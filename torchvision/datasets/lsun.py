@@ -10,7 +10,7 @@ if sys.version_info[0] == 2:
 else:
     import pickle
 
-class LSUNClassDataset(data.Dataset):
+class LSUNClass(data.Dataset):
     def __init__(self, db_path, transform=None, target_transform=None):
         import lmdb
         self.db_path = db_path
@@ -53,7 +53,7 @@ class LSUNClassDataset(data.Dataset):
     def __repr__(self):
         return self.__class__.__name__ + ' (' + self.db_path + ')'
 
-class LSUNDataset(data.Dataset):
+class LSUN(data.Dataset):
     """
     db_path = root directory for the database files
     classes = 'train' | 'val' | 'test' | ['bedroom_train', 'church_train', ...]

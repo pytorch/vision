@@ -3,7 +3,7 @@ from PIL import Image
 import os
 import os.path
 
-class CocoCaptionsDataset(data.Dataset):
+class CocoCaptions(data.Dataset):
     def __init__(self, root, annFile, transform=None, target_transform=None):
         from pycocotools.coco import COCO
         self.root = root
@@ -33,7 +33,7 @@ class CocoCaptionsDataset(data.Dataset):
     def __len__(self):
         return len(self.ids)
 
-class CocoDetectionDataset(data.Dataset):
+class CocoDetection(data.Dataset):
     def __init__(self, root, annFile, transform=None, target_transform=None):
         from pycocotools.coco import COCO
         self.root = root

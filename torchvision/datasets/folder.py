@@ -33,7 +33,7 @@ def make_dataset(dir, class_to_idx):
 
     return images
 
-class ImageFolderDataset(data.Dataset):
+class ImageFolder(data.Dataset):
     def __init__(self, root, transform=None, target_transform=None):
         classes, class_to_idx = find_classes(root)
         imgs = make_dataset(root, class_to_idx)

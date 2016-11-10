@@ -9,21 +9,6 @@ VERSION = '0.1.5'
 long_description = '''torch-vision provides DataLoaders, Pre-trained models
 and common transforms for torch for images and videos'''
 
-excluded = ['test']
-def exclude_package(pkg):
-    for exclude in excluded:
-        if pkg.startswith(exclude):
-            return True
-    return False
-
-def create_package_list(base_package):
-    return ([base_package] +
-            [base_package + '.' + pkg
-             for pkg
-             in find_packages(base_package)
-             if not exclude_package(pkg)])
-
-
 setup_info = dict(
     # Metadata
     name='torchvision',
@@ -36,7 +21,7 @@ setup_info = dict(
     license='BSD',
 
     # Package info
-    packages=find_packages(exclude=('test',)), #create_package_list('torchvision'),
+    packages=find_packages(exclude=('test',)),
 
     zip_safe=True,
 )
