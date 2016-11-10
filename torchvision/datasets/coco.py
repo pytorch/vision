@@ -51,6 +51,9 @@ class CocoDetection(data.Dataset):
         path = coco.loadImgs(img_id)[0]['file_name']
 
         img = Image.open(os.path.join(self.root, path)).convert('RGB')
+        if self.transform is not None:
+            img = self.transform(img)
+
         if self.target_transform is not None:
             target = self.target_transform(target)
 
