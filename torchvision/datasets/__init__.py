@@ -1,7 +1,7 @@
-from .lsun import LSUNDataset, LSUNClassDataset
-from .folder import ImageFolderDataset
-from .coco import CocoCaptionsDataset, CocoDetectionDataset
+from .lsun import LSUN, LSUNClass
+from .folder import ImageFolder
+from .coco import CocoCaptions, CocoDetection
 
-__all__ = ('LSUNDataset', 'LSUNClassDataset',
-           'ImageFolderDataset',
-           'CocoCaptionsDataset', 'CocoDetectionDataset')
+__all__ = ('LSUN', 'LSUNClass',
+           'ImageFolder',
+           'CocoCaptions', 'CocoDetection')
