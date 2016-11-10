@@ -29,6 +29,7 @@ The following dataset loaders are available:
 - [LSUN Classification](#lsun)
 - [ImageFolder](#imagefolder)
 - [Imagenet-12](#imagenet-12)
+- [CIFAR10 and CIFAR100](#cifar)
 
 Datasets have the API:
 - `__getitem__`
@@ -96,6 +97,15 @@ u'A mountain view with a plume of smoke in the background']
   - 'test' - all categories, test set
   - ['bedroom_train', 'church_train', ...] : a list of categories to load
 
+
+### CIFAR
+
+`dset.CIFAR10(root, train=True, transform=None, target_transform=None, download=False)`
+`dset.CIFAR100(root, train=True, transform=None, target_transform=None, download=False)`
+
+- `root` : root directory of dataset where there is folder `cifar-10-batches-py`
+- `train` : `True` = Training set, `False` = Test set
+- `download` : `True` = downloads the dataset from the internet and puts it in root directory. If dataset already downloaded, does not do anything.
 
 ### ImageFolder
 
