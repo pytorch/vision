@@ -11,7 +11,7 @@ This repository consists of:
 Binaries:
 
 ```bash
-conda install pytorch-vision -c https://conda.anaconda.org/t/6N-MsQ4WZ7jo/soumith
+conda install torchvision -c https://conda.anaconda.org/t/6N-MsQ4WZ7jo/soumith
 ```
 
 From Source:
