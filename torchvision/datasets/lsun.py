@@ -2,7 +2,7 @@ import torch.utils.data as data
 from PIL import Image
 import os
 import os.path
-import StringIO
+import six
 import string
 import sys
 if sys.version_info[0] == 2:
@@ -34,7 +34,7 @@ class LSUNClass(data.Dataset):
         with env.begin(write=False) as txn:
             imgbuf = txn.get(self.keys[index])
 
-        buf = StringIO.StringIO()
+        buf = six.BytesIO()
         buf.write(imgbuf)
         buf.seek(0)
         img = Image.open(buf).convert('RGB')
