@@ -114,3 +114,31 @@ It has the members:
 ### Imagenet-12
 
 This is simply implemented with an ImageFolder dataset, after the data is preprocessed [as described here](https://github.com/facebook/fb.resnet.torch/blob/master/INSTALL.md#download-the-imagenet-dataset)
+
+# Transforms
+
+Transforms are common image transforms.
+They can be chained together using `transforms.Compose`
+
+- `ToTensor()` - converts PIL Image to Tensor
+- `Normalize(mean, std)` - normalizes the image given mean, std (for example: mean = [0.3, 1.2, 2.1])
+- `Scale(size, interpolation=Image.BILINEAR)` - Scales the smaller image edge to the given size. Interpolation modes are options from PIL
+- `CenterCrop(size)` - center-crops the image to the given size
+- `RandomCrop(size)` - Random crops the image to the given size.
+- `RandomHorizontalFlip()` - hflip the image with probability 0.5
+- `RandomSizedCrop(size, interpolation=Image.BILINEAR)` - Random crop with size 0.08-1 and aspect ratio 3/4 - 4/3 (Inception-style)
+
+### `transforms.Compose`
+
+One can compose several transforms together.
+For example.
+
+```python
+transform = transforms.Compose([
+    transforms.RandomSizedCrop(224),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize(mean = [ 0.485, 0.456, 0.406 ],
+                          std = [ 0.229, 0.224, 0.225 ]),
+])
+```
