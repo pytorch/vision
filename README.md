@@ -23,6 +23,13 @@ pip install .
 
 # Datasets
 
+The following dataset loaders are available:
+
+- [COCO (Captioning and Detection)](#coco)
+- [LSUN Classification](#lsun)
+- [ImageFolder](#imagefolder)
+- [Imagenet-12](#imagenet-12)
+
 Datasets have the API:
 - `__getitem__`
 - `__len__`
@@ -39,13 +46,6 @@ In the constructor, each dataset has a slightly different API as needed, but the
   - common stuff like `ToTensor`, `RandomCrop`, etc. These can be composed together with `transforms.Compose` (see transforms section below)
 - `target_transform` - a function that takes in the target and transforms it. For example, take in the caption string and return a tensor of word indices.
 
-The following datasets are available:
-
-- COCO (Captioning and Detection)
-- LSUN Classification
-- Imagenet-12
-- ImageFolder
-
 ### COCO
 
 This requires the [COCO API to be installed](https://github.com/pdollar/coco/tree/master/PythonAPI)
@@ -59,7 +59,7 @@ Example:
 ```python
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
-cap = dset.CocoCaptions(root = 'dir where images are', annFile = 'json annotation file', transform=transforms.toTensor)
+cap = dset.CocoCaptions(root = 'dir where images are', annFile = 'json annotation file', transform=transforms.ToTensor())
 
 print('Number of samples:', len(cap))
 img, target = cap[3] # load 4th sample
@@ -71,6 +71,9 @@ print(target)
 Output:
 
 ```
+('Number of samples:', 82783)
+(3L, 427L, 640L)
+[u'A plane emitting smoke stream flying over a mountain.', u'A plane darts across a bright blue sky behind a mountain covered in snow', u'A plane leaves a contrail above the snowy mountain top.', u'A mountain that has a plane flying overheard in the distance.', u'A mountain view with a plume of smoke in the background']
 ```
 
 #### Detection:
@@ -113,7 +116,12 @@ It has the members:
 
 ### Imagenet-12
 
-This is simply implemented with an ImageFolder dataset, after the data is preprocessed [as described here](https://github.com/facebook/fb.resnet.torch/blob/master/INSTALL.md#download-the-imagenet-dataset)
+This is simply implemented with an ImageFolder dataset.
+
+The data is preprocessed [as described here](https://github.com/facebook/fb.resnet.torch/blob/master/INSTALL.md#download-the-imagenet-dataset)
+
+[Here is an example](https://github.com/pytorch/examples/blob/27e2a46c1d1505324032b1d94fc6ce24d5b67e97/imagenet/main.py#L48-L62).
+
 
 # Transforms
 
