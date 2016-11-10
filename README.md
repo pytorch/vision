@@ -59,21 +59,27 @@ Example:
 ```python
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
-cap = dset.CocoCaptions(root = 'dir where images are', annFile = 'json annotation file', transform=transforms.ToTensor())
+cap = dset.CocoCaptions(root = 'dir where images are', 
+                        annFile = 'json annotation file', 
+                        transform=transforms.ToTensor())
 
-print('Number of samples:', len(cap))
+print('Number of samples: ', len(cap))
 img, target = cap[3] # load 4th sample
 
-print(img.size())
+print("Image Size: ", img.size())
 print(target)
 ```
 
 Output:
 
 ```
-('Number of samples:', 82783)
-(3L, 427L, 640L)
-[u'A plane emitting smoke stream flying over a mountain.', u'A plane darts across a bright blue sky behind a mountain covered in snow', u'A plane leaves a contrail above the snowy mountain top.', u'A mountain that has a plane flying overheard in the distance.', u'A mountain view with a plume of smoke in the background']
+Number of samples: 82783
+Image Size: (3L, 427L, 640L)
+[u'A plane emitting smoke stream flying over a mountain.', 
+u'A plane darts across a bright blue sky behind a mountain covered in snow', 
+u'A plane leaves a contrail above the snowy mountain top.', 
+u'A mountain that has a plane flying overheard in the distance.', 
+u'A mountain view with a plume of smoke in the background']
 ```
 
 #### Detection:
