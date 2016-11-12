@@ -2,6 +2,7 @@ import torch
 import math
 import random
 from PIL import Image
+import numpy as np
 
 
 class Compose(object):
@@ -16,11 +17,16 @@ class Compose(object):
 
 class ToTensor(object):
     def __call__(self, pic):
-        img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
-        img = img.view(pic.size[0], pic.size[1], 3)
-        # put it in CHW format
-        # yikes, this transpose takes 80% of the loading time/CPU
-        img = img.transpose(0, 2).transpose(1, 2).contiguous()
+        if isinstance(pic, np.ndarray):
+            # handle numpy array
+            img = torch.from_numpy(pic)
+        else:
+            # handle PIL Image
+            img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
+            img = img.view(pic.size[0], pic.size[1], 3)
+            # put it in CHW format
+            # yikes, this transpose takes 80% of the loading time/CPU
+            img = img.transpose(0, 2).transpose(1, 2).contiguous()
         return img.float()
 
 class Normalize(object):
