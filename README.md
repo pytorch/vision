@@ -2,8 +2,8 @@
 
 This repository consists of:
 
-- `vision.datasets` : Data loaders for popular vision datasets
-- `vision.transforms` : Common image transformations such as random crop, rotations etc.
+- [vision.datasets](#datasets) : Data loaders for popular vision datasets
+- [vision.transforms](#transforms) : Common image transformations such as random crop, rotations etc.
 - `[WIP] vision.models` : Model definitions and Pre-trained models for popular models such as AlexNet, VGG, ResNet etc.
 
 # Installation
