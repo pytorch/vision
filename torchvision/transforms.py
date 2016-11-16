@@ -33,10 +33,10 @@ class ToTensor(object):
         else:
             # handle PIL Image
             img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
-            img = img.view(pic.size[0], pic.size[1], 3)
-            # put it from WHC to CHW format
+            img = img.view(pic.size[1], pic.size[0], 3)
+            # put it from HWC to CHW format
             # yikes, this transpose takes 80% of the loading time/CPU
-            img = img.transpose(0, 2).contiguous()
+            img = img.transpose(0, 1).transpose(0, 2).contiguous()
         return img.float().div(255)
 
 class ToPILImage(object):
