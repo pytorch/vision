@@ -87,7 +87,7 @@ class LSUN(data.Dataset):
         # for each class, create an LSUNClassDataset
         self.dbs = []
         for c in self.classes:
-            self.dbs.append(LSUNClassDataset(
+            self.dbs.append(LSUNClass(
                 db_path = db_path + '/' + c + '_lmdb',
                 transform = transform))
 
@@ -124,9 +124,9 @@ class LSUN(data.Dataset):
         return self.__class__.__name__ + ' (' + self.db_path + ')'
 
 if __name__ == '__main__':
-    #lsun = LSUNClassDataset(db_path='/home/soumith/local/lsun/train/bedroom_train_lmdb')
+    #lsun = LSUNClass(db_path='/home/soumith/local/lsun/train/bedroom_train_lmdb')
     #a = lsun[0]
-    lsun = LSUNDataset(db_path='/home/soumith/local/lsun/train',
+    lsun = LSUN(db_path='/home/soumith/local/lsun/train',
                        classes=['bedroom_train', 'church_outdoor_train'])
     print(lsun.classes)
     print(lsun.dbs)
