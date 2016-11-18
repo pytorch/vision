@@ -4,6 +4,7 @@ This repository consists of:
 
 - [vision.datasets](#datasets) : Data loaders for popular vision datasets
 - [vision.transforms](#transforms) : Common image transformations such as random crop, rotations etc.
+- [vision.utils](#utils) : Useful stuff such as saving tensor (3 x H x W) as image to disk, given a mini-batch creating a grid of images, etc.
 - `[WIP] vision.models` : Model definitions and Pre-trained models for popular models such as AlexNet, VGG, ResNet etc.
 
 # Installation
@@ -60,8 +61,8 @@ Example:
 ```python
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
-cap = dset.CocoCaptions(root = 'dir where images are', 
-                        annFile = 'json annotation file', 
+cap = dset.CocoCaptions(root = 'dir where images are',
+                        annFile = 'json annotation file',
                         transform=transforms.ToTensor())
 
 print('Number of samples: ', len(cap))
@@ -76,10 +77,10 @@ Output:
 ```
 Number of samples: 82783
 Image Size: (3L, 427L, 640L)
-[u'A plane emitting smoke stream flying over a mountain.', 
-u'A plane darts across a bright blue sky behind a mountain covered in snow', 
-u'A plane leaves a contrail above the snowy mountain top.', 
-u'A mountain that has a plane flying overheard in the distance.', 
+[u'A plane emitting smoke stream flying over a mountain.',
+u'A plane darts across a bright blue sky behind a mountain covered in snow',
+u'A plane leaves a contrail above the snowy mountain top.',
+u'A mountain that has a plane flying overheard in the distance.',
 u'A mountain view with a plume of smoke in the background']
 ```
 
@@ -174,7 +175,7 @@ rescaled to (size * height / width, size)
 Crops the given PIL.Image at the center to have a region of
 the given size. size can be a tuple (target_height, target_width)
 or an integer, in which case the target will be of a square shape (size, size)
-	
+
 ### `RandomCrop(size)`
 Crops the given PIL.Image at a random location to have a region of
 the given size. size can be a tuple (target_height, target_width)
@@ -200,3 +201,13 @@ Given mean: (R, G, B) and std: (R, G, B), will normalize each channel of the tor
 - `ToTensor()` - Converts a PIL.Image (RGB) or numpy.ndarray (H x W x C) in the range [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
 - `ToPILImage()` - Converts a torch.*Tensor of range [0, 1] and shape C x H x W or numpy ndarray of dtype=uint8, range[0, 255] and shape H x W x C to a PIL.Image of range [0, 255]
 
+
+# Utils
+
+### make_grid(tensor, nrow=8, padding=2)
+Given a 4D mini-batch Tensor of shape (B x C x H x W), makes a grid of images
+
+### save_image(tensor, filename, nrow=8, padding=2)
+Saves a given Tensor into an image file.
+
+If given a mini-batch tensor, will save the tensor as a grid of images.
