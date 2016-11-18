@@ -102,6 +102,7 @@ u'A mountain view with a plume of smoke in the background']
 ### CIFAR
 
 `dset.CIFAR10(root, train=True, transform=None, target_transform=None, download=False)`
+
 `dset.CIFAR100(root, train=True, transform=None, target_transform=None, download=False)`
 
 - `root` : root directory of dataset where there is folder `cifar-10-batches-py`
