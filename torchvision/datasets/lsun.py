@@ -14,8 +14,7 @@ class LSUNClass(data.Dataset):
     def __init__(self, db_path, transform=None, target_transform=None):
         import lmdb
         self.db_path = db_path
-        self.env = lmdb.open(db_path, map_size=1099511627776,
-                        max_readers=100, readonly=True)
+        self.env = lmdb.open(db_path, max_readers=1, readonly=True, lock=False)
         with self.env.begin(write=False) as txn:
             self.length = txn.stat()['entries']
         cache_file = '_cache_' + db_path.replace('/', '_')
