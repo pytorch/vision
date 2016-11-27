@@ -194,7 +194,6 @@ This is popularly used to train the Inception networks
 - size: size of the smaller edge
 - interpolation: Default: PIL.Image.BILINEAR
 
-
 ### `Pad(padding, fill=0)`
 Pads the given image on each side with `padding` number of pixels, and the padding pixels are filled with
 pixel value `fill`.
@@ -209,6 +208,14 @@ Given mean: (R, G, B) and std: (R, G, B), will normalize each channel of the tor
 - `ToTensor()` - Converts a PIL.Image (RGB) or numpy.ndarray (H x W x C) in the range [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
 - `ToPILImage()` - Converts a torch.*Tensor of range [0, 1] and shape C x H x W or numpy ndarray of dtype=uint8, range[0, 255] and shape H x W x C to a PIL.Image of range [0, 255]
 
+## Generic Transofrms
+### `Lambda(lambda)`
+Given a Python lambda, applies it to the input `img` and returns it.
+For example:
+
+```python
+transforms.Lambda(lambda x: x.add(10))
+```
 
 # Utils
 

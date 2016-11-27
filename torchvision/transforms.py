@@ -5,6 +5,7 @@ import random
 from PIL import Image, ImageOps
 import numpy as np
 import numbers
+import types
 
 class Compose(object):
     """ Composes several transforms together.
@@ -125,6 +126,15 @@ class Pad(object):
 
     def __call__(self, img):
         return ImageOps.expand(img, border=self.padding, fill=self.fill)
+
+class Lambda(object):
+    """Applies a lambda as a transform"""
+    def __init__(self, lambd):
+        assert type(lambd) is types.LambdaType
+        self.lambd = lambd
+
+    def __call__(self, img):
+        return self.lambd(img)
 
 
 class RandomCrop(object):
