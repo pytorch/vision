@@ -100,10 +100,19 @@ class Tester(unittest.TestCase):
             transforms.Pad(padding),
             transforms.ToTensor(),
         ])(img)
-        print(height, width, padding)
-        print(result.size(1), result.size(2))
         assert result.size(1) == height + 2*padding
         assert result.size(2) == width + 2*padding
+
+    def test_lambda(self):
+        trans = transforms.Lambda(lambda x: x.add(10))
+        x = torch.randn(10)
+        y = trans(x)
+        assert(y.equal(torch.add(x, 10)))
+
+        trans = transforms.Lambda(lambda x: x.add_(10))
+        x = torch.randn(10)
+        y = trans(x)
+        assert(y.equal(x))
         
 
 if __name__ == '__main__':
