@@ -2,10 +2,10 @@ import torch
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
 
-# print('\n\nCifar 10')
-# a = dset.CIFAR10(root="abc/def/ghi", download=True)
+print('\n\nCifar 10')
+a = dset.CIFAR10(root="abc/def/ghi", download=True)
 
-# print(a[3])
+print(a[3])
 
 # print('\n\nCifar 100')
 # a = dset.CIFAR100(root="abc/def/ghi", download=True)
@@ -14,9 +14,14 @@ import torchvision.transforms as transforms
 
 
 dataset = dset.CIFAR10(root='cifar', download=True, transform=transforms.ToTensor())
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=32, 
+dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, 
                                          shuffle=True, num_workers=2)
 
+
+for i, data in enumerate(dataloader, 0):
+    print(data)
+    if i == 10:
+        break
 
 # miter = dataloader.__iter__()
 # def getBatch():
