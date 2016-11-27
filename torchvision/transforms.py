@@ -2,7 +2,7 @@ from __future__ import division
 import torch
 import math
 import random
-from PIL import Image
+from PIL import Image, ImageOps
 import numpy as np
 import numbers
 
@@ -115,6 +115,18 @@ class CenterCrop(object):
         return img.crop((x1, y1, x1 + tw, y1 + th))
 
 
+class Pad(object):
+    """Pads the given PIL.Image on all sides with the given "pad" value"""
+    def __init__(self, padding, fill=0):
+        assert isinstance(padding, numbers.Number)
+        assert isinstance(fill, numbers.Number)
+        self.padding = padding
+        self.fill = fill
+
+    def __call__(self, img):
+        return ImageOps.expand(img, border=self.padding, fill=self.fill)
+
+
 class RandomCrop(object):
     """Crops the given PIL.Image at a random location to have a region of
     the given size. size can be a tuple (target_height, target_width)
@@ -129,7 +141,7 @@ class RandomCrop(object):
 
     def __call__(self, img):
         if self.padding > 0:
-            raise NotImplementedError()
+            img = ImageOps.expand(img, border=self.padding, fill=0)
 
         w, h = img.size
         th, tw = self.size

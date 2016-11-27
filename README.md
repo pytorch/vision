@@ -177,10 +177,11 @@ Crops the given PIL.Image at the center to have a region of
 the given size. size can be a tuple (target_height, target_width)
 or an integer, in which case the target will be of a square shape (size, size)
 
-### `RandomCrop(size)`
+### `RandomCrop(size, padding=0)`
 Crops the given PIL.Image at a random location to have a region of
 the given size. size can be a tuple (target_height, target_width)
 or an integer, in which case the target will be of a square shape (size, size)
+If `padding` is non-zero, then the image is first zero-padded on each side with `padding` pixels.
 
 ### `RandomHorizontalFlip()`
 Randomly horizontally flips the given PIL.Image with a probability of 0.5
@@ -192,6 +193,12 @@ and and a random aspect ratio of 3/4 to 4/3 of the original aspect ratio
 This is popularly used to train the Inception networks
 - size: size of the smaller edge
 - interpolation: Default: PIL.Image.BILINEAR
+
+
+### `Pad(padding, fill=0)`
+Pads the given image on each side with `padding` number of pixels, and the padding pixels are filled with
+pixel value `fill`.
+If a `5x5` image is padded with `padding=1` then it becomes `7x7`
 
 ## Transforms on torch.*Tensor
 
