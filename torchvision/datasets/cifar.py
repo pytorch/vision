@@ -77,6 +77,10 @@ class CIFAR10(data.Dataset):
             img, target = self.train_data[index], self.train_labels[index]
         else:
             img, target = self.test_data[index], self.test_labels[index]
+            
+        # doing this so that it is consistent with all other datasets
+        # to return a PIL Image
+        img = Image.fromarray(np.transpose(img, (1,2,0)))
 
         if self.transform is not None:
             img = self.transform(img)
