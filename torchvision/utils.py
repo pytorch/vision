@@ -1,10 +1,20 @@
+import torch
+import math
 
 def make_grid(tensor, nrow=8, padding=2):
     """
     Given a 4D mini-batch Tensor of shape (B x C x H x W),
+    or a list of images all of the same size,
     makes a grid of images
     """
-    import math
+    tensorlist = None
+    if isinstance(tensor, list):
+        tensorlist = tensor
+        numImages = len(tensorlist)
+        size = torch.Size(torch.Size([long(numImages)]) + tensorlist[0].size())
+        tensor = tensorlist[0].new(size)
+        for i in range(numImages):
+            tensor[i].copy_(tensorlist[i])
     if tensor.dim() == 3: # single image
         return tensor
     # make the mini-batch of images into a grid
