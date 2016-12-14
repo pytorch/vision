@@ -44,7 +44,7 @@ if __name__ == "__main__":
         batch = next(train_iter)
     end_time = timer()
     print("Performance: {dataset:.0f} minutes/dataset, {batch:.2f} secs/batch, {image:.2f} ms/image".format(
-        dataset=(end_time - start_time) * len(train_loader) / (batch_count * args.batchSize) / 60.0,
+        dataset=(end_time - start_time) * (float(len(train_loader)) / batch_count / 60.0),
         batch=(end_time - start_time) / float(batch_count),
         image=(end_time - start_time) / (batch_count * args.batchSize) * 1.0e+3))
 
