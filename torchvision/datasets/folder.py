@@ -1,6 +1,10 @@
 import torch.utils.data as data
 
 from PIL import Image
+try:
+    import accimage
+except ImportError:
+    accimage = None
 import os
 import os.path
 
@@ -47,7 +51,10 @@ class ImageFolder(data.Dataset):
 
     def __getitem__(self, index):
         path, target = self.imgs[index]
-        img = Image.open(os.path.join(self.root, path)).convert('RGB')
+        if accimage is None:
+            img = Image.open(os.path.join(self.root, path)).convert('RGB')
+        else:
+            img = accimage.Image(os.path.join(self.root, path))
         if self.transform is not None:
             img = self.transform(img)
         if self.target_transform is not None:
