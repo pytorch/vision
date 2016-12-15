@@ -49,7 +49,10 @@ class CIFAR10(data.Dataset):
                 f = fentry[0]
                 file = os.path.join(root, self.base_folder, f)
                 fo = open(file, 'rb')
-                entry = pickle.load(fo)
+                if sys.version_info[0] == 2:
+                    entry = pickle.load(fo)
+                else:
+                    entry = pickle.load(fo, encoding='latin1')
                 self.train_data.append(entry['data'])
                 if 'labels' in entry:
                     self.train_labels += entry['labels']

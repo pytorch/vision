@@ -28,8 +28,8 @@ def make_grid(tensor, nrow=8, padding=2):
         for x in range(xmaps):
             if k >= nmaps:
                 break
-            grid.narrow(1, y*height+1+padding/2,height-padding)\
-                .narrow(2, x*width+1+padding/2, width-padding)\
+            grid.narrow(1, y*height+1+padding//2,height-padding)\
+                .narrow(2, x*width+1+padding//2, width-padding)\
                 .copy_(tensor[k])
             k = k + 1
     return grid
