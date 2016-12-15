@@ -15,8 +15,13 @@ def make_grid(tensor, nrow=8, padding=2):
         tensor = tensorlist[0].new(size)
         for i in range(numImages):
             tensor[i].copy_(tensorlist[i])
+    if tensor.dim() == 2: # single image H x W
+        tensor = torch.view(1, tensor.size(0), tensor.size(1))
+        tensor = torch.cat((tensor, tensor, tensor), 0)
     if tensor.dim() == 3: # single image
         return tensor
+    if tensor.dim() == 4 and tensor.size(1) == 1: # single-channel images
+        tensor = torch.cat((tensor, tensor, tensor), 1)
     # make the mini-batch of images into a grid
     nmaps = tensor.size(0)
     xmaps = min(nrow, nmaps)
