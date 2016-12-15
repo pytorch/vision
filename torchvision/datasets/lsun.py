@@ -71,7 +71,7 @@ class LSUN(data.Dataset):
             for c in classes:
                 c_short = c.split('_')
                 c_short.pop(len(c_short) - 1)
-                c_short = string.join(c_short, '_')
+                c_short = '_'.join(c_short)
                 if c_short not in categories:
                     raise(ValueError('Unknown LSUN class: ' + c_short + '.'\
                           'Options are: ' + str(categories)))
