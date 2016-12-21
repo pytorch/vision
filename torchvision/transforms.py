@@ -35,7 +35,7 @@ class ToTensor(object):
         if accimage is not None and isinstance(pic, accimage.Image):
             nppic = np.empty([pic.channels, pic.height, pic.width])
             pic.copyto(nppic)
-            img = torch.from_numpy(np.transpose(nppic, axes=(1, 2, 0)))
+            img = torch.from_numpy(nppic)
         elif isinstance(pic, np.ndarray):
             # handle numpy array
             img = torch.from_numpy(pic)
