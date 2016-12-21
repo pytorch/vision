@@ -54,7 +54,11 @@ class ImageFolder(data.Dataset):
         if accimage is None:
             img = Image.open(os.path.join(self.root, path)).convert('RGB')
         else:
-            img = accimage.Image(os.path.join(self.root, path))
+            try:
+                img = accimage.Image(os.path.join(self.root, path))
+            except IOError:
+                # Potentially a decoding problem, fall back to PIL.Image
+                img = Image.open(os.path.join(self.root, path)).convert('RGB')
         if self.transform is not None:
             img = self.transform(img)
         if self.target_transform is not None:
