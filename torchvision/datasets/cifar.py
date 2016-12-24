@@ -66,7 +66,10 @@ class CIFAR10(data.Dataset):
             f = self.test_list[0][0]
             file = os.path.join(root, self.base_folder, f)
             fo = open(file, 'rb')
-            entry = pickle.load(fo)
+            if sys.version_info[0] == 2:
+                entry = pickle.load(fo)
+            else:
+                entry = pickle.load(fo, encoding='latin1')
             self.test_data = entry['data']
             if 'labels' in entry:
                 self.test_labels = entry['labels']
