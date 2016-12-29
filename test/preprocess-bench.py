@@ -6,6 +6,11 @@ import torch
 import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
+try:
+    import accimage
+    print("Using accimage.Image")
+except ImportError:
+    print("Using PIL.Image")
 
 
 parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')

@@ -3,6 +3,10 @@ import torch
 import math
 import random
 from PIL import Image, ImageOps
+try:
+    import accimage
+except ImportError:
+    accimage = None
 import numpy as np
 import numbers
 import types
@@ -28,7 +32,11 @@ class ToTensor(object):
     """ Converts a PIL.Image (RGB) or numpy.ndarray (H x W x C) in the range [0, 255]
     to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0] """
     def __call__(self, pic):
-        if isinstance(pic, np.ndarray):
+        if accimage is not None and isinstance(pic, accimage.Image):
+            nppic = np.empty([pic.channels, pic.height, pic.width])
+            pic.copyto(nppic)
+            img = torch.from_numpy(nppic)
+        elif isinstance(pic, np.ndarray):
             # handle numpy array
             img = torch.from_numpy(pic)
         else:
