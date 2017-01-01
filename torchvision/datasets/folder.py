@@ -34,13 +34,13 @@ def make_dataset(dir, class_to_idx):
     return images
 
 
-def default_load(path):
+def default_loader(path):
     return Image.open(path).convert('RGB')
 
 
 class ImageFolder(data.Dataset):
     def __init__(self, root, transform=None, target_transform=None,
-                 load=default_load):
+                 loader=default_loader):
         classes, class_to_idx = find_classes(root)
         imgs = make_dataset(root, class_to_idx)
 
@@ -50,11 +50,11 @@ class ImageFolder(data.Dataset):
         self.class_to_idx = class_to_idx
         self.transform = transform
         self.target_transform = target_transform
-        self.load = load
+        self.loader = loader
 
     def __getitem__(self, index):
         path, target = self.imgs[index]
-        img = self.load(os.path.join(self.root, path))
+        img = self.loader(os.path.join(self.root, path))
         if self.transform is not None:
             img = self.transform(img)
         if self.target_transform is not None:
