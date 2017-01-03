@@ -41,7 +41,7 @@ class ToTensor(object):
         return img.float().div(255)
 
 class ToPILImage(object):
-    """ Converts a torch.*Tensor of range [0, 1] and shape C x H x W 
+    """ Converts a torch.*Tensor of range [0, 1] and shape C x H x W
     or numpy ndarray of dtype=uint8, range[0, 255] and shape H x W x C
     to a PIL.Image of range [0, 255]
     """
@@ -111,8 +111,8 @@ class CenterCrop(object):
     def __call__(self, img):
         w, h = img.size
         th, tw = self.size
-        x1 = int(round((w - tw) / 2))
-        y1 = int(round((h - th) / 2))
+        x1 = int(round((w - tw) / 2.))
+        y1 = int(round((h - th) / 2.))
         return img.crop((x1, y1, x1 + tw, y1 + th))
 
 
@@ -187,7 +187,7 @@ class RandomSizedCrop(object):
         for attempt in range(10):
             area = img.size[0] * img.size[1]
             target_area = random.uniform(0.08, 1.0) * area
-            aspect_ratio = random.uniform(3 / 4, 4 / 3)
+            aspect_ratio = random.uniform(3. / 4, 4. / 3)
 
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
