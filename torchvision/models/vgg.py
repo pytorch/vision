@@ -7,7 +7,7 @@ __all__ = [
 ]
 
 
-class VGG(nn.Container):
+class VGG(nn.Module):
     def __init__(self, features):
         super(VGG, self).__init__()
         self.features = features

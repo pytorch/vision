@@ -21,7 +21,7 @@ def conv3x3(in_planes, out_planes, stride=1):
                      padding=1, bias=False)
 
 
-class BasicBlock(nn.Container):
+class BasicBlock(nn.Module):
     expansion = 1
 
     def __init__(self, inplanes, planes, stride=1, downsample=None):
@@ -53,7 +53,7 @@ class BasicBlock(nn.Container):
         return out
 
 
-class Bottleneck(nn.Container):
+class Bottleneck(nn.Module):
     expansion = 4
 
     def __init__(self, inplanes, planes, stride=1, downsample=None):
@@ -92,7 +92,7 @@ class Bottleneck(nn.Container):
         return out
 
 
-class ResNet(nn.Container):
+class ResNet(nn.Module):
     def __init__(self, block, layers, num_classes=1000):
         self.inplanes = 64
         super(ResNet, self).__init__()
