@@ -3,9 +3,9 @@
 This repository consists of:
 
 - [vision.datasets](#datasets) : Data loaders for popular vision datasets
+- [vision.models](#models) : Definitions for popular model architectures, such as AlexNet, VGG, and ResNet and pre-trained models.
 - [vision.transforms](#transforms) : Common image transformations such as random crop, rotations etc.
 - [vision.utils](#utils) : Useful stuff such as saving tensor (3 x H x W) as image to disk, given a mini-batch creating a grid of images, etc.
-- `[WIP] vision.models` : Model definitions and Pre-trained models for popular models such as AlexNet, VGG, ResNet etc.
 
 # Installation
 
@@ -140,6 +140,31 @@ The data is preprocessed [as described here](https://github.com/facebook/fb.resn
 
 [Here is an example](https://github.com/pytorch/examples/blob/27e2a46c1d1505324032b1d94fc6ce24d5b67e97/imagenet/main.py#L48-L62).
 
+# Models
+
+The models subpackage contains definitions for the following model architectures:
+
+ - [AlexNet](https://arxiv.org/abs/1404.5997): AlexNet variant from the "One weird trick" paper.
+ - [VGG](https://arxiv.org/abs/1409.1556): VGG-11, VGG-13, VGG-16, VGG-19 (with and without batch normalization)
+ - [ResNet](https://arxiv.org/abs/1512.03385): ResNet-18, ResNet-34, ResNet-50, ResNet-101, ResNet-152
+
+You can construct a model with random weights by calling its constructor:
+
+```python
+import torchvision.models as models
+resnet18 = models.resnet18()
+alexnet = models.alexnet()
+```
+
+ We provide pre-trained models for the ResNet variants and AlexNet, using the
+ PyTorch [model zoo](http://pytorch.org/docs/model_zoo.html). These can
+ be constructed by passing `pretrained=True`:
+
+ ```python
+ import torchvision.models as models
+ resnet18 = models.resnet18(pretrained=True)
+ alexnet = models.alexnet(pretrained=True)
+```
 
 # Transforms
 
