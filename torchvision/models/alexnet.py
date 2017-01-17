@@ -46,8 +46,11 @@ class AlexNet(nn.Module):
 
 
 def alexnet(pretrained=False):
-    r"""AlexNet model architecture from the "One weird trick" paper.
-    https://arxiv.org/abs/1404.5997
+    r"""AlexNet model architecture from the
+    `"One weird trick..." <https://arxiv.org/abs/1404.5997>`_ paper.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
     model = AlexNet()
     if pretrained:
