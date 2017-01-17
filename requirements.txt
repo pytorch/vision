@@ -1,2 +1,4 @@
+numpy
 pillow
 six
+torch
