@@ -53,32 +53,40 @@ cfg = {
 
 
 def vgg11():
+    """VGG 11-layer model (configuration "A")"""
     return VGG(make_layers(cfg['A']))
 
 
 def vgg11_bn():
+    """VGG 11-layer model (configuration "A") with batch normalization"""
     return VGG(make_layers(cfg['A'], batch_norm=True))
 
 
 def vgg13():
+    """VGG 13-layer model (configuration "B")"""
     return VGG(make_layers(cfg['B']))
 
 
 def vgg13_bn():
+    """VGG 13-layer model (configuration "B") with batch normalization"""
     return VGG(make_layers(cfg['B'], batch_norm=True))
 
 
 def vgg16():
+    """VGG 11-layer model (configuration "B")"""
     return VGG(make_layers(cfg['D']))
 
 
 def vgg16_bn():
+    """VGG 16-layer model (configuration "D") with batch normalization"""
     return VGG(make_layers(cfg['D'], batch_norm=True))
 
 
 def vgg19():
+    """VGG 19-layer model (configuration "D")"""
     return VGG(make_layers(cfg['E']))
 
 
 def vgg19_bn():
+    """VGG 19-layer model (configuration 'E') with batch normalization"""
     return VGG(make_layers(cfg['E'], batch_norm=True))
