@@ -4,7 +4,7 @@ import shutil
 import sys
 from setuptools import setup, find_packages
 
-VERSION = '0.1.5'
+VERSION = '0.1.6'
 
 long_description = '''torch-vision provides DataLoaders, Pre-trained models
 and common transforms for torch for images and videos'''
