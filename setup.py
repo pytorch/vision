@@ -9,6 +9,14 @@ VERSION = '0.1.6'
 long_description = '''torch-vision provides DataLoaders, Pre-trained models
 and common transforms for torch for images and videos'''
 
+# same as ./requirements.txt
+requirements = [
+    'numpy',
+    'pillow',
+    'six',
+    'torch',
+]
+
 setup_info = dict(
     # Metadata
     name='torchvision',
@@ -24,6 +32,7 @@ setup_info = dict(
     packages=find_packages(exclude=('test',)),
 
     zip_safe=True,
+    install_requires=requirements,
 )
 
 setup(**setup_info)
