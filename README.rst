@@ -17,17 +17,23 @@ This repository consists of:
 Installation
 ============
 
-Binaries:
+Anaconda:
 
 .. code:: bash
 
-    conda install torchvision -c https://conda.anaconda.org/t/6N-MsQ4WZ7jo/soumith
+    conda install torchvision -c soumith
 
-From Source:
+pip:
 
 .. code:: bash
 
     pip install torchvision
+
+From source:
+
+.. code:: bash
+
+    python setup.py install
 
 Datasets
 ========
