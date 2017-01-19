@@ -9,6 +9,14 @@ readme = open('README.rst').read()
 
 VERSION = '0.1.6'
 
+# same as ./requirements.txt
+requirements = [
+    'numpy',
+    'pillow',
+    'six',
+    'torch',
+]
+
 setup(
     # Metadata
     name='torchvision',
@@ -24,4 +32,5 @@ setup(
     packages=find_packages(exclude=('test',)),
 
     zip_safe=True,
+    install_requires=requirements,
 )
