@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 
 readme = open('README.rst').read()
 
-VERSION = '0.1.6'
+VERSION = '0.1.7'
 
 # same as ./requirements.txt
 requirements = [
