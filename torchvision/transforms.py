@@ -8,12 +8,16 @@ import numbers
 import types
 
 class Compose(object):
-    """ Composes several transforms together.
-    For example:
-    >>> transforms.Compose([
-    >>>     transforms.CenterCrop(10),
-    >>>     transforms.ToTensor(),
-    >>>  ])
+    """Composes several transforms together.
+
+    Args:
+        transforms (List[Transform]): list of transforms to compose.
+
+    Example:
+        >>> transforms.Compose([
+        >>>     transforms.CenterCrop(10),
+        >>>     transforms.ToTensor(),
+        >>> ])
     """
     def __init__(self, transforms):
         self.transforms = transforms
@@ -25,8 +29,9 @@ class Compose(object):
 
 
 class ToTensor(object):
-    """ Converts a PIL.Image (RGB) or numpy.ndarray (H x W x C) in the range [0, 255]
-    to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0] """
+    """Converts a PIL.Image (RGB) or numpy.ndarray (H x W x C) in the range
+    [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0].
+    """
     def __call__(self, pic):
         if isinstance(pic, np.ndarray):
             # handle numpy array
@@ -40,8 +45,9 @@ class ToTensor(object):
             img = img.transpose(0, 1).transpose(0, 2).contiguous()
         return img.float().div(255)
 
+
 class ToPILImage(object):
-    """ Converts a torch.*Tensor of range [0, 1] and shape C x H x W
+    """Converts a torch.*Tensor of range [0, 1] and shape C x H x W
     or numpy ndarray of dtype=uint8, range[0, 255] and shape H x W x C
     to a PIL.Image of range [0, 255]
     """
@@ -56,7 +62,7 @@ class ToPILImage(object):
         return img
 
 class Normalize(object):
-    """ Given mean: (R, G, B) and std: (R, G, B),
+    """Given mean: (R, G, B) and std: (R, G, B),
     will normalize each channel of the torch.*Tensor, i.e.
     channel = (channel - mean) / std
     """
@@ -72,7 +78,7 @@ class Normalize(object):
 
 
 class Scale(object):
-    """ Rescales the input PIL.Image to the given 'size'.
+    """Rescales the input PIL.Image to the given 'size'.
     'size' will be the size of the smaller edge.
     For example, if height > width, then image will be
     rescaled to (size * height / width, size)
@@ -128,7 +134,7 @@ class Pad(object):
         return ImageOps.expand(img, border=self.padding, fill=self.fill)
 
 class Lambda(object):
-    """Applies a lambda as a transform"""
+    """Applies a lambda as a transform."""
     def __init__(self, lambd):
         assert type(lambd) is types.LambdaType
         self.lambd = lambd
