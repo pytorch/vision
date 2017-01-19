@@ -72,7 +72,6 @@ class MNIST(data.Dataset):
         import gzip
 
         if self._check_exists():
-            print('Files already downloaded')
             return
 
         # download files
@@ -98,8 +97,8 @@ class MNIST(data.Dataset):
             os.unlink(file_path)
 
         # process and save as torch files
-        print('Processing')
-        
+        print('Processing...')
+
         training_set = (
             read_image_file(os.path.join(self.root, self.raw_folder, 'train-images-idx3-ubyte')),
             read_label_file(os.path.join(self.root, self.raw_folder, 'train-labels-idx1-ubyte'))
