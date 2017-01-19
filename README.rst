@@ -27,8 +27,7 @@ From Source:
 
 .. code:: bash
 
-    pip install -r requirements.txt
-    pip install .
+    pip install torchvision
 
 Datasets
 ========
