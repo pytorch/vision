@@ -201,7 +201,7 @@ Transforms are common image transforms. They can be chained together
 using ``transforms.Compose``
 
 ``transforms.Compose``
-^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~
 
 One can compose several transforms together. For example.
 
