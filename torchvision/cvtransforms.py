@@ -1,3 +1,6 @@
+""" OpenCV-based transforms
+    Operate on np.ndarrays only, no PIL or torch dependency
+"""
 from __future__ import division
 import math
 import random
@@ -21,12 +24,12 @@ class Normalize(object):
 
 
 class Scale(object):
-    """Rescales the input PIL.Image to the given 'size'.
+    """Rescales the input np.ndarray to the given 'size'.
     'size' will be the size of the smaller edge.
     For example, if height > width, then image will be
     rescaled to (size * height / width, size)
     size: size of the smaller edge
-    interpolation: Default: PIL.Image.BILINEAR
+    interpolation: Default: cv.INTER_CUBIC
     """
     def __init__(self, size, interpolation=cv2.INTER_CUBIC):
         self.size = size
