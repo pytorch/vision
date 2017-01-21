@@ -40,6 +40,7 @@ Datasets
 
 The following dataset loaders are available:
 
+-  `MNIST <#mnist>`__
 -  `COCO (Captioning and Detection) <#coco>`__
 -  `LSUN Classification <#lsun>`__
 -  `ImageFolder <#imagefolder>`__
@@ -65,6 +66,21 @@ but they all take the keyword args:
 -  ``target_transform`` - a function that takes in the target and
    transforms it. For example, take in the caption string and return a
    tensor of word indices.
+
+MNIST
+~~~~~
+``dset.MNIST(root, train=True, transform=None, target_transform=None, download=False)``
+
+``root``: root directory of dataset where ``processed/training.pt`` and ``training/test.pt`` exist
+
+``train``: ``True`` - use training set, ``False`` - use test set.
+
+``transform``: transform to apply to input images
+
+``target_transform``: transform to apply to targets (class labels)
+
+``download``: whether to download the MNIST data
+
 
 COCO
 ~~~~
@@ -115,12 +131,12 @@ LSUN
 
 ``dset.LSUN(db_path, classes='train', [transform, target_transform])``
 
--  db\_path = root directory for the database files
--  classes =
--  'train' - all categories, training set
--  'val' - all categories, validation set
--  'test' - all categories, test set
--  ['bedroom\_train', 'church\_train', ...] : a list of categories to
+-  ``db_path`` = root directory for the database files
+-  ``classes`` =
+-  ``'train'`` - all categories, training set
+-  ``'val'`` - all categories, validation set
+-  ``'test'`` - all categories, test set
+-  [``'bedroom_train'``, ``'church_train'``, ...] : a list of categories to
    load
 
 CIFAR
