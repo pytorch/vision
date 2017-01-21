@@ -67,7 +67,9 @@ class PascalVOC(data.Dataset):
     def __getitem__(self, index):
         img = Image.open(self.images[index]).convert('RGB')
         target = Image.open(self.masks[index]).convert('RGB')
+
         if self.transform is not None:
+            print("transform was not none")
             img = self.transform(img)
         # todo(bdd) : perhaps transformations should be applied differently to masks? 
         if self.target_transform is not None:
@@ -132,8 +134,37 @@ class PascalVOC(data.Dataset):
 
 
 if __name__ == '__main__':
-    # todo(bdd) : sanity checking, remove before merging
+    # todo(bdd) : sanity checking seen in tests/cifar.py ... remove before merging,
     pascal = PascalVOC('/tmp/pascal-voc/')
+    print(pascal[3])
+    # (<PIL.Image.Image image mode=RGB size=500x375 at 0x7EFED5975D10>, <PIL.Image.Image image mode=RGB size=500x375 at 0x7EFED5975D90>)
+    # import torch
+    # import torchvision.transforms as transforms
+    # transform = transforms.ToTensor()
+    # dataset = PascalVOC(
+    #     '/tmp/pascal-voc/', transform=transform, target_transform=transform)
+    # dataloader = torch.utils.data.DataLoader(
+    #     dataset, batch_size=1, shuffle=True, num_workers=2)
+
+    # for i, data in enumerate(dataloader):
+    #     print(data)
+    #     if i == 10:
+    #         break
+    # miter = dataloader.__iter__()
+
+    # def getBatch():
+    #     global miter
+    #     try:
+    #         return miter.next()
+    #     except StopIteration:
+    #         miter = dataloader.__iter__()
+    #         return miter.next()
+
+    # i = 0
+    # while True:
+    #     print(i)
+    #     img, target = getBatch()
+    #     i += 1
     # print(*pascal.CLASSES, sep='\n')
     # print(*pascal.images, sep='\n')
     # print(*pascal.masks, sep='\n')
