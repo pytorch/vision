@@ -12,7 +12,7 @@ from PIL import Image
 from six.moves import urllib
 
 
-class PascalVOC(data.Dataset):
+class VOCSegmentation(data.Dataset):
     CLASSES = [
         'background', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
         'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
@@ -32,68 +32,68 @@ class PascalVOC(data.Dataset):
                  target_transform=None,
                  download=False):
         self.root = root
-        voc_root = os.path.join(self.root, self.BASE_DIR)
-        mask_dir = os.path.join(voc_root, 'SegmentationClass')
-        image_dir = os.path.join(voc_root, 'JPEGImages')
+        _voc_root = os.path.join(self.root, self.BASE_DIR)
+        _mask_dir = os.path.join(_voc_root, 'SegmentationClass')
+        _image_dir = os.path.join(_voc_root, 'JPEGImages')
         self.transform = transform
         self.target_transform = target_transform
         self.train = train
 
         if download:
-            self.download()
+            self._download()
 
         if not self._check_integrity():
             raise RuntimeError('Dataset not found or corrupted.' +
                                ' You can use download=True to download it')
         # train/val/test splits are pre-cut
-        splits_dir = os.path.join(voc_root, 'ImageSets/Segmentation')
-        split_f = os.path.join(splits_dir, 'train.txt')
+        _splits_dir = os.path.join(_voc_root, 'ImageSets/Segmentation')
+        _split_f = os.path.join(_splits_dir, 'train.txt')
         if not self.train:
-            split_f = os.path.join(splits_dir, ' trainval.txt')
+            _split_f = os.path.join(_splits_dir, ' trainval.txt')
 
         self.images = []
         self.masks = []
-        with open(os.path.join(split_f), "r") as lines:
+        with open(os.path.join(_split_f), "r") as lines:
             for line in lines:
-                image = os.path.join(image_dir, line.rstrip('\n') + ".jpg")
-                mask = os.path.join(mask_dir, line.rstrip('\n') + ".png")
-                assert os.path.isfile(image)
-                assert os.path.isfile(mask)
-                self.images.append(image)
-                self.masks.append(mask)
+                _image = os.path.join(_image_dir, line.rstrip('\n') + ".jpg")
+                _mask = os.path.join(_mask_dir, line.rstrip('\n') + ".png")
+                assert os.path.isfile(_image)
+                assert os.path.isfile(_mask)
+                self.images.append(_image)
+                self.masks.append(_mask)
 
         assert (len(self.images) == len(self.masks))
 
     def __getitem__(self, index):
-        img = Image.open(self.images[index]).convert('RGB')
-        target = Image.open(self.masks[index]).convert('RGB')
+        _img = Image.open(self.images[index]).convert('RGB')
+        _target = Image.open(self.masks[index])
 
         if self.transform is not None:
             print("transform was not none")
-            img = self.transform(img)
+            _img = self.transform(_img)
         # todo(bdd) : perhaps transformations should be applied differently to masks? 
         if self.target_transform is not None:
-            target = self.target_transform(target)
+            _target = self.target_transform(_target)
 
-        return img, target
+        return _img, _target
 
     def __len__(self):
         return len(self.images)
 
     def _check_integrity(self):
-        fpath = os.path.join(self.root, self.FILE)
-        if not os.path.isfile(fpath):
-            print("{} does not exist".format(fpath))
+        _fpath = os.path.join(self.root, self.FILE)
+        if not os.path.isfile(_fpath):
+            print("{} does not exist".format(_fpath))
             return False
-        md5c = hashlib.md5(open(fpath, 'rb').read()).hexdigest()
-        if md5c != self.MD5:
+        _md5c = hashlib.md5(open(_fpath, 'rb').read()).hexdigest()
+        if _md5c != self.MD5:
             print(" MD5({}) did not match MD5({}) expected for {}".format(
-                md5c, self.MD5, fpath))
+                _md5c, self.MD5, _fpath))
             return False
         return True
 
-    def download(self):
-        fpath = os.path.join(self.root, self.FILE)
+    def _download(self):
+        _fpath = os.path.join(self.root, self.FILE)
 
         try:
             os.makedirs(self.root)
@@ -106,26 +106,21 @@ class PascalVOC(data.Dataset):
         if self._check_integrity():
             print('Files already downloaded and verified')
             return
-
-        # downloads file
-        if os.path.isfile(fpath) and \
-           hashlib.md5(open(fpath, 'rb').read()).hexdigest() == self.MD5:
-            print('Using downloaded file: ' + fpath)
         else:
-            print('Downloading ' + self.URL + ' to ' + fpath)
+            print('Downloading ' + self.URL + ' to ' + _fpath)
 
             def _progress(count, block_size, total_size):
                 sys.stdout.write('\r>> %s %.1f%%' %
-                                 (fpath, float(count * block_size) /
+                                 (_fpath, float(count * block_size) /
                                   float(total_size) * 100.0))
                 sys.stdout.flush()
 
-            urllib.request.urlretrieve(self.URL, fpath, _progress)
+            urllib.request.urlretrieve(self.URL, _fpath, _progress)
 
         # extract file
         cwd = os.getcwd()
         print('Extracting tar file')
-        tar = tarfile.open(fpath)
+        tar = tarfile.open(_fpath)
         os.chdir(self.root)
         tar.extractall()
         tar.close()
@@ -135,13 +130,13 @@ class PascalVOC(data.Dataset):
 
 if __name__ == '__main__':
     # todo(bdd) : sanity checking seen in tests/cifar.py ... remove before merging,
-    pascal = PascalVOC('/tmp/pascal-voc/')
+    pascal = VOCSegmentation('/tmp/pascal-voc/')
     print(pascal[3])
     # (<PIL.Image.Image image mode=RGB size=500x375 at 0x7EFED5975D10>, <PIL.Image.Image image mode=RGB size=500x375 at 0x7EFED5975D90>)
     # import torch
     # import torchvision.transforms as transforms
     # transform = transforms.ToTensor()
-    # dataset = PascalVOC(
+    # dataset = VOCSegmentation(
     #     '/tmp/pascal-voc/', transform=transform, target_transform=transform)
     # dataloader = torch.utils.data.DataLoader(
     #     dataset, batch_size=1, shuffle=True, num_workers=2)
