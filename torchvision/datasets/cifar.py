@@ -15,7 +15,7 @@ class CIFAR10(data.Dataset):
     base_folder = 'cifar-10-batches-py'
     url = "http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
     filename = "cifar-10-python.tar.gz"
-    tgz_mdf = 'c58f30108f718f92721af3b95e74349a'
+    tgz_md5 = 'c58f30108f718f92721af3b95e74349a'
     train_list = [
             ['data_batch_1', 'c99cafc152244af753f735de768cd75f'],
             ['data_batch_2', 'd4bba439e000b95fd0a9bffe97cbabec'],
