@@ -307,7 +307,7 @@ Conversion Transforms
    shape C x H x W or numpy ndarray of dtype=uint8, range[0, 255] and
    shape H x W x C to a PIL.Image of range [0, 255]
 
-Generic Transofrms
+Generic Transforms
 ~~~~~~~~~~~~~~~~~~
 
 ``Lambda(lambda)``
