@@ -46,7 +46,7 @@ The following dataset loaders are available:
 -  `ImageFolder <#imagefolder>`__
 -  `Imagenet-12 <#imagenet-12>`__
 -  `CIFAR10 and CIFAR100 <#cifar>`__
--  `OMNIGLOT`__
+-  `OMNIGLOT <#omniglot>`__
 Datasets have the API: - ``__getitem__`` - ``__len__`` They all subclass
 from ``torch.utils.data.Dataset`` Hence, they can all be multi-threaded
 (python multiprocessing) using standard torch.utils.data.DataLoader.
