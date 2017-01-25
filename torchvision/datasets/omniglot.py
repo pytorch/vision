@@ -20,10 +20,20 @@ class OMNIGLOT(data.Dataset):
     training_file = 'training.pt'
     test_file = 'test.pt'
 
-    def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
+    '''
+    Args:
+
+    - root: the directory where the dataset will be stored
+    - transform: how to transform the input
+    - target_transform: how to transform the target
+    - download: need to download the dataset
+    - input_is_filename: if True, the returned data is (filename,target), it is a pair (PIL.Image,target) elsewhere
+    '''
+    def __init__(self, root, transform=None, target_transform=None, download=False,input_is_filename=False):
         self.root = root
         self.transform = transform
         self.target_transform = target_transform
+        self.input_is_filename=input_is_filename
         if download:
             self.download()
 
@@ -36,8 +46,13 @@ class OMNIGLOT(data.Dataset):
 
     def __getitem__(self, index):
         filename=self.all_items[index][0]
-        path=self.all_items[index][2]+"/"+filename
-        img=Image.open(path).convert('RGB')
+        path=str.join('/',[self.all_items[index][2],filename])
+
+        if (not self.input_is_filename):
+            img=Image.open(path).convert('RGB')
+        else:
+            img=path
+
         target=self.idx_classes[self.all_items[index][1]]
         if self.transform is not None:
             img = self.transform(img)
