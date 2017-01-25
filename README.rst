@@ -190,7 +190,7 @@ example <https://github.com/pytorch/examples/blob/27e2a46c1d1505324032b1d94fc6ce
 OMNIGLOT
 ~~~~~~~~
 
-`dset.OMNIGLOT(root_dir, [transform=None, target_transform=None])`
+ `dset.OMNIGLOT(root_dir, [transform=None, target_transform=None])`
 
 From: `Lake, B. M., Salakhutdinov, R., and Tenenbaum, J. B. (2015). Human-level concept learning through probabilistic program induction. Science, 350(6266), 1332-1338.`
 
