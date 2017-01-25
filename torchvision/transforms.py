@@ -27,6 +27,13 @@ class Compose(object):
             img = t(img)
         return img
 
+class FilenameToPILImage(object):
+    """
+    Load a PIL RGB Image from a filename.
+    """
+    def __call__(self,filename):
+        img=Image.open(filename).convert('RGB')
+        return img
 
 class ToTensor(object):
     """Converts a PIL.Image (RGB) or numpy.ndarray (H x W x C) in the range

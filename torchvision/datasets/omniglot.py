@@ -21,19 +21,20 @@ class OMNIGLOT(data.Dataset):
     test_file = 'test.pt'
 
     '''
+    The items are (filename,category). The index of all the categories can be found in self.idx_classes
+
     Args:
 
     - root: the directory where the dataset will be stored
     - transform: how to transform the input
     - target_transform: how to transform the target
     - download: need to download the dataset
-    - input_is_filename: if True, the returned data is (filename,target), it is a pair (PIL.Image,target) elsewhere
     '''
-    def __init__(self, root, transform=None, target_transform=None, download=False,input_is_filename=False):
+    def __init__(self, root, transform=None, target_transform=None, download=False):
         self.root = root
         self.transform = transform
         self.target_transform = target_transform
-        self.input_is_filename=input_is_filename
+
         if download:
             self.download()
 
@@ -46,12 +47,7 @@ class OMNIGLOT(data.Dataset):
 
     def __getitem__(self, index):
         filename=self.all_items[index][0]
-        path=str.join('/',[self.all_items[index][2],filename])
-
-        if (not self.input_is_filename):
-            img=Image.open(path).convert('RGB')
-        else:
-            img=path
+        img=str.join('/',[self.all_items[index][2],filename])
 
         target=self.idx_classes[self.all_items[index][1]]
         if self.transform is not None:
@@ -107,7 +103,7 @@ def find_classes(root_dir):
                 r=root.split('/')
                 lr=len(r)
                 retour.append((f,r[lr-2]+"/"+r[lr-1],root))
-    print("Found %d items "%len(retour))
+    print("== Found %d items "%len(retour))
     return retour
 
 def index_classes(items):
@@ -115,5 +111,5 @@ def index_classes(items):
     for i in items:
         if (not i[1] in idx):
             idx[i[1]]=len(idx)
-    print("Found %d classes"% len(idx))
+    print("== Found %d classes"% len(idx))
     return idx

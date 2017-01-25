@@ -192,8 +192,8 @@ OMNIGLOT
 
  `dset.OMNIGLOT(root_dir, [transform=None, target_transform=None])`
 
-The dataset is composed of pairs: `(Image,Category idx)`. Each category corresponds to one character in one alphabet. Matching between classes indexes and real classes can be accessed through: `dataset.idx_classes`
-
+The dataset is composed of pairs: ``(Filename,Category idx)``. Each caty"egory corresponds to one character in one alphabet. Matching between classes indexes and real classes can be accessed through: `dataset.idx_classes`
+The dataset can be used with ``transform=transforms.FilenameToPILImage`` to obtain pairs of (PIL Image,Category_idx)
 
 From: `Lake, B. M., Salakhutdinov, R., and Tenenbaum, J. B. (2015). Human-level concept learning through probabilistic program induction. Science, 350(6266), 1332-1338.`
 
