@@ -49,7 +49,7 @@ def default_loader(path):
     return Image.open(path).convert('RGB')
 
 
-class ImageFolder(data.Dataset):
+class ImageClassFolder(data.Dataset):
     def __init__(self,
                  root,
                  transform=None,
@@ -80,8 +80,8 @@ class ImageFolder(data.Dataset):
         return len(self.imgs)
 
 
-class ImageFolderWithoutTargets(data.Dataset):
-    """ ImageFolderWithoutTargets can be used to load images where there are no labels."""
+class ImageFolder(data.Dataset):
+    """ ImageFolder can be used to load images where there are no labels."""
 
     def __init__(self, root, transform=None, loader=default_loader):
         images = []
