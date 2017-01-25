@@ -46,7 +46,7 @@ The following dataset loaders are available:
 -  `ImageFolder <#imagefolder>`__
 -  `Imagenet-12 <#imagenet-12>`__
 -  `CIFAR10 and CIFAR100 <#cifar>`__
--  `OMNIGLOT <#omniglot>`__
+-   OMNIGLOT
 Datasets have the API: - ``__getitem__`` - ``__len__`` They all subclass
 from ``torch.utils.data.Dataset`` Hence, they can all be multi-threaded
 (python multiprocessing) using standard torch.utils.data.DataLoader.
@@ -190,7 +190,7 @@ example <https://github.com/pytorch/examples/blob/27e2a46c1d1505324032b1d94fc6ce
 OMNIGLOT
 ~~~~~~~~
 
-dset.OMNIGLOT(root_dir, [transform=None, target_transform=None])`
+`dset.OMNIGLOT(root_dir, [transform=None, target_transform=None])`
 
 From: `Lake, B. M., Salakhutdinov, R., and Tenenbaum, J. B. (2015). Human-level concept learning through probabilistic program induction. Science, 350(6266), 1332-1338.`
 
