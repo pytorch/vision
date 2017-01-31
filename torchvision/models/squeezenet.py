@@ -77,11 +77,13 @@ class SqueezeNet(nn.Module):
         import math
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
+                gain = 2.0
                 if m is self.final_conv:
                     m.weight.data.normal_(0, 0.01)
                 else:
                     fan_in = m.kernel_size[0] * m.kernel_size[1] * m.in_channels
-                    m.weight.data.normal_(0, math.sqrt(2. / fan_in))
+                    u = math.sqrt(3.0 * gain / fan_in)
+                    m.weight.data.uniform_(-u, u)
                 if m.bias is not None:
                     m.bias.data.zero_()
 
