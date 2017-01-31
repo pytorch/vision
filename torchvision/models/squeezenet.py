@@ -10,18 +10,20 @@ class Fire(nn.Module):
             expand1x1_planes, expand3x3_planes):
         super(Fire, self).__init__()
         self.inplanes = inplanes
-        self.activation = nn.ReLU(inplace=True)
         self.squeeze = nn.Conv2d(inplanes, squeeze_planes, kernel_size=1)
+        self.squeeze_activation = nn.ReLU(inplace=True)
         self.expand1x1 = nn.Conv2d(squeeze_planes, expand1x1_planes,
                                    kernel_size=1)
+        self.expand1x1_activation = nn.ReLU()
         self.expand3x3 = nn.Conv2d(squeeze_planes, expand3x3_planes,
                                    kernel_size=3, padding=1)
+        self.expand3x3_activation = nn.ReLU()
 
     def forward(self, x):
-        x = self.activation(self.squeeze(x))
+        x = self.squeeze_activation(self.squeeze(x))
         return torch.cat([
-            self.activation(self.expand1x1(x)),
-            self.activation(self.expand3x3(x))
+            self.expand1x1_activation(self.expand1x1(x)),
+            self.expand3x3_activation(self.expand3x3(x))
         ], 1)
 
 
@@ -66,7 +68,7 @@ class SqueezeNet(nn.Module):
                 Fire(512, 64, 256, 256),
             )
         self.classifier = nn.Sequential(
-            nn.Dropout(p=0.5, inplace=True),
+            nn.Dropout(p=0.5),
             self.final_conv,
             nn.ReLU(inplace=True),
             nn.AvgPool2d(13)
