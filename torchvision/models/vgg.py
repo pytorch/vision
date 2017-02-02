@@ -73,7 +73,7 @@ def vgg13_bn():
 
 
 def vgg16():
-    """VGG 11-layer model (configuration "B")"""
+    """VGG 16-layer model (configuration "D")"""
     return VGG(make_layers(cfg['D']))
 
 
@@ -83,7 +83,7 @@ def vgg16_bn():
 
 
 def vgg19():
-    """VGG 19-layer model (configuration "D")"""
+    """VGG 19-layer model (configuration "E")"""
     return VGG(make_layers(cfg['E']))
 
 
