@@ -213,7 +213,12 @@ We provide pre-trained models for the ResNet variants and AlexNet, using
 the PyTorch `model zoo <http://pytorch.org/docs/model_zoo.html>`__.
 These can be constructed by passing ``pretrained=True``:
 
-``python  import torchvision.models as models  resnet18 = models.resnet18(pretrained=True)  alexnet = models.alexnet(pretrained=True)``
+.. code:: python
+
+    import torchvision.models as models
+    resnet18 = models.resnet18(pretrained=True)
+    alexnet = models.alexnet(pretrained=True)
+
 
 Transforms
 ==========
