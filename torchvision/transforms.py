@@ -52,14 +52,18 @@ class ToPILImage(object):
     to a PIL.Image of range [0, 255]
     """
     def __call__(self, pic):
-        if isinstance(pic, np.ndarray):
-            # handle numpy array
-            img = Image.fromarray(pic)
-        else:
+        npimg = pic
+        mode = None
+        if not isinstance(npimg, np.ndarray):
             npimg = pic.mul(255).byte().numpy()
             npimg = np.transpose(npimg, (1,2,0))
-            img = Image.fromarray(npimg)
-        return img
+
+        if npimg.shape[2] == 1:
+            npimg = npimg[:, :, 0]
+            mode = "L"
+
+        return Image.fromarray(npimg, mode=mode)
+
 
 class Normalize(object):
     """Given mean: (R, G, B) and std: (R, G, B),
