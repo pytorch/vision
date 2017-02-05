@@ -21,7 +21,7 @@ class ImageData(data.Dataset):
 
     Arguments:
         root: data directory
-        list_file: a file name. Each row of the file: image_path classs
+        list_file: a file name. Each row of the file: image_path class
     """
     def __init__(self, root, list_file, transform=None, target_transform=None,
                  loader=default_loader):
