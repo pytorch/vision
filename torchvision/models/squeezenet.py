@@ -1,8 +1,15 @@
 import torch
 import torch.nn as nn
+import torch.utils.model_zoo as model_zoo
 
 
 __all__ = ['SqueezeNet', 'squeezenet1_0', 'squeezenet1_1']
+
+
+model_urls = {
+    'squeezenet1_0': 'https://s3.amazonaws.com/pytorch/models/squeezenet1_0-d7263232.pth',
+    'squeezenet1_1': 'https://s3.amazonaws.com/pytorch/models/squeezenet1_1-5305410f.pth',
+}
 
 
 class Fire(nn.Module):
@@ -93,13 +100,30 @@ class SqueezeNet(nn.Module):
         return x.view(x.size(0), self.num_classes)
 
 
-def squeezenet1_0():
+def squeezenet1_0(pretrained=False):
     r"""SqueezeNet model architecture from the `"SqueezeNet: AlexNet-level
     accuracy with 50x fewer parameters and <0.5MB model size"
     <https://arxiv.org/abs/1602.07360>`_ paper.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    return SqueezeNet(version=1.0)
+    model = SqueezeNet(version=1.0)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(model_urls['squeezenet1_0']))
+    return model
 
 
-def squeezenet1_1():
-    return SqueezeNet(version=1.1)
+def squeezenet1_1(pretrained=False):
+    r"""SqueezeNet 1.1 model from the `official SqueezeNet repo
+    <https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1>`_.
+    SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters
+    than SqueezeNet 1.0, without sacrificing accuracy.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+    """
+    model = SqueezeNet(version=1.1)
+    if pretrained:
+        model.load_state_dict(model_zoo.load_url(model_urls['squeezenet1_1']))
+    return model
