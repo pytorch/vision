@@ -1,3 +1,4 @@
+import math
 import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
@@ -7,8 +8,8 @@ __all__ = ['SqueezeNet', 'squeezenet1_0', 'squeezenet1_1']
 
 
 model_urls = {
-    'squeezenet1_0': 'https://s3.amazonaws.com/pytorch/models/squeezenet1_0-d7263232.pth',
-    'squeezenet1_1': 'https://s3.amazonaws.com/pytorch/models/squeezenet1_1-5305410f.pth',
+    'squeezenet1_0': 'https://s3.amazonaws.com/pytorch/models/squeezenet1_0-a815701f.pth',
+    'squeezenet1_1': 'https://s3.amazonaws.com/pytorch/models/squeezenet1_1-f364aa15.pth',
 }
 
 
@@ -41,7 +42,6 @@ class SqueezeNet(nn.Module):
             raise ValueError("Unsupported SqueezeNet version {version}:"
                              "1.0 or 1.1 expected".format(version=version))
         self.num_classes = num_classes
-        self.final_conv = nn.Conv2d(512, num_classes, kernel_size=1)
         if version == 1.0:
             self.features = nn.Sequential(
                 nn.Conv2d(3, 96, kernel_size=7, stride=2),
@@ -74,18 +74,19 @@ class SqueezeNet(nn.Module):
                 Fire(384, 64, 256, 256),
                 Fire(512, 64, 256, 256),
             )
+        # Final convolution is initialized differently form the rest
+        final_conv = nn.Conv2d(512, num_classes, kernel_size=1)
         self.classifier = nn.Sequential(
             nn.Dropout(p=0.5),
-            self.final_conv,
+            final_conv,
             nn.ReLU(inplace=True),
             nn.AvgPool2d(13)
         )
 
-        import math
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 gain = 2.0
-                if m is self.final_conv:
+                if m is final_conv:
                     m.weight.data.normal_(0, 0.01)
                 else:
                     fan_in = m.kernel_size[0] * m.kernel_size[1] * m.in_channels
