@@ -199,6 +199,8 @@ architectures:
    VGG-19 (with and without batch normalization)
 -  `ResNet <https://arxiv.org/abs/1512.03385>`__: ResNet-18, ResNet-34,
    ResNet-50, ResNet-101, ResNet-152
+-  `SqueezeNet <https://arxiv.org/abs/1602.07360>`__: SqueezeNet 1.0, and
+   SqueezeNet 1.1
 
 You can construct a model with random weights by calling its
 constructor:
@@ -208,9 +210,11 @@ constructor:
     import torchvision.models as models
     resnet18 = models.resnet18()
     alexnet = models.alexnet()
+    vgg16 = model.vgg16()
+    squeezenet = models.squeezenet1_0()
 
-We provide pre-trained models for the ResNet variants and AlexNet, using
-the PyTorch `model zoo <http://pytorch.org/docs/model_zoo.html>`__.
+We provide pre-trained models for the ResNet variants, SqueezeNet 1.0 and 1.1,
+and AlexNet, using the PyTorch `model zoo <http://pytorch.org/docs/model_zoo.html>`__.
 These can be constructed by passing ``pretrained=True``:
 
 .. code:: python
@@ -218,6 +222,7 @@ These can be constructed by passing ``pretrained=True``:
     import torchvision.models as models
     resnet18 = models.resnet18(pretrained=True)
     alexnet = models.alexnet(pretrained=True)
+    squeezenet = models.squeezenet1_0(pretrained=True)
 
 
 Transforms

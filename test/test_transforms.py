@@ -6,6 +6,7 @@ import numpy as np
 
 
 class Tester(unittest.TestCase):
+
     def test_crop(self):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
@@ -127,6 +128,46 @@ class Tester(unittest.TestCase):
         output = trans(ndarray)
         expected_output = ndarray.transpose((2, 0, 1))/255.0
         assert np.allclose(output.numpy(), expected_output)
+
+    def test_tensor_to_pil_image(self):
+        trans = transforms.ToPILImage()
+        to_tensor = transforms.ToTensor()
+
+        img_data = torch.Tensor(3, 4, 4).uniform_()
+        img = trans(img_data)
+        assert img.getbands() == ('R', 'G', 'B')
+        r, g, b = img.split()
+
+        expected_output = img_data.mul(255).int().float().div(255)
+        assert np.allclose(expected_output[0].numpy(), to_tensor(r).numpy())
+        assert np.allclose(expected_output[1].numpy(), to_tensor(g).numpy())
+        assert np.allclose(expected_output[2].numpy(), to_tensor(b).numpy())
+
+        # single channel image
+        img_data = torch.Tensor(1, 4, 4).uniform_()
+        img = trans(img_data)
+        assert img.getbands() == ('L',)
+        l, = img.split()
+        expected_output = img_data.mul(255).int().float().div(255)
+        assert np.allclose(expected_output[0].numpy(), to_tensor(l).numpy())
+
+    def test_ndarray_to_pil_image(self):
+        trans = transforms.ToPILImage()
+        img_data = torch.ByteTensor(4, 4, 3).random_(0, 255).numpy()
+        img = trans(img_data)
+        assert img.getbands() == ('R', 'G', 'B')
+        r, g, b = img.split()
+
+        assert np.allclose(r, img_data[:, :, 0])
+        assert np.allclose(g, img_data[:, :, 1])
+        assert np.allclose(b, img_data[:, :, 2])
+
+        # single channel image
+        img_data = torch.ByteTensor(4, 4, 1).random_(0, 255).numpy()
+        img = trans(img_data)
+        assert img.getbands() == ('L',)
+        l, = img.split()
+        assert np.allclose(l, img_data[:, :, 0])
 
 if __name__ == '__main__':
     unittest.main()
