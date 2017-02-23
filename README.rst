@@ -207,6 +207,21 @@ example <https://github.com/pytorch/examples/blob/27e2a46c1d1505324032b1d94fc6ce
 PhotoTour
 ~~~~~~~~~
 
+**Learning Local Image Descriptors Data**
+http://phototour.cs.washington.edu/patches/default.htm
+
+.. code:: python
+
+    import torchvision.datasets as dset
+    import torchvision.transforms as transforms
+    dataset = dset.PhotoTour(root = 'dir where images are',
+                             name = 'name of the dataset to load',
+                             size = 32,  # resize image (default: 64)
+                             transform=transforms.ToTensor())
+
+    print('Loaded PhotoTour: {} with {} images.'
+          .format(dataset.name, len(dataset.data)))
+
 Models
 ======
 
