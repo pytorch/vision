@@ -8,7 +8,7 @@ class CocoCaptions(data.Dataset):
         from pycocotools.coco import COCO
         self.root = root
         self.coco = COCO(annFile)
-        self.ids = self.coco.imgs.keys()
+        self.ids = list(self.coco.imgs.keys())
         self.transform = transform
         self.target_transform = target_transform
 
