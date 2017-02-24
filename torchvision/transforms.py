@@ -29,7 +29,7 @@ class Compose(object):
 
 
 class ToTensor(object):
-    """Converts a PIL.Image (RGB) or numpy.ndarray (H x W x C) in the range
+    """Converts a PIL.Image or numpy.ndarray (H x W x C) in the range
     [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0].
     """
     def __call__(self, pic):
@@ -39,7 +39,12 @@ class ToTensor(object):
         else:
             # handle PIL Image
             img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
-            img = img.view(pic.size[1], pic.size[0], len(pic.mode))
+            # PIL image mode: 1, L, P, I, F, RGB, YCbCr, RGBA, CMYK
+            if pic.mode == 'YCbCr':
+                nchannel = 3
+            else:
+                nchannel = len(pic.mode)
+            img = img.view(pic.size[1], pic.size[0], nchannel)
             # put it from HWC to CHW format
             # yikes, this transpose takes 80% of the loading time/CPU
             img = img.transpose(0, 1).transpose(0, 2).contiguous()
