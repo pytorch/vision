@@ -135,7 +135,7 @@ class Pad(object):
     """Pads the given PIL.Image on all sides with the given "pad" value"""
     def __init__(self, padding, fill=0):
         assert isinstance(padding, numbers.Number)
-        assert isinstance(fill, numbers.Number)
+        assert isinstance(fill, numbers.Number) or isinstance(fill, str) or isinstance(fill, tuple)
         self.padding = padding
         self.fill = fill
 
