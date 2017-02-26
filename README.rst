@@ -210,7 +210,7 @@ constructor:
     import torchvision.models as models
     resnet18 = models.resnet18()
     alexnet = models.alexnet()
-    vgg16 = model.vgg16()
+    vgg16 = models.vgg16()
     squeezenet = models.squeezenet1_0()
 
 We provide pre-trained models for the ResNet variants, SqueezeNet 1.0 and 1.1,
