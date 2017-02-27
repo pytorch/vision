@@ -1,6 +1,9 @@
 torch-vision
 ============
 
+.. image:: https://travis-ci.org/pytorch/vision.svg?branch=master
+    :target: https://travis-ci.org/pytorch/vision
+
 This repository consists of:
 
 -  `vision.datasets <#datasets>`__ : Data loaders for popular vision
