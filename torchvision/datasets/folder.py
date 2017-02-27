@@ -15,7 +15,7 @@ def is_image_file(filename):
 
 
 def find_classes(dir):
-    classes = os.listdir(dir)
+    classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir,d))]
     classes.sort()
     class_to_idx = {classes[i]: i for i in range(len(classes))}
     return classes, class_to_idx
