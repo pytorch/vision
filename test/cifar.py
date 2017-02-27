@@ -14,7 +14,7 @@ print(a[3])
 
 
 dataset = dset.CIFAR10(root='cifar', download=True, transform=transforms.ToTensor())
-dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, 
+dataloader = torch.utils.data.DataLoader(dataset, batch_size=1,
                                          shuffle=True, num_workers=2)
 
 
@@ -31,10 +31,9 @@ for i, data in enumerate(dataloader, 0):
 #     except StopIteration:
 #         miter = dataloader.__iter__()
 #         return miter.next()
-    
+
 # i=0
 # while True:
 #     print(i)
 #     img, target = getBatch()
 #     i+=1
-    

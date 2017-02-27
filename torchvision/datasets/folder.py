@@ -9,14 +9,17 @@ IMG_EXTENSIONS = [
     '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
 ]
 
+
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
+
 
 def find_classes(dir):
     classes = os.listdir(dir)
     classes.sort()
     class_to_idx = {classes[i]: i for i in range(len(classes))}
     return classes, class_to_idx
+
 
 def make_dataset(dir, class_to_idx):
     images = []
@@ -39,6 +42,7 @@ def default_loader(path):
 
 
 class ImageFolder(data.Dataset):
+
     def __init__(self, root, transform=None, target_transform=None,
                  loader=default_loader):
         classes, class_to_idx = find_classes(root)

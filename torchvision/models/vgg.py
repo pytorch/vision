@@ -18,6 +18,7 @@ model_urls = {
 
 
 class VGG(nn.Module):
+
     def __init__(self, features):
         super(VGG, self).__init__()
         self.features = features

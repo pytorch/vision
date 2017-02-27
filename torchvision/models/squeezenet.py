@@ -14,8 +14,9 @@ model_urls = {
 
 
 class Fire(nn.Module):
+
     def __init__(self, inplanes, squeeze_planes,
-            expand1x1_planes, expand3x3_planes):
+                 expand1x1_planes, expand3x3_planes):
         super(Fire, self).__init__()
         self.inplanes = inplanes
         self.squeeze = nn.Conv2d(inplanes, squeeze_planes, kernel_size=1)
@@ -36,6 +37,7 @@ class Fire(nn.Module):
 
 
 class SqueezeNet(nn.Module):
+
     def __init__(self, version=1.0, num_classes=1000):
         super(SqueezeNet, self).__init__()
         if version not in [1.0, 1.1]:
