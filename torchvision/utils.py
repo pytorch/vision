@@ -1,6 +1,7 @@
 import torch
 import math
 
+
 def make_grid(tensor, nrow=8, padding=2):
     """
     Given a 4D mini-batch Tensor of shape (B x C x H x W),
@@ -15,13 +16,13 @@ def make_grid(tensor, nrow=8, padding=2):
         tensor = tensorlist[0].new(size)
         for i in range(numImages):
             tensor[i].copy_(tensorlist[i])
-    if tensor.dim() == 2: # single image H x W
+    if tensor.dim() == 2:  # single image H x W
         tensor = tensor.view(1, tensor.size(0), tensor.size(1))
-    if tensor.dim() == 3: # single image
+    if tensor.dim() == 3:  # single image
         if tensor.size(0) == 1:
             tensor = torch.cat((tensor, tensor, tensor), 0)
         return tensor
-    if tensor.dim() == 4 and tensor.size(1) == 1: # single-channel images
+    if tensor.dim() == 4 and tensor.size(1) == 1:  # single-channel images
         tensor = torch.cat((tensor, tensor, tensor), 1)
     # make the mini-batch of images into a grid
     nmaps = tensor.size(0)
@@ -34,8 +35,8 @@ def make_grid(tensor, nrow=8, padding=2):
         for x in range(xmaps):
             if k >= nmaps:
                 break
-            grid.narrow(1, y*height+1+padding//2,height-padding)\
-                .narrow(2, x*width+1+padding//2, width-padding)\
+            grid.narrow(1, y * height + 1 + padding // 2, height - padding)\
+                .narrow(2, x * width + 1 + padding // 2, width - padding)\
                 .copy_(tensor[k])
             k = k + 1
     return grid
@@ -49,6 +50,6 @@ def save_image(tensor, filename, nrow=8, padding=2):
     from PIL import Image
     tensor = tensor.cpu()
     grid = make_grid(tensor, nrow=nrow, padding=padding)
-    ndarr = grid.mul(0.5).add(0.5).mul(255).byte().transpose(0,2).transpose(0,1).numpy()
+    ndarr = grid.mul(0.5).add(0.5).mul(255).byte().transpose(0, 2).transpose(0, 1).numpy()
     im = Image.fromarray(ndarr)
     im.save(filename)
