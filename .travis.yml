@@ -1,0 +1,5 @@
+language: python
+python: 2.7
+
+install: pip install flake8
+script: flake8
