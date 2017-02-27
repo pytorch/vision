@@ -32,8 +32,8 @@ class MNIST(data.Dataset):
             self.download()
 
         if not self._check_exists():
-            raise RuntimeError('Dataset not found.'
-                               + ' You can use download=True to download it')
+            raise RuntimeError('Dataset not found.' +
+                               ' You can use download=True to download it')
 
         if self.train:
             self.train_data, self.train_labels = torch.load(

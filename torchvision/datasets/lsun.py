@@ -128,9 +128,10 @@ class LSUN(data.Dataset):
     def __repr__(self):
         return self.__class__.__name__ + ' (' + self.db_path + ')'
 
+
 if __name__ == '__main__':
-    #lsun = LSUNClass(db_path='/home/soumith/local/lsun/train/bedroom_train_lmdb')
-    #a = lsun[0]
+    # lsun = LSUNClass(db_path='/home/soumith/local/lsun/train/bedroom_train_lmdb')
+    # a = lsun[0]
     lsun = LSUN(db_path='/home/soumith/local/lsun/train',
                 classes=['bedroom_train', 'church_outdoor_train'])
     print(lsun.classes)

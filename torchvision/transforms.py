@@ -155,7 +155,7 @@ class Lambda(object):
     """Applies a lambda as a transform."""
 
     def __init__(self, lambd):
-        assert type(lambd) is types.LambdaType
+        assert isinstance(lambd, types.LambdaType)
         self.lambd = lambd
 
     def __call__(self, img):

@@ -155,5 +155,6 @@ class Tester(unittest.TestCase):
         l, = img.split()
         assert np.allclose(l, img_data[:, :, 0])
 
+
 if __name__ == '__main__':
     unittest.main()
