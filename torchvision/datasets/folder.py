@@ -28,11 +28,12 @@ def make_dataset(dir, class_to_idx):
         if not os.path.isdir(d):
             continue
 
-        for filename in os.listdir(d):
-            if is_image_file(filename):
-                path = '{0}/{1}'.format(target, filename)
-                item = (path, class_to_idx[target])
-                images.append(item)
+        for root, _, fnames in sorted(os.walk(d)):
+            for fname in fnames:
+                if is_image_file(fname):
+                    path = os.path.join(root, fname)
+                    item = (path, class_to_idx[target])
+                    images.append(item)
 
     return images
 
