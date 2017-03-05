@@ -203,6 +203,17 @@ here <https://github.com/facebook/fb.resnet.torch/blob/master/INSTALL.md#downloa
 `Here is an
 example <https://github.com/pytorch/examples/blob/27e2a46c1d1505324032b1d94fc6ce24d5b67e97/imagenet/main.py#L48-L62>`__.
 
+PASCAL VOC
+~~~~~~~~~~~
+
+Detection:
+^^^^^^^^^^
+``dset.VOCDetection(root="dir of VOCdevkit", image_set="train/val/test", [transform, target_transform, dataset_name="VOC2007"])``
+
+Segmentation:
+^^^^^^^^^^^^^
+``dset.VOCSegmentation(root="dir of VOCdevkit", image_set="train/val/test", [transform, target_transform, dataset_name="VOC2007"])``
+
 Models
 ======
 
