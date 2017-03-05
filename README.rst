@@ -75,7 +75,7 @@ MNIST
 ~~~~~
 ``dset.MNIST(root, train=True, transform=None, target_transform=None, download=False)``
 
-``root``: root directory of dataset where ``processed/training.pt`` and ``training/test.pt`` exist
+``root``: root directory of dataset where ``processed/training.pt`` and ``processed/test.pt`` exist
 
 ``train``: ``True`` - use training set, ``False`` - use test set.
 
