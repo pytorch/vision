@@ -1,7 +1,11 @@
 import os
+import errno
 import numpy as np
 
-import cv2
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 
 import torch
 import torch.utils.data as data
@@ -21,14 +25,15 @@ class PhotoTour(data.Dataset):
     info_file = 'info.txt'
     matches_files = 'm50_100000_100000_0.txt'
 
-    def __init__(self, root, name, download=False, size=None):
-        self.root = root
-        self.size = size or 64
+    def __init__(self, root, name, download=False):
+        if cv2 is None:
+            raise ImportError("PhotoTour dataset requires cv2 package (OpenCV 2)")
 
+        self.root = root
         self.name = name
         self.data_dir = os.path.join(root, name)
         self.data_down = os.path.join(root, '{}.zip'.format(name))
-        self.data_file = os.path.join(root, '{}_{}.pt'.format(name, self.size))
+        self.data_file = os.path.join(root, '{}.pt'.format(name))
 
         self.mean = self.mean[name]
         self.std = self.std[name]
@@ -56,10 +61,11 @@ class PhotoTour(data.Dataset):
         return os.path.exists(self.data_dir)
 
     def download(self):
-        print_('\n-- Loading PhotoTour dataset: {}\n'.format(self.name))
+        from six.moves import urllib
+        print('\n-- Loading PhotoTour dataset: {}\n'.format(self.name))
 
         if self._check_exists():
-            print_('# Found cached data {}'.format(self.data_file))
+            print('# Found cached data {}'.format(self.data_file))
             return
 
         if not self._check_downloaded():
@@ -70,30 +76,31 @@ class PhotoTour(data.Dataset):
 
             try:
                 os.makedirs(self.root)
-            except Exception:
+            except OSError as e:
+                if e.errno == errno.EEXIST:
                     pass
+                else:
+                    raise
 
-            print_('# Downloading {}\n# Downloading {}\n\nIt might take while.'
-                   ' Please grab yourself a coffee and relax.\n'
-                   .format(url, file_path))
+            print('# Downloading {} into {}\n\nIt might take while.'
+                  ' Please grab yourself a coffee and relax.'
+                  .format(url, file_path))
 
-            os.system('wget {} -P {}'.format(url, self.root))
+            urllib.request.urlretrieve(url, file_path)
             assert os.path.exists(file_path)
 
-            print_('# Extracting data {}\n'.format(self.data_down))
+            print('# Extracting data {}\n'.format(self.data_down))
 
             import zipfile
             with zipfile.ZipFile(file_path, 'r') as z:
                 z.extractall(self.data_dir)
             os.unlink(file_path)
-        else:
-            print_('# Dataset already extracted {}'.format(self.data_dir))
 
         # process and save as torch files
-        print_('# Caching data {}'.format(self.data_file))
+        print('# Caching data {}'.format(self.data_file))
 
         data_set = (
-            read_image_file(self.data_dir, self.image_ext, self.size, self.lens[self.name]),
+            read_image_file(self.data_dir, self.image_ext, self.lens[self.name]),
             read_info_file(self.data_dir, self.info_file),
             read_matches_files(self.data_dir, self.matches_files)
         )
@@ -101,21 +108,10 @@ class PhotoTour(data.Dataset):
         with open(self.data_file, 'wb') as f:
             torch.save(data_set, f)
 
-
-def print_(text):
-    print('\033[;1m{}\033[0;0m'.format(text))
-
-
-def read_image_file(data_dir, image_ext, img_sz, n):
+def read_image_file(data_dir, image_ext, n):
     """Return a Tensor containing the patches
     """
-    def PIL2array(_img, img_size):
-        """Convert PIL image type to numpy 2D array
-        """
-        return np.array(_img.getdata(), dtype=np.uint8) \
-            .reshape(img_size, img_size)
-
-    def read_filenames(_data_dir, _image_ext):
+    def find_files(_data_dir, _image_ext):
         """Return a list with the file names of the images containing the patches
         """
         files = []
@@ -125,8 +121,8 @@ def read_image_file(data_dir, image_ext, img_sz, n):
                 files.append(os.path.join(_data_dir, file_dir))
         return sorted(files)  # sort files in ascend order to keep relations
 
-    images = []
-    list_files = read_filenames(data_dir, image_ext)
+    patches = []
+    list_files = find_files(data_dir, image_ext)
 
     # use opencv to read  dataset
     for file_path in list_files:
@@ -135,11 +131,8 @@ def read_image_file(data_dir, image_ext, img_sz, n):
         img = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
         for y in range(0, 1024, 64):
             for x in range(0, 1024, 64):
-                patch = img[y: y + 64, x: x + 64]
-                if img_sz != 64:
-                    patch = cv2.resize(patch, (img_sz, img_sz), cv2.INTER_LINEAR)
-                images.append(patch)
-    return torch.ByteTensor(np.array(images[:n]))
+                patches.append(img[y:y + 64, x:x + 64])
+    return torch.ByteTensor(patches[:n])
 
 
 def read_info_file(data_dir, info_file):
@@ -148,9 +141,8 @@ def read_info_file(data_dir, info_file):
     """
     labels = []
     with open(os.path.join(data_dir, info_file), 'r') as f:
-        for line in f:
-            labels.append(int(line.split()[0]))
-    return torch.LongTensor(np.array(labels))
+        labels = [int(line.split()[0]) for line in f]
+    return torch.LongTensor(labels)
 
 
 def read_matches_files(data_dir, matches_file):
@@ -163,14 +155,13 @@ def read_matches_files(data_dir, matches_file):
         for line in f:
             l = line.split()
             matches.append([int(l[0]), int(l[3]), int(l[1] == l[4])])
-    return torch.LongTensor(np.array(matches))
+    return torch.LongTensor(matches)
 
 
 if __name__ == '__main__':
     dataset = PhotoTour(root='/home/eriba/datasets/patches_dataset',
                         name='notredame',
-                        download=True,
-                        size=32)
+                        download=True)
 
     print('Loaded PhotoTour: {} with {} images.'
           .format(dataset.name, len(dataset.data)))
