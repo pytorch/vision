@@ -7,6 +7,7 @@ import numpy as np
 import numbers
 import types
 
+
 class JointScale(object):
     """Rescales the input PIL.Image to the given 'size'.
     'size' will be the size of the smaller edge.
@@ -23,7 +24,7 @@ class JointScale(object):
     def __call__(self, imgs):
         w, h = imgs[0].size
         if (w <= h and w == self.size) or (h <= w and h == self.size):
-            return img
+            return imgs
         if w < h:
             ow = self.size
             oh = int(self.size * h / w)
@@ -76,7 +77,6 @@ class JointLambda(object):
 
     def __call__(self, imgs):
         return [self.lambd(img) for img in imgs]
-
 
 
 class JointRandomCrop(object):
@@ -152,4 +152,4 @@ class JointRandomSizedCrop(object):
         # Fallback
         scale = JointScale(self.size, interpolation=self.interpolation)
         crop = JointCenterCrop(self.size)
-        return crop(scale(img))
+        return crop(scale(imgs))
