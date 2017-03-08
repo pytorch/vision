@@ -160,7 +160,7 @@ def read_matches_files(data_dir, matches_file):
 
 
 if __name__ == '__main__':
-    dataset = PhotoTour(root='/home/eriba/datasets/patches_dataset',
+    dataset = PhotoTour(root='/tmp/datasets/patches_dataset',
                         name='notredame',
                         download=True)
 

@@ -216,7 +216,6 @@ http://phototour.cs.washington.edu/patches/default.htm
     import torchvision.transforms as transforms
     dataset = dset.PhotoTour(root = 'dir where images are',
                              name = 'name of the dataset to load',
-                             size = 32,  # resize image (default: 64)
                              transform=transforms.ToTensor())
 
     print('Loaded PhotoTour: {} with {} images.'
