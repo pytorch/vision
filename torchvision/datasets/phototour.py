@@ -42,8 +42,8 @@ class PhotoTour(data.Dataset):
             self.download()
 
         if not self._check_exists():
-            raise RuntimeError('Dataset not found.'
-                               + ' You can use download=True to download it')
+            raise RuntimeError('Dataset not found.' +
+                               ' You can use download=True to download it')
 
         # load the serialized data
         self.data, self.labels, self.matches = torch.load(self.data_file)
@@ -107,6 +107,7 @@ class PhotoTour(data.Dataset):
 
         with open(self.data_file, 'wb') as f:
             torch.save(data_set, f)
+
 
 def read_image_file(data_dir, image_ext, n):
     """Return a Tensor containing the patches
