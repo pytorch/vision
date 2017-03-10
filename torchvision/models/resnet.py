@@ -94,6 +94,7 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
+
     def __init__(self, block, layers, num_classes=1000):
         self.inplanes = 64
         super(ResNet, self).__init__()
@@ -152,61 +153,61 @@ class ResNet(nn.Module):
         return x
 
 
-def resnet18(pretrained=False):
+def resnet18(pretrained=False, **kwargs):
     """Constructs a ResNet-18 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(BasicBlock, [2, 2, 2, 2])
+    model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet18']))
     return model
 
 
-def resnet34(pretrained=False):
+def resnet34(pretrained=False, **kwargs):
     """Constructs a ResNet-34 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(BasicBlock, [3, 4, 6, 3])
+    model = ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet34']))
     return model
 
 
-def resnet50(pretrained=False):
+def resnet50(pretrained=False, **kwargs):
     """Constructs a ResNet-50 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(Bottleneck, [3, 4, 6, 3])
+    model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
 
 
-def resnet101(pretrained=False):
+def resnet101(pretrained=False, **kwargs):
     """Constructs a ResNet-101 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(Bottleneck, [3, 4, 23, 3])
+    model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet101']))
     return model
 
 
-def resnet152(pretrained=False):
+def resnet152(pretrained=False, **kwargs):
     """Constructs a ResNet-152 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(Bottleneck, [3, 8, 36, 3])
+    model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet152']))
     return model

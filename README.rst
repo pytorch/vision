@@ -1,6 +1,9 @@
 torch-vision
 ============
 
+.. image:: https://travis-ci.org/pytorch/vision.svg?branch=master
+    :target: https://travis-ci.org/pytorch/vision
+
 This repository consists of:
 
 -  `vision.datasets <#datasets>`__ : Data loaders for popular vision
@@ -46,6 +49,7 @@ The following dataset loaders are available:
 -  `ImageFolder <#imagefolder>`__
 -  `Imagenet-12 <#imagenet-12>`__
 -  `CIFAR10 and CIFAR100 <#cifar>`__
+-  `STL10 <#stl10>`__
 
 Datasets have the API: - ``__getitem__`` - ``__len__`` They all subclass
 from ``torch.utils.data.Dataset`` Hence, they can all be multi-threaded
@@ -71,7 +75,7 @@ MNIST
 ~~~~~
 ``dset.MNIST(root, train=True, transform=None, target_transform=None, download=False)``
 
-``root``: root directory of dataset where ``processed/training.pt`` and ``training/test.pt`` exist
+``root``: root directory of dataset where ``processed/training.pt`` and ``processed/test.pt`` exist
 
 ``train``: ``True`` - use training set, ``False`` - use test set.
 
@@ -153,6 +157,18 @@ CIFAR
    puts it in root directory. If dataset already downloaded, does not do
    anything.
 
+STL10
+~~~~~
+
+``dset.STL10(root, split='train', transform=None, target_transform=None, download=False)``
+
+-  ``root`` : root directory of dataset where there is folder ``stl10_binary``
+-  ``split`` : ``'train'`` = Training set, ``'test'`` = Test set, ``'unlabeled'`` = Unlabeled set,
+    ``'train+unlabeled'`` = Training + Unlabeled set (missing label marked as ``-1``)
+-  ``download`` : ``True`` = downloads the dataset from the internet and
+    puts it in root directory. If dataset already downloaded, does not do
+    anything.
+
 ImageFolder
 ~~~~~~~~~~~
 
@@ -210,7 +226,7 @@ constructor:
     import torchvision.models as models
     resnet18 = models.resnet18()
     alexnet = models.alexnet()
-    vgg16 = model.vgg16()
+    vgg16 = models.vgg16()
     squeezenet = models.squeezenet1_0()
 
 We provide pre-trained models for the ResNet variants, SqueezeNet 1.0 and 1.1,

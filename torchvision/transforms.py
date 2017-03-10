@@ -7,6 +7,7 @@ import numpy as np
 import numbers
 import types
 
+
 class Compose(object):
     """Composes several transforms together.
 
@@ -19,6 +20,7 @@ class Compose(object):
         >>>     transforms.ToTensor(),
         >>> ])
     """
+
     def __init__(self, transforms):
         self.transforms = transforms
 
@@ -29,9 +31,10 @@ class Compose(object):
 
 
 class ToTensor(object):
-    """Converts a PIL.Image (RGB) or numpy.ndarray (H x W x C) in the range
+    """Converts a PIL.Image or numpy.ndarray (H x W x C) in the range
     [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0].
     """
+
     def __call__(self, pic):
         if isinstance(pic, np.ndarray):
             # handle numpy array
@@ -39,7 +42,12 @@ class ToTensor(object):
         else:
             # handle PIL Image
             img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
-            img = img.view(pic.size[1], pic.size[0], len(pic.mode))
+            # PIL image mode: 1, L, P, I, F, RGB, YCbCr, RGBA, CMYK
+            if pic.mode == 'YCbCr':
+                nchannel = 3
+            else:
+                nchannel = len(pic.mode)
+            img = img.view(pic.size[1], pic.size[0], nchannel)
             # put it from HWC to CHW format
             # yikes, this transpose takes 80% of the loading time/CPU
             img = img.transpose(0, 1).transpose(0, 2).contiguous()
@@ -51,12 +59,13 @@ class ToPILImage(object):
     or numpy ndarray of dtype=uint8, range[0, 255] and shape H x W x C
     to a PIL.Image of range [0, 255]
     """
+
     def __call__(self, pic):
         npimg = pic
         mode = None
         if not isinstance(npimg, np.ndarray):
             npimg = pic.mul(255).byte().numpy()
-            npimg = np.transpose(npimg, (1,2,0))
+            npimg = np.transpose(npimg, (1, 2, 0))
 
         if npimg.shape[2] == 1:
             npimg = npimg[:, :, 0]
@@ -70,6 +79,7 @@ class Normalize(object):
     will normalize each channel of the torch.*Tensor, i.e.
     channel = (channel - mean) / std
     """
+
     def __init__(self, mean, std):
         self.mean = mean
         self.std = std
@@ -89,6 +99,7 @@ class Scale(object):
     size: size of the smaller edge
     interpolation: Default: PIL.Image.BILINEAR
     """
+
     def __init__(self, size, interpolation=Image.BILINEAR):
         self.size = size
         self.interpolation = interpolation
@@ -112,6 +123,7 @@ class CenterCrop(object):
     the given size. size can be a tuple (target_height, target_width)
     or an integer, in which case the target will be of a square shape (size, size)
     """
+
     def __init__(self, size):
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
@@ -128,19 +140,22 @@ class CenterCrop(object):
 
 class Pad(object):
     """Pads the given PIL.Image on all sides with the given "pad" value"""
+
     def __init__(self, padding, fill=0):
         assert isinstance(padding, numbers.Number)
-        assert isinstance(fill, numbers.Number)
+        assert isinstance(fill, numbers.Number) or isinstance(fill, str) or isinstance(fill, tuple)
         self.padding = padding
         self.fill = fill
 
     def __call__(self, img):
         return ImageOps.expand(img, border=self.padding, fill=self.fill)
 
+
 class Lambda(object):
     """Applies a lambda as a transform."""
+
     def __init__(self, lambd):
-        assert type(lambd) is types.LambdaType
+        assert isinstance(lambd, types.LambdaType)
         self.lambd = lambd
 
     def __call__(self, img):
@@ -152,6 +167,7 @@ class RandomCrop(object):
     the given size. size can be a tuple (target_height, target_width)
     or an integer, in which case the target will be of a square shape (size, size)
     """
+
     def __init__(self, size, padding=0):
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
@@ -176,6 +192,7 @@ class RandomCrop(object):
 class RandomHorizontalFlip(object):
     """Randomly horizontally flips the given PIL.Image with a probability of 0.5
     """
+
     def __call__(self, img):
         if random.random() < 0.5:
             return img.transpose(Image.FLIP_LEFT_RIGHT)
@@ -189,6 +206,7 @@ class RandomSizedCrop(object):
     size: size of the smaller edge
     interpolation: Default: PIL.Image.BILINEAR
     """
+
     def __init__(self, size, interpolation=Image.BILINEAR):
         self.size = size
         self.interpolation = interpolation
