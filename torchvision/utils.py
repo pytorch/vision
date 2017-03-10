@@ -27,7 +27,7 @@ def make_grid(tensor, nrow=8, padding=2):
     # make the mini-batch of images into a grid
     nmaps = tensor.size(0)
     xmaps = min(nrow, nmaps)
-    ymaps = int(math.ceil(nmaps / xmaps))
+    ymaps = int(math.ceil(float(nmaps) / xmaps))
     height, width = int(tensor.size(2) + padding), int(tensor.size(3) + padding)
     grid = tensor.new(3, height * ymaps, width * xmaps).fill_(tensor.max())
     k = 0
