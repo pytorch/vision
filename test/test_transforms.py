@@ -119,14 +119,14 @@ class Tester(unittest.TestCase):
         channels = 3
         height, width = 4, 4
         trans = transforms.ToTensor()
-        input_data = torch.ByteTensor(channels, height, width).random_(0,255).float().div_(255)
+        input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
         img = transforms.ToPILImage()(input_data)
         output = trans(img)
         assert np.allclose(input_data.numpy(), output.numpy())
 
         ndarray = np.random.randint(low=0, high=255, size=(height, width, channels))
         output = trans(ndarray)
-        expected_output = ndarray.transpose((2, 0, 1))/255.0
+        expected_output = ndarray.transpose((2, 0, 1)) / 255.0
         assert np.allclose(output.numpy(), expected_output)
 
     def test_tensor_to_pil_image(self):
