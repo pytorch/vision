@@ -63,6 +63,7 @@ class CIFAR10(data.Dataset):
 
             self.train_data = np.concatenate(self.train_data)
             self.train_data = self.train_data.reshape((50000, 3, 32, 32))
+            self.train_data = self.train_data.transpose((0, 2, 3, 1))  # convert to HWC
         else:
             f = self.test_list[0][0]
             file = os.path.join(root, self.base_folder, f)
@@ -78,6 +79,7 @@ class CIFAR10(data.Dataset):
                 self.test_labels = entry['fine_labels']
             fo.close()
             self.test_data = self.test_data.reshape((10000, 3, 32, 32))
+            self.test_data = self.test_data.transpose((0, 2, 3, 1))  # convert to HWC
 
     def __getitem__(self, index):
         if self.train:
@@ -87,7 +89,7 @@ class CIFAR10(data.Dataset):
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
-        img = Image.fromarray(np.transpose(img, (1, 2, 0)))
+        img = Image.fromarray(img)
 
         if self.transform is not None:
             img = self.transform(img)
