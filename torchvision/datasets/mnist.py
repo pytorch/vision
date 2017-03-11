@@ -9,6 +9,7 @@ import json
 import codecs
 import numpy as np
 
+
 class MNIST(data.Dataset):
     urls = [
         'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
@@ -25,17 +26,18 @@ class MNIST(data.Dataset):
         self.root = root
         self.transform = transform
         self.target_transform = target_transform
-        self.train = train # training set or test set
+        self.train = train  # training set or test set
 
         if download:
             self.download()
 
         if not self._check_exists():
-            raise RuntimeError('Dataset not found.'
-                               + ' You can use download=True to download it')
+            raise RuntimeError('Dataset not found.' +
+                               ' You can use download=True to download it')
 
         if self.train:
-            self.train_data, self.train_labels = torch.load(os.path.join(root, self.processed_folder, self.training_file))
+            self.train_data, self.train_labels = torch.load(
+                os.path.join(root, self.processed_folder, self.training_file))
         else:
             self.test_data, self.test_labels = torch.load(os.path.join(root, self.processed_folder, self.test_file))
 
@@ -65,7 +67,7 @@ class MNIST(data.Dataset):
 
     def _check_exists(self):
         return os.path.exists(os.path.join(self.root, self.processed_folder, self.training_file)) and \
-               os.path.exists(os.path.join(self.root, self.processed_folder, self.test_file))
+            os.path.exists(os.path.join(self.root, self.processed_folder, self.test_file))
 
     def download(self):
         from six.moves import urllib
@@ -92,7 +94,7 @@ class MNIST(data.Dataset):
             with open(file_path, 'wb') as f:
                 f.write(data.read())
             with open(file_path.replace('.gz', ''), 'wb') as out_f, \
-                 gzip.GzipFile(file_path) as zip_f:
+                    gzip.GzipFile(file_path) as zip_f:
                 out_f.write(zip_f.read())
             os.unlink(file_path)
 
@@ -114,13 +116,16 @@ class MNIST(data.Dataset):
 
         print('Done!')
 
+
 def get_int(b):
     return int(codecs.encode(b, 'hex'), 16)
+
 
 def parse_byte(b):
     if isinstance(b, str):
         return ord(b)
     return b
+
 
 def read_label_file(path):
     with open(path, 'rb') as f:
@@ -130,6 +135,7 @@ def read_label_file(path):
         labels = [parse_byte(b) for b in data[8:]]
         assert len(labels) == length
         return torch.LongTensor(labels)
+
 
 def read_image_file(path):
     with open(path, 'rb') as f:

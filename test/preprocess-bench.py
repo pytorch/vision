@@ -20,14 +20,13 @@ parser.add_argument('--batchSize', '-b', default=256, type=int, metavar='N',
 if __name__ == "__main__":
     args = parser.parse_args()
 
-
     # Data loading code
     transform = transforms.Compose([
         transforms.RandomSizedCrop(224),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize(mean = [ 0.485, 0.456, 0.406 ],
-                             std = [ 0.229, 0.224, 0.225 ]),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225]),
     ])
 
     traindir = os.path.join(args.data, 'train')
@@ -47,4 +46,3 @@ if __name__ == "__main__":
         dataset=(end_time - start_time) * (float(len(train_loader)) / batch_count / 60.0),
         batch=(end_time - start_time) / float(batch_count),
         image=(end_time - start_time) / (batch_count * args.batchSize) * 1.0e+3))
-

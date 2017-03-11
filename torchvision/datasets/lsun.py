@@ -10,7 +10,9 @@ if sys.version_info[0] == 2:
 else:
     import pickle
 
+
 class LSUNClass(data.Dataset):
+
     def __init__(self, db_path, transform=None, target_transform=None):
         import lmdb
         self.db_path = db_path
@@ -20,11 +22,11 @@ class LSUNClass(data.Dataset):
             self.length = txn.stat()['entries']
         cache_file = '_cache_' + db_path.replace('/', '_')
         if os.path.isfile(cache_file):
-            self.keys = pickle.load( open( cache_file, "rb" ) )
+            self.keys = pickle.load(open(cache_file, "rb"))
         else:
             with self.env.begin(write=False) as txn:
-                self.keys = [ key for key, _ in txn.cursor() ]
-            pickle.dump( self.keys, open( cache_file, "wb" ) )
+                self.keys = [key for key, _ in txn.cursor()]
+            pickle.dump(self.keys, open(cache_file, "wb"))
         self.transform = transform
         self.target_transform = target_transform
 
@@ -53,11 +55,13 @@ class LSUNClass(data.Dataset):
     def __repr__(self):
         return self.__class__.__name__ + ' (' + self.db_path + ')'
 
+
 class LSUN(data.Dataset):
     """
     db_path = root directory for the database files
     classes = 'train' | 'val' | 'test' | ['bedroom_train', 'church_train', ...]
     """
+
     def __init__(self, db_path, classes='train',
                  transform=None, target_transform=None):
         categories = ['bedroom', 'bridge', 'church_outdoor', 'classroom',
@@ -73,13 +77,13 @@ class LSUN(data.Dataset):
                 c_short.pop(len(c_short) - 1)
                 c_short = '_'.join(c_short)
                 if c_short not in categories:
-                    raise(ValueError('Unknown LSUN class: ' + c_short + '.'\
-                          'Options are: ' + str(categories)))
+                    raise(ValueError('Unknown LSUN class: ' + c_short + '.'
+                                     'Options are: ' + str(categories)))
                 c_short = c.split('_')
                 c_short = c_short.pop(len(c_short) - 1)
                 if c_short not in dset_opts:
-                    raise(ValueError('Unknown postfix: ' + c_short + '.'\
-                          'Options are: ' + str(dset_opts)))
+                    raise(ValueError('Unknown postfix: ' + c_short + '.'
+                                     'Options are: ' + str(dset_opts)))
         else:
             raise(ValueError('Unknown option for classes'))
         self.classes = classes
@@ -88,8 +92,8 @@ class LSUN(data.Dataset):
         self.dbs = []
         for c in self.classes:
             self.dbs.append(LSUNClass(
-                db_path = db_path + '/' + c + '_lmdb',
-                transform = transform))
+                db_path=db_path + '/' + c + '_lmdb',
+                transform=transform))
 
         self.indices = []
         count = 0
@@ -124,13 +128,14 @@ class LSUN(data.Dataset):
     def __repr__(self):
         return self.__class__.__name__ + ' (' + self.db_path + ')'
 
+
 if __name__ == '__main__':
-    #lsun = LSUNClass(db_path='/home/soumith/local/lsun/train/bedroom_train_lmdb')
-    #a = lsun[0]
+    # lsun = LSUNClass(db_path='/home/soumith/local/lsun/train/bedroom_train_lmdb')
+    # a = lsun[0]
     lsun = LSUN(db_path='/home/soumith/local/lsun/train',
-                       classes=['bedroom_train', 'church_outdoor_train'])
+                classes=['bedroom_train', 'church_outdoor_train'])
     print(lsun.classes)
     print(lsun.dbs)
-    a, t = lsun[len(lsun)-1]
+    a, t = lsun[len(lsun) - 1]
     print(a)
     print(t)
