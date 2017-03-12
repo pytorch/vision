@@ -84,6 +84,9 @@ class AnnotationTransform(object):
             (default: alphabetic indexing of VOC's 20 classes)
         keep_difficult (bool, optional): keep difficult instances or not
             (default: False)
+        channels (int): number of channels
+        height (int): height
+        width (int): width
     """
 
     def __init__(self, class_to_ind=None, keep_difficult=False):
@@ -91,7 +94,7 @@ class AnnotationTransform(object):
             zip(VOC_CLASSES, range(len(VOC_CLASSES))))
         self.keep_difficult = keep_difficult
 
-    def __call__(self, target):
+    def __call__(self, target, channels, height, width):
         """
         Arguments:
             target (annotation) : the target annotation to be made usable
@@ -108,13 +111,18 @@ class AnnotationTransform(object):
             bbox = obj.find('bndbox')
 
             # [xmin, ymin, xmax, ymax]
-            bndbox = [int(bb.text) - 1 for bb in bbox]
+            bndbox = []
+            for i, cur_bb in enumerate(bbox):
+                bb_sz = int(cur_bb.text) - 1
+                bb_sz = bb_sz/width if i%2 == 0 else bb_sz/height # scale height or width
+                bndbox.append(bb_sz)
+
             label_ind = self.class_to_ind[name]
             bndbox.append(label_ind)
             res += [bndbox]  # [xmin, ymin, xmax, ymax, ind]
 
         return res  # [[xmin, ymin, xmax, ymax, ind], ... ]
-# torch.Tensor(res)
+
 
 class VOCDetection(data.Dataset):
     """VOC Detection Dataset Object
@@ -169,8 +177,7 @@ class VOCDetection(data.Dataset):
         return len(self.ids)
 
     def show(self, index, subparts=False):
-        '''Shows an image with its ground truth boxes overlaid
-        optionally
+        '''Shows an image with its ground truth boxes overlaid optionally
 
         Note: not using self.__getitem__(), as any transformations passed in
         could mess up this functionality.
@@ -179,6 +186,7 @@ class VOCDetection(data.Dataset):
             index (int): index of img to show
             subparts (bool, optional): whether or not to display subpart
             bboxes of ground truths
+                (default: False)
         '''
         img_id = self.ids[index]
         target = ET.parse(self._annopath % img_id).getroot()
@@ -186,11 +194,11 @@ class VOCDetection(data.Dataset):
         draw = ImageDraw.Draw(img)
         i = 0
         bndboxs = []
-        classes = dict()
+        classes = dict() # maps class name to a class number
         for obj in target.iter('object'):
             bbox = obj.find('bndbox')
             name = obj.find('name').text.lower().strip()
-            if not name in classes:
+            if name not in classes:
                 classes[name] = i
                 i += 1
             bndboxs.append((name, [int(bb.text) - 1 for bb in bbox]))
@@ -199,7 +207,7 @@ class VOCDetection(data.Dataset):
                     name = part.find('name').text.lower().strip()
                     bbox = part.find('bndbox')
                     bndboxs.append((name, [int(bb.text) - 1 for bb in bbox]))
-                    if not name in classes:
+                    if name not in classes:
                         classes[name] = i
                         i += 1
         for name, bndbox in bndboxs:
@@ -209,14 +217,27 @@ class VOCDetection(data.Dataset):
         img.show()
         return img
 
+
 def detection_collate(batch):
+    """Custom collate fn for dealing with batches of images that have a different
+    number of associated object annotations (bounding boxes).
+
+    Arguments:
+        batch: (tuple) A tuple of tensor images and lists of annotations
+
+    Return:
+        A tuple containing:
+            1) (tensor) batch of images stacked on their 0 dim
+            2) (list of tensors) annotations for a given image are stacked on 0 dim
+    """
     targets = []
     imgs = []
-    for i,sample in enumerate(batch):
-        for j, tup in enumerate(sample):
+    for _, sample in enumerate(batch):
+        for _, tup in enumerate(sample):
             if torch.is_tensor(tup):
                 imgs.append(tup)
             elif isinstance(tup, type([])):
-                targets.append([torch.Tensor(x) for x in tup])
+                annos = [torch.Tensor(a) for a in tup]
+                targets.append(torch.stack(annos, 0))
 
     return (torch.stack(imgs, 0), targets)
