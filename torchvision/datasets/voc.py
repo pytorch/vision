@@ -114,7 +114,8 @@ class AnnotationTransform(object):
             bndbox = []
             for i, cur_bb in enumerate(bbox):
                 bb_sz = int(cur_bb.text) - 1
-                bb_sz = bb_sz/width if i%2 == 0 else bb_sz/height # scale height or width
+                # scale height or width
+                bb_sz = bb_sz / width if i % 2 == 0 else bb_sz / height
                 bndbox.append(bb_sz)
 
             label_ind = self.class_to_ind[name]
@@ -194,7 +195,7 @@ class VOCDetection(data.Dataset):
         draw = ImageDraw.Draw(img)
         i = 0
         bndboxs = []
-        classes = dict() # maps class name to a class number
+        classes = dict()  # maps class name to a class number
         for obj in target.iter('object'):
             bbox = obj.find('bndbox')
             name = obj.find('name').text.lower().strip()
