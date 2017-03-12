@@ -124,6 +124,7 @@ def read_image_file(data_dir, image_ext, n):
         """Convert PIL image type to numpy 2D array
         """
         return np.array(_img.getdata(), dtype=np.uint8).reshape(64, 64)
+
     def find_files(_data_dir, _image_ext):
         """Return a list with the file names of the images containing the patches
         """
