@@ -1,11 +1,7 @@
 import os
 import errno
 import numpy as np
-
-try:
-    import cv2
-except ImportError:
-    cv2 = None
+from PIL import Image
 
 import torch
 import torch.utils.data as data
@@ -25,15 +21,15 @@ class PhotoTour(data.Dataset):
     info_file = 'info.txt'
     matches_files = 'm50_100000_100000_0.txt'
 
-    def __init__(self, root, name, download=False):
-        if cv2 is None:
-            raise ImportError("PhotoTour dataset requires cv2 package (OpenCV 2)")
-
+    def __init__(self, root, name, train=True, transform=None, download=False):
         self.root = root
         self.name = name
         self.data_dir = os.path.join(root, name)
         self.data_down = os.path.join(root, '{}.zip'.format(name))
         self.data_file = os.path.join(root, '{}.pt'.format(name))
+
+        self.train = train
+        self.transform = transform
 
         self.mean = self.mean[name]
         self.std = self.std[name]
@@ -49,10 +45,22 @@ class PhotoTour(data.Dataset):
         self.data, self.labels, self.matches = torch.load(self.data_file)
 
     def __getitem__(self, index):
-        return self.data[index]
+        if self.train:
+            data = self.data[index]
+            if self.transform is not None:
+                data = self.transform(data)
+            return data
+        m = self.matches[index]
+        data1, data2 = self.data[m[0]], self.data[m[1]]
+        if self.transform is not None:
+            data1 = self.transform(data1)
+            data2 = self.transform(data2)
+        return data1, data2, m[2]
 
     def __len__(self):
-        return self.lens[self.name]
+        if self.train:
+            return self.lens[self.name]
+        return len(self.matches)
 
     def _check_exists(self):
         return os.path.exists(self.data_file)
@@ -112,6 +120,10 @@ class PhotoTour(data.Dataset):
 def read_image_file(data_dir, image_ext, n):
     """Return a Tensor containing the patches
     """
+    def PIL2array(_img):
+        """Convert PIL image type to numpy 2D array
+        """
+        return np.array(_img.getdata(), dtype=np.uint8).reshape(64, 64)
     def find_files(_data_dir, _image_ext):
         """Return a list with the file names of the images containing the patches
         """
@@ -125,15 +137,13 @@ def read_image_file(data_dir, image_ext, n):
     patches = []
     list_files = find_files(data_dir, image_ext)
 
-    # use opencv to read  dataset
     for file_path in list_files:
-        # load the image containing the patches, crop in 64x64 patches and
-        # reshape to the desired size (default: 64)
-        img = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
+        img = Image.open(file_path)
         for y in range(0, 1024, 64):
             for x in range(0, 1024, 64):
-                patches.append(img[y:y + 64, x:x + 64])
-    return torch.ByteTensor(patches[:n])
+                patch = img.crop((x, y, x + 64, y + 64))
+                patches.append(PIL2array(patch))
+    return torch.ByteTensor(np.array(patches[:n]))
 
 
 def read_info_file(data_dir, info_file):
@@ -160,7 +170,7 @@ def read_matches_files(data_dir, matches_file):
 
 
 if __name__ == '__main__':
-    dataset = PhotoTour(root='/tmp/datasets/patches_dataset',
+    dataset = PhotoTour(root='/home/eriba/datasets/patches_dataset',
                         name='notredame',
                         download=True)
 
