@@ -8,8 +8,8 @@ __all__ = ['SqueezeNet', 'squeezenet1_0', 'squeezenet1_1']
 
 
 model_urls = {
-    'squeezenet1_0': 'https://s3.amazonaws.com/pytorch/models/squeezenet1_0-a815701f.pth',
-    'squeezenet1_1': 'https://s3.amazonaws.com/pytorch/models/squeezenet1_1-f364aa15.pth',
+    'squeezenet1_0': 'https://download.pytorch.org/models/squeezenet1_0-a815701f.pth',
+    'squeezenet1_1': 'https://download.pytorch.org/models/squeezenet1_1-f364aa15.pth',
 }
 
 
