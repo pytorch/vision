@@ -35,6 +35,7 @@ ResNet-34                26.70           8.58
 ResNet-50                23.85           7.13
 ResNet-101               22.63           6.44
 ResNet-152               21.69           5.94
+Inception v3             22.55           6.44
 AlexNet                  43.45           20.91
 VGG-11                   32.14           12.12
 VGG-13                   31.04           11.40
@@ -55,3 +56,4 @@ from .alexnet import *
 from .resnet import *
 from .vgg import *
 from .squeezenet import *
+from .inception import *
