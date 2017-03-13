@@ -30,24 +30,24 @@ class SVHN(data.Dataset):
 
         if self.split not in self.split_list:
             raise ValueError('Wrong split entered! Please use split=train or split=extra or split=test')
-        else:
-            self.url = self.split_list[split][0]
-            self.filename = self.split_list[split][1]
-            self.file_md5 = self.split_list[split][2]
+        
+        self.url = self.split_list[split][0]
+        self.filename = self.split_list[split][1]
+        self.file_md5 = self.split_list[split][2]
 
-            if download:
-                self.download()
+        if download:
+            self.download()
 
-            if not self._check_integrity():
-                    raise RuntimeError('Dataset not found or corrupted.' +
-                                       ' You can use download=True to download it')
+        if not self._check_integrity():
+                raise RuntimeError('Dataset not found or corrupted.' +
+                                   ' You can use download=True to download it')
 
-            # reading(loading) mat file as array
-            loaded_mat = sio.loadmat(os.path.join(root, self.filename))
+        # reading(loading) mat file as array
+        loaded_mat = sio.loadmat(os.path.join(root, self.filename))
 
-            self.data = loaded_mat['X']
-            self.labels = loaded_mat['y']
-            self.data = np.transpose(self.data, (3, 2, 1, 0))
+        self.data = loaded_mat['X']
+        self.labels = loaded_mat['y']
+        self.data = np.transpose(self.data, (3, 2, 1, 0))
 
     def __getitem__(self, index):
         img, target = self.data[index], self.labels[index]
