@@ -28,7 +28,9 @@ class SVHN(data.Dataset):
         self.target_transform = target_transform
         self.split = split  # training set or test set or extra set
 
-        if self.split in self.split_list:
+        if self.split not in self.split_list:
+            raise ValueError('Wrong split entered! Please use split=train or split=extra or split=test')
+        else:
             self.url = self.split_list[split][0]
             self.filename = self.split_list[split][1]
             self.file_md5 = self.split_list[split][2]
@@ -43,22 +45,12 @@ class SVHN(data.Dataset):
             # reading(loading) mat file as array
             loaded_mat = sio.loadmat(os.path.join(root, self.filename))
 
-            if self.split != 'test':
-                self.train_data = loaded_mat['X']
-                self.train_labels = loaded_mat['y']
-                self.train_data = np.transpose(self.train_data, (3, 2, 1, 0))
-            else:
-                self.test_data = loaded_mat['X']
-                self.test_labels = loaded_mat['y']
-                self.test_data = np.transpose(self.test_data, (3, 2, 1, 0))
-        else:
-            print ("Wrong dataset entered! Please use split=train or split=extra or split=test")
+            self.data = loaded_mat['X']
+            self.labels = loaded_mat['y']
+            self.data = np.transpose(self.data, (3, 2, 1, 0))
 
     def __getitem__(self, index):
-        if self.split == 'train' or self.split == 'extra':
-            img, target = self.train_data[index], self.train_labels[index]
-        elif self.split == 'test':
-            img, target = self.test_data[index], self.test_labels[index]
+        img, target = self.data[index], self.labels[index]
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
@@ -73,7 +65,7 @@ class SVHN(data.Dataset):
         return img, target
 
     def __len__(self):
-        return len(self.train_data)
+        return len(self.data)
 
     def _check_integrity(self):
         import hashlib
