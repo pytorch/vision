@@ -50,6 +50,6 @@ def save_image(tensor, filename, nrow=8, padding=2):
     from PIL import Image
     tensor = tensor.cpu()
     grid = make_grid(tensor, nrow=nrow, padding=padding)
-    ndarr = grid.mul(255).byte().transpose(0,2).transpose(0,1).numpy()
+    ndarr = grid.mul(255).byte().transpose(0, 2).transpose(0, 1).numpy()
     im = Image.fromarray(ndarr)
     im.save(filename)
