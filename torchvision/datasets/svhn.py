@@ -39,15 +39,15 @@ class SVHN(data.Dataset):
             self.download()
 
         if not self._check_integrity():
-                raise RuntimeError('Dataset not found or corrupted.' +
-                                   ' You can use download=True to download it')
+            raise RuntimeError('Dataset not found or corrupted.' +
+                               ' You can use download=True to download it')
 
         # reading(loading) mat file as array
         loaded_mat = sio.loadmat(os.path.join(root, self.filename))
 
         self.data = loaded_mat['X']
         self.labels = loaded_mat['y']
-        self.data = np.transpose(self.data, (3, 2, 1, 0))
+        self.data = np.transpose(self.data, (3, 2, 0, 1))
 
     def __getitem__(self, index):
         img, target = self.data[index], self.labels[index]
