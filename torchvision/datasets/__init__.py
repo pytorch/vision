@@ -9,4 +9,4 @@ __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder',
            'CocoCaptions', 'CocoDetection',
            'CIFAR10', 'CIFAR100',
-           'MNIST', 'STL10')
+           'MNIST', 'STL10', 'PhotoTour')

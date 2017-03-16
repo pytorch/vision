@@ -50,6 +50,7 @@ The following dataset loaders are available:
 -  `Imagenet-12 <#imagenet-12>`__
 -  `CIFAR10 and CIFAR100 <#cifar>`__
 -  `STL10 <#stl10>`__
+-  `PhotoTour <#phototour>`__
 
 Datasets have the API: - ``__getitem__`` - ``__len__`` They all subclass
 from ``torch.utils.data.Dataset`` Hence, they can all be multi-threaded
@@ -202,6 +203,23 @@ here <https://github.com/facebook/fb.resnet.torch/blob/master/INSTALL.md#downloa
 
 `Here is an
 example <https://github.com/pytorch/examples/blob/27e2a46c1d1505324032b1d94fc6ce24d5b67e97/imagenet/main.py#L48-L62>`__.
+
+PhotoTour
+~~~~~~~~~
+
+**Learning Local Image Descriptors Data**
+http://phototour.cs.washington.edu/patches/default.htm
+
+.. code:: python
+
+    import torchvision.datasets as dset
+    import torchvision.transforms as transforms
+    dataset = dset.PhotoTour(root = 'dir where images are',
+                             name = 'name of the dataset to load',
+                             transform=transforms.ToTensor())
+
+    print('Loaded PhotoTour: {} with {} images.'
+          .format(dataset.name, len(dataset.data)))
 
 Models
 ======
