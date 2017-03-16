@@ -1,5 +1,4 @@
 from __future__ import print_function
-import scipy.io as sio
 import torch.utils.data as data
 from PIL import Image
 import os
@@ -42,6 +41,10 @@ class SVHN(data.Dataset):
             raise RuntimeError('Dataset not found or corrupted.' +
                                ' You can use download=True to download it')
 
+        # import here rather than at top of file because this is
+        # an optional dependency for torchvision
+        import scipy.io as sio
+        
         # reading(loading) mat file as array
         loaded_mat = sio.loadmat(os.path.join(root, self.filename))
 
