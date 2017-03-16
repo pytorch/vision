@@ -38,7 +38,7 @@ class ToTensor(object):
     def __call__(self, pic):
         if isinstance(pic, np.ndarray):
             # handle numpy array
-            img = torch.from_numpy(pic)
+            img = torch.from_numpy(pic.transpose((2, 0, 1)))
         else:
             # handle PIL Image
             img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))

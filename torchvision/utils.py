@@ -27,7 +27,7 @@ def make_grid(tensor, nrow=8, padding=2):
     # make the mini-batch of images into a grid
     nmaps = tensor.size(0)
     xmaps = min(nrow, nmaps)
-    ymaps = int(math.ceil(nmaps / xmaps))
+    ymaps = int(math.ceil(float(nmaps) / xmaps))
     height, width = int(tensor.size(2) + padding), int(tensor.size(3) + padding)
     grid = tensor.new(3, height * ymaps, width * xmaps).fill_(tensor.max())
     k = 0
@@ -50,6 +50,6 @@ def save_image(tensor, filename, nrow=8, padding=2):
     from PIL import Image
     tensor = tensor.cpu()
     grid = make_grid(tensor, nrow=nrow, padding=padding)
-    ndarr = grid.mul(0.5).add(0.5).mul(255).byte().transpose(0, 2).transpose(0, 1).numpy()
+    ndarr = grid.mul(255).byte().transpose(0, 2).transpose(0, 1).numpy()
     im = Image.fromarray(ndarr)
     im.save(filename)
