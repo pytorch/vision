@@ -99,7 +99,6 @@ class SVHN(data.Dataset):
             print('Files already downloaded and verified')
             return
 
-        print ("about to download")
         # downloads file
         if os.path.isfile(fpath):
             print('Using downloaded file: ' + fpath)
