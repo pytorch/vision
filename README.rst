@@ -168,6 +168,17 @@ STL10
 -  ``download`` : ``True`` = downloads the dataset from the internet and
     puts it in root directory. If dataset already downloaded, does not do
     anything.
+    
+SVHN
+~~~~~
+
+``dset.SVHN(root, split='train', transform=None, target_transform=None, download=False)``
+
+-  ``root`` : root directory of dataset where there is folder ``SVHN``
+-  ``split`` : ``'train'`` = Training set, ``'test'`` = Test set, ``'extra'`` = Extra training set
+-  ``download`` : ``True`` = downloads the dataset from the internet and
+    puts it in root directory. If dataset is already downloaded, does not do
+    anything.
 
 ImageFolder
 ~~~~~~~~~~~
