@@ -29,7 +29,7 @@ class SVHN(data.Dataset):
         self.split = split  # training set or test set or extra set
 
         if self.split not in self.split_list:
-            raise ValueError('Wrong split entered! Please use split=train or split=extra or split=test')
+            raise ValueError('Wrong split entered! Please use split="train" or split="extra" or split="test"')
 
         self.url = self.split_list[split][0]
         self.filename = self.split_list[split][1]
