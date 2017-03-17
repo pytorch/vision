@@ -50,6 +50,7 @@ The following dataset loaders are available:
 -  `Imagenet-12 <#imagenet-12>`__
 -  `CIFAR10 and CIFAR100 <#cifar>`__
 -  `STL10 <#stl10>`__
+-  `SVHN <#svhn>`__
 
 Datasets have the API: - ``__getitem__`` - ``__len__`` They all subclass
 from ``torch.utils.data.Dataset`` Hence, they can all be multi-threaded
