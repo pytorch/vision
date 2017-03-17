@@ -154,7 +154,7 @@ CIFAR
    ``cifar-10-batches-py``
 -  ``train`` : ``True`` = Training set, ``False`` = Test set
 -  ``download`` : ``True`` = downloads the dataset from the internet and
-   puts it in root directory. If dataset already downloaded, does not do
+   puts it in root directory. If dataset is already downloaded, does not do
    anything.
 
 STL10
@@ -166,7 +166,7 @@ STL10
 -  ``split`` : ``'train'`` = Training set, ``'test'`` = Test set, ``'unlabeled'`` = Unlabeled set,
     ``'train+unlabeled'`` = Training + Unlabeled set (missing label marked as ``-1``)
 -  ``download`` : ``True`` = downloads the dataset from the internet and
-    puts it in root directory. If dataset already downloaded, does not do
+    puts it in root directory. If dataset is already downloaded, does not do
     anything.
     
 SVHN
