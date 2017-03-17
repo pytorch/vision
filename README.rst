@@ -361,7 +361,7 @@ Utils
 =====
 
 make\_grid(tensor, nrow=8, padding=2, normalize=False, range=None, scale\_each=False)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Given a 4D mini-batch Tensor of shape (B x C x H x W),
 or a list of images all of the same size,
@@ -379,7 +379,7 @@ computing the (min, max) over all images.
 [Example usage is given in this notebook](https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91)
 
 save\_image(tensor, filename, nrow=8, padding=2, normalize=False, range=None, scale\_each=False)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Saves a given Tensor into an image file.
 
