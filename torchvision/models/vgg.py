@@ -10,10 +10,10 @@ __all__ = [
 
 
 model_urls = {
-    'vgg11': 'https://download.pytorch.org/models/vgg11-fb7e83b2.pth',
-    'vgg13': 'https://download.pytorch.org/models/vgg13-58758d87.pth',
-    'vgg16': 'https://download.pytorch.org/models/vgg16-82412952.pth',
-    'vgg19': 'https://download.pytorch.org/models/vgg19-341d7465.pth',
+    'vgg11': 'https://download.pytorch.org/models/vgg11-bbd30ac9.pth',
+    'vgg13': 'https://download.pytorch.org/models/vgg13-c768596a.pth',
+    'vgg16': 'https://download.pytorch.org/models/vgg16-397923af.pth',
+    'vgg19': 'https://download.pytorch.org/models/vgg19-dcbb9e9d.pth',
 }
 
 
@@ -23,12 +23,12 @@ class VGG(nn.Module):
         super(VGG, self).__init__()
         self.features = features
         self.classifier = nn.Sequential(
-            nn.Dropout(),
             nn.Linear(512 * 7 * 7, 4096),
             nn.ReLU(True),
             nn.Dropout(),
             nn.Linear(4096, 4096),
             nn.ReLU(True),
+            nn.Dropout(),
             nn.Linear(4096, 1000),
         )
         self._initialize_weights()
