@@ -2,3 +2,4 @@ numpy
 pillow
 six
 torch
+lmdb
