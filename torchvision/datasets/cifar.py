@@ -11,6 +11,8 @@ if sys.version_info[0] == 2:
 else:
     import pickle
 
+import .utils as utils
+
 
 class CIFAR10(data.Dataset):
     base_folder = 'cifar-10-batches-py'
@@ -29,7 +31,9 @@ class CIFAR10(data.Dataset):
         ['test_batch', '40351d587109b95175f43aff81a1287e'],
     ]
 
-    def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
+    def __init__(self, root, train=True,
+                 transform=None, target_transform=None,
+                 download=False):
         self.root = root
         self.transform = transform
         self.target_transform = target_transform
@@ -106,55 +110,33 @@ class CIFAR10(data.Dataset):
             return 10000
 
     def _check_integrity(self):
-        import hashlib
         root = self.root
         for fentry in (self.train_list + self.test_list):
             filename, md5 = fentry[0], fentry[1]
             fpath = os.path.join(root, self.base_folder, filename)
-            if not os.path.isfile(fpath):
-                return False
-            md5c = hashlib.md5(open(fpath, 'rb').read()).hexdigest()
-            if md5c != md5:
+            if not utils.check_integrity(fpath, md5):
                 return False
         return True
 
     def download(self):
-        from six.moves import urllib
         import tarfile
-        import hashlib
-
-        root = self.root
-        fpath = os.path.join(root, self.filename)
-
-        try:
-            os.makedirs(root)
-        except OSError as e:
-            if e.errno == errno.EEXIST:
-                pass
-            else:
-                raise
 
         if self._check_integrity():
             print('Files already downloaded and verified')
             return
 
-        # downloads file
-        if os.path.isfile(fpath) and \
-           hashlib.md5(open(fpath, 'rb').read()).hexdigest() == self.tgz_md5:
-            print('Using downloaded file: ' + fpath)
-        else:
-            print('Downloading ' + self.url + ' to ' + fpath)
-            urllib.request.urlretrieve(self.url, fpath)
+        root = self.root
+
+        # download
+        utils.download(self.url, root, self.filename, self.tgz_md5)
 
         # extract file
         cwd = os.getcwd()
-        print('Extracting tar file')
-        tar = tarfile.open(fpath, "r:gz")
+        tar = tarfile.open(os.path.join(root, self.filename), "r:gz")
         os.chdir(root)
         tar.extractall()
         tar.close()
         os.chdir(cwd)
-        print('Done!')
 
 
 class CIFAR100(CIFAR10):
