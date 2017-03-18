@@ -11,7 +11,7 @@ if sys.version_info[0] == 2:
 else:
     import pickle
 
-import .utils as utils
+from .utils import download_url, check_integrity
 
 
 class CIFAR10(data.Dataset):
@@ -114,7 +114,7 @@ class CIFAR10(data.Dataset):
         for fentry in (self.train_list + self.test_list):
             filename, md5 = fentry[0], fentry[1]
             fpath = os.path.join(root, self.base_folder, filename)
-            if not utils.check_integrity(fpath, md5):
+            if not check_integrity(fpath, md5):
                 return False
         return True
 
@@ -126,9 +126,7 @@ class CIFAR10(data.Dataset):
             return
 
         root = self.root
-
-        # download
-        utils.download(self.url, root, self.filename, self.tgz_md5)
+        download_url(self.url, root, self.filename, self.tgz_md5)
 
         # extract file
         cwd = os.getcwd()
