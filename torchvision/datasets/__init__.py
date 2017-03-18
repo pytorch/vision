@@ -5,6 +5,7 @@ from .cifar import CIFAR10, CIFAR100
 from .stl10 import STL10
 from .mnist import MNIST
 from .svhn import SVHN
+from .phototour import PhotoTour
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder',

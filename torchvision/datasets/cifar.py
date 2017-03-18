@@ -1,5 +1,4 @@
 from __future__ import print_function
-import torch.utils.data as data
 from PIL import Image
 import os
 import os.path
@@ -11,6 +10,7 @@ if sys.version_info[0] == 2:
 else:
     import pickle
 
+import torch.utils.data as data
 from .utils import download_url, check_integrity
 
 
