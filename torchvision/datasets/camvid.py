@@ -5,7 +5,7 @@ import torch
 import torch.utils.data as data
 import numpy as np
 from PIL import Image
-from torchvision.datasets.folder import is_image_file, default_loader
+from .folder import is_image_file, default_loader
 
 
 classes = ['Sky', 'Building', 'Column-Pole', 'Road',
@@ -38,7 +38,7 @@ class_color = [
 ]
 
 
-def make_dataset(dir):
+def _make_dataset(dir):
     images = []
     for root, _, fnames in sorted(os.walk(dir)):
         for fname in fnames:
@@ -49,39 +49,46 @@ def make_dataset(dir):
     return images
 
 
-def LabelToLongTensor(pic):
-    label = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
-    label = label.view(pic.size[1], pic.size[0], 1)
-    label = label.transpose(0, 1).transpose(0, 2).squeeze().contiguous().long()
-    return label
+class LabelToLongTensor(object):
+    def __call__(self, pic):
+        if isinstance(pic, np.ndarray):
+            # handle numpy array
+            label = torch.from_numpy(pic).long()
+        else:
+            label = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
+            label = label.view(pic.size[1], pic.size[0], 1)
+            label = label.transpose(0, 1).transpose(0, 2).squeeze().contiguous().long()
+        return label
 
 
-def LabelToPILImage(label):
-    label = label.unsqueeze(0)
-    colored_label = torch.zeros(3, label.size(1), label.size(2)).byte()
-    for i, color in enumerate(class_color):
-        mask = label.eq(i)
-        for j in range(3):
-            colored_label[j].masked_fill_(mask, color[j])
-    npimg = colored_label.numpy()
-    npimg = np.transpose(npimg, (1, 2, 0))
-    mode = None
-    if npimg.shape[2] == 1:
-        npimg = npimg[:, :, 0]
-        mode = "L"
+class LabelTensorToPILImage(object):
+    def __call__(self, label):
+        label = label.unsqueeze(0)
+        colored_label = torch.zeros(3, label.size(1), label.size(2)).byte()
+        for i, color in enumerate(class_color):
+            mask = label.eq(i)
+            for j in range(3):
+                colored_label[j].masked_fill_(mask, color[j])
+        npimg = colored_label.numpy()
+        npimg = np.transpose(npimg, (1, 2, 0))
+        mode = None
+        if npimg.shape[2] == 1:
+            npimg = npimg[:, :, 0]
+            mode = "L"
 
-    return Image.fromarray(npimg, mode=mode)
+        return Image.fromarray(npimg, mode=mode)
 
 
 class CamVid(data.Dataset):
 
     def __init__(self, root, split='train', joint_transform=None,
-                 transform=None, download=False,
+                 transform=None, target_transform=LabelToLongTensor(), download=False,
                  loader=default_loader):
         self.root = root
         assert split in ('train', 'val', 'test')
         self.split = split
         self.transform = transform
+        self.target_transform = target_transform
         self.joint_transform = joint_transform
         self.loader = loader
         self.class_weight = class_weight
@@ -93,7 +100,7 @@ class CamVid(data.Dataset):
         if download:
             self.download()
 
-        self.imgs = make_dataset(os.path.join(self.root, self.split))
+        self.imgs = _make_dataset(os.path.join(self.root, self.split))
 
     def __getitem__(self, index):
         path = self.imgs[index]
@@ -106,7 +113,7 @@ class CamVid(data.Dataset):
         if self.transform is not None:
             img = self.transform(img)
 
-        target = LabelToLongTensor(target)
+        target = self.target_transform(target)
         return img, target
 
     def __len__(self):
