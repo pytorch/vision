@@ -50,6 +50,8 @@ The following dataset loaders are available:
 -  `Imagenet-12 <#imagenet-12>`__
 -  `CIFAR10 and CIFAR100 <#cifar>`__
 -  `STL10 <#stl10>`__
+-  `SVHN <#svhn>`__
+-  `PhotoTour <#phototour>`__
 
 Datasets have the API: - ``__getitem__`` - ``__len__`` They all subclass
 from ``torch.utils.data.Dataset`` Hence, they can all be multi-threaded
@@ -154,7 +156,7 @@ CIFAR
    ``cifar-10-batches-py``
 -  ``train`` : ``True`` = Training set, ``False`` = Test set
 -  ``download`` : ``True`` = downloads the dataset from the internet and
-   puts it in root directory. If dataset already downloaded, does not do
+   puts it in root directory. If dataset is already downloaded, does not do
    anything.
 
 STL10
@@ -166,7 +168,18 @@ STL10
 -  ``split`` : ``'train'`` = Training set, ``'test'`` = Test set, ``'unlabeled'`` = Unlabeled set,
     ``'train+unlabeled'`` = Training + Unlabeled set (missing label marked as ``-1``)
 -  ``download`` : ``True`` = downloads the dataset from the internet and
-    puts it in root directory. If dataset already downloaded, does not do
+    puts it in root directory. If dataset is already downloaded, does not do
+    anything.
+
+SVHN
+~~~~~
+
+``dset.SVHN(root, split='train', transform=None, target_transform=None, download=False)``
+
+-  ``root`` : root directory of dataset where there is folder ``SVHN``
+-  ``split`` : ``'train'`` = Training set, ``'test'`` = Test set, ``'extra'`` = Extra training set
+-  ``download`` : ``True`` = downloads the dataset from the internet and
+    puts it in root directory. If dataset is already downloaded, does not do
     anything.
 
 ImageFolder
@@ -202,6 +215,23 @@ here <https://github.com/facebook/fb.resnet.torch/blob/master/INSTALL.md#downloa
 
 `Here is an
 example <https://github.com/pytorch/examples/blob/27e2a46c1d1505324032b1d94fc6ce24d5b67e97/imagenet/main.py#L48-L62>`__.
+
+PhotoTour
+~~~~~~~~~
+
+**Learning Local Image Descriptors Data**
+http://phototour.cs.washington.edu/patches/default.htm
+
+.. code:: python
+
+    import torchvision.datasets as dset
+    import torchvision.transforms as transforms
+    dataset = dset.PhotoTour(root = 'dir where images are',
+                             name = 'name of the dataset to load',
+                             transform=transforms.ToTensor())
+
+    print('Loaded PhotoTour: {} with {} images.'
+          .format(dataset.name, len(dataset.data)))
 
 Models
 ======
@@ -240,6 +270,15 @@ These can be constructed by passing ``pretrained=True``:
     alexnet = models.alexnet(pretrained=True)
     squeezenet = models.squeezenet1_0(pretrained=True)
 
+
+All pre-trained models expect input images normalized in the same way, i.e.
+mini-batches of 3-channel RGB images of shape (3 x H x W), where H and W are expected
+to be atleast 224.
+
+The images have to be loaded in to a range of [0, 1] and then
+normalized using `mean=[0.485, 0.456, 0.406]` and `std=[0.229, 0.224, 0.225]`
+
+An example of such normalization can be found in `the imagenet example here` <https://github.com/pytorch/examples/blob/42e5b996718797e45c46a25c55b031e6768f8440/imagenet/main.py#L89-L101>
 
 Transforms
 ==========
@@ -349,15 +388,30 @@ For example:
 Utils
 =====
 
-make\_grid(tensor, nrow=8, padding=2)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+make\_grid(tensor, nrow=8, padding=2, normalize=False, range=None, scale\_each=False)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Given a 4D mini-batch Tensor of shape (B x C x H x W), makes a grid of
-images
+Given a 4D mini-batch Tensor of shape (B x C x H x W),
+or a list of images all of the same size,
+makes a grid of images
 
-save\_image(tensor, filename, nrow=8, padding=2)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+normalize=True will shift the image to the range (0, 1),
+by subtracting the minimum and dividing by the maximum pixel value.
+
+if range=(min, max) where min and max are numbers, then these numbers are used to
+normalize the image.
+
+scale_each=True will scale each image in the batch of images separately rather than
+computing the (min, max) over all images.
+
+`Example usage is given in this notebook` <https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91>
+
+save\_image(tensor, filename, nrow=8, padding=2, normalize=False, range=None, scale\_each=False)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Saves a given Tensor into an image file.
 
 If given a mini-batch tensor, will save the tensor as a grid of images.
+
+All options after `filename` are passed through to `make_grid`. Refer to it's documentation for
+more details

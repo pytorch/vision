@@ -9,7 +9,6 @@ readme = open('README.rst').read()
 
 VERSION = '0.1.7'
 
-# same as ./requirements.txt
 requirements = [
     'numpy',
     'pillow',
