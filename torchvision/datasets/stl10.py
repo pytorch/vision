@@ -26,7 +26,8 @@ class STL10(CIFAR10):
         ['test_y.bin', '36f9794fa4beb8a2c72628de14fa638e']
     ]
 
-    def __init__(self, root, split='train', transform=None, target_transform=None, download=False):
+    def __init__(self, root, split='train',
+                 transform=None, target_transform=None, download=False):
         self.root = root
         self.transform = transform
         self.target_transform = target_transform
@@ -37,7 +38,8 @@ class STL10(CIFAR10):
 
         if not self._check_integrity():
             raise RuntimeError(
-                'Dataset not found or corrupted. You can use download=True to download it')
+                'Dataset not found or corrupted. '
+                'You can use download=True to download it')
 
         # now load the picked numpy arrays
         if self.split == 'train':

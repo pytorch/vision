@@ -6,12 +6,26 @@ from PIL import Image
 import torch
 import torch.utils.data as data
 
+from .utils import download_url, check_integrity
+
 
 class PhotoTour(data.Dataset):
     urls = {
-        'notredame': 'http://www.iis.ee.ic.ac.uk/~vbalnt/phototourism-patches/notredame.zip',
-        'yosemite': 'http://www.iis.ee.ic.ac.uk/~vbalnt/phototourism-patches/yosemite.zip',
-        'liberty': 'http://www.iis.ee.ic.ac.uk/~vbalnt/phototourism-patches/liberty.zip'
+        'notredame': [
+            'http://www.iis.ee.ic.ac.uk/~vbalnt/phototourism-patches/notredame.zip',
+            'notredame.zip',
+            '509eda8535847b8c0a90bbb210c83484'
+        ],
+        'yosemite': [
+            'http://www.iis.ee.ic.ac.uk/~vbalnt/phototourism-patches/yosemite.zip',
+            'yosemite.zip',
+            '533b2e8eb7ede31be40abc317b2fd4f0'
+        ],
+        'liberty': [
+            'http://www.iis.ee.ic.ac.uk/~vbalnt/phototourism-patches/liberty.zip',
+            'liberty.zip',
+            'fdd9152f138ea5ef2091746689176414'
+        ],
     }
     mean = {'notredame': 0.4854, 'yosemite': 0.4844, 'liberty': 0.4437}
     std = {'notredame': 0.1864, 'yosemite': 0.1818, 'liberty': 0.2019}
@@ -37,7 +51,7 @@ class PhotoTour(data.Dataset):
         if download:
             self.download()
 
-        if not self._check_exists():
+        if not self._check_datafile_exists():
             raise RuntimeError('Dataset not found.' +
                                ' You can use download=True to download it')
 
@@ -62,59 +76,45 @@ class PhotoTour(data.Dataset):
             return self.lens[self.name]
         return len(self.matches)
 
-    def _check_exists(self):
+    def _check_datafile_exists(self):
         return os.path.exists(self.data_file)
 
     def _check_downloaded(self):
         return os.path.exists(self.data_dir)
 
     def download(self):
-        from six.moves import urllib
-        print('\n-- Loading PhotoTour dataset: {}\n'.format(self.name))
-
-        if self._check_exists():
+        if self._check_datafile_exists():
             print('# Found cached data {}'.format(self.data_file))
             return
 
         if not self._check_downloaded():
             # download files
-            url = self.urls[self.name]
-            filename = url.rpartition('/')[2]
-            file_path = os.path.join(self.root, filename)
+            url = self.urls[self.name][0]
+            filename = self.urls[self.name][1]
+            md5 = self.urls[self.name][2]
+            fpath = os.path.join(self.root, filename)
 
-            try:
-                os.makedirs(self.root)
-            except OSError as e:
-                if e.errno == errno.EEXIST:
-                    pass
-                else:
-                    raise
-
-            print('# Downloading {} into {}\n\nIt might take while.'
-                  ' Please grab yourself a coffee and relax.'
-                  .format(url, file_path))
-
-            urllib.request.urlretrieve(url, file_path)
-            assert os.path.exists(file_path)
+            download_url(url, self.root, filename, md5)
 
             print('# Extracting data {}\n'.format(self.data_down))
 
             import zipfile
-            with zipfile.ZipFile(file_path, 'r') as z:
+            with zipfile.ZipFile(fpath, 'r') as z:
                 z.extractall(self.data_dir)
-            os.unlink(file_path)
+
+            os.unlink(fpath)
 
         # process and save as torch files
         print('# Caching data {}'.format(self.data_file))
 
-        data_set = (
+        dataset = (
             read_image_file(self.data_dir, self.image_ext, self.lens[self.name]),
             read_info_file(self.data_dir, self.info_file),
             read_matches_files(self.data_dir, self.matches_files)
         )
 
         with open(self.data_file, 'wb') as f:
-            torch.save(data_set, f)
+            torch.save(dataset, f)
 
 
 def read_image_file(data_dir, image_ext, n):
@@ -138,8 +138,8 @@ def read_image_file(data_dir, image_ext, n):
     patches = []
     list_files = find_files(data_dir, image_ext)
 
-    for file_path in list_files:
-        img = Image.open(file_path)
+    for fpath in list_files:
+        img = Image.open(fpath)
         for y in range(0, 1024, 64):
             for x in range(0, 1024, 64):
                 patch = img.crop((x, y, x + 64, y + 64))
@@ -168,14 +168,3 @@ def read_matches_files(data_dir, matches_file):
             l = line.split()
             matches.append([int(l[0]), int(l[3]), int(l[1] == l[4])])
     return torch.LongTensor(matches)
-
-
-if __name__ == '__main__':
-    dataset = PhotoTour(root='/home/eriba/datasets/patches_dataset',
-                        name='notredame',
-                        download=True)
-
-    print('Loaded PhotoTour: {} with {} images.'
-          .format(dataset.name, len(dataset.data)))
-
-    assert len(dataset.data) == len(dataset.labels)

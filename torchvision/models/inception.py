@@ -31,6 +31,7 @@ def inception_v3(pretrained=False, **kwargs):
 
 
 class Inception3(nn.Module):
+
     def __init__(self, num_classes=1000, aux_logits=True, transform_input=False):
         super(Inception3, self).__init__()
         self.aux_logits = aux_logits
@@ -126,6 +127,7 @@ class Inception3(nn.Module):
 
 
 class InceptionA(nn.Module):
+
     def __init__(self, in_channels, pool_features):
         super(InceptionA, self).__init__()
         self.branch1x1 = BasicConv2d(in_channels, 64, kernel_size=1)
@@ -157,6 +159,7 @@ class InceptionA(nn.Module):
 
 
 class InceptionB(nn.Module):
+
     def __init__(self, in_channels):
         super(InceptionB, self).__init__()
         self.branch3x3 = BasicConv2d(in_channels, 384, kernel_size=3, stride=2)
@@ -179,6 +182,7 @@ class InceptionB(nn.Module):
 
 
 class InceptionC(nn.Module):
+
     def __init__(self, in_channels, channels_7x7):
         super(InceptionC, self).__init__()
         self.branch1x1 = BasicConv2d(in_channels, 192, kernel_size=1)
@@ -217,6 +221,7 @@ class InceptionC(nn.Module):
 
 
 class InceptionD(nn.Module):
+
     def __init__(self, in_channels):
         super(InceptionD, self).__init__()
         self.branch3x3_1 = BasicConv2d(in_channels, 192, kernel_size=1)
@@ -242,6 +247,7 @@ class InceptionD(nn.Module):
 
 
 class InceptionE(nn.Module):
+
     def __init__(self, in_channels):
         super(InceptionE, self).__init__()
         self.branch1x1 = BasicConv2d(in_channels, 320, kernel_size=1)
@@ -283,6 +289,7 @@ class InceptionE(nn.Module):
 
 
 class InceptionAux(nn.Module):
+
     def __init__(self, in_channels, num_classes):
         super(InceptionAux, self).__init__()
         self.conv0 = BasicConv2d(in_channels, 128, kernel_size=1)
@@ -307,6 +314,7 @@ class InceptionAux(nn.Module):
 
 
 class BasicConv2d(nn.Module):
+
     def __init__(self, in_channels, out_channels, **kwargs):
         super(BasicConv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)

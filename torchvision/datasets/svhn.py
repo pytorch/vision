@@ -8,6 +8,7 @@ import numpy as np
 import sys
 from .utils import download_url, check_integrity
 
+
 class SVHN(data.Dataset):
     url = ""
     filename = ""
