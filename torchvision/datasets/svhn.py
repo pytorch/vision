@@ -6,7 +6,7 @@ import os.path
 import errno
 import numpy as np
 import sys
-
+from .utils import download_url, check_integrity
 
 class SVHN(data.Dataset):
     url = ""
@@ -21,14 +21,16 @@ class SVHN(data.Dataset):
         'extra': ["http://ufldl.stanford.edu/housenumbers/extra_32x32.mat",
                   "extra_32x32.mat", "a93ce644f1a588dc4d68dda5feec44a7"]}
 
-    def __init__(self, root, split='train', transform=None, target_transform=None, download=False):
+    def __init__(self, root, split='train',
+                 transform=None, target_transform=None, download=False):
         self.root = root
         self.transform = transform
         self.target_transform = target_transform
         self.split = split  # training set or test set or extra set
 
         if self.split not in self.split_list:
-            raise ValueError('Wrong split entered! Please use split="train" or split="extra" or split="test"')
+            raise ValueError('Wrong split entered! Please use split="train" '
+                             'or split="extra" or split="test"')
 
         self.url = self.split_list[split][0]
         self.filename = self.split_list[split][1]
@@ -71,41 +73,11 @@ class SVHN(data.Dataset):
         return len(self.data)
 
     def _check_integrity(self):
-        import hashlib
         root = self.root
         md5 = self.split_list[self.split][2]
         fpath = os.path.join(root, self.filename)
-        if not os.path.isfile(fpath):
-            return False
-        md5c = hashlib.md5(open(fpath, 'rb').read()).hexdigest()
-        if md5c != md5:
-            return False
-        return True
+        return check_integrity(fpath, md5)
 
     def download(self):
-        from six.moves import urllib
-        import tarfile
-        import hashlib
-
-        root = self.root
-        fpath = os.path.join(root, self.filename)
-
-        try:
-            os.makedirs(root)
-        except OSError as e:
-            if e.errno == errno.EEXIST:
-                pass
-            else:
-                raise
-
-        if self._check_integrity():
-            print('Files already downloaded and verified')
-            return
-
-        # downloads file
-        if os.path.isfile(fpath):
-            print('Using downloaded file: ' + fpath)
-        else:
-            print('Downloading ' + self.url + ' to ' + fpath)
-            urllib.request.urlretrieve(self.url, fpath)
-            print ('Downloaded!')
+        md5 = self.split_list[self.split][2]
+        download_url(self.url, self.root, self.filename, md5)
