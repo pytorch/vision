@@ -1,9 +1,18 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.model_zoo as model_zoo
 from collections import OrderedDict
 
 __all__ = ['DenseNet', 'densenet121', 'densenet169', 'densenet201', 'densenet161']
+
+
+model_urls = {
+    'densenet121': 'https://download.pytorch.org/models/densenet121-241335ed.pth',
+    'densenet169': 'https://download.pytorch.org/models/densenet169-6f0f7f60.pth',
+    'densenet201': 'https://download.pytorch.org/models/densenet201-4c113574.pth',
+    'densenet161': 'https://download.pytorch.org/models/densenet161-17b70270.pth',
+}
 
 
 def densenet121(pretrained=False, **kwargs):
@@ -13,9 +22,10 @@ def densenet121(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
+    model = DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 24, 16))
     if pretrained:
-        raise NotImplementedError('Sorry, model not yet uploaded :(')
-    return DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 24, 16))
+        model.load_state_dict(model_zoo.load_url(model_urls['densenet121']))
+    return model
 
 
 def densenet169(pretrained=False, **kwargs):
@@ -25,9 +35,10 @@ def densenet169(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
+    model = DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 32, 32))
     if pretrained:
-        raise NotImplementedError('Sorry, model not yet uploaded :(')
-    return DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 32, 32))
+        model.load_state_dict(model_zoo.load_url(model_urls['densenet169']))
+    return model
 
 
 def densenet201(pretrained=False, **kwargs):
@@ -37,9 +48,10 @@ def densenet201(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
+    model = DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 48, 32))
     if pretrained:
-        raise NotImplementedError('Sorry, model not yet uploaded :(')
-    return DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 48, 32))
+        model.load_state_dict(model_zoo.load_url(model_urls['densenet201']))
+    return model
 
 
 def densenet161(pretrained=False, **kwargs):
@@ -49,9 +61,10 @@ def densenet161(pretrained=False, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
+    model = DenseNet(num_init_features=96, growth_rate=48, block_config=(6, 12, 36, 24))
     if pretrained:
-        raise NotImplementedError('Sorry, model not yet uploaded :(')
-    return DenseNet(num_init_features=96, growth_rate=48, block_config=(6, 12, 36, 24))
+        model.load_state_dict(model_zoo.load_url(model_urls['densenet161']))
+    return model
 
 
 class _DenseLayer(nn.Sequential):
