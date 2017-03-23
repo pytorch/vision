@@ -90,6 +90,6 @@ def save_image(tensor, filename, nrow=8, padding=2,
     tensor = tensor.cpu()
     grid = make_grid(tensor, nrow=nrow, padding=padding,
                      normalize=normalize, range=range, scale_each=scale_each)
-    ndarr = grid.mul(255).clip(0, 255).byte().permute(1, 2, 0).numpy()
+    ndarr = grid.mul(255).clamp(0, 255).byte().permute(1, 2, 0).numpy()
     im = Image.fromarray(ndarr)
     im.save(filename)
