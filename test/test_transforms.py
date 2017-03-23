@@ -176,5 +176,6 @@ class Tester(unittest.TestCase):
         assert img.mode == 'I;16'
         assert np.allclose(img, img_data[:, :, 0])
 
+
 if __name__ == '__main__':
     unittest.main()
