@@ -169,11 +169,33 @@ class Tester(unittest.TestCase):
         l, = img.split()
         assert np.allclose(l, img_data[:, :, 0])
 
-    def test_ndarray16_to_pil_image(self):
+    def test_ndarray_bad_types_to_pil_image(self):
         trans = transforms.ToPILImage()
-        img_data = np.random.randint(0, 65535, [4, 4, 1], np.uint16)
+        with self.assertRaises(AssertionError):
+            trans(np.ones([4, 4, 1], np.int64))
+            trans(np.ones([4, 4, 1], np.uint16))
+            trans(np.ones([4, 4, 1], np.uint32))
+            trans(np.ones([4, 4, 1], np.float64))
+
+    def test_ndarray_gray_float32_to_pil_image(self):
+        trans = transforms.ToPILImage()
+        img_data = torch.FloatTensor(4, 4, 1).random_().numpy()
+        img = trans(img_data)
+        assert img.mode == 'F'
+        assert np.allclose(img, img_data[:, :, 0])
+
+    def test_ndarray_gray_int16_to_pil_image(self):
+        trans = transforms.ToPILImage()
+        img_data = torch.ShortTensor(4, 4, 1).random_().numpy()
         img = trans(img_data)
         assert img.mode == 'I;16'
+        assert np.allclose(img, img_data[:, :, 0])
+
+    def test_ndarray_gray_int32_to_pil_image(self):
+        trans = transforms.ToPILImage()
+        img_data = torch.IntTensor(4, 4, 1).random_().numpy()
+        img = trans(img_data)
+        assert img.mode == 'I'
         assert np.allclose(img, img_data[:, :, 0])
 
 

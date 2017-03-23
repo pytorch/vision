@@ -73,8 +73,10 @@ class ToPILImage(object):
 
             if npimg.dtype == np.uint8:
                 mode = 'L'
-            if npimg.dtype == np.uint16:
+            if npimg.dtype == np.int16:
                 mode = 'I;16'
+            if npimg.dtype == np.int32:
+                mode = 'I'
             elif npimg.dtype == np.float32:
                 mode = 'F'
         else:
