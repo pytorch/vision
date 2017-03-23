@@ -70,7 +70,10 @@ class LSUN(data.Dataset):
         dset_opts = ['train', 'val', 'test']
         self.db_path = db_path
         if type(classes) == str and classes in dset_opts:
-            classes = [c + '_' + classes for c in categories]
+            if classes == 'test':
+                classes = [classes]
+            else:
+                classes = [c + '_' + classes for c in categories]
         if type(classes) == list:
             for c in classes:
                 c_short = c.split('_')
