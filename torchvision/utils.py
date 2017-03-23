@@ -8,8 +8,8 @@ def make_grid(tensor, nrow=8, padding=2,
     """
     Given a 4D mini-batch Tensor of shape (B x C x H x W),
     or a list of images all of the same size,
-    makes a grid of images
-
+    makes a grid of images of size (B / nrow, nrow).  
+        
     normalize=True will shift the image to the range (0, 1),
     by subtracting the minimum and dividing by the maximum pixel value.
 
