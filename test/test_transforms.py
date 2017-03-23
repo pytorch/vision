@@ -158,22 +158,16 @@ class Tester(unittest.TestCase):
         img_data_byte = torch.ByteTensor(1, 4, 4).random_(0, 255)
         img_data_short = torch.ShortTensor(1, 4, 4).random_()
         img_data_int = torch.IntTensor(1, 4, 4).random_()
-        img_data_float = torch.FloatTensor(1, 4, 4).uniform_()
 
         img_byte = trans(img_data_byte)
         img_short = trans(img_data_short)
         img_int = trans(img_data_int)
-        img_float = trans(img_data_float)
         assert img_byte.mode == 'L'
         assert img_short.mode == 'I;16'
         assert img_int.mode == 'I'
-        #assert img_float.mode == 'F'
 
         assert np.allclose(img_data_short.numpy(), to_tensor(img_short).numpy())
         assert np.allclose(img_data_int.numpy(), to_tensor(img_int).numpy())
-        # would cause breaking changes as ToTensor converts to range [0, 1]
-        #assert np.allclose(img_data_byte.numpy(), to_tensor(img_byte).numpy())
-        #assert np.allclose(img_data_float.numpy(), to_tensor(img_float).numpy())
 
     def test_ndarray_to_pil_image(self):
         trans = transforms.ToPILImage()
