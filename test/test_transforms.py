@@ -169,6 +169,12 @@ class Tester(unittest.TestCase):
         l, = img.split()
         assert np.allclose(l, img_data[:, :, 0])
 
+    def test_ndarray16_to_pil_image(self):
+        trans = transforms.ToPILImage()
+        img_data = np.random.randint(0, 65535, [4, 4, 1], np.uint16)
+        img = trans(img_data)
+        assert img.mode == 'I;16'
+        assert np.allclose(img, img_data[:, :, 0])
 
 if __name__ == '__main__':
     unittest.main()
