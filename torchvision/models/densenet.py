@@ -139,9 +139,9 @@ class DenseNet(nn.Module):
             self.features.add_module('denseblock%d' % (i + 1), block)
             num_features = num_features + num_layers * growth_rate
             if i != len(block_config) - 1:
-                trans = _Transition(num_input_features=num_features, num_output_features=num_features / 2)
+                trans = _Transition(num_input_features=num_features, num_output_features=num_features // 2)
                 self.features.add_module('transition%d' % (i + 1), trans)
-                num_features = num_features / 2
+                num_features = num_features // 2
 
         # Final batch norm
         self.features.add_module('norm5', nn.BatchNorm2d(num_features))
