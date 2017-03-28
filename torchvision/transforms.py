@@ -127,17 +127,20 @@ class Scale(object):
         self.interpolation = interpolation
 
     def __call__(self, img):
-        w, h = img.size
-        if (w <= h and w == self.size) or (h <= w and h == self.size):
-            return img
-        if w < h:
-            ow = self.size
-            oh = int(self.size * h / w)
-            return img.resize((ow, oh), self.interpolation)
+        if isinstance(self.size, int): 
+            w, h = img.size
+            if (w <= h and w == self.size) or (h <= w and h == self.size):
+                return img
+            if w < h:
+                ow = self.size
+                oh = int(self.size * h / w)
+                return img.resize((ow, oh), self.interpolation)
+            else:
+                oh = self.size
+                ow = int(self.size * w / h)
+                return img.resize((ow, oh), self.interpolation)
         else:
-            oh = self.size
-            ow = int(self.size * w / h)
-            return img.resize((ow, oh), self.interpolation)
+            return img.resize(self.size, self.interpolation)
 
 
 class CenterCrop(object):
