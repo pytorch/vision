@@ -55,7 +55,7 @@ def densenet201(pretrained=False, **kwargs):
 
 
 def densenet161(pretrained=False, **kwargs):
-    r"""Densenet-201 model from
+    r"""Densenet-161 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`
 
     Args:
