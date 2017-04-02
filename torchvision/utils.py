@@ -25,7 +25,7 @@ def make_grid(tensor, nrow=8, padding=2,
     if isinstance(tensor, list):
         tensorlist = tensor
         numImages = len(tensorlist)
-        size = torch.Size(torch.Size([long(numImages)]) + tensorlist[0].size())
+        size = torch.Size(torch.Size([numImages]) + tensorlist[0].size())
         tensor = tensorlist[0].new(size)
         for i in irange(numImages):
             tensor[i].copy_(tensorlist[i])
