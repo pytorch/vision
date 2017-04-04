@@ -212,12 +212,15 @@ class RandomCrop(object):
 
 
 class RandomHorizontalFlip(object):
-    """Randomly horizontally flips the given PIL.Image with a probability of 0.5
+    """Randomly horizontally flips the given PIL.Image or np.ndarray with a probability of 0.5
     """
 
     def __call__(self, img):
         if random.random() < 0.5:
-            return img.transpose(Image.FLIP_LEFT_RIGHT)
+            if isinstance(img, np.ndarray):
+                return np.fliplr(img)
+            else:
+                return img.transpose(Image.FLIP_LEFT_RIGHT)
         return img
 
 
