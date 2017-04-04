@@ -172,7 +172,7 @@ STL10
     anything.
 
 SVHN
-~~~~~
+~~~~
 
 ``dset.SVHN(root, split='train', transform=None, target_transform=None, download=False)``
 
