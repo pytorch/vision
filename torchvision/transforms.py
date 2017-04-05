@@ -115,13 +115,10 @@ class Normalize(object):
 
 class Scale(object):
     """Rescales the input PIL.Image to the given 'size'.
-    
     If 'size' is a 2-element tuple, it will be the exactly size to scale.
-    
-    If 'size' is a number, it will indicate the size of the smaller edge. 
+    If 'size' is a number, it will indicate the size of the smaller edge.
     For example, if height > width, then image will be
     rescaled to (size * height / width, size)
-    
     size: size of the exactly size or the smaller edge
     interpolation: Default: PIL.Image.BILINEAR
     """
@@ -132,7 +129,7 @@ class Scale(object):
         self.interpolation = interpolation
 
     def __call__(self, img):
-        if isinstance(self.size, int): 
+        if isinstance(self.size, int):
             w, h = img.size
             if (w <= h and w == self.size) or (h <= w and h == self.size):
                 return img
