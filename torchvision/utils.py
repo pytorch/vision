@@ -3,7 +3,7 @@ import math
 irange = range
 
 
-def make_grid(tensor, nrow=8, padding=2,
+def make_grid(tensor, nrow=8, padding=2, pad_value=0,
               normalize=False, range=None, scale_each=False):
     """
     Given a 4D mini-batch Tensor of shape (B x C x H x W),
@@ -19,6 +19,8 @@ def make_grid(tensor, nrow=8, padding=2,
     scale_each=True will scale each image in the batch of images separately rather than
     computing the (min, max) over all images.
 
+    pad_value=<float> sets the value for the padded pixels.
+ 
     [Example usage is given in this notebook](https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91)
     """
     # if list of tensors, convert to a 4D mini-batch Tensor
@@ -65,7 +67,7 @@ def make_grid(tensor, nrow=8, padding=2,
     xmaps = min(nrow, nmaps)
     ymaps = int(math.ceil(float(nmaps) / xmaps))
     height, width = int(tensor.size(2) + padding), int(tensor.size(3) + padding)
-    grid = tensor.new(3, height * ymaps + 1 + padding // 2, width * xmaps + 1 + padding // 2).fill_(0)
+    grid = tensor.new(3, height * ymaps + 1 + padding // 2, width * xmaps + 1 + padding // 2).fill_(pad_value)
     k = 0
     for y in irange(ymaps):
         for x in irange(xmaps):
