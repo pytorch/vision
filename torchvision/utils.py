@@ -80,7 +80,7 @@ def make_grid(tensor, nrow=8, padding=2, pad_value=0,
     return grid
 
 
-def save_image(tensor, filename, nrow=8, padding=2,
+def save_image(tensor, filename, nrow=8, padding=2, pad_value=0,
                normalize=False, range=None, scale_each=False):
     """
     Saves a given Tensor into an image file.
@@ -90,7 +90,7 @@ def save_image(tensor, filename, nrow=8, padding=2,
     """
     from PIL import Image
     tensor = tensor.cpu()
-    grid = make_grid(tensor, nrow=nrow, padding=padding,
+    grid = make_grid(tensor, nrow=nrow, padding=padding, pad_value=pad_value,
                      normalize=normalize, range=range, scale_each=scale_each)
     ndarr = grid.mul(255).clamp(0, 255).byte().permute(1, 2, 0).numpy()
     im = Image.fromarray(ndarr)
