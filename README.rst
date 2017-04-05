@@ -309,7 +309,7 @@ Transforms on PIL.Image
 
 Rescales the input PIL.Image to the given 'size'. 
 
-If 'size' is a 2-element tuple, it will be the exactly size to scale.
+If 'size' is a 2-element tuple or list, it will be the exactly size to scale.
 
 If 'size' is a number, it will indicate the size of the smaller edge. 
 For example, if height > width, then image will be rescaled to (size \*
