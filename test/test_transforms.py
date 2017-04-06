@@ -78,6 +78,14 @@ class Tester(unittest.TestCase):
         assert result.size(1) == oheight
         assert result.size(2) == owidth
 
+        result = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.Scale([owidth, oheight]),
+            transforms.ToTensor(),
+        ])(img)
+        assert result.size(1) == oheight
+        assert result.size(2) == owidth
+
     def test_random_crop(self):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
