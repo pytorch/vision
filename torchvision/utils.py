@@ -3,8 +3,8 @@ import math
 irange = range
 
 
-def make_grid(tensor, nrow=8, padding=2, pad_value=0,
-              normalize=False, range=None, scale_each=False):
+def make_grid(tensor, nrow=8, padding=2,
+              normalize=False, range=None, scale_each=False, pad_value=0):
     """
     Given a 4D mini-batch Tensor of shape (B x C x H x W),
     or a list of images all of the same size,
@@ -80,8 +80,8 @@ def make_grid(tensor, nrow=8, padding=2, pad_value=0,
     return grid
 
 
-def save_image(tensor, filename, nrow=8, padding=2, pad_value=0,
-               normalize=False, range=None, scale_each=False):
+def save_image(tensor, filename, nrow=8, padding=2,
+               normalize=False, range=None, scale_each=False, pad_value=0):
     """
     Saves a given Tensor into an image file.
     If given a mini-batch tensor, will save the tensor as a grid of images by calling `make_grid`.
