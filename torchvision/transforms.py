@@ -6,6 +6,7 @@ from PIL import Image, ImageOps
 import numpy as np
 import numbers
 import types
+import collections
 
 
 class Compose(object):
@@ -115,29 +116,34 @@ class Normalize(object):
 
 class Scale(object):
     """Rescales the input PIL.Image to the given 'size'.
-    'size' will be the size of the smaller edge.
+    If 'size' is a 2-element tuple or list in the order of (width, height), it will be the exactly size to scale.
+    If 'size' is a number, it will indicate the size of the smaller edge.
     For example, if height > width, then image will be
     rescaled to (size * height / width, size)
-    size: size of the smaller edge
+    size: size of the exactly size or the smaller edge
     interpolation: Default: PIL.Image.BILINEAR
     """
 
     def __init__(self, size, interpolation=Image.BILINEAR):
+        assert isinstance(size, int) or (isinstance(size, collections.Iterable) and len(size) == 2)
         self.size = size
         self.interpolation = interpolation
 
     def __call__(self, img):
-        w, h = img.size
-        if (w <= h and w == self.size) or (h <= w and h == self.size):
-            return img
-        if w < h:
-            ow = self.size
-            oh = int(self.size * h / w)
-            return img.resize((ow, oh), self.interpolation)
+        if isinstance(self.size, int):
+            w, h = img.size
+            if (w <= h and w == self.size) or (h <= w and h == self.size):
+                return img
+            if w < h:
+                ow = self.size
+                oh = int(self.size * h / w)
+                return img.resize((ow, oh), self.interpolation)
+            else:
+                oh = self.size
+                ow = int(self.size * w / h)
+                return img.resize((ow, oh), self.interpolation)
         else:
-            oh = self.size
-            ow = int(self.size * w / h)
-            return img.resize((ow, oh), self.interpolation)
+            return img.resize(self.size, self.interpolation)
 
 
 class CenterCrop(object):
