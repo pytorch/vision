@@ -4,7 +4,7 @@ irange = range
 
 
 def make_grid(tensor, nrow=8, padding=2,
-              normalize=False, range=None, scale_each=False):
+              normalize=False, range=None, scale_each=False, pad_value=0):
     """
     Given a 4D mini-batch Tensor of shape (B x C x H x W),
     or a list of images all of the same size,
@@ -18,6 +18,8 @@ def make_grid(tensor, nrow=8, padding=2,
 
     scale_each=True will scale each image in the batch of images separately rather than
     computing the (min, max) over all images.
+
+    pad_value=<float> sets the value for the padded pixels.
 
     [Example usage is given in this notebook](https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91)
     """
@@ -65,7 +67,7 @@ def make_grid(tensor, nrow=8, padding=2,
     xmaps = min(nrow, nmaps)
     ymaps = int(math.ceil(float(nmaps) / xmaps))
     height, width = int(tensor.size(2) + padding), int(tensor.size(3) + padding)
-    grid = tensor.new(3, height * ymaps + 1 + padding // 2, width * xmaps + 1 + padding // 2).fill_(0)
+    grid = tensor.new(3, height * ymaps + 1 + padding // 2, width * xmaps + 1 + padding // 2).fill_(pad_value)
     k = 0
     for y in irange(ymaps):
         for x in irange(xmaps):
@@ -79,7 +81,7 @@ def make_grid(tensor, nrow=8, padding=2,
 
 
 def save_image(tensor, filename, nrow=8, padding=2,
-               normalize=False, range=None, scale_each=False):
+               normalize=False, range=None, scale_each=False, pad_value=0):
     """
     Saves a given Tensor into an image file.
     If given a mini-batch tensor, will save the tensor as a grid of images by calling `make_grid`.
@@ -88,7 +90,7 @@ def save_image(tensor, filename, nrow=8, padding=2,
     """
     from PIL import Image
     tensor = tensor.cpu()
-    grid = make_grid(tensor, nrow=nrow, padding=padding,
+    grid = make_grid(tensor, nrow=nrow, padding=padding, pad_value=pad_value,
                      normalize=normalize, range=range, scale_each=scale_each)
     ndarr = grid.mul(255).clamp(0, 255).byte().permute(1, 2, 0).numpy()
     im = Image.fromarray(ndarr)
