@@ -4,6 +4,8 @@ import math
 import random
 from PIL import Image, ImageOps
 import numpy as np
+import scipy as sp
+from scipy import misc
 import numbers
 import types
 
@@ -127,17 +129,27 @@ class Scale(object):
         self.interpolation = interpolation
 
     def __call__(self, img):
-        w, h = img.size
+        if isinstance(img, np.ndarray):
+            w, h, c = img.shape
+        else:
+            w, h = img.size
+
         if (w <= h and w == self.size) or (h <= w and h == self.size):
             return img
         if w < h:
             ow = self.size
             oh = int(self.size * h / w)
-            return img.resize((ow, oh), self.interpolation)
+            if isinstance(img, np.ndarray):
+                return misc.imresize(img, (oh, ow, c))
+            else:
+                return img.resize((ow, oh), self.interpolation)
         else:
             oh = self.size
             ow = int(self.size * w / h)
-            return img.resize((ow, oh), self.interpolation)
+            if isinstance(img, np.ndarray):
+                return misc.imresize(img, (oh, ow, c))
+            else:
+                return img.resize((ow, oh), self.interpolation)
 
 
 class CenterCrop(object):
