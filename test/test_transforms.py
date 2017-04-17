@@ -59,14 +59,20 @@ class Tester(unittest.TestCase):
             transforms.Scale(osize),
             transforms.ToTensor(),
         ])(img)
-        # print img.size()
-        # print 'output size:', osize
-        # print result.size()
         assert osize in result.size()
         if height < width:
             assert result.size(1) <= result.size(2)
         elif width < height:
             assert result.size(1) >= result.size(2)
+
+        result = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.Scale([osize, osize]),
+            transforms.ToTensor(),
+        ])(img)
+        assert osize in result.size()
+        assert result.size(1) == osize
+        assert result.size(2) == osize
 
         oheight = random.randint(5, 12) * 2
         owidth = random.randint(5, 12) * 2
