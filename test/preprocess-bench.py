@@ -4,6 +4,7 @@ from timeit import default_timer as timer
 from tqdm import tqdm
 import torch
 import torch.utils.data
+import torchvision
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 
@@ -15,10 +16,16 @@ parser.add_argument('--nThreads', '-j', default=2, type=int, metavar='N',
                     help='number of data loading threads (default: 2)')
 parser.add_argument('--batchSize', '-b', default=256, type=int, metavar='N',
                     help='mini-batch size (1 = pure stochastic) Default: 256')
+parser.add_argument('--accimage', action='store_true',
+                    help='use accimage')
 
 
 if __name__ == "__main__":
     args = parser.parse_args()
+
+    if args.accimage:
+        torchvision.set_image_backend('accimage')
+    print('Using {}'.format(torchvision.get_image_backend()))
 
     # Data loading code
     transform = transforms.Compose([
@@ -38,11 +45,13 @@ if __name__ == "__main__":
     train_iter = iter(train_loader)
 
     start_time = timer()
-    batch_count = 100 * args.nThreads
-    for i in tqdm(xrange(batch_count)):
+    batch_count = 20 * args.nThreads
+    for _ in tqdm(range(batch_count)):
         batch = next(train_iter)
     end_time = timer()
-    print("Performance: {dataset:.0f} minutes/dataset, {batch:.2f} secs/batch, {image:.2f} ms/image".format(
-        dataset=(end_time - start_time) * (float(len(train_loader)) / batch_count / 60.0),
-        batch=(end_time - start_time) / float(batch_count),
-        image=(end_time - start_time) / (batch_count * args.batchSize) * 1.0e+3))
+    print("Performance: {dataset:.0f} minutes/dataset, {batch:.1f} ms/batch,"
+          " {image:.2f} ms/image {rate:.0f} images/sec"
+          .format(dataset=(end_time - start_time) * (float(len(train_loader)) / batch_count / 60.0),
+                  batch=(end_time - start_time) / float(batch_count) * 1.0e+3,
+                  image=(end_time - start_time) / (batch_count * args.batchSize) * 1.0e+3,
+                  rate=(batch_count * args.batchSize) / (end_time - start_time)))

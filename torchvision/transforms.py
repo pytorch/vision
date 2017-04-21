@@ -3,6 +3,10 @@ import torch
 import math
 import random
 from PIL import Image, ImageOps
+try:
+    import accimage
+except ImportError:
+    accimage = None
 import numpy as np
 import numbers
 import types
@@ -42,6 +46,12 @@ class ToTensor(object):
             img = torch.from_numpy(pic.transpose((2, 0, 1)))
             # backard compability
             return img.float().div(255)
+
+        if accimage is not None and isinstance(pic, accimage.Image):
+            nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
+            pic.copyto(nppic)
+            return torch.from_numpy(nppic)
+
         # handle PIL Image
         if pic.mode == 'I':
             img = torch.from_numpy(np.array(pic, np.int32, copy=False))
