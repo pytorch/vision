@@ -4,8 +4,9 @@ architectures:
 -  `AlexNet`_
 -  `VGG`_
 -  `ResNet`_
--  `SqueezeNet`_
 -  `DenseNet`_
+-  `SqueezeNet`_
+-  `MobileNet`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -63,5 +64,6 @@ from .alexnet import *
 from .resnet import *
 from .vgg import *
 from .squeezenet import *
+from .mobilenet import *
 from .inception import *
 from .densenet import *
