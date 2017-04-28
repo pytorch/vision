@@ -44,7 +44,7 @@ class ToTensor(object):
         if isinstance(pic, np.ndarray):
             # handle numpy array
             img = torch.from_numpy(pic.transpose((2, 0, 1)))
-            # backard compability
+            # backward compatibility
             return img.float().div(255)
 
         if accimage is not None and isinstance(pic, accimage.Image):
