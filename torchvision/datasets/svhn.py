@@ -68,7 +68,7 @@ class SVHN(data.Dataset):
             extra_filename = self.split_list[split][1][1]
             loaded_mat = sio.loadmat(os.path.join(root, extra_filename))
             self.data = np.concatenate([self.data, loaded_mat['X']], axis=3)
-            self.labels = np.vstack(self.labels, loaded_mat['y'])
+            self.labels = np.vstack((self.labels, loaded_mat['y']))
         self.labels -= 1    # convert to zero-based indexing
         self.data = np.transpose(self.data, (3, 2, 0, 1))
     
@@ -95,13 +95,15 @@ class SVHN(data.Dataset):
         if self.split == "train_and_extra":
             md5 = self.split_list[self.split][0][2]
             fpath = os.path.join(root, self.filename)
+            train_integrity = check_integrity(fpath, md5)
             extra_filename = self.split_list[self.split][1][1]
             md5 = self.split_list[self.split][1][2]
             fpath = os.path.join(root, extra_filename)
+            return check_integrity(fpath, md5) and train_integrity
         else:
             md5 = self.split_list[self.split][2]
             fpath = os.path.join(root, self.filename)
-        return check_integrity(fpath, md5)
+            return check_integrity(fpath, md5)
 
     def download(self):
         if self.split == "train_and_extra":
