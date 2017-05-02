@@ -47,6 +47,10 @@ class CIFAR10(data.Dataset):
         ['test_batch', '40351d587109b95175f43aff81a1287e'],
     ]
 
+    mean = [125.30691805, 122.95039414, 113.86538318]
+    std = [62.99321928, 62.08870764, 66.70489964]
+
+
     def __init__(self, root, train=True,
                  transform=None, target_transform=None,
                  download=False):
@@ -176,3 +180,6 @@ class CIFAR100(CIFAR10):
     test_list = [
         ['test', 'f0ef6b0ae62326f3e7ffdfab6717acfc'],
     ]
+
+    mean = [129.30416561, 124.0699627, 112.43405006]
+    std = [68.1702429, 65.39180804, 70.41837019]
