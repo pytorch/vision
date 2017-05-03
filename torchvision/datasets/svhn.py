@@ -97,7 +97,10 @@ class SVHN(data.Dataset):
         return img, target
 
     def __len__(self):
-        return len(self.data)
+        if self.split == "test":
+            return len(self.test_data)
+        else:
+            return len(self.train_data)
 
     def _check_integrity(self):
         root = self.root
