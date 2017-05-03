@@ -61,19 +61,28 @@ class SVHN(data.Dataset):
         # reading(loading) mat file as array
         loaded_mat = sio.loadmat(os.path.join(root, self.filename))
 
-        self.data = loaded_mat['X']
-        self.labels = loaded_mat['y']
-        
-        if self.split == "train_and_extra":
-            extra_filename = self.split_list[split][1][1]
-            loaded_mat = sio.loadmat(os.path.join(root, extra_filename))
-            self.data = np.concatenate([self.data, loaded_mat['X']], axis=3)
-            self.labels = np.vstack((self.labels, loaded_mat['y']))
-        self.labels -= 1    # convert to zero-based indexing
-        self.data = np.transpose(self.data, (3, 2, 0, 1))
-    
+        if self.split == "test":
+            self.test_data = loaded_mat['X']
+            self.test_labels = loaded_mat['y']
+            self.test_labels %= 1    # convert to zero-based indexing # Note 10 == 0 so mod
+            self.test_data = np.transpose(self.test_data, (3, 2, 0, 1))
+        else:
+            self.train_data = loaded_mat['X']
+            self.train_labels = loaded_mat['y']
+
+            if self.split == "train_and_extra":
+                extra_filename = self.split_list[split][1][1]
+                loaded_mat = sio.loadmat(os.path.join(root, extra_filename))
+                self.train_data = np.concatenate([self.data, loaded_mat['X']], axis=3)
+                self.train_labels = np.vstack((self.labels, loaded_mat['y']))
+            self.train_labels %= 1    # convert to zero-based indexing # Note 10 == 0 so mod
+            self.train_data = np.transpose(self.data, (3, 2, 0, 1))
+
     def __getitem__(self, index):
-        img, target = self.data[index], self.labels[index]
+        if self.split == "test":
+            img, target = self.test_data[index], self.test_labels[index]
+        else:
+            img, target = self.train_data[index], self.train_labels[index]
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
@@ -115,4 +124,3 @@ class SVHN(data.Dataset):
         else:
             md5 = self.split_list[self.split][2]
             download_url(self.url, self.root, self.filename, md5)
-
