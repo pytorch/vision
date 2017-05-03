@@ -3,9 +3,7 @@ import torch.utils.data as data
 from PIL import Image
 import os
 import os.path
-import errno
 import numpy as np
-import sys
 from .utils import download_url, check_integrity
 
 
@@ -23,9 +21,9 @@ class SVHN(data.Dataset):
                   "extra_32x32.mat", "a93ce644f1a588dc4d68dda5feec44a7"],
         'train_and_extra': [
                 ["http://ufldl.stanford.edu/housenumbers/train_32x32.mat",
-                  "train_32x32.mat", "e26dedcc434d2e4c54c9b2d4a06d8373"],
+                 "train_32x32.mat", "e26dedcc434d2e4c54c9b2d4a06d8373"],
                 ["http://ufldl.stanford.edu/housenumbers/extra_32x32.mat",
-                  "extra_32x32.mat", "a93ce644f1a588dc4d68dda5feec44a7"]]}
+                 "extra_32x32.mat", "a93ce644f1a588dc4d68dda5feec44a7"]]}
 
     def __init__(self, root, split='train',
                  transform=None, target_transform=None, download=False):
@@ -36,7 +34,8 @@ class SVHN(data.Dataset):
 
         if self.split not in self.split_list:
             raise ValueError('Wrong split entered! Please use split="train" '
-                             'or split="extra" or split="test" or split="train_and_extra"')
+                             'or split="extra" or split="test" '
+                             'or split="train_and_extra" ')
 
         if self.split == "train_and_extra":
             self.url = self.split_list[split][0][0]
@@ -64,7 +63,8 @@ class SVHN(data.Dataset):
         if self.split == "test":
             self.test_data = loaded_mat['X']
             self.test_labels = loaded_mat['y']
-            self.test_labels %= 1    # convert to zero-based indexing # Note 10 == 0 so mod
+            # Note label 10 == 0 so modolu operator required
+            self.test_labels %= 1    # convert to zero-based indexing
             self.test_data = np.transpose(self.test_data, (3, 2, 0, 1))
         else:
             self.train_data = loaded_mat['X']
@@ -73,10 +73,13 @@ class SVHN(data.Dataset):
             if self.split == "train_and_extra":
                 extra_filename = self.split_list[split][1][1]
                 loaded_mat = sio.loadmat(os.path.join(root, extra_filename))
-                self.train_data = np.concatenate([self.data, loaded_mat['X']], axis=3)
-                self.train_labels = np.vstack((self.labels, loaded_mat['y']))
-            self.train_labels %= 1    # convert to zero-based indexing # Note 10 == 0 so mod
-            self.train_data = np.transpose(self.data, (3, 2, 0, 1))
+                self.train_data = np.concatenate([self.train_data,
+                                                  loaded_mat['X']], axis=3)
+                self.train_labels = np.vstack((self.train_labels,
+                                               loaded_mat['y']))
+            # Note label 10 == 0 so modolu operator required
+            self.train_labels %= 1    # convert to zero-based indexing
+            self.train_data = np.transpose(self.train_data, (3, 2, 0, 1))
 
     def __getitem__(self, index):
         if self.split == "test":
