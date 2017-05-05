@@ -64,7 +64,7 @@ class SVHN(data.Dataset):
             self.test_data = loaded_mat['X']
             self.test_labels = loaded_mat['y']
             # Note label 10 == 0 so modolu operator required
-            self.test_labels %= 1    # convert to zero-based indexing
+            self.test_labels %= 10    # convert to zero-based indexing
             self.test_data = np.transpose(self.test_data, (3, 2, 0, 1))
         else:
             self.train_data = loaded_mat['X']
@@ -78,7 +78,7 @@ class SVHN(data.Dataset):
                 self.train_labels = np.vstack((self.train_labels,
                                                loaded_mat['y']))
             # Note label 10 == 0 so modolu operator required
-            self.train_labels %= 1    # convert to zero-based indexing
+            self.train_labels %= 10    # convert to zero-based indexing
             self.train_data = np.transpose(self.train_data, (3, 2, 0, 1))
 
     def __getitem__(self, index):
