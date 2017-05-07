@@ -36,20 +36,20 @@ class BasicBlock(nn.Module):
         self.stride = stride
 
     def forward(self, x):
-        residual = x
+        orig = x
 
-        out = self.conv1(x)
-        out = self.bn1(out)
+        out = self.bn1(x)
         out = self.relu(out)
+        out = self.conv1(out)
 
-        out = self.conv2(out)
         out = self.bn2(out)
+        out = self.relu(out)
+        out = self.conv2(out)
 
         if self.downsample is not None:
-            residual = self.downsample(x)
+            orig = self.downsample(x)
 
-        out += residual
-        out = self.relu(out)
+        out += orig
 
         return out
 
@@ -71,24 +71,24 @@ class Bottleneck(nn.Module):
         self.stride = stride
 
     def forward(self, x):
-        residual = x
+        orig = x
 
-        out = self.conv1(x)
-        out = self.bn1(out)
+        out = self.bn1(x)
         out = self.relu(out)
+        out = self.conv1(out)
 
-        out = self.conv2(out)
         out = self.bn2(out)
         out = self.relu(out)
-
-        out = self.conv3(out)
+        out = self.conv2(out)
+        
         out = self.bn3(out)
-
-        if self.downsample is not None:
-            residual = self.downsample(x)
-
-        out += residual
         out = self.relu(out)
+        out = self.conv3(out)
+        
+        if self.downsample is not None:
+            orig = self.downsample(x)
+
+        out += orig
 
         return out
 
