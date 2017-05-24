@@ -52,7 +52,10 @@ class ToTensor(object):
         """
         if isinstance(pic, np.ndarray):
             # handle numpy array
-            img = torch.from_numpy(pic.transpose((2, 0, 1)))
+            if len(pic.shape) >= 3:
+                img = torch.from_numpy(pic.transpose((2, 0, 1)))
+            else:
+                img = torch.from_numpy(pic.reshape((1,) + pic.shape))
             # backward compatibility
             return img.float().div(255)
 
@@ -108,6 +111,8 @@ class ToPILImage(object):
         if torch.is_tensor(pic):
             npimg = np.transpose(pic.numpy(), (1, 2, 0))
         assert isinstance(npimg, np.ndarray), 'pic should be Tensor or ndarray'
+        if len(npimg.shape) < 3:
+            npimg = np.reshape(npimg, npimg.shape + (1,))
         if npimg.shape[2] == 1:
             npimg = npimg[:, :, 0]
 
