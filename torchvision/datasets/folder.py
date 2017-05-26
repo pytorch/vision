@@ -39,7 +39,10 @@ def make_dataset(dir, class_to_idx):
 
 
 def pil_loader(path):
-    return Image.open(path).convert('RGB')
+    # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
+    with open(path, 'rb') as f:
+        with Image.open(f) as img:
+            return img.convert('RGB')
 
 
 def accimage_loader(path):
