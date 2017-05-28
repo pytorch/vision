@@ -114,7 +114,7 @@ class LSUN(data.Dataset):
             if index < ind:
                 break
             target += 1
-            sub += ind
+            sub = ind
 
         db = self.dbs[target]
         index = index - sub
