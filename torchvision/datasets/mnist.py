@@ -20,9 +20,9 @@ class MNIST(data.Dataset):
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
         transform (callable, optional): A function/transform that  takes in an PIL image
-            and returns a transformed version. E.g, `transforms.RandomCrop`
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
-            target and transforms it
+            target and transforms it.
     """
     urls = [
         'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
