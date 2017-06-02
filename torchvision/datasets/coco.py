@@ -5,7 +5,7 @@ import os.path
 
 
 class CocoCaptions(data.Dataset):
-    """MS Coco Captions Dataset.
+    """`MS Coco Captions <http://mscoco.org/dataset/#captions-challenge2015>`_ Dataset.
 
     Args:
         root (string): Root directory where images are downloaded to.
@@ -80,7 +80,7 @@ class CocoCaptions(data.Dataset):
 
 
 class CocoDetection(data.Dataset):
-    """MS Coco Detection Dataset.
+    """`MS Coco Captions <http://mscoco.org/dataset/#detections-challenge2016>`_ Dataset.
 
     Args:
         root (string): Root directory where images are downloaded to.

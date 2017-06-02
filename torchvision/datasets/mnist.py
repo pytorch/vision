@@ -9,7 +9,7 @@ import codecs
 
 
 class MNIST(data.Dataset):
-    """MNIST Dataset.
+    """`MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where ``processed/training.pt``

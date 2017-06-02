@@ -15,7 +15,7 @@ from .utils import download_url, check_integrity
 
 
 class CIFAR10(data.Dataset):
-    """CIFAR10 Dataset.
+    """`CIFAR10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where directory
