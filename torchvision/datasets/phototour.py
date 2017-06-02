@@ -10,6 +10,19 @@ from .utils import download_url, check_integrity
 
 
 class PhotoTour(data.Dataset):
+    """`Learning Local Image Descriptors Data <http://phototour.cs.washington.edu/patches/default.htm>`_ Dataset.
+
+
+    Args:
+        root (string): Root directory where images are.
+        name (string): Name of the dataset to load.
+        transform (callable, optional): A function/transform that  takes in an PIL image
+            and returns a transformed version.
+        download (bool, optional): If true, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
+
+    """
     urls = {
         'notredame': [
             'http://www.iis.ee.ic.ac.uk/~vbalnt/phototourism-patches/notredame.zip',
@@ -59,6 +72,13 @@ class PhotoTour(data.Dataset):
         self.data, self.labels, self.matches = torch.load(self.data_file)
 
     def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (data1, data2, matches)
+        """
         if self.train:
             data = self.data[index]
             if self.transform is not None:

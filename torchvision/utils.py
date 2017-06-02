@@ -5,23 +5,25 @@ irange = range
 
 def make_grid(tensor, nrow=8, padding=2,
               normalize=False, range=None, scale_each=False, pad_value=0):
-    """
-    Given a 4D mini-batch Tensor of shape (B x C x H x W),
-    or a list of images all of the same size,
-    makes a grid of images of size (B / nrow, nrow).
+    """Make a grid of images.
 
-    normalize=True will shift the image to the range (0, 1),
-    by subtracting the minimum and dividing by the maximum pixel value.
+    Args:
+        tensor (Tensor or list): 4D mini-batch Tensor of shape (B x C x H x W)
+            or a list of images all of the same size.
+        nrows (int, optional): Number of rows in grid. Final grid size is
+            (B / nrow, nrow). Default is 8.
+        normalize (bool, optional): If True, shift the image to the range (0, 1),
+            by subtracting the minimum and dividing by the maximum pixel value.
+        range (tuple, optional): tuple (min, max) where min and max are numbers,
+            then these numbers are used to normalize the image. By default, min and max
+            are computed from the tensor.
+        scale_each(bool, optional): If True, scale each image in the batch of
+            images separately rather than the (min, max) over all images.
+        pad_value(float, optional): Value for the padded pixels.
 
-    if range=(min, max) where min and max are numbers, then these numbers are used to
-    normalize the image.
+    Example:
+        See this notebook `here <https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91>`_
 
-    scale_each=True will scale each image in the batch of images separately rather than
-    computing the (min, max) over all images.
-
-    pad_value=<float> sets the value for the padded pixels.
-
-    [Example usage is given in this notebook](https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91)
     """
     # if list of tensors, convert to a 4D mini-batch Tensor
     if isinstance(tensor, list):
@@ -82,11 +84,12 @@ def make_grid(tensor, nrow=8, padding=2,
 
 def save_image(tensor, filename, nrow=8, padding=2,
                normalize=False, range=None, scale_each=False, pad_value=0):
-    """
-    Saves a given Tensor into an image file.
-    If given a mini-batch tensor, will save the tensor as a grid of images by calling `make_grid`.
-    All options after `filename` are passed through to `make_grid`. Refer to it's documentation for
-    more details
+    """Save a given Tensor into an image file.
+
+    Args:
+        tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,
+            saves the tensor as a grid of images by calling ``make_grid``.
+        **kwargs: Other arguments are documented in ``make_grid``.
     """
     from PIL import Image
     tensor = tensor.cpu()

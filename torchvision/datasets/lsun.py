@@ -12,7 +12,6 @@ else:
 
 
 class LSUNClass(data.Dataset):
-
     def __init__(self, db_path, transform=None, target_transform=None):
         import lmdb
         self.db_path = db_path
@@ -58,8 +57,16 @@ class LSUNClass(data.Dataset):
 
 class LSUN(data.Dataset):
     """
-    db_path = root directory for the database files
-    classes = 'train' | 'val' | 'test' | ['bedroom_train', 'church_train', ...]
+    `LSUN <http://lsun.cs.princeton.edu>`_ dataset.
+
+    Args:
+        db_path (string): Root directory for the database files.
+        classes (string or list): One of {'train', 'val', 'test'} or a list of
+            categories to load. e,g. ['bedroom_train', 'church_train'].
+        transform (callable, optional): A function/transform that  takes in an PIL image
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
+        target_transform (callable, optional): A function/transform that takes in the
+            target and transforms it.
     """
 
     def __init__(self, db_path, classes='train',
@@ -108,6 +115,13 @@ class LSUN(data.Dataset):
         self.target_transform = target_transform
 
     def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: Tuple (image, target) where target is the index of the target category.
+        """
         target = 0
         sub = 0
         for ind in self.indices:

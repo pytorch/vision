@@ -17,7 +17,7 @@ class Compose(object):
     """Composes several transforms together.
 
     Args:
-        transforms (List[Transform]): list of transforms to compose.
+        transforms (list of ``Transform`` objects): list of transforms to compose.
 
     Example:
         >>> transforms.Compose([
@@ -36,11 +36,20 @@ class Compose(object):
 
 
 class ToTensor(object):
-    """Converts a PIL.Image or numpy.ndarray (H x W x C) in the range
+    """Convert a ``PIL.Image`` or ``numpy.ndarray`` to tensor.
+
+    Converts a PIL.Image or numpy.ndarray (H x W x C) in the range
     [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0].
     """
 
     def __call__(self, pic):
+        """
+        Args:
+            pic (PIL.Image or numpy.ndarray): Image to be converted to tensor.
+
+        Returns:
+            Tensor: Converted image.
+        """
         if isinstance(pic, np.ndarray):
             # handle numpy array
             img = torch.from_numpy(pic.transpose((2, 0, 1)))
@@ -77,11 +86,21 @@ class ToTensor(object):
 
 
 class ToPILImage(object):
-    """Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
-    H x W x C to a PIL.Image while preserving value range.
+    """Convert a tensor to PIL Image.
+
+    Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
+    H x W x C to a PIL.Image while preserving the value range.
     """
 
     def __call__(self, pic):
+        """
+        Args:
+            pic (Tensor or numpy.ndarray): Image to be converted to PIL.Image.
+
+        Returns:
+            PIL.Image: Image converted to PIL.Image.
+
+        """
         npimg = pic
         mode = None
         if isinstance(pic, torch.FloatTensor):
@@ -108,9 +127,16 @@ class ToPILImage(object):
 
 
 class Normalize(object):
-    """Given mean: (R, G, B) and std: (R, G, B),
+    """Normalize an tensor image with mean and standard deviation.
+
+    Given mean: (R, G, B) and std: (R, G, B),
     will normalize each channel of the torch.*Tensor, i.e.
     channel = (channel - mean) / std
+
+    Args:
+        mean (sequence): Sequence of means for R, G, B channels respecitvely.
+        std (sequence): Sequence of standard deviations for R, G, B channels
+            respecitvely.
     """
 
     def __init__(self, mean, std):
@@ -118,6 +144,13 @@ class Normalize(object):
         self.std = std
 
     def __call__(self, tensor):
+        """
+        Args:
+            tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
+
+        Returns:
+            Tensor: Normalized image.
+        """
         # TODO: make efficient
         for t, m, s in zip(tensor, self.mean, self.std):
             t.sub_(m).div_(s)
@@ -125,13 +158,16 @@ class Normalize(object):
 
 
 class Scale(object):
-    """Rescales the input PIL.Image to the given 'size'.
-    If 'size' is a 2-element tuple or list in the order of (width, height), it will be the exactly size to scale.
-    If 'size' is a number, it will indicate the size of the smaller edge.
-    For example, if height > width, then image will be
-    rescaled to (size * height / width, size)
-    size: size of the exactly size or the smaller edge
-    interpolation: Default: PIL.Image.BILINEAR
+    """Rescale the input PIL.Image to the given size.
+
+    Args:
+        size (sequence or int): Desired output size. If size is a sequence like
+            (w, h), output size will be matched to this. If size is an int,
+            smaller edge of the image will be matched to this number.
+            i.e, if height > width, then image will be rescaled to
+            (size * height / width, size)
+        interpolation (int, optional): Desired interpolation. Default is
+            ``PIL.Image.BILINEAR``
     """
 
     def __init__(self, size, interpolation=Image.BILINEAR):
@@ -140,6 +176,13 @@ class Scale(object):
         self.interpolation = interpolation
 
     def __call__(self, img):
+        """
+        Args:
+            img (PIL.Image): Image to be scaled.
+
+        Returns:
+            PIL.Image: Rescaled image.
+        """
         if isinstance(self.size, int):
             w, h = img.size
             if (w <= h and w == self.size) or (h <= w and h == self.size):
@@ -157,9 +200,12 @@ class Scale(object):
 
 
 class CenterCrop(object):
-    """Crops the given PIL.Image at the center to have a region of
-    the given size. size can be a tuple (target_height, target_width)
-    or an integer, in which case the target will be of a square shape (size, size)
+    """Crops the given PIL.Image at the center.
+
+    Args:
+        size (sequence or int): Desired output size of the crop. If size is an
+            int instead of sequence like (w, h), a square crop (size, size) is
+            made.
     """
 
     def __init__(self, size):
@@ -169,6 +215,13 @@ class CenterCrop(object):
             self.size = size
 
     def __call__(self, img):
+        """
+        Args:
+            img (PIL.Image): Image to be cropped.
+
+        Returns:
+            PIL.Image: Cropped image.
+        """
         w, h = img.size
         th, tw = self.size
         x1 = int(round((w - tw) / 2.))
@@ -177,7 +230,13 @@ class CenterCrop(object):
 
 
 class Pad(object):
-    """Pads the given PIL.Image on all sides with the given "pad" value"""
+    """Pad the given PIL.Image on all sides with the given "pad" value.
+
+    Args:
+        padding (int or sequence): Padding on each border. If a sequence of
+            length 4, it is used to pad left, top, right and bottom borders respectively.
+        fill: Pixel fill value. Default is 0.
+    """
 
     def __init__(self, padding, fill=0):
         assert isinstance(padding, numbers.Number)
@@ -186,11 +245,22 @@ class Pad(object):
         self.fill = fill
 
     def __call__(self, img):
+        """
+        Args:
+            img (PIL.Image): Image to be padded.
+
+        Returns:
+            PIL.Image: Padded image.
+        """
         return ImageOps.expand(img, border=self.padding, fill=self.fill)
 
 
 class Lambda(object):
-    """Applies a lambda as a transform."""
+    """Apply a user-defined lambda as a transform.
+
+    Args:
+        lambd (function): Lambda/function to be used for transform.
+    """
 
     def __init__(self, lambd):
         assert isinstance(lambd, types.LambdaType)
@@ -201,9 +271,16 @@ class Lambda(object):
 
 
 class RandomCrop(object):
-    """Crops the given PIL.Image at a random location to have a region of
-    the given size. size can be a tuple (target_height, target_width)
-    or an integer, in which case the target will be of a square shape (size, size)
+    """Crop the given PIL.Image at a random location.
+
+    Args:
+        size (sequence or int): Desired output size of the crop. If size is an
+            int instead of sequence like (w, h), a square crop (size, size) is
+            made.
+        padding (int or sequence, optional): Optional padding on each border
+            of the image. Default is 0, i.e no padding. If a sequence of length
+            4 is provided, it is used to pad left, top, right, bottom borders
+            respectively.
     """
 
     def __init__(self, size, padding=0):
@@ -214,6 +291,13 @@ class RandomCrop(object):
         self.padding = padding
 
     def __call__(self, img):
+        """
+        Args:
+            img (PIL.Image): Image to be cropped.
+
+        Returns:
+            PIL.Image: Cropped image.
+        """
         if self.padding > 0:
             img = ImageOps.expand(img, border=self.padding, fill=0)
 
@@ -228,21 +312,32 @@ class RandomCrop(object):
 
 
 class RandomHorizontalFlip(object):
-    """Randomly horizontally flips the given PIL.Image with a probability of 0.5
-    """
+    """Horizontally flip the given PIL.Image randomly with a probability of 0.5."""
 
     def __call__(self, img):
+        """
+        Args:
+            img (PIL.Image): Image to be flipped.
+
+        Returns:
+            PIL.Image: Randomly flipped image.
+        """
         if random.random() < 0.5:
             return img.transpose(Image.FLIP_LEFT_RIGHT)
         return img
 
 
 class RandomSizedCrop(object):
-    """Random crop the given PIL.Image to a random size of (0.08 to 1.0) of the original size
-    and and a random aspect ratio of 3/4 to 4/3 of the original aspect ratio
-    This is popularly used to train the Inception networks
-    size: size of the smaller edge
-    interpolation: Default: PIL.Image.BILINEAR
+    """Crop the given PIL.Image to random size and aspect ratio.
+
+    A crop of random size of (0.08 to 1.0) of the original size and a random
+    aspect ratio of 3/4 to 4/3 of the original aspect ratio is made. This crop
+    is finally resized to given size.
+    This is popularly used to train the Inception networks.
+
+    Args:
+        size: size of the smaller edge
+        interpolation: Default: PIL.Image.BILINEAR
     """
 
     def __init__(self, size, interpolation=Image.BILINEAR):

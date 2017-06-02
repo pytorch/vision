@@ -10,6 +10,22 @@ from .cifar import CIFAR10
 
 
 class STL10(CIFAR10):
+    """`STL10 <https://cs.stanford.edu/~acoates/stl10/>`_ Dataset.
+
+    Args:
+        root (string): Root directory of dataset where directory
+            ``stl10_binary`` exists.
+        split (string): One of {'train', 'test', 'unlabeled', 'train+unlabeled'}.
+            Accordingly dataset is selected.
+        transform (callable, optional): A function/transform that  takes in an PIL image
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
+        target_transform (callable, optional): A function/transform that takes in the
+            target and transforms it.
+        download (bool, optional): If true, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
+
+    """
     base_folder = 'stl10_binary'
     url = "http://ai.stanford.edu/~acoates/stl10/stl10_binary.tar.gz"
     filename = "stl10_binary.tar.gz"
@@ -67,6 +83,13 @@ class STL10(CIFAR10):
                 self.classes = f.read().splitlines()
 
     def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (image, target) where target is index of the target class.
+        """
         if self.labels is not None:
             img, target = self.data[index], int(self.labels[index])
         else:
