@@ -83,6 +83,13 @@ class STL10(CIFAR10):
                 self.classes = f.read().splitlines()
 
     def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (image, target) where target is index of the target class.
+        """
         if self.labels is not None:
             img, target = self.data[index], int(self.labels[index])
         else:

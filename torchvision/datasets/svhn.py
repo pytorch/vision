@@ -3,13 +3,27 @@ import torch.utils.data as data
 from PIL import Image
 import os
 import os.path
-import errno
 import numpy as np
-import sys
 from .utils import download_url, check_integrity
 
 
 class SVHN(data.Dataset):
+    """`SVHN <http://ufldl.stanford.edu/housenumbers/>`_ Dataset.
+
+    Args:
+        root (string): Root directory of dataset where directory
+            ``SVHN`` exists.
+        split (string): One of {'train', 'test', 'extra'}.
+            Accordingly dataset is selected. 'extra' is Extra training set.
+        transform (callable, optional): A function/transform that  takes in an PIL image
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
+        target_transform (callable, optional): A function/transform that takes in the
+            target and transforms it.
+        download (bool, optional): If true, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
+
+    """
     url = ""
     filename = ""
     file_md5 = ""
@@ -56,6 +70,13 @@ class SVHN(data.Dataset):
         self.data = np.transpose(self.data, (3, 2, 0, 1))
 
     def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (image, target) where target is index of the target class.
+        """
         img, target = self.data[index], self.labels[index]
 
         # doing this so that it is consistent with all other datasets

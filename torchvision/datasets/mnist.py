@@ -55,6 +55,13 @@ class MNIST(data.Dataset):
             self.test_data, self.test_labels = torch.load(os.path.join(root, self.processed_folder, self.test_file))
 
     def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (image, target) where target is index of the target class.
+        """
         if self.train:
             img, target = self.train_data[index], self.train_labels[index]
         else:

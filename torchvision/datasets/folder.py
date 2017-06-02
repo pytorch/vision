@@ -109,7 +109,7 @@ class ImageFolder(data.Dataset):
             index (int): Index
 
         Returns:
-            tuple: (image, class_index) where class_index is index of the target class.
+            tuple: (image, target) where target is class_index of the target class.
         """
         path, target = self.imgs[index]
         img = self.loader(path)

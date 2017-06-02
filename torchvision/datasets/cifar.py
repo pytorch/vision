@@ -102,6 +102,13 @@ class CIFAR10(data.Dataset):
             self.test_data = self.test_data.transpose((0, 2, 3, 1))  # convert to HWC
 
     def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (image, target) where target is index of the target class.
+        """
         if self.train:
             img, target = self.train_data[index], self.train_labels[index]
         else:
