@@ -11,12 +11,10 @@ def set_image_backend(backend):
     """
     Specifies the package used to load images.
 
-    Options are 'PIL' and 'accimage'. The :mod:`accimage` package uses the
-    Intel IPP library. It is generally faster than PIL, but does not support as
-    many operations.
-
     Args:
-        backend (string): name of the image backend
+        backend (string): Name of the image backend. one of {'PIL', 'accimage'}.
+            The :mod:`accimage` package uses the Intel IPP library. It is
+            generally faster than PIL, but does not support as many operations.
     """
     global _image_backend
     if backend not in ['PIL', 'accimage']:
