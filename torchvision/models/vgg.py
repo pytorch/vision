@@ -23,7 +23,6 @@ model_urls = {
 
 class VGG(nn.Module):
     
-    
     def __init__(self, features, num_classes=1000, fully_conv=False):
         super(VGG, self).__init__()
         self.features = features
