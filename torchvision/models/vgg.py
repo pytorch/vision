@@ -25,23 +25,38 @@ class VGG(nn.Module):
 
     def __init__(self, features, num_classes=1000):
         super(VGG, self).__init__()
-        self.features = features
-        self.classifier = nn.Sequential(
-            nn.Linear(512 * 7 * 7, 4096),
-            nn.ReLU(True),
-            nn.Dropout(),
-            nn.Linear(4096, 4096),
-            nn.ReLU(True),
-            nn.Dropout(),
-            nn.Linear(4096, num_classes),
-        )
-        self._initialize_weights()
+    self.features = features
+    self.fully_conv = fully_conv
+    
+    self.classifier = nn.Sequential(
+        nn.Linear(512 * 7 * 7, 4096),
+        nn.ReLU(True),
+        nn.Dropout(),
+        nn.Linear(4096, 4096),
+        nn.ReLU(True),
+        nn.Dropout(),
+        nn.Linear(4096, num_classes),
+    )
 
-    def forward(self, x):
-        x = self.features(x)
+    if fully_conv:
+
+        self.classifier = nn.Sequential(
+            nn.Conv2d(512, 4096, 7, 1, 3),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Conv2d(4096, 4096, 1),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Conv2d(4096, num_classes, 1)
+        )
+    self._initialize_weights()
+
+    def new_forward(self, x):
+    x = self.features(x)
+    if not self.fully_conv:
         x = x.view(x.size(0), -1)
-        x = self.classifier(x)
-        return x
+    x = self.classifier(x)
+    return x
 
     def _initialize_weights(self):
         for m in self.modules():
