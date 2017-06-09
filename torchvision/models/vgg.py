@@ -52,7 +52,7 @@ class VGG(nn.Module):
         
         self._initialize_weights()
 
-    def new_forward(self, x):
+    def forward(self, x):
         x = self.features(x)
         if not self.fully_conv:
             x = x.view(x.size(0), -1)
