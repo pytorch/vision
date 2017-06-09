@@ -27,7 +27,7 @@ class VGG(nn.Module):
         super(VGG, self).__init__()
         self.features = features
         self.fully_conv = fully_conv
-
+        
         self.classifier = nn.Sequential(
             nn.Linear(512 * 7 * 7, 4096),
             nn.ReLU(True),
@@ -37,9 +37,8 @@ class VGG(nn.Module):
             nn.Dropout(),
             nn.Linear(4096, num_classes),
         )
-
+        
         if fully_conv:
-
             self.classifier = nn.Sequential(
                 nn.Conv2d(512, 4096, 7, 1, 3),
                 nn.ReLU(True),
@@ -49,7 +48,6 @@ class VGG(nn.Module):
                 nn.Dropout(),
                 nn.Conv2d(4096, num_classes, 1)
             )
-        
         self._initialize_weights()
 
     def forward(self, x):
