@@ -36,7 +36,7 @@ class MNIST(data.Dataset):
     test_file = 'test.pt'
 
     def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
-        self.root = root
+        self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
         self.train = train  # training set or test set

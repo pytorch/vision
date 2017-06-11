@@ -49,7 +49,7 @@ class PhotoTour(data.Dataset):
     matches_files = 'm50_100000_100000_0.txt'
 
     def __init__(self, root, name, train=True, transform=None, download=False):
-        self.root = root
+        self.root = os.path.expanduser(root)
         self.name = name
         self.data_dir = os.path.join(root, name)
         self.data_down = os.path.join(root, '{}.zip'.format(name))

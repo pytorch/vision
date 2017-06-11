@@ -44,7 +44,7 @@ class CocoCaptions(data.Dataset):
     """
     def __init__(self, root, annFile, transform=None, target_transform=None):
         from pycocotools.coco import COCO
-        self.root = root
+        self.root = os.path.expanduser(root)
         self.coco = COCO(annFile)
         self.ids = list(self.coco.imgs.keys())
         self.transform = transform
