@@ -23,6 +23,7 @@ def find_classes(dir):
 
 def make_dataset(dir, class_to_idx):
     images = []
+    dir = os.path.expanduser(dir)
     for target in os.listdir(dir):
         d = os.path.join(dir, target)
         if not os.path.isdir(d):

@@ -38,7 +38,7 @@ class SVHN(data.Dataset):
 
     def __init__(self, root, split='train',
                  transform=None, target_transform=None, download=False):
-        self.root = root
+        self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
         self.split = split  # training set or test set or extra set
