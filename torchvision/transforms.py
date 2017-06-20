@@ -326,7 +326,7 @@ class RandomHorizontalFlip(object):
             return img.transpose(Image.FLIP_LEFT_RIGHT)
         return img
 
-    
+
 class RandomVerticalFlip(object):
     """Vertically flip the given PIL.Image randomly with a probability of 0.5."""
 
@@ -340,9 +340,9 @@ class RandomVerticalFlip(object):
         """
         if random.random() < 0.5:
             return img.transpose(Image.FLIP_TOP_BOTTOM)
-        return img
+        return img 
 
-    
+
 class RandomSizedCrop(object):
     """Crop the given PIL.Image to random size and aspect ratio.
 
