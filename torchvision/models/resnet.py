@@ -129,6 +129,8 @@ class ResNet(nn.Module):
         self.current_stride = 4
         self.current_dilation = 1
         
+        self.remove_avg_pool_layer = remove_avg_pool_layer
+        
         self.inplanes = 64
         self.fully_conv = fully_conv
         super(ResNet, self).__init__()
