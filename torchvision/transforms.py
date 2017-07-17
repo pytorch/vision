@@ -223,7 +223,7 @@ class CenterCrop(object):
             PIL.Image: Cropped image.
         """
         w, h = img.size
-        th, tw = self.size
+        tw, th = self.size
         x1 = int(round((w - tw) / 2.))
         y1 = int(round((h - th) / 2.))
         return img.crop((x1, y1, x1 + tw, y1 + th))
@@ -302,7 +302,7 @@ class RandomCrop(object):
             img = ImageOps.expand(img, border=self.padding, fill=0)
 
         w, h = img.size
-        th, tw = self.size
+        tw, th = self.size
         if w == tw and h == th:
             return img
 
