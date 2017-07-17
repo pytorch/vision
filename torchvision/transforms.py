@@ -223,7 +223,7 @@ class CenterCrop(object):
             PIL.Image: Cropped image.
         """
         w, h = img.size
-        th, tw = self.size
+        tw, th = self.size
         x1 = int(round((w - tw) / 2.))
         y1 = int(round((h - th) / 2.))
         return img.crop((x1, y1, x1 + tw, y1 + th))
@@ -302,7 +302,7 @@ class RandomCrop(object):
             img = ImageOps.expand(img, border=self.padding, fill=0)
 
         w, h = img.size
-        th, tw = self.size
+        tw, th = self.size
         if w == tw and h == th:
             return img
 
@@ -324,6 +324,22 @@ class RandomHorizontalFlip(object):
         """
         if random.random() < 0.5:
             return img.transpose(Image.FLIP_LEFT_RIGHT)
+        return img
+
+
+class RandomVerticalFlip(object):
+    """Vertically flip the given PIL.Image randomly with a probability of 0.5."""
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL.Image): Image to be flipped.
+
+        Returns:
+            PIL.Image: Randomly flipped image.
+        """
+        if random.random() < 0.5:
+            return img.transpose(Image.FLIP_TOP_BOTTOM)
         return img
 
 
