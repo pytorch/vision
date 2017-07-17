@@ -6,6 +6,7 @@ from .stl10 import STL10
 from .mnist import MNIST
 from .svhn import SVHN
 from .phototour import PhotoTour
+from .camvid import CamVid
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder',
