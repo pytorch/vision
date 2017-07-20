@@ -6,9 +6,10 @@ from .stl10 import STL10
 from .mnist import MNIST
 from .svhn import SVHN
 from .phototour import PhotoTour
+from .fakedata import FakeData
 
 __all__ = ('LSUN', 'LSUNClass',
-           'ImageFolder',
+           'ImageFolder', 'FakeData',
            'CocoCaptions', 'CocoDetection',
            'CIFAR10', 'CIFAR100',
            'MNIST', 'STL10', 'SVHN', 'PhotoTour')
