@@ -2,6 +2,7 @@ import torch
 import torch.utils.data as data
 from .. import transforms
 
+
 class FakeData(data.Dataset):
     """A fake dataset that returns randomly generated images and returns them as PIL images
 
