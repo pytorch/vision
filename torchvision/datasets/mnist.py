@@ -81,9 +81,9 @@ class MNIST(data.Dataset):
 
     def __len__(self):
         if self.train:
-            return 60000
+            return len(self.train_data)
         else:
-            return 10000
+            return len(self.test_data)
 
     def _check_exists(self):
         return os.path.exists(os.path.join(self.root, self.processed_folder, self.training_file)) and \
