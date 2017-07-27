@@ -128,9 +128,9 @@ class CIFAR10(data.Dataset):
 
     def __len__(self):
         if self.train:
-            return 50000
+            return len(self.train_data)
         else:
-            return 10000
+            return len(self.test_data)
 
     def _check_integrity(self):
         root = self.root
