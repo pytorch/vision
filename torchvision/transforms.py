@@ -11,7 +11,7 @@ import numpy as np
 import numbers
 import types
 import collections
-
+import functools
 
 class Compose(object):
     """Composes several transforms together.
@@ -369,3 +369,71 @@ class RandomSizedCrop(object):
         scale = Scale(self.size, interpolation=self.interpolation)
         crop = CenterCrop(self.size)
         return crop(scale(img))
+    
+    def expand_reflect(image, border=0):
+    """
+    Add border to the image(Symmetric padding)
+
+    :param image: The image to expand.
+    :param border: Border width, in pixels.
+    :return: An image.
+    """
+    img = np.asarray(image)
+    img = np.pad(img,pad_width=border,mode="reflect")
+    return Image.fromarray(np.uint8(img[:,:,2:5]))
+
+class Reflect_Pad(object):
+    """Pads the given PIL.Image on all sides with the given "pad" reflect"""
+
+    def __init__(self, padding):
+        assert isinstance(padding, numbers.Number)
+        self.padding = padding
+
+    def __call__(self, img):
+        return expand_reflect(img, border=self.padding)
+
+
+def expand_edge(image, border=0):
+    """
+    Add border to the image(Symmetric padding)
+
+    :param image: The image to expand.
+    :param border: Border width, in pixels.
+    :return: An image.
+    """
+    img = np.asarray(image)
+    img = np.pad(img,pad_width=border,mode="edge")
+    return Image.fromarray(np.uint8(img[:,:,2:5]))
+
+class Edge_Pad(object):
+    """Pads the given PIL.Image on all sides with the given "pad":edge pad """
+
+    def __init__(self, padding):
+        assert isinstance(padding, numbers.Number)
+        self.padding = padding
+
+    def __call__(self, img):
+        return expand_edge(img, border=self.padding)
+
+
+def expand_symmetric(image, border=0):
+    """
+    Add border to the image(Symmetric padding)
+
+    :param image: The image to expand.
+    :param border: Border width, in pixels.
+    :return: An image.
+    """
+    img = np.asarray(image)
+    img = np.pad(img,pad_width=border,mode="symmetric")
+    return Image.fromarray(np.uint8(img[:,:,2:5]))
+
+class Symmetric_Pad(object):
+    """Pads the given PIL.Image on all sides with the given "pad":symmetric pad """
+
+    def __init__(self, padding):
+        assert isinstance(padding, numbers.Number)
+        self.padding = padding
+
+    def __call__(self, img):
+        return expand_symmetric(img, border=self.padding)
