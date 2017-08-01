@@ -30,7 +30,7 @@ def make_dataset(dir, class_to_idx):
             continue
 
         for root, _, fnames in sorted(os.walk(d)):
-            for fname in fnames:
+            for fname in sorted(fnames):
                 if is_image_file(fname):
                     path = os.path.join(root, fname)
                     item = (path, class_to_idx[target])
