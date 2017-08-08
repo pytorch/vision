@@ -332,6 +332,16 @@ integer, in which case the target will be of a square shape (size, size)
 If ``padding`` is non-zero, then the image is first zero-padded on each
 side with ``padding`` pixels.
 
+``PairRandomCrop(size, padding=0)``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Crops the given PIL.Image at a random location to have a region of the
+given size for both input image and its target image. size can be a
+tuple (target\_height, target\_width) or an integer, in which case the
+target will be of a square shape (size, size)
+If ``padding`` is non-zero, then the image is first zero-padded on each
+side with ``padding`` pixels.
+
 ``RandomHorizontalFlip()``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
