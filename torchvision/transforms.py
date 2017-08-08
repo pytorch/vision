@@ -319,6 +319,7 @@ class RandomCrop(object):
         y1 = random.randint(0, h - th)
         return img.crop((x1, y1, x1 + tw, y1 + th))
 
+
 class PairRandomCrop(object):
     """Crop the given PIL.Image at a random location for both input and target.
 
