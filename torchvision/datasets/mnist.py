@@ -50,9 +50,9 @@ class MNIST(data.Dataset):
 
         if self.train:
             self.train_data, self.train_labels = torch.load(
-                os.path.join(root, self.processed_folder, self.training_file))
+                os.path.join(self.root, self.processed_folder, self.training_file))
         else:
-            self.test_data, self.test_labels = torch.load(os.path.join(root, self.processed_folder, self.test_file))
+            self.test_data, self.test_labels = torch.load(os.path.join(self.root, self.processed_folder, self.test_file))
 
     def __getitem__(self, index):
         """

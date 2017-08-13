@@ -68,7 +68,7 @@ class CIFAR10(data.Dataset):
             self.train_labels = []
             for fentry in self.train_list:
                 f = fentry[0]
-                file = os.path.join(root, self.base_folder, f)
+                file = os.path.join(self.root, self.base_folder, f)
                 fo = open(file, 'rb')
                 if sys.version_info[0] == 2:
                     entry = pickle.load(fo)
@@ -86,7 +86,7 @@ class CIFAR10(data.Dataset):
             self.train_data = self.train_data.transpose((0, 2, 3, 1))  # convert to HWC
         else:
             f = self.test_list[0][0]
-            file = os.path.join(root, self.base_folder, f)
+            file = os.path.join(self.root, self.base_folder, f)
             fo = open(file, 'rb')
             if sys.version_info[0] == 2:
                 entry = pickle.load(fo)

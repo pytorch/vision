@@ -51,9 +51,9 @@ class PhotoTour(data.Dataset):
     def __init__(self, root, name, train=True, transform=None, download=False):
         self.root = os.path.expanduser(root)
         self.name = name
-        self.data_dir = os.path.join(root, name)
-        self.data_down = os.path.join(root, '{}.zip'.format(name))
-        self.data_file = os.path.join(root, '{}.pt'.format(name))
+        self.data_dir = os.path.join(self.root, name)
+        self.data_down = os.path.join(self.root, '{}.zip'.format(name))
+        self.data_file = os.path.join(self.root, '{}.pt'.format(name))
 
         self.train = train
         self.transform = transform
