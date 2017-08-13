@@ -1,11 +1,3 @@
-#!/usr/local/bin/python3
-# coding: UTF-8
-# Author: David
-# Email: youchen.du@gmail.com
-# Created: 2017-08-08 21:13
-# Last modified: 2017-08-08 21:13
-# Filename: transforms.py
-# Description:
 from __future__ import division
 import torch
 import math
