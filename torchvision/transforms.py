@@ -2,7 +2,6 @@ from __future__ import division
 import torch
 import math
 import random
-import os
 from PIL import Image, ImageOps
 try:
     import accimage
@@ -324,7 +323,7 @@ class PairRandomCrop(object):
             4 is provided, it is used to pad left, top, right, bottom borders
             respectively.
     """
-    image_crop_position = {}
+    last_position = None
 
     def __init__(self, size, padding=0):
         if isinstance(size, numbers.Number):
@@ -348,13 +347,12 @@ class PairRandomCrop(object):
         if w == tw and h == th:
             return img
 
-        pid = os.getpid()
-        if pid in self.image_crop_position:
-            x1, y1 = self.image_crop_position.pop(pid)
+        if self.last_position is not None:
+            (x1, y1), self.last_position = self.last_position, None
         else:
             x1 = random.randint(0, w - tw)
             y1 = random.randint(0, h - th)
-            self.image_crop_position[pid] = (x1, y1)
+            self.last_position = (x1, y1)
         return img.crop((x1, y1, x1 + tw, y1 + th))
 
 
