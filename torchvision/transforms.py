@@ -235,11 +235,12 @@ class Pad(object):
     Args:
         padding (int or sequence): Padding on each border. If a sequence of
             length 4, it is used to pad left, top, right and bottom borders respectively.
-        fill: Pixel fill value. Default is 0.
+        fill: Pixel fill value. Default is 0. If a sequence of
+            length 3, it is used to fill R, G, B channels respectively.
     """
 
     def __init__(self, padding, fill=0):
-        assert isinstance(padding, numbers.Number)
+        assert isinstance(padding, numbers.Number) or isinstance(padding, tuple)
         assert isinstance(fill, numbers.Number) or isinstance(fill, str) or isinstance(fill, tuple)
         self.padding = padding
         self.fill = fill
