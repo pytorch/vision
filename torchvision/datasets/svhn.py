@@ -63,7 +63,7 @@ class SVHN(data.Dataset):
         import scipy.io as sio
 
         # reading(loading) mat file as array
-        loaded_mat = sio.loadmat(os.path.join(root, self.filename))
+        loaded_mat = sio.loadmat(os.path.join(self.root, self.filename))
 
         self.data = loaded_mat['X']
         self.labels = loaded_mat['y']

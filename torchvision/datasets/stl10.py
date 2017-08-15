@@ -77,7 +77,7 @@ class STL10(CIFAR10):
                 self.test_list[0][0], self.test_list[1][0])
 
         class_file = os.path.join(
-            root, self.base_folder, self.class_names_file)
+            self.root, self.base_folder, self.class_names_file)
         if os.path.isfile(class_file):
             with open(class_file) as f:
                 self.classes = f.read().splitlines()
