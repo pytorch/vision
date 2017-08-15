@@ -25,7 +25,7 @@ def densenet121(pretrained=False, **kwargs):
     model = DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 24, 16),
                      **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['densenet121']))
+        model.load_state_dict(model_zoo.load_url(model_urls['densenet121'], map_location=lambda storage, loc: storage))
     return model
 
 
@@ -39,7 +39,7 @@ def densenet169(pretrained=False, **kwargs):
     model = DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 32, 32),
                      **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['densenet169']))
+        model.load_state_dict(model_zoo.load_url(model_urls['densenet169'], map_location=lambda storage, loc: storage))
     return model
 
 
@@ -53,7 +53,7 @@ def densenet201(pretrained=False, **kwargs):
     model = DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 48, 32),
                      **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['densenet201']))
+        model.load_state_dict(model_zoo.load_url(model_urls['densenet201'], map_location=lambda storage, loc: storage))
     return model
 
 
@@ -67,7 +67,7 @@ def densenet161(pretrained=False, **kwargs):
     model = DenseNet(num_init_features=96, growth_rate=48, block_config=(6, 12, 36, 24),
                      **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['densenet161']))
+        model.load_state_dict(model_zoo.load_url(model_urls['densenet161'], map_location=lambda storage, loc: storage))
     return model
 
 
