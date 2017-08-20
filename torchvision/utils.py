@@ -10,7 +10,7 @@ def make_grid(tensor, nrow=8, padding=2,
     Args:
         tensor (Tensor or list): 4D mini-batch Tensor of shape (B x C x H x W)
             or a list of images all of the same size.
-        nrows (int, optional): Number of rows in grid. Final grid size is
+        nrow (int, optional): Number of rows in grid. Final grid size is
             (B / nrow, nrow). Default is 8.
         normalize (bool, optional): If True, shift the image to the range (0, 1),
             by subtracting the minimum and dividing by the maximum pixel value.
