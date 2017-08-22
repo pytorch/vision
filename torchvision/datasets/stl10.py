@@ -71,7 +71,7 @@ class STL10(CIFAR10):
 
         elif self.split == 'unlabeled':
             self.data, _ = self.__loadfile(self.train_list[2][0])
-            self.labels = None
+            self.labels = np.asarray([-1] * self.data.shape[0])
         else:  # self.split == 'test':
             self.data, self.labels = self.__loadfile(
                 self.test_list[0][0], self.test_list[1][0])
