@@ -43,7 +43,7 @@ Datasets
 
 The following dataset loaders are available:
 
--  `MNIST <#mnist>`__
+-  `MNIST and FashionMNIST <#mnist>`__
 -  `COCO (Captioning and Detection) <#coco>`__
 -  `LSUN Classification <#lsun>`__
 -  `ImageFolder <#imagefolder>`__
@@ -76,6 +76,8 @@ but they all take the keyword args:
 MNIST
 ~~~~~
 ``dset.MNIST(root, train=True, transform=None, target_transform=None, download=False)``
+
+``dset.FashionMNIST(root, train=True, transform=None, target_transform=None, download=False)``
 
 ``root``: root directory of dataset where ``processed/training.pt`` and ``processed/test.pt`` exist
 
