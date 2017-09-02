@@ -139,6 +139,17 @@ class MNIST(data.Dataset):
         print('Done!')
 
 
+class FashionMNIST(MNIST):
+    """`Fashion MNIST <https://github.com/zalandoresearch/fashion-mnist>`_ Dataset.
+    """
+    urls = [
+        'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz',
+        'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz',
+        'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz',
+        'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz',
+    ]
+
+
 def get_int(b):
     return int(codecs.encode(b, 'hex'), 16)
 
