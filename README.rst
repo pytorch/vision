@@ -392,32 +392,32 @@ For example:
 Utils
 =====
 
-make\_grid(tensor, nrow=8, padding=2, normalize=False, range=None, scale\_each=False, pad\_value=0)
+``make\_grid(tensor, nrow=8, padding=2, normalize=False, range=None, scale\_each=False, pad\_value=0)``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Given a 4D mini-batch Tensor of shape (B x C x H x W),
 or a list of images all of the same size,
 makes a grid of images
 
-normalize=True will shift the image to the range (0, 1),
+``normalize=True`` will shift the image to the range (0, 1),
 by subtracting the minimum and dividing by the maximum pixel value.
 
-if range=(min, max) where min and max are numbers, then these numbers are used to
+if ``range=(min, max)`` where ``min`` and ``max`` are numbers, then these numbers are used to
 normalize the image.
 
-scale_each=True will scale each image in the batch of images separately rather than
-computing the (min, max) over all images.
+``scale_each=True`` will scale each image in the batch of images separately rather than
+computing the ``(min, max)`` over all images.
 
-pad_value=<float> sets the value for the padded pixels.
+``pad_value=<float>`` sets the value for the padded pixels.
 
 `Example usage is given in this notebook` <https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91>
 
-save\_image(tensor, filename, nrow=8, padding=2, normalize=False, range=None, scale\_each=False, pad\_value=0)
+``save\_image(tensor, filename, nrow=8, padding=2, normalize=False, range=None, scale\_each=False, pad\_value=0)``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Saves a given Tensor into an image file.
 
 If given a mini-batch tensor, will save the tensor as a grid of images.
 
-All options after `filename` are passed through to `make_grid`. Refer to it's documentation for
+All options after ``filename`` are passed through to ``make_grid``. Refer to it's documentation for
 more details
