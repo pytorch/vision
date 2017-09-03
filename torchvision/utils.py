@@ -26,14 +26,13 @@ def make_grid(tensor, nrow=8, padding=2,
         See this notebook `here <https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91>`_
 
     """
+    if not (torch.is_tensor(tensor) or
+            (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
+        raise TypeError('tensor or list of tensors expected, got {}'.format(type(tensor)))
+
     # if list of tensors, convert to a 4D mini-batch Tensor
     if isinstance(tensor, list):
-        tensorlist = tensor
-        numImages = len(tensorlist)
-        size = torch.Size(torch.Size([numImages]) + tensorlist[0].size())
-        tensor = tensorlist[0].new(size)
-        for i in irange(numImages):
-            tensor[i].copy_(tensorlist[i])
+        tensor = torch.stack(tensor, dim=0)
 
     if tensor.dim() == 2:  # single image H x W
         tensor = tensor.view(1, tensor.size(0), tensor.size(1))
@@ -45,6 +44,7 @@ def make_grid(tensor, nrow=8, padding=2,
         tensor = torch.cat((tensor, tensor, tensor), 1)
 
     if normalize is True:
+        tensor = tensor.clone()  # avoid modifying tensor in-place
         if range is not None:
             assert isinstance(range, tuple), \
                 "range has to be a tuple (min, max) if specified. min and max are numbers"
