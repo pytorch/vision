@@ -233,15 +233,22 @@ class Pad(object):
     """Pad the given PIL.Image on all sides with the given "pad" value.
 
     Args:
-        padding (int or sequence): Padding on each border. If a sequence of
-            length 4, it is used to pad left, top, right and bottom borders respectively.
-        fill: Pixel fill value. Default is 0. If a sequence of
+        padding (int or tuple): Padding on each border. If a single int is provided this
+            is used to pad all borders. If tuple of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a tuple of length 4 is provided
+            this is the padding for the left, top, right and bottom borders
+            respectively.
+        fill: Pixel fill value. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
     """
 
     def __init__(self, padding, fill=0):
-        assert isinstance(padding, numbers.Number) or isinstance(padding, tuple)
-        assert isinstance(fill, numbers.Number) or isinstance(fill, str) or isinstance(fill, tuple)
+        assert isinstance(padding, (numbers.Number, tuple))
+        assert isinstance(fill, (numbers.Number, str, tuple))
+        if isinstance(padding, collections.Sequence) and len(padding) not in [2, 4]:
+            raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
+                             "{} element tuple".format(len(padding)))
+
         self.padding = padding
         self.fill = fill
 
