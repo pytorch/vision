@@ -101,8 +101,12 @@ def scale(img, size, interpolation=Image.BILINEAR):
 
 
 def pad(img, padding, fill=0):
-    assert isinstance(padding, numbers.Number)
-    assert isinstance(fill, numbers.Number) or isinstance(fill, str) or isinstance(fill, tuple)
+    assert isinstance(padding, (numbers.Number, tuple))
+    assert isinstance(fill, (numbers.Number, str, tuple))
+    if isinstance(padding, collections.Sequence) and len(padding) not in [2, 4]:
+        raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
+                         "{} element tuple".format(len(padding)))
+
     return ImageOps.expand(img, border=padding, fill=fill)
 
 
