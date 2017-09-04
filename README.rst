@@ -280,7 +280,7 @@ to be atleast 224.
 The images have to be loaded in to a range of [0, 1] and then
 normalized using `mean=[0.485, 0.456, 0.406]` and `std=[0.229, 0.224, 0.225]`
 
-An example of such normalization can be found in `the imagenet example here` <https://github.com/pytorch/examples/blob/42e5b996718797e45c46a25c55b031e6768f8440/imagenet/main.py#L89-L101>
+An example of such normalization can be found in the imagenet example `here <https://github.com/pytorch/examples/blob/42e5b996718797e45c46a25c55b031e6768f8440/imagenet/main.py#L89-L101>`__
 
 Transforms
 ==========
@@ -410,7 +410,7 @@ computing the ``(min, max)`` over all images.
 
 ``pad_value=<float>`` sets the value for the padded pixels.
 
-`Example usage is given in this notebook` <https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91>
+Example usage is given in this `notebook <https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91>`__ 
 
 ``save_image(tensor, filename, nrow=8, padding=2, normalize=False, range=None, scale_each=False, pad_value=0)``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
