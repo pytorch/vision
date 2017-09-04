@@ -29,7 +29,8 @@ def _is_numpy_image(img):
 
 
 def to_tensor(pic):
-    assert _is_pil_image(pic) or _is_numpy_image(pic), 'pic should be PIL Image or ndarray'
+    if not(_is_pil_image(pic) or _is_numpy_image(pic)):
+        raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
 
     if isinstance(pic, np.ndarray):
         # handle numpy array
@@ -67,7 +68,8 @@ def to_tensor(pic):
 
 
 def to_pilimage(pic):
-    assert _is_numpy_image(pic) or _is_tensor_image(pic), 'pic should be Tensor or ndarray'
+    if not(_is_numpy_image(pic) or _is_tensor_image(pic)):
+        raise TypeError('pic should be Tensor or ndarray. Got {}.'.format(type(pic)))
 
     npimg = pic
     mode = None
@@ -95,7 +97,8 @@ def to_pilimage(pic):
 
 
 def normalize(tensor, mean, std):
-    assert _is_tensor_image(tensor)
+    if not _is_tensor_image(tensor):
+        raise TypeError('tensor is not a torch image.')
     # TODO: make efficient
     for t, m, s in zip(tensor, mean, std):
         t.sub_(m).div_(s)
@@ -103,8 +106,11 @@ def normalize(tensor, mean, std):
 
 
 def scale(img, size, interpolation=Image.BILINEAR):
-    assert _is_pil_image(img), 'img should be PIL Image'
-    assert isinstance(size, int) or (isinstance(size, collections.Iterable) and len(size) == 2)
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not (isinstance(size, int) or (isinstance(size, collections.Iterable) and len(size) == 2)):
+        raise TypeError('Got inappropriate size arg: {}'.format(size))
+
     if isinstance(size, int):
         w, h = img.size
         if (w <= h and w == size) or (h <= w and h == size):
@@ -122,9 +128,14 @@ def scale(img, size, interpolation=Image.BILINEAR):
 
 
 def pad(img, padding, fill=0):
-    assert _is_pil_image(img), 'img should be PIL Image'
-    assert isinstance(padding, (numbers.Number, tuple))
-    assert isinstance(fill, (numbers.Number, str, tuple))
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    if not isinstance(padding, (numbers.Number, tuple)):
+        raise TypeError('Got inappropriate padding arg')
+    if not isinstance(fill, (numbers.Number, str, tuple)):
+        raise TypeError('Got inappropriate fill arg')
+
     if isinstance(padding, collections.Sequence) and len(padding) not in [2, 4]:
         raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
                          "{} element tuple".format(len(padding)))
@@ -133,7 +144,9 @@ def pad(img, padding, fill=0):
 
 
 def crop(img, x, y, w, h):
-    assert _is_pil_image(img), 'img should be PIL Image'
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
     return img.crop((x, y, x + w, y + h))
 
 
@@ -144,7 +157,9 @@ def scaled_crop(img, x, y, w, h, size, interpolation=Image.BILINEAR):
 
 
 def hflip(img):
-    assert _is_pil_image(img), 'img should be PIL Image'
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
     return img.transpose(Image.FLIP_LEFT_RIGHT)
 
 
