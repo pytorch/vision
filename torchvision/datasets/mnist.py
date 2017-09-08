@@ -52,7 +52,8 @@ class MNIST(data.Dataset):
             self.train_data, self.train_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.training_file))
         else:
-            self.test_data, self.test_labels = torch.load(os.path.join(self.root, self.processed_folder, self.test_file))
+            self.test_data, self.test_labels = torch.load(
+                os.path.join(self.root, self.processed_folder, self.test_file))
 
     def __getitem__(self, index):
         """
@@ -136,6 +137,17 @@ class MNIST(data.Dataset):
             torch.save(test_set, f)
 
         print('Done!')
+
+
+class FashionMNIST(MNIST):
+    """`Fashion MNIST <https://github.com/zalandoresearch/fashion-mnist>`_ Dataset.
+    """
+    urls = [
+        'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz',
+        'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz',
+        'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz',
+        'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz',
+    ]
 
 
 def get_int(b):

@@ -136,6 +136,30 @@ class Tester(unittest.TestCase):
         assert result.size(1) == height + 2 * padding
         assert result.size(2) == width + 2 * padding
 
+    def test_pad_with_tuple_of_pad_values(self):
+        height = random.randint(10, 32) * 2
+        width = random.randint(10, 32) * 2
+        img = transforms.ToPILImage()(torch.ones(3, height, width))
+
+        padding = tuple([random.randint(1, 20) for _ in range(2)])
+        output = transforms.Pad(padding)(img)
+        assert output.size == (width + padding[0] * 2, height + padding[1] * 2)
+
+        padding = tuple([random.randint(1, 20) for _ in range(4)])
+        output = transforms.Pad(padding)(img)
+        assert output.size[0] == width + padding[0] + padding[2]
+        assert output.size[1] == height + padding[1] + padding[3]
+
+    def test_pad_raises_with_invalide_pad_sequence_len(self):
+        with self.assertRaises(ValueError):
+            transforms.Pad(())
+
+        with self.assertRaises(ValueError):
+            transforms.Pad((1, 2, 3))
+
+        with self.assertRaises(ValueError):
+            transforms.Pad((1, 2, 3, 4, 5))
+
     def test_lambda(self):
         trans = transforms.Lambda(lambda x: x.add(10))
         x = torch.randn(10)
