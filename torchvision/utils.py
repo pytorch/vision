@@ -70,14 +70,14 @@ def make_grid(tensor, nrow=8, padding=2,
     xmaps = min(nrow, nmaps)
     ymaps = int(math.ceil(float(nmaps) / xmaps))
     height, width = int(tensor.size(2) + padding), int(tensor.size(3) + padding)
-    grid = tensor.new(3, height * ymaps + 1 + padding // 2, width * xmaps + 1 + padding // 2).fill_(pad_value)
+    grid = tensor.new(3, height * ymaps + padding, width * xmaps + padding).fill_(pad_value)
     k = 0
     for y in irange(ymaps):
         for x in irange(xmaps):
             if k >= nmaps:
                 break
-            grid.narrow(1, y * height + 1 + padding // 2, height - padding)\
-                .narrow(2, x * width + 1 + padding // 2, width - padding)\
+            grid.narrow(1, y * height + padding, height - padding)\
+                .narrow(2, x * width + padding, width - padding)\
                 .copy_(tensor[k])
             k = k + 1
     return grid
