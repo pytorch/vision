@@ -150,7 +150,7 @@ class Tester(unittest.TestCase):
         assert output.size[0] == width + padding[0] + padding[2]
         assert output.size[1] == height + padding[1] + padding[3]
 
-    def test_pad_raises_with_invalide_pad_sequence_len(self):
+    def test_pad_raises_with_invalid_pad_sequence_len(self):
         with self.assertRaises(ValueError):
             transforms.Pad(())
 
