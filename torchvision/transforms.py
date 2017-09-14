@@ -207,7 +207,7 @@ class CenterCrop(object):
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
-            int instead of sequence like (h, w), a square crop (size, size) is
+            int instead of sequence like (w, h), a square crop (size, size) is
             made.
     """
 
@@ -226,7 +226,7 @@ class CenterCrop(object):
             PIL.Image: Cropped image.
         """
         w, h = img.size
-        th, tw = self.size
+        tw, th = self.size
         x1 = int(round((w - tw) / 2.))
         y1 = int(round((h - th) / 2.))
         return img.crop((x1, y1, x1 + tw, y1 + th))
@@ -286,7 +286,7 @@ class RandomCrop(object):
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
-            int instead of sequence like (h, w), a square crop (size, size) is
+            int instead of sequence like (w, h), a square crop (size, size) is
             made.
         padding (int or sequence, optional): Optional padding on each border
             of the image. Default is 0, i.e no padding. If a sequence of length
@@ -313,7 +313,7 @@ class RandomCrop(object):
             img = ImageOps.expand(img, border=self.padding, fill=0)
 
         w, h = img.size
-        th, tw = self.size
+        tw, th = self.size
         if w == tw and h == th:
             return img
 
