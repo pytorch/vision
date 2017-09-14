@@ -207,7 +207,7 @@ class CenterCrop(object):
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
-            int instead of sequence like (w, h), a square crop (size, size) is
+            int instead of sequence like (h, w), a square crop (size, size) is
             made.
     """
 
@@ -286,7 +286,7 @@ class RandomCrop(object):
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
-            int instead of sequence like (w, h), a square crop (size, size) is
+            int instead of sequence like (h, w), a square crop (size, size) is
             made.
         padding (int or sequence, optional): Optional padding on each border
             of the image. Default is 0, i.e no padding. If a sequence of length
