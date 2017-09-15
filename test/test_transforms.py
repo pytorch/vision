@@ -28,7 +28,7 @@ class Tester(unittest.TestCase):
         imgnarrow.fill_(0)
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.CenterCrop((owidth, oheight)),
+            transforms.CenterCrop((oheight, owidth)),
             transforms.ToTensor(),
         ])(img)
         assert result.sum() == 0, "height: " + str(height) + " width: " \
@@ -37,7 +37,7 @@ class Tester(unittest.TestCase):
         owidth += 1
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.CenterCrop((owidth, oheight)),
+            transforms.CenterCrop((oheight, owidth)),
             transforms.ToTensor(),
         ])(img)
         sum1 = result.sum()
@@ -47,7 +47,7 @@ class Tester(unittest.TestCase):
         owidth += 1
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.CenterCrop((owidth, oheight)),
+            transforms.CenterCrop((oheight, owidth)),
             transforms.ToTensor(),
         ])(img)
         sum2 = result.sum()
@@ -108,7 +108,7 @@ class Tester(unittest.TestCase):
         img = torch.ones(3, height, width)
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.RandomCrop((owidth, oheight)),
+            transforms.RandomCrop((oheight, owidth)),
             transforms.ToTensor(),
         ])(img)
         assert result.size(1) == oheight
@@ -117,7 +117,7 @@ class Tester(unittest.TestCase):
         padding = random.randint(1, 20)
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.RandomCrop((owidth, oheight), padding=padding),
+            transforms.RandomCrop((oheight, owidth), padding=padding),
             transforms.ToTensor(),
         ])(img)
         assert result.size(1) == oheight
