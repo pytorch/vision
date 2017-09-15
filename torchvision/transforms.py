@@ -380,3 +380,41 @@ class RandomSizedCrop(object):
         scale = Scale(self.size, interpolation=self.interpolation)
         crop = CenterCrop(self.size)
         return crop(scale(img))
+
+class FiveCrop(object):
+    """Crop the given PIL.Image into four corners and the central crop."""
+
+    def __call__(self, img):
+      w, h = img.size 
+      crop_w = w // 2
+      crop_h = h // 2
+
+      tl = img.crop((0, 0, crop_w, crop_h))
+      tr = img.crop((w - crop_w, 0, w, crop_h))
+      bl = img.crop((0, h - crop_h, crop_w, h))
+      br = img.crop((w - crop_w, h - crop_h, w, h))
+      # TODO: change center crop to (w, h) once PR #256 is resolved
+      center = CenterCrop((crop_h, crop_w))(img)
+      return [tl, tr, bl, br, center]
+
+
+class TenCrop(object):
+    """Crop the given PIL.Image into four corners and the central crop plus the
+       flipped version of these (horizontal flipping is used by default)
+
+       Args:
+           vflip bool: Use vertical flipping instead of horizontal
+    """
+
+    def __init__(self, vflip=False):
+      self.vflip = vflip
+
+    def __call__(self, img):
+      first_five = FiveCrop()(img)
+      if self.vflip:
+        img = img.transpose(Image.FLIP_LEFT_RIGHT)
+      else:
+        img = img.transpose(Image.FLIP_TOP_BOTTOM)
+
+      second_five = FiveCrop()(img)
+      return first_five + second_five
