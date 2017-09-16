@@ -165,7 +165,7 @@ class Scale(object):
 
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
-            (w, h), output size will be matched to this. If size is an int,
+            (h, w), output size will be matched to this. If size is an int,
             smaller edge of the image will be matched to this number.
             i.e, if height > width, then image will be rescaled to
             (size * height / width, size)
@@ -199,7 +199,7 @@ class Scale(object):
                 ow = int(self.size * w / h)
                 return img.resize((ow, oh), self.interpolation)
         else:
-            return img.resize(self.size, self.interpolation)
+            return img.resize(self.size[::-1], self.interpolation)
 
 
 class CenterCrop(object):
