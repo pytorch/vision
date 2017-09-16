@@ -29,6 +29,16 @@ def _is_numpy_image(img):
 
 
 def to_tensor(pic):
+    """Convert a ``PIL.Image`` or ``numpy.ndarray`` to tensor.
+
+    See ``ToTensor`` for more details.
+
+    Args:
+        pic (PIL.Image or numpy.ndarray): Image to be converted to tensor.
+
+    Returns:
+        Tensor: Converted image.
+    """
     if not(_is_pil_image(pic) or _is_numpy_image(pic)):
         raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
 
@@ -68,6 +78,16 @@ def to_tensor(pic):
 
 
 def to_pil_image(pic):
+    """Convert a tensor or an ndarray to PIL Image.
+
+    See ``ToPIlImage`` for more details.
+
+    Args:
+        pic (Tensor or numpy.ndarray): Image to be converted to PIL.Image.
+
+    Returns:
+        PIL.Image: Image converted to PIL.Image.
+    """
     if not(_is_numpy_image(pic) or _is_tensor_image(pic)):
         raise TypeError('pic should be Tensor or ndarray. Got {}.'.format(type(pic)))
 
@@ -97,6 +117,19 @@ def to_pil_image(pic):
 
 
 def normalize(tensor, mean, std):
+    """Normalize an tensor image with mean and standard deviation.
+
+    See ``Normalize`` for more details.
+
+    Args:
+        tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
+        mean (sequence): Sequence of means for R, G, B channels respecitvely.
+        std (sequence): Sequence of standard deviations for R, G, B channels
+            respecitvely.
+
+    Returns:
+        Tensor: Normalized image.
+    """
     if not _is_tensor_image(tensor):
         raise TypeError('tensor is not a torch image.')
     # TODO: make efficient
@@ -106,6 +139,21 @@ def normalize(tensor, mean, std):
 
 
 def scale(img, size, interpolation=Image.BILINEAR):
+    """Rescale the input PIL.Image to the given size.
+
+    Args:
+        img (PIL.Image): Image to be scaled.
+        size (sequence or int): Desired output size. If size is a sequence like
+            (w, h), output size will be matched to this. If size is an int,
+            smaller edge of the image will be matched to this number.
+            i.e, if height > width, then image will be rescaled to
+            (size * height / width, size)
+        interpolation (int, optional): Desired interpolation. Default is
+            ``PIL.Image.BILINEAR``
+
+    Returns:
+        PIL.Image: Rescaled image.
+    """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
     if not (isinstance(size, int) or (isinstance(size, collections.Iterable) and len(size) == 2)):
@@ -128,6 +176,21 @@ def scale(img, size, interpolation=Image.BILINEAR):
 
 
 def pad(img, padding, fill=0):
+    """Pad the given PIL.Image on all sides with the given "pad" value.
+
+    Args:
+        img (PIL.Image): Image to be padded.
+        padding (int or tuple): Padding on each border. If a single int is provided this
+            is used to pad all borders. If tuple of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a tuple of length 4 is provided
+            this is the padding for the left, top, right and bottom borders
+            respectively.
+        fill: Pixel fill value. Default is 0. If a tuple of
+            length 3, it is used to fill R, G, B channels respectively.
+
+    Returns:
+        PIL.Image: Padded image.
+    """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
@@ -144,6 +207,18 @@ def pad(img, padding, fill=0):
 
 
 def crop(img, x, y, w, h):
+    """Crop the given PIL.Image.
+
+    Args:
+        img (PIL.Image): Image to be cropped.
+        x: Left pixel coordinate.
+        y: Upper pixel coordinate.
+        w: Width of the cropped image.
+        h: Height of the cropped image.
+
+    Returns:
+        PIL.Image: Cropped image.
+    """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
@@ -151,12 +226,36 @@ def crop(img, x, y, w, h):
 
 
 def scaled_crop(img, x, y, w, h, size, interpolation=Image.BILINEAR):
+    """Crop the given PIL.Image and scale it to desired size.
+
+    Notably used in RandomSizedCrop.
+
+    Args:
+        img (PIL.Image): Image to be cropped.
+        x: Left pixel coordinate.
+        y: Upper pixel coordinate.
+        w: Width of the cropped image.
+        h: Height of the cropped image.
+        size (sequence or int): Desired output size. Same semantics as ``scale``.
+        interpolation (int, optional): Desired interpolation. Default is
+            ``PIL.Image.BILINEAR``.
+    Returns:
+        PIL.Image: Cropped image.
+    """
     assert _is_pil_image(img), 'img should be PIL Image'
     img = crop(img, x, y, w, h)
     img = scale(img, size, interpolation)
 
 
 def hflip(img):
+    """Horizontally flip the given PIL.Image.
+
+    Args:
+        img (PIL.Image): Image to be flipped.
+
+    Returns:
+        PIL.Image:  Horizontall flipped image.
+    """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
@@ -204,7 +303,7 @@ class ToTensor(object):
 
 
 class ToPILImage(object):
-    """Convert a tensor to PIL Image.
+    """Convert a tensor or an ndarray to PIL Image.
 
     Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
     H x W x C to a PIL.Image while preserving the value range.
@@ -296,6 +395,15 @@ class CenterCrop(object):
 
     @staticmethod
     def get_params(img, output_size):
+        """Get parameters for ``crop`` for center crop.
+
+        Args:
+            img (PIL.Image): Image to be cropped.
+            output_size (tuple): Expected output size of the crop.
+
+        Returns:
+            tuple: params (x, y, w, h) to be passed to ``crop`` for center crop.
+        """
         w, h = img.size
         th, tw = output_size
         x1 = int(round((w - tw) / 2.))
@@ -385,6 +493,15 @@ class RandomCrop(object):
 
     @staticmethod
     def get_params(img, output_size):
+        """Get parameters for ``crop`` for a random crop.
+
+        Args:
+            img (PIL.Image): Image to be cropped.
+            output_size (tuple): Expected output size of the crop.
+
+        Returns:
+            tuple: params (x, y, w, h) to be passed to ``crop`` for random crop.
+        """
         w, h = img.size
         th, tw = output_size
         if w == tw and h == th:
@@ -445,6 +562,16 @@ class RandomSizedCrop(object):
 
     @staticmethod
     def get_params(img):
+        """Get parameters for ``crop`` for a random sized crop.
+
+        Args:
+            img (PIL.Image): Image to be cropped.
+            output_size (tuple): Expected output size of the crop.
+
+        Returns:
+            tuple: params (x, y, w, h) to be passed to ``crop`` for a random
+                sized crop.
+        """
         for attempt in range(10):
             area = img.size[0] * img.size[1]
             target_area = random.uniform(0.08, 1.0) * area
@@ -468,5 +595,12 @@ class RandomSizedCrop(object):
         return x, y, w, w
 
     def __call__(self, img):
+        """
+        Args:
+            img (PIL.Image): Image to be flipped.
+
+        Returns:
+            PIL.Image: Randomly cropped and scaled image.
+        """
         x, y, w, h = self.get_params(img)
         return scaled_crop(img, x, y, w, h, self.size, self.interpolation)
