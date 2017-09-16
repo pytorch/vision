@@ -15,6 +15,24 @@ GRACE_HOPPER = 'assets/grace_hopper_517x606.jpg'
 
 class Tester(unittest.TestCase):
 
+    def test_five_crop(self):
+        for h, w, crop_h, crop_w in [(8, 8, 4, 4), (9, 9, 4, 4), (10, 5, 5, 2), (5, 10, 2, 5)]:
+            img = torch.Tensor(3, h, w).uniform_()
+            results = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.FiveCrop(),
+            ])(img)
+
+            assert len(results) == 5
+            for crop in results:
+                assert crop.size == (crop_w, crop_h)
+            tl = img[:, 0:crop_h, 0:crop_w]
+            tr = img[:, 0:crop_h, w - crop_w:]
+            bl = img[:, h - crop_h:, 0:crop_w]
+            br = img[:, h - crop_:, w - crop_w:]
+            center = transforms.CenterCrop((crop_h, crop_w))(transforms.ToPILImage()(img))
+            expected_output = [tl, tr, bl, br, center]
+
     def test_crop(self):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
