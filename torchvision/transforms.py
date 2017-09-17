@@ -245,6 +245,7 @@ def scaled_crop(img, x, y, w, h, size, interpolation=Image.BILINEAR):
     assert _is_pil_image(img), 'img should be PIL Image'
     img = crop(img, x, y, w, h)
     img = scale(img, size, interpolation)
+    return img
 
 
 def hflip(img):
@@ -552,12 +553,12 @@ class RandomSizedCrop(object):
     This is popularly used to train the Inception networks.
 
     Args:
-        size: size of the smaller edge
+        size: expected output size of each edge
         interpolation: Default: PIL.Image.BILINEAR
     """
 
     def __init__(self, size, interpolation=Image.BILINEAR):
-        self.size = size
+        self.size = (size, size)
         self.interpolation = interpolation
 
     @staticmethod
@@ -566,7 +567,6 @@ class RandomSizedCrop(object):
 
         Args:
             img (PIL.Image): Image to be cropped.
-            output_size (tuple): Expected output size of the crop.
 
         Returns:
             tuple: params (x, y, w, h) to be passed to ``crop`` for a random
