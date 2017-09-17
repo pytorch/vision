@@ -178,7 +178,7 @@ class Tester(unittest.TestCase):
     ])
     def test_pil_to_tensor(self, _, channels, height, width):
         input_data = torch.ByteTensor(channels, height, width)
-	input_data = input_data.random_(0, 255).float().div_(255)
+        input_data = input_data.random_(0, 255).float().div_(255)
         img = transforms.ToPILImage()(input_data)
         output = transforms.ToTensor()(img)
         assert np.allclose(input_data.numpy(), output.numpy())
@@ -187,10 +187,10 @@ class Tester(unittest.TestCase):
         ('smoke', 4, 4),
     ])
     def test_ndarray_to_tensor_2dim(self, _, height, width):
-	ndarray_size = (height, width)
-	ndarray = np.random.randint(low=0, high=255, size=ndarray_size)
+        ndarray_size = (height, width)
+        ndarray = np.random.randint(low=0, high=255, size=ndarray_size)
         output = transforms.ToTensor()(ndarray)
-	expected_output = ndarray[...,np.newaxis].transpose((2, 0, 1)) / 255.0
+        expected_output = ndarray[..., np.newaxis].transpose((2, 0, 1)) / 255.0
         assert np.allclose(output.numpy(), expected_output)
 
     @parameterized.expand([
@@ -198,10 +198,10 @@ class Tester(unittest.TestCase):
         ('3channel', 3, 4, 4),
     ])
     def test_ndarray_to_tensor_3dim(self, _, channels, height, width):
-	ndarray_size = (height, width, channels)
-	ndarray = np.random.randint(low=0, high=255, size=ndarray_size)
+        ndarray_size = (height, width, channels)
+        ndarray = np.random.randint(low=0, high=255, size=ndarray_size)
         output = transforms.ToTensor()(ndarray)
-	expected_output = ndarray.transpose((2, 0, 1)) / 255.0
+        expected_output = ndarray.transpose((2, 0, 1)) / 255.0
         assert np.allclose(output.numpy(), expected_output)
 
     @unittest.skipIf(accimage is None, 'accimage not available')
