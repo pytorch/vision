@@ -52,12 +52,14 @@ class ToTensor(object):
         """
         if isinstance(pic, np.ndarray):
             # handle numpy array
-            if len(pic.shape) >= 3:
-                img = torch.from_numpy(pic.transpose((2, 0, 1)))
-            else:
-                img = torch.from_numpy(pic.reshape((1,) + pic.shape))
+            if pic.ndim == 2:
+		pic = pic[np.newaxis]
+	    elif pic.ndim == 3:
+		pic.transpose((2, 0, 1))
+	    else:
+		raise ValueError('only 2D and 3D images accepted, got {}D image'.format(pic.ndim)
             # backward compatibility
-            return img.float().div(255)
+            return torch.from_numpy(pic).float().div(255.)
 
         if accimage is not None and isinstance(pic, accimage.Image):
             nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)

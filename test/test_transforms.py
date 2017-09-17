@@ -1,6 +1,7 @@
 import torch
 import torchvision.transforms as transforms
 import unittest
+from parameterized import parameterized
 import random
 import numpy as np
 from PIL import Image
@@ -171,18 +172,36 @@ class Tester(unittest.TestCase):
         y = trans(x)
         assert (y.equal(x))
 
-    def test_to_tensor(self):
-        channels = 3
-        height, width = 4, 4
-        trans = transforms.ToTensor()
-        input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
+    @parameterized.expand([
+        ('3channel', 3, 4, 4),
+        ('1channel', 1, 4, 4),
+    ])
+    def test_pil_to_tensor(self, _, channels, height, width):
+        input_data = torch.ByteTensor(channels, height, width)
+	input_data = input_data.random_(0, 255).float().div_(255)
         img = transforms.ToPILImage()(input_data)
-        output = trans(img)
+        output = transforms.ToTensor()(img)
         assert np.allclose(input_data.numpy(), output.numpy())
 
-        ndarray = np.random.randint(low=0, high=255, size=(height, width, channels))
-        output = trans(ndarray)
-        expected_output = ndarray.transpose((2, 0, 1)) / 255.0
+    @parameterized.expand([
+        ('smoke', 4, 4),
+    ])
+    def test_ndarray_to_tensor_2dim(self, _, height, width):
+	ndarray_size = (height, width)
+	ndarray = np.random.randint(low=0, high=255, size=ndarray_size)
+        output = transforms.ToTensor()(ndarray)
+	expected_output = ndarray[...,np.newaxis].transpose((2, 0, 1)) / 255.0
+        assert np.allclose(output.numpy(), expected_output)
+
+    @parameterized.expand([
+        ('1channel', 1, 4, 4),
+        ('3channel', 3, 4, 4),
+    ])
+    def test_ndarray_to_tensor_3dim(self, _, channels, height, width):
+	ndarray_size = (height, width, channels)
+	ndarray = np.random.randint(low=0, high=255, size=ndarray_size)
+        output = transforms.ToTensor()(ndarray)
+	expected_output = ndarray.transpose((2, 0, 1)) / 255.0
         assert np.allclose(output.numpy(), expected_output)
 
     @unittest.skipIf(accimage is None, 'accimage not available')
