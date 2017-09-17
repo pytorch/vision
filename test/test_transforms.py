@@ -1,7 +1,6 @@
 import torch
 import torchvision.transforms as transforms
 import unittest
-from unittest.mock import patch
 import random
 import numpy as np
 from PIL import Image
