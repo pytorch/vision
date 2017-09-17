@@ -1,6 +1,7 @@
 import torch
 import torchvision.transforms as transforms
 import unittest
+from unittest.mock import patch
 import random
 import numpy as np
 from PIL import Image
@@ -8,6 +9,11 @@ try:
     import accimage
 except ImportError:
     accimage = None
+
+try:
+    from scipy import stats
+except ImportError:
+    stats = None
 
 
 GRACE_HOPPER = 'assets/grace_hopper_517x606.jpg'
@@ -326,6 +332,34 @@ class Tester(unittest.TestCase):
         img = trans(img_data)
         assert img.mode == 'I'
         assert np.allclose(img, img_data[:, :, 0])
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_vertical_flip(self):
+        img = transforms.ToPILImage()(torch.rand(3, 10, 10))
+        vimg = img.transpose(Image.FLIP_TOP_BOTTOM)
+
+        num_vertical = 0
+        for _ in range(100):
+            out = transforms.RandomVerticalFlip()(img)
+            if out == vimg:
+                num_vertical += 1
+
+        p_value = stats.binom_test(num_vertical, 100, p=0.5)
+        assert p_value > 0.05
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_horizontal_flip(self):
+        img = transforms.ToPILImage()(torch.rand(3, 10, 10))
+        himg = img.transpose(Image.FLIP_LEFT_RIGHT)
+
+        num_horizontal = 0
+        for _ in range(100):
+            out = transforms.RandomHorizontalFlip()(img)
+            if out == himg:
+                num_horizontal += 1
+
+        p_value = stats.binom_test(num_horizontal, 100, p=0.5)
+        assert p_value > 0.05
 
 
 if __name__ == '__main__':
