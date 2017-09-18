@@ -395,7 +395,7 @@ class Whiten(object):
 
     def __init__(self, whiten_matrix):
         self.whiten_matrix = whiten_matrix
-    
+
     def __call__(self, tensor):
         """
         Args:
