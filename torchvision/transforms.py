@@ -380,3 +380,31 @@ class RandomSizedCrop(object):
         scale = Scale(self.size, interpolation=self.interpolation)
         crop = CenterCrop(self.size)
         return crop(scale(img))
+
+
+class Whiten(object):
+    """Whiten a tensor image with a whitening matrix computed offline.
+
+    Given whiten_matrix, will flatten the torch.*Tensor, compute the
+    dot product with the whitening matrix and reshape the tensor to
+    its original shape.
+
+    Args:
+        whiten_matrix (Tensor): tensor [D x D], D = C*H*W
+    """
+    
+    def __init__(self, whiten_matrix):
+        self.whiten_matrix = whiten_matrix
+        
+    def __call__(self, tensor):
+        """
+        Args:
+            tensor (Tensor): Tensor image of size (C, H, W) to be whitened.
+
+        Returns:
+            Tensor: Whitened image.
+        """
+        flat_tensor = tensor.view(1, -1)
+        white_tensor = torch.mm(flat_tensor, self.whiten_matrix)
+        tensor = white_tensor.view(tensor.size())
+        return tensor

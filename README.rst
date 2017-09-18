@@ -366,6 +366,12 @@ Transforms on torch.\*Tensor
 Given mean: (R, G, B) and std: (R, G, B), will normalize each channel of
 the torch.\*Tensor, i.e. channel = (channel - mean) / std
 
+``Whiten(whiten_matrix)``
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Given ``whiten_matrix`` (D x D), will compute its dot product with the flattened 
+torch.\*Tensor and then reshape it to its original dimensions.
+
 Conversion Transforms
 ~~~~~~~~~~~~~~~~~~~~~
 
