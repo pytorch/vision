@@ -392,10 +392,10 @@ class Whiten(object):
     Args:
         whiten_matrix (Tensor): tensor [D x D], D = C*H*W
     """
-    
+
     def __init__(self, whiten_matrix):
         self.whiten_matrix = whiten_matrix
-        
+    
     def __call__(self, tensor):
         """
         Args:
