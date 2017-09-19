@@ -6,6 +6,7 @@ architectures:
 -  `ResNet`_
 -  `SqueezeNet`_
 -  `DenseNet`_
+-  `Inception`_ v3
 
 You can construct a model with random weights by calling its constructor:
 
@@ -14,22 +15,27 @@ You can construct a model with random weights by calling its constructor:
     import torchvision.models as models
     resnet18 = models.resnet18()
     alexnet = models.alexnet()
+    vgg16 = models.vgg16()
     squeezenet = models.squeezenet1_0()
     densenet = models.densenet_161()
+    inception = models.inception_v3()
 
-We provide pre-trained models for the ResNet variants and AlexNet, using the
-PyTorch :mod:`torch.utils.model_zoo`. These can  constructed by passing
-``pretrained=True``:
+We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
+These can be constructed by passing ``pretrained=True``:
 
 .. code:: python
 
     import torchvision.models as models
     resnet18 = models.resnet18(pretrained=True)
     alexnet = models.alexnet(pretrained=True)
+    squeezenet = models.squeezenet1_0(pretrained=True)
+    vgg16 = models.vgg16(pretrained=True)
+    densenet = models.densenet_161(pretrained=True)
+    inception = models.inception_v3(pretrained=True)
 
 All pre-trained models expect input images normalized in the same way,
 i.e. mini-batches of 3-channel RGB images of shape (3 x H x W),
-where H and W are expected to be atleast 224.
+where H and W are expected to be at least 224.
 The images have to be loaded in to a range of [0, 1] and then normalized
 using ``mean = [0.485, 0.456, 0.406]`` and ``std = [0.229, 0.224, 0.225]``.
 You can use the following transform to normalize::
@@ -74,6 +80,7 @@ Densenet-161                      22.35           6.20
 .. _ResNet: https://arxiv.org/abs/1512.03385
 .. _SqueezeNet: https://arxiv.org/abs/1602.07360
 .. _DenseNet: https://arxiv.org/abs/1608.06993
+.. _Inception: https://arxiv.org/abs/1512.00567
 """
 
 from .alexnet import *
