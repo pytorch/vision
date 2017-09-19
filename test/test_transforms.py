@@ -86,7 +86,7 @@ class Tester(unittest.TestCase):
         owidth = random.randint(5, 12) * 2
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Scale((owidth, oheight)),
+            transforms.Scale((oheight, owidth)),
             transforms.ToTensor(),
         ])(img)
         assert result.size(1) == oheight
@@ -94,7 +94,7 @@ class Tester(unittest.TestCase):
 
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Scale([owidth, oheight]),
+            transforms.Scale([oheight, owidth]),
             transforms.ToTensor(),
         ])(img)
         assert result.size(1) == oheight
@@ -150,7 +150,7 @@ class Tester(unittest.TestCase):
         assert output.size[0] == width + padding[0] + padding[2]
         assert output.size[1] == height + padding[1] + padding[3]
 
-    def test_pad_raises_with_invalide_pad_sequence_len(self):
+    def test_pad_raises_with_invalid_pad_sequence_len(self):
         with self.assertRaises(ValueError):
             transforms.Pad(())
 
@@ -263,6 +263,22 @@ class Tester(unittest.TestCase):
 
         assert np.allclose(img_data_short.numpy(), to_tensor(img_short).numpy())
         assert np.allclose(img_data_int.numpy(), to_tensor(img_int).numpy())
+
+    def test_tensor_rgba_to_pil_image(self):
+        trans = transforms.ToPILImage()
+        to_tensor = transforms.ToTensor()
+
+        img_data = torch.Tensor(4, 4, 4).uniform_()
+        img = trans(img_data)
+        assert img.mode == 'RGBA'
+        assert img.getbands() == ('R', 'G', 'B', 'A')
+        r, g, b, a = img.split()
+
+        expected_output = img_data.mul(255).int().float().div(255)
+        assert np.allclose(expected_output[0].numpy(), to_tensor(r).numpy())
+        assert np.allclose(expected_output[1].numpy(), to_tensor(g).numpy())
+        assert np.allclose(expected_output[2].numpy(), to_tensor(b).numpy())
+        assert np.allclose(expected_output[3].numpy(), to_tensor(a).numpy())
 
     def test_ndarray_to_pil_image(self):
         trans = transforms.ToPILImage()

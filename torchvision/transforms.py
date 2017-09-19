@@ -109,6 +109,9 @@ def to_pil_image(pic):
             mode = 'I'
         elif npimg.dtype == np.float32:
             mode = 'F'
+    elif npimg.shape[2] == 4:
+            if npimg.dtype == np.uint8:
+                mode = 'RGBA'
     else:
         if npimg.dtype == np.uint8:
             mode = 'RGB'
