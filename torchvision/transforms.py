@@ -144,7 +144,7 @@ def scale(img, size, interpolation=Image.BILINEAR):
     Args:
         img (PIL.Image): Image to be scaled.
         size (sequence or int): Desired output size. If size is a sequence like
-            (w, h), output size will be matched to this. If size is an int,
+            (h, w), output size will be matched to this. If size is an int,
             smaller edge of the image will be matched to this number.
             i.e, if height > width, then image will be rescaled to
             (size * height / width, size)
@@ -172,7 +172,7 @@ def scale(img, size, interpolation=Image.BILINEAR):
             ow = int(size * w / h)
             return img.resize((ow, oh), interpolation)
     else:
-        return img.resize(size, interpolation)
+        return img.resize(size[::-1], interpolation)
 
 
 def pad(img, padding, fill=0):
@@ -355,7 +355,7 @@ class Scale(object):
 
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
-            (w, h), output size will be matched to this. If size is an int,
+            (h, w), output size will be matched to this. If size is an int,
             smaller edge of the image will be matched to this number.
             i.e, if height > width, then image will be rescaled to
             (size * height / width, size)
