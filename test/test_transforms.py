@@ -126,7 +126,7 @@ class Tester(unittest.TestCase):
         owidth = random.randint(5, 12) * 2
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Scale((owidth, oheight)),
+            transforms.Scale((oheight, owidth)),
             transforms.ToTensor(),
         ])(img)
         assert result.size(1) == oheight
@@ -134,7 +134,7 @@ class Tester(unittest.TestCase):
 
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Scale([owidth, oheight]),
+            transforms.Scale([oheight, owidth]),
             transforms.ToTensor(),
         ])(img)
         assert result.size(1) == oheight
