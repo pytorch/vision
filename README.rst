@@ -176,6 +176,10 @@ STL10
 SVHN
 ~~~~
 
+Note: The SVHN dataset assigns the label `10` to the digit `0`. However, in this Dataset,
+we assign the label `0` to the digit `0` to be compatible with PyTorch loss functions which
+expect the class labels to be in the range `[0, C-1]`
+
 ``dset.SVHN(root, split='train', transform=None, target_transform=None, download=False)``
 
 -  ``root`` : root directory of dataset where there is folder ``SVHN``
