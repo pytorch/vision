@@ -9,6 +9,9 @@ from .utils import download_url, check_integrity
 
 class SVHN(data.Dataset):
     """`SVHN <http://ufldl.stanford.edu/housenumbers/>`_ Dataset.
+    Note: The SVHN dataset assigns the label `10` to the digit `0`. However, in this Dataset,
+    we assign the label `0` to the digit `0` to be compatible with PyTorch loss functions which
+    expect the class labels to be in the range `[0, C-1]`
 
     Args:
         root (string): Root directory of dataset where directory
