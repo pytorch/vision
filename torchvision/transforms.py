@@ -403,8 +403,8 @@ class FiveCrop(object):
         w, h = img.size
         crop_h, crop_w = self.size
         if crop_w > w or crop_h > h:
-          raise ValueError("Requested crop size {} is bigger than input size {}".format(self.size,
-                                                                                        (h, w)))
+            raise ValueError("Requested crop size {} is bigger than input size {}".format(self.size,
+                                                                                          (h, w)))
         tl = img.crop((0, 0, crop_w, crop_h))
         tr = img.crop((w - crop_w, 0, w, crop_h))
         bl = img.crop((0, h - crop_h, crop_w, h))
