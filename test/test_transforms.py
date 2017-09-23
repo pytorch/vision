@@ -57,27 +57,33 @@ class Tester(unittest.TestCase):
                             + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
 
     def test_five_crop(self):
-        for h, w, expected_crop_h, expected_crop_w in [(8, 8, 4, 4), (9, 9, 4, 4), (10, 5, 5, 2),
-                                                       (5, 10, 2, 5)]:
-            img = torch.FloatTensor(3, h, w).uniform_()
+        to_pil_image = transforms.ToPILImage()
+        h = random.randint(5, 25)
+        w = random.randint(5, 25)
+        for single_dim in [True, False]:
+            crop_h = random.randint(1, h)
+            crop_w = random.randint(1, w)
+            if single_dim:
+              crop_h = min(crop_h, crop_w)
+              crop_w = crop_h
+              transform = transforms.FiveCrop(crop_h)
+            else:
+              transform = transforms.FiveCrop((crop_h, crop_w))
 
-            results = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.FiveCrop(),
-            ])(img)
+            img = torch.FloatTensor(3, h, w).uniform_()
+            results = transform(to_pil_image(img))
 
             assert len(results) == 5
             for crop in results:
-                assert crop.size == (expected_crop_w, expected_crop_h)
+                assert crop.size == (crop_w, crop_h)
 
             to_pil_image = transforms.ToPILImage()
-            tl = to_pil_image(img[:, 0:expected_crop_h, 0:expected_crop_w])
-            tr = to_pil_image(img[:, 0:expected_crop_h, w - expected_crop_w:])
-            bl = to_pil_image(img[:, h - expected_crop_h:, 0:expected_crop_w])
-            br = to_pil_image(img[:, h - expected_crop_h:, w - expected_crop_w:])
-            center = transforms.CenterCrop((expected_crop_h,
-                                            expected_crop_w))(to_pil_image(img))
-            expected_output = [tl, tr, bl, br, center]
+            tl = to_pil_image(img[:, 0:crop_h, 0:crop_w])
+            tr = to_pil_image(img[:, 0:crop_h, w - crop_w:])
+            bl = to_pil_image(img[:, h - crop_h:, 0:crop_w])
+            br = to_pil_image(img[:, h - crop_h:, w - crop_w:])
+            center = transforms.CenterCrop((crop_h, crop_w))(to_pil_image(img))
+            expected_output = (tl, tr, bl, br, center)
             assert results == expected_output
 
     def test_ten_crop(self):

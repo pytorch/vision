@@ -383,19 +383,34 @@ class RandomSizedCrop(object):
 
 
 class FiveCrop(object):
-    """Crop the given PIL.Image into four corners and the central crop."""
+    """Crop the given PIL.Image into four corners and the central crop.
+
+      Args:
+          size (sequence or int): Desired output size of the crop. If size is an
+              int instead of sequence like (h, w), a square crop (size, size) is
+              made.
+    """
+
+    def __init__(self, size):
+        self.size = size
+        if isinstance(size, numbers.Number):
+            self.size = (int(size), int(size))
+        else:
+            assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
+            self.size = size
 
     def __call__(self, img):
         w, h = img.size
-        crop_w = w // 2
-        crop_h = h // 2
-
+        crop_h, crop_w = self.size
+        if crop_w > w or crop_h > h:
+          raise ValueError("Requested crop size {} is bigger than input size {}".format(self.size,
+                                                                                        (h, w)))
         tl = img.crop((0, 0, crop_w, crop_h))
         tr = img.crop((w - crop_w, 0, w, crop_h))
         bl = img.crop((0, h - crop_h, crop_w, h))
         br = img.crop((w - crop_w, h - crop_h, w, h))
         center = CenterCrop((crop_h, crop_w))(img)
-        return [tl, tr, bl, br, center]
+        return (tl, tr, bl, br, center)
 
 
 class TenCrop(object):
