@@ -421,15 +421,22 @@ class TenCrop(object):
            vflip bool: Use vertical flipping instead of horizontal
     """
 
-    def __init__(self, vflip=False):
+    def __init__(self, size, vflip=False):
+        self.size = size
+        if isinstance(size, numbers.Number):
+            self.size = (int(size), int(size))
+        else:
+            assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
+            self.size = size
         self.vflip = vflip
 
     def __call__(self, img):
-        first_five = FiveCrop()(img)
+        five_crop = FiveCrop(self.size)
+        first_five = five_crop(img)
         if self.vflip:
             img = img.transpose(Image.FLIP_TOP_BOTTOM)
         else:
             img = img.transpose(Image.FLIP_LEFT_RIGHT)
 
-        second_five = FiveCrop()(img)
+        second_five = five_crop(img)
         return first_five + second_five
