@@ -61,6 +61,66 @@ class Tester(unittest.TestCase):
         assert sum2 > sum1, "height: " + str(height) + " width: " \
                             + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
 
+    def test_five_crop(self):
+        to_pil_image = transforms.ToPILImage()
+        h = random.randint(5, 25)
+        w = random.randint(5, 25)
+        for single_dim in [True, False]:
+            crop_h = random.randint(1, h)
+            crop_w = random.randint(1, w)
+            if single_dim:
+                crop_h = min(crop_h, crop_w)
+                crop_w = crop_h
+                transform = transforms.FiveCrop(crop_h)
+            else:
+                transform = transforms.FiveCrop((crop_h, crop_w))
+
+            img = torch.FloatTensor(3, h, w).uniform_()
+            results = transform(to_pil_image(img))
+
+            assert len(results) == 5
+            for crop in results:
+                assert crop.size == (crop_w, crop_h)
+
+            to_pil_image = transforms.ToPILImage()
+            tl = to_pil_image(img[:, 0:crop_h, 0:crop_w])
+            tr = to_pil_image(img[:, 0:crop_h, w - crop_w:])
+            bl = to_pil_image(img[:, h - crop_h:, 0:crop_w])
+            br = to_pil_image(img[:, h - crop_h:, w - crop_w:])
+            center = transforms.CenterCrop((crop_h, crop_w))(to_pil_image(img))
+            expected_output = (tl, tr, bl, br, center)
+            assert results == expected_output
+
+    def test_ten_crop(self):
+        to_pil_image = transforms.ToPILImage()
+        h = random.randint(5, 25)
+        w = random.randint(5, 25)
+        for should_vflip in [True, False]:
+            for single_dim in [True, False]:
+                crop_h = random.randint(1, h)
+                crop_w = random.randint(1, w)
+                if single_dim:
+                    crop_h = min(crop_h, crop_w)
+                    crop_w = crop_h
+                    transform = transforms.TenCrop(crop_h, vflip=should_vflip)
+                    five_crop = transforms.FiveCrop(crop_h)
+                else:
+                    transform = transforms.TenCrop((crop_h, crop_w), vflip=should_vflip)
+                    five_crop = transforms.FiveCrop((crop_h, crop_w))
+
+                img = to_pil_image(torch.FloatTensor(3, h, w).uniform_())
+                results = transform(img)
+                expected_output = five_crop(img)
+                if should_vflip:
+                    vflipped_img = img.transpose(Image.FLIP_TOP_BOTTOM)
+                    expected_output += five_crop(vflipped_img)
+                else:
+                    hflipped_img = img.transpose(Image.FLIP_LEFT_RIGHT)
+                    expected_output += five_crop(hflipped_img)
+
+                assert len(results) == 10
+                assert expected_output == results
+
     def test_scale(self):
         height = random.randint(24, 32) * 2
         width = random.randint(24, 32) * 2
