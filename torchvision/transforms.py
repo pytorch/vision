@@ -13,6 +13,7 @@ import types
 import collections
 import warnings
 
+
 def _is_pil_image(img):
     if accimage is not None:
         return isinstance(img, (Image.Image, accimage.Image))
@@ -179,7 +180,7 @@ def resize(img, size, interpolation=Image.BILINEAR):
 
 
 def scale(*args, **kwargs):
-    warnings.warn("The use of the transforms.Scale transform is deprecated, " + \
+    warnings.warn("The use of the transforms.Scale transform is deprecated, " +
                   "please use transforms.Resize instead.")
     return resize(*args, **kwargs)
 
@@ -472,8 +473,8 @@ class Resize(object):
 
 class Scale(Resize):
     def __init__(self, *args, **kwargs):
-        warnings.warn("The use of the transforms.Scale transform is deprecated, " + \
-                  "please use transforms.Resize instead.")
+        warnings.warn("The use of the transforms.Scale transform is deprecated, " +
+                      "please use transforms.Resize instead.")
         super(Scale, self).__init__(*args, **kwargs)
 
 
