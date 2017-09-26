@@ -123,7 +123,7 @@ class Tester(unittest.TestCase):
                 assert len(results) == 10
                 assert expected_output == results
 
-    def test_scale(self):
+    def test_resize(self):
         height = random.randint(24, 32) * 2
         width = random.randint(24, 32) * 2
         osize = random.randint(5, 12) * 2
@@ -131,7 +131,7 @@ class Tester(unittest.TestCase):
         img = torch.ones(3, height, width)
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Scale(osize),
+            transforms.Resize(osize),
             transforms.ToTensor(),
         ])(img)
         assert osize in result.size()
@@ -142,7 +142,7 @@ class Tester(unittest.TestCase):
 
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Scale([osize, osize]),
+            transforms.Resize([osize, osize]),
             transforms.ToTensor(),
         ])(img)
         assert osize in result.size()
@@ -153,7 +153,7 @@ class Tester(unittest.TestCase):
         owidth = random.randint(5, 12) * 2
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Scale((oheight, owidth)),
+            transforms.Resize((oheight, owidth)),
             transforms.ToTensor(),
         ])(img)
         assert result.size(1) == oheight
@@ -161,7 +161,7 @@ class Tester(unittest.TestCase):
 
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Scale([oheight, owidth]),
+            transforms.Resize([oheight, owidth]),
             transforms.ToTensor(),
         ])(img)
         assert result.size(1) == oheight
@@ -265,7 +265,7 @@ class Tester(unittest.TestCase):
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_resize(self):
         trans = transforms.Compose([
-            transforms.Scale(256, interpolation=Image.LINEAR),
+            transforms.Resize(256, interpolation=Image.LINEAR),
             transforms.ToTensor(),
         ])
 

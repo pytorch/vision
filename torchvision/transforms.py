@@ -11,7 +11,7 @@ import numpy as np
 import numbers
 import types
 import collections
-
+import warnings
 
 def _is_pil_image(img):
     if accimage is not None:
@@ -141,21 +141,21 @@ def normalize(tensor, mean, std):
     return tensor
 
 
-def scale(img, size, interpolation=Image.BILINEAR):
-    """Rescale the input PIL.Image to the given size.
+def resize(img, size, interpolation=Image.BILINEAR):
+    """Resize the input PIL.Image to the given size.
 
     Args:
-        img (PIL.Image): Image to be scaled.
+        img (PIL.Image): Image to be resized.
         size (sequence or int): Desired output size. If size is a sequence like
-            (h, w), output size will be matched to this. If size is an int,
-            smaller edge of the image will be matched to this number.
-            i.e, if height > width, then image will be rescaled to
+            (h, w), the output size will be matched to this. If size is an int,
+            the smaller edge of the image will be matched to this number maintaing
+            the aspect ratio. i.e, if height > width, then image will be rescaled to
             (size * height / width, size)
         interpolation (int, optional): Desired interpolation. Default is
             ``PIL.Image.BILINEAR``
 
     Returns:
-        PIL.Image: Rescaled image.
+        PIL.Image: Resized image.
     """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
@@ -176,6 +176,12 @@ def scale(img, size, interpolation=Image.BILINEAR):
             return img.resize((ow, oh), interpolation)
     else:
         return img.resize(size[::-1], interpolation)
+
+
+def scale(*args, **kwargs):
+    warnings.warn("The use of the transforms.Scale transform is deprecated, " + \
+                  "please use transforms.Resize instead.")
+    return resize(*args, **kwargs)
 
 
 def pad(img, padding, fill=0):
@@ -229,7 +235,7 @@ def crop(img, i, j, h, w):
 
 
 def scaled_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
-    """Crop the given PIL.Image and scale it to desired size.
+    """Crop the given PIL.Image and resize it to desired size.
 
     Notably used in RandomSizedCrop.
 
@@ -247,7 +253,7 @@ def scaled_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
     """
     assert _is_pil_image(img), 'img should be PIL Image'
     img = crop(img, i, j, h, w)
-    img = scale(img, size, interpolation)
+    img = resize(img, size, interpolation)
     return img
 
 
@@ -435,8 +441,8 @@ class Normalize(object):
         return normalize(tensor, self.mean, self.std)
 
 
-class Scale(object):
-    """Rescale the input PIL.Image to the given size.
+class Resize(object):
+    """Resize the input PIL.Image to the given size.
 
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
@@ -461,7 +467,14 @@ class Scale(object):
         Returns:
             PIL.Image: Rescaled image.
         """
-        return scale(img, self.size, self.interpolation)
+        return resize(img, self.size, self.interpolation)
+
+
+class Scale(Resize):
+    def __init__(self, *args, **kwargs):
+        warnings.warn("The use of the transforms.Scale transform is deprecated, " + \
+                  "please use transforms.Resize instead.")
+        super(Scale, self).__init__(*args, **kwargs)
 
 
 class CenterCrop(object):
