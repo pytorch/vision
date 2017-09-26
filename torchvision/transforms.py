@@ -266,6 +266,21 @@ def hflip(img):
     return img.transpose(Image.FLIP_LEFT_RIGHT)
 
 
+def vflip(img):
+    """Vertically flip the given PIL.Image.
+
+    Args:
+        img (PIL.Image): Image to be flipped.
+
+    Returns:
+        PIL.Image:  Vertically flipped image.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    return img.transpose(Image.FLIP_TOP_BOTTOM)
+
+
 class Compose(object):
     """Composes several transforms together.
 
@@ -548,7 +563,7 @@ class RandomHorizontalFlip(object):
 
 
 class RandomVerticalFlip(object):
-    """Vertically flip the given PIL.Image randomly with a probability of 0.5"""
+    """Vertically flip the given PIL.Image randomly with a probability of 0.5."""
 
     def __call__(self, img):
         """
@@ -559,7 +574,7 @@ class RandomVerticalFlip(object):
             PIL.Image: Randomly flipped image.
         """
         if random.random() < 0.5:
-            return img.transpose(Image.FLIP_TOP_BOTTOM)
+            return vflip(img)
         return img
 
 
