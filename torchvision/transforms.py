@@ -209,15 +209,15 @@ def pad(img, padding, fill=0):
     return ImageOps.expand(img, border=padding, fill=fill)
 
 
-def crop(img, x, y, w, h):
+def crop(img, i, j, h, w):
     """Crop the given PIL.Image.
 
     Args:
         img (PIL.Image): Image to be cropped.
-        x: Left pixel coordinate.
-        y: Upper pixel coordinate.
-        w: Width of the cropped image.
+        i: Upper pixel coordinate.
+        j: Left pixel coordinate.
         h: Height of the cropped image.
+        w: Width of the cropped image.
 
     Returns:
         PIL.Image: Cropped image.
@@ -225,20 +225,20 @@ def crop(img, x, y, w, h):
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    return img.crop((x, y, x + w, y + h))
+    return img.crop((j, i, j + w, i + h))
 
 
-def scaled_crop(img, x, y, w, h, size, interpolation=Image.BILINEAR):
+def scaled_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
     """Crop the given PIL.Image and scale it to desired size.
 
     Notably used in RandomSizedCrop.
 
     Args:
         img (PIL.Image): Image to be cropped.
-        x: Left pixel coordinate.
-        y: Upper pixel coordinate.
-        w: Width of the cropped image.
+        i: Upper pixel coordinate.
+        j: Left pixel coordinate.
         h: Height of the cropped image.
+        w: Width of the cropped image.
         size (sequence or int): Desired output size. Same semantics as ``scale``.
         interpolation (int, optional): Desired interpolation. Default is
             ``PIL.Image.BILINEAR``.
@@ -246,7 +246,7 @@ def scaled_crop(img, x, y, w, h, size, interpolation=Image.BILINEAR):
         PIL.Image: Cropped image.
     """
     assert _is_pil_image(img), 'img should be PIL Image'
-    img = crop(img, x, y, w, h)
+    img = crop(img, i, j, h, w)
     img = scale(img, size, interpolation)
     return img
 
@@ -406,13 +406,13 @@ class CenterCrop(object):
             output_size (tuple): Expected output size of the crop.
 
         Returns:
-            tuple: params (x, y, w, h) to be passed to ``crop`` for center crop.
+            tuple: params (i, j, h, w) to be passed to ``crop`` for center crop.
         """
         w, h = img.size
         th, tw = output_size
-        x1 = int(round((w - tw) / 2.))
-        y1 = int(round((h - th) / 2.))
-        return x1, y1, tw, th
+        i = int(round((h - th) / 2.))
+        j = int(round((w - tw) / 2.))
+        return i, j, th, tw
 
     def __call__(self, img):
         """
@@ -422,8 +422,8 @@ class CenterCrop(object):
         Returns:
             PIL.Image: Cropped image.
         """
-        x1, y1, tw, th = self.get_params(img, self.size)
-        return crop(img, x1, y1, tw, th)
+        i, j, h, w = self.get_params(img, self.size)
+        return crop(img, i, j, h, w)
 
 
 class Pad(object):
@@ -504,16 +504,16 @@ class RandomCrop(object):
             output_size (tuple): Expected output size of the crop.
 
         Returns:
-            tuple: params (x, y, w, h) to be passed to ``crop`` for random crop.
+            tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
         """
         w, h = img.size
         th, tw = output_size
         if w == tw and h == th:
             return img
 
-        x1 = random.randint(0, w - tw)
-        y1 = random.randint(0, h - th)
-        return x1, y1, tw, th
+        i = random.randint(0, h - th)
+        j = random.randint(0, w - tw)
+        return i, j, th, tw
 
     def __call__(self, img):
         """
@@ -526,9 +526,9 @@ class RandomCrop(object):
         if self.padding > 0:
             img = pad(img, self.padding)
 
-        x1, y1, tw, th = self.get_params(img, self.size)
+        i, j, h, w = self.get_params(img, self.size)
 
-        return crop(img, x1, y1, tw, th)
+        return crop(img, i, j, h, w)
 
 
 class RandomHorizontalFlip(object):
@@ -572,7 +572,7 @@ class RandomSizedCrop(object):
             img (PIL.Image): Image to be cropped.
 
         Returns:
-            tuple: params (x, y, w, h) to be passed to ``crop`` for a random
+            tuple: params (i, j, h, w) to be passed to ``crop`` for a random
                 sized crop.
         """
         for attempt in range(10):
@@ -587,15 +587,15 @@ class RandomSizedCrop(object):
                 w, h = h, w
 
             if w <= img.size[0] and h <= img.size[1]:
-                x = random.randint(0, img.size[0] - w)
-                y = random.randint(0, img.size[1] - h)
-                return x, y, w, h
+                i = random.randint(0, img.size[1] - h)
+                j = random.randint(0, img.size[0] - w)
+                return i, j, h, w
 
         # Fallback
         w = min(img.size[0], img.shape[1])
-        x = (img.shape[0] - w) // 2
-        y = (img.shape[1] - w) // 2
-        return x, y, w, w
+        i = (img.shape[1] - w) // 2
+        j = (img.shape[0] - w) // 2
+        return i, j, w, w
 
     def __call__(self, img):
         """
@@ -605,5 +605,5 @@ class RandomSizedCrop(object):
         Returns:
             PIL.Image: Randomly cropped and scaled image.
         """
-        x, y, w, h = self.get_params(img)
-        return scaled_crop(img, x, y, w, h, self.size, self.interpolation)
+        i, j, h, w = self.get_params(img)
+        return scaled_crop(img, i, j, h, w, self.size, self.interpolation)
