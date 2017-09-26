@@ -102,10 +102,12 @@ class Tester(unittest.TestCase):
                 if single_dim:
                     crop_h = min(crop_h, crop_w)
                     crop_w = crop_h
-                    transform = transforms.TenCrop(crop_h, vflip=should_vflip)
+                    transform = transforms.TenCrop(crop_h,
+                                                   vertical_flip=should_vflip)
                     five_crop = transforms.FiveCrop(crop_h)
                 else:
-                    transform = transforms.TenCrop((crop_h, crop_w), vflip=should_vflip)
+                    transform = transforms.TenCrop((crop_h, crop_w),
+                                                   vertical_flip=should_vflip)
                     five_crop = transforms.FiveCrop((crop_h, crop_w))
 
                 img = to_pil_image(torch.FloatTensor(3, h, w).uniform_())
