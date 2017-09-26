@@ -234,7 +234,7 @@ def crop(img, i, j, h, w):
     return img.crop((j, i, j + w, i + h))
 
 
-def scaled_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
+def resized_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
     """Crop the given PIL.Image and resize it to desired size.
 
     Notably used in RandomSizedCrop.
@@ -714,10 +714,10 @@ class RandomSizedCrop(object):
             img (PIL.Image): Image to be flipped.
 
         Returns:
-            PIL.Image: Randomly cropped and scaled image.
+            PIL.Image: Randomly cropped and resize image.
         """
         i, j, h, w = self.get_params(img)
-        return scaled_crop(img, i, j, h, w, self.size, self.interpolation)
+        return resized_crop(img, i, j, h, w, self.size, self.interpolation)
 
 
 class FiveCrop(object):
