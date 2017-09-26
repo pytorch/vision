@@ -282,6 +282,19 @@ def vflip(img):
 
 
 def five_crop(img, size):
+    """Crop the given PIL.Image into four corners and the central crop.
+
+    Note: this transform returns a tuple of images and there may be a mismatch in the number of
+    inputs and targets your `Dataset` returns.
+
+    Args:
+       size (sequence or int): Desired output size of the crop. If size is an
+           int instead of sequence like (h, w), a square crop (size, size) is
+           made.
+    Returns:
+        tuple: tuple (tl, tr, bl, br, center) corresponding top left,
+            top right, bottom left, bottom right and center crop.
+    """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
     else:
@@ -312,6 +325,12 @@ def ten_crop(img, size, vertical_flip=False):
                int instead of sequence like (h, w), a square crop (size, size) is
                made.
            vertical_flip (bool): Use vertical flipping instead of horizontal
+
+        Returns:
+            tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip,
+                br_flip, center_flip) corresponding top left, top right,
+                bottom left, bottom right and center crop and same for the
+                flipped image.
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
