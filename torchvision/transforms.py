@@ -639,6 +639,7 @@ class RandomSizedCrop(object):
         i, j, h, w = self.get_params(img)
         return scaled_crop(img, i, j, h, w, self.size, self.interpolation)
 
+
 class FiveCrop(object):
     """Crop the given PIL.Image into four corners and the central crop.abs
 
