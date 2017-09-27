@@ -2,7 +2,7 @@ from __future__ import division
 import torch
 import math
 import random
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageChops
 try:
     import accimage
 except ImportError:
@@ -346,6 +346,68 @@ def ten_crop(img, size, vertical_flip=False):
 
     second_five = five_crop(img, size)
     return first_five + second_five
+
+
+def adjust_hue(img, delta):
+    """Adjust hue of an RGB image.
+
+    `image` is an RGB image.  The image hue is adjusted by converting the
+    image to HSV and cyclically rotating the intensities in hue channel (H).
+    The image is then converted back to RGB.
+
+    `delta` must be in the interval `[-1, 1]`.
+
+    Args:
+        image: RGB image. Size of the last dimension must be 3.
+        delta: float.  How much to rotate the hue channel. 1 and -1 are
+            complete rotation in positive and negative direction respectively.
+            0 means no rotation.
+
+    Returns:
+        PIL.Image: Adjusted image.
+    """
+    assert delta < 1 and delta >= -1, 'delta out of range.'
+
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    h, s, v = img.convert('HSV').split()
+
+    np_h = np.array(h, dtype='uint8')
+    # uint8 addition take cares of rotation across boundaries
+    np_h += np.uint8(delta * 255)
+    h = Image.fromarray(np_h, 'L')
+
+    img = Image.merge('HSV', (h, s, v)).convert('RGB')
+    return img
+
+
+def adjust_saturation(img, saturation_factor):
+    """Adjust saturation of an RGB image.
+
+    `image` is an RGB image.  The image saturation is adjusted by converting the
+    image to HSV and multiplying the saturation (S) channel by
+    `saturation_factor` and clipping. The image is then converted back to RGB.
+
+    Args:
+        image: RGB image or images. Size of the last dimension must be 3.
+        saturation_factor: float. Factor to multiply the saturation by.
+
+    Returns:
+        Adjusted image(s), same shape and DType as `image`.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    h, s, v = img.convert('HSV').split()
+
+    np_s = np.array(s)
+    np_s = np_s * saturation_factor
+    np_s = np.clip(np_s, 0, 255).astype('uint8')
+    s = Image.fromarray(np_s, 'L')
+
+    img = Image.merge('HSV', (h, s, v)).convert('RGB')
+    return img
 
 
 class Compose(object):
