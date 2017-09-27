@@ -431,7 +431,8 @@ def adjust_hue(img, hue_factor):
     Returns:
         PIL.Image: Hue adjusted image.
     """
-    assert hue_factor <= 0.5 and hue_factor >= -0.5, 'hue_factor out of range.'
+    if hue_factor <= 0.5 and hue_factor >= -0.5:
+        raise ValueError('hue_factor {} out of range.'.format(hue_factor))
 
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
@@ -444,6 +445,39 @@ def adjust_hue(img, hue_factor):
     h = Image.fromarray(np_h, 'L')
 
     img = Image.merge('HSV', (h, s, v)).convert('RGB')
+    return img
+
+
+def adjust_gamma(img, gamma, gain=1):
+    """Perform gamma correction on an image.
+
+    Also known as Power Law Transform. Intensities are adjusted based on the
+    following equation:
+
+        I_out = 255 * gain * ((I_in / 255) ** gamma)
+
+    See https://en.wikipedia.org/wiki/Gamma_correction for more details.
+
+    Args:
+        img (PIL.Image): PIL Image to be adjusted.
+        gamma (float): Non negative real number. gamma larger than 1 make the
+            shadows darker, while gamma smaller than 1 make dark regions
+            lighter.
+        gain (float): The constant multiplier.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    if gamma < 0:
+        raise ValueError('Gamma should be a non-negative real number')
+
+    img = img.convert('RGB')
+
+    np_img = np.array(img)
+    np_img = 255 * gain * ((np_img / 255) ** gamma)
+    np_img = np.uint8(np.clip(np_img, 0, 255))
+
+    img = Image.fromarray(np_img, 'RGB')
     return img
 
 
