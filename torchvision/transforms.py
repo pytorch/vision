@@ -394,7 +394,7 @@ def adjust_saturation(img, saturation_factor):
     Args:
         img (PIL.Image): PIL Image to be adjusted.
         saturation_factor (float):  How much to adjust the saturation. 0 will
-            give a black and weight image, 1 will give the original image while
+            give a black and white image, 1 will give the original image while
             2 will enhance the saturation by a factor of 2.
 
     Returns:
@@ -431,7 +431,7 @@ def adjust_hue(img, hue_factor):
     Returns:
         PIL.Image: Hue adjusted image.
     """
-    if hue_factor <= 0.5 and hue_factor >= -0.5:
+    if not(hue_factor <= 0.5 and hue_factor >= -0.5):
         raise ValueError('hue_factor {} out of range.'.format(hue_factor))
 
     if not _is_pil_image(img):
@@ -889,3 +889,67 @@ class TenCrop(object):
 
     def __call__(self, img):
         return ten_crop(img, self.size, self.vertical_flip)
+
+
+class ColorJitter(object):
+    """Randomly change the brightness, contrast and saturation of an image.
+
+    Args:
+        brightness (float): How much to jitter brightness. brightness_factor
+            is chosen uniformly from [max(0, 1 - brightness), brightness]
+        contrast (float): How much to jitter contrast. contrast_factor
+            is chosen uniformly from [max(0, 1 - contrast), contrast]
+        saturation (float): How much to jitter saturation. saturation_factor
+            is chosen uniformly from [max(0, 1 - saturation), saturation]
+        hue(float): How much to jitter hue. hue_factor is chosen uniformly from
+            [-hue, hue]. Should be >=0 and <= 0.5.
+    """
+    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
+        self.brightness = brightness
+        self.contrast = contrast
+        self.saturation = saturation
+        self.hue = hue
+
+    @staticmethod
+    def get_params(brightness, contrast, saturation, hue):
+        """Get a randomized transform to be applied on image.
+
+        Arguments are same as that of __init__.
+
+        Returns:
+            Transform which randomly adjusts brightness, contrast and
+            saturation in a random order.
+        """
+        transforms = []
+        if brightness > 0:
+            brightness_factor = np.random.uniform(max(0, 1 - brightness), 1 + brightness)
+            transforms.append(Lambda(lambda img: adjust_brightness(img, brightness_factor)))
+
+        if contrast > 0:
+            contrast_factor = np.random.uniform(max(0, 1 - contrast), 1 + contrast)
+            transforms.append(Lambda(lambda img: adjust_contrast(img, contrast_factor)))
+
+        if saturation > 0:
+            saturation_factor = np.random.uniform(max(0, 1 - saturation), 1 + saturation)
+            transforms.append(Lambda(lambda img: adjust_saturation(img, saturation_factor)))
+
+        if hue > 0:
+            hue_factor = np.random.uniform(-hue, hue)
+            transforms.append(Lambda(lambda img: adjust_hue(img, hue_factor)))
+
+        np.random.shuffle(transforms)
+        transform = Compose(transforms)
+
+        return transform
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL.Image): Input image.
+
+        Returns:
+            PIL.Image: Color jittered image.
+        """
+        transform = self.get_params(self.brightness, self.contrast,
+                                    self.saturation, self.hue)
+        return transform(img)
