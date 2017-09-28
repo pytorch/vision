@@ -120,7 +120,7 @@ def to_pil_image(pic):
 
 
 def normalize(tensor, mean, std):
-    """Normalize an tensor image with mean and standard deviation.
+    """Normalize a tensor image with mean and standard deviation.
 
     See ``Normalize`` for more details.
 
