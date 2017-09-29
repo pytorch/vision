@@ -897,11 +897,11 @@ class ColorJitter(object):
 
     Args:
         brightness (float): How much to jitter brightness. brightness_factor
-            is chosen uniformly from [max(0, 1 - brightness), brightness]
+            is chosen uniformly from [max(0, 1 - brightness), 1 + brightness].
         contrast (float): How much to jitter contrast. contrast_factor
-            is chosen uniformly from [max(0, 1 - contrast), contrast]
+            is chosen uniformly from [max(0, 1 - contrast), 1 + contrast].
         saturation (float): How much to jitter saturation. saturation_factor
-            is chosen uniformly from [max(0, 1 - saturation), saturation]
+            is chosen uniformly from [max(0, 1 - saturation), 1 + saturation].
         hue(float): How much to jitter hue. hue_factor is chosen uniformly from
             [-hue, hue]. Should be >=0 and <= 0.5.
     """
