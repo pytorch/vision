@@ -690,9 +690,9 @@ class RandomSizedCrop(object):
                 return i, j, h, w
 
         # Fallback
-        w = min(img.size[0], img.shape[1])
-        i = (img.shape[1] - w) // 2
-        j = (img.shape[0] - w) // 2
+        w = min(img.size[0], img.size[1])
+        i = (img.size[1] - w) // 2
+        j = (img.size[0] - w) // 2
         return i, j, w, w
 
     def __call__(self, img):
