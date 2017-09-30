@@ -9,6 +9,9 @@ from .utils import download_url, check_integrity
 
 class SVHN(data.Dataset):
     """`SVHN <http://ufldl.stanford.edu/housenumbers/>`_ Dataset.
+    Note: The SVHN dataset assigns the label `10` to the digit `0`. However, in this Dataset,
+    we assign the label `0` to the digit `0` to be compatible with PyTorch loss functions which
+    expect the class labels to be in the range `[0, C-1]`
 
     Args:
         root (string): Root directory of dataset where directory
@@ -66,7 +69,16 @@ class SVHN(data.Dataset):
         loaded_mat = sio.loadmat(os.path.join(self.root, self.filename))
 
         self.data = loaded_mat['X']
-        self.labels = loaded_mat['y']
+        # loading from the .mat file gives an np array of type np.uint8
+        # converting to np.int64, so that we have a LongTensor after
+        # the conversion from the numpy array
+        # the squeeze is needed to obtain a 1D tensor
+        self.labels = loaded_mat['y'].astype(np.int64).squeeze()
+
+        # the svhn dataset assigns the class label "10" to the digit 0
+        # this makes it inconsistent with several loss functions
+        # which expect the class labels to be in the range [0, C-1]
+        np.place(self.labels, self.labels == 10, 0)
         self.data = np.transpose(self.data, (3, 2, 0, 1))
 
     def __getitem__(self, index):

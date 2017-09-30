@@ -9,6 +9,11 @@ try:
 except ImportError:
     accimage = None
 
+try:
+    from scipy import stats
+except ImportError:
+    stats = None
+
 
 GRACE_HOPPER = 'assets/grace_hopper_517x606.jpg'
 
@@ -55,6 +60,68 @@ class Tester(unittest.TestCase):
                          + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
         assert sum2 > sum1, "height: " + str(height) + " width: " \
                             + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
+
+    def test_five_crop(self):
+        to_pil_image = transforms.ToPILImage()
+        h = random.randint(5, 25)
+        w = random.randint(5, 25)
+        for single_dim in [True, False]:
+            crop_h = random.randint(1, h)
+            crop_w = random.randint(1, w)
+            if single_dim:
+                crop_h = min(crop_h, crop_w)
+                crop_w = crop_h
+                transform = transforms.FiveCrop(crop_h)
+            else:
+                transform = transforms.FiveCrop((crop_h, crop_w))
+
+            img = torch.FloatTensor(3, h, w).uniform_()
+            results = transform(to_pil_image(img))
+
+            assert len(results) == 5
+            for crop in results:
+                assert crop.size == (crop_w, crop_h)
+
+            to_pil_image = transforms.ToPILImage()
+            tl = to_pil_image(img[:, 0:crop_h, 0:crop_w])
+            tr = to_pil_image(img[:, 0:crop_h, w - crop_w:])
+            bl = to_pil_image(img[:, h - crop_h:, 0:crop_w])
+            br = to_pil_image(img[:, h - crop_h:, w - crop_w:])
+            center = transforms.CenterCrop((crop_h, crop_w))(to_pil_image(img))
+            expected_output = (tl, tr, bl, br, center)
+            assert results == expected_output
+
+    def test_ten_crop(self):
+        to_pil_image = transforms.ToPILImage()
+        h = random.randint(5, 25)
+        w = random.randint(5, 25)
+        for should_vflip in [True, False]:
+            for single_dim in [True, False]:
+                crop_h = random.randint(1, h)
+                crop_w = random.randint(1, w)
+                if single_dim:
+                    crop_h = min(crop_h, crop_w)
+                    crop_w = crop_h
+                    transform = transforms.TenCrop(crop_h,
+                                                   vertical_flip=should_vflip)
+                    five_crop = transforms.FiveCrop(crop_h)
+                else:
+                    transform = transforms.TenCrop((crop_h, crop_w),
+                                                   vertical_flip=should_vflip)
+                    five_crop = transforms.FiveCrop((crop_h, crop_w))
+
+                img = to_pil_image(torch.FloatTensor(3, h, w).uniform_())
+                results = transform(img)
+                expected_output = five_crop(img)
+                if should_vflip:
+                    vflipped_img = img.transpose(Image.FLIP_TOP_BOTTOM)
+                    expected_output += five_crop(vflipped_img)
+                else:
+                    hflipped_img = img.transpose(Image.FLIP_LEFT_RIGHT)
+                    expected_output += five_crop(hflipped_img)
+
+                assert len(results) == 10
+                assert expected_output == results
 
     def test_scale(self):
         height = random.randint(24, 32) * 2
@@ -326,6 +393,34 @@ class Tester(unittest.TestCase):
         img = trans(img_data)
         assert img.mode == 'I'
         assert np.allclose(img, img_data[:, :, 0])
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_vertical_flip(self):
+        img = transforms.ToPILImage()(torch.rand(3, 10, 10))
+        vimg = img.transpose(Image.FLIP_TOP_BOTTOM)
+
+        num_vertical = 0
+        for _ in range(100):
+            out = transforms.RandomVerticalFlip()(img)
+            if out == vimg:
+                num_vertical += 1
+
+        p_value = stats.binom_test(num_vertical, 100, p=0.5)
+        assert p_value > 0.05
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_horizontal_flip(self):
+        img = transforms.ToPILImage()(torch.rand(3, 10, 10))
+        himg = img.transpose(Image.FLIP_LEFT_RIGHT)
+
+        num_horizontal = 0
+        for _ in range(100):
+            out = transforms.RandomHorizontalFlip()(img)
+            if out == himg:
+                num_horizontal += 1
+
+        p_value = stats.binom_test(num_horizontal, 100, p=0.5)
+        assert p_value > 0.05
 
 
 if __name__ == '__main__':
