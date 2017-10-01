@@ -11,6 +11,7 @@ import numpy as np
 import numbers
 import types
 import collections
+import warnings
 
 
 def _is_pil_image(img):
@@ -141,21 +142,21 @@ def normalize(tensor, mean, std):
     return tensor
 
 
-def scale(img, size, interpolation=Image.BILINEAR):
-    """Rescale the input PIL.Image to the given size.
+def resize(img, size, interpolation=Image.BILINEAR):
+    """Resize the input PIL.Image to the given size.
 
     Args:
-        img (PIL.Image): Image to be scaled.
+        img (PIL.Image): Image to be resized.
         size (sequence or int): Desired output size. If size is a sequence like
-            (h, w), output size will be matched to this. If size is an int,
-            smaller edge of the image will be matched to this number.
-            i.e, if height > width, then image will be rescaled to
+            (h, w), the output size will be matched to this. If size is an int,
+            the smaller edge of the image will be matched to this number maintaing
+            the aspect ratio. i.e, if height > width, then image will be rescaled to
             (size * height / width, size)
         interpolation (int, optional): Desired interpolation. Default is
             ``PIL.Image.BILINEAR``
 
     Returns:
-        PIL.Image: Rescaled image.
+        PIL.Image: Resized image.
     """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
@@ -176,6 +177,12 @@ def scale(img, size, interpolation=Image.BILINEAR):
             return img.resize((ow, oh), interpolation)
     else:
         return img.resize(size[::-1], interpolation)
+
+
+def scale(*args, **kwargs):
+    warnings.warn("The use of the transforms.Scale transform is deprecated, " +
+                  "please use transforms.Resize instead.")
+    return resize(*args, **kwargs)
 
 
 def pad(img, padding, fill=0):
@@ -228,10 +235,10 @@ def crop(img, i, j, h, w):
     return img.crop((j, i, j + w, i + h))
 
 
-def scaled_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
-    """Crop the given PIL.Image and scale it to desired size.
+def resized_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
+    """Crop the given PIL.Image and resize it to desired size.
 
-    Notably used in RandomSizedCrop.
+    Notably used in RandomResizedCrop.
 
     Args:
         img (PIL.Image): Image to be cropped.
@@ -247,7 +254,7 @@ def scaled_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
     """
     assert _is_pil_image(img), 'img should be PIL Image'
     img = crop(img, i, j, h, w)
-    img = scale(img, size, interpolation)
+    img = resize(img, size, interpolation)
     return img
 
 
@@ -435,8 +442,8 @@ class Normalize(object):
         return normalize(tensor, self.mean, self.std)
 
 
-class Scale(object):
-    """Rescale the input PIL.Image to the given size.
+class Resize(object):
+    """Resize the input PIL.Image to the given size.
 
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
@@ -461,7 +468,14 @@ class Scale(object):
         Returns:
             PIL.Image: Rescaled image.
         """
-        return scale(img, self.size, self.interpolation)
+        return resize(img, self.size, self.interpolation)
+
+
+class Scale(Resize):
+    def __init__(self, *args, **kwargs):
+        warnings.warn("The use of the transforms.Scale transform is deprecated, " +
+                      "please use transforms.Resize instead.")
+        super(Scale, self).__init__(*args, **kwargs)
 
 
 class CenterCrop(object):
@@ -645,7 +659,7 @@ class RandomVerticalFlip(object):
         return img
 
 
-class RandomSizedCrop(object):
+class RandomResizedCrop(object):
     """Crop the given PIL.Image to random size and aspect ratio.
 
     A crop of random size of (0.08 to 1.0) of the original size and a random
@@ -701,10 +715,17 @@ class RandomSizedCrop(object):
             img (PIL.Image): Image to be flipped.
 
         Returns:
-            PIL.Image: Randomly cropped and scaled image.
+            PIL.Image: Randomly cropped and resize image.
         """
         i, j, h, w = self.get_params(img)
-        return scaled_crop(img, i, j, h, w, self.size, self.interpolation)
+        return resized_crop(img, i, j, h, w, self.size, self.interpolation)
+
+
+class RandomSizedCrop(RandomResizedCrop):
+    def __init__(self, *args, **kwargs):
+        warnings.warn("The use of the transforms.RandomSizedCrop transform is deprecated, " +
+                      "please use transforms.RandomResizedCrop instead.")
+        super(RandomSizedCrop, self).__init__(*args, **kwargs)
 
 
 class FiveCrop(object):
