@@ -238,7 +238,7 @@ def crop(img, i, j, h, w):
 def resized_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
     """Crop the given PIL.Image and resize it to desired size.
 
-    Notably used in RandomSizedCrop.
+    Notably used in RandomResizedCrop.
 
     Args:
         img (PIL.Image): Image to be cropped.
@@ -659,7 +659,7 @@ class RandomVerticalFlip(object):
         return img
 
 
-class RandomSizedCrop(object):
+class RandomResizedCrop(object):
     """Crop the given PIL.Image to random size and aspect ratio.
 
     A crop of random size of (0.08 to 1.0) of the original size and a random
@@ -719,6 +719,13 @@ class RandomSizedCrop(object):
         """
         i, j, h, w = self.get_params(img)
         return resized_crop(img, i, j, h, w, self.size, self.interpolation)
+
+
+class RandomSizedCrop(RandomResizedCrop):
+    def __init__(self, *args, **kwargs):
+        warnings.warn("The use of the transforms.RandomSizedCrop transform is deprecated, " +
+                      "please use transforms.RandomResizedCrop instead.")
+        super(RandomSizedCrop, self).__init__(*args, **kwargs)
 
 
 class FiveCrop(object):
