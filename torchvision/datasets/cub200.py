@@ -65,7 +65,7 @@ class CUB2002010(data.Dataset):
             img, target = self.test_data[index], self.test_labels[index]
 
         img = Image.fromarray(img.numpy(), mode='L')
-        
+
         if self.transform is not None:
             img = self.transform(img)
 
@@ -73,7 +73,7 @@ class CUB2002010(data.Dataset):
             img = self.target_transform(img)
 
         return img, target
-        
+
     def __len__(self):
         if self.train:
             return len(self.train_data)
@@ -152,7 +152,7 @@ class CUB2002010(data.Dataset):
 
         assert train_data.shape[0] == 3000 and test_data.shape[0] == 3033
         assert train_labels.shape[0] == 3000 and test_labels.shape[0] == 3033
-        
+
         training_set = (
             torch.from_numpy(train_data).type(torch.FloatTensor),
             torch.from_numpy(train_labels).type(torch.LongTensor)
