@@ -4,8 +4,29 @@ import errno
 import torch
 import numpy as np
 from PIL import Image
-from folder import default_loader, pil_loader, accimage_loader
 import torch.utils.data as data
+
+
+def pil_loader(path):
+    with open(path, 'rb') as f:
+        with Image.open(f) as img:
+            return img.convert('RGB')
+
+
+def accimage_loader(path):
+    import accimage
+    try:
+        return accimage.Image(path)
+    except IOError:
+        return pil_loader(path)
+
+
+def default_loader(path):
+    from torchvision import get_image_backend
+    if get_image_backend() == 'accimage':
+        return accimage_loader(path)
+    else:
+        return pil_loader(path)
 
 
 def build_set(root, year, train):
