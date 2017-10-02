@@ -438,6 +438,9 @@ def adjust_hue(img, hue_factor):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     input_mode = img.mode
+    if input_mode in {'L', '1', 'I', 'F'}:
+        return img
+
     h, s, v = img.convert('HSV').split()
 
     np_h = np.array(h, dtype='uint8')
