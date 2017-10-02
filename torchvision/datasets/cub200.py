@@ -11,7 +11,7 @@ import torch.utils.data as data
 def build_set(root, year, train):
     """
        Function to return the lists of paths with the corresponding labels for the images
-       
+
     Args:
         root (string): Root directory of dataset
         year (int): Year/version of the dataset. Available options are 2010 and 2011
@@ -26,17 +26,17 @@ def build_set(root, year, train):
             lists_path = os.path.join(root, 'lists/train.txt')
         else:
             lists_path = os.path.join(root, 'lists/test.txt')
-            
+
         files = np.genfromtxt(lists_path, dtype=str)
 
         return_set = []
-            
+
         for fname in files:
             full_path = os.path.join(images_file_path, fname)
             return_set.append((full_path, int(fname[0:3]) - 1))
-            
+
         return return_set
-                     
+
     elif year == 2011:
         images_file_path = os.path.join(root, 'CUB_200_2011/images/')
 
