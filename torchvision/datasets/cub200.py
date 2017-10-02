@@ -185,7 +185,7 @@ class CUB2002011(data.Dataset):
             target and transforms it.
     """
     urls = [
-         'http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz'
+        'http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz'
     ]
     raw_folder = 'raw'
     processed_folder = 'processed'
@@ -275,7 +275,8 @@ class CUB2002011(data.Dataset):
 
         images_file_path = os.path.join(self.root, self.raw_folder, 'CUB_200_2011/images/')
         all_images_list = np.genfromtxt(os.path.join(self.root, self.raw_folder, 'CUB_200_2011/images.txt'), dtype=str)
-        train_test_list = np.genfromtxt(os.path.join(self.root, self.raw_folder, 'CUB_200_2011/train_test_split.txt'), dtype=int)
+        train_test_list = np.genfromtxt(os.path.join(self.root, self.raw_folder, 'CUB_200_2011/train_test_split.txt'))
+        train_test_list = train_test_list.astype(int)
         train_data = []
         train_labels = []
         test_data = []
@@ -292,11 +293,11 @@ class CUB2002011(data.Dataset):
             label = int(all_images_list[i, 1][0:3]) - 1
             img.close()
             if train_test_list[i, 1] == 1:
-               train_data.append(npimg)
-               train_labels.append(label)
+                train_data.append(npimg)
+                train_labels.append(label)
             elif train_test_list[i, 1] == 0:
-               test_data.append(npimg)
-               test_labels.append(label)
+                test_data.append(npimg)
+                test_labels.append(label)
 
         train_data = np.array(train_data) / 255
         train_labels = np.array(train_labels)
