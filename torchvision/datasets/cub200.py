@@ -166,3 +166,156 @@ class CUB2002010(data.Dataset):
         torch.save(testing_set, os.path.join(self.root, self.processed_folder, self.test_file))
 
         print('Done!')
+
+
+class CUB2002011(data.Dataset):
+    """`CUB200-2011 <http://www.vision.caltech.edu/visipedia/CUB-200-2011.html>`_ Dataset.
+
+    Args:
+        root (string): Root directory of dataset where ``processed/training.pt``
+            and  ``processed/test.pt`` exist.
+        train (bool, optional): If True, creates dataset from ``training.pt``,
+            otherwise from ``test.pt``.
+        download (bool, optional): If true, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
+        transform (callable, optional): A function/transform that  takes in an PIL image
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
+        target_transform (callable, optional): A function/transform that takes in the
+            target and transforms it.
+    """
+    urls = [
+         'http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz'
+    ]
+    raw_folder = 'raw'
+    processed_folder = 'processed'
+    training_file = 'training.pt'
+    test_file = 'test.pt'
+
+    def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
+        self.root = os.path.expanduser(root)
+        self.transform = transform
+        self.target_transform = target_transform
+        self.train = train
+
+        if download:
+            self.download()
+
+        if not self._check_exists():
+            raise RuntimeError('Dataset not found. You can use download=True to download it')
+
+        if self.train:
+            self.train_data, self.train_labels = torch.load(
+                os.path.join(self.root, self.processed_folder, self.training_file))
+        else:
+            self.test_data, self.test_labels = torch.load(
+                os.path.join(self.root, self.processed_folder, self.test_file))
+
+    def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: (image, target) where target is index of the target class.
+        """
+        if self.train:
+            img, target = self.train_data[index], self.train_labels[index]
+        else:
+            img, target = self.test_data[index], self.test_labels[index]
+
+        img = Image.fromarray(img.numpy(), mode='L')
+
+        if self.transform is not None:
+            img = self.transform(img)
+
+        if self.target_transform is not None:
+            img = self.target_transform(img)
+
+        return img, target
+
+    def __len__(self):
+        if self.train:
+            return len(self.train_data)
+        else:
+            return len(self.test_data)
+
+    def _check_exists(self):
+        return os.path.exists(os.path.join(self.root, self.processed_folder, self.training_file))
+
+    def download(self):
+        from six.moves import urllib
+        import tarfile
+
+        if self._check_exists():
+            return
+
+        try:
+            os.makedirs(os.path.join(self.root, self.raw_folder))
+            os.makedirs(os.path.join(self.root, self.processed_folder))
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                pass
+            else:
+                raise
+
+        for url in self.urls:
+            print('Downloading ' + url)
+            data = urllib.request.urlopen(url)
+            filename = url.rpartition('/')[2]
+            file_path = os.path.join(self.root, self.raw_folder, filename)
+            with open(file_path, 'wb') as f:
+                f.write(data.read())
+            tar = tarfile.open(file_path, 'r')
+            for item in tar:
+                tar.extract(item, file_path.replace(filename, ''))
+            os.unlink(file_path)
+
+        print('Processing...')
+
+        images_file_path = os.path.join(self.root, self.raw_folder, 'CUB_200_2011/images/')
+        all_images_list = np.genfromtxt(os.path.join(self.root, self.raw_folder, 'CUB_200_2011/images.txt'), dtype=str)
+        train_test_list = np.genfromtxt(os.path.join(self.root, self.raw_folder, 'CUB_200_2011/train_test_split.txt'), dtype=int)
+        train_data = []
+        train_labels = []
+        test_data = []
+        test_labels = []
+        for i in range(0, len(all_images_list)):
+            pathway = os.path.join(images_file_path, all_images_list[i, 1])
+            img = Image.open(pathway)
+            img = img.resize((64, 64), Image.ANTIALIAS)
+            if img.getbands()[0] == 'L':
+                img = img.convert('RGB')
+            npimg = np.array(img.getdata()).astype(float)
+            npimg = np.reshape(npimg, (img.size[0], img.size[1], 3))
+            npimg = np.transpose(npimg, (2, 0, 1))
+            label = int(all_images_list[i, 1][0:3]) - 1
+            img.close()
+            if train_test_list[i, 1] == 1:
+               train_data.append(npimg)
+               train_labels.append(label)
+            elif train_test_list[i, 1] == 0:
+               test_data.append(npimg)
+               test_labels.append(label)
+
+        train_data = np.array(train_data) / 255
+        train_labels = np.array(train_labels)
+        test_data = np.array(test_data) / 255
+        test_labels = np.array(test_labels)
+
+        assert train_data.shape[0] == 5994 and test_data.shape[0] == 5794
+        assert train_labels.shape[0] == 5994 and test_labels.shape[0] == 5794
+
+        training_set = (
+            torch.from_numpy(train_data).type(torch.FloatTensor),
+            torch.from_numpy(train_labels).type(torch.LongTensor)
+        )
+        testing_set = (
+            torch.from_numpy(test_data).type(torch.FloatTensor),
+            torch.from_numpy(test_labels).type(torch.LongTensor)
+        )
+
+        torch.save(training_set, os.path.join(self.root, self.processed_folder, self.training_file))
+        torch.save(testing_set, os.path.join(self.root, self.processed_folder, self.test_file))
+
+        print('Done!')
