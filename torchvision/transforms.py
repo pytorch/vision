@@ -369,7 +369,7 @@ def adjust_brightness(img, brightness_factor):
 
 
 def adjust_contrast(img, contrast_factor):
-    """Adjust brightness of an Image.
+    """Adjust contrast of an Image.
 
     Args:
         img (PIL.Image): PIL Image to be adjusted.
@@ -398,7 +398,7 @@ def adjust_saturation(img, saturation_factor):
             2 will enhance the saturation by a factor of 2.
 
     Returns:
-        Adjusted image(s), same shape and DType as `image`.
+        PIL.Image: Saturation adjusted image.
     """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
@@ -411,9 +411,9 @@ def adjust_saturation(img, saturation_factor):
 def adjust_hue(img, hue_factor):
     """Adjust hue of an image.
 
-    `image` is an RGB image.  The image hue is adjusted by converting the
-    image to HSV and cyclically shifting the intensities in hue channel (H).
-    The image is then converted back to RGB.
+    The image hue is adjusted by converting the image to HSV and
+    cyclically shifting the intensities in the hue channel (H).
+    The image is then converted back to original image mode.
 
     `hue_factor` is the amount of shift in H channel and must be in the
     interval `[-0.5, 0.5]`.
@@ -431,12 +431,13 @@ def adjust_hue(img, hue_factor):
     Returns:
         PIL.Image: Hue adjusted image.
     """
-    if not(hue_factor <= 0.5 and hue_factor >= -0.5):
-        raise ValueError('hue_factor {} out of range.'.format(hue_factor))
+    if not(-0.5 <= hue_factor <= 0.5):
+        raise ValueError('hue_factor is not in [-0.5, 0.5].'.format(hue_factor))
 
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
+    input_mode = img.mode
     h, s, v = img.convert('HSV').split()
 
     np_h = np.array(h, dtype='uint8')
@@ -445,15 +446,15 @@ def adjust_hue(img, hue_factor):
         np_h += np.uint8(hue_factor * 255)
     h = Image.fromarray(np_h, 'L')
 
-    img = Image.merge('HSV', (h, s, v)).convert('RGB')
+    img = Image.merge('HSV', (h, s, v)).convert(input_mode)
     return img
 
 
 def adjust_gamma(img, gamma, gain=1):
     """Perform gamma correction on an image.
 
-    Also known as Power Law Transform. Intensities are adjusted based on the
-    following equation:
+    Also known as Power Law Transform. Intensities in RGB mode are adjusted
+    based on the following equation:
 
         I_out = 255 * gain * ((I_in / 255) ** gamma)
 
@@ -472,13 +473,14 @@ def adjust_gamma(img, gamma, gain=1):
     if gamma < 0:
         raise ValueError('Gamma should be a non-negative real number')
 
+    input_mode = img.mode
     img = img.convert('RGB')
 
     np_img = np.array(img, dtype='float32')
     np_img = 255 * gain * ((np_img / 255) ** gamma)
     np_img = np.uint8(np.clip(np_img, 0, 255))
 
-    img = Image.fromarray(np_img, 'RGB')
+    img = Image.fromarray(np_img, 'RGB').convert(input_mode)
     return img
 
 
