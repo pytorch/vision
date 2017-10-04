@@ -424,9 +424,9 @@ class Tester(unittest.TestCase):
 
     def test_linear_transformation(self):
         x = torch.randn(250, 10, 10, 3)
-        flat_x = x.view(x.size(0), x.size(1)*x.size(2)*x.size(3))
+        flat_x = x.view(x.size(0), x.size(1) * x.size(2) * x.size(3))
         # compute principal components
-        sigma = torch.mm(flat_x.t(), flat_x)/flat_x.size(0)
+        sigma = torch.mm(flat_x.t(), flat_x) / flat_x.size(0)
         u, s, _ = np.linalg.svd(sigma.numpy())
         zca_epsilon = 1e-10  # avoid division by 0
         d = torch.Tensor(np.diag(1. / np.sqrt(s + zca_epsilon)))
@@ -435,10 +435,10 @@ class Tester(unittest.TestCase):
         # initialize whitening matrix
         whitening = transforms.LinearTransformation(principal_components)
         # pass first vector
-        xwhite = torch.mm(flat_x[0].view(1, 300), principal_components)
+        xwhite = whitening(flat_x[0].view(1, 300))
         # estimate covariance
         xwhite = xwhite.numpy()
-        cov = np.dot(xwhite, xwhite.T)/x.size(0)
+        cov = np.dot(xwhite, xwhite.T) / x.size(0)
         assert np.allclose(cov, np.identity(1), rtol=1e-3)
 
 
