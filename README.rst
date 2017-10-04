@@ -377,11 +377,19 @@ Transforms on torch.\*Tensor
 Given mean: (R, G, B) and std: (R, G, B), will normalize each channel of
 the torch.\*Tensor, i.e. channel = (channel - mean) / std
 
-``Whiten(whiten_matrix)``
+``LinearTransformation(transformation_matrix)``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Given ``whiten_matrix`` (D x D), will compute its dot product with the flattened 
-torch.\*Tensor and then reshape it to its original dimensions.
+Given ``transformation_matrix`` (D x D), where D = (C x H x W), will compute its
+dot product with the flattened torch.\*Tensor and then reshape it to its 
+original dimensions.
+
+Applications:
+- whitening: zero-center the data, compute the data covariance matrix [D x D] with 
+np.dot(X.T, X), perform SVD on this matrix and pass the principal components as 
+transformation_matrix.
+- linear random projection: initialize a random matrix [D x D] and pass it as 
+transformation_matrix.
 
 Conversion Transforms
 ~~~~~~~~~~~~~~~~~~~~~

@@ -753,19 +753,27 @@ class TenCrop(object):
     def __call__(self, img):
         return ten_crop(img, self.size, self.vertical_flip)
 
-class Whiten(object):
-    """Whiten a tensor image with a whitening matrix computed offline.
 
-    Given whiten_matrix, will flatten the torch.*Tensor, compute the
-    dot product with the whitening matrix and reshape the tensor to
-    its original shape.
+class LinearTransformation(object):
+    """Transform a tensor image with a transformation matrix computed offline.
+
+    Given transformation_matrix, will flatten the torch.*Tensor, compute the dot
+    product with the transformation matrix and reshape the tensor to its original
+    shape.
+
+    Applications:
+    - whitening: zero-center the data, compute the data covariance matrix
+                 [D x D] with np.dot(X.T, X), perform SVD on this matrix and
+                 pass it as transformation_matrix.
+    - linear random projection: initialize a random matrix [D x D] and pass it
+                                as transformation_matrix.
 
     Args:
-        whiten_matrix (Tensor): tensor [D x D], D = C*H*W
+        transformation_matrix (Tensor): tensor [D x D], D = C*H*W
     """
 
-    def __init__(self, whiten_matrix):
-        self.whiten_matrix = whiten_matrix
+    def __init__(self, transformation_matrix):
+        self.transformation_matrix = transformation_matrix
 
     def __call__(self, tensor):
         """
@@ -773,9 +781,9 @@ class Whiten(object):
             tensor (Tensor): Tensor image of size (C, H, W) to be whitened.
 
         Returns:
-            Tensor: Whitened image.
+            Tensor: Transformed image.
         """
         flat_tensor = tensor.view(1, -1)
-        white_tensor = torch.mm(flat_tensor, self.whiten_matrix)
-        tensor = white_tensor.view(tensor.size())
+        transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
+        tensor = transformed_tensor.view(tensor.size())
         return tensor
