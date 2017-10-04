@@ -443,7 +443,7 @@ def adjust_hue(img, hue_factor):
 
     h, s, v = img.convert('HSV').split()
 
-    np_h = np.array(h, dtype='uint8')
+    np_h = np.array(h, dtype=np.uint8)
     # uint8 addition take cares of rotation across boundaries
     with np.errstate(over='ignore'):
         np_h += np.uint8(hue_factor * 255)
@@ -479,7 +479,7 @@ def adjust_gamma(img, gamma, gain=1):
     input_mode = img.mode
     img = img.convert('RGB')
 
-    np_img = np.array(img, dtype='float32')
+    np_img = np.array(img, dtype=np.float32)
     np_img = 255 * gain * ((np_img / 255) ** gamma)
     np_img = np.uint8(np.clip(np_img, 0, 255))
 
