@@ -401,7 +401,7 @@ class Tester(unittest.TestCase):
         img = transforms.ToPILImage()(torch.rand(3, 10, 10))
         vimg = img.transpose(Image.FLIP_TOP_BOTTOM)
 
-        num_samples=250
+        num_samples = 250
         num_vertical = 0
         for _ in range(num_samples):
             out = transforms.RandomVerticalFlip()(img)
@@ -419,7 +419,7 @@ class Tester(unittest.TestCase):
         img = transforms.ToPILImage()(torch.rand(3, 10, 10))
         himg = img.transpose(Image.FLIP_LEFT_RIGHT)
 
-        num_samples=250
+        num_samples = 250
         num_horizontal = 0
         for _ in range(num_samples):
             out = transforms.RandomHorizontalFlip()(img)
