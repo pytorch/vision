@@ -2,7 +2,7 @@ from __future__ import division
 import torch
 import math
 import random
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageEnhance
 try:
     import accimage
 except ImportError:
@@ -11,6 +11,7 @@ import numpy as np
 import numbers
 import types
 import collections
+import warnings
 
 
 def _is_pil_image(img):
@@ -141,21 +142,21 @@ def normalize(tensor, mean, std):
     return tensor
 
 
-def scale(img, size, interpolation=Image.BILINEAR):
-    """Rescale the input PIL.Image to the given size.
+def resize(img, size, interpolation=Image.BILINEAR):
+    """Resize the input PIL.Image to the given size.
 
     Args:
-        img (PIL.Image): Image to be scaled.
+        img (PIL.Image): Image to be resized.
         size (sequence or int): Desired output size. If size is a sequence like
-            (h, w), output size will be matched to this. If size is an int,
-            smaller edge of the image will be matched to this number.
-            i.e, if height > width, then image will be rescaled to
+            (h, w), the output size will be matched to this. If size is an int,
+            the smaller edge of the image will be matched to this number maintaing
+            the aspect ratio. i.e, if height > width, then image will be rescaled to
             (size * height / width, size)
         interpolation (int, optional): Desired interpolation. Default is
             ``PIL.Image.BILINEAR``
 
     Returns:
-        PIL.Image: Rescaled image.
+        PIL.Image: Resized image.
     """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
@@ -176,6 +177,12 @@ def scale(img, size, interpolation=Image.BILINEAR):
             return img.resize((ow, oh), interpolation)
     else:
         return img.resize(size[::-1], interpolation)
+
+
+def scale(*args, **kwargs):
+    warnings.warn("The use of the transforms.Scale transform is deprecated, " +
+                  "please use transforms.Resize instead.")
+    return resize(*args, **kwargs)
 
 
 def pad(img, padding, fill=0):
@@ -228,10 +235,10 @@ def crop(img, i, j, h, w):
     return img.crop((j, i, j + w, i + h))
 
 
-def scaled_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
-    """Crop the given PIL.Image and scale it to desired size.
+def resized_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
+    """Crop the given PIL.Image and resize it to desired size.
 
-    Notably used in RandomSizedCrop.
+    Notably used in RandomResizedCrop.
 
     Args:
         img (PIL.Image): Image to be cropped.
@@ -247,7 +254,7 @@ def scaled_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
     """
     assert _is_pil_image(img), 'img should be PIL Image'
     img = crop(img, i, j, h, w)
-    img = scale(img, size, interpolation)
+    img = resize(img, size, interpolation)
     return img
 
 
@@ -348,6 +355,145 @@ def ten_crop(img, size, vertical_flip=False):
     return first_five + second_five
 
 
+def adjust_brightness(img, brightness_factor):
+    """Adjust brightness of an Image.
+
+    Args:
+        img (PIL.Image): PIL Image to be adjusted.
+        brightness_factor (float):  How much to adjust the brightness. Can be
+            any non negative number. 0 gives a black image, 1 gives the
+            original image while 2 increases the brightness by a factor of 2.
+
+    Returns:
+        PIL.Image: Brightness adjusted image.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    enhancer = ImageEnhance.Brightness(img)
+    img = enhancer.enhance(brightness_factor)
+    return img
+
+
+def adjust_contrast(img, contrast_factor):
+    """Adjust contrast of an Image.
+
+    Args:
+        img (PIL.Image): PIL Image to be adjusted.
+        contrast_factor (float): How much to adjust the contrast. Can be any
+            non negative number. 0 gives a solid gray image, 1 gives the
+            original image while 2 increases the contrast by a factor of 2.
+
+    Returns:
+        PIL.Image: Contrast adjusted image.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    enhancer = ImageEnhance.Contrast(img)
+    img = enhancer.enhance(contrast_factor)
+    return img
+
+
+def adjust_saturation(img, saturation_factor):
+    """Adjust color saturation of an image.
+
+    Args:
+        img (PIL.Image): PIL Image to be adjusted.
+        saturation_factor (float):  How much to adjust the saturation. 0 will
+            give a black and white image, 1 will give the original image while
+            2 will enhance the saturation by a factor of 2.
+
+    Returns:
+        PIL.Image: Saturation adjusted image.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    enhancer = ImageEnhance.Color(img)
+    img = enhancer.enhance(saturation_factor)
+    return img
+
+
+def adjust_hue(img, hue_factor):
+    """Adjust hue of an image.
+
+    The image hue is adjusted by converting the image to HSV and
+    cyclically shifting the intensities in the hue channel (H).
+    The image is then converted back to original image mode.
+
+    `hue_factor` is the amount of shift in H channel and must be in the
+    interval `[-0.5, 0.5]`.
+
+    See https://en.wikipedia.org/wiki/Hue for more details on Hue.
+
+    Args:
+        img (PIL.Image): PIL Image to be adjusted.
+        hue_factor (float):  How much to shift the hue channel. Should be in
+            [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
+            HSV space in positive and negative direction respectively.
+            0 means no shift. Therefore, both -0.5 and 0.5 will give an image
+            with complementary colors while 0 gives the original image.
+
+    Returns:
+        PIL.Image: Hue adjusted image.
+    """
+    if not(-0.5 <= hue_factor <= 0.5):
+        raise ValueError('hue_factor is not in [-0.5, 0.5].'.format(hue_factor))
+
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    input_mode = img.mode
+    if input_mode in {'L', '1', 'I', 'F'}:
+        return img
+
+    h, s, v = img.convert('HSV').split()
+
+    np_h = np.array(h, dtype=np.uint8)
+    # uint8 addition take cares of rotation across boundaries
+    with np.errstate(over='ignore'):
+        np_h += np.uint8(hue_factor * 255)
+    h = Image.fromarray(np_h, 'L')
+
+    img = Image.merge('HSV', (h, s, v)).convert(input_mode)
+    return img
+
+
+def adjust_gamma(img, gamma, gain=1):
+    """Perform gamma correction on an image.
+
+    Also known as Power Law Transform. Intensities in RGB mode are adjusted
+    based on the following equation:
+
+        I_out = 255 * gain * ((I_in / 255) ** gamma)
+
+    See https://en.wikipedia.org/wiki/Gamma_correction for more details.
+
+    Args:
+        img (PIL.Image): PIL Image to be adjusted.
+        gamma (float): Non negative real number. gamma larger than 1 make the
+            shadows darker, while gamma smaller than 1 make dark regions
+            lighter.
+        gain (float): The constant multiplier.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    if gamma < 0:
+        raise ValueError('Gamma should be a non-negative real number')
+
+    input_mode = img.mode
+    img = img.convert('RGB')
+
+    np_img = np.array(img, dtype=np.float32)
+    np_img = 255 * gain * ((np_img / 255) ** gamma)
+    np_img = np.uint8(np.clip(np_img, 0, 255))
+
+    img = Image.fromarray(np_img, 'RGB').convert(input_mode)
+    return img
+
+
 class Compose(object):
     """Composes several transforms together.
 
@@ -435,8 +581,8 @@ class Normalize(object):
         return normalize(tensor, self.mean, self.std)
 
 
-class Scale(object):
-    """Rescale the input PIL.Image to the given size.
+class Resize(object):
+    """Resize the input PIL.Image to the given size.
 
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
@@ -461,7 +607,14 @@ class Scale(object):
         Returns:
             PIL.Image: Rescaled image.
         """
-        return scale(img, self.size, self.interpolation)
+        return resize(img, self.size, self.interpolation)
+
+
+class Scale(Resize):
+    def __init__(self, *args, **kwargs):
+        warnings.warn("The use of the transforms.Scale transform is deprecated, " +
+                      "please use transforms.Resize instead.")
+        super(Scale, self).__init__(*args, **kwargs)
 
 
 class CenterCrop(object):
@@ -645,7 +798,7 @@ class RandomVerticalFlip(object):
         return img
 
 
-class RandomSizedCrop(object):
+class RandomResizedCrop(object):
     """Crop the given PIL.Image to random size and aspect ratio.
 
     A crop of random size of (0.08 to 1.0) of the original size and a random
@@ -701,10 +854,17 @@ class RandomSizedCrop(object):
             img (PIL.Image): Image to be flipped.
 
         Returns:
-            PIL.Image: Randomly cropped and scaled image.
+            PIL.Image: Randomly cropped and resize image.
         """
         i, j, h, w = self.get_params(img)
-        return scaled_crop(img, i, j, h, w, self.size, self.interpolation)
+        return resized_crop(img, i, j, h, w, self.size, self.interpolation)
+
+
+class RandomSizedCrop(RandomResizedCrop):
+    def __init__(self, *args, **kwargs):
+        warnings.warn("The use of the transforms.RandomSizedCrop transform is deprecated, " +
+                      "please use transforms.RandomResizedCrop instead.")
+        super(RandomSizedCrop, self).__init__(*args, **kwargs)
 
 
 class FiveCrop(object):
@@ -787,3 +947,67 @@ class LinearTransformation(object):
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
         tensor = transformed_tensor.view(tensor.size())
         return tensor
+
+
+class ColorJitter(object):
+    """Randomly change the brightness, contrast and saturation of an image.
+
+    Args:
+        brightness (float): How much to jitter brightness. brightness_factor
+            is chosen uniformly from [max(0, 1 - brightness), 1 + brightness].
+        contrast (float): How much to jitter contrast. contrast_factor
+            is chosen uniformly from [max(0, 1 - contrast), 1 + contrast].
+        saturation (float): How much to jitter saturation. saturation_factor
+            is chosen uniformly from [max(0, 1 - saturation), 1 + saturation].
+        hue(float): How much to jitter hue. hue_factor is chosen uniformly from
+            [-hue, hue]. Should be >=0 and <= 0.5.
+    """
+    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
+        self.brightness = brightness
+        self.contrast = contrast
+        self.saturation = saturation
+        self.hue = hue
+
+    @staticmethod
+    def get_params(brightness, contrast, saturation, hue):
+        """Get a randomized transform to be applied on image.
+
+        Arguments are same as that of __init__.
+
+        Returns:
+            Transform which randomly adjusts brightness, contrast and
+            saturation in a random order.
+        """
+        transforms = []
+        if brightness > 0:
+            brightness_factor = np.random.uniform(max(0, 1 - brightness), 1 + brightness)
+            transforms.append(Lambda(lambda img: adjust_brightness(img, brightness_factor)))
+
+        if contrast > 0:
+            contrast_factor = np.random.uniform(max(0, 1 - contrast), 1 + contrast)
+            transforms.append(Lambda(lambda img: adjust_contrast(img, contrast_factor)))
+
+        if saturation > 0:
+            saturation_factor = np.random.uniform(max(0, 1 - saturation), 1 + saturation)
+            transforms.append(Lambda(lambda img: adjust_saturation(img, saturation_factor)))
+
+        if hue > 0:
+            hue_factor = np.random.uniform(-hue, hue)
+            transforms.append(Lambda(lambda img: adjust_hue(img, hue_factor)))
+
+        np.random.shuffle(transforms)
+        transform = Compose(transforms)
+
+        return transform
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL.Image): Input image.
+
+        Returns:
+            PIL.Image: Color jittered image.
+        """
+        transform = self.get_params(self.brightness, self.contrast,
+                                    self.saturation, self.hue)
+        return transform(img)

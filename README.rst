@@ -266,7 +266,7 @@ constructor:
     alexnet = models.alexnet()
     vgg16 = models.vgg16()
     squeezenet = models.squeezenet1_0()
-    densenet = models.densenet_161()
+    densenet = models.densenet161()
     inception = models.inception_v3()
 
 We provide pre-trained models for the ResNet variants, SqueezeNet 1.0 and 1.1,
@@ -280,7 +280,7 @@ These can be constructed by passing ``pretrained=True``:
     alexnet = models.alexnet(pretrained=True)
     squeezenet = models.squeezenet1_0(pretrained=True)
     vgg16 = models.vgg16(pretrained=True)
-    densenet = models.densenet_161(pretrained=True)
+    densenet = models.densenet161(pretrained=True)
     inception = models.inception_v3(pretrained=True)
     
 
