@@ -396,31 +396,39 @@ class Tester(unittest.TestCase):
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_vertical_flip(self):
+        random_state = random.getstate()
+        random.seed(42)
         img = transforms.ToPILImage()(torch.rand(3, 10, 10))
         vimg = img.transpose(Image.FLIP_TOP_BOTTOM)
 
+        num_samples=250
         num_vertical = 0
-        for _ in range(100):
+        for _ in range(num_samples):
             out = transforms.RandomVerticalFlip()(img)
             if out == vimg:
                 num_vertical += 1
 
-        p_value = stats.binom_test(num_vertical, 100, p=0.5)
-        assert p_value > 0.05
+        p_value = stats.binom_test(num_vertical, num_samples, p=0.5)
+        random.setstate(random_state)
+        assert p_value > 0.0001
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_horizontal_flip(self):
+        random_state = random.getstate()
+        random.seed(42)
         img = transforms.ToPILImage()(torch.rand(3, 10, 10))
         himg = img.transpose(Image.FLIP_LEFT_RIGHT)
 
+        num_samples=250
         num_horizontal = 0
-        for _ in range(100):
+        for _ in range(num_samples):
             out = transforms.RandomHorizontalFlip()(img)
             if out == himg:
                 num_horizontal += 1
 
-        p_value = stats.binom_test(num_horizontal, 100, p=0.5)
-        assert p_value > 0.05
+        p_value = stats.binom_test(num_horizontal, num_samples, p=0.5)
+        random.setstate(random_state)
+        assert p_value > 0.0001
 
     def test_adjust_brightness(self):
         x_shape = [2, 2, 3]
