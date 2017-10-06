@@ -380,15 +380,13 @@ the torch.\*Tensor, i.e. channel = (channel - mean) / std
 ``LinearTransformation(transformation_matrix)``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Given ``transformation_matrix`` (D x K), where D = (C x H x W) and K is a
-positive integer, will compute its dot product with the flattened torch.\*Tensor
-and then reshape it to its original dimensions.
+Given ``transformation_matrix`` (D x d), where D = (C x H x W), will compute its
+dot product with the flattened torch.\*Tensor and then reshape it to its
+original dimensions.
 
 Applications:
 - whitening: zero-center the data, compute the data covariance matrix [D x D] with 
 np.dot(X.T, X), perform SVD on this matrix and pass the principal components as 
-transformation_matrix.
-- linear random projection: initialize a random matrix [D x D] and pass it as 
 transformation_matrix.
 
 Conversion Transforms
