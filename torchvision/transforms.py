@@ -943,7 +943,7 @@ class LinearTransformation(object):
         Returns:
             Tensor: Transformed image.
         """
-        assert tensor.size(0)*tensor.size(1)*tensor.size(2) == self.transformation_matrix.size(0)
+        assert tensor.size(0) * tensor.size(1) * tensor.size(2) == self.transformation_matrix.size(0)
         flat_tensor = tensor.view(1, -1)
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
         tensor = transformed_tensor.view(tensor.size())
