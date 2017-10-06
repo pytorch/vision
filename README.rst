@@ -288,8 +288,8 @@ All pre-trained models expect input images normalized in the same way, i.e.
 mini-batches of 3-channel RGB images of shape (3 x H x W), where H and W are expected
 to be at least 224.
 
-The images have to be loaded in to a range of [0, 1] and then
-normalized using `mean=[0.485, 0.456, 0.406]` and `std=[0.229, 0.224, 0.225]`
+The images have to be loaded in to a range of [0.0, 1.0] and then
+normalized using ``mean=[0.485, 0.456, 0.406]`` and ``std=[0.229, 0.224, 0.225]``
 
 An example of such normalization can be found in the imagenet example `here <https://github.com/pytorch/examples/blob/42e5b996718797e45c46a25c55b031e6768f8440/imagenet/main.py#L89-L101>`__
 
@@ -314,52 +314,52 @@ One can compose several transforms together. For example.
                               std = [ 0.229, 0.224, 0.225 ]),
     ])
 
-Transforms on PIL.Image
+Transforms on ``PIL.Image``
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 ``Scale(size, interpolation=Image.BILINEAR)``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Rescales the input PIL.Image to the given 'size'. 
+Rescales the input ``PIL.Image`` to the given 'size'. 
 
 If 'size' is a 2-element tuple or list in the order of (width, height), it will be the exactly size to scale.
 
 If 'size' is a number, it will indicate the size of the smaller edge. 
 For example, if height > width, then image will be rescaled to (size \*
-height / width, size) - size: size of the smaller edge - interpolation:
-Default: PIL.Image.BILINEAR
+height / width, size) - ``size``: size of the smaller edge - interpolation:
+Default: ``PIL.Image.BILINEAR``
 
 ``CenterCrop(size)`` - center-crops the image to the given size
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Crops the given PIL.Image at the center to have a region of the given
-size. size can be a tuple (target\_height, target\_width) or an integer,
-in which case the target will be of a square shape (size, size)
+Crops the given ``PIL.Image`` at the center to have a region of the given
+size. ``size`` can be a tuple ``(target_height, target_width)`` or an integer,
+in which case the target will be of a square shape ``(size, size)``
 
 ``RandomCrop(size, padding=0)``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Crops the given PIL.Image at a random location to have a region of the
-given size. size can be a tuple (target\_height, target\_width) or an
-integer, in which case the target will be of a square shape (size, size)
+Crops the given ``PIL.Image`` at a random location to have a region of the
+given ``size``. ``size`` can be a tuple ``(target_height, target_width)`` or an
+integer, in which case the target will be of a square shape ``(size, size)``
 If ``padding`` is non-zero, then the image is first zero-padded on each
 side with ``padding`` pixels.
 
 ``RandomHorizontalFlip()``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Randomly horizontally flips the given PIL.Image with a probability of
+Randomly horizontally flips the given ``PIL.Image`` with a probability of
 0.5
 
 ``RandomSizedCrop(size, interpolation=Image.BILINEAR)``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Random crop the given PIL.Image to a random size of (0.08 to 1.0) of the
+Random crop the given ``PIL.Image`` to a random size of (0.08 to 1.0) of the
 original size and and a random aspect ratio of 3/4 to 4/3 of the
 original aspect ratio
 
 This is popularly used to train the Inception networks - size: size of
-the smaller edge - interpolation: Default: PIL.Image.BILINEAR
+the smaller edge - interpolation: Default: ``PIL.Image.BILINEAR``
 
 ``Pad(padding, fill=0)``
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -374,18 +374,18 @@ Transforms on torch.\*Tensor
 ``Normalize(mean, std)``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Given mean: (R, G, B) and std: (R, G, B), will normalize each channel of
-the torch.\*Tensor, i.e. channel = (channel - mean) / std
+Given mean and standard deviation for ``n`` channels ``(M1, M2, ..., Mn)`` and ``(S1, S2, ..., Sn)`` respectively, 
+will normalize each channel of the torch.\*Tensor, i.e. ``C = (C - M) / S``.
 
 Conversion Transforms
 ~~~~~~~~~~~~~~~~~~~~~
 
--  ``ToTensor()`` - Converts a PIL.Image (RGB) or numpy.ndarray (H x W x
+-  ``ToTensor()`` - Converts a ``PIL.Image`` (RGB) or numpy.ndarray (H x W x
    C) in the range [0, 255] to a torch.FloatTensor of shape (C x H x W)
    in the range [0.0, 1.0]
--  ``ToPILImage()`` - Converts a torch.\*Tensor of range [0, 1] and
+-  ``ToPILImage()`` - Converts a torch.\*Tensor of range [0.0, 1.0] and
    shape C x H x W or numpy ndarray of dtype=uint8, range[0, 255] and
-   shape H x W x C to a PIL.Image of range [0, 255]
+   shape H x W x C to a ``PIL.Image`` of range [0, 255]
 
 Generic Transforms
 ~~~~~~~~~~~~~~~~~~
@@ -393,7 +393,7 @@ Generic Transforms
 ``Lambda(lambda)``
 ^^^^^^^^^^^^^^^^^^
 
-Given a Python lambda, applies it to the input ``img`` and returns it.
+Given a Python ``lambda``, applies it to the input ``img`` and returns it.
 For example:
 
 .. code:: python
@@ -410,7 +410,7 @@ Given a 4D mini-batch Tensor of shape (B x C x H x W),
 or a list of images all of the same size,
 makes a grid of images
 
-``normalize=True`` will shift the image to the range (0, 1),
+``normalize=True`` will shift the image to the range (0.0, 1.0),
 by subtracting the minimum and dividing by the maximum pixel value.
 
 if ``range=(min, max)`` where ``min`` and ``max`` are numbers, then these numbers are used to

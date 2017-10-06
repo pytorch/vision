@@ -50,13 +50,18 @@ def build_set(root, year, train):
 
         files = np.genfromtxt(lists_path, dtype=str)
 
-        return_set = []
+        imgs = []
+        classes = []
+        class_to_idx = []
 
         for fname in files:
             full_path = os.path.join(images_file_path, fname)
-            return_set.append((full_path, int(fname[0:3]) - 1))
+            imgs.append((full_path, int(fname[0:3]) - 1))
+            if os.path.split(fname)[0][4:] not in classes:
+                classes.append(os.path.split(fname)[0][4:])
+                class_to_idx.append(int(fname[0:3]) - 1)
 
-        return return_set
+        return imgs, classes, class_to_idx
 
     elif year == 2011:
         images_file_path = os.path.join(root, 'CUB_200_2011/images/')
@@ -66,17 +71,22 @@ def build_set(root, year, train):
         train_test_list_path = os.path.join(root, 'CUB_200_2011/train_test_split.txt')
         train_test_list = np.genfromtxt(train_test_list_path, dtype=int)
 
-        return_set = []
+        imgs = []
+        classes = []
+        class_to_idx = []
 
         for i in range(0, len(all_images_list)):
             fname = all_images_list[i, 1]
             full_path = os.path.join(images_file_path, fname)
             if train_test_list[i, 1] == 1 and train:
-                return_set.append((full_path, int(fname[0:3]) - 1))
+                imgs.append((full_path, int(fname[0:3]) - 1))
             elif train_test_list[i, 1] == 0 and not train:
-                return_set.append((full_path, int(fname[0:3]) - 1))
+                imgs.append((full_path, int(fname[0:3]) - 1))
+            if os.path.split(fname)[0][4:] not in classes:
+                classes.append(os.path.split(fname)[0][4:])
+                class_to_idx.append(int(fname[0:3]) - 1)
 
-        return return_set
+        return imgs, classes, class_to_idx
 
 
 class CUB200(data.Dataset):
@@ -111,11 +121,11 @@ class CUB200(data.Dataset):
 
         assert year == 2010 or year == 2011, "Invalid version of CUB200 dataset"
         if year == 2010:
-            self.urls.append('http://www.vision.caltech.edu/visipedia-data/CUB-200/images.tgz')
-            self.urls.append('http://www.vision.caltech.edu/visipedia-data/CUB-200/lists.tgz')
+            self.urls = ['http://www.vision.caltech.edu/visipedia-data/CUB-200/images.tgz',
+                         'http://www.vision.caltech.edu/visipedia-data/CUB-200/lists.tgz']
 
         elif year == 2011:
-            self.urls.append('http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz')
+            self.urls = ['http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz']
 
         if download:
             self.download()
@@ -123,7 +133,8 @@ class CUB200(data.Dataset):
         if not self._check_exists():
             raise RuntimeError('Dataset not found. You can use download=True to download it')
 
-        self.data_set = build_set(os.path.join(self.root, self.raw_folder), self.year, self.train)
+        self.imgs, self.classes, self.class_to_idx = build_set(os.path.join(self.root, self.raw_folder),
+                                                               self.year, self.train)
 
     def __getitem__(self, index):
         """
@@ -152,7 +163,7 @@ class CUB200(data.Dataset):
             return os.path.exists(os.path.join(pth, 'CUB_200_2011/'))
 
     def __len__(self):
-        return len(self.data_set)
+        return len(self.imgs)
 
     def download(self):
         from six.moves import urllib
