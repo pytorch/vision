@@ -915,24 +915,24 @@ class TenCrop(object):
 
 
 class LinearTransformation(object):
-    """Transform a tensor image with a transformation matrix computed offline.
+    """Transform a tensor image with a square transformation matrix computed
+    offline.
 
     Given transformation_matrix, will flatten the torch.*Tensor, compute the dot
-    product with the transformation matrix and reshape the tensor to its original
-    shape.
+    product with the transformation matrix and reshape the tensor to its
+    original shape.
 
     Applications:
     - whitening: zero-center the data, compute the data covariance matrix
                  [D x D] with np.dot(X.T, X), perform SVD on this matrix and
                  pass it as transformation_matrix.
-    - linear random projection: initialize a random matrix [D x D] and pass it
-                                as transformation_matrix.
 
     Args:
-        transformation_matrix (Tensor): tensor [D x D], D = C*H*W
+        transformation_matrix (Tensor): tensor [D x D], D = C x H x W
     """
 
     def __init__(self, transformation_matrix):
+        assert transformation_matrix.size(0) == transformation_matrix.size(1)
         self.transformation_matrix = transformation_matrix
 
     def __call__(self, tensor):
@@ -943,6 +943,7 @@ class LinearTransformation(object):
         Returns:
             Tensor: Transformed image.
         """
+        assert tensor.size(0)*tensor.size(1)*tensor.size(2) == self.transformation_matrix.size(0)
         flat_tensor = tensor.view(1, -1)
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
         tensor = transformed_tensor.view(tensor.size())
