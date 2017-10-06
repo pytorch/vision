@@ -604,9 +604,9 @@ class Tester(unittest.TestCase):
         # initialize whitening matrix
         whitening = transforms.LinearTransformation(principal_components)
         # pass first vector
-        xwhite = whitening(flat_x[0].view(1, 300))
+        xwhite = whitening(x[0].view(10, 10, 3))
         # estimate covariance
-        xwhite = xwhite.numpy()
+        xwhite = xwhite.view(1, 300).numpy()
         cov = np.dot(xwhite, xwhite.T) / x.size(0)
         assert np.allclose(cov, np.identity(1), rtol=1e-3)
 
