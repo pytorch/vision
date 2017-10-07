@@ -380,7 +380,7 @@ the torch.\*Tensor, i.e. channel = (channel - mean) / std
 ``LinearTransformation(transformation_matrix)``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Given ``transformation_matrix`` (D x d), where D = (C x H x W), will compute its
+Given ``transformation_matrix`` (D x D), where D = (C x H x W), will compute its
 dot product with the flattened torch.\*Tensor and then reshape it to its
 original dimensions.
 

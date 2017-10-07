@@ -869,8 +869,10 @@ class RandomSizedCrop(RandomResizedCrop):
 
 class FiveCrop(object):
     """Crop the given PIL.Image into four corners and the central crop.abs
+
        Note: this transform returns a tuple of images and there may be a mismatch in the number of
        inputs and targets your `Dataset` returns.
+
        Args:
            size (sequence or int): Desired output size of the crop. If size is an
                int instead of sequence like (h, w), a square crop (size, size) is
@@ -892,8 +894,10 @@ class FiveCrop(object):
 class TenCrop(object):
     """Crop the given PIL.Image into four corners and the central crop plus the
        flipped version of these (horizontal flipping is used by default)
+
        Note: this transform returns a tuple of images and there may be a mismatch in the number of
        inputs and targets your `Dataset` returns.
+
        Args:
            size (sequence or int): Desired output size of the crop. If size is an
                int instead of sequence like (h, w), a square crop (size, size) is
@@ -932,7 +936,9 @@ class LinearTransformation(object):
     """
 
     def __init__(self, transformation_matrix):
-        assert transformation_matrix.size(0) == transformation_matrix.size(1)
+        if transformation_matrix.size(0) != transformation_matrix.size(1):
+            raise ValueError("transformation_matrix should be square. Got " +
+                             "[{} x {}] rectangular matrix.".format(*transformation_matrix.size()))
         self.transformation_matrix = transformation_matrix
 
     def __call__(self, tensor):
@@ -943,7 +949,10 @@ class LinearTransformation(object):
         Returns:
             Tensor: Transformed image.
         """
-        assert tensor.size(0) * tensor.size(1) * tensor.size(2) == self.transformation_matrix.size(0)
+        if tensor.size(0) * tensor.size(1) * tensor.size(2) != self.transformation_matrix.size(0):
+            raise ValueError("tensor and transformation matrix have incompatible shape." +
+                             "[{} x {} x {}] != ".format(*tensor.size()) +
+                             "{}".format(self.transformation_matrix.size(0)))
         flat_tensor = tensor.view(1, -1)
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
         tensor = transformed_tensor.view(tensor.size())
