@@ -7,8 +7,10 @@ Transforms are common image transforms. They can be chained together using :clas
 
 .. autoclass:: Compose
 
-Transforms on PIL.Image
+Transforms on PIL Image
 -----------------------
+
+.. autoclass:: Resize
 
 .. autoclass:: Scale
 
@@ -18,9 +20,19 @@ Transforms on PIL.Image
 
 .. autoclass:: RandomHorizontalFlip
 
+.. autoclass:: RandomVerticalFlip
+
+.. autoclass:: RandomResizedCrop
+
 .. autoclass:: RandomSizedCrop
 
+.. autoclass:: FiveCrop
+
+.. autoclass:: TenCrop
+
 .. autoclass:: Pad
+
+.. autoclass:: ColorJitter
 
 Transforms on torch.\*Tensor
 ----------------------------
