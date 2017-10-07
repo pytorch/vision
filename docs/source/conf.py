@@ -246,4 +246,5 @@ def patched_make_field(self, types, domain, items, **kw):
     fieldbody = nodes.field_body('', bodynode)
     return nodes.field('', fieldname, fieldbody)
 
+
 TypedField.make_field = patched_make_field
