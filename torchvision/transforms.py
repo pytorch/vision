@@ -918,6 +918,47 @@ class TenCrop(object):
         return ten_crop(img, self.size, self.vertical_flip)
 
 
+class LinearTransformation(object):
+    """Transform a tensor image with a square transformation matrix computed
+    offline.
+
+    Given transformation_matrix, will flatten the torch.*Tensor, compute the dot
+    product with the transformation matrix and reshape the tensor to its
+    original shape.
+
+    Applications:
+    - whitening: zero-center the data, compute the data covariance matrix
+                 [D x D] with np.dot(X.T, X), perform SVD on this matrix and
+                 pass it as transformation_matrix.
+
+    Args:
+        transformation_matrix (Tensor): tensor [D x D], D = C x H x W
+    """
+
+    def __init__(self, transformation_matrix):
+        if transformation_matrix.size(0) != transformation_matrix.size(1):
+            raise ValueError("transformation_matrix should be square. Got " +
+                             "[{} x {}] rectangular matrix.".format(*transformation_matrix.size()))
+        self.transformation_matrix = transformation_matrix
+
+    def __call__(self, tensor):
+        """
+        Args:
+            tensor (Tensor): Tensor image of size (C, H, W) to be whitened.
+
+        Returns:
+            Tensor: Transformed image.
+        """
+        if tensor.size(0) * tensor.size(1) * tensor.size(2) != self.transformation_matrix.size(0):
+            raise ValueError("tensor and transformation matrix have incompatible shape." +
+                             "[{} x {} x {}] != ".format(*tensor.size()) +
+                             "{}".format(self.transformation_matrix.size(0)))
+        flat_tensor = tensor.view(1, -1)
+        transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
+        tensor = transformed_tensor.view(tensor.size())
+        return tensor
+
+
 class ColorJitter(object):
     """Randomly change the brightness, contrast and saturation of an image.
 
