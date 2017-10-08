@@ -1,5 +1,5 @@
-Utils
-=====
+torchvision.utils
+=================
 
 .. currentmodule:: torchvision.utils
 
@@ -7,6 +7,3 @@ Utils
 
 .. autofunction:: save_image
 
-
-.. automodule:: torchvision
-   :members:

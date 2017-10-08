@@ -1,5 +1,5 @@
-Transforms
-==========
+torchvision.transforms
+======================
 
 .. currentmodule:: torchvision.transforms
 

@@ -1,5 +1,5 @@
-Models
-======
+torchvision.models
+==================
 
 The models subpackage contains definitions for the following model
 architectures:

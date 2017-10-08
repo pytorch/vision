@@ -1,5 +1,5 @@
-Datasets
-========
+torchvision.datasets
+====================
 
 All datasets are subclasses of :class:`torch.utils.data.Dataset`
 i.e, they have ``__getitem__`` and ``__len__`` methods implemented.

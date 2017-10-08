@@ -12,3 +12,6 @@ architectures, and common image transformations for computer vision.
    models
    transforms
    utils
+
+.. automodule:: torchvision
+   :members:
