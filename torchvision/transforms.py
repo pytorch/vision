@@ -749,7 +749,7 @@ class RandomCrop(object):
         w, h = img.size
         th, tw = output_size
         if w == tw and h == th:
-            return img
+            return 0, 0, h, w
 
         i = random.randint(0, h - th)
         j = random.randint(0, w - tw)
