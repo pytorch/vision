@@ -3,6 +3,7 @@ from torchvision import datasets
 from torchvision import transforms
 from torchvision import utils
 
+__version__ = '0.1.9'
 
 _image_backend = 'PIL'
 
