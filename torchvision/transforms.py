@@ -127,12 +127,11 @@ def normalize(tensor, mean, std):
 
     Args:
         tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
-        mean (sequence): Sequence of means for R, G, B channels respecitvely.
-        std (sequence): Sequence of standard deviations for R, G, B channels
-            respecitvely.
+        mean (sequence): Sequence of means for each channel.
+        std (sequence): Sequence of standard deviations for each channely.
 
     Returns:
-        Tensor: Normalized image.
+        Tensor: Normalized Tensor image.
     """
     if not _is_tensor_image(tensor):
         raise TypeError('tensor is not a torch image.')
@@ -557,15 +556,13 @@ class ToPILImage(object):
 
 class Normalize(object):
     """Normalize an tensor image with mean and standard deviation.
-
-    Given mean: (R, G, B) and std: (R, G, B),
-    will normalize each channel of the torch.*Tensor, i.e.
-    channel = (channel - mean) / std
+    Given mean: ``(M1,...,Mn)`` and std: ``(M1,..,Mn)`` for ``n`` channels, this transform
+    will normalize each channel of the input ``torch.*Tensor`` i.e.
+    ``input[channel] = (input[channel] - mean[channel]) / std[channel]``
 
     Args:
-        mean (sequence): Sequence of means for R, G, B channels respecitvely.
-        std (sequence): Sequence of standard deviations for R, G, B channels
-            respecitvely.
+        mean (sequence): Sequence of means for each channel.
+        std (sequence): Sequence of standard deviations for each channel.
     """
 
     def __init__(self, mean, std):
@@ -578,7 +575,7 @@ class Normalize(object):
             tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
 
         Returns:
-            Tensor: Normalized image.
+            Tensor: Normalized Tensor image.
         """
         return normalize(tensor, self.mean, self.std)
 
