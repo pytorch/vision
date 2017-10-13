@@ -190,6 +190,15 @@ class Tester(unittest.TestCase):
         assert result.size(1) == oheight
         assert result.size(2) == owidth
 
+        result = transforms.Compose([
+            transforms.ToPILImage(),
+            transforms.RandomCrop((height, width)),
+            transforms.ToTensor()
+        ])(img)
+        assert result.size(1) == height
+        assert result.size(2) == width
+        assert np.allclose(img.numpy(), result.numpy())
+
     def test_pad(self):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
