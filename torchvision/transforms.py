@@ -345,7 +345,7 @@ def ten_crop(img, size, vertical_flip=False):
          img (PIL Image): Image to be cropped.
          size (sequence or int): Desired output size of the crop. If size is an ``int``
             instead of sequence like (h, w), a square crop of size (size, size) is made.
-         vertical_flip (bool): User vertical flipping instead of horizontal.
+         vertical_flip (bool): Use vertical flipping instead of horizontal.
 
     Returns:
         tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip,
