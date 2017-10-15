@@ -341,6 +341,7 @@ class Tester(unittest.TestCase):
 
         assert np.allclose(img_data_short.numpy(), to_tensor(img_short).numpy())
         assert np.allclose(img_data_int.numpy(), to_tensor(img_int).numpy())
+        assert np.allclose(img_data_byte.float().div_(255.0).numpy(), to_tensor(img_byte).numpy())
 
     def test_tensor_rgba_to_pil_image(self):
         trans = transforms.ToPILImage()
