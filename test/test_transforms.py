@@ -261,7 +261,7 @@ class Tester(unittest.TestCase):
             ndarray = np.random.randint(low=0, high=255, size=(height, width, channels))
             output = trans(ndarray)
             expected_output = ndarray.transpose((2, 0, 1)) / 255.0
-           assert np.allclose(output.numpy(), expected_output)
+            assert np.allclose(output.numpy(), expected_output)
 
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_to_tensor(self):
