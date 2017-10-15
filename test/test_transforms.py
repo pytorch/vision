@@ -253,14 +253,14 @@ class Tester(unittest.TestCase):
         trans = transforms.ToTensor()
 
         for channels in test_channels:
-           input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
-           img = transforms.ToPILImage()(input_data)
-           output = trans(img)
-           assert np.allclose(input_data.numpy(), output.numpy())
+            input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
+            img = transforms.ToPILImage()(input_data)
+            output = trans(img)
+            assert np.allclose(input_data.numpy(), output.numpy())
 
-           ndarray = np.random.randint(low=0, high=255, size=(height, width, channels))
-           output = trans(ndarray)
-           expected_output = ndarray.transpose((2, 0, 1)) / 255.0
+            ndarray = np.random.randint(low=0, high=255, size=(height, width, channels))
+            output = trans(ndarray)
+            expected_output = ndarray.transpose((2, 0, 1)) / 255.0
            assert np.allclose(output.numpy(), expected_output)
 
     @unittest.skipIf(accimage is None, 'accimage not available')
