@@ -248,18 +248,20 @@ class Tester(unittest.TestCase):
         assert (y.equal(x))
 
     def test_to_tensor(self):
-        channels = 3
+        test_channels = [1, 3, 4]
         height, width = 4, 4
         trans = transforms.ToTensor()
-        input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
-        img = transforms.ToPILImage()(input_data)
-        output = trans(img)
-        assert np.allclose(input_data.numpy(), output.numpy())
 
-        ndarray = np.random.randint(low=0, high=255, size=(height, width, channels))
-        output = trans(ndarray)
-        expected_output = ndarray.transpose((2, 0, 1)) / 255.0
-        assert np.allclose(output.numpy(), expected_output)
+        for channels in test_channels:
+           input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
+           img = transforms.ToPILImage()(input_data)
+           output = trans(img)
+           assert np.allclose(input_data.numpy(), output.numpy())
+
+           ndarray = np.random.randint(low=0, high=255, size=(height, width, channels))
+           output = trans(ndarray)
+           expected_output = ndarray.transpose((2, 0, 1)) / 255.0
+           assert np.allclose(output.numpy(), expected_output)
 
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_to_tensor(self):
