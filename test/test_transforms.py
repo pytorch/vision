@@ -302,80 +302,103 @@ class Tester(unittest.TestCase):
         self.assertEqual(expected_output.size(), output.size())
         assert np.allclose(output.numpy(), expected_output.numpy())
 
-    def test_tensor_to_pil_image(self):
+    def test_1_channel_tensor_to_pil_image(self):
         trans = transforms.ToPILImage()
         to_tensor = transforms.ToTensor()
 
-        img_data = torch.Tensor(3, 4, 4).uniform_()
-        img = trans(img_data)
-        assert img.getbands() == ('R', 'G', 'B')
-        r, g, b = img.split()
-
-        expected_output = img_data.mul(255).int().float().div(255)
-        assert np.allclose(expected_output[0].numpy(), to_tensor(r).numpy())
-        assert np.allclose(expected_output[1].numpy(), to_tensor(g).numpy())
-        assert np.allclose(expected_output[2].numpy(), to_tensor(b).numpy())
-
-        # single channel image
-        img_data = torch.Tensor(1, 4, 4).uniform_()
-        img = trans(img_data)
-        assert img.getbands() == ('L',)
-        l, = img.split()
-        expected_output = img_data.mul(255).int().float().div(255)
-        assert np.allclose(expected_output[0].numpy(), to_tensor(l).numpy())
-
-    def test_tensor_gray_to_pil_image(self):
-        trans = transforms.ToPILImage()
-        to_tensor = transforms.ToTensor()
-
+        img_data_float = torch.Tensor(1, 4, 4).uniform_()
         img_data_byte = torch.ByteTensor(1, 4, 4).random_(0, 255)
         img_data_short = torch.ShortTensor(1, 4, 4).random_()
         img_data_int = torch.IntTensor(1, 4, 4).random_()
 
-        img_byte = trans(img_data_byte)
-        img_short = trans(img_data_short)
-        img_int = trans(img_data_int)
-        assert img_byte.mode == 'L'
-        assert img_short.mode == 'I;16'
-        assert img_int.mode == 'I'
+        inputs = [img_data_float, img_data_byte, img_data_short, img_data_int]
+        expected_outputs = [img_data_float.mul(255).int().float().div(255).numpy(),
+                            img_data_byte.float().div(255.0).numpy(),
+                            img_data_short.numpy(),
+                            img_data_int.numpy()]
+        expected_modes = ['L', 'L', 'I;16', 'I']
 
-        assert np.allclose(img_data_short.numpy(), to_tensor(img_short).numpy())
-        assert np.allclose(img_data_int.numpy(), to_tensor(img_int).numpy())
-        assert np.allclose(img_data_byte.float().div_(255.0).numpy(), to_tensor(img_byte).numpy())
+        for img_data, expected_output, mode in zip(inputs, expected_outputs, expected_modes):
+            for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
+                img = transform(img_data)
+                assert img.mode == mode
+                assert np.allclose(expected_output, to_tensor(img).numpy())
 
-    def test_tensor_rgba_to_pil_image(self):
+    def test_1_channel_ndarray_to_pil_image(self):
+        trans = transforms.ToPILImage()
+
+        img_data_float = torch.Tensor(4, 4, 1).uniform_().numpy()
+        img_data_byte = torch.ByteTensor(4, 4, 1).random_(0, 255).numpy()
+        img_data_short = torch.ShortTensor(4, 4, 1).random_().numpy()
+        img_data_int = torch.IntTensor(4, 4, 1).random_().numpy()
+
+        inputs = [img_data_float, img_data_byte, img_data_short, img_data_int]
+        expected_modes = ['F', 'L', 'I;16', 'I']
+        for img_data, mode in zip(inputs, expected_modes):
+            for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
+                img = transform(img_data)
+                assert img.mode == mode
+                assert np.allclose(img_data[:, :, 0], img)
+
+    def test_3_channel_tensor_to_pil_image(self):
+        to_tensor = transforms.ToTensor()
+        img_data = torch.Tensor(3, 4, 4).uniform_()
+
+        #default should assume RGB
+        img = transforms.ToPILImage()(img_data)
+        assert img.mode == 'RGB'
+        expected_output = img_data.mul(255).int().float().div(255)
+
+        for mode in ['RGB', 'HSV', 'YCbCr']:
+           img = transforms.ToPILImage(mode=mode)(img_data)
+           assert img.mode == mode
+           split = img.split()
+           for i in range(len(split)):
+               assert np.allclose(expected_output[i].numpy(), to_tensor(split[i]).numpy())
+
+        with self.assertRaises(ValueError):
+            #should raise if we try a mode for 4 or 1 channel images
+            transforms.ToPILImage(mode='RGBA')(img_data)
+            transforms.ToPILImage(mode='P')(img_data)
+
+    def test_3_channel_ndarray_to_pil_image(self):
+        trans = transforms.ToPILImage()
+        img_data = torch.ByteTensor(4, 4, 3).random_(0, 255).numpy()
+        img = transforms.ToPILImage()(img_data)
+        assert img.mode == 'RGB'
+
+        for mode in ['RGB', 'HSV', 'YCbCr']:
+            img = transforms.ToPILImage(mode=mode)(img_data)
+            assert img.mode == mode
+            split = img.split()
+            for i in range(len(split)):
+                assert np.allclose(img_data[:, :, i], split[i])
+
+        with self.assertRaises(ValueError):
+            #should raise if we try a mode for 4 or 1 channel images
+            transforms.ToPILImage(mode='RGBA')(img_data)
+            transforms.ToPILImage(mode='P')(img_data)
+
+    def test_4_channel_tensor_to_pil_image(self):
         trans = transforms.ToPILImage()
         to_tensor = transforms.ToTensor()
 
         img_data = torch.Tensor(4, 4, 4).uniform_()
-        img = trans(img_data)
+        #Default should be RGBA
+        img = transforms.ToPILImage()(img_data)
         assert img.mode == 'RGBA'
-        assert img.getbands() == ('R', 'G', 'B', 'A')
-        r, g, b, a = img.split()
-
         expected_output = img_data.mul(255).int().float().div(255)
-        assert np.allclose(expected_output[0].numpy(), to_tensor(r).numpy())
-        assert np.allclose(expected_output[1].numpy(), to_tensor(g).numpy())
-        assert np.allclose(expected_output[2].numpy(), to_tensor(b).numpy())
-        assert np.allclose(expected_output[3].numpy(), to_tensor(a).numpy())
+        for mode in ['RGBA', 'CMYK']:
+           img = transforms.ToPILImage(mode=mode)(img_data)
+           assert img.mode == mode
+           split = img.split()
+           for i in range(len(split)):
+               assert np.allclose(expected_output[i].numpy(), to_tensor(split[i]).numpy())
 
-    def test_ndarray_to_pil_image(self):
-        trans = transforms.ToPILImage()
-        img_data = torch.ByteTensor(4, 4, 3).random_(0, 255).numpy()
-        img = trans(img_data)
-        assert img.getbands() == ('R', 'G', 'B')
-        r, g, b = img.split()
-
-        assert np.allclose(r, img_data[:, :, 0])
-        assert np.allclose(g, img_data[:, :, 1])
-        assert np.allclose(b, img_data[:, :, 2])
-
-        # single channel image
-        img_data = torch.ByteTensor(4, 4, 1).random_(0, 255).numpy()
-        img = trans(img_data)
-        assert img.getbands() == ('L',)
-        l, = img.split()
-        assert np.allclose(l, img_data[:, :, 0])
+        with self.assertRaises(ValueError):
+            #should raise if we try a mode for 3 or 1 channel images
+            transforms.ToPILImage(mode='RGB')(img_data)
+            transforms.ToPILImage(mode='P')(img_data)
 
     def test_ndarray_bad_types_to_pil_image(self):
         trans = transforms.ToPILImage()
@@ -385,26 +408,6 @@ class Tester(unittest.TestCase):
             trans(np.ones([4, 4, 1], np.uint32))
             trans(np.ones([4, 4, 1], np.float64))
 
-    def test_ndarray_gray_float32_to_pil_image(self):
-        trans = transforms.ToPILImage()
-        img_data = torch.FloatTensor(4, 4, 1).random_().numpy()
-        img = trans(img_data)
-        assert img.mode == 'F'
-        assert np.allclose(img, img_data[:, :, 0])
-
-    def test_ndarray_gray_int16_to_pil_image(self):
-        trans = transforms.ToPILImage()
-        img_data = torch.ShortTensor(4, 4, 1).random_().numpy()
-        img = trans(img_data)
-        assert img.mode == 'I;16'
-        assert np.allclose(img, img_data[:, :, 0])
-
-    def test_ndarray_gray_int32_to_pil_image(self):
-        trans = transforms.ToPILImage()
-        img_data = torch.IntTensor(4, 4, 1).random_().numpy()
-        img = trans(img_data)
-        assert img.mode == 'I'
-        assert np.allclose(img, img_data[:, :, 0])
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_vertical_flip(self):
