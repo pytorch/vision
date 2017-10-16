@@ -109,26 +109,26 @@ def to_pil_image(pic, mode=None):
         elif npimg.dtype == np.float32:
             expected_mode = 'F'
         if mode is not None and mode != expected_mode:
-            raise ValueError("Incorrect mode supplied for input type {}. Should be
-                             {}".format(np.dtype, expected_mode))
+            raise ValueError("Incorrect mode ({}) supplied for input type {}. Should be {}".format(mode, np.dtype, expected_mode))
         mode = expected_mode
+
     elif npimg.shape[2] == 4:
         permitted_4_channel_modes = ['RGBA', 'CMYK']
         if mode is not None and mode not in permitted_4_channel_modes:
-            raise ValueError("Only modes {} are supported for 4D
-                             inputs".format(permitted_4_channel_modes))
-        if npimg.dtype == np.uint8:
+            raise ValueError("Only modes {} are supported for 4D inputs".format(permitted_4_channel_modes))
+
+        if mode is None and npimg.dtype == np.uint8:
             mode = 'RGBA'
     else:
-        permitted_3_channel_modes = ['RGB', 'YCbCr', 'LAB', 'HSV']
+        permitted_3_channel_modes = ['RGB', 'YCbCr', 'HSV']
         if mode is not None and mode not in permitted_3_channel_modes:
-            raise ValueError("Only modes {} are supported for 3D
-                             inputs".format(permitted_3_channel_modes))
-        if npimg.dtype == np.uint8:
+            raise ValueError("Only modes {} are supported for 3D inputs".format(permitted_3_channel_modes))
+        if mode is None and npimg.dtype == np.uint8:
             mode = 'RGB'
 
-    if mode is not None:
+    if mode is None:
         raise RuntimeError('Input type {} is not supported'.format(npimg.dtype))
+
     return Image.fromarray(npimg, mode=mode)
 
 
