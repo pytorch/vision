@@ -303,7 +303,6 @@ class Tester(unittest.TestCase):
         assert np.allclose(output.numpy(), expected_output.numpy())
 
     def test_1_channel_tensor_to_pil_image(self):
-        trans = transforms.ToPILImage()
         to_tensor = transforms.ToTensor()
 
         img_data_float = torch.Tensor(1, 4, 4).uniform_()
@@ -325,8 +324,6 @@ class Tester(unittest.TestCase):
                 assert np.allclose(expected_output, to_tensor(img).numpy())
 
     def test_1_channel_ndarray_to_pil_image(self):
-        trans = transforms.ToPILImage()
-
         img_data_float = torch.Tensor(4, 4, 1).uniform_().numpy()
         img_data_byte = torch.ByteTensor(4, 4, 1).random_(0, 255).numpy()
         img_data_short = torch.ShortTensor(4, 4, 1).random_().numpy()
@@ -358,7 +355,7 @@ class Tester(unittest.TestCase):
             verify_img_data(img_data, expected_output, mode=mode)
 
         with self.assertRaises(ValueError):
-            #should raise if we try a mode for 4 or 1 channel images
+            # should raise if we try a mode for 4 or 1 channel images
             transforms.ToPILImage(mode='RGBA')(img_data)
             transforms.ToPILImage(mode='P')(img_data)
 
@@ -379,7 +376,7 @@ class Tester(unittest.TestCase):
             verify_img_data(img_data, mode)
 
         with self.assertRaises(ValueError):
-            #should raise if we try a mode for 4 or 1 channel images
+            # should raise if we try a mode for 4 or 1 channel images
             transforms.ToPILImage(mode='RGBA')(img_data)
             transforms.ToPILImage(mode='P')(img_data)
 
@@ -402,7 +399,7 @@ class Tester(unittest.TestCase):
             verify_img_data(img_data, expected_output, mode)
 
         with self.assertRaises(ValueError):
-            #should raise if we try a mode for 3 or 1 channel images
+            # should raise if we try a mode for 3 or 1 channel images
             transforms.ToPILImage(mode='RGB')(img_data)
             transforms.ToPILImage(mode='P')(img_data)
 
@@ -423,7 +420,7 @@ class Tester(unittest.TestCase):
             verify_img_data(img_data, mode)
 
         with self.assertRaises(ValueError):
-            #should raise if we try a mode for 3 or 1 channel images
+            # should raise if we try a mode for 3 or 1 channel images
             transforms.ToPILImage(mode='RGB')(img_data)
             transforms.ToPILImage(mode='P')(img_data)
 
@@ -434,7 +431,6 @@ class Tester(unittest.TestCase):
             trans(np.ones([4, 4, 1], np.uint16))
             trans(np.ones([4, 4, 1], np.uint32))
             trans(np.ones([4, 4, 1], np.float64))
-
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_vertical_flip(self):

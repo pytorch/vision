@@ -85,6 +85,9 @@ def to_pil_image(pic, mode=None):
 
     Args:
         pic (Tensor or numpy.ndarray): Image to be converted to PIL Image.
+        mode (`PIL.Image mode`_): color space and pixel depth of input data (optional).
+
+    .. _PIL.Image mode: http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#modes
 
     Returns:
         PIL Image: Image converted to PIL Image.
@@ -114,7 +117,8 @@ def to_pil_image(pic, mode=None):
         elif npimg.dtype == np.float32:
             expected_mode = 'F'
         if mode is not None and mode != expected_mode:
-            raise ValueError("Incorrect mode ({}) supplied for input type {}. Should be {}".format(mode, np.dtype, expected_mode))
+            raise ValueError("Incorrect mode ({}) supplied for input type {}. Should be {}"
+                             .format(mode, np.dtype, expected_mode))
         mode = expected_mode
 
     elif npimg.shape[2] == 4:
@@ -557,6 +561,16 @@ class ToPILImage(object):
 
     Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
     H x W x C to a PIL Image while preserving the value range.
+
+    Args:
+        mode (`PIL.Image mode`_): color space and pixel depth of input data (optional).
+            If ``mode`` is ``None`` (default) there are some assumptions made about the input data:
+            1. If the input has 3 channels, the ``mode`` is assumed to be ``RGB``.
+            2. If the input has 4 channels, the ``mode`` is assumed to be ``RGBA``.
+            3. If the input has 1 channel, the ``mode`` is determined by the data type (i,e,
+            ``int``, ``float``, ``short``).
+
+    .. _PIL.Image mode: http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#modes
     """
     def __init__(self, mode=None):
         self.mode = mode
