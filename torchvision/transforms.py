@@ -98,7 +98,12 @@ def to_pil_image(pic, mode=None):
     if torch.is_tensor(pic):
         npimg = np.transpose(pic.numpy(), (1, 2, 0))
 
+    if not isinstance(npimg, np.ndarray):
+        raise TypeError('Input pic must be a torch.Tensor or NumPy ndarray, ' +
+                        'not {}'.format(type(npimg)))
+
     if npimg.shape[2] == 1:
+        expected_mode = None
         npimg = npimg[:, :, 0]
         if npimg.dtype == np.uint8:
             expected_mode = 'L'
@@ -127,7 +132,7 @@ def to_pil_image(pic, mode=None):
             mode = 'RGB'
 
     if mode is None:
-        raise RuntimeError('Input type {} is not supported'.format(npimg.dtype))
+        raise TypeError('Input type {} is not supported'.format(npimg.dtype))
 
     return Image.fromarray(npimg, mode=mode)
 

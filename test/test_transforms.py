@@ -341,20 +341,21 @@ class Tester(unittest.TestCase):
                 assert np.allclose(img_data[:, :, 0], img)
 
     def test_3_channel_tensor_to_pil_image(self):
-        to_tensor = transforms.ToTensor()
+        def verify_img_data(img_data, expected_output, mode):
+            if mode is None:
+                img = transforms.ToPILImage()(img_data)
+                assert img.mode == 'RGB'  # default should assume RGB
+            else:
+                img = transforms.ToPILImage(mode=mode)(img_data)
+                assert img.mode == mode
+            split = img.split()
+            for i in range(3):
+                assert np.allclose(expected_output[i].numpy(), transforms.to_tensor(split[i]).numpy())
+
         img_data = torch.Tensor(3, 4, 4).uniform_()
-
-        #default should assume RGB
-        img = transforms.ToPILImage()(img_data)
-        assert img.mode == 'RGB'
         expected_output = img_data.mul(255).int().float().div(255)
-
-        for mode in ['RGB', 'HSV', 'YCbCr']:
-           img = transforms.ToPILImage(mode=mode)(img_data)
-           assert img.mode == mode
-           split = img.split()
-           for i in range(len(split)):
-               assert np.allclose(expected_output[i].numpy(), to_tensor(split[i]).numpy())
+        for mode in [None, 'RGB', 'HSV', 'YCbCr']:
+            verify_img_data(img_data, expected_output, mode=mode)
 
         with self.assertRaises(ValueError):
             #should raise if we try a mode for 4 or 1 channel images
@@ -362,17 +363,20 @@ class Tester(unittest.TestCase):
             transforms.ToPILImage(mode='P')(img_data)
 
     def test_3_channel_ndarray_to_pil_image(self):
-        trans = transforms.ToPILImage()
-        img_data = torch.ByteTensor(4, 4, 3).random_(0, 255).numpy()
-        img = transforms.ToPILImage()(img_data)
-        assert img.mode == 'RGB'
-
-        for mode in ['RGB', 'HSV', 'YCbCr']:
-            img = transforms.ToPILImage(mode=mode)(img_data)
-            assert img.mode == mode
+        def verify_img_data(img_data, mode):
+            if mode is None:
+                img = transforms.ToPILImage()(img_data)
+                assert img.mode == 'RGB'  # default should assume RGB
+            else:
+                img = transforms.ToPILImage(mode=mode)(img_data)
+                assert img.mode == mode
             split = img.split()
-            for i in range(len(split)):
+            for i in range(3):
                 assert np.allclose(img_data[:, :, i], split[i])
+
+        img_data = torch.ByteTensor(4, 4, 3).random_(0, 255).numpy()
+        for mode in [None, 'RGB', 'HSV', 'YCbCr']:
+            verify_img_data(img_data, mode)
 
         with self.assertRaises(ValueError):
             #should raise if we try a mode for 4 or 1 channel images
@@ -380,20 +384,43 @@ class Tester(unittest.TestCase):
             transforms.ToPILImage(mode='P')(img_data)
 
     def test_4_channel_tensor_to_pil_image(self):
-        trans = transforms.ToPILImage()
-        to_tensor = transforms.ToTensor()
+        def verify_img_data(img_data, expected_output, mode):
+            if mode is None:
+                img = transforms.ToPILImage()(img_data)
+                assert img.mode == 'RGBA'  # default should assume RGBA
+            else:
+                img = transforms.ToPILImage(mode=mode)(img_data)
+                assert img.mode == mode
+
+            split = img.split()
+            for i in range(4):
+                assert np.allclose(expected_output[i].numpy(), transforms.to_tensor(split[i]).numpy())
 
         img_data = torch.Tensor(4, 4, 4).uniform_()
-        #Default should be RGBA
-        img = transforms.ToPILImage()(img_data)
-        assert img.mode == 'RGBA'
         expected_output = img_data.mul(255).int().float().div(255)
-        for mode in ['RGBA', 'CMYK']:
-           img = transforms.ToPILImage(mode=mode)(img_data)
-           assert img.mode == mode
-           split = img.split()
-           for i in range(len(split)):
-               assert np.allclose(expected_output[i].numpy(), to_tensor(split[i]).numpy())
+        for mode in [None, 'RGBA', 'CMYK']:
+            verify_img_data(img_data, expected_output, mode)
+
+        with self.assertRaises(ValueError):
+            #should raise if we try a mode for 3 or 1 channel images
+            transforms.ToPILImage(mode='RGB')(img_data)
+            transforms.ToPILImage(mode='P')(img_data)
+
+    def test_4_channel_ndarray_to_pil_image(self):
+        def verify_img_data(img_data, mode):
+            if mode is None:
+                img = transforms.ToPILImage()(img_data)
+                assert img.mode == 'RGBA'  # default should assume RGBA
+            else:
+                img = transforms.ToPILImage(mode=mode)(img_data)
+                assert img.mode == mode
+            split = img.split()
+            for i in range(4):
+                assert np.allclose(img_data[:, :, i], split[i])
+
+        img_data = torch.ByteTensor(4, 4, 4).random_(0, 255).numpy()
+        for mode in [None, 'RGBA', 'CMYK']:
+            verify_img_data(img_data, mode)
 
         with self.assertRaises(ValueError):
             #should raise if we try a mode for 3 or 1 channel images
@@ -402,7 +429,7 @@ class Tester(unittest.TestCase):
 
     def test_ndarray_bad_types_to_pil_image(self):
         trans = transforms.ToPILImage()
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(TypeError):
             trans(np.ones([4, 4, 1], np.int64))
             trans(np.ones([4, 4, 1], np.uint16))
             trans(np.ones([4, 4, 1], np.uint32))
