@@ -78,13 +78,16 @@ def to_tensor(pic):
         return img
 
 
-def to_pil_image(pic):
+def to_pil_image(pic, mode=None):
     """Convert a tensor or an ndarray to PIL Image.
 
-    See ``ToPIlImage`` for more details.
+    See :class:`~torchvision.transforms.ToPIlImage` for more details.
 
     Args:
         pic (Tensor or numpy.ndarray): Image to be converted to PIL Image.
+        mode (`PIL.Image mode`_): color space and pixel depth of input data (optional).
+
+    .. _PIL.Image mode: http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#modes
 
     Returns:
         PIL Image: Image converted to PIL Image.
@@ -93,30 +96,48 @@ def to_pil_image(pic):
         raise TypeError('pic should be Tensor or ndarray. Got {}.'.format(type(pic)))
 
     npimg = pic
-    mode = None
     if isinstance(pic, torch.FloatTensor):
         pic = pic.mul(255).byte()
     if torch.is_tensor(pic):
         npimg = np.transpose(pic.numpy(), (1, 2, 0))
-    assert isinstance(npimg, np.ndarray)
-    if npimg.shape[2] == 1:
-        npimg = npimg[:, :, 0]
 
+    if not isinstance(npimg, np.ndarray):
+        raise TypeError('Input pic must be a torch.Tensor or NumPy ndarray, ' +
+                        'not {}'.format(type(npimg)))
+
+    if npimg.shape[2] == 1:
+        expected_mode = None
+        npimg = npimg[:, :, 0]
         if npimg.dtype == np.uint8:
-            mode = 'L'
+            expected_mode = 'L'
         if npimg.dtype == np.int16:
-            mode = 'I;16'
+            expected_mode = 'I;16'
         if npimg.dtype == np.int32:
-            mode = 'I'
+            expected_mode = 'I'
         elif npimg.dtype == np.float32:
-            mode = 'F'
+            expected_mode = 'F'
+        if mode is not None and mode != expected_mode:
+            raise ValueError("Incorrect mode ({}) supplied for input type {}. Should be {}"
+                             .format(mode, np.dtype, expected_mode))
+        mode = expected_mode
+
     elif npimg.shape[2] == 4:
-            if npimg.dtype == np.uint8:
-                mode = 'RGBA'
+        permitted_4_channel_modes = ['RGBA', 'CMYK']
+        if mode is not None and mode not in permitted_4_channel_modes:
+            raise ValueError("Only modes {} are supported for 4D inputs".format(permitted_4_channel_modes))
+
+        if mode is None and npimg.dtype == np.uint8:
+            mode = 'RGBA'
     else:
-        if npimg.dtype == np.uint8:
+        permitted_3_channel_modes = ['RGB', 'YCbCr', 'HSV']
+        if mode is not None and mode not in permitted_3_channel_modes:
+            raise ValueError("Only modes {} are supported for 3D inputs".format(permitted_3_channel_modes))
+        if mode is None and npimg.dtype == np.uint8:
             mode = 'RGB'
-    assert mode is not None, '{} is not supported'.format(npimg.dtype)
+
+    if mode is None:
+        raise TypeError('Input type {} is not supported'.format(npimg.dtype))
+
     return Image.fromarray(npimg, mode=mode)
 
 
@@ -540,7 +561,19 @@ class ToPILImage(object):
 
     Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
     H x W x C to a PIL Image while preserving the value range.
+
+    Args:
+        mode (`PIL.Image mode`_): color space and pixel depth of input data (optional).
+            If ``mode`` is ``None`` (default) there are some assumptions made about the input data:
+            1. If the input has 3 channels, the ``mode`` is assumed to be ``RGB``.
+            2. If the input has 4 channels, the ``mode`` is assumed to be ``RGBA``.
+            3. If the input has 1 channel, the ``mode`` is determined by the data type (i,e,
+            ``int``, ``float``, ``short``).
+
+    .. _PIL.Image mode: http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#modes
     """
+    def __init__(self, mode=None):
+        self.mode = mode
 
     def __call__(self, pic):
         """
@@ -551,7 +584,7 @@ class ToPILImage(object):
             PIL Image: Image converted to PIL Image.
 
         """
-        return to_pil_image(pic)
+        return to_pil_image(pic, self.mode)
 
 
 class Normalize(object):
