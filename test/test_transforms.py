@@ -694,6 +694,13 @@ class Tester(unittest.TestCase):
         assert all(x in c for x in [40])   
         assert all(x in ch for x in [0, 1, 2]) 
 
+        result = transforms.rotate(img, 45, center=(40,40), translate=(2,2))
+        assert result.size == (100, 100)
+        r, c, ch = np.where(result)
+        assert all(x in r for x in [41, 42]) 
+        assert all(x in c for x in [42])   
+        assert all(x in ch for x in [0, 1, 2]) 
+
         result_a = transforms.rotate(img, 90) 
         result_b = transforms.rotate(img, -270)
 
