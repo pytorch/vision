@@ -521,7 +521,7 @@ def rotate(img, angle, resample=False, expand=False, center=None, translate=None
 
 
     Args:
-        img (PIL Image): PIL Image to be rotated.    
+        img (PIL Image): PIL Image to be rotated.
         angle ({float, int}): In degrees degrees counter clockwise order.
         resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
             An optional resampling filter.
@@ -529,12 +529,12 @@ def rotate(img, angle, resample=False, expand=False, center=None, translate=None
             If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output image to make it large enough to hold the entire rotated image.
-            If false or omitted, make the output image the same size as the input image.  
+            If false or omitted, make the output image the same size as the input image.
             Note that the expand flag assumes rotation around the center and no translation.
-        center (2-tuple, optional): Optional center of rotation.  
-            Origin is the upper left corner.  
+        center (2-tuple, optional): Optional center of rotation.
+            Origin is the upper left corner.
             Default is the center of the image.
-        translate (2-tuple, optional): An optional post-rotate translation.         
+        translate (2-tuple, optional): An optional post-rotate translation.
     """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
@@ -1092,6 +1092,7 @@ class ColorJitter(object):
         transform = self.get_params(self.brightness, self.contrast,
                                     self.saturation, self.hue)
         return transform(img)
+
 
 class RandomRotation(object):
     """Rotate the image by angle and then (optionally) translate it by (n_columns, n_rows)

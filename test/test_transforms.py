@@ -665,7 +665,7 @@ class Tester(unittest.TestCase):
         assert np.allclose(cov, np.identity(1), rtol=1e-3)
 
     def test_rotate(self):
-        x = np.zeros((100,100, 3), dtype=np.uint8)
+        x = np.zeros((100, 100, 3), dtype=np.uint8)
         x[40, 40] = [255, 255, 255]
 
         with self.assertRaises(TypeError):
@@ -676,32 +676,32 @@ class Tester(unittest.TestCase):
         result = transforms.rotate(img, 45)
         assert result.size == (100, 100)
         r, c, ch = np.where(result)
-        assert all(x in r for x in [49, 50]) 
-        assert all(x in c for x in [36])   
-        assert all(x in ch for x in [0, 1, 2])    
-  
+        assert all(x in r for x in [49, 50])
+        assert all(x in c for x in [36])
+        assert all(x in ch for x in [0, 1, 2])
+
         result = transforms.rotate(img, 45, expand=True)
         assert result.size == (142, 142)
         r, c, ch = np.where(result)
-        assert all(x in r for x in [70, 71]) 
-        assert all(x in c for x in [57])   
+        assert all(x in r for x in [70, 71])
+        assert all(x in c for x in [57])
         assert all(x in ch for x in [0, 1, 2])
 
-        result = transforms.rotate(img, 45, center=(40,40))
+        result = transforms.rotate(img, 45, center=(40, 40))
         assert result.size == (100, 100)
         r, c, ch = np.where(result)
-        assert all(x in r for x in [40]) 
-        assert all(x in c for x in [40])   
-        assert all(x in ch for x in [0, 1, 2]) 
+        assert all(x in r for x in [40])
+        assert all(x in c for x in [40])
+        assert all(x in ch for x in [0, 1, 2])
 
-        result = transforms.rotate(img, 45, center=(40,40), translate=(2,2))
+        result = transforms.rotate(img, 45, center=(40, 40), translate=(2, 2))
         assert result.size == (100, 100)
         r, c, ch = np.where(result)
-        assert all(x in r for x in [41, 42]) 
-        assert all(x in c for x in [42])   
-        assert all(x in ch for x in [0, 1, 2]) 
+        assert all(x in r for x in [41, 42])
+        assert all(x in c for x in [42])
+        assert all(x in ch for x in [0, 1, 2])
 
-        result_a = transforms.rotate(img, 90) 
+        result_a = transforms.rotate(img, 90)
         result_b = transforms.rotate(img, -270)
 
         assert np.all(np.array(result_a) == np.array(result_b))
@@ -715,12 +715,12 @@ class Tester(unittest.TestCase):
 
         t = transforms.RandomRotation(10)
         params = t.get_params(t.degrees, t.resample, t.expand,
-                                 t.center, t.translate)
+                              t.center, t.translate)
         assert params[0] > -10 and params[0] < 10
 
         t = transforms.RandomRotation((-10, 10))
         params = t.get_params(t.degrees, t.resample, t.expand,
-                            t.center, t.translate)
+                              t.center, t.translate)
         assert params[0] > -10 and params[0] < 10
 
 
