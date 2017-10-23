@@ -120,7 +120,7 @@ SqueezeNet
 .. autofunction:: squeezenet1_0
 .. autofunction:: squeezenet1_1
 
-DensetNet
+DenseNet
 ---------
 
 .. autofunction:: densenet121
