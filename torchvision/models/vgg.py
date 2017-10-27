@@ -49,7 +49,7 @@ class VGG(nn.Module):
         self._initialize_weights()
 
     def get_feature_extractor(self, layer_name):
-        """Returns a Sequential wrapping layer until the given one."""
+        """Returns a Sequential() which wraps layers up to the given one."""
         names = [n for (n, _) in self.layers.named_children()]
         if layer_name not in names:
             raise ValueError("%s is not a valid layer name." % layer_name)
