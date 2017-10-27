@@ -282,7 +282,7 @@ These can be constructed by passing ``pretrained=True``:
     vgg16 = models.vgg16(pretrained=True)
     densenet = models.densenet161(pretrained=True)
     inception = models.inception_v3(pretrained=True)
-    
+
 
 All pre-trained models expect input images normalized in the same way, i.e.
 mini-batches of 3-channel RGB images of shape (3 x H x W), where H and W are expected
@@ -292,6 +292,25 @@ The images have to be loaded in to a range of [0, 1] and then
 normalized using `mean=[0.485, 0.456, 0.406]` and `std=[0.229, 0.224, 0.225]`
 
 An example of such normalization can be found in the imagenet example `here <https://github.com/pytorch/examples/blob/42e5b996718797e45c46a25c55b031e6768f8440/imagenet/main.py#L89-L101>`__
+
+Feature Extraction
+~~~~~~~~~~~~~~~~~~
+
+VGG models implement a special method called ``get_feature_extractor()``
+which returns a ``nn.Sequential`` container up to the requested layer name
+for easy feature extraction. The layer names are compatible with the original
+Caffe naming scheme with additional extraction points after each ``BatchNorm``
+and ``ReLU`` layer.
+
+.. code:: python
+
+  import torchvision.models as models
+  vgg16 = models.vgg16(pretrained=True)
+  # Print model to get a sense of layer names
+  print(vgg16)
+  extractor = vgg16.get_feature_extractor('conv5_2+relu')
+  features = extractor(batch)
+
 
 Transforms
 ==========
