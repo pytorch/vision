@@ -9,7 +9,6 @@ __all__ = [
     'vgg19_bn', 'vgg19',
 ]
 
-
 model_urls = {
     'vgg11': 'https://download.pytorch.org/models/vgg11-bbd30ac9.pth',
     'vgg13': 'https://download.pytorch.org/models/vgg13-c768596a.pth',
@@ -21,13 +20,21 @@ model_urls = {
     'vgg19_bn': 'https://download.pytorch.org/models/vgg19_bn-c79401a0.pth',
 }
 
+class Flatten(nn.Module):
+    """Utility class for flattening an incoming input."""
+    def forward(self, x):
+        return x.view(x.size(0), -1)
+    def __repr__(self):
+        return "Flatten ()"
+
 
 class VGG(nn.Module):
-
-    def __init__(self, features, num_classes=1000):
+    def __init__(self, layers, num_classes=1000):
         super(VGG, self).__init__()
-        self.features = features
-        self.classifier = nn.Sequential(OrderedDict([
+
+        # Add top part of the CNN
+        layers.update(OrderedDict([
+            ('flatten', Flatten()),
             ('fc6',     nn.Linear(512 * 7 * 7, 4096)),
             ('relu6',   nn.ReLU(True)),
             ('drop6',   nn.Dropout()),
@@ -36,13 +43,27 @@ class VGG(nn.Module):
             ('drop7',   nn.Dropout()),
             ('fc8',     nn.Linear(4096, num_classes)),
         ]))
+
+        # Put all layers inside a single container
+        self.layers = nn.Sequential(layers)
         self._initialize_weights()
 
+    def get_feature_extractor(self, layer_name):
+        """Returns a Sequential wrapping layer until the given one."""
+        names = [n for (n, _) in self.layers.named_children()]
+        if layer_name not in names:
+            raise ValueError("%s is not a valid layer name." % layer_name)
+
+        layers = OrderedDict()
+        for name, module in self.layers.named_children():
+            layers[name] = module
+            if name == layer_name:
+                break
+        return nn.Sequential(layers)
+
     def forward(self, x):
-        x = self.features(x)
-        x = x.view(x.size(0), -1)
-        x = self.classifier(x)
-        return x
+        """Computes a forward pass over all the network."""
+        return self.layers(x)
 
     def _initialize_weights(self):
         for m in self.modules():
@@ -84,7 +105,7 @@ def make_layers(cfg, batch_norm=False):
 
             # Set in_channels to the output channels of previous layer
             in_channels = v
-    return nn.Sequential(layers)
+    return layers
 
 
 cfg = {
