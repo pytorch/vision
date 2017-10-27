@@ -1,7 +1,8 @@
+import math
+from collections import OrderedDict
+
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
-import math
-
 
 __all__ = [
     'VGG', 'vgg11', 'vgg11_bn', 'vgg13', 'vgg13_bn', 'vgg16', 'vgg16_bn',
@@ -59,19 +60,31 @@ class VGG(nn.Module):
 
 
 def make_layers(cfg, batch_norm=False):
-    layers = []
+    layers = OrderedDict()
     in_channels = 3
+
+    # Counters for layer naming
+    n_block, n_conv = 1, 1
+
     for v in cfg:
         if v == 'M':
-            layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
+            layers['pool%d' % n_block] = nn.MaxPool2d(kernel_size=2, stride=2)
+            n_block += 1
+            n_conv = 1
         else:
-            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
+            conv_name = 'conv%d_%d' % (n_block, n_conv)
+            layers[conv_name] = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
             if batch_norm:
-                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+                layers['%s+bn' % conv_name] = nn.BatchNorm2d(v)
+                layers['%s+bn+relu' % conv_name] = nn.ReLU(inplace=True)
             else:
-                layers += [conv2d, nn.ReLU(inplace=True)]
+                layers['%s+relu' % conv_name] = nn.ReLU(inplace=True)
+
+            n_conv += 1
+
+            # Set in_channels to the output channels of previous layer
             in_channels = v
-    return nn.Sequential(*layers)
+    return nn.Sequential(layers)
 
 
 cfg = {
