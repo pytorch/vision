@@ -27,15 +27,15 @@ class VGG(nn.Module):
     def __init__(self, features, num_classes=1000):
         super(VGG, self).__init__()
         self.features = features
-        self.classifier = nn.Sequential(
-            nn.Linear(512 * 7 * 7, 4096),
-            nn.ReLU(True),
-            nn.Dropout(),
-            nn.Linear(4096, 4096),
-            nn.ReLU(True),
-            nn.Dropout(),
-            nn.Linear(4096, num_classes),
-        )
+        self.classifier = nn.Sequential(OrderedDict([
+            ('fc6',     nn.Linear(512 * 7 * 7, 4096)),
+            ('relu6',   nn.ReLU(True)),
+            ('drop6',   nn.Dropout()),
+            ('fc7',     nn.Linear(4096, 4096)),
+            ('relu7',   nn.ReLU(True)),
+            ('drop7',   nn.Dropout()),
+            ('fc8',     nn.Linear(4096, num_classes)),
+        ]))
         self._initialize_weights()
 
     def forward(self, x):
