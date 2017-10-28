@@ -20,10 +20,12 @@ model_urls = {
     'vgg19_bn': 'https://download.pytorch.org/models/vgg19_bn-c79401a0.pth',
 }
 
+
 class Flatten(nn.Module):
     """Utility class for flattening an incoming input."""
     def forward(self, x):
         return x.view(x.size(0), -1)
+
     def __repr__(self):
         return "Flatten ()"
 
@@ -35,13 +37,13 @@ class VGG(nn.Module):
         # Add top part of the CNN
         layers.update(OrderedDict([
             ('flatten', Flatten()),
-            ('fc6',     nn.Linear(512 * 7 * 7, 4096)),
-            ('relu6',   nn.ReLU(True)),
-            ('drop6',   nn.Dropout()),
-            ('fc7',     nn.Linear(4096, 4096)),
-            ('relu7',   nn.ReLU(True)),
-            ('drop7',   nn.Dropout()),
-            ('fc8',     nn.Linear(4096, num_classes)),
+            ('fc6', nn.Linear(512 * 7 * 7, 4096)),
+            ('relu6', nn.ReLU(True)),
+            ('drop6', nn.Dropout()),
+            ('fc7', nn.Linear(4096, 4096)),
+            ('relu7', nn.ReLU(True)),
+            ('drop7', nn.Dropout()),
+            ('fc8', nn.Linear(4096, num_classes)),
         ]))
 
         # Put all layers inside a single container
