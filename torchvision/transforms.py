@@ -539,13 +539,6 @@ def rotate(img, angle, resample=False, expand=False, center=None, translate=None
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    if angle < -360 or angle > 360:
-        if angle < 0:
-            angle += 360
-        else:
-            angle -= 360
-        warnings.warn("You could use {} as angle to obtain the same result". format(angle))
-
     return img.rotate(angle, resample, expand, center, translate)
 
 
