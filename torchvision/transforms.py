@@ -312,16 +312,28 @@ def five_crop(img, size):
     """Crop the given PIL Image into four corners and the central crop.
 
     .. Note::
-        This transform returns a tuple of images and there may be a
-        mismatch in the number of inputs and targets your ``Dataset`` returns.
+         This transform returns a tuple of images and there may be a mismatch in the number of
+         inputs and targets your Dataset returns. See below for an example of how to deal with
+         this.
 
     Args:
-       size (sequence or int): Desired output size of the crop. If size is an
-           int instead of sequence like (h, w), a square crop (size, size) is
-           made.
+         img (PIL Image): Image to be cropped.
+         size (sequence or int): Desired output size of the crop. If size is an ``int``
+            instead of sequence like (h, w), a square crop of size (size, size) is made.
+
     Returns:
         tuple: tuple (tl, tr, bl, br, center) corresponding top left,
             top right, bottom left, bottom right and center crop.
+
+    Example:
+         >>> def transform(img):
+         >>>    crops = five_crop(img, size) # this is a list of PIL Images
+         >>>    return torch.stack([to_tensor(crop) for crop in crops)]) # returns a 4D tensor
+         >>> #In your test loop you can do the following:
+         >>> input, target = batch # input is a 5d tensor, target is 2d
+         >>> bs, ncrops, c, h, w = input.size()
+         >>> result = model(input.view(-1, c, h, w)) # fuse batch size and ncrops
+         >>> result_avg = result.view(bs, ncrops, -1).mean(1) # avg over crops
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
@@ -342,24 +354,35 @@ def five_crop(img, size):
 
 
 def ten_crop(img, size, vertical_flip=False):
-    """Crop the given PIL Image into four corners and the central crop plus the
-       flipped version of these (horizontal flipping is used by default).
+    """Crop the given PIL Image into four corners and the central crop plus the flipped version of
+    these (horizontal flipping is used by default).
 
     .. Note::
-        This transform returns a tuple of images and there may be a
-        mismatch in the number of inputs and targets your ``Dataset`` returns.
+         This transform returns a tuple of images and there may be a mismatch in the number of
+         inputs and targets your Dataset returns. See below for an example of how to deal with
+         this.
 
-       Args:
-           size (sequence or int): Desired output size of the crop. If size is an
-               int instead of sequence like (h, w), a square crop (size, size) is
-               made.
-           vertical_flip (bool): Use vertical flipping instead of horizontal
+    Args:
+         img (PIL Image): Image to be cropped.
+         size (sequence or int): Desired output size of the crop. If size is an ``int``
+            instead of sequence like (h, w), a square crop of size (size, size) is made.
+         vertical_flip (bool): Use vertical flipping instead of horizontal.
 
-        Returns:
-            tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip,
-                br_flip, center_flip) corresponding top left, top right,
-                bottom left, bottom right and center crop and same for the
-                flipped image.
+    Returns:
+        tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip,
+            br_flip, center_flip) corresponding top left, top right,
+            bottom left, bottom right and center crop and same for the
+            flipped image.
+
+    Example:
+         >>> def transform(img):
+         >>>    crops = ten_crop(img, size) # this is a list of PIL Images
+         >>>    return torch.stack([to_tensor(crop) for crop in crops)]) # returns a 4D tensor
+         >>> #In your test loop you can do the following:
+         >>> input, target = batch # input is a 5d tensor, target is 2d
+         >>> bs, ncrops, c, h, w = input.size()
+         >>> result = model(input.view(-1, c, h, w)) # fuse batch size and ncrops
+         >>> result_avg = result.view(bs, ncrops, -1).mean(1) # avg over crops
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
@@ -906,15 +929,27 @@ class RandomSizedCrop(RandomResizedCrop):
 
 
 class FiveCrop(object):
-    """Crop the given PIL Image into four corners and the central crop.abs
+    """Crop the given PIL Image into four corners and the central crop
 
-       Note: this transform returns a tuple of images and there may be a mismatch in the number of
-       inputs and targets your `Dataset` returns.
+    .. Note::
+         This transform returns a tuple of images and there may be a mismatch in the number of
+         inputs and targets your Dataset returns. See below for an example of how to deal with
+         this.
 
-       Args:
-           size (sequence or int): Desired output size of the crop. If size is an
-               int instead of sequence like (h, w), a square crop (size, size) is
-               made.
+    Args:
+         size (sequence or int): Desired output size of the crop. If size is an ``int``
+            instead of sequence like (h, w), a square crop of size (size, size) is made.
+
+    Example:
+         >>> transform = Compose([
+         >>>    FiveCrop(size), # this is a list of PIL Images
+         >>>    Lambda(lambda crops: torch.stack([ToTensor()(crop) for crop in crops])) # returns a 4D tensor
+         >>> ])
+         >>> #In your test loop you can do the following:
+         >>> input, target = batch # input is a 5d tensor, target is 2d
+         >>> bs, ncrops, c, h, w = input.size()
+         >>> result = model(input.view(-1, c, h, w)) # fuse batch size and ncrops
+         >>> result_avg = result.view(bs, ncrops, -1).mean(1) # avg over crops
     """
 
     def __init__(self, size):
@@ -930,17 +965,30 @@ class FiveCrop(object):
 
 
 class TenCrop(object):
-    """Crop the given PIL Image into four corners and the central crop plus the
-       flipped version of these (horizontal flipping is used by default)
+    """Crop the given PIL Image into four corners and the central crop plus the flipped version of
+    these (horizontal flipping is used by default)
 
-       Note: this transform returns a tuple of images and there may be a mismatch in the number of
-       inputs and targets your `Dataset` returns.
+    .. Note::
+         This transform returns a tuple of images and there may be a mismatch in the number of
+         inputs and targets your Dataset returns. See below for an example of how to deal with
+         this.
 
-       Args:
-           size (sequence or int): Desired output size of the crop. If size is an
-               int instead of sequence like (h, w), a square crop (size, size) is
-               made.
-           vertical_flip(bool): Use vertical flipping instead of horizontal
+    Args:
+        size (sequence or int): Desired output size of the crop. If size is an
+            int instead of sequence like (h, w), a square crop (size, size) is
+            made.
+        vertical_flip(bool): Use vertical flipping instead of horizontal
+
+    Example:
+         >>> transform = Compose([
+         >>>    TenCrop(size), # this is a list of PIL Images
+         >>>    Lambda(lambda crops: torch.stack([ToTensor()(crop) for crop in crops])) # returns a 4D tensor
+         >>> ])
+         >>> #In your test loop you can do the following:
+         >>> input, target = batch # input is a 5d tensor, target is 2d
+         >>> bs, ncrops, c, h, w = input.size()
+         >>> result = model(input.view(-1, c, h, w)) # fuse batch size and ncrops
+         >>> result_avg = result.view(bs, ncrops, -1).mean(1) # avg over crops
     """
 
     def __init__(self, size, vertical_flip=False):
