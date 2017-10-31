@@ -42,7 +42,6 @@ def download_url(url, root, filename, md5):
         except:
             if url[:5] == 'https':
                 url = url.replace('https:', 'http:')
-            else:
-                url = url.replace('http:', 'https:')
-            print('Downloading ' + url + ' to ' + fpath)
-            urllib.request.urlretrieve(url, fpath)
+                print('Failed download. Trying https -> http instead.'
+                      ' Downloading ' + url + ' to ' + fpath)
+                urllib.request.urlretrieve(url, fpath)
