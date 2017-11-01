@@ -32,7 +32,7 @@ class CIFAR10(data.Dataset):
 
     """
     base_folder = 'cifar-10-batches-py'
-    url = "http://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
+    url = "https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz"
     filename = "cifar-10-python.tar.gz"
     tgz_md5 = 'c58f30108f718f92721af3b95e74349a'
     train_list = [
@@ -162,7 +162,7 @@ class CIFAR10(data.Dataset):
 
 class CIFAR100(CIFAR10):
     base_folder = 'cifar-100-python'
-    url = "http://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz"
+    url = "https://www.cs.toronto.edu/~kriz/cifar-100-python.tar.gz"
     filename = "cifar-100-python.tar.gz"
     tgz_md5 = 'eb9058c3a382ffc7106e4002c42a8d85'
     train_list = [
