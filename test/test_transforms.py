@@ -1,5 +1,6 @@
 import torch
 import torchvision.transforms as transforms
+import torchvision.transforms.functional as F
 import unittest
 import random
 import numpy as np
@@ -13,7 +14,6 @@ try:
     from scipy import stats
 except ImportError:
     stats = None
-
 
 GRACE_HOPPER = 'assets/grace_hopper_517x606.jpg'
 
@@ -347,7 +347,7 @@ class Tester(unittest.TestCase):
                 assert img.mode == mode
             split = img.split()
             for i in range(3):
-                assert np.allclose(expected_output[i].numpy(), transforms.to_tensor(split[i]).numpy())
+                assert np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy())
 
         img_data = torch.Tensor(3, 4, 4).uniform_()
         expected_output = img_data.mul(255).int().float().div(255)
@@ -391,7 +391,7 @@ class Tester(unittest.TestCase):
 
             split = img.split()
             for i in range(4):
-                assert np.allclose(expected_output[i].numpy(), transforms.to_tensor(split[i]).numpy())
+                assert np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy())
 
         img_data = torch.Tensor(4, 4, 4).uniform_()
         expected_output = img_data.mul(255).int().float().div(255)
@@ -491,19 +491,19 @@ class Tester(unittest.TestCase):
         x_pil = Image.fromarray(x_np, mode='RGB')
 
         # test 0
-        y_pil = transforms.adjust_brightness(x_pil, 1)
+        y_pil = F.adjust_brightness(x_pil, 1)
         y_np = np.array(y_pil)
         assert np.allclose(y_np, x_np)
 
         # test 1
-        y_pil = transforms.adjust_brightness(x_pil, 0.5)
+        y_pil = F.adjust_brightness(x_pil, 0.5)
         y_np = np.array(y_pil)
         y_ans = [0, 2, 6, 27, 67, 113, 18, 4, 117, 45, 127, 0]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         assert np.allclose(y_np, y_ans)
 
         # test 2
-        y_pil = transforms.adjust_brightness(x_pil, 2)
+        y_pil = F.adjust_brightness(x_pil, 2)
         y_np = np.array(y_pil)
         y_ans = [0, 10, 26, 108, 255, 255, 74, 16, 255, 180, 255, 2]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
@@ -516,19 +516,19 @@ class Tester(unittest.TestCase):
         x_pil = Image.fromarray(x_np, mode='RGB')
 
         # test 0
-        y_pil = transforms.adjust_contrast(x_pil, 1)
+        y_pil = F.adjust_contrast(x_pil, 1)
         y_np = np.array(y_pil)
         assert np.allclose(y_np, x_np)
 
         # test 1
-        y_pil = transforms.adjust_contrast(x_pil, 0.5)
+        y_pil = F.adjust_contrast(x_pil, 0.5)
         y_np = np.array(y_pil)
         y_ans = [43, 45, 49, 70, 110, 156, 61, 47, 160, 88, 170, 43]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         assert np.allclose(y_np, y_ans)
 
         # test 2
-        y_pil = transforms.adjust_contrast(x_pil, 2)
+        y_pil = F.adjust_contrast(x_pil, 2)
         y_np = np.array(y_pil)
         y_ans = [0, 0, 0, 22, 184, 255, 0, 0, 255, 94, 255, 0]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
@@ -541,19 +541,19 @@ class Tester(unittest.TestCase):
         x_pil = Image.fromarray(x_np, mode='RGB')
 
         # test 0
-        y_pil = transforms.adjust_saturation(x_pil, 1)
+        y_pil = F.adjust_saturation(x_pil, 1)
         y_np = np.array(y_pil)
         assert np.allclose(y_np, x_np)
 
         # test 1
-        y_pil = transforms.adjust_saturation(x_pil, 0.5)
+        y_pil = F.adjust_saturation(x_pil, 0.5)
         y_np = np.array(y_pil)
         y_ans = [2, 4, 8, 87, 128, 173, 39, 25, 138, 133, 215, 88]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         assert np.allclose(y_np, y_ans)
 
         # test 2
-        y_pil = transforms.adjust_saturation(x_pil, 2)
+        y_pil = F.adjust_saturation(x_pil, 2)
         y_np = np.array(y_pil)
         y_ans = [0, 6, 22, 0, 149, 255, 32, 0, 255, 4, 255, 0]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
@@ -566,26 +566,26 @@ class Tester(unittest.TestCase):
         x_pil = Image.fromarray(x_np, mode='RGB')
 
         with self.assertRaises(ValueError):
-            transforms.adjust_hue(x_pil, -0.7)
-            transforms.adjust_hue(x_pil, 1)
+            F.adjust_hue(x_pil, -0.7)
+            F.adjust_hue(x_pil, 1)
 
         # test 0: almost same as x_data but not exact.
         # probably because hsv <-> rgb floating point ops
-        y_pil = transforms.adjust_hue(x_pil, 0)
+        y_pil = F.adjust_hue(x_pil, 0)
         y_np = np.array(y_pil)
         y_ans = [0, 5, 13, 54, 139, 226, 35, 8, 234, 91, 255, 1]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         assert np.allclose(y_np, y_ans)
 
         # test 1
-        y_pil = transforms.adjust_hue(x_pil, 0.25)
+        y_pil = F.adjust_hue(x_pil, 0.25)
         y_np = np.array(y_pil)
         y_ans = [13, 0, 12, 224, 54, 226, 234, 8, 99, 1, 222, 255]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         assert np.allclose(y_np, y_ans)
 
         # test 2
-        y_pil = transforms.adjust_hue(x_pil, -0.25)
+        y_pil = F.adjust_hue(x_pil, -0.25)
         y_np = np.array(y_pil)
         y_ans = [0, 13, 2, 54, 226, 58, 8, 234, 152, 255, 43, 1]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
@@ -598,19 +598,19 @@ class Tester(unittest.TestCase):
         x_pil = Image.fromarray(x_np, mode='RGB')
 
         # test 0
-        y_pil = transforms.adjust_gamma(x_pil, 1)
+        y_pil = F.adjust_gamma(x_pil, 1)
         y_np = np.array(y_pil)
         assert np.allclose(y_np, x_np)
 
         # test 1
-        y_pil = transforms.adjust_gamma(x_pil, 0.5)
+        y_pil = F.adjust_gamma(x_pil, 0.5)
         y_np = np.array(y_pil)
         y_ans = [0, 35, 57, 117, 185, 240, 97, 45, 244, 151, 255, 15]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         assert np.allclose(y_np, y_ans)
 
         # test 2
-        y_pil = transforms.adjust_gamma(x_pil, 2)
+        y_pil = F.adjust_gamma(x_pil, 2)
         y_np = np.array(y_pil)
         y_ans = [0, 0, 0, 11, 71, 200, 5, 0, 214, 31, 255, 0]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
@@ -623,11 +623,11 @@ class Tester(unittest.TestCase):
         x_rgb = Image.fromarray(x_np, mode='RGB')
 
         x_l = x_rgb.convert('L')
-        assert transforms.adjust_brightness(x_l, 2).mode == 'L'
-        assert transforms.adjust_saturation(x_l, 2).mode == 'L'
-        assert transforms.adjust_contrast(x_l, 2).mode == 'L'
-        assert transforms.adjust_hue(x_l, 0.4).mode == 'L'
-        assert transforms.adjust_gamma(x_l, 0.5).mode == 'L'
+        assert F.adjust_brightness(x_l, 2).mode == 'L'
+        assert F.adjust_saturation(x_l, 2).mode == 'L'
+        assert F.adjust_contrast(x_l, 2).mode == 'L'
+        assert F.adjust_hue(x_l, 0.4).mode == 'L'
+        assert F.adjust_gamma(x_l, 0.5).mode == 'L'
 
     def test_color_jitter(self):
         color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
