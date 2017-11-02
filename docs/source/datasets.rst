@@ -86,6 +86,8 @@ CIFAR
   :members: __getitem__
   :special-members:
 
+.. autoclass:: CIFAR100
+
 STL10
 ~~~~~
 
