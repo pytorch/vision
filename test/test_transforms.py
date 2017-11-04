@@ -669,40 +669,33 @@ class Tester(unittest.TestCase):
         x[40, 40] = [255, 255, 255]
 
         with self.assertRaises(TypeError):
-            transforms.rotate(x, 10)
+            F.rotate(x, 10)
 
         img = Image.fromarray(x)
 
-        result = transforms.rotate(img, 45)
+        result = F.rotate(img, 45)
         assert result.size == (100, 100)
         r, c, ch = np.where(result)
         assert all(x in r for x in [49, 50])
         assert all(x in c for x in [36])
         assert all(x in ch for x in [0, 1, 2])
 
-        result = transforms.rotate(img, 45, expand=True)
+        result = F.rotate(img, 45, expand=True)
         assert result.size == (142, 142)
         r, c, ch = np.where(result)
         assert all(x in r for x in [70, 71])
         assert all(x in c for x in [57])
         assert all(x in ch for x in [0, 1, 2])
 
-        result = transforms.rotate(img, 45, center=(40, 40))
+        result = F.rotate(img, 45, center=(40, 40))
         assert result.size == (100, 100)
         r, c, ch = np.where(result)
         assert all(x in r for x in [40])
         assert all(x in c for x in [40])
         assert all(x in ch for x in [0, 1, 2])
 
-        result = transforms.rotate(img, 45, center=(40, 40), translate=(2, 2))
-        assert result.size == (100, 100)
-        r, c, ch = np.where(result)
-        assert all(x in r for x in [41, 42])
-        assert all(x in c for x in [42])
-        assert all(x in ch for x in [0, 1, 2])
-
-        result_a = transforms.rotate(img, 90)
-        result_b = transforms.rotate(img, -270)
+        result_a = F.rotate(img, 90)
+        result_b = F.rotate(img, -270)
 
         assert np.all(np.array(result_a) == np.array(result_b))
 
@@ -714,13 +707,11 @@ class Tester(unittest.TestCase):
             transforms.RandomRotation([-0.7, 0, 0.7])
 
         t = transforms.RandomRotation(10)
-        params = t.get_params(t.degrees, t.resample, t.expand,
-                              t.center, t.translate)
+        params = t.get_params(t.degrees, t.resample, t.expand, t.center)
         assert params[0] > -10 and params[0] < 10
 
         t = transforms.RandomRotation((-10, 10))
-        params = t.get_params(t.degrees, t.resample, t.expand,
-                              t.center, t.translate)
+        params = t.get_params(t.degrees, t.resample, t.expand, t.center)
         assert params[0] > -10 and params[0] < 10
 
 
