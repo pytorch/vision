@@ -131,9 +131,19 @@ class OmniglotRandomPair(Omniglot):
 
     This is a subclass of the Omniglot dataset. This instead it returns
     a randomized pair of images with similarity label (0 or 1)
+
+    Args:
+        pair_count (int, optional): The total number of image pairs to generate. Defaults to
+            10000
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, pair_count=10000, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
+
+        self.pair_count = pair_count
+        self._precompute_pairs()
+
+    def __len__(self):
+        return len(self.pairs_list)
 
     def __getitem__(self, index):
         """
@@ -141,28 +151,17 @@ class OmniglotRandomPair(Omniglot):
             index (int): Index
 
         Returns:
-            tuple: ((image0, image1), is_match) a random pair of images from the Omniglot characters
+            tuple: (image0, image1, is_match) a random pair of images from the Omniglot characters
                 with corresponding label 1 if it is matching pair and 0 otherwise
         """
 
-        character_classes = [random.randint(0, len(self.characters_) - 1) for _ in range(2)]
-
-        # Choose to return a matching/non-matching pair with probability 1/2
-        is_match = random.randint(0, 1)
-        if is_match == 1:
-            character_classes = [character_classes[0], character_classes[0]]
-        else:
-            while character_classes[0] == character_classes[1]:
-                character_classes[1] = random.randint(0, len(self.characters_) - 1)
-
-        image_names = [random.choice(self.character_images_[cls]) for cls in character_classes]
-
-        image_paths = [
-            os.path.join(self.target_folder, self.characters_[character_classes[idx]], image_name[0])
-            for idx, image_name in enumerate(image_names)
+        target_pair, is_match = self.pairs_list[index]
+        target_image_names = [self.character_images_[i][j] for i, j in target_pair]
+        target_image_paths = [
+            os.path.join(self.target_folder, self.characters_[cid], name)
+            for name, cid in target_image_names
         ]
-
-        images = [Image.open(image_path, mode='r').convert('L') for image_path in image_paths]
+        images = [Image.open(path, mode='r').convert('L') for path in target_image_paths]
 
         if self.transform is not None:
             images = [self.transform(image) for image in images]
@@ -170,4 +169,39 @@ class OmniglotRandomPair(Omniglot):
         if self.target_transform is not None:
             is_match = self.target_transform(is_match)
 
-        return images, is_match
+        return images[0], images[1], is_match
+
+    def _precompute_pairs(self):
+        """A utility wrapper to randomly generate pairs of images
+
+        Args:
+
+        Returns:
+            list(tuple((cid0, id0), (cid1, id1), is_match)), a list of 3-tuples where the first two
+                items of the tuple contains a character id and corresponding randomly chose image id
+                and the last item is 1 or 0 based on whether the image pair is from the same character
+                or not respectively
+        """
+        is_match = [random.randint(0, 1) for _ in range(self.pair_count)]
+
+        cid0_list = [random.randint(0, len(self.characters_) - 1) for _ in range(self.pair_count)]
+        c0_list = [random.randint(0, len(self.character_images_[cid]) - 1) for cid in cid0_list]
+
+        cid1_list = [
+            cid0_list[idx] if is_match[idx] == 1 else self._generate_pair(cid0_list[idx])
+            for idx in range(self.pair_count)
+        ]
+        c1_list = [random.randint(0, len(self.character_images_[cid]) - 1) for cid in cid1_list]
+
+        self.pairs_list = [
+            (((cid0_list[idx], c0_list[idx]), (cid1_list[idx], c1_list[idx])), is_match[idx])
+            for idx in range(self.pair_count)
+        ]
+
+    def _generate_pair(self, character_id):
+        pair_id = random.randint(0, len(self.characters_) - 1)
+        while pair_id == character_id:
+            pair_id = random.randint(0, len(self.characters_) - 1)
+        return pair_id
+
+
