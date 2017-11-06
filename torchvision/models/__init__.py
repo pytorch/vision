@@ -78,6 +78,7 @@ Densenet-161                      22.35           6.20
 
 from .alexnet import *
 from .resnet import *
+from .resnext import *
 from .vgg import *
 from .squeezenet import *
 from .inception import *
