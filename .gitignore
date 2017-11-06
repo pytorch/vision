@@ -6,3 +6,4 @@ torchvision.egg-info/
 */**/*~
 *~
 docs/build
+.idea/
