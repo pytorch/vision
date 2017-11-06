@@ -2,6 +2,7 @@ from __future__ import print_function
 from PIL import Image
 from functools import reduce
 import os
+import random
 import torch.utils.data as data
 from .utils import download_url, check_integrity, list_dir, list_files
 
@@ -28,9 +29,9 @@ class Omniglot(data.Dataset):
     zips_md5 = [
         ['images_background', '68d2efa1b9178cc56df9314c21c6e718'],
         ['images_evaluation', '6b91aef0f799c5bb55b94e3f2daec811'],
-        # Kept for provisional purposes
-        ['images_background_small1', 'e704a628b5459e08445c13499850abc4'],
-        ['images_background_small2', 'b75a71a51d3b13f821f212756fe481fd'],
+        # Provision in future
+        # ['images_background_small1', 'e704a628b5459e08445c13499850abc4'],
+        # ['images_background_small2', 'b75a71a51d3b13f821f212756fe481fd'],
     ]
 
     def __init__(self, root, background=True,
@@ -51,16 +52,18 @@ class Omniglot(data.Dataset):
 
         self.target_folder = os.path.join(self.root, self._get_target_folder())
         self.alphabets_ = list_dir(self.target_folder)
-        self.characters_ = list(reduce(lambda x, y: x + y,
-           [
-               [
-                   os.path.join(alphabet, character)
-                   for character in
-                   list_dir(os.path.join(self.target_folder, alphabet))
-               ]
-               for alphabet in self.alphabets_
-           ]
-        ))
+        self.characters_ = list(
+            reduce(
+                lambda x, y: x + y,
+                [
+                    [
+                        os.path.join(alphabet, character)
+                        for character in list_dir(os.path.join(self.target_folder, alphabet))
+                    ]
+                    for alphabet in self.alphabets_
+                ]
+            )
+        )
         self.character_images_ = [
             [
                 tuple([image, idx])
@@ -121,3 +124,50 @@ class Omniglot(data.Dataset):
 
     def _get_target_folder(self):
         return 'images_background' if self.background is True else 'images_evaluation'
+
+
+class OmniglotRandomPair(Omniglot):
+    """`OmniglotRandomPair <https://github.com/brendenlake/omniglot>`_ Dataset.
+
+    This is a subclass of the Omniglot dataset. This instead it returns
+    a randomized pair of images with similarity label (0 or 1)
+    """
+    def __init__(self, *args, **kwargs):
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+    def __getitem__(self, index):
+        """
+        Args:
+            index (int): Index
+
+        Returns:
+            tuple: ((image0, image1), is_match) a random pair of images from the Omniglot characters
+                with corresponding label 1 if it is matching pair and 0 otherwise
+        """
+
+        character_classes = [random.randint(0, len(self.characters_) - 1) for _ in range(2)]
+
+        # Choose to return a matching/non-matching pair with probability 1/2
+        is_match = random.randint(0, 1)
+        if is_match == 1:
+            character_classes = [character_classes[0], character_classes[0]]
+        else:
+            while character_classes[0] == character_classes[1]:
+                character_classes[1] = random.randint(0, len(self.characters_) - 1)
+
+        image_names = [random.choice(self.character_images_[cls]) for cls in character_classes]
+
+        image_paths = [
+            os.path.join(self.target_folder, self.characters_[character_classes[idx]], image_name[0])
+            for idx, image_name in enumerate(image_names)
+        ]
+
+        images = [Image.open(image_path, mode='r').convert('L') for image_path in image_paths]
+
+        if self.transform is not None:
+            images = [self.transform(image) for image in images]
+
+        if self.target_transform is not None:
+            is_match = self.target_transform(is_match)
+
+        return images, is_match
