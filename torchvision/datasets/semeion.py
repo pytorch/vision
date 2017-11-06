@@ -31,7 +31,6 @@ class SEMEION(data.Dataset):
     filename = "semeion.data"
     md5_checksum = 'cb545d371d2ce14ec121470795a77432'
 
-
     def __init__(self, root, transform=None, target_transform=None, download=True):
         self.root = os.path.expanduser(root)
         self.transform = transform
@@ -55,7 +54,7 @@ class SEMEION(data.Dataset):
         i = 0
         while i < datasetLength:
             # Get the 'i-th' row
-            strings = dataSplitted[i] 
+            strings = dataSplitted[i]
 
             # Split row into numbers(string), and avoid blank at the end
             stringsSplitted = (strings[:-1]).split(" ")
