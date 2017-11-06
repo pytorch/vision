@@ -32,8 +32,7 @@ class SEMEION(data.Dataset):
     md5_checksum = 'cb545d371d2ce14ec121470795a77432'
 
 
-    def __init__(self, root, transform=None, target_transform=None,
-                 download=True):
+    def __init__(self, root, transform=None, target_transform=None, download=True):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
@@ -56,11 +55,11 @@ class SEMEION(data.Dataset):
         i = 0
         while i < datasetLength:
             # Get the 'i-th' row
-            strings = dataSplitted[i]
-    
+            strings = dataSplitted[i] 
+
             # Split row into numbers(string), and avoid blank at the end
             stringsSplitted = (strings[:-1]).split(" ")
-            
+
             # Get data (which ends at column 256th), then in a numpy array.
             rawData = stringsSplitted[:256]
             dataFloat = [float(j) for j in rawData]
@@ -69,16 +68,16 @@ class SEMEION(data.Dataset):
             k = 0
             while j < len(dataFloat):
                 temp = np.array(dataFloat[k:j])
-                img = np.vstack((img,temp))
-            
-                k = j   
+                img = np.vstack((img, temp))
+
+                k = j
                 j += 16
-            
+
             self.data.append(img)
-            
+
             # Get label and convert it into numbers, then in a numpy array.
             labelString = stringsSplitted[256:]
-            labelInt = [int(i) for i in labelString]
+            labelInt = [int(index) for index in labelString]
             self.labels.append(np.array(labelInt))
             i += 1
 
@@ -95,7 +94,7 @@ class SEMEION(data.Dataset):
         # to return a PIL Image
         # convert value to 8 bit unsigned integer
         # color (white #255) the pixels
-        img = img.astype('uint8')*255
+        img = img.astype('uint8') * 255
         img = Image.fromarray(img, mode='L')
 
         if self.transform is not None:
@@ -123,5 +122,3 @@ class SEMEION(data.Dataset):
 
         root = self.root
         download_url(self.url, root, self.filename, self.md5_checksum)
-
-        
