@@ -19,8 +19,6 @@ class SEMEION(data.Dataset):
     Args:
         root (string): Root directory of dataset where directory
             ``semeion.py`` exists.
-        train (bool, optional): If True, creates dataset from training set, otherwise
-            creates from test set.
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
@@ -29,75 +27,60 @@ class SEMEION(data.Dataset):
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
     """
-    base_folder = 'semeion-py'
     url = "http://archive.ics.uci.edu/ml/machine-learning-databases/semeion/semeion.data"
     filename = "semeion.data"
-    tgz_md5 = 'c58f30108f718f92721af3b95e74349a'
-    train_list = [
-        ['data_batch_1', 'c99cafc152244af753f735de768cd75f'],
-        ['data_batch_2', 'd4bba439e000b95fd0a9bffe97cbabec'],
-        ['data_batch_3', '54ebc095f3ab1f0389bbae665268c751'],
-        ['data_batch_4', '634d18415352ddfa80567beed471001a'],
-        ['data_batch_5', '482c414d41f54cd18b22e5b47cb7c3cb'],
-    ]
+    md5_checksum = 'cb545d371d2ce14ec121470795a77432'
 
-    test_list = [
-        ['test_batch', '40351d587109b95175f43aff81a1287e'],
-    ]
 
-    def __init__(self, root, train=True,
-                 transform=None, target_transform=None,
-                 download=False):
+    def __init__(self, root, transform=None, target_transform=None,
+                 download=True):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
-        self.train = train  # training set or test set
 
         if download:
             self.download()
 
-        #if not self._check_integrity():
-            #raise RuntimeError('Dataset not found or corrupted.' +
-                               #' You can use download=True to download it')
+        if not self._check_integrity():
+            raise RuntimeError('Dataset not found or corrupted.' +
+                               ' You can use download=True to download it')
 
-        # now load the picked numpy arrays
-        if self.train:
-            self.train_data = []
-            self.train_labels = []
-            for fentry in self.train_list:
-                f = fentry[0]
-                file = os.path.join(self.root, self.base_folder, f)
-                fo = open(file, 'rb')
-                if sys.version_info[0] == 2:
-                    entry = pickle.load(fo)
-                else:
-                    entry = pickle.load(fo, encoding='latin1')
-                self.train_data.append(entry['data'])
-                if 'labels' in entry:
-                    self.train_labels += entry['labels']
-                else:
-                    self.train_labels += entry['fine_labels']
-                fo.close()
-
-            self.train_data = np.concatenate(self.train_data)
-            self.train_data = self.train_data.reshape((50000, 3, 32, 32))
-            self.train_data = self.train_data.transpose((0, 2, 3, 1))  # convert to HWC
-        else:
-            f = self.test_list[0][0]
-            file = os.path.join(self.root, self.base_folder, f)
-            fo = open(file, 'rb')
-            if sys.version_info[0] == 2:
-                entry = pickle.load(fo)
-            else:
-                entry = pickle.load(fo, encoding='latin1')
-            self.test_data = entry['data']
-            if 'labels' in entry:
-                self.test_labels = entry['labels']
-            else:
-                self.test_labels = entry['fine_labels']
-            fo.close()
-            self.test_data = self.test_data.reshape((10000, 3, 32, 32))
-            self.test_data = self.test_data.transpose((0, 2, 3, 1))  # convert to HWC
+        self.data = []
+        self.labels = []
+        fp = os.path.join(root, self.filename)
+        file = open(fp, 'r')
+        data = file.read()
+        file.close()
+        dataSplitted = data.split("\n")[:-1]
+        datasetLength = len(dataSplitted)
+        i = 0
+        while i < datasetLength:
+            # Get the 'i-th' row
+            strings = dataSplitted[i]
+    
+            # Split row into numbers(string), and avoid blank at the end
+            stringsSplitted = (strings[:-1]).split(" ")
+            
+            # Get data (which ends at column 256th), then in a numpy array.
+            rawData = stringsSplitted[:256]
+            dataFloat = [float(j) for j in rawData]
+            img = np.array(dataFloat[:16])
+            j = 16
+            k = 0
+            while j < len(dataFloat):
+                temp = np.array(dataFloat[k:j])
+                img = np.vstack((img,temp))
+            
+                k = j   
+                j += 16
+            
+            self.data.append(img)
+            
+            # Get label and convert it into numbers, then in a numpy array.
+            labelString = stringsSplitted[256:]
+            labelInt = [int(i) for i in labelString]
+            self.labels.append(np.array(labelInt))
+            i += 1
 
     def __getitem__(self, index):
         """
@@ -106,14 +89,14 @@ class SEMEION(data.Dataset):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        if self.train:
-            img, target = self.train_data[index], self.train_labels[index]
-        else:
-            img, target = self.test_data[index], self.test_labels[index]
+        img, target = self.data[index], self.labels[index]
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
-        img = Image.fromarray(img)
+        # convert value to 8 bit unsigned integer
+        # color (white #255) the pixels
+        img = img.astype('uint8')*255
+        img = Image.fromarray(img, mode='L')
 
         if self.transform is not None:
             img = self.transform(img)
@@ -124,34 +107,21 @@ class SEMEION(data.Dataset):
         return img, target
 
     def __len__(self):
-        if self.train:
-            return len(self.train_data)
-        else:
-            return len(self.test_data)
+        return len(self.data)
 
     def _check_integrity(self):
         root = self.root
-        for fentry in (self.train_list + self.test_list):
-            filename, md5 = fentry[0], fentry[1]
-            fpath = os.path.join(root, self.base_folder, filename)
-            if not check_integrity(fpath, md5):
-                return False
+        fpath = os.path.join(root, self.filename)
+        if not check_integrity(fpath, self.md5_checksum):
+            return False
         return True
 
     def download(self):
-        import tarfile
-
         if self._check_integrity():
             print('Files already downloaded and verified')
             return
 
         root = self.root
-        download_url(self.url, root, self.filename, self.tgz_md5)
+        download_url(self.url, root, self.filename, self.md5_checksum)
 
-        # extract file
-        cwd = os.getcwd()
-        tar = tarfile.open(os.path.join(root, self.filename), "r:gz")
-        os.chdir(root)
-        tar.extractall()
-        tar.close()
-        os.chdir(cwd)
+        
