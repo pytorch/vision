@@ -17,7 +17,7 @@ from . import functional as F
 
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomCrop", "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop",
-           "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation", "ColorJitter"]
+           "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation", "ColorJitter", "RandomGrayscale"]
 
 
 class Compose(object):
@@ -570,3 +570,33 @@ class ColorJitter(object):
         transform = self.get_params(self.brightness, self.contrast,
                                     self.saturation, self.hue)
         return transform(img)
+
+
+class RandomGrayscale(object):
+    """Randomly convert image to grayscale with a probability of p (default 0.1).
+    Args:
+        p (float): probability that image should be converted to grayscale.
+        num_output_channels (int): (1 or 3) number of channels desired for output image
+
+    Returns:
+        PIL Image: grayscale version of the input image with probability p
+                   if num_output_channels == 1 : returned image is single channel
+                   if num_output_channels == 3 : returned image is 3 channel with r == g == b
+
+    """
+
+    def __init__(self, p=0.1, num_output_channels=1):
+        self.p = p
+        self.num_output_channels = num_output_channels
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL Image): Image to be converted to grayscale.
+
+        Returns:
+            PIL Image: Randomly grayscaled image.
+        """
+        if random.random() < self.p:
+            return F.to_grayscale(img, num_output_channels=self.num_output_channels)
+        return img
