@@ -3,7 +3,7 @@ import math
 import torch.utils.model_zoo as model_zoo
 
 
-__all__ = ['ResNeXt', 'resnext18', 'resnext34', 'resnext50', 'resnext101',
+__all__ = ['ResNeXt', 'resnext50', 'resnext101',
            'resnext152']
 
 
@@ -139,6 +139,8 @@ class ResNeXt(nn.Module):
                               kernel_size=1, stride=1, bias=False),
                     nn.BatchNorm2d(planes * block.expansion),
                 )
+        else:
+            shortcut = None
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes, 1, shortcut, self.cardinality, self.baseWidth))
 
@@ -162,48 +164,23 @@ class ResNeXt(nn.Module):
         return x
 
 
-#def resnext18(**kwargs):
-#    """Constructs a ResNet-18 model.
-#    """
-#    model = ResNeXt(BasicBlock, [2, 2, 2, 2], **kwargs)
-#    return model
-
-
-#def resnext34(**kwargs):
-#    """Constructs a ResNet-34 model.
-#    """
-#    model = ResNeXt(BasicBlock, [3, 4, 6, 3], **kwargs)
-#    return model
-
-
-def resnext50(cardinality=32, baseWidth=4, **kwargs):
+def resnext50(cardinality=32, baseWidth=4, shortcut='C', **kwargs):
     """Constructs a ResNeXt-50 model.
     """
-    model = ResNeXt(ResNeXtBottleneckC, [3, 4, 6, 3], cardinality=cardinality, baseWidth=baseWidth, shortcut='C', **kwargs)
+    model = ResNeXt(ResNeXtBottleneckC, [3, 4, 6, 3], cardinality=cardinality, baseWidth=baseWidth, shortcut=shortcut, **kwargs)
     return model
 
 
-def resnext101(**kwargs):
+def resnext101(cardinality=32, baseWidth=4, shortcut='C', **kwargs):
     """Constructs a ResNeXt-101 model.
     """
-    model = ResNeXt(ResNeXtBottleneckC, [3, 4, 23, 3], cardinality=cardinality, baseWidth=baseWidth, shortcut='C', **kwargs)
+    model = ResNeXt(ResNeXtBottleneckC, [3, 4, 23, 3], cardinality=cardinality, baseWidth=baseWidth, shortcut=shortcut, **kwargs)
     return model
 
 
-def resnext152(**kwargs):
+def resnext152(cardinality=32, baseWidth=4, shortcut='C', **kwargs):
     """Constructs a ResNeXt-152 model.
     """
-    model = ResNeXt(ResNeXtBottleneckC, [3, 8, 36, 3], cardinality=cardinality, baseWidth=baseWidth, shortcut='C', **kwargs)
+    model = ResNeXt(ResNeXtBottleneckC, [3, 8, 36, 3], cardinality=cardinality, baseWidth=baseWidth, shortcut=shortcut, **kwargs)
     return model
 
-import torch
-def test(c, b):
-    net = resnext50(cardinality=c, baseWidth=b)
-    x = torch.autograd.Variable(torch.ones((1, 3, 224, 224)))
-    print(x.size())
-    
-    print(net(x).size())
-
-test(32, 4)
-test(1, 64)
-test(2, 40)
