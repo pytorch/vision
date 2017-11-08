@@ -707,11 +707,11 @@ class Tester(unittest.TestCase):
             transforms.RandomRotation([-0.7, 0, 0.7])
 
         t = transforms.RandomRotation(10)
-        params = t.get_params(t.degrees, t.resample, t.expand, t.center)
+        params = t.get_params(t.degrees)
         assert params[0] > -10 and params[0] < 10
 
         t = transforms.RandomRotation((-10, 10))
-        params = t.get_params(t.degrees, t.resample, t.expand, t.center)
+        params = t.get_params(t.degrees)
         assert params[0] > -10 and params[0] < 10
 
 
