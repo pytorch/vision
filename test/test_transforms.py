@@ -671,7 +671,7 @@ class Tester(unittest.TestCase):
         with self.assertRaises(TypeError):
             F.rotate(x, 10)
 
-        img = Image.fromarray(x)
+        img = F.to_pil_image(x)
 
         result = F.rotate(img, 45)
         assert result.size == (100, 100)

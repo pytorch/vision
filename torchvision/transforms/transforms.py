@@ -573,7 +573,7 @@ class ColorJitter(object):
 
 
 class RandomRotation(object):
-    """Rotate the image by angle and then (optionally) translate it by (n_columns, n_rows)
+    """Rotate the image by angle.
 
     Args:
         degrees (sequence or float or int): Range of degrees to select from.
@@ -607,7 +607,7 @@ class RandomRotation(object):
         self.center = center
 
     @staticmethod
-    def get_params(degrees, resample, expand, center):
+    def get_params(degrees):
         """Get parameters for ``rotate`` for a random rotation.
 
         Returns:
@@ -615,7 +615,7 @@ class RandomRotation(object):
         """
         angle = np.random.uniform(degrees[0], degrees[1])
 
-        return angle, resample, expand, center
+        return angle
 
     def __call__(self, img):
         """
@@ -626,6 +626,6 @@ class RandomRotation(object):
             PIL Image: Rotated image.
         """
 
-        params = self.get_params(self.degrees, self.resample, self.expand, self.center)
+        angle = self.get_params(self.degrees)
 
-        return F.rotate(img, *params)
+        return F.rotate(img, angle, self.resample, self.expand, self.center)
