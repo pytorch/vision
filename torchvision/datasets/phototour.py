@@ -25,17 +25,17 @@ class PhotoTour(data.Dataset):
     """
     urls = {
         'notredame': [
-            'http://www.iis.ee.ic.ac.uk/~vbalnt/phototourism-patches/notredame.zip',
+            'http://icvl.ee.ic.ac.uk/vbalnt/notredame.zip',
             'notredame.zip',
             '509eda8535847b8c0a90bbb210c83484'
         ],
         'yosemite': [
-            'http://www.iis.ee.ic.ac.uk/~vbalnt/phototourism-patches/yosemite.zip',
+            'http://icvl.ee.ic.ac.uk/vbalnt/yosemite.zip',
             'yosemite.zip',
             '533b2e8eb7ede31be40abc317b2fd4f0'
         ],
         'liberty': [
-            'http://www.iis.ee.ic.ac.uk/~vbalnt/phototourism-patches/liberty.zip',
+            'http://icvl.ee.ic.ac.uk/vbalnt/liberty.zip',
             'liberty.zip',
             'fdd9152f138ea5ef2091746689176414'
         ],

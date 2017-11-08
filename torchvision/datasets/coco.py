@@ -80,7 +80,7 @@ class CocoCaptions(data.Dataset):
 
 
 class CocoDetection(data.Dataset):
-    """`MS Coco Captions <http://mscoco.org/dataset/#detections-challenge2016>`_ Dataset.
+    """`MS Coco Detection <http://mscoco.org/dataset/#detections-challenge2016>`_ Dataset.
 
     Args:
         root (string): Root directory where images are downloaded to.
