@@ -193,5 +193,3 @@ class OmniglotRandomPair(Omniglot):
         while pair_id == character_id:
             pair_id = random.randint(0, len(self._characters) - 1)
         return pair_id
-
-
