@@ -29,9 +29,6 @@ class Omniglot(data.Dataset):
     zips_md5 = [
         ['images_background', '68d2efa1b9178cc56df9314c21c6e718'],
         ['images_evaluation', '6b91aef0f799c5bb55b94e3f2daec811'],
-        # Provision in future
-        # ['images_background_small1', 'e704a628b5459e08445c13499850abc4'],
-        # ['images_background_small2', 'b75a71a51d3b13f821f212756fe481fd'],
     ]
 
     def __init__(self, root, background=True,
@@ -51,30 +48,28 @@ class Omniglot(data.Dataset):
                                ' You can use download=True to download it')
 
         self.target_folder = os.path.join(self.root, self._get_target_folder())
-        self.alphabets_ = list_dir(self.target_folder)
-        self.characters_ = list(
-            reduce(
-                lambda x, y: x + y,
-                [
-                    [
-                        os.path.join(alphabet, character)
-                        for character in list_dir(os.path.join(self.target_folder, alphabet))
-                    ]
-                    for alphabet in self.alphabets_
-                ]
-            )
-        )
-        self.character_images_ = [
+        self._alphabets = list_dir(self.target_folder)
+        self._characters = sum(
             [
-                tuple([image, idx])
+                [
+                    os.path.join(alphabet, character)
+                    for character in list_dir(os.path.join(self.target_folder, alphabet))
+                ]
+                for alphabet in self._alphabets
+            ],
+            []
+        )
+        self._character_images = [
+            [
+                (image, idx)
                 for image in list_files(os.path.join(self.target_folder, character), '.png')
             ]
-            for idx, character in enumerate(self.characters_)
+            for idx, character in enumerate(self._characters)
         ]
-        self.flat_character_images_ = list(reduce(lambda x, y: x + y, self.character_images_))
+        self._flat_character_images = sum(self._character_images, [])
 
     def __len__(self):
-        return len(self.flat_character_images_)
+        return len(self._flat_character_images)
 
     def __getitem__(self, index):
         """
@@ -84,8 +79,8 @@ class Omniglot(data.Dataset):
         Returns:
             tuple: (image, target) where target is index of the target character class.
         """
-        image_name, character_class = self.flat_character_images_[index]
-        image_path = os.path.join(self.target_folder, self.characters_[character_class], image_name)
+        image_name, character_class = self._flat_character_images[index]
+        image_path = os.path.join(self.target_folder, self._characters[character_class], image_name)
         image = Image.open(image_path, mode='r').convert('L')
 
         if self.transform:
@@ -156,9 +151,9 @@ class OmniglotRandomPair(Omniglot):
         """
 
         target_pair, is_match = self.pairs_list[index]
-        target_image_names = [self.character_images_[i][j] for i, j in target_pair]
+        target_image_names = [self._character_images[i][j] for i, j in target_pair]
         target_image_paths = [
-            os.path.join(self.target_folder, self.characters_[cid], name)
+            os.path.join(self.target_folder, self._characters[cid], name)
             for name, cid in target_image_names
         ]
         images = [Image.open(path, mode='r').convert('L') for path in target_image_paths]
@@ -184,14 +179,14 @@ class OmniglotRandomPair(Omniglot):
         """
         is_match = [random.randint(0, 1) for _ in range(self.pair_count)]
 
-        cid0_list = [random.randint(0, len(self.characters_) - 1) for _ in range(self.pair_count)]
-        c0_list = [random.randint(0, len(self.character_images_[cid]) - 1) for cid in cid0_list]
+        cid0_list = [random.randint(0, len(self._characters) - 1) for _ in range(self.pair_count)]
+        c0_list = [random.randint(0, len(self._character_images[cid]) - 1) for cid in cid0_list]
 
         cid1_list = [
             cid0_list[idx] if is_match[idx] == 1 else self._generate_pair(cid0_list[idx])
             for idx in range(self.pair_count)
         ]
-        c1_list = [random.randint(0, len(self.character_images_[cid]) - 1) for cid in cid1_list]
+        c1_list = [random.randint(0, len(self._character_images[cid]) - 1) for cid in cid1_list]
 
         self.pairs_list = [
             (((cid0_list[idx], c0_list[idx]), (cid1_list[idx], c1_list[idx])), is_match[idx])
@@ -199,9 +194,9 @@ class OmniglotRandomPair(Omniglot):
         ]
 
     def _generate_pair(self, character_id):
-        pair_id = random.randint(0, len(self.characters_) - 1)
+        pair_id = random.randint(0, len(self._characters) - 1)
         while pair_id == character_id:
-            pair_id = random.randint(0, len(self.characters_) - 1)
+            pair_id = random.randint(0, len(self._characters) - 1)
         return pair_id
 
 
