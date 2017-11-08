@@ -1,6 +1,5 @@
 from __future__ import print_function
 from PIL import Image
-from functools import reduce
 import os
 import random
 import torch.utils.data as data
@@ -21,27 +20,24 @@ class Omniglot(data.Dataset):
         download (bool, optional): If true, downloads the dataset zip files from the internet and
             puts it in root directory. If the zip files are already downloaded, they are not
             downloaded again.
-        force_extract (bool, optional): If true, extracts the downloaded zip file irrespective
-            of the existence of an extracted folder with the same name
     """
     folder = 'omniglot-py'
     download_url_prefix = 'https://github.com/brendenlake/omniglot/raw/master/python'
-    zips_md5 = [
-        ['images_background', '68d2efa1b9178cc56df9314c21c6e718'],
-        ['images_evaluation', '6b91aef0f799c5bb55b94e3f2daec811'],
-    ]
+    zips_md5 = {
+        'images_background': '68d2efa1b9178cc56df9314c21c6e718',
+        'images_evaluation': '6b91aef0f799c5bb55b94e3f2daec811'
+    }
 
     def __init__(self, root, background=True,
                  transform=None, target_transform=None,
-                 download=False,
-                 force_extract=False):
+                 download=False):
         self.root = os.path.join(os.path.expanduser(root), self.folder)
         self.background = background
         self.transform = transform
         self.target_transform = target_transform
 
         if download:
-            self.download(force_extract)
+            self.download()
 
         if not self._check_integrity():
             raise RuntimeError('Dataset not found or corrupted.' +
@@ -92,30 +88,25 @@ class Omniglot(data.Dataset):
         return image, character_class
 
     def _check_integrity(self):
-        for fzip in self.zips_md5:
-            filename, md5 = fzip[0] + '.zip', fzip[1]
-            fpath = os.path.join(self.root, filename)
-            if not check_integrity(fpath, md5):
-                return False
+        zip_filename = self._get_target_folder()
+        if not check_integrity(os.path.join(self.root, zip_filename + '.zip'), self.zips_md5[zip_filename]):
+            return False
         return True
 
-    def download(self, force_extract=False):
+    def download(self):
         import zipfile
 
         if self._check_integrity():
             print('Files already downloaded and verified')
             return
 
-        for fzip in self.zips_md5:
-            filename, md5 = fzip[0], fzip[1]
-            zip_filename = filename + '.zip'
-            url = self.download_url_prefix + '/' + zip_filename
-            download_url(url, self.root, zip_filename, md5)
-
-            if not os.path.isdir(os.path.join(self.root, filename)) or force_extract is True:
-                print('Extracting downloaded file: ' + os.path.join(self.root, zip_filename))
-                with zipfile.ZipFile(os.path.join(self.root, zip_filename), 'r') as zip_file:
-                    zip_file.extractall(self.root)
+        filename = self._get_target_folder()
+        zip_filename = filename + '.zip'
+        url = self.download_url_prefix + '/' + zip_filename
+        download_url(url, self.root, zip_filename, self.zips_md5[filename])
+        print('Extracting downloaded file: ' + os.path.join(self.root, zip_filename))
+        with zipfile.ZipFile(os.path.join(self.root, zip_filename), 'r') as zip_file:
+            zip_file.extractall(self.root)
 
     def _get_target_folder(self):
         return 'images_background' if self.background is True else 'images_evaluation'
@@ -131,8 +122,12 @@ class OmniglotRandomPair(Omniglot):
         pair_count (int, optional): The total number of image pairs to generate. Defaults to
             10000
     """
-    def __init__(self, *args, pair_count=10000, **kwargs):
-        super(self.__class__, self).__init__(*args, **kwargs)
+    def __init__(self, root, pair_count=10000, background=True,
+                 transform=None, target_transform=None,
+                 download=False):
+        super(self.__class__, self).__init__(root, background=background,
+                                             transform=transform, target_transform=target_transform,
+                                             download=download)
 
         self.pair_count = pair_count
         self._precompute_pairs()
