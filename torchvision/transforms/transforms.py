@@ -17,7 +17,8 @@ from . import functional as F
 
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomCrop", "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop",
-           "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation", "ColorJitter", "RandomGrayscale"]
+           "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation", "ColorJitter",
+           "Grayscale", "RandomGrayscale"]
 
 
 class Compose(object):
@@ -572,21 +573,19 @@ class ColorJitter(object):
         return transform(img)
 
 
-class RandomGrayscale(object):
-    """Randomly convert image to grayscale with a probability of p (default 0.1).
+class Grayscale(object):
+    """Convert image to grayscale.
     Args:
-        p (float): probability that image should be converted to grayscale.
         num_output_channels (int): (1 or 3) number of channels desired for output image
 
     Returns:
-        PIL Image: grayscale version of the input image with probability p
+        PIL Image: grayscale version of the input
                    if num_output_channels == 1 : returned image is single channel
                    if num_output_channels == 3 : returned image is 3 channel with r == g == b
 
     """
 
-    def __init__(self, p=0.1, num_output_channels=1):
-        self.p = p
+    def __init__(self, num_output_channels=1):
         self.num_output_channels = num_output_channels
 
     def __call__(self, img):
@@ -597,6 +596,36 @@ class RandomGrayscale(object):
         Returns:
             PIL Image: Randomly grayscaled image.
         """
+        return F.to_grayscale(img, num_output_channels=self.num_output_channels)
+
+
+class RandomGrayscale(object):
+    """Randomly convert image to grayscale with a probability of p (default 0.1).
+    Args:
+        p (float): probability that image should be converted to grayscale.
+
+    Returns:
+        PIL Image: grayscale version of the input image with probability p
+                   and unchanged with probability (1-p)
+                   - if input image is 1 channel:
+                        grayscale version is 1 channel
+                   - if input image is 3 channel:
+                        grayscale version is 3 channel with r == g == b
+
+    """
+
+    def __init__(self, p=0.1):
+        self.p = p
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL Image): Image to be converted to grayscale.
+
+        Returns:
+            PIL Image: Randomly grayscaled image.
+        """
+        num_output_channels = 1 if img.mode == 'L' else 3
         if random.random() < self.p:
-            return F.to_grayscale(img, num_output_channels=self.num_output_channels)
+            return F.to_grayscale(img, num_output_channels=num_output_channels)
         return img
