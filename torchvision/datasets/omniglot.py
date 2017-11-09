@@ -1,5 +1,6 @@
 from __future__ import print_function
 from PIL import Image
+from os.path import join
 import os
 import random
 import torch.utils.data as data
@@ -31,7 +32,7 @@ class Omniglot(data.Dataset):
     def __init__(self, root, background=True,
                  transform=None, target_transform=None,
                  download=False):
-        self.root = os.path.join(os.path.expanduser(root), self.folder)
+        self.root = join(os.path.expanduser(root), self.folder)
         self.background = background
         self.transform = transform
         self.target_transform = target_transform
@@ -43,25 +44,12 @@ class Omniglot(data.Dataset):
             raise RuntimeError('Dataset not found or corrupted.' +
                                ' You can use download=True to download it')
 
-        self.target_folder = os.path.join(self.root, self._get_target_folder())
+        self.target_folder = join(self.root, self._get_target_folder())
         self._alphabets = list_dir(self.target_folder)
-        self._characters = sum(
-            [
-                [
-                    os.path.join(alphabet, character)
-                    for character in list_dir(os.path.join(self.target_folder, alphabet))
-                ]
-                for alphabet in self._alphabets
-            ],
-            []
-        )
-        self._character_images = [
-            [
-                (image, idx)
-                for image in list_files(os.path.join(self.target_folder, character), '.png')
-            ]
-            for idx, character in enumerate(self._characters)
-        ]
+        self._characters = sum([[join(a, c) for c in list_dir(join(self.target_folder, a))]
+                                for a in self._alphabets], [])
+        self._character_images = [[(image, idx) for image in list_files(join(self.target_folder, character), '.png')]
+                                  for idx, character in enumerate(self._characters)]
         self._flat_character_images = sum(self._character_images, [])
 
     def __len__(self):
@@ -76,7 +64,7 @@ class Omniglot(data.Dataset):
             tuple: (image, target) where target is index of the target character class.
         """
         image_name, character_class = self._flat_character_images[index]
-        image_path = os.path.join(self.target_folder, self._characters[character_class], image_name)
+        image_path = join(self.target_folder, self._characters[character_class], image_name)
         image = Image.open(image_path, mode='r').convert('L')
 
         if self.transform:
@@ -89,7 +77,7 @@ class Omniglot(data.Dataset):
 
     def _check_integrity(self):
         zip_filename = self._get_target_folder()
-        if not check_integrity(os.path.join(self.root, zip_filename + '.zip'), self.zips_md5[zip_filename]):
+        if not check_integrity(join(self.root, zip_filename + '.zip'), self.zips_md5[zip_filename]):
             return False
         return True
 
@@ -104,12 +92,12 @@ class Omniglot(data.Dataset):
         zip_filename = filename + '.zip'
         url = self.download_url_prefix + '/' + zip_filename
         download_url(url, self.root, zip_filename, self.zips_md5[filename])
-        print('Extracting downloaded file: ' + os.path.join(self.root, zip_filename))
-        with zipfile.ZipFile(os.path.join(self.root, zip_filename), 'r') as zip_file:
+        print('Extracting downloaded file: ' + join(self.root, zip_filename))
+        with zipfile.ZipFile(join(self.root, zip_filename), 'r') as zip_file:
             zip_file.extractall(self.root)
 
     def _get_target_folder(self):
-        return 'images_background' if self.background is True else 'images_evaluation'
+        return 'images_background' if self.background else 'images_evaluation'
 
 
 class OmniglotRandomPair(Omniglot):
@@ -121,14 +109,17 @@ class OmniglotRandomPair(Omniglot):
     Args:
         pair_count (int, optional): The total number of image pairs to generate. Defaults to
             10000
+        random_seed (int, optional): The value to pass to "random.seed" to allow reproducibility
+            of randomized pair generation
     """
     def __init__(self, root, pair_count=10000, background=True,
                  transform=None, target_transform=None,
-                 download=False):
-        super(self.__class__, self).__init__(root, background=background,
-                                             transform=transform, target_transform=target_transform,
-                                             download=download)
+                 download=False, random_seed=None):
+        super(OmniglotRandomPair, self).__init__(root, background=background,
+                                                 transform=transform, target_transform=target_transform,
+                                                 download=download)
 
+        self.random_seed = random_seed
         self.pair_count = pair_count
         self._precompute_pairs()
 
@@ -148,7 +139,7 @@ class OmniglotRandomPair(Omniglot):
         target_pair, is_match = self.pairs_list[index]
         target_image_names = [self._character_images[i][j] for i, j in target_pair]
         target_image_paths = [
-            os.path.join(self.target_folder, self._characters[cid], name)
+            join(self.target_folder, self._characters[cid], name)
             for name, cid in target_image_names
         ]
         images = [Image.open(path, mode='r').convert('L') for path in target_image_paths]
@@ -172,6 +163,8 @@ class OmniglotRandomPair(Omniglot):
                 and the last item is 1 or 0 based on whether the image pair is from the same character
                 or not respectively
         """
+        random.seed(self.random_seed)
+
         is_match = [random.randint(0, 1) for _ in range(self.pair_count)]
 
         cid0_list = [random.randint(0, len(self._characters) - 1) for _ in range(self.pair_count)]
