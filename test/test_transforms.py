@@ -664,6 +664,56 @@ class Tester(unittest.TestCase):
         cov = np.dot(xwhite, xwhite.T) / x.size(0)
         assert np.allclose(cov, np.identity(1), rtol=1e-3)
 
+    def test_rotate(self):
+        x = np.zeros((100, 100, 3), dtype=np.uint8)
+        x[40, 40] = [255, 255, 255]
+
+        with self.assertRaises(TypeError):
+            F.rotate(x, 10)
+
+        img = F.to_pil_image(x)
+
+        result = F.rotate(img, 45)
+        assert result.size == (100, 100)
+        r, c, ch = np.where(result)
+        assert all(x in r for x in [49, 50])
+        assert all(x in c for x in [36])
+        assert all(x in ch for x in [0, 1, 2])
+
+        result = F.rotate(img, 45, expand=True)
+        assert result.size == (142, 142)
+        r, c, ch = np.where(result)
+        assert all(x in r for x in [70, 71])
+        assert all(x in c for x in [57])
+        assert all(x in ch for x in [0, 1, 2])
+
+        result = F.rotate(img, 45, center=(40, 40))
+        assert result.size == (100, 100)
+        r, c, ch = np.where(result)
+        assert all(x in r for x in [40])
+        assert all(x in c for x in [40])
+        assert all(x in ch for x in [0, 1, 2])
+
+        result_a = F.rotate(img, 90)
+        result_b = F.rotate(img, -270)
+
+        assert np.all(np.array(result_a) == np.array(result_b))
+
+    def test_random_rotation(self):
+
+        with self.assertRaises(ValueError):
+            transforms.RandomRotation(-0.7)
+            transforms.RandomRotation([-0.7])
+            transforms.RandomRotation([-0.7, 0, 0.7])
+
+        t = transforms.RandomRotation(10)
+        angle = t.get_params(t.degrees)
+        assert angle > -10 and angle < 10
+
+        t = transforms.RandomRotation((-10, 10))
+        angle = t.get_params(t.degrees)
+        assert angle > -10 and angle < 10
+
     def test_to_grayscale(self):
 
         x_shape = [2, 2, 3]
