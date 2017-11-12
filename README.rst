@@ -29,4 +29,8 @@ From source:
 
 Documentation
 =============
-You can find the API doucmentation on the pytorch website: http://pytorch.org/docs/master/torchvision/
+You can find the API documentation on the pytorch website: http://pytorch.org/docs/master/torchvision/
+
+Contributing
+============
+We appreciate all contributions. If you are planning to contribute back bug-fixes, please do so without any further discussion. If you plan to contribute new features, utility functions or extensions, please first open an issue and discuss the feature with us.

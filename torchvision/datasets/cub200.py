@@ -144,7 +144,7 @@ class CUB200(data.Dataset):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        path, target = self.data_set[index]
+        path, target = self.imgs[index], self.class_to_idx[index]
         img = self.loader(path)
 
         if self.transform is not None:
