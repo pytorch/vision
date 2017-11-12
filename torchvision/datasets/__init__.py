@@ -16,3 +16,4 @@ __all__ = ('LSUN', 'LSUNClass',
            'CIFAR10', 'CIFAR100', 'FashionMNIST',
            'MNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
            'CUB200')
+
