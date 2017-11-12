@@ -715,6 +715,7 @@ class Tester(unittest.TestCase):
         assert angle > -10 and angle < 10
 
     def test_to_grayscale(self):
+        """Unit tests for grayscale transform"""
 
         x_shape = [2, 2, 3]
         x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
@@ -723,7 +724,7 @@ class Tester(unittest.TestCase):
         x_pil_2 = x_pil.convert('L')
         gray_np = np.array(x_pil_2)
 
-        # Set 1: Grayscale an image with desired number of output channels
+        # Test Set: Grayscale an image with desired number of output channels
         # Case 1: RGB -> 1 channel grayscale
         trans1 = transforms.Grayscale(num_output_channels=1)
         gray_pil_1 = trans1(x_pil)
@@ -760,8 +761,63 @@ class Tester(unittest.TestCase):
         np.testing.assert_equal(gray_np_4[:, :, 1], gray_np_4[:, :, 2])
         np.testing.assert_equal(gray_np, gray_np_4[:, :, 0])
 
-        # Set 2: Randomly grayscale image
-        # Case 1a: RGB -> 3 channel grayscale (grayscaled)
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_grayscale(self):
+        """Unit tests for random grayscale transform"""
+
+        # Test Set 1: RGB -> 3 channel grayscale
+        random_state = random.getstate()
+        random.seed(42)
+        x_shape = [2, 2, 3]
+        x_np = np.random.randint(0, 256, x_shape, np.uint8)
+        x_pil = Image.fromarray(x_np, mode='RGB')
+        x_pil_2 = x_pil.convert('L')
+        gray_np = np.array(x_pil_2)
+
+        num_samples = 250
+        num_gray = 0
+        for _ in range(num_samples):
+            gray_pil_2 = transforms.RandomGrayscale(p=0.5)(x_pil)
+            gray_np_2 = np.array(gray_pil_2)
+            if np.array_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1]) and \
+               np.array_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2]) and \
+               np.array_equal(gray_np, gray_np_2[:, :, 0]):
+                num_gray = num_gray + 1
+
+        p_value = stats.binom_test(num_gray, num_samples, p=0.5)
+        random.setstate(random_state)
+        assert p_value > 0.0001
+
+        # Test Set 2: grayscale -> 1 channel grayscale
+        random_state = random.getstate()
+        random.seed(42)
+        x_shape = [2, 2, 3]
+        x_np = np.random.randint(0, 256, x_shape, np.uint8)
+        x_pil = Image.fromarray(x_np, mode='RGB')
+        x_pil_2 = x_pil.convert('L')
+        gray_np = np.array(x_pil_2)
+
+        num_samples = 250
+        num_gray = 0
+        for _ in range(num_samples):
+            gray_pil_3 = transforms.RandomGrayscale(p=0.5)(x_pil_2)
+            gray_np_3 = np.array(gray_pil_3)
+            if np.array_equal(gray_np, gray_np_3):
+                num_gray = num_gray + 1
+
+        p_value = stats.binom_test(num_gray, num_samples, p=1.0)  # Note: grayscale is always unchanged
+        random.setstate(random_state)
+        assert p_value > 0.0001
+
+        # Test set 3: Explicit tests
+        x_shape = [2, 2, 3]
+        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+        x_pil = Image.fromarray(x_np, mode='RGB')
+        x_pil_2 = x_pil.convert('L')
+        gray_np = np.array(x_pil_2)
+
+        # Case 3a: RGB -> 3 channel grayscale (grayscaled)
         trans2 = transforms.RandomGrayscale(p=1.0)
         gray_pil_2 = trans2(x_pil)
         gray_np_2 = np.array(gray_pil_2)
@@ -771,7 +827,7 @@ class Tester(unittest.TestCase):
         np.testing.assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
         np.testing.assert_equal(gray_np, gray_np_2[:, :, 0])
 
-        # Case 1b: RGB -> 3 channel grayscale (unchanged)
+        # Case 3b: RGB -> 3 channel grayscale (unchanged)
         trans2 = transforms.RandomGrayscale(p=0.0)
         gray_pil_2 = trans2(x_pil)
         gray_np_2 = np.array(gray_pil_2)
@@ -779,7 +835,7 @@ class Tester(unittest.TestCase):
         assert gray_np_2.shape == tuple(x_shape), 'should be 3 channel'
         np.testing.assert_equal(x_np, gray_np_2)
 
-        # Case 2a: 1 channel grayscale -> 1 channel grayscale (grayscaled)
+        # Case 3c: 1 channel grayscale -> 1 channel grayscale (grayscaled)
         trans3 = transforms.RandomGrayscale(p=1.0)
         gray_pil_3 = trans3(x_pil_2)
         gray_np_3 = np.array(gray_pil_3)
@@ -787,7 +843,7 @@ class Tester(unittest.TestCase):
         assert gray_np_3.shape == tuple(x_shape[0:2]), 'should be 1 channel'
         np.testing.assert_equal(gray_np, gray_np_3)
 
-        # Case 2b: 1 channel grayscale -> 1 channel grayscale (unchanged)
+        # Case 3d: 1 channel grayscale -> 1 channel grayscale (unchanged)
         trans3 = transforms.RandomGrayscale(p=0.0)
         gray_pil_3 = trans3(x_pil_2)
         gray_np_3 = np.array(gray_pil_3)
