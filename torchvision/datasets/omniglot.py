@@ -2,7 +2,6 @@ from __future__ import print_function
 from PIL import Image
 from os.path import join
 import os
-import random
 import torch.utils.data as data
 from .utils import download_url, check_integrity, list_dir, list_files
 
@@ -98,91 +97,3 @@ class Omniglot(data.Dataset):
 
     def _get_target_folder(self):
         return 'images_background' if self.background else 'images_evaluation'
-
-
-class OmniglotRandomPair(Omniglot):
-    """`OmniglotRandomPair <https://github.com/brendenlake/omniglot>`_ Dataset.
-
-    This is a subclass of the Omniglot dataset. This instead it returns
-    a randomized pair of images with similarity label (0 or 1)
-
-    Args:
-        pair_count (int, optional): The total number of image pairs to generate. Defaults to
-            10000
-        random_seed (int, optional): The value to pass to "random.seed" to allow reproducibility
-            of randomized pair generation
-    """
-    def __init__(self, root, pair_count=10000, background=True,
-                 transform=None, target_transform=None,
-                 download=False, random_seed=None):
-        super(OmniglotRandomPair, self).__init__(root, background=background,
-                                                 transform=transform, target_transform=target_transform,
-                                                 download=download)
-
-        self.random_seed = random_seed
-        self.pair_count = pair_count
-        self._precompute_pairs()
-
-    def __len__(self):
-        return len(self.pairs_list)
-
-    def __getitem__(self, index):
-        """
-        Args:
-            index (int): Index
-
-        Returns:
-            tuple: (image0, image1, is_match) a random pair of images from the Omniglot characters
-                with corresponding label 1 if it is matching pair and 0 otherwise
-        """
-
-        target_pair, is_match = self.pairs_list[index]
-        target_image_names = [self._character_images[i][j] for i, j in target_pair]
-        target_image_paths = [
-            join(self.target_folder, self._characters[cid], name)
-            for name, cid in target_image_names
-        ]
-        images = [Image.open(path, mode='r').convert('L') for path in target_image_paths]
-
-        if self.transform is not None:
-            images = [self.transform(image) for image in images]
-
-        if self.target_transform is not None:
-            is_match = self.target_transform(is_match)
-
-        return images[0], images[1], is_match
-
-    def _precompute_pairs(self):
-        """A utility wrapper to randomly generate pairs of images
-
-        Args:
-
-        Returns:
-            list(tuple((cid0, id0), (cid1, id1), is_match)), a list of 3-tuples where the first two
-                items of the tuple contains a character id and corresponding randomly chose image id
-                and the last item is 1 or 0 based on whether the image pair is from the same character
-                or not respectively
-        """
-        random.seed(self.random_seed)
-
-        is_match = [random.randint(0, 1) for _ in range(self.pair_count)]
-
-        cid0_list = [random.randint(0, len(self._characters) - 1) for _ in range(self.pair_count)]
-        c0_list = [random.randint(0, len(self._character_images[cid]) - 1) for cid in cid0_list]
-
-        cid1_list = [
-            cid0_list[idx] if is_match[idx] == 1 else self._generate_pair(cid0_list[idx])
-            for idx in range(self.pair_count)
-        ]
-        c1_list = [random.randint(0, len(self._character_images[cid]) - 1) for cid in cid1_list]
-
-        self.pairs_list = [
-            (((cid0_list[idx], c0_list[idx]), (cid1_list[idx], c1_list[idx])), is_match[idx])
-            for idx in range(self.pair_count)
-        ]
-
-    def _generate_pair(self, character_id):
-        pair_id = random.randint(0, len(self._characters) - 1)
-        while pair_id == character_id:
-            pair_id = random.randint(0, len(self._characters) - 1)
-        return pair_id
