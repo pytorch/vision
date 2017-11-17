@@ -572,7 +572,7 @@ class ColorJitter(object):
                                     self.saturation, self.hue)
         return transform(img)
 
-3
+
 class RandomRotation(object):
     """Rotate the image by angle.
 
