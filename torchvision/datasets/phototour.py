@@ -24,6 +24,21 @@ class PhotoTour(data.Dataset):
 
     """
     urls = {
+        'notredame_harris': [
+            'http://matthewalunbrown.com/patchdata/notredame_harris.zip',
+            'notredame_harris.zip',
+            '69f8c90f78e171349abdf0307afefe4d'
+        ],
+        'yosemite_harris': [
+            'http://matthewalunbrown.com/patchdata/yosemite_harris.zip',
+            'yosemite_harris.zip',
+            'a73253d1c6fbd3ba2613c45065c00d46'
+        ],
+        'liberty_harris': [
+            'http://matthewalunbrown.com/patchdata/liberty_harris.zip',
+            'liberty_harris.zip',
+            'c731fcfb3abb4091110d0ae8c7ba182c'
+        ],
         'notredame': [
             'http://icvl.ee.ic.ac.uk/vbalnt/notredame.zip',
             'notredame.zip',
@@ -40,9 +55,9 @@ class PhotoTour(data.Dataset):
             'fdd9152f138ea5ef2091746689176414'
         ],
     }
-    mean = {'notredame': 0.4854, 'yosemite': 0.4844, 'liberty': 0.4437}
-    std = {'notredame': 0.1864, 'yosemite': 0.1818, 'liberty': 0.2019}
-    lens = {'notredame': 468159, 'yosemite': 633587, 'liberty': 450092}
+    mean = {'notredame': 0.4854, 'yosemite': 0.4844, 'liberty': 0.4437, 'notredame_harris': 0.4854, 'yosemite_harris': 0.4844, 'liberty_harris': 0.4437}
+    std = {'notredame': 0.1864, 'yosemite': 0.1818, 'liberty': 0.2019, 'notredame_harris': 0.1864, 'yosemite_harris': 0.1818, 'liberty_harris': 0.2019}
+    lens = {'notredame': 468159, 'yosemite': 633587, 'liberty': 450092, 'liberty_harris': 379587, 'yosemite_harris': 450912 , 'notredame_harris': 325295}
 
     image_ext = 'bmp'
     info_file = 'info.txt'
@@ -57,7 +72,6 @@ class PhotoTour(data.Dataset):
 
         self.train = train
         self.transform = transform
-
         self.mean = self.mean[name]
         self.std = self.std[name]
 
