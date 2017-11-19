@@ -689,7 +689,7 @@ class RandomGrayscale(object):
         return img
     
     
-    class RandomErasing(object):
+class RandomErasing(object):
     """ Randomly selects a rectangle region in an image and erases its pixels with random values or the Imagenet mean pixel value.
     'Random Erasing Data Augmentation' by Zhong et al.
     https://arxiv.org/pdf/1708.04896.pdf.
@@ -711,6 +711,7 @@ class RandomGrayscale(object):
         >>> transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         >>> transforms.RandomErasing(),
         >>> ])
+        
     """
 
     def __init__(self, probability=0.5, sl=0.02, sh=0.4, r1=0.3, value=0):
