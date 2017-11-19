@@ -690,15 +690,16 @@ class RandomGrayscale(object):
     
     
 class RandomErasing(object):
-    """ Randomly selects a rectangle region in an image and erases its pixels with random values or the Imagenet mean pixel value.
-    'Random Erasing Data Augmentation' by Zhong et al.
-    https://arxiv.org/pdf/1708.04896.pdf.
+    """ Randomly selects a rectangle region in an image and erases its pixels with random values, 
+        or the Imagenet mean pixel value.
+        'Random Erasing Data Augmentation' by Zhong et al.
+        https://arxiv.org/pdf/1708.04896.pdf.
 
     Args:
          probability: The probability that the Random Erasing operation will be performed.
          sl: Minimum proportion of erased area against input image.
          sh: Maximum proportion of erased area against input image.
-         r1: Minimum aspect ratio of erased area
+         r1: Minimum aspect ratio of erased area.
          values: Type of erasing value. If values = 0, erasing with random values, else erasing with the Imagenet mean pixel value.
 
     Returns:
