@@ -711,7 +711,6 @@ class RandomErasing(object):
         >>> transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         >>> transforms.RandomErasing(),
         >>> ])
-        
     """
 
     def __init__(self, probability=0.5, sl=0.02, sh=0.4, r1=0.3, value=0):
@@ -730,7 +729,7 @@ class RandomErasing(object):
             area = img.size()[1] * img.size()[2]
        
             target_area = random.uniform(self.sl, self.sh) * area
-            aspect_ratio = random.uniform(self.r1, 1/self.r1)
+            aspect_ratio = random.uniform(self.r1, 1 / self.r1)
 
             h = int(round(math.sqrt(target_area * aspect_ratio)))
             w = int(round(math.sqrt(target_area / aspect_ratio)))
@@ -742,9 +741,9 @@ class RandomErasing(object):
                     if self.value == 0:
                         img[:, x1:x1 + h, y1:y1 + w] = torch.from_numpy(np.random.rand(3, h, w))
                     else:
-                        img[0, x1:x1+h, y1:y1+w] = self.imagenet_mean_value[0]
-                        img[1, x1:x1+h, y1:y1+w] = self.imagenet_mean_value[1]
-                        img[2, x1:x1+h, y1:y1+w] = self.imagenet_mean_value[2]
+                        img[0, x1:x1 + h, y1:y1 + w] = self.imagenet_mean_value[0]
+                        img[1, x1:x1 + h, y1:y1 + w] = self.imagenet_mean_value[1]
+                        img[2, x1:x1 + h, y1:y1 + w] = self.imagenet_mean_value[2]
                 else:
                     if self.value == 0:
                         img[:, x1:x1 + h, y1:y1 + w] = torch.from_numpy(np.random.rand(1, h, w))
