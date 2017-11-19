@@ -55,9 +55,12 @@ class PhotoTour(data.Dataset):
             'fdd9152f138ea5ef2091746689176414'
         ],
     }
-    mean = {'notredame': 0.4854, 'yosemite': 0.4844, 'liberty': 0.4437, 'notredame_harris': 0.4854, 'yosemite_harris': 0.4844, 'liberty_harris': 0.4437}
-    std = {'notredame': 0.1864, 'yosemite': 0.1818, 'liberty': 0.2019, 'notredame_harris': 0.1864, 'yosemite_harris': 0.1818, 'liberty_harris': 0.2019}
-    lens = {'notredame': 468159, 'yosemite': 633587, 'liberty': 450092, 'liberty_harris': 379587, 'yosemite_harris': 450912 , 'notredame_harris': 325295}
+    mean = {'notredame': 0.4854, 'yosemite': 0.4844, 'liberty': 0.4437,
+            'notredame_harris': 0.4854, 'yosemite_harris': 0.4844, 'liberty_harris': 0.4437}
+    std = {'notredame': 0.1864, 'yosemite': 0.1818, 'liberty': 0.2019,
+            'notredame_harris': 0.1864, 'yosemite_harris': 0.1818, 'liberty_harris': 0.2019}
+    lens = {'notredame': 468159, 'yosemite': 633587, 'liberty': 450092,
+            'liberty_harris': 379587, 'yosemite_harris': 450912, 'notredame_harris': 325295}
 
     image_ext = 'bmp'
     info_file = 'info.txt'
