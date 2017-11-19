@@ -687,3 +687,66 @@ class RandomGrayscale(object):
         if random.random() < self.p:
             return F.to_grayscale(img, num_output_channels=num_output_channels)
         return img
+    
+    
+    class RandomErasing(object):
+    """ Randomly selects a rectangle region in an image and erases its pixels with random values or the Imagenet mean pixel value.
+    'Random Erasing Data Augmentation' by Zhong et al.
+    https://arxiv.org/pdf/1708.04896.pdf.
+
+    Args:
+         probability: The probability that the Random Erasing operation will be performed.
+         sl: Minimum proportion of erased area against input image.
+         sh: Maximum proportion of erased area against input image.
+         r1: Minimum aspect ratio of erased area
+         values: Type of erasing value. If values = 0, erasing with random values, else erasing with the Imagenet mean pixel value.
+
+    Returns:
+        Erased Image.
+
+    Examples:
+        >>> transform = transforms.Compose([
+        >>> transforms.RandomHorizontalFlip(),
+        >>> transforms.ToTensor(),
+        >>> transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        >>> transforms.RandomErasing(),
+        >>> ])
+    """
+
+    def __init__(self, probability=0.5, sl=0.02, sh=0.4, r1=0.3, value=0):
+        self.probability = probability
+        self.sl = sl
+        self.sh = sh
+        self.r1 = r1
+        self.imagenet_mean_value = [0.485, 0.456, 0.406]
+        self.value = value
+       
+    def __call__(self, img):
+
+        if random.uniform(0, 1) > self.probability:
+            return img
+        while True:
+            area = img.size()[1] * img.size()[2]
+       
+            target_area = random.uniform(self.sl, self.sh) * area
+            aspect_ratio = random.uniform(self.r1, 1/self.r1)
+
+            h = int(round(math.sqrt(target_area * aspect_ratio)))
+            w = int(round(math.sqrt(target_area / aspect_ratio)))
+
+            if w <= img.size()[2] and h <= img.size()[1]:
+                x1 = random.randint(0, img.size()[1] - h)
+                y1 = random.randint(0, img.size()[2] - w)
+                if img.size()[0] == 3:
+                    if self.value == 0:
+                        img[:, x1:x1 + h, y1:y1 + w] = torch.from_numpy(np.random.rand(3, h, w))
+                    else:
+                        img[0, x1:x1+h, y1:y1+w] = self.imagenet_mean_value[0]
+                        img[1, x1:x1+h, y1:y1+w] = self.imagenet_mean_value[1]
+                        img[2, x1:x1+h, y1:y1+w] = self.imagenet_mean_value[2]
+                else:
+                    if self.value == 0:
+                        img[:, x1:x1 + h, y1:y1 + w] = torch.from_numpy(np.random.rand(1, h, w))
+                    else:
+                        img[0, x1:x1 + h, y1:y1 + w] = self.imagenet_mean_value[0]
+                return img
