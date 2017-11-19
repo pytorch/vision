@@ -545,7 +545,35 @@ def rotate(img, angle, resample=False, expand=False, center=None):
             Origin is the upper left corner.
             Default is the center of the image.
     """
+
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     return img.rotate(angle, resample, expand, center)
+
+
+def to_grayscale(img, num_output_channels=1):
+    """Convert image to grayscale version of image.
+
+    Args:
+        img (PIL Image): Image to be converted to grayscale.
+
+    Returns:
+        PIL Image:  Grayscale version of the image.
+                    if num_output_channels == 1 : returned image is single channel
+                    if num_output_channels == 3 : returned image is 3 channel with r == g == b
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    if num_output_channels == 1:
+        img = img.convert('L')
+    elif num_output_channels == 3:
+        img = img.convert('L')
+        np_img = np.array(img, dtype=np.uint8)
+        np_img = np.dstack([np_img, np_img, np_img])
+        img = Image.fromarray(np_img, 'RGB')
+    else:
+        raise ValueError('num_output_channels should be either 1 or 3')
+
+    return img
