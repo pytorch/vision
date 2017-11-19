@@ -687,8 +687,8 @@ class RandomGrayscale(object):
         if random.random() < self.p:
             return F.to_grayscale(img, num_output_channels=num_output_channels)
         return img
-    
-    
+
+
 class RandomErasing(object):
     """ Randomly selects a rectangle region in an image and erases its pixels with random values, 
         or the Imagenet mean pixel value.
@@ -723,14 +723,14 @@ class RandomErasing(object):
         self.r1 = r1
         self.imagenet_mean_value = [0.485, 0.456, 0.406]
         self.value = value
-       
+
     def __call__(self, img):
 
         if random.uniform(0, 1) > self.probability:
             return img
         while True:
             area = img.size()[1] * img.size()[2]
-       
+
             target_area = random.uniform(self.sl, self.sh) * area
             aspect_ratio = random.uniform(self.r1, 1 / self.r1)
 
