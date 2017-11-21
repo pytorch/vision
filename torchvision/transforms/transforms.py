@@ -726,5 +726,5 @@ class RandomErasing(object):
     def __call__(self, img):
 
         if random.uniform(0, 1) < self.probability:
-            return F.random_erasing(img, probability=self.probability, sl=self.sl, sh=self.sh, r1=self.r1, value=self.value)
+            return F.random_erasing(img, sl=self.sl, sh=self.sh, r1=self.r1, value=self.value)
         return img
