@@ -18,7 +18,7 @@ from . import functional as F
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomCrop", "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop",
            "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation", "ColorJitter", "RandomRotation",
-           "Grayscale", "RandomGrayscale"]
+           "Grayscale", "RandomGrayscale", "RandomErasing"]
 
 
 class Compose(object):
@@ -721,35 +721,10 @@ class RandomErasing(object):
         self.sl = sl
         self.sh = sh
         self.r1 = r1
-        self.imagenet_mean_value = [0.485, 0.456, 0.406]
         self.value = value
 
     def __call__(self, img):
 
-        if random.uniform(0, 1) > self.probability:
-            return img
-        while True:
-            area = img.size()[1] * img.size()[2]
-
-            target_area = random.uniform(self.sl, self.sh) * area
-            aspect_ratio = random.uniform(self.r1, 1 / self.r1)
-
-            h = int(round(math.sqrt(target_area * aspect_ratio)))
-            w = int(round(math.sqrt(target_area / aspect_ratio)))
-
-            if w <= img.size()[2] and h <= img.size()[1]:
-                x1 = random.randint(0, img.size()[1] - h)
-                y1 = random.randint(0, img.size()[2] - w)
-                if img.size()[0] == 3:
-                    if self.value == 0:
-                        img[:, x1:x1 + h, y1:y1 + w] = torch.from_numpy(np.random.rand(3, h, w))
-                    else:
-                        img[0, x1:x1 + h, y1:y1 + w] = self.imagenet_mean_value[0]
-                        img[1, x1:x1 + h, y1:y1 + w] = self.imagenet_mean_value[1]
-                        img[2, x1:x1 + h, y1:y1 + w] = self.imagenet_mean_value[2]
-                else:
-                    if self.value == 0:
-                        img[:, x1:x1 + h, y1:y1 + w] = torch.from_numpy(np.random.rand(1, h, w))
-                    else:
-                        img[0, x1:x1 + h, y1:y1 + w] = self.imagenet_mean_value[0]
-                return img
+        if random.uniform(0, 1) < self.probability:
+            return F.random_erasing(img, probability=self.probability, sl=self.sl, sh=self.sh, r1=self.r1, value=self.value)
+        return img
