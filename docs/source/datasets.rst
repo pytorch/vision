@@ -30,6 +30,11 @@ MNIST
 
 .. autoclass:: MNIST
 
+CORe50
+~~~~~~
+
+.. autoclass:: CORE50
+
 COCO
 ~~~~
 
@@ -95,7 +100,7 @@ STL10
   :special-members:
 
 SVHN
-~~~~~
+~~~~
 
 
 .. autoclass:: SVHN

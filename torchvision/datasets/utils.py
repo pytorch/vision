@@ -2,6 +2,8 @@ import os
 import os.path
 import hashlib
 import errno
+import sys
+import time
 
 
 def check_integrity(fpath, md5):
@@ -16,6 +18,20 @@ def check_integrity(fpath, md5):
     if md5c != md5:
         return False
     return True
+
+
+def reporthook(count, block_size, total_size):
+    global start_time
+    if count == 0:
+        start_time = time.time()
+        return
+    duration = time.time() - start_time
+    progress_size = int(count * block_size)
+    speed = int(progress_size / (1024 * duration))
+    percent = min(int(count * block_size * 100 / total_size), 100)
+    sys.stdout.write("\r...%d%%, %d MB, %d KB/s, %d seconds passed" %
+                    (percent, progress_size / (1024 * 1024), speed, duration))
+    sys.stdout.flush()
 
 
 def download_url(url, root, filename, md5):
@@ -37,4 +53,4 @@ def download_url(url, root, filename, md5):
         print('Using downloaded and verified file: ' + fpath)
     else:
         print('Downloading ' + url + ' to ' + fpath)
-        urllib.request.urlretrieve(url, fpath)
+        urllib.request.urlretrieve(url, fpath, reporthook)
