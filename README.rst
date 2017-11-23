@@ -44,6 +44,7 @@ Datasets
 The following dataset loaders are available:
 
 -  `MNIST and FashionMNIST <#mnist>`__
+-  `CORe50 (Continuous Learning and Object Recognition) <#core50>`__
 -  `COCO (Captioning and Detection) <#coco>`__
 -  `LSUN Classification <#lsun>`__
 -  `ImageFolder <#imagefolder>`__
@@ -89,6 +90,31 @@ MNIST
 
 ``download``: whether to download the MNIST data
 
+CORe50
+~~~~~~
+``dset.CORE50(self, root, check_integrity=True, scenario="ni", train=True, img_size="128x128", run=0, batch=7, cumul=True, transform=None, target_transform=None, download=False)``
+
+Example:
+
+.. code:: python
+
+    training_data = datasets.CORE50(
+        '~/data/core50', transform=transforms.ToTensor(), download=True
+    )
+    training_loader = torch.utils.data.DataLoader(
+        training_data, batch_size=128, shuffle=True, num_workers=4
+    )
+    test_data = datasets.CORE50(
+        '~/data/core50', transform=transforms.ToTensor(), train=False,
+        download=True
+    )
+    test_loader = torch.utils.data.DataLoader(
+        training_data, batch_size=128, shuffle=True, num_workers=4
+    )
+
+    for batch in training_loader:
+        imgs, labels = batch
+        ...
 
 COCO
 ~~~~
