@@ -341,8 +341,7 @@ class RandomResizedCrop(object):
         self.scale = scale
         self.ratio = ratio
 
-    @staticmethod
-    def get_params(img):
+    def get_params(self, img):
         """Get parameters for ``crop`` for a random sized crop.
 
         Args:
