@@ -323,19 +323,23 @@ class RandomVerticalFlip(object):
 class RandomResizedCrop(object):
     """Crop the given PIL Image to random size and aspect ratio.
 
-    A crop of random size of (0.08 to 1.0) of the original size and a random
-    aspect ratio of 3/4 to 4/3 of the original aspect ratio is made. This crop
+    A crop of random size (default: of 0.08 to 1.0) of the original size and a random
+    aspect ratio (default: of 3/4 to 4/3) of the original aspect ratio is made. This crop
     is finally resized to given size.
     This is popularly used to train the Inception networks.
 
     Args:
         size: expected output size of each edge
+        scale: range of size of the origin size cropped
+        ratio: range of aspect ratio of the origin aspect ratio cropped
         interpolation: Default: PIL.Image.BILINEAR
     """
 
-    def __init__(self, size, interpolation=Image.BILINEAR):
+    def __init__(self, size, scale=(0.08, 1.0), ratio=(3./4., 4./3.), interpolation=Image.BILINEAR):
         self.size = (size, size)
         self.interpolation = interpolation
+        self.scale = scale
+        self.ratio = ratio
 
     @staticmethod
     def get_params(img):
@@ -350,8 +354,8 @@ class RandomResizedCrop(object):
         """
         for attempt in range(10):
             area = img.size[0] * img.size[1]
-            target_area = random.uniform(0.08, 1.0) * area
-            aspect_ratio = random.uniform(3. / 4, 4. / 3)
+            target_area = random.uniform(*self.scale) * area
+            aspect_ratio = random.uniform(*self.ratio)
 
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
