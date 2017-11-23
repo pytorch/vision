@@ -92,6 +92,7 @@ MNIST
 
 CORe50
 ~~~~~~
+
 ``dset.CORE50(self, root, check_integrity=True, scenario="ni", train=True, img_size="128x128", run=0, batch=7, cumul=True, transform=None, target_transform=None, download=False)``
 
 Example:
