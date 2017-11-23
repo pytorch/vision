@@ -52,5 +52,12 @@ def download_url(url, root, filename, md5):
     if os.path.isfile(fpath) and check_integrity(fpath, md5):
         print('Using downloaded and verified file: ' + fpath)
     else:
-        print('Downloading ' + url + ' to ' + fpath)
-        urllib.request.urlretrieve(url, fpath, reporthook)
+        try:
+            print('Downloading ' + url + ' to ' + fpath)
+            urllib.request.urlretrieve(url, fpath, reporthook)
+        except:
+            if url[:5] == 'https':
+                url = url.replace('https:', 'http:')
+                print('Failed download. Trying https -> http instead.'
+                      ' Downloading ' + url + ' to ' + fpath)
+                urllib.request.urlretrieve(url, fpath, reporthook)

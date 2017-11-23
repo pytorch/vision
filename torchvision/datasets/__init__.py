@@ -8,9 +8,10 @@ from .mnist import MNIST, FashionMNIST
 from .svhn import SVHN
 from .phototour import PhotoTour
 from .fakedata import FakeData
+from .semeion import SEMEION
 
 __all__ = ('CORE50', 'LSUN', 'LSUNClass',
            'ImageFolder', 'FakeData',
            'CocoCaptions', 'CocoDetection',
            'CIFAR10', 'CIFAR100', 'FashionMNIST',
-           'MNIST', 'STL10', 'SVHN', 'PhotoTour')
+           'MNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION')

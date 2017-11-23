@@ -1,5 +1,6 @@
 import torch
 import torchvision.transforms as transforms
+import torchvision.transforms.functional as F
 import unittest
 import random
 import numpy as np
@@ -13,7 +14,6 @@ try:
     from scipy import stats
 except ImportError:
     stats = None
-
 
 GRACE_HOPPER = 'assets/grace_hopper_517x606.jpg'
 
@@ -347,7 +347,7 @@ class Tester(unittest.TestCase):
                 assert img.mode == mode
             split = img.split()
             for i in range(3):
-                assert np.allclose(expected_output[i].numpy(), transforms.to_tensor(split[i]).numpy())
+                assert np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy())
 
         img_data = torch.Tensor(3, 4, 4).uniform_()
         expected_output = img_data.mul(255).int().float().div(255)
@@ -391,7 +391,7 @@ class Tester(unittest.TestCase):
 
             split = img.split()
             for i in range(4):
-                assert np.allclose(expected_output[i].numpy(), transforms.to_tensor(split[i]).numpy())
+                assert np.allclose(expected_output[i].numpy(), F.to_tensor(split[i]).numpy())
 
         img_data = torch.Tensor(4, 4, 4).uniform_()
         expected_output = img_data.mul(255).int().float().div(255)
@@ -491,19 +491,19 @@ class Tester(unittest.TestCase):
         x_pil = Image.fromarray(x_np, mode='RGB')
 
         # test 0
-        y_pil = transforms.adjust_brightness(x_pil, 1)
+        y_pil = F.adjust_brightness(x_pil, 1)
         y_np = np.array(y_pil)
         assert np.allclose(y_np, x_np)
 
         # test 1
-        y_pil = transforms.adjust_brightness(x_pil, 0.5)
+        y_pil = F.adjust_brightness(x_pil, 0.5)
         y_np = np.array(y_pil)
         y_ans = [0, 2, 6, 27, 67, 113, 18, 4, 117, 45, 127, 0]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         assert np.allclose(y_np, y_ans)
 
         # test 2
-        y_pil = transforms.adjust_brightness(x_pil, 2)
+        y_pil = F.adjust_brightness(x_pil, 2)
         y_np = np.array(y_pil)
         y_ans = [0, 10, 26, 108, 255, 255, 74, 16, 255, 180, 255, 2]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
@@ -516,19 +516,19 @@ class Tester(unittest.TestCase):
         x_pil = Image.fromarray(x_np, mode='RGB')
 
         # test 0
-        y_pil = transforms.adjust_contrast(x_pil, 1)
+        y_pil = F.adjust_contrast(x_pil, 1)
         y_np = np.array(y_pil)
         assert np.allclose(y_np, x_np)
 
         # test 1
-        y_pil = transforms.adjust_contrast(x_pil, 0.5)
+        y_pil = F.adjust_contrast(x_pil, 0.5)
         y_np = np.array(y_pil)
         y_ans = [43, 45, 49, 70, 110, 156, 61, 47, 160, 88, 170, 43]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         assert np.allclose(y_np, y_ans)
 
         # test 2
-        y_pil = transforms.adjust_contrast(x_pil, 2)
+        y_pil = F.adjust_contrast(x_pil, 2)
         y_np = np.array(y_pil)
         y_ans = [0, 0, 0, 22, 184, 255, 0, 0, 255, 94, 255, 0]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
@@ -541,19 +541,19 @@ class Tester(unittest.TestCase):
         x_pil = Image.fromarray(x_np, mode='RGB')
 
         # test 0
-        y_pil = transforms.adjust_saturation(x_pil, 1)
+        y_pil = F.adjust_saturation(x_pil, 1)
         y_np = np.array(y_pil)
         assert np.allclose(y_np, x_np)
 
         # test 1
-        y_pil = transforms.adjust_saturation(x_pil, 0.5)
+        y_pil = F.adjust_saturation(x_pil, 0.5)
         y_np = np.array(y_pil)
         y_ans = [2, 4, 8, 87, 128, 173, 39, 25, 138, 133, 215, 88]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         assert np.allclose(y_np, y_ans)
 
         # test 2
-        y_pil = transforms.adjust_saturation(x_pil, 2)
+        y_pil = F.adjust_saturation(x_pil, 2)
         y_np = np.array(y_pil)
         y_ans = [0, 6, 22, 0, 149, 255, 32, 0, 255, 4, 255, 0]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
@@ -566,26 +566,26 @@ class Tester(unittest.TestCase):
         x_pil = Image.fromarray(x_np, mode='RGB')
 
         with self.assertRaises(ValueError):
-            transforms.adjust_hue(x_pil, -0.7)
-            transforms.adjust_hue(x_pil, 1)
+            F.adjust_hue(x_pil, -0.7)
+            F.adjust_hue(x_pil, 1)
 
         # test 0: almost same as x_data but not exact.
         # probably because hsv <-> rgb floating point ops
-        y_pil = transforms.adjust_hue(x_pil, 0)
+        y_pil = F.adjust_hue(x_pil, 0)
         y_np = np.array(y_pil)
         y_ans = [0, 5, 13, 54, 139, 226, 35, 8, 234, 91, 255, 1]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         assert np.allclose(y_np, y_ans)
 
         # test 1
-        y_pil = transforms.adjust_hue(x_pil, 0.25)
+        y_pil = F.adjust_hue(x_pil, 0.25)
         y_np = np.array(y_pil)
         y_ans = [13, 0, 12, 224, 54, 226, 234, 8, 99, 1, 222, 255]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         assert np.allclose(y_np, y_ans)
 
         # test 2
-        y_pil = transforms.adjust_hue(x_pil, -0.25)
+        y_pil = F.adjust_hue(x_pil, -0.25)
         y_np = np.array(y_pil)
         y_ans = [0, 13, 2, 54, 226, 58, 8, 234, 152, 255, 43, 1]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
@@ -598,19 +598,19 @@ class Tester(unittest.TestCase):
         x_pil = Image.fromarray(x_np, mode='RGB')
 
         # test 0
-        y_pil = transforms.adjust_gamma(x_pil, 1)
+        y_pil = F.adjust_gamma(x_pil, 1)
         y_np = np.array(y_pil)
         assert np.allclose(y_np, x_np)
 
         # test 1
-        y_pil = transforms.adjust_gamma(x_pil, 0.5)
+        y_pil = F.adjust_gamma(x_pil, 0.5)
         y_np = np.array(y_pil)
         y_ans = [0, 35, 57, 117, 185, 240, 97, 45, 244, 151, 255, 15]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         assert np.allclose(y_np, y_ans)
 
         # test 2
-        y_pil = transforms.adjust_gamma(x_pil, 2)
+        y_pil = F.adjust_gamma(x_pil, 2)
         y_np = np.array(y_pil)
         y_ans = [0, 0, 0, 11, 71, 200, 5, 0, 214, 31, 255, 0]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
@@ -623,11 +623,11 @@ class Tester(unittest.TestCase):
         x_rgb = Image.fromarray(x_np, mode='RGB')
 
         x_l = x_rgb.convert('L')
-        assert transforms.adjust_brightness(x_l, 2).mode == 'L'
-        assert transforms.adjust_saturation(x_l, 2).mode == 'L'
-        assert transforms.adjust_contrast(x_l, 2).mode == 'L'
-        assert transforms.adjust_hue(x_l, 0.4).mode == 'L'
-        assert transforms.adjust_gamma(x_l, 0.5).mode == 'L'
+        assert F.adjust_brightness(x_l, 2).mode == 'L'
+        assert F.adjust_saturation(x_l, 2).mode == 'L'
+        assert F.adjust_contrast(x_l, 2).mode == 'L'
+        assert F.adjust_hue(x_l, 0.4).mode == 'L'
+        assert F.adjust_gamma(x_l, 0.5).mode == 'L'
 
     def test_color_jitter(self):
         color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
@@ -663,6 +663,193 @@ class Tester(unittest.TestCase):
         xwhite = xwhite.view(1, 300).numpy()
         cov = np.dot(xwhite, xwhite.T) / x.size(0)
         assert np.allclose(cov, np.identity(1), rtol=1e-3)
+
+    def test_rotate(self):
+        x = np.zeros((100, 100, 3), dtype=np.uint8)
+        x[40, 40] = [255, 255, 255]
+
+        with self.assertRaises(TypeError):
+            F.rotate(x, 10)
+
+        img = F.to_pil_image(x)
+
+        result = F.rotate(img, 45)
+        assert result.size == (100, 100)
+        r, c, ch = np.where(result)
+        assert all(x in r for x in [49, 50])
+        assert all(x in c for x in [36])
+        assert all(x in ch for x in [0, 1, 2])
+
+        result = F.rotate(img, 45, expand=True)
+        assert result.size == (142, 142)
+        r, c, ch = np.where(result)
+        assert all(x in r for x in [70, 71])
+        assert all(x in c for x in [57])
+        assert all(x in ch for x in [0, 1, 2])
+
+        result = F.rotate(img, 45, center=(40, 40))
+        assert result.size == (100, 100)
+        r, c, ch = np.where(result)
+        assert all(x in r for x in [40])
+        assert all(x in c for x in [40])
+        assert all(x in ch for x in [0, 1, 2])
+
+        result_a = F.rotate(img, 90)
+        result_b = F.rotate(img, -270)
+
+        assert np.all(np.array(result_a) == np.array(result_b))
+
+    def test_random_rotation(self):
+
+        with self.assertRaises(ValueError):
+            transforms.RandomRotation(-0.7)
+            transforms.RandomRotation([-0.7])
+            transforms.RandomRotation([-0.7, 0, 0.7])
+
+        t = transforms.RandomRotation(10)
+        angle = t.get_params(t.degrees)
+        assert angle > -10 and angle < 10
+
+        t = transforms.RandomRotation((-10, 10))
+        angle = t.get_params(t.degrees)
+        assert angle > -10 and angle < 10
+
+    def test_to_grayscale(self):
+        """Unit tests for grayscale transform"""
+
+        x_shape = [2, 2, 3]
+        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+        x_pil = Image.fromarray(x_np, mode='RGB')
+        x_pil_2 = x_pil.convert('L')
+        gray_np = np.array(x_pil_2)
+
+        # Test Set: Grayscale an image with desired number of output channels
+        # Case 1: RGB -> 1 channel grayscale
+        trans1 = transforms.Grayscale(num_output_channels=1)
+        gray_pil_1 = trans1(x_pil)
+        gray_np_1 = np.array(gray_pil_1)
+        assert gray_pil_1.mode == 'L', 'mode should be L'
+        assert gray_np_1.shape == tuple(x_shape[0:2]), 'should be 1 channel'
+        np.testing.assert_equal(gray_np, gray_np_1)
+
+        # Case 2: RGB -> 3 channel grayscale
+        trans2 = transforms.Grayscale(num_output_channels=3)
+        gray_pil_2 = trans2(x_pil)
+        gray_np_2 = np.array(gray_pil_2)
+        assert gray_pil_2.mode == 'RGB', 'mode should be RGB'
+        assert gray_np_2.shape == tuple(x_shape), 'should be 3 channel'
+        np.testing.assert_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
+        np.testing.assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
+        np.testing.assert_equal(gray_np, gray_np_2[:, :, 0])
+
+        # Case 3: 1 channel grayscale -> 1 channel grayscale
+        trans3 = transforms.Grayscale(num_output_channels=1)
+        gray_pil_3 = trans3(x_pil_2)
+        gray_np_3 = np.array(gray_pil_3)
+        assert gray_pil_3.mode == 'L', 'mode should be L'
+        assert gray_np_3.shape == tuple(x_shape[0:2]), 'should be 1 channel'
+        np.testing.assert_equal(gray_np, gray_np_3)
+
+        # Case 4: 1 channel grayscale -> 3 channel grayscale
+        trans4 = transforms.Grayscale(num_output_channels=3)
+        gray_pil_4 = trans4(x_pil_2)
+        gray_np_4 = np.array(gray_pil_4)
+        assert gray_pil_4.mode == 'RGB', 'mode should be RGB'
+        assert gray_np_4.shape == tuple(x_shape), 'should be 3 channel'
+        np.testing.assert_equal(gray_np_4[:, :, 0], gray_np_4[:, :, 1])
+        np.testing.assert_equal(gray_np_4[:, :, 1], gray_np_4[:, :, 2])
+        np.testing.assert_equal(gray_np, gray_np_4[:, :, 0])
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_grayscale(self):
+        """Unit tests for random grayscale transform"""
+
+        # Test Set 1: RGB -> 3 channel grayscale
+        random_state = random.getstate()
+        random.seed(42)
+        x_shape = [2, 2, 3]
+        x_np = np.random.randint(0, 256, x_shape, np.uint8)
+        x_pil = Image.fromarray(x_np, mode='RGB')
+        x_pil_2 = x_pil.convert('L')
+        gray_np = np.array(x_pil_2)
+
+        num_samples = 250
+        num_gray = 0
+        for _ in range(num_samples):
+            gray_pil_2 = transforms.RandomGrayscale(p=0.5)(x_pil)
+            gray_np_2 = np.array(gray_pil_2)
+            if np.array_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1]) and \
+               np.array_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2]) and \
+               np.array_equal(gray_np, gray_np_2[:, :, 0]):
+                num_gray = num_gray + 1
+
+        p_value = stats.binom_test(num_gray, num_samples, p=0.5)
+        random.setstate(random_state)
+        assert p_value > 0.0001
+
+        # Test Set 2: grayscale -> 1 channel grayscale
+        random_state = random.getstate()
+        random.seed(42)
+        x_shape = [2, 2, 3]
+        x_np = np.random.randint(0, 256, x_shape, np.uint8)
+        x_pil = Image.fromarray(x_np, mode='RGB')
+        x_pil_2 = x_pil.convert('L')
+        gray_np = np.array(x_pil_2)
+
+        num_samples = 250
+        num_gray = 0
+        for _ in range(num_samples):
+            gray_pil_3 = transforms.RandomGrayscale(p=0.5)(x_pil_2)
+            gray_np_3 = np.array(gray_pil_3)
+            if np.array_equal(gray_np, gray_np_3):
+                num_gray = num_gray + 1
+
+        p_value = stats.binom_test(num_gray, num_samples, p=1.0)  # Note: grayscale is always unchanged
+        random.setstate(random_state)
+        assert p_value > 0.0001
+
+        # Test set 3: Explicit tests
+        x_shape = [2, 2, 3]
+        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+        x_pil = Image.fromarray(x_np, mode='RGB')
+        x_pil_2 = x_pil.convert('L')
+        gray_np = np.array(x_pil_2)
+
+        # Case 3a: RGB -> 3 channel grayscale (grayscaled)
+        trans2 = transforms.RandomGrayscale(p=1.0)
+        gray_pil_2 = trans2(x_pil)
+        gray_np_2 = np.array(gray_pil_2)
+        assert gray_pil_2.mode == 'RGB', 'mode should be RGB'
+        assert gray_np_2.shape == tuple(x_shape), 'should be 3 channel'
+        np.testing.assert_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1])
+        np.testing.assert_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2])
+        np.testing.assert_equal(gray_np, gray_np_2[:, :, 0])
+
+        # Case 3b: RGB -> 3 channel grayscale (unchanged)
+        trans2 = transforms.RandomGrayscale(p=0.0)
+        gray_pil_2 = trans2(x_pil)
+        gray_np_2 = np.array(gray_pil_2)
+        assert gray_pil_2.mode == 'RGB', 'mode should be RGB'
+        assert gray_np_2.shape == tuple(x_shape), 'should be 3 channel'
+        np.testing.assert_equal(x_np, gray_np_2)
+
+        # Case 3c: 1 channel grayscale -> 1 channel grayscale (grayscaled)
+        trans3 = transforms.RandomGrayscale(p=1.0)
+        gray_pil_3 = trans3(x_pil_2)
+        gray_np_3 = np.array(gray_pil_3)
+        assert gray_pil_3.mode == 'L', 'mode should be L'
+        assert gray_np_3.shape == tuple(x_shape[0:2]), 'should be 1 channel'
+        np.testing.assert_equal(gray_np, gray_np_3)
+
+        # Case 3d: 1 channel grayscale -> 1 channel grayscale (unchanged)
+        trans3 = transforms.RandomGrayscale(p=0.0)
+        gray_pil_3 = trans3(x_pil_2)
+        gray_np_3 = np.array(gray_pil_3)
+        assert gray_pil_3.mode == 'L', 'mode should be L'
+        assert gray_np_3.shape == tuple(x_shape[0:2]), 'should be 1 channel'
+        np.testing.assert_equal(gray_np, gray_np_3)
 
 
 if __name__ == '__main__':
