@@ -167,7 +167,8 @@ class CIFAR100(CIFAR10):
     def __init__(self, root, train=True,
                  transform=None, target_transform=None,
                  download=False, include_coarse=False):
+        self.label_keys = ['fine_labels']
         if include_coarse:
-            self.label_keys = ['fine_labels', 'coarse_labels']
+            self.label_keys.append('coarse_labels')
         super(CIFAR100, self).__init__(root=root, train=train, transform=transform,
                                        target_transform=target_transform, download=download)
