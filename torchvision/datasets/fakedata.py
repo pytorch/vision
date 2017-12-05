@@ -19,7 +19,8 @@ class FakeData(data.Dataset):
 
     """
 
-    def __init__(self, size=1000, image_size=(3, 224, 224), num_classes=10, transform=None, target_transform=None, random_offset=0):
+    def __init__(self, size=1000, image_size=(3, 224, 224), num_classes=10,
+                 transform=None, target_transform=None, random_offset=0):
         self.size = size
         self.num_classes = num_classes
         self.image_size = image_size
