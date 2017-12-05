@@ -188,7 +188,7 @@ class EMNIST(MNIST):
 
     def __init__(self, root, split, **kwargs):
         if split not in self.splits:
-            raise RuntimeError('Split "{}" not found. Valid splits are: {}'.format(
+            raise ValueError('Split "{}" not found. Valid splits are: {}'.format(
                 split, ', '.join(self.splits),
             ))
         self.split = split
