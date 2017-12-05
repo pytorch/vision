@@ -13,7 +13,7 @@ Anaconda:
 
 .. code:: bash
 
-    conda install torchvision -c soumith
+    conda install torchvision -c pytorch
 
 pip:
 
