@@ -890,5 +890,25 @@ class Tester(unittest.TestCase):
         np.testing.assert_equal(r, 50)
         np.testing.assert_equal(c, 30)        
 
+    def test_random_translation(self):
+
+        with self.assertRaises(ValueError):
+            transforms.RandomTranslation(horizontal=-10)
+            transforms.RandomTranslation(horizontal=[-10])
+            transforms.RandomTranslation(horizontal=[-10, 0, 10])
+            transforms.RandomTranslation(vertical=-10)
+            transforms.RandomTranslation(vertical=[-10])
+            transforms.RandomTranslation(vertical=[-10, 0, 10])            
+
+        t = transforms.RandomTranslation(horizontal=10, vertical=10)
+        h, v = t.get_params(t.horizontal, t.vertical)
+        assert h > -10 and h < 10
+        assert v > -10 and v < 10
+
+        t = transforms.RandomTranslation(horizontal=(-10, 10), vertical=(-10,10))
+        h, v = t.get_params(t.horizontal, t.vertical)
+        assert h > -10 and h < 10
+        assert v > -10 and v < 10
+
 if __name__ == '__main__':
     unittest.main()
