@@ -851,6 +851,44 @@ class Tester(unittest.TestCase):
         assert gray_np_3.shape == tuple(x_shape[0:2]), 'should be 1 channel'
         np.testing.assert_equal(gray_np, gray_np_3)
 
+    def test_translate(self):
+        x = np.zeros((100, 100), dtype=np.uint8)
+        x[40, 40] = 255
+
+        with self.assertRaises(TypeError):
+            F.translate(x, horizontal=10)
+
+        img = F.to_pil_image(x)
+
+        result = F.translate(img, horizontal=10)
+        assert result.size == (100, 100)
+        r, c = np.where(result)
+        np.testing.assert_equal(r, 40)
+        np.testing.assert_equal(c, 30)
+
+        result = F.translate(img, horizontal=-10)
+        assert result.size == (100, 100)
+        r, c = np.where(result)
+        np.testing.assert_equal(r, 40)
+        np.testing.assert_equal(c, 50)
+
+        result = F.translate(img, vertical=10)
+        assert result.size == (100, 100)
+        r, c = np.where(result)
+        np.testing.assert_equal(r, 30)
+        np.testing.assert_equal(c, 40)
+
+        result = F.translate(img, vertical=-10)
+        assert result.size == (100, 100)
+        r, c = np.where(result)
+        np.testing.assert_equal(r, 50)
+        np.testing.assert_equal(c, 40)
+
+        result = F.translate(img, horizontal=10, vertical=-10)
+        assert result.size == (100, 100)
+        r, c = np.where(result)
+        np.testing.assert_equal(r, 30)
+        np.testing.assert_equal(c, 50)        
 
 if __name__ == '__main__':
     unittest.main()
