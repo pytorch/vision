@@ -577,3 +577,20 @@ def to_grayscale(img, num_output_channels=1):
         raise ValueError('num_output_channels should be either 1 or 3')
 
     return img
+
+def translate(img, horizontal=0, vertical=0):
+    """Translate the img by horizontal and vertical pixels.
+
+    Args:
+        img (PIL Image): PIL Image to be rotated.
+        horizontal (int): Number of horizontal pixels to translate.
+            If horizontal > 0, img will be translated LEFT.
+            If horizontal < 0, img will be translated RIGHT.
+        vertical (int): Number of vertical pixels to translate.
+            If vertical > 0, img will be translated UP.
+            If vertical < 0, img will be translated DOWN.            
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    return img.transform(img.size, Image.AFFINE, (1, 0, horizontal, 0, 1, vertical))

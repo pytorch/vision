@@ -852,7 +852,7 @@ class Tester(unittest.TestCase):
         np.testing.assert_equal(gray_np, gray_np_3)
 
     def test_translate(self):
-        x = np.zeros((100, 100), dtype=np.uint8)
+        x = np.zeros((100, 100, 1), dtype=np.uint8)
         x[40, 40] = 255
 
         with self.assertRaises(TypeError):
@@ -887,8 +887,8 @@ class Tester(unittest.TestCase):
         result = F.translate(img, horizontal=10, vertical=-10)
         assert result.size == (100, 100)
         r, c = np.where(result)
-        np.testing.assert_equal(r, 30)
-        np.testing.assert_equal(c, 50)        
+        np.testing.assert_equal(r, 50)
+        np.testing.assert_equal(c, 30)        
 
 if __name__ == '__main__':
     unittest.main()
