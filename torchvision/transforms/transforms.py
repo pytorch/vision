@@ -18,7 +18,7 @@ from . import functional as F
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomCrop", "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop",
            "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation", "ColorJitter", "RandomRotation",
-           "Grayscale", "RandomGrayscale"]
+           "Grayscale", "RandomGrayscale", "RandomTranslation"]
 
 
 class Compose(object):
@@ -693,3 +693,63 @@ class RandomGrayscale(object):
         if random.random() < self.p:
             return F.to_grayscale(img, num_output_channels=num_output_channels)
         return img
+
+
+class RandomTranslation(object):
+    """Tanslate the image horizontally and vertically.
+
+    Args:
+        horizontal (sequence or int): Range of horizontal pixels to select from.
+            If horizontal is a number instead of sequence like (min, max), the range of pixels
+            will be (-horizontal, +horizontal).
+            If horizontal > 0, img will be translated LEFT.
+            If horizontal < 0, img will be translated RIGHT.
+        vertical (sequence or int): Range of vertical pixels to select from.
+            If vertical is a number instead of sequence like (min, max), the range of pixels
+            will be (-vertical, +vertical).
+            If vertical > 0, img will be translated UP.
+            If vertical < 0, img will be translated DOWN.
+    """
+
+    def __init__(self, horizontal=0, vertical=0):
+        if isinstance(horizontal, numbers.Number):
+            if horizontal < 0:
+                raise ValueError("If horizontal is a single number, it must be positive.")
+            self.horizontal = (-horizontal, horizontal)
+        else:
+            if len(horizontal) != 2:
+                raise ValueError("If horizontal is a sequence, it must be of len 2.")
+            self.horizontal = horizontal
+
+        if isinstance(vertical, numbers.Number):
+            if vertical < 0:
+                raise ValueError("If vertical is a single number, it must be positive.")
+            self.vertical = (-vertical, vertical)
+        else:
+            if len(vertical) != 2:
+                raise ValueError("If vertical is a sequence, it must be of len 2.")
+            self.vertical = vertical
+
+    @staticmethod
+    def get_params(horizontal, vertical):
+        """Get parameters for ``translate`` for a random translation.
+
+        Returns:
+            h, v: params to be passed to ``translate`` for random translation.
+        """
+        h = np.random.uniform(horizontal[0], horizontal[1])
+        v = np.random.uniform(vertical[0], vertical[1])
+
+        return h, v
+
+    def __call__(self, img):
+        """
+            img (PIL Image): Image to be rotated.
+
+        Returns:
+            PIL Image: Rotated image.
+        """
+
+        h, v = self.get_params(self.horizontal, self.vertical)
+
+        return F.translate(img, h, v)

@@ -888,7 +888,7 @@ class Tester(unittest.TestCase):
         assert result.size == (100, 100)
         r, c = np.where(result)
         np.testing.assert_equal(r, 50)
-        np.testing.assert_equal(c, 30)        
+        np.testing.assert_equal(c, 30)
 
     def test_random_translation(self):
 
@@ -898,14 +898,14 @@ class Tester(unittest.TestCase):
             transforms.RandomTranslation(horizontal=[-10, 0, 10])
             transforms.RandomTranslation(vertical=-10)
             transforms.RandomTranslation(vertical=[-10])
-            transforms.RandomTranslation(vertical=[-10, 0, 10])            
+            transforms.RandomTranslation(vertical=[-10, 0, 10])
 
         t = transforms.RandomTranslation(horizontal=10, vertical=10)
         h, v = t.get_params(t.horizontal, t.vertical)
         assert h > -10 and h < 10
         assert v > -10 and v < 10
 
-        t = transforms.RandomTranslation(horizontal=(-10, 10), vertical=(-10,10))
+        t = transforms.RandomTranslation(horizontal=(-10, 10), vertical=(-10, 10))
         h, v = t.get_params(t.horizontal, t.vertical)
         assert h > -10 and h < 10
         assert v > -10 and v < 10

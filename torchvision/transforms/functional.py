@@ -578,6 +578,7 @@ def to_grayscale(img, num_output_channels=1):
 
     return img
 
+
 def translate(img, horizontal=0, vertical=0):
     """Translate the img by horizontal and vertical pixels.
 
@@ -588,7 +589,7 @@ def translate(img, horizontal=0, vertical=0):
             If horizontal < 0, img will be translated RIGHT.
         vertical (int): Number of vertical pixels to translate.
             If vertical > 0, img will be translated UP.
-            If vertical < 0, img will be translated DOWN.            
+            If vertical < 0, img will be translated DOWN.
     """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
