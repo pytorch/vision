@@ -694,7 +694,6 @@ class RandomErasing(object):
         or the Imagenet mean pixel value.
         'Random Erasing Data Augmentation' by Zhong et al.
         See https://arxiv.org/pdf/1708.04896.pdf
-
     Args:
          probability: The probability that the Random Erasing operation will be performed.
          sl: Minimum proportion of erased area against input image.
@@ -703,10 +702,8 @@ class RandomErasing(object):
          values: Type of erasing value.
                  If values = 0, erasing with random values,
                  else, erasing with the Imagenet mean pixel value.
-
     Returns:
         Erased Image.
-
     Examples:
         >>> transform = transforms.Compose([
         >>> transforms.RandomHorizontalFlip(),
@@ -723,8 +720,37 @@ class RandomErasing(object):
         self.r1 = r1
         self.value = value
 
-    def __call__(self, img):
+    @staticmethod
+    def get_params(img, sl=0.02, sh=0.4, r1=0.3):
+        """Get parameters for ``erase`` for a random erasing.
+        Args:
+            img (Tensor): Image to be erased.
+            output_size (tuple): Expected output size of the erase.
+        Returns:
+            tuple: params (x, y, h, w) to be passed to ``erase`` for random erasing.
+        """
+        while True:
+            area = img.size()[1] * img.size()[2]
 
+            target_area = random.uniform(sl, sh) * area
+            aspect_ratio = random.uniform(r1, 1 / r1)
+
+            h = int(round(math.sqrt(target_area * aspect_ratio)))
+            w = int(round(math.sqrt(target_area / aspect_ratio)))
+
+            if w < img.size()[2] and h < img.size()[1]:
+                x = random.randint(0, img.size()[1] - h)
+                y = random.randint(0, img.size()[2] - w)
+                return x, y, h, w
+
+    def __call__(self, img):
+        """
+        Args:
+            img (Tensor): Image to be erased.
+        Returns:
+            Image (Tensor): Erased image.
+        """
         if random.uniform(0, 1) < self.probability:
-            return F.random_erasing(img, sl=self.sl, sh=self.sh, r1=self.r1, value=self.value)
+            x, y, h, w = self.get_params(img, sl=self.sl, sh=self.sh, r1=self.r1)
+            return F.erase(img, x, y, h, w, self.value)
         return img
