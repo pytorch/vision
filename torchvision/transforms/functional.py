@@ -579,46 +579,36 @@ def to_grayscale(img, num_output_channels=1):
     return img
 
 
-def random_erasing(img, sl=0.02, sh=0.4, r1=0.3, value=0):
-    """ Randomly selects a rectangle region in an image and erases its pixels with random values,
+def erase(img, x, y, w, h, value=0):
+    """ Erase the given Image with random values,
         or the Imagenet mean pixel value.
         'Random Erasing Data Augmentation' by Zhong et al.
         See https://arxiv.org/pdf/1708.04896.pdf
 
     Args:
-         sl: Minimum proportion of erased area against input image.
-         sh: Maximum proportion of erased area against input image.
-         r1: Minimum aspect ratio of erased area.
-         values: Type of erasing value.
-                 If values = 0, erasing with random values,
-                 else, erasing with the Imagenet mean pixel value.
+        img (Tensor): Image to be erased.
+        x: Upper pixel coordinate.
+        y: Left pixel coordinate.
+        w: Width of the erased image.
+        h: Height of the erased image.
+        values: Type of erasing value.
+                If values = 0, erasing with random values,
+                else, erasing with the Imagenet mean pixel value.
 
     Returns:
         Erased Image.
     """
     imagenet_mean_value = [0.485, 0.456, 0.406]
-    while True:
-        area = img.size()[1] * img.size()[2]
-
-        target_area = random.uniform(sl, sh) * area
-        aspect_ratio = random.uniform(r1, 1 / r1)
-
-        h = int(round(math.sqrt(target_area * aspect_ratio)))
-        w = int(round(math.sqrt(target_area / aspect_ratio)))
-
-        if w <= img.size()[2] and h <= img.size()[1]:
-            x1 = random.randint(0, img.size()[1] - h)
-            y1 = random.randint(0, img.size()[2] - w)
-            if img.size()[0] == 3:
-                if value == 0:
-                    img[:, x1:x1 + h, y1:y1 + w] = torch.from_numpy(np.random.rand(3, h, w))
-                else:
-                    img[0, x1:x1 + h, y1:y1 + w] = imagenet_mean_value[0]
-                    img[1, x1:x1 + h, y1:y1 + w] = imagenet_mean_value[1]
-                    img[2, x1:x1 + h, y1:y1 + w] = imagenet_mean_value[2]
-            else:
-                if value == 0:
-                    img[:, x1:x1 + h, y1:y1 + w] = torch.from_numpy(np.random.rand(1, h, w))
-                else:
-                    img[0, x1:x1 + h, y1:y1 + w] = imagenet_mean_value[0]
-            return img
+    if img.size()[0] == 3:
+        if value == 0:
+            img[:, x:x + h, y:y + w] = torch.from_numpy(np.random.rand(3, h, w))
+        else:
+            img[0, x:x + h, y:y + w] = imagenet_mean_value[0]
+            img[1, x:x + h, y:y + w] = imagenet_mean_value[1]
+            img[2, x:x + h, y:y + w] = imagenet_mean_value[2]
+    else:
+        if value == 0:
+            img[:, x:x + h, y:y + w] = torch.from_numpy(np.random.rand(1, h, w))
+        else:
+            img[0, x:x + h, y:y + w] = imagenet_mean_value[0]
+    return img
