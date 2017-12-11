@@ -19,7 +19,7 @@ class ResNeXtBottleneckC(nn.Module):
     def __init__(self, inplanes, planes, stride=1, downsample=None, cardinality=32, baseWidth=4):
         super(ResNeXtBottleneckC, self).__init__()
 
-        width = math.floor(planes/64 * cardinality * baseWidth)
+        width = math.floor(planes / 64 * cardinality * baseWidth)
 
         self.conv1 = nn.Conv2d(inplanes, width, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(width)
@@ -68,9 +68,9 @@ class ResNeXt(nn.Module):
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64,  layers[0])
-        self.layer2 = self._make_layer(block, 128,  layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256,  layers[2], stride=2)
+        self.layer1 = self._make_layer(block, 64, layers[0])
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.avgpool = nn.AvgPool2d(7, stride=1)
         self.fc = nn.Linear(512 * block.expansion, num_classes)
@@ -86,7 +86,7 @@ class ResNeXt(nn.Module):
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
         reshape = stride != 1 or self.inplanes != planes * block.expansion
-        useConv = (self.shortcut == 'C') or (self.shortcut == 'B' and reshape) 
+        useConv = (self.shortcut == 'C') or (self.shortcut == 'B' and reshape)
 
         if useConv:
             downsample = nn.Sequential(
@@ -103,10 +103,10 @@ class ResNeXt(nn.Module):
 
         if self.shortcut == 'C':
             shortcut = nn.Sequential(
-                    nn.Conv2d(self.inplanes, planes * block.expansion,
-                              kernel_size=1, stride=1, bias=False),
-                    nn.BatchNorm2d(planes * block.expansion),
-                )
+                nn.Conv2d(self.inplanes, planes * block.expansion,
+                          kernel_size=1, stride=1, bias=False),
+                nn.BatchNorm2d(planes * block.expansion),
+            )
         else:
             shortcut = None
         for i in range(1, blocks):
@@ -140,7 +140,8 @@ def resnext50(cardinality=32, baseWidth=4, shortcut='C', **kwargs):
         baseWidth (int): Base width of the grouped convolution
         shortcut ('A'|'B'|'C'): 'B' use 1x1 conv to downsample, 'C' use 1x1 conv on every residual connection
     """
-    model = ResNeXt(ResNeXtBottleneckC, [3, 4, 6, 3], cardinality=cardinality, baseWidth=baseWidth, shortcut=shortcut, **kwargs)
+    model = ResNeXt(ResNeXtBottleneckC, [3, 4, 6, 3], cardinality=cardinality,
+                    baseWidth=baseWidth, shortcut=shortcut, **kwargs)
     return model
 
 
@@ -152,7 +153,8 @@ def resnext101(cardinality=32, baseWidth=4, shortcut='C', **kwargs):
         baseWidth (int): Base width of the grouped convolution
         shortcut ('A'|'B'|'C'): 'B' use 1x1 conv to downsample, 'C' use 1x1 conv on every residual connection
     """
-    model = ResNeXt(ResNeXtBottleneckC, [3, 4, 23, 3], cardinality=cardinality, baseWidth=baseWidth, shortcut=shortcut, **kwargs)
+    model = ResNeXt(ResNeXtBottleneckC, [3, 4, 23, 3], cardinality=cardinality,
+                    baseWidth=baseWidth, shortcut=shortcut, **kwargs)
     return model
 
 
@@ -164,6 +166,6 @@ def resnext152(cardinality=32, baseWidth=4, shortcut='C', **kwargs):
         baseWidth (int): Base width of the grouped convolution
         shortcut ('A'|'B'|'C'): 'B' use 1x1 conv to downsample, 'C' use 1x1 conv on every residual connection
     """
-    model = ResNeXt(ResNeXtBottleneckC, [3, 8, 36, 3], cardinality=cardinality, baseWidth=baseWidth, shortcut=shortcut, **kwargs)
+    model = ResNeXt(ResNeXtBottleneckC, [3, 8, 36, 3], cardinality=cardinality,
+                    baseWidth=baseWidth, shortcut=shortcut, **kwargs)
     return model
-
