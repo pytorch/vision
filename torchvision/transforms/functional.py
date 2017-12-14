@@ -580,8 +580,7 @@ def to_grayscale(img, num_output_channels=1):
 
 
 def erase(img, x, y, w, h, value=0):
-    """ Erase the given Image with random values,
-        or the Imagenet mean pixel value.
+    """ Erase the given Image with given value.
         'Random Erasing Data Augmentation' by Zhong et al.
         See https://arxiv.org/pdf/1708.04896.pdf
 
@@ -591,24 +590,10 @@ def erase(img, x, y, w, h, value=0):
         y: Left pixel coordinate.
         w: Width of the erased image.
         h: Height of the erased image.
-        values: Type of erasing value.
-                If values = 0, erasing with random values,
-                else, erasing with the Imagenet mean pixel value.
+        value: Erasing value.
 
     Returns:
         Erased Image.
     """
-    imagenet_mean_value = [0.485, 0.456, 0.406]
-    if img.size()[0] == 3:
-        if value == 0:
-            img[:, x:x + h, y:y + w] = torch.from_numpy(np.random.rand(3, h, w))
-        else:
-            img[0, x:x + h, y:y + w] = imagenet_mean_value[0]
-            img[1, x:x + h, y:y + w] = imagenet_mean_value[1]
-            img[2, x:x + h, y:y + w] = imagenet_mean_value[2]
-    else:
-        if value == 0:
-            img[:, x:x + h, y:y + w] = torch.from_numpy(np.random.rand(1, h, w))
-        else:
-            img[0, x:x + h, y:y + w] = imagenet_mean_value[0]
+    img[:, y:y + h, x:x + w] = value
     return img
