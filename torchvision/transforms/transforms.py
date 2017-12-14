@@ -690,8 +690,7 @@ class RandomGrayscale(object):
 
 
 class RandomErasing(object):
-    """ Randomly selects a rectangle region in an image and erases its pixels with random values,
-        or the Imagenet mean pixel value.
+    """ Randomly selects a rectangle region in an image and erases its pixels.
         'Random Erasing Data Augmentation' by Zhong et al.
         See https://arxiv.org/pdf/1708.04896.pdf
     Args:
@@ -699,12 +698,12 @@ class RandomErasing(object):
          sl: Minimum proportion of erased area against input image.
          sh: Maximum proportion of erased area against input image.
          r1: Minimum aspect ratio of erased area.
-         values: Type of erasing value.
-                 If values = 0, erasing with random values,
-                 else, erasing with the Imagenet mean pixel value.
+         values: Erasing value. Default is 0. If a tuple of
+            length 3, it is used to erase R, G, B channels respectively.
+            If a str of 'random', erasing each pixel with random values.
     Returns:
         Erased Image.
-    Examples:
+    # Examples:
         >>> transform = transforms.Compose([
         >>> transforms.RandomHorizontalFlip(),
         >>> transforms.ToTensor(),
@@ -714,6 +713,7 @@ class RandomErasing(object):
     """
 
     def __init__(self, probability=0.5, sl=0.02, sh=0.4, r1=0.3, value=0):
+        assert isinstance(value, (numbers.Number, str, tuple))
         self.probability = probability
         self.sl = sl
         self.sh = sh
@@ -721,13 +721,13 @@ class RandomErasing(object):
         self.value = value
 
     @staticmethod
-    def get_params(img, sl=0.02, sh=0.4, r1=0.3):
+    def get_params(img, sl=0.02, sh=0.4, r1=0.3, value=0):
         """Get parameters for ``erase`` for a random erasing.
         Args:
             img (Tensor): Image to be erased.
-            output_size (tuple): Expected output size of the erase.
+            output_size (tuple): Expected output size and erasing value of the erase.
         Returns:
-            tuple: params (x, y, h, w) to be passed to ``erase`` for random erasing.
+            tuple: params (x, y, h, w, v) to be passed to ``erase`` for random erasing.
         """
         while True:
             area = img.size()[1] * img.size()[2]
@@ -741,7 +741,13 @@ class RandomErasing(object):
             if w < img.size()[2] and h < img.size()[1]:
                 x = random.randint(0, img.size()[1] - h)
                 y = random.randint(0, img.size()[2] - w)
-                return x, y, h, w
+                if isinstance(value, numbers.Number):
+                    v = value
+                elif isinstance(value, str):
+                    v = torch.rand(img.size()[0], h, w)
+                elif isinstance(value, tuple):
+                    v = torch.FloatTensor(value).view(-1, 1, 1).expand(-1, h, w)
+                return x, y, h, w, v
 
     def __call__(self, img):
         """
@@ -751,6 +757,6 @@ class RandomErasing(object):
             Image (Tensor): Erased image.
         """
         if random.uniform(0, 1) < self.probability:
-            x, y, h, w = self.get_params(img, sl=self.sl, sh=self.sh, r1=self.r1)
-            return F.erase(img, x, y, h, w, self.value)
+            x, y, h, w, v = self.get_params(img, sl=self.sl, sh=self.sh, r1=self.r1, value=self.value)
+            return F.erase(img, x, y, h, w, v)
         return img
