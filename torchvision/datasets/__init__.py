@@ -13,6 +13,6 @@ from .omniglot import Omniglot
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'FakeData',
            'CocoCaptions', 'CocoDetection',
-           'CIFAR10', 'CIFAR100', 'FashionMNIST',
+           'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST',
            'MNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
            'Omniglot')
