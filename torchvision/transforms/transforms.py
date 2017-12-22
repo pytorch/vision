@@ -17,7 +17,8 @@ from . import functional as F
 
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomCrop", "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop",
-           "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation", "ColorJitter"]
+           "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation", "ColorJitter", "RandomRotation",
+           "Grayscale", "RandomGrayscale"]
 
 
 class Compose(object):
@@ -93,7 +94,7 @@ class ToPILImage(object):
 
 class Normalize(object):
     """Normalize an tensor image with mean and standard deviation.
-    Given mean: ``(M1,...,Mn)`` and std: ``(M1,..,Mn)`` for ``n`` channels, this transform
+    Given mean: ``(M1,...,Mn)`` and std: ``(S1,..,Sn)`` for ``n`` channels, this transform
     will normalize each channel of the input ``torch.*Tensor`` i.e.
     ``input[channel] = (input[channel] - mean[channel]) / std[channel]``
 
@@ -322,26 +323,32 @@ class RandomVerticalFlip(object):
 class RandomResizedCrop(object):
     """Crop the given PIL Image to random size and aspect ratio.
 
-    A crop of random size of (0.08 to 1.0) of the original size and a random
-    aspect ratio of 3/4 to 4/3 of the original aspect ratio is made. This crop
+    A crop of random size (default: of 0.08 to 1.0) of the original size and a random
+    aspect ratio (default: of 3/4 to 4/3) of the original aspect ratio is made. This crop
     is finally resized to given size.
     This is popularly used to train the Inception networks.
 
     Args:
         size: expected output size of each edge
+        scale: range of size of the origin size cropped
+        ratio: range of aspect ratio of the origin aspect ratio cropped
         interpolation: Default: PIL.Image.BILINEAR
     """
 
-    def __init__(self, size, interpolation=Image.BILINEAR):
+    def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=Image.BILINEAR):
         self.size = (size, size)
         self.interpolation = interpolation
+        self.scale = scale
+        self.ratio = ratio
 
     @staticmethod
-    def get_params(img):
+    def get_params(img, scale, ratio):
         """Get parameters for ``crop`` for a random sized crop.
 
         Args:
             img (PIL Image): Image to be cropped.
+            scale (tuple): range of size of the origin size cropped
+            ratio (tuple): range of aspect ratio of the origin aspect ratio cropped
 
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
@@ -349,8 +356,8 @@ class RandomResizedCrop(object):
         """
         for attempt in range(10):
             area = img.size[0] * img.size[1]
-            target_area = random.uniform(0.08, 1.0) * area
-            aspect_ratio = random.uniform(3. / 4, 4. / 3)
+            target_area = random.uniform(*scale) * area
+            aspect_ratio = random.uniform(*ratio)
 
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
@@ -377,7 +384,7 @@ class RandomResizedCrop(object):
         Returns:
             PIL Image: Randomly cropped and resize image.
         """
-        i, j, h, w = self.get_params(img)
+        i, j, h, w = self.get_params(img, self.scale, self.ratio)
         return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
 
 
@@ -570,3 +577,119 @@ class ColorJitter(object):
         transform = self.get_params(self.brightness, self.contrast,
                                     self.saturation, self.hue)
         return transform(img)
+
+
+class RandomRotation(object):
+    """Rotate the image by angle.
+
+    Args:
+        degrees (sequence or float or int): Range of degrees to select from.
+            If degrees is a number instead of sequence like (min, max), the range of degrees
+            will be (-degrees, +degrees).
+        resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
+            An optional resampling filter.
+            See http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#filters
+            If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
+        expand (bool, optional): Optional expansion flag.
+            If true, expands the output to make it large enough to hold the entire rotated image.
+            If false or omitted, make the output image the same size as the input image.
+            Note that the expand flag assumes rotation around the center and no translation.
+        center (2-tuple, optional): Optional center of rotation.
+            Origin is the upper left corner.
+            Default is the center of the image.
+    """
+
+    def __init__(self, degrees, resample=False, expand=False, center=None):
+        if isinstance(degrees, numbers.Number):
+            if degrees < 0:
+                raise ValueError("If degrees is a single number, it must be positive.")
+            self.degrees = (-degrees, degrees)
+        else:
+            if len(degrees) != 2:
+                raise ValueError("If degrees is a sequence, it must be of len 2.")
+            self.degrees = degrees
+
+        self.resample = resample
+        self.expand = expand
+        self.center = center
+
+    @staticmethod
+    def get_params(degrees):
+        """Get parameters for ``rotate`` for a random rotation.
+
+        Returns:
+            sequence: params to be passed to ``rotate`` for random rotation.
+        """
+        angle = np.random.uniform(degrees[0], degrees[1])
+
+        return angle
+
+    def __call__(self, img):
+        """
+            img (PIL Image): Image to be rotated.
+
+        Returns:
+            PIL Image: Rotated image.
+        """
+
+        angle = self.get_params(self.degrees)
+
+        return F.rotate(img, angle, self.resample, self.expand, self.center)
+
+
+class Grayscale(object):
+    """Convert image to grayscale.
+
+    Args:
+        num_output_channels (int): (1 or 3) number of channels desired for output image
+
+    Returns:
+        PIL Image: Grayscale version of the input.
+        - If num_output_channels == 1 : returned image is single channel
+        - If num_output_channels == 3 : returned image is 3 channel with r == g == b
+
+    """
+
+    def __init__(self, num_output_channels=1):
+        self.num_output_channels = num_output_channels
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL Image): Image to be converted to grayscale.
+
+        Returns:
+            PIL Image: Randomly grayscaled image.
+        """
+        return F.to_grayscale(img, num_output_channels=self.num_output_channels)
+
+
+class RandomGrayscale(object):
+    """Randomly convert image to grayscale with a probability of p (default 0.1).
+
+    Args:
+        p (float): probability that image should be converted to grayscale.
+
+    Returns:
+        PIL Image: Grayscale version of the input image with probability p and unchanged
+        with probability (1-p).
+        - If input image is 1 channel: grayscale version is 1 channel
+        - If input image is 3 channel: grayscale version is 3 channel with r == g == b
+
+    """
+
+    def __init__(self, p=0.1):
+        self.p = p
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL Image): Image to be converted to grayscale.
+
+        Returns:
+            PIL Image: Randomly grayscaled image.
+        """
+        num_output_channels = 1 if img.mode == 'L' else 3
+        if random.random() < self.p:
+            return F.to_grayscale(img, num_output_channels=num_output_channels)
+        return img

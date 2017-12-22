@@ -1,4 +1,4 @@
-torch-vision
+torchvision
 ============
 
 .. image:: https://travis-ci.org/pytorch/vision.svg?branch=master
@@ -13,7 +13,7 @@ Anaconda:
 
 .. code:: bash
 
-    conda install torchvision -c soumith
+    conda install torchvision -c pytorch
 
 pip:
 
@@ -29,7 +29,7 @@ From source:
 
 Documentation
 =============
-You can find the API doucmentation on the pytorch website: http://pytorch.org/docs/master/torchvision/
+You can find the API documentation on the pytorch website: http://pytorch.org/docs/master/torchvision/
 
 Contributing
 ============

@@ -26,6 +26,10 @@ Transforms on PIL Image
 
 .. autoclass:: RandomSizedCrop
 
+.. autoclass:: Grayscale
+
+.. autoclass:: RandomGrayscale
+
 .. autoclass:: FiveCrop
 
 .. autoclass:: TenCrop
@@ -33,6 +37,8 @@ Transforms on PIL Image
 .. autoclass:: Pad
 
 .. autoclass:: ColorJitter
+
+.. autoclass:: RandomRotation
 
 Transforms on torch.\*Tensor
 ----------------------------

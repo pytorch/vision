@@ -35,6 +35,11 @@ Fashion-MNIST
 
 .. autoclass:: FashionMNIST
 
+EMNIST
+~~~~~~
+
+.. autoclass:: EMNIST
+
 COCO
 ~~~~
 

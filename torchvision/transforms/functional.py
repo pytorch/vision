@@ -524,3 +524,56 @@ def adjust_gamma(img, gamma, gain=1):
 
     img = Image.fromarray(np_img, 'RGB').convert(input_mode)
     return img
+
+
+def rotate(img, angle, resample=False, expand=False, center=None):
+    """Rotate the image by angle.
+
+
+    Args:
+        img (PIL Image): PIL Image to be rotated.
+        angle ({float, int}): In degrees degrees counter clockwise order.
+        resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
+            An optional resampling filter.
+            See http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#filters
+            If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
+        expand (bool, optional): Optional expansion flag.
+            If true, expands the output image to make it large enough to hold the entire rotated image.
+            If false or omitted, make the output image the same size as the input image.
+            Note that the expand flag assumes rotation around the center and no translation.
+        center (2-tuple, optional): Optional center of rotation.
+            Origin is the upper left corner.
+            Default is the center of the image.
+    """
+
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    return img.rotate(angle, resample, expand, center)
+
+
+def to_grayscale(img, num_output_channels=1):
+    """Convert image to grayscale version of image.
+
+    Args:
+        img (PIL Image): Image to be converted to grayscale.
+
+    Returns:
+        PIL Image:  Grayscale version of the image.
+                    if num_output_channels == 1 : returned image is single channel
+                    if num_output_channels == 3 : returned image is 3 channel with r == g == b
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    if num_output_channels == 1:
+        img = img.convert('L')
+    elif num_output_channels == 3:
+        img = img.convert('L')
+        np_img = np.array(img, dtype=np.uint8)
+        np_img = np.dstack([np_img, np_img, np_img])
+        img = Image.fromarray(np_img, 'RGB')
+    else:
+        raise ValueError('num_output_channels should be either 1 or 3')
+
+    return img
