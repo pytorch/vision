@@ -38,6 +38,8 @@ Transforms on PIL Image
 
 .. autoclass:: ColorJitter
 
+.. autoclass:: RandomRotation
+
 Transforms on torch.\*Tensor
 ----------------------------
 
