@@ -27,6 +27,21 @@ From source:
 
     python setup.py install
 
+
+Image Backend
+=============
+Torchvision currently supports the following image backends:
+
+* `Pillow`_ (default)
+
+* `Pillow-SIMD`_ - a **much faster** drop-in replacement for Pillow with SIMD. If installed will be used as the default.
+
+* `accimage`_ - if installed can be activated by calling :code:`torchvision.set_image_backend('accimage')`
+
+.. _Pillow : https://python-pillow.org/
+.. _Pillow-SIMD : https://github.com/uploadcare/pillow-simd
+.. _accimage: https://github.com/pytorch/accimage
+
 Documentation
 =============
 You can find the API documentation on the pytorch website: http://pytorch.org/docs/master/torchvision/
