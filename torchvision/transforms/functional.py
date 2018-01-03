@@ -527,7 +527,7 @@ def adjust_gamma(img, gamma, gain=1):
 
 
 def rotate(img, angle, resample=False, expand=False, center=None):
-    """Rotate the image by angle and then (optionally) translate it by (n_columns, n_rows)
+    """Rotate the image by angle.
 
 
     Args:

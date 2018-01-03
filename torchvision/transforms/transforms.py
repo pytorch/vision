@@ -42,6 +42,14 @@ class Compose(object):
             img = t(img)
         return img
 
+    def __repr__(self):
+        format_string = self.__class__.__name__ + '('
+        for t in self.transforms:
+            format_string += '\n'
+            format_string += '    {0}'.format(t)
+        format_string += '\n)'
+        return format_string
+
 
 class ToTensor(object):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
@@ -59,6 +67,9 @@ class ToTensor(object):
             Tensor: Converted image.
         """
         return F.to_tensor(pic)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
 
 
 class ToPILImage(object):
@@ -91,10 +102,13 @@ class ToPILImage(object):
         """
         return F.to_pil_image(pic, self.mode)
 
+    def __repr__(self):
+        return self.__class__.__name__ + '({0})'.format(self.mode)
+
 
 class Normalize(object):
     """Normalize an tensor image with mean and standard deviation.
-    Given mean: ``(M1,...,Mn)`` and std: ``(M1,..,Mn)`` for ``n`` channels, this transform
+    Given mean: ``(M1,...,Mn)`` and std: ``(S1,..,Sn)`` for ``n`` channels, this transform
     will normalize each channel of the input ``torch.*Tensor`` i.e.
     ``input[channel] = (input[channel] - mean[channel]) / std[channel]``
 
@@ -116,6 +130,9 @@ class Normalize(object):
             Tensor: Normalized Tensor image.
         """
         return F.normalize(tensor, self.mean, self.std)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 
 class Resize(object):
@@ -145,6 +162,9 @@ class Resize(object):
             PIL Image: Rescaled image.
         """
         return F.resize(img, self.size, self.interpolation)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(size={0})'.format(self.size)
 
 
 class Scale(Resize):
@@ -182,6 +202,9 @@ class CenterCrop(object):
         """
         return F.center_crop(img, self.size)
 
+    def __repr__(self):
+        return self.__class__.__name__ + '(size={0})'.format(self.size)
+
 
 class Pad(object):
     """Pad the given PIL Image on all sides with the given "pad" value.
@@ -216,6 +239,9 @@ class Pad(object):
         """
         return F.pad(img, self.padding, self.fill)
 
+    def __repr__(self):
+        return self.__class__.__name__ + '(padding={0})'.format(self.padding)
+
 
 class Lambda(object):
     """Apply a user-defined lambda as a transform.
@@ -230,6 +256,9 @@ class Lambda(object):
 
     def __call__(self, img):
         return self.lambd(img)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
 
 
 class RandomCrop(object):
@@ -287,6 +316,9 @@ class RandomCrop(object):
 
         return F.crop(img, i, j, h, w)
 
+    def __repr__(self):
+        return self.__class__.__name__ + '(size={0})'.format(self.size)
+
 
 class RandomHorizontalFlip(object):
     """Horizontally flip the given PIL Image randomly with a probability of 0.5."""
@@ -302,6 +334,9 @@ class RandomHorizontalFlip(object):
         if random.random() < 0.5:
             return F.hflip(img)
         return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
 
 
 class RandomVerticalFlip(object):
@@ -319,30 +354,39 @@ class RandomVerticalFlip(object):
             return F.vflip(img)
         return img
 
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
 
 class RandomResizedCrop(object):
     """Crop the given PIL Image to random size and aspect ratio.
 
-    A crop of random size of (0.08 to 1.0) of the original size and a random
-    aspect ratio of 3/4 to 4/3 of the original aspect ratio is made. This crop
+    A crop of random size (default: of 0.08 to 1.0) of the original size and a random
+    aspect ratio (default: of 3/4 to 4/3) of the original aspect ratio is made. This crop
     is finally resized to given size.
     This is popularly used to train the Inception networks.
 
     Args:
         size: expected output size of each edge
+        scale: range of size of the origin size cropped
+        ratio: range of aspect ratio of the origin aspect ratio cropped
         interpolation: Default: PIL.Image.BILINEAR
     """
 
-    def __init__(self, size, interpolation=Image.BILINEAR):
+    def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=Image.BILINEAR):
         self.size = (size, size)
         self.interpolation = interpolation
+        self.scale = scale
+        self.ratio = ratio
 
     @staticmethod
-    def get_params(img):
+    def get_params(img, scale, ratio):
         """Get parameters for ``crop`` for a random sized crop.
 
         Args:
             img (PIL Image): Image to be cropped.
+            scale (tuple): range of size of the origin size cropped
+            ratio (tuple): range of aspect ratio of the origin aspect ratio cropped
 
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
@@ -350,8 +394,8 @@ class RandomResizedCrop(object):
         """
         for attempt in range(10):
             area = img.size[0] * img.size[1]
-            target_area = random.uniform(0.08, 1.0) * area
-            aspect_ratio = random.uniform(3. / 4, 4. / 3)
+            target_area = random.uniform(*scale) * area
+            aspect_ratio = random.uniform(*ratio)
 
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
@@ -378,8 +422,11 @@ class RandomResizedCrop(object):
         Returns:
             PIL Image: Randomly cropped and resize image.
         """
-        i, j, h, w = self.get_params(img)
+        i, j, h, w = self.get_params(img, self.scale, self.ratio)
         return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(size={0})'.format(self.size)
 
 
 class RandomSizedCrop(RandomResizedCrop):
@@ -427,6 +474,9 @@ class FiveCrop(object):
     def __call__(self, img):
         return F.five_crop(img, self.size)
 
+    def __repr__(self):
+        return self.__class__.__name__ + '(size={0})'.format(self.size)
+
 
 class TenCrop(object):
     """Crop the given PIL Image into four corners and the central crop plus the flipped version of
@@ -466,6 +516,9 @@ class TenCrop(object):
 
     def __call__(self, img):
         return F.ten_crop(img, self.size, self.vertical_flip)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(size={0})'.format(self.size)
 
 
 class LinearTransformation(object):
@@ -507,6 +560,11 @@ class LinearTransformation(object):
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
         tensor = transformed_tensor.view(tensor.size())
         return tensor
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + '('
+        format_string += (str(self.transformation_matrix.numpy().tolist()) + ')')
+        return format_string
 
 
 class ColorJitter(object):
@@ -572,6 +630,9 @@ class ColorJitter(object):
                                     self.saturation, self.hue)
         return transform(img)
 
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
 
 class RandomRotation(object):
     """Rotate the image by angle.
@@ -630,6 +691,9 @@ class RandomRotation(object):
 
         return F.rotate(img, angle, self.resample, self.expand, self.center)
 
+    def __repr__(self):
+        return self.__class__.__name__ + '(degrees={0})'.format(self.degrees)
+
 
 class Grayscale(object):
     """Convert image to grayscale.
@@ -656,6 +720,9 @@ class Grayscale(object):
             PIL Image: Randomly grayscaled image.
         """
         return F.to_grayscale(img, num_output_channels=self.num_output_channels)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
 
 
 class RandomGrayscale(object):
@@ -760,3 +827,6 @@ class RandomErasing(object):
             x, y, h, w, v = self.get_params(img, sl=self.sl, sh=self.sh, r1=self.r1, value=self.value)
             return F.erase(img, x, y, h, w, v)
         return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'

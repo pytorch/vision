@@ -113,6 +113,11 @@ class Tester(unittest.TestCase):
                 img = to_pil_image(torch.FloatTensor(3, h, w).uniform_())
                 results = transform(img)
                 expected_output = five_crop(img)
+
+                # Checking if FiveCrop and TenCrop can be printed as string
+                transform.__repr__()
+                five_crop.__repr__()
+
                 if should_vflip:
                     vflipped_img = img.transpose(Image.FLIP_TOP_BOTTOM)
                     expected_output += five_crop(vflipped_img)
@@ -226,6 +231,9 @@ class Tester(unittest.TestCase):
         assert output.size[0] == width + padding[0] + padding[2]
         assert output.size[1] == height + padding[1] + padding[3]
 
+        # Checking if Padding can be printed as string
+        transforms.Pad(padding).__repr__()
+
     def test_pad_raises_with_invalid_pad_sequence_len(self):
         with self.assertRaises(ValueError):
             transforms.Pad(())
@@ -246,6 +254,9 @@ class Tester(unittest.TestCase):
         x = torch.randn(10)
         y = trans(x)
         assert (y.equal(x))
+
+        # Checking if Lambda can be printed as string
+        trans.__repr__()
 
     def test_to_tensor(self):
         test_channels = [1, 3, 4]
@@ -280,6 +291,9 @@ class Tester(unittest.TestCase):
             transforms.ToTensor(),
         ])
 
+        # Checking if Compose, Resize and ToTensor can be printed as string
+        trans.__repr__()
+
         expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
         output = trans(accimage.Image(GRACE_HOPPER))
 
@@ -295,6 +309,9 @@ class Tester(unittest.TestCase):
             transforms.CenterCrop(256),
             transforms.ToTensor(),
         ])
+
+        # Checking if Compose, CenterCrop and ToTensor can be printed as string
+        trans.__repr__()
 
         expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
         output = trans(accimage.Image(GRACE_HOPPER))
@@ -375,6 +392,9 @@ class Tester(unittest.TestCase):
         for mode in [None, 'RGB', 'HSV', 'YCbCr']:
             verify_img_data(img_data, mode)
 
+        # Checking if ToPILImage can be printed as string
+        transforms.ToPILImage().__repr__()
+
         with self.assertRaises(ValueError):
             # should raise if we try a mode for 4 or 1 channel images
             transforms.ToPILImage(mode='RGBA')(img_data)
@@ -450,6 +470,9 @@ class Tester(unittest.TestCase):
         random.setstate(random_state)
         assert p_value > 0.0001
 
+        # Checking if RandomVerticalFlip can be printed as string
+        transforms.RandomVerticalFlip().__repr__()
+
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_horizontal_flip(self):
         random_state = random.getstate()
@@ -468,6 +491,9 @@ class Tester(unittest.TestCase):
         random.setstate(random_state)
         assert p_value > 0.0001
 
+        # Checking if RandomHorizontalFlip can be printed as string
+        transforms.RandomHorizontalFlip().__repr__()
+
     @unittest.skipIf(stats is None, 'scipt.stats is not available')
     def test_normalize(self):
         def samples_from_standard_normal(tensor):
@@ -483,6 +509,9 @@ class Tester(unittest.TestCase):
             normalized = transforms.Normalize(mean, std)(img)
             assert samples_from_standard_normal(normalized)
         random.setstate(random_state)
+
+        # Checking if Normalize can be printed as string
+        transforms.Normalize(mean, std).__repr__()
 
     def test_adjust_brightness(self):
         x_shape = [2, 2, 3]
@@ -645,6 +674,9 @@ class Tester(unittest.TestCase):
             y_pil_2 = color_jitter(x_pil_2)
             assert y_pil_2.mode == x_pil_2.mode
 
+        # Checking if ColorJitter can be printed as string
+        color_jitter.__repr__()
+
     def test_linear_transformation(self):
         x = torch.randn(250, 10, 10, 3)
         flat_x = x.view(x.size(0), x.size(1) * x.size(2) * x.size(3))
@@ -663,6 +695,9 @@ class Tester(unittest.TestCase):
         xwhite = xwhite.view(1, 300).numpy()
         cov = np.dot(xwhite, xwhite.T) / x.size(0)
         assert np.allclose(cov, np.identity(1), rtol=1e-3)
+
+        # Checking if LinearTransformation can be printed as string
+        whitening.__repr__()
 
     def test_rotate(self):
         x = np.zeros((100, 100, 3), dtype=np.uint8)
@@ -714,6 +749,9 @@ class Tester(unittest.TestCase):
         angle = t.get_params(t.degrees)
         assert angle > -10 and angle < 10
 
+        # Checking if RandomRotation can be printed as string
+        t.__repr__()
+
     def test_to_grayscale(self):
         """Unit tests for grayscale transform"""
 
@@ -760,6 +798,9 @@ class Tester(unittest.TestCase):
         np.testing.assert_equal(gray_np_4[:, :, 0], gray_np_4[:, :, 1])
         np.testing.assert_equal(gray_np_4[:, :, 1], gray_np_4[:, :, 2])
         np.testing.assert_equal(gray_np, gray_np_4[:, :, 0])
+
+        # Checking if Grayscale can be printed as string
+        trans4.__repr__()
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_grayscale(self):
@@ -850,6 +891,9 @@ class Tester(unittest.TestCase):
         assert gray_pil_3.mode == 'L', 'mode should be L'
         assert gray_np_3.shape == tuple(x_shape[0:2]), 'should be 1 channel'
         np.testing.assert_equal(gray_np, gray_np_3)
+
+        # Checking if RandomGrayscale can be printed as string
+        trans3.__repr__()
 
 
 if __name__ == '__main__':
