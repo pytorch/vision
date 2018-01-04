@@ -143,4 +143,11 @@ class LSUN(data.Dataset):
         return self.length
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (' + self.db_path + ')'
+        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
+        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
+        fmt_str += '    Root Location: {}\n'.format(self.root)
+        tmp = '    Transforms (if any): '
+        fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
+        tmp = '    Target Transforms (if any): '
+        fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
+        return fmt_str
