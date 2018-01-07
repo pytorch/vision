@@ -1,3 +1,4 @@
+from .core50 import CORE50
 from .lsun import LSUN, LSUNClass
 from .folder import ImageFolder
 from .coco import CocoCaptions, CocoDetection
@@ -9,7 +10,7 @@ from .phototour import PhotoTour
 from .fakedata import FakeData
 from .semeion import SEMEION
 
-__all__ = ('LSUN', 'LSUNClass',
+__all__ = ('CORE50', 'LSUN', 'LSUNClass',
            'ImageFolder', 'FakeData',
            'CocoCaptions', 'CocoDetection',
            'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST',

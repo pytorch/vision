@@ -30,6 +30,11 @@ MNIST
 
 .. autoclass:: MNIST
 
+CORe50
+~~~~~~
+
+.. autoclass:: CORE50
+
 Fashion-MNIST
 ~~~~~~~~~~~~~
 
@@ -107,7 +112,7 @@ STL10
   :special-members:
 
 SVHN
-~~~~~
+~~~~
 
 
 .. autoclass:: SVHN
