@@ -1,6 +1,5 @@
 from __future__ import print_function
 from PIL import Image
-import PIL
 import os
 import os.path
 import errno
