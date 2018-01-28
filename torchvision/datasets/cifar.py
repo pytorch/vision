@@ -126,7 +126,7 @@ class CIFAR10(data.Dataset):
                 target = [self.target_transform(t) for t in target]
 
             return img, target
-        else:   
+        else:
             img = Image.fromarray(img)
             if self.transform is not None:
                 img = self.transform(img)
