@@ -2,7 +2,6 @@ from __future__ import print_function
 from PIL import Image
 import os
 import os.path
-import errno
 import numpy as np
 import sys
 if sys.version_info[0] == 2:
