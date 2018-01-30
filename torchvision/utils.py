@@ -52,7 +52,7 @@ def make_grid(tensor, nrow=8, padding=2,
 
         def norm_ip(img, min, max):
             img.clamp_(min=min, max=max)
-            img.add_(-min).div_(max - min)
+            img.add_(-min).div_(max - min + 1e-5)
 
         def norm_range(t, range):
             if range is not None:
