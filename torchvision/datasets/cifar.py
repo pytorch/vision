@@ -103,7 +103,7 @@ class CIFAR10(data.Dataset):
     def __getitem__(self, index):
         """
         Args:
-            index (int): Index
+            index (int): Index or slice
 
         Returns:
             tuple: (image, target) where target is index of the target class.
@@ -115,10 +115,20 @@ class CIFAR10(data.Dataset):
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
-        img = Image.fromarray(img)
+        if isinstance(index, slice):
+            img = [Image.fromarray(image) for image in img]
 
-        if self.transform is not None:
-            img = self.transform(img)
+            if self.transform is not None:
+                img = [self.transform(image) for image in img]
+
+            if self.target_transform is not None:
+                target = [self.target_transform(t) for t in target]
+
+            return img, target
+        else:
+            img = Image.fromarray(img)
+            if self.transform is not None:
+                img = self.transform(img)
 
         if self.target_transform is not None:
             target = self.target_transform(target)
