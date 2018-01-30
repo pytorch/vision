@@ -89,7 +89,7 @@ class SVHN(data.Dataset):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        img, target = self.data[index], self.labels[index]
+        img, target = self.data[index], int(self.labels[index])
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
