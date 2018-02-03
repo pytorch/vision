@@ -7,7 +7,7 @@ import errno
 import numpy as np
 import sys
 from .cifar import CIFAR10
-
+from ..transforms import functional as F
 
 class STL10(CIFAR10):
     """`STL10 <https://cs.stanford.edu/~acoates/stl10/>`_ Dataset.
@@ -43,7 +43,7 @@ class STL10(CIFAR10):
     ]
 
     def __init__(self, root, split='train',
-                 transform=None, target_transform=None, download=False):
+                 transform=None, target_transform=None, download=False, pretensor=False):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
@@ -81,6 +81,10 @@ class STL10(CIFAR10):
         if os.path.isfile(class_file):
             with open(class_file) as f:
                 self.classes = f.read().splitlines()
+        
+        self._data = [Image.fromarray(np.transpose(self.data[i], (1, 2, 0))) for i in range(self.data.shape[0])]
+        if pretensor:
+            self._data = [F.to_tensor(img) for img in self._data]
 
     def __getitem__(self, index):
         """
@@ -91,13 +95,9 @@ class STL10(CIFAR10):
             tuple: (image, target) where target is index of the target class.
         """
         if self.labels is not None:
-            img, target = self.data[index], int(self.labels[index])
+            img, target = self._data[index], int(self.labels[index])
         else:
-            img, target = self.data[index], None
-
-        # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        img = Image.fromarray(np.transpose(img, (1, 2, 0)))
+            img, target = self._data[index], None
 
         if self.transform is not None:
             img = self.transform(img)

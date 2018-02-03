@@ -11,7 +11,7 @@ else:
 
 import torch.utils.data as data
 from .utils import download_url, check_integrity
-
+from ..transforms import functional as F
 
 class CIFAR10(data.Dataset):
     """`CIFAR10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ Dataset.
@@ -46,9 +46,8 @@ class CIFAR10(data.Dataset):
         ['test_batch', '40351d587109b95175f43aff81a1287e'],
     ]
 
-    def __init__(self, root, train=True,
-                 transform=None, target_transform=None,
-                 download=False):
+    def __init__(self, root, train=True, transform=None, target_transform=None,
+                 download=False, pretensor=False):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
@@ -83,6 +82,10 @@ class CIFAR10(data.Dataset):
             self.train_data = np.concatenate(self.train_data)
             self.train_data = self.train_data.reshape((50000, 3, 32, 32))
             self.train_data = self.train_data.transpose((0, 2, 3, 1))  # convert to HWC
+            
+            self._train_data = [Image.fromarray(self.train_data[i]) for i in range(self.train_data.shape[0])]
+            if pretensor:
+                self._train_data = [F.to_tensor(img) for img in self._train_data]
         else:
             f = self.test_list[0][0]
             file = os.path.join(self.root, self.base_folder, f)
@@ -99,6 +102,10 @@ class CIFAR10(data.Dataset):
             fo.close()
             self.test_data = self.test_data.reshape((10000, 3, 32, 32))
             self.test_data = self.test_data.transpose((0, 2, 3, 1))  # convert to HWC
+            
+            self._test_data = [Image.fromarray(self.test_data[i]) for i in range(self.test_data.shape[0])]
+            if pretensor:
+                self._test_data = [F.to_tensor(img) for img in self._test_data]
 
     def __getitem__(self, index):
         """
@@ -109,13 +116,9 @@ class CIFAR10(data.Dataset):
             tuple: (image, target) where target is index of the target class.
         """
         if self.train:
-            img, target = self.train_data[index], self.train_labels[index]
+            img, target = self._train_data[index], self.train_labels[index]
         else:
-            img, target = self.test_data[index], self.test_labels[index]
-
-        # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        img = Image.fromarray(img)
+            img, target = self._test_data[index], self.test_labels[index]
 
         if self.transform is not None:
             img = self.transform(img)

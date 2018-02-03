@@ -5,7 +5,7 @@ import os
 import os.path
 import numpy as np
 from .utils import download_url, check_integrity
-
+from ..transforms import functional as F
 
 class SVHN(data.Dataset):
     """`SVHN <http://ufldl.stanford.edu/housenumbers/>`_ Dataset.
@@ -40,7 +40,7 @@ class SVHN(data.Dataset):
                   "extra_32x32.mat", "a93ce644f1a588dc4d68dda5feec44a7"]}
 
     def __init__(self, root, split='train',
-                 transform=None, target_transform=None, download=False):
+                 transform=None, target_transform=None, download=False, pretensor=False):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
@@ -80,6 +80,10 @@ class SVHN(data.Dataset):
         # which expect the class labels to be in the range [0, C-1]
         np.place(self.labels, self.labels == 10, 0)
         self.data = np.transpose(self.data, (3, 2, 0, 1))
+        
+        self._data = [Image.fromarray(np.transpose(self.data[i], (1, 2, 0))) for i in range(self.data.shape[0])]
+        if pretensor:
+            self._data = [F.to_tensor(img) for img in self._data]
 
     def __getitem__(self, index):
         """
@@ -89,11 +93,7 @@ class SVHN(data.Dataset):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        img, target = self.data[index], int(self.labels[index])
-
-        # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        img = Image.fromarray(np.transpose(img, (1, 2, 0)))
+        img, target = self._data[index], int(self.labels[index])
 
         if self.transform is not None:
             img = self.transform(img)
