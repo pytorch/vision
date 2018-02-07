@@ -13,6 +13,7 @@ import torch.utils.data as data
 from .utils import download_url, check_integrity
 from ..transforms import functional as F
 
+
 class CIFAR10(data.Dataset):
     """`CIFAR10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ Dataset.
 
@@ -82,7 +83,7 @@ class CIFAR10(data.Dataset):
             self.train_data = np.concatenate(self.train_data)
             self.train_data = self.train_data.reshape((50000, 3, 32, 32))
             self.train_data = self.train_data.transpose((0, 2, 3, 1))  # convert to HWC
-            
+
             self._train_data = [Image.fromarray(self.train_data[i]) for i in range(self.train_data.shape[0])]
             if pretensor:
                 self._train_data = [F.to_tensor(img) for img in self._train_data]
@@ -102,7 +103,7 @@ class CIFAR10(data.Dataset):
             fo.close()
             self.test_data = self.test_data.reshape((10000, 3, 32, 32))
             self.test_data = self.test_data.transpose((0, 2, 3, 1))  # convert to HWC
-            
+
             self._test_data = [Image.fromarray(self.test_data[i]) for i in range(self.test_data.shape[0])]
             if pretensor:
                 self._test_data = [F.to_tensor(img) for img in self._test_data]

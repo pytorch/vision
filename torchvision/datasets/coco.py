@@ -42,6 +42,7 @@ class CocoCaptions(data.Dataset):
             u'A mountain view with a plume of smoke in the background']
 
     """
+
     def __init__(self, root, annFile, transform=None, target_transform=None):
         from pycocotools.coco import COCO
         self.root = os.path.expanduser(root)

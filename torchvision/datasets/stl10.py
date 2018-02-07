@@ -9,6 +9,7 @@ import sys
 from .cifar import CIFAR10
 from ..transforms import functional as F
 
+
 class STL10(CIFAR10):
     """`STL10 <https://cs.stanford.edu/~acoates/stl10/>`_ Dataset.
 
@@ -81,7 +82,7 @@ class STL10(CIFAR10):
         if os.path.isfile(class_file):
             with open(class_file) as f:
                 self.classes = f.read().splitlines()
-        
+
         self._data = [Image.fromarray(np.transpose(self.data[i], (1, 2, 0))) for i in range(self.data.shape[0])]
         if pretensor:
             self._data = [F.to_tensor(img) for img in self._data]

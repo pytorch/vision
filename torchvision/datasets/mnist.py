@@ -9,6 +9,7 @@ import torch
 import codecs
 from ..transforms import functional as F
 
+
 class MNIST(data.Dataset):
     """`MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
 
@@ -52,15 +53,17 @@ class MNIST(data.Dataset):
         if self.train:
             self.train_data, self.train_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.training_file))
-            
-            self._train_data = [Image.fromarray(self.train_data[i].numpy(), mode='L') for i in range(self.train_data.shape[0])]
+
+            self._train_data = [Image.fromarray(self.train_data[i].numpy(), mode='L')
+                                for i in range(self.train_data.shape[0])]
             if pretensor:
                 self._train_data = [F.to_tensor(img) for img in self._train_data]
         else:
             self.test_data, self.test_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.test_file))
-            
-            self._test_data = [Image.fromarray(self.test_data[i].numpy(), mode='L') for i in range(self.test_data.shape[0])]
+
+            self._test_data = [Image.fromarray(self.test_data[i].numpy(), mode='L')
+                               for i in range(self.test_data.shape[0])]
             if pretensor:
                 self._test_data = [F.to_tensor(img) for img in self._test_data]
 
