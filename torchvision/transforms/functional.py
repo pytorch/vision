@@ -554,6 +554,64 @@ def rotate(img, angle, resample=False, expand=False, center=None):
     return img.rotate(angle, resample, expand, center)
 
 
+def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
+    """Apply affine transformation on the image keeping image center invariant
+
+    Args:
+        img (PIL Image): PIL Image to be rotated.
+        angle ({float, int}): rotation angle in degrees between -180 and 180, clockwise direction.
+        translate (list or tuple of integers): horizontal and vertical translations (post-rotation translation)
+        scale (float): overall scale
+        shear (float): shear angle value in degrees between -180 to 180, clockwise direction.
+        resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
+            An optional resampling filter.
+            See http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#filters
+            If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
+        fillcolor (int): Optional fill color for the area outside the transform in the output image.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    assert isinstance(translate, (tuple, list)) and len(translate) == 2, \
+        "Argument translate should be a list or tuple of length 2"
+
+    assert scale > 0.0, "Argument scale should be positive"
+
+    # As it is explained in PIL.Image.rotate
+    # We need compute INVERSE of affine transformation matrix: M = T * C * RSS * C^-1
+    # where T is translation matrix: [1, 0, tx | 0, 1, ty | 0, 0, 1]
+    #       C is translation matrix to keep center: [1, 0, cx | 0, 1, cy | 0, 0, 1]
+    #       RSS is rotation with scale and shear matrix
+    #       RSS(a, scale, shear) = [ cos(a)*scale    -sin(a + shear)*scale     0]
+    #                              [ sin(a)*scale    cos(a + shear)*scale     0]
+    #                              [     0                  0          1]
+    # Thus, the inverse is M^-1 = C * RSS^-1 * C^-1 * T^-1
+
+    output_size = img.size
+    angle = math.radians(angle)
+    shear = math.radians(shear)
+    scale = 1.0 / scale
+
+    center = (img.size[0] * 0.5 + 0.5, img.size[1] * 0.5 + 0.5)
+    # Inverted rotation matrix with scale and shear
+    d = math.cos(angle + shear) * math.cos(angle) + math.sin(angle + shear) * math.sin(angle)
+    matrix = [
+        math.cos(angle + shear), math.sin(angle + shear), 0,
+        -math.sin(angle), math.cos(angle), 0
+    ]
+    matrix = [scale / d * m for m in matrix]
+
+    # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
+    matrix[2] += matrix[0] * (-center[0] - translate[0]) + matrix[1] * (-center[1] - translate[1])
+    matrix[5] += matrix[3] * (-center[0] - translate[0]) + matrix[4] * (-center[1] - translate[1])
+
+    # Apply center translation: C * RSS^-1 * C^-1 * T^-1
+    matrix[2] += center[0]
+    matrix[5] += center[1]
+
+    return img.transform(output_size, Image.AFFINE, matrix, resample, fillcolor=fillcolor)
+
+
 def to_grayscale(img, num_output_channels=1):
     """Convert image to grayscale version of image.
 

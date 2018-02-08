@@ -2,6 +2,7 @@ import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
 import unittest
+import math
 import random
 import numpy as np
 from PIL import Image
@@ -734,6 +735,109 @@ class Tester(unittest.TestCase):
 
         assert np.all(np.array(result_a) == np.array(result_b))
 
+    def test_affine(self):
+        x = np.zeros((100, 100, 3), dtype=np.uint8)
+        pts = [(40, 40), (50, 40), (50, 50)]
+        cnt = [50, 50]
+        for pt in pts:
+            x[pt] = [255, 255, 255]
+
+        with self.assertRaises(TypeError):
+            F.affine(x, 10)
+
+        img = F.to_pil_image(x)
+        # Test rotation
+        xs = []
+        ys = []
+        a = 45
+        a_rad = math.radians(a)
+        for y, x in pts:
+            xs.append(int((x - cnt[0]) * math.cos(a_rad) - (y - cnt[1]) * math.sin(a_rad) + cnt[0] + 0.5))
+            ys.append(int((x - cnt[0]) * math.sin(a_rad) + (y - cnt[1]) * math.cos(a_rad) + cnt[1] + 0.5))
+
+        result = F.affine(img, angle=a, translate=(0, 0), scale=1.0, shear=0.0)
+        assert result.size == (100, 100)
+        r, c, ch = np.where(result)
+        assert all(y in r for y in ys)
+        assert all(x in c for x in xs)
+        assert all(c in ch for c in [0, 1, 2])
+
+        # Test translation
+        xs = []
+        ys = []
+        t = [10, 15]
+        for y, x in pts:
+            xs.append(int(x + t[0]))
+            ys.append(int(y + t[1]))
+
+        result = F.affine(img, angle=0, translate=t, scale=1.0, shear=0.0)
+        assert result.size == (100, 100)
+        r, c, ch = np.where(result)
+        assert all(y in r for y in ys)
+        assert all(x in c for x in xs)
+        assert all(c in ch for c in [0, 1, 2])
+
+        # Test scale
+        xs = []
+        ys = []
+        s = 1.2
+        for y, x in pts:
+            xs.append(int((x - cnt[0]) * s + cnt[0] + 0.5))
+            ys.append(int((y - cnt[1]) * s + cnt[1] + 0.5))
+
+        result = F.affine(img, angle=0, translate=(0, 0), scale=s, shear=0.0)
+        assert result.size == (100, 100)
+        r, c, ch = np.where(result)
+        assert all(y in r for y in ys)
+        assert all(x in c for x in xs)
+        assert all(c in ch for c in [0, 1, 2])
+
+        # Test shear
+        s = 45.0
+        s_rad = math.radians(s)
+        xs = []
+        ys = []
+        for y, x in pts:
+            xs.append(int(x - (y - cnt[1]) * math.sin(s_rad) + 0.5))
+            ys.append(int((y - cnt[1]) * math.cos(s_rad) + cnt[1] + 0.5))
+
+        result = F.affine(img, angle=0, translate=(0, 0), scale=1.0, shear=s)
+        assert result.size == (100, 100)
+        r, c, ch = np.where(result)
+        assert all(y in r for y in ys)
+        assert all(x in c for x in xs)
+        assert all(c in ch for c in [0, 1, 2])
+
+        # Test rotation, scale, translation, shear
+        for a in range(-90, 90, 15):
+            for t1 in range(-10, 10, 4):
+                for s in [0.75, 0.98, 1.0, 1.1, 1.2]:
+                    for sh in range(-15, 15, 3):
+                        xs = []
+                        ys = []
+                        t = (t1, t1)
+                        a_rad = math.radians(a)
+                        sh_rad = math.radians(sh)
+                        for y, x in pts:
+                            xs.append(int((x - cnt[0]) * s * math.cos(a_rad) -
+                                          (y - cnt[1]) * s * math.sin(a_rad + sh_rad) +
+                                          cnt[0] + t[0] + 0.5))
+                            ys.append(int((x - cnt[0]) * s * math.sin(a_rad) +
+                                          (y - cnt[1]) * s * math.cos(a_rad + sh_rad) +
+                                          cnt[1] + t[1] + 0.5))
+
+                        result = F.affine(img, angle=a, translate=t, scale=s, shear=sh, resample=Image.BILINEAR)
+                        assert result.size == (100, 100)
+                        r, c, ch = np.where(result)
+                        assert all(y in r for y in ys), \
+                            "a={}, t1={}, s={}, sh={} \n".format(a, t1, s, sh) + \
+                            "ys={} vs r={}".format(ys, r)
+                        assert all(x in c for x in xs), \
+                            "a={}, t1={}, s={}, sh={} \n".format(a, t1, s, sh) + \
+                            "xs={} vs c={}".format(ys, r)
+                        assert all(i in ch for i in [0, 1, 2]), \
+                            "a={}, t1={}, s={}, sh={}".format(a, t1, s, sh)
+
     def test_random_rotation(self):
 
         with self.assertRaises(ValueError):
@@ -750,6 +854,44 @@ class Tester(unittest.TestCase):
         assert angle > -10 and angle < 10
 
         # Checking if RandomRotation can be printed as string
+        t.__repr__()
+
+    def test_random_affine(self):
+
+        with self.assertRaises(ValueError):
+            transforms.RandomAffine(-0.7)
+            transforms.RandomAffine([-0.7])
+            transforms.RandomAffine([-0.7, 0, 0.7])
+
+            transforms.RandomAffine([-90, 90], translate=2.0)
+            transforms.RandomAffine([-90, 90], translate=[-1.0, 1.0])
+            transforms.RandomAffine([-90, 90], translate=[-1.0, 0.0, 1.0])
+
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.0])
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[-1.0, 1.0])
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, -0.5])
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 3.0, -0.5])
+
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=-7)
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10])
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10])
+
+        x = np.zeros((100, 100, 3), dtype=np.uint8)
+        img = F.to_pil_image(x)
+
+        t = transforms.RandomAffine(10, translate=[0.5, 0.3], scale=[0.7, 1.3], shear=[-10, 10])
+        for _ in range(100):
+            angle, translations, scale, shear = t.get_params(t.degrees, t.translate, t.scale, t.shear,
+                                                             img_size=img.size)
+            assert -10 < angle < 10
+            assert -img.size[0] * 0.5 <= translations[0] <= img.size[0] * 0.5, \
+                "{} vs {}".format(translations[0], img.size[0] * 0.5)
+            assert -img.size[1] * 0.5 <= translations[1] <= img.size[1] * 0.5, \
+                "{} vs {}".format(translations[1], img.size[1] * 0.5)
+            assert 0.7 < scale < 1.3
+            assert -10 < shear < 10
+
+        # Checking if RandomAffine can be printed as string
         t.__repr__()
 
     def test_to_grayscale(self):
