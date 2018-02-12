@@ -20,6 +20,13 @@ __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", 
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
            "ColorJitter", "RandomRotation", "Grayscale", "RandomGrayscale"]
 
+_pil_interpolation_to_str = {
+    Image.NEAREST: 'PIL.Image.BILINEAR',
+    Image.BILINEAR: 'PIL.Image.BILINEAR',
+    Image.BICUBIC: 'PIL.Image.BICUBIC',
+    Image.LANCZOS: 'PIL.Image.LANCZOS',
+}
+
 
 class Compose(object):
     """Composes several transforms together.
@@ -168,15 +175,7 @@ class Resize(object):
         return F.resize(img, self.size, self.interpolation)
 
     def __repr__(self):
-        interpolate_str = 'PIL.Image.'
-        if self.interpolation == Image.NEAREST:
-            interpolate_str += 'NEAREST'
-        elif self.interpolation == Image.BILINEAR:
-            interpolate_str += 'BILINEAR'
-        elif self.interpolation == Image.BICUBIC:
-            interpolate_str += 'BICUBIC'
-        elif self.interpolation == Image.LANCZOS:
-            interpolate_str += 'LANCZOS'
+        interpolate_str = _pil_interpolation_to_str[self.interpolation]
         return self.__class__.__name__ + '(size={0}, interpolation={1})'.format(self.size, interpolate_str)
 
 
@@ -524,15 +523,7 @@ class RandomResizedCrop(object):
         return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
 
     def __repr__(self):
-        interpolate_str = 'PIL.Image.'
-        if self.interpolation == Image.NEAREST:
-            interpolate_str += 'NEAREST'
-        elif self.interpolation == Image.BILINEAR:
-            interpolate_str += 'BILINEAR'
-        elif self.interpolation == Image.BICUBIC:
-            interpolate_str += 'BICUBIC'
-        elif self.interpolation == Image.LANCZOS:
-            interpolate_str += 'LANCZOS'
+        interpolate_str = _pil_interpolation_to_str[self.interpolation]
         format_string = self.__class__.__name__ + '(size={0}'.format(self.size)
         format_string += ', scale={0}'.format(round(self.scale, 4))
         format_string += ', ratio={0}'.format(round(self.ratio, 4))
