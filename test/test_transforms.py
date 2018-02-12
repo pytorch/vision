@@ -266,7 +266,7 @@ class Tester(unittest.TestCase):
                 transforms.RandomRotation((-45, 45)),
                 transforms.RandomHorizontalFlip(),
                 transforms.RandomVerticalFlip(),
-            ], proba=0.75
+            ], p=0.75
         )
         img = transforms.ToPILImage()(torch.rand(3, 10, 10))
         num_samples = 250

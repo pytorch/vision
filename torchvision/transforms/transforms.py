@@ -285,19 +285,19 @@ class RandomTransforms(object):
 
 
 class RandomApply(RandomTransforms):
-    """Apply randomly a list of transformations with a probability
+    """Apply randomly a list of transformations with a given probability
 
     Args:
         transforms (list or tuple): list of transformations
-        proba (float): probability
+        p (float): probability
     """
 
-    def __init__(self, transforms, proba=0.5):
+    def __init__(self, transforms, p=0.5):
         super(RandomApply, self).__init__(transforms)
-        self.proba = proba
+        self.p = p
 
     def __call__(self, img):
-        if self.proba < random.random():
+        if self.p < random.random():
             return img
         for t in self.transforms:
             img = t(img)
@@ -305,7 +305,7 @@ class RandomApply(RandomTransforms):
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
-        format_string += '\n    proba={}'.format(self.proba)
+        format_string += '\n    p={}'.format(self.p)
         for t in self.transforms:
             format_string += '\n'
             format_string += '    {0}'.format(t)
