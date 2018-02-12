@@ -258,6 +258,91 @@ class Tester(unittest.TestCase):
         # Checking if Lambda can be printed as string
         trans.__repr__()
 
+    def test_random_apply(self):
+        random_state = random.getstate()
+        random.seed(42)
+        random_apply_transform = transforms.RandomApply(
+            [
+                transforms.RandomRotation((-45, 45)),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomVerticalFlip(),
+            ], p=0.75
+        )
+        img = transforms.ToPILImage()(torch.rand(3, 10, 10))
+        num_samples = 250
+        num_applies = 0
+        for _ in range(num_samples):
+            out = random_apply_transform(img)
+            if out != img:
+                num_applies += 1
+
+        p_value = stats.binom_test(num_applies, num_samples, p=0.75)
+        random.setstate(random_state)
+        assert p_value > 0.0001
+
+        # Checking if RandomApply can be printed as string
+        random_apply_transform.__repr__()
+
+    def test_random_choice(self):
+        random_state = random.getstate()
+        random.seed(42)
+        random_choice_transform = transforms.RandomChoice(
+            [
+                transforms.Resize(15),
+                transforms.Resize(20),
+                transforms.CenterCrop(10)
+            ]
+        )
+        img = transforms.ToPILImage()(torch.rand(3, 25, 25))
+        num_samples = 250
+        num_resize_15 = 0
+        num_resize_20 = 0
+        num_crop_10 = 0
+        for _ in range(num_samples):
+            out = random_choice_transform(img)
+            if out.size == (15, 15):
+                num_resize_15 += 1
+            elif out.size == (20, 20):
+                num_resize_20 += 1
+            elif out.size == (10, 10):
+                num_crop_10 += 1
+
+        p_value = stats.binom_test(num_resize_15, num_samples, p=0.33333)
+        assert p_value > 0.0001
+        p_value = stats.binom_test(num_resize_20, num_samples, p=0.33333)
+        assert p_value > 0.0001
+        p_value = stats.binom_test(num_crop_10, num_samples, p=0.33333)
+        assert p_value > 0.0001
+
+        random.setstate(random_state)
+        # Checking if RandomChoice can be printed as string
+        random_choice_transform.__repr__()
+
+    def test_random_order(self):
+        random_state = random.getstate()
+        random.seed(42)
+        random_order_transform = transforms.RandomOrder(
+            [
+                transforms.Resize(20),
+                transforms.CenterCrop(10)
+            ]
+        )
+        img = transforms.ToPILImage()(torch.rand(3, 25, 25))
+        num_samples = 250
+        num_normal_order = 0
+        resize_crop_out = transforms.CenterCrop(10)(transforms.Resize(20)(img))
+        for _ in range(num_samples):
+            out = random_order_transform(img)
+            if out == resize_crop_out:
+                num_normal_order += 1
+
+        p_value = stats.binom_test(num_normal_order, num_samples, p=0.5)
+        random.setstate(random_state)
+        assert p_value > 0.0001
+
+        # Checking if RandomOrder can be printed as string
+        random_order_transform.__repr__()
+
     def test_to_tensor(self):
         test_channels = [1, 3, 4]
         height, width = 4, 4
