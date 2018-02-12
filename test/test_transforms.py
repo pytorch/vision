@@ -475,6 +475,17 @@ class Tester(unittest.TestCase):
         random.setstate(random_state)
         assert p_value > 0.0001
 
+        num_samples = 250
+        num_vertical = 0
+        for _ in range(num_samples):
+            out = transforms.RandomVerticalFlip(p=0.7)(img)
+            if out == vimg:
+                num_vertical += 1
+
+        p_value = stats.binom_test(num_vertical, num_samples, p=0.7)
+        random.setstate(random_state)
+        assert p_value > 0.0001
+
         # Checking if RandomVerticalFlip can be printed as string
         transforms.RandomVerticalFlip().__repr__()
 
@@ -493,6 +504,17 @@ class Tester(unittest.TestCase):
                 num_horizontal += 1
 
         p_value = stats.binom_test(num_horizontal, num_samples, p=0.5)
+        random.setstate(random_state)
+        assert p_value > 0.0001
+
+        num_samples = 250
+        num_horizontal = 0
+        for _ in range(num_samples):
+            out = transforms.RandomHorizontalFlip(p=0.7)(img)
+            if out == himg:
+                num_horizontal += 1
+
+        p_value = stats.binom_test(num_horizontal, num_samples, p=0.7)
         random.setstate(random_state)
         assert p_value > 0.0001
 
