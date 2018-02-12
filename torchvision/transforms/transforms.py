@@ -21,7 +21,7 @@ __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", 
            "ColorJitter", "RandomRotation", "Grayscale", "RandomGrayscale"]
 
 _pil_interpolation_to_str = {
-    Image.NEAREST: 'PIL.Image.BILINEAR',
+    Image.NEAREST: 'PIL.Image.NEAREST',
     Image.BILINEAR: 'PIL.Image.BILINEAR',
     Image.BICUBIC: 'PIL.Image.BICUBIC',
     Image.LANCZOS: 'PIL.Image.LANCZOS',
