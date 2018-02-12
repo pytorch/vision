@@ -269,9 +269,14 @@ class Tester(unittest.TestCase):
             output = trans(img)
             assert np.allclose(input_data.numpy(), output.numpy())
 
-            ndarray = np.random.randint(low=0, high=255, size=(height, width, channels))
+            ndarray = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
             output = trans(ndarray)
             expected_output = ndarray.transpose((2, 0, 1)) / 255.0
+            assert np.allclose(output.numpy(), expected_output)
+
+            ndarray = np.random.rand(height, width, channels).astype(np.float32)
+            output = trans(ndarray)
+            expected_output = ndarray.transpose((2, 0, 1))
             assert np.allclose(output.numpy(), expected_output)
 
     @unittest.skipIf(accimage is None, 'accimage not available')
