@@ -798,15 +798,19 @@ class RandomAffine(object):
         return F.affine(img, *ret, resample=self.resample, fillcolor=self.fillcolor)
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + '(\n'
-        format_string += '    degrees={0}\n'.format(self.degrees)
-        format_string += '    translate={0}\n'.format(self.translate)
-        format_string += '    scale={0}\n'.format(self.scale)
-        format_string += '    shear={0}\n'.format(self.shear)
-        format_string += '    resample={0}\n'.format(self.resample)
-        format_string += '    fillcolor={0}\n'.format(self.fillcolor)
-        format_string += ')'
-        return format_string
+        s = '{name}(degrees={degrees}'
+        if self.translate is not None:
+            s += ', translate={translate}'
+        if self.scale is not None:
+            s += ', scale={scale}'
+        if self.shear is not None:
+            s += ', shear={shear}'
+        if self.resample > 0:
+            s += ', resample={resample}'
+        if self.fillcolor != 0:
+            s += ', fillcolor={fillcolor}'
+        s += ')'
+        return s.format(name=self.__class__.__name__, **self.__dict__)
 
 
 class Grayscale(object):
