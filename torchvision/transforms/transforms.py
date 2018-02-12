@@ -321,10 +321,10 @@ class RandomCrop(object):
 
 
 class RandomHorizontalFlip(object):
-    """Horizontally flip the given PIL Image randomly with a probability.
+    """Horizontally flip the given PIL Image randomly with a given probability.
 
     Args:
-        p (float): probability of image is flipped. Default value is 0.5
+        p (float): probability of the image being flipped. Default value is 0.5
     """
 
     def __init__(self, p=0.5):
@@ -347,10 +347,10 @@ class RandomHorizontalFlip(object):
 
 
 class RandomVerticalFlip(object):
-    """Vertically flip the given PIL Image randomly with a probability.
+    """Vertically flip the given PIL Image randomly with a given probability.
 
     Args:
-        p (float): probability of image is flipped. Default value is 0.5
+        p (float): probability of the image being flipped. Default value is 0.5
     """
 
     def __init__(self, p=0.5):
@@ -360,7 +360,6 @@ class RandomVerticalFlip(object):
         """
         Args:
             img (PIL Image): Image to be flipped.
-            proba (float): probability of image is flipped. Default value is 0.5
 
         Returns:
             PIL Image: Randomly flipped image.
