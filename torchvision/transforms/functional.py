@@ -47,7 +47,10 @@ def to_tensor(pic):
         # handle numpy array
         img = torch.from_numpy(pic.transpose((2, 0, 1)))
         # backward compatibility
-        return img.float().div(255)
+        if isinstance(img, torch.ByteTensor):
+            return img.float().div(255)
+        else:
+            return img
 
     if accimage is not None and isinstance(pic, accimage.Image):
         nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)

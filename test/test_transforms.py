@@ -259,6 +259,91 @@ class Tester(unittest.TestCase):
         # Checking if Lambda can be printed as string
         trans.__repr__()
 
+    def test_random_apply(self):
+        random_state = random.getstate()
+        random.seed(42)
+        random_apply_transform = transforms.RandomApply(
+            [
+                transforms.RandomRotation((-45, 45)),
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomVerticalFlip(),
+            ], p=0.75
+        )
+        img = transforms.ToPILImage()(torch.rand(3, 10, 10))
+        num_samples = 250
+        num_applies = 0
+        for _ in range(num_samples):
+            out = random_apply_transform(img)
+            if out != img:
+                num_applies += 1
+
+        p_value = stats.binom_test(num_applies, num_samples, p=0.75)
+        random.setstate(random_state)
+        assert p_value > 0.0001
+
+        # Checking if RandomApply can be printed as string
+        random_apply_transform.__repr__()
+
+    def test_random_choice(self):
+        random_state = random.getstate()
+        random.seed(42)
+        random_choice_transform = transforms.RandomChoice(
+            [
+                transforms.Resize(15),
+                transforms.Resize(20),
+                transforms.CenterCrop(10)
+            ]
+        )
+        img = transforms.ToPILImage()(torch.rand(3, 25, 25))
+        num_samples = 250
+        num_resize_15 = 0
+        num_resize_20 = 0
+        num_crop_10 = 0
+        for _ in range(num_samples):
+            out = random_choice_transform(img)
+            if out.size == (15, 15):
+                num_resize_15 += 1
+            elif out.size == (20, 20):
+                num_resize_20 += 1
+            elif out.size == (10, 10):
+                num_crop_10 += 1
+
+        p_value = stats.binom_test(num_resize_15, num_samples, p=0.33333)
+        assert p_value > 0.0001
+        p_value = stats.binom_test(num_resize_20, num_samples, p=0.33333)
+        assert p_value > 0.0001
+        p_value = stats.binom_test(num_crop_10, num_samples, p=0.33333)
+        assert p_value > 0.0001
+
+        random.setstate(random_state)
+        # Checking if RandomChoice can be printed as string
+        random_choice_transform.__repr__()
+
+    def test_random_order(self):
+        random_state = random.getstate()
+        random.seed(42)
+        random_order_transform = transforms.RandomOrder(
+            [
+                transforms.Resize(20),
+                transforms.CenterCrop(10)
+            ]
+        )
+        img = transforms.ToPILImage()(torch.rand(3, 25, 25))
+        num_samples = 250
+        num_normal_order = 0
+        resize_crop_out = transforms.CenterCrop(10)(transforms.Resize(20)(img))
+        for _ in range(num_samples):
+            out = random_order_transform(img)
+            if out == resize_crop_out:
+                num_normal_order += 1
+
+        p_value = stats.binom_test(num_normal_order, num_samples, p=0.5)
+        random.setstate(random_state)
+        assert p_value > 0.0001
+
+        # Checking if RandomOrder can be printed as string
+        random_order_transform.__repr__()
+
     def test_to_tensor(self):
         test_channels = [1, 3, 4]
         height, width = 4, 4
@@ -270,9 +355,14 @@ class Tester(unittest.TestCase):
             output = trans(img)
             assert np.allclose(input_data.numpy(), output.numpy())
 
-            ndarray = np.random.randint(low=0, high=255, size=(height, width, channels))
+            ndarray = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
             output = trans(ndarray)
             expected_output = ndarray.transpose((2, 0, 1)) / 255.0
+            assert np.allclose(output.numpy(), expected_output)
+
+            ndarray = np.random.rand(height, width, channels).astype(np.float32)
+            output = trans(ndarray)
+            expected_output = ndarray.transpose((2, 0, 1))
             assert np.allclose(output.numpy(), expected_output)
 
     @unittest.skipIf(accimage is None, 'accimage not available')
@@ -471,6 +561,17 @@ class Tester(unittest.TestCase):
         random.setstate(random_state)
         assert p_value > 0.0001
 
+        num_samples = 250
+        num_vertical = 0
+        for _ in range(num_samples):
+            out = transforms.RandomVerticalFlip(p=0.7)(img)
+            if out == vimg:
+                num_vertical += 1
+
+        p_value = stats.binom_test(num_vertical, num_samples, p=0.7)
+        random.setstate(random_state)
+        assert p_value > 0.0001
+
         # Checking if RandomVerticalFlip can be printed as string
         transforms.RandomVerticalFlip().__repr__()
 
@@ -489,6 +590,17 @@ class Tester(unittest.TestCase):
                 num_horizontal += 1
 
         p_value = stats.binom_test(num_horizontal, num_samples, p=0.5)
+        random.setstate(random_state)
+        assert p_value > 0.0001
+
+        num_samples = 250
+        num_horizontal = 0
+        for _ in range(num_samples):
+            out = transforms.RandomHorizontalFlip(p=0.7)(img)
+            if out == himg:
+                num_horizontal += 1
+
+        p_value = stats.binom_test(num_horizontal, num_samples, p=0.7)
         random.setstate(random_state)
         assert p_value > 0.0001
 
@@ -736,11 +848,15 @@ class Tester(unittest.TestCase):
         assert np.all(np.array(result_a) == np.array(result_b))
 
     def test_affine(self):
-        x = np.zeros((100, 100, 3), dtype=np.uint8)
-        pts = [(40, 40), (50, 40), (50, 50)]
-        cnt = [50, 50]
-        for pt in pts:
-            x[pt] = [255, 255, 255]
+        x = np.zeros((200, 200, 3), dtype=np.uint8)
+        pts = []
+        cnt = [100, 100]
+        for pt in [(80, 80), (100, 80), (100, 100)]:
+            for i in range(-5, 5):
+                for j in range(-5, 5):
+                    x[pt[0] + i, pt[1] + j, :] = [255, 255, 255]
+                    pts.append((pt[0] + i, pt[1] + j))
+        pts = list(set(pts))
 
         with self.assertRaises(TypeError):
             F.affine(x, 10)
@@ -756,11 +872,11 @@ class Tester(unittest.TestCase):
             ys.append(int((x - cnt[0]) * math.sin(a_rad) + (y - cnt[1]) * math.cos(a_rad) + cnt[1] + 0.5))
 
         result = F.affine(img, angle=a, translate=(0, 0), scale=1.0, shear=0.0)
-        assert result.size == (100, 100)
+        assert result.size == img.size
         r, c, ch = np.where(result)
-        assert all(y in r for y in ys)
-        assert all(x in c for x in xs)
-        assert all(c in ch for c in [0, 1, 2])
+        assert set(ys).issubset(set(r))
+        assert set(xs).issubset(set(c))
+        assert all(i in ch for i in [0, 1, 2])
 
         # Test translation
         xs = []
@@ -771,11 +887,11 @@ class Tester(unittest.TestCase):
             ys.append(int(y + t[1]))
 
         result = F.affine(img, angle=0, translate=t, scale=1.0, shear=0.0)
-        assert result.size == (100, 100)
+        assert result.size == img.size
         r, c, ch = np.where(result)
-        assert all(y in r for y in ys)
-        assert all(x in c for x in xs)
-        assert all(c in ch for c in [0, 1, 2])
+        assert set(ys).issubset(set(r))
+        assert set(xs).issubset(set(c))
+        assert all(i in ch for i in [0, 1, 2])
 
         # Test scale
         xs = []
@@ -786,11 +902,11 @@ class Tester(unittest.TestCase):
             ys.append(int((y - cnt[1]) * s + cnt[1] + 0.5))
 
         result = F.affine(img, angle=0, translate=(0, 0), scale=s, shear=0.0)
-        assert result.size == (100, 100)
+        assert result.size == img.size
         r, c, ch = np.where(result)
-        assert all(y in r for y in ys)
-        assert all(x in c for x in xs)
-        assert all(c in ch for c in [0, 1, 2])
+        assert set(ys).issubset(set(r))
+        assert set(xs).issubset(set(c))
+        assert all(i in ch for i in [0, 1, 2])
 
         # Test shear
         s = 45.0
@@ -801,12 +917,12 @@ class Tester(unittest.TestCase):
             xs.append(int(x - (y - cnt[1]) * math.sin(s_rad) + 0.5))
             ys.append(int((y - cnt[1]) * math.cos(s_rad) + cnt[1] + 0.5))
 
-        result = F.affine(img, angle=0, translate=(0, 0), scale=1.0, shear=s)
-        assert result.size == (100, 100)
+        result = F.affine(img, angle=0, translate=(0, 0), scale=1.0, shear=s, resample=Image.BILINEAR)
+        assert result.size == img.size
         r, c, ch = np.where(result)
-        assert all(y in r for y in ys)
-        assert all(x in c for x in xs)
-        assert all(c in ch for c in [0, 1, 2])
+        assert set(ys).issubset(set(r)), "ys - r = {}".format(set(ys) - set(r))
+        assert set(xs).issubset(set(c)), "xs - c = {}".format(set(xs) - set(c))
+        assert all(i in ch for i in [0, 1, 2])
 
         # Test rotation, scale, translation, shear
         for a in range(-90, 90, 15):
@@ -827,14 +943,14 @@ class Tester(unittest.TestCase):
                                           cnt[1] + t[1] + 0.5))
 
                         result = F.affine(img, angle=a, translate=t, scale=s, shear=sh, resample=Image.BILINEAR)
-                        assert result.size == (100, 100)
+                        assert result.size == img.size
                         r, c, ch = np.where(result)
-                        assert all(y in r for y in ys), \
+                        assert set(ys).issubset(set(r)), \
                             "a={}, t1={}, s={}, sh={} \n".format(a, t1, s, sh) + \
-                            "ys={} vs r={}".format(ys, r)
-                        assert all(x in c for x in xs), \
+                            "ys - r = {}".format(set(ys) - set(r))
+                        assert set(xs).issubset(set(c)), \
                             "a={}, t1={}, s={}, sh={} \n".format(a, t1, s, sh) + \
-                            "xs={} vs c={}".format(ys, r)
+                            "xs - c = {}".format(set(xs) - set(c))
                         assert all(i in ch for i in [0, 1, 2]), \
                             "a={}, t1={}, s={}, sh={}".format(a, t1, s, sh)
 
@@ -893,6 +1009,9 @@ class Tester(unittest.TestCase):
 
         # Checking if RandomAffine can be printed as string
         t.__repr__()
+
+        t = transforms.RandomAffine(10, resample=Image.BILINEAR)
+        assert "Image.BILINEAR" in t.__repr__()
 
     def test_to_grayscale(self):
         """Unit tests for grayscale transform"""
