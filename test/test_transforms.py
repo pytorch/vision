@@ -848,111 +848,86 @@ class Tester(unittest.TestCase):
         assert np.all(np.array(result_a) == np.array(result_b))
 
     def test_affine(self):
-        x = np.zeros((200, 200, 3), dtype=np.uint8)
+        input_img = np.zeros((200, 200, 3), dtype=np.uint8)
         pts = []
         cnt = [100, 100]
         for pt in [(80, 80), (100, 80), (100, 100)]:
             for i in range(-5, 5):
                 for j in range(-5, 5):
-                    x[pt[0] + i, pt[1] + j, :] = [255, 255, 255]
+                    input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
                     pts.append((pt[0] + i, pt[1] + j))
         pts = list(set(pts))
 
         with self.assertRaises(TypeError):
-            F.affine(x, 10)
+            F.affine(input_img, 10)
 
-        img = F.to_pil_image(x)
+        pil_img = F.to_pil_image(input_img)
+
+        def _to_3x3_inv(inv_result_matrix):
+            result_matrix = np.zeros((3, 3))
+            result_matrix[:2, :] = np.array(inv_result_matrix).reshape((2, 3))
+            result_matrix[2, 2] = 1
+            return np.linalg.inv(result_matrix)
+
+        def _test_transformation(a, t, s, sh):
+            a_rad = math.radians(a)
+            s_rad = math.radians(sh)
+            # 1) Check transformation matrix:
+            c_matrix = np.array([[1.0, 0.0, cnt[0]], [0.0, 1.0, cnt[1]], [0.0, 0.0, 1.0]])
+            c_inv_matrix = np.linalg.inv(c_matrix)
+            t_matrix = np.array([[1.0, 0.0, t[0]],
+                                 [0.0, 1.0, t[1]],
+                                 [0.0, 0.0, 1.0]])
+            r_matrix = np.array([[s * math.cos(a_rad), -s * math.sin(a_rad + s_rad), 0.0],
+                                 [s * math.sin(a_rad), s * math.cos(a_rad + s_rad), 0.0],
+                                 [0.0, 0.0, 1.0]])
+            true_matrix = np.dot(t_matrix, np.dot(c_matrix, np.dot(r_matrix, c_inv_matrix)))
+            result_matrix = _to_3x3_inv(F._get_inverse_affine_matrix(center=cnt, angle=a,
+                                                                     translate=t, scale=s, shear=sh))
+            assert np.sum(np.abs(true_matrix - result_matrix)) < 1e-10
+            # 2) Perform inverse mapping:
+            true_result = np.zeros((200, 200, 3), dtype=np.uint8)
+            inv_true_matrix = np.linalg.inv(true_matrix)
+            for y in range(true_result.shape[0]):
+                for x in range(true_result.shape[1]):
+                    res = np.dot(inv_true_matrix, [x, y, 1])
+                    _x = int(res[0] + 0.5)
+                    _y = int(res[1] + 0.5)
+                    if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
+                        true_result[y, x, :] = input_img[_y, _x, :]
+
+            result = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh)
+            assert result.size == pil_img.size
+            # Compute number of different pixels:
+            np_result = np.array(result)
+            n_diff_pixels = np.sum(np_result != true_result) / 3
+            # Accept 3 wrong pixels
+            assert n_diff_pixels < 3, \
+                "a={}, t={}, s={}, sh={}\n".format(a, t, s, sh) +\
+                "n diff pixels={}\n".format(np.sum(np.array(result)[:, :, 0] != true_result[:, :, 0]))
+
         # Test rotation
-        xs = []
-        ys = []
         a = 45
-        a_rad = math.radians(a)
-        for y, x in pts:
-            xs.append(int((x - cnt[0]) * math.cos(a_rad) - (y - cnt[1]) * math.sin(a_rad) + cnt[0] + 0.5))
-            ys.append(int((x - cnt[0]) * math.sin(a_rad) + (y - cnt[1]) * math.cos(a_rad) + cnt[1] + 0.5))
-
-        result = F.affine(img, angle=a, translate=(0, 0), scale=1.0, shear=0.0)
-        assert result.size == img.size
-        r, c, ch = np.where(result)
-        assert set(ys).issubset(set(r))
-        assert set(xs).issubset(set(c))
-        assert all(i in ch for i in [0, 1, 2])
+        _test_transformation(a=a, t=(0, 0), s=1.0, sh=0.0)
 
         # Test translation
-        xs = []
-        ys = []
         t = [10, 15]
-        for y, x in pts:
-            xs.append(int(x + t[0]))
-            ys.append(int(y + t[1]))
-
-        result = F.affine(img, angle=0, translate=t, scale=1.0, shear=0.0)
-        assert result.size == img.size
-        r, c, ch = np.where(result)
-        assert set(ys).issubset(set(r))
-        assert set(xs).issubset(set(c))
-        assert all(i in ch for i in [0, 1, 2])
+        _test_transformation(a=0.0, t=t, s=1.0, sh=0.0)
 
         # Test scale
-        xs = []
-        ys = []
         s = 1.2
-        for y, x in pts:
-            xs.append(int((x - cnt[0]) * s + cnt[0] + 0.5))
-            ys.append(int((y - cnt[1]) * s + cnt[1] + 0.5))
-
-        result = F.affine(img, angle=0, translate=(0, 0), scale=s, shear=0.0)
-        assert result.size == img.size
-        r, c, ch = np.where(result)
-        assert set(ys).issubset(set(r))
-        assert set(xs).issubset(set(c))
-        assert all(i in ch for i in [0, 1, 2])
+        _test_transformation(a=0.0, t=(0.0, 0.0), s=s, sh=0.0)
 
         # Test shear
-        s = 45.0
-        s_rad = math.radians(s)
-        xs = []
-        ys = []
-        for y, x in pts:
-            xs.append(int(x - (y - cnt[1]) * math.sin(s_rad) + 0.5))
-            ys.append(int((y - cnt[1]) * math.cos(s_rad) + cnt[1] + 0.5))
-
-        result = F.affine(img, angle=0, translate=(0, 0), scale=1.0, shear=s, resample=Image.BILINEAR)
-        assert result.size == img.size
-        r, c, ch = np.where(result)
-        assert set(ys).issubset(set(r)), "ys - r = {}".format(set(ys) - set(r))
-        assert set(xs).issubset(set(c)), "xs - c = {}".format(set(xs) - set(c))
-        assert all(i in ch for i in [0, 1, 2])
+        sh = 45.0
+        _test_transformation(a=0.0, t=(0.0, 0.0), s=1.0, sh=sh)
 
         # Test rotation, scale, translation, shear
-        for a in range(-90, 90, 15):
-            for t1 in range(-10, 10, 4):
+        for a in range(-90, 90, 25):
+            for t1 in range(-10, 10, 5):
                 for s in [0.75, 0.98, 1.0, 1.1, 1.2]:
-                    for sh in range(-15, 15, 3):
-                        xs = []
-                        ys = []
-                        t = (t1, t1)
-                        a_rad = math.radians(a)
-                        sh_rad = math.radians(sh)
-                        for y, x in pts:
-                            xs.append(int((x - cnt[0]) * s * math.cos(a_rad) -
-                                          (y - cnt[1]) * s * math.sin(a_rad + sh_rad) +
-                                          cnt[0] + t[0] + 0.5))
-                            ys.append(int((x - cnt[0]) * s * math.sin(a_rad) +
-                                          (y - cnt[1]) * s * math.cos(a_rad + sh_rad) +
-                                          cnt[1] + t[1] + 0.5))
-
-                        result = F.affine(img, angle=a, translate=t, scale=s, shear=sh, resample=Image.BILINEAR)
-                        assert result.size == img.size
-                        r, c, ch = np.where(result)
-                        assert set(ys).issubset(set(r)), \
-                            "a={}, t1={}, s={}, sh={} \n".format(a, t1, s, sh) + \
-                            "ys - r = {}".format(set(ys) - set(r))
-                        assert set(xs).issubset(set(c)), \
-                            "a={}, t1={}, s={}, sh={} \n".format(a, t1, s, sh) + \
-                            "xs - c = {}".format(set(xs) - set(c))
-                        assert all(i in ch for i in [0, 1, 2]), \
-                            "a={}, t1={}, s={}, sh={}".format(a, t1, s, sh)
+                    for sh in range(-15, 15, 5):
+                        _test_transformation(a=a, t=(t1, t1), s=s, sh=sh)
 
     def test_random_rotation(self):
 
@@ -1082,8 +1057,8 @@ class Tester(unittest.TestCase):
             gray_pil_2 = transforms.RandomGrayscale(p=0.5)(x_pil)
             gray_np_2 = np.array(gray_pil_2)
             if np.array_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1]) and \
-               np.array_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2]) and \
-               np.array_equal(gray_np, gray_np_2[:, :, 0]):
+                    np.array_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2]) and \
+                    np.array_equal(gray_np, gray_np_2[:, :, 0]):
                 num_gray = num_gray + 1
 
         p_value = stats.binom_test(num_gray, num_samples, p=0.5)
