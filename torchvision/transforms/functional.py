@@ -26,7 +26,7 @@ def _is_tensor_image(img):
 
 
 def _is_numpy_image(img):
-    return isinstance(img, np.ndarray) and (img.ndim in {2, 3})
+    return isinstance(img, np.ndarray) and img.ndim == 3
 
 
 def to_tensor(pic):
@@ -41,7 +41,8 @@ def to_tensor(pic):
         Tensor: Converted image.
     """
     if not(_is_pil_image(pic) or _is_numpy_image(pic)):
-        raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
+        shape_msg = ' with shape {}'.format(pic.shape) if hasattr(pic, 'shape') else ''
+        raise TypeError('pic should be PIL Image or 3D ndarray. Got {}{}'.format(type(pic), shape_msg))
 
     if isinstance(pic, np.ndarray):
         # handle numpy array
@@ -98,7 +99,9 @@ def to_pil_image(pic, mode=None):
         PIL Image: Image converted to PIL Image.
     """
     if not(_is_numpy_image(pic) or _is_tensor_image(pic)):
-        raise TypeError('pic should be Tensor or ndarray. Got {}.'.format(type(pic)))
+        shape_msg = ' with shape {}'.format(tuple(pic.shape)) if hasattr(pic, 'shape') else ''
+        raise TypeError('pic should be 3D Tensor or 3D ndarray. Got {}{}'
+                        .format(type(pic), shape_msg))
 
     npimg = pic
     if isinstance(pic, torch.FloatTensor):
