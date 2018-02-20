@@ -2,6 +2,7 @@ import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
 import unittest
+import math
 import random
 import numpy as np
 from PIL import Image
@@ -846,6 +847,88 @@ class Tester(unittest.TestCase):
 
         assert np.all(np.array(result_a) == np.array(result_b))
 
+    def test_affine(self):
+        input_img = np.zeros((200, 200, 3), dtype=np.uint8)
+        pts = []
+        cnt = [100, 100]
+        for pt in [(80, 80), (100, 80), (100, 100)]:
+            for i in range(-5, 5):
+                for j in range(-5, 5):
+                    input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
+                    pts.append((pt[0] + i, pt[1] + j))
+        pts = list(set(pts))
+
+        with self.assertRaises(TypeError):
+            F.affine(input_img, 10)
+
+        pil_img = F.to_pil_image(input_img)
+
+        def _to_3x3_inv(inv_result_matrix):
+            result_matrix = np.zeros((3, 3))
+            result_matrix[:2, :] = np.array(inv_result_matrix).reshape((2, 3))
+            result_matrix[2, 2] = 1
+            return np.linalg.inv(result_matrix)
+
+        def _test_transformation(a, t, s, sh):
+            a_rad = math.radians(a)
+            s_rad = math.radians(sh)
+            # 1) Check transformation matrix:
+            c_matrix = np.array([[1.0, 0.0, cnt[0]], [0.0, 1.0, cnt[1]], [0.0, 0.0, 1.0]])
+            c_inv_matrix = np.linalg.inv(c_matrix)
+            t_matrix = np.array([[1.0, 0.0, t[0]],
+                                 [0.0, 1.0, t[1]],
+                                 [0.0, 0.0, 1.0]])
+            r_matrix = np.array([[s * math.cos(a_rad), -s * math.sin(a_rad + s_rad), 0.0],
+                                 [s * math.sin(a_rad), s * math.cos(a_rad + s_rad), 0.0],
+                                 [0.0, 0.0, 1.0]])
+            true_matrix = np.dot(t_matrix, np.dot(c_matrix, np.dot(r_matrix, c_inv_matrix)))
+            result_matrix = _to_3x3_inv(F._get_inverse_affine_matrix(center=cnt, angle=a,
+                                                                     translate=t, scale=s, shear=sh))
+            assert np.sum(np.abs(true_matrix - result_matrix)) < 1e-10
+            # 2) Perform inverse mapping:
+            true_result = np.zeros((200, 200, 3), dtype=np.uint8)
+            inv_true_matrix = np.linalg.inv(true_matrix)
+            for y in range(true_result.shape[0]):
+                for x in range(true_result.shape[1]):
+                    res = np.dot(inv_true_matrix, [x, y, 1])
+                    _x = int(res[0] + 0.5)
+                    _y = int(res[1] + 0.5)
+                    if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
+                        true_result[y, x, :] = input_img[_y, _x, :]
+
+            result = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh)
+            assert result.size == pil_img.size
+            # Compute number of different pixels:
+            np_result = np.array(result)
+            n_diff_pixels = np.sum(np_result != true_result) / 3
+            # Accept 3 wrong pixels
+            assert n_diff_pixels < 3, \
+                "a={}, t={}, s={}, sh={}\n".format(a, t, s, sh) +\
+                "n diff pixels={}\n".format(np.sum(np.array(result)[:, :, 0] != true_result[:, :, 0]))
+
+        # Test rotation
+        a = 45
+        _test_transformation(a=a, t=(0, 0), s=1.0, sh=0.0)
+
+        # Test translation
+        t = [10, 15]
+        _test_transformation(a=0.0, t=t, s=1.0, sh=0.0)
+
+        # Test scale
+        s = 1.2
+        _test_transformation(a=0.0, t=(0.0, 0.0), s=s, sh=0.0)
+
+        # Test shear
+        sh = 45.0
+        _test_transformation(a=0.0, t=(0.0, 0.0), s=1.0, sh=sh)
+
+        # Test rotation, scale, translation, shear
+        for a in range(-90, 90, 25):
+            for t1 in range(-10, 10, 5):
+                for s in [0.75, 0.98, 1.0, 1.1, 1.2]:
+                    for sh in range(-15, 15, 5):
+                        _test_transformation(a=a, t=(t1, t1), s=s, sh=sh)
+
     def test_random_rotation(self):
 
         with self.assertRaises(ValueError):
@@ -863,6 +946,47 @@ class Tester(unittest.TestCase):
 
         # Checking if RandomRotation can be printed as string
         t.__repr__()
+
+    def test_random_affine(self):
+
+        with self.assertRaises(ValueError):
+            transforms.RandomAffine(-0.7)
+            transforms.RandomAffine([-0.7])
+            transforms.RandomAffine([-0.7, 0, 0.7])
+
+            transforms.RandomAffine([-90, 90], translate=2.0)
+            transforms.RandomAffine([-90, 90], translate=[-1.0, 1.0])
+            transforms.RandomAffine([-90, 90], translate=[-1.0, 0.0, 1.0])
+
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.0])
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[-1.0, 1.0])
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, -0.5])
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 3.0, -0.5])
+
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=-7)
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10])
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10])
+
+        x = np.zeros((100, 100, 3), dtype=np.uint8)
+        img = F.to_pil_image(x)
+
+        t = transforms.RandomAffine(10, translate=[0.5, 0.3], scale=[0.7, 1.3], shear=[-10, 10])
+        for _ in range(100):
+            angle, translations, scale, shear = t.get_params(t.degrees, t.translate, t.scale, t.shear,
+                                                             img_size=img.size)
+            assert -10 < angle < 10
+            assert -img.size[0] * 0.5 <= translations[0] <= img.size[0] * 0.5, \
+                "{} vs {}".format(translations[0], img.size[0] * 0.5)
+            assert -img.size[1] * 0.5 <= translations[1] <= img.size[1] * 0.5, \
+                "{} vs {}".format(translations[1], img.size[1] * 0.5)
+            assert 0.7 < scale < 1.3
+            assert -10 < shear < 10
+
+        # Checking if RandomAffine can be printed as string
+        t.__repr__()
+
+        t = transforms.RandomAffine(10, resample=Image.BILINEAR)
+        assert "Image.BILINEAR" in t.__repr__()
 
     def test_to_grayscale(self):
         """Unit tests for grayscale transform"""
@@ -933,8 +1057,8 @@ class Tester(unittest.TestCase):
             gray_pil_2 = transforms.RandomGrayscale(p=0.5)(x_pil)
             gray_np_2 = np.array(gray_pil_2)
             if np.array_equal(gray_np_2[:, :, 0], gray_np_2[:, :, 1]) and \
-               np.array_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2]) and \
-               np.array_equal(gray_np, gray_np_2[:, :, 0]):
+                    np.array_equal(gray_np_2[:, :, 1], gray_np_2[:, :, 2]) and \
+                    np.array_equal(gray_np, gray_np_2[:, :, 0]):
                 num_gray = num_gray + 1
 
         p_value = stats.binom_test(num_gray, num_samples, p=0.5)
