@@ -261,13 +261,21 @@ def crop(img, i, j, h, w):
 
 
 def center_crop(img, output_size):
-    if isinstance(output_size, numbers.Number):
-        output_size = (int(output_size), int(output_size))
-    w, h = img.size
-    th, tw = output_size
-    i = int(round((h - th) / 2.))
-    j = int(round((w - tw) / 2.))
-    return crop(img, i, j, th, tw)
+    if isinstance(output_size, float):
+        w, h = img.size
+        th, tw = int(h*output_size), int(w*output_size)
+
+        i = int(round((h - th) / 2.))
+        j = int(round((w - tw) / 2.))
+        return crop(img, i, j, th, tw)
+    else:
+        if isinstance(output_size, numbers.Number):
+            output_size = (int(output_size), int(output_size))
+        w, h = img.size
+        th, tw = output_size
+        i = int(round((h - th) / 2.))
+        j = int(round((w - tw) / 2.))
+        return crop(img, i, j, th, tw)
 
 
 def resized_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
@@ -291,6 +299,25 @@ def resized_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
     img = crop(img, i, j, h, w)
     img = resize(img, size, interpolation)
     return img
+
+
+def resized_center_crop(img, scale, size, interpolation=Image.BILINEAR):
+    """Center Crop the given PIL Image and resize it to desired size.
+
+    Notably used in CenterResizedCrop.
+
+    Args:
+        img (PIL Image): Image to be cropped.
+        size (sequence or int): Desired output size. Same semantics as ``scale``.
+        interpolation (int, optional): Desired interpolation. Default is
+            ``PIL.Image.BILINEAR``.
+    Returns:
+        PIL Image: Center cropped then resized image.
+    """
+    assert _is_pil_image(img), 'img should be PIL Image'
+    img = center_crop(img, scale)
+    img = resize(img, size, interpolation)
+    return img    
 
 
 def hflip(img):

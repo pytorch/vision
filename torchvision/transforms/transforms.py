@@ -27,7 +27,6 @@ _pil_interpolation_to_str = {
     Image.LANCZOS: 'PIL.Image.LANCZOS',
 }
 
-
 class Compose(object):
     """Composes several transforms together.
 
@@ -199,7 +198,10 @@ class CenterCrop(object):
     """
 
     def __init__(self, size):
-        if isinstance(size, numbers.Number):
+        if isinstance(size, float):
+            self.size = size
+            
+        elif isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
         else:
             self.size = size
@@ -454,6 +456,41 @@ class RandomVerticalFlip(object):
     def __repr__(self):
         return self.__class__.__name__ + '(p={})'.format(self.p)
 
+class CenterResizedCrop(object):
+    """Center crop the given PIL im age with a specific fraction and then resizes it.
+    
+    A fractional input is used to first center crop the image, and then by default
+    bilinear interpolation will be used to resize the image to the given size. This
+    transformation is commonly in imagenet validation preprocessing.
+
+    Args:
+        size: expected output size of each edge
+        scale: fraction to center crop the image (0.0 to 1.0)
+        interpolation: Default: PIL.Image.BILINEAR
+    """
+
+    def __init__(self, size, scale=0.875, interpolation=Image.BILINEAR):
+        self.size = (size, size)
+        self.scale = scale
+        self.interpolation = interpolation
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL Image): Image to be center cropped and resized.
+
+        Returns:
+            PIL Image: Center cropped and resized image.
+        """
+        return F.resized_center_crop(img, self.scale, self.size, self.interpolation)
+
+    def __repr__(self):
+        interpolate_str = _pil_interpolation_to_str[self.interpolation]
+        format_string = self.__class__.__name__ + '(size={0}'.format(self.size)
+        format_string += ', scale={0}'.format(round(self.scale, 4))
+        format_string += ', interpolation={0})'.format(interpolate_str)
+        return format_string        
+
 
 class RandomResizedCrop(object):
     """Crop the given PIL Image to random size and aspect ratio.
@@ -475,6 +512,25 @@ class RandomResizedCrop(object):
         self.interpolation = interpolation
         self.scale = scale
         self.ratio = ratio
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL Image): Image to be cropped and resized.
+
+        Returns:
+            PIL Image: Randomly cropped and resized image.
+        """
+        i, j, h, w = self.get_params(img, self.scale, self.ratio)
+        return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
+
+    def __repr__(self):
+        interpolate_str = _pil_interpolation_to_str[self.interpolation]
+        format_string = self.__class__.__name__ + '(size={0}'.format(self.size)
+        format_string += ', scale={0}'.format(round(self.scale, 4))
+        format_string += ', ratio={0}'.format(round(self.ratio, 4))
+        format_string += ', interpolation={0})'.format(interpolate_str)
+        return format_string        
 
     @staticmethod
     def get_params(img, scale, ratio):
