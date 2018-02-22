@@ -27,6 +27,7 @@ _pil_interpolation_to_str = {
     Image.LANCZOS: 'PIL.Image.LANCZOS',
 }
 
+
 class Compose(object):
     """Composes several transforms together.
 
@@ -200,7 +201,6 @@ class CenterCrop(object):
     def __init__(self, size):
         if isinstance(size, float):
             self.size = size
-            
         elif isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
         else:
@@ -456,9 +456,10 @@ class RandomVerticalFlip(object):
     def __repr__(self):
         return self.__class__.__name__ + '(p={})'.format(self.p)
 
+
 class CenterResizedCrop(object):
     """Center crop the given PIL im age with a specific fraction and then resizes it.
-    
+
     A fractional input is used to first center crop the image, and then by default
     bilinear interpolation will be used to resize the image to the given size. This
     transformation is commonly in imagenet validation preprocessing.
@@ -489,7 +490,7 @@ class CenterResizedCrop(object):
         format_string = self.__class__.__name__ + '(size={0}'.format(self.size)
         format_string += ', scale={0}'.format(round(self.scale, 4))
         format_string += ', interpolation={0})'.format(interpolate_str)
-        return format_string        
+        return format_string
 
 
 class RandomResizedCrop(object):
@@ -530,7 +531,7 @@ class RandomResizedCrop(object):
         format_string += ', scale={0}'.format(round(self.scale, 4))
         format_string += ', ratio={0}'.format(round(self.ratio, 4))
         format_string += ', interpolation={0})'.format(interpolate_str)
-        return format_string        
+        return format_string
 
     @staticmethod
     def get_params(img, scale, ratio):

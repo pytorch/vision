@@ -263,7 +263,7 @@ def crop(img, i, j, h, w):
 def center_crop(img, output_size):
     if isinstance(output_size, float):
         w, h = img.size
-        th, tw = int(h*output_size), int(w*output_size)
+        th, tw = int(h * output_size), int(w * output_size)
 
         i = int(round((h - th) / 2.))
         j = int(round((w - tw) / 2.))
@@ -317,6 +317,7 @@ def resized_center_crop(img, scale, size, interpolation=Image.BILINEAR):
     assert _is_pil_image(img), 'img should be PIL Image'
     img = center_crop(img, scale)
     img = resize(img, size, interpolation)
+    
     return img    
 
 
