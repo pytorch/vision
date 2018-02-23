@@ -317,8 +317,8 @@ def resized_center_crop(img, scale, size, interpolation=Image.BILINEAR):
     assert _is_pil_image(img), 'img should be PIL Image'
     img = center_crop(img, scale)
     img = resize(img, size, interpolation)
-    
-    return img    
+
+    return img
 
 
 def hflip(img):

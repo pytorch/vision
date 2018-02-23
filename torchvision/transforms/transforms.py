@@ -568,25 +568,6 @@ class RandomResizedCrop(object):
         j = (img.size[0] - w) // 2
         return i, j, w, w
 
-    def __call__(self, img):
-        """
-        Args:
-            img (PIL Image): Image to be cropped and resized.
-
-        Returns:
-            PIL Image: Randomly cropped and resized image.
-        """
-        i, j, h, w = self.get_params(img, self.scale, self.ratio)
-        return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
-
-    def __repr__(self):
-        interpolate_str = _pil_interpolation_to_str[self.interpolation]
-        format_string = self.__class__.__name__ + '(size={0}'.format(self.size)
-        format_string += ', scale={0}'.format(round(self.scale, 4))
-        format_string += ', ratio={0}'.format(round(self.ratio, 4))
-        format_string += ', interpolation={0})'.format(interpolate_str)
-        return format_string
-
 
 class RandomSizedCrop(RandomResizedCrop):
     """
