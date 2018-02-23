@@ -490,7 +490,7 @@ class CenterResizedCrop(object):
         format_string = self.__class__.__name__ + '(size={0}'.format(self.size)
         format_string += ', scale={0}'.format(round(self.scale, 4))
         format_string += ', interpolation={0})'.format(interpolate_str)
-        return format_string        
+        return format_string
 
 
 class RandomResizedCrop(object):
@@ -567,6 +567,7 @@ class RandomResizedCrop(object):
         i = (img.size[1] - w) // 2
         j = (img.size[0] - w) // 2
         return i, j, w, w
+
 
 class RandomSizedCrop(RandomResizedCrop):
     """
