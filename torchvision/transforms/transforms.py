@@ -700,22 +700,22 @@ class ColorJitter(object):
         """
         transforms = []
         if brightness > 0:
-            brightness_factor = np.random.uniform(max(0, 1 - brightness), 1 + brightness)
+            brightness_factor = random.uniform(max(0, 1 - brightness), 1 + brightness)
             transforms.append(Lambda(lambda img: F.adjust_brightness(img, brightness_factor)))
 
         if contrast > 0:
-            contrast_factor = np.random.uniform(max(0, 1 - contrast), 1 + contrast)
+            contrast_factor = random.uniform(max(0, 1 - contrast), 1 + contrast)
             transforms.append(Lambda(lambda img: F.adjust_contrast(img, contrast_factor)))
 
         if saturation > 0:
-            saturation_factor = np.random.uniform(max(0, 1 - saturation), 1 + saturation)
+            saturation_factor = random.uniform(max(0, 1 - saturation), 1 + saturation)
             transforms.append(Lambda(lambda img: F.adjust_saturation(img, saturation_factor)))
 
         if hue > 0:
-            hue_factor = np.random.uniform(-hue, hue)
+            hue_factor = random.uniform(-hue, hue)
             transforms.append(Lambda(lambda img: F.adjust_hue(img, hue_factor)))
 
-        np.random.shuffle(transforms)
+        random.shuffle(transforms)
         transform = Compose(transforms)
 
         return transform
@@ -782,7 +782,7 @@ class RandomRotation(object):
         Returns:
             sequence: params to be passed to ``rotate`` for random rotation.
         """
-        angle = np.random.uniform(degrees[0], degrees[1])
+        angle = random.uniform(degrees[0], degrees[1])
 
         return angle
 
