@@ -1,19 +1,22 @@
 import unittest
-from unittest.mock import Mock
+try:
+    from unittest.mock import Mock
+except ImportError as e:
+    from mock import Mock
+
 import os
 
 from torchvision.datasets import ImageFolder
 
 
-
 class Tester(unittest.TestCase):
-    root = './assets/dataset/'
+    root = 'test/assets/dataset/'
     classes = ['a', 'b']
-    class_a_images = [os.path.join('./assets/dataset/a/', path) for path in ['a1.png', 'a2.png', 'a3.png']]
-    class_b_images = [os.path.join('./assets/dataset/b/', path) for path in ['b1.png', 'b2.png', 'b3.png', 'b4.png']]
+    class_a_images = [os.path.join('test/assets/dataset/a/', path) for path in ['a1.png', 'a2.png', 'a3.png']]
+    class_b_images = [os.path.join('test/assets/dataset/b/', path) for path in ['b1.png', 'b2.png', 'b3.png', 'b4.png']]
 
     def test_image_folder(self):
-        dataset = ImageFolder(Tester.root, loader=lambda x:x)
+        dataset = ImageFolder(Tester.root, loader=lambda x: x)
         self.assertEqual(sorted(Tester.classes), sorted(dataset.classes))
         for cls in Tester.classes:
             self.assertEqual(cls, dataset.classes[dataset.class_to_idx[cls]])
@@ -28,11 +31,11 @@ class Tester(unittest.TestCase):
         self.assertEqual(imgs, outputs)
 
     def test_transform(self):
-        return_value = './data/a/a1.png'
+        return_value = 'test/assets/dataset/a/a1.png'
         transform = Mock(return_value=return_value)
-        dataset = ImageFolder(Tester.root, loader=lambda x:x, transform=transform)
+        dataset = ImageFolder(Tester.root, loader=lambda x: x, transform=transform)
         outputs = [dataset[i][0] for i in range(len(dataset))]
-        self.assertEqual([return_value]*len(outputs), outputs)
+        self.assertEqual([return_value] * len(outputs), outputs)
 
         imgs = sorted(Tester.class_a_images + Tester.class_b_images)
         args = [call[0][0] for call in transform.call_args_list]
@@ -41,14 +44,14 @@ class Tester(unittest.TestCase):
     def test_target_transform(self):
         return_value = 1
         target_transform = Mock(return_value=return_value)
-        dataset = ImageFolder(Tester.root, loader=lambda x:x, target_transform=target_transform)
+        dataset = ImageFolder(Tester.root, loader=lambda x: x, target_transform=target_transform)
         outputs = [dataset[i][1] for i in range(len(dataset))]
-        self.assertEqual([return_value]*len(outputs), outputs)
+        self.assertEqual([return_value] * len(outputs), outputs)
 
         class_a_idx = dataset.class_to_idx['a']
         class_b_idx = dataset.class_to_idx['b']
-        targets = sorted([class_a_idx]*len(Tester.class_a_images) +
-                         [class_b_idx]*len(Tester.class_b_images))
+        targets = sorted([class_a_idx] * len(Tester.class_a_images) +
+                         [class_b_idx] * len(Tester.class_b_images))
         args = [call[0][0] for call in target_transform.call_args_list]
         self.assertEqual(targets, sorted(args))
 

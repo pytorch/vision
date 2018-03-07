@@ -120,7 +120,6 @@ class DatasetFolder(data.Dataset):
         return fmt_str
 
 
-
 IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm']
 
 
@@ -174,5 +173,7 @@ class ImageFolder(DatasetFolder):
     """
     def __init__(self, root, transform=None, target_transform=None,
                  loader=default_loader):
-        super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS, transform=transform, target_transform=target_transform)
+        super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS,
+                                          transform=transform,
+                                          target_transform=target_transform)
         self.imgs = self.samples
