@@ -33,7 +33,6 @@ requirements = [
     'pillow >= 4.1.1',
     'six',
     'torch',
-    'mock',
 ]
 
 setup(
