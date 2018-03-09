@@ -1,12 +1,15 @@
 import unittest
-try:
-    from unittest.mock import Mock
-except ImportError as e:
-    from mock import Mock
 
 import os
 
 from torchvision.datasets import ImageFolder
+
+
+def mock_transform(return_value, arg_list):
+    def mock(arg):
+        arg_list.append(arg)
+        return return_value
+    return mock
 
 
 class Tester(unittest.TestCase):
@@ -32,18 +35,23 @@ class Tester(unittest.TestCase):
 
     def test_transform(self):
         return_value = 'test/assets/dataset/a/a1.png'
-        transform = Mock(return_value=return_value)
+
+        args = []
+        transform = mock_transform(return_value, args)
+
         dataset = ImageFolder(Tester.root, loader=lambda x: x, transform=transform)
         outputs = [dataset[i][0] for i in range(len(dataset))]
         self.assertEqual([return_value] * len(outputs), outputs)
 
         imgs = sorted(Tester.class_a_images + Tester.class_b_images)
-        args = [call[0][0] for call in transform.call_args_list]
         self.assertEqual(imgs, sorted(args))
 
     def test_target_transform(self):
         return_value = 1
-        target_transform = Mock(return_value=return_value)
+
+        args = []
+        target_transform = mock_transform(return_value, args)
+
         dataset = ImageFolder(Tester.root, loader=lambda x: x, target_transform=target_transform)
         outputs = [dataset[i][1] for i in range(len(dataset))]
         self.assertEqual([return_value] * len(outputs), outputs)
@@ -52,7 +60,6 @@ class Tester(unittest.TestCase):
         class_b_idx = dataset.class_to_idx['b']
         targets = sorted([class_a_idx] * len(Tester.class_a_images) +
                          [class_b_idx] * len(Tester.class_b_images))
-        args = [call[0][0] for call in target_transform.call_args_list]
         self.assertEqual(targets, sorted(args))
 
 if __name__ == '__main__':
