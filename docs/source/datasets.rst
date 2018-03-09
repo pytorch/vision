@@ -4,11 +4,11 @@ torchvision.datasets
 All datasets are subclasses of :class:`torch.utils.data.Dataset`
 i.e, they have ``__getitem__`` and ``__len__`` methods implemented.
 Hence, they can all be passed to a :class:`torch.utils.data.DataLoader`
-which can load multiple samples parallelly using ``torch.multiprocessing`` workers. 
+which can load multiple samples parallelly using ``torch.multiprocessing`` workers.
 For example: ::
-    
+
     imagenet_data = torchvision.datasets.ImageFolder('path/to/imagenet_root/')
-    data_loader = torch.utils.data.DataLoader(imagenet_data, 
+    data_loader = torch.utils.data.DataLoader(imagenet_data,
                                               batch_size=4,
                                               shuffle=True,
                                               num_workers=args.nThreads)
@@ -22,7 +22,7 @@ All the datasets have almost similar API. They all have two common arguments:
 ``transform`` and  ``target_transform`` to transform the input and target respectively.
 
 
-.. currentmodule:: torchvision.datasets 
+.. currentmodule:: torchvision.datasets
 
 
 MNIST
@@ -78,6 +78,14 @@ ImageFolder
   :members: __getitem__
   :special-members:
 
+DatasetFolder
+~~~~~~~~~~~~~
+
+.. autoclass:: DatasetFolder
+  :members: __getitem__
+  :special-members:
+
+
 
 Imagenet-12
 ~~~~~~~~~~~
@@ -121,4 +129,3 @@ PhotoTour
 .. autoclass:: PhotoTour
   :members: __getitem__
   :special-members:
-

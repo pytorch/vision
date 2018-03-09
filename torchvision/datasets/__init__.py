@@ -1,5 +1,5 @@
 from .lsun import LSUN, LSUNClass
-from .folder import ImageFolder
+from .folder import ImageFolder, DatasetFolder
 from .coco import CocoCaptions, CocoDetection
 from .cifar import CIFAR10, CIFAR100
 from .stl10 import STL10
@@ -11,7 +11,7 @@ from .semeion import SEMEION
 from .omniglot import Omniglot
 
 __all__ = ('LSUN', 'LSUNClass',
-           'ImageFolder', 'FakeData',
+           'ImageFolder', 'DatasetFolder', 'FakeData',
            'CocoCaptions', 'CocoDetection',
            'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST',
            'MNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
