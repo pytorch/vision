@@ -44,7 +44,7 @@ class STL10(CIFAR10):
     ]
 
     def __init__(self, root, split='train',
-                 transform=None, target_transform=None, download=False, pretensor=False):
+                 transform=None, target_transform=None, download=False):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
@@ -83,9 +83,7 @@ class STL10(CIFAR10):
             with open(class_file) as f:
                 self.classes = f.read().splitlines()
 
-        self._data = [Image.fromarray(np.transpose(self.data[i], (1, 2, 0))) for i in range(self.data.shape[0])]
-        if pretensor:
-            self._data = [F.to_tensor(img) for img in self._data]
+        self.data = [Image.fromarray(np.transpose(self.data[i], (1, 2, 0))) for i in range(self.data.shape[0])]
 
     def __getitem__(self, index):
         """
@@ -96,9 +94,9 @@ class STL10(CIFAR10):
             tuple: (image, target) where target is index of the target class.
         """
         if self.labels is not None:
-            img, target = self._data[index], int(self.labels[index])
+            img, target = self.data[index], int(self.labels[index])
         else:
-            img, target = self._data[index], None
+            img, target = self.data[index], None
 
         if self.transform is not None:
             img = self.transform(img)
@@ -109,7 +107,7 @@ class STL10(CIFAR10):
         return img, target
 
     def __len__(self):
-        return self.data.shape[0]
+        return len(self.data)
 
     def __loadfile(self, data_file, labels_file=None):
         labels = None

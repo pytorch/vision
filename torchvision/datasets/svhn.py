@@ -41,7 +41,7 @@ class SVHN(data.Dataset):
                   "extra_32x32.mat", "a93ce644f1a588dc4d68dda5feec44a7"]}
 
     def __init__(self, root, split='train',
-                 transform=None, target_transform=None, download=False, pretensor=False):
+                 transform=None, target_transform=None, download=False):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
@@ -82,9 +82,7 @@ class SVHN(data.Dataset):
         np.place(self.labels, self.labels == 10, 0)
         self.data = np.transpose(self.data, (3, 2, 0, 1))
 
-        self._data = [Image.fromarray(np.transpose(self.data[i], (1, 2, 0))) for i in range(self.data.shape[0])]
-        if pretensor:
-            self._data = [F.to_tensor(img) for img in self._data]
+        self.data = [Image.fromarray(np.transpose(self.data[i], (1, 2, 0))) for i in range(self.data.shape[0])]
 
     def __getitem__(self, index):
         """
@@ -94,7 +92,7 @@ class SVHN(data.Dataset):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        img, target = self._data[index], int(self.labels[index])
+        img, target = self.data[index], int(self.labels[index])
 
         if self.transform is not None:
             img = self.transform(img)

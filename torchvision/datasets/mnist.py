@@ -37,7 +37,7 @@ class MNIST(data.Dataset):
     training_file = 'training.pt'
     test_file = 'test.pt'
 
-    def __init__(self, root, train=True, transform=None, target_transform=None, download=False, pretensor=False):
+    def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
@@ -54,18 +54,14 @@ class MNIST(data.Dataset):
             self.train_data, self.train_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.training_file))
 
-            self._train_data = [Image.fromarray(self.train_data[i].numpy(), mode='L')
+            self.train_data = [Image.fromarray(self.train_data[i].numpy(), mode='L')
                                 for i in range(self.train_data.shape[0])]
-            if pretensor:
-                self._train_data = [F.to_tensor(img) for img in self._train_data]
         else:
             self.test_data, self.test_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.test_file))
 
-            self._test_data = [Image.fromarray(self.test_data[i].numpy(), mode='L')
+            self.test_data = [Image.fromarray(self.test_data[i].numpy(), mode='L')
                                for i in range(self.test_data.shape[0])]
-            if pretensor:
-                self._test_data = [F.to_tensor(img) for img in self._test_data]
 
     def __getitem__(self, index):
         """
@@ -76,9 +72,9 @@ class MNIST(data.Dataset):
             tuple: (image, target) where target is index of the target class.
         """
         if self.train:
-            img, target = self._train_data[index], self.train_labels[index]
+            img, target = self.train_data[index], self.train_labels[index]
         else:
-            img, target = self._test_data[index], self.test_labels[index]
+            img, target = self.test_data[index], self.test_labels[index]
 
         if self.transform is not None:
             img = self.transform(img)
