@@ -36,13 +36,18 @@ class MNIST(data.Dataset):
     training_file = 'training.pt'
     test_file = 'test.pt'
 
-    def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
+    def __init__(self, root, train=True, transform=None, target_transform=None, \
+                 download=False, from_local=False):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
         self.train = train  # training set or test set
+        self.from_local = from_local
 
         if download:
+            self.download()
+
+        elif self.from_local:
             self.download()
 
         if not self._check_exists():
@@ -94,7 +99,7 @@ class MNIST(data.Dataset):
     def download(self):
         """Download the MNIST data if it doesn't exist in processed_folder already."""
         from six.moves import urllib
-        import gzip
+        import gzip, shutil
 
         if self._check_exists():
             return
@@ -110,12 +115,18 @@ class MNIST(data.Dataset):
                 raise
 
         for url in self.urls:
-            print('Downloading ' + url)
-            data = urllib.request.urlopen(url)
             filename = url.rpartition('/')[2]
             file_path = os.path.join(self.root, self.raw_folder, filename)
-            with open(file_path, 'wb') as f:
-                f.write(data.read())
+
+            if self.from_local:
+                tmp_file_path = os.path.join(self.root, filename)
+                shutil.move(tmp_file_path, os.path.join(self.root, self.raw_folder))
+            else:
+                print('Downloading ' + url)
+                data = urllib.request.urlopen(url)
+                with open(file_path, 'wb') as f:
+                    f.write(data.read())
+
             with open(file_path.replace('.gz', ''), 'wb') as out_f, \
                     gzip.GzipFile(file_path) as zip_f:
                 out_f.write(zip_f.read())
