@@ -195,7 +195,7 @@ class EMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    url = 'http://biometrics.nist.gov/cs_links/EMNIST/gzip.zip'
+    url = 'http://www.itl.nist.gov/iaui/vip/cs_links/EMNIST/gzip.zip'
     splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
 
     def __init__(self, root, split, **kwargs):
