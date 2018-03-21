@@ -36,7 +36,7 @@ class MNIST(data.Dataset):
     training_file = 'training.pt'
     test_file = 'test.pt'
 
-    def __init__(self, root, train=True, transform=None, target_transform=None, \
+    def __init__(self, root, train=True, transform=None, target_transform=None,
                  download=False, from_local=False):
         self.root = os.path.expanduser(root)
         self.transform = transform
@@ -99,7 +99,8 @@ class MNIST(data.Dataset):
     def download(self):
         """Download the MNIST data if it doesn't exist in processed_folder already."""
         from six.moves import urllib
-        import gzip, shutil
+        import gzip
+        import shutil
 
         if self._check_exists():
             return
