@@ -76,6 +76,9 @@ class LSUN(data.Dataset):
                       'living_room', 'restaurant', 'tower']
         dset_opts = ['train', 'val', 'test']
         self.db_path = db_path
+        self.transform = transform
+        self.target_transform = target_transform
+
         if type(classes) == str and classes in dset_opts:
             if classes == 'test':
                 classes = [classes]
@@ -112,7 +115,6 @@ class LSUN(data.Dataset):
             self.indices.append(count)
 
         self.length = count
-        self.target_transform = target_transform
 
     def __getitem__(self, index):
         """
@@ -145,7 +147,7 @@ class LSUN(data.Dataset):
     def __repr__(self):
         fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
         fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        fmt_str += '    Root Location: {}\n'.format(self.root)
+        fmt_str += '    Root Location: {}\n'.format(self.db_path)
         tmp = '    Transforms (if any): '
         fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
         tmp = '    Target Transforms (if any): '
