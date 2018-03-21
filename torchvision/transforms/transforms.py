@@ -525,8 +525,8 @@ class RandomResizedCrop(object):
     def __repr__(self):
         interpolate_str = _pil_interpolation_to_str[self.interpolation]
         format_string = self.__class__.__name__ + '(size={0}'.format(self.size)
-        format_string += ', scale={0}'.format(round(self.scale, 4))
-        format_string += ', ratio={0}'.format(round(self.ratio, 4))
+        format_string += ', scale={0}'.format(tuple(round(s, 4) for s in self.scale))
+        format_string += ', ratio={0}'.format(tuple(round(r, 4) for r in self.ratio))
         format_string += ', interpolation={0})'.format(interpolate_str)
         return format_string
 
