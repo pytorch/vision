@@ -79,7 +79,6 @@ class LSUN(data.Dataset):
         self.root = os.path.expanduser(root)
         self.transform = transform
         self.target_transform = target_transform
-        self.classes = classes
 
         if type(classes) == str and classes in dset_opts:
             if classes == 'test':
@@ -101,6 +100,7 @@ class LSUN(data.Dataset):
                                      'Options are: ' + str(dset_opts)))
         else:
             raise(ValueError('Unknown option for classes'))
+        self.classes = classes
 
         # for each class, create an LSUNClassDataset
         self.dbs = []
