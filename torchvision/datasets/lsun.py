@@ -101,7 +101,6 @@ class LSUN(data.Dataset):
                                      'Options are: ' + str(dset_opts)))
         else:
             raise(ValueError('Unknown option for classes'))
-        self.classes = classes
 
         # for each class, create an LSUNClassDataset
         self.dbs = []
