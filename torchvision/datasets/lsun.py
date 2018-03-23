@@ -53,7 +53,7 @@ class LSUNClass(data.Dataset):
         return self.length
 
     def __repr__(self):
-        return self.__class__.__name__ + ' (' + self.db_path + ')'
+        return self.__class__.__name__ + ' (' + self.root + ')'
 
 
 class LSUN(data.Dataset):
