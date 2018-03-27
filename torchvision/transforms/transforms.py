@@ -828,7 +828,7 @@ class RandomAffine(object):
             An optional resampling filter.
             See http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#filters
             If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
-        fillcolor (int): Optional fill color for the area outside the transform in the output image.
+        fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
     """
 
     def __init__(self, degrees, translate=None, scale=None, shear=None, resample=False, fillcolor=0):
