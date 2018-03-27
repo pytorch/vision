@@ -19,7 +19,7 @@ def check_integrity(fpath, md5):
         for chunk in iter(lambda: f.read(1024 * 1024), b''):
             md5o.update(chunk)
     md5c = md5o.hexdigest()
-    return md5c == md5
+    return md5c != md5
 
 
 def download_url(url, root, filename, md5):
