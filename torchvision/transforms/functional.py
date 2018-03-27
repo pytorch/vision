@@ -2,7 +2,7 @@ from __future__ import division
 import torch
 import math
 import random
-from PIL import Image, ImageOps, ImageEnhance
+from PIL import Image, ImageOps, ImageEnhance, PILLOW_VERSION
 try:
     import accimage
 except ImportError:
@@ -604,7 +604,7 @@ def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
             An optional resampling filter.
             See http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#filters
             If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
-        fillcolor (int): Optional fill color for the area outside the transform in the output image.
+        fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
     """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
@@ -617,7 +617,8 @@ def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
     output_size = img.size
     center = (img.size[0] * 0.5 + 0.5, img.size[1] * 0.5 + 0.5)
     matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
-    return img.transform(output_size, Image.AFFINE, matrix, resample, fillcolor=fillcolor)
+    kwargs = {"fillcolor": fillcolor} if PILLOW_VERSION[0] == '5' else {}
+    return img.transform(output_size, Image.AFFINE, matrix, resample, **kwargs)
 
 
 def to_grayscale(img, num_output_channels=1):

@@ -40,6 +40,8 @@ Transforms on PIL Image
 
 .. autoclass:: RandomRotation
 
+.. autoclass:: RandomAffine
+
 Transforms on torch.\*Tensor
 ----------------------------
 
