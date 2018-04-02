@@ -231,15 +231,17 @@ class Pad(object):
             length 3, it is used to fill R, G, B channels respectively.
     """
 
-    def __init__(self, padding, fill=0):
+    def __init__(self, padding, fill=0, padding_mode='constant'):
         assert isinstance(padding, (numbers.Number, tuple))
         assert isinstance(fill, (numbers.Number, str, tuple))
+        assert padding_mode in ['constant', 'edge', 'reflect', 'symmetric']
         if isinstance(padding, collections.Sequence) and len(padding) not in [2, 4]:
             raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
                              "{} element tuple".format(len(padding)))
 
         self.padding = padding
         self.fill = fill
+        self.padding_mode = padding_mode
 
     def __call__(self, img):
         """
@@ -249,10 +251,11 @@ class Pad(object):
         Returns:
             PIL Image: Padded image.
         """
-        return F.pad(img, self.padding, self.fill)
+        return F.pad(img, self.padding, self.fill, self.padding_mode)
 
     def __repr__(self):
-        return self.__class__.__name__ + '(padding={0}, fill={1})'.format(self.padding, self.fill)
+        return self.__class__.__name__ + '(padding={0}, fill={1}, padding_mode={2})'.\
+            format(self.padding, self.fill, self.padding_mode)
 
 
 class Lambda(object):
