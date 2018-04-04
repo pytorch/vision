@@ -85,7 +85,7 @@ class LSUN(data.Dataset):
                 classes = [classes]
             else:
                 classes = [c + '_' + classes for c in categories]
-        if type(classes) == list:
+        elif type(classes) == list:
             for c in classes:
                 c_short = c.split('_')
                 c_short.pop(len(c_short) - 1)
