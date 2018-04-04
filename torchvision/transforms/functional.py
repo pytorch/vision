@@ -210,8 +210,8 @@ def scale(*args, **kwargs):
     return resize(*args, **kwargs)
 
 
-def pad(img, padding, fill=0):
-    """Pad the given PIL Image on all sides with the given "pad" value.
+def pad(img, padding, fill=0, padding_mode='constant'):
+    """Pad the given PIL Image on all sides with speficified padding mode and fill value.
 
     Args:
         img (PIL Image): Image to be padded.
@@ -220,8 +220,18 @@ def pad(img, padding, fill=0):
             on left/right and top/bottom respectively. If a tuple of length 4 is provided
             this is the padding for the left, top, right and bottom borders
             respectively.
-        fill: Pixel fill value. Default is 0. If a tuple of
+        fill: Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
+            This value is only used when the padding_mode is constant
+        padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+            constant: pads with a constant value, this value is specified with fill
+            edge: pads with the last value on the edge of the image
+            reflect: pads with reflection of image (without repeating the last value on the edge)
+                padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+                will result in [3, 2, 1, 2, 3, 4, 3, 2]
+            symmetric: pads with reflection of image (repeating the last value on the edge)
+                padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+                will result in [2, 1, 1, 2, 3, 4, 4, 3]
 
     Returns:
         PIL Image: Padded image.
@@ -233,12 +243,39 @@ def pad(img, padding, fill=0):
         raise TypeError('Got inappropriate padding arg')
     if not isinstance(fill, (numbers.Number, str, tuple)):
         raise TypeError('Got inappropriate fill arg')
+    if not isinstance(padding_mode, str):
+        raise TypeError('Got inappropriate padding_mode arg')
 
     if isinstance(padding, collections.Sequence) and len(padding) not in [2, 4]:
         raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
                          "{} element tuple".format(len(padding)))
 
-    return ImageOps.expand(img, border=padding, fill=fill)
+    assert padding_mode in ['constant', 'edge', 'reflect', 'symmetric'], \
+        'Padding mode should be either constant, edge, reflect or symmetric'
+
+    if padding_mode == 'constant':
+        return ImageOps.expand(img, border=padding, fill=fill)
+    else:
+        if isinstance(padding, int):
+            pad_left = pad_right = pad_top = pad_bottom = padding
+        if isinstance(padding, collections.Sequence) and len(padding) == 2:
+            pad_left = pad_right = padding[0]
+            pad_top = pad_bottom = padding[1]
+        if isinstance(padding, collections.Sequence) and len(padding) == 4:
+            pad_left = padding[0]
+            pad_top = padding[1]
+            pad_right = padding[2]
+            pad_bottom = padding[3]
+
+        img = np.asarray(img)
+        # RGB image
+        if len(img.shape) == 3:
+            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), padding_mode)
+        # Grayscale image
+        if len(img.shape) == 2:
+            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
+
+        return Image.fromarray(img)
 
 
 def crop(img, i, j, h, w):
