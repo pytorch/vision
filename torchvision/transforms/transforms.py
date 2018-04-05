@@ -368,14 +368,17 @@ class RandomCrop(object):
             of the image. Default is 0, i.e no padding. If a sequence of length
             4 is provided, it is used to pad left, top, right, bottom borders
             respectively.
+        pad_if_needed (boolean): It will pad the image if smaller than the
+            desired size to avoid raising an exception.
     """
 
-    def __init__(self, size, padding=0):
+    def __init__(self, size, padding=0, pad_if_needed=False):
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
         else:
             self.size = size
         self.padding = padding
+        self.pad_if_needed = pad_if_needed
 
     @staticmethod
     def get_params(img, output_size):
@@ -407,6 +410,11 @@ class RandomCrop(object):
         """
         if self.padding > 0:
             img = F.pad(img, self.padding)
+
+        if self.pad_if_needed and img.size[0] < self.size[0]:
+            img = F.pad(img, int((self.size[0] - img.size[0]) / 2), 0)
+        if self.pad_if_needed and img.size[1] < self.size[1]:
+            img = F.pad(img,(0, int((self.size[1] - img.size[1]) / 2)))
 
         i, j, h, w = self.get_params(img, self.size)
 
