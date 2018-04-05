@@ -205,8 +205,8 @@ class Tester(unittest.TestCase):
         assert result.size(2) == width
         assert np.allclose(img.numpy(), result.numpy())
 
-        lheight = height + 5
-        lwidth = width + 5
+        lheight = height + 1
+        lwidth = width + 1
         result = transforms.Compose([
             transforms.ToPILImage(),
             transforms.RandomCrop((lheight, lwidth), pad_if_needed=True),
