@@ -10,37 +10,45 @@ Transforms are common image transforms. They can be chained together using :clas
 Transforms on PIL Image
 -----------------------
 
+.. autoclass:: CenterCrop
+
+.. autoclass:: ColorJitter
+
+.. autoclass:: FiveCrop
+
+.. autoclass:: Grayscale
+
+.. autoclass:: LinearTransformation
+
+.. autoclass:: Pad
+
+.. autoclass:: RandomAffine
+
+.. autoclass:: RandomApply
+
+.. autoclass:: RandomChoice
+
+.. autoclass:: RandomCrop
+
+.. autoclass:: RandomGrayscale
+
+.. autoclass:: RandomHorizontalFlip
+
+.. autoclass:: RandomOrder
+
+.. autoclass:: RandomResizedCrop
+
+.. autoclass:: RandomRotation
+
+.. autoclass:: RandomSizedCrop
+
+.. autoclass:: RandomVerticalFlip
+
 .. autoclass:: Resize
 
 .. autoclass:: Scale
 
-.. autoclass:: CenterCrop
-
-.. autoclass:: RandomCrop
-
-.. autoclass:: RandomHorizontalFlip
-
-.. autoclass:: RandomVerticalFlip
-
-.. autoclass:: RandomResizedCrop
-
-.. autoclass:: RandomSizedCrop
-
-.. autoclass:: Grayscale
-
-.. autoclass:: RandomGrayscale
-
-.. autoclass:: FiveCrop
-
 .. autoclass:: TenCrop
-
-.. autoclass:: Pad
-
-.. autoclass:: ColorJitter
-
-.. autoclass:: RandomRotation
-
-.. autoclass:: RandomAffine
 
 Transforms on torch.\*Tensor
 ----------------------------
@@ -53,11 +61,11 @@ Transforms on torch.\*Tensor
 Conversion Transforms
 ---------------------
 
-.. autoclass:: ToTensor
+.. autoclass:: ToPILImage
 	:members: __call__
 	:special-members:
 
-.. autoclass:: ToPILImage
+.. autoclass:: ToTensor
 	:members: __call__
 	:special-members:
 
