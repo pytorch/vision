@@ -24,11 +24,17 @@ Transforms on PIL Image
 
 .. autoclass:: RandomAffine
 
+.. autoclass:: RandomApply
+
+.. autoclass:: RandomChoice
+
 .. autoclass:: RandomCrop
 
 .. autoclass:: RandomGrayscale
 
 .. autoclass:: RandomHorizontalFlip
+
+.. autoclass:: RandomOrder
 
 .. autoclass:: RandomResizedCrop
 
