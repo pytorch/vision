@@ -14,7 +14,7 @@ def make_dataset(dir, image_ids, targets):
     images = []
     dir = os.path.expanduser(dir)
     for i in range(len(image_ids)):
-        item = (os.path.join(dir, 'data', 'images', 
+        item = (os.path.join(dir, 'data', 'images',
                              '%s.jpg' % image_ids[i]), targets[i])
         images.append(item)
     return images
@@ -48,7 +48,7 @@ class FGVCAircraft(data.Dataset):
             to label data with (i.e., ``variant``, ``family``, or ``manufacturer``).
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g. ``transforms.RandomCrop``
-        target_transform (callable, optional): A function/transform that takes in the 
+        target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         loader (callable, optional): A function to load an image given its path.
         download (bool, optional): If true, downloads the dataset from the internet and
@@ -57,14 +57,14 @@ class FGVCAircraft(data.Dataset):
     """
     url = 'http://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/archives/fgvc-aircraft-2013b.tar.gz'
 
-    def __init__(self, root, class_type='variant', train=True, transform=None, 
+    def __init__(self, root, class_type='variant', train=True, transform=None,
                  target_transform=None, loader=default_loader, download=False):
         assert(class_type in AIRPLANE_CLASS_TYPES)
         self.root = os.path.expanduser(root)
         self.class_type = class_type
         self.split = 'train' if train else 'val'
-        self.classes_file = os.path.join(self.root, 'data', 
-                                    'images_%s_%s.txt' % (self.class_type, self.split))
+        self.classes_file = os.path.join(self.root, 'data',
+                                         'images_%s_%s.txt' % (self.class_type, self.split))
 
         if download:
             self.download()
@@ -76,10 +76,10 @@ class FGVCAircraft(data.Dataset):
         self.target_transform = target_transform
         self.loader = loader
         self.train = train
-        
+
         self.samples = samples
         self.classes = classes
-        self.class_to_idx = class_to_idx 
+        self.class_to_idx = class_to_idx
 
     def __getitem__(self, index):
         """
@@ -100,7 +100,7 @@ class FGVCAircraft(data.Dataset):
         return sample, target
 
     def __len__(self):
-        return len(self.samples) 
+        return len(self.samples)
 
     def __repr__(self):
         fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
