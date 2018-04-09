@@ -6,7 +6,6 @@ import os
 import numpy as np
 
 
-AIRPLANE_CLASS_TYPES = ['variant', 'family', 'manufacturer']
 
 
 def make_dataset(dir, image_ids, targets):
@@ -56,13 +55,22 @@ class FGVCAircraft(data.Dataset):
             downloaded again.
     """
     url = 'http://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/archives/fgvc-aircraft-2013b.tar.gz'
+    class_types = ('variant', 'family', 'manufacturer')
+    splits = ('train', 'val', 'trainval', 'test')
 
-    def __init__(self, root, class_type='variant', train=True, transform=None,
+    def __init__(self, root, class_type='variant', split='train', transform=None,
                  target_transform=None, loader=default_loader, download=False):
-        assert(class_type in AIRPLANE_CLASS_TYPES)
+        if split not in self.splits:
+            raise ValueError('Split "{}" not found. Valid splits are: {}'.format(
+                split, ', '.join(self.splits),
+            ))
+        if class_type not in self.class_types:
+            raise ValueError('Class type "{}" not found. Valid class types are: {}'.format(
+                class_type, ', '.join(self.class_types),
+            ))
         self.root = os.path.expanduser(root)
         self.class_type = class_type
-        self.split = 'train' if train else 'val'
+        self.split = split
         self.classes_file = os.path.join(self.root, 'data',
                                          'images_%s_%s.txt' % (self.class_type, self.split))
 
@@ -75,7 +83,6 @@ class FGVCAircraft(data.Dataset):
         self.transform = transform
         self.target_transform = target_transform
         self.loader = loader
-        self.train = train
 
         self.samples = samples
         self.classes = classes
