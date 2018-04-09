@@ -1,3 +1,4 @@
+from .aircraft import FGVCAircraft
 from .lsun import LSUN, LSUNClass
 from .folder import ImageFolder, DatasetFolder
 from .coco import CocoCaptions, CocoDetection
@@ -10,7 +11,7 @@ from .fakedata import FakeData
 from .semeion import SEMEION
 from .omniglot import Omniglot
 
-__all__ = ('LSUN', 'LSUNClass',
+__all__ = ('FGVCAircraft', 'LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
            'CocoCaptions', 'CocoDetection',
            'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST',
