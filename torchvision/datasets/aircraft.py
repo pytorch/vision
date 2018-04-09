@@ -5,6 +5,7 @@ from PIL import Image
 import os
 import numpy as np
 
+
 AIRPLANE_CLASS_TYPES = ['variant', 'family', 'manufacturer']
 
 
@@ -36,6 +37,7 @@ def find_classes(classes_file):
     targets = [class_to_idx[c] for c in targets]
 
     return (image_ids, targets, classes, class_to_idx)
+
 
 class FGVCAircraft(data.Dataset):
     """`FGVC-Aircraft <http://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft>`_ Dataset.
@@ -116,13 +118,35 @@ class FGVCAircraft(data.Dataset):
 
     def download(self):
         """Download the FGVC-Aircraft data if it doesn't exist already."""
-        raise NotImplementedError
         from six.moves import urllib
         import tarfile
 
         if self._check_exists():
             return
-        print('Downloading ' + url)
-        tmp_file = urlretrieve(url, filename=None)[0]
-        tar = tarfile.open(file_tmp)
 
+        # prepare to download data to PARENT_DIR/fgvc-aircraft-2013.tar.gz
+        print('Downloading %s ... (may take a few minutes)' % self.url)
+        parent_dir = os.path.abspath(os.path.join(self.root, os.pardir))
+        tar_name = self.url.rpartition('/')[-1]
+        tar_path = os.path.join(parent_dir, tar_name)
+        data = urllib.request.urlopen(self.url)
+
+        # download .tar.gz file
+        with open(tar_path, 'wb') as f:
+            f.write(data.read())
+
+        # extract .tar.gz to PARENT_DIR/fgvc-aircraft-2013b
+        print('Extracting %s... (may take a few minutes)' % tar_path)
+        tar = tarfile.open(tar_path)
+        tar.extractall(parent_dir)
+
+        # rename data folder to self.root
+        tmp_folder = tar_path.strip('.tar.gz')
+        print('Rename data folder %s to %s' % (tmp_folder, self.root))
+        os.rename(tmp_folder, self.root)
+
+        # delete .tar.gz file
+        print('Delete .tar.gz file %s' % tar_path)
+        os.remove(tar_path)
+
+        print('Done!')
