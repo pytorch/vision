@@ -136,17 +136,18 @@ class FGVCAircraft(data.Dataset):
             f.write(data.read())
 
         # extract .tar.gz to PARENT_DIR/fgvc-aircraft-2013b
-        print('Extracting %s... (may take a few minutes)' % tar_path)
+        data_folder = tar_path.strip('.tar.gz')
+        print('Extracting %s to %s ... (may take a few minutes)' % (tar_path, data_folder))
         tar = tarfile.open(tar_path)
         tar.extractall(parent_dir)
 
-        # rename data folder to self.root
-        tmp_folder = tar_path.strip('.tar.gz')
-        print('Rename data folder %s to %s' % (tmp_folder, self.root))
-        os.rename(tmp_folder, self.root)
+        # if necessary, rename data folder to self.root
+        if not os.path.samefile(data_folder, self.root):
+            print('Renaming %s to %s ...' % (data_folder, self.root))
+            os.rename(data_folder, self.root)
 
         # delete .tar.gz file
-        print('Delete .tar.gz file %s' % tar_path)
+        print('Deleting %s ...' % tar_path)
         os.remove(tar_path)
 
         print('Done!')
