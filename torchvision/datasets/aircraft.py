@@ -6,8 +6,6 @@ import os
 import numpy as np
 
 
-
-
 def make_dataset(dir, image_ids, targets):
     assert(len(image_ids) == len(targets))
     images = []
