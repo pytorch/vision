@@ -63,14 +63,14 @@ class FGVCAircraft(data.Dataset):
         self.root = os.path.expanduser(root)
         self.class_type = class_type
         self.split = 'train' if train else 'val'
-        self.classes_file = os.path.join(root, 'data', 
+        self.classes_file = os.path.join(self.root, 'data', 
                                     'images_%s_%s.txt' % (self.class_type, self.split))
 
         if download:
             self.download()
 
         (image_ids, targets, classes, class_to_idx) = find_classes(self.classes_file)
-        samples = make_dataset(root, image_ids, targets)
+        samples = make_dataset(self.root, image_ids, targets)
 
         self.transform = transform
         self.target_transform = target_transform
