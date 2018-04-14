@@ -404,6 +404,12 @@ class Tester(unittest.TestCase):
             expected_output = ndarray.transpose((2, 0, 1))
             assert np.allclose(output.numpy(), expected_output)
 
+        #separate test for mode '1' PIL images
+        input_data = torch.ByteTensor(1, height, width).bernoulli_()
+        img = transforms.ToPILImage()(input_data.mul(255)).convert('1')
+        output = trans(img)
+        assert np.allclose(input_data.numpy(), output.numpy())
+
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_to_tensor(self):
         trans = transforms.ToTensor()
