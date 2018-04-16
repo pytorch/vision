@@ -65,7 +65,7 @@ def to_tensor(pic):
     elif pic.mode == 'F':
         img = torch.from_numpy(np.array(pic, np.float32, copy=False))
     elif pic.mode == '1':
-        img = 255*torch.from_numpy(np.array(pic, np.uint8, copy=False))
+        img = 255 * torch.from_numpy(np.array(pic, np.uint8, copy=False))
     else:
         img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
     # PIL image mode: L, P, I, F, RGB, YCbCr, RGBA, CMYK
