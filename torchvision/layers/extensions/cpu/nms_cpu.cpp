@@ -1,6 +1,7 @@
-#pragma once
+//#pragma once
 
-#include <torch/torch.h>
+//#include <torch/torch.h>
+#include "cpu/vision.h"
 
 
 template <typename scalar_t>
@@ -63,3 +64,16 @@ at::Tensor nms_cpu_kernel(const at::Tensor& dets,
   }
   return at::nonzero(suppressed_t == 0).squeeze(1);
 }
+
+at::Tensor nms_cpu(const at::Tensor& dets,
+               const at::Tensor& scores,
+               const float threshold) {
+
+  auto result = dets.type().tensor();
+
+  AT_DISPATCH_FLOATING_TYPES(dets.type(), "nms", [&] {
+    result = nms_cpu_kernel<scalar_t>(dets, scores, threshold);
+  });
+  return result;
+}
+
