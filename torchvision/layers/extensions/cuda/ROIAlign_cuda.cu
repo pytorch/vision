@@ -1,6 +1,7 @@
-#include <cuda.h>
-#include <cuda_runtime.h>
+//#include <cuda.h>
+//#include <cuda_runtime.h>
 
+//#include "cuda/vision.h"
 #include <ATen/ATen.h>
 
 #include <THC/THC.h>
@@ -283,6 +284,7 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
     return output;
   }
 
+
   AT_DISPATCH_FLOATING_TYPES(input.type(), "ROIAlign_forward", [&] {
     RoIAlignForward<scalar_t><<<grid, block, 0, stream>>>(
          output_size,
@@ -329,6 +331,7 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
     THCudaCheck(cudaGetLastError());
     return grad_input;
   }
+
 
   AT_DISPATCH_FLOATING_TYPES(grad.type(), "ROIAlign_backward", [&] {
     RoIAlignBackwardFeature<scalar_t><<<grid, block, 0, stream>>>(
