@@ -1,6 +1,7 @@
-#pragma once
+//#pragma once
 
-#include <torch/torch.h>
+//#include <torch/torch.h>
+#include "cpu/vision.h"
 
 // implementation taken from Caffe2
 template <typename T>

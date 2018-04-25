@@ -1,7 +1,5 @@
 #pragma once
 
-#include <torch/torch.h>
-
 #include "cpu/vision.h"
 
 #ifdef WITH_CUDA

@@ -5,14 +5,10 @@ at::Tensor nms(const at::Tensor& dets,
                const at::Tensor& scores,
                const float threshold) {
 
-  auto result = dets.type().tensor();
-
   if (dets.type().is_cuda())
     std::runtime_error("NMS not implemented on the GPU");
 
-  AT_DISPATCH_FLOATING_TYPES(dets.type(), "nms", [&] {
-    result = nms_cpu_kernel<scalar_t>(dets, scores, threshold);
-  });
+  at::Tensor result = nms_cpu(dets, scores, threshold);
   return result;
 }
 
