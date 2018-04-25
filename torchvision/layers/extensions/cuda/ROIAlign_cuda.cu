@@ -300,21 +300,20 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
 
 // TODO remove the dependency on input and use instead its sizes -> save memory
 at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
-                                  const at::Tensor& input,
                                   const at::Tensor& rois,
                                   const float spatial_scale,
                                   const int pooled_height,
                                   const int pooled_width,
+                                  const int batch_size,
+                                  const int channels,
+                                  const int height,
+                                  const int width,
                                   const int sampling_ratio) {
   AT_ASSERT(grad.type().is_cuda(), "grad must be a CUDA tensor");
   AT_ASSERT(rois.type().is_cuda(), "rois must be a CUDA tensor");
 
   auto num_rois = rois.size(0);
-  auto channels = input.size(1);
-  auto height = input.size(2);
-  auto width = input.size(3);
-
-  at::Tensor grad_input = at::zeros_like(input);
+  at::Tensor grad_input = grad.type().tensor({batch_size, channels, height, width}).zero_();
 
   cudaStream_t stream = at::globalContext().getCurrentCUDAStream();
 
