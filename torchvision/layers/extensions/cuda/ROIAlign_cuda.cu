@@ -270,7 +270,7 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
   auto height = input.size(2);
   auto width = input.size(3);
 
-  at::Tensor output = input.type().tensor({num_rois, channels, pooled_height, pooled_width});//.zero_();
+  at::Tensor output = input.type().tensor({num_rois, channels, pooled_height, pooled_width});
 
   auto output_size = num_rois * pooled_height * pooled_width * channels;
   cudaStream_t stream = at::globalContext().getCurrentCUDAStream();
@@ -278,9 +278,12 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
   dim3 grid(std::min(THCCeilDiv(output_size, 512L), 4096L));
   dim3 block(512);
 
-  if (output.numel() > 0) {
-    // TODO get dispatching to work
-    using scalar_t = float;
+  if (output.numel() == 0) {
+    THCudaCheck(cudaGetLastError());
+    return output;
+  }
+
+  AT_DISPATCH_FLOATING_TYPES(input.type(), "ROIAlign_forward", [&] {
     RoIAlignForward<scalar_t><<<grid, block, 0, stream>>>(
          output_size,
          input.data<scalar_t>(),
@@ -293,7 +296,7 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
          sampling_ratio,
          rois.data<scalar_t>(),
          output.data<scalar_t>());
-  }
+  });
   THCudaCheck(cudaGetLastError());
   return output;
 }
@@ -318,17 +321,17 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
 
   cudaStream_t stream = at::globalContext().getCurrentCUDAStream();
 
-  // auto input_size = input.numel();
-  // dim3 grid(std::min(THCCeilDiv(input_size, 512L), 4096L));
   dim3 grid(std::min(THCCeilDiv(grad.numel(), 512L), 4096L));
   dim3 block(512);
 
   // handle possibly empty gradients
-  if (grad.numel() > 0) {
-    // TODO get dispatching to work
-    using scalar_t = float;
+  if (grad.numel() == 0) {
+    THCudaCheck(cudaGetLastError());
+    return grad_input;
+  }
+
+  AT_DISPATCH_FLOATING_TYPES(grad.type(), "ROIAlign_backward", [&] {
     RoIAlignBackwardFeature<scalar_t><<<grid, block, 0, stream>>>(
-         //input_size,
          grad.numel(),
          grad.data<scalar_t>(),
          num_rois,
@@ -341,7 +344,7 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
          sampling_ratio,
          grad_input.data<scalar_t>(),
          rois.data<scalar_t>());
-  }
+  });
   THCudaCheck(cudaGetLastError());
   return grad_input;
 }
