@@ -45,5 +45,15 @@ class Tester(unittest.TestCase):
         assert gradcheck(func, (x,)), 'gradcheck failed for roi_align'
 
 
+    def test_nms(self):
+        boxes = torch.tensor([
+            [0, 0, 100, 100],
+            [2, 2, 98, 98],
+            [50, 50, 200, 200],
+            [50, 50, 200, 200]], dtype=torch.float32)
+        scores = torch.tensor([1, 2, 0.5, 1], dtype=torch.float32)
+        keep = layers.nms(boxes, scores, 0.5)
+        assert keep.tolist() == [1, 3]
+
 if __name__ == '__main__':
     unittest.main()
