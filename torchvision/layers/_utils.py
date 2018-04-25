@@ -21,4 +21,3 @@ def _load_C_extensions(source_cpu, source_gpu=None):
 
 _C = _load_C_extensions(['extensions/vision.cpp'])
 
-

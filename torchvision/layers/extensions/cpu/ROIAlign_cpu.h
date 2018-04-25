@@ -237,9 +237,10 @@ at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
 
   auto output_size = num_rois * pooled_height * pooled_width * channels;
 
-  if (output.numel() > 0) {
-    // TODO get dispatching to work
-    using scalar_t = float;
+  if (output.numel() == 0)
+    return output;
+
+  AT_DISPATCH_FLOATING_TYPES(input.type(), "ROIAlign_forward", [&] {
     ROIAlignForward_cpu_kernel<scalar_t>(
          output_size,
          input.data<scalar_t>(),
@@ -252,6 +253,6 @@ at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
          sampling_ratio,
          rois.data<scalar_t>(),
          output.data<scalar_t>());
-  }
+  });
   return output;
 }
