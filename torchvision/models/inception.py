@@ -61,12 +61,12 @@ class Inception3(nn.Module):
                 import scipy.stats as stats
                 stddev = m.stddev if hasattr(m, 'stddev') else 0.1
                 X = stats.truncnorm(-2, 2, scale=stddev)
-                values = torch.Tensor(X.rvs(m.weight.data.numel()))
-                values = values.view(m.weight.data.size())
-                m.weight.data.copy_(values)
+                values = torch.Tensor(X.rvs(m.weight.numel()))
+                values = values.view(m.weight.size())
+                m.weight.copy_(values)
             elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
+                m.weight.fill_(1)
+                m.bias.zero_()
 
     def forward(self, x):
         if self.transform_input:

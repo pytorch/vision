@@ -89,11 +89,11 @@ class SqueezeNet(nn.Module):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 if m is final_conv:
-                    init.normal(m.weight.data, mean=0.0, std=0.01)
+                    init.normal(m.weight, mean=0.0, std=0.01)
                 else:
-                    init.kaiming_uniform(m.weight.data)
+                    init.kaiming_uniform_(m.weight)
                 if m.bias is not None:
-                    m.bias.data.zero_()
+                    m.bias.zero_()
 
     def forward(self, x):
         x = self.features(x)
