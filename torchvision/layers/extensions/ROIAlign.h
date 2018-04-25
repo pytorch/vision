@@ -40,10 +40,3 @@ at::Tensor ROIAlign_backward(const at::Tensor& grad,
   std::runtime_error("Not implemented on the CPU");
 }
 
-
-/*
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-  m.def("roi_align_forward", &ROIAlign_forward, "ROIAlign_forward");
-  m.def("roi_align_backward", &ROIAlign_backward, "ROIAlign_backward");
-}
-*/
