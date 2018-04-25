@@ -17,7 +17,7 @@ at::Tensor ROIAlign_forward(const at::Tensor& input,
 #ifdef WITH_CUDA
     return ROIAlign_forward_cuda(input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio);
 #else
-    std::runtime_error("Not compiled with GPU support");
+    AT_ERROR("Not compiled with GPU support");
 #endif
   }
   return ROIAlign_forward_cpu(input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio);
@@ -37,9 +37,9 @@ at::Tensor ROIAlign_backward(const at::Tensor& grad,
 #ifdef WITH_CUDA
     return ROIAlign_backward_cuda(grad, rois, spatial_scale, pooled_height, pooled_width, batch_size, channels, height, width, sampling_ratio);
 #else
-    std::runtime_error("Not compiled with GPU support");
+    AT_ERROR("Not compiled with GPU support");
 #endif
   }
-  std::runtime_error("Not implemented on the CPU");
+  AT_ERROR("Not implemented on the CPU");
 }
 
