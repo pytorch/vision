@@ -6,6 +6,7 @@ import sys
 from setuptools import setup, find_packages
 from pkg_resources import get_distribution, DistributionNotFound
 import subprocess
+import glob
 
 import torch.cuda
 from torch.utils.cpp_extension import CppExtension, CUDAExtension, CUDA_HOME
@@ -72,10 +73,12 @@ pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
 def get_extensions():
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
 
-    main_file = ['vision.cpp']
-    source_cpu = ['cpu/nms_cpu.cpp', 'cpu/ROIAlign_cpu.cpp']
-    source_cuda = ['cuda/ROIAlign_cuda.cu', 'cuda/ROIPool_cuda.cu']
+    main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
+    source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
+    source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
 
     sources = main_file + source_cpu
     extension = CppExtension
@@ -87,8 +90,6 @@ def get_extensions():
         sources += source_cuda
         define_macros += [('WITH_CUDA', None)]
     
-    this_dir = os.path.dirname(os.path.abspath(__file__))
-    extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs = [extensions_dir]
