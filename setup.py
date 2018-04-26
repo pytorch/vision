@@ -7,9 +7,12 @@ import sys
 from setuptools import setup, find_packages
 from pkg_resources import get_distribution, DistributionNotFound
 import glob
+<<<<<<< c42bd059e7431f1f6be40a29313e36951ce57842
 
 import torch.cuda
 from torch.utils.cpp_extension import CppExtension, CUDAExtension, CUDA_HOME
+=======
+>>>>>>> Cleanups
 
 import torch.cuda
 from torch.utils.cpp_extension import CppExtension, CUDAExtension, CUDA_HOME
@@ -92,11 +95,19 @@ requirements.append('tqdm' + tqdm_ver)
 
 
 def get_extensions():
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
 
+<<<<<<< c42bd059e7431f1f6be40a29313e36951ce57842
     main_file = ['vision.cpp']
     source_cpu = ['cpu/nms_cpu.cpp', 'cpu/ROIAlign_cpu.cpp']
     source_cuda = ['cuda/ROIAlign_cuda.cu']
     name = 'torchvision._C'
+=======
+    main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
+    source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
+    source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
+>>>>>>> Cleanups
 
     sources = main_file + source_cpu
     extension = CppExtension
@@ -109,8 +120,6 @@ def get_extensions():
         sources += source_cuda
         define_macros += [('WITH_CUDA', None)]
     
-    this_dir = os.path.dirname(os.path.abspath(__file__))
-    extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs = [extensions_dir]
