@@ -23,7 +23,7 @@ def _load_C_extensions(source_cpu, source_gpu=None):
 
 main_file = ['vision.cpp']
 source_cpu = ['cpu/nms_cpu.cpp', 'cpu/ROIAlign_cpu.cpp']
-source_cuda = ['cuda/ROIAlign_cuda.cu']
+source_cuda = ['cuda/ROIAlign_cuda.cu', 'cuda/ROIPool_cuda.cu']
 
 _C = _load_C_extensions(source_cpu + main_file, source_cuda)
 
