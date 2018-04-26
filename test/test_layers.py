@@ -44,6 +44,20 @@ class Tester(unittest.TestCase):
 
         assert gradcheck(func, (x,)), 'gradcheck failed for roi_align'
 
+    def test_roi_pool_gradient(self):
+        dtype = torch.float64
+        device = torch.device('cuda')
+        m = layers.ROIPool((5, 5), 0.5).to(dtype=dtype, device=device)
+        x = torch.rand(1, 1, 10, 10, dtype=dtype, device=device)
+        rois = torch.tensor([
+            [0, 0, 0, 10, 10],
+            [0, 0, 5, 5, 10],
+            [0, 5, 5, 10, 10]], dtype=dtype, device=device)
+
+        def func(input):
+            return m(input, rois)
+
+        assert gradcheck(func, (x,)), 'gradcheck failed for roi_pool'
 
     def test_nms(self):
         boxes = torch.tensor([

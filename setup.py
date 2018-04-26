@@ -42,13 +42,11 @@ def get_extensions():
 
     main_file = ['vision.cpp']
     source_cpu = ['cpu/nms_cpu.cpp', 'cpu/ROIAlign_cpu.cpp']
-    source_cuda = ['cuda/ROIAlign_cuda.cu']
-    name = 'torchvision._C'
+    source_cuda = ['cuda/ROIAlign_cuda.cu', 'cuda/ROIPool_cuda.cu']
 
     sources = main_file + source_cpu
     extension = CppExtension
 
-    extra_cflags = []
     define_macros = []
     
     if torch.cuda.is_available() and CUDA_HOME is not None:
@@ -64,7 +62,8 @@ def get_extensions():
 
     ext_modules = [
         extension(
-            name, sources,
+            'torchvision._C',
+            sources,
             include_dirs=include_dirs,
             define_macros=define_macros
         )
