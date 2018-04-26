@@ -6,7 +6,8 @@ from torch.autograd.function import once_differentiable
 
 from torch.nn.modules.utils import _pair
 
-from ._utils import _C
+# from ._utils import _C
+from torchvision import _C
 
 
 class _ROIAlign(Function):
