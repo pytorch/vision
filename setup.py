@@ -7,6 +7,9 @@ from setuptools import setup, find_packages
 from pkg_resources import get_distribution, DistributionNotFound
 import subprocess
 
+import torch.cuda
+from torch.utils.cpp_extension import CppExtension, CUDAExtension, CUDA_HOME
+
 
 def read(*names, **kwargs):
     with io.open(
@@ -68,6 +71,40 @@ pillow_ver = ' >= 4.1.1'
 pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
+def get_extensions():
+
+    main_file = ['vision.cpp']
+    source_cpu = ['cpu/nms_cpu.cpp', 'cpu/ROIAlign_cpu.cpp']
+    source_cuda = ['cuda/ROIAlign_cuda.cu']
+    # name = '_torchvision_C'
+    name = 'torchvision._C'
+
+    sources = main_file + source_cpu
+    extension = CppExtension
+
+    extra_cflags = []
+    
+    if torch.cuda.is_available() and CUDA_HOME is not None:
+        extension = CUDAExtension
+        sources += source_cuda
+        extra_cflags = ['-DWITH_CUDA']
+    
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    extensions_dir = os.path.join(this_dir, 'torchvision', 'layers', 'extensions')
+    sources = [os.path.join(extensions_dir, s) for s in sources]
+
+    include_dirs = [extensions_dir]
+
+    ext_modules = [
+        extension(
+            name, sources,
+            include_dirs=include_dirs,
+            extra_cflags=extra_cflags
+        )
+    ]
+
+    return ext_modules
+
 
 setup(
     # Metadata
@@ -88,4 +125,7 @@ setup(
     extras_require={
         "scipy": ["scipy"],
     },
+
+    ext_modules=get_extensions(),
+    cmdclass={'build_ext': torch.utils.cpp_extension.BuildExtension}
 )
