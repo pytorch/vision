@@ -18,7 +18,6 @@ class Tester(unittest.TestCase):
             [0, 0, 5, 5, 10],
             [0, 5, 5, 10, 10]], dtype=dtype)
 
-
         for device in ['cpu', 'cuda']:
             device = torch.device(device)
             x_n = x.to(device)
@@ -27,7 +26,6 @@ class Tester(unittest.TestCase):
             outputs.append(output)
 
         assert (outputs[0] - outputs[1]).abs().max() < 1e-6
-
 
     def test_roi_align_gradient(self):
         dtype = torch.float64
