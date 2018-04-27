@@ -6,7 +6,6 @@ from torch.autograd.function import once_differentiable
 
 from torch.nn.modules.utils import _pair
 
-# from ._utils import _C
 from torchvision import _C
 
 
@@ -16,7 +15,8 @@ class _ROIPool(Function):
         ctx.output_size = _pair(output_size)
         ctx.spatial_scale = spatial_scale
         ctx.input_shape = input.size()
-        output, argmax = _C.roi_pool_forward(input, roi, spatial_scale,
+        output, argmax = _C.roi_pool_forward(
+                input, roi, spatial_scale,
                 output_size[0], output_size[1])
         ctx.save_for_backward(input, roi, argmax)
         return output
@@ -28,11 +28,13 @@ class _ROIPool(Function):
         output_size = ctx.output_size
         spatial_scale = ctx.spatial_scale
         bs, ch, h, w = ctx.input_shape
-        grad_input =  _C.roi_pool_backward(grad_output, input, rois, argmax, spatial_scale,
+        grad_input = _C.roi_pool_backward(
+                grad_output, input, rois, argmax, spatial_scale,
                 output_size[0], output_size[1], bs, ch, h, w)
         return grad_input, None, None, None
 
 roi_pool = _ROIPool.apply
+
 
 class ROIPool(nn.Module):
     def __init__(self, output_size, spatial_scale):
@@ -49,5 +51,3 @@ class ROIPool(nn.Module):
         tmpstr += ', spatial_scale=' + str(self.spatial_scale)
         tmpstr += ')'
         return tmpstr
-
-
