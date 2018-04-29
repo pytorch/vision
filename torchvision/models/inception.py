@@ -63,7 +63,7 @@ class Inception3(nn.Module):
                 X = stats.truncnorm(-2, 2, scale=stddev)
                 values = torch.Tensor(X.rvs(m.weight.numel()))
                 values = values.view(m.weight.size())
-                m.weight.copy_(values)
+                m.weight.data.copy_(values)
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
