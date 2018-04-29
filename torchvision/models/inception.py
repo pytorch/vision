@@ -65,8 +65,8 @@ class Inception3(nn.Module):
                 values = values.view(m.weight.size())
                 m.weight.copy_(values)
             elif isinstance(m, nn.BatchNorm2d):
-                m.weight.fill_(1)
-                m.bias.zero_()
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         if self.transform_input:

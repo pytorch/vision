@@ -211,10 +211,10 @@ class DenseNet(nn.Module):
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight)
             elif isinstance(m, nn.BatchNorm2d):
-                m.weight.fill_(1)
-                m.bias.zero_()
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
-                m.bias.zero_()
+                nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         features = self.features(x)
