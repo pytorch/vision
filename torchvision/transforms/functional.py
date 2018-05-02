@@ -13,6 +13,8 @@ import types
 import collections
 import warnings
 
+from ..structures.bounding_box import BBox
+
 
 def _is_pil_image(img):
     if accimage is not None:
@@ -167,7 +169,7 @@ def normalize(tensor, mean, std):
     return tensor
 
 
-def resize(img, size, interpolation=Image.BILINEAR):
+def resize(img, size, interpolation=Image.BILINEAR, max_size=None):
     """Resize the input PIL Image to the given size.
 
     Args:
@@ -183,15 +185,23 @@ def resize(img, size, interpolation=Image.BILINEAR):
     Returns:
         PIL Image: Resized image.
     """
-    if not _is_pil_image(img):
+    if not (_is_pil_image(img) or isinstance(img, BBox)):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
     if not (isinstance(size, int) or (isinstance(size, collections.Iterable) and len(size) == 2)):
         raise TypeError('Got inappropriate size arg: {}'.format(size))
 
     if isinstance(size, int):
         w, h = img.size
+
+        if max_size is not None:
+            min_original_size = float(min((w, h)))
+            max_original_size = float(max((w, h)))
+            if max_original_size / min_original_size * size > max_size:
+                size = int(round(max_size * min_original_size / max_original_size))
+
         if (w <= h and w == size) or (h <= w and h == size):
             return img
+
         if w < h:
             ow = size
             oh = int(size * h / w)
@@ -291,7 +301,7 @@ def crop(img, i, j, h, w):
     Returns:
         PIL Image: Cropped image.
     """
-    if not _is_pil_image(img):
+    if not (_is_pil_image(img) or isinstance(img, BBox)):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     return img.crop((j, i, j + w, i + h))
@@ -339,7 +349,7 @@ def hflip(img):
     Returns:
         PIL Image:  Horizontall flipped image.
     """
-    if not _is_pil_image(img):
+    if not (_is_pil_image(img) or isinstance(img, BBox)):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     return img.transpose(Image.FLIP_LEFT_RIGHT)
