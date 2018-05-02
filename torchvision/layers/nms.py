@@ -2,5 +2,5 @@
 from torchvision import _C
 
 nms = _C.nms
-nms.__doc__ = """
-This function performs Non-maximum suppresion"""
+# nms.__doc__ = """
+# This function performs Non-maximum suppresion"""
