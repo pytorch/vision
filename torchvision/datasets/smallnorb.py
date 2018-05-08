@@ -113,15 +113,15 @@ class SmallNORB(data.Dataset):
 
         # load right set
         if self.mode == "left":
-            self.data = self._load(f"{image_file}_left")
+            self.data = self._load("{}_left".format(image_file))
 
         # load left set
         elif self.mode == "right":
-            self.data = self._load(f"{image_file}_right")
+            self.data = self._load("{}_right".format(image_file))
 
         elif self.mode == "all" or self.mode == "stereo":
-            left_data = self._load(f"{image_file}_left")
-            right_data = self._load(f"{image_file}_right")
+            left_data = self._load("{}_left".format(image_file))
+            right_data = self._load("{}_right".format(image_file))
 
             # load stereo
             if self.mode == "stereo":
@@ -171,23 +171,23 @@ class SmallNORB(data.Dataset):
         return img
 
     def _load(self, file_name):
-        return torch.load(os.path.join(self.root, self.processed_folder, f"{file_name}{self.extension}"))
+        return torch.load(os.path.join(self.root, self.processed_folder, file_name + self.extension))
 
     def _save(self, file, file_name):
-        with open(os.path.join(self.root, self.processed_folder, f"{file_name}{self.extension}"), 'wb') as f:
+        with open(os.path.join(self.root, self.processed_folder, file_name + self.extension), 'wb') as f:
             torch.save(file, f)
 
     def _check_exists(self):
         """ Check if processed files exists."""
         files = (
-            f"{self.train_image_file}_left",
-            f"{self.train_image_file}_right",
-            f"{self.test_image_file}_left",
-            f"{self.test_image_file}_right",
+            "{}_left".format(self.train_image_file),
+            "{}_right".format(self.train_image_file),
+            "{}_left".format(self.test_image_file),
+            "{}_right".format(self.test_image_file),
             self.test_label_file,
             self.train_label_file
         )
-        fpaths = [os.path.exists(os.path.join(self.root, self.processed_folder, f"{f}{self.extension}")) for f in files]
+        fpaths = [os.path.exists(os.path.join(self.root, self.processed_folder, f + self.extension)) for f in files]
         return False not in fpaths
 
     def _flat_data_files(self):
@@ -258,16 +258,16 @@ class SmallNORB(data.Dataset):
         test_info = self._read_label_file(self.data_files["test"]["cat"]["name"])
 
         # save training files
-        self._save(left_train_img, f"{self.train_image_file}_left")
-        self._save(right_train_img, f"{self.train_image_file}_right")
-        self._save(train_label, f"{self.train_label_file}")
-        self._save(train_info, f"{self.train_info_file}")
+        self._save(left_train_img, "{}_left".format(self.train_image_file))
+        self._save(right_train_img, "{}_right".format(self.train_image_file))
+        self._save(train_label, self.train_label_file)
+        self._save(train_info, self.train_info_file)
 
         # save test files
-        self._save(left_test_img, f"{self.test_image_file}_left")
-        self._save(right_test_img, f"{self.test_image_file}_right")
-        self._save(test_label, f"{self.test_label_file}")
-        self._save(test_info, f"{self.test_info_file}")
+        self._save(left_test_img, "{}_left".format(self.test_image_file))
+        self._save(right_test_img, "{}_right".format(self.test_image_file))
+        self._save(test_label, self.test_label_file)
+        self._save(test_info, self.test_info_file)
 
         print('Done!')
 
