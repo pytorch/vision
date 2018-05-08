@@ -10,7 +10,6 @@ from PIL import Image
 from .utils import download_url, check_integrity
 
 
-
 class SmallNORB(data.Dataset):
     """`MNIST <https://cs.nyu.edu/~ylclab/data/norb-v1.0-small//>`_ Dataset.
 
@@ -120,7 +119,7 @@ class SmallNORB(data.Dataset):
         elif self.mode == "right":
             self.data = self._load(f"{image_file}_right")
 
-        elif self.mode == "all" or self.mode == "all""stereo":
+        elif self.mode == "all" or self.mode == "stereo":
             left_data = self._load(f"{image_file}_left")
             right_data = self._load(f"{image_file}_right")
 
@@ -313,8 +312,9 @@ class SmallNORB(data.Dataset):
     def _read_label_file(self, file_name):
         fpath = os.path.join(self.root, self.raw_folder, file_name)
         with open(fpath, mode='rb') as f:
-            num_samples = self._parse_header(f)
-            assert num_samples == 24300
+            dimensions = self._parse_header(f)
+            assert dimensions == [24300]
+            num_samples = dimensions[0]
 
             struct.unpack('<BBBB', f.read(4))  # ignore this integer
             struct.unpack('<BBBB', f.read(4))  # ignore this integer
