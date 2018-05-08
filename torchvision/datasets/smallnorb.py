@@ -17,8 +17,7 @@ from torchvision.datasets.utils import download_url, check_integrity
 class smallNORB(data.Dataset):
     """`small NORB <https://cs.nyu.edu/~ylclab/data/norb-v1.0-small/>`_ Dataset.
     Args:
-        root (string): Root directory of dataset where directory
-            ``cifar-10-batches-py`` exists or will be saved to if download is set to True.
+        root (string): Root directory of dataset
         train (bool, optional): If True, creates dataset from training set, otherwise
             creates from test set.
         transform (callable, optional): A function/transform that  takes in an PIL image
