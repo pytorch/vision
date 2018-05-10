@@ -69,6 +69,7 @@ class DatasetFolder(data.Dataset):
         classes (list): List of the class names.
         class_to_idx (dict): Dict with items (class_name, class_index).
         samples (list): List of (sample path, class_index) tuples
+        targets (list): The class_index value for each image in the dataset
     """
 
     def __init__(self, root, loader, extensions, transform=None, target_transform=None):
@@ -85,6 +86,7 @@ class DatasetFolder(data.Dataset):
         self.classes = classes
         self.class_to_idx = class_to_idx
         self.samples = samples
+        self.targets = [s[1] for s in samples]
 
         self.transform = transform
         self.target_transform = target_transform
