@@ -38,6 +38,13 @@ class MNIST(data.Dataset):
     classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four', '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
     class_to_idx = {_class: i for i, _class in enumerate(classes)}
 
+    @property
+    def targets(self):
+        if self.train:
+            return self.train_labels
+        else:
+            return self.test_labels
+
     def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
         self.root = os.path.expanduser(root)
         self.transform = transform
