@@ -51,6 +51,13 @@ class CIFAR10(data.Dataset):
         'md5': '5ff9c542aee3614f3951f8cda6e48888',
     }
 
+    @property
+    def targets(self):
+        if self.train:
+            return self.train_labels
+        else:
+            return self.test_labels
+
     def __init__(self, root, train=True,
                  transform=None, target_transform=None,
                  download=False):
