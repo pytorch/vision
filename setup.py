@@ -33,7 +33,7 @@ requirements = [
     'pillow >= 4.1.1',
     'six',
     'torch',
-    'progressbar2'
+    'tqdm'
 ]
 
 setup(

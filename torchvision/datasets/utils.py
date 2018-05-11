@@ -2,12 +2,12 @@ import os
 import os.path
 import hashlib
 import errno
-from progressbar import *
+from tqdm import tqdm
 
 
 def gen_bar_updator(pbar):
     def bar_update(count, block_size, total_size):
-        pbar.max_value = total_size / block_size
+        pbar.total = total_size / block_size
         pbar.update(count)
 
     return bar_update
@@ -47,7 +47,7 @@ def download_url(url, root, filename, md5):
     else:
         try:
             print('Downloading ' + url + ' to ' + fpath)
-            urllib.request.urlretrieve(url, fpath, reporthook=gen_bar_updator(ProgressBar()))
+            urllib.request.urlretrieve(url, fpath, reporthook=gen_bar_updator(tqdm()))
         except:
             if url[:5] == 'https':
                 url = url.replace('https:', 'http:')
