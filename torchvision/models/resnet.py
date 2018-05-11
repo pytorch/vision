@@ -117,6 +117,14 @@ class ResNet(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
+        # Zero-initialize the last BN in each block.
+        # This improves the model by 0.2~0.3% according to https://arxiv.org/abs/1706.02677
+        for m in self.modules():
+            if isinstance(m, Bottleneck):
+                nn.init.constant_(m.bn3.weight, 0)
+            elif isinstance(m, BasicBlock):
+                nn.init.constant_(m.bn2.weight, 0)
+
     def _make_layer(self, block, planes, blocks, stride=1):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
