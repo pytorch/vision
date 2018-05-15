@@ -74,3 +74,9 @@ Generic Transforms
 
 .. autoclass:: Lambda
 
+
+Functional Transforms
+---------------------
+
+.. automodule:: torchvision.transforms.functional
+    :members:
