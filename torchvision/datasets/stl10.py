@@ -7,6 +7,7 @@ import errno
 import numpy as np
 import sys
 from .cifar import CIFAR10
+from ..transforms import functional as F
 
 
 class STL10(CIFAR10):
@@ -87,6 +88,8 @@ class STL10(CIFAR10):
             with open(class_file) as f:
                 self.classes = f.read().splitlines()
 
+        self.data = [Image.fromarray(np.transpose(self.data[i], (1, 2, 0))) for i in range(self.data.shape[0])]
+
     def __getitem__(self, index):
         """
         Args:
@@ -100,10 +103,6 @@ class STL10(CIFAR10):
         else:
             img, target = self.data[index], None
 
-        # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        img = Image.fromarray(np.transpose(img, (1, 2, 0)))
-
         if self.transform is not None:
             img = self.transform(img)
 
@@ -113,7 +112,7 @@ class STL10(CIFAR10):
         return img, target
 
     def __len__(self):
-        return self.data.shape[0]
+        return len(self.data)
 
     def __loadfile(self, data_file, labels_file=None):
         labels = None

@@ -7,6 +7,7 @@ import errno
 import numpy as np
 import torch
 import codecs
+from ..transforms import functional as F
 
 
 class MNIST(data.Dataset):
@@ -52,9 +53,15 @@ class MNIST(data.Dataset):
         if self.train:
             self.train_data, self.train_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.training_file))
+
+            self.train_data = [Image.fromarray(self.train_data[i].numpy(), mode='L')
+                                for i in range(self.train_data.shape[0])]
         else:
             self.test_data, self.test_labels = torch.load(
                 os.path.join(self.root, self.processed_folder, self.test_file))
+
+            self.test_data = [Image.fromarray(self.test_data[i].numpy(), mode='L')
+                               for i in range(self.test_data.shape[0])]
 
     def __getitem__(self, index):
         """
@@ -68,10 +75,6 @@ class MNIST(data.Dataset):
             img, target = self.train_data[index], self.train_labels[index]
         else:
             img, target = self.test_data[index], self.test_labels[index]
-
-        # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        img = Image.fromarray(img.numpy(), mode='L')
 
         if self.transform is not None:
             img = self.transform(img)
