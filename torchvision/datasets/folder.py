@@ -11,12 +11,25 @@ def has_file_allowed_extension(filename, extensions):
 
     Args:
         filename (string): path to a file
+        extensions (iterable of strings): extensions to consider (lowercase)
+
+    Returns:
+        bool: True if the filename ends with one of given extensions
+    """
+    filename_lower = filename.lower()
+    return any(filename_lower.endswith(ext) for ext in extensions)
+
+
+def is_image_file(filename):
+    """Checks if a file is an allowed image extension.
+
+    Args:
+        filename (string): path to a file
 
     Returns:
         bool: True if the filename ends with a known image extension
     """
-    filename_lower = filename.lower()
-    return any(filename_lower.endswith(ext) for ext in extensions)
+    return has_file_allowed_extension(filename, IMG_EXTENSIONS)
 
 
 def find_classes(dir):
