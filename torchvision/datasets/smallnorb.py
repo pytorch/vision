@@ -138,9 +138,9 @@ class SmallNORB(data.Dataset):
 
         Returns:
             mode ``all'', ``left'', ``right'':
-                tuple: (image, info, target)
+                tuple: (image, target, info)
             mode ``stereo'':
-                tuple: (image left, image right, info, target)
+                tuple: (image left, image right, target, info)
         """
         target = self.labels[index % 24300] if self.mode is "all" else self.labels[index]
         if self.target_transform is not None:
@@ -153,10 +153,10 @@ class SmallNORB(data.Dataset):
         if self.mode == "stereo":
             img_left = self._transform(self.data[index, 0])
             img_right = self._transform(self.data[index, 1])
-            return img_left, img_right, info, target
+            return img_left, img_right, target, info
 
         img = self._transform(self.data[index])
-        return img, info, target
+        return img, target, info
 
     def __len__(self):
         return len(self.data)
