@@ -254,8 +254,8 @@ class SmallNORB(data.Dataset):
 
         # read test files
         left_test_img, right_test_img = self._read_image_file(self.data_files["test"]["dat"]["name"])
-        test_label = self._read_info_file(self.data_files["test"]["info"]["name"])
-        test_info = self._read_label_file(self.data_files["test"]["cat"]["name"])
+        test_info = self._read_info_file(self.data_files["test"]["info"]["name"])
+        test_label = self._read_label_file(self.data_files["test"]["cat"]["name"])
 
         # save training files
         self._save(left_train_img, "{}_left".format(self.train_image_file))
