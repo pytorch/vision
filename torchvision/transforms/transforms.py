@@ -372,7 +372,7 @@ class RandomCrop(object):
             desired size to avoid raising an exception.
     """
 
-    def __init__(self, size, padding=0, pad_if_needed=False):
+    def __init__(self, size, padding=None, pad_if_needed=False):
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
         else:
@@ -408,7 +408,7 @@ class RandomCrop(object):
         Returns:
             PIL Image: Cropped image.
         """
-        if self.padding > 0:
+        if self.padding is not None:
             img = F.pad(img, self.padding)
 
         # pad the width if needed
