@@ -365,9 +365,10 @@ class RandomCrop(object):
             int instead of sequence like (h, w), a square crop (size, size) is
             made.
         padding (int or sequence, optional): Optional padding on each border
-            of the image. Default is 0, i.e no padding. If a sequence of length
+            of the image. Default is None, i.e no padding. If a sequence of length
             4 is provided, it is used to pad left, top, right, bottom borders
-            respectively.
+            respectively. If a sequence of length 2 is provided, it is used to
+            pad left/right, top/bottom borders, respectively.
         pad_if_needed (boolean): It will pad the image if smaller than the
             desired size to avoid raising an exception.
     """
