@@ -245,7 +245,7 @@ class Tester(unittest.TestCase):
 
     def test_pad_with_non_constant_padding_modes(self):
         """Unit tests for edge, reflect, symmetric padding"""
-        img = torch.zeros(3, 27, 27)
+        img = torch.zeros(3, 27, 27).byte()
         img[:, :, 0] = 1  # Constant value added to leftmost edge
         img = transforms.ToPILImage()(img)
         img = F.pad(img, 1, (200, 200, 200))
@@ -255,7 +255,7 @@ class Tester(unittest.TestCase):
         # First 6 elements of leftmost edge in the middle of the image, values are in order:
         # edge_pad, edge_pad, edge_pad, constant_pad, constant value added to leftmost edge, 0
         edge_middle_slice = np.asarray(edge_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert np.all(edge_middle_slice == np.asarray([200, 200, 200, 200, 255, 0]))
+        assert np.all(edge_middle_slice == np.asarray([200, 200, 200, 200, 1, 0]))
         assert transforms.ToTensor()(edge_padded_img).size() == (3, 35, 35)
 
         # Pad 3 to left/right, 2 to top/bottom
@@ -263,7 +263,7 @@ class Tester(unittest.TestCase):
         # First 6 elements of leftmost edge in the middle of the image, values are in order:
         # reflect_pad, reflect_pad, reflect_pad, constant_pad, constant value added to leftmost edge, 0
         reflect_middle_slice = np.asarray(reflect_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert np.all(reflect_middle_slice == np.asarray([0, 0, 255, 200, 255, 0]))
+        assert np.all(reflect_middle_slice == np.asarray([0, 0, 1, 200, 1, 0]))
         assert transforms.ToTensor()(reflect_padded_img).size() == (3, 33, 35)
 
         # Pad 3 to left, 2 to top, 2 to right, 1 to bottom
@@ -271,7 +271,7 @@ class Tester(unittest.TestCase):
         # First 6 elements of leftmost edge in the middle of the image, values are in order:
         # sym_pad, sym_pad, sym_pad, constant_pad, constant value added to leftmost edge, 0
         symmetric_middle_slice = np.asarray(symmetric_padded_img).transpose(2, 0, 1)[0][17][:6]
-        assert np.all(symmetric_middle_slice == np.asarray([0, 255, 200, 200, 255, 0]))
+        assert np.all(symmetric_middle_slice == np.asarray([0, 1, 200, 200, 1, 0]))
         assert transforms.ToTensor()(symmetric_padded_img).size() == (3, 32, 34)
 
     def test_pad_raises_with_invalid_pad_sequence_len(self):

@@ -11,12 +11,25 @@ def has_file_allowed_extension(filename, extensions):
 
     Args:
         filename (string): path to a file
+        extensions (iterable of strings): extensions to consider (lowercase)
+
+    Returns:
+        bool: True if the filename ends with one of given extensions
+    """
+    filename_lower = filename.lower()
+    return any(filename_lower.endswith(ext) for ext in extensions)
+
+
+def is_image_file(filename):
+    """Checks if a file is an allowed image extension.
+
+    Args:
+        filename (string): path to a file
 
     Returns:
         bool: True if the filename ends with a known image extension
     """
-    filename_lower = filename.lower()
-    return any(filename_lower.endswith(ext) for ext in extensions)
+    return has_file_allowed_extension(filename, IMG_EXTENSIONS)
 
 
 def find_classes(dir):
@@ -69,6 +82,7 @@ class DatasetFolder(data.Dataset):
         classes (list): List of the class names.
         class_to_idx (dict): Dict with items (class_name, class_index).
         samples (list): List of (sample path, class_index) tuples
+        targets (list): The class_index value for each image in the dataset
     """
 
     def __init__(self, root, loader, extensions, transform=None, target_transform=None):
@@ -85,6 +99,7 @@ class DatasetFolder(data.Dataset):
         self.classes = classes
         self.class_to_idx = class_to_idx
         self.samples = samples
+        self.targets = [s[1] for s in samples]
 
         self.transform = transform
         self.target_transform = target_transform
