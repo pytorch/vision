@@ -368,16 +368,19 @@ class RandomCrop(object):
             of the image. Default is 0, i.e no padding. If a sequence of length
             4 is provided, it is used to pad left, top, right, bottom borders
             respectively.
+        padding_mode (str): Type of padding. Should be: constant, edge, reflect
+            or symmetric. Default is constant.
         pad_if_needed (boolean): It will pad the image if smaller than the
             desired size to avoid raising an exception.
     """
 
-    def __init__(self, size, padding=0, pad_if_needed=False):
+    def __init__(self, size, padding=0, padding_mode='constant', pad_if_needed=False):
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
         else:
             self.size = size
         self.padding = padding
+        self.padding_mode = padding_mode
         self.pad_if_needed = pad_if_needed
 
     @staticmethod
@@ -409,14 +412,14 @@ class RandomCrop(object):
             PIL Image: Cropped image.
         """
         if self.padding > 0:
-            img = F.pad(img, self.padding)
+            img = F.pad(img, self.padding, padding_mode=self.padding_mode)
 
         # pad the width if needed
         if self.pad_if_needed and img.size[0] < self.size[1]:
-            img = F.pad(img, (int((1 + self.size[1] - img.size[0]) / 2), 0))
+            img = F.pad(img, (int((1 + self.size[1] - img.size[0]) / 2), 0), padding_mode=self.padding_mode)
         # pad the height if needed
         if self.pad_if_needed and img.size[1] < self.size[0]:
-            img = F.pad(img, (0, int((1 + self.size[0] - img.size[1]) / 2)))
+            img = F.pad(img, (0, int((1 + self.size[0] - img.size[1]) / 2)), padding_mode=self.padding_mode)
 
         i, j, h, w = self.get_params(img, self.size)
 
