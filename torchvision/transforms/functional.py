@@ -223,7 +223,7 @@ def scale(*args, **kwargs):
 
 
 def pad(img, padding, fill=0, padding_mode='constant'):
-    r"""Pad the given PIL Image on all sides with speficified padding mode and fill value.
+    r"""Pad the given PIL Image on all sides with specified padding mode and fill value.
 
     Args:
         img (PIL Image): Image to be padded.

@@ -372,20 +372,42 @@ class RandomCrop(object):
             int instead of sequence like (h, w), a square crop (size, size) is
             made.
         padding (int or sequence, optional): Optional padding on each border
-            of the image. Default is 0, i.e no padding. If a sequence of length
+            of the image. Default is None, i.e no padding. If a sequence of length
             4 is provided, it is used to pad left, top, right, bottom borders
-            respectively.
+            respectively. If a sequence of length 2 is provided, it is used to
+            pad left/right, top/bottom borders, respectively.
         pad_if_needed (boolean): It will pad the image if smaller than the
             desired size to avoid raising an exception.
+        fill: Pixel fill value for constant fill. Default is 0. If a tuple of
+            length 3, it is used to fill R, G, B channels respectively.
+            This value is only used when the padding_mode is constant
+        padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+
+             - constant: pads with a constant value, this value is specified with fill
+
+             - edge: pads with the last value on the edge of the image
+
+             - reflect: pads with reflection of image (without repeating the last value on the edge)
+
+                padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+                will result in [3, 2, 1, 2, 3, 4, 3, 2]
+
+             - symmetric: pads with reflection of image (repeating the last value on the edge)
+
+                padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+                will result in [2, 1, 1, 2, 3, 4, 4, 3]
+
     """
 
-    def __init__(self, size, padding=0, pad_if_needed=False):
+    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode='constant'):
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
         else:
             self.size = size
         self.padding = padding
         self.pad_if_needed = pad_if_needed
+        self.fill = fill
+        self.padding_mode = padding_mode
 
     @staticmethod
     def get_params(img, output_size):
@@ -415,15 +437,15 @@ class RandomCrop(object):
         Returns:
             PIL Image: Cropped image.
         """
-        if self.padding > 0:
-            img = F.pad(img, self.padding)
+        if self.padding is not None:
+            img = F.pad(img, self.padding, self.fill, self.padding_mode)
 
         # pad the width if needed
         if self.pad_if_needed and img.size[0] < self.size[1]:
-            img = F.pad(img, (int((1 + self.size[1] - img.size[0]) / 2), 0))
+            img = F.pad(img, (int((1 + self.size[1] - img.size[0]) / 2), 0), self.fill, self.padding_mode)
         # pad the height if needed
         if self.pad_if_needed and img.size[1] < self.size[0]:
-            img = F.pad(img, (0, int((1 + self.size[0] - img.size[1]) / 2)))
+            img = F.pad(img, (0, int((1 + self.size[0] - img.size[1]) / 2)), self.fill, self.padding_mode)
 
         i, j, h, w = self.get_params(img, self.size)
 
