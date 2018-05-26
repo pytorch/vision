@@ -96,7 +96,7 @@ def to_pil_image(pic, mode=None):
         pic (Tensor or numpy.ndarray): Image to be converted to PIL Image.
         mode (`PIL.Image mode`_): color space and pixel depth of input data (optional).
 
-    .. _PIL.Image mode: http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#modes
+    .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
 
     Returns:
         PIL Image: Image converted to PIL Image.
@@ -165,10 +165,10 @@ def normalize(tensor, mean, std):
     """
     if not _is_tensor_image(tensor):
         raise TypeError('tensor is not a torch image.')
-    # TODO: make efficient
-    for t, m, s in zip(tensor, mean, std):
-        t.sub_(m).div_(s)
-    return tensor
+
+    mean = torch.Tensor(mean).view((tensor.shape[0], 1, 1))
+    std = torch.Tensor(std).view((tensor.shape[0], 1, 1))
+    return tensor.sub_(mean).div_(std)
 
 
 def resize(img, size, interpolation=Image.BILINEAR, max_size=None):
