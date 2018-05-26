@@ -4,6 +4,7 @@ import io
 import re
 import shutil
 import sys
+import platform
 from setuptools import setup, find_packages
 
 
@@ -23,6 +24,11 @@ def find_version(*file_paths):
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 
+def pillow_requirement():
+    if platform.system() == 'Darwin':
+        return 'pillow >= 4.1.1, != 5.1'
+    else: 
+        return 'pillow >= 4.1.1'
 
 readme = open('README.rst').read()
 
@@ -30,7 +36,7 @@ VERSION = find_version('torchvision', '__init__.py')
 
 requirements = [
     'numpy',
-    'pillow >= 4.1.1',
+    pillow_requirement(),
     'six',
     'torch',
     'tqdm'
