@@ -123,6 +123,9 @@ class Normalize(object):
     will normalize each channel of the input ``torch.*Tensor`` i.e.
     ``input[channel] = (input[channel] - mean[channel]) / std[channel]``
 
+    .. note::
+        This transform acts in-place, i.e., it mutates the input tensor.
+
     Args:
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
