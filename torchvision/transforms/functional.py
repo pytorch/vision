@@ -151,6 +151,9 @@ def to_pil_image(pic, mode=None):
 def normalize(tensor, mean, std):
     """Normalize a tensor image with mean and standard deviation.
 
+    .. note::
+        This transform acts in-place, i.e., it mutates the input tensor.
+
     See :class:`~torchvision.transforms.Normalize` for more details.
 
     Args:
