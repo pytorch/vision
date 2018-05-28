@@ -652,7 +652,7 @@ class Tester(unittest.TestCase):
         # Checking if RandomHorizontalFlip can be printed as string
         transforms.RandomHorizontalFlip().__repr__()
 
-    @unittest.skipIf(stats is None, 'scipt.stats is not available')
+    @unittest.skipIf(stats is None, 'scipy.stats is not available')
     def test_normalize(self):
         def samples_from_standard_normal(tensor):
             p_value = stats.kstest(list(tensor.view(-1)), 'norm', args=(0, 1)).pvalue
