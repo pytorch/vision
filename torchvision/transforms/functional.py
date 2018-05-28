@@ -169,9 +169,10 @@ def normalize(tensor, mean, std):
     if not _is_tensor_image(tensor):
         raise TypeError('tensor is not a torch image.')
 
-    mean = torch.Tensor(mean).view((tensor.shape[0], 1, 1))
-    std = torch.Tensor(std).view((tensor.shape[0], 1, 1))
-    return tensor.sub_(mean).div_(std)
+    # This is faster than using broadcasting, don't change without benchmarking
+    for t, m, s in zip(tensor, mean, std):
+        t.sub_(m).div_(s)
+    return tensor
 
 
 def resize(img, size, interpolation=Image.BILINEAR, max_size=None):
