@@ -5,6 +5,7 @@ import re
 import shutil
 import sys
 from setuptools import setup, find_packages
+from pkg_resources import get_distribution
 
 
 def read(*names, **kwargs):
@@ -30,11 +31,14 @@ VERSION = find_version('torchvision', '__init__.py')
 
 requirements = [
     'numpy',
-    'pillow >= 4.1.1',
     'six',
     'torch',
     'tqdm'
 ]
+
+pillow_ver = ' >= 4.1.1'
+pillow_req = 'pillow-simd' if get_distribution('pillow-simd') is not None else 'pillow'
+requirements.append(pillow_req+pillow_ver)
 
 setup(
     # Metadata
@@ -53,3 +57,4 @@ setup(
     zip_safe=True,
     install_requires=requirements,
 )
+
