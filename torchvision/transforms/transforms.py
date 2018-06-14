@@ -93,7 +93,7 @@ class ToPILImage(object):
             3. If the input has 1 channel, the ``mode`` is determined by the data type (i,e,
             ``int``, ``float``, ``short``).
 
-    .. _PIL.Image mode: http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#modes
+    .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
     def __init__(self, mode=None):
         self.mode = mode
