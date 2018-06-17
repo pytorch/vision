@@ -123,7 +123,7 @@ void ROIAlignForward_cpu_kernel(
     const T* bottom_rois,
     //int roi_cols,
     T* top_data) {
-  //AT_ASSERT(roi_cols == 4 || roi_cols == 5);
+  //AT_CHECK(roi_cols == 4 || roi_cols == 5);
   int roi_cols = 5;
 
   int n_rois = nthreads / channels / pooled_width / pooled_height;
@@ -391,8 +391,8 @@ at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
                                 const int pooled_height,
                                 const int pooled_width,
                                 const int sampling_ratio) {
-  AT_ASSERT(!input.type().is_cuda(), "input must be a CPU tensor");
-  AT_ASSERT(!rois.type().is_cuda(), "rois must be a CPU tensor");
+  AT_CHECK(!input.type().is_cuda(), "input must be a CPU tensor");
+  AT_CHECK(!rois.type().is_cuda(), "rois must be a CPU tensor");
 
   auto num_rois = rois.size(0);
   auto channels = input.size(1);
