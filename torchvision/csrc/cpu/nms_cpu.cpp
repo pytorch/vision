@@ -5,9 +5,9 @@ template <typename scalar_t>
 at::Tensor nms_cpu_kernel(const at::Tensor& dets,
                           const at::Tensor& scores,
                           const float threshold) {
-  AT_ASSERT(!dets.type().is_cuda(), "dets must be a CPU tensor");
-  AT_ASSERT(!scores.type().is_cuda(), "scores must be a CPU tensor");
-  AT_ASSERT(dets.type() == scores.type(), "dets should have the same type as scores");
+  AT_CHECK(!dets.type().is_cuda(), "dets must be a CPU tensor");
+  AT_CHECK(!scores.type().is_cuda(), "scores must be a CPU tensor");
+  AT_CHECK(dets.type() == scores.type(), "dets should have the same type as scores");
 
   if (dets.numel() == 0)
     return torch::CPU(at::kLong).tensor();
