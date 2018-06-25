@@ -15,7 +15,9 @@ def gen_bar_updater(pbar):
     return bar_update
 
 
-def check_integrity(fpath, md5):
+def check_integrity(fpath, md5=None):
+    if md5 is None:
+        return True
     if not os.path.isfile(fpath):
         return False
     md5o = hashlib.md5()
