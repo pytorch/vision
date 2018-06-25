@@ -7,6 +7,7 @@ import errno
 import numpy as np
 import torch
 import codecs
+from .utils import download_url
 
 
 class MNIST(data.Dataset):
@@ -120,12 +121,10 @@ class MNIST(data.Dataset):
                 raise
 
         for url in self.urls:
-            print('Downloading ' + url)
-            data = urllib.request.urlopen(url)
             filename = url.rpartition('/')[2]
             file_path = os.path.join(self.root, self.raw_folder, filename)
-            with open(file_path, 'wb') as f:
-                f.write(data.read())
+            download_url(url, root=os.path.join(self.root, self.raw_folder),
+                         filename=filename, md5=None)
             with open(file_path.replace('.gz', ''), 'wb') as out_f, \
                     gzip.GzipFile(file_path) as zip_f:
                 out_f.write(zip_f.read())
@@ -247,13 +246,10 @@ class EMNIST(MNIST):
             else:
                 raise
 
-        print('Downloading ' + self.url)
-        data = urllib.request.urlopen(self.url)
         filename = self.url.rpartition('/')[2]
         raw_folder = os.path.join(self.root, self.raw_folder)
         file_path = os.path.join(raw_folder, filename)
-        with open(file_path, 'wb') as f:
-            f.write(data.read())
+        download_url(self.url, root=file_path, filename=filename, md5=None)
 
         print('Extracting zip archive')
         with zipfile.ZipFile(file_path) as zip_f:
