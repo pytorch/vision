@@ -110,8 +110,8 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(const at::Tensor& input,
                                 const float spatial_scale,
                                 const int pooled_height,
                                 const int pooled_width) {
-  AT_ASSERT(input.type().is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERT(rois.type().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(input.type().is_cuda(), "input must be a CUDA tensor");
+  AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
 
   auto num_rois = rois.size(0);
   auto channels = input.size(1);
@@ -162,8 +162,8 @@ at::Tensor ROIPool_backward_cuda(const at::Tensor& grad,
                                  const int channels,
                                  const int height,
                                  const int width) {
-  AT_ASSERT(grad.type().is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERT(rois.type().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(grad.type().is_cuda(), "grad must be a CUDA tensor");
+  AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
   // TODO add more checks
 
   auto num_rois = rois.size(0);
