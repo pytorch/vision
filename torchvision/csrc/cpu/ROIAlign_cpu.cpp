@@ -223,8 +223,8 @@ at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
                                 const int pooled_height,
                                 const int pooled_width,
                                 const int sampling_ratio) {
-  AT_ASSERT(!input.type().is_cuda(), "input must be a CPU tensor");
-  AT_ASSERT(!rois.type().is_cuda(), "rois must be a CPU tensor");
+  AT_ASSERTM(!input.type().is_cuda(), "input must be a CPU tensor");
+  AT_ASSERTM(!rois.type().is_cuda(), "rois must be a CPU tensor");
 
   auto num_rois = rois.size(0);
   auto channels = input.size(1);
