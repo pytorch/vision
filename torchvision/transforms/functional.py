@@ -703,3 +703,28 @@ def to_grayscale(img, num_output_channels=1):
         raise ValueError('num_output_channels should be either 1 or 3')
 
     return img
+
+
+def invert(img):
+    r"""Invert the input PIL Image.
+    Args:
+        img (PIL Image): Image to be inverted.
+    Returns:
+        PIL Image: Inverted image.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    
+    if img.mode == 'RGBA':
+        r,g,b,a = img.split()
+        rgb = Image.merge('RGB', (r,g,b))
+        inv = ImageOps.invert(rgb)
+        r,g,b = inv.split()
+        inv = Image.merge('RGBA', (r,g,b,a))
+    elif img.mode == 'LA':
+        l,a = img.split()
+        inv = ImageOps.invert(l)
+        inv = Image.merge('LA', (l,a))
+    else:
+        inv = ImageOps.invert(img)
+    return inv
