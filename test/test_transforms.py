@@ -1176,6 +1176,35 @@ class Tester(unittest.TestCase):
         # Checking if RandomGrayscale can be printed as string
         trans3.__repr__()
 
+    def test_invert(self):
+        mode = "L"
+        size = (4,4)
+        invert = transforms.Compose([
+            transforms.Invert(),
+            transforms.ToTensor(),
+        ])
+        convert = transforms.ToTensor()
+        
+        # Invert Grayscale
+        img = Image.fromarray(np.arange(0, 255, 16, dtype=np.uint8).reshape(size), mode=mode)
+        inv = Image.fromarray(np.arange(255, 0, -16, dtype=np.uint8).reshape(size), mode=mode)
+        assert torch.equal(invert(img), convert(inv))
+        
+        # Invert RGB
+        r = Image.fromarray(np.arange(0, 255, 16, dtype=np.uint8).reshape(size), mode=mode)
+        g = Image.fromarray(np.arange(255, 0, -16, dtype=np.uint8).reshape(size), mode=mode)
+        b = Image.fromarray(np.arange(127, 0, -8, dtype=np.uint8).reshape(size), mode=mode)
+        img = Image.merge('RGB', (r,g,b))
+        r = Image.fromarray(np.arange(255, 0, -16, dtype=np.uint8).reshape(size), mode=mode)
+        g = Image.fromarray(np.arange(0, 255, 16, dtype=np.uint8).reshape(size), mode=mode)
+        b = Image.fromarray(np.arange(128, 255, 8, dtype=np.uint8).reshape(size), mode=mode)
+        inv = Image.merge('RGB', (r,g,b))
+        assert torch.equal(invert(img), convert(inv))
+        
+        # Checking if Invert can be printed as string
+        invert = transforms.Invert()
+        invert.__repr__()
+
 
 if __name__ == '__main__':
     unittest.main()
