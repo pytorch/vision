@@ -714,17 +714,17 @@ def invert(img):
     """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-    
+
     if img.mode == 'RGBA':
-        r,g,b,a = img.split()
-        rgb = Image.merge('RGB', (r,g,b))
+        r, g, b, a = img.split()
+        rgb = Image.merge('RGB', (r, g, b))
         inv = ImageOps.invert(rgb)
-        r,g,b = inv.split()
-        inv = Image.merge('RGBA', (r,g,b,a))
+        r, g, b = inv.split()
+        inv = Image.merge('RGBA', (r, g, b, a))
     elif img.mode == 'LA':
-        l,a = img.split()
+        l, a = img.split()
         l = ImageOps.invert(l)
-        inv = Image.merge('LA', (l,a))
+        inv = Image.merge('LA', (l, a))
     else:
         inv = ImageOps.invert(img)
     return inv
