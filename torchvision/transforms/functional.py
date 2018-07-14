@@ -723,7 +723,7 @@ def invert(img):
         inv = Image.merge('RGBA', (r,g,b,a))
     elif img.mode == 'LA':
         l,a = img.split()
-        inv = ImageOps.invert(l)
+        l = ImageOps.invert(l)
         inv = Image.merge('LA', (l,a))
     else:
         inv = ImageOps.invert(img)
