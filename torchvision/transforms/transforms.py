@@ -728,14 +728,18 @@ class ColorJitter(object):
     """Randomly change the brightness, contrast and saturation of an image.
 
     Args:
-        brightness (float): How much to jitter brightness. brightness_factor
-            is chosen uniformly from [max(0, 1 - brightness), 1 + brightness].
-        contrast (float): How much to jitter contrast. contrast_factor
-            is chosen uniformly from [max(0, 1 - contrast), 1 + contrast].
-        saturation (float): How much to jitter saturation. saturation_factor
-            is chosen uniformly from [max(0, 1 - saturation), 1 + saturation].
-        hue(float): How much to jitter hue. hue_factor is chosen uniformly from
-            [-hue, hue]. Should be >=0 and <= 0.5.
+        brightness (float or tuple of float (min, max)): How much to jitter brightness.
+            brightness_factor is chosen uniformly from [max(0, 1 - brightness), 1 + brightness]
+            or the given [min, max]. Should be non negative numbers.
+        contrast (float or tuple of float (min, max)): How much to jitter contrast.
+            contrast_factor is chosen uniformly from [max(0, 1 - contrast), 1 + contrast]
+            or the given [min, max]. Should be non negative numbers.
+        saturation (float or tuple of float (min, max)): How much to jitter saturation.
+            saturation_factor is chosen uniformly from [max(0, 1 - saturation), 1 + saturation]
+            or the given [min, max]. Should be non negative numbers.
+        hue (float or tuple of float (min, max)): How much to jitter hue. 
+            hue_factor is chosen uniformly from [-hue, hue] or the given [min, max].
+            Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
     """
     def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
         self.brightness = brightness
@@ -754,20 +758,53 @@ class ColorJitter(object):
             saturation in a random order.
         """
         transforms = []
-        if brightness > 0:
+        brightness_factor = None
+        if isinstance(brightness, float) and brightness >= 0:
             brightness_factor = random.uniform(max(0, 1 - brightness), 1 + brightness)
+        elif isinstance(brightness, tuple) and len(brightness) == 2:
+            if not (0 <= brightness[0] <= brightness[1]):
+                raise ValueError('Invalid brightness factor {}.'.format(brightness))
+            brightness_factor = random.uniform(brightness[0], brightness[1])
+        else:
+            raise TypeError('Brightness should be non negative float or tuple of float (min, max).')
+        if brightness_factor is not None:
             transforms.append(Lambda(lambda img: F.adjust_brightness(img, brightness_factor)))
 
-        if contrast > 0:
+        contrast_factor = None
+        if isinstance(contrast, float) and contrast >= 0:
             contrast_factor = random.uniform(max(0, 1 - contrast), 1 + contrast)
+        elif isinstance(contrast, tuple) and len(contrast) == 2:
+            if not (0 <= contrast[0] <= contrast[1]):
+                raise ValueError('Invalid contrast factor {}.'.format(contrast))
+            contrast_factor = random.uniform(contrast[0], contrast[1])
+        else:
+            raise TypeError('Contrast should be non negative float or tuple of float (min, max).')
+        if contrast_factor is not None:
             transforms.append(Lambda(lambda img: F.adjust_contrast(img, contrast_factor)))
 
-        if saturation > 0:
+        saturation_factor = None
+        if isinstance(saturation, float) and saturation >= 0:
             saturation_factor = random.uniform(max(0, 1 - saturation), 1 + saturation)
+        elif isinstance(saturation, tuple) and len(saturation) == 2:
+            if not (0 <= saturation[0] <= saturation[1]):
+                raise ValueError('Invalid saturation factor {}.'.format(saturation))
+            saturation_factor = random.uniform(saturation[0], saturation[1])
+        else:
+            raise TypeError('Saturation should be non negative float or tuple of float (min, max).')
+        if saturation_factor is not None:
             transforms.append(Lambda(lambda img: F.adjust_saturation(img, saturation_factor)))
 
-        if hue > 0:
+        # hue factor will be check in F.adjust_hue
+        hue_factor = None
+        if isinstance(hue, float) and hue >= 0:
             hue_factor = random.uniform(-hue, hue)
+        elif isinstance(hue, tuple) and len(hue) == 2:
+            if not (-0.5 <= hue[0] <= hue[1] <= 0.5):
+                raise ValueError('Invalid hue factor {}.'.format(hue))
+            hue_factor = random.uniform(hue[0], hue[1])
+        else:
+            raise TypeError('Hue should be non negative float or tuple of float (min, max).')
+        if hue_factor is not None:
             transforms.append(Lambda(lambda img: F.adjust_hue(img, hue_factor)))
 
         random.shuffle(transforms)
