@@ -757,20 +757,22 @@ class ColorJitter(object):
             Transform which randomly adjusts brightness, contrast and
             saturation in a random order.
         """
-        def _sample_from(value, name):
+        def _sample_from(value, name, center=1, clip_first_on_zero=True):
             factor = None
             if isinstance(value, numbers.Number) and value >= 0:
-                if name == 'hue':
-                    factor = random.uniform(-value, value)
-                else:
-                    factor = random.uniform(max(0, 1 - value), 1 + value)
+                value = [center - value, center + value]
             elif isinstance(value, (tuple, list)) and len(value) == 2:
-                if (name == 'hue' and not (-0.5 <= value[0] <= value[1] <= 0.5)) or \
-                   (name != 'hue' and not (0 <= value[0] <= value[1])):
+                # hue factor will be check in F.adjust_hue
+                if name != 'hue' and not (0 <= value[0] <= value[1]):
                     raise ValueError('Invalid {} factor {}.'.format(name, value))
-                factor = random.uniform(value[0], value[1])
             else:
                 raise TypeError('{} should be non negative float or tuple of float (min, max).'.format(name))
+            if clip_first_on_zero:
+                value[0] = max(value[0], 0)
+            # if brightness/contrast/saturation is 0 or (1, 1)
+            # hue is 0 or (0, 0), return None, nothing to do.
+            if not value[0] == value[1] == center:
+                factor = random.uniform(value[0], value[1])
             return factor
 
         transforms = []
@@ -787,8 +789,7 @@ class ColorJitter(object):
         if saturation_factor is not None:
             transforms.append(Lambda(lambda img: F.adjust_saturation(img, saturation_factor)))
 
-        # hue factor will be check in F.adjust_hue
-        hue_factor = _sample_from(hue, 'hue')
+        hue_factor = _sample_from(hue, 'hue', center=0, clip_first_on_zero=False)
         if hue_factor is not None:
             transforms.append(Lambda(lambda img: F.adjust_hue(img, hue_factor)))
 
