@@ -757,53 +757,38 @@ class ColorJitter(object):
             Transform which randomly adjusts brightness, contrast and
             saturation in a random order.
         """
+        def _sample_from(value, name):
+            factor = None
+            if isinstance(value, numbers.Number) and value >= 0:
+                if name == 'hue':
+                    factor = random.uniform(-value, value)
+                else:
+                    factor = random.uniform(max(0, 1 - value), 1 + value)
+            elif isinstance(value, (tuple, list)) and len(value) == 2:
+                if (name == 'hue' and not (-0.5 <= value[0] <= value[1] <= 0.5)) or \
+                   (name != 'hue' and not (0 <= value[0] <= value[1])):
+                    raise ValueError('Invalid {} factor {}.'.format(name, value))
+                factor = random.uniform(value[0], value[1])
+            else:
+                raise TypeError('{} should be non negative float or tuple of float (min, max).'.format(name))
+            return factor
+
         transforms = []
-        brightness_factor = None
-        if isinstance(brightness, float) and brightness >= 0:
-            brightness_factor = random.uniform(max(0, 1 - brightness), 1 + brightness)
-        elif isinstance(brightness, tuple) and len(brightness) == 2:
-            if not (0 <= brightness[0] <= brightness[1]):
-                raise ValueError('Invalid brightness factor {}.'.format(brightness))
-            brightness_factor = random.uniform(brightness[0], brightness[1])
-        else:
-            raise TypeError('Brightness should be non negative float or tuple of float (min, max).')
+
+        brightness_factor = _sample_from(brightness, 'brightness')
         if brightness_factor is not None:
             transforms.append(Lambda(lambda img: F.adjust_brightness(img, brightness_factor)))
 
-        contrast_factor = None
-        if isinstance(contrast, float) and contrast >= 0:
-            contrast_factor = random.uniform(max(0, 1 - contrast), 1 + contrast)
-        elif isinstance(contrast, tuple) and len(contrast) == 2:
-            if not (0 <= contrast[0] <= contrast[1]):
-                raise ValueError('Invalid contrast factor {}.'.format(contrast))
-            contrast_factor = random.uniform(contrast[0], contrast[1])
-        else:
-            raise TypeError('Contrast should be non negative float or tuple of float (min, max).')
+        contrast_factor = _sample_from(contrast, 'contrast')
         if contrast_factor is not None:
             transforms.append(Lambda(lambda img: F.adjust_contrast(img, contrast_factor)))
 
-        saturation_factor = None
-        if isinstance(saturation, float) and saturation >= 0:
-            saturation_factor = random.uniform(max(0, 1 - saturation), 1 + saturation)
-        elif isinstance(saturation, tuple) and len(saturation) == 2:
-            if not (0 <= saturation[0] <= saturation[1]):
-                raise ValueError('Invalid saturation factor {}.'.format(saturation))
-            saturation_factor = random.uniform(saturation[0], saturation[1])
-        else:
-            raise TypeError('Saturation should be non negative float or tuple of float (min, max).')
+        saturation_factor = _sample_from(saturation, 'saturation')
         if saturation_factor is not None:
             transforms.append(Lambda(lambda img: F.adjust_saturation(img, saturation_factor)))
 
         # hue factor will be check in F.adjust_hue
-        hue_factor = None
-        if isinstance(hue, float) and hue >= 0:
-            hue_factor = random.uniform(-hue, hue)
-        elif isinstance(hue, tuple) and len(hue) == 2:
-            if not (-0.5 <= hue[0] <= hue[1] <= 0.5):
-                raise ValueError('Invalid hue factor {}.'.format(hue))
-            hue_factor = random.uniform(hue[0], hue[1])
-        else:
-            raise TypeError('Hue should be non negative float or tuple of float (min, max).')
+        hue_factor = _sample_from(hue, 'hue')
         if hue_factor is not None:
             transforms.append(Lambda(lambda img: F.adjust_hue(img, hue_factor)))
 
