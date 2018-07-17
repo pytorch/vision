@@ -742,10 +742,30 @@ class ColorJitter(object):
             Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
     """
     def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
-        self.brightness = brightness
-        self.contrast = contrast
-        self.saturation = saturation
-        self.hue = hue
+        self.brightness = self._check_input(brightness, 'brightness')
+        self.contrast = self._check_input(contrast, 'contrast')
+        self.saturation = self._check_input(saturation, 'saturation')
+        self.hue = self._check_input(hue, 'hue', center=0, bound=(-0.5, 0.5),
+                                     clip_first_on_zero=False)
+
+    def _check_input(self, value, name, center=1, bound=(0, float('inf')), clip_first_on_zero=True):
+        if isinstance(value, numbers.Number):
+            if value < 0:
+                raise ValueError("If {} is a single number, it must be non negative.".format(name))
+            value = (center - value, center + value)
+            if clip_first_on_zero:
+                value[0] = max(value[0], 0)
+        elif isinstance(value, (tuple, list)) and len(value) == 2:
+            if not bound[0] <= value[0] <= value[1] <= bound[1]:
+                raise ValueError("{} values should be between {}".format(name, bound))
+        else:
+            raise TypeError("{} should be a single number or a list/tuple with lenght 2.".format(name))
+
+        # if value is 0 or (1., 1.) for brightness/contrast/saturation
+        # or (0., 0.) for hue, do nothing
+        if value[0] == value[1] == center:
+            value = None
+        return value
 
     @staticmethod
     def get_params(brightness, contrast, saturation, hue):
@@ -757,40 +777,22 @@ class ColorJitter(object):
             Transform which randomly adjusts brightness, contrast and
             saturation in a random order.
         """
-        def _sample_from(value, name, center=1, clip_first_on_zero=True):
-            factor = None
-            if isinstance(value, numbers.Number) and value >= 0:
-                value = [center - value, center + value]
-            elif isinstance(value, (tuple, list)) and len(value) == 2:
-                # hue factor will be check in F.adjust_hue
-                if name != 'hue' and not (0 <= value[0] <= value[1]):
-                    raise ValueError('Invalid {} factor {}.'.format(name, value))
-            else:
-                raise TypeError('{} should be non negative float or tuple of float (min, max).'.format(name))
-            if clip_first_on_zero:
-                value[0] = max(value[0], 0)
-            # if brightness/contrast/saturation is 0 or (1, 1)
-            # hue is 0 or (0, 0), return None, nothing to do.
-            if not value[0] == value[1] == center:
-                factor = random.uniform(value[0], value[1])
-            return factor
-
         transforms = []
 
-        brightness_factor = _sample_from(brightness, 'brightness')
-        if brightness_factor is not None:
+        if brightness is not None:
+            brightness_factor = random.uniform(brightness[0], brightness[1])
             transforms.append(Lambda(lambda img: F.adjust_brightness(img, brightness_factor)))
 
-        contrast_factor = _sample_from(contrast, 'contrast')
-        if contrast_factor is not None:
+        if contrast is not None:
+            contrast_factor = random.uniform(contrast[0], contrast[1])
             transforms.append(Lambda(lambda img: F.adjust_contrast(img, contrast_factor)))
 
-        saturation_factor = _sample_from(saturation, 'saturation')
-        if saturation_factor is not None:
+        if saturation is not None:
+            saturation_factor = random.uniform(saturation[0], saturation[1])
             transforms.append(Lambda(lambda img: F.adjust_saturation(img, saturation_factor)))
 
-        hue_factor = _sample_from(hue, 'hue', center=0, clip_first_on_zero=False)
-        if hue_factor is not None:
+        if hue is not None:
+            hue_factor = random.uniform(hue[0], hue[1])
             transforms.append(Lambda(lambda img: F.adjust_hue(img, hue_factor)))
 
         random.shuffle(transforms)
