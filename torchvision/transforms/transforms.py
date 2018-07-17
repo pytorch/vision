@@ -737,7 +737,7 @@ class ColorJitter(object):
         saturation (float or tuple of float (min, max)): How much to jitter saturation.
             saturation_factor is chosen uniformly from [max(0, 1 - saturation), 1 + saturation]
             or the given [min, max]. Should be non negative numbers.
-        hue (float or tuple of float (min, max)): How much to jitter hue. 
+        hue (float or tuple of float (min, max)): How much to jitter hue.
             hue_factor is chosen uniformly from [-hue, hue] or the given [min, max].
             Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
     """
@@ -752,7 +752,7 @@ class ColorJitter(object):
         if isinstance(value, numbers.Number):
             if value < 0:
                 raise ValueError("If {} is a single number, it must be non negative.".format(name))
-            value = (center - value, center + value)
+            value = [center - value, center + value]
             if clip_first_on_zero:
                 value[0] = max(value[0], 0)
         elif isinstance(value, (tuple, list)) and len(value) == 2:
