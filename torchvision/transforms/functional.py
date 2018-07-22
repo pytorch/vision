@@ -602,7 +602,7 @@ def rotate(img, angle, resample=False, expand=False, center=None):
             Origin is the upper left corner.
             Default is the center of the image.
 
-    .. _filters: http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#filters
+    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
 
