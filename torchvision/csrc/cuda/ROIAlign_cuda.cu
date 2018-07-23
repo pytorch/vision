@@ -4,11 +4,7 @@
 #include <THC/THCAtomics.cuh>
 #include <THC/THCDeviceUtils.cuh>
 
-// TODO make it in a common file
-#define CUDA_1D_KERNEL_LOOP(i, n)                            \
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; \
-       i += blockDim.x * gridDim.x)
-
+#include "cuda_helpers.h"
 
 template <typename T>
 __device__ T bilinear_interpolate(const T* bottom_data,
@@ -297,7 +293,6 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
   return output;
 }
 
-// TODO remove the dependency on input and use instead its sizes -> save memory
 at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
                                   const at::Tensor& rois,
                                   const float spatial_scale,

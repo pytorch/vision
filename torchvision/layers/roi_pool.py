@@ -18,18 +18,18 @@ class _ROIPool(Function):
         output, argmax = _C.roi_pool_forward(
                 input, roi, spatial_scale,
                 output_size[0], output_size[1])
-        ctx.save_for_backward(input, roi, argmax)
+        ctx.save_for_backward(roi, argmax)
         return output
 
     @staticmethod
     @once_differentiable
     def backward(ctx, grad_output):
-        input, rois, argmax = ctx.saved_tensors
+        rois, argmax = ctx.saved_tensors
         output_size = ctx.output_size
         spatial_scale = ctx.spatial_scale
         bs, ch, h, w = ctx.input_shape
         grad_input = _C.roi_pool_backward(
-                grad_output, input, rois, argmax, spatial_scale,
+                grad_output, rois, argmax, spatial_scale,
                 output_size[0], output_size[1], bs, ch, h, w)
         return grad_input, None, None, None
 

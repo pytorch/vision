@@ -4,11 +4,7 @@
 #include <THC/THCAtomics.cuh>
 #include <THC/THCDeviceUtils.cuh>
 
-
-// TODO make it in a common file
-#define CUDA_1D_KERNEL_LOOP(i, n)                            \
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; \
-       i += blockDim.x * gridDim.x)
+#include "cuda_helpers.h"
 
 
 template <typename T>
@@ -150,9 +146,7 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(const at::Tensor& input,
   return std::make_tuple(output, argmax);
 }
 
-// TODO remove the dependency on input and use instead its sizes -> save memory
 at::Tensor ROIPool_backward_cuda(const at::Tensor& grad,
-                                 const at::Tensor& input,
                                  const at::Tensor& rois,
                                  const at::Tensor& argmax,
                                  const float spatial_scale,
@@ -162,9 +156,10 @@ at::Tensor ROIPool_backward_cuda(const at::Tensor& grad,
                                  const int channels,
                                  const int height,
                                  const int width) {
+  // Check if input tensors are CUDA tensors
   AT_ASSERTM(grad.type().is_cuda(), "grad must be a CUDA tensor");
   AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
-  // TODO add more checks
+  AT_ASSERTM(argmax.type().is_cuda(), "argmax must be a CUDA tensor");
 
   auto num_rois = rois.size(0);
   at::Tensor grad_input = grad.type().tensor({batch_size, channels, height, width}).zero_();
