@@ -33,8 +33,7 @@ class SVHN(data.Dataset):
         'test': ["http://ufldl.stanford.edu/housenumbers/test_32x32.mat",
                  "test_32x32.mat", "eb5a983be6a315427106f1b164d9cef3"],
         'extra': ["http://ufldl.stanford.edu/housenumbers/extra_32x32.mat",
-                  "extra_32x32.mat", "a93ce644f1a588dc4d68dda5feec44a7"]
-         }
+                  "extra_32x32.mat", "a93ce644f1a588dc4d68dda5feec44a7"]}
 
     def __init__(self, root, split='train',
                  transform=None, target_transform=None, download=False):
