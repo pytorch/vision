@@ -26,9 +26,6 @@ class SVHN(data.Dataset):
             downloaded again.
 
     """
-    url = ""
-    filename = ""
-    file_md5 = ""
 
     split_list = {
         'train': ["http://ufldl.stanford.edu/housenumbers/train_32x32.mat",
