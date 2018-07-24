@@ -6,7 +6,6 @@ import os.path
 import numpy as np
 from .utils import download_url, check_integrity
 
-
 class SVHN(data.Dataset):
     """`SVHN <http://ufldl.stanford.edu/housenumbers/>`_ Dataset.
     Note: The SVHN dataset assigns the label `10` to the digit `0`. However, in this Dataset,
@@ -37,7 +36,8 @@ class SVHN(data.Dataset):
         'test': ["http://ufldl.stanford.edu/housenumbers/test_32x32.mat",
                  "test_32x32.mat", "eb5a983be6a315427106f1b164d9cef3"],
         'extra': ["http://ufldl.stanford.edu/housenumbers/extra_32x32.mat",
-                  "extra_32x32.mat", "a93ce644f1a588dc4d68dda5feec44a7"]}
+                  "extra_32x32.mat", "a93ce644f1a588dc4d68dda5feec44a7"]
+         }
 
     def __init__(self, root, split='train',
                  transform=None, target_transform=None, download=False):
@@ -46,14 +46,36 @@ class SVHN(data.Dataset):
         self.target_transform = target_transform
         self.split = split  # training set or test set or extra set
 
-        if self.split not in self.split_list:
-            raise ValueError('Wrong split entered! Please use split="train" '
-                             'or split="extra" or split="test"')
+        if self.split not in [f for f in self.split_list] + ['train-extra','download-all']:
+            raise ValueError('Wrong split entered! valid choices include "train"'
+                              ', "train-extra", "extra", "download-all", and "test"')
 
-        self.url = self.split_list[split][0]
-        self.filename = self.split_list[split][1]
-        self.file_md5 = self.split_list[split][2]
+        self.urls=[]
+        self.filenames=[]
+        self.file_md5s=[]  
+        
 
+        if split=='download-all':    
+          for splt in self.split_list:
+              self.urls.append(self.split_list[splt][0])
+              self.filenames.append(self.split_list[splt][1])
+              self.file_md5s.append(self.split_list[splt][2])  
+          self.download()
+          return  
+
+        if split=='train-extra':
+          for splt in self.split_list:
+            if(splt != 'test'): 
+              #print(splt)
+              self.urls.append(self.split_list[splt][0])
+              self.filenames.append(self.split_list[splt][1])
+              self.file_md5s.append(self.split_list[splt][2])
+            
+        else:
+          self.urls.append(self.split_list[split][0])
+          self.filenames.append(self.split_list[split][1])
+          self.file_md5s.append(self.split_list[split][2])
+        
         if download:
             self.download()
 
@@ -64,16 +86,20 @@ class SVHN(data.Dataset):
         # import here rather than at top of file because this is
         # an optional dependency for torchvision
         import scipy.io as sio
-
-        # reading(loading) mat file as array
-        loaded_mat = sio.loadmat(os.path.join(self.root, self.filename))
-
-        self.data = loaded_mat['X']
-        # loading from the .mat file gives an np array of type np.uint8
-        # converting to np.int64, so that we have a LongTensor after
-        # the conversion from the numpy array
-        # the squeeze is needed to obtain a 1D tensor
-        self.labels = loaded_mat['y'].astype(np.int64).squeeze()
+        
+        self.data=np.empty((32,32,3,0))
+        self.labels=np.empty(0)
+        for i in range(len(self.filenames)):
+          # reading(loading) mat file as array
+          loaded_mat = sio.loadmat(os.path.join(self.root, self.filenames[i]))
+          self.data = np.concatenate((self.data, loaded_mat['X']), axis=3)
+          
+          # loading from the .mat file gives an np array of type np.uint8
+          # converting to np.int64, so that we have a LongTensor after
+          # the conversion from the numpy array
+          # the squeeze is needed to obtain a 1D tensor
+          y = loaded_mat['y'].astype(np.int64).squeeze()
+          self.labels = np.concatenate((self.labels, y),axis=0)
 
         # the svhn dataset assigns the class label "10" to the digit 0
         # this makes it inconsistent with several loss functions
@@ -103,18 +129,74 @@ class SVHN(data.Dataset):
 
         return img, target
 
+
     def __len__(self):
         return len(self.data)
 
     def _check_integrity(self):
         root = self.root
-        md5 = self.split_list[self.split][2]
-        fpath = os.path.join(root, self.filename)
+        for i in range(len(self.filenames)):
+          md5 = self.file_md5s[i]
+          fpath = os.path.join(root, self.filenames[i])
         return check_integrity(fpath, md5)
 
     def download(self):
-        md5 = self.split_list[self.split][2]
-        download_url(self.url, self.root, self.filename, md5)
+      for i in range(len(self.filenames)):
+        md5 = self.file_md5s[i]
+        download_url(self.urls[i], self.root, self.filenames[i], md5)
+    
+    def create_dataset(self, output_dir):
+      """
+      Creates and configures a dataset in the given directory for full training and test sets. 
+      The training folder will contain both 'train' and 'extra' splits
+      
+      Args: 
+          output_dir (string) : The directory in which the dataset will be created
+
+      """
+      import torch.utils.data as data
+      from PIL import Image
+      import scipy.io as sio
+      from pathlib import Path
+      import numpy as np 
+
+      source_dir = self.root
+      save_directory = output_dir
+      training_dir = os.path.join(output_dir,'train-extra')
+      test_dir = os.path.join(output_dir,'test')
+     
+      if os.path.isdir(training_dir):
+        return training_dir, test_dir
+      else:  
+        for matfile in [f for f in os.listdir(source_dir) if f.endswith('.mat')]: 
+          # reading(loading) mat file as array
+            loaded_mat = sio.loadmat(os.path.join(source_dir, matfile))
+            # The matrix shape is (32,32,3,# of samples)
+            for idx in range(loaded_mat['X'].shape[3]):   
+              img = Image.fromarray(loaded_mat['X'][:,:,:,idx]).convert('RGB')
+
+              # loading from the .mat file gives an np array of type np.uint8
+              # converting to np.int64, so that we have a LongTensor after
+              # the conversion from the numpy array
+              # the squeeze is needed to obtain a 1D tensor
+              labels = loaded_mat['y'].astype(np.int64).squeeze()
+              # the svhn dataset assigns the class label "10" to the digit 0
+              # this makes it inconsistent with several loss functions
+              # which expect the class labels to be in the range [0, C-1]
+              np.place(labels, labels == 10, 0)
+              
+              prefix = 'test' if 'test' in Path(matfile).stem else 'train-extra'
+              image_name = '{0}/{1}/{2}_{3}.jpg'.format(prefix, labels[idx], Path(matfile).stem, idx)
+              
+              full_path = os.path.join(save_directory, image_name)
+              print('{0} '.format(image_name))
+
+              Path(os.path.dirname(full_path)).mkdir(parents=True, exist_ok=True) 
+
+              img.save(full_path)
+                    
+      return training_dir, test_dir
+
 
     def __repr__(self):
         fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
@@ -126,3 +208,4 @@ class SVHN(data.Dataset):
         tmp = '    Target Transforms (if any): '
         fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
         return fmt_str
+
