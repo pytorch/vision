@@ -4,6 +4,7 @@ from PIL import Image
 
 import os
 import os.path
+import sys
 
 
 def has_file_allowed_extension(filename, extensions):
@@ -110,7 +111,11 @@ class DatasetFolder(data.Dataset):
         Ensures:
             No class is a subdirectory of another.
         """
-        classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
+        if sys.version_info >= (3,5):
+            # Faster and available in Python 3.5 and above
+            classes = [d.name for d in os.scandir(dir) if d.is_dir()]
+        else:
+            classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
         classes.sort()
         class_to_idx = {classes[i]: i for i in range(len(classes))}
         return classes, class_to_idx
