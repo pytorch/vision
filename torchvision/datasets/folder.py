@@ -111,7 +111,7 @@ class DatasetFolder(data.Dataset):
         Ensures:
             No class is a subdirectory of another.
         """
-        if sys.version_info >= (3,5):
+        if sys.version_info >= (3, 5):
             # Faster and available in Python 3.5 and above
             classes = [d.name for d in os.scandir(dir) if d.is_dir()]
         else:
