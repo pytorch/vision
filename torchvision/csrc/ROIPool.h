@@ -24,7 +24,6 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward(const at::Tensor &input,
 }
 
 at::Tensor ROIPool_backward(const at::Tensor &grad,
-                            const at::Tensor &input,
                             const at::Tensor &rois,
                             const at::Tensor &argmax,
                             const float spatial_scale,
@@ -38,7 +37,7 @@ at::Tensor ROIPool_backward(const at::Tensor &grad,
     if (grad.type().is_cuda())
     {
 #ifdef WITH_CUDA
-        return ROIPool_backward_cuda(grad, input, rois, argmax, spatial_scale, pooled_height, pooled_width, batch_size, channels, height, width);
+        return ROIPool_backward_cuda(grad, rois, argmax, spatial_scale, pooled_height, pooled_width, batch_size, channels, height, width);
 #else
         AT_ERROR("Not compiled with GPU support");
 #endif
