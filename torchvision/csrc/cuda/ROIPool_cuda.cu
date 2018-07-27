@@ -170,7 +170,7 @@ at::Tensor ROIPool_backward_cuda(const at::Tensor& grad,
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
-  dim3 grid(std::min(THCCeilDiv(argmax.numel(), 512L), 4096L));
+  dim3 grid(std::min(THCCeilDiv(grad.numel(), 512L), 4096L));
   dim3 block(512);
 
   // handle possibly empty gradients
@@ -178,7 +178,7 @@ at::Tensor ROIPool_backward_cuda(const at::Tensor& grad,
     THCudaCheck(cudaGetLastError());
     return grad_input;
   }
-
+  
   int n_stride = grad.stride(0);
   int c_stride = grad.stride(1);
   int h_stride = grad.stride(2);
@@ -186,7 +186,7 @@ at::Tensor ROIPool_backward_cuda(const at::Tensor& grad,
   
   AT_DISPATCH_FLOATING_TYPES(grad.type(), "ROIPool_backward", [&] {
     RoIPoolBackward<scalar_t><<<grid, block, 0, stream>>>(
-         argmax.numel(),
+         grad.numel(),
          grad.data<scalar_t>(),
          argmax.data<int>(),
          num_rois,
