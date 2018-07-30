@@ -18,7 +18,7 @@ from . import functional as F
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
-           "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale"]
+           "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale", "Invert"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -1049,3 +1049,21 @@ class RandomGrayscale(object):
 
     def __repr__(self):
         return self.__class__.__name__ + '(p={0})'.format(self.p)
+
+
+class Invert(object):
+    """Inverts the color channels of an PIL Image
+    while leaving intact the alpha channel.
+    """
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL Image): Image to be inverted.
+        Returns:
+            PIL Image: Inverted image.
+        """
+        return F.invert(img)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
