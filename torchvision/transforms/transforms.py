@@ -896,7 +896,7 @@ class RandomAffine(object):
     Args:
         degrees (sequence or float or int): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
-            will be (-degrees, +degrees). Set to 0 to desactivate rotations.
+            will be (-degrees, +degrees). Set to 0 to deactivate rotations.
         translate (tuple, optional): tuple of maximum absolute fraction for horizontal
             and vertical translations. For example translate=(a, b), then horizontal shift
             is randomly sampled in the range -img_width * a < dx < img_width * a and vertical shift is
