@@ -1074,3 +1074,50 @@ class RandomGrayscale(object):
 
     def __repr__(self):
         return self.__class__.__name__ + '(p={0})'.format(self.p)
+    
+class Whitening(object):
+    """Whiten a tensor image with a square covariance matrix 
+    and a mean vector computed offline.
+
+    First, it will flatten the torch.*Tensor, then the mean_vector
+    is subtracted from the torch.*Tensor 
+    Next, compute the dot product with the covariance matrix and 
+    reshape the tensor to its original shape.
+
+    Args:
+        cov_matrix (Tensor): tensor [D x D], D = C x H x W
+        mean_vector (Tensor): tensor [D], D = C x H x W
+    """
+
+    def __init__(self, cov_matrix, mean_vector):
+        if cov_matrix.size(0) != cov_matrix.size(1):
+            raise ValueError("cov_matrix should be square. Got " +
+                             "[{} x {}] rectangular matrix.".format(*cov_matrix.size()))
+        if mean_vector.size(0) != cov_matrix.size(0):
+            raise ValueError("mean_vector should have the same length {}".format(mean_vector.size(0)) + 
+                             " as the cov_matrix")
+        self.cov_matrix = cov_matrix
+        self.mean_vector = mean_vector
+
+    def __call__(self, tensor):
+        """
+        Args:
+            tensor (Tensor): Tensor image of size (C, H, W) to be whitened.
+
+        Returns:
+            Tensor: Transformed image.
+        """
+        if tensor.size(0) * tensor.size(1) * tensor.size(2) != self.cov_matrix.size(0):
+            raise ValueError("tensor and transformation matrix have incompatible shape." +
+                             "[{} x {} x {}] != ".format(*tensor.size()) +
+                             "{}".format(self.cov_matrix.size(0)))
+        flat_tensor = tensor.view(1, -1) - self.mean_vector
+        transformed_tensor = torch.mm(flat_tensor, self.cov_matrix)
+        tensor = transformed_tensor.view(tensor.size())
+        return tensor
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + '(cov_matrix='
+        format_string += (str(self.cov_matrix.numpy().tolist()) + ')')
+        format_string += (", (mean=" + str(self.cov_matrix.numpy().tolist()) + ')')
+        return format_string
