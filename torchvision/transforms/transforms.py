@@ -1074,14 +1074,15 @@ class RandomGrayscale(object):
 
     def __repr__(self):
         return self.__class__.__name__ + '(p={0})'.format(self.p)
-    
+
+
 class Whitening(object):
-    """Whiten a tensor image with a square covariance matrix 
+    """Whiten a tensor image with a square covariance matrix
     and a mean vector computed offline.
 
     First, it will flatten the torch.*Tensor, then the mean_vector
-    is subtracted from the torch.*Tensor 
-    Next, compute the dot product with the covariance matrix and 
+    is subtracted from the torch.*Tensor
+    Next, compute the dot product with the covariance matrix and
     reshape the tensor to its original shape.
 
     Args:
@@ -1094,7 +1095,7 @@ class Whitening(object):
             raise ValueError("cov_matrix should be square. Got " +
                              "[{} x {}] rectangular matrix.".format(*cov_matrix.size()))
         if mean_vector.size(0) != cov_matrix.size(0):
-            raise ValueError("mean_vector should have the same length {}".format(mean_vector.size(0)) + 
+            raise ValueError("mean_vector should have the same length {}".format(mean_vector.size(0)) +
                              " as the cov_matrix")
         self.cov_matrix = cov_matrix
         self.mean_vector = mean_vector
