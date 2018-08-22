@@ -20,7 +20,7 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward(const at::Tensor &input,
         AT_ERROR("Not compiled with GPU support");
 #endif
     }
-    AT_ERROR("Not implemented on the CPU");
+    return ROIPool_forward_cpu(input, rois, spatial_scale, pooled_height, pooled_width);
 }
 
 at::Tensor ROIPool_backward(const at::Tensor &grad,
@@ -42,5 +42,5 @@ at::Tensor ROIPool_backward(const at::Tensor &grad,
         AT_ERROR("Not compiled with GPU support");
 #endif
     }
-    AT_ERROR("Not implemented on the CPU");
+    return ROIPool_backward_cpu(grad, rois, argmax, spatial_scale, pooled_height, pooled_width, batch_size, channels, height, width);
 }
