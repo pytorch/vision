@@ -11,9 +11,6 @@ import glob
 import torch.cuda
 from torch.utils.cpp_extension import CppExtension, CUDAExtension, CUDA_HOME
 
-import torch.cuda
-from torch.utils.cpp_extension import CppExtension, CUDAExtension, CUDA_HOME
-
 
 def read(*names, **kwargs):
     with io.open(
