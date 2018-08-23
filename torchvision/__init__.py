@@ -1,9 +1,10 @@
-from torchvision import models
 from torchvision import datasets
+from torchvision import layers
+from torchvision import models
 from torchvision import transforms
 from torchvision import utils
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 _image_backend = 'PIL'
 

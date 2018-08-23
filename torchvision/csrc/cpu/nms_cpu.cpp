@@ -22,7 +22,7 @@ at::Tensor nms_cpu_kernel(const at::Tensor& dets,
   auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
 
   auto ndets = dets.size(0);
-  at::Tensor suppressed_t = at::zeros(torch::CPU(at::kByte), {ndets});
+  at::Tensor suppressed_t = at::zeros({ndets}, torch::CPU(at::kByte));
 
   auto suppressed = suppressed_t.data<uint8_t>();
   auto order = order_t.data<int64_t>();

@@ -15,19 +15,20 @@ class BBox(object):
     They can contain extra information that is specific to each bounding box, such as
     labels.
     """
+
     def __init__(self, bbox, image_size, mode='xyxy'):
         device = bbox.device if isinstance(bbox, torch.Tensor) else torch.device('cpu')
         bbox = torch.tensor(bbox, dtype=torch.float32, device=device)
         if bbox.ndimension() != 2:
             raise ValueError(
-                    "bbox should have 2 dimensions, got {}".format(bbox.ndimension()))
+                "bbox should have 2 dimensions, got {}".format(bbox.ndimension()))
         if bbox.size(-1) != 4:
             raise ValueError(
-                    "last dimenion of bbox should have a "
-                    "size of 4, got {}".format(bbox.size(-1)))
+                "last dimenion of bbox should have a "
+                "size of 4, got {}".format(bbox.size(-1)))
         if mode not in ('xyxy', 'xywh'):
             raise ValueError(
-                    "mode should be 'xyxy' or 'xywh'")
+                "mode should be 'xyxy' or 'xywh'")
 
         self.bbox = bbox
         self.size = image_size  # (image_width, image_height)
@@ -50,7 +51,7 @@ class BBox(object):
     def convert(self, mode):
         if mode not in ('xyxy', 'xywh'):
             raise ValueError(
-                    "mode should be 'xyxy' or 'xywh'")
+                "mode should be 'xyxy' or 'xywh'")
         if mode == self.mode:
             return self
         # we only have two modes, so don't need to check
@@ -58,11 +59,11 @@ class BBox(object):
         xmin, ymin, xmax, ymax = self._split()
         if mode == 'xyxy':
             bbox = torch.cat(
-                    (xmin, ymin, xmax, ymax), dim=-1)
+                (xmin, ymin, xmax, ymax), dim=-1)
             bbox = BBox(bbox, self.size, mode=mode)
         else:
             bbox = torch.cat(
-                    (xmin, ymin, xmax - xmin, ymax - ymin), dim=-1)
+                (xmin, ymin, xmax - xmin, ymax - ymin), dim=-1)
             bbox = BBox(bbox, self.size, mode=mode)
         bbox._copy_extra_fields(self)
         return bbox
@@ -100,7 +101,7 @@ class BBox(object):
         scaled_ymin = ymin * ratio_height
         scaled_ymax = ymax * ratio_height
         scaled_box = torch.cat(
-                (scaled_xmin, scaled_ymin, scaled_xmax, scaled_ymax), dim=-1)
+            (scaled_xmin, scaled_ymin, scaled_xmax, scaled_ymax), dim=-1)
         bbox = BBox(scaled_box, size, mode='xyxy')
         bbox._copy_extra_fields(self)
         return bbox.convert(self.mode)
@@ -115,7 +116,7 @@ class BBox(object):
         """
         if method not in (FLIP_LEFT_RIGHT, FLIP_TOP_BOTTOM):
             raise NotImplementedError(
-                    "Only FLIP_LEFT_RIGHT and FLIP_TOP_BOTTOM implemented")
+                "Only FLIP_LEFT_RIGHT and FLIP_TOP_BOTTOM implemented")
         image_width, image_height = self.size
         xmin, ymin, xmax, ymax = self._split()
         if method == FLIP_LEFT_RIGHT:
@@ -130,7 +131,7 @@ class BBox(object):
             transposed_ymax = image_height - ymin
 
         transposed_boxes = torch.cat(
-                (transposed_xmin, transposed_ymin, transposed_xmax, transposed_ymax), dim=-1)
+            (transposed_xmin, transposed_ymin, transposed_xmax, transposed_ymax), dim=-1)
         bbox = BBox(transposed_boxes, self.size, mode='xyxy')
         bbox._copy_extra_fields(self)
         return bbox.convert(self.mode)
@@ -153,7 +154,7 @@ class BBox(object):
             is_empty = (cropped_xmin == cropped_xmax) | (cropped_ymin == cropped_ymax)
 
         cropped_box = torch.cat(
-                (cropped_xmin, cropped_ymin, cropped_xmax, cropped_ymax), dim=-1)
+            (cropped_xmin, cropped_ymin, cropped_xmax, cropped_ymax), dim=-1)
         bbox = BBox(cropped_box, (w, h), mode='xyxy')
         bbox._copy_extra_fields(self)
         return bbox.convert(self.mode)

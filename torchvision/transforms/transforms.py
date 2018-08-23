@@ -93,7 +93,7 @@ class ToPILImage(object):
             3. If the input has 1 channel, the ``mode`` is determined by the data type (i,e,
             ``int``, ``float``, ``short``).
 
-    .. _PIL.Image mode: http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#modes
+    .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
     def __init__(self, mode=None):
         self.mode = mode
@@ -122,6 +122,9 @@ class Normalize(object):
     Given mean: ``(M1,...,Mn)`` and std: ``(S1,..,Sn)`` for ``n`` channels, this transform
     will normalize each channel of the input ``torch.*Tensor`` i.e.
     ``input[channel] = (input[channel] - mean[channel]) / std[channel]``
+
+    .. note::
+        This transform acts in-place, i.e., it mutates the input tensor.
 
     Args:
         mean (sequence): Sequence of means for each channel.
@@ -227,17 +230,24 @@ class Pad(object):
             on left/right and top/bottom respectively. If a tuple of length 4 is provided
             this is the padding for the left, top, right and bottom borders
             respectively.
-        fill: Pixel fill value for constant fill. Default is 0. If a tuple of
+        fill (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant
-        padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
-            constant: pads with a constant value, this value is specified with fill
-            edge: pads with the last value at the edge of the image
-            reflect: pads with reflection of image (without repeating the last value on the edge)
-                padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
+            Default is constant.
+
+            - constant: pads with a constant value, this value is specified with fill
+
+            - edge: pads with the last value at the edge of the image
+
+            - reflect: pads with reflection of image without repeating the last value on the edge
+
+                For example, padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
                 will result in [3, 2, 1, 2, 3, 4, 3, 2]
-            symmetric: pads with reflection of image (repeating the last value on the edge)
-                padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+
+            - symmetric: pads with reflection of image repeating the last value on the edge
+
+                For example, padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
                 will result in [2, 1, 1, 2, 3, 4, 4, 3]
     """
 
@@ -365,20 +375,42 @@ class RandomCrop(object):
             int instead of sequence like (h, w), a square crop (size, size) is
             made.
         padding (int or sequence, optional): Optional padding on each border
-            of the image. Default is 0, i.e no padding. If a sequence of length
+            of the image. Default is None, i.e no padding. If a sequence of length
             4 is provided, it is used to pad left, top, right, bottom borders
-            respectively.
+            respectively. If a sequence of length 2 is provided, it is used to
+            pad left/right, top/bottom borders, respectively.
         pad_if_needed (boolean): It will pad the image if smaller than the
             desired size to avoid raising an exception.
+        fill: Pixel fill value for constant fill. Default is 0. If a tuple of
+            length 3, it is used to fill R, G, B channels respectively.
+            This value is only used when the padding_mode is constant
+        padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+
+             - constant: pads with a constant value, this value is specified with fill
+
+             - edge: pads with the last value on the edge of the image
+
+             - reflect: pads with reflection of image (without repeating the last value on the edge)
+
+                padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+                will result in [3, 2, 1, 2, 3, 4, 3, 2]
+
+             - symmetric: pads with reflection of image (repeating the last value on the edge)
+
+                padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+                will result in [2, 1, 1, 2, 3, 4, 4, 3]
+
     """
 
-    def __init__(self, size, padding=0, pad_if_needed=False):
+    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode='constant'):
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
         else:
             self.size = size
         self.padding = padding
         self.pad_if_needed = pad_if_needed
+        self.fill = fill
+        self.padding_mode = padding_mode
 
     @staticmethod
     def get_params(img, output_size):
@@ -408,15 +440,15 @@ class RandomCrop(object):
         Returns:
             PIL Image: Cropped image.
         """
-        if self.padding > 0:
-            img = F.pad(img, self.padding)
+        if self.padding is not None:
+            img = F.pad(img, self.padding, self.fill, self.padding_mode)
 
         # pad the width if needed
         if self.pad_if_needed and img.size[0] < self.size[1]:
-            img = F.pad(img, (int((1 + self.size[1] - img.size[0]) / 2), 0))
+            img = F.pad(img, (int((1 + self.size[1] - img.size[0]) / 2), 0), self.fill, self.padding_mode)
         # pad the height if needed
         if self.pad_if_needed and img.size[1] < self.size[0]:
-            img = F.pad(img, (0, int((1 + self.size[0] - img.size[1]) / 2)))
+            img = F.pad(img, (0, int((1 + self.size[0] - img.size[1]) / 2)), self.fill, self.padding_mode)
 
         i, j, h, w = self.get_params(img, self.size)
 
@@ -655,7 +687,7 @@ class LinearTransformation(object):
     original shape.
 
     Applications:
-    - whitening: zero-center the data, compute the data covariance matrix
+        - whitening: zero-center the data, compute the data covariance matrix
                  [D x D] with np.dot(X.T, X), perform SVD on this matrix and
                  pass it as transformation_matrix.
 
@@ -772,8 +804,7 @@ class RandomRotation(object):
             If degrees is a number instead of sequence like (min, max), the range of degrees
             will be (-degrees, +degrees).
         resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
-            An optional resampling filter.
-            See http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#filters
+            An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output to make it large enough to hold the entire rotated image.
@@ -782,6 +813,9 @@ class RandomRotation(object):
         center (2-tuple, optional): Optional center of rotation.
             Origin is the upper left corner.
             Default is the center of the image.
+
+    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
+
     """
 
     def __init__(self, degrees, resample=False, expand=False, center=None):
@@ -848,10 +882,12 @@ class RandomAffine(object):
             If degrees is a number instead of sequence like (min, max), the range of degrees
             will be (-degrees, +degrees). Will not apply shear by default
         resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
-            An optional resampling filter.
-            See http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#filters
+            An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
         fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
+
+    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
+
     """
 
     def __init__(self, degrees, translate=None, scale=None, shear=None, resample=False, fillcolor=0):

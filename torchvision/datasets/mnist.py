@@ -7,6 +7,7 @@ import errno
 import numpy as np
 import torch
 import codecs
+from .utils import download_url
 
 
 class MNIST(data.Dataset):
@@ -35,6 +36,16 @@ class MNIST(data.Dataset):
     processed_folder = 'processed'
     training_file = 'training.pt'
     test_file = 'test.pt'
+    classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
+               '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
+    class_to_idx = {_class: i for i, _class in enumerate(classes)}
+
+    @property
+    def targets(self):
+        if self.train:
+            return self.train_labels
+        else:
+            return self.test_labels
 
     def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
         self.root = os.path.expanduser(root)
@@ -110,12 +121,10 @@ class MNIST(data.Dataset):
                 raise
 
         for url in self.urls:
-            print('Downloading ' + url)
-            data = urllib.request.urlopen(url)
             filename = url.rpartition('/')[2]
             file_path = os.path.join(self.root, self.raw_folder, filename)
-            with open(file_path, 'wb') as f:
-                f.write(data.read())
+            download_url(url, root=os.path.join(self.root, self.raw_folder),
+                         filename=filename, md5=None)
             with open(file_path.replace('.gz', ''), 'wb') as out_f, \
                     gzip.GzipFile(file_path) as zip_f:
                 out_f.write(zip_f.read())
@@ -174,6 +183,9 @@ class FashionMNIST(MNIST):
         'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz',
         'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz',
     ]
+    classes = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal',
+               'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+    class_to_idx = {_class: i for i, _class in enumerate(classes)}
 
 
 class EMNIST(MNIST):
@@ -234,13 +246,10 @@ class EMNIST(MNIST):
             else:
                 raise
 
-        print('Downloading ' + self.url)
-        data = urllib.request.urlopen(self.url)
         filename = self.url.rpartition('/')[2]
         raw_folder = os.path.join(self.root, self.raw_folder)
         file_path = os.path.join(raw_folder, filename)
-        with open(file_path, 'wb') as f:
-            f.write(data.read())
+        download_url(self.url, root=file_path, filename=filename, md5=None)
 
         print('Extracting zip archive')
         with zipfile.ZipFile(file_path) as zip_f:
