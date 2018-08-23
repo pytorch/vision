@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 from pkg_resources import get_distribution, DistributionNotFound
 import glob
 
-import torch.cuda
+import torch
 from torch.utils.cpp_extension import CppExtension, CUDAExtension, CUDA_HOME
 
 
