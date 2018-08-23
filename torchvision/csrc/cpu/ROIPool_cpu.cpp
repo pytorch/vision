@@ -21,6 +21,7 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(const at::Tensor &input,
 
     auto output_size = num_rois * pooled_height * pooled_width * channels;
 
+    // define accessors for indexing
     auto input_a = input.accessor<float, 4>();
     auto rois_a = rois.accessor<float, 2>();
     auto output_a = output.accessor<float, 4>();
@@ -116,13 +117,38 @@ at::Tensor ROIPool_backward_cpu(const at::Tensor &grad,
         return grad_input;
     }
 
+    // get stride values to ensure indexing into gradients is correct.
     int n_stride = grad.stride(0);
     int c_stride = grad.stride(1);
     int h_stride = grad.stride(2);
     int w_stride = grad.stride(3);
 
-    /* * TODO
-     * Implement backward pass of ROI Pooling
-     * */
+    // define accessors for tensors
+    auto grad_input_a = grad_input.accessor<float, 4>();
+    auto grad_a = grad.accessor<float, 4>();
+    auto argmax_a = argmax.accessor<int, 4>();
+    auto rois_a = rois.accessor<float, 2>();
+
+    for (int n = 0; n < num_rois; ++n)
+    {
+        int roi_batch_ind = rois_a[n][0];
+
+        for (int c = 0; c < channels; ++c)
+        {
+            for (int ph = 0; ph < pooled_height; ++ph)
+            {
+                for (int pw = 0; pw < pooled_width; ++pw)
+                {
+                    int argmax_idx = argmax_a[n][c][ph][pw];
+                    // get height and width index from argmax index
+                    int h = argmax_idx / height;
+                    int w = argmax_idx % width;
+
+                    grad_input_a[roi_batch_ind][c][h][w] += grad_a[n * n_stride][c * c_stride][ph * h_stride][pw * w_stride];
+                }
+            }
+        }
+    }
+
     return grad_input;
 }
