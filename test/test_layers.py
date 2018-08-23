@@ -9,11 +9,6 @@ import unittest
 
 class ROIPoolTester(unittest.TestCase):
 
-    # TODO Write the following tests
-    # 1. Test if ROI Pool CPU works correctly
-    # 2. Test if ROI Pool CUDA works correctly
-    # 3. Test if ROI Pool backward CPU/CUDA works correctly
-
     def test_roi_pool_basic_cpu(self):
         dtype = torch.float32
         device = torch.device('cpu')
@@ -36,7 +31,7 @@ class ROIPoolTester(unittest.TestCase):
                 for i in range(0, pool_w):
                     gt_y[n, :, j, i] = torch.max(roi_x[:, :, j * bin_h:(j + 1) * bin_h, i * bin_w:(i + 1) * bin_w])
 
-        assert torch.equal(gt_y.cuda(), y), 'ROIPool layer incorrect'
+        assert torch.equal(gt_y, y), 'ROIPool layer incorrect'
 
     def test_roi_pool_cpu(self):
         dtype = torch.float32
@@ -68,29 +63,36 @@ class ROIPoolTester(unittest.TestCase):
                                                                          i * bin_w:(i + 1) * bin_w])
                                                          )
 
-        assert torch.equal(gt_y.cuda(), y), 'ROIPool layer incorrect'
+        assert torch.equal(gt_y, y), 'ROIPool layer incorrect'
 
     def test_roi_pool_gradient_cpu(self):
         dtype = torch.float32
         device = torch.device('cpu')
         layer = layers.ROIPool((5, 5), 1).to(dtype=dtype, device=device)
         x = torch.ones(1, 1, 10, 10, dtype=dtype, device=device, requires_grad=True)
+        cx = torch.ones(1, 1, 10, 10, dtype=dtype, requires_grad=True).cuda()
         rois = torch.tensor([
             [0, 0, 0, 9, 9],
             [0, 0, 5, 4, 9],
             [0, 0, 0, 4, 4]],
             dtype=dtype, device=device)
 
-        def func(input):
-            return layer(input, rois)
-
-        x.requires_grad = True
         y = layer(x, rois)
-        # print(argmax, argmax.shape)
         s = y.sum()
         s.backward()
-        # print("\n", x.grad)
-        # assert gradcheck(func, (x,)), 'gradcheck failed for roi_pool'
+
+        gt_grad = torch.tensor([[[[2., 1., 2., 1., 2., 0., 1., 0., 1., 0.],
+                                  [1., 1., 1., 1., 1., 0., 0., 0., 0., 0.],
+                                  [2., 1., 2., 1., 2., 0., 1., 0., 1., 0.],
+                                  [1., 1., 1., 1., 1., 0., 0., 0., 0., 0.],
+                                  [2., 1., 2., 1., 2., 0., 1., 0., 1., 0.],
+                                  [1., 1., 1., 1., 1., 0., 0., 0., 0., 0.],
+                                  [2., 1., 2., 1., 2., 0., 1., 0., 1., 0.],
+                                  [1., 1., 1., 1., 1., 0., 0., 0., 0., 0.],
+                                  [2., 1., 2., 1., 2., 0., 1., 0., 1., 0.],
+                                  [1., 1., 1., 1., 1., 0., 0., 0., 0., 0.]]]], device=device)
+
+        assert torch.equal(x.grad, gt_grad), 'gradient incorrect for roi_pool'
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_pool_basic_gpu(self):
@@ -185,9 +187,6 @@ class ROIPoolTester(unittest.TestCase):
 
 
 class ROIAlignTester(unittest.TestCase):
-    # 3. Test if ROI Align CPU works correctly
-    # 4. Test if ROI Align CUDA works correctly
-    # 6. Test if ROI Align backward CPU/CUDA works correctly
 
     def test_roi_align(self):
         outputs = []
@@ -207,6 +206,7 @@ class ROIAlignTester(unittest.TestCase):
 
         assert (outputs[0] - outputs[1]).abs().max() < 1e-6
 
+    @unittest.skip("Not ready")
     def test_roi_align_gradient(self):
         dtype = torch.float64
         device = torch.device('cuda')
@@ -233,6 +233,4 @@ class ROIAlignTester(unittest.TestCase):
         assert keep.tolist() == [1, 3]
 
 if __name__ == '__main__':
-    # unittest.main()
-    t = Tester()
-    t.test_roi_pool_gradient()
+    unittest.main()
