@@ -3,6 +3,7 @@ import unittest
 import os
 
 from torchvision.datasets import ImageFolder
+from torch._utils_internal import get_file_path_2
 
 
 def mock_transform(return_value, arg_list):
@@ -13,10 +14,10 @@ def mock_transform(return_value, arg_list):
 
 
 class Tester(unittest.TestCase):
-    root = 'test/assets/dataset/'
+    root = get_file_path_2('test/assets/dataset/')
     classes = ['a', 'b']
-    class_a_images = [os.path.join('test/assets/dataset/a/', path) for path in ['a1.png', 'a2.png', 'a3.png']]
-    class_b_images = [os.path.join('test/assets/dataset/b/', path) for path in ['b1.png', 'b2.png', 'b3.png', 'b4.png']]
+    class_a_images = [get_file_path_2(os.path.join('test/assets/dataset/a/', path)) for path in ['a1.png', 'a2.png', 'a3.png']]
+    class_b_images = [get_file_path_2(os.path.join('test/assets/dataset/b/', path)) for path in ['b1.png', 'b2.png', 'b3.png', 'b4.png']]
 
     def test_image_folder(self):
         dataset = ImageFolder(Tester.root, loader=lambda x: x)
@@ -34,7 +35,7 @@ class Tester(unittest.TestCase):
         self.assertEqual(imgs, outputs)
 
     def test_transform(self):
-        return_value = 'test/assets/dataset/a/a1.png'
+        return_value = get_file_path_2('test/assets/dataset/a/a1.png')
 
         args = []
         transform = mock_transform(return_value, args)

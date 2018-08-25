@@ -1,6 +1,7 @@
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
+from torch._utils_internal import get_file_path_2
 import unittest
 import math
 import random
@@ -16,7 +17,7 @@ try:
 except ImportError:
     stats = None
 
-GRACE_HOPPER = 'assets/grace_hopper_517x606.jpg'
+GRACE_HOPPER = get_file_path_2('assets/grace_hopper_517x606.jpg')
 
 
 class Tester(unittest.TestCase):
