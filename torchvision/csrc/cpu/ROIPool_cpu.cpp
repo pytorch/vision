@@ -38,7 +38,7 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(const at::Tensor &input,
         int roi_end_w = round(rois_a[n][3] * spatial_scale);
         int roi_end_h = round(rois_a[n][4] * spatial_scale);
 
-        // Force malformed ROIs to be 1x1 or HxW
+        // Force malformed ROIs to be 1x1
         int roi_width = std::max(roi_end_w - roi_start_w + 1, 1);
         int roi_height = std::max(roi_end_h - roi_start_h + 1, 1);
         float bin_size_h = static_cast<float>(roi_height) / static_cast<float>(pooled_height);

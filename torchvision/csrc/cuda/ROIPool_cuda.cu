@@ -10,10 +10,10 @@
 
 
 template <typename T>
-__global__ void RoIPoolForward(const int nthreads, const T* bottom_data,
+__global__ void RoIPoolForward(const int nthreads, const T* input,
     const T spatial_scale, const int channels, const int height,
     const int width, const int pooled_height, const int pooled_width,
-    const T* bottom_rois, T* top_data, int* argmax_data) {
+    const T* rois, T* output, int* argmax_data) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
@@ -21,14 +21,14 @@ __global__ void RoIPoolForward(const int nthreads, const T* bottom_data,
     int c = (index / pooled_width / pooled_height) % channels;
     int n = index / pooled_width / pooled_height / channels;
 
-    const T* offset_bottom_rois = bottom_rois + n * 5;
-    int roi_batch_ind = offset_bottom_rois[0];
-    int roi_start_w = round(offset_bottom_rois[1] * spatial_scale);
-    int roi_start_h = round(offset_bottom_rois[2] * spatial_scale);
-    int roi_end_w = round(offset_bottom_rois[3] * spatial_scale);
-    int roi_end_h = round(offset_bottom_rois[4] * spatial_scale);
+    const T* offset_rois = rois + n * 5;
+    int roi_batch_ind = offset_rois[0];
+    int roi_start_w = round(offset_rois[1] * spatial_scale);
+    int roi_start_h = round(offset_rois[2] * spatial_scale);
+    int roi_end_w = round(offset_rois[3] * spatial_scale);
+    int roi_end_h = round(offset_rois[4] * spatial_scale);
 
-    // Force malformed ROIs to be 1x1 or HxW
+    // Force malformed ROIs to be 1x1
     int roi_width = max(roi_end_w - roi_start_w + 1, 1);
     int roi_height = max(roi_end_h - roi_start_h + 1, 1);
     T bin_size_h = static_cast<T>(roi_height)
@@ -56,28 +56,28 @@ __global__ void RoIPoolForward(const int nthreads, const T* bottom_data,
     T maxval = is_empty ? 0 : -FLT_MAX;
     // If nothing is pooled, argmax = -1 causes nothing to be backprop'd
     int maxidx = -1;
-    const T* offset_bottom_data =
-        bottom_data + (roi_batch_ind * channels + c) * height * width;
+    const T* offset_input =
+        input + (roi_batch_ind * channels + c) * height * width;
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
-        int bottom_index = h * width + w;
-        if (offset_bottom_data[bottom_index] > maxval) {
-          maxval = offset_bottom_data[bottom_index];
-          maxidx = bottom_index;
+        int input_index = h * width + w;
+        if (offset_input[input_index] > maxval) {
+          maxval = offset_input[input_index];
+          maxidx = input_index;
         }
       }
     }
-    top_data[index] = maxval;
+    output[index] = maxval;
     argmax_data[index] = maxidx;
   }
 }
 
 template <typename T>
-__global__ void RoIPoolBackward(const int nthreads, const T* top_grad,
+__global__ void RoIPoolBackward(const int nthreads, const T* grad_output,
     const int* argmax_data, const int num_rois, const T spatial_scale,
     const int channels, const int height, const int width,
-    const int pooled_height, const int pooled_width, T* bottom_data,
-    const T* bottom_rois, 
+    const int pooled_height, const int pooled_width, 
+    T* grad_input, const T* rois, 
     const int n_stride, const int c_stride,
     const int h_stride, const int w_stride) {
 
@@ -88,18 +88,17 @@ __global__ void RoIPoolBackward(const int nthreads, const T* top_grad,
         int c = (index / pooled_width / pooled_height) % channels;
         int n = index / pooled_width / pooled_height / channels;
 
-        const T* offset_bottom_rois = bottom_rois + n * 5;
-        int roi_batch_ind = offset_bottom_rois[0];
-        int bottom_offset = (roi_batch_ind * channels + c) * height * width;
-        T* bottom_data_offset = bottom_data + bottom_offset;
+        const T* offset_rois = rois + n * 5;
+        int roi_batch_ind = offset_rois[0];
+        T* grad_input_offset = grad_input + ((roi_batch_ind * channels + c) * height * width);
         
-        int top_offset = n*n_stride + c*c_stride;
+        int output_offset = n*n_stride + c*c_stride;
         const int* argmax_data_offset = argmax_data + n*channels*pooled_height*pooled_width;
         int argmax = argmax_data_offset[c*pooled_height*pooled_width + ph*pooled_width + pw];
 
         if (argmax != -1) {
-            atomicAdd(bottom_data_offset + argmax,
-                      static_cast<T>(top_grad[top_offset + ph*h_stride + pw*w_stride]));
+            atomicAdd(grad_input_offset + argmax,
+                      static_cast<T>(grad_output[output_offset + ph*h_stride + pw*w_stride]));
         }
     }
 }
