@@ -1,4 +1,5 @@
 #include <ATen/ATen.h>
+#include <ATen/cuda/CUDAContext.h>
 
 #include <THC/THC.h>
 #include <THC/THCAtomics.cuh>
@@ -269,7 +270,7 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
   at::Tensor output = input.type().tensor({num_rois, channels, pooled_height, pooled_width});
 
   auto output_size = num_rois * pooled_height * pooled_width * channels;
-  cudaStream_t stream = at::globalContext().getCurrentCUDAStream();
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   dim3 grid(std::min(THCCeilDiv(output_size, 512L), 4096L));
   dim3 block(512);
@@ -314,7 +315,7 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
   auto num_rois = rois.size(0);
   at::Tensor grad_input = grad.type().tensor({batch_size, channels, height, width}).zero_();
 
-  cudaStream_t stream = at::globalContext().getCurrentCUDAStream();
+  cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   dim3 grid(std::min(THCCeilDiv(grad.numel(), 512L), 4096L));
   dim3 block(512);
