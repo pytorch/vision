@@ -39,8 +39,10 @@ VERSION = find_version('torchvision', '__init__.py')
 requirements = [
     'numpy',
     'six',
-    'torch',
 ]
+
+if get_dist('torch') is None:
+    requirements.append('torch')
 
 pillow_ver = ' >= 4.1.1'
 pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
