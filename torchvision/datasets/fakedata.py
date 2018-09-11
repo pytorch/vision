@@ -40,7 +40,7 @@ class FakeData(data.Dataset):
         rng_state = torch.get_rng_state()
         torch.manual_seed(index + self.random_offset)
         img = torch.randn(*self.image_size)
-        target = torch.Tensor(1).random_(0, self.num_classes)[0]
+        target = torch.randint(0, self.num_classes, size=(1,), dtype=torch.long)[0]
         torch.set_rng_state(rng_state)
 
         # convert to PIL Image
