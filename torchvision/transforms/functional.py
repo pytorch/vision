@@ -1,5 +1,6 @@
 from __future__ import division
 import torch
+import sys
 import math
 import random
 from PIL import Image, ImageOps, ImageEnhance, PILLOW_VERSION
@@ -12,6 +13,13 @@ import numbers
 import types
 import collections
 import warnings
+
+if sys.version_info < (3, 3):
+    Sequence = collections.Sequence
+    Iterable = collections.Iterable
+else:
+    Sequence = collections.abc.Sequence
+    Iterable = collections.abc.Iterable
 
 
 def _is_pil_image(img):
@@ -191,7 +199,7 @@ def resize(img, size, interpolation=Image.BILINEAR):
     """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-    if not (isinstance(size, int) or (isinstance(size, collections.Iterable) and len(size) == 2)):
+    if not (isinstance(size, int) or (isinstance(size, Iterable) and len(size) == 2)):
         raise TypeError('Got inappropriate size arg: {}'.format(size))
 
     if isinstance(size, int):
@@ -258,7 +266,7 @@ def pad(img, padding, fill=0, padding_mode='constant'):
     if not isinstance(padding_mode, str):
         raise TypeError('Got inappropriate padding_mode arg')
 
-    if isinstance(padding, collections.Sequence) and len(padding) not in [2, 4]:
+    if isinstance(padding, Sequence) and len(padding) not in [2, 4]:
         raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
                          "{} element tuple".format(len(padding)))
 
@@ -270,10 +278,10 @@ def pad(img, padding, fill=0, padding_mode='constant'):
     else:
         if isinstance(padding, int):
             pad_left = pad_right = pad_top = pad_bottom = padding
-        if isinstance(padding, collections.Sequence) and len(padding) == 2:
+        if isinstance(padding, Sequence) and len(padding) == 2:
             pad_left = pad_right = padding[0]
             pad_top = pad_bottom = padding[1]
-        if isinstance(padding, collections.Sequence) and len(padding) == 4:
+        if isinstance(padding, Sequence) and len(padding) == 4:
             pad_left = padding[0]
             pad_top = padding[1]
             pad_right = padding[2]
