@@ -67,7 +67,7 @@ class MNIST(data.Dataset):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        img, target = self.data[index], self.targets[index]
+        img, target = self.data[index], int(self.targets[index])
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
