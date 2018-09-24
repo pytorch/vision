@@ -82,7 +82,10 @@ class ToTensor(object):
         Returns:
             Tensor: Converted image.
         """
-        return F.to_tensor(pic)
+        if not isinstance(pic,list) :
+            return F.to_tensor(pic)
+        else :
+            return [F.to_tensor(p) for p in pic]
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -116,7 +119,10 @@ class ToPILImage(object):
             PIL Image: Image converted to PIL Image.
 
         """
-        return F.to_pil_image(pic, self.mode)
+        if not isinstance(pic,list) :
+            return F.to_pil_image(pic, self.mode)
+        else :
+            return [F.to_pil_image(p, self.mode) for p in pic]
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
@@ -184,7 +190,10 @@ class Resize(object):
         Returns:
             PIL Image: Rescaled image.
         """
-        return F.resize(img, self.size, self.interpolation)
+        if not isinstance(img,list) :
+            return F.resize(img, self.size, self.interpolation)
+        else :
+            return [F.resize(im, self.size, self.interpolation) for im in img]
 
     def __repr__(self):
         interpolate_str = _pil_interpolation_to_str[self.interpolation]
@@ -224,7 +233,10 @@ class CenterCrop(object):
         Returns:
             PIL Image: Cropped image.
         """
-        return F.center_crop(img, self.size)
+        if not isinstance(img,list) :
+            return F.center_crop(img, self.size)
+        else :
+            return [ F.center_crop(im, self.size) for im in img]
 
     def __repr__(self):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
@@ -280,7 +292,10 @@ class Pad(object):
         Returns:
             PIL Image: Padded image.
         """
-        return F.pad(img, self.padding, self.fill, self.padding_mode)
+        if not isinstance(img,list) :
+            return F.pad(img, self.padding, self.fill, self.padding_mode)
+        else :
+            return [F.pad(im, self.padding, self.fill, self.padding_mode) for im in img]
 
     def __repr__(self):
         return self.__class__.__name__ + '(padding={0}, fill={1}, padding_mode={2})'.\
@@ -299,7 +314,10 @@ class Lambda(object):
         self.lambd = lambd
 
     def __call__(self, img):
-        return self.lambd(img)
+        if not isinstance(img,list) :
+            return self.lambd(img)
+        else :
+            return [self.lambd(im) for im in img]
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -344,7 +362,10 @@ class RandomApply(RandomTransforms):
         if self.p < random.random():
             return img
         for t in self.transforms:
-            img = t(img)
+            if not isinstance(img,list) :
+                img = t(img)
+            else :
+                img = [t(im) for im in img]
         return img
 
     def __repr__(self):
@@ -364,7 +385,10 @@ class RandomOrder(RandomTransforms):
         order = list(range(len(self.transforms)))
         random.shuffle(order)
         for i in order:
-            img = self.transforms[i](img)
+            if not isinstance(img,list) :
+                img = self.transforms[i](img)
+            else :
+                img = [self.transforms[i](im) for im in img]
         return img
 
 
@@ -373,7 +397,10 @@ class RandomChoice(RandomTransforms):
     """
     def __call__(self, img):
         t = random.choice(self.transforms)
-        return t(img)
+        if not isinstance(img,list) :
+            return t(img)
+        else :
+            return [t(im) for im in img]
 
 
 class RandomCrop(object):
@@ -441,7 +468,7 @@ class RandomCrop(object):
         j = random.randint(0, w - tw)
         return i, j, th, tw
 
-    def __call__(self, img):
+    def __call__(self, imgs):
         """
         Args:
             img (PIL Image): Image to be cropped.
@@ -449,20 +476,29 @@ class RandomCrop(object):
         Returns:
             PIL Image: Cropped image.
         """
-        if self.padding is not None:
-            img = F.pad(img, self.padding, self.fill, self.padding_mode)
+        not_list_flag = False
+        if not isinstance(imgs,list) :
+            imgs = [imgs]
+            not_list_flag = True
+        outputs = []
+        for img in imgs :
+            if self.padding is not None:
+                img = F.pad(img, self.padding, self.fill, self.padding_mode)
 
-        # pad the width if needed
-        if self.pad_if_needed and img.size[0] < self.size[1]:
-            img = F.pad(img, (self.size[1] - img.size[0], 0), self.fill, self.padding_mode)
-        # pad the height if needed
-        if self.pad_if_needed and img.size[1] < self.size[0]:
-            img = F.pad(img, (0, self.size[0] - img.size[1]), self.fill, self.padding_mode)
-
-        i, j, h, w = self.get_params(img, self.size)
-
-        return F.crop(img, i, j, h, w)
-
+            # pad the width if needed
+            if self.pad_if_needed and img.size[0] < self.size[1]:
+                img = F.pad(img, (self.size[1] - img.size[0], 0), self.fill, self.padding_mode)
+            # pad the height if needed
+            if self.pad_if_needed and img.size[1] < self.size[0]:
+                img = F.pad(img, (0, self.size[0] - img.size[1]), self.fill, self.padding_mode)
+            
+            outputs.append(img)
+        i, j, h, w = self.get_params(imgs[0], self.size)
+        outputs = [F.crop(img, i, j, h, w)) for img in outputs]
+        if not_list_flag :
+            return outputs[0]
+        else :
+            return outputs
     def __repr__(self):
         return self.__class__.__name__ + '(size={0}, padding={1})'.format(self.size, self.padding)
 
@@ -486,7 +522,10 @@ class RandomHorizontalFlip(object):
             PIL Image: Randomly flipped image.
         """
         if random.random() < self.p:
-            return F.hflip(img)
+            if not isinstance(img,list) :
+                return F.hflip(img)
+            else :
+                return [F.hflip(im) for im in img]
         return img
 
     def __repr__(self):
@@ -512,7 +551,10 @@ class RandomVerticalFlip(object):
             PIL Image: Randomly flipped image.
         """
         if random.random() < self.p:
-            return F.vflip(img)
+            if not isinstance(img,list) :
+                return F.vflip(img)
+            else :
+                return [F.vflip(im) for im in img]
         return img
 
     def __repr__(self):
@@ -575,7 +617,7 @@ class RandomResizedCrop(object):
         j = (img.size[0] - w) // 2
         return i, j, w, w
 
-    def __call__(self, img):
+    def __call__(self, imgs):
         """
         Args:
             img (PIL Image): Image to be cropped and resized.
@@ -583,8 +625,18 @@ class RandomResizedCrop(object):
         Returns:
             PIL Image: Randomly cropped and resized image.
         """
-        i, j, h, w = self.get_params(img, self.scale, self.ratio)
-        return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
+        outputs = []
+        not_list_flag = False
+        if not isinstance(imgs,list) :
+            imgs = [imgs]
+            not_list_flag = True
+        i, j, h, w = self.get_params(imgs[0], self.scale, self.ratio)
+        for img in imgs :
+            outputs.append(F.resized_crop(img, i, j, h, w, self.size, self.interpolation))
+        if not_list_flag :
+            return outputs[0]
+        else :
+            return outputs
 
     def __repr__(self):
         interpolate_str = _pil_interpolation_to_str[self.interpolation]
@@ -638,7 +690,10 @@ class FiveCrop(object):
             self.size = size
 
     def __call__(self, img):
-        return F.five_crop(img, self.size)
+        if not isinstance(img,list) :
+            return F.five_crop(img, self.size)
+        else :
+            return [F.five_crop(im, self.size) for im in img]
 
     def __repr__(self):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
@@ -681,8 +736,10 @@ class TenCrop(object):
         self.vertical_flip = vertical_flip
 
     def __call__(self, img):
-        return F.ten_crop(img, self.size, self.vertical_flip)
-
+        if not isinstance(img,list) :
+            return F.ten_crop(img, self.size, self.vertical_flip)
+        else :
+            return [F.ten_crop(im, self.size, self.vertical_flip) for im in img]
     def __repr__(self):
         return self.__class__.__name__ + '(size={0}, vertical_flip={1})'.format(self.size, self.vertical_flip)
 
@@ -819,7 +876,10 @@ class ColorJitter(object):
         """
         transform = self.get_params(self.brightness, self.contrast,
                                     self.saturation, self.hue)
-        return transform(img)
+        if not isinstance(img,list) :
+            return transform(img)
+        else :
+            return [transform(im) for im in img]
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
@@ -886,9 +946,11 @@ class RandomRotation(object):
         """
 
         angle = self.get_params(self.degrees)
-
-        return F.rotate(img, angle, self.resample, self.expand, self.center)
-
+        if not isinstance(img,list) :
+            return F.rotate(img, angle, self.resample, self.expand, self.center)
+        else :
+            return [F.rotate(im, angle, self.resample, self.expand, self.center) for im in img]
+        
     def __repr__(self):
         format_string = self.__class__.__name__ + '(degrees={0}'.format(self.degrees)
         format_string += ', resample={0}'.format(self.resample)
@@ -993,16 +1055,25 @@ class RandomAffine(object):
 
         return angle, translations, scale, shear
 
-    def __call__(self, img):
+    def __call__(self, imgs):
         """
             img (PIL Image): Image to be transformed.
 
         Returns:
             PIL Image: Affine transformed image.
         """
-        ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img.size)
-        return F.affine(img, *ret, resample=self.resample, fillcolor=self.fillcolor)
-
+        not_list_flag = False 
+        outputs = []
+        if not isinstance(imgs,list) :
+            imgs = [imgs]
+            not_list_flag = True
+        ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, imgs[0].size)
+        outputs = [ F.affine(img, *ret, resample=self.resample, fillcolor=self.fillcolor) for img in imgs]
+        if not_list_flag :
+            return outputs[0]
+        else :
+            return outputs
+        
     def __repr__(self):
         s = '{name}(degrees={degrees}'
         if self.translate is not None:
@@ -1045,8 +1116,10 @@ class Grayscale(object):
         Returns:
             PIL Image: Randomly grayscaled image.
         """
-        return F.to_grayscale(img, num_output_channels=self.num_output_channels)
-
+        if not isinstance(img,list) :
+            return F.to_grayscale(img, num_output_channels=self.num_output_channels)
+        else :
+            return [ F.to_grayscale(im, num_output_channels=self.num_output_channels) for im in img]
     def __repr__(self):
         return self.__class__.__name__ + '(num_output_channels={0})'.format(self.num_output_channels)
 
@@ -1078,7 +1151,10 @@ class RandomGrayscale(object):
         """
         num_output_channels = 1 if img.mode == 'L' else 3
         if random.random() < self.p:
-            return F.to_grayscale(img, num_output_channels=num_output_channels)
+            if not isinstance(img,list) :
+                return F.to_grayscale(img, num_output_channels=num_output_channels)
+            else :
+                return [ F.to_grayscale(im, num_output_channels=num_output_channels) for im in img]
         return img
 
     def __repr__(self):
