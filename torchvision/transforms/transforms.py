@@ -1092,6 +1092,7 @@ class RandomGrayscale(object):
     def __init__(self, p=0.1):
         self.p = p
 
+    @staticmethod
     def get_params(p):
         """Get parameters for ``crop`` for a random crop.
 
