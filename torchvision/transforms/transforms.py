@@ -484,7 +484,7 @@ class RandomHorizontalFlip(object):
         Args:
             p : probability of flipping
         Returns:
-            tuple: bool that would determine the flip
+            tuple: bool
         """
         return random.random() < p
     
@@ -521,7 +521,7 @@ class RandomVerticalFlip(object):
         Args:
             p : probability of flipping
         Returns:
-            tuple: bool that would determine the flip
+            tuple: bool 
         """
         return random.random() < p
 
@@ -1098,7 +1098,7 @@ class RandomGrayscale(object):
         Args:
             p : probability of converting to grayscale
         Returns:
-            tuple: bool that would determine the flip
+            tuple: bool
         """
         return random.random() < p
 
