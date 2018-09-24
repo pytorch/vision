@@ -497,7 +497,7 @@ class RandomHorizontalFlip(object):
             PIL Image: Randomly flipped image.
         """
         to_flip = self.get_params(self.p)
-        if to_flip :
+        if to_flip:
             return F.hflip(img)
         return img
 
@@ -535,7 +535,7 @@ class RandomVerticalFlip(object):
             PIL Image: Randomly flipped image.
         """
         to_flip = self.get_params(self.p)
-        if to_flip :
+        if to_flip:
             return F.vflip(img)
         return img
 
@@ -1114,7 +1114,7 @@ class RandomGrayscale(object):
         """
         num_output_channels = 1 if img.mode == 'L' else 3
         to_convert = self.get_params(self.p)
-        if to_convert :
+        if to_convert:
             return F.to_grayscale(img, num_output_channels=num_output_channels)
         return img
 
