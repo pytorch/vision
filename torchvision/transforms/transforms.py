@@ -477,6 +477,17 @@ class RandomHorizontalFlip(object):
     def __init__(self, p=0.5):
         self.p = p
 
+    @staticmethod
+    def get_params(p):
+        """Get parameters for ``crop`` for a random crop.
+
+        Args:
+            p : probability of flipping
+        Returns:
+            tuple: bool that would determine the flip
+        """
+        return random.random() < p
+    
     def __call__(self, img):
         """
         Args:
@@ -485,7 +496,8 @@ class RandomHorizontalFlip(object):
         Returns:
             PIL Image: Randomly flipped image.
         """
-        if random.random() < self.p:
+        to_flip = self.get_params(self.p)
+        if to_flip :
             return F.hflip(img)
         return img
 
@@ -503,6 +515,16 @@ class RandomVerticalFlip(object):
     def __init__(self, p=0.5):
         self.p = p
 
+    def get_params(p):
+        """Get parameters for ``crop`` for a random crop.
+
+        Args:
+            p : probability of flipping
+        Returns:
+            tuple: bool that would determine the flip
+        """
+        return random.random() < p
+
     def __call__(self, img):
         """
         Args:
@@ -511,7 +533,8 @@ class RandomVerticalFlip(object):
         Returns:
             PIL Image: Randomly flipped image.
         """
-        if random.random() < self.p:
+        to_flip = self.get_params(self.p)
+        if to_flip :
             return F.vflip(img)
         return img
 
@@ -1037,6 +1060,7 @@ class Grayscale(object):
     def __init__(self, num_output_channels=1):
         self.num_output_channels = num_output_channels
 
+
     def __call__(self, img):
         """
         Args:
@@ -1068,6 +1092,16 @@ class RandomGrayscale(object):
     def __init__(self, p=0.1):
         self.p = p
 
+    def get_params(p):
+        """Get parameters for ``crop`` for a random crop.
+
+        Args:
+            p : probability of converting to grayscale
+        Returns:
+            tuple: bool that would determine the flip
+        """
+        return random.random() < p
+
     def __call__(self, img):
         """
         Args:
@@ -1077,7 +1111,8 @@ class RandomGrayscale(object):
             PIL Image: Randomly grayscaled image.
         """
         num_output_channels = 1 if img.mode == 'L' else 3
-        if random.random() < self.p:
+        to_convert = self.get_params(self.p)
+        if to_convert :
             return F.to_grayscale(img, num_output_channels=num_output_channels)
         return img
 
