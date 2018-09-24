@@ -1061,7 +1061,6 @@ class Grayscale(object):
     def __init__(self, num_output_channels=1):
         self.num_output_channels = num_output_channels
 
-
     def __call__(self, img):
         """
         Args:
