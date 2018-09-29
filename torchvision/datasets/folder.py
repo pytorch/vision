@@ -4,6 +4,7 @@ from PIL import Image
 
 import os
 import os.path
+import random
 import sys
 
 
@@ -208,3 +209,85 @@ class ImageFolder(DatasetFolder):
                                           transform=transform,
                                           target_transform=target_transform)
         self.imgs = self.samples
+
+
+def make_train_val_dataset(root, loader=pil_loader, extensions=IMG_EXTENSIONS,
+                           transform=None, target_transform=None,  shuffle=True,
+                           classes=None, train_ratio=0.95):
+    """Make train and val DatasetFolder instances without organizing train and val
+    samples into separate folders and then copy files into specific class subfolders.
+    Classes and ratio of training set can also be specified.
+
+    A typical image dataset downloaded is normally arranged this way:
+        root/dog/xxx.png
+        root/dog/xxy.png
+        root/dog/xxz.png
+        root/cat/123.png
+        root/cat/nsdf3.png
+        root/cat/asd932_.png
+
+    While using the dataset for machine learning tasks, the dataset is normally
+    arranged this way:
+        train/dog/xxx.png
+        train/dog/xxy.png
+        train/cat/123.png
+        train/cat/nsdf3.png
+        val/cat/asd932_.png
+        val/dog/xxz.png
+
+    This function modifies the attributes of two DatasetFolder instances.
+
+    Args:
+        root (string): Root directory path.
+        loader (callable): A function to load a sample given its path.
+        extensions (list[string]): A list of allowed extensions.
+        transform (callable, optional): A function/transform that takes in
+            a sample and returns a transformed version.
+            E.g, ``transforms.RandomCrop`` for images.
+        target_transform (callable, optional): A function/transform that takes
+            in the target and transforms it.
+        shuffle (boolean, optional): Shuffle the files before splitting.
+        classes (list[string], optional): classes to make train and val dataset.
+            Default is the list of all classes.
+        train_ratio (float, optional): the ratio of training data. Default value
+            is 0.95
+
+    Returns:
+        train_ds (DatasetFolder): train dataset
+        val_ds (DatasetFolder): val dataset
+    """
+    train_ds = DatasetFolder(root, loader, extensions, transform, target_transform)
+    val_ds = DatasetFolder(root, loader, extensions, transform, target_transform)
+
+    _class_to_idx = train_ds.class_to_idx
+    if classes:
+        _class_to_idx = {cls: idx for cls, idx in _class_to_idx.items() if cls in classes}
+        _classes_not_found = set(classes) - set(_class_to_idx.keys())
+        if _classes_not_found:
+            fmt_str = "{0} class(es) not found in subfolders of {1}:\n".format(len(_classes_not_found), root)
+            fmt_str += ", ".join(list(_classes_not_found))
+            raise RuntimeError(fmt_str)
+        train_ds.classes = val_ds.classes = list(_class_to_idx.keys())
+        train_ds.class_to_idx = val_ds.class_to_idx = _class_to_idx
+
+    train_samples = []
+    val_samples = []
+    _samples = [s for s in train_ds.samples if s[1] in _class_to_idx.values()]
+    cls_samples = {}
+    for path, idx in _samples:
+        if idx not in cls_samples:
+            cls_samples[idx] = [path]
+        else:
+            cls_samples[idx].append(path)
+
+    for idx, paths in cls_samples.items():
+        if shuffle:
+            random.shuffle(paths)
+        n_train = int(len(paths) * train_ratio)
+        train_samples += [(p, idx) for p in paths[:n_train]]
+        val_samples += [(p, idx) for p in paths[n_train:]]
+
+    train_ds.samples = train_samples
+    val_ds.samples = val_samples
+
+    return train_ds, val_ds
