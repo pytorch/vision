@@ -96,7 +96,7 @@ def to_tensor(pic):
 def to_pil_image(pic, mode=None):
     """Convert a tensor or an ndarray to PIL Image.
 
-    See :class:`~torchvision.transforms.ToPILImage` for more details.
+    See :class:`~torchvision_hub.transforms.ToPILImage` for more details.
 
     Args:
         pic (Tensor or numpy.ndarray): Image to be converted to PIL Image.
@@ -162,7 +162,7 @@ def normalize(tensor, mean, std):
     .. note::
         This transform acts in-place, i.e., it mutates the input tensor.
 
-    See :class:`~torchvision.transforms.Normalize` for more details.
+    See :class:`~torchvision_hub.transforms.Normalize` for more details.
 
     Args:
         tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
@@ -330,7 +330,7 @@ def center_crop(img, output_size):
 def resized_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
     """Crop the given PIL Image and resize it to desired size.
 
-    Notably used in :class:`~torchvision.transforms.RandomResizedCrop`.
+    Notably used in :class:`~torchvision_hub.transforms.RandomResizedCrop`.
 
     Args:
         img (PIL Image): Image to be cropped.

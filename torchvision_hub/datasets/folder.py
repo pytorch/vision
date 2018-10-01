@@ -171,7 +171,7 @@ def accimage_loader(path):
 
 
 def default_loader(path):
-    from torchvision import get_image_backend
+    from torchvision_hub import get_image_backend
     if get_image_backend() == 'accimage':
         return accimage_loader(path)
     else:
