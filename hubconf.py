@@ -9,11 +9,11 @@
 
 entrypoints = [
     ('wrapper1',
-     'torchvision_hub.models.hub_example',
-     'https://download.pytorch.org/models/resnet18-5c106cde.pth'),
-    ('wrapper2',
-     'torchvision_hub.transforms.hub_example',
-     'https://download.pytorch.org/models/resnet18-5c106cde.pth')
+     'hub_example.example',
+     'https://download.pytorch.org/models/alexnet-owt-4df8aa71.pth'),
+    ('alexnet',
+     'torchvision.models.alexnet',
+     'https://download.pytorch.org/models/alexnet-owt-4df8aa71.pth')
     ]
 dependencies = ['torch', 'math']
 help_msg = ("/****** Hub Help Section ******/\n"

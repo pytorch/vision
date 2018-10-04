@@ -19,8 +19,8 @@ class CocoCaptions(data.Dataset):
 
         .. code:: python
 
-            import torchvision_hub.datasets as dset
-            import torchvision_hub.transforms as transforms
+            import torchvision.datasets as dset
+            import torchvision.transforms as transforms
             cap = dset.CocoCaptions(root = 'dir where images are',
                                     annFile = 'json annotation file',
                                     transform=transforms.ToTensor())
