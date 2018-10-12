@@ -112,7 +112,7 @@ void pre_calc_for_bilinear_interpolate(
 template <typename T>
 void ROIAlignForward_cpu_kernel(
     const int nthreads,
-    const T* bottom_data,
+    const T* input,
     const T& spatial_scale,
     const int channels,
     const int height,
@@ -120,9 +120,9 @@ void ROIAlignForward_cpu_kernel(
     const int pooled_height,
     const int pooled_width,
     const int sampling_ratio,
-    const T* bottom_rois,
+    const T* rois,
     //int roi_cols,
-    T* top_data) {
+    T* output) {
   //AT_ASSERT(roi_cols == 4 || roi_cols == 5);
   int roi_cols = 5;
 
@@ -134,22 +134,22 @@ void ROIAlignForward_cpu_kernel(
     int index_n = n * channels * pooled_width * pooled_height;
 
     // roi could have 4 or 5 columns
-    const T* offset_bottom_rois = bottom_rois + n * roi_cols;
+    const T* offset_rois = rois + n * roi_cols;
     int roi_batch_ind = 0;
     if (roi_cols == 5) {
-      roi_batch_ind = offset_bottom_rois[0];
-      offset_bottom_rois++;
+      roi_batch_ind = offset_rois[0];
+      offset_rois++;
     }
 
     // Do not using rounding; this implementation detail is critical
-    T roi_start_w = offset_bottom_rois[0] * spatial_scale;
-    T roi_start_h = offset_bottom_rois[1] * spatial_scale;
-    T roi_end_w = offset_bottom_rois[2] * spatial_scale;
-    T roi_end_h = offset_bottom_rois[3] * spatial_scale;
-    // T roi_start_w = round(offset_bottom_rois[0] * spatial_scale);
-    // T roi_start_h = round(offset_bottom_rois[1] * spatial_scale);
-    // T roi_end_w = round(offset_bottom_rois[2] * spatial_scale);
-    // T roi_end_h = round(offset_bottom_rois[3] * spatial_scale);
+    T roi_start_w = offset_rois[0] * spatial_scale;
+    T roi_start_h = offset_rois[1] * spatial_scale;
+    T roi_end_w = offset_rois[2] * spatial_scale;
+    T roi_end_h = offset_rois[3] * spatial_scale;
+    // T roi_start_w = round(offset_rois[0] * spatial_scale);
+    // T roi_start_h = round(offset_rois[1] * spatial_scale);
+    // T roi_end_w = round(offset_rois[2] * spatial_scale);
+    // T roi_end_h = round(offset_rois[3] * spatial_scale);
 
     // Force malformed ROIs to be 1x1
     T roi_width = std::max(roi_end_w - roi_start_w, (T)1.);
@@ -188,8 +188,8 @@ void ROIAlignForward_cpu_kernel(
 
       for (int c = 0; c < channels; c++) {
       int index_n_c = index_n + c * pooled_width * pooled_height;
-      const T* offset_bottom_data =
-          bottom_data + (roi_batch_ind * channels + c) * height * width;
+      const T* offset_input =
+          input + (roi_batch_ind * channels + c) * height * width;
       int pre_calc_index = 0;
 
       for (int ph = 0; ph < pooled_height; ph++) {
@@ -200,17 +200,17 @@ void ROIAlignForward_cpu_kernel(
           for (int iy = 0; iy < roi_bin_grid_h; iy++) {
             for (int ix = 0; ix < roi_bin_grid_w; ix++) {
               PreCalc<T> pc = pre_calc[pre_calc_index];
-              output_val += pc.w1 * offset_bottom_data[pc.pos1] +
-                  pc.w2 * offset_bottom_data[pc.pos2] +
-                  pc.w3 * offset_bottom_data[pc.pos3] +
-                  pc.w4 * offset_bottom_data[pc.pos4];
+              output_val += pc.w1 * offset_input[pc.pos1] +
+                  pc.w2 * offset_input[pc.pos2] +
+                  pc.w3 * offset_input[pc.pos3] +
+                  pc.w4 * offset_input[pc.pos4];
 
               pre_calc_index += 1;
             }
           }
           output_val /= count;
 
-          top_data[index] = output_val;
+          output[index] = output_val;
         } // for pw
       } // for ph
     } // for c
