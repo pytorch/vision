@@ -11,14 +11,14 @@ from torchvision import _C
 
 class _ROIPool(Function):
     @staticmethod
-    def forward(ctx, input, roi, output_size, spatial_scale):
+    def forward(ctx, input, rois, output_size, spatial_scale):
         ctx.output_size = _pair(output_size)
         ctx.spatial_scale = spatial_scale
         ctx.input_shape = input.size()
         output, argmax = _C.roi_pool_forward(
-            input, roi, spatial_scale,
+            input, rois, spatial_scale,
             output_size[0], output_size[1])
-        ctx.save_for_backward(roi, argmax)
+        ctx.save_for_backward(rois, argmax)
         return output
 
     @staticmethod
