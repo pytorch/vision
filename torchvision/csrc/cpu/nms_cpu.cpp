@@ -1,6 +1,5 @@
 #include "cpu/vision.h"
 
-
 template <typename scalar_t>
 at::Tensor nms_cpu_kernel(const at::Tensor& dets,
                           const at::Tensor& scores,
@@ -10,7 +9,7 @@ at::Tensor nms_cpu_kernel(const at::Tensor& dets,
   AT_ASSERTM(dets.type() == scores.type(), "dets should have the same type as scores");
 
   if (dets.numel() == 0)
-    return torch::CPU(at::kLong).tensor();
+    return at::empty({0}, at::device(at::kCPU).dtype(at::kLong));
 
   auto x1_t = dets.select(1, 0).contiguous();
   auto y1_t = dets.select(1, 1).contiguous();
@@ -22,7 +21,7 @@ at::Tensor nms_cpu_kernel(const at::Tensor& dets,
   auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
 
   auto ndets = dets.size(0);
-  at::Tensor suppressed_t = at::zeros(torch::CPU(at::kByte), {ndets});
+  at::Tensor suppressed_t = at::zeros({ndets}, at::device(at::kCPU).dtype(at::kByte));
 
   auto suppressed = suppressed_t.data<uint8_t>();
   auto order = order_t.data<int64_t>();
@@ -66,7 +65,7 @@ at::Tensor nms_cpu(const at::Tensor& dets,
                const at::Tensor& scores,
                const float threshold) {
 
-  auto result = dets.type().tensor();
+  auto result = at::empty({0}, dets.type());
 
   AT_DISPATCH_FLOATING_TYPES(dets.type(), "nms", [&] {
     result = nms_cpu_kernel<scalar_t>(dets, scores, threshold);
