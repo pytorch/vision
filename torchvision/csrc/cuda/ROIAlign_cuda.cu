@@ -5,10 +5,7 @@
 #include <THC/THCAtomics.cuh>
 #include <THC/THCDeviceUtils.cuh>
 
-// TODO make it in a common file
-#define CUDA_1D_KERNEL_LOOP(i, n)                            \
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; \
-       i += blockDim.x * gridDim.x)
+#include "cuda_helpers.h"
 
 
 template <typename T>
@@ -48,7 +45,7 @@ __device__ T bilinear_interpolate(const T* input,
   T ly = y - y_low;
   T lx = x - x_low;
   T hy = 1. - ly, hx = 1. - lx;
-
+  
   // do bilinear interpolation
   T v1 = input[y_low * width + x_low];
   T v2 = input[y_low * width + x_high];
@@ -171,7 +168,7 @@ __device__ void bilinear_interpolate_gradient(
 }
 
 template <typename T>
-__global__ void RoIAlignBackwardFeature(const int nthreads, const T* grad_output,
+__global__ void RoIAlignBackward(const int nthreads, const T* grad_output,
     const int num_rois, const T spatial_scale,
     const int channels, const int height, const int width,
     const int pooled_height, const int pooled_width,
@@ -327,7 +324,7 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
   int w_stride = grad.stride(3);
   
   AT_DISPATCH_FLOATING_TYPES(grad.type(), "ROIAlign_backward", [&] {
-    RoIAlignBackwardFeature<scalar_t><<<grid, block, 0, stream>>>(
+    RoIAlignBackward<scalar_t><<<grid, block, 0, stream>>>(
          grad.numel(),
          grad.data<scalar_t>(),
          num_rois,
