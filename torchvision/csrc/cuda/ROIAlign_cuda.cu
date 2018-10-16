@@ -169,7 +169,7 @@ __device__ void bilinear_interpolate_gradient(
 
 template <typename T>
 __global__ void RoIAlignBackward(const int nthreads, const T* grad_output,
-    const int num_rois, const T spatial_scale,
+    const T spatial_scale,
     const int channels, const int height, const int width,
     const int pooled_height, const int pooled_width,
     const int sampling_ratio,
@@ -199,11 +199,12 @@ __global__ void RoIAlignBackward(const int nthreads, const T* grad_output,
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
-    T* offset_grad_input = grad_input + (roi_batch_ind * channels + c) * height * width;
+    T* offset_grad_input = grad_input + ((roi_batch_ind * channels + c) * height * width);
 
-    int top_offset = (n * channels + c) * pooled_height * pooled_width;
-    const T* offset_grad_output = grad_output + top_offset;
-    const T grad_output_this_bin = offset_grad_output[ph * pooled_width + pw];
+    // We need to index the gradient using the tensor strides to access the correct values.
+    int output_offset = n*n_stride + c*c_stride;
+    const T* offset_grad_output = grad_output + output_offset;
+    const T grad_output_this_bin = offset_grad_output[ph*h_stride + pw*w_stride];
 
     // We use roi_bin_grid to sample the grid and mimic integral
     int roi_bin_grid_h = (sampling_ratio > 0) ? sampling_ratio : ceil(roi_height / pooled_height); // e.g., = 2
@@ -251,8 +252,8 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
                                  const int pooled_height,
                                  const int pooled_width,
                                  const int sampling_ratio) {
-  AT_ASSERTM(input.type().is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(input.device().is_cuda(), "input must be a CUDA tensor");
+  AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
 
   auto num_rois = rois.size(0);
   auto channels = input.size(1);
@@ -290,7 +291,7 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
   return output;
 }
 
-// TODO remove the dependency on input and use instead its sizes -> save memory
+
 at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
                                   const at::Tensor& rois,
                                   const float spatial_scale,
@@ -301,10 +302,9 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
                                   const int height,
                                   const int width,
                                   const int sampling_ratio) {
-  AT_ASSERTM(grad.type().is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(grad.device().is_cuda(), "grad must be a CUDA tensor");
+  AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
 
-  auto num_rois = rois.size(0);
   at::Tensor grad_input = at::zeros({batch_size, channels, height, width}, grad.options());
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
@@ -322,12 +322,11 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
   int c_stride = grad.stride(1);
   int h_stride = grad.stride(2);
   int w_stride = grad.stride(3);
-  
+
   AT_DISPATCH_FLOATING_TYPES(grad.type(), "ROIAlign_backward", [&] {
     RoIAlignBackward<scalar_t><<<grid, block, 0, stream>>>(
          grad.numel(),
          grad.data<scalar_t>(),
-         num_rois,
          spatial_scale,
          channels,
          height,
