@@ -197,13 +197,13 @@ class ROIAlignTester(unittest.TestCase):
         cls.rois = torch.tensor([[0, 0, 0, 9, 9],  # format is (xyxy)
                                  [0, 0, 5, 4, 9],
                                  [0, 5, 5, 9, 9]],
-                                dtype=torch.float32)
+                                dtype=cls.dtype)
 
         cls.gt_y_single = torch.tensor([[[[0.41617328, 0.5040753, 0.25266218, 0.4296828, 0.29928464],
                                           [0.5210769, 0.57222337, 0.2524979, 0.32063985, 0.32635176],
                                           [0.73108256, 0.6114335, 0.62033176, 0.8188273, 0.5562218],
                                           [0.83115816, 0.70803946, 0.7084047, 0.74928707, 0.7769296],
-                                          [0.54266506, 0.45964524, 0.5780159, 0.80522037, 0.7321807]]]])
+                                          [0.54266506, 0.45964524, 0.5780159, 0.80522037, 0.7321807]]]], dtype=cls.dtype)
 
         cls.gt_y_multiple = torch.tensor([[[[0.49311584, 0.35972416, 0.40843594, 0.3638034, 0.49751836],
                                             [0.70881474, 0.75481665, 0.5826779, 0.34767765, 0.46865487],
@@ -219,58 +219,118 @@ class ROIAlignTester(unittest.TestCase):
                                             [0.49006107, 0.42982674, 0.34184104, 0.15493104, 0.49633422],
                                               [0.54400194, 0.5265246, 0.22381854, 0.3929715, 0.6757667],
                                               [0.32961223, 0.38482672, 0.68877804, 0.71822757, 0.711909],
-                                              [0.561259, 0.71047884, 0.84651315, 0.8541089, 0.644432]]]])
+                                              [0.561259, 0.71047884, 0.84651315, 0.8541089, 0.644432]]]],
+                                              dtype=cls.dtype)
+
+        cls.x_grad = torch.tensor([[[[0.075625, 0.15125, 0.15124999, 0.15125002, 0.15812504, 0.15812503, 0.15124999, 0.15124999, 0.15125006, 0.0756249],
+                                     [0.15125, 0.30250007, 0.3025, 0.30250007, 0.31625012,
+                                         0.31625003, 0.3025, 0.3025, 0.30250013, 0.1512498],
+                                     [0.15124999, 0.3025, 0.30249995, 0.3025, 0.31625006,
+                                         0.31625, 0.30249995, 0.30249995, 0.30250007, 0.15124978],
+                                     [0.15125002, 0.30250007, 0.3025, 0.30250007, 0.31625012,
+                                         0.3162501, 0.3025, 0.3025, 0.30250013, 0.15124981],
+                                     [0.15812504, 0.31625012, 0.31625006, 0.31625012, 0.33062524,
+                                         0.3306251, 0.31625006, 0.31625006, 0.3162502, 0.15812483],
+                                     [0.5181251, 1.0962502, 1.0362502, 1.0962503, 0.69062525, 0.6906252,
+                                      1.0962502, 1.0362502, 1.0962503, 0.5181248],
+                                     [0.93125, 1.9925, 1.8624997, 1.9925, 1.0962502, 1.0962502,
+                                      1.9925, 1.8624998, 1.9925, 0.9312496],
+                                     [0.8712501, 1.8625, 1.7425002, 1.8625001, 1.0362502, 1.0362502,
+                                      1.8625, 1.7425001, 1.8625002, 0.8712497],
+                                     [0.93125004, 1.9925, 1.8625002, 1.9925, 1.0962503, 1.0962503,
+                                      1.9925001, 1.8625001, 1.9925001, 0.93124974],
+                                     [0.43562484, 0.9312497, 0.8712497, 0.9312497, 0.5181249, 0.5181248,
+                                      0.9312496, 0.8712497, 0.93124974, 0.43562466]]]],
+                                      dtype=cls.dtype)
 
     def test_roi_align_basic_cpu(self):
         device = torch.device('cpu')
-        self.x = self.x.to(device)
-        self.single_roi = self.single_roi.to(device)
-        self.gt_y_multiple = self.gt_y_multiple.to(device)
+        x = self.x.to(device)
+        single_roi = self.single_roi.to(device)
+        gt_y_single = self.gt_y_single.to(device)
 
         pool_h, pool_w = (5, 5)
-        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2.0)
-        y = roi_align(self.x, self.single_roi)
-
-        assert torch.equal(self.gt_y_single, y), 'ROIAlign layer incorrect for single ROI on CPU'
+        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        y = roi_align(x, single_roi)
+        
+        assert torch.equal(gt_y_single, y), 'ROIAlign layer incorrect for single ROI on CPU'
 
     def test_roi_align_cpu(self):
         device = torch.device('cpu')
-        self.x = self.x.to(device)
-        self.rois = self.rois.to(device)
-        self.gt_y_multiple = self.gt_y_multiple.to(device)
+        x = self.x.to(device)
+        rois = self.rois.to(device)
+        gt_y_multiple = self.gt_y_multiple.to(device)
 
         pool_h, pool_w = (5, 5)
-        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2.0)
-        y = roi_align(self.x, self.rois)
+        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        y = roi_align(x, rois)
 
-        assert torch.equal(self.gt_y_multiple, y), 'ROIAlign layer incorrect for multiple ROIs on CPU'
+        assert torch.equal(gt_y_multiple, y), 'ROIAlign layer incorrect for multiple ROIs on CPU'
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_align_basic_cuda(self):
         device = torch.device('cuda')
-        self.x = self.x.to(device)
-        self.single_roi = self.single_roi.to(device)
-        self.gt_y_single = self.gt_y_single.to(device)
+        x = self.x.to(device)
+        single_roi = self.single_roi.to(device)
+        gt_y_single = self.gt_y_single.to(device)
 
         pool_h, pool_w = (5, 5)
-        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2.0)
-        y = roi_align(self.x, self.single_roi)
-
-        assert torch.allclose(self.gt_y_single, y), 'ROIAlign layer incorrect for single ROI on CUDA'
+        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        y = roi_align(x, single_roi)
+        
+        assert torch.allclose(gt_y_single, y), 'ROIAlign layer incorrect for single ROI on CUDA'
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_align_cuda(self):
         device = torch.device('cuda')
-        self.x = self.x.to(device)
-        self.rois = self.rois.to(device)
-        self.gt_y_multiple = self.gt_y_multiple.to(device)
+        x = self.x.to(device)
+        rois = self.rois.to(device)
+        gt_y_multiple = self.gt_y_multiple.to(device)
 
         pool_h, pool_w = (5, 5)
-        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2.0)
-        y = roi_align(self.x, self.rois)
+        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        y = roi_align(x, rois)
 
-        assert torch.allclose(self.gt_y_multiple, y), 'ROIAlign layer incorrect for multiple ROIs on CUDA'
+        assert torch.allclose(gt_y_multiple, y), 'ROIAlign layer incorrect for multiple ROIs on CUDA'
 
+    def test_roi_align_gradient_cpu(self):
+        """
+        Compute gradients for ROIAlign with multiple bounding boxes on CPU
+        """
+        device = torch.device('cpu')
+        pool_h, pool_w = (5, 5)
+        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+
+        x = self.x.to(device).clone()
+        rois = self.rois.to(device)
+        gt_grad = self.x_grad.to(device)
+
+        x.requires_grad = True
+        y = roi_align(x, rois)
+        s = y.sum()
+        s.backward()
+        
+        assert torch.allclose(x.grad, gt_grad), 'gradient incorrect for ROIAlign CPU'
+
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_roi_align_gradient_cuda(self):
+        """
+        Compute gradients for ROIAlign with multiple bounding boxes on the GPU
+        """
+        device = torch.device('cuda')
+        pool_h, pool_w = (5, 5)
+        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+
+        x = self.x.to(device).clone()
+        rois = self.rois.to(device)
+        gt_grad = self.x_grad.to(device)
+
+        x.requires_grad = True
+        y = roi_align(x, rois)
+        s = y.sum()
+        s.backward()
+
+        assert torch.allclose(x.grad, gt_grad), 'gradient incorrect for ROIAlign CUDA'
 
 if __name__ == '__main__':
     unittest.main()
