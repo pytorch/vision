@@ -6,7 +6,6 @@
 #include <THC/THCDeviceUtils.cuh>
 
 #include "cuda_helpers.h"
-#include <iostream>
 
 
 template <typename T>
@@ -93,8 +92,8 @@ __global__ void RoIPoolBackward(const int nthreads, const T* grad_output,
         T* grad_input_offset = grad_input + ((roi_batch_ind * channels + c) * height * width);
         
         int output_offset = n*n_stride + c*c_stride;
-        const int* argmax_data_offset = argmax_data + n*channels*pooled_height*pooled_width;
-        int argmax = argmax_data_offset[c*pooled_height*pooled_width + ph*pooled_width + pw];
+        const int* argmax_data_offset = argmax_data + (n*channels + c)*pooled_height*pooled_width;
+        int argmax = argmax_data_offset[ph*pooled_width + pw];
 
         if (argmax != -1) {
             atomicAdd(grad_input_offset + argmax,
