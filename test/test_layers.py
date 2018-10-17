@@ -220,7 +220,7 @@ class ROIAlignTester(unittest.TestCase):
                                               [0.54400194, 0.5265246, 0.22381854, 0.3929715, 0.6757667],
                                               [0.32961223, 0.38482672, 0.68877804, 0.71822757, 0.711909],
                                               [0.561259, 0.71047884, 0.84651315, 0.8541089, 0.644432]]]],
-                                              dtype=cls.dtype)
+                                         dtype=cls.dtype)
 
         cls.x_grad = torch.tensor([[[[0.075625, 0.15125, 0.15124999, 0.15125002, 0.15812504, 0.15812503, 0.15124999, 0.15124999, 0.15125006, 0.0756249],
                                      [0.15125, 0.30250007, 0.3025, 0.30250007, 0.31625012,
@@ -241,7 +241,7 @@ class ROIAlignTester(unittest.TestCase):
                                       1.9925001, 1.8625001, 1.9925001, 0.93124974],
                                      [0.43562484, 0.9312497, 0.8712497, 0.9312497, 0.5181249, 0.5181248,
                                       0.9312496, 0.8712497, 0.93124974, 0.43562466]]]],
-                                      dtype=cls.dtype)
+                                  dtype=cls.dtype)
 
     def test_roi_align_basic_cpu(self):
         device = torch.device('cpu')
@@ -252,8 +252,8 @@ class ROIAlignTester(unittest.TestCase):
         pool_h, pool_w = (5, 5)
         roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
         y = roi_align(x, single_roi)
-        
-        assert torch.equal(gt_y_single, y), 'ROIAlign layer incorrect for single ROI on CPU'
+
+        assert torch.allclose(gt_y_single, y), 'ROIAlign layer incorrect for single ROI on CPU'
 
     def test_roi_align_cpu(self):
         device = torch.device('cpu')
@@ -265,7 +265,7 @@ class ROIAlignTester(unittest.TestCase):
         roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
         y = roi_align(x, rois)
 
-        assert torch.equal(gt_y_multiple, y), 'ROIAlign layer incorrect for multiple ROIs on CPU'
+        assert torch.allclose(gt_y_multiple, y), 'ROIAlign layer incorrect for multiple ROIs on CPU'
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_align_basic_cuda(self):
@@ -277,7 +277,7 @@ class ROIAlignTester(unittest.TestCase):
         pool_h, pool_w = (5, 5)
         roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
         y = roi_align(x, single_roi)
-        
+
         assert torch.allclose(gt_y_single, y), 'ROIAlign layer incorrect for single ROI on CUDA'
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
@@ -309,8 +309,20 @@ class ROIAlignTester(unittest.TestCase):
         y = roi_align(x, rois)
         s = y.sum()
         s.backward()
-        
+
         assert torch.allclose(x.grad, gt_grad), 'gradient incorrect for ROIAlign CPU'
+
+    def test_roi_align_gradcheck_cpu(self):
+        dtype = torch.float64
+        device = torch.device('cpu')
+        m = layers.ROIAlign((5, 5), 0.5, 1).to(dtype=dtype, device=device)
+        x = torch.rand(1, 1, 10, 10, dtype=dtype, device=device, requires_grad=True)
+        rois = self.rois.to(device=device, dtype=dtype)
+
+        def func(input):
+            return m(input, rois)
+
+        assert gradcheck(func, (x,)), 'gradcheck failed for ROIAlign CPU'
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_align_gradient_cuda(self):
@@ -331,6 +343,20 @@ class ROIAlignTester(unittest.TestCase):
         s.backward()
 
         assert torch.allclose(x.grad, gt_grad), 'gradient incorrect for ROIAlign CUDA'
+
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_roi_align_gradcheck_cuda(self):
+        dtype = torch.float64
+        device = torch.device('cuda')
+        m = layers.ROIAlign((5, 5), 0.5, 1).to(dtype=dtype, device=device)
+        x = torch.rand(1, 1, 10, 10, dtype=dtype, device=device, requires_grad=True)
+        rois = self.rois.to(device=device, dtype=dtype)
+
+        def func(input):
+            return m(input, rois)
+
+        assert gradcheck(func, (x,)), 'gradcheck failed for ROIAlign CUDA'
+
 
 if __name__ == '__main__':
     unittest.main()
