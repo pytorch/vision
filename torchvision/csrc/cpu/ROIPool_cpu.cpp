@@ -16,8 +16,8 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(const at::Tensor &input,
     int input_height = input.size(2);
     int input_width = input.size(3);
 
-    at::Tensor output = at::zeros({num_rois, channels, pooled_height, pooled_width}, input.type());
-    at::Tensor argmax = at::zeros({num_rois, channels, pooled_height, pooled_width}, input.type().toScalarType(at::kInt));
+    at::Tensor output = at::zeros({num_rois, channels, pooled_height, pooled_width}, input.options());
+    at::Tensor argmax = at::zeros({num_rois, channels, pooled_height, pooled_width}, input.options().dtype(at::kInt));
 
     // define accessors for indexing
     auto input_a = input.accessor<float, 4>();
@@ -107,7 +107,7 @@ at::Tensor ROIPool_backward_cpu(const at::Tensor &grad,
 
     auto num_rois = rois.size(0);
 
-    at::Tensor grad_input = at::zeros({batch_size, channels, height, width}, grad.type());
+    at::Tensor grad_input = at::zeros({batch_size, channels, height, width}, grad.options());
 
     // handle possibly empty gradients
     if (grad.numel() == 0)
