@@ -108,16 +108,16 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(const at::Tensor& input,
                                 const float spatial_scale,
                                 const int pooled_height,
                                 const int pooled_width) {
-  AT_ASSERTM(input.type().is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(input.device().is_cuda(), "input must be a CUDA tensor");
+  AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
 
   auto num_rois = rois.size(0);
   auto channels = input.size(1);
   auto height = input.size(2);
   auto width = input.size(3);
 
-  at::Tensor output = at::zeros({num_rois, channels, pooled_height, pooled_width}, input.type());
-  at::Tensor argmax = at::zeros({num_rois, channels, pooled_height, pooled_width}, input.type().toScalarType(at::kInt));
+  at::Tensor output = at::zeros({num_rois, channels, pooled_height, pooled_width}, input.options());
+  at::Tensor argmax = at::zeros({num_rois, channels, pooled_height, pooled_width}, input.options().dtype(at::kInt));
 
   auto output_size = num_rois * pooled_height * pooled_width * channels;
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
@@ -159,13 +159,13 @@ at::Tensor ROIPool_backward_cuda(const at::Tensor& grad,
                                  const int height,
                                  const int width) {
   // Check if input tensors are CUDA tensors
-  AT_ASSERTM(grad.type().is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
-  AT_ASSERTM(argmax.type().is_cuda(), "argmax must be a CUDA tensor");
+  AT_ASSERTM(grad.device().is_cuda(), "grad must be a CUDA tensor");
+  AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(argmax.device().is_cuda(), "argmax must be a CUDA tensor");
 
   auto num_rois = rois.size(0);
     
-  at::Tensor grad_input = at::zeros({batch_size, channels, height, width}, grad.type());
+  at::Tensor grad_input = at::zeros({batch_size, channels, height, width}, grad.options());
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
