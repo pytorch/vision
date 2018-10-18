@@ -5,14 +5,11 @@
 #include <THC/THCAtomics.cuh>
 #include <THC/THCDeviceUtils.cuh>
 
-// TODO make it in a common file
-#define CUDA_1D_KERNEL_LOOP(i, n)                            \
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; \
-       i += blockDim.x * gridDim.x)
+#include "cuda_helpers.h"
 
 
 template <typename T>
-__device__ T bilinear_interpolate(const T* bottom_data,
+__device__ T bilinear_interpolate(const T* input,
     const int height, const int width,
     T y, T x,
     const int index /* index for debug only*/) {
@@ -48,11 +45,12 @@ __device__ T bilinear_interpolate(const T* bottom_data,
   T ly = y - y_low;
   T lx = x - x_low;
   T hy = 1. - ly, hx = 1. - lx;
+  
   // do bilinear interpolation
-  T v1 = bottom_data[y_low * width + x_low];
-  T v2 = bottom_data[y_low * width + x_high];
-  T v3 = bottom_data[y_high * width + x_low];
-  T v4 = bottom_data[y_high * width + x_high];
+  T v1 = input[y_low * width + x_low];
+  T v2 = input[y_low * width + x_high];
+  T v3 = input[y_high * width + x_low];
+  T v4 = input[y_high * width + x_high];
   T w1 = hy * hx, w2 = hy * lx, w3 = ly * hx, w4 = ly * lx;
 
   T val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
@@ -61,12 +59,12 @@ __device__ T bilinear_interpolate(const T* bottom_data,
 }
 
 template <typename T>
-__global__ void RoIAlignForward(const int nthreads, const T* bottom_data,
+__global__ void RoIAlignForward(const int nthreads, const T* input,
     const T spatial_scale, const int channels,
     const int height, const int width,
     const int pooled_height, const int pooled_width,
     const int sampling_ratio,
-    const T* bottom_rois, T* top_data) {
+    const T* rois, T* output) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
@@ -74,18 +72,14 @@ __global__ void RoIAlignForward(const int nthreads, const T* bottom_data,
     int c = (index / pooled_width / pooled_height) % channels;
     int n = index / pooled_width / pooled_height / channels;
 
-    const T* offset_bottom_rois = bottom_rois + n * 5;
-    int roi_batch_ind = offset_bottom_rois[0];
+    const T* offset_rois = rois + n * 5;
+    int roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
-    T roi_start_w = offset_bottom_rois[1] * spatial_scale;
-    T roi_start_h = offset_bottom_rois[2] * spatial_scale;
-    T roi_end_w = offset_bottom_rois[3] * spatial_scale;
-    T roi_end_h = offset_bottom_rois[4] * spatial_scale;
-    // T roi_start_w = round(offset_bottom_rois[1] * spatial_scale);
-    // T roi_start_h = round(offset_bottom_rois[2] * spatial_scale);
-    // T roi_end_w = round(offset_bottom_rois[3] * spatial_scale);
-    // T roi_end_h = round(offset_bottom_rois[4] * spatial_scale);
+    T roi_start_w = offset_rois[1] * spatial_scale;
+    T roi_start_h = offset_rois[2] * spatial_scale;
+    T roi_end_w = offset_rois[3] * spatial_scale;
+    T roi_end_h = offset_rois[4] * spatial_scale;
 
     // Force malformed ROIs to be 1x1
     T roi_width = max(roi_end_w - roi_start_w, (T)1.);
@@ -93,7 +87,7 @@ __global__ void RoIAlignForward(const int nthreads, const T* bottom_data,
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
-    const T* offset_bottom_data = bottom_data + (roi_batch_ind * channels + c) * height * width;
+    const T* offset_input = input + (roi_batch_ind * channels + c) * height * width;
 
     // We use roi_bin_grid to sample the grid and mimic integral
     int roi_bin_grid_h = (sampling_ratio > 0) ? sampling_ratio : ceil(roi_height / pooled_height); // e.g., = 2
@@ -110,13 +104,13 @@ __global__ void RoIAlignForward(const int nthreads, const T* bottom_data,
       {
         const T x = roi_start_w + pw * bin_size_w + static_cast<T>(ix + .5f) * bin_size_w / static_cast<T>(roi_bin_grid_w);
 
-        T val = bilinear_interpolate(offset_bottom_data, height, width, y, x, index);
+        T val = bilinear_interpolate(offset_input, height, width, y, x, index);
         output_val += val;
       }
     }
     output_val /= count;
 
-    top_data[index] = output_val;
+    output[index] = output_val;
   }
 }
 
@@ -162,10 +156,10 @@ __device__ void bilinear_interpolate_gradient(
   T hy = 1. - ly, hx = 1. - lx;
 
   // reference in forward
-  // T v1 = bottom_data[y_low * width + x_low];
-  // T v2 = bottom_data[y_low * width + x_high];
-  // T v3 = bottom_data[y_high * width + x_low];
-  // T v4 = bottom_data[y_high * width + x_high];
+  // T v1 = input[y_low * width + x_low];
+  // T v2 = input[y_low * width + x_high];
+  // T v3 = input[y_high * width + x_low];
+  // T v4 = input[y_high * width + x_high];
   // T val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
 
   w1 = hy * hx, w2 = hy * lx, w3 = ly * hx, w4 = ly * lx;
@@ -174,13 +168,15 @@ __device__ void bilinear_interpolate_gradient(
 }
 
 template <typename T>
-__global__ void RoIAlignBackwardFeature(const int nthreads, const T* top_diff,
-    const int num_rois, const T spatial_scale,
+__global__ void RoIAlignBackward(const int nthreads, const T* grad_output,
+    const T spatial_scale,
     const int channels, const int height, const int width,
     const int pooled_height, const int pooled_width,
     const int sampling_ratio,
-    T* bottom_diff,
-    const T* bottom_rois) {
+    T* grad_input,
+    const T* rois,
+    const int n_stride, const int c_stride,
+    const int h_stride, const int w_stride) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
@@ -188,30 +184,27 @@ __global__ void RoIAlignBackwardFeature(const int nthreads, const T* top_diff,
     int c = (index / pooled_width / pooled_height) % channels;
     int n = index / pooled_width / pooled_height / channels;
 
-    const T* offset_bottom_rois = bottom_rois + n * 5;
-    int roi_batch_ind = offset_bottom_rois[0];
+    const T* offset_rois = rois + n * 5;
+    int roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
-    T roi_start_w = offset_bottom_rois[1] * spatial_scale;
-    T roi_start_h = offset_bottom_rois[2] * spatial_scale;
-    T roi_end_w = offset_bottom_rois[3] * spatial_scale;
-    T roi_end_h = offset_bottom_rois[4] * spatial_scale;
-    // T roi_start_w = round(offset_bottom_rois[1] * spatial_scale);
-    // T roi_start_h = round(offset_bottom_rois[2] * spatial_scale);
-    // T roi_end_w = round(offset_bottom_rois[3] * spatial_scale);
-    // T roi_end_h = round(offset_bottom_rois[4] * spatial_scale);
-
+    T roi_start_w = offset_rois[1] * spatial_scale;
+    T roi_start_h = offset_rois[2] * spatial_scale;
+    T roi_end_w = offset_rois[3] * spatial_scale;
+    T roi_end_h = offset_rois[4] * spatial_scale;
+    
     // Force malformed ROIs to be 1x1
     T roi_width = max(roi_end_w - roi_start_w, (T)1.);
     T roi_height = max(roi_end_h - roi_start_h, (T)1.);
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
-    T* offset_bottom_diff = bottom_diff + (roi_batch_ind * channels + c) * height * width;
+    T* offset_grad_input = grad_input + ((roi_batch_ind * channels + c) * height * width);
 
-    int top_offset    = (n * channels + c) * pooled_height * pooled_width;
-    const T* offset_top_diff = top_diff + top_offset;
-    const T top_diff_this_bin = offset_top_diff[ph * pooled_width + pw];
+    // We need to index the gradient using the tensor strides to access the correct values.
+    int output_offset = n*n_stride + c*c_stride;
+    const T* offset_grad_output = grad_output + output_offset;
+    const T grad_output_this_bin = offset_grad_output[ph*h_stride + pw*w_stride];
 
     // We use roi_bin_grid to sample the grid and mimic integral
     int roi_bin_grid_h = (sampling_ratio > 0) ? sampling_ratio : ceil(roi_height / pooled_height); // e.g., = 2
@@ -235,17 +228,17 @@ __global__ void RoIAlignBackwardFeature(const int nthreads, const T* top_diff,
             x_low, x_high, y_low, y_high,
             index);
 
-        T g1 = top_diff_this_bin * w1 / count;
-        T g2 = top_diff_this_bin * w2 / count;
-        T g3 = top_diff_this_bin * w3 / count;
-        T g4 = top_diff_this_bin * w4 / count;
+        T g1 = grad_output_this_bin * w1 / count;
+        T g2 = grad_output_this_bin * w2 / count;
+        T g3 = grad_output_this_bin * w3 / count;
+        T g4 = grad_output_this_bin * w4 / count;
 
         if (x_low >= 0 && x_high >= 0 && y_low >= 0 && y_high >= 0)
         {
-          atomicAdd(offset_bottom_diff + y_low * width + x_low, static_cast<T>(g1));
-          atomicAdd(offset_bottom_diff + y_low * width + x_high, static_cast<T>(g2));
-          atomicAdd(offset_bottom_diff + y_high * width + x_low, static_cast<T>(g3));
-          atomicAdd(offset_bottom_diff + y_high * width + x_high, static_cast<T>(g4));
+          atomicAdd(offset_grad_input + y_low * width + x_low, static_cast<T>(g1));
+          atomicAdd(offset_grad_input + y_low * width + x_high, static_cast<T>(g2));
+          atomicAdd(offset_grad_input + y_high * width + x_low, static_cast<T>(g3));
+          atomicAdd(offset_grad_input + y_high * width + x_high, static_cast<T>(g4));
         } // if
       } // ix
     } // iy
@@ -259,8 +252,8 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
                                  const int pooled_height,
                                  const int pooled_width,
                                  const int sampling_ratio) {
-  AT_ASSERTM(input.type().is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(input.device().is_cuda(), "input must be a CUDA tensor");
+  AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
 
   auto num_rois = rois.size(0);
   auto channels = input.size(1);
@@ -280,7 +273,7 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
     return output;
   }
 
-  AT_DISPATCH_FLOATING_TYPES(input.type(), "ROIAlign_forward", [&] {
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.type(), "ROIAlign_forward", [&] {
     RoIAlignForward<scalar_t><<<grid, block, 0, stream>>>(
          output_size,
          input.data<scalar_t>(),
@@ -298,7 +291,7 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
   return output;
 }
 
-// TODO remove the dependency on input and use instead its sizes -> save memory
+
 at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
                                   const at::Tensor& rois,
                                   const float spatial_scale,
@@ -309,10 +302,9 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
                                   const int height,
                                   const int width,
                                   const int sampling_ratio) {
-  AT_ASSERTM(grad.type().is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(grad.device().is_cuda(), "grad must be a CUDA tensor");
+  AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
 
-  auto num_rois = rois.size(0);
   at::Tensor grad_input = at::zeros({batch_size, channels, height, width}, grad.options());
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
@@ -326,11 +318,15 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
     return grad_input;
   }
 
-  AT_DISPATCH_FLOATING_TYPES(grad.type(), "ROIAlign_backward", [&] {
-    RoIAlignBackwardFeature<scalar_t><<<grid, block, 0, stream>>>(
+  int n_stride = grad.stride(0);
+  int c_stride = grad.stride(1);
+  int h_stride = grad.stride(2);
+  int w_stride = grad.stride(3);
+
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIAlign_backward", [&] {
+    RoIAlignBackward<scalar_t><<<grid, block, 0, stream>>>(
          grad.numel(),
          grad.data<scalar_t>(),
-         num_rois,
          spatial_scale,
          channels,
          height,
@@ -339,7 +335,11 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
          pooled_width,
          sampling_ratio,
          grad_input.data<scalar_t>(),
-         rois.data<scalar_t>());
+         rois.data<scalar_t>(),
+         n_stride,
+         c_stride,
+         h_stride,
+         w_stride);
   });
   THCudaCheck(cudaGetLastError());
   return grad_input;
