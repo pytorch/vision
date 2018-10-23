@@ -1,4 +1,4 @@
-import torch
-import torchvision
-import torchvision.datasets as dset
-import torchvision.transforms
+import torch  # noqa
+import torchvision  # noqa
+import torchvision.datasets as dset  # noqa
+import torchvision.transforms  # noqa
