@@ -31,19 +31,26 @@ def check_integrity(fpath, md5=None):
     return True
 
 
+def makedir_exist_ok(dirpath):
+    """
+    Python2 support for os.makedirs(.., exist_ok=True)
+    """
+    try:
+        os.makedirs(dirpath)
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            pass
+        else:
+            raise
+
+
 def download_url(url, root, filename, md5):
     from six.moves import urllib
 
     root = os.path.expanduser(root)
     fpath = os.path.join(root, filename)
 
-    try:
-        os.makedirs(root)
-    except OSError as e:
-        if e.errno == errno.EEXIST:
-            pass
-        else:
-            raise
+    makedir_exist_ok(root)
 
     # downloads file
     if os.path.isfile(fpath) and check_integrity(fpath, md5):
