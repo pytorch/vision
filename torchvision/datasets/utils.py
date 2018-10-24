@@ -62,7 +62,7 @@ def download_url(url, root, filename, md5):
                 url, fpath,
                 reporthook=gen_bar_updater(tqdm(unit='B', unit_scale=True))
             )
-        except:  # noqa
+        except OSError:
             if url[:5] == 'https':
                 url = url.replace('https:', 'http:')
                 print('Failed download. Trying https -> http instead.'

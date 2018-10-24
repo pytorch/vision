@@ -210,6 +210,6 @@ def read_matches_files(data_dir, matches_file):
     matches = []
     with open(os.path.join(data_dir, matches_file), 'r') as f:
         for line in f:
-            l = line.split()  # noqa
-            matches.append([int(l[0]), int(l[3]), int(l[1] == l[4])])
+            line_split = line.split()
+            matches.append([int(line_split[0]), int(line_split[3]), int(line_split[1] == line_split[4])])
     return torch.LongTensor(matches)

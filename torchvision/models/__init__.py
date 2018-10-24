@@ -1,6 +1,6 @@
-from .alexnet import *  # noqa
-from .resnet import *  # noqa
-from .vgg import *  # noqa
-from .squeezenet import *  # noqa
-from .inception import *  # noqa
-from .densenet import *  # noqa
+from .alexnet import *
+from .resnet import *
+from .vgg import *
+from .squeezenet import *
+from .inception import *
+from .densenet import *

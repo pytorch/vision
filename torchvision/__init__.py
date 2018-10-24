@@ -1,7 +1,7 @@
-from torchvision import models  # noqa
-from torchvision import datasets  # noqa
-from torchvision import transforms  # noqa
-from torchvision import utils  # noqa
+from torchvision import models
+from torchvision import datasets
+from torchvision import transforms
+from torchvision import utils
 
 __version__ = '0.2.1'
 

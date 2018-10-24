@@ -9,8 +9,8 @@ if sys.version_info[0] == 2:
 else:
     import pickle
 
-import torch.utils.data as data  # noqa
-from .utils import download_url, check_integrity  # noqa
+import torch.utils.data as data
+from .utils import download_url, check_integrity
 
 
 class CIFAR10(data.Dataset):
