@@ -284,6 +284,5 @@ def read_image_file(path):
         length = get_int(data[4:8])
         num_rows = get_int(data[8:12])
         num_cols = get_int(data[12:16])
-        images = []
         parsed = np.frombuffer(data, dtype=np.uint8, offset=16)
         return torch.from_numpy(parsed).view(length, num_rows, num_cols)

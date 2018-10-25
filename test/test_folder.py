@@ -65,5 +65,6 @@ class Tester(unittest.TestCase):
                          [class_b_idx] * len(Tester.class_b_images))
         self.assertEqual(targets, sorted(args))
 
+
 if __name__ == '__main__':
     unittest.main()

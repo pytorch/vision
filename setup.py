@@ -2,7 +2,6 @@
 import os
 import io
 import re
-import shutil
 import sys
 from setuptools import setup, find_packages
 from pkg_resources import get_distribution, DistributionNotFound

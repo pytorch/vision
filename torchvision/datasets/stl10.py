@@ -1,11 +1,8 @@
 from __future__ import print_function
-import torch.utils.data as data
 from PIL import Image
 import os
 import os.path
-import errno
 import numpy as np
-import sys
 from .cifar import CIFAR10
 
 
