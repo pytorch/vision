@@ -57,7 +57,7 @@ def resnet50(pretrained=False, *args, **kwargs):
     pretrained (bool): a recommended kwargs for all entrypoints
     args & kwargs are arguments for the function
     """
-    from torchvision.models.resnet import resnet50 as  _resnet50
+    from torchvision.models.resnet import resnet50 as _resnet50
     model = _resnet50(*args, **kwargs)
     checkpoint = 'https://download.pytorch.org/models/resnet50-19c8e357.pth'
     if pretrained:
