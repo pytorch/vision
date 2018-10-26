@@ -554,7 +554,7 @@ class RandomResizedCrop(object):
                 sized crop.
         """
         area = img.size[0] * img.size[1]
-        
+
         for attempt in range(10):
             target_area = random.uniform(*scale) * area
             aspect_ratio = random.uniform(*ratio)
