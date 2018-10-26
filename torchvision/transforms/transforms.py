@@ -553,8 +553,9 @@ class RandomResizedCrop(object):
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
                 sized crop.
         """
+        area = img.size[0] * img.size[1]
+
         for attempt in range(10):
-            area = img.size[0] * img.size[1]
             target_area = random.uniform(*scale) * area
             aspect_ratio = random.uniform(*ratio)
 
