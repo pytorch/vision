@@ -82,7 +82,7 @@ class SqueezeNet(nn.Module):
             nn.Dropout(p=0.5),
             final_conv,
             nn.ReLU(inplace=True),
-            nn.AdaptiveAvgPool2d((1,1))
+            nn.AdaptiveAvgPool2d((1, 1))
         )
 
         for m in self.modules():
