@@ -336,7 +336,7 @@ def resized_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
         j: Left pixel coordinate.
         h: Height of the cropped image.
         w: Width of the cropped image.
-        size (sequence or int): Desired output size. Same semantics as ``scale``.
+        size (sequence or int): Desired output size. Same semantics as ``resize``.
         interpolation (int, optional): Desired interpolation. Default is
             ``PIL.Image.BILINEAR``.
     Returns:
