@@ -13,18 +13,19 @@ model_urls = {
 }
 
 
-def inception_v3(pretrained=False, **kwargs):
+def inception_v3(pretrained=False, model_dir=None, **kwargs):
     r"""Inception v3 model architecture from
     `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     if pretrained:
         if 'transform_input' not in kwargs:
             kwargs['transform_input'] = True
         model = Inception3(**kwargs)
-        model.load_state_dict(model_zoo.load_url(model_urls['inception_v3_google']))
+        model.load_state_dict(model_zoo.load_url(model_urls['inception_v3_google'], model_dir=model_dir))
         return model
 
     return Inception3(**kwargs)

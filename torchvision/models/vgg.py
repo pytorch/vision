@@ -81,113 +81,121 @@ cfg = {
 }
 
 
-def vgg11(pretrained=False, **kwargs):
+def vgg11(pretrained=False, model_dir=None, **kwargs):
     """VGG 11-layer model (configuration "A")
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     if pretrained:
         kwargs['init_weights'] = False
     model = VGG(make_layers(cfg['A']), **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg11']))
+        model.load_state_dict(model_zoo.load_url(model_urls['vgg11'], model_dir=model_dir))
     return model
 
 
-def vgg11_bn(pretrained=False, **kwargs):
+def vgg11_bn(pretrained=False, model_dir=None, **kwargs):
     """VGG 11-layer model (configuration "A") with batch normalization
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     if pretrained:
         kwargs['init_weights'] = False
     model = VGG(make_layers(cfg['A'], batch_norm=True), **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg11_bn']))
+        model.load_state_dict(model_zoo.load_url(model_urls['vgg11_bn'], model_dir=model_dir))
     return model
 
 
-def vgg13(pretrained=False, **kwargs):
+def vgg13(pretrained=False, model_dir=None, **kwargs):
     """VGG 13-layer model (configuration "B")
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     if pretrained:
         kwargs['init_weights'] = False
     model = VGG(make_layers(cfg['B']), **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg13']))
+        model.load_state_dict(model_zoo.load_url(model_urls['vgg13'], model_dir=model_dir))
     return model
 
 
-def vgg13_bn(pretrained=False, **kwargs):
+def vgg13_bn(pretrained=False, model_dir=None, **kwargs):
     """VGG 13-layer model (configuration "B") with batch normalization
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     if pretrained:
         kwargs['init_weights'] = False
     model = VGG(make_layers(cfg['B'], batch_norm=True), **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg13_bn']))
+        model.load_state_dict(model_zoo.load_url(model_urls['vgg13_bn'], model_dir=model_dir))
     return model
 
 
-def vgg16(pretrained=False, **kwargs):
+def vgg16(pretrained=False, model_dir=None, **kwargs):
     """VGG 16-layer model (configuration "D")
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     if pretrained:
         kwargs['init_weights'] = False
     model = VGG(make_layers(cfg['D']), **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg16']))
+        model.load_state_dict(model_zoo.load_url(model_urls['vgg16'], model_dir=model_dir))
     return model
 
 
-def vgg16_bn(pretrained=False, **kwargs):
+def vgg16_bn(pretrained=False, model_dir=None, **kwargs):
     """VGG 16-layer model (configuration "D") with batch normalization
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     if pretrained:
         kwargs['init_weights'] = False
     model = VGG(make_layers(cfg['D'], batch_norm=True), **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg16_bn']))
+        model.load_state_dict(model_zoo.load_url(model_urls['vgg16_bn'], model_dir=model_dir))
     return model
 
 
-def vgg19(pretrained=False, **kwargs):
+def vgg19(pretrained=False, model_dir=None, **kwargs):
     """VGG 19-layer model (configuration "E")
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     if pretrained:
         kwargs['init_weights'] = False
     model = VGG(make_layers(cfg['E']), **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg19']))
+        model.load_state_dict(model_zoo.load_url(model_urls['vgg19'], model_dir=model_dir))
     return model
 
 
-def vgg19_bn(pretrained=False, **kwargs):
+def vgg19_bn(pretrained=False, model_dir=None, **kwargs):
     """VGG 19-layer model (configuration 'E') with batch normalization
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     if pretrained:
         kwargs['init_weights'] = False
     model = VGG(make_layers(cfg['E'], batch_norm=True), **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg19_bn']))
+        model.load_state_dict(model_zoo.load_url(model_urls['vgg19_bn'], model_dir=model_dir))
     return model

@@ -100,21 +100,22 @@ class SqueezeNet(nn.Module):
         return x.view(x.size(0), self.num_classes)
 
 
-def squeezenet1_0(pretrained=False, **kwargs):
+def squeezenet1_0(pretrained=False, model_dir=None, **kwargs):
     r"""SqueezeNet model architecture from the `"SqueezeNet: AlexNet-level
     accuracy with 50x fewer parameters and <0.5MB model size"
     <https://arxiv.org/abs/1602.07360>`_ paper.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     model = SqueezeNet(version=1.0, **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['squeezenet1_0']))
+        model.load_state_dict(model_zoo.load_url(model_urls['squeezenet1_0'], model_dir=model_dir))
     return model
 
 
-def squeezenet1_1(pretrained=False, **kwargs):
+def squeezenet1_1(pretrained=False, model_dir=None, **kwargs):
     r"""SqueezeNet 1.1 model from the `official SqueezeNet repo
     <https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1>`_.
     SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters
@@ -122,8 +123,9 @@ def squeezenet1_1(pretrained=False, **kwargs):
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     model = SqueezeNet(version=1.1, **kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['squeezenet1_1']))
+        model.load_state_dict(model_zoo.load_url(model_urls['squeezenet1_1'], model_dir=model_dir))
     return model

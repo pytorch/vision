@@ -16,12 +16,13 @@ model_urls = {
 }
 
 
-def densenet121(pretrained=False, **kwargs):
+def densenet121(pretrained=False, model_dir=None, **kwargs):
     r"""Densenet-121 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     model = DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 24, 16),
                      **kwargs)
@@ -32,7 +33,7 @@ def densenet121(pretrained=False, **kwargs):
         # to find such keys.
         pattern = re.compile(
             r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
-        state_dict = model_zoo.load_url(model_urls['densenet121'])
+        state_dict = model_zoo.load_url(model_urls['densenet121'], model_dir=model_dir)
         for key in list(state_dict.keys()):
             res = pattern.match(key)
             if res:
@@ -43,12 +44,13 @@ def densenet121(pretrained=False, **kwargs):
     return model
 
 
-def densenet169(pretrained=False, **kwargs):
+def densenet169(pretrained=False, model_dir=None, **kwargs):
     r"""Densenet-169 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     model = DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 32, 32),
                      **kwargs)
@@ -59,7 +61,7 @@ def densenet169(pretrained=False, **kwargs):
         # to find such keys.
         pattern = re.compile(
             r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
-        state_dict = model_zoo.load_url(model_urls['densenet169'])
+        state_dict = model_zoo.load_url(model_urls['densenet169'], model_dir=model_dir)
         for key in list(state_dict.keys()):
             res = pattern.match(key)
             if res:
@@ -70,12 +72,13 @@ def densenet169(pretrained=False, **kwargs):
     return model
 
 
-def densenet201(pretrained=False, **kwargs):
+def densenet201(pretrained=False, model_dir=None, **kwargs):
     r"""Densenet-201 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     model = DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 48, 32),
                      **kwargs)
@@ -86,7 +89,7 @@ def densenet201(pretrained=False, **kwargs):
         # to find such keys.
         pattern = re.compile(
             r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
-        state_dict = model_zoo.load_url(model_urls['densenet201'])
+        state_dict = model_zoo.load_url(model_urls['densenet201'], model_dir=model_dir)
         for key in list(state_dict.keys()):
             res = pattern.match(key)
             if res:
@@ -97,12 +100,13 @@ def densenet201(pretrained=False, **kwargs):
     return model
 
 
-def densenet161(pretrained=False, **kwargs):
+def densenet161(pretrained=False, model_dir=None, **kwargs):
     r"""Densenet-161 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     model = DenseNet(num_init_features=96, growth_rate=48, block_config=(6, 12, 36, 24),
                      **kwargs)
@@ -113,7 +117,7 @@ def densenet161(pretrained=False, **kwargs):
         # to find such keys.
         pattern = re.compile(
             r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
-        state_dict = model_zoo.load_url(model_urls['densenet161'])
+        state_dict = model_zoo.load_url(model_urls['densenet161'], model_dir=model_dir)
         for key in list(state_dict.keys()):
             res = pattern.match(key)
             if res:

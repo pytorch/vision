@@ -46,14 +46,15 @@ class AlexNet(nn.Module):
         return x
 
 
-def alexnet(pretrained=False, **kwargs):
+def alexnet(pretrained=False, model_dir=None,**kwargs):
     r"""AlexNet model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1404.5997>`_ paper.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        model_dir (string, optional): directory in which to save the object if pretrained model is to be returned
     """
     model = AlexNet(**kwargs)
     if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['alexnet']))
+        model.load_state_dict(model_zoo.load_url(model_urls['alexnet'], model_dir=model_dir))
     return model
