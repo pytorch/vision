@@ -41,7 +41,8 @@ class AlexNet(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
-        x = x.view(x.size(0), x.size(1) * x.size(2) * x.size(3)) # x.size(1), x.size(2) and x.size(3) represent 256, 6 and 6 respectively if the input size is (3, 224, 224)
+        # x.size(1), x.size(2) and x.size(3) represent 256, 6 and 6 respectively if the input size is (3, 224, 224)
+        x = x.view(x.size(0), x.size(1) * x.size(2) * x.size(3))
         x = self.classifier(x)
         return x
 
