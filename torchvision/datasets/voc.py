@@ -55,7 +55,7 @@ class VOCSegmentation(data.Dataset):
     Args:
         root (string): Root directory of the VOC Dataset.
         year (string, optional): The dataset year, supports years 2007 to 2012.
-        image_set (string, optional): Select the image_set to use, ``train, trainval or val``
+        image_set (string, optional): Select the image_set to use, ``train``, ``trainval`` or ``val``
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
@@ -143,7 +143,7 @@ class VOCDetection(data.Dataset):
     Args:
         root (string): Root directory of the VOC Dataset.
         year (string, optional): The dataset year, supports years 2007 to 2012.
-        image_set (string, optional): Select the image_set to use, ``train, trainval or val``
+        image_set (string, optional): Select the image_set to use, ``train``, ``trainval`` or ``val``
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
