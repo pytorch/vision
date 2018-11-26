@@ -1,12 +1,11 @@
 import os
-import errno
 import numpy as np
 from PIL import Image
 
 import torch
 import torch.utils.data as data
 
-from .utils import download_url, check_integrity
+from .utils import download_url
 
 
 class PhotoTour(data.Dataset):
@@ -211,6 +210,6 @@ def read_matches_files(data_dir, matches_file):
     matches = []
     with open(os.path.join(data_dir, matches_file), 'r') as f:
         for line in f:
-            l = line.split()
-            matches.append([int(l[0]), int(l[3]), int(l[1] == l[4])])
+            line_split = line.split()
+            matches.append([int(line_split[0]), int(line_split[3]), int(line_split[1] == line_split[4])])
     return torch.LongTensor(matches)
