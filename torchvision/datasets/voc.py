@@ -30,13 +30,13 @@ DATASET_YEAR_DICT = {
     },
     '2010': {
         'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2010/VOCtrainval_03-May-2010.tar',
-        'filename': 'VOCtrainval_03-May-2010.tar,
+        'filename': 'VOCtrainval_03-May-2010.tar',
         'md5': 'da459979d0c395079b5c75ee67908abb',
         'base_dir': 'VOCdevkit/VOC2010'
     },
     '2009': {
         'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2009/VOCtrainval_11-May-2009.tar',
-        'filename': 'VOCtrainval_11-May-2009.tar'',
+        'filename': 'VOCtrainval_11-May-2009.tar',
         'md5': '59065e4b188729180974ef6572f6a212',
         'base_dir': 'VOCdevkit/VOC2009'
     },
@@ -52,37 +52,6 @@ DATASET_YEAR_DICT = {
         'md5': 'c52e279531787c972589f7e41ab4ae64',
         'base_dir': 'VOCdevkit/VOC2007'
     }
-}
-    '2012': [
-        'http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar',
-        'VOCtrainval_11-May-2012.tar', '6cd6e144f989b92b3379bac3b3de84fd',
-        ' VOCdevkit/VOC2012'
-    ],
-    '2011': [
-        'http://host.robots.ox.ac.uk/pascal/VOC/voc2011/VOCtrainval_25-May-2011.tar',
-        'VOCtrainval_25-May-2011.tar', '6c3384ef61512963050cb5d687e5bf1e',
-        'TrainVal/VOCdevkit/VOC2011'
-    ],
-    '2010': [
-        'http://host.robots.ox.ac.uk/pascal/VOC/voc2010/VOCtrainval_03-May-2010.tar',
-        'VOCtrainval_03-May-2010.tar', 'da459979d0c395079b5c75ee67908abb',
-        'VOCdevkit/VOC2010'
-    ],
-    '2009': [
-        'http://host.robots.ox.ac.uk/pascal/VOC/voc2009/VOCtrainval_11-May-2009.tar',
-        'VOCtrainval_11-May-2009.tar', '59065e4b188729180974ef6572f6a212',
-        'VOCdevkit/VOC2009'
-    ],
-    '2008': [
-        'http://host.robots.ox.ac.uk/pascal/VOC/voc2008/VOCtrainval_14-Jul-2008.tar',
-        'VOCtrainval_14-Jul-2008.tar', '2629fa636546599198acfcfbfcf1904a',
-        'VOCdevkit/VOC2008'
-    ],
-    '2007': [
-        'http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar',
-        'VOCtrainval_06-Nov-2007.tar', 'c52e279531787c972589f7e41ab4ae64',
-        'VOCdevkit/VOC2007'
-    ]
 }
 
 
