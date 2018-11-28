@@ -16,6 +16,43 @@ VOC_CLASSES = [
     'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
 ]
 DATASET_YEAR_DICT = {
+    '2012': {
+        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar',
+        'filename': 'VOCtrainval_11-May-2012.tar',
+        'md5': '6cd6e144f989b92b3379bac3b3de84fd',
+        'base_dir': 'VOCdevkit/VOC2012'
+    },
+    '2011': {
+        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2011/VOCtrainval_25-May-2011.tar',
+        'filename': 'VOCtrainval_25-May-2011.tar',
+        'md5': '6c3384ef61512963050cb5d687e5bf1e',
+        'base_dir': 'TrainVal/VOCdevkit/VOC2011'
+    },
+    '2010': {
+        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2010/VOCtrainval_03-May-2010.tar',
+        'filename': 'VOCtrainval_03-May-2010.tar,
+        'md5': 'da459979d0c395079b5c75ee67908abb',
+        'base_dir': 'VOCdevkit/VOC2010'
+    },
+    '2009': {
+        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2009/VOCtrainval_11-May-2009.tar',
+        'filename': 'VOCtrainval_11-May-2009.tar'',
+        'md5': '59065e4b188729180974ef6572f6a212',
+        'base_dir': 'VOCdevkit/VOC2009'
+    },
+    '2008': {
+        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2008/VOCtrainval_14-Jul-2008.tar',
+        'filename': 'VOCtrainval_11-May-2012.tar',
+        'md5': '2629fa636546599198acfcfbfcf1904a',
+        'base_dir': 'VOCdevkit/VOC2008'
+    },
+    '2007': {
+        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtrainval_06-Nov-2007.tar',
+        'filename': 'VOCtrainval_06-Nov-2007.tar',
+        'md5': 'c52e279531787c972589f7e41ab4ae64',
+        'base_dir': 'VOCdevkit/VOC2007'
+    }
+}
     '2012': [
         'http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar',
         'VOCtrainval_11-May-2012.tar', '6cd6e144f989b92b3379bac3b3de84fd',
@@ -74,13 +111,13 @@ class VOCSegmentation(data.Dataset):
                  target_transform=None):
         self.root = root
         self.year = year
-        self.url = DATASET_YEAR_DICT[year][0]
-        self.filename = DATASET_YEAR_DICT[year][1]
-        self.md5 = DATASET_YEAR_DICT[year][2]
+        self.url = DATASET_YEAR_DICT[year]['url']
+        self.filename = DATASET_YEAR_DICT[year]['filename']
+        self.md5 = DATASET_YEAR_DICT[year]['md5']
         self.transform = transform
         self.target_transform = target_transform
         self.image_set = image_set
-        _base_dir = DATASET_YEAR_DICT[year][3]
+        _base_dir = DATASET_YEAR_DICT[year]['base_dir']
         _voc_root = os.path.join(self.root, _base_dir)
         _image_dir = os.path.join(_voc_root, 'JPEGImages')
         _mask_dir = os.path.join(_voc_root, 'SegmentationClass')
@@ -167,16 +204,16 @@ class VOCDetection(data.Dataset):
                  target_transform=None):
         self.root = root
         self.year = year
-        self.url = DATASET_YEAR_DICT[year][0]
-        self.filename = DATASET_YEAR_DICT[year][1]
-        self.md5 = DATASET_YEAR_DICT[year][2]
+        self.url = DATASET_YEAR_DICT[year]['url']
+        self.filename = DATASET_YEAR_DICT[year]['filename']
+        self.md5 = DATASET_YEAR_DICT[year]['md5']
         self.transform = transform
         self.target_transform = target_transform
         self.image_set = image_set
         self.class_to_ind = class_to_ind or dict(
             zip(VOC_CLASSES, range(len(VOC_CLASSES))))
         self.keep_difficult = keep_difficult
-        _base_dir = DATASET_YEAR_DICT[year][3]
+        _base_dir = DATASET_YEAR_DICT[year]['base_dir']
         _voc_root = os.path.join(self.root, _base_dir)
         _image_dir = os.path.join(_voc_root, 'JPEGImages')
         _annotation_dir = os.path.join(_voc_root, 'Annotations')
