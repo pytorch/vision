@@ -105,8 +105,16 @@ def to_pil_image(pic, mode=None):
     Returns:
         PIL Image: Image converted to PIL Image.
     """
-    if not(_is_numpy_image(pic) or _is_tensor_image(pic)):
+    if not(torch.is_tensor(pic) or isinstance(pic, np.ndarray)):
         raise TypeError('pic should be Tensor or ndarray. Got {}.'.format(type(pic)))
+
+    elif torch.is_tensor(pic):
+        if pic.ndimension() != 3:
+            raise ValueError('pic should be 3 dimensional. Got {} dimensions.'.format(pic.ndimension()))
+
+    elif isinstance(pic, np.ndarray):
+        if pic.ndim not in {2, 3}:
+            raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
 
     npimg = pic
     if isinstance(pic, torch.FloatTensor):
@@ -117,6 +125,10 @@ def to_pil_image(pic, mode=None):
     if not isinstance(npimg, np.ndarray):
         raise TypeError('Input pic must be a torch.Tensor or NumPy ndarray, ' +
                         'not {}'.format(type(npimg)))
+
+    # if `npimg` is 2D, add the channel dimension
+    if npimg.ndim == 2:
+        npimg = np.expand_dims(npimg, 2)
 
     if npimg.shape[2] == 1:
         expected_mode = None

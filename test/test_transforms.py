@@ -513,6 +513,11 @@ class Tester(unittest.TestCase):
             transforms.ToPILImage(mode='RGBA')(img_data)
             transforms.ToPILImage(mode='P')(img_data)
 
+        with self.assertRaises(ValueError):
+            # should raise if we try a tensor which is not 3 dimensional
+            transforms.ToPILImage()(torch.Tensor(4, 4).uniform_())
+            transforms.ToPILImage()(torch.Tensor(1, 3, 4, 4).uniform_())
+
     def test_3_channel_ndarray_to_pil_image(self):
         def verify_img_data(img_data, mode):
             if mode is None:
@@ -536,6 +541,11 @@ class Tester(unittest.TestCase):
             # should raise if we try a mode for 4 or 1 channel images
             transforms.ToPILImage(mode='RGBA')(img_data)
             transforms.ToPILImage(mode='P')(img_data)
+
+        with self.assertRaises(ValueError):
+            # should raise if we try a tensor which is not 3 dimensional
+            transforms.ToPILImage()(torch.ByteTensor(4, 4).random_(0, 255).numpy())
+            transforms.ToPILImage()(torch.ByteTensor(1, 4, 4, 3).random_(0, 255).numpy())
 
     def test_4_channel_tensor_to_pil_image(self):
         def verify_img_data(img_data, expected_output, mode):
