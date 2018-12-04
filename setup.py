@@ -37,6 +37,7 @@ VERSION = find_version('torchvision', '__init__.py')
 
 requirements = [
     'numpy',
+    'scipy',
     'six',
     'torch',
 ]
