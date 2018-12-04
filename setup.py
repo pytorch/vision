@@ -37,7 +37,6 @@ VERSION = find_version('torchvision', '__init__.py')
 
 requirements = [
     'numpy',
-    'scipy',
     'six',
     'torch',
 ]
@@ -65,4 +64,7 @@ setup(
 
     zip_safe=True,
     install_requires=requirements,
+    extras_require={
+        "scipy": ["scipy"],
+    },
 )
