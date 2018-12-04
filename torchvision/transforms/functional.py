@@ -105,30 +105,34 @@ def to_pil_image(pic, mode=None):
     Returns:
         PIL Image: Image converted to PIL Image.
     """
-    if not(torch.is_tensor(pic) or isinstance(pic, np.ndarray)):
+    if not(isinstance(pic, torch.Tensor) or isinstance(pic, np.ndarray)):
         raise TypeError('pic should be Tensor or ndarray. Got {}.'.format(type(pic)))
 
-    elif torch.is_tensor(pic):
-        if pic.ndimension() != 3:
-            raise ValueError('pic should be 3 dimensional. Got {} dimensions.'.format(pic.ndimension()))
+    elif isinstance(pic, torch.Tensor):
+        if pic.ndimension() not in {2, 3}:
+            raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndimension()))
+
+        elif pic.ndimension() == 2:
+            # if 2D image, add channel dimension (CHW)
+            pic.unsqueeze_(0)
 
     elif isinstance(pic, np.ndarray):
         if pic.ndim not in {2, 3}:
             raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
 
+        elif pic.ndim == 2:
+            # if 2D image, add channel dimension (HWC)
+            pic = np.expand_dims(pic, 2)
+
     npimg = pic
     if isinstance(pic, torch.FloatTensor):
         pic = pic.mul(255).byte()
-    if torch.is_tensor(pic):
+    if isinstance(pic, torch.Tensor):
         npimg = np.transpose(pic.numpy(), (1, 2, 0))
 
     if not isinstance(npimg, np.ndarray):
         raise TypeError('Input pic must be a torch.Tensor or NumPy ndarray, ' +
                         'not {}'.format(type(npimg)))
-
-    # if `npimg` is 2D, add the channel dimension
-    if npimg.ndim == 2:
-        npimg = np.expand_dims(npimg, 2)
 
     if npimg.shape[2] == 1:
         expected_mode = None
