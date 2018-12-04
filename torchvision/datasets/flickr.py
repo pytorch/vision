@@ -55,21 +55,21 @@ class Flickr8k(data.Dataset):
 
     Args:
         root (string): Root directory where images are downloaded to.
-        annFile (string): Path to annotation file.
+        ann_file (string): Path to annotation file.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.ToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    def __init__(self, root, annFile, transform=None, target_transform=None):
+    def __init__(self, root, ann_file, transform=None, target_transform=None):
         self.root = os.path.expanduser(root)
-        self.annFile = os.path.expanduser(annFile)
+        self.ann_file = os.path.expanduser(ann_file)
         self.transform = transform
         self.target_transform = target_transform
 
         # Read annotations and store in a dict
         parser = Flickr8kParser(self.root)
-        with open(self.annFile) as fh:
+        with open(self.ann_file) as fh:
             parser.feed(fh.read())
         self.annotations = parser.annotations
 
@@ -106,21 +106,21 @@ class Flickr30k(data.Dataset):
 
     Args:
         root (string): Root directory where images are downloaded to.
-        annFile (string): Path to annotation file.
+        ann_file (string): Path to annotation file.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.ToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    def __init__(self, root, annFile, transform=None, target_transform=None):
+    def __init__(self, root, ann_file, transform=None, target_transform=None):
         self.root = os.path.expanduser(root)
-        self.annFile = os.path.expanduser(annFile)
+        self.ann_file = os.path.expanduser(ann_file)
         self.transform = transform
         self.target_transform = target_transform
 
         # Read annotations and store in a dict
         self.annotations = defaultdict(list)
-        with open(self.annFile) as fh:
+        with open(self.ann_file) as fh:
             for line in fh:
                 img_id, caption = line.strip().split('\t')
                 self.annotations[img_id[:-2]].append(caption)
