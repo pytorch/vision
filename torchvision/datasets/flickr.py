@@ -42,7 +42,7 @@ class Flickr8kParser(html_parser.HTMLParser):
             elif self.current_tag == 'a':
                 img_id = data.split('/')[-2]
                 img_id = os.path.join(self.root, img_id + '_*.jpg')
-                img_id = glob.glob(filename)[0]
+                img_id = glob.glob(img_id)[0]
                 self.current_img = img_id
                 self.annotations[img_id] = []
             elif self.current_tag == 'li' and self.current_img:
