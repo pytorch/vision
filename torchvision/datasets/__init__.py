@@ -10,10 +10,11 @@ from .fakedata import FakeData
 from .semeion import SEMEION
 from .omniglot import Omniglot
 from .sbu import SBU
+from .flickr import Flickr8k, Flickr30k
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
            'CocoCaptions', 'CocoDetection',
            'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST',
            'MNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
-           'Omniglot', 'SBU')
+           'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k')
