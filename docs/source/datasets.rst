@@ -129,3 +129,12 @@ PhotoTour
 .. autoclass:: PhotoTour
   :members: __getitem__
   :special-members:
+
+SBU
+~~~
+
+
+.. autoclass:: SBU
+  :members: __getitem__
+  :special-members:
+

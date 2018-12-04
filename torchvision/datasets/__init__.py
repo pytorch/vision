@@ -9,10 +9,11 @@ from .phototour import PhotoTour
 from .fakedata import FakeData
 from .semeion import SEMEION
 from .omniglot import Omniglot
+from .sbu import SBU
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
            'CocoCaptions', 'CocoDetection',
            'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST',
            'MNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
-           'Omniglot')
+           'Omniglot', 'SBU')
