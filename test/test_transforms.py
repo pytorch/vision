@@ -513,6 +513,9 @@ class Tester(unittest.TestCase):
             transforms.ToPILImage(mode='RGBA')(img_data)
             transforms.ToPILImage(mode='P')(img_data)
 
+        with self.assertRaises(ValueError):
+            transforms.ToPILImage()(torch.Tensor(1, 3, 4, 4).uniform_())
+
     def test_3_channel_ndarray_to_pil_image(self):
         def verify_img_data(img_data, mode):
             if mode is None:
@@ -581,6 +584,45 @@ class Tester(unittest.TestCase):
             transforms.ToPILImage(mode='RGB')(img_data)
             transforms.ToPILImage(mode='P')(img_data)
 
+    def test_2d_tensor_to_pil_image(self):
+        to_tensor = transforms.ToTensor()
+
+        img_data_float = torch.Tensor(4, 4).uniform_()
+        img_data_byte = torch.ByteTensor(4, 4).random_(0, 255)
+        img_data_short = torch.ShortTensor(4, 4).random_()
+        img_data_int = torch.IntTensor(4, 4).random_()
+
+        inputs = [img_data_float, img_data_byte, img_data_short, img_data_int]
+        expected_outputs = [img_data_float.mul(255).int().float().div(255).numpy(),
+                            img_data_byte.float().div(255.0).numpy(),
+                            img_data_short.numpy(),
+                            img_data_int.numpy()]
+        expected_modes = ['L', 'L', 'I;16', 'I']
+
+        for img_data, expected_output, mode in zip(inputs, expected_outputs, expected_modes):
+            for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
+                img = transform(img_data)
+                assert img.mode == mode
+                assert np.allclose(expected_output, to_tensor(img).numpy())
+
+    def test_2d_ndarray_to_pil_image(self):
+        img_data_float = torch.Tensor(4, 4).uniform_().numpy()
+        img_data_byte = torch.ByteTensor(4, 4).random_(0, 255).numpy()
+        img_data_short = torch.ShortTensor(4, 4).random_().numpy()
+        img_data_int = torch.IntTensor(4, 4).random_().numpy()
+
+        inputs = [img_data_float, img_data_byte, img_data_short, img_data_int]
+        expected_modes = ['F', 'L', 'I;16', 'I']
+        for img_data, mode in zip(inputs, expected_modes):
+            for transform in [transforms.ToPILImage(), transforms.ToPILImage(mode=mode)]:
+                img = transform(img_data)
+                assert img.mode == mode
+                assert np.allclose(img_data, img)
+
+    def test_tensor_bad_types_to_pil_image(self):
+        with self.assertRaises(ValueError):
+            transforms.ToPILImage()(torch.ones(1, 3, 4, 4))
+
     def test_ndarray_bad_types_to_pil_image(self):
         trans = transforms.ToPILImage()
         with self.assertRaises(TypeError):
@@ -588,6 +630,9 @@ class Tester(unittest.TestCase):
             trans(np.ones([4, 4, 1], np.uint16))
             trans(np.ones([4, 4, 1], np.uint32))
             trans(np.ones([4, 4, 1], np.float64))
+
+        with self.assertRaises(ValueError):
+            transforms.ToPILImage()(np.ones([1, 4, 4, 3]))
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_vertical_flip(self):
