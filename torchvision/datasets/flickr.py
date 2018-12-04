@@ -10,8 +10,10 @@ import torch.utils.data as data
 class Flickr8kParser(html_parser.HTMLParser):
     """Parser for extracting captions from the Flickr8k dataset web page."""
 
-    def __init__(self):
+    def __init__(self, root):
         super(Flickr8kParser, self).__init__()
+
+        self.root = root
 
         # Data structure to store captions
         self.annotations = {}
@@ -39,6 +41,8 @@ class Flickr8kParser(html_parser.HTMLParser):
                 self.current_img = None
             elif self.current_tag == 'a':
                 img_id = data.split('/')[-2]
+                img_id = os.path.join(self.root, img_id + '_*.jpg')
+                img_id = glob.glob(filename)[0]
                 self.current_img = img_id
                 self.annotations[img_id] = []
             elif self.current_tag == 'li' and self.current_img:
@@ -64,12 +68,12 @@ class Flickr8k(data.Dataset):
         self.target_transform = target_transform
 
         # Read annotations and store in a dict
-        parser = Flickr8kParser()
+        parser = Flickr8kParser(self.root)
         with open(self.annFile) as fh:
             parser.feed(fh.read())
         self.annotations = parser.annotations
 
-        self.ids = list(self.annotations.keys())
+        self.ids = list(sorted(self.annotations.keys()))
 
     def __getitem__(self, index):
         """
@@ -82,9 +86,7 @@ class Flickr8k(data.Dataset):
         img_id = self.ids[index]
 
         # Image
-        filename = os.path.join(self.root, img_id + '_*.jpg')
-        filename = glob.glob(filename)[0]
-        img = Image.open(filename).convert('RGB')
+        img = Image.open(img_id).convert('RGB')
         if self.transform is not None:
             img = self.transform(img)
 
@@ -123,7 +125,7 @@ class Flickr30k(data.Dataset):
                 img_id, caption = line.strip().split('\t')
                 self.annotations[img_id[:-2]].append(caption)
 
-        self.ids = list(self.annotations.keys())
+        self.ids = list(sorted(self.annotations.keys()))
 
     def __getitem__(self, index):
         """
