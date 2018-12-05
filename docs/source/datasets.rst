@@ -129,3 +129,15 @@ PhotoTour
 .. autoclass:: PhotoTour
   :members: __getitem__
   :special-members:
+
+VOC
+~~~~~~
+
+
+.. autoclass:: VOCSegmentation
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: VOCDetection
+  :members: __getitem__
+  :special-members:
