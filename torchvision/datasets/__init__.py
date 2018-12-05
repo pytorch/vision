@@ -9,6 +9,8 @@ from .phototour import PhotoTour
 from .fakedata import FakeData
 from .semeion import SEMEION
 from .omniglot import Omniglot
+from .sbu import SBU
+from .flickr import Flickr8k, Flickr30k
 from .voc import VOCSegmentation, VOCDetection
 
 __all__ = ('LSUN', 'LSUNClass',
@@ -16,4 +18,5 @@ __all__ = ('LSUN', 'LSUNClass',
            'CocoCaptions', 'CocoDetection',
            'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST',
            'MNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
-           'Omniglot', 'VOCSegmentation', 'VOCDetection')
+           'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
+           'VOCSegmentation', 'VOCDetection')

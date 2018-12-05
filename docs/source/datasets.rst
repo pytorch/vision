@@ -130,6 +130,26 @@ PhotoTour
   :members: __getitem__
   :special-members:
 
+SBU
+~~~
+
+
+.. autoclass:: SBU
+  :members: __getitem__
+  :special-members:
+
+Flickr
+~~~~~~
+
+
+.. autoclass:: Flickr8k
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: Flickr30k
+  :members: __getitem__
+  :special-members:
+
 VOC
 ~~~~~~
 
