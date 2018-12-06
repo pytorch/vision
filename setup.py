@@ -64,4 +64,7 @@ setup(
 
     zip_safe=True,
     install_requires=requirements,
+    extras_require={
+        "scipy": ["scipy"],
+    },
 )
