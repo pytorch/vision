@@ -10,6 +10,7 @@ architectures:
 -  `SqueezeNet`_
 -  `DenseNet`_
 -  `Inception`_ v3
+-  `GoogLeNet`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -22,6 +23,7 @@ You can construct a model with random weights by calling its constructor:
     squeezenet = models.squeezenet1_0()
     densenet = models.densenet161()
     inception = models.inception_v3()
+    googlenet = models.googlenet()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -35,6 +37,7 @@ These can be constructed by passing ``pretrained=True``:
     vgg16 = models.vgg16(pretrained=True)
     densenet = models.densenet161(pretrained=True)
     inception = models.inception_v3(pretrained=True)
+    googlenet = models.googlenet(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
@@ -93,6 +96,7 @@ Inception v3                      22.55           6.44
 .. _SqueezeNet: https://arxiv.org/abs/1602.07360
 .. _DenseNet: https://arxiv.org/abs/1608.06993
 .. _Inception: https://arxiv.org/abs/1512.00567
+.. _GoogLeNet: https://arxiv.org/abs/1409.4842
 
 .. currentmodule:: torchvision.models
 
@@ -141,4 +145,9 @@ Inception v3
 ------------
 
 .. autofunction:: inception_v3
+
+GoogLeNet
+------------
+
+.. autofunction:: googlenet
 
