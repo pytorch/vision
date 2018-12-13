@@ -288,7 +288,7 @@ def pad(img, padding, fill=0, padding_mode='constant'):
         'Padding mode should be either constant, edge, reflect or symmetric'
 
     if padding_mode == 'constant':
-        if img.mode =='P':
+        if img.mode == 'P':
             palette = img.getpalette()
             image = ImageOps.expand(img, border=padding, fill=fill)
             image.putpalette(palette)
