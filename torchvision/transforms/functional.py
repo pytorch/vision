@@ -288,9 +288,9 @@ def pad(img, padding, fill=0, padding_mode='constant'):
         'Padding mode should be either constant, edge, reflect or symmetric'
 
     if padding_mode == 'constant':
-        if img.mode=='P':
+        if img.mode =='P':
             palette = img.getpalette()
-            image = ImageOps.expand(img, border=padding, fill=fill)    
+            image = ImageOps.expand(img, border=padding, fill=fill)
             image.putpalette(palette)
             return image
 
@@ -309,7 +309,7 @@ def pad(img, padding, fill=0, padding_mode='constant'):
 
         if img.mode == 'P':
             palette = img.getpalette()
-            img = np.asarray(img)            
+            img = np.asarray(img)
             img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
             img = Image.fromarray(img)
             img.putpalette(palette)
@@ -739,4 +739,3 @@ def to_grayscale(img, num_output_channels=1):
         raise ValueError('num_output_channels should be either 1 or 3')
 
     return img
-
