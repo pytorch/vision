@@ -289,8 +289,8 @@ def pad(img, padding, fill=0, padding_mode='constant'):
 
     if padding_mode == 'constant':
         if img.mode=='P':
-            palette=img.getpalette()
-            image=ImageOps.expand(img, border=padding, fill=fill)    
+            palette = img.getpalette()
+            image = ImageOps.expand(img, border=padding, fill=fill)    
             image.putpalette(palette)
             return image
 
@@ -307,13 +307,11 @@ def pad(img, padding, fill=0, padding_mode='constant'):
             pad_right = padding[2]
             pad_bottom = padding[3]
 
-        
         if img.mode == 'P':
-
-            palette=img.getpalette()
-            img=np.asarray(img)            
+            palette = img.getpalette()
+            img = np.asarray(img)            
             img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
-            img=Image.fromarray(img)
+            img = Image.fromarray(img)
             img.putpalette(palette)
             return img
 
