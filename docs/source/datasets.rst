@@ -35,6 +35,11 @@ Fashion-MNIST
 
 .. autoclass:: FashionMNIST
 
+KMNIST
+~~~~~~~~~~~~~
+
+.. autoclass:: KMNIST
+
 EMNIST
 ~~~~~~
 
