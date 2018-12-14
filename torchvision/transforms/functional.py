@@ -51,6 +51,9 @@ def to_tensor(pic):
 
     if isinstance(pic, np.ndarray):
         # handle numpy array
+        if pic.ndim == 2:
+            pic = pic[:, :, None]
+
         img = torch.from_numpy(pic.transpose((2, 0, 1)))
         # backward compatibility
         if isinstance(img, torch.ByteTensor):
