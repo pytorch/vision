@@ -153,8 +153,16 @@ def to_pil_image(pic, mode=None):
                              .format(mode, np.dtype, expected_mode))
         mode = expected_mode
 
+    elif npimg.shape[2] == 2:
+        permitted_2_channel_modes = ['LA']
+        if mode is not None and mode not in permitted_2_channel_modes:
+            raise ValueError("Only modes {} are supported for 2D inputs".format(permitted_2_channel_modes))
+
+        if mode is None and npimg.dtype == np.uint8:
+            mode = 'LA'
+
     elif npimg.shape[2] == 4:
-        permitted_4_channel_modes = ['RGBA', 'CMYK']
+        permitted_4_channel_modes = ['RGBA', 'CMYK', 'RGBX']
         if mode is not None and mode not in permitted_4_channel_modes:
             raise ValueError("Only modes {} are supported for 4D inputs".format(permitted_4_channel_modes))
 
