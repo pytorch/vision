@@ -604,7 +604,7 @@ class Tester(unittest.TestCase):
 
         img_data = torch.Tensor(4, 4, 4).uniform_()
         expected_output = img_data.mul(255).int().float().div(255)
-        for mode in [None, 'RGBA', 'CMYK']:
+        for mode in [None, 'RGBA', 'CMYK', 'RGBX']:
             verify_img_data(img_data, expected_output, mode)
 
         with self.assertRaises(ValueError):
@@ -626,7 +626,7 @@ class Tester(unittest.TestCase):
                 assert np.allclose(img_data[:, :, i], split[i])
 
         img_data = torch.ByteTensor(4, 4, 4).random_(0, 255).numpy()
-        for mode in [None, 'RGBA', 'CMYK']:
+        for mode in [None, 'RGBA', 'CMYK', 'RGBX']:
             verify_img_data(img_data, mode)
 
         with self.assertRaises(ValueError):
