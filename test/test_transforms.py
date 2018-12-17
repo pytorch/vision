@@ -507,7 +507,7 @@ class Tester(unittest.TestCase):
         for mode in [None, 'LA']:
             verify_img_data(img_data, mode)
 
-        transforms.ToPILImage().__repr__()    
+        transforms.ToPILImage().__repr__()
 
         with self.assertRaises(ValueError):
             # should raise if we try a mode for 4 or 1 or 3 channel images
