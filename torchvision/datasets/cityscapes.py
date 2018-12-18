@@ -11,7 +11,7 @@ class Cityscapes(data.Dataset):
         root (string): Root directory of dataset where directory ``leftImg8bit``
             and ``gtFine`` are located.
         split (string, optional): The image split to use, ``train``, ``test`` or ``val``
-        target_type (string, optional): Type of target to use, ``instance``, ``label``, ``polygon``
+        target_type (string, optional): Type of target to use, ``instance``, ``semantic``, ``polygon``
             or ``color``
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
@@ -34,9 +34,9 @@ class Cityscapes(data.Dataset):
             raise ValueError('Invalid value for "split"! Please use split="train", split="train"'
                              ' or split="train"')
 
-        if target_type not in ['instance', 'label', 'polygon', 'color']:
+        if target_type not in ['instance', 'semantic', 'polygon', 'color']:
             raise ValueError('Invalid value for "target_type"! Please use target_type="instance",'
-                             ' target_type="label", target_type="polygon" or target_type="color"')
+                             ' target_type="semantic", target_type="polygon" or target_type="color"')
 
         if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
             raise RuntimeError('Dataset not found. Please make sure both "leftImg8bit" and "gtFine"'
@@ -97,8 +97,10 @@ class Cityscapes(data.Dataset):
         return data
 
     def _get_target_suffix(self, target_type):
-        if target_type in ['instance', 'label']:
-            return 'gtFine_{}Ids.png'.format(target_type)
+        if target_type == 'instance':
+            return 'gtFine_instanceIds.png'
+        elif target_type == 'semantic':
+            return 'gtFine_labelIds.png'
         elif target_type == 'color':
             return 'gtFine_color.png'
         else:
