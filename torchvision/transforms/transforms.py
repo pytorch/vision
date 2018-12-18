@@ -100,7 +100,7 @@ class ToPILImage(object):
              - If the input has 4 channels, the ``mode`` is assumed to be ``RGBA``.
              - If the input has 3 channels, the ``mode`` is assumed to be ``RGB``.
              - If the input has 2 channels, the ``mode`` is assumed to be ``LA``.
-             - If the input has 1 channel, the ``mode`` is determined by the data type (i.e ``int``, ``float``, 
+             - If the input has 1 channel, the ``mode`` is determined by the data type (i.e ``int``, ``float``,
               ``short``).
 
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
