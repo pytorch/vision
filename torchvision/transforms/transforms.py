@@ -97,10 +97,11 @@ class ToPILImage(object):
     Args:
         mode (`PIL.Image mode`_): color space and pixel depth of input data (optional).
             If ``mode`` is ``None`` (default) there are some assumptions made about the input data:
-            1. If the input has 3 channels, the ``mode`` is assumed to be ``RGB``.
-            2. If the input has 4 channels, the ``mode`` is assumed to be ``RGBA``.
-            3. If the input has 1 channel, the ``mode`` is determined by the data type (i,e,
-            ``int``, ``float``, ``short``).
+             - If the input has 4 channels, the ``mode`` is assumed to be ``RGBA``.
+             - If the input has 3 channels, the ``mode`` is assumed to be ``RGB``.
+             - If the input has 2 channels, the ``mode`` is assumed to be ``LA``.
+             - If the input has 1 channel, the ``mode`` is determined by the data type (i.e ``int``, ``float``,
+              ``short``).
 
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
