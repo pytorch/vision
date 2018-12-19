@@ -9,8 +9,10 @@ class Cityscapes(data.Dataset):
     """`Cityscapes <http://www.cityscapes-dataset.com/>`_ Dataset.
     Args:
         root (string): Root directory of dataset where directory ``leftImg8bit``
-            and ``gtFine`` are located.
-        split (string, optional): The image split to use, ``train``, ``test`` or ``val``
+            and ``gtFine`` or ``gtCoarse`` are located.
+        split (string, optional): The image split to use, ``train``, ``test`` or ``val`` if mode="gtFine"
+            otherwise ``train``, ``train_extra`` or ``val``
+        mode (string, optional): The quality mode to use, ``gtFine`` or ``gtCoarse``
         target_type (string, optional): Type of target to use, ``instance``, ``semantic``, ``polygon``
             or ``color``
         transform (callable, optional): A function/transform that takes in a PIL image
@@ -19,38 +21,46 @@ class Cityscapes(data.Dataset):
             target and transforms it.
     """
 
-    def __init__(self, root, split='train', target_type='instance', transform=None, target_transform=None):
+    def __init__(self, root, split='train', mode='gtFine', target_type='instance',
+                 transform=None, target_transform=None):
         self.root = os.path.expanduser(root)
         self.images_dir = os.path.join(self.root, 'leftImg8bit', split)
-        self.targets_dir = os.path.join(self.root, 'gtFine', split)
+        self.targets_dir = os.path.join(self.root, mode, split)
         self.transform = transform
         self.target_transform = target_transform
         self.target_type = target_type
         self.split = split
+        self.mode = mode
         self.images = []
         self.targets = []
 
-        if split not in ['train', 'test', 'val']:
-            raise ValueError('Invalid value for "split"! Please use split="train", split="train"'
-                             ' or split="train"')
+        if mode not in ['gtFine', 'gtCoarse']:
+            raise ValueError('Invalid mode! Please use mode="gtFine" or mode="gtCoarse"')
+
+        if mode == 'gtFine' and split not in ['train', 'test', 'val']:
+            raise ValueError('Invalid split for mode "gtFine"! Please use split="train", split="test"'
+                             ' or split="val"')
+        elif mode == 'gtCoarse' and split not in ['train', 'train_extra', 'val']:
+            raise ValueError('Invalid split for mode "gtCoarse"! Please use split="train", split="train_extra"'
+                             ' or split="val"')
 
         if target_type not in ['instance', 'semantic', 'polygon', 'color']:
             raise ValueError('Invalid value for "target_type"! Please use target_type="instance",'
                              ' target_type="semantic", target_type="polygon" or target_type="color"')
 
         if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
-            raise RuntimeError('Dataset not found. Please make sure both "leftImg8bit" and "gtFine"'
-                               ' exist inside the "root" directory')
+            raise RuntimeError('Dataset not found or incomplete. Please make sure all required folders for the'
+                               ' specified "split" and "mode" are inside the "root" directory')
 
         for city in os.listdir(self.images_dir):
             img_dir = os.path.join(self.images_dir, city)
-            lbl_dir = os.path.join(self.targets_dir, city)
+            target_dir = os.path.join(self.targets_dir, city)
             for file_name in os.listdir(img_dir):
-                label_name = '{}_{}'.format(file_name.split('_leftImg8bit')[0],
-                                            self._get_target_suffix(self.target_type))
+                target_name = '{}_{}'.format(file_name.split('_leftImg8bit')[0],
+                                             self._get_target_suffix(self.mode, self.target_type))
 
                 self.images.append(os.path.join(img_dir, file_name))
-                self.targets.append(os.path.join(lbl_dir, label_name))
+                self.targets.append(os.path.join(target_dir, target_name))
 
     def __getitem__(self, index):
         """
@@ -83,6 +93,7 @@ class Cityscapes(data.Dataset):
         fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
         fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
         fmt_str += '    Split: {}\n'.format(self.split)
+        fmt_str += '    Mode: {}\n'.format(self.mode)
         fmt_str += '    Type: {}\n'.format(self.target_type)
         fmt_str += '    Root Location: {}\n'.format(self.root)
         tmp = '    Transforms (if any): '
@@ -96,12 +107,12 @@ class Cityscapes(data.Dataset):
             data = json.load(file)
         return data
 
-    def _get_target_suffix(self, target_type):
+    def _get_target_suffix(self, mode, target_type):
         if target_type == 'instance':
-            return 'gtFine_instanceIds.png'
+            return '{}_instanceIds.png'.format(mode)
         elif target_type == 'semantic':
-            return 'gtFine_labelIds.png'
+            return '{}_labelIds.png'.format(mode)
         elif target_type == 'color':
-            return 'gtFine_color.png'
+            return '{}_color.png'.format(mode)
         else:
-            return 'gtFine_polygons.json'
+            return '{}_polygons.json'.format(mode)
