@@ -17,6 +17,6 @@ __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
            'CocoCaptions', 'CocoDetection',
            'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST',
-           'MNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
+           'MNIST', 'KMNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
            'VOCSegmentation', 'VOCDetection')
