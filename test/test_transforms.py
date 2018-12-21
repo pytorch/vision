@@ -1182,7 +1182,7 @@ class Tester(unittest.TestCase):
         trans5 = transforms.Grayscale(num_output_channels=2)
         gray_pil_5 = trans5(x_pil)
         gray_np_5 = np.array(gray_pil_5)
-        assert gray_pil_5.mode == 'LA','mode should be LA'
+        assert gray_pil_5.mode == 'LA', 'mode should be LA'
         assert gray_np_5.shape == tuple(x_shape[0:2] + [2]), 'should be 2 channel'
         np.testing.assert_equal(np.array(x_pil.convert('LA')), gray_np_5)
 
