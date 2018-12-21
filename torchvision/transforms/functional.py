@@ -733,7 +733,7 @@ def to_grayscale(img, num_output_channels=1):
     Returns:
         PIL Image: Grayscale version of the image.
             if num_output_channels = 1 : returned image is single channel
-            
+
             if num_output_channels = 2 : returned image is 2 channel with mode LA
 
             if num_output_channels = 3 : returned image is 3 channel with r = g = b
