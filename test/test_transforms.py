@@ -1138,6 +1138,7 @@ class Tester(unittest.TestCase):
         x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
         x_pil = Image.fromarray(x_np, mode='RGB')
         x_pil_2 = x_pil.convert('L')
+        x_pil_3 = x_pil.convert('LA')
         gray_np = np.array(x_pil_2)
 
         # Test Set: Grayscale an image with desired number of output channels
@@ -1185,8 +1186,43 @@ class Tester(unittest.TestCase):
         assert gray_np_5.shape == tuple(x_shape[0:2]+[2]),'should be 2 channel'
         np.testing.assert_equal(np.array(x_pil.convert('LA')), gray_np_5)
 
+        # Case 6: 2 channel -> 2 channel grayscale
+        trans6 = transforms.Grayscale(num_output_channels = 2)
+        gray_pil_6 = trans6(x_pil_3)
+        gray_np_6 = np.array(gray_pil_6)
+        assert gray_pil_6.mode == 'LA','mode should be LA'
+        assert gray_np_6.shape == tuple(x_shape[0:2]+[2]),'should be 2 channel'
+        np.testing.assert_equal(np.array(x_pil_3), gray_np_6)
+
+        # Case 7: 2 channel -> 1 channel grayscale
+        trans7 = transforms.Grayscale(num_output_channels = 1)
+        gray_pil_7 = trans7(x_pil)
+        gray_np_7 = np.array(gray_pil_7)
+        assert gray_pil_7.mode == 'L','mode should be L'
+        assert gray_np_7.shape == tuple(x_shape[0:2]),'should be 1 channel'
+        np.testing.assert_equal(gray_np, gray_np_7)
+
+        # Case 8: 2 channel -> 3 channel grayscale
+        trans8 = transforms.Grayscale(num_output_channels = 3)
+        gray_pil_8 = trans8(x_pil)
+        gray_np_8 = np.array(gray_pil_8)
+        assert gray_pil_8.mode == 'RGB','mode should be RGB'
+        assert gray_np_8.shape == tuple(x_shape),'should be 3 channel'
+        np.testing.assert_equal(gray_np_8[:, :, 0], gray_np_8[:, :, 1])
+        np.testing.assert_equal(gray_np_8[:, :, 1], gray_np_8[:, :, 2])
+        np.testing.assert_equal(gray_np, gray_np_8[:, :, 0])
+
+        # Case 9: 1 channel grayscale -> 2 channel grayscale
+        trans9 = transforms.Grayscale(num_output_channels=2)
+        gray_pil_9 = trans9(x_pil_2)
+        gray_np_9 = np.array(gray_pil_9)
+        assert gray_pil_9.mode == 'LA', 'mode should be LA'
+        assert gray_np_9.shape == tuple(x_shape[0:2]+[2]), 'should be 2 channel'
+        np.testing.assert_equal(np.array(x_pil_3), gray_np_9)
+
+
         # Checking if Grayscale can be printed as string
-        trans5.__repr__()
+        trans9.__repr__()
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_grayscale(self):
