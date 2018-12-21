@@ -161,3 +161,13 @@ VOC
 .. autoclass:: VOCDetection
   :members: __getitem__
   :special-members:
+
+Cityscapes
+~~~~~~~~~~
+
+.. note ::
+    Requires Cityscape to be downloaded.
+
+.. autoclass:: Cityscapes
+  :members: __getitem__
+  :special-members:

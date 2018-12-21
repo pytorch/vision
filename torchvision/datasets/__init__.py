@@ -12,6 +12,7 @@ from .omniglot import Omniglot
 from .sbu import SBU
 from .flickr import Flickr8k, Flickr30k
 from .voc import VOCSegmentation, VOCDetection
+from .cityscapes import Cityscapes
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
@@ -19,4 +20,4 @@ __all__ = ('LSUN', 'LSUNClass',
            'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST',
            'MNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
-           'VOCSegmentation', 'VOCDetection')
+           'VOCSegmentation', 'VOCDetection', 'Cityscapes')
