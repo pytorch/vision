@@ -733,6 +733,8 @@ def to_grayscale(img, num_output_channels=1):
     Returns:
         PIL Image: Grayscale version of the image.
             if num_output_channels = 1 : returned image is single channel
+            
+            if num_output_channels = 2 : returned image is 2 channel with mode LA 
 
             if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
@@ -741,12 +743,14 @@ def to_grayscale(img, num_output_channels=1):
 
     if num_output_channels == 1:
         img = img.convert('L')
+    elif num_output_channels == 2:
+        img = img.convert('LA')
     elif num_output_channels == 3:
         img = img.convert('L')
         np_img = np.array(img, dtype=np.uint8)
         np_img = np.dstack([np_img, np_img, np_img])
         img = Image.fromarray(np_img, 'RGB')
     else:
-        raise ValueError('num_output_channels should be either 1 or 3')
+        raise ValueError('num_output_channels should be either 1 or 2 or 3')
 
     return img

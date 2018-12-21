@@ -1177,8 +1177,16 @@ class Tester(unittest.TestCase):
         np.testing.assert_equal(gray_np_4[:, :, 1], gray_np_4[:, :, 2])
         np.testing.assert_equal(gray_np, gray_np_4[:, :, 0])
 
+        # Case 5: RGB -> 2 channel grayscale
+        trans5 = transforms.Grayscale(num_output_channels = 2)
+        gray_pil_5 = trans5(x_pil)
+        gray_np_5 = np.array(gray_pil_5)
+        assert gray_pil_5.mode == 'LA','mode should be LA'
+        assert gray_np_5.shape == tuple(x_shape[0:2]+[2]),'should be 2 channel'
+        np.testing.assert_equal(np.array(x_pil.convert('LA')), gray_np_5)
+
         # Checking if Grayscale can be printed as string
-        trans4.__repr__()
+        trans5.__repr__()
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_grayscale(self):
