@@ -181,11 +181,11 @@ def to_pil_image(pic, mode=None):
     return Image.fromarray(npimg, mode=mode)
 
 
-def normalize(tensor, mean, std):
+def normalize(tensor, mean, std, inplace=False):
     """Normalize a tensor image with mean and standard deviation.
 
     .. note::
-        This transform acts in-place, i.e., it mutates the input tensor.
+        This transform acts out of place by default, i.e., it does not mutates the input tensor.
 
     See :class:`~torchvision.transforms.Normalize` for more details.
 
@@ -200,10 +200,18 @@ def normalize(tensor, mean, std):
     if not _is_tensor_image(tensor):
         raise TypeError('tensor is not a torch image.')
 
-    # This is faster than using broadcasting, don't change without benchmarking
-    for t, m, s in zip(tensor, mean, std):
-        t.sub_(m).div_(s)
-    return tensor
+    if not inplace:
+        tensor_clone = tensor.clone()
+        # This is faster than using broadcasting, don't change without benchmarking
+        for t, m, s in zip(tensor_clone, mean, std):
+            t.sub_(m).div_(s)
+        return tensor_clone
+
+    else:
+        # This is faster than using broadcasting, don't change without benchmarking
+        for t, m, s in zip(tensor, mean, std):
+            t.sub_(m).div_(s)
+        return tensor
 
 
 def resize(img, size, interpolation=Image.BILINEAR):
