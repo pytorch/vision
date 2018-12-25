@@ -201,18 +201,16 @@ def normalize(tensor, mean, std, inplace=False):
         raise TypeError('tensor is not a torch image.')
 
     if not inplace:
-        tensor_clone = tensor.clone()
-        # This is faster than using broadcasting, don't change without benchmarking
-        for t, m, s in zip(tensor_clone, mean, std):
-            t.sub_(m).div_(s)
-        return tensor_clone
+        tensor = tensor.clone()
+        mean = torch.tensor(mean, dtype=torch.float32)
+        std = torch.tensor(std, dtype=torch.float32)
+        return (tensor - mean[:, None, None]) / std[:, None, None]
 
     else:
-        # This is faster than using broadcasting, don't change without benchmarking
-        for t, m, s in zip(tensor, mean, std):
-            t.sub_(m).div_(s)
+        mean = torch.tensor(mean, dtype=torch.float32)
+        std = torch.tensor(std, dtype=torch.float32)
+        tensor.sub_(mean[:, None, None]).div_(std[:, None, None])
         return tensor
-
 
 def resize(img, size, interpolation=Image.BILINEAR):
     r"""Resize the input PIL Image to the given size.
