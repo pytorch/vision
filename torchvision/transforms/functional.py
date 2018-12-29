@@ -208,6 +208,7 @@ def normalize(tensor, mean, std, inplace=False):
     tensor.sub_(mean[:, None, None]).div_(std[:, None, None])
     return tensor
 
+
 def resize(img, size, interpolation=Image.BILINEAR):
     r"""Resize the input PIL Image to the given size.
 
