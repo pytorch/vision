@@ -202,15 +202,11 @@ def normalize(tensor, mean, std, inplace=False):
 
     if not inplace:
         tensor = tensor.clone()
-        mean = torch.tensor(mean, dtype=torch.float32)
-        std = torch.tensor(std, dtype=torch.float32)
-        return (tensor - mean[:, None, None]) / std[:, None, None]
 
-    else:
-        mean = torch.tensor(mean, dtype=torch.float32)
-        std = torch.tensor(std, dtype=torch.float32)
-        tensor.sub_(mean[:, None, None]).div_(std[:, None, None])
-        return tensor
+    mean = torch.tensor(mean, dtype=torch.float32)
+    std = torch.tensor(std, dtype=torch.float32)
+    tensor.sub_(mean[:, None, None]).div_(std[:, None, None])
+    return tensor
 
 def resize(img, size, interpolation=Image.BILINEAR):
     r"""Resize the input PIL Image to the given size.
