@@ -40,7 +40,7 @@ class GoogLeNet(nn.Module):
 
         self.inception3a = Inception(192, 64, 96, 128, 16, 32, 32)
         self.inception3b = Inception(256, 128, 128, 192, 32, 96, 64)
-        self.maxpool3 = nn.MaxPool2d(3, stride=2)
+        self.maxpool3 = nn.MaxPool2d(3, stride=2, padding=1)
 
         self.inception4a = Inception(480, 192, 96, 208, 16, 48, 64)
         self.inception4b = Inception(512, 160, 112, 224, 24, 64, 64)
@@ -140,7 +140,7 @@ class InceptionAux(nn.Module):
         super(InceptionAux, self).__init__()
         self.conv = BasicConv2d(in_channels, 128, kernel_size=1)
 
-        self.fc1 = nn.Linear(128 * 3 * 3, 1024)
+        self.fc1 = nn.Linear(128 * 4 * 4, 1024)
         self.fc2 = nn.Linear(1024, num_classes)
 
     def forward(self, x):
