@@ -148,7 +148,7 @@ class InceptionAux(nn.Module):
 
         x = self.conv(x)
         x = x.view(x.size(0), -1)
-        x = self.fc1(x)
+        x = F.relu(self.fc1(x), inplace=True)
         x = F.dropout(x, 0.7, training=self.training)
         x = self.fc2(x)
 
