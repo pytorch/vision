@@ -136,16 +136,17 @@ class Normalize(object):
     ``input[channel] = (input[channel] - mean[channel]) / std[channel]``
 
     .. note::
-        This transform acts in-place, i.e., it mutates the input tensor.
+        This transform acts out of place, i.e., it does not mutates the input tensor.
 
     Args:
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
     """
 
-    def __init__(self, mean, std):
+    def __init__(self, mean, std, inplace=False):
         self.mean = mean
         self.std = std
+        self.inplace = inplace
 
     def __call__(self, tensor):
         """
@@ -155,7 +156,7 @@ class Normalize(object):
         Returns:
             Tensor: Normalized Tensor image.
         """
-        return F.normalize(tensor, self.mean, self.std)
+        return F.normalize(tensor, self.mean, self.std, self.inplace)
 
     def __repr__(self):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
