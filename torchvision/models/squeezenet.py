@@ -48,29 +48,29 @@ class SqueezeNet(nn.Module):
             self.features = nn.Sequential(
                 nn.Conv2d(3, 96, kernel_size=7, stride=2),
                 nn.ReLU(inplace=True),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=False),
                 Fire(96, 16, 64, 64),
                 Fire(128, 16, 64, 64),
                 Fire(128, 32, 128, 128),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=False),
                 Fire(256, 32, 128, 128),
                 Fire(256, 48, 192, 192),
                 Fire(384, 48, 192, 192),
                 Fire(384, 64, 256, 256),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=False),
                 Fire(512, 64, 256, 256),
             )
         else:
             self.features = nn.Sequential(
                 nn.Conv2d(3, 64, kernel_size=3, stride=2),
                 nn.ReLU(inplace=True),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=False),
                 Fire(64, 16, 64, 64),
                 Fire(128, 16, 64, 64),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=False),
                 Fire(128, 32, 128, 128),
                 Fire(256, 32, 128, 128),
-                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
+                nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=False),
                 Fire(256, 48, 192, 192),
                 Fire(384, 48, 192, 192),
                 Fire(384, 64, 256, 256),
@@ -79,7 +79,6 @@ class SqueezeNet(nn.Module):
         # Final convolution is initialized differently form the rest
         final_conv = nn.Conv2d(512, self.num_classes, kernel_size=1)
         self.classifier = nn.Sequential(
-            nn.Dropout(p=0.5),
             final_conv,
             nn.ReLU(inplace=True),
             nn.AdaptiveAvgPool2d((1, 1))
