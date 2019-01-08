@@ -77,7 +77,7 @@ class ToTensor(object):
     if the PIL Image belongs to one of the modes (L, LA, P, I, F, RGB, YCbCr, RGBA, CMYK, 1)
     or if the numpy.ndarray has dtype = np.uint8
 
-    In rest cases, tensors are returned without scaling.
+    In the other cases, tensors are returned without scaling.
     """
 
     def __call__(self, pic):
