@@ -6,3 +6,5 @@ torchvision.egg-info/
 */**/*~
 *~
 docs/build
+.coverage
+htmlcov
