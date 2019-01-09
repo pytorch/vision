@@ -46,23 +46,23 @@ class GoogLeNet(nn.Module):
         self.aux_logits = aux_logits
 
         self.conv1 = BasicConv2d(3, 64, batch_norm, kernel_size=7, stride=2, padding=3)
-        self.maxpool1 = nn.MaxPool2d(3, stride=2, padding=1)
+        self.maxpool1 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
         self.lrn1 = nn.LocalResponseNorm(5, alpha=0.0001)
         self.conv2 = BasicConv2d(64, 64, batch_norm, kernel_size=1)
         self.conv3 = BasicConv2d(64, 192, batch_norm, kernel_size=3, stride=1, padding=1)
         self.lrn2 = nn.LocalResponseNorm(5, alpha=0.0001)
-        self.maxpool2 = nn.MaxPool2d(3, stride=2, padding=1)
+        self.maxpool2 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
 
         self.inception3a = Inception(192, 64, 96, 128, 16, 32, 32, batch_norm)
         self.inception3b = Inception(256, 128, 128, 192, 32, 96, 64, batch_norm)
-        self.maxpool3 = nn.MaxPool2d(3, stride=2, padding=1)
+        self.maxpool3 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
 
         self.inception4a = Inception(480, 192, 96, 208, 16, 48, 64, batch_norm)
         self.inception4b = Inception(512, 160, 112, 224, 24, 64, 64, batch_norm)
         self.inception4c = Inception(512, 128, 128, 256, 24, 64, 64, batch_norm)
         self.inception4d = Inception(512, 112, 144, 288, 32, 64, 64, batch_norm)
         self.inception4e = Inception(528, 256, 160, 320, 32, 128, 128, batch_norm)
-        self.maxpool4 = nn.MaxPool2d(3, stride=2, padding=1)
+        self.maxpool4 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
 
         self.inception5a = Inception(832, 256, 160, 320, 32, 128, 128, batch_norm)
         self.inception5b = Inception(832, 384, 192, 384, 48, 128, 128, batch_norm)
@@ -75,11 +75,9 @@ class GoogLeNet(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
-                import scipy.stats as stats
-                X = stats.truncnorm(-2, 2, scale=0.01)
-                values = torch.Tensor(X.rvs(m.weight.numel()))
-                values = values.view(m.weight.size())
-                m.weight.data.copy_(values)
+                nn.init.xavier_uniform_(m.weight)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0.2)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -135,7 +133,7 @@ class Inception(nn.Module):
         )
 
         self.branch4 = nn.Sequential(
-            nn.MaxPool2d(kernel_size=3, stride=1, padding=1),
+            nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=True),
             BasicConv2d(in_channels, pool_proj, batch_norm, kernel_size=1)
         )
 
