@@ -18,6 +18,7 @@ def googlenet(pretrained=False, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
     if pretrained:
+        kwargs['init_weights'] = False
         model = GoogLeNet(**kwargs)
         model.load_state_dict(model_zoo.load_url(model_urls['googlenet']))
         return model
@@ -32,6 +33,7 @@ def googlenet_bn(pretrained=False, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
     if pretrained:
+        kwargs['init_weights'] = False
         model = GoogLeNet(batch_norm=True, **kwargs)
         model.load_state_dict(model_zoo.load_url(model_urls['googlenet_bn']))
         return model
@@ -41,7 +43,7 @@ def googlenet_bn(pretrained=False, **kwargs):
 
 class GoogLeNet(nn.Module):
 
-    def __init__(self, num_classes=1000, aux_logits=True, batch_norm=False):
+    def __init__(self, num_classes=1000, aux_logits=True, batch_norm=False, init_weights=True):
         super(GoogLeNet, self).__init__()
         self.aux_logits = aux_logits
 
@@ -73,11 +75,21 @@ class GoogLeNet(nn.Module):
         self.dropout = nn.Dropout(0.4)
         self.fc = nn.Linear(1024, num_classes)
 
+        if init_weights:
+            self._initialize_weights()
+
+    def _initialize_weights(self):
         for m in self.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+            if isinstance(m, nn.Conv2d):
                 nn.init.xavier_uniform_(m.weight)
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0.2)
+            elif isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         x = self.conv1(x)
