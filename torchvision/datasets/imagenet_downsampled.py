@@ -67,7 +67,7 @@ class ImageNetDS(data.Dataset):
                     self.mean = entry['mean']
 
             self.train_data = np.concatenate(self.train_data)
-            self.train_data = self.train_data.reshape((self.train_data.shape[0], 3, 32, 32))
+            self.train_data = self.train_data.reshape((self.train_data.shape[0], 3, self.img_size, self.img_size))
             self.train_data = self.train_data.transpose((0, 2, 3, 1))  # convert to HWC
         else:
             f = self.test_list[0][0]
@@ -77,7 +77,7 @@ class ImageNetDS(data.Dataset):
             self.test_data = entry['data']
             self.test_labels = [label - 1 for label in entry['labels']]
             fo.close()
-            self.test_data = self.test_data.reshape((self.test_data.shape[0], 3, 32, 32))
+            self.test_data = self.test_data.reshape((self.test_data.shape[0], 3, self.img_size, self.img_size))
             self.test_data = self.test_data.transpose((0, 2, 3, 1))  # convert to HWC
 
     def __getitem__(self, index):
