@@ -543,7 +543,13 @@ class RandomResizedCrop(object):
     """
 
     def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=Image.BILINEAR):
-        self.size = (size, size)
+        if isinstance(size, tuple):
+            self.size = size
+        else:
+            self.size = (size, size)
+        if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
+            raise ValueError("inappropriate range(min,max) for scale or ratio supplied")
+
         self.interpolation = interpolation
         self.scale = scale
         self.ratio = ratio
@@ -570,7 +576,7 @@ class RandomResizedCrop(object):
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
 
-            if random.random() < 0.5:
+            if random.random() < 0.5 and min(ratio) <= (w/h) <= max(ratio):
                 w, h = h, w
 
             if w <= img.size[0] and h <= img.size[1]:
