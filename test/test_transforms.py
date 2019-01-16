@@ -130,6 +130,20 @@ class Tester(unittest.TestCase):
                 assert len(results) == 10
                 assert expected_output == results
 
+    def test_randomresized_params(self):
+        height = random.randint(24, 32) * 2
+        width = random.randint(24, 32) * 2
+        img = torch.ones(3, height, width)
+        to_pil_image = transforms.ToPILImage()
+        img = to_pil_image(img)
+        size = 100
+        aspect_ratio_range = (0.75, 1.3)
+        scale_range = (0.08, 1)
+        randresizecrop = transforms.RandomResizedCrop(img, scale_range, aspect_ratio_range)
+        _, _, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
+        aspect_ratio_obtained = w/h
+        assert min(aspect_ratio_range) <= aspect_ratio_obtained <= max(aspect_ratio_range)
+
     def test_resize(self):
         height = random.randint(24, 32) * 2
         width = random.randint(24, 32) * 2
