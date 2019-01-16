@@ -139,9 +139,9 @@ class Tester(unittest.TestCase):
         size = 100
         aspect_ratio_range = (0.75, 1.3)
         scale_range = (0.08, 1)
-        randresizecrop = transforms.RandomResizedCrop(img, scale_range, aspect_ratio_range)
+        randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range)
         _, _, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
-        aspect_ratio_obtained = w/h
+        aspect_ratio_obtained = w / h
         assert min(aspect_ratio_range) <= aspect_ratio_obtained <= max(aspect_ratio_range)
 
     def test_resize(self):
