@@ -1,0 +1,7 @@
+[run]
+branch = True
+
+[paths]
+source = 
+    torchvision
+    /**/site-packages/torchvision

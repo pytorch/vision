@@ -1,4 +1,3 @@
-import math
 import torch
 import torch.nn as nn
 import torch.nn.init as init
@@ -83,17 +82,17 @@ class SqueezeNet(nn.Module):
             nn.Dropout(p=0.5),
             final_conv,
             nn.ReLU(inplace=True),
-            nn.AvgPool2d(13, stride=1)
+            nn.AdaptiveAvgPool2d((1, 1))
         )
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 if m is final_conv:
-                    init.normal(m.weight.data, mean=0.0, std=0.01)
+                    init.normal_(m.weight, mean=0.0, std=0.01)
                 else:
-                    init.kaiming_uniform(m.weight.data)
+                    init.kaiming_uniform_(m.weight)
                 if m.bias is not None:
-                    m.bias.data.zero_()
+                    init.constant_(m.bias, 0)
 
     def forward(self, x):
         x = self.features(x)

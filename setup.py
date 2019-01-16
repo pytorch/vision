@@ -2,9 +2,9 @@
 import os
 import io
 import re
-import shutil
 import sys
 from setuptools import setup, find_packages
+from pkg_resources import get_distribution, DistributionNotFound
 
 
 def read(*names, **kwargs):
@@ -13,6 +13,13 @@ def read(*names, **kwargs):
         encoding=kwargs.get("encoding", "utf8")
     ) as fp:
         return fp.read()
+
+
+def get_dist(pkgname):
+    try:
+        return get_distribution(pkgname)
+    except DistributionNotFound:
+        return None
 
 
 def find_version(*file_paths):
@@ -30,10 +37,16 @@ VERSION = find_version('torchvision', '__init__.py')
 
 requirements = [
     'numpy',
-    'pillow >= 4.1.1',
     'six',
     'torch',
 ]
+
+pillow_ver = ' >= 4.1.1'
+pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
+requirements.append(pillow_req + pillow_ver)
+
+tqdm_ver = ' == 4.19.9' if sys.version_info[0] < 3 else ''
+requirements.append('tqdm' + tqdm_ver)
 
 setup(
     # Metadata
@@ -51,4 +64,7 @@ setup(
 
     zip_safe=True,
     install_requires=requirements,
+    extras_require={
+        "scipy": ["scipy"],
+    },
 )

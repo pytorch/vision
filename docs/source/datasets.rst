@@ -35,6 +35,11 @@ Fashion-MNIST
 
 .. autoclass:: FashionMNIST
 
+KMNIST
+~~~~~~~~~~~~~
+
+.. autoclass:: KMNIST
+
 EMNIST
 ~~~~~~
 
@@ -127,5 +132,47 @@ PhotoTour
 
 
 .. autoclass:: PhotoTour
+  :members: __getitem__
+  :special-members:
+
+SBU
+~~~
+
+
+.. autoclass:: SBU
+  :members: __getitem__
+  :special-members:
+
+Flickr
+~~~~~~
+
+
+.. autoclass:: Flickr8k
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: Flickr30k
+  :members: __getitem__
+  :special-members:
+
+VOC
+~~~~~~
+
+
+.. autoclass:: VOCSegmentation
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: VOCDetection
+  :members: __getitem__
+  :special-members:
+
+Cityscapes
+~~~~~~~~~~
+
+.. note ::
+    Requires Cityscape to be downloaded.
+
+.. autoclass:: Cityscapes
   :members: __getitem__
   :special-members:
