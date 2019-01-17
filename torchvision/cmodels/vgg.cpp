@@ -1,6 +1,6 @@
 #include "vgg.h"
 
-void torchvision::VGGImpl::initializeWeights()
+void torchvision::VGGImpl::_initialize_weights()
 {
     for (auto &module : modules(false))
     {
@@ -25,8 +25,8 @@ void torchvision::VGGImpl::initializeWeights()
     }
 }
 
-torchvision::VGGImpl::VGGImpl(torch::nn::Sequential features, int classes,
-							  bool initWeights)
+torchvision::VGGImpl::VGGImpl(torch::nn::Sequential features, int num_classes,
+							  bool initialize_weights)
 {
     // clang-format off
     classifier = torch::nn::Sequential(
@@ -36,27 +36,27 @@ torchvision::VGGImpl::VGGImpl(torch::nn::Sequential features, int classes,
                 torch::nn::Linear(4096, 4096),
 				visionimpl::Relu(true),
                 torch::nn::Dropout(),
-                torch::nn::Linear(4096, classes));
+				torch::nn::Linear(4096, num_classes));
     // clang-format on
 
     this->features = features;
 
-    register_module("features", features);
+	register_module("features", this->features);
     register_module("classifier", classifier);
 
-    if (initWeights) initializeWeights();
+	if (initialize_weights) _initialize_weights();
 }
 
-torch::Tensor torchvision::VGGImpl::forward(at::Tensor X)
+torch::Tensor torchvision::VGGImpl::forward(at::Tensor x)
 {
-    X = features->forward(X);
-    X = X.view({X.size(0), -1});
-    X = classifier->forward(X);
-    return X;
+	x = features->forward(x);
+	x = x.view({x.size(0), -1});
+	x = classifier->forward(x);
+	return x;
 }
 
 torch::nn::Sequential torchvision::makeLayers(const std::vector<int> &cfg,
-											  bool batchNorm)
+											  bool batch_norm)
 {
     torch::nn::Sequential seq;
     auto channels = 3;
@@ -68,7 +68,7 @@ torch::nn::Sequential torchvision::makeLayers(const std::vector<int> &cfg,
         else
         {
 			seq->push_back(visionimpl::Conv(channels, V, 3, 1));
-            if (batchNorm) seq->push_back(torch::nn::BatchNorm(V));
+			if (batch_norm) seq->push_back(torch::nn::BatchNorm(V));
 			seq->push_back(visionimpl::Relu(true));
 
             channels = V;
@@ -78,62 +78,62 @@ torch::nn::Sequential torchvision::makeLayers(const std::vector<int> &cfg,
     return seq;
 }
 
-torchvision::VGG11Impl::VGG11Impl(int classes, bool initWeights)
+torchvision::VGG11Impl::VGG11Impl(int num_classes, bool initialize_weights)
 	: VGGImpl(makeLayers(
 				  {64, -1, 128, -1, 256, 256, -1, 512, 512, -1, 512, 512, -1}),
-			  classes, initWeights)
+			  num_classes, initialize_weights)
 {
 }
 
-torchvision::VGG13Impl::VGG13Impl(int classes, bool initWeights)
+torchvision::VGG13Impl::VGG13Impl(int num_classes, bool initWeights)
 	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, -1, 512, 512, -1,
 						  512, 512, -1}),
-			  classes, initWeights)
+			  num_classes, initWeights)
 {
 }
 
-torchvision::VGG16Impl::VGG16Impl(int classes, bool initWeights)
+torchvision::VGG16Impl::VGG16Impl(int num_classes, bool initWeights)
 	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, 256, -1, 512, 512,
 						  512, -1, 512, 512, 512, -1}),
-			  classes, initWeights)
+			  num_classes, initWeights)
 {
 }
 
-torchvision::VGG19Impl::VGG19Impl(int classes, bool initWeights)
+torchvision::VGG19Impl::VGG19Impl(int num_classes, bool initialize_weights)
 	: VGGImpl(makeLayers({64,  64,  -1,  128, 128, -1,  256, 256, 256, 256, -1,
 						  512, 512, 512, 512, -1,  512, 512, 512, 512, -1}),
-			  classes, initWeights)
+			  num_classes, initialize_weights)
 {
 }
 
-torchvision::VGG11BNImpl::VGG11BNImpl(int classes, bool initWeights)
+torchvision::VGG11BNImpl::VGG11BNImpl(int num_classes, bool initWeights)
 	: VGGImpl(makeLayers(
 				  {64, -1, 128, -1, 256, 256, -1, 512, 512, -1, 512, 512, -1},
 				  true),
-			  classes, initWeights)
+			  num_classes, initWeights)
 {
 }
 
-torchvision::VGG13BNImpl::VGG13BNImpl(int classes, bool initWeights)
+torchvision::VGG13BNImpl::VGG13BNImpl(int num_classes, bool initialize_weights)
 	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, -1, 512, 512, -1,
 						  512, 512, -1},
 						 true),
-			  classes, initWeights)
+			  num_classes, initialize_weights)
 {
 }
 
-torchvision::VGG16BNImpl::VGG16BNImpl(int classes, bool initWeights)
+torchvision::VGG16BNImpl::VGG16BNImpl(int num_classes, bool initWeights)
 	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, 256, -1, 512, 512,
 						  512, -1, 512, 512, 512, -1},
 						 true),
-			  classes, initWeights)
+			  num_classes, initWeights)
 {
 }
 
-torchvision::VGG19BNImpl::VGG19BNImpl(int classes, bool initWeights)
+torchvision::VGG19BNImpl::VGG19BNImpl(int num_classes, bool initWeights)
 	: VGGImpl(makeLayers({64,  64,  -1,  128, 128, -1,  256, 256, 256, 256, -1,
 						  512, 512, 512, 512, -1,  512, 512, 512, 512, -1},
 						 true),
-			  classes, initWeights)
+			  num_classes, initWeights)
 {
 }

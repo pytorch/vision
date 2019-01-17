@@ -1,6 +1,6 @@
 #include "alexnet.h"
 
-torchvision::AlexNetImpl::AlexNetImpl(int classes)
+torchvision::AlexNetImpl::AlexNetImpl(int num_classes)
 {
     // clang-format off
     features = torch::nn::Sequential(
@@ -25,18 +25,18 @@ torchvision::AlexNetImpl::AlexNetImpl(int classes)
                 torch::nn::Dropout(),
                 torch::nn::Linear(4096, 4096),
 				visionimpl::Relu(true),
-                torch::nn::Linear(4096, classes));
+				torch::nn::Linear(4096, num_classes));
     // clang-format on
 
     register_module("features", features);
     register_module("clasifier", classifier);
 }
 
-torch::Tensor torchvision::AlexNetImpl::forward(at::Tensor X)
+torch::Tensor torchvision::AlexNetImpl::forward(at::Tensor x)
 {
-    X = features->forward(X);
-    X = X.view({X.size(0), 256 * 6 * 6});
-    X = classifier->forward(X);
+	x = features->forward(x);
+	x = x.view({x.size(0), 256 * 6 * 6});
+	x = classifier->forward(x);
 
-    return X;
+	return x;
 }

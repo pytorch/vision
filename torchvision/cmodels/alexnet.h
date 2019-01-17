@@ -10,9 +10,9 @@ class AlexNetImpl : public torch::nn::Module
 	torch::nn::Sequential features, classifier;
 
 public:
-	AlexNetImpl(int classes = 1000);
+	AlexNetImpl(int num_classes = 1000);
 
-	torch::Tensor forward(torch::Tensor X);
+	torch::Tensor forward(torch::Tensor x);
 };
 
 TORCH_MODULE(AlexNet);

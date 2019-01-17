@@ -10,64 +10,64 @@ class VGGImpl : public torch::nn::Module
 	torch::nn::Sequential features;
 	torch::nn::Sequential classifier;
 
-	void initializeWeights();
+	void _initialize_weights();
 
 public:
-	VGGImpl(torch::nn::Sequential features, int classes = 1000,
-			bool initWeights = true);
+	VGGImpl(torch::nn::Sequential features, int num_classes = 1000,
+			bool initialize_weights = true);
 
-	torch::Tensor forward(torch::Tensor X);
+	torch::Tensor forward(torch::Tensor x);
 };
 
 torch::nn::Sequential makeLayers(const std::vector<int> &cfg,
-								 bool batchNorm = false);
+								 bool batch_norm = false);
 
 class VGG11Impl : public VGGImpl
 {
 public:
-	VGG11Impl(int classes = 1000, bool initWeights = true);
+	VGG11Impl(int num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG13Impl : public VGGImpl
 {
 public:
-	VGG13Impl(int classes = 1000, bool initWeights = true);
+	VGG13Impl(int num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG16Impl : public VGGImpl
 {
 public:
-	VGG16Impl(int classes = 1000, bool initWeights = true);
+	VGG16Impl(int num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG19Impl : public VGGImpl
 {
 public:
-	VGG19Impl(int classes = 1000, bool initWeights = true);
+	VGG19Impl(int num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG11BNImpl : public VGGImpl
 {
 public:
-	VGG11BNImpl(int classes = 1000, bool initWeights = true);
+	VGG11BNImpl(int num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG13BNImpl : public VGGImpl
 {
 public:
-	VGG13BNImpl(int classes = 1000, bool initWeights = true);
+	VGG13BNImpl(int num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG16BNImpl : public VGGImpl
 {
 public:
-	VGG16BNImpl(int classes = 1000, bool initWeights = true);
+	VGG16BNImpl(int num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG19BNImpl : public VGGImpl
 {
 public:
-	VGG19BNImpl(int classes = 1000, bool initWeights = true);
+	VGG19BNImpl(int num_classes = 1000, bool initialize_weights = true);
 };
 
 TORCH_MODULE(VGG11);

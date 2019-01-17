@@ -30,7 +30,7 @@ public:
 	BasicBlock(int64_t inplanes, int64_t planes, int64_t stride = 1,
 			   torch::nn::Sequential downsample = nullptr);
 
-	torch::Tensor forward(torch::Tensor X);
+	torch::Tensor forward(torch::Tensor x);
 };
 
 class Bottleneck : public torch::nn::Module
@@ -67,8 +67,8 @@ class ResNetImpl : public torch::nn::Module
 									int64_t stride = 1);
 
 public:
-	ResNetImpl(const std::vector<int> &layers, int classes = 1000,
-			   bool zeroInitResidual = false);
+	ResNetImpl(const std::vector<int> &layers, int num_classes = 1000,
+			   bool zero_init_residual = false);
 
 	torch::Tensor forward(torch::Tensor X);
 };
@@ -97,8 +97,8 @@ torch::nn::Sequential ResNetImpl<Block>::makeLayer(int64_t planes,
 }
 
 template <typename Block>
-ResNetImpl<Block>::ResNetImpl(const std::vector<int> &layers, int classes,
-							  bool zeroInitResidual)
+ResNetImpl<Block>::ResNetImpl(const std::vector<int> &layers, int num_classes,
+							  bool zero_init_residual)
 	: inplanes(64),
 	  conv1(torch::nn::Conv2dOptions(3, 64, 7).stride(2).padding(3).with_bias(
 		  false)),
@@ -107,9 +107,9 @@ ResNetImpl<Block>::ResNetImpl(const std::vector<int> &layers, int classes,
 	  layer2(makeLayer(128, layers[1], 2)),
 	  layer3(makeLayer(256, layers[2], 2)),
 	  layer4(makeLayer(512, layers[3], 2)),
-	  fc(512 * Block::expantion, classes)
+	  fc(512 * Block::expantion, num_classes)
 {
-	if (zeroInitResidual)
+	if (zero_init_residual)
 		for (auto &module : modules(false))
 		{
 			if (resnetimpl::Bottleneck *M =
@@ -131,52 +131,52 @@ ResNetImpl<Block>::ResNetImpl(const std::vector<int> &layers, int classes,
 }
 
 template <typename Block>
-torch::Tensor ResNetImpl<Block>::forward(at::Tensor X)
+torch::Tensor ResNetImpl<Block>::forward(at::Tensor x)
 {
-	X = conv1->forward(X);
-	X = bn1->forward(X).relu_();
-	X = torch::max_pool2d(X, 3, 2, 1);
+	x = conv1->forward(x);
+	x = bn1->forward(x).relu_();
+	x = torch::max_pool2d(x, 3, 2, 1);
 
-	X = layer1->forward(X);
-	X = layer2->forward(X);
-	X = layer3->forward(X);
-	X = layer4->forward(X);
+	x = layer1->forward(x);
+	x = layer2->forward(x);
+	x = layer3->forward(x);
+	x = layer4->forward(x);
 
-	X = torch::adaptive_avg_pool2d(X, {1, 1});
-	X = X.view({X.size(0), -1});
-	X = fc->forward(X);
+	x = torch::adaptive_avg_pool2d(x, {1, 1});
+	x = x.view({x.size(0), -1});
+	x = fc->forward(x);
 
-	return X;
+	return x;
 }
 
 class ResNet18Impl : public ResNetImpl<resnetimpl::BasicBlock>
 {
 public:
-	ResNet18Impl(int classes = 1000, bool zeroInitResidual = false);
+	ResNet18Impl(int num_classes = 1000, bool zero_init_residual = false);
 };
 
 class ResNet34Impl : public ResNetImpl<resnetimpl::BasicBlock>
 {
 public:
-	ResNet34Impl(int classes = 1000, bool zeroInitResidual = false);
+	ResNet34Impl(int num_classes = 1000, bool zero_init_residual = false);
 };
 
 class ResNet50Impl : public ResNetImpl<resnetimpl::Bottleneck>
 {
 public:
-	ResNet50Impl(int classes = 1000, bool zeroInitResidual = false);
+	ResNet50Impl(int num_classes = 1000, bool zero_init_residual = false);
 };
 
 class ResNet101Impl : public ResNetImpl<resnetimpl::Bottleneck>
 {
 public:
-	ResNet101Impl(int classes = 1000, bool zeroInitResidual = false);
+	ResNet101Impl(int num_classes = 1000, bool zero_init_residual = false);
 };
 
 class ResNet152Impl : public ResNetImpl<resnetimpl::Bottleneck>
 {
 public:
-	ResNet152Impl(int classes = 1000, bool zeroInitResidual = false);
+	ResNet152Impl(int num_classes = 1000, bool zero_init_residual = false);
 };
 
 TORCH_MODULE(ResNet18);

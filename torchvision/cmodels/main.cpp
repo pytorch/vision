@@ -3,6 +3,8 @@
 
 using namespace torchvision;
 
+// TODO change num_classes from int to int64_t
+
 int main()
 {
 	auto X = torch::rand({1, 3, 224, 224});
@@ -62,6 +64,14 @@ int main()
 	ResNet152 R152;
 	R152->forward(X);
 	std::cout << "ResNet152 Done" << std::endl;
+
+	SqueezeNet1_0 S10;
+	S10->forward(X);
+	std::cout << "SqueezeNet1.0 Done" << std::endl;
+
+	SqueezeNet1_1 S11;
+	S11->forward(X);
+	std::cout << "SqueezeNet1.1 Done" << std::endl;
 
 	return 0;
 }

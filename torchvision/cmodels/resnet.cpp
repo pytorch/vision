@@ -35,20 +35,20 @@ torchvision::resnetimpl::BasicBlock::BasicBlock(
 	register_module("bn1", bn1);
 	register_module("bn2", bn2);
 
-	if (!downsample.is_empty()) register_module("downsample", downsample);
+	if (!downsample.is_empty()) register_module("downsample", this->downsample);
 }
 
-torch::Tensor torchvision::resnetimpl::BasicBlock::forward(at::Tensor X)
+torch::Tensor torchvision::resnetimpl::BasicBlock::forward(at::Tensor x)
 {
-	auto identity = X;
+	auto identity = x;
 
-	auto out = conv1->forward(X);
+	auto out = conv1->forward(x);
 	out = bn1->forward(out).relu_();
 
 	out = conv2->forward(out);
 	out = bn2->forward(out);
 
-	if (!downsample.is_empty()) identity = downsample->forward(X);
+	if (!downsample.is_empty()) identity = downsample->forward(x);
 
 	out += identity;
 	return out.relu_();
@@ -74,7 +74,7 @@ torchvision::resnetimpl::Bottleneck::Bottleneck(
 	register_module("bn2", bn2);
 	register_module("bn3", bn3);
 
-	if (!downsample.is_empty()) register_module("downsample", downsample);
+	if (!downsample.is_empty()) register_module("downsample", this->downsample);
 }
 
 torch::Tensor torchvision::resnetimpl::Bottleneck::forward(at::Tensor X)
@@ -96,27 +96,32 @@ torch::Tensor torchvision::resnetimpl::Bottleneck::forward(at::Tensor X)
 	return out.relu_();
 }
 
-torchvision::ResNet18Impl::ResNet18Impl(int classes, bool zeroInitResidual)
-	: ResNetImpl({2, 2, 2, 2}, classes, zeroInitResidual)
+torchvision::ResNet18Impl::ResNet18Impl(int num_classes,
+										bool zero_init_residual)
+	: ResNetImpl({2, 2, 2, 2}, num_classes, zero_init_residual)
 {
 }
 
-torchvision::ResNet34Impl::ResNet34Impl(int classes, bool zeroInitResidual)
-	: ResNetImpl({3, 4, 6, 3}, classes, zeroInitResidual)
+torchvision::ResNet34Impl::ResNet34Impl(int num_classes,
+										bool zero_init_residual)
+	: ResNetImpl({3, 4, 6, 3}, num_classes, zero_init_residual)
 {
 }
 
-torchvision::ResNet50Impl::ResNet50Impl(int classes, bool zeroInitResidual)
-	: ResNetImpl({3, 4, 6, 3}, classes, zeroInitResidual)
+torchvision::ResNet50Impl::ResNet50Impl(int num_classes,
+										bool zero_init_residual)
+	: ResNetImpl({3, 4, 6, 3}, num_classes, zero_init_residual)
 {
 }
 
-torchvision::ResNet101Impl::ResNet101Impl(int classes, bool zeroInitResidual)
-	: ResNetImpl({3, 4, 23, 3}, classes, zeroInitResidual)
+torchvision::ResNet101Impl::ResNet101Impl(int num_classes,
+										  bool zero_init_residual)
+	: ResNetImpl({3, 4, 23, 3}, num_classes, zero_init_residual)
 {
 }
 
-torchvision::ResNet152Impl::ResNet152Impl(int classes, bool zeroInitResidual)
-	: ResNetImpl({3, 8, 36, 3}, classes, zeroInitResidual)
+torchvision::ResNet152Impl::ResNet152Impl(int num_classes,
+										  bool zero_init_residual)
+	: ResNetImpl({3, 8, 36, 3}, num_classes, zero_init_residual)
 {
 }
