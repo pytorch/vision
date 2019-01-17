@@ -1,3 +1,4 @@
+from __future__ import division
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
@@ -6,7 +7,6 @@ import unittest
 import math
 import random
 import numpy as np
-from __future__ import division
 from PIL import Image
 try:
     import accimage
