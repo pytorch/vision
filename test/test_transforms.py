@@ -6,6 +6,7 @@ import unittest
 import math
 import random
 import numpy as np
+from __future__ import division
 from PIL import Image
 try:
     import accimage

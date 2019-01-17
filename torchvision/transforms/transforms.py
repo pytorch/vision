@@ -548,7 +548,7 @@ class RandomResizedCrop(object):
         else:
             self.size = (size, size)
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
-            raise ValueError("inappropriate range(min,max) for scale or ratio supplied")
+            warnings.warn("range should be of kind (min, max)")
 
         self.interpolation = interpolation
         self.scale = scale
