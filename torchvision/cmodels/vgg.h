@@ -7,8 +7,7 @@ namespace torchvision
 {
 class VGGImpl : public torch::nn::Module
 {
-	torch::nn::Sequential features;
-	torch::nn::Sequential classifier;
+	torch::nn::Sequential features{nullptr}, classifier{nullptr};
 
 	void _initialize_weights();
 

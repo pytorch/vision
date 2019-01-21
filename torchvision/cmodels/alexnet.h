@@ -7,10 +7,10 @@ namespace torchvision
 {
 class AlexNetImpl : public torch::nn::Module
 {
-	torch::nn::Sequential features, classifier;
+	torch::nn::Sequential features{nullptr}, classifier{nullptr};
 
 public:
-	AlexNetImpl(int num_classes = 1000);
+	AlexNetImpl(int64_t num_classes = 1000);
 
 	torch::Tensor forward(torch::Tensor x);
 };

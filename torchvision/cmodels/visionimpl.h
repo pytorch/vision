@@ -7,18 +7,6 @@ namespace torchvision
 {
 namespace visionimpl
 {
-class Conv : public torch::nn::Conv2d
-{
-public:
-	inline Conv(int64_t input, int64_t output, int64_t kernel,
-				int64_t padding = 0, int64_t stride = 1)
-		: Conv2d(torch::nn::Conv2dOptions(input, output, kernel)
-					 .padding(padding)
-					 .stride(stride))
-	{
-	}
-};
-
 class ReluImpl : public torch::nn::Module
 {
 	bool inplace;
@@ -41,24 +29,27 @@ public:
 	}
 };
 
-class MaxPoolImpl : public torch::nn::Module
+class MaxPool2DImpl : public torch::nn::Module
 {
 	int64_t kernel;
 	int64_t stride;
 	bool ceil_mode;
+	torch::IntList padding;
 
 public:
-	inline MaxPoolImpl(int64_t kernel, int64_t stride, bool ceil_mode = false)
+	inline MaxPool2DImpl(int64_t kernel, int64_t stride, bool ceil_mode = false,
+						 torch::IntList padding = torch::IntList({0}))
 		: torch::nn::Module(),
 		  kernel(kernel),
 		  stride(stride),
-		  ceil_mode(ceil_mode)
+		  ceil_mode(ceil_mode),
+		  padding(padding)
 	{
 	}
 
 	inline torch::Tensor forward(torch::Tensor X)
 	{
-		return torch::max_pool2d(X, kernel, stride, 0, 1, ceil_mode);
+		return torch::max_pool2d(X, kernel, stride, padding, 1, ceil_mode);
 	}
 };
 
@@ -77,8 +68,25 @@ public:
 	}
 };
 
+class AvgPool2DImpl : public torch::nn::Module
+{
+	torch::IntList kernel_size, stride;
+
+public:
+	AvgPool2DImpl(torch::IntList kernel_size, torch::IntList stride)
+		: kernel_size(kernel_size), stride(stride)
+	{
+	}
+
+	inline torch::Tensor forward(torch::Tensor x)
+	{
+		return torch::avg_pool2d(x, kernel_size, stride);
+	}
+};
+
 TORCH_MODULE(Relu);
-TORCH_MODULE(MaxPool);
+TORCH_MODULE(MaxPool2D);
+TORCH_MODULE(AvgPool2D);
 TORCH_MODULE(AdaptiveAvgPool2D);
 
 }  // namespace visionimpl

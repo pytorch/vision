@@ -32,33 +32,39 @@ torchvision::SqueezeNetImpl::SqueezeNetImpl(double version, int num_classes)
 	{
 		features = torch::nn::Sequential(
 			torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 96, 7).stride(2)),
-			visionimpl::Relu(true), visionimpl::MaxPool(3, 2, true),
+			visionimpl::Relu(true), visionimpl::MaxPool2D(3, 2, true),
 			squeezenetimpl::Fire(96, 16, 64, 64),
 			squeezenetimpl::Fire(128, 16, 64, 64),
 			squeezenetimpl::Fire(128, 32, 128, 128),
-			visionimpl::MaxPool(3, 2, true),
+			visionimpl::MaxPool2D(3, 2, true),
 			squeezenetimpl::Fire(256, 32, 128, 128),
 			squeezenetimpl::Fire(256, 48, 192, 192),
 			squeezenetimpl::Fire(384, 48, 192, 192),
 			squeezenetimpl::Fire(384, 64, 256, 256),
-			visionimpl::MaxPool(3, 2, true),
+			visionimpl::MaxPool2D(3, 2, true),
 			squeezenetimpl::Fire(512, 64, 256, 256));
 	}
 	else if (version == 1.1)
 	{
 		features = torch::nn::Sequential(
 			torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 64, 3).stride(2)),
-			visionimpl::Relu(true), visionimpl::MaxPool(3, 2, true),
+			visionimpl::Relu(true), visionimpl::MaxPool2D(3, 2, true),
 			squeezenetimpl::Fire(64, 16, 64, 64),
 			squeezenetimpl::Fire(128, 16, 64, 64),
-			visionimpl::MaxPool(3, 2, true),
+			visionimpl::MaxPool2D(3, 2, true),
 			squeezenetimpl::Fire(128, 32, 128, 128),
 			squeezenetimpl::Fire(256, 32, 128, 128),
-			visionimpl::MaxPool(3, 2, true),
+			visionimpl::MaxPool2D(3, 2, true),
 			squeezenetimpl::Fire(256, 48, 192, 192),
 			squeezenetimpl::Fire(384, 48, 192, 192),
 			squeezenetimpl::Fire(384, 64, 256, 256),
 			squeezenetimpl::Fire(512, 64, 256, 256));
+	}
+	else
+	{
+		std::cerr << "Wrong version number is passed th SqueeseNet constructor!"
+				  << std::endl;
+		assert(false);
 	}
 
 	auto final_conv =

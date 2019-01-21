@@ -64,10 +64,12 @@ torch::nn::Sequential torchvision::makeLayers(const std::vector<int> &cfg,
     for (const auto &V : cfg)
     {
         if (V <= -1)
-			seq->push_back(visionimpl::MaxPool(2, 2));
+			seq->push_back(visionimpl::MaxPool2D(2, 2));
         else
         {
-			seq->push_back(visionimpl::Conv(channels, V, 3, 1));
+			seq->push_back(torch::nn::Conv2d(
+				torch::nn::Conv2dOptions(channels, V, 3).padding(1)));
+
 			if (batch_norm) seq->push_back(torch::nn::BatchNorm(V));
 			seq->push_back(visionimpl::Relu(true));
 
