@@ -25,21 +25,21 @@ void torchvision::VGGImpl::_initialize_weights()
     }
 }
 
-torchvision::VGGImpl::VGGImpl(torch::nn::Sequential features, int num_classes,
-							  bool initialize_weights)
+torchvision::VGGImpl::VGGImpl(torch::nn::Sequential features,
+							  int64_t num_classes, bool initialize_weights)
 {
-    // clang-format off
+	// clang-format off
     classifier = torch::nn::Sequential(
-                torch::nn::Linear(512 * 7 * 7, 4096),
-				visionimpl::Relu(true),
-                torch::nn::Dropout(),
-                torch::nn::Linear(4096, 4096),
-				visionimpl::Relu(true),
-                torch::nn::Dropout(),
-				torch::nn::Linear(4096, num_classes));
-    // clang-format on
+		torch::nn::Linear(512 * 7 * 7, 4096),
+		visionimpl::Relu(true),
+		torch::nn::Dropout(),
+		torch::nn::Linear(4096, 4096),
+		visionimpl::Relu(true),
+		torch::nn::Dropout(),
+		torch::nn::Linear(4096, num_classes));
+	// clang-format on
 
-    this->features = features;
+	this->features = features;
 
 	register_module("features", this->features);
     register_module("classifier", classifier);
@@ -47,7 +47,7 @@ torchvision::VGGImpl::VGGImpl(torch::nn::Sequential features, int num_classes,
 	if (initialize_weights) _initialize_weights();
 }
 
-torch::Tensor torchvision::VGGImpl::forward(at::Tensor x)
+torch::Tensor torchvision::VGGImpl::forward(torch::Tensor x)
 {
 	x = features->forward(x);
 	x = x.view({x.size(0), -1});
@@ -80,35 +80,35 @@ torch::nn::Sequential torchvision::makeLayers(const std::vector<int> &cfg,
     return seq;
 }
 
-torchvision::VGG11Impl::VGG11Impl(int num_classes, bool initialize_weights)
+torchvision::VGG11Impl::VGG11Impl(int64_t num_classes, bool initialize_weights)
 	: VGGImpl(makeLayers(
 				  {64, -1, 128, -1, 256, 256, -1, 512, 512, -1, 512, 512, -1}),
 			  num_classes, initialize_weights)
 {
 }
 
-torchvision::VGG13Impl::VGG13Impl(int num_classes, bool initWeights)
+torchvision::VGG13Impl::VGG13Impl(int64_t num_classes, bool initWeights)
 	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, -1, 512, 512, -1,
 						  512, 512, -1}),
 			  num_classes, initWeights)
 {
 }
 
-torchvision::VGG16Impl::VGG16Impl(int num_classes, bool initWeights)
+torchvision::VGG16Impl::VGG16Impl(int64_t num_classes, bool initWeights)
 	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, 256, -1, 512, 512,
 						  512, -1, 512, 512, 512, -1}),
 			  num_classes, initWeights)
 {
 }
 
-torchvision::VGG19Impl::VGG19Impl(int num_classes, bool initialize_weights)
+torchvision::VGG19Impl::VGG19Impl(int64_t num_classes, bool initialize_weights)
 	: VGGImpl(makeLayers({64,  64,  -1,  128, 128, -1,  256, 256, 256, 256, -1,
 						  512, 512, 512, 512, -1,  512, 512, 512, 512, -1}),
 			  num_classes, initialize_weights)
 {
 }
 
-torchvision::VGG11BNImpl::VGG11BNImpl(int num_classes, bool initWeights)
+torchvision::VGG11BNImpl::VGG11BNImpl(int64_t num_classes, bool initWeights)
 	: VGGImpl(makeLayers(
 				  {64, -1, 128, -1, 256, 256, -1, 512, 512, -1, 512, 512, -1},
 				  true),
@@ -116,7 +116,8 @@ torchvision::VGG11BNImpl::VGG11BNImpl(int num_classes, bool initWeights)
 {
 }
 
-torchvision::VGG13BNImpl::VGG13BNImpl(int num_classes, bool initialize_weights)
+torchvision::VGG13BNImpl::VGG13BNImpl(int64_t num_classes,
+									  bool initialize_weights)
 	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, -1, 512, 512, -1,
 						  512, 512, -1},
 						 true),
@@ -124,7 +125,7 @@ torchvision::VGG13BNImpl::VGG13BNImpl(int num_classes, bool initialize_weights)
 {
 }
 
-torchvision::VGG16BNImpl::VGG16BNImpl(int num_classes, bool initWeights)
+torchvision::VGG16BNImpl::VGG16BNImpl(int64_t num_classes, bool initWeights)
 	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, 256, -1, 512, 512,
 						  512, -1, 512, 512, 512, -1},
 						 true),
@@ -132,7 +133,7 @@ torchvision::VGG16BNImpl::VGG16BNImpl(int num_classes, bool initWeights)
 {
 }
 
-torchvision::VGG19BNImpl::VGG19BNImpl(int num_classes, bool initWeights)
+torchvision::VGG19BNImpl::VGG19BNImpl(int64_t num_classes, bool initWeights)
 	: VGGImpl(makeLayers({64,  64,  -1,  128, 128, -1,  256, 256, 256, 256, -1,
 						  512, 512, 512, 512, -1,  512, 512, 512, 512, -1},
 						 true),

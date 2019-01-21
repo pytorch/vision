@@ -3,9 +3,7 @@
 
 using namespace torchvision;
 
-// TODO change num_classes from int to int64_t
-// TODO in some classes I have initialized weights of submodules before
-// registering them. this is wrong. fix it
+// TODO change xavier fill
 
 template <typename T>
 long params(T &M)

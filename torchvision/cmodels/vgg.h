@@ -12,7 +12,7 @@ class VGGImpl : public torch::nn::Module
 	void _initialize_weights();
 
 public:
-	VGGImpl(torch::nn::Sequential features, int num_classes = 1000,
+	VGGImpl(torch::nn::Sequential features, int64_t num_classes = 1000,
 			bool initialize_weights = true);
 
 	torch::Tensor forward(torch::Tensor x);
@@ -24,49 +24,49 @@ torch::nn::Sequential makeLayers(const std::vector<int> &cfg,
 class VGG11Impl : public VGGImpl
 {
 public:
-	VGG11Impl(int num_classes = 1000, bool initialize_weights = true);
+	VGG11Impl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG13Impl : public VGGImpl
 {
 public:
-	VGG13Impl(int num_classes = 1000, bool initialize_weights = true);
+	VGG13Impl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG16Impl : public VGGImpl
 {
 public:
-	VGG16Impl(int num_classes = 1000, bool initialize_weights = true);
+	VGG16Impl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG19Impl : public VGGImpl
 {
 public:
-	VGG19Impl(int num_classes = 1000, bool initialize_weights = true);
+	VGG19Impl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG11BNImpl : public VGGImpl
 {
 public:
-	VGG11BNImpl(int num_classes = 1000, bool initialize_weights = true);
+	VGG11BNImpl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG13BNImpl : public VGGImpl
 {
 public:
-	VGG13BNImpl(int num_classes = 1000, bool initialize_weights = true);
+	VGG13BNImpl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG16BNImpl : public VGGImpl
 {
 public:
-	VGG16BNImpl(int num_classes = 1000, bool initialize_weights = true);
+	VGG16BNImpl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 class VGG19BNImpl : public VGGImpl
 {
 public:
-	VGG19BNImpl(int num_classes = 1000, bool initialize_weights = true);
+	VGG19BNImpl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 TORCH_MODULE(VGG11);

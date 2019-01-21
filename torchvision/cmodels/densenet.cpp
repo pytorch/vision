@@ -20,7 +20,8 @@ torchvision::densenetimpl::_DenseLayerImpl::_DenseLayerImpl(
 			.with_bias(false)));
 }
 
-torch::Tensor torchvision::densenetimpl::_DenseLayerImpl::forward(at::Tensor x)
+torch::Tensor torchvision::densenetimpl::_DenseLayerImpl::forward(
+	torch::Tensor x)
 {
 	auto new_features = torch::nn::SequentialImpl::forward(x);
 	if (drop_rate > 0)
@@ -41,7 +42,8 @@ torchvision::densenetimpl::_DenseBlockImpl::_DenseBlockImpl(
 	}
 }
 
-torch::Tensor torchvision::densenetimpl::_DenseBlockImpl::forward(at::Tensor x)
+torch::Tensor torchvision::densenetimpl::_DenseBlockImpl::forward(
+	torch::Tensor x)
 {
 	return torch::nn::SequentialImpl::forward(x);
 }
@@ -98,6 +100,9 @@ torchvision::DenseNetImpl::DenseNetImpl(int64_t growth_rate,
 	features->push_back(torch::nn::BatchNorm(num_features));
 	classifier = torch::nn::Linear(num_features, num_classes);
 
+	register_module("features", features);
+	register_module("classifier", classifier);
+
 	for (auto &module : modules(false))
 	{
 		if (torch::nn::Conv2dImpl *M =
@@ -113,12 +118,9 @@ torchvision::DenseNetImpl::DenseNetImpl(int64_t growth_rate,
 					 dynamic_cast<torch::nn::LinearImpl *>(module.get()))
 			torch::nn::init::normal_(M->bias, 0);
 	}
-
-	register_module("features", features);
-	register_module("classifier", classifier);
 }
 
-torch::Tensor torchvision::DenseNetImpl::forward(at::Tensor x)
+torch::Tensor torchvision::DenseNetImpl::forward(torch::Tensor x)
 {
 	auto features = this->features->forward(x);
 	auto out = torch::relu_(features);
@@ -127,22 +129,22 @@ torch::Tensor torchvision::DenseNetImpl::forward(at::Tensor x)
 	return out;
 }
 
-torchvision::DenseNet121Impl::DenseNet121Impl()
-	: DenseNetImpl(32, {6, 12, 32, 32}, 64)
+torchvision::DenseNet121Impl::DenseNet121Impl(int64_t num_classes)
+	: DenseNetImpl(32, {6, 12, 32, 32}, 64, 4, 0, num_classes)
 {
 }
 
-torchvision::DenseNet169Impl::DenseNet169Impl()
-	: DenseNetImpl(32, {6, 12, 32, 32}, 64)
+torchvision::DenseNet169Impl::DenseNet169Impl(int64_t num_classes)
+	: DenseNetImpl(32, {6, 12, 32, 32}, 64, 4, 0, num_classes)
 {
 }
 
-torchvision::DenseNet201Impl::DenseNet201Impl()
-	: DenseNetImpl(32, {6, 12, 48, 32}, 64)
+torchvision::DenseNet201Impl::DenseNet201Impl(int64_t num_classes)
+	: DenseNetImpl(32, {6, 12, 48, 32}, 64, 4, 0, num_classes)
 {
 }
 
-torchvision::DenseNet161Impl::DenseNet161Impl()
-	: DenseNetImpl(48, {6, 12, 36, 24}, 96)
+torchvision::DenseNet161Impl::DenseNet161Impl(int64_t num_classes)
+	: DenseNetImpl(48, {6, 12, 36, 24}, 96, 4, 0, num_classes)
 {
 }

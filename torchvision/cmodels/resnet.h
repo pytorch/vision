@@ -67,7 +67,7 @@ class ResNetImpl : public torch::nn::Module
 									int64_t stride = 1);
 
 public:
-	ResNetImpl(const std::vector<int> &layers, int num_classes = 1000,
+	ResNetImpl(const std::vector<int> &layers, int64_t num_classes = 1000,
 			   bool zero_init_residual = false);
 
 	torch::Tensor forward(torch::Tensor X);
@@ -78,6 +78,9 @@ torch::nn::Sequential ResNetImpl<Block>::makeLayer(int64_t planes,
 												   int64_t blocks,
 												   int64_t stride)
 {
+	// TODO Blocks that are created here are not shared_ptr. see if that is a
+	// problem (the layers in blocks are used in the resnet constructor).
+
 	torch::nn::Sequential downsample = nullptr;
 	if (stride != 1 || inplanes != planes * Block::expantion)
 	{
@@ -97,8 +100,8 @@ torch::nn::Sequential ResNetImpl<Block>::makeLayer(int64_t planes,
 }
 
 template <typename Block>
-ResNetImpl<Block>::ResNetImpl(const std::vector<int> &layers, int num_classes,
-							  bool zero_init_residual)
+ResNetImpl<Block>::ResNetImpl(const std::vector<int> &layers,
+							  int64_t num_classes, bool zero_init_residual)
 	: inplanes(64),
 	  conv1(torch::nn::Conv2dOptions(3, 64, 7).stride(2).padding(3).with_bias(
 		  false)),
@@ -109,6 +112,29 @@ ResNetImpl<Block>::ResNetImpl(const std::vector<int> &layers, int num_classes,
 	  layer4(makeLayer(512, layers[3], 2)),
 	  fc(512 * Block::expantion, num_classes)
 {
+	register_module("conv1", conv1);
+	register_module("bn1", bn1);
+	register_module("fc", fc);
+
+	register_module("layer1", layer1);
+	register_module("layer2", layer2);
+	register_module("layer3", layer3);
+	register_module("layer4", layer4);
+
+	for (auto &module : modules(false))
+	{
+		if (torch::nn::Conv2dImpl *M =
+				dynamic_cast<torch::nn::Conv2dImpl *>(module.get()))
+		{
+			torch::nn::init::xavier_normal_(M->weight);
+		}
+		else if (torch::nn::BatchNormImpl *M =
+					 dynamic_cast<torch::nn::BatchNormImpl *>(module.get()))
+		{
+			torch::nn::init::constant_(M->weight, 1);
+			torch::nn::init::constant_(M->bias, 0);
+		}
+	}
 	if (zero_init_residual)
 		for (auto &module : modules(false))
 		{
@@ -119,19 +145,10 @@ ResNetImpl<Block>::ResNetImpl(const std::vector<int> &layers, int num_classes,
 						 dynamic_cast<resnetimpl::BasicBlock *>(module.get()))
 				torch::nn::init::constant_(M->bn2->weight, 0);
 		}
-
-	register_module("conv1", conv1);
-	register_module("bn1", bn1);
-	register_module("fc", fc);
-
-	register_module("layer1", layer1);
-	register_module("layer2", layer2);
-	register_module("layer3", layer3);
-	register_module("layer4", layer4);
 }
 
 template <typename Block>
-torch::Tensor ResNetImpl<Block>::forward(at::Tensor x)
+torch::Tensor ResNetImpl<Block>::forward(torch::Tensor x)
 {
 	x = conv1->forward(x);
 	x = bn1->forward(x).relu_();
@@ -152,31 +169,31 @@ torch::Tensor ResNetImpl<Block>::forward(at::Tensor x)
 class ResNet18Impl : public ResNetImpl<resnetimpl::BasicBlock>
 {
 public:
-	ResNet18Impl(int num_classes = 1000, bool zero_init_residual = false);
+	ResNet18Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
 class ResNet34Impl : public ResNetImpl<resnetimpl::BasicBlock>
 {
 public:
-	ResNet34Impl(int num_classes = 1000, bool zero_init_residual = false);
+	ResNet34Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
 class ResNet50Impl : public ResNetImpl<resnetimpl::Bottleneck>
 {
 public:
-	ResNet50Impl(int num_classes = 1000, bool zero_init_residual = false);
+	ResNet50Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
 class ResNet101Impl : public ResNetImpl<resnetimpl::Bottleneck>
 {
 public:
-	ResNet101Impl(int num_classes = 1000, bool zero_init_residual = false);
+	ResNet101Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
 class ResNet152Impl : public ResNetImpl<resnetimpl::Bottleneck>
 {
 public:
-	ResNet152Impl(int num_classes = 1000, bool zero_init_residual = false);
+	ResNet152Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
 TORCH_MODULE(ResNet18);

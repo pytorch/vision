@@ -9,7 +9,6 @@ namespace squeezenetimpl
 {
 class Fire : public torch::nn::Module
 {
-	int64_t inplanes;
 	torch::nn::Conv2d squeeze, expand1x1, expand3x3;
 
 public:
@@ -23,11 +22,11 @@ public:
 
 class SqueezeNetImpl : public torch::nn::Module
 {
-	int num_classes;
-	torch::nn::Sequential features, classifier;
+	int64_t num_classes;
+	torch::nn::Sequential features{nullptr}, classifier{nullptr};
 
 public:
-	SqueezeNetImpl(double version = 1.0, int num_classes = 1000);
+	SqueezeNetImpl(double version = 1.0, int64_t num_classes = 1000);
 
 	torch::Tensor forward(torch::Tensor x);
 };
@@ -35,13 +34,13 @@ public:
 class SqueezeNet1_0Impl : public SqueezeNetImpl
 {
 public:
-	SqueezeNet1_0Impl(int num_classes = 1000);
+	SqueezeNet1_0Impl(int64_t num_classes = 1000);
 };
 
 class SqueezeNet1_1Impl : public SqueezeNetImpl
 {
 public:
-	SqueezeNet1_1Impl(int num_classes = 1000);
+	SqueezeNet1_1Impl(int64_t num_classes = 1000);
 };
 
 TORCH_MODULE(SqueezeNet1_0);

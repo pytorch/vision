@@ -60,25 +60,25 @@ public:
 class DenseNet121Impl : public DenseNetImpl
 {
 public:
-	DenseNet121Impl();
+	DenseNet121Impl(int64_t num_classes = 1000);
 };
 
 class DenseNet169Impl : public DenseNetImpl
 {
 public:
-	DenseNet169Impl();
+	DenseNet169Impl(int64_t num_classes = 1000);
 };
 
 class DenseNet201Impl : public DenseNetImpl
 {
 public:
-	DenseNet201Impl();
+	DenseNet201Impl(int64_t num_classes = 1000);
 };
 
 class DenseNet161Impl : public DenseNetImpl
 {
 public:
-	DenseNet161Impl();
+	DenseNet161Impl(int64_t num_classes = 1000);
 };
 
 TORCH_MODULE(DenseNet121);
