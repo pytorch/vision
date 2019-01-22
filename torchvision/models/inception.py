@@ -18,7 +18,7 @@ def inception_v3(pretrained=False, **kwargs):
     `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
 
     .. note::
-        **Important**: In contrast to the other models the inception_v3 expects tensors with a size of 
+        **Important**: In contrast to the other models the inception_v3 expects tensors with a size of
         299x299x3, so ensure your images are sized accordingly.
 
     Args:
