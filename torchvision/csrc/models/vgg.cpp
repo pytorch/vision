@@ -1,6 +1,35 @@
 #include "vgg.h"
 
-void torchvision::VGGImpl::_initialize_weights()
+#include "visionimpl.h"
+
+namespace torchvision
+{
+torch::nn::Sequential makeLayers(const std::vector<int> &cfg,
+								 bool batch_norm = false)
+{
+	torch::nn::Sequential seq;
+	auto channels = 3;
+
+	for (const auto &V : cfg)
+	{
+		if (V <= -1)
+			seq->push_back(visionimpl::MaxPool2D(2, 2));
+		else
+		{
+			seq->push_back(torch::nn::Conv2d(
+				torch::nn::Conv2dOptions(channels, V, 3).padding(1)));
+
+			if (batch_norm) seq->push_back(torch::nn::BatchNorm(V));
+			seq->push_back(visionimpl::Relu(true));
+
+			channels = V;
+		}
+	}
+
+	return seq;
+}
+
+void VGGImpl::_initialize_weights()
 {
     for (auto &module : modules(false))
     {
@@ -25,8 +54,8 @@ void torchvision::VGGImpl::_initialize_weights()
     }
 }
 
-torchvision::VGGImpl::VGGImpl(torch::nn::Sequential features,
-							  int64_t num_classes, bool initialize_weights)
+VGGImpl::VGGImpl(torch::nn::Sequential features, int64_t num_classes,
+				 bool initialize_weights)
 {
 	// clang-format off
     classifier = torch::nn::Sequential(
@@ -47,7 +76,7 @@ torchvision::VGGImpl::VGGImpl(torch::nn::Sequential features,
 	if (initialize_weights) _initialize_weights();
 }
 
-torch::Tensor torchvision::VGGImpl::forward(torch::Tensor x)
+torch::Tensor VGGImpl::forward(torch::Tensor x)
 {
 	x = features->forward(x);
 	x = x.view({x.size(0), -1});
@@ -55,60 +84,35 @@ torch::Tensor torchvision::VGGImpl::forward(torch::Tensor x)
 	return x;
 }
 
-torch::nn::Sequential torchvision::makeLayers(const std::vector<int> &cfg,
-											  bool batch_norm)
-{
-    torch::nn::Sequential seq;
-    auto channels = 3;
-
-    for (const auto &V : cfg)
-    {
-        if (V <= -1)
-			seq->push_back(visionimpl::MaxPool2D(2, 2));
-        else
-        {
-			seq->push_back(torch::nn::Conv2d(
-				torch::nn::Conv2dOptions(channels, V, 3).padding(1)));
-
-			if (batch_norm) seq->push_back(torch::nn::BatchNorm(V));
-			seq->push_back(visionimpl::Relu(true));
-
-            channels = V;
-        }
-    }
-
-    return seq;
-}
-
-torchvision::VGG11Impl::VGG11Impl(int64_t num_classes, bool initialize_weights)
+VGG11Impl::VGG11Impl(int64_t num_classes, bool initialize_weights)
 	: VGGImpl(makeLayers(
 				  {64, -1, 128, -1, 256, 256, -1, 512, 512, -1, 512, 512, -1}),
 			  num_classes, initialize_weights)
 {
 }
 
-torchvision::VGG13Impl::VGG13Impl(int64_t num_classes, bool initWeights)
+VGG13Impl::VGG13Impl(int64_t num_classes, bool initWeights)
 	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, -1, 512, 512, -1,
 						  512, 512, -1}),
 			  num_classes, initWeights)
 {
 }
 
-torchvision::VGG16Impl::VGG16Impl(int64_t num_classes, bool initWeights)
+VGG16Impl::VGG16Impl(int64_t num_classes, bool initWeights)
 	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, 256, -1, 512, 512,
 						  512, -1, 512, 512, 512, -1}),
 			  num_classes, initWeights)
 {
 }
 
-torchvision::VGG19Impl::VGG19Impl(int64_t num_classes, bool initialize_weights)
+VGG19Impl::VGG19Impl(int64_t num_classes, bool initialize_weights)
 	: VGGImpl(makeLayers({64,  64,  -1,  128, 128, -1,  256, 256, 256, 256, -1,
 						  512, 512, 512, 512, -1,  512, 512, 512, 512, -1}),
 			  num_classes, initialize_weights)
 {
 }
 
-torchvision::VGG11BNImpl::VGG11BNImpl(int64_t num_classes, bool initWeights)
+VGG11BNImpl::VGG11BNImpl(int64_t num_classes, bool initWeights)
 	: VGGImpl(makeLayers(
 				  {64, -1, 128, -1, 256, 256, -1, 512, 512, -1, 512, 512, -1},
 				  true),
@@ -116,8 +120,7 @@ torchvision::VGG11BNImpl::VGG11BNImpl(int64_t num_classes, bool initWeights)
 {
 }
 
-torchvision::VGG13BNImpl::VGG13BNImpl(int64_t num_classes,
-									  bool initialize_weights)
+VGG13BNImpl::VGG13BNImpl(int64_t num_classes, bool initialize_weights)
 	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, -1, 512, 512, -1,
 						  512, 512, -1},
 						 true),
@@ -125,7 +128,7 @@ torchvision::VGG13BNImpl::VGG13BNImpl(int64_t num_classes,
 {
 }
 
-torchvision::VGG16BNImpl::VGG16BNImpl(int64_t num_classes, bool initWeights)
+VGG16BNImpl::VGG16BNImpl(int64_t num_classes, bool initWeights)
 	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, 256, -1, 512, 512,
 						  512, -1, 512, 512, 512, -1},
 						 true),
@@ -133,10 +136,12 @@ torchvision::VGG16BNImpl::VGG16BNImpl(int64_t num_classes, bool initWeights)
 {
 }
 
-torchvision::VGG19BNImpl::VGG19BNImpl(int64_t num_classes, bool initWeights)
+VGG19BNImpl::VGG19BNImpl(int64_t num_classes, bool initWeights)
 	: VGGImpl(makeLayers({64,  64,  -1,  128, 128, -1,  256, 256, 256, 256, -1,
 						  512, 512, 512, 512, -1,  512, 512, 512, 512, -1},
 						 true),
 			  num_classes, initWeights)
 {
 }
+
+}  // namespace torchvision

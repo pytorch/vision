@@ -1,7 +1,7 @@
 #ifndef ALEXNET_H
 #define ALEXNET_H
 
-#include "visionimpl.h"
+#include <torch/torch.h>
 
 namespace torchvision
 {

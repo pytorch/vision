@@ -1,7 +1,7 @@
 #ifndef VGG_H
 #define VGG_H
 
-#include "visionimpl.h"
+#include <torch/torch.h>
 
 namespace torchvision
 {
@@ -17,9 +17,6 @@ public:
 
 	torch::Tensor forward(torch::Tensor x);
 };
-
-torch::nn::Sequential makeLayers(const std::vector<int> &cfg,
-								 bool batch_norm = false);
 
 class VGG11Impl : public VGGImpl
 {

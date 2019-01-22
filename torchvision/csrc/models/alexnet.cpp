@@ -1,6 +1,10 @@
 #include "alexnet.h"
 
-torchvision::AlexNetImpl::AlexNetImpl(int64_t num_classes)
+#include "visionimpl.h"
+
+namespace torchvision
+{
+AlexNetImpl::AlexNetImpl(int64_t num_classes)
 {
 	// clang-format off
     features = torch::nn::Sequential(
@@ -32,7 +36,7 @@ torchvision::AlexNetImpl::AlexNetImpl(int64_t num_classes)
     register_module("clasifier", classifier);
 }
 
-torch::Tensor torchvision::AlexNetImpl::forward(torch::Tensor x)
+torch::Tensor AlexNetImpl::forward(torch::Tensor x)
 {
 	x = features->forward(x);
 	x = x.view({x.size(0), 256 * 6 * 6});
@@ -40,3 +44,5 @@ torch::Tensor torchvision::AlexNetImpl::forward(torch::Tensor x)
 
 	return x;
 }
+
+}  // namespace torchvision

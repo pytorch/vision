@@ -1,27 +1,30 @@
 #include "resnet.h"
 
-int torchvision::resnetimpl::BasicBlock::expantion = 1;
-int torchvision::resnetimpl::Bottleneck::expantion = 4;
+#include "visionimpl.h"
 
-torch::nn::Conv2d torchvision::resnetimpl::conv3x3(int64_t in, int64_t out,
-												   int64_t stride)
+namespace torchvision
+{
+namespace _resnetimpl
+{
+torch::nn::Conv2d conv3x3(int64_t in, int64_t out, int64_t stride)
 {
 	torch::nn::Conv2dOptions O(in, out, 3);
 	O.padding(1).stride(stride).with_bias(false);
 	return torch::nn::Conv2d(O);
 }
 
-torch::nn::Conv2d torchvision::resnetimpl::conv1x1(int64_t in, int64_t out,
-												   int64_t stride)
+torch::nn::Conv2d conv1x1(int64_t in, int64_t out, int64_t stride)
 {
 	torch::nn::Conv2dOptions O(in, out, 1);
 	O.stride(stride).with_bias(false);
 	return torch::nn::Conv2d(O);
 }
 
-torchvision::resnetimpl::BasicBlock::BasicBlock(
-	int64_t inplanes, int64_t planes, int64_t stride,
-	torch::nn::Sequential downsample)
+int BasicBlock::expantion = 1;
+int Bottleneck::expantion = 4;
+
+BasicBlock::BasicBlock(int64_t inplanes, int64_t planes, int64_t stride,
+					   torch::nn::Sequential downsample)
 	: stride(stride),
 	  downsample(downsample),
 	  conv1(conv3x3(inplanes, planes, stride)),
@@ -38,25 +41,8 @@ torchvision::resnetimpl::BasicBlock::BasicBlock(
 	if (!downsample.is_empty()) register_module("downsample", this->downsample);
 }
 
-torch::Tensor torchvision::resnetimpl::BasicBlock::forward(torch::Tensor x)
-{
-	auto identity = x;
-
-	auto out = conv1->forward(x);
-	out = bn1->forward(out).relu_();
-
-	out = conv2->forward(out);
-	out = bn2->forward(out);
-
-	if (!downsample.is_empty()) identity = downsample->forward(x);
-
-	out += identity;
-	return out.relu_();
-}
-
-torchvision::resnetimpl::Bottleneck::Bottleneck(
-	int64_t inplanes, int64_t planes, int64_t stride,
-	torch::nn::Sequential downsample)
+Bottleneck::Bottleneck(int64_t inplanes, int64_t planes, int64_t stride,
+					   torch::nn::Sequential downsample)
 	: stride(stride),
 	  downsample(downsample),
 	  conv1(conv1x1(inplanes, planes)),
@@ -77,7 +63,7 @@ torchvision::resnetimpl::Bottleneck::Bottleneck(
 	if (!downsample.is_empty()) register_module("downsample", this->downsample);
 }
 
-torch::Tensor torchvision::resnetimpl::Bottleneck::forward(torch::Tensor X)
+torch::Tensor Bottleneck::forward(torch::Tensor X)
 {
 	auto identity = X;
 
@@ -96,32 +82,46 @@ torch::Tensor torchvision::resnetimpl::Bottleneck::forward(torch::Tensor X)
 	return out.relu_();
 }
 
-torchvision::ResNet18Impl::ResNet18Impl(int64_t num_classes,
-										bool zero_init_residual)
+torch::Tensor BasicBlock::forward(torch::Tensor x)
+{
+	auto identity = x;
+
+	auto out = conv1->forward(x);
+	out = bn1->forward(out).relu_();
+
+	out = conv2->forward(out);
+	out = bn2->forward(out);
+
+	if (!downsample.is_empty()) identity = downsample->forward(x);
+
+	out += identity;
+	return out.relu_();
+}
+}  // namespace _resnetimpl
+
+ResNet18Impl::ResNet18Impl(int64_t num_classes, bool zero_init_residual)
 	: ResNetImpl({2, 2, 2, 2}, num_classes, zero_init_residual)
 {
 }
 
-torchvision::ResNet34Impl::ResNet34Impl(int64_t num_classes,
-										bool zero_init_residual)
+ResNet34Impl::ResNet34Impl(int64_t num_classes, bool zero_init_residual)
 	: ResNetImpl({3, 4, 6, 3}, num_classes, zero_init_residual)
 {
 }
 
-torchvision::ResNet50Impl::ResNet50Impl(int64_t num_classes,
-										bool zero_init_residual)
+ResNet50Impl::ResNet50Impl(int64_t num_classes, bool zero_init_residual)
 	: ResNetImpl({3, 4, 6, 3}, num_classes, zero_init_residual)
 {
 }
 
-torchvision::ResNet101Impl::ResNet101Impl(int64_t num_classes,
-										  bool zero_init_residual)
+ResNet101Impl::ResNet101Impl(int64_t num_classes, bool zero_init_residual)
 	: ResNetImpl({3, 4, 23, 3}, num_classes, zero_init_residual)
 {
 }
 
-torchvision::ResNet152Impl::ResNet152Impl(int64_t num_classes,
-										  bool zero_init_residual)
+ResNet152Impl::ResNet152Impl(int64_t num_classes, bool zero_init_residual)
 	: ResNetImpl({3, 8, 36, 3}, num_classes, zero_init_residual)
 {
 }
+
+}  // namespace torchvision

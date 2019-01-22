@@ -1,48 +1,10 @@
 #ifndef DENSENET_H
 #define DENSENET_H
 
-#include "visionimpl.h"
+#include <torch/torch.h>
 
 namespace torchvision
 {
-namespace densenetimpl
-{
-// TODO give modules names in sequential subclasses
-class _DenseLayerImpl : public torch::nn::SequentialImpl
-{
-	double drop_rate;
-
-public:
-	_DenseLayerImpl(int64_t num_input_features, int64_t growth_rate,
-					int64_t bn_size, double drop_rate);
-
-	torch::Tensor forward(torch::Tensor x);
-};
-
-TORCH_MODULE(_DenseLayer);
-
-class _DenseBlockImpl : public torch::nn::SequentialImpl
-{
-public:
-	_DenseBlockImpl(int64_t num_layers, int64_t num_input_features,
-					int64_t bn_size, int64_t growth_rate, double drop_rate);
-
-	torch::Tensor forward(torch::Tensor x);
-};
-
-TORCH_MODULE(_DenseBlock);
-
-class _TransitionImpl : public torch::nn::SequentialImpl
-{
-public:
-	_TransitionImpl(int64_t num_input_features, int64_t num_output_features);
-
-	torch::Tensor forward(torch::Tensor x);
-};
-
-TORCH_MODULE(_Transition);
-}  // namespace densenetimpl
-
 class DenseNetImpl : public torch::nn::Module
 {
 	torch::nn::Sequential features{nullptr};

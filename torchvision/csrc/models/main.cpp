@@ -22,8 +22,16 @@ long params(T &M)
 template <typename T>
 void process(torch::Tensor X, std::string name)
 {
+	auto device = torch::kCPU;
 	T M;
-	M->forward(X);
+	M->to(device);
+
+	M->train();
+	M->forward(X.to(device));
+
+	M->eval();
+	M->forward(X.to(device));
+
 	std::cout << name + " Done. Params: " << params(M) << " : "
 			  << params(M) / 1000000 << std::endl;
 }
@@ -116,26 +124,27 @@ int main()
 	//	D161->forward(X);
 	//	std::cout << "DenseNet161 Done. #Params: " << params(D161) << std::endl;
 
-	PROCESS(AlexNet, X);
-	PROCESS(VGG11, X);
-	PROCESS(VGG13, X);
-	PROCESS(VGG16, X);
-	PROCESS(VGG19, X);
-	PROCESS(VGG11BN, X);
-	PROCESS(VGG13BN, X);
-	PROCESS(VGG16BN, X);
-	PROCESS(VGG19BN, X);
-	PROCESS(ResNet18, X);
-	PROCESS(ResNet34, X);
-	PROCESS(ResNet50, X);
-	PROCESS(ResNet101, X);
-	PROCESS(ResNet152, X);
-	PROCESS(SqueezeNet1_0, X);
-	PROCESS(SqueezeNet1_1, X);
-	PROCESS(DenseNet121, X);
-	PROCESS(DenseNet169, X);
-	PROCESS(DenseNet201, X);
-	PROCESS(DenseNet161, X);
+	//	PROCESS(AlexNet, X);
+	//	PROCESS(VGG11, X);
+	//	PROCESS(VGG13, X);
+	//	PROCESS(VGG16, X);
+	//	PROCESS(VGG19, X);
+	//	PROCESS(VGG11BN, X);
+	//	PROCESS(VGG13BN, X);
+	//	PROCESS(VGG16BN, X);
+	//	PROCESS(VGG19BN, X);
+	//	PROCESS(ResNet18, X);
+	//	PROCESS(ResNet34, X);
+	//	PROCESS(ResNet50, X);
+	//	PROCESS(ResNet101, X);
+	//	PROCESS(ResNet152, X);
+	//	PROCESS(SqueezeNet1_0, X);
+	//	PROCESS(SqueezeNet1_1, X);
+	//	PROCESS(DenseNet121, X);
+	//	PROCESS(DenseNet169, X);
+	//	PROCESS(DenseNet201, X);
+	//	PROCESS(DenseNet161, X);
+	PROCESS(InceptionV3, X);
 
 	return 0;
 }

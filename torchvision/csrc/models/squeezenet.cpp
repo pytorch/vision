@@ -1,30 +1,39 @@
 #include "squeezenet.h"
 
 #include <limits>
+#include "visionimpl.h"
 
-torchvision::squeezenetimpl::Fire::Fire(int64_t inplanes,
-										int64_t squeeze_planes,
-										int64_t expand1x1_planes,
-										int64_t expand3x3_planes)
-	: squeeze(torch::nn::Conv2dOptions(inplanes, squeeze_planes, 1)),
-	  expand1x1(torch::nn::Conv2dOptions(squeeze_planes, expand1x1_planes, 1)),
-	  expand3x3(torch::nn::Conv2dOptions(squeeze_planes, expand3x3_planes, 3)
-					.padding(1))
+namespace torchvision
 {
-	register_module("squeeze", squeeze);
-	register_module("expand1x1", expand1x1);
-	register_module("expand3x3", expand3x3);
-}
-
-torch::Tensor torchvision::squeezenetimpl::Fire::forward(torch::Tensor x)
+class Fire : public torch::nn::Module
 {
-	x = torch::relu(squeeze->forward(x));
-	return torch::cat({torch::relu(expand1x1->forward(x)),
-					   torch::relu(expand3x3->forward(x))},
-					  1);
-}
+	torch::nn::Conv2d squeeze, expand1x1, expand3x3;
 
-torchvision::SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
+public:
+	Fire(int64_t inplanes, int64_t squeeze_planes, int64_t expand1x1_planes,
+		 int64_t expand3x3_planes)
+		: squeeze(torch::nn::Conv2dOptions(inplanes, squeeze_planes, 1)),
+		  expand1x1(
+			  torch::nn::Conv2dOptions(squeeze_planes, expand1x1_planes, 1)),
+		  expand3x3(
+			  torch::nn::Conv2dOptions(squeeze_planes, expand3x3_planes, 3)
+				  .padding(1))
+	{
+		register_module("squeeze", squeeze);
+		register_module("expand1x1", expand1x1);
+		register_module("expand3x3", expand3x3);
+	}
+
+	torch::Tensor forward(torch::Tensor x)
+	{
+		x = torch::relu(squeeze->forward(x));
+		return torch::cat({torch::relu(expand1x1->forward(x)),
+						   torch::relu(expand3x3->forward(x))},
+						  1);
+	}
+};
+
+SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
 	: num_classes(num_classes)
 {
 	auto double_compare = [](double a, double b) {
@@ -38,16 +47,16 @@ torchvision::SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
 			torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 96, 7).stride(2)),
 			visionimpl::Relu(true),
 			visionimpl::MaxPool2D(3, 2, true),
-			squeezenetimpl::Fire(96, 16, 64, 64),
-			squeezenetimpl::Fire(128, 16, 64, 64),
-			squeezenetimpl::Fire(128, 32, 128, 128),
+			Fire(96, 16, 64, 64),
+			Fire(128, 16, 64, 64),
+			Fire(128, 32, 128, 128),
 			visionimpl::MaxPool2D(3, 2, true),
-			squeezenetimpl::Fire(256, 32, 128, 128),
-			squeezenetimpl::Fire(256, 48, 192, 192),
-			squeezenetimpl::Fire(384, 48, 192, 192),
-			squeezenetimpl::Fire(384, 64, 256, 256),
+			Fire(256, 32, 128, 128),
+			Fire(256, 48, 192, 192),
+			Fire(384, 48, 192, 192),
+			Fire(384, 64, 256, 256),
 			visionimpl::MaxPool2D(3, 2, true),
-			squeezenetimpl::Fire(512, 64, 256, 256));
+			Fire(512, 64, 256, 256));
 		// clang-format on
 	}
 	else if (double_compare(version, 1.1))
@@ -57,16 +66,16 @@ torchvision::SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
 			torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 64, 3).stride(2)),
 			visionimpl::Relu(true),
 			visionimpl::MaxPool2D(3, 2, true),
-			squeezenetimpl::Fire(64, 16, 64, 64),
-			squeezenetimpl::Fire(128, 16, 64, 64),
+			Fire(64, 16, 64, 64),
+			Fire(128, 16, 64, 64),
 			visionimpl::MaxPool2D(3, 2, true),
-			squeezenetimpl::Fire(128, 32, 128, 128),
-			squeezenetimpl::Fire(256, 32, 128, 128),
+			Fire(128, 32, 128, 128),
+			Fire(256, 32, 128, 128),
 			visionimpl::MaxPool2D(3, 2, true),
-			squeezenetimpl::Fire(256, 48, 192, 192),
-			squeezenetimpl::Fire(384, 48, 192, 192),
-			squeezenetimpl::Fire(384, 64, 256, 256),
-			squeezenetimpl::Fire(512, 64, 256, 256));
+			Fire(256, 48, 192, 192),
+			Fire(384, 48, 192, 192),
+			Fire(384, 64, 256, 256),
+			Fire(512, 64, 256, 256));
 		// clang-format on
 	}
 	else
@@ -103,19 +112,21 @@ torchvision::SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
 		}
 }
 
-torch::Tensor torchvision::SqueezeNetImpl::forward(torch::Tensor x)
+torch::Tensor SqueezeNetImpl::forward(torch::Tensor x)
 {
 	x = features->forward(x);
 	x = classifier->forward(x);
 	return x.view({x.size(0), num_classes});
 }
 
-torchvision::SqueezeNet1_0Impl::SqueezeNet1_0Impl(int64_t num_classes)
+SqueezeNet1_0Impl::SqueezeNet1_0Impl(int64_t num_classes)
 	: SqueezeNetImpl(1.0, num_classes)
 {
 }
 
-torchvision::SqueezeNet1_1Impl::SqueezeNet1_1Impl(int64_t num_classes)
+SqueezeNet1_1Impl::SqueezeNet1_1Impl(int64_t num_classes)
 	: SqueezeNetImpl(1.1, num_classes)
 {
 }
+
+}  // namespace torchvision
