@@ -133,14 +133,22 @@ def densenet121(pretrained=False, **kwargs):
         # to find such keys.
         pattern = re.compile(
             r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
-        state_dict = model_zoo.load_url(model_urls['densenet121'])
-        for key in list(state_dict.keys()):
+        origin_model = model_zoo.load_url(model_urls['densenet121'])
+
+        for key in list(origin_model.keys()):
             res = pattern.match(key)
             if res:
                 new_key = res.group(1) + res.group(2)
-                state_dict[new_key] = state_dict[key]
-                del state_dict[key]
-        model.load_state_dict(state_dict)
+                origin_model[new_key] = origin_model[key]
+                del origin_model[key]
+
+        model_dict = model.state_dict()
+        # 1. filter out unnecessary keys
+        origin_model = {k: v for k, v in origin_model.items() if k in model_dict}
+        # 2. overwrite entries in the existing state dict
+        model_dict.update(origin_model)
+        # 3. load the new state dict
+        model.load_state_dict(model_dict)
     return model
 
 
@@ -160,14 +168,22 @@ def densenet169(pretrained=False, **kwargs):
         # to find such keys.
         pattern = re.compile(
             r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
-        state_dict = model_zoo.load_url(model_urls['densenet169'])
-        for key in list(state_dict.keys()):
+        origin_model = model_zoo.load_url(model_urls['densenet169'])
+
+        for key in list(origin_model.keys()):
             res = pattern.match(key)
             if res:
                 new_key = res.group(1) + res.group(2)
-                state_dict[new_key] = state_dict[key]
-                del state_dict[key]
-        model.load_state_dict(state_dict)
+                origin_model[new_key] = origin_model[key]
+                del origin_model[key]
+
+        model_dict = model.state_dict()
+        # 1. filter out unnecessary keys
+        origin_model = {k: v for k, v in origin_model.items() if k in model_dict}
+        # 2. overwrite entries in the existing state dict
+        model_dict.update(origin_model)
+        # 3. load the new state dict
+        model.load_state_dict(model_dict)
     return model
 
 
@@ -187,14 +203,22 @@ def densenet201(pretrained=False, **kwargs):
         # to find such keys.
         pattern = re.compile(
             r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
-        state_dict = model_zoo.load_url(model_urls['densenet201'])
-        for key in list(state_dict.keys()):
+        origin_model = model_zoo.load_url(model_urls['densenet201'])
+
+        for key in list(origin_model.keys()):
             res = pattern.match(key)
             if res:
                 new_key = res.group(1) + res.group(2)
-                state_dict[new_key] = state_dict[key]
-                del state_dict[key]
-        model.load_state_dict(state_dict)
+                origin_model[new_key] = origin_model[key]
+                del origin_model[key]
+
+        model_dict = model.state_dict()
+        # 1. filter out unnecessary keys
+        origin_model = {k: v for k, v in origin_model.items() if k in model_dict}
+        # 2. overwrite entries in the existing state dict
+        model_dict.update(origin_model)
+        # 3. load the new state dict
+        model.load_state_dict(model_dict)
     return model
 
 
@@ -214,12 +238,20 @@ def densenet161(pretrained=False, **kwargs):
         # to find such keys.
         pattern = re.compile(
             r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
-        state_dict = model_zoo.load_url(model_urls['densenet161'])
-        for key in list(state_dict.keys()):
+        origin_model = model_zoo.load_url(model_urls['densenet161'])
+
+        for key in list(origin_model.keys()):
             res = pattern.match(key)
             if res:
                 new_key = res.group(1) + res.group(2)
-                state_dict[new_key] = state_dict[key]
-                del state_dict[key]
-        model.load_state_dict(state_dict)
+                origin_model[new_key] = origin_model[key]
+                del origin_model[key]
+
+        model_dict = model.state_dict()
+        # 1. filter out unnecessary keys
+        origin_model = {k: v for k, v in origin_model.items() if k in model_dict}
+        # 2. overwrite entries in the existing state dict
+        model_dict.update(origin_model)
+        # 3. load the new state dict
+        model.load_state_dict(model_dict)
     return model
