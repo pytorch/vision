@@ -1,5 +1,6 @@
 #include "vgg.h"
 
+#include <map>
 #include "visionimpl.h"
 
 namespace torchvision
@@ -84,63 +85,51 @@ torch::Tensor VGGImpl::forward(torch::Tensor x)
 	return x;
 }
 
+// clang-format off
+static std::map<char, std::vector<int>> cfg = {
+	{'A', {64, -1, 128, -1, 256, 256, -1, 512, 512, -1, 512, 512, -1}},
+	{'B', {64, 64, -1, 128, 128, -1, 256, 256, -1, 512, 512, -1, 512, 512, -1}},
+	{'D', {64, 64, -1, 128, 128, -1, 256, 256, 256, -1, 512, 512, 512, -1, 512, 512, 512, -1}},
+	{'E', {64,  64,  -1,  128, 128, -1,  256, 256, 256, 256, -1, 512, 512, 512, 512, -1,  512, 512, 512, 512, -1}}};
+// clang-format on
+
 VGG11Impl::VGG11Impl(int64_t num_classes, bool initialize_weights)
-	: VGGImpl(makeLayers(
-				  {64, -1, 128, -1, 256, 256, -1, 512, 512, -1, 512, 512, -1}),
-			  num_classes, initialize_weights)
+	: VGGImpl(makeLayers(cfg['A']), num_classes, initialize_weights)
 {
 }
 
 VGG13Impl::VGG13Impl(int64_t num_classes, bool initWeights)
-	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, -1, 512, 512, -1,
-						  512, 512, -1}),
-			  num_classes, initWeights)
+	: VGGImpl(makeLayers(cfg['B']), num_classes, initWeights)
 {
 }
 
 VGG16Impl::VGG16Impl(int64_t num_classes, bool initWeights)
-	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, 256, -1, 512, 512,
-						  512, -1, 512, 512, 512, -1}),
-			  num_classes, initWeights)
+	: VGGImpl(makeLayers(cfg['D']), num_classes, initWeights)
 {
 }
 
 VGG19Impl::VGG19Impl(int64_t num_classes, bool initialize_weights)
-	: VGGImpl(makeLayers({64,  64,  -1,  128, 128, -1,  256, 256, 256, 256, -1,
-						  512, 512, 512, 512, -1,  512, 512, 512, 512, -1}),
-			  num_classes, initialize_weights)
+	: VGGImpl(makeLayers(cfg['E']), num_classes, initialize_weights)
 {
 }
 
 VGG11BNImpl::VGG11BNImpl(int64_t num_classes, bool initWeights)
-	: VGGImpl(makeLayers(
-				  {64, -1, 128, -1, 256, 256, -1, 512, 512, -1, 512, 512, -1},
-				  true),
-			  num_classes, initWeights)
+	: VGGImpl(makeLayers(cfg['A'], true), num_classes, initWeights)
 {
 }
 
 VGG13BNImpl::VGG13BNImpl(int64_t num_classes, bool initialize_weights)
-	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, -1, 512, 512, -1,
-						  512, 512, -1},
-						 true),
-			  num_classes, initialize_weights)
+	: VGGImpl(makeLayers(cfg['B'], true), num_classes, initialize_weights)
 {
 }
 
 VGG16BNImpl::VGG16BNImpl(int64_t num_classes, bool initWeights)
-	: VGGImpl(makeLayers({64, 64, -1, 128, 128, -1, 256, 256, 256, -1, 512, 512,
-						  512, -1, 512, 512, 512, -1},
-						 true),
-			  num_classes, initWeights)
+	: VGGImpl(makeLayers(cfg['D'], true), num_classes, initWeights)
 {
 }
 
 VGG19BNImpl::VGG19BNImpl(int64_t num_classes, bool initWeights)
-	: VGGImpl(makeLayers({64,  64,  -1,  128, 128, -1,  256, 256, 256, 256, -1,
-						  512, 512, 512, 512, -1,  512, 512, 512, 512, -1},
-						 true),
-			  num_classes, initWeights)
+	: VGGImpl(makeLayers(cfg['E'], true), num_classes, initWeights)
 {
 }
 

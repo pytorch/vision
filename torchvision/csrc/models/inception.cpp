@@ -2,6 +2,8 @@
 
 namespace torchvision
 {
+using Options = torch::nn::Conv2dOptions;
+
 namespace _inceptionimpl
 {
 BasicConv2dImpl::BasicConv2dImpl(torch::nn::Conv2dOptions options)
@@ -222,11 +224,17 @@ InceptionAuxImpl::InceptionAuxImpl(int64_t in_channels, int64_t num_classes)
 
 torch::Tensor InceptionAuxImpl::forward(torch::Tensor x)
 {
+	// 17 x 17 x 768
 	x = torch::avg_pool2d(x, 5, 3);
+	// 5 x 5 x 768
 	x = conv0->forward(x);
+	// 5 x 5 x 128
 	x = conv1->forward(x);
+	// 1 x 1 x 768
 	x = x.view({x.size(0), -1});
+	// 768
 	x = fc->forward(x);
+	// 1000 (num_classes)
 	return x;
 }
 
@@ -349,7 +357,7 @@ torch::TensorList InceptionV3Impl::forward(torch::Tensor x)
 	x = Mixed_6e->forward(x);
 	// 17 x 17 x 768
 	torch::Tensor aux;
-	if (is_training() and aux_logits) aux = AuxLogits->forward(x);
+	if (is_training() && aux_logits) aux = AuxLogits->forward(x);
 	// 17 x 17 x 768
 	x = Mixed_7a->forward(x);
 	// 8 x 8 x 1280
@@ -366,7 +374,7 @@ torch::TensorList InceptionV3Impl::forward(torch::Tensor x)
 	x = fc->forward(x);
 	// 1000 (num_classes)
 
-	if (is_training() and aux_logits) return {x, aux};
+	if (is_training() && aux_logits) return {x, aux};
 	return x;
 }
 

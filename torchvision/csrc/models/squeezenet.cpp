@@ -85,6 +85,7 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
 		assert(false);
 	}
 
+	// Final convolution is initialized differently form the rest
 	auto final_conv =
 		torch::nn::Conv2d(torch::nn::Conv2dOptions(512, num_classes, 1));
 

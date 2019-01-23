@@ -87,11 +87,12 @@ public:
 
 TORCH_MODULE(_Transition);
 
-DenseNetImpl::DenseNetImpl(int64_t growth_rate,
+DenseNetImpl::DenseNetImpl(int64_t num_classes, int64_t growth_rate,
 						   std::vector<int64_t> block_config,
 						   int64_t num_init_features, int64_t bn_size,
-						   int64_t drop_rate, int64_t num_classes)
+						   double drop_rate)
 {
+	// First convolution
 	features = torch::nn::Sequential(
 		torch::nn::Conv2d(torch::nn::Conv2dOptions(3, num_init_features, 7)
 							  .stride(2)
@@ -100,6 +101,7 @@ DenseNetImpl::DenseNetImpl(int64_t growth_rate,
 		torch::nn::BatchNorm(num_init_features), visionimpl::Relu(true),
 		visionimpl::MaxPool2D(3, 2, false, torch::IntList({1})));
 
+	// Each denseblock
 	auto num_features = num_init_features;
 	for (size_t i = 0; i < block_config.size(); ++i)
 	{
@@ -117,12 +119,15 @@ DenseNetImpl::DenseNetImpl(int64_t growth_rate,
 		}
 	}
 
+	// Final batch norm
 	features->push_back(torch::nn::BatchNorm(num_features));
+	// Linear layer
 	classifier = torch::nn::Linear(num_features, num_classes);
 
 	register_module("features", features);
 	register_module("classifier", classifier);
 
+	// Official init from torch repo.
 	for (auto &module : modules(false))
 	{
 		if (torch::nn::Conv2dImpl *M =
@@ -149,23 +154,39 @@ torch::Tensor DenseNetImpl::forward(torch::Tensor x)
 	return out;
 }
 
-DenseNet121Impl::DenseNet121Impl(int64_t num_classes)
-	: DenseNetImpl(32, {6, 12, 32, 32}, 64, 4, 0, num_classes)
+DenseNet121Impl::DenseNet121Impl(int64_t num_classes, int64_t growth_rate,
+								 std::vector<int64_t> block_config,
+								 int64_t num_init_features, int64_t bn_size,
+								 double drop_rate)
+	: DenseNetImpl(num_classes, growth_rate, block_config, num_init_features,
+				   bn_size, drop_rate)
 {
 }
 
-DenseNet169Impl::DenseNet169Impl(int64_t num_classes)
-	: DenseNetImpl(32, {6, 12, 32, 32}, 64, 4, 0, num_classes)
+DenseNet169Impl::DenseNet169Impl(int64_t num_classes, int64_t growth_rate,
+								 std::vector<int64_t> block_config,
+								 int64_t num_init_features, int64_t bn_size,
+								 double drop_rate)
+	: DenseNetImpl(num_classes, growth_rate, block_config, num_init_features,
+				   bn_size, drop_rate)
 {
 }
 
-DenseNet201Impl::DenseNet201Impl(int64_t num_classes)
-	: DenseNetImpl(32, {6, 12, 48, 32}, 64, 4, 0, num_classes)
+DenseNet201Impl::DenseNet201Impl(int64_t num_classes, int64_t growth_rate,
+								 std::vector<int64_t> block_config,
+								 int64_t num_init_features, int64_t bn_size,
+								 double drop_rate)
+	: DenseNetImpl(num_classes, growth_rate, block_config, num_init_features,
+				   bn_size, drop_rate)
 {
 }
 
-DenseNet161Impl::DenseNet161Impl(int64_t num_classes)
-	: DenseNetImpl(48, {6, 12, 36, 24}, 96, 4, 0, num_classes)
+DenseNet161Impl::DenseNet161Impl(int64_t num_classes, int64_t growth_rate,
+								 std::vector<int64_t> block_config,
+								 int64_t num_init_features, int64_t bn_size,
+								 double drop_rate)
+	: DenseNetImpl(num_classes, growth_rate, block_config, num_init_features,
+				   bn_size, drop_rate)
 {
 }
 

@@ -10,7 +10,9 @@ class ResNetImpl;
 
 namespace _resnetimpl
 {
+// 3x3 convolution with padding
 torch::nn::Conv2d conv3x3(int64_t in, int64_t out, int64_t stride = 1);
+// 1x1 convolution
 torch::nn::Conv2d conv1x1(int64_t in, int64_t out, int64_t stride = 1);
 
 class BasicBlock : public torch::nn::Module
@@ -136,6 +138,10 @@ ResNetImpl<Block>::ResNetImpl(const std::vector<int> &layers,
 		}
 	}
 
+	// Zero-initialize the last BN in each residual branch, so that the residual
+	// branch starts with zeros, and each residual block behaves like an
+	// identity. This improves the model by 0.2~0.3% according to
+	// https://arxiv.org/abs/1706.02677
 	if (zero_init_residual)
 		for (auto &module : modules(false))
 		{
@@ -167,34 +173,46 @@ torch::Tensor ResNetImpl<Block>::forward(torch::Tensor x)
 	return x;
 }
 
+// ResNet-18 model
 class ResNet18Impl : public ResNetImpl<_resnetimpl::BasicBlock>
 {
 public:
 	ResNet18Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
+// ResNet-34 model
 class ResNet34Impl : public ResNetImpl<_resnetimpl::BasicBlock>
 {
 public:
 	ResNet34Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
+// ResNet-50 model
 class ResNet50Impl : public ResNetImpl<_resnetimpl::Bottleneck>
 {
 public:
 	ResNet50Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
+// ResNet-101 model
 class ResNet101Impl : public ResNetImpl<_resnetimpl::Bottleneck>
 {
 public:
 	ResNet101Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
+// ResNet-152 model
 class ResNet152Impl : public ResNetImpl<_resnetimpl::Bottleneck>
 {
 public:
 	ResNet152Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
+};
+
+template <typename Block>
+class ResNet : public torch::nn::ModuleHolder<ResNetImpl<Block>>
+{
+public:
+	using torch::nn::ModuleHolder<ResNetImpl<Block>>::ModuleHolder;
 };
 
 TORCH_MODULE(ResNet18);

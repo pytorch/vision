@@ -21,8 +21,6 @@ public:
 
 TORCH_MODULE(BasicConv2d);
 
-using Options = torch::nn::Conv2dOptions;
-
 class InceptionAImpl : public torch::nn::Module
 {
 	BasicConv2d branch1x1, branch5x5_1, branch5x5_2, branch3x3dbl_1,
@@ -123,8 +121,9 @@ inline void init_weight(torch::Tensor &weight, double stddev) {}
 
 }  // namespace _inceptionimpl
 
-using _inceptionimpl::Options;
-
+// Inception v3 model architecture from
+//"Rethinking the Inception Architecture for Computer Vision"
+//<http://arxiv.org/abs/1512.00567>
 class InceptionV3Impl : public torch::nn::Module
 {
 	bool aux_logits, transform_input;
@@ -142,7 +141,7 @@ class InceptionV3Impl : public torch::nn::Module
 	_inceptionimpl::InceptionAux AuxLogits{nullptr};
 
 public:
-	InceptionV3Impl(int64_t num_classes = 1000, bool aux_logits = false,
+	InceptionV3Impl(int64_t num_classes = 1000, bool aux_logits = true,
 					bool transform_input = false);
 
 	torch::TensorList forward(torch::Tensor x);
