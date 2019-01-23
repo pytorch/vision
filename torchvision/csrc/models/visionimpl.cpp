@@ -4,7 +4,7 @@ namespace torchvision
 {
 namespace visionimpl
 {
-ReluImpl::ReluImpl(bool inplace) : torch::nn::Module(), inplace(inplace) {}
+ReluImpl::ReluImpl(bool inplace) : inplace(inplace) {}
 
 torch::Tensor ReluImpl::forward(torch::Tensor X)
 {
@@ -17,22 +17,23 @@ torch::Tensor ReluImpl::forward(torch::Tensor X)
 	return torch::relu(X);
 }
 
-MaxPool2DImpl::MaxPool2DImpl(int64_t kernel, int64_t stride, bool ceil_mode,
-							 c10::IntList padding)
-	: torch::nn::Module(),
-	  kernel(kernel),
-	  stride(stride),
-	  ceil_mode(ceil_mode),
-	  padding(padding)
+MaxPool2DImpl::MaxPool2DImpl(torch::ExpandingArray<2> kernel,
+							 torch::ExpandingArray<2> stride)
+	: options(MaxPool2DOptions(kernel).stride(stride))
 {
 }
+
+MaxPool2DImpl::MaxPool2DImpl(MaxPool2DOptions options) : options(options) {}
 
 torch::Tensor MaxPool2DImpl::forward(torch::Tensor X)
 {
-	return torch::max_pool2d(X, kernel, stride, padding, 1, ceil_mode);
+	return torch::max_pool2d(X, options.kernel_size(), options.stride(),
+							 options.padding(), options.dilation(),
+							 options.ceil_mode());
 }
 
-AdaptiveAvgPool2DImpl::AdaptiveAvgPool2DImpl(c10::IntList output_size)
+AdaptiveAvgPool2DImpl::AdaptiveAvgPool2DImpl(
+	torch::ExpandingArray<2> output_size)
 	: output_size(output_size)
 {
 }
@@ -42,7 +43,8 @@ torch::Tensor AdaptiveAvgPool2DImpl::forward(torch::Tensor x)
 	return torch::adaptive_avg_pool2d(x, output_size);
 }
 
-AvgPool2DImpl::AvgPool2DImpl(c10::IntList kernel_size, c10::IntList stride)
+AvgPool2DImpl::AvgPool2DImpl(torch::ExpandingArray<2> kernel_size,
+							 torch::ExpandingArray<2> stride)
 	: kernel_size(kernel_size), stride(stride)
 {
 }

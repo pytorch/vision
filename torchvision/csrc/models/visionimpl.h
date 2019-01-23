@@ -17,36 +17,50 @@ public:
 	torch::Tensor forward(torch::Tensor X);
 };
 
+struct MaxPool2DOptions
+{
+	MaxPool2DOptions(torch::ExpandingArray<2> kernel_size)
+		: kernel_size_(kernel_size), stride_(kernel_size)
+	{
+	}
+
+	TORCH_ARG(torch::ExpandingArray<2>, kernel_size);
+	TORCH_ARG(torch::ExpandingArray<2>, stride);
+	TORCH_ARG(torch::ExpandingArray<2>, padding) = 0;
+	TORCH_ARG(torch::ExpandingArray<2>, dilation) = 1;
+	TORCH_ARG(bool, ceil_mode) = false;
+};
+
 class MaxPool2DImpl : public torch::nn::Module
 {
-	int64_t kernel;
-	int64_t stride;
-	bool ceil_mode;
-	torch::IntList padding;
+	MaxPool2DOptions options;
 
 public:
-	MaxPool2DImpl(int64_t kernel, int64_t stride, bool ceil_mode = false,
-				  torch::IntList padding = torch::IntList({0}));
+	MaxPool2DImpl(torch::ExpandingArray<2> kernel,
+				  torch::ExpandingArray<2> stride);
+
+	explicit MaxPool2DImpl(MaxPool2DOptions options);
 
 	torch::Tensor forward(torch::Tensor X);
 };
 
 class AdaptiveAvgPool2DImpl : public torch::nn::Module
 {
-	torch::IntList output_size;
+	torch::ExpandingArray<2> output_size;
 
 public:
-	AdaptiveAvgPool2DImpl(torch::IntList output_size);
+	AdaptiveAvgPool2DImpl(torch::ExpandingArray<2> output_size);
 
 	torch::Tensor forward(torch::Tensor x);
 };
 
 class AvgPool2DImpl : public torch::nn::Module
 {
-	torch::IntList kernel_size, stride;
+	torch::ExpandingArray<2> kernel_size, stride;
 
 public:
-	AvgPool2DImpl(torch::IntList kernel_size, torch::IntList stride);
+	AvgPool2DImpl(torch::ExpandingArray<2> kernel_size,
+				  torch::ExpandingArray<2> stride);
 
 	torch::Tensor forward(torch::Tensor x);
 };

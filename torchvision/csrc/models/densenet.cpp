@@ -4,6 +4,8 @@
 
 namespace torchvision
 {
+using Options = torch::nn::Conv2dOptions;
+
 // TODO give modules names in sequential subclasses
 class _DenseLayerImpl : public torch::nn::SequentialImpl
 {
@@ -16,18 +18,17 @@ public:
 	{
 		push_back(torch::nn::BatchNorm(num_input_features));
 		push_back(visionimpl::Relu(true));
-		push_back(
-			torch::nn::Conv2d(torch::nn::Conv2dOptions(num_input_features,
-													   bn_size * growth_rate, 1)
-								  .stride(1)
-								  .with_bias(false)));
+		push_back(torch::nn::Conv2d(
+			Options(num_input_features, bn_size * growth_rate, 1)
+				.stride(1)
+				.with_bias(false)));
 		push_back(torch::nn::BatchNorm(bn_size * growth_rate));
 		push_back(visionimpl::Relu(true));
-		push_back(torch::nn::Conv2d(
-			torch::nn::Conv2dOptions(bn_size * growth_rate, growth_rate, 3)
-				.stride(1)
-				.padding(1)
-				.with_bias(false)));
+		push_back(
+			torch::nn::Conv2d(Options(bn_size * growth_rate, growth_rate, 3)
+								  .stride(1)
+								  .padding(1)
+								  .with_bias(false)));
 	}
 
 	torch::Tensor forward(torch::Tensor x)
@@ -72,11 +73,10 @@ public:
 		push_back(torch::nn::BatchNorm(num_input_features));
 		push_back(visionimpl::Relu(true));
 		push_back(torch::nn::Conv2d(
-			torch::nn::Conv2dOptions(num_input_features, num_output_features, 1)
+			Options(num_input_features, num_output_features, 1)
 				.stride(1)
 				.with_bias(false)));
-		push_back(
-			visionimpl::AvgPool2D(torch::IntList({2}), torch::IntList({2})));
+		push_back(visionimpl::AvgPool2D(2, 2));
 	}
 
 	torch::Tensor forward(torch::Tensor x)
@@ -99,7 +99,8 @@ DenseNetImpl::DenseNetImpl(int64_t num_classes, int64_t growth_rate,
 							  .padding(3)
 							  .with_bias(false)),
 		torch::nn::BatchNorm(num_init_features), visionimpl::Relu(true),
-		visionimpl::MaxPool2D(3, 2, false, torch::IntList({1})));
+		visionimpl::MaxPool2D(
+			visionimpl::MaxPool2DOptions(3).stride(2).padding(1)));
 
 	// Each denseblock
 	auto num_features = num_init_features;

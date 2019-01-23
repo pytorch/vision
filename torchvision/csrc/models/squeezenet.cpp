@@ -46,16 +46,16 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
 		features = torch::nn::Sequential(
 			torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 96, 7).stride(2)),
 			visionimpl::Relu(true),
-			visionimpl::MaxPool2D(3, 2, true),
+			visionimpl::MaxPool2D(visionimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
 			Fire(96, 16, 64, 64),
 			Fire(128, 16, 64, 64),
 			Fire(128, 32, 128, 128),
-			visionimpl::MaxPool2D(3, 2, true),
+			visionimpl::MaxPool2D(visionimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
 			Fire(256, 32, 128, 128),
 			Fire(256, 48, 192, 192),
 			Fire(384, 48, 192, 192),
 			Fire(384, 64, 256, 256),
-			visionimpl::MaxPool2D(3, 2, true),
+			visionimpl::MaxPool2D(visionimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
 			Fire(512, 64, 256, 256));
 		// clang-format on
 	}
@@ -65,13 +65,13 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
 		features = torch::nn::Sequential(
 			torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 64, 3).stride(2)),
 			visionimpl::Relu(true),
-			visionimpl::MaxPool2D(3, 2, true),
+			visionimpl::MaxPool2D(visionimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
 			Fire(64, 16, 64, 64),
 			Fire(128, 16, 64, 64),
-			visionimpl::MaxPool2D(3, 2, true),
+			visionimpl::MaxPool2D(visionimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
 			Fire(128, 32, 128, 128),
 			Fire(256, 32, 128, 128),
-			visionimpl::MaxPool2D(3, 2, true),
+			visionimpl::MaxPool2D(visionimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
 			Fire(256, 48, 192, 192),
 			Fire(384, 48, 192, 192),
 			Fire(384, 64, 256, 256),
@@ -94,7 +94,7 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
 		torch::nn::Dropout(0.5),
 		final_conv,
 		visionimpl::Relu(true),
-		visionimpl::AdaptiveAvgPool2D(torch::IntList({1, 1})));
+		visionimpl::AdaptiveAvgPool2D(1));
 	// clang-format on
 
 	register_module("features", features);
