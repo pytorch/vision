@@ -1,5 +1,6 @@
 #include "cpu/vision.h"
 
+
 template <typename scalar_t>
 at::Tensor nms_cpu_kernel(const at::Tensor& dets,
                           const at::Tensor& scores,
@@ -21,7 +22,7 @@ at::Tensor nms_cpu_kernel(const at::Tensor& dets,
   auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
 
   auto ndets = dets.size(0);
-  at::Tensor suppressed_t = at::zeros({ndets}, at::device(at::kCPU).dtype(at::kByte));
+  at::Tensor suppressed_t = torch::zeros({ndets}, at::device(at::kCPU).dtype(at::kByte));
 
   auto suppressed = suppressed_t.data<uint8_t>();
   auto order = order_t.data<int64_t>();
@@ -65,8 +66,7 @@ at::Tensor nms_cpu(const at::Tensor& dets,
                const at::Tensor& scores,
                const float threshold) {
 
-  auto result = at::empty({0}, dets.type());
-
+  at::Tensor result;
   AT_DISPATCH_FLOATING_TYPES(dets.type(), "nms", [&] {
     result = nms_cpu_kernel<scalar_t>(dets, scores, threshold);
   });
