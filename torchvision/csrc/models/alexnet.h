@@ -3,7 +3,7 @@
 
 #include <torch/torch.h>
 
-namespace torchvision
+namespace vision
 {
 // AlexNet model architecture from the
 // "One weird trick..." <https://arxiv.org/abs/1404.5997> paper.

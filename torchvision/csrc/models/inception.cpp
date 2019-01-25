@@ -1,6 +1,6 @@
 #include "inception.h"
 
-namespace torchvision
+namespace vision
 {
 using Options = torch::nn::Conv2dOptions;
 
@@ -240,6 +240,22 @@ torch::Tensor InceptionAuxImpl::forward(torch::Tensor x)
 
 }  // namespace _inceptionimpl
 
+void init_weight(at::Tensor &weight, double stddev)
+{
+	//	auto temp = torch::fmod(torch::randn(weight.sizes()), 2);
+	//	weight = temp.mul(stddev);
+
+	std::vector<int64_t> sizes;
+	for (auto i : weight.sizes()) sizes.push_back(i);
+	sizes.push_back(4);
+
+	auto tmp = torch::empty(sizes, weight.options()).normal_();
+	auto valid = (tmp < 2).__and__(tmp > -2);
+	auto ind = std::get<1>(valid.max(-1, true));
+	weight = tmp.gather(-1, ind).squeeze(-1);
+	weight.mul_(stddev);
+}
+
 InceptionV3Impl::InceptionV3Impl(int64_t num_classes, bool aux_logits,
 								 bool transform_input)
 	: aux_logits(aux_logits), transform_input(transform_input)
@@ -295,13 +311,13 @@ InceptionV3Impl::InceptionV3Impl(int64_t num_classes, bool aux_logits,
 
 		if (_inceptionimpl::AuxLinearImpl *M =
 				dynamic_cast<_inceptionimpl::AuxLinearImpl *>(module.get()))
-			_inceptionimpl::init_weight(M->weight, M->stddev);
+			init_weight(M->weight, M->stddev);
 		else if (torch::nn::Conv2dImpl *M =
 					 dynamic_cast<torch::nn::Conv2dImpl *>(module.get()))
-			_inceptionimpl::init_weight(M->weight, 0.1);
+			init_weight(M->weight, 0.1);
 		else if (torch::nn::LinearImpl *M =
 					 dynamic_cast<torch::nn::LinearImpl *>(module.get()))
-			_inceptionimpl::init_weight(M->weight, 0.1);
+			init_weight(M->weight, 0.1);
 		else if (torch::nn::BatchNormImpl *M =
 					 dynamic_cast<torch::nn::BatchNormImpl *>(module.get()))
 		{
@@ -379,4 +395,4 @@ torch::TensorList InceptionV3Impl::forward(torch::Tensor x)
 }
 
 // namespace _inceptionimpl
-}  // namespace torchvision
+}  // namespace vision

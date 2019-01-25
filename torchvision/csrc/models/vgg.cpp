@@ -3,7 +3,7 @@
 #include <map>
 #include "visionimpl.h"
 
-namespace torchvision
+namespace vision
 {
 torch::nn::Sequential makeLayers(const std::vector<int> &cfg,
 								 bool batch_norm = false)

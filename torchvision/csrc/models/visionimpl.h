@@ -3,7 +3,7 @@
 
 #include <torch/torch.h>
 
-namespace torchvision
+namespace vision
 {
 namespace visionimpl
 {
@@ -71,6 +71,6 @@ TORCH_MODULE(AvgPool2D);
 TORCH_MODULE(AdaptiveAvgPool2D);
 
 }  // namespace visionimpl
-}  // namespace torchvision
+}  // namespace vision
 
 #endif  // VISIONIMPL_H

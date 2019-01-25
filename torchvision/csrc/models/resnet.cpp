@@ -2,7 +2,7 @@
 
 #include "visionimpl.h"
 
-namespace torchvision
+namespace vision
 {
 namespace _resnetimpl
 {

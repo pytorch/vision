@@ -3,7 +3,7 @@
 
 #include <torch/torch.h>
 
-namespace torchvision
+namespace vision
 {
 namespace _inceptionimpl
 {
@@ -117,8 +117,6 @@ TORCH_MODULE(InceptionD);
 TORCH_MODULE(InceptionE);
 TORCH_MODULE(InceptionAux);
 
-inline void init_weight(torch::Tensor &weight, double stddev) {}
-
 }  // namespace _inceptionimpl
 
 // Inception v3 model architecture from
@@ -149,6 +147,6 @@ public:
 
 TORCH_MODULE(InceptionV3);
 
-}  // namespace torchvision
+}  // namespace vision
 
 #endif  // INCEPTION_H

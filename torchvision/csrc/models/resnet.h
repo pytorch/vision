@@ -3,7 +3,7 @@
 
 #include <torch/torch.h>
 
-namespace torchvision
+namespace vision
 {
 template <typename Block>
 class ResNetImpl;
@@ -18,7 +18,7 @@ torch::nn::Conv2d conv1x1(int64_t in, int64_t out, int64_t stride = 1);
 class BasicBlock : public torch::nn::Module
 {
 	template <typename Block>
-	friend class torchvision::ResNetImpl;
+	friend class vision::ResNetImpl;
 
 	int64_t stride;
 	torch::nn::Sequential downsample;
@@ -38,7 +38,7 @@ public:
 class Bottleneck : public torch::nn::Module
 {
 	template <typename Block>
-	friend class torchvision::ResNetImpl;
+	friend class vision::ResNetImpl;
 
 	int64_t stride;
 	torch::nn::Sequential downsample;

@@ -3,7 +3,7 @@
 
 #include <torch/torch.h>
 
-namespace torchvision
+namespace vision
 {
 class SqueezeNetImpl : public torch::nn::Module
 {

@@ -1,6 +1,6 @@
 #include "visionimpl.h"
 
-namespace torchvision
+namespace vision
 {
 namespace visionimpl
 {

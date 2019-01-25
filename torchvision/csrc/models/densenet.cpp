@@ -2,7 +2,7 @@
 
 #include "visionimpl.h"
 
-namespace torchvision
+namespace vision
 {
 using Options = torch::nn::Conv2dOptions;
 

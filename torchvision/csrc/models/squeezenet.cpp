@@ -3,7 +3,7 @@
 #include <limits>
 #include "visionimpl.h"
 
-namespace torchvision
+namespace vision
 {
 class Fire : public torch::nn::Module
 {

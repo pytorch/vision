@@ -2,7 +2,7 @@
 
 #include "visionimpl.h"
 
-namespace torchvision
+namespace vision
 {
 AlexNetImpl::AlexNetImpl(int64_t num_classes)
 {

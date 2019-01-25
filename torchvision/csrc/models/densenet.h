@@ -3,13 +3,14 @@
 
 #include <torch/torch.h>
 
-namespace torchvision
+namespace vision
 {
 // Densenet-BC model class, based on
 // "Densely Connected Convolutional Networks"
 // <https://arxiv.org/pdf/1608.06993.pdf>
 
 // Args:
+//     num_classes (int) - number of classification classes
 //     growth_rate (int) - how many filters to add each layer (`k` in paper)
 //     block_config (list of 4 ints) - how many layers in each pooling block
 //     num_init_features (int) - the number of filters to learn in the first
@@ -17,7 +18,6 @@ namespace torchvision
 //     bn_size (int) - multiplicative factor for number of bottle neck layers
 //         (i.e. bn_size * k features in the bottleneck layer)
 //     drop_rate (float) - dropout rate after each dense layer
-//     num_classes (int) - number of classification classes
 class DenseNetImpl : public torch::nn::Module
 {
 	torch::nn::Sequential features{nullptr};
@@ -74,6 +74,6 @@ TORCH_MODULE(DenseNet169);
 TORCH_MODULE(DenseNet201);
 TORCH_MODULE(DenseNet161);
 
-}  // namespace torchvision
+}  // namespace vision
 
 #endif  // DENSENET_H
