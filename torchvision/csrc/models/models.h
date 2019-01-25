@@ -1,5 +1,7 @@
-#ifndef VISION_H
-#define VISION_H
+#ifndef MODELS_H
+#define MODELS_H
+
+// TODO change xavier fills to kaiming fills
 
 #include "alexnet.h"
 #include "densenet.h"
@@ -8,4 +10,4 @@
 #include "squeezenet.h"
 #include "vgg.h"
 
-#endif  // VISION_H
+#endif // MODELS_H

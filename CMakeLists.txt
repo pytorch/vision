@@ -1,14 +1,16 @@
 cmake_minimum_required(VERSION 2.8)
-project(TorchVision)
+project(torchvision)
 set(CMAKE_CXX_STANDARD 11)
 
-file(GLOB_RECURSE HEADERS torchvision/csrc/models/*.h)
-file(GLOB_RECURSE SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.cpp)
-add_executable(${PROJECT_NAME} ${SOURCES})
+file(GLOB_RECURSE HEADERS torchvision/csrc/vision.h)
+file(GLOB_RECURSE MODELS_HEADERS torchvision/csrc/models/*.h)
+file(GLOB_RECURSE MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.cpp)
+add_library (${PROJECT_NAME} SHARED ${MODELS_SOURCES})
 
 set(CUDNN_INCLUDE_DIR /usr/include/cuda)
 find_package(Torch REQUIRED)
 target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}")
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/torchvision)
+install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME})
+install(FILES ${MODELS_HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME}/models)

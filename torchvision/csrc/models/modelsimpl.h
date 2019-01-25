@@ -1,11 +1,13 @@
-#ifndef VISIONIMPL_H
-#define VISIONIMPL_H
+#ifndef MODELSIMPL_H
+#define MODELSIMPL_H
 
 #include <torch/torch.h>
 
 namespace vision
 {
-namespace visionimpl
+namespace models
+{
+namespace modelsimpl
 {
 class ReluImpl : public torch::nn::Module
 {
@@ -70,7 +72,8 @@ TORCH_MODULE(MaxPool2D);
 TORCH_MODULE(AvgPool2D);
 TORCH_MODULE(AdaptiveAvgPool2D);
 
-}  // namespace visionimpl
+}  // namespace modelsimpl
+}  // namespace models
 }  // namespace vision
 
-#endif  // VISIONIMPL_H
+#endif  // MODELSIMPL_H

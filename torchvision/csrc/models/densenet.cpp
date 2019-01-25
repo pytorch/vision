@@ -1,8 +1,10 @@
 #include "densenet.h"
 
-#include "visionimpl.h"
+#include "modelsimpl.h"
 
 namespace vision
+{
+namespace models
 {
 using Options = torch::nn::Conv2dOptions;
 
@@ -17,13 +19,13 @@ public:
 		: drop_rate(drop_rate)
 	{
 		push_back(torch::nn::BatchNorm(num_input_features));
-		push_back(visionimpl::Relu(true));
+		push_back(modelsimpl::Relu(true));
 		push_back(torch::nn::Conv2d(
 			Options(num_input_features, bn_size * growth_rate, 1)
 				.stride(1)
 				.with_bias(false)));
 		push_back(torch::nn::BatchNorm(bn_size * growth_rate));
-		push_back(visionimpl::Relu(true));
+		push_back(modelsimpl::Relu(true));
 		push_back(
 			torch::nn::Conv2d(Options(bn_size * growth_rate, growth_rate, 3)
 								  .stride(1)
@@ -71,12 +73,12 @@ public:
 	_TransitionImpl(int64_t num_input_features, int64_t num_output_features)
 	{
 		push_back(torch::nn::BatchNorm(num_input_features));
-		push_back(visionimpl::Relu(true));
+		push_back(modelsimpl::Relu(true));
 		push_back(torch::nn::Conv2d(
 			Options(num_input_features, num_output_features, 1)
 				.stride(1)
 				.with_bias(false)));
-		push_back(visionimpl::AvgPool2D(2, 2));
+		push_back(modelsimpl::AvgPool2D(2, 2));
 	}
 
 	torch::Tensor forward(torch::Tensor x)
@@ -98,9 +100,9 @@ DenseNetImpl::DenseNetImpl(int64_t num_classes, int64_t growth_rate,
 							  .stride(2)
 							  .padding(3)
 							  .with_bias(false)),
-		torch::nn::BatchNorm(num_init_features), visionimpl::Relu(true),
-		visionimpl::MaxPool2D(
-			visionimpl::MaxPool2DOptions(3).stride(2).padding(1)));
+		torch::nn::BatchNorm(num_init_features), modelsimpl::Relu(true),
+		modelsimpl::MaxPool2D(
+			modelsimpl::MaxPool2DOptions(3).stride(2).padding(1)));
 
 	// Each denseblock
 	auto num_features = num_init_features;
@@ -191,4 +193,5 @@ DenseNet161Impl::DenseNet161Impl(int64_t num_classes, int64_t growth_rate,
 {
 }
 
-}  // namespace torchvision
+}  // namespace models
+}  // namespace vision

@@ -5,6 +5,8 @@
 
 namespace vision
 {
+namespace models
+{
 class SqueezeNetImpl : public torch::nn::Module
 {
 	int64_t num_classes;
@@ -39,6 +41,7 @@ TORCH_MODULE(SqueezeNet);
 TORCH_MODULE(SqueezeNet1_0);
 TORCH_MODULE(SqueezeNet1_1);
 
-}  // namespace torchvision
+}  // namespace models
+}  // namespace vision
 
 #endif  // SQUEEZENET_H

@@ -2,6 +2,8 @@
 
 namespace vision
 {
+namespace models
+{
 using Options = torch::nn::Conv2dOptions;
 
 namespace _inceptionimpl
@@ -395,4 +397,5 @@ torch::TensorList InceptionV3Impl::forward(torch::Tensor x)
 }
 
 // namespace _inceptionimpl
+}  // namespace models
 }  // namespace vision

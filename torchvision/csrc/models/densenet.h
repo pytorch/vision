@@ -5,6 +5,8 @@
 
 namespace vision
 {
+namespace models
+{
 // Densenet-BC model class, based on
 // "Densely Connected Convolutional Networks"
 // <https://arxiv.org/pdf/1608.06993.pdf>
@@ -74,6 +76,7 @@ TORCH_MODULE(DenseNet169);
 TORCH_MODULE(DenseNet201);
 TORCH_MODULE(DenseNet161);
 
+}  // namespace models
 }  // namespace vision
 
 #endif  // DENSENET_H

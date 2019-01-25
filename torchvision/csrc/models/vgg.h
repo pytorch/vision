@@ -5,6 +5,8 @@
 
 namespace vision
 {
+namespace models
+{
 class VGGImpl : public torch::nn::Module
 {
 	torch::nn::Sequential features{nullptr}, classifier{nullptr};
@@ -86,6 +88,7 @@ TORCH_MODULE(VGG13BN);
 TORCH_MODULE(VGG16BN);
 TORCH_MODULE(VGG19BN);
 
-}  // namespace torchvision
+}  // namespace models
+}  // namespace vision
 
 #endif  // VGG_H

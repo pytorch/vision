@@ -5,6 +5,8 @@
 
 namespace vision
 {
+namespace models
+{
 template <typename Block>
 class ResNetImpl;
 
@@ -18,7 +20,7 @@ torch::nn::Conv2d conv1x1(int64_t in, int64_t out, int64_t stride = 1);
 class BasicBlock : public torch::nn::Module
 {
 	template <typename Block>
-	friend class vision::ResNetImpl;
+	friend class vision::models::ResNetImpl;
 
 	int64_t stride;
 	torch::nn::Sequential downsample;
@@ -38,7 +40,7 @@ public:
 class Bottleneck : public torch::nn::Module
 {
 	template <typename Block>
-	friend class vision::ResNetImpl;
+	friend class vision::models::ResNetImpl;
 
 	int64_t stride;
 	torch::nn::Sequential downsample;
@@ -221,6 +223,7 @@ TORCH_MODULE(ResNet50);
 TORCH_MODULE(ResNet101);
 TORCH_MODULE(ResNet152);
 
-}  // namespace torchvision
+}  // namespace models
+}  // namespace vision
 
 #endif  // RESNET_H

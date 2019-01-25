@@ -1,8 +1,10 @@
 #include "resnet.h"
 
-#include "visionimpl.h"
+#include "modelsimpl.h"
 
 namespace vision
+{
+namespace models
 {
 namespace _resnetimpl
 {
@@ -124,4 +126,5 @@ ResNet152Impl::ResNet152Impl(int64_t num_classes, bool zero_init_residual)
 {
 }
 
-}  // namespace torchvision
+}  // namespace models
+}  // namespace vision

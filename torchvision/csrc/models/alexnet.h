@@ -5,6 +5,8 @@
 
 namespace vision
 {
+namespace models
+{
 // AlexNet model architecture from the
 // "One weird trick..." <https://arxiv.org/abs/1404.5997> paper.
 class AlexNetImpl : public torch::nn::Module
@@ -19,6 +21,7 @@ public:
 
 TORCH_MODULE(AlexNet);
 
-}  // namespace torchvision
+}  // namespace models
+}  // namespace vision
 
 #endif  // ALEXNET_H

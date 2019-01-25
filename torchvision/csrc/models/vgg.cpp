@@ -1,9 +1,11 @@
 #include "vgg.h"
 
 #include <map>
-#include "visionimpl.h"
+#include "modelsimpl.h"
 
 namespace vision
+{
+namespace models
 {
 torch::nn::Sequential makeLayers(const std::vector<int> &cfg,
 								 bool batch_norm = false)
@@ -14,14 +16,14 @@ torch::nn::Sequential makeLayers(const std::vector<int> &cfg,
 	for (const auto &V : cfg)
 	{
 		if (V <= -1)
-			seq->push_back(visionimpl::MaxPool2D(2, 2));
+			seq->push_back(modelsimpl::MaxPool2D(2, 2));
 		else
 		{
 			seq->push_back(torch::nn::Conv2d(
 				torch::nn::Conv2dOptions(channels, V, 3).padding(1)));
 
 			if (batch_norm) seq->push_back(torch::nn::BatchNorm(V));
-			seq->push_back(visionimpl::Relu(true));
+			seq->push_back(modelsimpl::Relu(true));
 
 			channels = V;
 		}
@@ -61,10 +63,10 @@ VGGImpl::VGGImpl(torch::nn::Sequential features, int64_t num_classes,
 	// clang-format off
     classifier = torch::nn::Sequential(
 		torch::nn::Linear(512 * 7 * 7, 4096),
-		visionimpl::Relu(true),
+		modelsimpl::Relu(true),
 		torch::nn::Dropout(),
 		torch::nn::Linear(4096, 4096),
-		visionimpl::Relu(true),
+		modelsimpl::Relu(true),
 		torch::nn::Dropout(),
 		torch::nn::Linear(4096, num_classes));
 	// clang-format on
@@ -133,4 +135,5 @@ VGG19BNImpl::VGG19BNImpl(int64_t num_classes, bool initWeights)
 {
 }
 
-}  // namespace torchvision
+}  // namespace models
+}  // namespace vision

@@ -1,8 +1,10 @@
-#include "visionimpl.h"
+#include "modelsimpl.h"
 
 namespace vision
 {
-namespace visionimpl
+namespace models
+{
+namespace modelsimpl
 {
 ReluImpl::ReluImpl(bool inplace) : inplace(inplace) {}
 
@@ -54,5 +56,6 @@ torch::Tensor AvgPool2DImpl::forward(torch::Tensor x)
 	return torch::avg_pool2d(x, kernel_size, stride);
 }
 
-}  // namespace visionimpl
-}  // namespace torchvision
+}  // namespace modelsimpl
+}  // namespace models
+}  // namespace vision

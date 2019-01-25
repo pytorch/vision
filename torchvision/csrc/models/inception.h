@@ -5,6 +5,8 @@
 
 namespace vision
 {
+namespace models
+{
 namespace _inceptionimpl
 {
 class BasicConv2dImpl : public torch::nn::Module
@@ -147,6 +149,7 @@ public:
 
 TORCH_MODULE(InceptionV3);
 
+}  // namespace models
 }  // namespace vision
 
 #endif  // INCEPTION_H
