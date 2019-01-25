@@ -224,7 +224,7 @@ class EMNIST(MNIST):
             target and transforms it.
     """
     # Updated URL from https://www.westernsydney.edu.au/bens/home/reproducible_research/emnist
-    url = 'https://cloudstor.aarnet.edu.au/plus/index.php/s/54h3OuGJhFLwAlQ/download'  
+    url = 'https://cloudstor.aarnet.edu.au/plus/index.php/s/54h3OuGJhFLwAlQ/download'
     splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
 
     def __init__(self, root, split, **kwargs):
