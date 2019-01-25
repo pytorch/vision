@@ -1,5 +1,6 @@
 from torchvision import _C
 
-nms = _C.nms
-# nms.__doc__ = """
-# This function performs Non-maximum suppresion"""
+
+def nms(dets, scores, threshold):
+    """This function performs Non-maximum suppresion"""
+    return _C.nms(dets, scores, threshold)
