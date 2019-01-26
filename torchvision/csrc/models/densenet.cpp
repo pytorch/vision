@@ -8,7 +8,6 @@ namespace models
 {
 using Options = torch::nn::Conv2dOptions;
 
-// TODO give modules names in sequential subclasses
 class _DenseLayerImpl : public torch::nn::SequentialImpl
 {
 	double drop_rate;

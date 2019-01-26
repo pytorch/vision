@@ -309,8 +309,6 @@ InceptionV3Impl::InceptionV3Impl(int64_t num_classes, bool aux_logits,
 
 	for (auto &module : modules(false))
 	{
-		// TODO there is an error in inception that is related to AuxBasicConv
-
 		if (_inceptionimpl::AuxLinearImpl *M =
 				dynamic_cast<_inceptionimpl::AuxLinearImpl *>(module.get()))
 			init_weight(M->weight, M->stddev);

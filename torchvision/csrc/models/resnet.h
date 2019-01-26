@@ -82,9 +82,6 @@ torch::nn::Sequential ResNetImpl<Block>::_make_layer(int64_t planes,
 													 int64_t blocks,
 													 int64_t stride)
 {
-	// TODO Blocks that are created here are not shared_ptr. see if that is a
-	// problem (the layers in blocks are used in the resnet constructor).
-
 	torch::nn::Sequential downsample = nullptr;
 	if (stride != 1 || inplanes != planes * Block::expantion)
 	{
