@@ -143,11 +143,8 @@ def densenet121(pretrained=False, **kwargs):
                 del origin_model[key]
 
         model_dict = model.state_dict()
-        # 1. filter out unnecessary keys
         origin_model = {k: v for k, v in origin_model.items() if k in model_dict}
-        # 2. overwrite entries in the existing state dict
         model_dict.update(origin_model)
-        # 3. load the new state dict
         model.load_state_dict(model_dict)
     return model
 
@@ -178,11 +175,8 @@ def densenet169(pretrained=False, **kwargs):
                 del origin_model[key]
 
         model_dict = model.state_dict()
-        # 1. filter out unnecessary keys
         origin_model = {k: v for k, v in origin_model.items() if k in model_dict}
-        # 2. overwrite entries in the existing state dict
         model_dict.update(origin_model)
-        # 3. load the new state dict
         model.load_state_dict(model_dict)
     return model
 
@@ -213,11 +207,8 @@ def densenet201(pretrained=False, **kwargs):
                 del origin_model[key]
 
         model_dict = model.state_dict()
-        # 1. filter out unnecessary keys
         origin_model = {k: v for k, v in origin_model.items() if k in model_dict}
-        # 2. overwrite entries in the existing state dict
         model_dict.update(origin_model)
-        # 3. load the new state dict
         model.load_state_dict(model_dict)
     return model
 
@@ -248,10 +239,7 @@ def densenet161(pretrained=False, **kwargs):
                 del origin_model[key]
 
         model_dict = model.state_dict()
-        # 1. filter out unnecessary keys
         origin_model = {k: v for k, v in origin_model.items() if k in model_dict}
-        # 2. overwrite entries in the existing state dict
         model_dict.update(origin_model)
-        # 3. load the new state dict
         model.load_state_dict(model_dict)
     return model
