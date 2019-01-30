@@ -96,7 +96,8 @@ class ToTensor(object):
 
 
 class ToPILImage(object):
-    """Convert a tensor or an ndarray to PIL Image.
+    """Convert a tensor or an ndarray to PIL Image or do nothing if input
+    is already a PIL Image
 
     Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
     H x W x C to a PIL Image while preserving the value range.
@@ -118,7 +119,7 @@ class ToPILImage(object):
     def __call__(self, pic):
         """
         Args:
-            pic (Tensor or numpy.ndarray): Image to be converted to PIL Image.
+            pic (Tensor, numpy.ndarray or PIL Image): Image to be converted to PIL Image.
 
         Returns:
             PIL Image: Image converted to PIL Image.
