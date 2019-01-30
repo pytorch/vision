@@ -103,7 +103,7 @@ def to_pil_image(pic, mode=None):
     See :class:`~torchvision.transforms.ToPILImage` for more details.
 
     Args:
-        pic (Tensor or numpy.ndarray): Image to be converted to PIL Image.
+        pic (Tensor, numpy.ndarray or PIL Image): Image to be converted to PIL Image.
         mode (`PIL.Image mode`_): color space and pixel depth of input data (optional).
 
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
@@ -111,6 +111,9 @@ def to_pil_image(pic, mode=None):
     Returns:
         PIL Image: Image converted to PIL Image.
     """
+    if _is_pil_image(pic):
+        return pic
+    
     if not(isinstance(pic, torch.Tensor) or isinstance(pic, np.ndarray)):
         raise TypeError('pic should be Tensor or ndarray. Got {}.'.format(type(pic)))
 
