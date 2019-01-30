@@ -112,7 +112,7 @@ def to_pil_image(pic, mode=None):
         PIL Image: Image converted to PIL Image.
     """
     if _is_pil_image(pic):
-        return pic
+        return pic.convert(mode)
     
     if not(isinstance(pic, torch.Tensor) or isinstance(pic, np.ndarray)):
         raise TypeError('pic should be Tensor or ndarray. Got {}.'.format(type(pic)))
