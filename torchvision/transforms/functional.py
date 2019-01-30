@@ -36,7 +36,7 @@ def _is_numpy_image(img):
 
 
 def to_tensor(pic):
-    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
+    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor, or do nothing if it is already a tensor.
 
     See ``ToTensor`` for more details.
 
@@ -46,6 +46,9 @@ def to_tensor(pic):
     Returns:
         Tensor: Converted image.
     """
+    if _is_tensor_img(pic):
+        return pic
+    
     if not(_is_pil_image(pic) or _is_numpy_image(pic)):
         raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
 
