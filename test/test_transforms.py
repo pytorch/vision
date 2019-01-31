@@ -3,12 +3,12 @@ import random
 import unittest
 
 import numpy as np
-from PIL import Image
-
 import torch
+from PIL import Image
+from torch._utils_internal import get_file_path_2
+
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
-from torch._utils_internal import get_file_path_2
 
 try:
     import accimage
@@ -425,7 +425,8 @@ class Tester(unittest.TestCase):
             output = trans(input_data)
             assert np.allclose(input_data.numpy(), output.numpy())
 
-            tensor = torch.as_tensor(np.random.randint(low=0, high=255, size=(channels, height, width)).astype(np.uint8))
+            tensor = torch.as_tensor(
+                np.random.randint(low=0, high=255, size=(channels, height, width)).astype(np.uint8))
             output = trans(tensor)
 
             assert np.allclose(output.numpy(), tensor.numpy())
@@ -709,8 +710,6 @@ class Tester(unittest.TestCase):
             transforms.ToPILImage()(np.ones([1, 4, 4, 3]))
 
     def test_pil_image_to_pil_image(self):
-        to_tensor = transforms.ToTensor()
-
         img_data_byte = torch.ByteTensor(4, 4, 4).random_(0, 255).numpy()
         pil_img_rbga = Image.fromarray(img_data_byte)
 
