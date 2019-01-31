@@ -1,20 +1,25 @@
 from __future__ import division
-import torch
+
+import collections
 import math
-import sys
+import numbers
 import random
+import sys
+import types
+import warnings
+
+import numpy as np
 from PIL import Image
+
+import torch
+
+from . import functional as F
+
 try:
     import accimage
 except ImportError:
     accimage = None
-import numpy as np
-import numbers
-import types
-import collections
-import warnings
 
-from . import functional as F
 
 if sys.version_info < (3, 3):
     Sequence = collections.Sequence
@@ -70,7 +75,7 @@ class Compose(object):
 
 
 class ToTensor(object):
-    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor, or do nothing if it is already 
+    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor, or do nothing if it is already
     a tensor.
 
     Converts a PIL Image or numpy.ndarray (H x W x C) in the range
@@ -84,7 +89,8 @@ class ToTensor(object):
     def __call__(self, pic):
         """
         Args:
-            pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
+            pic (PIL Image, numpy.ndarray or Tensor): Image to be converted to tensor. If `pic` is a
+            tensor, this function does nothing.
 
         Returns:
             Tensor: Converted image.
@@ -119,7 +125,8 @@ class ToPILImage(object):
     def __call__(self, pic):
         """
         Args:
-            pic (Tensor, numpy.ndarray or PIL Image): Image to be converted to PIL Image.
+            pic (Tensor, numpy.ndarray or PIL Image): Image to be converted to PIL Image. If `pic`
+                is a PIL Image, this function only converts `pic` to the specified `mode`.
 
         Returns:
             PIL Image: Image converted to PIL Image.

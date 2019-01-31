@@ -1,12 +1,15 @@
+import math
+import random
+import unittest
+
+import numpy as np
+from PIL import Image
+
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
 from torch._utils_internal import get_file_path_2
-import unittest
-import math
-import random
-import numpy as np
-from PIL import Image
+
 try:
     import accimage
 except ImportError:
@@ -411,6 +414,26 @@ class Tester(unittest.TestCase):
         output = trans(img)
         assert np.allclose(input_data.numpy(), output.numpy())
 
+    def test_tensor_to_tensor(self):
+        test_channels = [1, 3, 4]
+        height, width = 4, 4
+        trans = transforms.ToTensor()
+
+        for channels in test_channels:
+            input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
+
+            output = trans(input_data)
+            assert np.allclose(input_data.numpy(), output.numpy())
+
+            tensor = torch.as_tensor(np.random.randint(low=0, high=255, size=(channels, height, width)).astype(np.uint8))
+            output = trans(tensor)
+
+            assert np.allclose(output.numpy(), tensor.numpy())
+
+            tensor = torch.rand(channels, height, width, dtype=torch.float)
+            output = trans(tensor)
+            assert np.allclose(output.numpy(), tensor.numpy())
+
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_to_tensor(self):
         trans = transforms.ToTensor()
@@ -684,6 +707,21 @@ class Tester(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             transforms.ToPILImage()(np.ones([1, 4, 4, 3]))
+
+    def test_pil_image_to_pil_image(self):
+        to_tensor = transforms.ToTensor()
+
+        img_data_byte = torch.ByteTensor(4, 4, 4).random_(0, 255).numpy()
+        pil_img_rbga = Image.fromarray(img_data_byte)
+
+        img = transforms.ToPILImage()(pil_img_rbga)
+        assert img.mode == 'RGBA'
+        assert np.allclose(img_data_byte, np.array(img))
+
+        modes = ['I', 'RGB', 'L']
+        for mode in modes:
+            img = transforms.ToPILImage(mode=mode)(pil_img_rbga)
+            assert img.mode == mode
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_vertical_flip(self):
