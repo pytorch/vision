@@ -34,6 +34,8 @@ _pil_interpolation_to_str = {
     Image.BILINEAR: 'PIL.Image.BILINEAR',
     Image.BICUBIC: 'PIL.Image.BICUBIC',
     Image.LANCZOS: 'PIL.Image.LANCZOS',
+    Image.HAMMING: 'PIL.Image.HAMMING',
+    Image.BOX: 'PIL.Image.BOX',
 }
 
 
@@ -71,7 +73,11 @@ class ToTensor(object):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
 
     Converts a PIL Image or numpy.ndarray (H x W x C) in the range
-    [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0].
+    [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
+    if the PIL Image belongs to one of the modes (L, LA, P, I, F, RGB, YCbCr, RGBA, CMYK, 1)
+    or if the numpy.ndarray has dtype = np.uint8
+
+    In the other cases, tensors are returned without scaling.
     """
 
     def __call__(self, pic):
@@ -97,10 +103,11 @@ class ToPILImage(object):
     Args:
         mode (`PIL.Image mode`_): color space and pixel depth of input data (optional).
             If ``mode`` is ``None`` (default) there are some assumptions made about the input data:
-            1. If the input has 3 channels, the ``mode`` is assumed to be ``RGB``.
-            2. If the input has 4 channels, the ``mode`` is assumed to be ``RGBA``.
-            3. If the input has 1 channel, the ``mode`` is determined by the data type (i,e,
-            ``int``, ``float``, ``short``).
+             - If the input has 4 channels, the ``mode`` is assumed to be ``RGBA``.
+             - If the input has 3 channels, the ``mode`` is assumed to be ``RGB``.
+             - If the input has 2 channels, the ``mode`` is assumed to be ``LA``.
+             - If the input has 1 channel, the ``mode`` is determined by the data type (i.e ``int``, ``float``,
+              ``short``).
 
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
@@ -133,16 +140,17 @@ class Normalize(object):
     ``input[channel] = (input[channel] - mean[channel]) / std[channel]``
 
     .. note::
-        This transform acts in-place, i.e., it mutates the input tensor.
+        This transform acts out of place, i.e., it does not mutates the input tensor.
 
     Args:
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
     """
 
-    def __init__(self, mean, std):
+    def __init__(self, mean, std, inplace=False):
         self.mean = mean
         self.std = std
+        self.inplace = inplace
 
     def __call__(self, tensor):
         """
@@ -152,7 +160,7 @@ class Normalize(object):
         Returns:
             Tensor: Normalized Tensor image.
         """
-        return F.normalize(tensor, self.mean, self.std)
+        return F.normalize(tensor, self.mean, self.std, self.inplace)
 
     def __repr__(self):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)

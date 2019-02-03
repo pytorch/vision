@@ -22,8 +22,6 @@ Transforms on PIL Image
 
 .. autoclass:: Grayscale
 
-.. autoclass:: LinearTransformation
-
 .. autoclass:: Pad
 
 .. autoclass:: RandomAffine
@@ -57,10 +55,11 @@ Transforms on PIL Image
 Transforms on torch.\*Tensor
 ----------------------------
 
+.. autoclass:: LinearTransformation
+
 .. autoclass:: Normalize
 	:members: __call__
 	:special-members:
-
 
 Conversion Transforms
 ---------------------

@@ -51,6 +51,9 @@ def to_tensor(pic):
 
     if isinstance(pic, np.ndarray):
         # handle numpy array
+        if pic.ndim == 2:
+            pic = pic[:, :, None]
+
         img = torch.from_numpy(pic.transpose((2, 0, 1)))
         # backward compatibility
         if isinstance(img, torch.ByteTensor):
@@ -74,7 +77,7 @@ def to_tensor(pic):
         img = 255 * torch.from_numpy(np.array(pic, np.uint8, copy=False))
     else:
         img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
-    # PIL image mode: L, P, I, F, RGB, YCbCr, RGBA, CMYK
+    # PIL image mode: L, LA, P, I, F, RGB, YCbCr, RGBA, CMYK
     if pic.mode == 'YCbCr':
         nchannel = 3
     elif pic.mode == 'I;16':
@@ -150,8 +153,16 @@ def to_pil_image(pic, mode=None):
                              .format(mode, np.dtype, expected_mode))
         mode = expected_mode
 
+    elif npimg.shape[2] == 2:
+        permitted_2_channel_modes = ['LA']
+        if mode is not None and mode not in permitted_2_channel_modes:
+            raise ValueError("Only modes {} are supported for 2D inputs".format(permitted_2_channel_modes))
+
+        if mode is None and npimg.dtype == np.uint8:
+            mode = 'LA'
+
     elif npimg.shape[2] == 4:
-        permitted_4_channel_modes = ['RGBA', 'CMYK']
+        permitted_4_channel_modes = ['RGBA', 'CMYK', 'RGBX']
         if mode is not None and mode not in permitted_4_channel_modes:
             raise ValueError("Only modes {} are supported for 4D inputs".format(permitted_4_channel_modes))
 
@@ -170,11 +181,11 @@ def to_pil_image(pic, mode=None):
     return Image.fromarray(npimg, mode=mode)
 
 
-def normalize(tensor, mean, std):
+def normalize(tensor, mean, std, inplace=False):
     """Normalize a tensor image with mean and standard deviation.
 
     .. note::
-        This transform acts in-place, i.e., it mutates the input tensor.
+        This transform acts out of place by default, i.e., it does not mutates the input tensor.
 
     See :class:`~torchvision.transforms.Normalize` for more details.
 
@@ -189,9 +200,12 @@ def normalize(tensor, mean, std):
     if not _is_tensor_image(tensor):
         raise TypeError('tensor is not a torch image.')
 
-    # This is faster than using broadcasting, don't change without benchmarking
-    for t, m, s in zip(tensor, mean, std):
-        t.sub_(m).div_(s)
+    if not inplace:
+        tensor = tensor.clone()
+
+    mean = torch.tensor(mean, dtype=torch.float32)
+    std = torch.tensor(std, dtype=torch.float32)
+    tensor.sub_(mean[:, None, None]).div_(std[:, None, None])
     return tensor
 
 
@@ -288,6 +302,12 @@ def pad(img, padding, fill=0, padding_mode='constant'):
         'Padding mode should be either constant, edge, reflect or symmetric'
 
     if padding_mode == 'constant':
+        if img.mode == 'P':
+            palette = img.getpalette()
+            image = ImageOps.expand(img, border=padding, fill=fill)
+            image.putpalette(palette)
+            return image
+
         return ImageOps.expand(img, border=padding, fill=fill)
     else:
         if isinstance(padding, int):
@@ -300,6 +320,14 @@ def pad(img, padding, fill=0, padding_mode='constant'):
             pad_top = padding[1]
             pad_right = padding[2]
             pad_bottom = padding[3]
+
+        if img.mode == 'P':
+            palette = img.getpalette()
+            img = np.asarray(img)
+            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
+            img = Image.fromarray(img)
+            img.putpalette(palette)
+            return img
 
         img = np.asarray(img)
         # RGB image

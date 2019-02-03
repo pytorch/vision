@@ -151,7 +151,7 @@ class DatasetFolder(data.Dataset):
         return fmt_str
 
 
-IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif']
+IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff']
 
 
 def pil_loader(path):
