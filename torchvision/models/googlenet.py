@@ -49,10 +49,10 @@ class GoogLeNet(nn.Module):
 
         self.conv1 = BasicConv2d(3, 64, batch_norm, kernel_size=7, stride=2, padding=3)
         self.maxpool1 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
-        self.lrn1 = nn.LocalResponseNorm(5, alpha=0.0001)
+        self.lrn1 = nn.LocalResponseNorm(5, alpha=0.0001, beta=0.75)
         self.conv2 = BasicConv2d(64, 64, batch_norm, kernel_size=1)
-        self.conv3 = BasicConv2d(64, 192, batch_norm, kernel_size=3, stride=1, padding=1)
-        self.lrn2 = nn.LocalResponseNorm(5, alpha=0.0001)
+        self.conv3 = BasicConv2d(64, 192, batch_norm, kernel_size=3, padding=1)
+        self.lrn2 = nn.LocalResponseNorm(5, alpha=0.0001, beta=0.75)
         self.maxpool2 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
 
         self.inception3a = Inception(192, 64, 96, 128, 16, 32, 32, batch_norm)
@@ -135,7 +135,7 @@ class Inception(nn.Module):
         self.branch1 = BasicConv2d(in_channels, ch1x1, batch_norm, kernel_size=1)
 
         self.branch2 = nn.Sequential(
-            BasicConv2d(in_channels, ch3x3red, batch_norm, kernel_size=1, stride=1),
+            BasicConv2d(in_channels, ch3x3red, batch_norm, kernel_size=1),
             BasicConv2d(ch3x3red, ch3x3, batch_norm, kernel_size=3, padding=1)
         )
 
