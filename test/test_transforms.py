@@ -138,6 +138,7 @@ class Tester(unittest.TestCase):
         to_pil_image = transforms.ToPILImage()
         img = to_pil_image(img)
         size = 100
+        epsilon = 0.05
         for i in range(10):
             scale_min = round(random.random(), 2)
             scale_range = (scale_min, scale_min + round(random.random(), 2))
@@ -146,7 +147,7 @@ class Tester(unittest.TestCase):
             randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range)
             _, _, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
             aspect_ratio_obtained = w / h
-            assert min(aspect_ratio_range) <= aspect_ratio_obtained <= max(aspect_ratio_range) 
+            assert min(aspect_ratio_range) - epsilon <= aspect_ratio_obtained <= max(aspect_ratio_range) + epsilon \
             or aspect_ratio_obtained == 1.0
 
     def test_resize(self):
