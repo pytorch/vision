@@ -148,7 +148,7 @@ class Tester(unittest.TestCase):
             _, _, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
             aspect_ratio_obtained = w / h
             assert min(aspect_ratio_range) - epsilon <= aspect_ratio_obtained <= max(aspect_ratio_range) + epsilon \
-            or aspect_ratio_obtained == 1.0
+                    or aspect_ratio_obtained == 1.0
 
     def test_resize(self):
         height = random.randint(24, 32) * 2
