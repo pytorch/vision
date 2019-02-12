@@ -8,4 +8,4 @@
 #include "squeezenet.h"
 #include "vgg.h"
 
-#endif  // MODELS_H
+#endif // MODELS_H

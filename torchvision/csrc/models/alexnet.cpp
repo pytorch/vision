@@ -2,13 +2,10 @@
 
 #include "modelsimpl.h"
 
-namespace vision
-{
-namespace models
-{
-AlexNetImpl::AlexNetImpl(int64_t num_classes)
-{
-	// clang-format off
+namespace vision {
+namespace models {
+AlexNetImpl::AlexNetImpl(int64_t num_classes) {
+  // clang-format off
     features = torch::nn::Sequential(
 				torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 64, 11).stride(4).padding(2)),
 				modelsimpl::Relu(true),
@@ -32,20 +29,19 @@ AlexNetImpl::AlexNetImpl(int64_t num_classes)
 				torch::nn::Linear(4096, 4096),
 				modelsimpl::Relu(true),
 				torch::nn::Linear(4096, num_classes));
-	// clang-format on
+  // clang-format on
 
-    register_module("features", features);
-    register_module("clasifier", classifier);
+  register_module("features", features);
+  register_module("clasifier", classifier);
 }
 
-torch::Tensor AlexNetImpl::forward(torch::Tensor x)
-{
-	x = features->forward(x);
-	x = x.view({x.size(0), 256 * 6 * 6});
-	x = classifier->forward(x);
+torch::Tensor AlexNetImpl::forward(torch::Tensor x) {
+  x = features->forward(x);
+  x = x.view({x.size(0), 256 * 6 * 6});
+  x = classifier->forward(x);
 
-	return x;
+  return x;
 }
 
-}  // namespace models
-}  // namespace vision
+} // namespace models
+} // namespace vision
