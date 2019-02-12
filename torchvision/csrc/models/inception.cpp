@@ -4,19 +4,6 @@ namespace vision {
 namespace models {
 using Options = torch::nn::Conv2dOptions;
 
-void init_weight(at::Tensor& weight, double stddev) {
-  std::vector<int64_t> sizes;
-  for (auto i : weight.sizes())
-    sizes.push_back(i);
-  sizes.push_back(4);
-
-  auto tmp = torch::empty(sizes, weight.options()).normal_();
-  auto valid = (tmp < 2).__and__(tmp > -2);
-  auto ind = std::get<1>(valid.max(-1, true));
-  weight = tmp.gather(-1, ind).squeeze(-1);
-  weight.mul_(stddev);
-}
-
 namespace _inceptionimpl {
 BasicConv2dImpl::BasicConv2dImpl(
     torch::nn::Conv2dOptions options,
@@ -29,7 +16,11 @@ BasicConv2dImpl::BasicConv2dImpl(
   register_module("conv", conv);
   register_module("bn", bn);
 
-  init_weight(conv->weight, std_dev);
+  torch::nn::init::normal_(
+      conv->weight,
+      0,
+      std_dev); // Note: used instead of truncated normal initialization
+
   torch::nn::init::constant_(bn->weight, 1);
   torch::nn::init::constant_(bn->bias, 0);
 }
@@ -221,7 +212,10 @@ InceptionAuxImpl::InceptionAuxImpl(int64_t in_channels, int64_t num_classes)
     : conv0(BasicConv2d(Options(in_channels, 128, 1))),
       conv1(BasicConv2d(Options(128, 768, 5), 0.01)),
       fc(768, num_classes) {
-  init_weight(fc->weight, 0.001);
+  torch::nn::init::normal_(
+      fc->weight,
+      0,
+      0.001); // Note: used instead of truncated normal initialization
 
   register_module("conv0", conv0);
   register_module("conv1", conv1);
@@ -274,7 +268,10 @@ InceptionV3Impl::InceptionV3Impl(
   Mixed_7c = _inceptionimpl::InceptionE(2048);
 
   fc = torch::nn::Linear(2048, num_classes);
-  init_weight(fc->weight, 0.1);
+  torch::nn::init::normal_(
+      fc->weight,
+      0,
+      0.1); // Note: used instead of truncated normal initialization
 
   register_module("Conv2d_1a_3x3", Conv2d_1a_3x3);
   register_module("Conv2d_2a_3x3", Conv2d_2a_3x3);
