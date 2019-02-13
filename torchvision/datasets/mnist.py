@@ -205,7 +205,7 @@ class KMNIST(MNIST):
 
 
 class EMNIST(MNIST):
-    """`EMNIST <https://www.nist.gov/itl/iad/image-group/emnist-dataset/>`_ Dataset.
+    """`EMNIST <https://www.westernsydney.edu.au/bens/home/reproducible_research/emnist>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where ``processed/training.pt``
@@ -223,7 +223,8 @@ class EMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    url = 'http://www.itl.nist.gov/iaui/vip/cs_links/EMNIST/gzip.zip'
+    # Updated URL from https://www.westernsydney.edu.au/bens/home/reproducible_research/emnist
+    url = 'https://cloudstor.aarnet.edu.au/plus/index.php/s/54h3OuGJhFLwAlQ/download'
     splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
 
     def __init__(self, root, split, **kwargs):
