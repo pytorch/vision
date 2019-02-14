@@ -124,7 +124,7 @@ ResNetImpl<Block>::ResNetImpl(
   register_module("layer3", layer3);
   register_module("layer4", layer4);
 
-  for (auto& module : modules(false)) {
+  for (auto& module : modules(/*include_self=*/false)) {
     if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get())) {
       torch::nn::init::xavier_normal_(M->weight); // TODO kaiming
     } else if (auto M = dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
@@ -138,7 +138,7 @@ ResNetImpl<Block>::ResNetImpl(
   // identity. This improves the model by 0.2~0.3% according to
   // https://arxiv.org/abs/1706.02677
   if (zero_init_residual)
-    for (auto& module : modules(false)) {
+    for (auto& module : modules(/*include_self=*/false)) {
       if (_resnetimpl::Bottleneck* M =
               dynamic_cast<_resnetimpl::Bottleneck*>(module.get()))
         torch::nn::init::constant_(M->bn3->weight, 0);

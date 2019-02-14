@@ -87,7 +87,7 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
   register_module("features", features);
   register_module("classifier", classifier);
 
-  for (auto& module : modules(false))
+  for (auto& module : modules(/*include_self=*/false))
     if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get())) {
       if (M == final_conv.get())
         torch::nn::init::normal_(M->weight, 0.0, 0.01);

@@ -13,8 +13,7 @@ torch::nn::Sequential makeLayers(
 
   for (const auto& V : cfg) {
     if (V <= -1)
-      seq->push_back(
-          torch::nn::Functional(torch::max_pool2d, 2, 2, 0, 1, false));
+      seq->push_back(torch::nn::Functional(modelsimpl::max_pool2d, 2, 2));
     else {
       seq->push_back(torch::nn::Conv2d(
           torch::nn::Conv2dOptions(channels, V, 3).padding(1)));
@@ -31,7 +30,7 @@ torch::nn::Sequential makeLayers(
 }
 
 void VGGImpl::_initialize_weights() {
-  for (auto& module : modules(false)) {
+  for (auto& module : modules(/*include_self=*/false)) {
     if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get())) {
       torch::nn::init::xavier_normal_(M->weight); // TODO kaiming
       torch::nn::init::constant_(M->bias, 0);

@@ -125,7 +125,7 @@ DenseNetImpl::DenseNetImpl(
   register_module("classifier", classifier);
 
   // Official init from torch repo.
-  for (auto& module : modules(false)) {
+  for (auto& module : modules(/*include_self=*/false)) {
     if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
       torch::nn::init::xavier_normal_(M->weight); // TODO kaiming
     else if (auto M = dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {

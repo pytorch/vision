@@ -9,17 +9,17 @@ AlexNetImpl::AlexNetImpl(int64_t num_classes) {
       torch::nn::Conv2d(
           torch::nn::Conv2dOptions(3, 64, 11).stride(4).padding(2)),
       torch::nn::Functional(modelsimpl::relu_),
-      torch::nn::Functional(torch::max_pool2d, 3, 2, 0, 1, false),
+      torch::nn::Functional(modelsimpl::max_pool2d, 3, 2),
       torch::nn::Conv2d(torch::nn::Conv2dOptions(64, 192, 5).padding(2)),
       torch::nn::Functional(modelsimpl::relu_),
-      torch::nn::Functional(torch::max_pool2d, 3, 2, 0, 1, false),
+      torch::nn::Functional(modelsimpl::max_pool2d, 3, 2),
       torch::nn::Conv2d(torch::nn::Conv2dOptions(192, 384, 3).padding(1)),
       torch::nn::Functional(modelsimpl::relu_),
       torch::nn::Conv2d(torch::nn::Conv2dOptions(384, 256, 3).padding(1)),
       torch::nn::Functional(modelsimpl::relu_),
       torch::nn::Conv2d(torch::nn::Conv2dOptions(256, 256, 3).padding(1)),
       torch::nn::Functional(modelsimpl::relu_),
-      torch::nn::Functional(torch::max_pool2d, 3, 2, 0, 1, false));
+      torch::nn::Functional(modelsimpl::max_pool2d, 3, 2));
 
   classifier = torch::nn::Sequential(
       torch::nn::Dropout(),
