@@ -7,7 +7,6 @@ file(GLOB_RECURSE MODELS_HEADERS torchvision/csrc/models/*.h)
 file(GLOB_RECURSE MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.cpp)
 add_library (${PROJECT_NAME} SHARED ${MODELS_SOURCES})
 
-set(CUDNN_INCLUDE_DIR /usr/include/cuda)
 find_package(Torch REQUIRED)
 target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}")
 

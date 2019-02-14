@@ -13,14 +13,15 @@ torch::nn::Sequential makeLayers(
 
   for (const auto& V : cfg) {
     if (V <= -1)
-      seq->push_back(modelsimpl::MaxPool2D(2, 2));
+      seq->push_back(
+          torch::nn::Functional(torch::max_pool2d, 2, 2, 0, 1, false));
     else {
       seq->push_back(torch::nn::Conv2d(
           torch::nn::Conv2dOptions(channels, V, 3).padding(1)));
 
       if (batch_norm)
         seq->push_back(torch::nn::BatchNorm(V));
-      seq->push_back(modelsimpl::Relu(true));
+      seq->push_back(torch::nn::Functional(modelsimpl::relu_));
 
       channels = V;
     }
@@ -50,10 +51,10 @@ VGGImpl::VGGImpl(
     bool initialize_weights) {
   classifier = torch::nn::Sequential(
       torch::nn::Linear(512 * 7 * 7, 4096),
-      modelsimpl::Relu(true),
+      torch::nn::Functional(modelsimpl::relu_),
       torch::nn::Dropout(),
       torch::nn::Linear(4096, 4096),
-      modelsimpl::Relu(true),
+      torch::nn::Functional(modelsimpl::relu_),
       torch::nn::Dropout(),
       torch::nn::Linear(4096, num_classes));
 

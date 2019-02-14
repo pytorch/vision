@@ -41,35 +41,29 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
   if (double_compare(version, 1.0)) {
     features = torch::nn::Sequential(
         torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 96, 7).stride(2)),
-        modelsimpl::Relu(true),
-        modelsimpl::MaxPool2D(
-            modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
+        torch::nn::Functional(modelsimpl::relu_),
+        torch::nn::Functional(torch::max_pool2d, 3, 2, 0, 1, true),
         Fire(96, 16, 64, 64),
         Fire(128, 16, 64, 64),
         Fire(128, 32, 128, 128),
-        modelsimpl::MaxPool2D(
-            modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
+        torch::nn::Functional(torch::max_pool2d, 3, 2, 0, 1, true),
         Fire(256, 32, 128, 128),
         Fire(256, 48, 192, 192),
         Fire(384, 48, 192, 192),
         Fire(384, 64, 256, 256),
-        modelsimpl::MaxPool2D(
-            modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
+        torch::nn::Functional(torch::max_pool2d, 3, 2, 0, 1, true),
         Fire(512, 64, 256, 256));
   } else if (double_compare(version, 1.1)) {
     features = torch::nn::Sequential(
         torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 64, 3).stride(2)),
-        modelsimpl::Relu(true),
-        modelsimpl::MaxPool2D(
-            modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
+        torch::nn::Functional(modelsimpl::relu_),
+        torch::nn::Functional(torch::max_pool2d, 3, 2, 0, 1, true),
         Fire(64, 16, 64, 64),
         Fire(128, 16, 64, 64),
-        modelsimpl::MaxPool2D(
-            modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
+        torch::nn::Functional(torch::max_pool2d, 3, 2, 0, 1, true),
         Fire(128, 32, 128, 128),
         Fire(256, 32, 128, 128),
-        modelsimpl::MaxPool2D(
-            modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
+        torch::nn::Functional(torch::max_pool2d, 3, 2, 0, 1, true),
         Fire(256, 48, 192, 192),
         Fire(384, 48, 192, 192),
         Fire(384, 64, 256, 256),
@@ -87,7 +81,7 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
   classifier = torch::nn::Sequential(
       torch::nn::Dropout(0.5),
       final_conv,
-      modelsimpl::Relu(true),
+      torch::nn::Functional(modelsimpl::relu_),
       modelsimpl::AdaptiveAvgPool2D(1));
 
   register_module("features", features);
