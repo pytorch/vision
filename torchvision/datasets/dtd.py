@@ -4,8 +4,8 @@ from torch.utils.data import Subset
 from .utils import download_url, check_integrity
 
 
-class DTD(ImageFolder):
-    """`DTD <https://www.robots.ox.ac.uk/~vgg/data/dtd/>`_ Dataset.
+class FullDTD(ImageFolder):
+    """Full `DTD <https://www.robots.ox.ac.uk/~vgg/data/dtd/>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where directory
@@ -73,8 +73,8 @@ class DTD(ImageFolder):
         return fmt_str
 
 
-class DTDSubset(Subset):
-    """`Subset of the DTD <https://www.robots.ox.ac.uk/~vgg/data/dtd/>`_ Dataset.
+class DTD(Subset):
+    """`DTD <https://www.robots.ox.ac.uk/~vgg/data/dtd/>`_ Dataset.
 
         Args:
             root (string): Root directory of dataset where directory
@@ -105,7 +105,7 @@ class DTDSubset(Subset):
         assert fold in range(1, 11), "fold should be integer in [1, 10]"
         self.fold = fold
 
-        dataset = DTD(root, **kwargs)
+        dataset = FullDTD(root, **kwargs)
         indices = self._make_indices(dataset)
         super().__init__(dataset, indices)
 
