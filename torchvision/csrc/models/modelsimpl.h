@@ -10,20 +10,15 @@ namespace modelsimpl {
 // TODO here torch::relu_ and torch::adaptive_avg_pool2d wrapped in
 // torch::nn::Fuctional don't work. so keeping these for now
 
-inline torch::Tensor relu_(torch::Tensor x) {
+inline torch::Tensor& relu_(torch::Tensor x) {
   return torch::relu_(x);
 }
 
-class AdaptiveAvgPool2DImpl : public torch::nn::Module {
-  torch::ExpandingArray<2> output_size;
-
- public:
-  AdaptiveAvgPool2DImpl(torch::ExpandingArray<2> output_size);
-
-  torch::Tensor forward(torch::Tensor x);
-};
-
-TORCH_MODULE(AdaptiveAvgPool2D);
+inline torch::Tensor adaptive_avg_pool2d(
+    torch::Tensor x,
+    torch::ExpandingArray<2> output_size) {
+  return torch::adaptive_avg_pool2d(x, output_size);
+}
 
 } // namespace modelsimpl
 } // namespace models

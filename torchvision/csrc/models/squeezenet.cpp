@@ -82,7 +82,7 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
       torch::nn::Dropout(0.5),
       final_conv,
       torch::nn::Functional(modelsimpl::relu_),
-      modelsimpl::AdaptiveAvgPool2D(1));
+      torch::nn::Functional(modelsimpl::adaptive_avg_pool2d, 1));
 
   register_module("features", features);
   register_module("classifier", classifier);
