@@ -19,7 +19,7 @@ def inception_v3(pretrained=False, **kwargs):
 
     .. note::
         **Important**: In contrast to the other models the inception_v3 expects tensors with a size of
-        3x299x299, so ensure your images are sized accordingly.
+        N x 3 x 299 x 299, so ensure your images are sized accordingly.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
