@@ -5,12 +5,11 @@
 
 namespace vision {
 namespace models {
-class VGGImpl : public torch::nn::Module {
+struct VGGImpl : torch::nn::Module {
   torch::nn::Sequential features{nullptr}, classifier{nullptr};
 
   void _initialize_weights();
 
- public:
   VGGImpl(
       torch::nn::Sequential features,
       int64_t num_classes = 1000,
@@ -20,50 +19,42 @@ class VGGImpl : public torch::nn::Module {
 };
 
 // VGG 11-layer model (configuration "A")
-class VGG11Impl : public VGGImpl {
- public:
+struct VGG11Impl : VGGImpl {
   VGG11Impl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 13-layer model (configuration "B")
-class VGG13Impl : public VGGImpl {
- public:
+struct VGG13Impl : VGGImpl {
   VGG13Impl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 16-layer model (configuration "D")
-class VGG16Impl : public VGGImpl {
- public:
+struct VGG16Impl : VGGImpl {
   VGG16Impl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 19-layer model (configuration "E")
-class VGG19Impl : public VGGImpl {
- public:
+struct VGG19Impl : VGGImpl {
   VGG19Impl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 11-layer model (configuration "A") with batch normalization
-class VGG11BNImpl : public VGGImpl {
- public:
+struct VGG11BNImpl : VGGImpl {
   VGG11BNImpl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 13-layer model (configuration "B") with batch normalization
-class VGG13BNImpl : public VGGImpl {
- public:
+struct VGG13BNImpl : VGGImpl {
   VGG13BNImpl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 16-layer model (configuration "D") with batch normalization
-class VGG16BNImpl : public VGGImpl {
- public:
+struct VGG16BNImpl : VGGImpl {
   VGG16BNImpl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 19-layer model (configuration 'E') with batch normalization
-class VGG19BNImpl : public VGGImpl {
- public:
+struct VGG19BNImpl : VGGImpl {
   VGG19BNImpl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 

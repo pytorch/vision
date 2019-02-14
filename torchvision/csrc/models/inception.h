@@ -6,8 +6,7 @@
 namespace vision {
 namespace models {
 namespace _inceptionimpl {
-class BasicConv2dImpl : public torch::nn::Module {
- public:
+struct BasicConv2dImpl : torch::nn::Module {
   torch::nn::Conv2d conv{nullptr};
   torch::nn::BatchNorm bn{nullptr};
 
@@ -18,64 +17,58 @@ class BasicConv2dImpl : public torch::nn::Module {
 
 TORCH_MODULE(BasicConv2d);
 
-class InceptionAImpl : public torch::nn::Module {
+struct InceptionAImpl : torch::nn::Module {
   BasicConv2d branch1x1, branch5x5_1, branch5x5_2, branch3x3dbl_1,
       branch3x3dbl_2, branch3x3dbl_3, branch_pool;
 
- public:
   InceptionAImpl(int64_t in_channels, int64_t pool_features);
 
   torch::Tensor forward(torch::Tensor x);
 };
 
-class InceptionBImpl : public torch::nn::Module {
+struct InceptionBImpl : torch::nn::Module {
   BasicConv2d branch3x3, branch3x3dbl_1, branch3x3dbl_2, branch3x3dbl_3;
 
- public:
   InceptionBImpl(int64_t in_channels);
 
   torch::Tensor forward(torch::Tensor x);
 };
 
-class InceptionCImpl : public torch::nn::Module {
+struct InceptionCImpl : torch::nn::Module {
   BasicConv2d branch1x1{nullptr}, branch7x7_1{nullptr}, branch7x7_2{nullptr},
       branch7x7_3{nullptr}, branch7x7dbl_1{nullptr}, branch7x7dbl_2{nullptr},
       branch7x7dbl_3{nullptr}, branch7x7dbl_4{nullptr}, branch7x7dbl_5{nullptr},
       branch_pool{nullptr};
 
- public:
   InceptionCImpl(int64_t in_channels, int64_t channels_7x7);
 
   torch::Tensor forward(torch::Tensor x);
 };
 
-class InceptionDImpl : public torch::nn::Module {
+struct InceptionDImpl : torch::nn::Module {
   BasicConv2d branch3x3_1, branch3x3_2, branch7x7x3_1, branch7x7x3_2,
       branch7x7x3_3, branch7x7x3_4;
 
- public:
   InceptionDImpl(int64_t in_channels);
 
   torch::Tensor forward(torch::Tensor x);
 };
 
-class InceptionEImpl : public torch::nn::Module {
+struct InceptionEImpl : torch::nn::Module {
   BasicConv2d branch1x1, branch3x3_1, branch3x3_2a, branch3x3_2b,
       branch3x3dbl_1, branch3x3dbl_2, branch3x3dbl_3a, branch3x3dbl_3b,
       branch_pool;
 
- public:
   InceptionEImpl(int64_t in_channels);
 
   torch::Tensor forward(torch::Tensor x);
 };
 
-class InceptionAuxImpl : public torch::nn::Module {
+struct InceptionAuxImpl : torch::nn::Module {
   BasicConv2d conv0;
   BasicConv2d conv1;
   torch::nn::Linear fc;
 
- public:
   InceptionAuxImpl(int64_t in_channels, int64_t num_classes);
 
   torch::Tensor forward(torch::Tensor x);
@@ -93,7 +86,7 @@ TORCH_MODULE(InceptionAux);
 // Inception v3 model architecture from
 //"Rethinking the Inception Architecture for Computer Vision"
 //<http://arxiv.org/abs/1512.00567>
-class InceptionV3Impl : public torch::nn::Module {
+struct InceptionV3Impl : torch::nn::Module {
   bool aux_logits, transform_input;
   _inceptionimpl::BasicConv2d Conv2d_1a_3x3{nullptr}, Conv2d_2a_3x3{nullptr},
       Conv2d_2b_3x3{nullptr}, Conv2d_3b_1x1{nullptr}, Conv2d_4a_3x3{nullptr};
@@ -108,7 +101,6 @@ class InceptionV3Impl : public torch::nn::Module {
 
   _inceptionimpl::InceptionAux AuxLogits{nullptr};
 
- public:
   InceptionV3Impl(
       int64_t num_classes = 1000,
       bool aux_logits = true,

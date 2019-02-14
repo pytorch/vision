@@ -18,11 +18,10 @@ namespace models {
 //     bn_size (int) - multiplicative factor for number of bottle neck layers
 //         (i.e. bn_size * k features in the bottleneck layer)
 //     drop_rate (float) - dropout rate after each dense layer
-class DenseNetImpl : public torch::nn::Module {
+struct DenseNetImpl : torch::nn::Module {
   torch::nn::Sequential features{nullptr};
   torch::nn::Linear classifier{nullptr};
 
- public:
   DenseNetImpl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
@@ -34,8 +33,7 @@ class DenseNetImpl : public torch::nn::Module {
   torch::Tensor forward(torch::Tensor x);
 };
 
-class DenseNet121Impl : public DenseNetImpl {
- public:
+struct DenseNet121Impl : DenseNetImpl {
   DenseNet121Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
@@ -45,8 +43,7 @@ class DenseNet121Impl : public DenseNetImpl {
       double drop_rate = 0);
 };
 
-class DenseNet169Impl : public DenseNetImpl {
- public:
+struct DenseNet169Impl : DenseNetImpl {
   DenseNet169Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
@@ -56,8 +53,7 @@ class DenseNet169Impl : public DenseNetImpl {
       double drop_rate = 0);
 };
 
-class DenseNet201Impl : public DenseNetImpl {
- public:
+struct DenseNet201Impl : DenseNetImpl {
   DenseNet201Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
@@ -67,8 +63,7 @@ class DenseNet201Impl : public DenseNetImpl {
       double drop_rate = 0);
 };
 
-class DenseNet161Impl : public DenseNetImpl {
- public:
+struct DenseNet161Impl : DenseNetImpl {
   DenseNet161Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 48,

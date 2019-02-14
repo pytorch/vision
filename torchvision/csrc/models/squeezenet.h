@@ -5,11 +5,10 @@
 
 namespace vision {
 namespace models {
-class SqueezeNetImpl : public torch::nn::Module {
+struct SqueezeNetImpl : torch::nn::Module {
   int64_t num_classes;
   torch::nn::Sequential features{nullptr}, classifier{nullptr};
 
- public:
   SqueezeNetImpl(double version = 1.0, int64_t num_classes = 1000);
 
   torch::Tensor forward(torch::Tensor x);
@@ -18,8 +17,7 @@ class SqueezeNetImpl : public torch::nn::Module {
 // SqueezeNet model architecture from the "SqueezeNet: AlexNet-level
 // accuracy with 50x fewer parameters and <0.5MB model size"
 // <https://arxiv.org/abs/1602.07360> paper.
-class SqueezeNet1_0Impl : public SqueezeNetImpl {
- public:
+struct SqueezeNet1_0Impl : SqueezeNetImpl {
   SqueezeNet1_0Impl(int64_t num_classes = 1000);
 };
 
@@ -27,8 +25,7 @@ class SqueezeNet1_0Impl : public SqueezeNetImpl {
 // <https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1>.
 // SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters
 // than SqueezeNet 1.0, without sacrificing accuracy.
-class SqueezeNet1_1Impl : public SqueezeNetImpl {
- public:
+struct SqueezeNet1_1Impl : SqueezeNetImpl {
   SqueezeNet1_1Impl(int64_t num_classes = 1000);
 };
 

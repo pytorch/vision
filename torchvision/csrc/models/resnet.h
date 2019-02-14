@@ -6,7 +6,7 @@
 namespace vision {
 namespace models {
 template <typename Block>
-class ResNetImpl;
+struct ResNetImpl;
 
 namespace _resnetimpl {
 // 3x3 convolution with padding
@@ -14,9 +14,9 @@ torch::nn::Conv2d conv3x3(int64_t in, int64_t out, int64_t stride = 1);
 // 1x1 convolution
 torch::nn::Conv2d conv1x1(int64_t in, int64_t out, int64_t stride = 1);
 
-class BasicBlock : public torch::nn::Module {
+struct BasicBlock : torch::nn::Module {
   template <typename Block>
-  friend class vision::models::ResNetImpl;
+  friend struct vision::models::ResNetImpl;
 
   int64_t stride;
   torch::nn::Sequential downsample;
@@ -24,7 +24,6 @@ class BasicBlock : public torch::nn::Module {
   torch::nn::Conv2d conv1, conv2;
   torch::nn::BatchNorm bn1, bn2;
 
- public:
   static int expansion;
 
   BasicBlock(
@@ -36,9 +35,9 @@ class BasicBlock : public torch::nn::Module {
   torch::Tensor forward(torch::Tensor x);
 };
 
-class Bottleneck : public torch::nn::Module {
+struct Bottleneck : torch::nn::Module {
   template <typename Block>
-  friend class vision::models::ResNetImpl;
+  friend struct vision::models::ResNetImpl;
 
   int64_t stride;
   torch::nn::Sequential downsample;
@@ -46,7 +45,6 @@ class Bottleneck : public torch::nn::Module {
   torch::nn::Conv2d conv1, conv2, conv3;
   torch::nn::BatchNorm bn1, bn2, bn3;
 
- public:
   static int expansion;
 
   Bottleneck(
@@ -60,7 +58,7 @@ class Bottleneck : public torch::nn::Module {
 } // namespace _resnetimpl
 
 template <typename Block>
-class ResNetImpl : public torch::nn::Module {
+struct ResNetImpl : torch::nn::Module {
   int64_t inplanes;
   torch::nn::Conv2d conv1;
   torch::nn::BatchNorm bn1;
@@ -72,7 +70,6 @@ class ResNetImpl : public torch::nn::Module {
       int64_t blocks,
       int64_t stride = 1);
 
- public:
   ResNetImpl(
       const std::vector<int>& layers,
       int64_t num_classes = 1000,
@@ -128,12 +125,9 @@ ResNetImpl<Block>::ResNetImpl(
   register_module("layer4", layer4);
 
   for (auto& module : modules(false)) {
-    if (torch::nn::Conv2dImpl* M =
-            dynamic_cast<torch::nn::Conv2dImpl*>(module.get())) {
+    if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get())) {
       torch::nn::init::xavier_normal_(M->weight); // TODO kaiming
-    } else if (
-        torch::nn::BatchNormImpl* M =
-            dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
+    } else if (auto M = dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
       torch::nn::init::constant_(M->weight, 1);
       torch::nn::init::constant_(M->bias, 0);
     }
@@ -173,39 +167,28 @@ torch::Tensor ResNetImpl<Block>::forward(torch::Tensor x) {
   return x;
 }
 
-// ResNet-18 model
-class ResNet18Impl : public ResNetImpl<_resnetimpl::BasicBlock> {
- public:
+struct ResNet18Impl : ResNetImpl<_resnetimpl::BasicBlock> {
   ResNet18Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
-// ResNet-34 model
-class ResNet34Impl : public ResNetImpl<_resnetimpl::BasicBlock> {
- public:
+struct ResNet34Impl : ResNetImpl<_resnetimpl::BasicBlock> {
   ResNet34Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
-// ResNet-50 model
-class ResNet50Impl : public ResNetImpl<_resnetimpl::Bottleneck> {
- public:
+struct ResNet50Impl : ResNetImpl<_resnetimpl::Bottleneck> {
   ResNet50Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
-// ResNet-101 model
-class ResNet101Impl : public ResNetImpl<_resnetimpl::Bottleneck> {
- public:
+struct ResNet101Impl : ResNetImpl<_resnetimpl::Bottleneck> {
   ResNet101Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
-// ResNet-152 model
-class ResNet152Impl : public ResNetImpl<_resnetimpl::Bottleneck> {
- public:
+struct ResNet152Impl : ResNetImpl<_resnetimpl::Bottleneck> {
   ResNet152Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
 template <typename Block>
-class ResNet : public torch::nn::ModuleHolder<ResNetImpl<Block>> {
- public:
+struct ResNet : torch::nn::ModuleHolder<ResNetImpl<Block>> {
   using torch::nn::ModuleHolder<ResNetImpl<Block>>::ModuleHolder;
 };
 

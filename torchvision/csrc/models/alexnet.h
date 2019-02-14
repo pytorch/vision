@@ -7,10 +7,9 @@ namespace vision {
 namespace models {
 // AlexNet model architecture from the
 // "One weird trick..." <https://arxiv.org/abs/1404.5997> paper.
-class AlexNetImpl : public torch::nn::Module {
+struct AlexNetImpl : torch::nn::Module {
   torch::nn::Sequential features{nullptr}, classifier{nullptr};
 
- public:
   AlexNetImpl(int64_t num_classes = 1000);
 
   torch::Tensor forward(torch::Tensor x);

@@ -6,10 +6,9 @@ namespace vision {
 namespace models {
 using Options = torch::nn::Conv2dOptions;
 
-class _DenseLayerImpl : public torch::nn::SequentialImpl {
+struct _DenseLayerImpl : torch::nn::SequentialImpl {
   double drop_rate;
 
- public:
   _DenseLayerImpl(
       int64_t num_input_features,
       int64_t growth_rate,
@@ -41,8 +40,7 @@ class _DenseLayerImpl : public torch::nn::SequentialImpl {
 
 TORCH_MODULE(_DenseLayer);
 
-class _DenseBlockImpl : public torch::nn::SequentialImpl {
- public:
+struct _DenseBlockImpl : torch::nn::SequentialImpl {
   _DenseBlockImpl(
       int64_t num_layers,
       int64_t num_input_features,
@@ -66,8 +64,7 @@ class _DenseBlockImpl : public torch::nn::SequentialImpl {
 
 TORCH_MODULE(_DenseBlock);
 
-class _TransitionImpl : public torch::nn::SequentialImpl {
- public:
+struct _TransitionImpl : torch::nn::SequentialImpl {
   _TransitionImpl(int64_t num_input_features, int64_t num_output_features) {
     push_back(torch::nn::BatchNorm(num_input_features));
     push_back(modelsimpl::Relu(true));
@@ -107,8 +104,9 @@ DenseNetImpl::DenseNetImpl(
   auto num_features = num_init_features;
   for (size_t i = 0; i < block_config.size(); ++i) {
     auto num_layers = block_config[i];
-    auto block =
-        _DenseBlock(num_layers, num_features, bn_size, growth_rate, drop_rate);
+    _DenseBlock block(
+        num_layers, num_features, bn_size, growth_rate, drop_rate);
+
     features->push_back(block);
     num_features = num_features + num_layers * growth_rate;
 
@@ -129,17 +127,12 @@ DenseNetImpl::DenseNetImpl(
 
   // Official init from torch repo.
   for (auto& module : modules(false)) {
-    if (torch::nn::Conv2dImpl* M =
-            dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
+    if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
       torch::nn::init::xavier_normal_(M->weight); // TODO kaiming
-    else if (
-        torch::nn::BatchNormImpl* M =
-            dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
+    else if (auto M = dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
       torch::nn::init::constant_(M->weight, 1);
       torch::nn::init::constant_(M->bias, 0);
-    } else if (
-        torch::nn::LinearImpl* M =
-            dynamic_cast<torch::nn::LinearImpl*>(module.get()))
+    } else if (auto M = dynamic_cast<torch::nn::LinearImpl*>(module.get()))
       torch::nn::init::constant_(M->bias, 0);
   }
 }

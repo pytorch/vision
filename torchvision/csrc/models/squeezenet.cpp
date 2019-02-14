@@ -5,10 +5,9 @@
 
 namespace vision {
 namespace models {
-class Fire : public torch::nn::Module {
+struct Fire : torch::nn::Module {
   torch::nn::Conv2d squeeze, expand1x1, expand3x3;
 
- public:
   Fire(
       int64_t inplanes,
       int64_t squeeze_planes,
@@ -40,39 +39,41 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
   };
 
   if (double_compare(version, 1.0)) {
-    // clang-format off
-		features = torch::nn::Sequential(
-			torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 96, 7).stride(2)),
-			modelsimpl::Relu(true),
-			modelsimpl::MaxPool2D(modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
-			Fire(96, 16, 64, 64),
-			Fire(128, 16, 64, 64),
-			Fire(128, 32, 128, 128),
-			modelsimpl::MaxPool2D(modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
-			Fire(256, 32, 128, 128),
-			Fire(256, 48, 192, 192),
-			Fire(384, 48, 192, 192),
-			Fire(384, 64, 256, 256),
-			modelsimpl::MaxPool2D(modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
-			Fire(512, 64, 256, 256));
-    // clang-format on
+    features = torch::nn::Sequential(
+        torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 96, 7).stride(2)),
+        modelsimpl::Relu(true),
+        modelsimpl::MaxPool2D(
+            modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
+        Fire(96, 16, 64, 64),
+        Fire(128, 16, 64, 64),
+        Fire(128, 32, 128, 128),
+        modelsimpl::MaxPool2D(
+            modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
+        Fire(256, 32, 128, 128),
+        Fire(256, 48, 192, 192),
+        Fire(384, 48, 192, 192),
+        Fire(384, 64, 256, 256),
+        modelsimpl::MaxPool2D(
+            modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
+        Fire(512, 64, 256, 256));
   } else if (double_compare(version, 1.1)) {
-    // clang-format off
-		features = torch::nn::Sequential(
-			torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 64, 3).stride(2)),
-			modelsimpl::Relu(true),
-			modelsimpl::MaxPool2D(modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
-			Fire(64, 16, 64, 64),
-			Fire(128, 16, 64, 64),
-			modelsimpl::MaxPool2D(modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
-			Fire(128, 32, 128, 128),
-			Fire(256, 32, 128, 128),
-			modelsimpl::MaxPool2D(modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
-			Fire(256, 48, 192, 192),
-			Fire(384, 48, 192, 192),
-			Fire(384, 64, 256, 256),
-			Fire(512, 64, 256, 256));
-    // clang-format on
+    features = torch::nn::Sequential(
+        torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 64, 3).stride(2)),
+        modelsimpl::Relu(true),
+        modelsimpl::MaxPool2D(
+            modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
+        Fire(64, 16, 64, 64),
+        Fire(128, 16, 64, 64),
+        modelsimpl::MaxPool2D(
+            modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
+        Fire(128, 32, 128, 128),
+        Fire(256, 32, 128, 128),
+        modelsimpl::MaxPool2D(
+            modelsimpl::MaxPool2DOptions(3).stride(2).ceil_mode(true)),
+        Fire(256, 48, 192, 192),
+        Fire(384, 48, 192, 192),
+        Fire(384, 64, 256, 256),
+        Fire(512, 64, 256, 256));
   } else {
     std::cerr << "Wrong version number is passed th SqueeseNet constructor!"
               << std::endl;
@@ -83,20 +84,17 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
   auto final_conv =
       torch::nn::Conv2d(torch::nn::Conv2dOptions(512, num_classes, 1));
 
-  // clang-format off
-	classifier = torch::nn::Sequential(
-		torch::nn::Dropout(0.5),
-		final_conv,
-		modelsimpl::Relu(true),
-		modelsimpl::AdaptiveAvgPool2D(1));
-  // clang-format on
+  classifier = torch::nn::Sequential(
+      torch::nn::Dropout(0.5),
+      final_conv,
+      modelsimpl::Relu(true),
+      modelsimpl::AdaptiveAvgPool2D(1));
 
   register_module("features", features);
   register_module("classifier", classifier);
 
   for (auto& module : modules(false))
-    if (torch::nn::Conv2dImpl* M =
-            dynamic_cast<torch::nn::Conv2dImpl*>(module.get())) {
+    if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get())) {
       if (M == final_conv.get())
         torch::nn::init::normal_(M->weight, 0.0, 0.01);
       else
