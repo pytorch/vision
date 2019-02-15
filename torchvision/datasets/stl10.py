@@ -129,3 +129,5 @@ class STL10(CIFAR10):
 
         return images, labels
 
+    def extra_repr(self):
+        return "Split: {split}".format(**self.__dict__)
