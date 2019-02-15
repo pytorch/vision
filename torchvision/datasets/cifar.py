@@ -4,16 +4,17 @@ import os
 import os.path
 import numpy as np
 import sys
+
 if sys.version_info[0] == 2:
     import cPickle as pickle
 else:
     import pickle
 
-import torch.utils.data as data
+from .vision import VisionDataset
 from .utils import download_url, check_integrity
 
 
-class CIFAR10(data.Dataset):
+class CIFAR10(VisionDataset):
     """`CIFAR10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ Dataset.
 
     Args:
@@ -54,9 +55,9 @@ class CIFAR10(data.Dataset):
     def __init__(self, root, train=True,
                  transform=None, target_transform=None,
                  download=False):
-        self.root = os.path.expanduser(root)
-        self.transform = transform
-        self.target_transform = target_transform
+
+        super().__init__(root, transform, target_transform)
+
         self.train = train  # training set or test set
 
         if download:
@@ -150,20 +151,12 @@ class CIFAR10(data.Dataset):
         download_url(self.url, self.root, self.filename, self.tgz_md5)
 
         # extract file
-        with tarfile.open(os.path.join(self.root, self.filename), "r:gz") as tar:
+        with tarfile.open(os.path.join(self.root, self.filename),
+                          "r:gz") as tar:
             tar.extractall(path=self.root)
 
-    def __repr__(self):
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        tmp = 'train' if self.train is True else 'test'
-        fmt_str += '    Split: {}\n'.format(tmp)
-        fmt_str += '    Root Location: {}\n'.format(self.root)
-        tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        return fmt_str
+    def extra_repr(self):
+        return "Split: {}".format("Train" if self.train is True else "Test")
 
 
 class CIFAR100(CIFAR10):

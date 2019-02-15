@@ -1,5 +1,5 @@
 from __future__ import print_function
-import torch.utils.data as data
+from .vision import VisionDataset
 from PIL import Image
 import os
 import os.path
@@ -10,7 +10,7 @@ import codecs
 from .utils import download_url, makedir_exist_ok
 
 
-class MNIST(data.Dataset):
+class MNIST(VisionDataset):
     """`MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
 
     Args:
@@ -37,10 +37,9 @@ class MNIST(data.Dataset):
     classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
                '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
 
-    def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
-        self.root = os.path.expanduser(root)
-        self.transform = transform
-        self.target_transform = target_transform
+    def __init__(self, root, train=True, transform=None, target_transform=None,
+                 download=False):
+        super().__init__(root, transform, target_transform)
         self.train = train  # training set or test set
 
         if download:
@@ -54,7 +53,8 @@ class MNIST(data.Dataset):
             data_file = self.training_file
         else:
             data_file = self.test_file
-        self.data, self.targets = torch.load(os.path.join(self.processed_folder, data_file))
+        self.data, self.targets = torch.load(
+            os.path.join(self.processed_folder, data_file))
 
     def __getitem__(self, index):
         """
@@ -94,8 +94,10 @@ class MNIST(data.Dataset):
         return {_class: i for i, _class in enumerate(self.classes)}
 
     def _check_exists(self):
-        return os.path.exists(os.path.join(self.processed_folder, self.training_file)) and \
-            os.path.exists(os.path.join(self.processed_folder, self.test_file))
+        return os.path.exists(
+            os.path.join(self.processed_folder, self.training_file)) and \
+               os.path.exists(
+                   os.path.join(self.processed_folder, self.test_file))
 
     @staticmethod
     def extract_gzip(gzip_path, remove_finished=False):
@@ -126,31 +128,28 @@ class MNIST(data.Dataset):
         print('Processing...')
 
         training_set = (
-            read_image_file(os.path.join(self.raw_folder, 'train-images-idx3-ubyte')),
-            read_label_file(os.path.join(self.raw_folder, 'train-labels-idx1-ubyte'))
+            read_image_file(
+                os.path.join(self.raw_folder, 'train-images-idx3-ubyte')),
+            read_label_file(
+                os.path.join(self.raw_folder, 'train-labels-idx1-ubyte'))
         )
         test_set = (
-            read_image_file(os.path.join(self.raw_folder, 't10k-images-idx3-ubyte')),
-            read_label_file(os.path.join(self.raw_folder, 't10k-labels-idx1-ubyte'))
+            read_image_file(
+                os.path.join(self.raw_folder, 't10k-images-idx3-ubyte')),
+            read_label_file(
+                os.path.join(self.raw_folder, 't10k-labels-idx1-ubyte'))
         )
-        with open(os.path.join(self.processed_folder, self.training_file), 'wb') as f:
+        with open(os.path.join(self.processed_folder, self.training_file),
+                  'wb') as f:
             torch.save(training_set, f)
-        with open(os.path.join(self.processed_folder, self.test_file), 'wb') as f:
+        with open(os.path.join(self.processed_folder, self.test_file),
+                  'wb') as f:
             torch.save(test_set, f)
 
         print('Done!')
 
-    def __repr__(self):
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        tmp = 'train' if self.train is True else 'test'
-        fmt_str += '    Split: {}\n'.format(tmp)
-        fmt_str += '    Root Location: {}\n'.format(self.root)
-        tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        return fmt_str
+    def extra_repr(self):
+        return "Split: {}".format("Train" if self.train is True else "Test")
 
 
 class FashionMNIST(MNIST):
@@ -228,9 +227,10 @@ class EMNIST(MNIST):
 
     def __init__(self, root, split, **kwargs):
         if split not in self.splits:
-            raise ValueError('Split "{}" not found. Valid splits are: {}'.format(
-                split, ', '.join(self.splits),
-            ))
+            raise ValueError(
+                'Split "{}" not found. Valid splits are: {}'.format(
+                    split, ', '.join(self.splits),
+                ))
         self.split = split
         self.training_file = self._training_file(split)
         self.test_file = self._test_file(split)
@@ -258,7 +258,8 @@ class EMNIST(MNIST):
         # download files
         filename = self.url.rpartition('/')[2]
         file_path = os.path.join(self.raw_folder, filename)
-        download_url(self.url, root=self.raw_folder, filename=filename, md5=None)
+        download_url(self.url, root=self.raw_folder, filename=filename,
+                     md5=None)
 
         print('Extracting zip archive')
         with zipfile.ZipFile(file_path) as zip_f:
@@ -267,22 +268,34 @@ class EMNIST(MNIST):
         gzip_folder = os.path.join(self.raw_folder, 'gzip')
         for gzip_file in os.listdir(gzip_folder):
             if gzip_file.endswith('.gz'):
-                self.extract_gzip(gzip_path=os.path.join(gzip_folder, gzip_file))
+                self.extract_gzip(
+                    gzip_path=os.path.join(gzip_folder, gzip_file))
 
         # process and save as torch files
         for split in self.splits:
             print('Processing ' + split)
             training_set = (
-                read_image_file(os.path.join(gzip_folder, 'emnist-{}-train-images-idx3-ubyte'.format(split))),
-                read_label_file(os.path.join(gzip_folder, 'emnist-{}-train-labels-idx1-ubyte'.format(split)))
+                read_image_file(os.path.join(gzip_folder,
+                                             'emnist-{}-train-images-idx3-ubyte'.format(
+                                                 split))),
+                read_label_file(os.path.join(gzip_folder,
+                                             'emnist-{}-train-labels-idx1-ubyte'.format(
+                                                 split)))
             )
             test_set = (
-                read_image_file(os.path.join(gzip_folder, 'emnist-{}-test-images-idx3-ubyte'.format(split))),
-                read_label_file(os.path.join(gzip_folder, 'emnist-{}-test-labels-idx1-ubyte'.format(split)))
+                read_image_file(os.path.join(gzip_folder,
+                                             'emnist-{}-test-images-idx3-ubyte'.format(
+                                                 split))),
+                read_label_file(os.path.join(gzip_folder,
+                                             'emnist-{}-test-labels-idx1-ubyte'.format(
+                                                 split)))
             )
-            with open(os.path.join(self.processed_folder, self._training_file(split)), 'wb') as f:
+            with open(os.path.join(self.processed_folder,
+                                   self._training_file(split)), 'wb') as f:
                 torch.save(training_set, f)
-            with open(os.path.join(self.processed_folder, self._test_file(split)), 'wb') as f:
+            with open(
+                    os.path.join(self.processed_folder, self._test_file(split)),
+                    'wb') as f:
                 torch.save(test_set, f)
         shutil.rmtree(gzip_folder)
 

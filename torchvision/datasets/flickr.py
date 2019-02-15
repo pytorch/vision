@@ -4,7 +4,7 @@ from six.moves import html_parser
 
 import glob
 import os
-import torch.utils.data as data
+from .vision import VisionDataset
 
 
 class Flickr8kParser(html_parser.HTMLParser):
@@ -50,7 +50,7 @@ class Flickr8kParser(html_parser.HTMLParser):
                 self.annotations[img_id].append(data.strip())
 
 
-class Flickr8k(data.Dataset):
+class Flickr8k(VisionDataset):
     """`Flickr8k Entities <http://nlp.cs.illinois.edu/HockenmaierGroup/8k-pictures.html>`_ Dataset.
 
     Args:
@@ -61,11 +61,10 @@ class Flickr8k(data.Dataset):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
+
     def __init__(self, root, ann_file, transform=None, target_transform=None):
-        self.root = os.path.expanduser(root)
+        super().__init__(root, transform, target_transform)
         self.ann_file = os.path.expanduser(ann_file)
-        self.transform = transform
-        self.target_transform = target_transform
 
         # Read annotations and store in a dict
         parser = Flickr8kParser(self.root)
@@ -101,7 +100,7 @@ class Flickr8k(data.Dataset):
         return len(self.ids)
 
 
-class Flickr30k(data.Dataset):
+class Flickr30k(VisionDataset):
     """`Flickr30k Entities <http://web.engr.illinois.edu/~bplumme2/Flickr30kEntities/>`_ Dataset.
 
     Args:
@@ -112,11 +111,10 @@ class Flickr30k(data.Dataset):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
+
     def __init__(self, root, ann_file, transform=None, target_transform=None):
-        self.root = os.path.expanduser(root)
+        super().__init__(root, transform, target_transform)
         self.ann_file = os.path.expanduser(ann_file)
-        self.transform = transform
-        self.target_transform = target_transform
 
         # Read annotations and store in a dict
         self.annotations = defaultdict(list)

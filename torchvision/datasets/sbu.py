@@ -3,10 +3,10 @@ from six.moves import zip
 from .utils import download_url, check_integrity
 
 import os
-import torch.utils.data as data
+from .vision import VisionDataset
 
 
-class SBU(data.Dataset):
+class SBU(VisionDataset):
     """`SBU Captioned Photo <http://www.cs.virginia.edu/~vicente/sbucaptions/>`_ Dataset.
 
     Args:
@@ -24,10 +24,9 @@ class SBU(data.Dataset):
     filename = "SBUCaptionedPhotoDataset.tar.gz"
     md5_checksum = '9aec147b3488753cf758b4d493422285'
 
-    def __init__(self, root, transform=None, target_transform=None, download=True):
-        self.root = os.path.expanduser(root)
-        self.transform = transform
-        self.target_transform = target_transform
+    def __init__(self, root, transform=None, target_transform=None,
+                 download=True):
+        super().__init__(root, transform, target_transform)
 
         if download:
             self.download()
@@ -40,8 +39,10 @@ class SBU(data.Dataset):
         self.photos = []
         self.captions = []
 
-        file1 = os.path.join(self.root, 'dataset', 'SBU_captioned_photo_dataset_urls.txt')
-        file2 = os.path.join(self.root, 'dataset', 'SBU_captioned_photo_dataset_captions.txt')
+        file1 = os.path.join(self.root, 'dataset',
+                             'SBU_captioned_photo_dataset_urls.txt')
+        file2 = os.path.join(self.root, 'dataset',
+                             'SBU_captioned_photo_dataset_captions.txt')
 
         for line1, line2 in zip(open(file1), open(file2)):
             url = line1.rstrip()
@@ -94,11 +95,13 @@ class SBU(data.Dataset):
         download_url(self.url, self.root, self.filename, self.md5_checksum)
 
         # Extract file
-        with tarfile.open(os.path.join(self.root, self.filename), 'r:gz') as tar:
+        with tarfile.open(os.path.join(self.root, self.filename),
+                          'r:gz') as tar:
             tar.extractall(path=self.root)
 
         # Download individual photos
-        with open(os.path.join(self.root, 'dataset', 'SBU_captioned_photo_dataset_urls.txt')) as fh:
+        with open(os.path.join(self.root, 'dataset',
+                               'SBU_captioned_photo_dataset_urls.txt')) as fh:
             for line in fh:
                 url = line.rstrip()
                 try:

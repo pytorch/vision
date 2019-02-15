@@ -1,9 +1,9 @@
 import torch
-import torch.utils.data as data
+from .vision import VisionDataset
 from .. import transforms
 
 
-class FakeData(data.Dataset):
+class FakeData(VisionDataset):
     """A fake dataset that returns randomly generated images and returns them as PIL images
 
     Args:
@@ -21,6 +21,7 @@ class FakeData(data.Dataset):
 
     def __init__(self, size=1000, image_size=(3, 224, 224), num_classes=10,
                  transform=None, target_transform=None, random_offset=0):
+        super().__init__(None, transform, target_transform)
         self.size = size
         self.num_classes = num_classes
         self.image_size = image_size
@@ -40,7 +41,8 @@ class FakeData(data.Dataset):
         rng_state = torch.get_rng_state()
         torch.manual_seed(index + self.random_offset)
         img = torch.randn(*self.image_size)
-        target = torch.randint(0, self.num_classes, size=(1,), dtype=torch.long)[0]
+        target = \
+            torch.randint(0, self.num_classes, size=(1,), dtype=torch.long)[0]
         torch.set_rng_state(rng_state)
 
         # convert to PIL Image
@@ -54,12 +56,3 @@ class FakeData(data.Dataset):
 
     def __len__(self):
         return self.size
-
-    def __repr__(self):
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        return fmt_str

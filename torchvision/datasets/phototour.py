@@ -3,12 +3,12 @@ import numpy as np
 from PIL import Image
 
 import torch
-import torch.utils.data as data
+from .vision import VisionDataset
 
 from .utils import download_url
 
 
-class PhotoTour(data.Dataset):
+class PhotoTour(VisionDataset):
     """`Learning Local Image Descriptors Data <http://phototour.cs.washington.edu/patches/default.htm>`_ Dataset.
 
 
@@ -55,24 +55,26 @@ class PhotoTour(data.Dataset):
         ],
     }
     mean = {'notredame': 0.4854, 'yosemite': 0.4844, 'liberty': 0.4437,
-            'notredame_harris': 0.4854, 'yosemite_harris': 0.4844, 'liberty_harris': 0.4437}
+            'notredame_harris': 0.4854, 'yosemite_harris': 0.4844,
+            'liberty_harris': 0.4437}
     std = {'notredame': 0.1864, 'yosemite': 0.1818, 'liberty': 0.2019,
-           'notredame_harris': 0.1864, 'yosemite_harris': 0.1818, 'liberty_harris': 0.2019}
+           'notredame_harris': 0.1864, 'yosemite_harris': 0.1818,
+           'liberty_harris': 0.2019}
     lens = {'notredame': 468159, 'yosemite': 633587, 'liberty': 450092,
-            'liberty_harris': 379587, 'yosemite_harris': 450912, 'notredame_harris': 325295}
+            'liberty_harris': 379587, 'yosemite_harris': 450912,
+            'notredame_harris': 325295}
     image_ext = 'bmp'
     info_file = 'info.txt'
     matches_files = 'm50_100000_100000_0.txt'
 
     def __init__(self, root, name, train=True, transform=None, download=False):
-        self.root = os.path.expanduser(root)
+        super().__init__(root, transform, None)
         self.name = name
         self.data_dir = os.path.join(self.root, name)
         self.data_down = os.path.join(self.root, '{}.zip'.format(name))
         self.data_file = os.path.join(self.root, '{}.pt'.format(name))
 
         self.train = train
-        self.transform = transform
         self.mean = self.mean[name]
         self.std = self.std[name]
 
@@ -143,7 +145,8 @@ class PhotoTour(data.Dataset):
         print('# Caching data {}'.format(self.data_file))
 
         dataset = (
-            read_image_file(self.data_dir, self.image_ext, self.lens[self.name]),
+            read_image_file(self.data_dir, self.image_ext,
+                            self.lens[self.name]),
             read_info_file(self.data_dir, self.info_file),
             read_matches_files(self.data_dir, self.matches_files)
         )
@@ -151,20 +154,14 @@ class PhotoTour(data.Dataset):
         with open(self.data_file, 'wb') as f:
             torch.save(dataset, f)
 
-    def __repr__(self):
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        tmp = 'train' if self.train is True else 'test'
-        fmt_str += '    Split: {}\n'.format(tmp)
-        fmt_str += '    Root Location: {}\n'.format(self.root)
-        tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        return fmt_str
+    def extra_repr(self):
+        return "Split: {}".format("Train" if self.train is True else "Test")
 
 
 def read_image_file(data_dir, image_ext, n):
     """Return a Tensor containing the patches
     """
+
     def PIL2array(_img):
         """Convert PIL image type to numpy 2D array
         """
@@ -211,5 +208,6 @@ def read_matches_files(data_dir, matches_file):
     with open(os.path.join(data_dir, matches_file), 'r') as f:
         for line in f:
             line_split = line.split()
-            matches.append([int(line_split[0]), int(line_split[3]), int(line_split[1] == line_split[4])])
+            matches.append([int(line_split[0]), int(line_split[3]),
+                            int(line_split[1] == line_split[4])])
     return torch.LongTensor(matches)

@@ -2,11 +2,11 @@ from __future__ import print_function
 from PIL import Image
 from os.path import join
 import os
-import torch.utils.data as data
+from .vision import VisionDataset
 from .utils import download_url, check_integrity, list_dir, list_files
 
 
-class Omniglot(data.Dataset):
+class Omniglot(VisionDataset):
     """`Omniglot <https://github.com/brendenlake/omniglot>`_ Dataset.
     Args:
         root (string): Root directory of dataset where directory
@@ -31,10 +31,9 @@ class Omniglot(data.Dataset):
     def __init__(self, root, background=True,
                  transform=None, target_transform=None,
                  download=False):
-        self.root = join(os.path.expanduser(root), self.folder)
+        super().__init__(join(os.path.expanduser(root), self.folder),
+                         transform, target_transform)
         self.background = background
-        self.transform = transform
-        self.target_transform = target_transform
 
         if download:
             self.download()
@@ -45,10 +44,13 @@ class Omniglot(data.Dataset):
 
         self.target_folder = join(self.root, self._get_target_folder())
         self._alphabets = list_dir(self.target_folder)
-        self._characters = sum([[join(a, c) for c in list_dir(join(self.target_folder, a))]
-                                for a in self._alphabets], [])
-        self._character_images = [[(image, idx) for image in list_files(join(self.target_folder, character), '.png')]
-                                  for idx, character in enumerate(self._characters)]
+        self._characters = sum(
+            [[join(a, c) for c in list_dir(join(self.target_folder, a))]
+             for a in self._alphabets], [])
+        self._character_images = [[(image, idx) for image in list_files(
+            join(self.target_folder, character), '.png')]
+                                  for idx, character in
+                                  enumerate(self._characters)]
         self._flat_character_images = sum(self._character_images, [])
 
     def __len__(self):
@@ -63,7 +65,8 @@ class Omniglot(data.Dataset):
             tuple: (image, target) where target is index of the target character class.
         """
         image_name, character_class = self._flat_character_images[index]
-        image_path = join(self.target_folder, self._characters[character_class], image_name)
+        image_path = join(self.target_folder, self._characters[character_class],
+                          image_name)
         image = Image.open(image_path, mode='r').convert('L')
 
         if self.transform:
@@ -76,7 +79,8 @@ class Omniglot(data.Dataset):
 
     def _check_integrity(self):
         zip_filename = self._get_target_folder()
-        if not check_integrity(join(self.root, zip_filename + '.zip'), self.zips_md5[zip_filename]):
+        if not check_integrity(join(self.root, zip_filename + '.zip'),
+                               self.zips_md5[zip_filename]):
             return False
         return True
 
