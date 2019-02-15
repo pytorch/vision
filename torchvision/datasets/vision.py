@@ -1,4 +1,5 @@
 import os
+import torch
 import torch.utils.data as data
 
 
@@ -6,7 +7,7 @@ class VisionDataset(data.Dataset):
     _repr_indent = 4
 
     def __init__(self, root, transform, target_transform):
-        if isinstance(root, str):
+        if isinstance(root, torch._six.string_classes):
             root = os.path.expanduser(root)
         self.root = root
         self.transform = transform

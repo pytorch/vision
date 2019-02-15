@@ -44,7 +44,7 @@ class CocoCaptions(VisionDataset):
     """
 
     def __init__(self, root, annFile, transform=None, target_transform=None):
-        super().__init__(root, transform, target_transform)
+        super(VisionDataset, self).__init__(root, transform, target_transform)
         from pycocotools.coco import COCO
         self.coco = COCO(annFile)
         self.ids = list(self.coco.imgs.keys())
@@ -91,7 +91,7 @@ class CocoDetection(VisionDataset):
     """
 
     def __init__(self, root, annFile, transform=None, target_transform=None):
-        super().__init__(root, transform, target_transform)
+        super(VisionDataset, self).__init__(root, transform, target_transform)
         from pycocotools.coco import COCO
         self.coco = COCO(annFile)
         self.ids = list(self.coco.imgs.keys())

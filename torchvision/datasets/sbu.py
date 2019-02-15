@@ -26,7 +26,7 @@ class SBU(VisionDataset):
 
     def __init__(self, root, transform=None, target_transform=None,
                  download=True):
-        super().__init__(root, transform, target_transform)
+        super(VisionDataset, self).__init__(root, transform, target_transform)
 
         if download:
             self.download()

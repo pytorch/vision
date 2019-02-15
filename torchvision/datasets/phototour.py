@@ -65,7 +65,7 @@ class PhotoTour(VisionDataset):
     matches_files = 'm50_100000_100000_0.txt'
 
     def __init__(self, root, name, train=True, transform=None, download=False):
-        super().__init__(root, transform, None)
+        super(VisionDataset, self).__init__(root, transform, None)
         self.name = name
         self.data_dir = os.path.join(self.root, name)
         self.data_down = os.path.join(self.root, '{}.zip'.format(name))

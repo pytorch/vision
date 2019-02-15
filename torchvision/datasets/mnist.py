@@ -38,7 +38,7 @@ class MNIST(VisionDataset):
                '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
 
     def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
-        super().__init__(root, transform, target_transform)
+        super(VisionDataset, self).__init__(root, transform, target_transform)
         self.train = train  # training set or test set
 
         if download:
