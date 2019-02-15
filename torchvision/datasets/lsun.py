@@ -86,8 +86,7 @@ class LSUN(VisionDataset):
                 c_short = '_'.join(c_short)
                 if c_short not in categories:
                     raise (ValueError('Unknown LSUN class: ' + c_short + '.'
-                                      'Options are: ' + str(
-                        categories)))
+                                      'Options are: ' + str(categories)))
                 c_short = c.split('_')
                 c_short = c_short.pop(len(c_short) - 1)
                 if c_short not in dset_opts:

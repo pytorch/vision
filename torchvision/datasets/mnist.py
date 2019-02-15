@@ -218,7 +218,7 @@ class EMNIST(MNIST):
     def __init__(self, root, split, **kwargs):
         if split not in self.splits:
             raise ValueError('Split "{}" not found. Valid splits are: {}'.format(
-                    split, ', '.join(self.splits),
+                split, ', '.join(self.splits),
             ))
         self.split = split
         self.training_file = self._training_file(split)
@@ -247,8 +247,7 @@ class EMNIST(MNIST):
         # download files
         filename = self.url.rpartition('/')[2]
         file_path = os.path.join(self.raw_folder, filename)
-        download_url(self.url, root=self.raw_folder, filename=filename,
-                     md5=None)
+        download_url(self.url, root=self.raw_folder, filename=filename, md5=None)
 
         print('Extracting zip archive')
         with zipfile.ZipFile(file_path) as zip_f:

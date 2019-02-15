@@ -50,10 +50,8 @@ class Cityscapes(VisionDataset):
     """
 
     # Based on https://github.com/mcordts/cityscapesScripts
-    CityscapesClass = namedtuple('CityscapesClass',
-                                 ['name', 'id', 'train_id', 'category',
-                                  'category_id', 'has_instances',
-                                  'ignore_in_eval', 'color'])
+    CityscapesClass = namedtuple('CityscapesClass', ['name', 'id', 'train_id', 'category', 'category_id',
+                                                     'has_instances', 'ignore_in_eval', 'color'])
 
     classes = [
         CityscapesClass('unlabeled', 0, 255, 'void', 0, False, True, (0, 0, 0)),

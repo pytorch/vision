@@ -128,3 +128,4 @@ class STL10(CIFAR10):
             images = np.transpose(images, (0, 1, 3, 2))
 
         return images, labels
+

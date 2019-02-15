@@ -47,8 +47,7 @@ class Omniglot(VisionDataset):
         self._characters = sum([[join(a, c) for c in list_dir(join(self.target_folder, a))]
                                 for a in self._alphabets], [])
         self._character_images = [[(image, idx) for image in list_files(join(self.target_folder, character), '.png')]
-                                  for idx, character in
-                                  enumerate(self._characters)]
+                                  for idx, character in enumerate(self._characters)]
         self._flat_character_images = sum(self._character_images, [])
 
     def __len__(self):
