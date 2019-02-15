@@ -20,8 +20,9 @@ class VisionDataset(data.Dataset):
 
     def __repr__(self):
         head = "Dataset " + self.__class__.__name__
-        body = ["Root location: {}".format(self.root),
-                "Number of datapoints: {}".format(self.__len__())]
+        body = ["Number of datapoints: {}".format(self.__len__())]
+        if self.root is not None:
+            body.append("Root location: {}".format(self.root))
         body += self.extra_repr().splitlines()
         if self.transform is not None:
             body += self._format_transform_repr(self.transform,
