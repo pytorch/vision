@@ -26,7 +26,7 @@ class SEMEION(VisionDataset):
 
     def __init__(self, root, transform=None, target_transform=None,
                  download=True):
-        super(VisionDataset, self).__init__(root, transform, target_transform)
+        super(SEMEION, self).__init__(root, transform, target_transform)
 
         if download:
             self.download()

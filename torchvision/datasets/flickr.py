@@ -63,7 +63,7 @@ class Flickr8k(VisionDataset):
     """
 
     def __init__(self, root, ann_file, transform=None, target_transform=None):
-        super(VisionDataset, self).__init__(root, transform, target_transform)
+        super(Flickr8k, self).__init__(root, transform, target_transform)
         self.ann_file = os.path.expanduser(ann_file)
 
         # Read annotations and store in a dict
@@ -113,7 +113,7 @@ class Flickr30k(VisionDataset):
     """
 
     def __init__(self, root, ann_file, transform=None, target_transform=None):
-        super(VisionDataset, self).__init__(root, transform, target_transform)
+        super(Flickr30k, self).__init__(root, transform, target_transform)
         self.ann_file = os.path.expanduser(ann_file)
 
         # Read annotations and store in a dict
