@@ -55,14 +55,11 @@ class PhotoTour(VisionDataset):
         ],
     }
     mean = {'notredame': 0.4854, 'yosemite': 0.4844, 'liberty': 0.4437,
-            'notredame_harris': 0.4854, 'yosemite_harris': 0.4844,
-            'liberty_harris': 0.4437}
+            'notredame_harris': 0.4854, 'yosemite_harris': 0.4844, 'liberty_harris': 0.4437}
     std = {'notredame': 0.1864, 'yosemite': 0.1818, 'liberty': 0.2019,
-           'notredame_harris': 0.1864, 'yosemite_harris': 0.1818,
-           'liberty_harris': 0.2019}
+           'notredame_harris': 0.1864, 'yosemite_harris': 0.1818, 'liberty_harris': 0.2019}
     lens = {'notredame': 468159, 'yosemite': 633587, 'liberty': 450092,
-            'liberty_harris': 379587, 'yosemite_harris': 450912,
-            'notredame_harris': 325295}
+            'liberty_harris': 379587, 'yosemite_harris': 450912, 'notredame_harris': 325295}
     image_ext = 'bmp'
     info_file = 'info.txt'
     matches_files = 'm50_100000_100000_0.txt'
@@ -145,8 +142,7 @@ class PhotoTour(VisionDataset):
         print('# Caching data {}'.format(self.data_file))
 
         dataset = (
-            read_image_file(self.data_dir, self.image_ext,
-                            self.lens[self.name]),
+            read_image_file(self.data_dir, self.image_ext, self.lens[self.name]),
             read_info_file(self.data_dir, self.info_file),
             read_matches_files(self.data_dir, self.matches_files)
         )

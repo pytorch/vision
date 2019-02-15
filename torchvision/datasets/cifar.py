@@ -151,8 +151,7 @@ class CIFAR10(VisionDataset):
         download_url(self.url, self.root, self.filename, self.tgz_md5)
 
         # extract file
-        with tarfile.open(os.path.join(self.root, self.filename),
-                          "r:gz") as tar:
+        with tarfile.open(os.path.join(self.root, self.filename), "r:gz") as tar:
             tar.extractall(path=self.root)
 
     def extra_repr(self):

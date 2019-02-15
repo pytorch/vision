@@ -189,8 +189,7 @@ class VOCDetection(VisionDataset):
             file_names = [x.strip() for x in f.readlines()]
 
         self.images = [os.path.join(image_dir, x + ".jpg") for x in file_names]
-        self.annotations = [os.path.join(annotation_dir, x + ".xml") for x in
-                            file_names]
+        self.annotations = [os.path.join(annotation_dir, x + ".xml") for x in file_names]
         assert (len(self.images) == len(self.annotations))
 
     def __getitem__(self, index):

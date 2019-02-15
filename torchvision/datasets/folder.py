@@ -79,14 +79,13 @@ class DatasetFolder(VisionDataset):
         targets (list): The class_index value for each image in the dataset
     """
 
-    def __init__(self, root, loader, extensions, transform=None,
-                 target_transform=None):
+    def __init__(self, root, loader, extensions, transform=None, target_transform=None):
         super().__init__(root, transform, target_transform)
         classes, class_to_idx = self._find_classes(root)
         samples = make_dataset(root, class_to_idx, extensions)
         if len(samples) == 0:
             raise (RuntimeError("Found 0 files in subfolders of: " + root + "\n"
-                                                                            "Supported extensions are: " + ",".join(
+                                "Supported extensions are: " + ",".join(
                 extensions)))
 
         self.loader = loader
@@ -114,8 +113,7 @@ class DatasetFolder(VisionDataset):
             # Faster and available in Python 3.5 and above
             classes = [d.name for d in os.scandir(dir) if d.is_dir()]
         else:
-            classes = [d for d in os.listdir(dir) if
-                       os.path.isdir(os.path.join(dir, d))]
+            classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
         classes.sort()
         class_to_idx = {classes[i]: i for i in range(len(classes))}
         return classes, class_to_idx
@@ -141,8 +139,7 @@ class DatasetFolder(VisionDataset):
         return len(self.samples)
 
 
-IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif',
-                  '.tiff', 'webp']
+IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', 'webp']
 
 
 def pil_loader(path):

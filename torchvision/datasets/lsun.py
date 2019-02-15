@@ -21,8 +21,7 @@ class LSUNClass(VisionDataset):
                              readahead=False, meminit=False)
         with self.env.begin(write=False) as txn:
             self.length = txn.stat()['entries']
-        cache_file = '_cache_' + ''.join(
-            c for c in root if c in string.ascii_letters)
+        cache_file = '_cache_' + ''.join(c for c in root if c in string.ascii_letters)
         if os.path.isfile(cache_file):
             self.keys = pickle.load(open(cache_file, "rb"))
         else:
@@ -87,14 +86,13 @@ class LSUN(VisionDataset):
                 c_short = '_'.join(c_short)
                 if c_short not in categories:
                     raise (ValueError('Unknown LSUN class: ' + c_short + '.'
-                                                                         'Options are: ' + str(
+                                      'Options are: ' + str(
                         categories)))
                 c_short = c.split('_')
                 c_short = c_short.pop(len(c_short) - 1)
                 if c_short not in dset_opts:
                     raise (ValueError('Unknown postfix: ' + c_short + '.'
-                                                                      'Options are: ' + str(
-                        dset_opts)))
+                                      'Options are: ' + str(dset_opts)))
         else:
             raise (ValueError('Unknown option for classes'))
         self.classes = classes

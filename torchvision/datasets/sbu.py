@@ -39,10 +39,8 @@ class SBU(VisionDataset):
         self.photos = []
         self.captions = []
 
-        file1 = os.path.join(self.root, 'dataset',
-                             'SBU_captioned_photo_dataset_urls.txt')
-        file2 = os.path.join(self.root, 'dataset',
-                             'SBU_captioned_photo_dataset_captions.txt')
+        file1 = os.path.join(self.root, 'dataset', 'SBU_captioned_photo_dataset_urls.txt')
+        file2 = os.path.join(self.root, 'dataset', 'SBU_captioned_photo_dataset_captions.txt')
 
         for line1, line2 in zip(open(file1), open(file2)):
             url = line1.rstrip()
@@ -95,13 +93,11 @@ class SBU(VisionDataset):
         download_url(self.url, self.root, self.filename, self.md5_checksum)
 
         # Extract file
-        with tarfile.open(os.path.join(self.root, self.filename),
-                          'r:gz') as tar:
+        with tarfile.open(os.path.join(self.root, self.filename), 'r:gz') as tar:
             tar.extractall(path=self.root)
 
         # Download individual photos
-        with open(os.path.join(self.root, 'dataset',
-                               'SBU_captioned_photo_dataset_urls.txt')) as fh:
+        with open(os.path.join(self.root, 'dataset', 'SBU_captioned_photo_dataset_urls.txt')) as fh:
             for line in fh:
                 url = line.rstrip()
                 try:

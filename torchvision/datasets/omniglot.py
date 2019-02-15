@@ -44,11 +44,9 @@ class Omniglot(VisionDataset):
 
         self.target_folder = join(self.root, self._get_target_folder())
         self._alphabets = list_dir(self.target_folder)
-        self._characters = sum(
-            [[join(a, c) for c in list_dir(join(self.target_folder, a))]
-             for a in self._alphabets], [])
-        self._character_images = [[(image, idx) for image in list_files(
-            join(self.target_folder, character), '.png')]
+        self._characters = sum([[join(a, c) for c in list_dir(join(self.target_folder, a))]
+                                for a in self._alphabets], [])
+        self._character_images = [[(image, idx) for image in list_files(join(self.target_folder, character), '.png')]
                                   for idx, character in
                                   enumerate(self._characters)]
         self._flat_character_images = sum(self._character_images, [])
@@ -65,8 +63,7 @@ class Omniglot(VisionDataset):
             tuple: (image, target) where target is index of the target character class.
         """
         image_name, character_class = self._flat_character_images[index]
-        image_path = join(self.target_folder, self._characters[character_class],
-                          image_name)
+        image_path = join(self.target_folder, self._characters[character_class], image_name)
         image = Image.open(image_path, mode='r').convert('L')
 
         if self.transform:
@@ -79,8 +76,7 @@ class Omniglot(VisionDataset):
 
     def _check_integrity(self):
         zip_filename = self._get_target_folder()
-        if not check_integrity(join(self.root, zip_filename + '.zip'),
-                               self.zips_md5[zip_filename]):
+        if not check_integrity(join(self.root, zip_filename + '.zip'), self.zips_md5[zip_filename]):
             return False
         return True
 
