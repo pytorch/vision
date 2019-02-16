@@ -92,7 +92,7 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
       if (M == final_conv.get())
         torch::nn::init::normal_(M->weight, 0.0, 0.01);
       else
-        torch::nn::init::xavier_uniform_(M->weight); // TODO kaiming
+        torch::nn::init::kaiming_uniform_(M->weight);
 
       if (M->options.with_bias())
         torch::nn::init::constant_(M->bias, 0);

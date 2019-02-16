@@ -126,7 +126,7 @@ ResNetImpl<Block>::ResNetImpl(
 
   for (auto& module : modules(/*include_self=*/false)) {
     if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get())) {
-      torch::nn::init::xavier_normal_(M->weight); // TODO kaiming
+      torch::nn::init::kaiming_normal_(M->weight);
     } else if (auto M = dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
       torch::nn::init::constant_(M->weight, 1);
       torch::nn::init::constant_(M->bias, 0);

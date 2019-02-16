@@ -32,7 +32,7 @@ torch::nn::Sequential makeLayers(
 void VGGImpl::_initialize_weights() {
   for (auto& module : modules(/*include_self=*/false)) {
     if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get())) {
-      torch::nn::init::xavier_normal_(M->weight); // TODO kaiming
+      torch::nn::init::kaiming_normal_(M->weight);
       torch::nn::init::constant_(M->bias, 0);
     } else if (auto M = dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
       torch::nn::init::constant_(M->weight, 1);
