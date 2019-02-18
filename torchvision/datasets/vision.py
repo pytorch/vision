@@ -10,8 +10,6 @@ class VisionDataset(data.Dataset):
         if isinstance(root, torch._six.string_classes):
             root = os.path.expanduser(root)
         self.root = root
-        self.transform = None
-        self.target_transform = None
 
     def __getitem__(self, index):
         raise NotImplementedError
@@ -25,10 +23,10 @@ class VisionDataset(data.Dataset):
         if self.root is not None:
             body.append("Root location: {}".format(self.root))
         body += self.extra_repr().splitlines()
-        if self.transform is not None:
+        if hasattr(self, 'transform') and self.transform is not None:
             body += self._format_transform_repr(self.transform,
                                                 "Transforms: ")
-        if self.target_transform is not None:
+        if hasattr(self, 'target_transform') and self.target_transform is not None:
             body += self._format_transform_repr(self.target_transform,
                                                 "Target transforms: ")
         lines = [head] + [" " * self._repr_indent + line for line in body]
