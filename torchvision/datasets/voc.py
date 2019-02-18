@@ -75,7 +75,9 @@ class VOCSegmentation(VisionDataset):
                  download=False,
                  transform=None,
                  target_transform=None):
-        super(VOCSegmentation, self).__init__(root, transform, target_transform)
+        super(VOCSegmentation, self).__init__(root)
+        self.transform = transform
+        self.target_transform = target_transform
         self.year = year
         self.url = DATASET_YEAR_DICT[year]['url']
         self.filename = DATASET_YEAR_DICT[year]['filename']
@@ -156,7 +158,9 @@ class VOCDetection(VisionDataset):
                  download=False,
                  transform=None,
                  target_transform=None):
-        super(VOCDetection, self).__init__(root, transform, target_transform)
+        super(VOCDetection, self).__init__(root)
+        self.transform = transform
+        self.target_transform = target_transform
         self.year = year
         self.url = DATASET_YEAR_DICT[year]['url']
         self.filename = DATASET_YEAR_DICT[year]['filename']

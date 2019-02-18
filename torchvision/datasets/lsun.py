@@ -68,7 +68,9 @@ class LSUN(VisionDataset):
 
     def __init__(self, root, classes='train',
                  transform=None, target_transform=None):
-        super(LSUN, self).__init__(root, transform, target_transform)
+        super(LSUN, self).__init__(root)
+        self.transform = transform
+        self.target_transform = target_transform
         categories = ['bedroom', 'bridge', 'church_outdoor', 'classroom',
                       'conference_room', 'dining_room', 'kitchen',
                       'living_room', 'restaurant', 'tower']

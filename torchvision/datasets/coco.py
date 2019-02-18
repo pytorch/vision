@@ -91,7 +91,9 @@ class CocoDetection(VisionDataset):
     """
 
     def __init__(self, root, annFile, transform=None, target_transform=None):
-        super(CocoDetection, self).__init__(root, transform, target_transform)
+        super(CocoDetection, self).__init__(root)
+        self.transform = transform
+        self.target_transform = target_transform
         from pycocotools.coco import COCO
         self.coco = COCO(annFile)
         self.ids = list(self.coco.imgs.keys())

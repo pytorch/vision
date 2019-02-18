@@ -80,7 +80,9 @@ class DatasetFolder(VisionDataset):
     """
 
     def __init__(self, root, loader, extensions, transform=None, target_transform=None):
-        super(DatasetFolder, self).__init__(root, transform, target_transform)
+        super(DatasetFolder, self).__init__(root)
+        self.transform = transform
+        self.target_transform = target_transform
         classes, class_to_idx = self._find_classes(root)
         samples = make_dataset(root, class_to_idx, extensions)
         if len(samples) == 0:

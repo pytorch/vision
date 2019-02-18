@@ -6,12 +6,12 @@ import torch.utils.data as data
 class VisionDataset(data.Dataset):
     _repr_indent = 4
 
-    def __init__(self, root, transform, target_transform):
+    def __init__(self, root):
         if isinstance(root, torch._six.string_classes):
             root = os.path.expanduser(root)
         self.root = root
-        self.transform = transform
-        self.target_transform = target_transform
+        self.transform = None
+        self.target_transform = None
 
     def __getitem__(self, index):
         raise NotImplementedError
