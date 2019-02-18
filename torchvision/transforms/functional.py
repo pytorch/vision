@@ -1,16 +1,20 @@
 from __future__ import division
-import torch
-import sys
+
+import collections
 import math
-from PIL import Image, ImageOps, ImageEnhance, PILLOW_VERSION
+import numbers
+import sys
+import warnings
+
+import numpy as np
+from PIL import PILLOW_VERSION, Image, ImageEnhance, ImageOps
+
+import torch
+
 try:
     import accimage
 except ImportError:
     accimage = None
-import numpy as np
-import numbers
-import collections
-import warnings
 
 if sys.version_info < (3, 3):
     Sequence = collections.Sequence
@@ -36,16 +40,20 @@ def _is_numpy_image(img):
 
 
 def to_tensor(pic):
-    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
+    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor, or do nothing if it is already a tensor.
 
     See ``ToTensor`` for more details.
 
     Args:
-        pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
+        pic (PIL Image, numpy.ndarray or Tensor): Image to be converted to tensor. If `pic` is a
+        tensor, this function does nothing.
 
     Returns:
         Tensor: Converted image.
     """
+    if torch.is_tensor(pic):
+        return pic
+
     if not(_is_pil_image(pic) or _is_numpy_image(pic)):
         raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
 
@@ -100,7 +108,8 @@ def to_pil_image(pic, mode=None):
     See :class:`~torchvision.transforms.ToPILImage` for more details.
 
     Args:
-        pic (Tensor or numpy.ndarray): Image to be converted to PIL Image.
+        pic (Tensor, numpy.ndarray or PIL Image): Image to be converted to PIL Image. If `pic`
+            is a PIL Image, this function only converts `pic` to the specified `mode`.
         mode (`PIL.Image mode`_): color space and pixel depth of input data (optional).
 
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
@@ -108,6 +117,9 @@ def to_pil_image(pic, mode=None):
     Returns:
         PIL Image: Image converted to PIL Image.
     """
+    if _is_pil_image(pic):
+        return pic.convert(mode=mode)
+
     if not(isinstance(pic, torch.Tensor) or isinstance(pic, np.ndarray)):
         raise TypeError('pic should be Tensor or ndarray. Got {}.'.format(type(pic)))
 
