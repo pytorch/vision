@@ -1,6 +1,6 @@
 import os
 from .folder import ImageFolder
-from torch.utils.data import Subset
+from torch.utils import data
 from .utils import download_url, check_integrity
 
 
@@ -36,7 +36,9 @@ class FullDTD(ImageFolder):
         if download:
             self.download()
 
-        super().__init__(os.path.join(self.root, self.image_folder), **kwargs)
+        super(FullDTD, self).__init__(os.path.join(self.root,
+                                                   self.image_folder),
+                                      **kwargs)
         # super class sets this to the root of the image folder, which is inside
         # the data folder
         self.root = root
@@ -73,7 +75,7 @@ class FullDTD(ImageFolder):
         return fmt_str
 
 
-class DTD(Subset):
+class DTD(data.Subset):
     """`DTD <https://www.robots.ox.ac.uk/~vgg/data/dtd/>`_ Dataset.
 
         Args:
@@ -107,7 +109,7 @@ class DTD(Subset):
 
         dataset = FullDTD(root, **kwargs)
         indices = self._make_indices(dataset)
-        super().__init__(dataset, indices)
+        super(DTD, self).__init__(dataset, indices)
 
     def _make_indices(self, dataset):
         image_folder = os.path.join(dataset.root, dataset.image_folder)
