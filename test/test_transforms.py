@@ -1,3 +1,4 @@
+from __future__ import division
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
@@ -129,6 +130,25 @@ class Tester(unittest.TestCase):
 
                 assert len(results) == 10
                 assert expected_output == results
+
+    def test_randomresized_params(self):
+        height = random.randint(24, 32) * 2
+        width = random.randint(24, 32) * 2
+        img = torch.ones(3, height, width)
+        to_pil_image = transforms.ToPILImage()
+        img = to_pil_image(img)
+        size = 100
+        epsilon = 0.05
+        for i in range(10):
+            scale_min = round(random.random(), 2)
+            scale_range = (scale_min, scale_min + round(random.random(), 2))
+            aspect_min = round(random.random(), 2)
+            aspect_ratio_range = (aspect_min, aspect_min + round(random.random(), 2))
+            randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range)
+            _, _, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
+            aspect_ratio_obtained = w / h
+            assert (min(aspect_ratio_range) - epsilon <= aspect_ratio_obtained <= max(aspect_ratio_range) + epsilon or
+                    aspect_ratio_obtained == 1.0)
 
     def test_resize(self):
         height = random.randint(24, 32) * 2
