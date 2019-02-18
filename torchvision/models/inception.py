@@ -96,7 +96,7 @@ class Inception3(nn.Module):
         x = self.Mixed_5b(x)
         # N x 256 x 35 x 35
         x = self.Mixed_5c(x)
-        # N x 288 x 35 x 35 
+        # N x 288 x 35 x 35
         x = self.Mixed_5d(x)
         # N x 288 x 35 x 35
         x = self.Mixed_6a(x)
