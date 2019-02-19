@@ -115,8 +115,10 @@ class MNIST(VisionDataset):
         return {_class: i for i, _class in enumerate(self.classes)}
 
     def _check_exists(self):
-        return os.path.exists(os.path.join(self.processed_folder, self.training_file)) and \
-               os.path.exists(os.path.join(self.processed_folder, self.test_file))
+        return (os.path.exists(os.path.join(self.processed_folder,
+                                            self.training_file)) and
+                os.path.exists(os.path.join(self.processed_folder,
+                                            self.test_file)))
 
     @staticmethod
     def extract_gzip(gzip_path, remove_finished=False):
