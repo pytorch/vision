@@ -64,14 +64,11 @@ class FullDTD(ImageFolder):
         fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
         fmt_str += '    Root Location: {}\n'.format(self.root)
         tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}\n'.format(tmp,
-                                     self.transform.__repr__().replace('\n',
-                                                                       '\n' + ' ' * len(
-                                                                           tmp)))
+        transform_repr = self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp))
+        fmt_str += '{0}{1}\n'.format(tmp, transform_repr)
         tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp,
-                                   self.target_transform.__repr__().replace(
-                                       '\n', '\n' + ' ' * len(tmp)))
+        transform_repr = self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp))
+        fmt_str += '{0}{1}'.format(tmp, transform_repr)
         return fmt_str
 
 
@@ -133,15 +130,9 @@ class DTD(data.Subset):
         fmt_str += '    Fold: {}\n'.format(self.fold)
         fmt_str += '    Root Location: {}\n'.format(self.dataset.root)
         tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}\n'.format(tmp,
-                                     self.dataset.transform.__repr__().replace('\n',
-                                                                       '\n' + ' ' * len(
-                                                                           tmp)))
+        transform_repr = self.dataset.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp))
+        fmt_str += '{0}{1}\n'.format(tmp, transform_repr)
         tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp,
-                                   self.dataset.target_transform.__repr__().replace(
-                                       '\n', '\n' + ' ' * len(tmp)))
+        transform_repr = self.dataset.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp))
+        fmt_str += '{0}{1}'.format(tmp, transform_repr)
         return fmt_str
-
-
-
