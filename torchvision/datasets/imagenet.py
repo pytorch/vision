@@ -76,7 +76,7 @@ class ImageNetDetection(ImageFolder):
     def _prepare_tree(self):
         try:
             os.makedirs(self.split_folder)
-        except FileExistsError:
+        except (OSError, FileExistsError):
             shutil.rmtree(self.split_folder)
 
     def _verify_split(self, split):
