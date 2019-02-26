@@ -117,7 +117,7 @@ def to_pil_image(pic, mode=None):
 
         elif pic.ndimension() == 2:
             # if 2D image, add channel dimension (CHW)
-            pic.unsqueeze_(0)
+            pic = pic.unsqueeze(0)
 
     elif isinstance(pic, np.ndarray):
         if pic.ndim not in {2, 3}:
@@ -376,8 +376,8 @@ def resized_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
 
     Args:
         img (PIL Image): Image to be cropped.
-        i: Upper pixel coordinate.
-        j: Left pixel coordinate.
+        i: i in (i,j) i.e coordinates of the upper left corner
+        j: j in (i,j) i.e coordinates of the upper left corner
         h: Height of the cropped image.
         w: Width of the cropped image.
         size (sequence or int): Desired output size. Same semantics as ``resize``.

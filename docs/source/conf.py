@@ -208,7 +208,7 @@ def patched_make_field(self, types, domain, items, **kw):
     # `kw` catches `env=None` needed for newer sphinx while maintaining
     #  backwards compatibility when passed along further down!
 
-    # type: (List, unicode, Tuple) -> nodes.field
+    # type: (list, unicode, tuple) -> nodes.field
     def handle_item(fieldarg, content):
         par = nodes.paragraph()
         par += addnodes.literal_strong('', fieldarg)  # Patch: this line added

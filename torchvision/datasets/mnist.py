@@ -1,4 +1,5 @@
 from __future__ import print_function
+import warnings
 import torch.utils.data as data
 from PIL import Image
 import os
@@ -36,6 +37,26 @@ class MNIST(data.Dataset):
     test_file = 'test.pt'
     classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
                '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
+
+    @property
+    def train_labels(self):
+        warnings.warn("train_labels has been renamed targets")
+        return self.targets
+
+    @property
+    def test_labels(self):
+        warnings.warn("test_labels has been renamed targets")
+        return self.targets
+
+    @property
+    def train_data(self):
+        warnings.warn("train_data has been renamed data")
+        return self.data
+
+    @property
+    def test_data(self):
+        warnings.warn("test_data has been renamed data")
+        return self.data
 
     def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
         self.root = os.path.expanduser(root)
@@ -205,7 +226,7 @@ class KMNIST(MNIST):
 
 
 class EMNIST(MNIST):
-    """`EMNIST <https://www.nist.gov/itl/iad/image-group/emnist-dataset/>`_ Dataset.
+    """`EMNIST <https://www.westernsydney.edu.au/bens/home/reproducible_research/emnist>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where ``processed/training.pt``
@@ -223,7 +244,8 @@ class EMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    url = 'http://www.itl.nist.gov/iaui/vip/cs_links/EMNIST/gzip.zip'
+    # Updated URL from https://www.westernsydney.edu.au/bens/home/reproducible_research/emnist
+    url = 'https://cloudstor.aarnet.edu.au/plus/index.php/s/54h3OuGJhFLwAlQ/download'
     splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
 
     def __init__(self, root, split, **kwargs):
