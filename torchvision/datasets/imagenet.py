@@ -1,4 +1,9 @@
 import os
+import sys
+if sys.version_info[0] == 2:
+    # FIXME: I don't know if this is good pratice / robust
+    FileExistsError = OSError
+
 import shutil
 import scipy.io as sio
 import torch
@@ -27,7 +32,7 @@ META_DICT = {
 META_FILE = 'meta.bin'
 
 
-class ImageNetDetection(ImageFolder):
+class ImageNetClassification(ImageFolder):
     def __init__(self, root, split='val', year='2012', download=False, **kwargs):
 
         root = self.root = os.path.expanduser(root)
@@ -38,7 +43,7 @@ class ImageNetDetection(ImageFolder):
             self.download()
 
         self.wnids, self.wnid_to_idx, classes, class_to_idx = self._load_meta()
-        super(ImageNetDetection, self).__init__(self.split_folder, **kwargs)
+        super(ImageNetClassification, self).__init__(self.split_folder, **kwargs)
         self.root = root
         self.classes = classes
         self.class_to_idx = class_to_idx
@@ -76,7 +81,7 @@ class ImageNetDetection(ImageFolder):
     def _prepare_tree(self):
         try:
             os.makedirs(self.split_folder)
-        except (OSError, FileExistsError):
+        except FileExistsError:
             shutil.rmtree(self.split_folder)
 
     def _verify_split(self, split):
@@ -118,7 +123,7 @@ class ImageNetDetection(ImageFolder):
         return ARCHIVE_DICT[(self.year, self.split)]
 
 
-class ImageNetSegmentation():
+class ImageNetDetection():
     # TODO: implement
     pass
 
