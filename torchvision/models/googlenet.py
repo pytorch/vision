@@ -71,7 +71,7 @@ class GoogLeNet(nn.Module):
         if aux_logits:
             self.aux1 = InceptionAux(512, num_classes, batch_norm)
             self.aux2 = InceptionAux(528, num_classes, batch_norm)
-        self.avgpool = nn.AvgPool2d(7, stride=1)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.dropout = nn.Dropout(0.4)
         self.fc = nn.Linear(1024, num_classes)
 
@@ -169,7 +169,7 @@ class InceptionAux(nn.Module):
         self.fc2 = nn.Linear(1024, num_classes)
 
     def forward(self, x):
-        x = F.avg_pool2d(x, kernel_size=5, stride=3)
+        x = F.adaptive_avg_pool2d(x, (4, 4))
 
         x = self.conv(x)
         x = x.view(x.size(0), -1)
