@@ -1,15 +1,14 @@
 import os
 import sys
-
-if sys.version_info[0] == 2:
-    # FIXME: I don't know if this is good pratice / robust
-    FileExistsError = OSError
-
 import shutil
 import scipy.io as sio
 import torch
 from .folder import ImageFolder
 from .utils import check_integrity, download_url
+
+if sys.version_info[0] == 2:
+    # FIXME: I don't know if this is good pratice / robust
+    FileExistsError = OSError
 
 ARCHIVE_DICT = {
     ('2012', 'train'): {
@@ -33,7 +32,7 @@ META_DICT = {
 META_FILE = 'meta.bin'
 
 
-class ImageNetClassification(ImageFolder):
+class ImageNet(ImageFolder):
     def __init__(self, root, split='train', year='2012', download=False, **kwargs):
 
         root = self.root = os.path.expanduser(root)
@@ -44,7 +43,7 @@ class ImageNetClassification(ImageFolder):
             self.download()
 
         self.wnids, self.wnid_to_idx, classes, class_to_idx = self._load_meta()
-        super(ImageNetClassification, self).__init__(self.split_folder, **kwargs)
+        super(ImageNet, self).__init__(self.split_folder, **kwargs)
         self.root = root
         self.classes = classes
         self.class_to_idx = class_to_idx
@@ -120,11 +119,6 @@ class ImageNetClassification(ImageFolder):
     @property
     def split_folder(self):
         return os.path.join(self.year_folder, self.split)
-
-
-class ImageNetDetection():
-    # TODO: implement
-    pass
 
 
 def extract_tar(src, dest=None, gzip=None, delete=False):

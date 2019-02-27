@@ -13,7 +13,7 @@ from .sbu import SBU
 from .flickr import Flickr8k, Flickr30k
 from .voc import VOCSegmentation, VOCDetection
 from .cityscapes import Cityscapes
-from .imagenet import ImageNetClassification, ImageNetDetection
+from .imagenet import ImageNet
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
@@ -21,5 +21,4 @@ __all__ = ('LSUN', 'LSUNClass',
            'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST',
            'MNIST', 'KMNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
-           'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNetClassification',
-           'ImageNetDetection')
+           'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNet')
