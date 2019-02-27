@@ -1,5 +1,6 @@
 import os
 import sys
+
 if sys.version_info[0] == 2:
     # FIXME: I don't know if this is good pratice / robust
     FileExistsError = OSError
@@ -33,7 +34,7 @@ META_FILE = 'meta.bin'
 
 
 class ImageNetClassification(ImageFolder):
-    def __init__(self, root, split='val', year='2012', download=False, **kwargs):
+    def __init__(self, root, split='train', year='2012', download=False, **kwargs):
 
         root = self.root = os.path.expanduser(root)
         self.split = self._verify_split(split)
@@ -58,7 +59,7 @@ class ImageNetClassification(ImageFolder):
             archive_dict = ARCHIVE_DICT[(self.year, 'devkit')]
             download_and_extract_tar(archive_dict['url'], self.root,
                                      extract_root=tmpdir,
-                                     md5=archive_dict['md5'], gzip=True)
+                                     md5=archive_dict['md5'])
             devkit_folder = _splitexts(os.path.basename(archive_dict['url']))[0]
             meta, val_wnids = parse_devkit(os.path.join(tmpdir, devkit_folder))
             torch.save((meta, val_wnids), meta_file)
@@ -68,9 +69,11 @@ class ImageNetClassification(ImageFolder):
         archive_dict = ARCHIVE_DICT[(self.year, self.split)]
         download_and_extract_tar(archive_dict['url'], self.root,
                                  extract_root=self.split_folder,
-                                 md5=archive_dict['md5'], gzip=False)
+                                 md5=archive_dict['md5'])
 
-        if self.split == 'val':
+        if self.split == 'train':
+            prepare_train_folder(self.split_folder)
+        elif self.split == 'val':
             val_wnids = torch.load(meta_file)[1]
             prepare_val_folder(self.split_folder, val_wnids)
 
@@ -98,7 +101,7 @@ class ImageNetClassification(ImageFolder):
     def _verify_year(self, year):
         if year not in self.valid_years:
             msg = "Unknown year {} .".format(year)
-            msg += "Valid splits are {{}}.".format(", ".join(self.valid_years))
+            msg += "Valid years are {{}}.".format(", ".join(self.valid_years))
             raise ValueError(msg)
         return year
 
@@ -118,33 +121,40 @@ class ImageNetClassification(ImageFolder):
     def split_folder(self):
         return os.path.join(self.year_folder, self.split)
 
-    @property
-    def archive_dict(self):
-        return ARCHIVE_DICT[(self.year, self.split)]
-
 
 class ImageNetDetection():
     # TODO: implement
     pass
 
 
-def download_and_extract_tar(url, download_root, extract_root=None, filename=None,
-                             md5=None, gzip=False):
+def extract_tar(src, dest=None, gzip=None, delete=False):
     import tarfile
 
-    download_root = os.path.expanduser(download_root)
-    if not extract_root:
-        extract_root = download_root
-    if not filename:
-        filename = os.path.basename(url)
-
-    archive = os.path.join(download_root, filename)
-    if not check_integrity(archive, md5):
-        download_url(url, download_root, filename=filename, md5=md5)
+    if dest is None:
+        dest = os.path.dirname(src)
+    if gzip is None:
+        gzip = src.lower().endswith('.gz')
 
     mode = 'r:gz' if gzip else 'r'
-    with tarfile.open(archive, mode) as tgzfh:
-        tgzfh.extractall(path=extract_root)
+    with tarfile.open(src, mode) as tarfh:
+        tarfh.extractall(path=dest)
+
+    if delete:
+        os.remove(src)
+
+
+def download_and_extract_tar(url, download_root, extract_root=None, filename=None,
+                             md5=None, **kwargs):
+    download_root = os.path.expanduser(download_root)
+    if extract_root is None:
+        extract_root = extract_root
+    if filename is None:
+        filename = os.path.basename(url)
+
+    if not check_integrity(os.path.join(download_root, filename), md5):
+        download_url(url, download_root, filename=filename, md5=md5)
+
+    extract_tar(os.path.join(download_root, filename), extract_root, **kwargs)
 
 
 def parse_devkit(root):
@@ -176,6 +186,11 @@ def parse_val_groundtruth(devkit_root, path='data',
     with open(os.path.join(devkit_root, path, filename), 'r') as fh:
         val_idcs = fh.readlines()
     return [int(val_idx) for val_idx in val_idcs]
+
+
+def prepare_train_folder(folder):
+    for archive in [os.path.join(folder, archive) for archive in os.listdir(folder)]:
+        extract_tar(archive, os.path.splitext(archive)[0], delete=True)
 
 
 def prepare_val_folder(folder, wnids):
