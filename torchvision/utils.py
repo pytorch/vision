@@ -35,11 +35,11 @@ def make_grid(tensor, nrow=8, padding=2,
         tensor = torch.stack(tensor, dim=0)
 
     if tensor.dim() == 2:  # single image H x W
-        tensor = tensor.view(1, tensor.size(0), tensor.size(1))
+        tensor = tensor.unsqueeze(0)
     if tensor.dim() == 3:  # single image
         if tensor.size(0) == 1:  # if single-channel, convert to 3-channel
             tensor = torch.cat((tensor, tensor, tensor), 0)
-        tensor = tensor.view(1, tensor.size(0), tensor.size(1), tensor.size(2))
+        tensor = tensor.unsqueeze(0)
 
     if tensor.dim() == 4 and tensor.size(1) == 1:  # single-channel images
         tensor = torch.cat((tensor, tensor, tensor), 1)
