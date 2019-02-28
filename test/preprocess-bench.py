@@ -1,7 +1,7 @@
 import argparse
 import os
 from timeit import default_timer as timer
-from tqdm import tqdm
+from torch.utils.model_zoo import tqdm
 import torch
 import torch.utils.data
 import torchvision
