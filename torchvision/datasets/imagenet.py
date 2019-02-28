@@ -33,6 +33,30 @@ META_FILE = 'meta.bin'
 
 
 class ImageNet(ImageFolder):
+    """`ImageNet <http://image-net.org/>`_ Classification Dataset.
+
+    Args:
+        root (string): Root directory of the ImageNet Dataset.
+        year (string, optional): The dataset year, supports years 2012 to 2012.
+        split (string, optional): The dataset split, supports ``train``, or ``val``.
+        download (bool, optional): If true, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
+        transform (callable, optional): A function/transform that  takes in an PIL image
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
+        target_transform (callable, optional): A function/transform that takes in the
+            target and transforms it.
+        loader (callable, optional): A function to load an image given its path.
+
+     Attributes:
+        classes (list): List of the class names.
+        class_to_idx (dict): Dict with items (class_name, class_index).
+        wnids (list): List of the WordNet IDs.
+        class_to_idx (dict): Dict with items (wordnet_id, wordnet_id_index).
+        imgs (list): List of (image path, class_index) tuples
+        targets (list): The class_index value for each image in the dataset
+    """
+
     def __init__(self, root, split='train', year='2012', download=False, **kwargs):
 
         root = self.root = os.path.expanduser(root)
@@ -119,6 +143,27 @@ class ImageNet(ImageFolder):
     @property
     def split_folder(self):
         return os.path.join(self.year_folder, self.split)
+
+    def __repr__(self):
+        head = "Dataset " + self.__class__.__name__
+        body = ["Number of datapoints: {}".format(self.__len__())]
+        if self.root is not None:
+            body.append("Root location: {}".format(self.root))
+        body += ["Year: {}".format(self.year),
+                 "Split: {}".format(self.split)]
+        if hasattr(self, 'transform') and self.transform is not None:
+            body += self._format_transform_repr(self.transform,
+                                                "Transforms: ")
+        if hasattr(self, 'target_transform') and self.target_transform is not None:
+            body += self._format_transform_repr(self.target_transform,
+                                                "Target transforms: ")
+        lines = [head] + [" " * 4 + line for line in body]
+        return '\n'.join(lines)
+
+    def _format_transform_repr(self, transform, head):
+        lines = transform.__repr__().splitlines()
+        return (["{}{}".format(head, lines[0])] +
+                ["{}{}".format(" " * len(head), line) for line in lines[1:]])
 
 
 def extract_tar(src, dest=None, gzip=None, delete=False):
