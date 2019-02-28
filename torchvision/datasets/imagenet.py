@@ -1,7 +1,6 @@
 import os
 import sys
 import shutil
-import scipy.io as sio
 import torch
 from .folder import ImageFolder
 from .utils import check_integrity, download_url
@@ -210,6 +209,8 @@ def parse_devkit(root):
 
 def parse_meta(devkit_root, path='data', filename='meta.mat'):
     # FIXME: generalize this for all years
+    import scipy.io as sio
+
     metafile = os.path.join(devkit_root, path, filename)
     meta = sio.loadmat(metafile, squeeze_me=True)['synsets']
     idcs, wnids, classes = list(zip(*meta))[:3]
