@@ -214,9 +214,11 @@ def parse_meta(devkit_root, path='data', filename='meta.mat'):
     metafile = os.path.join(devkit_root, path, filename)
     meta = sio.loadmat(metafile, squeeze_me=True)['synsets']
     idcs, wnids, classes = list(zip(*meta))[:3]
-    classes = [tuple(cls.split(', ')) for cls in classes]
     wnid_to_idx = {wnid: idx for wnid, idx in zip(wnids, idcs)}
-    class_to_idx = {cls: idx for cls, idx in zip(classes, idcs)}
+    classes = [tuple(cls.split(', ')) for cls in classes]
+    class_to_idx = {cls: idx
+                    for clss, idx in zip(classes, idcs)
+                    for cls in clss}
     return wnids, wnid_to_idx, classes, class_to_idx
 
 
