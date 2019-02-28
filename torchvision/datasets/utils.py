@@ -2,7 +2,7 @@ import os
 import os.path
 import hashlib
 import errno
-from tqdm import tqdm
+from torch.utils.model_zoo import tqdm
 
 
 def gen_bar_updater(pbar):
@@ -70,7 +70,7 @@ def download_url(url, root, filename=None, md5=None):
             print('Downloading ' + url + ' to ' + fpath)
             urllib.request.urlretrieve(
                 url, fpath,
-                reporthook=gen_bar_updater(tqdm(unit='B', unit_scale=True))
+                reporthook=gen_bar_updater(tqdm())
             )
         except OSError:
             if url[:5] == 'https':
@@ -79,7 +79,7 @@ def download_url(url, root, filename=None, md5=None):
                       ' Downloading ' + url + ' to ' + fpath)
                 urllib.request.urlretrieve(
                     url, fpath,
-                    reporthook=gen_bar_updater(tqdm(unit='B', unit_scale=True))
+                    reporthook=gen_bar_updater(tqdm())
                 )
 
 
