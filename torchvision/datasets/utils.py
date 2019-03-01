@@ -5,7 +5,9 @@ import errno
 from torch.utils.model_zoo import tqdm
 
 
-def gen_bar_updater(pbar):
+def gen_bar_updater():
+    pbar = tqdm(total=None)
+
     def bar_update(count, block_size, total_size):
         if pbar.total is None and total_size:
             pbar.total = total_size
@@ -70,7 +72,7 @@ def download_url(url, root, filename=None, md5=None):
             print('Downloading ' + url + ' to ' + fpath)
             urllib.request.urlretrieve(
                 url, fpath,
-                reporthook=gen_bar_updater(tqdm())
+                reporthook=gen_bar_updater()
             )
         except OSError:
             if url[:5] == 'https':
@@ -79,7 +81,7 @@ def download_url(url, root, filename=None, md5=None):
                       ' Downloading ' + url + ' to ' + fpath)
                 urllib.request.urlretrieve(
                     url, fpath,
-                    reporthook=gen_bar_updater(tqdm())
+                    reporthook=gen_bar_updater()
                 )
 
 
