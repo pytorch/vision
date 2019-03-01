@@ -7,6 +7,7 @@ from torch.utils.model_zoo import tqdm
 
 def gen_bar_updater():
     pbar = tqdm(total=None)
+
     def bar_update(count, block_size, total_size):
         if pbar.total is None and total_size:
             pbar.total = total_size
