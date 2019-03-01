@@ -46,8 +46,10 @@ if __name__ == "__main__":
 
     start_time = timer()
     batch_count = 20 * args.nThreads
-    for _ in tqdm(range(batch_count)):
-        batch = next(train_iter)
+    with tqdm(total=batch_count) as pbar:
+        for _ in tqdm(range(batch_count)):
+            pbar.update(1)
+            batch = next(train_iter)
     end_time = timer()
     print("Performance: {dataset:.0f} minutes/dataset, {batch:.1f} ms/batch,"
           " {image:.2f} ms/image {rate:.0f} images/sec"
