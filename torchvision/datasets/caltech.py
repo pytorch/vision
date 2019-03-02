@@ -24,7 +24,7 @@ class Caltech101(data.Dataset):
         target_type (string or list, optional): Type of target to use, ``category`` or
         ``annotation''. Can also be a list to output a tuple with all specified target types.
         ``category'' represents the target class, and ``annotation'' is a list of points
-        from a hand-generated outline.
+        from a hand-generated outline. Defaults to ``category''.
         transform (callable, optional): A function/transform that takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
