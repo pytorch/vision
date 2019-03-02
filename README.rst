@@ -56,6 +56,9 @@ Documentation
 =============
 You can find the API documentation on the pytorch website: http://pytorch.org/docs/master/torchvision/
 
-Contributing
-============
+Contributing |image|
+====================
+
+.. |image| image:: https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat
+
 We appreciate all contributions. If you are planning to contribute back bug-fixes, please do so without any further discussion. If you plan to contribute new features, utility functions or extensions, please first open an issue and discuss the feature with us.
