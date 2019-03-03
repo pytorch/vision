@@ -6,6 +6,7 @@ from torch._utils_internal import get_file_path_2
 import unittest
 import math
 import sys
+import collections
 import random
 import numpy as np
 from PIL import Image
