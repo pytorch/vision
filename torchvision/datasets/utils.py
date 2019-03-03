@@ -50,8 +50,8 @@ def download_url(url, root, filename=None, md5=None):
     Args:
         url (str): URL to download file from
         root (str): Directory to place downloaded file in
-        filename (str): Name to save the file under. If None, use the basename of the URL
-        md5 (str): MD5 checksum of the download. If None, do not check
+        filename (str, optional): Name to save the file under. If None, use the basename of the URL
+        md5 (str, optional): MD5 checksum of the download. If None, do not check
     """
     from six.moves import urllib
 
@@ -127,3 +127,58 @@ def list_files(root, suffix, prefix=False):
         files = [os.path.join(root, d) for d in files]
 
     return files
+
+
+def download_file_from_google_drive(id, root, filename=None, md5=None):
+    """Download a Google Drive file from  and place it in root.
+
+    Args:
+        url (str): URL to download file from
+        root (str): Directory to place downloaded file in
+        filename (str, optional): Name to save the file under. If None, use the id of the file.
+        md5 (str, optional): MD5 checksum of the download. If None, do not check
+    """
+    # Based on https://stackoverflow.com/questions/38511444/python-download-files-from-google-drive-using-url
+    import requests
+    url = "https://docs.google.com/uc?export=download"
+
+    root = os.path.expanduser(root)
+    if not filename:
+        filename = id
+    fpath = os.path.join(root, filename)
+
+    makedir_exist_ok(root)
+
+    if os.path.isfile(fpath) and check_integrity(fpath, md5):
+        print('Using downloaded and verified file: ' + fpath)
+    else:
+        session = requests.Session()
+
+        response = session.get(url, params={'id': id}, stream=True)
+        token = _get_confirm_token(response)
+
+        if token:
+            params = {'id': id, 'confirm': token}
+            response = session.get(url, params=params, stream=True)
+
+        _save_response_content(response, fpath)
+
+
+def _get_confirm_token(response):
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            return value
+
+    return None
+
+
+def _save_response_content(response, destination, chunk_size=32768):
+    with open(destination, "wb") as f:
+        pbar = tqdm(total=None)
+        progress = 0
+        for chunk in response.iter_content(chunk_size):
+            if chunk:  # filter out keep-alive new chunks
+                f.write(chunk)
+                progress += len(chunk)
+                pbar.update(progress - pbar.n)
+        pbar.close()
