@@ -14,6 +14,7 @@ from .flickr import Flickr8k, Flickr30k
 from .voc import VOCSegmentation, VOCDetection
 from .cityscapes import Cityscapes
 from .caltech import Caltech101, Caltech256
+from .celeba import CelebA
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
@@ -22,4 +23,4 @@ __all__ = ('LSUN', 'LSUNClass',
            'MNIST', 'KMNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
            'VOCSegmentation', 'VOCDetection', 'Cityscapes',
-           'Caltech101', 'Caltech256')
+           'Caltech101', 'Caltech256', 'CelebA')
