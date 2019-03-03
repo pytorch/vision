@@ -22,9 +22,9 @@ class Caltech101(data.Dataset):
         root (string): Root directory of dataset where directory
             ``caltech101`` exists or will be saved to if download is set to True.
         target_type (string or list, optional): Type of target to use, ``category`` or
-        ``annotation''. Can also be a list to output a tuple with all specified target types.
-        ``category'' represents the target class, and ``annotation'' is a list of points
-        from a hand-generated outline.
+        ``annotation``. Can also be a list to output a tuple with all specified target types.
+        ``category`` represents the target class, and ``annotation`` is a list of points
+        from a hand-generated outline. Defaults to ``category``.
         transform (callable, optional): A function/transform that takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
