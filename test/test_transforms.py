@@ -5,6 +5,7 @@ import torchvision.transforms.functional as F
 from torch._utils_internal import get_file_path_2
 import unittest
 import math
+import sys
 import random
 import numpy as np
 from PIL import Image
@@ -22,6 +23,11 @@ GRACE_HOPPER = get_file_path_2('assets/grace_hopper_517x606.jpg')
 
 
 class Tester(unittest.TestCase):
+
+    def test_sys_collections(self):
+        if sys.version_info >= (3,3):
+            assert collections.abc.Sequence == collections.Sequence
+            assert collections.abc.Iterable == collections.Iterable
 
     def test_crop(self):
         height = random.randint(10, 32) * 2
