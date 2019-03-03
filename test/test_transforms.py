@@ -25,7 +25,7 @@ GRACE_HOPPER = get_file_path_2('assets/grace_hopper_517x606.jpg')
 class Tester(unittest.TestCase):
 
     def test_sys_collections(self):
-        if sys.version_info >= (3,3):
+        if sys.version_info >= (3, 3):
             assert collections.abc.Sequence == collections.Sequence
             assert collections.abc.Iterable == collections.Iterable
 
