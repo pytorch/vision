@@ -12,8 +12,9 @@ import numbers
 import collections
 import warnings
 
-Sequence = collections.abc.Sequence
-Iterable = collections.abc.Iterable
+Sequence = collections.Sequence
+Iterable = collections.Iterable
+
 
 def _is_pil_image(img):
     if accimage is not None:
