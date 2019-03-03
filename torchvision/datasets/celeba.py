@@ -1,6 +1,5 @@
 import torch
 import torch.utils.data as data
-import pandas
 import os
 import PIL
 from .utils import download_file_from_google_drive, check_integrity
@@ -52,6 +51,7 @@ class CelebA(data.Dataset):
                  target_type="attr",
                  transform=None, target_transform=None,
                  download=False):
+        import pandas
         self.root = os.path.expanduser(root)
         if isinstance(target_type, list):
             self.target_type = target_type
