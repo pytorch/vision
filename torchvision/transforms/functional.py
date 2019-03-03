@@ -12,13 +12,8 @@ import numbers
 import collections
 import warnings
 
-if sys.version_info < (3, 3):
-    Sequence = collections.Sequence
-    Iterable = collections.Iterable
-else:
-    Sequence = collections.abc.Sequence
-    Iterable = collections.abc.Iterable
-
+Sequence = collections.abc.Sequence
+Iterable = collections.abc.Iterable
 
 def _is_pil_image(img):
     if accimage is not None:
