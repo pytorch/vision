@@ -150,5 +150,4 @@ GoogLeNet
 ------------
 
 .. autofunction:: googlenet
-.. autofunction:: googlenet_bn
 
