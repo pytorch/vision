@@ -8,7 +8,6 @@ if sys.version_info[0] == 2:
     import cPickle as pickle
 else:
     import pickle
-import scipy.io
 import collections
 
 import torch.utils.data as data
@@ -80,6 +79,8 @@ class Caltech101(data.Dataset):
         Returns:
             tuple: (image, target) where the type of target specified by target_type.
         """
+        import scipy.io
+
         img = Image.open(os.path.join(self.root,
                                       "101_ObjectCategories",
                                       self.categories[self.y[index]],

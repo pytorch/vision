@@ -35,6 +35,7 @@ class CelebA(data.Dataset):
     # dependencies). The "in-the-wild" (not aligned+cropped) images are only in 7z, so they are not available
     # right now.
     file_list = [
+        # File ID                         MD5 Hash                            Filename
         ("0B7EVK8r0v71pZjFTYXZWM3FlRnM", "00d2c5bc6d35e252742224ab0c1e8fcb", "img_align_celeba.zip"),
         # ("0B7EVK8r0v71pbWNEUjJKdDQ3dGc", "b6cd7e93bc7a96c2dc33f819aa3ac651", "img_align_celeba_png.7z"),
         # ("0B7EVK8r0v71peklHb0pGdDl6R28", "b6cd7e93bc7a96c2dc33f819aa3ac651", "img_celeba.7z"),
@@ -53,6 +54,7 @@ class CelebA(data.Dataset):
                  download=False):
         import pandas
         self.root = os.path.expanduser(root)
+        self.split = split
         if isinstance(target_type, list):
             self.target_type = target_type
         else:
@@ -97,10 +99,10 @@ class CelebA(data.Dataset):
 
         mask = (splits[1] == split)
         self.filename = splits[mask].index.values
-        self.identity = self.identity[mask].values
-        self.bbox = self.bbox[mask].values
-        self.landmarks_align = self.landmarks_align[mask].values
-        self.attr = self.attr[mask].values
+        self.identity = torch.LongTensor(self.identity[mask].values)
+        self.bbox = torch.LongTensor(self.bbox[mask].values)
+        self.landmarks_align = torch.LongTensor(self.landmarks_align[mask].values)
+        self.attr = torch.LongTensor(self.attr[mask].values)
         self.attr = (self.attr + 1) // 2  # map from {-1, 1} to {0, 1}
 
     def _check_integrity(self):
@@ -122,8 +124,8 @@ class CelebA(data.Dataset):
             print('Files already downloaded and verified')
             return
 
-        for (id, md5, filename) in self.file_list:
-            download_file_from_google_drive(id, os.path.join(self.root, self.base_folder), filename, md5)
+        for (file_id, md5, filename) in self.file_list:
+            download_file_from_google_drive(file_id, os.path.join(self.root, self.base_folder), filename, md5)
 
         with zipfile.ZipFile(os.path.join(self.root, self.base_folder, "img_align_celeba.zip"), "r") as f:
             f.extractall(os.path.join(self.root, self.base_folder))

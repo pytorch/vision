@@ -129,11 +129,11 @@ def list_files(root, suffix, prefix=False):
     return files
 
 
-def download_file_from_google_drive(id, root, filename=None, md5=None):
+def download_file_from_google_drive(file_id, root, filename=None, md5=None):
     """Download a Google Drive file from  and place it in root.
 
     Args:
-        url (str): URL to download file from
+        file_id (str): id of file to be downloaded 
         root (str): Directory to place downloaded file in
         filename (str, optional): Name to save the file under. If None, use the id of the file.
         md5 (str, optional): MD5 checksum of the download. If None, do not check
@@ -144,7 +144,7 @@ def download_file_from_google_drive(id, root, filename=None, md5=None):
 
     root = os.path.expanduser(root)
     if not filename:
-        filename = id
+        filename = file_id
     fpath = os.path.join(root, filename)
 
     makedir_exist_ok(root)
@@ -154,11 +154,11 @@ def download_file_from_google_drive(id, root, filename=None, md5=None):
     else:
         session = requests.Session()
 
-        response = session.get(url, params={'id': id}, stream=True)
+        response = session.get(url, params={'id': file_id}, stream=True)
         token = _get_confirm_token(response)
 
         if token:
-            params = {'id': id, 'confirm': token}
+            params = {'id': file_id, 'confirm': token}
             response = session.get(url, params=params, stream=True)
 
         _save_response_content(response, fpath)
