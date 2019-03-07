@@ -133,7 +133,7 @@ def download_file_from_google_drive(file_id, root, filename=None, md5=None):
     """Download a Google Drive file from  and place it in root.
 
     Args:
-        file_id (str): id of file to be downloaded 
+        file_id (str): id of file to be downloaded
         root (str): Directory to place downloaded file in
         filename (str, optional): Name to save the file under. If None, use the id of the file.
         md5 (str, optional): MD5 checksum of the download. If None, do not check
