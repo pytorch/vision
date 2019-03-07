@@ -99,10 +99,10 @@ class CelebA(data.Dataset):
 
         mask = (splits[1] == split)
         self.filename = splits[mask].index.values
-        self.identity = torch.LongTensor(self.identity[mask].values)
-        self.bbox = torch.LongTensor(self.bbox[mask].values)
-        self.landmarks_align = torch.LongTensor(self.landmarks_align[mask].values)
-        self.attr = torch.LongTensor(self.attr[mask].values)
+        self.identity = torch.as_tensor(self.identity[mask].values)
+        self.bbox = torch.as_tensor(self.bbox[mask].values)
+        self.landmarks_align = torch.as_tensor(self.landmarks_align[mask].values)
+        self.attr = torch.as_tensor(self.attr[mask].values)
         self.attr = (self.attr + 1) // 2  # map from {-1, 1} to {0, 1}
 
     def _check_integrity(self):
