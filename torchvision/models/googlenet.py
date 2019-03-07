@@ -7,7 +7,7 @@ __all__ = ['GoogLeNet', 'googlenet']
 
 model_urls = {
     # GoogLeNet ported from TensorFlow
-    'googlenet': 'https://github.com/TheCodez/vision/releases/download/1.0/googlenet-1378be20.pth',
+    'googlenet': 'https://download.pytorch.org/models/googlenet-1378be20.pth',
 }
 
 
