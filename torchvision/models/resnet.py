@@ -74,7 +74,16 @@ class Bottleneck(nn.Module):
         self.stride = stride
 
     def forward(self, x):
+
+        #imagenet normalisation
+        if self.transform_input:
+            x_ch0 = (torch.unsqueeze(x[:, 0], 1) - 0.485) / 0.229
+            x_ch1 = (torch.unsqueeze(x[:, 1], 1) - 0.456) / 0.224
+            x_ch2 = (torch.unsqueeze(x[:, 2], 1) - 0.406) / 0.225
+            x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
+
         identity = x
+
 
         out = self.conv1(x)
         out = self.bn1(out)
