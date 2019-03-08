@@ -75,15 +75,7 @@ class Bottleneck(nn.Module):
 
     def forward(self, x):
 
-        #imagenet normalisation
-        if self.transform_input:
-            x_ch0 = (torch.unsqueeze(x[:, 0], 1) - 0.485) / 0.229
-            x_ch1 = (torch.unsqueeze(x[:, 1], 1) - 0.456) / 0.224
-            x_ch2 = (torch.unsqueeze(x[:, 2], 1) - 0.406) / 0.225
-            x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
-
         identity = x
-
 
         out = self.conv1(x)
         out = self.bn1(out)
@@ -107,8 +99,9 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False):
+    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False, tranform_input=False):
         super(ResNet, self).__init__()
+        self.tranform_input = tranform_input
         self.inplanes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
@@ -156,6 +149,14 @@ class ResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
+
+        #imagenet normalisation
+        if self.transform_input:
+            x_ch0 = (torch.unsqueeze(x[:, 0], 1) - 0.485) / 0.229
+            x_ch1 = (torch.unsqueeze(x[:, 1], 1) - 0.456) / 0.224
+            x_ch2 = (torch.unsqueeze(x[:, 2], 1) - 0.406) / 0.225
+            x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
+
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
