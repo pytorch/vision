@@ -69,9 +69,11 @@ class DenseNet(nn.Module):
     """
 
     def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16),
-                 num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000):
+                 num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, transform_input=False):
 
         super(DenseNet, self).__init__()
+        
+        self.transform_input = transform_input
 
         # First convolution
         self.features = nn.Sequential(OrderedDict([
@@ -110,6 +112,14 @@ class DenseNet(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
+        
+        #imagenet normalisation
+        if self.transform_input:
+            x_ch0 = (torch.unsqueeze(x[:, 0], 1) - 0.485) / 0.229
+            x_ch1 = (torch.unsqueeze(x[:, 1], 1) - 0.456) / 0.224
+            x_ch2 = (torch.unsqueeze(x[:, 2], 1) - 0.406) / 0.225
+            x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
+            
         features = self.features(x)
         out = F.relu(features, inplace=True)
         out = F.adaptive_avg_pool2d(out, (1, 1)).view(features.size(0), -1)
