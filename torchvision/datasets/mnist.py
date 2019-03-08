@@ -1,4 +1,5 @@
 from __future__ import print_function
+import warnings
 import torch.utils.data as data
 from PIL import Image
 import os
@@ -14,8 +15,8 @@ class MNIST(data.Dataset):
     """`MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``processed/training.pt``
-            and  ``processed/test.pt`` exist.
+        root (string): Root directory of dataset where ``MNIST/processed/training.pt``
+            and  ``MNIST/processed/test.pt`` exist.
         train (bool, optional): If True, creates dataset from ``training.pt``,
             otherwise from ``test.pt``.
         download (bool, optional): If true, downloads the dataset from the internet and
@@ -36,6 +37,26 @@ class MNIST(data.Dataset):
     test_file = 'test.pt'
     classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
                '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
+
+    @property
+    def train_labels(self):
+        warnings.warn("train_labels has been renamed targets")
+        return self.targets
+
+    @property
+    def test_labels(self):
+        warnings.warn("test_labels has been renamed targets")
+        return self.targets
+
+    @property
+    def train_data(self):
+        warnings.warn("train_data has been renamed data")
+        return self.data
+
+    @property
+    def test_data(self):
+        warnings.warn("test_data has been renamed data")
+        return self.data
 
     def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
         self.root = os.path.expanduser(root)
@@ -157,8 +178,8 @@ class FashionMNIST(MNIST):
     """`Fashion-MNIST <https://github.com/zalandoresearch/fashion-mnist>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``processed/training.pt``
-            and  ``processed/test.pt`` exist.
+        root (string): Root directory of dataset where ``Fashion-MNIST/processed/training.pt``
+            and  ``Fashion-MNIST/processed/test.pt`` exist.
         train (bool, optional): If True, creates dataset from ``training.pt``,
             otherwise from ``test.pt``.
         download (bool, optional): If true, downloads the dataset from the internet and
@@ -183,8 +204,8 @@ class KMNIST(MNIST):
     """`Kuzushiji-MNIST <https://github.com/rois-codh/kmnist>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``processed/training.pt``
-            and  ``processed/test.pt`` exist.
+        root (string): Root directory of dataset where ``KMNIST/processed/training.pt``
+            and  ``KMNIST/processed/test.pt`` exist.
         train (bool, optional): If True, creates dataset from ``training.pt``,
             otherwise from ``test.pt``.
         download (bool, optional): If true, downloads the dataset from the internet and
@@ -205,11 +226,11 @@ class KMNIST(MNIST):
 
 
 class EMNIST(MNIST):
-    """`EMNIST <https://www.nist.gov/itl/iad/image-group/emnist-dataset/>`_ Dataset.
+    """`EMNIST <https://www.westernsydney.edu.au/bens/home/reproducible_research/emnist>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``processed/training.pt``
-            and  ``processed/test.pt`` exist.
+        root (string): Root directory of dataset where ``EMNIST/processed/training.pt``
+            and  ``EMNIST/processed/test.pt`` exist.
         split (string): The dataset has 6 different splits: ``byclass``, ``bymerge``,
             ``balanced``, ``letters``, ``digits`` and ``mnist``. This argument specifies
             which one to use.
@@ -223,7 +244,8 @@ class EMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    url = 'http://www.itl.nist.gov/iaui/vip/cs_links/EMNIST/gzip.zip'
+    # Updated URL from https://www.westernsydney.edu.au/bens/home/reproducible_research/emnist
+    url = 'https://cloudstor.aarnet.edu.au/plus/index.php/s/54h3OuGJhFLwAlQ/download'
     splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
 
     def __init__(self, root, split, **kwargs):

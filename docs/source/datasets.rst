@@ -45,6 +45,11 @@ EMNIST
 
 .. autoclass:: EMNIST
 
+FakeData
+~~~~~~~~
+
+.. autoclass:: FakeData
+
 COCO
 ~~~~
 

@@ -2,10 +2,12 @@ import os
 import os.path
 import hashlib
 import errno
-from tqdm import tqdm
+from torch.utils.model_zoo import tqdm
 
 
-def gen_bar_updater(pbar):
+def gen_bar_updater():
+    pbar = tqdm(total=None)
+
     def bar_update(count, block_size, total_size):
         if pbar.total is None and total_size:
             pbar.total = total_size
@@ -50,8 +52,8 @@ def download_url(url, root, filename=None, md5=None):
     Args:
         url (str): URL to download file from
         root (str): Directory to place downloaded file in
-        filename (str): Name to save the file under. If None, use the basename of the URL
-        md5 (str): MD5 checksum of the download. If None, do not check
+        filename (str, optional): Name to save the file under. If None, use the basename of the URL
+        md5 (str, optional): MD5 checksum of the download. If None, do not check
     """
     from six.moves import urllib
 
@@ -70,7 +72,7 @@ def download_url(url, root, filename=None, md5=None):
             print('Downloading ' + url + ' to ' + fpath)
             urllib.request.urlretrieve(
                 url, fpath,
-                reporthook=gen_bar_updater(tqdm(unit='B', unit_scale=True))
+                reporthook=gen_bar_updater()
             )
         except OSError:
             if url[:5] == 'https':
@@ -79,7 +81,7 @@ def download_url(url, root, filename=None, md5=None):
                       ' Downloading ' + url + ' to ' + fpath)
                 urllib.request.urlretrieve(
                     url, fpath,
-                    reporthook=gen_bar_updater(tqdm(unit='B', unit_scale=True))
+                    reporthook=gen_bar_updater()
                 )
 
 
@@ -127,3 +129,58 @@ def list_files(root, suffix, prefix=False):
         files = [os.path.join(root, d) for d in files]
 
     return files
+
+
+def download_file_from_google_drive(file_id, root, filename=None, md5=None):
+    """Download a Google Drive file from  and place it in root.
+
+    Args:
+        file_id (str): id of file to be downloaded
+        root (str): Directory to place downloaded file in
+        filename (str, optional): Name to save the file under. If None, use the id of the file.
+        md5 (str, optional): MD5 checksum of the download. If None, do not check
+    """
+    # Based on https://stackoverflow.com/questions/38511444/python-download-files-from-google-drive-using-url
+    import requests
+    url = "https://docs.google.com/uc?export=download"
+
+    root = os.path.expanduser(root)
+    if not filename:
+        filename = file_id
+    fpath = os.path.join(root, filename)
+
+    makedir_exist_ok(root)
+
+    if os.path.isfile(fpath) and check_integrity(fpath, md5):
+        print('Using downloaded and verified file: ' + fpath)
+    else:
+        session = requests.Session()
+
+        response = session.get(url, params={'id': file_id}, stream=True)
+        token = _get_confirm_token(response)
+
+        if token:
+            params = {'id': file_id, 'confirm': token}
+            response = session.get(url, params=params, stream=True)
+
+        _save_response_content(response, fpath)
+
+
+def _get_confirm_token(response):
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            return value
+
+    return None
+
+
+def _save_response_content(response, destination, chunk_size=32768):
+    with open(destination, "wb") as f:
+        pbar = tqdm(total=None)
+        progress = 0
+        for chunk in response.iter_content(chunk_size):
+            if chunk:  # filter out keep-alive new chunks
+                f.write(chunk)
+                progress += len(chunk)
+                pbar.update(progress - pbar.n)
+        pbar.close()
