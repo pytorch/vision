@@ -7,36 +7,34 @@ from .utils import check_integrity, download_url
 
 if sys.version_info[0] == 2:
     # FIXME: I don't know if this is good pratice / robust
-    FileExistsError = OSError
+    FileNotFoundError = OSError
 
 ARCHIVE_DICT = {
-    ('2012', 'train'): {
+    'train': {
         'url': 'http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_train.tar',
         'md5': '1d675b47d978889d74fa0da5fadfb00e',
     },
-    ('2012', 'val'): {
+    'val': {
         'url': 'http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_val.tar',
         'md5': '29b22e2961454d5413ddabcf34fc5622',
     },
-    ('2012', 'devkit'): {
+    'devkit': {
         'url': 'http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_devkit_t12.tar.gz',
         'md5': 'fa75699e90414af021442c21a62c3abf',
     }
 }
 
 META_DICT = {
-    '2012': '5c2648af14b2ff44540504b860a81a79',
+    'filename': 'meta.bin',
+    'md5': '5c2648af14b2ff44540504b860a81a79',
 }
-
-META_FILE = 'meta.bin'
 
 
 class ImageNet(ImageFolder):
-    """`ImageNet <http://image-net.org/>`_ Classification Dataset.
+    """`ImageNet <http://image-net.org/>`_ 2012 Classification Dataset.
 
     Args:
         root (string): Root directory of the ImageNet Dataset.
-        year (string, optional): The dataset year, supports years 2012 to 2012.
         split (string, optional): The dataset split, supports ``train``, or ``val``.
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
@@ -56,11 +54,10 @@ class ImageNet(ImageFolder):
         targets (list): The class_index value for each image in the dataset
     """
 
-    def __init__(self, root, split='train', year='2012', download=False, **kwargs):
+    def __init__(self, root, split='train', download=False, **kwargs):
 
         root = self.root = os.path.expanduser(root)
         self.split = self._verify_split(split)
-        self.year = self._verify_year(year)
 
         if download:
             self.download()
@@ -72,13 +69,13 @@ class ImageNet(ImageFolder):
         self.class_to_idx = class_to_idx
 
     def download(self):
-        self._prepare_tree()
+        self._empty_split_folder()
 
-        meta_file = os.path.join(self.year_folder, META_FILE)
-        if not check_integrity(meta_file, META_DICT[self.year]):
+        meta_file = os.path.join(self.root, META_DICT['filename'])
+        if not check_integrity(meta_file, META_DICT['md5']):
             tmpdir = os.path.join(self.root, 'tmp')
 
-            archive_dict = ARCHIVE_DICT[(self.year, 'devkit')]
+            archive_dict = ARCHIVE_DICT['devkit']
             download_and_extract_tar(archive_dict['url'], self.root,
                                      extract_root=tmpdir,
                                      md5=archive_dict['md5'])
@@ -88,7 +85,7 @@ class ImageNet(ImageFolder):
 
             shutil.rmtree(tmpdir)
 
-        archive_dict = ARCHIVE_DICT[(self.year, self.split)]
+        archive_dict = ARCHIVE_DICT[self.split]
         download_and_extract_tar(archive_dict['url'], self.root,
                                  extract_root=self.split_folder,
                                  md5=archive_dict['md5'])
@@ -101,13 +98,14 @@ class ImageNet(ImageFolder):
 
     def _load_meta(self):
         # TODO: verify meta file
-        return torch.load(os.path.join(self.year_folder, META_FILE))[0]
+        return torch.load(os.path.join(self.root, META_DICT['filename']))[0]
 
-    def _prepare_tree(self):
+    def _empty_split_folder(self):
         try:
-            os.makedirs(self.split_folder)
-        except FileExistsError:
             shutil.rmtree(self.split_folder)
+        except FileNotFoundError:
+            pass
+        os.makedirs(self.split_folder)
 
     def _verify_split(self, split):
         if split not in self.valid_splits:
@@ -120,36 +118,16 @@ class ImageNet(ImageFolder):
     def valid_splits(self):
         return 'train', 'val'
 
-    def _verify_year(self, year):
-        if year not in self.valid_years:
-            msg = "Unknown year {} .".format(year)
-            msg += "Valid years are {{}}.".format(", ".join(self.valid_years))
-            raise ValueError(msg)
-        return year
-
-    @property
-    def valid_years(self):
-        return '2012',
-
-    @property
-    def base_folder(self):
-        return os.path.join(self.root, 'ILSVRC')
-
-    @property
-    def year_folder(self):
-        return os.path.join(self.base_folder, self.year)
-
     @property
     def split_folder(self):
-        return os.path.join(self.year_folder, self.split)
+        return os.path.join(self.root, self.split)
 
     def __repr__(self):
         head = "Dataset " + self.__class__.__name__
         body = ["Number of datapoints: {}".format(self.__len__())]
         if self.root is not None:
             body.append("Root location: {}".format(self.root))
-        body += ["Year: {}".format(self.year),
-                 "Split: {}".format(self.split)]
+        body += ["Split: {}".format(self.split)]
         if hasattr(self, 'transform') and self.transform is not None:
             body += self._format_transform_repr(self.transform,
                                                 "Transforms: ")
@@ -196,7 +174,6 @@ def download_and_extract_tar(url, download_root, extract_root=None, filename=Non
 
 
 def parse_devkit(root):
-    # FIXME: generalize this for all years
     meta = parse_meta(root)
     val_idcs = parse_val_groundtruth(root)
 
@@ -208,7 +185,6 @@ def parse_devkit(root):
 
 
 def parse_meta(devkit_root, path='data', filename='meta.mat'):
-    # FIXME: generalize this for all years
     import scipy.io as sio
 
     metafile = os.path.join(devkit_root, path, filename)
@@ -224,9 +200,8 @@ def parse_meta(devkit_root, path='data', filename='meta.mat'):
 
 def parse_val_groundtruth(devkit_root, path='data',
                           filename='ILSVRC2012_validation_ground_truth.txt'):
-    # FIXME: generalize this for all years
-    with open(os.path.join(devkit_root, path, filename), 'r') as fh:
-        val_idcs = fh.readlines()
+    with open(os.path.join(devkit_root, path, filename), 'r') as txtfh:
+        val_idcs = txtfh.readlines()
     return [int(val_idx) for val_idx in val_idcs]
 
 
