@@ -22,8 +22,9 @@ model_urls = {
 
 class VGG(nn.Module):
 
-    def __init__(self, features, num_classes=1000, init_weights=True):
+    def __init__(self, features, num_classes=1000, init_weights=True, transform_input=False):
         super(VGG, self).__init__()
+        self.transform_input = transform_input
         self.features = features
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
@@ -39,6 +40,14 @@ class VGG(nn.Module):
             self._initialize_weights()
 
     def forward(self, x):
+
+        # imagenet normalisation
+        if self.transform_input:
+            x_ch0 = (torch.unsqueeze(x[:, 0], 1) - 0.485) / 0.229
+            x_ch1 = (torch.unsqueeze(x[:, 1], 1) - 0.456) / 0.224
+            x_ch2 = (torch.unsqueeze(x[:, 2], 1) - 0.406) / 0.225
+            x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
+
         x = self.features(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
