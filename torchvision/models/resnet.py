@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
 
@@ -150,7 +151,7 @@ class ResNet(nn.Module):
 
     def forward(self, x):
 
-        #imagenet normalisation
+        # imagenet normalisation
         if self.transform_input:
             x_ch0 = (torch.unsqueeze(x[:, 0], 1) - 0.485) / 0.229
             x_ch1 = (torch.unsqueeze(x[:, 1], 1) - 0.456) / 0.224
