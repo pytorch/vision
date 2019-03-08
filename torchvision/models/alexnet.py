@@ -50,7 +50,7 @@ class AlexNet(nn.Module):
             x_ch1 = (torch.unsqueeze(x[:, 1], 1) - 0.456) / 0.224
             x_ch2 = (torch.unsqueeze(x[:, 2], 1) - 0.406) / 0.225
             x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
-        
+
         x = self.features(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), 256 * 6 * 6)
