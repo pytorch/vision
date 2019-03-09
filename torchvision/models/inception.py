@@ -23,6 +23,8 @@ def inception_v3(pretrained=False, **kwargs):
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        transform_input (bool): If True, preprocesses the input according to the method with which it
+        was trained on ImageNet. Default: *False*
     """
     if pretrained:
         if 'transform_input' not in kwargs:
