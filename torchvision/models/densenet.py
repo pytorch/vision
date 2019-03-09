@@ -133,6 +133,8 @@ def densenet121(pretrained=False, **kwargs):
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        transform_input (bool): If True, preprocesses the input according to the method with which it
+        was trained on ImageNet. Default: *False*
     """
     model = DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 24, 16),
                      **kwargs)
@@ -160,6 +162,8 @@ def densenet169(pretrained=False, **kwargs):
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        transform_input (bool): If True, preprocesses the input according to the method with which it
+        was trained on ImageNet. Default: *False*
     """
     model = DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 32, 32),
                      **kwargs)
@@ -187,6 +191,8 @@ def densenet201(pretrained=False, **kwargs):
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        transform_input (bool): If True, preprocesses the input according to the method with which it
+        was trained on ImageNet. Default: *False*
     """
     model = DenseNet(num_init_features=64, growth_rate=32, block_config=(6, 12, 48, 32),
                      **kwargs)
@@ -214,6 +220,8 @@ def densenet161(pretrained=False, **kwargs):
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        transform_input (bool): If True, preprocesses the input according to the method with which it
+        was trained on ImageNet. Default: *False*
     """
     model = DenseNet(num_init_features=96, growth_rate=48, block_config=(6, 12, 36, 24),
                      **kwargs)
