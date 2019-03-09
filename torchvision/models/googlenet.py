@@ -84,34 +84,55 @@ class GoogLeNet(nn.Module):
             x_ch2 = torch.unsqueeze(x[:, 2], 1) * (0.225 / 0.5) + (0.406 - 0.5) / 0.5
             x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
 
+        # N X 3 X 224 X 224
         x = self.conv1(x)
+        # N X 64 X 112 X 112
         x = self.maxpool1(x)
+        # N X 64 X 56 X 56
         x = self.conv2(x)
+        # N X 64 X 56 X 56
         x = self.conv3(x)
+        # N X 192 X 56 X 56
         x = self.maxpool2(x)
 
+        # N X 192 X 28 X 28
         x = self.inception3a(x)
+        # N X 256 X 28 X 28
         x = self.inception3b(x)
+        # N X 480 X 28 X 28
         x = self.maxpool3(x)
+        # N X 480 X 14 X 14
         x = self.inception4a(x)
+        # N X 512 x 14 X 14
         if self.training and self.aux_logits:
             aux1 = self.aux1(x)
 
         x = self.inception4b(x)
+        # N X 512 X 14 X 14
         x = self.inception4c(x)
+        # N X 512 X 14 X 14
         x = self.inception4d(x)
+        # N X 528 X 14 X 14
         if self.training and self.aux_logits:
             aux2 = self.aux2(x)
 
         x = self.inception4e(x)
+        # N X 832 X 14 X 14
         x = self.maxpool4(x)
+        # N X 832 X 7 X 7
         x = self.inception5a(x)
+        # N X 832 X 7 X 7
         x = self.inception5b(x)
+        # N X 1024 X 7 X 7
 
         x = self.avgpool(x)
+        # N X 1024 X 1 X 1
         x = x.view(x.size(0), -1)
+        # N X 1024
         x = self.dropout(x)
+        # N X 1024
         x = self.fc(x)
+        # N X 1000 (num_classes)
         if self.training and self.aux_logits:
             return aux1, aux2, x
         return x
@@ -159,13 +180,19 @@ class InceptionAux(nn.Module):
         self.fc2 = nn.Linear(1024, num_classes)
 
     def forward(self, x):
+        # aux1: N X 512 X 14 X 14, aux2: N X 528 X 14 X 14
         x = F.adaptive_avg_pool2d(x, (4, 4))
-
+        # aux1: N X 512 X 4 X 4, aux2: N X 528 X 4 X 4
         x = self.conv(x)
+        # N X 128 X 4 X 4
         x = x.view(x.size(0), -1)
+        # N X 2048
         x = F.relu(self.fc1(x), inplace=True)
+        # N X 2048
         x = F.dropout(x, 0.7, training=self.training)
+        # N X 2048
         x = self.fc2(x)
+        # N X 1024
 
         return x
 
