@@ -35,11 +35,11 @@ def make_grid(tensor, nrow=8, padding=2,
         tensor = torch.stack(tensor, dim=0)
 
     if tensor.dim() == 2:  # single image H x W
-        tensor = tensor.view(1, tensor.size(0), tensor.size(1))
+        tensor = tensor.unsqueeze(0)
     if tensor.dim() == 3:  # single image
         if tensor.size(0) == 1:  # if single-channel, convert to 3-channel
             tensor = torch.cat((tensor, tensor, tensor), 0)
-        tensor = tensor.view(1, tensor.size(0), tensor.size(1), tensor.size(2))
+        tensor = tensor.unsqueeze(0)
 
     if tensor.dim() == 4 and tensor.size(1) == 1:  # single-channel images
         tensor = torch.cat((tensor, tensor, tensor), 1)
@@ -74,7 +74,7 @@ def make_grid(tensor, nrow=8, padding=2,
     xmaps = min(nrow, nmaps)
     ymaps = int(math.ceil(float(nmaps) / xmaps))
     height, width = int(tensor.size(2) + padding), int(tensor.size(3) + padding)
-    grid = tensor.new(3, height * ymaps + padding, width * xmaps + padding).fill_(pad_value)
+    grid = tensor.new_full((3, height * ymaps + padding, width * xmaps + padding), pad_value)
     k = 0
     for y in irange(ymaps):
         for x in irange(xmaps):
@@ -99,6 +99,7 @@ def save_image(tensor, filename, nrow=8, padding=2,
     from PIL import Image
     grid = make_grid(tensor, nrow=nrow, padding=padding, pad_value=pad_value,
                      normalize=normalize, range=range, scale_each=scale_each)
-    ndarr = grid.mul(255).clamp(0, 255).byte().permute(1, 2, 0).cpu().numpy()
+    # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
+    ndarr = grid.mul_(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     im.save(filename)

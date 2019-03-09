@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import os
 import io
 import re
@@ -44,9 +43,6 @@ requirements = [
 pillow_ver = ' >= 4.1.1'
 pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
-
-tqdm_ver = ' == 4.19.9' if sys.version_info[0] < 3 else ''
-requirements.append('tqdm' + tqdm_ver)
 
 setup(
     # Metadata
