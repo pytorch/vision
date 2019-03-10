@@ -702,7 +702,7 @@ class TenCrop(object):
         return self.__class__.__name__ + '(size={0}, vertical_flip={1})'.format(self.size, self.vertical_flip)
 
 
-class LinearTransformation(object):
+class LinearTransformation(AffineTransformation):
     """
     Note: This transform is deprecated in favor of AffineTransformation.
     """
@@ -710,7 +710,7 @@ class LinearTransformation(object):
     def __init__(self, transformation_matrix):
         warnings.warn("The use of the transforms.LinearTransformation transform is deprecated, " +
                       "please use transforms.AffineTransformation instead.")
-        super(LinearTransformation, self).__init__(*args, **kwargs)
+        super(LinearTransformation, self).__init__(transformation_matrix)
 
 
 class AffineTransformation(object):
