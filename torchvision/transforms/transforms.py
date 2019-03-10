@@ -702,17 +702,6 @@ class TenCrop(object):
         return self.__class__.__name__ + '(size={0}, vertical_flip={1})'.format(self.size, self.vertical_flip)
 
 
-class LinearTransformation(AffineTransformation):
-    """
-    Note: This transform is deprecated in favor of AffineTransformation.
-    """
-
-    def __init__(self, transformation_matrix):
-        warnings.warn("The use of the transforms.LinearTransformation transform is deprecated, " +
-                      "please use transforms.AffineTransformation instead.")
-        super(LinearTransformation, self).__init__(transformation_matrix)
-
-
 class AffineTransformation(object):
     """Transform a tensor image with a square transformation matrix and a mean_vector computed
     offline.
@@ -762,6 +751,17 @@ class AffineTransformation(object):
         format_string += (str(self.transformation_matrix.numpy().tolist()) + ')')
         format_string += (", (mean_vector=" + str(self.cov_matrix.numpy().tolist()) + ')')
         return format_string
+
+
+class LinearTransformation(AffineTransformation):
+    """
+    Note: This transform is deprecated in favor of AffineTransformation.
+    """
+
+    def __init__(self, transformation_matrix):
+        warnings.warn("The use of the transforms.LinearTransformation transform is deprecated, " +
+                      "please use transforms.AffineTransformation instead.")
+        super(LinearTransformation, self).__init__(transformation_matrix)
 
 
 class ColorJitter(object):
