@@ -37,6 +37,8 @@ class FakeData(data.Dataset):
             tuple: (image, target) where target is class_index of the target class.
         """
         # create random image that is consistent with the index id
+        if index >= len(self):
+            raise IndexError("{} index out of range".format(self.__class__.__name__))
         rng_state = torch.get_rng_state()
         torch.manual_seed(index + self.random_offset)
         img = torch.randn(*self.image_size)
