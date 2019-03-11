@@ -69,8 +69,6 @@ class ImageNet(ImageFolder):
         self.class_to_idx = class_to_idx
 
     def download(self):
-        self._empty_split_folder()
-
         meta_file = os.path.join(self.root, META_DICT['filename'])
         if not check_integrity(meta_file, META_DICT['md5']):
             tmpdir = os.path.join(self.root, 'tmp')
@@ -99,13 +97,6 @@ class ImageNet(ImageFolder):
     def _load_meta(self):
         # TODO: verify meta file
         return torch.load(os.path.join(self.root, META_DICT['filename']))[0]
-
-    def _empty_split_folder(self):
-        try:
-            shutil.rmtree(self.split_folder)
-        except FileNotFoundError:
-            pass
-        os.makedirs(self.split_folder)
 
     def _verify_split(self, split):
         if split not in self.valid_splits:
@@ -170,6 +161,7 @@ def download_and_extract_tar(url, download_root, extract_root=None, filename=Non
     if not check_integrity(os.path.join(download_root, filename), md5):
         download_url(url, download_root, filename=filename, md5=md5)
 
+    _empty_folder(extract_root)
     extract_tar(os.path.join(download_root, filename), extract_root, **kwargs)
 
 
@@ -218,6 +210,14 @@ def prepare_val_folder(folder, wnids):
 
     for wnid, img_file in zip(wnids, img_files):
         shutil.move(img_file, os.path.join(folder, wnid, os.path.basename(img_file)))
+
+
+def _empty_folder(folder):
+    try:
+        shutil.rmtree(folder)
+    except FileNotFoundError:
+        pass
+    os.makedirs(folder)
 
 
 def _splitexts(root):
