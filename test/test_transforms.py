@@ -953,7 +953,7 @@ class Tester(unittest.TestCase):
         color_jitter.__repr__()
 
     def test_affine_transformation(self):
-        num_samples = 250
+        num_samples = 1000
         x = torch.randn(num_samples, 3, 10, 10)
         flat_x = x.view(x.size(0), x.size(1) * x.size(2) * x.size(3))
         # compute principal components
@@ -967,7 +967,7 @@ class Tester(unittest.TestCase):
         # initialize whitening matrix
         whitening = transforms.AffineTransformation(principal_components, mean_vector)
         # estimate covariance and mean using weak law of large number
-        num_features = x.size(1)
+        num_features = flat_x.size(1)
         cov = 0.0
         mean = 0.0
         for i in x:
