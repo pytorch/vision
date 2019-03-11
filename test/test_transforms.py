@@ -953,7 +953,7 @@ class Tester(unittest.TestCase):
         color_jitter.__repr__()
 
     def test_affine_transformation(self):
-        num_samples = 500
+        num_samples = 250
         x = torch.randn(num_samples, 3, 10, 10)
         flat_x = x.view(x.size(0), x.size(1) * x.size(2) * x.size(3))
         # compute principal components
