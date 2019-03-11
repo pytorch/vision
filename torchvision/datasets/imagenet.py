@@ -1,3 +1,4 @@
+from __future__ import print_function
 import os
 import sys
 import shutil
@@ -55,7 +56,6 @@ class ImageNet(ImageFolder):
     """
 
     def __init__(self, root, split='train', download=False, **kwargs):
-
         root = self.root = os.path.expanduser(root)
         self.split = self._verify_split(split)
 
@@ -83,16 +83,22 @@ class ImageNet(ImageFolder):
 
             shutil.rmtree(tmpdir)
 
-        archive_dict = ARCHIVE_DICT[self.split]
-        download_and_extract_tar(archive_dict['url'], self.root,
-                                 extract_root=self.split_folder,
-                                 md5=archive_dict['md5'])
+        if not os.path.isdir(self.split_folder):
+            archive_dict = ARCHIVE_DICT[self.split]
+            download_and_extract_tar(archive_dict['url'], self.root,
+                                     extract_root=self.split_folder,
+                                     md5=archive_dict['md5'])
 
-        if self.split == 'train':
-            prepare_train_folder(self.split_folder)
-        elif self.split == 'val':
-            val_wnids = torch.load(meta_file)[1]
-            prepare_val_folder(self.split_folder, val_wnids)
+            if self.split == 'train':
+                prepare_train_folder(self.split_folder)
+            elif self.split == 'val':
+                val_wnids = torch.load(meta_file)[1]
+                prepare_val_folder(self.split_folder, val_wnids)
+        else:
+            msg = ("You set download=True, but a folder '{}' already exist in "
+                   "the root directory. If you want to re-download or re-extract the "
+                   "archive, delete the folder.")
+            print(msg.format(self.split))
 
     def _load_meta(self):
         # TODO: verify meta file
@@ -143,6 +149,7 @@ def extract_tar(src, dest=None, gzip=None, delete=False):
         gzip = src.lower().endswith('.gz')
 
     mode = 'r:gz' if gzip else 'r'
+
     with tarfile.open(src, mode) as tarfh:
         tarfh.extractall(path=dest)
 
@@ -161,7 +168,6 @@ def download_and_extract_tar(url, download_root, extract_root=None, filename=Non
     if not check_integrity(os.path.join(download_root, filename), md5):
         download_url(url, download_root, filename=filename, md5=md5)
 
-    _empty_folder(extract_root)
     extract_tar(os.path.join(download_root, filename), extract_root, **kwargs)
 
 
@@ -210,14 +216,6 @@ def prepare_val_folder(folder, wnids):
 
     for wnid, img_file in zip(wnids, img_files):
         shutil.move(img_file, os.path.join(folder, wnid, os.path.basename(img_file)))
-
-
-def _empty_folder(folder):
-    try:
-        shutil.rmtree(folder)
-    except FileNotFoundError:
-        pass
-    os.makedirs(folder)
 
 
 def _splitexts(root):
