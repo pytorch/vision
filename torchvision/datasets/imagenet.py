@@ -1,14 +1,10 @@
 from __future__ import print_function
 import os
-import sys
 import shutil
 import torch
 from .folder import ImageFolder
 from .utils import check_integrity, download_url
 
-if sys.version_info[0] == 2:
-    # FIXME: I don't know if this is good pratice / robust
-    FileNotFoundError = OSError
 
 ARCHIVE_DICT = {
     'train': {
@@ -149,7 +145,6 @@ def extract_tar(src, dest=None, gzip=None, delete=False):
         gzip = src.lower().endswith('.gz')
 
     mode = 'r:gz' if gzip else 'r'
-
     with tarfile.open(src, mode) as tarfh:
         tarfh.extractall(path=dest)
 
