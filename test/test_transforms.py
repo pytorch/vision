@@ -953,7 +953,8 @@ class Tester(unittest.TestCase):
         color_jitter.__repr__()
 
     def test_affine_transformation(self):
-        x = torch.randn(250, 10, 10, 3)
+        num_samples = 500
+        x = torch.randn(num_samples, 3, 10, 10)
         flat_x = x.view(x.size(0), x.size(1) * x.size(2) * x.size(3))
         # compute principal components
         sigma = torch.mm(flat_x.t(), flat_x) / flat_x.size(0)
@@ -965,14 +966,17 @@ class Tester(unittest.TestCase):
         mean_vector = (torch.sum(flat_x, dim=0) / flat_x.size(0)).view(1, -1)
         # initialize whitening matrix
         whitening = transforms.AffineTransformation(principal_components, mean_vector)
-        # pass first vector
-        xwhite = whitening(x[0].view(10, 10, 3))
-        # estimate covariance
-        xwhite = xwhite.view(1, 300).numpy()
-        cov = np.dot(xwhite, xwhite.T) / x.size(0)
-        mean = np.sum(xwhite) / x.size(0)
-        assert np.allclose(cov, np.identity(1), rtol=1e-3), "cov not close to 1"
-        assert np.allclose(mean, 0, rtol=1e-3), "mean not close to 0"
+        # estimate covariance and mean using weak law of large number
+        num_features = x.size(1)
+        cov = 0.0
+        mean = 0.0
+        for i in x:
+            xwhite = whitening(i)
+            xwhite = xwhite.view(1, -1).numpy()
+            cov += np.dot(xwhite, xwhite.T) / num_features
+            mean += np.sum(xwhite) / num_features
+        assert np.allclose(cov/num_samples, np.identity(1), rtol=1e-3), "cov not close to 1"
+        assert np.allclose(mean/num_samples, 0, rtol=1e-3), "mean not close to 0"
 
         # Checking if AffineTransformation can be printed as string
         whitening.__repr__()
