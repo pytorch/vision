@@ -397,7 +397,7 @@ class RandomCrop(object):
             respectively. If a sequence of length 2 is provided, it is used to
             pad left/right, top/bottom borders, respectively.
         pad_if_needed (boolean): It will pad the image if smaller than the
-            desired size to avoid raising an exception. Since cropping is done 
+            desired size to avoid raising an exception. Since cropping is done
             after padding, the padding seems to be done at a random offset.
         fill: Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
@@ -706,7 +706,7 @@ class TenCrop(object):
 class AffineTransformation(object):
     """Transform a tensor image with a square transformation matrix and a mean_vector computed
     offline.
-    Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and  
+    Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
     subtract mean_vector from it which is then followed by computing the dot
     product with the transformation matrix and then reshaping the tensor to its
     original shape.
@@ -726,10 +726,12 @@ class AffineTransformation(object):
 
         if mean_vector.size(1) != transformation_matrix.size(0):
             raise ValueError("mean_vector should have the same length {}".format(mean_vector.size(1)) +
-                             " as any one of the dimensions of the transformation_matrix [{} x {}]".format(transformation_matrix.size()))
+                             " as any one of the dimensions of the transformation_matrix [{} x {}]"
+                             .format(transformation_matrix.size()))
 
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
+
 
     def __call__(self, tensor):
         """
@@ -763,7 +765,7 @@ class LinearTransformation(AffineTransformation):
     def __init__(self, transformation_matrix):
         warnings.warn("The use of the transforms.LinearTransformation transform is deprecated, " +
                       "please use transforms.AffineTransformation instead.")
-        super(LinearTransformation, self).__init__(transformation_matrix, torch.zeros_like(transformation_matrix[0]))
+        super(LinearTransformation, self).__init__(transformation_matrix, torch.zeros(transformation_matrix.shape(0)).view(1, -1))
 
 
 class ColorJitter(object):
