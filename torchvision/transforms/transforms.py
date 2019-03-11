@@ -732,6 +732,7 @@ class AffineTransformation(object):
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
+
     def __call__(self, tensor):
         """
         Args:
@@ -752,7 +753,7 @@ class AffineTransformation(object):
     def __repr__(self):
         format_string = self.__class__.__name__ + '(transformation_matrix='
         format_string += (str(self.transformation_matrix.numpy().tolist()) + ')')
-        format_string += (", (mean_vector=" + str(self.cov_matrix.numpy().tolist()) + ')')
+        format_string += (", (mean_vector=" + str(self.mean_vector.numpy().tolist()) + ')')
         return format_string
 
 
@@ -764,7 +765,7 @@ class LinearTransformation(AffineTransformation):
     def __init__(self, transformation_matrix):
         warnings.warn("The use of the transforms.LinearTransformation transform is deprecated, " +
                       "please use transforms.AffineTransformation instead.")
-        super(LinearTransformation, self).__init__(transformation_matrix, torch.zeros_like(transformation_matrix[0]))
+        super(LinearTransformation, self).__init__(transformation_matrix, torch.zeros(transformation_matrix.shape(0)).view(1, -1))
 
 
 class ColorJitter(object):
