@@ -975,8 +975,8 @@ class Tester(unittest.TestCase):
             xwhite = xwhite.view(1, -1).numpy()
             cov += np.dot(xwhite, xwhite.T) / num_features
             mean += np.sum(xwhite) / num_features
-        assert np.allclose(cov/num_samples, np.identity(1), rtol=1e-3), "cov not close to 1"
-        assert np.allclose(mean/num_samples, 0, rtol=1e-3), "mean not close to 0"
+        assert np.allclose(cov/num_samples, np.identity(1), rtol=1e-3), "cov not close to 1: "+str(cov)
+        assert np.allclose(mean/num_samples, 0, rtol=1e-3), "mean not close to 0: "+str(mean)
 
         # Checking if AffineTransformation can be printed as string
         whitening.__repr__()
