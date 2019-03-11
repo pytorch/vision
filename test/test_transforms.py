@@ -961,7 +961,7 @@ class Tester(unittest.TestCase):
         zca_epsilon = 1e-10  # avoid division by 0
         d = torch.Tensor(np.diag(1. / np.sqrt(s + zca_epsilon)))
         u = torch.Tensor(u)
-        principal_components = torch.mm(torch.mm(u, d), u.t
+        principal_components = torch.mm(torch.mm(u, d), u.t)
         mean_vector = torch.sum(flat_x, dim=0) / flat_x.size(0)
         # initialize whitening matrix
         whitening = transforms.AffineTransformation(principal_components, mean_vector)
