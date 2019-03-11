@@ -726,7 +726,7 @@ class AffineTransformation(object):
 
         if mean_vector.size(1) != transformation_matrix.size(0):
             raise ValueError("mean_vector should have the same length {}".format(mean_vector.size(1)) +
-                             " as any one of the dimensions of the transformation_matrix [{} x {}]".format(transformation_matrix.size())
+                             " as any one of the dimensions of the transformation_matrix [{} x {}]".format(transformation_matrix.size()))
 
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
