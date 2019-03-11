@@ -715,7 +715,7 @@ class AffineTransformation(object):
                  pass it as transformation_matrix.
     Args:
         transformation_matrix (Tensor): tensor [D x D], D = C x H x W
-        mean_vector (Tensor): tensor [D], D = C x H x W
+        mean_vector (Tensor): tensor [1 x D], D = C x H x W
     """
 
     def __init__(self, transformation_matrix, mean_vector):
@@ -723,9 +723,9 @@ class AffineTransformation(object):
             raise ValueError("transformation_matrix should be square. Got " +
                              "[{} x {}] rectangular matrix.".format(*transformation_matrix.size()))
 
-        if mean_vector.size(0) != transformation_matrix.size(0):
-            raise ValueError("mean_vector should have the same length {}".format(mean_vector.size(0)) +
-                             " as the transformation_matrix")
+        if mean_vector.size(1) != transformation_matrix.size(0):
+            raise ValueError("mean_vector should have the same length {}".format(mean_vector.size(1)) +
+                             " as any one of the dimensions of the transformation_matrix [{} x {}]".format(transformation_matrix.size())
 
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
@@ -734,6 +734,7 @@ class AffineTransformation(object):
         """
         Args:
             tensor (Tensor): Tensor image of size (C, H, W) to be whitened.
+
         Returns:
             Tensor: Transformed image.
         """
@@ -753,7 +754,7 @@ class AffineTransformation(object):
         return format_string
 
 
-class LinearTransformation(object):
+class LinearTransformation(AffineTransformation):
     """
     Note: This transform is deprecated in favor of AffineTransformation.
     """
@@ -761,7 +762,7 @@ class LinearTransformation(object):
     def __init__(self, transformation_matrix):
         warnings.warn("The use of the transforms.LinearTransformation transform is deprecated, " +
                       "please use transforms.AffineTransformation instead.")
-        super(LinearTransformation, self).__init__(transformation_matrix)
+        super(LinearTransformation, self).__init__(transformation_matrix, torch.zeros(transformation_matrix.shape(0)).view(1, -1))
 
 
 class ColorJitter(object):
