@@ -764,8 +764,8 @@ class LinearTransformation(AffineTransformation):
     def __init__(self, transformation_matrix):
         warnings.warn("The use of the transforms.LinearTransformation transform is deprecated, " +
                       "please use transforms.AffineTransformation instead.")
-        super(LinearTransformation, self).__init__(transformation_matrix, torch.zeros(
-            transformation_matrix.shape(0)).view(1, -1))
+        super(LinearTransformation, self).__init__(transformation_matrix, torch.zeros_like(
+            transformation_matrix[0]).view(1, -1))
 
 
 class ColorJitter(object):
