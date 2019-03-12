@@ -397,7 +397,8 @@ class RandomCrop(object):
             respectively. If a sequence of length 2 is provided, it is used to
             pad left/right, top/bottom borders, respectively.
         pad_if_needed (boolean): It will pad the image if smaller than the
-            desired size to avoid raising an exception.
+            desired size to avoid raising an exception. Since cropping is done
+            after padding, the padding seems to be done at a random offset.
         fill: Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant
