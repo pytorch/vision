@@ -1143,7 +1143,7 @@ class HistogramTransform(object):
         self.num_channels = len(template_histograms)
 
 
-    def __call__(self, tensor, noise_range = 0, dtype = torch.float32):
+    def __call__(self, tensor, noise_range=0, dtype=torch.float32):
         """
         Transforms the distribution of the input tensor to match that
         of the template histogram. If a list of histograms is provided
@@ -1168,7 +1168,7 @@ class HistogramTransform(object):
         
         channels = []
         for c, templateHisto in enumerate(self.template_histograms):
-            channels.append(self.histogram_transform_1D(tensor[c], templateHisto, noise_range = noise_range))
+            channels.append(self.histogram_transform_1D(tensor[c], templateHisto, noise_range=noise_range))
 
         transformed_tensor = np.asanyarray(channels)
 
@@ -1181,7 +1181,7 @@ class HistogramTransform(object):
 
 
     # Core of the computation, to be used by histogram_transform method internally
-    def histogram_transform_1D(self, tensor, template_histogram, noise_range = 0):
+    def histogram_transform_1D(self, tensor, template_histogram, noise_range=0):
         """
         Transforms the distribution of the input tensor to match that
         of the template histogram.
@@ -1211,28 +1211,28 @@ class HistogramTransform(object):
         # Take the cumsum of the counts and normalize by the number of pixels to
         # Get the empirical cumulative distribution functions
         # (maps value --> quantile)
-        t_quantiles      = np.cumsum(t_counts).astype(np.float32)
-        t_quantiles     /= t_quantiles[-1]
+        t_quantiles = np.cumsum(t_counts).astype(np.float32)
+        t_quantiles /= t_quantiles[-1]
         
         # === Input Tensor ===
         # Convert to flattened numpy array
-        tensor           = np.asanyarray(tensor)
-        originalShape    = tensor.shape
-        tensor           = tensor.ravel()
+        tensor = np.asanyarray(tensor)
+        originalShape = tensor.shape
+        tensor = tensor.ravel()
         
         # Get counts, bins, and corresponding bin indices for each tensor value
-        counts, bins     = np.histogram(tensor, bins = t_bins)
-        bin_idx          = np.searchsorted(t_bins[:-2], tensor)
+        counts, bins = np.histogram(tensor, bins = t_bins)
+        bin_idx = np.searchsorted(t_bins[:-2], tensor)
         
         # See comments for t_quantiles
-        quantiles      = np.cumsum(counts).astype(np.float32)
-        quantiles     /= quantiles[-1]
+        quantiles = np.cumsum(counts).astype(np.float32)
+        quantiles /= quantiles[-1]
         
         # === Histogram Transformation ===
         # interpolate linearly to find the pixel values in the template image
         # that corresponds most closely to the quantiles for the input tensor
-        interp_t_values  = np.interp(quantiles, t_quantiles, t_bins[:-1])
-        tensor_transformed  = interp_t_values[bin_idx]
+        interp_t_values = np.interp(quantiles, t_quantiles, t_bins[:-1])
+        tensor_transformed = interp_t_values[bin_idx]
 
         noise = np.random.uniform(
                 low=-noise_range, 
@@ -1240,6 +1240,6 @@ class HistogramTransform(object):
                 size=(len(tensor_transformed))
             )
         tensor_transformed += noise
-        tensor_transformed  = np.maximum(tensor_transformed, min(t_bins))
+        tensor_transformed = np.maximum(tensor_transformed, min(t_bins))
 
         return tensor_transformed.reshape(originalShape)
