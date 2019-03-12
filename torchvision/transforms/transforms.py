@@ -1145,12 +1145,7 @@ class HistogramTransform(object):
         self.template_histograms = template_histograms
         self.num_channels = len(template_histograms)
 
-    def __call__(
-        self,
-        tensor,
-        noise_range=0,
-        dtype=torch.float32,
-        ):
+    def __call__(self, tensor, noise_range=0, dtype=torch.float32):
         """
         Transforms the distribution of the input tensor to match that
         of the template histogram. If a list of histograms is provided
@@ -1192,12 +1187,7 @@ class HistogramTransform(object):
 
     # Core of the computation to be used by histogram_transform method internally
 
-    def histogram_transform_1D(
-        self,
-        tensor,
-        template_histogram,
-        noise_range=0,
-        ):
+    def histogram_transform_1D(self, tensor, template_histogram, noise_range=0):
         """
         Transforms the distribution of the input tensor to match that
         of the template histogram.
