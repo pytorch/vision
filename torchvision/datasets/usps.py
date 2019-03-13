@@ -2,10 +2,10 @@ from __future__ import print_function
 import torch.utils.data as data
 from PIL import Image
 import os
-import tqdm
 import os.path
 import numpy as np
 from .utils import download_url
+from torch.utils.model_zoo import tqdm
 
 
 class USPS(data.Dataset):
@@ -66,8 +66,8 @@ class USPS(data.Dataset):
         fp = bz2.open(full_path)
 
         datas = []
-        labels = []
-        for line in tqdm.tqdm(
+        targets = []
+        for line in tqdm(
                 fp, desc='processing data', total=self.total_images):
             label, *pixels = line.decode().split()
             pixels = [float(x.split(':')[-1]) for x in pixels]
@@ -75,14 +75,14 @@ class USPS(data.Dataset):
             im = (im + 1) / 2 * 255
             im = im.astype(dtype=np.uint8)
             datas.append(im)
-            labels.append(int(label) - 1)
+            targets.append(int(label) - 1)
 
-        assert len(
-            labels
-        ) == self.total_images, 'total number of images are wrong! maybe the download is corrupted?'
+        assert len(targets) == self.total_images, \
+            'total number of images are wrong! maybe the download is corrupted?'
 
         self.data = np.stack(datas, axis=0)
-        self.labels = labels
+        self.targets = targets
+        self.labels = list(range(10))
 
     def __getitem__(self, index):
         """
@@ -92,7 +92,7 @@ class USPS(data.Dataset):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        img, target = self.data[index], int(self.labels[index])
+        img, target = self.data[index], int(self.targets[index])
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
