@@ -1102,43 +1102,42 @@ class RandomGrayscale(object):
     
  
 class HistogramTransform(object):
-
     """
     Transforms the distribution of the input tensor to match that
     of the list of template histograms corresponding to each channel.
-    
-    A template historgram must be set initially. 
+
+    A template historgram must be set initially.
     Args:
         tensor (numpy.ndarray):
             Image to transform; the histogram is computed over the flattened
             array
-        noise_range (float): Default is 0. A uniform noise ranged between 
+        noise_range (float): Default is 0. A uniform noise ranged between
             (-noise_range, +noise_range) will be added to pixels randomly.
     Returns:
-        histogram transformed tensor: 
-            The output tensor type matches the input, either numpy.ndarray 
+        histogram transformed tensor:
+            The output tensor type matches the input, either numpy.ndarray
             or torch.Tensor.
     """
 
     def __init__(self, template_histograms):
         '''
         Args:
-            template_histograms: 
-                A list of template histograms. 
-                Each template histogram must consist of the tuple 
+            template_histograms:
+                A list of template histograms.
+                Each template histogram must consist of the tuple
                 (counts (numpy.ndarray), bins (numpy.ndarray)).
                 template_histograms is a list of numpy.histogram outputs,
-                each corresponding to each channel of the input tensor 
+                each corresponding to each channel of the input tensor
                 to be transformed.
                 If 1 channel, still feed as a list, i.e. [(counts, bin)].
                 Example:
-                Assuming img is made by ToTensor(some pil image) 
+                Assuming img is made by ToTensor(some pil image)
                 and has 3 (RGB) channels, one can get the histogram as such:
-                histR = np.histogram(img[0].numpy().ravel(), 
+                histR = np.histogram(img[0].numpy().ravel(),
                     bins=256, range=[0, 1])
-                histG = np.histogram(img[1].numpy().ravel(), 
+                histG = np.histogram(img[1].numpy().ravel(),
                     bins=256, range=[0, 1])
-                histB = np.histogram(img[2].numpy().ravel(), 
+                histB = np.histogram(img[2].numpy().ravel(),
                     bins=256, range=[0, 1])
         '''
 
@@ -1149,21 +1148,21 @@ class HistogramTransform(object):
         """
         Transforms the distribution of the input tensor to match that
         of the template histogram. If a list of histograms is provided
-        and it maches the number of channels of the input tensor, each 
-        channel will be transformed with the corresponding histogram. 
-        
-        This funciton utilises histogram_tranform_1D for an easier user 
-        interface. 
-        
+        and it maches the number of channels of the input tensor, each
+        channel will be transformed with the corresponding histogram.
+
+        This funciton utilises histogram_tranform_1D for an easier user
+        interface.
+
         Args:
             tensor (numpy.ndarray):
-                Image to transform; the histogram is computed over the 
+                Image to transform; the histogram is computed over the
                 flattened array for each channel.
-            noise_range (float): Default is 0. A uniform noise ranged between 
+            noise_range (float): Default is 0. A uniform noise ranged between
                 (-noise_range, +noise_range) will be added to pixels randomly.
         Returns:
-            histogram transformed tensor: 
-                The output tensor type matches the input, either numpy.ndarray 
+            histogram transformed tensor:
+                The output tensor type matches the input, either numpy.ndarray
                 or torch.Tensor.
         """
 
@@ -1190,19 +1189,19 @@ class HistogramTransform(object):
         """
         Transforms the distribution of the input tensor to match that
         of the template histogram.
-        
-        Input tensor will be flattened, transformed, and rearranged 
+
+        Input tensor will be flattened, transformed, and rearranged
         to the original shape.
-        Mainly intended for call by class functions. 
-        
+        Mainly intended for call by class functions.
+
         Args:
-            tensor (numpy.ndarray): Image to transform; the histogram is 
+            tensor (numpy.ndarray): Image to transform; the histogram is
             computed over the flattened array.
-            template_histogram (tubple of (numpy.ndarray, numpy.ndarray)): 
-                The template histogram consisiting of a tuple of (counts, bins). 
-                See (the output of) numpy.histogram. 
-            noise_range (float): Default is 0. A uniform noise ranged between 
-                (-noise_range, +noise_range) will be added to pixels randomly. 
+            template_histogram (tubple of (numpy.ndarray, numpy.ndarray)):
+                The template histogram consisiting of a tuple of (counts, bins).
+                See (the output of) numpy.histogram.
+            noise_range (float): Default is 0. A uniform noise ranged between
+                (-noise_range, +noise_range) will be added to pixels randomly.
         Returns:
             histogram transformed array (numpy.ndarray):
                 The transformed output tensor/image that maches the input
@@ -1252,3 +1251,4 @@ class HistogramTransform(object):
         tensor_transformed = np.maximum(tensor_transformed, min(t_bins))
 
         return tensor_transformed.reshape(originalShape)
+
