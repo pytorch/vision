@@ -1099,8 +1099,8 @@ class RandomGrayscale(object):
 
     def __repr__(self):
         return self.__class__.__name__ + '(p={0})'.format(self.p)
-    
- 
+
+
 class HistogramTransform(object):
     """
     Transforms the distribution of the input tensor to match that
@@ -1251,4 +1251,3 @@ class HistogramTransform(object):
         tensor_transformed = np.maximum(tensor_transformed, min(t_bins))
 
         return tensor_transformed.reshape(originalShape)
-
