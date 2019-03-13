@@ -1180,8 +1180,7 @@ class HistogramTransform(object):
         # Convert to the original type
 
         if tensorType == torch.Tensor:
-            transformed_tensor = torch.tensor(transformed_tensor,
-                    dtype=dtype)
+            transformed_tensor = torch.tensor(transformed_tensor, dtype=dtype)
 
         return transformed_tensor
 
