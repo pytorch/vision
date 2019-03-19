@@ -9,6 +9,7 @@ import numpy as np
 import torch
 import codecs
 from .utils import download_url, makedir_exist_ok
+from .utils import download_and_extract, extract_file
 
 
 class MNIST(VisionDataset):
@@ -141,9 +142,7 @@ class MNIST(VisionDataset):
         # download files
         for url in self.urls:
             filename = url.rpartition('/')[2]
-            file_path = os.path.join(self.raw_folder, filename)
-            download_url(url, root=self.raw_folder, filename=filename, md5=None)
-            self.extract_gzip(gzip_path=file_path, remove_finished=True)
+            download_and_extract(url, root=self.raw_folder, filename=filename, md5=None)
 
         # process and save as torch files
         print('Processing...')
@@ -273,16 +272,18 @@ class EMNIST(MNIST):
         # download files
         filename = self.url.rpartition('/')[2]
         file_path = os.path.join(self.raw_folder, filename)
-        download_url(self.url, root=self.raw_folder, filename=filename, md5=None)
+        #download_url(self.url, root=self.raw_folder, filename=filename, md5=None)
 
         print('Extracting zip archive')
-        with zipfile.ZipFile(file_path) as zip_f:
-            zip_f.extractall(self.raw_folder)
-        os.unlink(file_path)
+        #with zipfile.ZipFile(file_path) as zip_f:
+        #    zip_f.extractall(self.raw_folder)
+        #os.unlink(file_path)
+        download_and_extract(self.url, root=self.raw_folder, filename="kmnist.zip", md5=None)
         gzip_folder = os.path.join(self.raw_folder, 'gzip')
         for gzip_file in os.listdir(gzip_folder):
             if gzip_file.endswith('.gz'):
-                self.extract_gzip(gzip_path=os.path.join(gzip_folder, gzip_file))
+                extract_file(os.path.join(gzip_folder, gzip_file), gzip_folder)
+            #    self.extract_gzip(gzip_path=os.path.join(gzip_folder, gzip_file))
 
         # process and save as torch files
         for split in self.splits:

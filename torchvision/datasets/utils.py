@@ -189,3 +189,32 @@ def _save_response_content(response, destination, chunk_size=32768):
                 progress += len(chunk)
                 pbar.update(progress - pbar.n)
         pbar.close()
+
+
+import tarfile
+import zipfile
+import gzip
+def extract_file(from_path, to_path, remove_finished=False):
+    # TODO make it more robust wrt tar.gz
+    if from_path.endswith(".tar"):
+        with tarfile.open(from_path, 'r:') as tar:
+            tar.extractall(path=to_path)
+    elif from_path.endswith(".tar.gz"):
+        with tarfile.open(from_path, 'r:gz') as tar:
+            tar.extractall(path=to_path)
+    elif from_path.endswith(".gz"):
+        to_path = os.path.join(to_path, os.path.splitext(os.path.basename(from_path))[0])
+        with open(to_path, "wb") as out_f, gzip.GzipFile(from_path) as zip_f:
+            out_f.write(zip_f.read())
+    elif from_path.endswith("zip"):
+        with zipfile.ZipFile(from_path, 'r') as z:
+            z.extractall(to_path)
+    else:
+        raise ValueError("Not supported")
+
+    if remove_finished:
+        os.unlink(from_path)
+
+def download_and_extract(url, root, filename, md5=None):
+    download_url(url, root, filename, md5)
+    extract_file(os.path.join(root, filename), root)
