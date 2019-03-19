@@ -14,7 +14,8 @@ import types
 import collections
 import warnings
 
-from . import functional as F
+# from . import functional as F
+import functional as F
 
 if sys.version_info < (3, 3):
     Sequence = collections.Sequence
@@ -27,7 +28,7 @@ else:
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
-           "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale"]
+           "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale", "RandomShear"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -913,6 +914,68 @@ class RandomRotation(object):
             format_string += ', center={0}'.format(self.center)
         format_string += ')'
         return format_string
+
+
+class RandomShear(object):
+    """Random shear transformation of the image keeping center invariant
+
+    Args:
+        shear (sequence or float or int, optional): Range of degrees to select from.
+            If degrees is a number instead of sequence like (min, max), the range of degrees
+            will be (-degrees, +degrees). Will not apply shear by default
+        resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
+            An optional resampling filter. See `filters`_ for more information.
+            If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
+        fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
+
+    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
+
+    """
+
+    def __init__(self, shear, resample=False, fillcolor=0):
+        if isinstance(shear, numbers.Number):
+            if shear < 0:
+                raise ValueError("If shear is a single number, it must be positive.")
+            self.shear = (-shear, shear)
+        else:
+            assert isinstance(shear, (tuple, list)) and len(shear) == 2, \
+                "shear should be a list or tuple and it must be of length 2."
+            self.shear = shear
+
+        self.resample = resample
+        self.fillcolor = fillcolor
+
+    @staticmethod
+    def get_params(shears):
+        """Get parameters for shear transformation
+
+        Returns:
+            sequence: params to be passed to the shear transformation
+        """
+        shear = random.uniform(shears[0], shears[1])
+
+        return shear
+
+    def __call__(self, img):
+        """
+            img (PIL Image): Image to be sheared.
+
+        Returns:
+            PIL Image: Shear transformed image.
+        """
+        ret = self.get_params(self.shear)
+        return F.shear(img, ret, resample=self.resample, fillcolor=self.fillcolor)
+
+    def __repr__(self):
+        s = '{name}(shear={shear}'
+        if self.resample > 0:
+            s += ', resample={resample}'
+        if self.fillcolor != 0:
+            s += ', fillcolor={fillcolor}'
+        s += ')'
+        d = dict(self.__dict__)
+        d['resample'] = _pil_interpolation_to_str[d['resample']]
+        return s.format(name=self.__class__.__name__, **d)
 
 
 class RandomAffine(object):
