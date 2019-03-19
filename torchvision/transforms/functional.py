@@ -662,6 +662,43 @@ def rotate(img, angle, resample=False, expand=False, center=None):
     return img.rotate(angle, resample, expand, center)
 
 
+def shear(img, shear, resample=0, fillcolor=None):
+    """Apply shear transformation on the image keeping image center invariant
+
+    Args:
+        img (PIL Image): PIL Image to be sheared.
+        shear (float): shear angle value in degrees between -180 to 180, clockwise direction.
+        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
+            An optional resampling filter.
+            See `filters`_ for more information.
+            If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
+        fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    output_size = img.size
+    center = (img.size[0] * 0.5 + 0.5, img.size[1] * 0.5 + 0.5)
+
+    shear = math.radians(shear)
+
+    # Inverted shear matrix
+    d = math.cos(shear)
+    matrix = [math.cos(shear), math.sin(shear), 0, 0, 1, 0]
+    matrix = [1.0 / d * m for m in matrix]
+
+    # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
+    matrix[2] += matrix[0] * (-center[0]) + matrix[1] * (-center[1])
+    matrix[5] += matrix[3] * (-center[0]) + matrix[4] * (-center[1])
+
+    # Apply center translation: C * RSS^-1 * C^-1 * T^-1
+    matrix[2] += center[0]
+    matrix[5] += center[1]
+
+    kwargs = {"fillcolor": fillcolor} if PILLOW_VERSION[0] == '5' else {}
+    return img.transform(output_size, Image.AFFINE, matrix, resample, **kwargs)
+
+
 def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     # Helper method to compute inverse matrix for affine transformation
 
