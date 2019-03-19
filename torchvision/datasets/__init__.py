@@ -13,6 +13,7 @@ from .sbu import SBU
 from .flickr import Flickr8k, Flickr30k
 from .voc import VOCSegmentation, VOCDetection
 from .cityscapes import Cityscapes
+from .imagenet import ImageNet
 from .caltech import Caltech101, Caltech256
 from .celeba import CelebA
 
@@ -22,5 +23,5 @@ __all__ = ('LSUN', 'LSUNClass',
            'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST',
            'MNIST', 'KMNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
-           'VOCSegmentation', 'VOCDetection', 'Cityscapes',
+           'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNet',
            'Caltech101', 'Caltech256', 'CelebA')
