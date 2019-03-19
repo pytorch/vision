@@ -662,6 +662,41 @@ def rotate(img, angle, resample=False, expand=False, center=None):
     return img.rotate(angle, resample, expand, center)
 
 
+def translate(img, translate, resample=0, fillcolor=None):
+    """Apply translation on the image
+
+    Args:
+        img (PIL Image): PIL Image to be rotated.
+        translate (list or tuple of integers): horizontal and vertical translations
+        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
+            An optional resampling filter.
+            See `filters`_ for more information.
+            If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
+        fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    assert isinstance(translate, (tuple, list)) and len(translate) == 2, \
+        "Argument translate should be a list or tuple of length 2"
+
+    output_size = img.size
+    # Helper method to compute inverse matrix for affine transformation
+
+    # We need compute INVERSE of affine transformation matrix: M = T
+    # where T is translation matrix: [1, 0, tx | 0, 1, ty | 0, 0, 1]
+    # Thus, the inverse is M^-1 = T^-1
+
+    # Inverted translation: T^-1
+    matrix = [
+        1, 0, -translate[0],
+        0, 1, -translate[1]
+    ]
+
+    kwargs = {"fillcolor": fillcolor} if PILLOW_VERSION[0] == '5' else {}
+    return img.transform(output_size, Image.AFFINE, matrix, resample, **kwargs)
+
+
 def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     # Helper method to compute inverse matrix for affine transformation
 
