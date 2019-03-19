@@ -14,8 +14,7 @@ import types
 import collections
 import warnings
 
-# from . import functional as F
-import functional as F
+from . import functional as F
 
 if sys.version_info < (3, 3):
     Sequence = collections.Sequence
