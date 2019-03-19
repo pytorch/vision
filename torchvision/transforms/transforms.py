@@ -27,7 +27,7 @@ else:
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
-           "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale"]
+           "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale", "RandomTranslate"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -913,6 +913,70 @@ class RandomRotation(object):
             format_string += ', center={0}'.format(self.center)
         format_string += ')'
         return format_string
+
+
+class RandomTranslate(object):
+    """Random translations of the image
+
+    Args:
+        translate (tuple, optional): tuple of maximum absolute fraction for horizontal
+            and vertical translations. For example translate=(a, b), then horizontal shift
+            is randomly sampled in the range -img_width * a < dx < img_width * a and vertical shift is
+            randomly sampled in the range -img_height * b < dy < img_height * b. Will not translate by default.
+        resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
+            An optional resampling filter. See `filters`_ for more information.
+            If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
+        fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
+
+    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
+
+    """
+
+    def __init__(self, translate, resample=False, fillcolor=0):
+        assert isinstance(translate, (tuple, list)) and len(translate) == 2, \
+            "translate should be a list or tuple and it must be of length 2."
+        for t in translate:
+            if not (0.0 <= t <= 1.0):
+                raise ValueError("translation values should be between 0 and 1")
+        self.translate = translate
+
+        self.resample = resample
+        self.fillcolor = fillcolor
+
+    @staticmethod
+    def get_params(translate, img_size):
+        """Get parameters for translation
+
+        Returns:
+            sequence: params to be passed to the translation
+        """
+        max_dx = translate[0] * img_size[0]
+        max_dy = translate[1] * img_size[1]
+        translations = (np.round(random.uniform(-max_dx, max_dx)),
+                        np.round(random.uniform(-max_dy, max_dy)))
+
+        return translations
+
+    def __call__(self, img):
+        """
+            img (PIL Image): Image to be translated.
+
+        Returns:
+            PIL Image: Translated image.
+        """
+        ret = self.get_params(self.translate, img.size)
+        return F.translate(img, ret, resample=self.resample, fillcolor=self.fillcolor)
+
+    def __repr__(self):
+        s = '{name}(translate={translate}'
+        if self.resample > 0:
+            s += ', resample={resample}'
+        if self.fillcolor != 0:
+            s += ', fillcolor={fillcolor}'
+        s += ')'
+        d = dict(self.__dict__)
+        d['resample'] = _pil_interpolation_to_str[d['resample']]
+        return s.format(name=self.__class__.__name__, **d)
 
 
 class RandomAffine(object):
