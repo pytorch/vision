@@ -1191,7 +1191,7 @@ class Tester(unittest.TestCase):
         # Checking if RandomAffine can be printed as string
         t.__repr__()
 
-        t = transforms.RandomTranslate(10, resample=Image.BILINEAR)
+        t = transforms.RandomTranslate((0.2, 0.1), resample=Image.BILINEAR)
         assert "Image.BILINEAR" in t.__repr__()
 
     def test_random_affine(self):
