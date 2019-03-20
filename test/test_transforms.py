@@ -1021,7 +1021,7 @@ class Tester(unittest.TestCase):
         pts = list(set(pts))
 
         with self.assertRaises(TypeError):
-            F.affine(input_img, 10)
+            F.translate(input_img, (10, 20))
 
         pil_img = F.to_pil_image(input_img)
 
@@ -1058,7 +1058,7 @@ class Tester(unittest.TestCase):
                     if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
                         true_result[y, x, :] = input_img[_y, _x, :]
 
-            result = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh)
+            result = F.translate(pil_img, translate=t)
             assert result.size == pil_img.size
             # Compute number of different pixels:
             np_result = np.array(result)
@@ -1069,9 +1069,8 @@ class Tester(unittest.TestCase):
                 "n diff pixels={}\n".format(np.sum(np.array(result)[:, :, 0] != true_result[:, :, 0]))
 
         # Test translation
-        t = [10, 15]
+        t = [10, 20]
         _test_transformation(a=0.0, t=t, s=1.0, sh=0.0)
-
 
     def test_affine(self):
         input_img = np.zeros((40, 40, 3), dtype=np.uint8)
@@ -1176,9 +1175,7 @@ class Tester(unittest.TestCase):
     def test_random_translate(self):
 
         with self.assertRaises(ValueError):
-            transforms.RandomTranslate(translate=2.0)
             transforms.RandomTranslate(translate=[-1.0, 1.0])
-            transforms.RandomTranslate(translate=[-1.0, 0.0, 1.0])
 
         x = np.zeros((100, 100, 3), dtype=np.uint8)
         img = F.to_pil_image(x)
