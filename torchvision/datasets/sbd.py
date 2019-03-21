@@ -52,7 +52,7 @@ class SBDataset(data.Dataset):
                  image_set='train',
                  mode='boundaries',
                  download=False,
-                 xy_transform=None):
+                 xy_transform=None, **kwargs):
 
         try:
             from scipy.io import loadmat
