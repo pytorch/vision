@@ -1009,6 +1009,69 @@ class Tester(unittest.TestCase):
 
         assert np.all(np.array(result_a) == np.array(result_b))
 
+    def test_shear(self):
+        input_img = np.zeros((40, 40, 3), dtype=np.uint8)
+        pts = []
+        cnt = [20, 20]
+        for pt in [(16, 16), (20, 16), (20, 20)]:
+            for i in range(-5, 5):
+                for j in range(-5, 5):
+                    input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
+                    pts.append((pt[0] + i, pt[1] + j))
+        pts = list(set(pts))
+
+        with self.assertRaises(TypeError):
+            F.shear(input_img, 10)
+
+        pil_img = F.to_pil_image(input_img)
+
+        def _to_3x3_inv(inv_result_matrix):
+            result_matrix = np.zeros((3, 3))
+            result_matrix[:2, :] = np.array(inv_result_matrix).reshape((2, 3))
+            result_matrix[2, 2] = 1
+            return np.linalg.inv(result_matrix)
+
+        def _test_transformation(a, t, s, sh):
+            a_rad = math.radians(a)
+            s_rad = math.radians(sh)
+            # 1) Check transformation matrix:
+            c_matrix = np.array([[1.0, 0.0, cnt[0]], [0.0, 1.0, cnt[1]], [0.0, 0.0, 1.0]])
+            c_inv_matrix = np.linalg.inv(c_matrix)
+            t_matrix = np.array([[1.0, 0.0, t[0]],
+                                 [0.0, 1.0, t[1]],
+                                 [0.0, 0.0, 1.0]])
+            r_matrix = np.array([[s * math.cos(a_rad), -s * math.sin(a_rad + s_rad), 0.0],
+                                 [s * math.sin(a_rad), s * math.cos(a_rad + s_rad), 0.0],
+                                 [0.0, 0.0, 1.0]])
+            true_matrix = np.dot(t_matrix, np.dot(c_matrix, np.dot(r_matrix, c_inv_matrix)))
+            result_matrix = _to_3x3_inv(F._get_inverse_affine_matrix(center=cnt, angle=a,
+                                                                     translate=t, scale=s, shear=sh))
+            assert np.sum(np.abs(true_matrix - result_matrix)) < 1e-10
+            # 2) Perform inverse mapping:
+            true_result = np.zeros((40, 40, 3), dtype=np.uint8)
+            inv_true_matrix = np.linalg.inv(true_matrix)
+            for y in range(true_result.shape[0]):
+                for x in range(true_result.shape[1]):
+                    res = np.dot(inv_true_matrix, [x, y, 1])
+                    _x = int(res[0] + 0.5)
+                    _y = int(res[1] + 0.5)
+                    if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
+                        true_result[y, x, :] = input_img[_y, _x, :]
+
+            result = F.shear(pil_img, shear=sh)
+            assert result.size == pil_img.size
+            # Compute number of different pixels:
+            np_result = np.array(result)
+            n_diff_pixels = np.sum(np_result != true_result) / 3
+            # Accept 3 wrong pixels
+            assert n_diff_pixels < 3, \
+                "a={}, t={}, s={}, sh={}\n".format(a, t, s, sh) +\
+                "n diff pixels={}\n".format(np.sum(np.array(result)[:, :, 0] != true_result[:, :, 0]))
+
+        # Test shear
+        sh = 45.0
+        _test_transformation(a=0.0, t=(0.0, 0.0), s=1.0, sh=sh)
+
     def test_affine(self):
         input_img = np.zeros((40, 40, 3), dtype=np.uint8)
         pts = []
@@ -1108,6 +1171,26 @@ class Tester(unittest.TestCase):
 
         # Checking if RandomRotation can be printed as string
         t.__repr__()
+
+    def test_random_shear(self):
+
+        with self.assertRaises(ValueError):
+            transforms.RandomShear(shear=-7)
+            transforms.RandomShear(shear=[-10, 20])
+
+        x = np.zeros((100, 100, 3), dtype=np.uint8)
+        img = F.to_pil_image(x)
+
+        t = transforms.RandomShear(shear=[-10, 10])
+        for _ in range(100):
+            shear = t.get_params(t.shear)
+            assert -10 < shear < 10
+
+        # Checking if RandomShear can be printed as string
+        t.__repr__()
+
+        t = transforms.RandomShear(10, resample=Image.BILINEAR)
+        assert "Image.BILINEAR" in t.__repr__()
 
     def test_random_affine(self):
 
