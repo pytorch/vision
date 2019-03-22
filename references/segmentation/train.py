@@ -142,7 +142,6 @@ def main(args):
 
     start_time = time.time()
     for epoch in range(args.epochs):
-        # lr_scheduler.step()
         train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, args.print_freq)
         with torch.no_grad():
             confmat = evaluate(model, data_loader_test, device=device, num_classes=dataset.num_classes)
