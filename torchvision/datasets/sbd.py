@@ -10,9 +10,10 @@ from .voc import download_extract
 
 class SBDataset(data.Dataset):
     """`Semantic Boundaries Dataset <http://home.bharathh.info/pubs/codes/SBD/download.html>`_
+
     The SBD currently contains annotations from 11355 images taken from the PASCAL VOC 2011 dataset.
 
-    Notes:
+    .. note ::
 
         Please note that the train and val splits included with this dataset are different from
         the splits in the PASCAL VOC dataset. In particular some "train" images might be part of
@@ -22,7 +23,7 @@ class SBDataset(data.Dataset):
 
     .. warning::
 
-        This classes needs `scipy` to load target files from `.mat` format.
+        This class needs `scipy <https://docs.scipy.org/doc/>`_ to load target files from `.mat` format.
 
     Args:
         root (string): Root directory of the Semantic Boundaries Dataset
