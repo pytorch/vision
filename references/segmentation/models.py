@@ -1,9 +1,10 @@
+from collections import OrderedDict
+
 import torch
 from torch import nn
 from torch.nn import functional as F
-import torchvision
-from collections import OrderedDict
 import torch.utils.model_zoo as model_zoo
+import torchvision
 
 
 class SegmentationModel(nn.Module):
@@ -13,25 +14,17 @@ class SegmentationModel(nn.Module):
         self.head = head
 
     def forward(self, x):
-        shape = x.shape[-2:]
-        x = self.backbone(x)
-        x = self.head(x, shape)
-        return x
+        input_shape = x.shape[-2:]
+        features = self.backbone(x)
 
-
-class SegmentationHeadModel(nn.ModuleDict):
-    def __init__(self, *classifiers):
-        super(SegmentationHeadModel, self).__init__(*classifiers)
-
-    def forward(self, features, input_shape):
         # contract: features is a dict of tensors
         # the names from the classifiers in self will be matched to those
         # in the features dict
-        assert len(features) == len(self)
-        assert len(set(features).difference(set(self))) == 0
+        assert len(features) == len(self.head)
+        assert len(set(features).difference(set(self.head))) == 0
 
         result = OrderedDict()
-        for key, module in self.items():
+        for key, module in self.head.items():
             x = features[key]
             x = module(x)
             x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
@@ -52,16 +45,15 @@ class ResNet(torchvision.models.resnet.ResNet):
         if not return_layers:
             return_layers = "layer4"
         if isinstance(return_layers, str):
-            return_layers = [return_layers]
+            return_layers = {return_layers: "out"}
         assert set(return_layers).issubset([name for name, _ in self.named_children()])
-        self.return_layers = set(return_layers)
+        self.return_layers = return_layers
 
         if dilated:
             assert block is torchvision.models.resnet.Bottleneck
             self._add_dilation()
 
     def _add_dilation(self):
-        # add dilation
         d = (2, 2)
         for b in self.layer3[1:]:
             b.conv2.padding = d
@@ -78,52 +70,59 @@ class ResNet(torchvision.models.resnet.ResNet):
         for name, module in self.named_children():
             x = module(x)
             if name in self.return_layers:
-                out[name] = x
+                out_name = self.return_layers[name]
+                out[out_name] = x
         return out
+
+def get_resnet(name, aux=False):
+    import re
+    model_list = {
+        '18': (torchvision.models.resnet.BasicBlock, [2, 2, 2, 2]),
+        '50': (torchvision.models.resnet.Bottleneck, [3, 4, 6, 3]),
+        '101': (torchvision.models.resnet.Bottleneck, [3, 4, 23, 3]),
+    }
+    matcher = re.compile('resnet(\d+)')
+    match = matcher.match(name)
+    if not match:
+        raise ValueError("Invalid ResNet type {}".format(name))
+
+    backbone_name = match.group(0)
+    num_layers = match.group(1)
+
+    return_layers = {'layer4': 'out'}
+    if aux:
+        return_layers['layer3'] = 'aux'
+    dilated = True if 'dilated' in name else False
+    block, layers = model_list[num_layers]
+
+    model = ResNet(block, layers, dilated=dilated, return_layers=return_layers)
+
+    state_dict = model_zoo.load_url(torchvision.models.resnet.model_urls[backbone_name])
+    model.load_state_dict(state_dict, strict=False)
+
+    return model
 
 
 def get_model(name, backbone, num_classes, aux=False):
     if 'resnet' in backbone:
-        import re
-        m = {
-            '18': (torchvision.models.resnet.BasicBlock, [2, 2, 2, 2]),
-            '50': (torchvision.models.resnet.Bottleneck, [3, 4, 6, 3]),
-            '101': (torchvision.models.resnet.Bottleneck, [3, 4, 23, 3]),
-        }
-        matcher = re.compile('resnet(\d+)')
-        match = matcher.match(backbone)
-        if not match:
-            raise ValueError("Invalid ResNet type {}".format(backbone))
+        backbone = get_resnet(backbone, aux)
 
-        backbone_name = match.group(0)
-        num_layers = match.group(1)
-
-        return_layers = ['layer4']
-        if aux:
-            return_layers.append('layer3')
-        dilated = True if 'dilated' in backbone else False
-        block, layers = m[num_layers]
-        state_dict = model_zoo.load_url(torchvision.models.resnet.model_urls[backbone_name])
-        # TODO rename backbone as there is a conflict with the name above
-        backbone = ResNet(block, layers, dilated=dilated, return_layers=return_layers)
-        backbone.feature_channels = [512 * block.expansion]
-        if aux:
-            backbone.feature_channels.insert(0, 256 * block.expansion)
-
-        backbone.load_state_dict(state_dict, strict=False)
-
-    classifiers = OrderedDict()
+    inv_return_layers = {v: k for k, v in backbone.return_layers.items()}
+    classifiers = nn.ModuleDict()
     if aux:
-        classifiers['layer3'] = FCNHead(backbone.feature_channels[0], num_classes)
+        layer_name = inv_return_layers['aux']
+        inplanes = getattr(backbone, layer_name).outplanes
+        classifiers['aux'] = FCNHead(inplanes, num_classes)
 
     model_map = {
         'deeplab': DeepLabHead,
         'fcn': FCNHead,
     }
-    classifiers['layer4'] = model_map[name](backbone.feature_channels[-1], num_classes)
+    layer_name = inv_return_layers['out']
+    inplanes = getattr(backbone, layer_name).outplanes
+    classifiers['out'] = model_map[name](inplanes, num_classes)
 
-    heads = SegmentationHeadModel(classifiers)
-    model = SegmentationModel(backbone, heads)
+    model = SegmentationModel(backbone, classifiers)
     return model
 
 

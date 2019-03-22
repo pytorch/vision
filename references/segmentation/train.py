@@ -1,14 +1,11 @@
+import datetime
+import os
+import time
+
 import torch
 import torch.utils.data
 from torch import nn
-
 import torchvision
-
-import os
-
-import time
-
-import datetime
 
 import datasets
 import models
@@ -32,22 +29,20 @@ def criterion(inputs, target):
         losses[name] = nn.functional.cross_entropy(x, target, ignore_index=255)
 
     if len(losses) == 1:
-        return losses['layer4']
+        return losses['out']
 
-    return losses['layer4'] + 0.5 * losses['layer3']
+    return losses['out'] + 0.5 * losses['aux']
 
 
-
-import tqdm
 def evaluate(model, data_loader, device, num_classes):
     model.eval()
     confmat = utils.ConfusionMatrix(num_classes)
-    for i, (image, target) in enumerate(tqdm.tqdm(data_loader)):
-        image = image.to(device)
-        target = target.to(device)
+    metric_logger = utils.MetricLogger(delimiter="  ")
+    header = 'Test:'
+    for image, target in metric_logger.log_every(data_loader, 100, header):
+        image, target = image.to(device), target.to(device)
         output = model(image)
-        if True:  # TODO if aux classifier
-            output = output['layer4']
+        output = output['out']
 
         confmat.update(target.flatten(), output.argmax(1).flatten())
 
@@ -58,15 +53,10 @@ def evaluate(model, data_loader, device, num_classes):
 
 def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, print_freq):
     model.train()
-    data_time = utils.SmoothedValue()
-    batch_time = utils.SmoothedValue()
-    losses = utils.SmoothedValue()
-    end = time.time()
-    for i, (image, target) in enumerate(data_loader):
-        data_time.update(time.time() - end)
-
-        image = image.to(device)
-        target = target.to(device)
+    metric_logger = utils.MetricLogger(delimiter="  ")
+    header = 'Epoch: [{}]'.format(epoch)
+    for image, target in metric_logger.log_every(data_loader, print_freq, header):
+        image, target = image.to(device), target.to(device)
         output = model(image)
         loss = criterion(output, target)
 
@@ -76,23 +66,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
 
         lr_scheduler.step()
 
-        batch_time.update(time.time() - end)
-        losses.update(loss.item())
-        end = time.time()
-        
-        eta_seconds = batch_time.global_avg * (len(data_loader) - i)
-        eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
-
-        if i % print_freq == 0:
-            print('Epoch: [{0}][{1}/{2}]\t'
-                    'eta: {eta}\t'
-                    'loss: {loss:.2f}\t'
-                    'time: {time:.3f}\t'
-                    'data: {data:.3f}\t'
-                    'max mem: {memory:.0f}'.format(
-                epoch, i, len(data_loader), eta=eta_string,
-                loss=losses.avg, time=batch_time.avg, data=data_time.avg,
-                memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0))
+        metric_logger.update(loss=loss.item())
 
 
 def suppress_output(is_master):
@@ -126,38 +100,39 @@ def main(args):
         torch.distributed.init_process_group(backend=args.dist_backend, init_method=dist_url)
         suppress_output(args.rank == 0)
 
-    device = torch.device("{}:{}".format(args.device, args.gpu))
+    device = torch.device(args.device)
 
     dataset = get_dataset(args.dataset, "train", datasets.Transform(0.5))
-    if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-    else:
-        train_sampler = torch.utils.data.RandomSampler(dataset)
-
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size,
-            sampler=train_sampler, num_workers=args.workers, collate_fn=utils.collate_fn, drop_last=True)
-
     dataset_test = get_dataset(args.dataset, "val", datasets.Transform())
 
     if args.distributed:
+        train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
         test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
     else:
+        train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
+
+    data_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size,
+            sampler=train_sampler, num_workers=args.workers, collate_fn=utils.collate_fn, drop_last=True)
 
     data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=1,
             sampler=test_sampler, num_workers=args.workers, collate_fn=utils.collate_fn)
 
     model = models.get_model(args.model, args.backbone, num_classes=dataset.num_classes, aux=args.aux_loss)
     model.to(device)
+
+    model_without_ddp = model
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+        model_without_ddp = model.module
 
     params_to_optimize = [
-            {"params": [p for n, p in model.named_parameters() if p.requires_grad and 'head.layer3' not in n]},
-        ]
+        {"params": [p for p in model_without_ddp.backbone.parameters() if p.requires_grad]},
+        {"params": [p for p in model_without_ddp.head['out'].parameters() if p.requires_grad]},
+    ]
     if args.aux_loss:
         params_to_optimize.append(
-            {"params": [p for p in model.head['layer3'].parameters() if p.requires_grad], "lr": args.lr * 10})
+            {"params": [p for p in model_without_ddp.head['aux'].parameters() if p.requires_grad], "lr": args.lr * 10})
     optimizer = torch.optim.SGD(
         params_to_optimize,
         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
@@ -169,10 +144,13 @@ def main(args):
     for epoch in range(args.epochs):
         # lr_scheduler.step()
         train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, args.print_freq)
-        confmat = evaluate(model, data_loader_test, device=device, num_classes=dataset.num_classes)
+        with torch.no_grad():
+            confmat = evaluate(model, data_loader_test, device=device, num_classes=dataset.num_classes)
         print(confmat)
 
-    print('Training time', time.time() - start_time)
+    total_time = time.time() - start_time
+    total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+    print('Training time {}'.format(total_time_str))
 
 
 if __name__ == "__main__":
