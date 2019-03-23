@@ -1179,7 +1179,7 @@ class Tester(unittest.TestCase):
             transforms.RandomShear(shear=[-10, 20])
 
         x = np.zeros((100, 100, 3), dtype=np.uint8)
-        img = F.to_pil_image(x)
+#         img = F.to_pil_image(x)
 
         t = transforms.RandomShear(shear=[-10, 10])
         for _ in range(100):
