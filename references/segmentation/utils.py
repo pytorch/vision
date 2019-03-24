@@ -4,6 +4,10 @@ import math
 import time
 import torch
 
+import errno
+import os
+
+
 
 class SmoothedValue(object):
     """Track a series of values and provide access to smoothed values over a
@@ -162,3 +166,10 @@ def collate_fn(batch):
     batched_imgs = cat_list(images, fill_value=0)
     batched_targets = cat_list(targets, fill_value=255)
     return batched_imgs, batched_targets
+
+def mkdir(path):
+    try:
+        os.makedirs(path)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise

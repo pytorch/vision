@@ -30,9 +30,14 @@ class ResNet(torchvision.models.resnet.ResNet):
 
     def _add_dilation(self):
         d = (2, 2)
+        self.layer3[0].downsample[0].stride = (1, 1)
+        self.layer3[0].conv2.stride = (1, 1)
         for b in self.layer3[1:]:
             b.conv2.padding = d
             b.conv2.dilation = d
+        self.layer4[0].downsample[0].stride = (1, 1)
+        self.layer4[0].conv2.stride = (1, 1)
+        self.layer4[0].conv2.dilation = (2, 2)
         self.layer4[0].conv2.padding = d
         self.layer4[0].conv2.dilation = d
         d = (4, 4)
@@ -89,19 +94,15 @@ class FCNHead(nn.Sequential):
         super(FCNHead, self).__init__(*layers)
 
 
-class DeepLabHead(nn.Module):
+class DeepLabHead(nn.Sequential):
     def __init__(self, in_channels, num_classes):
-        super(DeepLabHead, self).__init__()
-        self.aspp = ASPP(in_channels, [12, 24, 36])
-        self.block = nn.Sequential(nn.Conv2d(256, 256, 3, padding=1, bias=False),
-                nn.BatchNorm2d(256),
-                nn.ReLU(),
-                nn.Conv2d(256, num_classes, 1)
+        super(DeepLabHead, self).__init__(
+            ASPP(in_channels, [12, 24, 36]),
+            nn.Conv2d(256, 256, 3, padding=1, bias=False),
+            nn.BatchNorm2d(256),
+            nn.ReLU(),
+            nn.Conv2d(256, num_classes, 1)
         )
-
-    def forward(self, x):
-        x = self.aspp(x)
-        return self.block(x)
 
 
 class ASPPConv(nn.Sequential):

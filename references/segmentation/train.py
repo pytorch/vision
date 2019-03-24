@@ -120,6 +120,7 @@ def main(args):
 
     model = models.get_model(args.model, args.backbone, num_classes=dataset.num_classes, aux=args.aux_loss)
     model.to(device)
+    model = torch.nn.utils.convert_sync_batchnorm(model)
 
     model_without_ddp = model
     if args.distributed:
@@ -146,6 +147,8 @@ def main(args):
         with torch.no_grad():
             confmat = evaluate(model, data_loader_test, device=device, num_classes=dataset.num_classes)
         print(confmat)
+        torch.save({'model': model_without_ddp.state_dict(), 'optimizer': optimizer.state_dict(), 'args': args},
+                os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
@@ -174,10 +177,14 @@ if __name__ == "__main__":
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
+    parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--local_rank', default=0, type=int, help='print frequency')
 
     args = parser.parse_args()
     print(args)
+
+    if args.output_dir:
+        utils.mkdir(args.output_dir)
 
 
     import os
