@@ -142,7 +142,7 @@ class Tester(unittest.TestCase):
         for i in range(10):
             scale_min = round(random.random(), 2)
             scale_range = (scale_min, scale_min + round(random.random(), 2))
-            aspect_min = round(random.random(), 2)
+            aspect_min = max(round(random.random(), 2), epsilon)
             aspect_ratio_range = (aspect_min, aspect_min + round(random.random(), 2))
             randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range)
             _, _, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
