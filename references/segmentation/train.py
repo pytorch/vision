@@ -120,7 +120,12 @@ def main(args):
 
     model = models.get_model(args.model, args.backbone, num_classes=dataset.num_classes, aux=args.aux_loss)
     model.to(device)
-    model = torch.nn.utils.convert_sync_batchnorm(model)
+    if args.distributed:
+        model = torch.nn.utils.convert_sync_batchnorm(model)
+
+    if args.resume:
+        checkpoint = torch.load(args.resume, map_location='cpu')
+        model.load_state_dict(checkpoint['model'])
 
     model_without_ddp = model
     if args.distributed:
@@ -178,6 +183,7 @@ if __name__ == "__main__":
                         dest='weight_decay')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
+    parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--local_rank', default=0, type=int, help='print frequency')
 
     args = parser.parse_args()
