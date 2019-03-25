@@ -10,7 +10,8 @@ def get_available_models():
 
 class Tester(unittest.TestCase):
     def _test_model(self, name, input_shape):
-        model = models.__dict__[name]()
+        # test whether model can successfully load the pretrained weights
+        model = models.__dict__[name](pretrained=True)
         model.eval()
         x = torch.rand(input_shape)
         out = model(x)
