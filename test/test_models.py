@@ -5,7 +5,7 @@ import unittest
 
 def get_available_models():
     # TODO add a registration mechanism to torchvision.models
-    return [k for k,v in models.__dict__.items() if callable(v) and k[0].lower() == k[0]]
+    return [k for k, v in models.__dict__.items() if callable(v) and k[0].lower() == k[0]]
 
 
 class Tester(unittest.TestCase):
