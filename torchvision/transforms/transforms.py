@@ -27,7 +27,7 @@ else:
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
-           "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale"]
+           "AffineTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -710,28 +710,34 @@ class TenCrop(object):
         return self.__class__.__name__ + '(size={0}, vertical_flip={1})'.format(self.size, self.vertical_flip)
 
 
-class LinearTransformation(object):
-    """Transform a tensor image with a square transformation matrix computed
+class AffineTransformation(object):
+    """Transform a tensor image with a square transformation matrix and a mean_vector computed
     offline.
-
-    Given transformation_matrix, will flatten the torch.*Tensor, compute the dot
-    product with the transformation matrix and reshape the tensor to its
+    Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
+    subtract mean_vector from it which is then followed by computing the dot
+    product with the transformation matrix and then reshaping the tensor to its
     original shape.
-
     Applications:
-        - whitening: zero-center the data, compute the data covariance matrix
-                 [D x D] with np.dot(X.T, X), perform SVD on this matrix and
-                 pass it as transformation_matrix.
-
+        - whitening transformation: Suppose X is a column vector zero-centered data.
+                 Then compute the data covariance matrix [D x D] with torch.mm(X.t(), X),
+                 perform SVD on this matrix and pass it as transformation_matrix.
     Args:
         transformation_matrix (Tensor): tensor [D x D], D = C x H x W
+        mean_vector (Tensor): tensor [D], D = C x H x W
     """
 
-    def __init__(self, transformation_matrix):
+    def __init__(self, transformation_matrix, mean_vector):
         if transformation_matrix.size(0) != transformation_matrix.size(1):
             raise ValueError("transformation_matrix should be square. Got " +
                              "[{} x {}] rectangular matrix.".format(*transformation_matrix.size()))
+
+        if mean_vector.size(0) != transformation_matrix.size(0):
+            raise ValueError("mean_vector should have the same length {}".format(mean_vector.size(0)) +
+                             " as any one of the dimensions of the transformation_matrix [{} x {}]"
+                             .format(transformation_matrix.size()))
+
         self.transformation_matrix = transformation_matrix
+        self.mean_vector = mean_vector
 
     def __call__(self, tensor):
         """
@@ -745,15 +751,27 @@ class LinearTransformation(object):
             raise ValueError("tensor and transformation matrix have incompatible shape." +
                              "[{} x {} x {}] != ".format(*tensor.size()) +
                              "{}".format(self.transformation_matrix.size(0)))
-        flat_tensor = tensor.view(1, -1)
+        flat_tensor = tensor.view(1, -1) - self.mean_vector
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
         tensor = transformed_tensor.view(tensor.size())
         return tensor
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + '('
-        format_string += (str(self.transformation_matrix.numpy().tolist()) + ')')
+        format_string = self.__class__.__name__ + '(transformation_matrix='
+        format_string += (str(self.transformation_matrix.tolist()) + ')')
+        format_string += (", (mean_vector=" + str(self.mean_vector.tolist()) + ')')
         return format_string
+
+
+class LinearTransformation(AffineTransformation):
+    """
+    Note: This transform is deprecated in favor of AffineTransformation.
+    """
+
+    def __init__(self, transformation_matrix):
+        warnings.warn("The use of the transforms.LinearTransformation transform is deprecated, " +
+                      "please use transforms.AffineTransformation instead.")
+        super(LinearTransformation, self).__init__(transformation_matrix, torch.zeros_like(transformation_matrix[0]))
 
 
 class ColorJitter(object):

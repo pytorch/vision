@@ -974,6 +974,36 @@ class Tester(unittest.TestCase):
         # Checking if LinearTransformation can be printed as string
         whitening.__repr__()
 
+    def test_affine_transformation(self):
+        num_samples = 1000
+        x = torch.randn(num_samples, 3, 10, 10)
+        flat_x = x.view(x.size(0), x.size(1) * x.size(2) * x.size(3))
+        # compute principal components
+        sigma = torch.mm(flat_x.t(), flat_x) / flat_x.size(0)
+        u, s, _ = np.linalg.svd(sigma.numpy())
+        zca_epsilon = 1e-10  # avoid division by 0
+        d = torch.Tensor(np.diag(1. / np.sqrt(s + zca_epsilon)))
+        u = torch.Tensor(u)
+        principal_components = torch.mm(torch.mm(u, d), u.t())
+        mean_vector = (torch.sum(flat_x, dim=0) / flat_x.size(0))
+        # initialize whitening matrix
+        whitening = transforms.AffineTransformation(principal_components, mean_vector)
+        # estimate covariance and mean using weak law of large number
+        num_features = flat_x.size(1)
+        cov = 0.0
+        mean = 0.0
+        for i in x:
+            xwhite = whitening(i)
+            xwhite = xwhite.view(1, -1).numpy()
+            cov += np.dot(xwhite, xwhite.T) / num_features
+            mean += np.sum(xwhite) / num_features
+        # if rtol for std = 1e-3 then rtol for cov = 2e-3 as std**2 = cov
+        assert np.allclose(cov / num_samples, np.identity(1), rtol=2e-3), "cov not close to 1"
+        assert np.allclose(mean / num_samples, 0, rtol=1e-3), "mean not close to 0"
+
+        # Checking if AffineTransformation can be printed as string
+        whitening.__repr__()
+
     def test_rotate(self):
         x = np.zeros((100, 100, 3), dtype=np.uint8)
         x[40, 40] = [255, 255, 255]
