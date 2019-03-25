@@ -711,12 +711,12 @@ class AffineTransformation(object):
     product with the transformation matrix and then reshaping the tensor to its
     original shape.
     Applications:
-        - whitening: zero-center the data, compute the data covariance matrix
-                 [D x D] with np.dot(X.T, X), perform SVD on this matrix and
-                 pass it as transformation_matrix.
+        - whitening transformation: Suppose X is a column vector zero-centered data.
+                 Then compute the data covariance matrix [D x D] with torch.mm(X.t(), X),
+                 perform SVD on this matrix and pass it as transformation_matrix.
     Args:
         transformation_matrix (Tensor): tensor [D x D], D = C x H x W
-        mean_vector (Tensor): tensor [1 x D], D = C x H x W
+        mean_vector (Tensor): tensor [D], D = C x H x W
     """
 
     def __init__(self, transformation_matrix, mean_vector):
@@ -724,8 +724,8 @@ class AffineTransformation(object):
             raise ValueError("transformation_matrix should be square. Got " +
                              "[{} x {}] rectangular matrix.".format(*transformation_matrix.size()))
 
-        if mean_vector.size(1) != transformation_matrix.size(0):
-            raise ValueError("mean_vector should have the same length {}".format(mean_vector.size(1)) +
+        if mean_vector.size(0) != transformation_matrix.size(0):
+            raise ValueError("mean_vector should have the same length {}".format(mean_vector.size(0)) +
                              " as any one of the dimensions of the transformation_matrix [{} x {}]"
                              .format(transformation_matrix.size()))
 
@@ -751,8 +751,8 @@ class AffineTransformation(object):
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '(transformation_matrix='
-        format_string += (str(self.transformation_matrix.numpy().tolist()) + ')')
-        format_string += (", (mean_vector=" + str(self.mean_vector.numpy().tolist()) + ')')
+        format_string += (str(self.transformation_matrix.tolist()) + ')')
+        format_string += (", (mean_vector=" + str(self.mean_vector.tolist()) + ')')
         return format_string
 
 
