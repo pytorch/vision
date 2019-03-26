@@ -14,10 +14,11 @@ model_urls = {
 def googlenet(pretrained=False, **kwargs):
     r"""GoogLeNet (Inception v1) model architecture from
     `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
+
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         transform_input (bool): If True, preprocesses the input according to the method with which it
-        was trained on ImageNet. Default: *False*
+            was trained on ImageNet. Default: *False*
     """
     if pretrained:
         if 'transform_input' not in kwargs:
