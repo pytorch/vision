@@ -10,12 +10,12 @@ def get_available_models():
 
 class Tester(unittest.TestCase):
     def _test_model(self, name, input_shape):
-        # test whether model can successfully load the pretrained weights
-        model = models.__dict__[name](pretrained=True)
+        # passing num_class equal to a number other than 1000 helps in making the test more enforcing in nature
+        model = models.__dict__[name](num_classes=50)
         model.eval()
         x = torch.rand(input_shape)
         out = model(x)
-        self.assertEqual(out.shape[-1], 1000)
+        self.assertEqual(out.shape[-1], 50)
 
 
 for model_name in get_available_models():
