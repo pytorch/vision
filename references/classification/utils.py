@@ -1,6 +1,5 @@
 from collections import defaultdict, deque
 import datetime
-import math
 import time
 import torch
 
@@ -42,6 +41,9 @@ class SmoothedValue(object):
     def max(self):
         return max(self.deque)
 
+    def __str__(self):
+        return "{:.4f} ({:.4f})".format(self.median, self.avg)
+
 
 class MetricLogger(object):
     def __init__(self, delimiter="\t"):
@@ -67,7 +69,7 @@ class MetricLogger(object):
         loss_str = []
         for name, meter in self.meters.items():
             loss_str.append(
-                "{}: {:.4f} ({:.4f})".format(name, meter.median, meter.avg)
+                "{}: {}".format(name, str(meter))
             )
         return self.delimiter.join(loss_str)
 
@@ -79,7 +81,7 @@ class MetricLogger(object):
         end = time.time()
         iter_time = SmoothedValue()
         data_time = SmoothedValue()
-        space_fmt = ':' + str(math.ceil(math.log10(len(iterable)))) + 'd'
+        space_fmt = ':' + str(len(str(len(iterable)))) + 'd'
         log_msg = self.delimiter.join([
             header,
             '[{0' + space_fmt + '}/{1}]',
@@ -89,6 +91,7 @@ class MetricLogger(object):
             'data: {data:.4f}',
             'max mem: {memory:.0f}'
         ])
+        MB = 1024.0 * 1024.0
         for obj in iterable:
             data_time.update(time.time() - end)
             yield obj
@@ -100,8 +103,7 @@ class MetricLogger(object):
                     i, len(iterable), eta=eta_string,
                     meters=str(self),
                     time=iter_time.avg, data=data_time.avg,
-                    space_fmt=space_fmt,
-                    memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0))
+                    memory=torch.cuda.max_memory_allocated() / MB))
             i += 1
             end = time.time()
         total_time = time.time() - start_time
