@@ -67,20 +67,28 @@ def main(args):
     torch.backends.cudnn.benchmark = True
 
     # Data loading code
+    print("Loading data")
     traindir = os.path.join(args.data_path, 'train')
     valdir = os.path.join(args.data_path, 'val')
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
 
+    print("Loading training data")
+    st = time.time()
+    scale = (0.08, 1.0)
+    if args.model == 'mobilenet_v2':
+        scale = (0.2, 1.0)
     dataset = torchvision.datasets.ImageFolder(
         traindir,
         transforms.Compose([
-            transforms.RandomResizedCrop(224),
+            transforms.RandomResizedCrop(224, scale=scale),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             normalize,
         ]))
+    print("Took", time.time() - st)
 
+    print("Loading validation data")
     dataset_test = torchvision.datasets.ImageFolder(
         valdir,
         transforms.Compose([
@@ -90,6 +98,7 @@ def main(args):
             normalize,
         ]))
 
+    print("Creating data loaders")
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
         test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
@@ -103,6 +112,7 @@ def main(args):
     data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=args.batch_size,
             sampler=test_sampler, num_workers=args.workers, pin_memory=True)
 
+    print("Creating model")
     model = torchvision.models.__dict__[args.model]()
     model.to(device)
     if args.distributed:
@@ -123,8 +133,10 @@ def main(args):
     optimizer = torch.optim.SGD(model.parameters(),
         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+    # if using mobilenet, step_size=2 and gamma=0.94
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
 
+    print("Start training")
     start_time = time.time()
     for epoch in range(args.epochs):
         if args.distributed:
@@ -155,7 +167,6 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--batch-size', default=32, type=int)
     parser.add_argument('--epochs', default=90, type=int, metavar='N',
                         help='number of total epochs to run')
-
     parser.add_argument('-j', '--workers', default=16, type=int, metavar='N',
                         help='number of data loading workers (default: 16)')
     parser.add_argument('--lr', default=0.1, type=float, help='initial learning rate')
@@ -164,6 +175,8 @@ if __name__ == "__main__":
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
+    parser.add_argument('--lr-step-size', default=30, type=int, help='decrease lr every step-size epochs')
+    parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
