@@ -117,11 +117,11 @@ def accuracy(output, target, topk=(1,)):
 
         _, pred = output.topk(maxk, 1, True, True)
         pred = pred.t()
-        correct = pred.eq(target.view(1, -1).expand_as(pred))
+        correct = pred.eq(target[None])
 
         res = []
         for k in topk:
-            correct_k = correct[:k].view(-1).float().sum(0)
+            correct_k = correct[:k].flatten().sum(dtype=torch.float32)
             res.append(correct_k * (100.0 / batch_size))
         return res
 
@@ -131,3 +131,26 @@ def mkdir(path):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+
+
+def setup_for_distributed(is_master):
+    """
+    For the master process, this function does nothing.
+    For the other processes, this function disables printing and
+    torch.save
+    """
+    import builtins as __builtin__
+    builtin_print = __builtin__.print
+
+    def print(*args, **kwargs):
+        force = kwargs.pop('force', False)
+        if is_master or force:
+            builtin_print(*args, **kwargs)
+
+    __builtin__.print = print
+
+    torch_save = torch.save
+    def save(*args, **kwargs):
+        if is_master:
+            torch_save(*args, **kwargs)
+    torch.save = save

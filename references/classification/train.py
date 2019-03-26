@@ -11,6 +11,24 @@ from torchvision import transforms
 import utils
 
 
+def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, print_freq):
+    model.train()
+    metric_logger = utils.MetricLogger(delimiter="  ")
+    header = 'Epoch: [{}]'.format(epoch)
+    for image, target in metric_logger.log_every(data_loader, print_freq, header):
+        image, target = image.to(device), target.to(device)
+        output = model(image)
+        loss = criterion(output, target)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
+        # FIXME need to pass input.size(0) to accurately compute the metric
+        metric_logger.update(loss=loss.item(), acc1=acc1.item(), acc5=acc5.item())
+
+
 def evaluate(model, criterion, data_loader, device):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -31,44 +49,6 @@ def evaluate(model, criterion, data_loader, device):
     return metric_logger.acc1.avg
 
 
-
-
-def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, print_freq):
-    model.train()
-    metric_logger = utils.MetricLogger(delimiter="  ")
-    header = 'Epoch: [{}]'.format(epoch)
-    for image, target in metric_logger.log_every(data_loader, print_freq, header):
-        image, target = image.to(device), target.to(device)
-        output = model(image)
-        loss = criterion(output, target)
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
-        # FIXME need to pass input.size(0) to accurately compute the metric
-        metric_logger.update(loss=loss.item(), acc1=acc1.item(), acc5=acc5.item())
-
-
-def suppress_output(is_master):
-    """Suppress printing on the current device. Force printing with `force=True`."""
-    import builtins as __builtin__
-    builtin_print = __builtin__.print
-
-    def print(*args, **kwargs):
-        force = kwargs.pop('force', False)
-        if is_master or force:
-            builtin_print(*args, **kwargs)
-
-    __builtin__.print = print
-
-    torch_save = torch.save
-    def save(*args, **kwargs):
-        if is_master:
-            torch_save(*args, **kwargs)
-    torch.save = save
-
 def main(args):
     args.gpu = args.local_rank
 
@@ -80,7 +60,7 @@ def main(args):
         print('| distributed init (rank {}): {}'.format(
             args.rank, dist_url), flush=True)
         torch.distributed.init_process_group(backend=args.dist_backend, init_method=dist_url)
-        suppress_output(args.rank == 0)
+        utils.setup_for_distributed(args.rank == 0)
 
     device = torch.device(args.device)
 
@@ -131,6 +111,7 @@ def main(args):
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
         model.load_state_dict(checkpoint['model'])
+        # TODO load optimizer and lr_scheduler
 
     model_without_ddp = model
     if args.distributed:
@@ -194,8 +175,6 @@ if __name__ == "__main__":
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
-
-    import os
     num_gpus = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
     args.distributed = num_gpus > 1
 
