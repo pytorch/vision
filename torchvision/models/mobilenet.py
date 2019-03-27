@@ -2,10 +2,10 @@ from torch import nn
 
 
 class ConvBNReLU(nn.Sequential):
-    def __init__(self, in_planes, out_planes, kernel_size=3, stride=1):
+    def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, groups=1):
         padding = (kernel_size - 1) // 2
         super(ConvBNReLU, self).__init__(
-            nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, bias=False),
+            nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, groups=groups, bias=False),
             nn.BatchNorm2d(out_planes),
             nn.ReLU6(inplace=True)
         )
@@ -22,17 +22,11 @@ class InvertedResidual(nn.Module):
 
         layers = []
         if expand_ratio != 1:
-            layers.extend([
-                # pw
-                nn.Conv2d(inp, hidden_dim, 1, 1, 0, bias=False),
-                nn.BatchNorm2d(hidden_dim),
-                nn.ReLU6(inplace=True),
-            ])
+            # pw
+            layers.append(ConvBNReLU(inp, hidden_dim, kernel_size=1))
         layers.extend([
             # dw
-            nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
-            nn.BatchNorm2d(hidden_dim),
-            nn.ReLU6(inplace=True),
+            ConvBNReLU(hidden_dim, hidden_dim, stride=stride, groups=hidden_dim),
             # pw-linear
             nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
             nn.BatchNorm2d(oup),
