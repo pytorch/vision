@@ -30,7 +30,7 @@ class SmoothedValue(object):
 
     @property
     def avg(self):
-        d = torch.tensor(list(self.deque))
+        d = torch.tensor(list(self.deque), dtype=torch.float32)
         return d.mean().item()
 
     @property
@@ -42,7 +42,7 @@ class SmoothedValue(object):
         return max(self.deque)
 
     def __str__(self):
-        return "{:.4f} ({:.4f})".format(self.median, self.avg)
+        return "{:.4f} ({:.4f})".format(self.median, self.global_avg)
 
 
 class MetricLogger(object):

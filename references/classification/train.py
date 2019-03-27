@@ -43,11 +43,12 @@ def evaluate(model, criterion, data_loader, device):
 
             acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
             # FIXME need to pass input.size(0) to accurately compute the metric
+            # FIXME need to reduce from all processes!!!
             metric_logger.update(loss=loss.item(), acc1=acc1.item(), acc5=acc5.item())
 
-    print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
+    print(' * Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f}'
           .format(top1=metric_logger.acc1, top5=metric_logger.acc5))
-    return metric_logger.acc1.avg
+    return metric_logger.acc1.global_avg
 
 
 def main(args):
@@ -132,12 +133,15 @@ def main(args):
     # if using mobilenet, step_size=2 and gamma=0.94
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
 
-
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
         model_without_ddp.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+
+    if args.test_only:
+        evaluate(model, criterion, data_loader_test, device=device)
+        return
 
     print("Start training")
     start_time = time.time()
@@ -183,6 +187,12 @@ if __name__ == "__main__":
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
+    parser.add_argument(
+        "--test-only",
+        dest="test_only",
+        help="Only test the model",
+        action="store_true",
+    )
     parser.add_argument('--local_rank', default=0, type=int, help='print frequency')
 
     args = parser.parse_args()
