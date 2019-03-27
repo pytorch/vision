@@ -26,7 +26,8 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
 
         acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
         # FIXME need to pass input.size(0) to accurately compute the metric
-        metric_logger.update(loss=loss.item(), acc1=acc1.item(), acc5=acc5.item())
+        metric_logger.update(loss=loss.item(), acc1=acc1.item(), acc5=acc5.item(),
+                lr=optimizer.param_groups[0]["lr"])
 
 
 def evaluate(model, criterion, data_loader, device):
@@ -118,11 +119,6 @@ def main(args):
     if args.distributed:
         model = torch.nn.utils.convert_sync_batchnorm(model)
 
-    if args.resume:
-        checkpoint = torch.load(args.resume, map_location='cpu')
-        model.load_state_dict(checkpoint['model'])
-        # TODO load optimizer and lr_scheduler
-
     model_without_ddp = model
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
@@ -135,6 +131,13 @@ def main(args):
 
     # if using mobilenet, step_size=2 and gamma=0.94
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
+
+
+    if args.resume:
+        checkpoint = torch.load(args.resume, map_location='cpu')
+        model_without_ddp.load_state_dict(checkpoint['model'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
 
     print("Start training")
     start_time = time.time()
