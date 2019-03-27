@@ -152,7 +152,7 @@ def main(args):
         train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq)
         evaluate(model, criterion, data_loader_test, device=device)
         if args.output_dir:
-            torch.save({
+            utils.save_on_master({
                 'model': model_without_ddp.state_dict(),
                 'optimizer': optimizer.state_dict(),
                 'lr_scheduler': lr_scheduler.state_dict(),

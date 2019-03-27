@@ -2,6 +2,7 @@ from collections import defaultdict, deque
 import datetime
 import time
 import torch
+import torch.distributed as dist
 
 import errno
 import os
@@ -137,9 +138,7 @@ def mkdir(path):
 
 def setup_for_distributed(is_master):
     """
-    For the master process, this function does nothing.
-    For the other processes, this function disables printing and
-    torch.save
+    This function disables printing when not in master process
     """
     import builtins as __builtin__
     builtin_print = __builtin__.print
@@ -151,8 +150,27 @@ def setup_for_distributed(is_master):
 
     __builtin__.print = print
 
-    torch_save = torch.save
-    def save(*args, **kwargs):
-        if is_master:
-            torch_save(*args, **kwargs)
-    torch.save = save
+
+def get_world_size():
+    if not dist.is_available():
+        return 1
+    if not dist.is_initialized():
+        return 1
+    return dist.get_world_size()
+
+
+def get_rank():
+    if not dist.is_available():
+        return 0
+    if not dist.is_initialized():
+        return 0
+    return dist.get_rank()
+
+
+def is_main_process():
+    return get_rank() == 0
+
+
+def save_on_master(*args, **kwargs):
+    if is_main_process():
+        torch.save(*args, **kwargs)
