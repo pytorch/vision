@@ -8,7 +8,6 @@ import errno
 import os
 
 
-
 class SmoothedValue(object):
     """Track a series of values and provide access to smoothed values over a
     window or the global series average.
@@ -89,7 +88,7 @@ class MetricLogger(object):
         if attr in self.__dict__:
             return self.__dict__[attr]
         raise AttributeError("'{}' object has no attribute '{}'".format(
-                    type(self).__name__, attr))
+            type(self).__name__, attr))
 
     def __str__(self):
         loss_str = []
@@ -160,6 +159,7 @@ def accuracy(output, target, topk=(1,)):
             res.append(correct_k * (100.0 / batch_size))
         return res
 
+
 def mkdir(path):
     try:
         os.makedirs(path)
@@ -182,12 +182,14 @@ def setup_for_distributed(is_master):
 
     __builtin__.print = print
 
+
 def is_dist_avail_and_initialized():
     if not dist.is_available():
         return False
     if not dist.is_initialized():
         return False
     return True
+
 
 def get_world_size():
     if not is_dist_avail_and_initialized():

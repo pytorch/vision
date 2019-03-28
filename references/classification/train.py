@@ -115,11 +115,13 @@ def main(args):
         train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
 
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size,
-            sampler=train_sampler, num_workers=args.workers, pin_memory=True)
+    data_loader = torch.utils.data.DataLoader(
+        dataset, batch_size=args.batch_size,
+        sampler=train_sampler, num_workers=args.workers, pin_memory=True)
 
-    data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=args.batch_size,
-            sampler=test_sampler, num_workers=args.workers, pin_memory=True)
+    data_loader_test = torch.utils.data.DataLoader(
+        dataset_test, batch_size=args.batch_size,
+        sampler=test_sampler, num_workers=args.workers, pin_memory=True)
 
     print("Creating model")
     model = torchvision.models.__dict__[args.model]()
@@ -134,8 +136,8 @@ def main(args):
 
     criterion = nn.CrossEntropyLoss()
 
-    optimizer = torch.optim.SGD(model.parameters(),
-        lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+    optimizer = torch.optim.SGD(
+        model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
     # if using mobilenet, step_size=2 and gamma=0.94
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
@@ -164,7 +166,7 @@ def main(args):
                 'optimizer': optimizer.state_dict(),
                 'lr_scheduler': lr_scheduler.state_dict(),
                 'args': args},
-                    os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
+                os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
