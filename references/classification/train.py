@@ -14,6 +14,7 @@ import utils
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, print_freq):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
+    metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
     header = 'Epoch: [{}]'.format(epoch)
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
         image, target = image.to(device), target.to(device)
@@ -25,9 +26,10 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
         optimizer.step()
 
         acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
-        # FIXME need to pass input.size(0) to accurately compute the metric
-        metric_logger.update(loss=loss.item(), acc1=acc1.item(), acc5=acc5.item(),
-                lr=optimizer.param_groups[0]["lr"])
+        batch_size = image.shape[0]
+        metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
+        metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
+        metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
 
 
 def evaluate(model, criterion, data_loader, device):
@@ -42,9 +44,14 @@ def evaluate(model, criterion, data_loader, device):
             loss = criterion(output, target)
 
             acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
-            # FIXME need to pass input.size(0) to accurately compute the metric
-            # FIXME need to reduce from all processes!!!
-            metric_logger.update(loss=loss.item(), acc1=acc1.item(), acc5=acc5.item())
+            # FIXME need to take into account that the datasets
+            # could have been padded in distributed setup
+            batch_size = image.shape[0]
+            metric_logger.update(loss=loss.item())
+            metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
+            metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
+    # gather the stats from all processes
+    metric_logger.synchronize_between_processes()
 
     print(' * Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f}'
           .format(top1=metric_logger.acc1, top5=metric_logger.acc5))

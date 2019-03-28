@@ -14,15 +14,31 @@ class SmoothedValue(object):
     window or the global series average.
     """
 
-    def __init__(self, window_size=20):
+    def __init__(self, window_size=20, fmt=None):
+        if fmt is None:
+            fmt = "{median:.4f} ({global_avg:.4f})"
         self.deque = deque(maxlen=window_size)
         self.total = 0.0
         self.count = 0
+        self.fmt = fmt
 
-    def update(self, value):
+    def update(self, value, n=1):
         self.deque.append(value)
-        self.count += 1
-        self.total += value
+        self.count += n
+        self.total += value * n
+
+    def synchronize_between_processes(self):
+        """
+        Warning: does not synchronize the deque!
+        """
+        if not is_dist_avail_and_initialized():
+            return
+        t = torch.tensor([self.count, self.total], dtype=torch.float64, device='cuda')
+        dist.barrier()
+        dist.all_reduce(t)
+        t = t.tolist()
+        self.count = int(t[0])
+        self.total = t[1]
 
     @property
     def median(self):
@@ -42,8 +58,17 @@ class SmoothedValue(object):
     def max(self):
         return max(self.deque)
 
+    @property
+    def value(self):
+        return self.deque[-1]
+
     def __str__(self):
-        return "{:.4f} ({:.4f})".format(self.median, self.global_avg)
+        return self.fmt.format(
+            median=self.median,
+            avg=self.avg,
+            global_avg=self.global_avg,
+            max=self.max,
+            value=self.value)
 
 
 class MetricLogger(object):
@@ -74,22 +99,29 @@ class MetricLogger(object):
             )
         return self.delimiter.join(loss_str)
 
+    def synchronize_between_processes(self):
+        for meter in self.meters.values():
+            meter.synchronize_between_processes()
+
+    def add_meter(self, name, meter):
+        self.meters[name] = meter
+
     def log_every(self, iterable, print_freq, header=None):
         i = 0
         if not header:
             header = ''
         start_time = time.time()
         end = time.time()
-        iter_time = SmoothedValue()
-        data_time = SmoothedValue()
+        iter_time = SmoothedValue(fmt='{avg:.4f}')
+        data_time = SmoothedValue(fmt='{avg:.4f}')
         space_fmt = ':' + str(len(str(len(iterable)))) + 'd'
         log_msg = self.delimiter.join([
             header,
             '[{0' + space_fmt + '}/{1}]',
             'eta: {eta}',
             '{meters}',
-            'time: {time:.4f}',
-            'data: {data:.4f}',
+            'time: {time}',
+            'data: {data}',
             'max mem: {memory:.0f}'
         ])
         MB = 1024.0 * 1024.0
@@ -103,7 +135,7 @@ class MetricLogger(object):
                 print(log_msg.format(
                     i, len(iterable), eta=eta_string,
                     meters=str(self),
-                    time=iter_time.avg, data=data_time.avg,
+                    time=str(iter_time), data=str(data_time),
                     memory=torch.cuda.max_memory_allocated() / MB))
             i += 1
             end = time.time()
@@ -150,19 +182,21 @@ def setup_for_distributed(is_master):
 
     __builtin__.print = print
 
+def is_dist_avail_and_initialized():
+    if not dist.is_available():
+        return False
+    if not dist.is_initialized():
+        return False
+    return True
 
 def get_world_size():
-    if not dist.is_available():
-        return 1
-    if not dist.is_initialized():
+    if not is_dist_avail_and_initialized():
         return 1
     return dist.get_world_size()
 
 
 def get_rank():
-    if not dist.is_available():
-        return 0
-    if not dist.is_initialized():
+    if not is_dist_avail_and_initialized():
         return 0
     return dist.get_rank()
 
