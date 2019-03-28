@@ -15,10 +15,10 @@ model_urls = {
 }
 
 
-def conv3x3(in_planes, out_planes, stride=1):
+def conv3x3(in_planes, out_planes, stride=1, groups=1):
     """3x3 convolution with padding"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
+                     padding=1, groups=groups, bias=False)
 
 
 def conv1x1(in_planes, out_planes, stride=1):
@@ -29,10 +29,12 @@ def conv1x1(in_planes, out_planes, stride=1):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, norm_layer=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1, norm_layer=None):
         super(BasicBlock, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
+        if groups != 1:
+            raise ValueError('BasicBlock only supports groups=1')
         # Both self.conv1 and self.downsample layers downsample the input when stride != 1
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = norm_layer(planes)
@@ -64,14 +66,14 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, norm_layer=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1, norm_layer=None):
         super(Bottleneck, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         # Both self.conv2 and self.downsample layers downsample the input when stride != 1
         self.conv1 = conv1x1(inplanes, planes)
         self.bn1 = norm_layer(planes)
-        self.conv2 = conv3x3(planes, planes, stride)
+        self.conv2 = conv3x3(planes, planes, stride, groups)
         self.bn2 = norm_layer(planes)
         self.conv3 = conv1x1(planes, planes * self.expansion)
         self.bn3 = norm_layer(planes * self.expansion)
@@ -102,24 +104,25 @@ class Bottleneck(nn.Module):
         return out
 
 
-class ResNet(nn.Module):
+class BaseResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False, norm_layer=None):
-        super(ResNet, self).__init__()
+    def __init__(self, block, layers, planes, num_classes=1000, zero_init_residual=False, groups=1, norm_layer=None):
+        super(BaseResNet, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
-        self.inplanes = 64
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
+        assert len(layers) == len(planes)
+        self.inplanes = planes[0]
+        self.conv1 = nn.Conv2d(3, planes[0], kernel_size=7, stride=2, padding=3,
                                bias=False)
-        self.bn1 = norm_layer(64)
+        self.bn1 = norm_layer(planes[0])
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0], norm_layer=norm_layer)
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2, norm_layer=norm_layer)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2, norm_layer=norm_layer)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2, norm_layer=norm_layer)
+        self.layer1 = self._make_layer(block, planes[0], layers[0], groups=groups, norm_layer=norm_layer)
+        self.layer2 = self._make_layer(block, planes[1], layers[1], stride=2, groups=groups, norm_layer=norm_layer)
+        self.layer3 = self._make_layer(block, planes[2], layers[2], stride=2, groups=groups, norm_layer=norm_layer)
+        self.layer4 = self._make_layer(block, planes[3], layers[3], stride=2, groups=groups, norm_layer=norm_layer)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(512 * block.expansion, num_classes)
+        self.fc = nn.Linear(planes[3] * block.expansion, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -138,7 +141,7 @@ class ResNet(nn.Module):
                 elif isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block, planes, blocks, stride=1, norm_layer=None):
+    def _make_layer(self, block, planes, blocks, stride=1, groups=1, norm_layer=None):
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         downsample = None
@@ -149,10 +152,10 @@ class ResNet(nn.Module):
             )
 
         layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample, norm_layer))
+        layers.append(block(self.inplanes, planes, stride, downsample, groups, norm_layer))
         self.inplanes = planes * block.expansion
         for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes, norm_layer=norm_layer))
+            layers.append(block(self.inplanes, planes, groups=groups, norm_layer=norm_layer))
 
         return nn.Sequential(*layers)
 
@@ -172,6 +175,13 @@ class ResNet(nn.Module):
         x = self.fc(x)
 
         return x
+
+class ResNet(BaseResNet):
+    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False, groups=1,
+            width_per_group=64, norm_layer=None):
+        planes = [width_per_group * groups * 2 ** i for i in range(4)]
+        super(ResNet, self).__init__(
+            block, layers, planes, num_classes, zero_init_residual, groups, norm_layer)
 
 
 def resnet18(pretrained=False, **kwargs):
