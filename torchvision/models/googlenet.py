@@ -32,9 +32,8 @@ def googlenet(pretrained=False, **kwargs):
 
 class GoogLeNet(nn.Module):
 
-    def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, init_weights=True):
+    def __init__(self, num_classes=1000, transform_input=False, init_weights=True):
         super(GoogLeNet, self).__init__()
-        self.aux_logits = aux_logits
         self.transform_input = transform_input
 
         self.conv1 = BasicConv2d(3, 64, kernel_size=7, stride=2, padding=3)
@@ -56,11 +55,8 @@ class GoogLeNet(nn.Module):
 
         self.inception5a = Inception(832, 256, 160, 320, 32, 128, 128)
         self.inception5b = Inception(832, 384, 192, 384, 48, 128, 128)
-        if aux_logits:
-            self.aux1 = InceptionAux(512, num_classes)
-            self.aux2 = InceptionAux(528, num_classes)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.dropout = nn.Dropout(0.4)
+        self.dropout = nn.Dropout(0.2)
         self.fc = nn.Linear(1024, num_classes)
 
         if init_weights:
@@ -68,13 +64,12 @@ class GoogLeNet(nn.Module):
 
     def _initialize_weights(self):
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.xavier_uniform_(m.weight)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0.2)
-            elif isinstance(m, nn.Linear):
-                nn.init.xavier_uniform_(m.weight)
-                nn.init.constant_(m.bias, 0)
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+                import scipy.stats as stats
+                X = stats.truncnorm(-2, 2, scale=0.01)
+                values = torch.Tensor(X.rvs(m.weight.numel()))
+                values = values.view(m.weight.size())
+                m.weight.data.copy_(values)
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
@@ -106,18 +101,12 @@ class GoogLeNet(nn.Module):
         # N x 480 x 14 x 14
         x = self.inception4a(x)
         # N x 512 x 14 x 14
-        if self.training and self.aux_logits:
-            aux1 = self.aux1(x)
-
         x = self.inception4b(x)
         # N x 512 x 14 x 14
         x = self.inception4c(x)
         # N x 512 x 14 x 14
         x = self.inception4d(x)
         # N x 528 x 14 x 14
-        if self.training and self.aux_logits:
-            aux2 = self.aux2(x)
-
         x = self.inception4e(x)
         # N x 832 x 14 x 14
         x = self.maxpool4(x)
@@ -134,8 +123,6 @@ class GoogLeNet(nn.Module):
         x = self.dropout(x)
         x = self.fc(x)
         # N x 1000 (num_classes)
-        if self.training and self.aux_logits:
-            return aux1, aux2, x
         return x
 
 
@@ -169,33 +156,6 @@ class Inception(nn.Module):
 
         outputs = [branch1, branch2, branch3, branch4]
         return torch.cat(outputs, 1)
-
-
-class InceptionAux(nn.Module):
-
-    def __init__(self, in_channels, num_classes):
-        super(InceptionAux, self).__init__()
-        self.conv = BasicConv2d(in_channels, 128, kernel_size=1)
-
-        self.fc1 = nn.Linear(2048, 1024)
-        self.fc2 = nn.Linear(1024, num_classes)
-
-    def forward(self, x):
-        # aux1: N x 512 x 14 x 14, aux2: N x 528 x 14 x 14
-        x = F.adaptive_avg_pool2d(x, (4, 4))
-        # aux1: N x 512 x 4 x 4, aux2: N x 528 x 4 x 4
-        x = self.conv(x)
-        # N x 128 x 4 x 4
-        x = x.view(x.size(0), -1)
-        # N x 2048
-        x = F.relu(self.fc1(x), inplace=True)
-        # N x 2048
-        x = F.dropout(x, 0.7, training=self.training)
-        # N x 2048
-        x = self.fc2(x)
-        # N x 1024
-
-        return x
 
 
 class BasicConv2d(nn.Module):
