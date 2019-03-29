@@ -3,7 +3,7 @@ import torch.utils.model_zoo as model_zoo
 
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
-           'resnet152']
+           'resnet152', 'resnext50_32x4d', 'resnext101_32x8d']
 
 
 model_urls = {
@@ -104,13 +104,14 @@ class Bottleneck(nn.Module):
         return out
 
 
-class BaseResNet(nn.Module):
+class ResNet(nn.Module):
 
-    def __init__(self, block, layers, planes, num_classes=1000, zero_init_residual=False, groups=1, norm_layer=None):
-        super(BaseResNet, self).__init__()
+    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False,
+            groups=1,width_per_group=64, norm_layer=None):
+        super(ResNet, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
-        assert len(layers) == len(planes)
+        planes = [int(width_per_group * groups * 2 ** i) for i in range(4)]
         self.inplanes = planes[0]
         self.conv1 = nn.Conv2d(3, planes[0], kernel_size=7, stride=2, padding=3,
                                bias=False)
@@ -176,13 +177,6 @@ class BaseResNet(nn.Module):
 
         return x
 
-class ResNet(BaseResNet):
-    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False, groups=1,
-            width_per_group=64, norm_layer=None):
-        planes = [width_per_group * groups * 2 ** i for i in range(4)]
-        super(ResNet, self).__init__(
-            block, layers, planes, num_classes, zero_init_residual, groups, norm_layer)
-
 
 def resnet18(pretrained=False, **kwargs):
     """Constructs a ResNet-18 model.
@@ -241,4 +235,18 @@ def resnet152(pretrained=False, **kwargs):
     model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
     if pretrained:
         model.load_state_dict(model_zoo.load_url(model_urls['resnet152']))
+    return model
+
+
+def resnext50_32x4d(pretrained=False, **kwargs):
+    model = ResNet(Bottleneck, [3, 4, 6, 3], groups=4, width_per_group=32, **kwargs)
+    #if pretrained:
+    #    model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+    return model
+
+
+def resnext101_32x8d(pretrained=False, **kwargs):
+    model = ResNet(Bottleneck, [3, 4, 23, 3], groups=8, width_per_group=32, **kwargs)
+    #if pretrained:
+    #    model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
