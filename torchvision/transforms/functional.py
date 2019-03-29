@@ -192,7 +192,7 @@ def normalize(tensor, mean, std, inplace=False):
     Args:
         tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
         mean (sequence): Sequence of means for each channel.
-        std (sequence): Sequence of standard deviations for each channely.
+        std (sequence): Sequence of standard deviations for each channel.
 
     Returns:
         Tensor: Normalized Tensor image.
