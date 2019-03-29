@@ -59,17 +59,8 @@ def evaluate(model, criterion, data_loader, device):
 
 
 def main(args):
-    args.gpu = args.local_rank
-
-    if args.distributed:
-        args.rank = int(os.environ["RANK"])
-        torch.cuda.set_device(args.gpu)
-        args.dist_backend = 'nccl'
-        dist_url = 'env://'
-        print('| distributed init (rank {}): {}'.format(
-            args.rank, dist_url), flush=True)
-        torch.distributed.init_process_group(backend=args.dist_backend, init_method=dist_url)
-        utils.setup_for_distributed(args.rank == 0)
+    utils.init_distributed_mode(args)
+    print(args)
 
     device = torch.device(args.device)
 
@@ -202,15 +193,15 @@ if __name__ == "__main__":
         help="Only test the model",
         action="store_true",
     )
-    parser.add_argument('--local_rank', default=0, type=int, help='print frequency')
+
+    # distributed training parameters
+    parser.add_argument('--world-size', default=1, type=int,
+                        help='number of distributed processes')
+    parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
 
     args = parser.parse_args()
-    print(args)
 
     if args.output_dir:
         utils.mkdir(args.output_dir)
-
-    num_gpus = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
-    args.distributed = num_gpus > 1
 
     main(args)
