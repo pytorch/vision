@@ -1,6 +1,7 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
+#include <ATen/TensorUtils.h>
 
 #include <THC/THC.h>
 #include <THC/THCAtomics.cuh>
@@ -255,6 +256,14 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
                                  const int sampling_ratio) {
   AT_ASSERTM(input.device().is_cuda(), "input must be a CUDA tensor");
   AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
+
+  at::TensorArg input_t{ input, "input", 1 },
+                rois_t{ rois, "rois", 2 };
+
+  at::CheckedFrom c = "ROIAlign_forward_cuda";
+  at::checkAllSameGPU(c, {input_t, rois_t});
+  at::checkAllSameType(c, {input_t, rois_t});
+
   at::cuda::CUDAGuard device_guard(input.device());
 
   auto num_rois = rois.size(0);
@@ -278,7 +287,7 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.type(), "ROIAlign_forward", [&] {
     RoIAlignForward<scalar_t><<<grid, block, 0, stream>>>(
          output_size,
-         input.data<scalar_t>(),
+         input.contiguous().data<scalar_t>(),
          spatial_scale,
          channels,
          height,
@@ -286,7 +295,7 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
          pooled_height,
          pooled_width,
          sampling_ratio,
-         rois.data<scalar_t>(),
+         rois.contiguous().data<scalar_t>(),
          output.data<scalar_t>());
   });
   THCudaCheck(cudaGetLastError());
@@ -306,6 +315,14 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
                                   const int sampling_ratio) {
   AT_ASSERTM(grad.device().is_cuda(), "grad must be a CUDA tensor");
   AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
+
+  at::TensorArg grad_t{ grad, "grad", 1 },
+                rois_t{ rois, "rois", 2 };
+
+  at::CheckedFrom c = "ROIAlign_backward_cuda";
+  at::checkAllSameGPU(c, {grad_t, rois_t});
+  at::checkAllSameType(c, {grad_t, rois_t});
+
   at::cuda::CUDAGuard device_guard(grad.device());
 
   at::Tensor grad_input = at::zeros({batch_size, channels, height, width}, grad.options());
@@ -329,7 +346,7 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIAlign_backward", [&] {
     RoIAlignBackward<scalar_t><<<grid, block, 0, stream>>>(
          grad.numel(),
-         grad.data<scalar_t>(),
+         grad.contiguous().data<scalar_t>(),
          spatial_scale,
          channels,
          height,
@@ -338,7 +355,7 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
          pooled_width,
          sampling_ratio,
          grad_input.data<scalar_t>(),
-         rois.data<scalar_t>(),
+         rois.contiguous().data<scalar_t>(),
          n_stride,
          c_stride,
          h_stride,

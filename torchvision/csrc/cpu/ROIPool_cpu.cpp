@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <ATen/ATen.h>
+#include <ATen/TensorUtils.h>
 #include <TH/TH.h>
 
 
@@ -126,6 +127,12 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(const at::Tensor &input,
   AT_ASSERTM(input.device().is_cpu(), "input must be a CPU tensor");
   AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
 
+  at::TensorArg input_t{ input, "input", 1 },
+                rois_t{ rois, "rois", 2 };
+
+  at::CheckedFrom c = "ROIPool_forward_cpu";
+  at::checkAllSameType(c, {input_t, rois_t});
+
   int num_rois = rois.size(0);
   int channels = input.size(1);
   int height = input.size(2);
@@ -141,14 +148,14 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(const at::Tensor &input,
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.type(), "ROIPool_forward", [&] {
     RoIPoolForward<scalar_t>(
-        input.data<scalar_t>(),
+        input.contiguous().data<scalar_t>(),
         spatial_scale,
         channels,
         height,
         width,
         pooled_height,
         pooled_width,
-        rois.data<scalar_t>(),
+        rois.contiguous().data<scalar_t>(),
         num_rois,
         output.data<scalar_t>(),
         argmax.data<int>());
@@ -172,6 +179,12 @@ at::Tensor ROIPool_backward_cpu(const at::Tensor &grad,
   AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
   AT_ASSERTM(argmax.device().is_cpu(), "argmax must be a CPU tensor");
 
+  at::TensorArg grad_t{ grad, "grad", 1 },
+                rois_t{ rois, "rois", 2 };
+
+  at::CheckedFrom c = "ROIPool_backward_cpu";
+  at::checkAllSameType(c, {grad_t, rois_t});
+
   auto num_rois = rois.size(0);
 
   at::Tensor grad_input = at::zeros({batch_size, channels, height, width}, grad.options());
@@ -190,7 +203,7 @@ at::Tensor ROIPool_backward_cpu(const at::Tensor &grad,
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIPool_backward", [&] {
     RoIPoolBackward<scalar_t>(
-         grad.data<scalar_t>(),
+         grad.contiguous().data<scalar_t>(),
          argmax.data<int>(),
          num_rois,
          channels,
@@ -199,7 +212,7 @@ at::Tensor ROIPool_backward_cpu(const at::Tensor &grad,
          pooled_height,
          pooled_width,
          grad_input.data<scalar_t>(),
-         rois.data<scalar_t>(),
+         rois.contiguous().data<scalar_t>(),
          n_stride,
          c_stride,
          h_stride,

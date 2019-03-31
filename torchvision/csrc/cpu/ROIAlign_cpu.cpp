@@ -1,4 +1,5 @@
 #include "cpu/vision.h"
+#include <ATen/TensorUtils.h>
 
 // implementation taken from Caffe2
 template <typename T>
@@ -357,6 +358,12 @@ at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
   AT_ASSERTM(input.device().is_cpu(), "input must be a CPU tensor");
   AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
 
+  at::TensorArg input_t{ input, "input", 1 },
+                rois_t{ rois, "rois", 2 };
+
+  at::CheckedFrom c = "ROIAlign_forward_cpu";
+  at::checkAllSameType(c, {input_t, rois_t});
+
   auto num_rois = rois.size(0);
   auto channels = input.size(1);
   auto height = input.size(2);
@@ -372,7 +379,7 @@ at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.type(), "ROIAlign_forward", [&] {
     ROIAlignForward<scalar_t>(
          output_size,
-         input.data<scalar_t>(),
+         input.contiguous().data<scalar_t>(),
          spatial_scale,
          channels,
          height,
@@ -380,7 +387,7 @@ at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
          pooled_height,
          pooled_width,
          sampling_ratio,
-         rois.data<scalar_t>(),
+         rois.contiguous().data<scalar_t>(),
          output.data<scalar_t>());
   });
   return output;
@@ -400,6 +407,12 @@ at::Tensor ROIAlign_backward_cpu(const at::Tensor& grad,
   AT_ASSERTM(grad.device().is_cpu(), "grad must be a CPU tensor");
   AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
 
+  at::TensorArg grad_t{ grad, "grad", 1 },
+                rois_t{ rois, "rois", 2 };
+
+  at::CheckedFrom c = "ROIAlign_backward_cpu";
+  at::checkAllSameType(c, {grad_t, rois_t});
+
   at::Tensor grad_input = at::zeros({batch_size, channels, height, width}, grad.options());
 
   // handle possibly empty gradients
@@ -417,7 +430,7 @@ at::Tensor ROIAlign_backward_cpu(const at::Tensor& grad,
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIAlign_forward", [&] {
     ROIAlignBackward<scalar_t>(
         grad.numel(),
-        grad.data<scalar_t>(),
+        grad.contiguous().data<scalar_t>(),
         spatial_scale,
         channels,
         height, 
@@ -426,7 +439,7 @@ at::Tensor ROIAlign_backward_cpu(const at::Tensor& grad,
         pooled_width,
         sampling_ratio,
         grad_input.data<scalar_t>(),
-        rois.data<scalar_t>(),
+        rois.contiguous().data<scalar_t>(),
         n_stride, 
         c_stride,
         h_stride, 

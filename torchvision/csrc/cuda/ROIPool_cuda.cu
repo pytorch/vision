@@ -1,6 +1,7 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
+#include <ATen/TensorUtils.h>
 
 #include <THC/THC.h>
 #include <THC/THCAtomics.cuh>
@@ -110,6 +111,14 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(const at::Tensor& input,
                                 const int pooled_width) {
   AT_ASSERTM(input.device().is_cuda(), "input must be a CUDA tensor");
   AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
+
+  at::TensorArg input_t{ input, "input", 1 },
+                rois_t{ rois, "rois", 2 };
+
+  at::CheckedFrom c = "ROIPool_forward_cuda";
+  at::checkAllSameGPU(c, {input_t, rois_t});
+  at::checkAllSameType(c, {input_t, rois_t});
+
   at::cuda::CUDAGuard device_guard(input.device());
 
   auto num_rois = rois.size(0);
@@ -134,14 +143,14 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(const at::Tensor& input,
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.type(), "ROIPool_forward", [&] {
     RoIPoolForward<scalar_t><<<grid, block, 0, stream>>>(
          output_size,
-         input.data<scalar_t>(),
+         input.contiguous().data<scalar_t>(),
          spatial_scale,
          channels,
          height,
          width,
          pooled_height,
          pooled_width,
-         rois.data<scalar_t>(),
+         rois.contiguous().data<scalar_t>(),
          output.data<scalar_t>(),
          argmax.data<int>());
   });
@@ -163,6 +172,15 @@ at::Tensor ROIPool_backward_cuda(const at::Tensor& grad,
   AT_ASSERTM(grad.device().is_cuda(), "grad must be a CUDA tensor");
   AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
   AT_ASSERTM(argmax.device().is_cuda(), "argmax must be a CUDA tensor");
+
+  at::TensorArg grad_t{ grad, "grad", 1 },
+                rois_t{ rois, "rois", 2 },
+                argmax_t{ argmax, "argmax", 3 };
+
+  at::CheckedFrom c = "ROIPool_backward_cuda";
+  at::checkAllSameGPU(c, {grad_t, rois_t, argmax_t});
+  at::checkAllSameType(c, {grad_t, rois_t});
+
   at::cuda::CUDAGuard device_guard(grad.device());
 
   auto num_rois = rois.size(0);
@@ -188,8 +206,8 @@ at::Tensor ROIPool_backward_cuda(const at::Tensor& grad,
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIPool_backward", [&] {
     RoIPoolBackward<scalar_t><<<grid, block, 0, stream>>>(
          grad.numel(),
-         grad.data<scalar_t>(),
-         argmax.data<int>(),
+         grad.contiguous().data<scalar_t>(),
+         argmax.contiguous().data<int>(),
          num_rois,
          spatial_scale,
          channels,
@@ -198,7 +216,7 @@ at::Tensor ROIPool_backward_cuda(const at::Tensor& grad,
          pooled_height,
          pooled_width,
          grad_input.data<scalar_t>(),
-         rois.data<scalar_t>(),
+         rois.contiguous().data<scalar_t>(),
          n_stride,
          c_stride,
          h_stride,
