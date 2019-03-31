@@ -1,5 +1,6 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAGuard.h>
 
 #include <THC/THC.h>
 #include <THC/THCAtomics.cuh>
@@ -109,6 +110,7 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(const at::Tensor& input,
                                 const int pooled_width) {
   AT_ASSERTM(input.device().is_cuda(), "input must be a CUDA tensor");
   AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
+  at::cuda::CUDAGuard device_guard(input.device());
 
   auto num_rois = rois.size(0);
   auto channels = input.size(1);
@@ -161,6 +163,7 @@ at::Tensor ROIPool_backward_cuda(const at::Tensor& grad,
   AT_ASSERTM(grad.device().is_cuda(), "grad must be a CUDA tensor");
   AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
   AT_ASSERTM(argmax.device().is_cuda(), "argmax must be a CUDA tensor");
+  at::cuda::CUDAGuard device_guard(grad.device());
 
   auto num_rois = rois.size(0);
     

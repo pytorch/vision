@@ -1,5 +1,6 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
+#include <c10/cuda/CUDAGuard.h>
 
 #include <THC/THC.h>
 #include <THC/THCAtomics.cuh>
@@ -254,6 +255,7 @@ at::Tensor ROIAlign_forward_cuda(const at::Tensor& input,
                                  const int sampling_ratio) {
   AT_ASSERTM(input.device().is_cuda(), "input must be a CUDA tensor");
   AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
+  at::cuda::CUDAGuard device_guard(input.device());
 
   auto num_rois = rois.size(0);
   auto channels = input.size(1);
@@ -304,6 +306,7 @@ at::Tensor ROIAlign_backward_cuda(const at::Tensor& grad,
                                   const int sampling_ratio) {
   AT_ASSERTM(grad.device().is_cuda(), "grad must be a CUDA tensor");
   AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
+  at::cuda::CUDAGuard device_guard(grad.device());
 
   at::Tensor grad_input = at::zeros({batch_size, channels, height, width}, grad.options());
 
