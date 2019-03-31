@@ -82,11 +82,7 @@ at::Tensor nms_cuda(const at::Tensor boxes, float nms_overlap_thresh) {
 
   const int col_blocks = THCCeilDiv(boxes_num, threadsPerBlock);
 
-  THCState *state = at::globalContext().lazyInitCUDA(); // TODO replace with getTHCState
-
-  unsigned long long* mask_dev = NULL;
-
-  mask_dev = (unsigned long long*) THCudaMalloc(state, boxes_num * col_blocks * sizeof(unsigned long long));
+  at::Tensor mask = at::empty({boxes_num * col_blocks}, boxes.options().dtype(at::kLong));
 
   dim3 blocks(THCCeilDiv(boxes_num, threadsPerBlock),
               THCCeilDiv(boxes_num, threadsPerBlock));
@@ -98,14 +94,11 @@ at::Tensor nms_cuda(const at::Tensor boxes, float nms_overlap_thresh) {
         boxes_num,
         nms_overlap_thresh,
         boxes_sorted.data<scalar_t>(),
-        mask_dev);
+        (unsigned long long *)mask.data<int64_t>());
   });
 
-  std::vector<unsigned long long> mask_host(boxes_num * col_blocks);
-  THCudaCheck(cudaMemcpy(&mask_host[0],
-                        mask_dev,
-                        sizeof(unsigned long long) * boxes_num * col_blocks,
-                        cudaMemcpyDeviceToHost));
+  at::Tensor mask_cpu = mask.to(at::kCPU);
+  unsigned long long * mask_host = (unsigned long long *) mask_cpu.data<int64_t>();
 
   std::vector<unsigned long long> remv(col_blocks);
   memset(&remv[0], 0, sizeof(unsigned long long) * col_blocks);
@@ -120,14 +113,13 @@ at::Tensor nms_cuda(const at::Tensor boxes, float nms_overlap_thresh) {
 
     if (!(remv[nblock] & (1ULL << inblock))) {
       keep_out[num_to_keep++] = i;
-      unsigned long long *p = &mask_host[0] + i * col_blocks;
+      unsigned long long *p = mask_host + i * col_blocks;
       for (int j = nblock; j < col_blocks; j++) {
         remv[j] |= p[j];
       }
     }
   }
 
-  THCudaFree(state, mask_dev);
   THCudaCheck(cudaGetLastError());
   // TODO improve this part
   return std::get<0>(order_t.index({
