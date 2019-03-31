@@ -8,6 +8,7 @@ from pkg_resources import get_distribution, DistributionNotFound
 import subprocess
 import distutils.command.clean
 import glob
+import shutil
 
 import torch
 from torch.utils.cpp_extension import CppExtension, CUDAExtension, CUDA_HOME
@@ -110,8 +111,6 @@ def get_extensions():
 
 class clean(distutils.command.clean.clean):
     def run(self):
-        import glob
-        import shutil
         with open('.gitignore', 'r') as f:
             ignores = f.read()
             for wildcard in filter(None, ignores.split('\n')):

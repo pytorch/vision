@@ -394,5 +394,17 @@ class ROIAlignTester(unittest.TestCase):
         assert gradcheck(func, (x.transpose(2, 3),)), 'gradcheck failed for ROIAlign CUDA'
 
 
+class NMSTester(unittest.TestCase):
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_nms_cuda(self):
+        x = torch.rand(10, 4) * 100
+        x[:, 2:] += torch.rand(10, 2) * 100
+        scores = torch.rand(10)
+
+        r_cpu = layers.nms(x, scores, 0.3)
+        r_cuda = layers.nms(x.cuda(), scores.cuda(), 0.3)
+
+        assert torch.allclose(r_cpu, r_cuda.cpu()), 'NMS incompatible between CPU and CUDA'
+
 if __name__ == '__main__':
     unittest.main()

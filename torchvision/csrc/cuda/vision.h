@@ -1,5 +1,6 @@
 #pragma once
 #include <torch/extension.h>
+#include <c10/cuda/CUDAGuard.h>
 
 at::Tensor ROIAlign_forward_cuda(const at::Tensor &input,
                                  const at::Tensor &rois,
@@ -35,3 +36,5 @@ at::Tensor ROIPool_backward_cuda(const at::Tensor &grad,
                                  const int channels,
                                  const int height,
                                  const int width);
+
+at::Tensor nms_cuda(const at::Tensor boxes, float nms_overlap_thresh);
