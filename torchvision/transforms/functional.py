@@ -11,17 +11,15 @@ import numpy as np
 import numbers
 import collections
 import warnings
+from ..structures.bounding_box import BBox
 
-<<<<<<< HEAD
+
 if sys.version_info < (3, 3):
     Sequence = collections.Sequence
     Iterable = collections.Iterable
 else:
     Sequence = collections.abc.Sequence
     Iterable = collections.abc.Iterable
-=======
-from ..structures.bounding_box import BBox
->>>>>>> Add initial structures folder for bounding boxes
 
 
 def _is_pil_image(img):
