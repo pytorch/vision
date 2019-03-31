@@ -10,7 +10,7 @@ import unittest
 
 class ROIPoolTester(unittest.TestCase):
     @classmethod
-    def setup_class(cls):
+    def setUpClass(cls):
         cls.dtype = torch.float64
 
     def slow_roi_pooling(self, x, rois, pool_h, pool_w, spatial_scale=1, device=torch.device('cpu'), dtype=torch.float64):
@@ -190,7 +190,7 @@ class ROIPoolTester(unittest.TestCase):
 
 class ROIAlignTester(unittest.TestCase):
     @classmethod
-    def setup_class(cls):
+    def setUpClass(cls):
         torch.manual_seed(123)
         cls.dtype = torch.float32
         cls.x = torch.rand(1, 1, 10, 10, dtype=cls.dtype)

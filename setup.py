@@ -6,6 +6,7 @@ import sys
 from setuptools import setup, find_packages
 from pkg_resources import get_distribution, DistributionNotFound
 import subprocess
+import distutils.command.clean
 import glob
 
 import torch
@@ -111,6 +112,22 @@ def get_extensions():
     return ext_modules
 
 
+class clean(distutils.command.clean.clean):
+    def run(self):
+        import glob
+        import shutil
+        with open('.gitignore', 'r') as f:
+            ignores = f.read()
+            for wildcard in filter(None, ignores.split('\n')):
+                for filename in glob.glob(wildcard):
+                    try:
+                        os.remove(filename)
+                    except OSError:
+                        shutil.rmtree(filename, ignore_errors=True)
+
+        # It's an old-style class in Python 2.7...
+        distutils.command.clean.clean.run(self)
+
 setup(
     # Metadata
     name=package_name,
@@ -132,5 +149,5 @@ setup(
     },
 
     ext_modules=get_extensions(),
-    cmdclass={'build_ext': torch.utils.cpp_extension.BuildExtension}
+    cmdclass={'build_ext': torch.utils.cpp_extension.BuildExtension, 'clean': clean}
 )
