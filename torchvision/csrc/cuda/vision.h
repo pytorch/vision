@@ -1,5 +1,5 @@
 #pragma once
-#include <torch/torch.h>
+#include <torch/extension.h>
 
 at::Tensor ROIAlign_forward_cuda(const at::Tensor &input,
                                  const at::Tensor &rois,

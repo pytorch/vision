@@ -1,5 +1,5 @@
 #pragma once
-#include <torch/torch.h>
+#include <torch/extension.h>
 
 std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(const at::Tensor &input,
                                                        const at::Tensor &rois,
