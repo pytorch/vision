@@ -34,6 +34,7 @@ class _RoIPoolFunction(Function):
             output_size[0], output_size[1], bs, ch, h, w)
         return grad_input, None, None, None
 
+
 def roi_pool(input, boxes, output_size, spatial_scale=1.0):
     """
     Performs Region of Interest (RoI) Pool operator described in Fast R-CNN

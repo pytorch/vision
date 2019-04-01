@@ -408,5 +408,6 @@ class NMSTester(unittest.TestCase):
         r_cuda = ops.nms(x.cuda().half(), scores.cuda().half(), 0.3)
         assert torch.allclose(r_cpu, r_cuda.cpu()), 'NMS incompatible between CPU and CUDA'
 
+
 if __name__ == '__main__':
     unittest.main()
