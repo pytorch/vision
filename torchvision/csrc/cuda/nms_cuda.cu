@@ -1,9 +1,9 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
+#include <ATen/cuda/CUDAApplyUtils.cuh>
 
-#include <THC/THC.h>
-#include <THC/THCDeviceUtils.cuh>
+#include "cuda_helpers.h"
 
 #include <iostream>
 #include <vector>
@@ -66,7 +66,7 @@ __global__ void nms_kernel(
         t |= 1ULL << i;
       }
     }
-    const int col_blocks = THCCeilDiv(n_boxes, threadsPerBlock);
+    const int col_blocks = at::cuda::ATenCeilDiv(n_boxes, threadsPerBlock);
     dev_mask[cur_box_idx * col_blocks + col_start] = t;
   }
 }
@@ -83,14 +83,14 @@ at::Tensor nms_cuda(const at::Tensor boxes, float nms_overlap_thresh) {
 
   int boxes_num = boxes.size(0);
 
-  const int col_blocks = THCCeilDiv(boxes_num, threadsPerBlock);
+  const int col_blocks = at::cuda::ATenCeilDiv(boxes_num, threadsPerBlock);
 
   at::Tensor mask =
       at::empty({boxes_num * col_blocks}, boxes.options().dtype(at::kLong));
 
   dim3 blocks(
-      THCCeilDiv(boxes_num, threadsPerBlock),
-      THCCeilDiv(boxes_num, threadsPerBlock));
+      at::cuda::ATenCeilDiv(boxes_num, threadsPerBlock),
+      at::cuda::ATenCeilDiv(boxes_num, threadsPerBlock));
   dim3 threads(threadsPerBlock);
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
@@ -127,7 +127,7 @@ at::Tensor nms_cuda(const at::Tensor boxes, float nms_overlap_thresh) {
     }
   }
 
-  THCudaCheck(cudaGetLastError());
+  AT_CUDA_CHECK(cudaGetLastError());
   // TODO improve this part
   return std::get<0>(
       order_t
