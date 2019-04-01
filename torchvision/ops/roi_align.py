@@ -57,6 +57,9 @@ def roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1):
             then exactly sampling_ratio x sampling_ratio grid points are used. If
             <= 0, then an adaptive number of grid points are used (computed as
             ceil(roi_width / pooled_w), and likewise for height). Default: -1
+
+    Returns:
+        output (Tensor[K, C, output_size[0], output_size[1]])
     """
     rois = boxes
     if not isinstance(rois, torch.Tensor):

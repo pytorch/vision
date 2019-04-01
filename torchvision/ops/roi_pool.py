@@ -49,6 +49,9 @@ def roi_pool(input, boxes, output_size, spatial_scale=1.0):
             is performed
         spatial_scale (float): a scaling factor that maps the input coordinates to
             the box coordinates. Default: 1.0
+
+    Returns:
+        output (Tensor[K, C, output_size[0], output_size[1]])
     """
     rois = boxes
     if not isinstance(rois, torch.Tensor):
