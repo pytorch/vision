@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from torch.autograd import gradcheck
 
-from torchvision import layers
+from torchvision import ops
 
 from itertools import product
 import unittest
@@ -42,7 +42,7 @@ class ROIPoolTester(unittest.TestCase):
                             dtype=self.dtype, device=device)
 
         pool_h, pool_w = (5, 5)
-        roi_pool = layers.ROIPool((pool_h, pool_w), 1)
+        roi_pool = ops.ROIPool((pool_h, pool_w), 1)
         y = roi_pool(x, rois)
 
         gt_y = self.slow_roi_pooling(x, rois, pool_h, pool_w, device=device, dtype=self.dtype)
@@ -64,7 +64,7 @@ class ROIPoolTester(unittest.TestCase):
                             dtype=self.dtype, device=device)
 
         pool_h, pool_w = (5, 5)
-        roi_pool = layers.ROIPool((pool_h, pool_w), 1)
+        roi_pool = ops.ROIPool((pool_h, pool_w), 1)
         y = roi_pool(x, rois)
 
         gt_y = self.slow_roi_pooling(x, rois, pool_h, pool_w, device=device, dtype=self.dtype)
@@ -85,7 +85,7 @@ class ROIPoolTester(unittest.TestCase):
             [0, 0, 0, 4, 4]],
             dtype=self.dtype, device=device)
 
-        layer = layers.ROIPool((5, 5), 1).to(dtype=self.dtype, device=device)
+        layer = ops.ROIPool((5, 5), 1).to(dtype=self.dtype, device=device)
 
         y = layer(x, rois)
         s = y.sum()
@@ -113,7 +113,7 @@ class ROIPoolTester(unittest.TestCase):
             [0, 0, 5, 5, 9],
             [0, 5, 5, 9, 9]], dtype=self.dtype, device=device)
 
-        m = layers.ROIPool((5, 5), 1).to(dtype=self.dtype, device=device)
+        m = ops.ROIPool((5, 5), 1).to(dtype=self.dtype, device=device)
 
         def func(input):
             return m(input, rois)
@@ -129,7 +129,7 @@ class ROIPoolTester(unittest.TestCase):
                             dtype=self.dtype, device=device)
 
         pool_h, pool_w = (5, 5)
-        roi_pool = layers.ROIPool((pool_h, pool_w), 1)
+        roi_pool = ops.ROIPool((pool_h, pool_w), 1)
         y = roi_pool(x, rois)
 
         gt_y = self.slow_roi_pooling(x, rois, pool_h, pool_w, device=device, dtype=self.dtype)
@@ -151,7 +151,7 @@ class ROIPoolTester(unittest.TestCase):
                             dtype=self.dtype, device=device)
 
         pool_h, pool_w = (5, 5)
-        roi_pool = layers.ROIPool((pool_h, pool_w), 1)
+        roi_pool = ops.ROIPool((pool_h, pool_w), 1)
         y = roi_pool(x, rois)
 
         gt_y = self.slow_roi_pooling(x, rois, pool_h, pool_w, device=device, dtype=self.dtype)
@@ -165,7 +165,7 @@ class ROIPoolTester(unittest.TestCase):
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_pool_gradient_cuda(self):
         device = torch.device('cuda')
-        layer = layers.ROIPool((5, 5), 1).to(dtype=self.dtype, device=device)
+        layer = ops.ROIPool((5, 5), 1).to(dtype=self.dtype, device=device)
         x = torch.ones(1, 1, 10, 10, dtype=self.dtype, device=device, requires_grad=True)
         rois = torch.tensor([
             [0, 0, 0, 9, 9],
@@ -199,7 +199,7 @@ class ROIPoolTester(unittest.TestCase):
             [0, 0, 5, 5, 9],
             [0, 5, 5, 9, 9]], dtype=self.dtype, device=device)
 
-        m = layers.ROIPool((5, 5), 1).to(dtype=self.dtype, device=device)
+        m = ops.ROIPool((5, 5), 1).to(dtype=self.dtype, device=device)
 
         def func(input):
             return m(input, rois)
@@ -272,7 +272,7 @@ class ROIAlignTester(unittest.TestCase):
         gt_y_single = self.gt_y_single.to(device)
 
         pool_h, pool_w = (5, 5)
-        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        roi_align = ops.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
         y = roi_align(x, single_roi)
 
         assert torch.allclose(gt_y_single, y), 'ROIAlign layer incorrect for single ROI on CPU'
@@ -287,7 +287,7 @@ class ROIAlignTester(unittest.TestCase):
         gt_y_multiple = self.gt_y_multiple.to(device)
 
         pool_h, pool_w = (5, 5)
-        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        roi_align = ops.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
         y = roi_align(x, rois)
 
         assert torch.allclose(gt_y_multiple, y), 'ROIAlign layer incorrect for multiple ROIs on CPU'
@@ -303,7 +303,7 @@ class ROIAlignTester(unittest.TestCase):
         gt_y_single = self.gt_y_single.to(device)
 
         pool_h, pool_w = (5, 5)
-        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        roi_align = ops.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
         y = roi_align(x, single_roi)
 
         assert torch.allclose(gt_y_single, y), 'ROIAlign layer incorrect for single ROI on CUDA'
@@ -319,7 +319,7 @@ class ROIAlignTester(unittest.TestCase):
         gt_y_multiple = self.gt_y_multiple.to(device)
 
         pool_h, pool_w = (5, 5)
-        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        roi_align = ops.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
         y = roi_align(x, rois)
 
         assert torch.allclose(gt_y_multiple, y), 'ROIAlign layer incorrect for multiple ROIs on CUDA'
@@ -333,7 +333,7 @@ class ROIAlignTester(unittest.TestCase):
         """
         device = torch.device('cpu')
         pool_h, pool_w = (5, 5)
-        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        roi_align = ops.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
 
         x = self.x.to(device).clone()
         rois = self.rois.to(device)
@@ -349,7 +349,7 @@ class ROIAlignTester(unittest.TestCase):
     def test_roi_align_gradcheck_cpu(self):
         dtype = torch.float64
         device = torch.device('cpu')
-        m = layers.ROIAlign((5, 5), 0.5, 1).to(dtype=dtype, device=device)
+        m = ops.ROIAlign((5, 5), 0.5, 1).to(dtype=dtype, device=device)
         x = torch.rand(1, 1, 10, 10, dtype=dtype, device=device, requires_grad=True)
         rois = self.rois.to(device=device, dtype=dtype)
 
@@ -366,7 +366,7 @@ class ROIAlignTester(unittest.TestCase):
         """
         device = torch.device('cuda')
         pool_h, pool_w = (5, 5)
-        roi_align = layers.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        roi_align = ops.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
 
         x = self.x.to(device).clone()
         rois = self.rois.to(device)
@@ -383,7 +383,7 @@ class ROIAlignTester(unittest.TestCase):
     def test_roi_align_gradcheck_cuda(self):
         dtype = torch.float64
         device = torch.device('cuda')
-        m = layers.ROIAlign((5, 5), 0.5, 1).to(dtype=dtype, device=device)
+        m = ops.ROIAlign((5, 5), 0.5, 1).to(dtype=dtype, device=device)
         x = torch.rand(1, 1, 10, 10, dtype=dtype, device=device, requires_grad=True)
         rois = self.rois.to(device=device, dtype=dtype)
 
@@ -401,11 +401,11 @@ class NMSTester(unittest.TestCase):
         x[:, 2:] += torch.rand(10, 2) * 100
         scores = torch.rand(10)
 
-        r_cpu = layers.nms(x, scores, 0.3)
-        r_cuda = layers.nms(x.cuda(), scores.cuda(), 0.3)
+        r_cpu = ops.nms(x, scores, 0.3)
+        r_cuda = ops.nms(x.cuda(), scores.cuda(), 0.3)
 
         assert torch.allclose(r_cpu, r_cuda.cpu()), 'NMS incompatible between CPU and CUDA'
-        r_cuda = layers.nms(x.cuda().half(), scores.cuda().half(), 0.3)
+        r_cuda = ops.nms(x.cuda().half(), scores.cuda().half(), 0.3)
         assert torch.allclose(r_cpu, r_cuda.cpu()), 'NMS incompatible between CPU and CUDA'
 
 if __name__ == '__main__':
