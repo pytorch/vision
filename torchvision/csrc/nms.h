@@ -5,11 +5,10 @@
 #include "cuda/vision.h"
 #endif
 
-
-at::Tensor nms(const at::Tensor& dets,
-               const at::Tensor& scores,
-               const float threshold) {
-
+at::Tensor nms(
+    const at::Tensor& dets,
+    const at::Tensor& scores,
+    const float threshold) {
   if (dets.device().is_cuda()) {
 #ifdef WITH_CUDA
     if (dets.numel() == 0) {

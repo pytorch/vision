@@ -1,7 +1,6 @@
-#include "nms.h"
 #include "ROIAlign.h"
 #include "ROIPool.h"
-
+#include "nms.h"
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("nms", &nms, "non-maximum suppression");

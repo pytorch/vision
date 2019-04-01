@@ -1,12 +1,14 @@
 #include "cpu/vision.h"
 
 template <typename scalar_t>
-at::Tensor nms_cpu_kernel(const at::Tensor& dets,
-                          const at::Tensor& scores,
-                          const float threshold) {
+at::Tensor nms_cpu_kernel(
+    const at::Tensor& dets,
+    const at::Tensor& scores,
+    const float threshold) {
   AT_ASSERTM(!dets.type().is_cuda(), "dets must be a CPU tensor");
   AT_ASSERTM(!scores.type().is_cuda(), "scores must be a CPU tensor");
-  AT_ASSERTM(dets.type() == scores.type(), "dets should have the same type as scores");
+  AT_ASSERTM(
+      dets.type() == scores.type(), "dets should have the same type as scores");
 
   if (dets.numel() == 0)
     return at::empty({0}, dets.options().dtype(at::kLong));
@@ -56,15 +58,15 @@ at::Tensor nms_cpu_kernel(const at::Tensor& dets,
       auto ovr = inter / (iarea + areas[j] - inter);
       if (ovr >= threshold)
         suppressed[j] = 1;
-   }
+    }
   }
   return at::nonzero(suppressed_t == 0).squeeze(1);
 }
 
-at::Tensor nms_cpu(const at::Tensor& dets,
-               const at::Tensor& scores,
-               const float threshold) {
-
+at::Tensor nms_cpu(
+    const at::Tensor& dets,
+    const at::Tensor& scores,
+    const float threshold) {
   auto result = at::empty({0}, dets.options());
 
   AT_DISPATCH_FLOATING_TYPES(dets.type(), "nms", [&] {
@@ -72,4 +74,3 @@ at::Tensor nms_cpu(const at::Tensor& dets,
   });
   return result;
 }
-

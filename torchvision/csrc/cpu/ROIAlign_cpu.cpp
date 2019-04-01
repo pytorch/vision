@@ -1,5 +1,5 @@
-#include "cpu/vision.h"
 #include <ATen/TensorUtils.h>
+#include "cpu/vision.h"
 
 // implementation taken from Caffe2
 template <typename T>
@@ -178,7 +178,7 @@ void ROIAlignForward(
         roi_bin_grid_w,
         pre_calc);
 
-      for (int c = 0; c < channels; c++) {
+    for (int c = 0; c < channels; c++) {
       int index_n_c = index_n + c * pooled_width * pooled_height;
       const T* offset_input =
           input + (roi_batch_ind * channels + c) * height * width;
@@ -194,8 +194,7 @@ void ROIAlignForward(
               PreCalc<T> pc = pre_calc[pre_calc_index];
               output_val += pc.w1 * offset_input[pc.pos1] +
                   pc.w2 * offset_input[pc.pos2] +
-                  pc.w3 * offset_input[pc.pos3] +
-                  pc.w4 * offset_input[pc.pos4];
+                  pc.w3 * offset_input[pc.pos3] + pc.w4 * offset_input[pc.pos4];
 
               pre_calc_index += 1;
             }
@@ -211,12 +210,19 @@ void ROIAlignForward(
 
 template <typename T>
 void bilinear_interpolate_gradient(
-    const int height, const int width,
-    T y, T x,
-    T& w1, T& w2, T& w3, T& w4,
-    int& x_low, int& x_high, int& y_low, int& y_high,
+    const int height,
+    const int width,
+    T y,
+    T x,
+    T& w1,
+    T& w2,
+    T& w3,
+    T& w4,
+    int& x_low,
+    int& x_high,
+    int& y_low,
+    int& y_high,
     const int index /* index for debug only*/) {
-
   // deal with cases that inverse elements are out of feature map boundary
   if (y < -1.0 || y > height || x < -1.0 || x > width) {
     // empty
@@ -225,8 +231,10 @@ void bilinear_interpolate_gradient(
     return;
   }
 
-  if (y <= 0) y = 0;
-  if (x <= 0) x = 0;
+  if (y <= 0)
+    y = 0;
+  if (x <= 0)
+    x = 0;
 
   y_low = (int)y;
   x_low = (int)x;
@@ -272,15 +280,17 @@ void ROIAlignBackward(
     const T* grad_output,
     const T& spatial_scale,
     const int channels,
-    const int height, 
+    const int height,
     const int width,
-    const int pooled_height, 
+    const int pooled_height,
     const int pooled_width,
     const int sampling_ratio,
     T* grad_input,
     const T* rois,
-    const int n_stride, const int c_stride,
-    const int h_stride, const int w_stride) {
+    const int n_stride,
+    const int c_stride,
+    const int h_stride,
+    const int w_stride) {
   for (int index = 0; index < nthreads; index++) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
@@ -289,46 +299,63 @@ void ROIAlignBackward(
     int n = index / pooled_width / pooled_height / channels;
 
     const T* offset_rois = rois + n * 5;
-    int roi_batch_ind  = offset_rois[0];
-    
+    int roi_batch_ind = offset_rois[0];
+
     // Do not using rounding; this implementation detail is critical
     T roi_start_w = offset_rois[1] * spatial_scale;
     T roi_start_h = offset_rois[2] * spatial_scale;
     T roi_end_w = offset_rois[3] * spatial_scale;
     T roi_end_h = offset_rois[4] * spatial_scale;
-    
+
     // Force malformed ROIs to be 1x1
     T roi_width = std::max(roi_end_w - roi_start_w, (T)1.);
     T roi_height = std::max(roi_end_h - roi_start_h, (T)1.);
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
-    T* offset_grad_input = grad_input + ((roi_batch_ind * channels + c) * height * width);
+    T* offset_grad_input =
+        grad_input + ((roi_batch_ind * channels + c) * height * width);
 
-    int output_offset = n*n_stride + c*c_stride;
+    int output_offset = n * n_stride + c * c_stride;
     const T* offset_grad_output = grad_output + output_offset;
-    const T grad_output_this_bin = offset_grad_output[ph*h_stride + pw*w_stride];
+    const T grad_output_this_bin =
+        offset_grad_output[ph * h_stride + pw * w_stride];
 
     // We use roi_bin_grid to sample the grid and mimic integral
-    int roi_bin_grid_h = (sampling_ratio > 0) ? sampling_ratio : ceil(roi_height / pooled_height); // e.g., = 2
-    int roi_bin_grid_w = (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
+    int roi_bin_grid_h = (sampling_ratio > 0)
+        ? sampling_ratio
+        : ceil(roi_height / pooled_height); // e.g., = 2
+    int roi_bin_grid_w =
+        (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
 
     // We do average (integral) pooling inside a bin
     const T count = roi_bin_grid_h * roi_bin_grid_w; // e.g. = 4
 
-    for (int iy = 0; iy < roi_bin_grid_h; iy++) 
-    {
-      const T y = roi_start_h + ph * bin_size_h + static_cast<T>(iy + .5f) * bin_size_h / static_cast<T>(roi_bin_grid_h); // e.g., 0.5, 1.5
-      for (int ix = 0; ix < roi_bin_grid_w; ix++) 
-      {
-        const T x = roi_start_w + pw * bin_size_w + static_cast<T>(ix + .5f) * bin_size_w / static_cast<T>(roi_bin_grid_w);
+    for (int iy = 0; iy < roi_bin_grid_h; iy++) {
+      const T y = roi_start_h + ph * bin_size_h +
+          static_cast<T>(iy + .5f) * bin_size_h /
+              static_cast<T>(roi_bin_grid_h); // e.g., 0.5, 1.5
+      for (int ix = 0; ix < roi_bin_grid_w; ix++) {
+        const T x = roi_start_w + pw * bin_size_w +
+            static_cast<T>(ix + .5f) * bin_size_w /
+                static_cast<T>(roi_bin_grid_w);
 
         T w1, w2, w3, w4;
         int x_low, x_high, y_low, y_high;
 
-        bilinear_interpolate_gradient(height, width, y, x,
-            w1, w2, w3, w4,
-            x_low, x_high, y_low, y_high,
+        bilinear_interpolate_gradient(
+            height,
+            width,
+            y,
+            x,
+            w1,
+            w2,
+            w3,
+            w4,
+            x_low,
+            x_high,
+            y_low,
+            y_high,
             index);
 
         T g1 = grad_output_this_bin * w1 / count;
@@ -348,18 +375,17 @@ void ROIAlignBackward(
   } // for
 } // ROIAlignBackward
 
-
-at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
-                                const at::Tensor& rois,
-                                const float spatial_scale,
-                                const int pooled_height,
-                                const int pooled_width,
-                                const int sampling_ratio) {
+at::Tensor ROIAlign_forward_cpu(
+    const at::Tensor& input,
+    const at::Tensor& rois,
+    const float spatial_scale,
+    const int pooled_height,
+    const int pooled_width,
+    const int sampling_ratio) {
   AT_ASSERTM(input.device().is_cpu(), "input must be a CPU tensor");
   AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
 
-  at::TensorArg input_t{ input, "input", 1 },
-                rois_t{ rois, "rois", 2 };
+  at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
   at::CheckedFrom c = "ROIAlign_forward_cpu";
   at::checkAllSameType(c, {input_t, rois_t});
@@ -369,8 +395,9 @@ at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
   auto height = input.size(2);
   auto width = input.size(3);
 
-  at::Tensor output = at::zeros({num_rois, channels, pooled_height, pooled_width}, input.options());
-  
+  at::Tensor output = at::zeros(
+      {num_rois, channels, pooled_height, pooled_width}, input.options());
+
   auto output_size = num_rois * pooled_height * pooled_width * channels;
 
   if (output.numel() == 0)
@@ -378,46 +405,45 @@ at::Tensor ROIAlign_forward_cpu(const at::Tensor& input,
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.type(), "ROIAlign_forward", [&] {
     ROIAlignForward<scalar_t>(
-         output_size,
-         input.contiguous().data<scalar_t>(),
-         spatial_scale,
-         channels,
-         height,
-         width,
-         pooled_height,
-         pooled_width,
-         sampling_ratio,
-         rois.contiguous().data<scalar_t>(),
-         output.data<scalar_t>());
+        output_size,
+        input.contiguous().data<scalar_t>(),
+        spatial_scale,
+        channels,
+        height,
+        width,
+        pooled_height,
+        pooled_width,
+        sampling_ratio,
+        rois.contiguous().data<scalar_t>(),
+        output.data<scalar_t>());
   });
   return output;
 }
 
-
-at::Tensor ROIAlign_backward_cpu(const at::Tensor& grad,
-                                 const at::Tensor& rois,
-                                 const float spatial_scale,
-                                 const int pooled_height,
-                                 const int pooled_width,
-                                 const int batch_size,
-                                 const int channels,
-                                 const int height,
-                                 const int width,
-                                 const int sampling_ratio) {
+at::Tensor ROIAlign_backward_cpu(
+    const at::Tensor& grad,
+    const at::Tensor& rois,
+    const float spatial_scale,
+    const int pooled_height,
+    const int pooled_width,
+    const int batch_size,
+    const int channels,
+    const int height,
+    const int width,
+    const int sampling_ratio) {
   AT_ASSERTM(grad.device().is_cpu(), "grad must be a CPU tensor");
   AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
 
-  at::TensorArg grad_t{ grad, "grad", 1 },
-                rois_t{ rois, "rois", 2 };
+  at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2};
 
   at::CheckedFrom c = "ROIAlign_backward_cpu";
   at::checkAllSameType(c, {grad_t, rois_t});
 
-  at::Tensor grad_input = at::zeros({batch_size, channels, height, width}, grad.options());
+  at::Tensor grad_input =
+      at::zeros({batch_size, channels, height, width}, grad.options());
 
   // handle possibly empty gradients
-  if (grad.numel() == 0)
-  {
+  if (grad.numel() == 0) {
     return grad_input;
   }
 
@@ -433,16 +459,16 @@ at::Tensor ROIAlign_backward_cpu(const at::Tensor& grad,
         grad.contiguous().data<scalar_t>(),
         spatial_scale,
         channels,
-        height, 
+        height,
         width,
-        pooled_height, 
+        pooled_height,
         pooled_width,
         sampling_ratio,
         grad_input.data<scalar_t>(),
         rois.contiguous().data<scalar_t>(),
-        n_stride, 
+        n_stride,
         c_stride,
-        h_stride, 
+        h_stride,
         w_stride);
   });
   return grad_input;
