@@ -8,7 +8,7 @@ from itertools import product
 import unittest
 
 
-class ROIPoolTester(unittest.TestCase):
+class RoIPoolTester(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.dtype = torch.float64
@@ -42,17 +42,17 @@ class ROIPoolTester(unittest.TestCase):
                             dtype=self.dtype, device=device)
 
         pool_h, pool_w = (5, 5)
-        roi_pool = ops.ROIPool((pool_h, pool_w), 1)
+        roi_pool = ops.RoIPool((pool_h, pool_w), 1)
         y = roi_pool(x, rois)
 
         gt_y = self.slow_roi_pooling(x, rois, pool_h, pool_w, device=device, dtype=self.dtype)
 
-        assert torch.allclose(gt_y, y), 'ROIPool layer incorrect on CPU'
+        assert torch.allclose(gt_y, y), 'RoIPool layer incorrect on CPU'
 
         # non-contiguous
         y = roi_pool(x.permute(0, 1, 3, 2), rois)
         gt_y = self.slow_roi_pooling(x.permute(0, 1, 3, 2), rois, pool_h, pool_w, device=device, dtype=self.dtype)
-        assert torch.allclose(gt_y, y), 'ROIPool layer incorrect on CPU'
+        assert torch.allclose(gt_y, y), 'RoIPool layer incorrect on CPU'
 
     def test_roi_pool_cpu(self):
         device = torch.device('cpu')
@@ -64,17 +64,17 @@ class ROIPoolTester(unittest.TestCase):
                             dtype=self.dtype, device=device)
 
         pool_h, pool_w = (5, 5)
-        roi_pool = ops.ROIPool((pool_h, pool_w), 1)
+        roi_pool = ops.RoIPool((pool_h, pool_w), 1)
         y = roi_pool(x, rois)
 
         gt_y = self.slow_roi_pooling(x, rois, pool_h, pool_w, device=device, dtype=self.dtype)
 
-        assert torch.allclose(gt_y, y), 'ROIPool layer incorrect on CPU for batch > 1'
+        assert torch.allclose(gt_y, y), 'RoIPool layer incorrect on CPU for batch > 1'
 
         # non-contiguous
         y = roi_pool(x.permute(0, 1, 3, 2), rois)
         gt_y = self.slow_roi_pooling(x.permute(0, 1, 3, 2), rois, pool_h, pool_w, device=device, dtype=self.dtype)
-        assert torch.allclose(gt_y, y), 'ROIPool layer incorrect on CPU for batch > 1'
+        assert torch.allclose(gt_y, y), 'RoIPool layer incorrect on CPU for batch > 1'
 
     def test_roi_pool_gradient_cpu(self):
         device = torch.device('cpu')
@@ -85,7 +85,7 @@ class ROIPoolTester(unittest.TestCase):
             [0, 0, 0, 4, 4]],
             dtype=self.dtype, device=device)
 
-        layer = ops.ROIPool((5, 5), 1).to(dtype=self.dtype, device=device)
+        layer = ops.RoIPool((5, 5), 1).to(dtype=self.dtype, device=device)
 
         y = layer(x, rois)
         s = y.sum()
@@ -113,7 +113,7 @@ class ROIPoolTester(unittest.TestCase):
             [0, 0, 5, 5, 9],
             [0, 5, 5, 9, 9]], dtype=self.dtype, device=device)
 
-        m = ops.ROIPool((5, 5), 1).to(dtype=self.dtype, device=device)
+        m = ops.RoIPool((5, 5), 1).to(dtype=self.dtype, device=device)
 
         def func(input):
             return m(input, rois)
@@ -129,16 +129,16 @@ class ROIPoolTester(unittest.TestCase):
                             dtype=self.dtype, device=device)
 
         pool_h, pool_w = (5, 5)
-        roi_pool = ops.ROIPool((pool_h, pool_w), 1)
+        roi_pool = ops.RoIPool((pool_h, pool_w), 1)
         y = roi_pool(x, rois)
 
         gt_y = self.slow_roi_pooling(x, rois, pool_h, pool_w, device=device, dtype=self.dtype)
 
-        assert torch.allclose(gt_y.cuda(), y), 'ROIPool layer incorrect'
+        assert torch.allclose(gt_y.cuda(), y), 'RoIPool layer incorrect'
 
         y = roi_pool(x.permute(0, 1, 3, 2), rois)
         gt_y = self.slow_roi_pooling(x.permute(0, 1, 3, 2), rois, pool_h, pool_w, device=device, dtype=self.dtype)
-        assert torch.allclose(gt_y.cuda(), y), 'ROIPool layer incorrect'
+        assert torch.allclose(gt_y.cuda(), y), 'RoIPool layer incorrect'
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_pool_cuda(self):
@@ -151,21 +151,21 @@ class ROIPoolTester(unittest.TestCase):
                             dtype=self.dtype, device=device)
 
         pool_h, pool_w = (5, 5)
-        roi_pool = ops.ROIPool((pool_h, pool_w), 1)
+        roi_pool = ops.RoIPool((pool_h, pool_w), 1)
         y = roi_pool(x, rois)
 
         gt_y = self.slow_roi_pooling(x, rois, pool_h, pool_w, device=device, dtype=self.dtype)
 
-        assert torch.allclose(gt_y.cuda(), y), 'ROIPool layer incorrect'
+        assert torch.allclose(gt_y.cuda(), y), 'RoIPool layer incorrect'
 
         y = roi_pool(x.permute(0, 1, 3, 2), rois)
         gt_y = self.slow_roi_pooling(x.permute(0, 1, 3, 2), rois, pool_h, pool_w, device=device, dtype=self.dtype)
-        assert torch.allclose(gt_y.cuda(), y), 'ROIPool layer incorrect'
+        assert torch.allclose(gt_y.cuda(), y), 'RoIPool layer incorrect'
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_pool_gradient_cuda(self):
         device = torch.device('cuda')
-        layer = ops.ROIPool((5, 5), 1).to(dtype=self.dtype, device=device)
+        layer = ops.RoIPool((5, 5), 1).to(dtype=self.dtype, device=device)
         x = torch.ones(1, 1, 10, 10, dtype=self.dtype, device=device, requires_grad=True)
         rois = torch.tensor([
             [0, 0, 0, 9, 9],
@@ -199,7 +199,7 @@ class ROIPoolTester(unittest.TestCase):
             [0, 0, 5, 5, 9],
             [0, 5, 5, 9, 9]], dtype=self.dtype, device=device)
 
-        m = ops.ROIPool((5, 5), 1).to(dtype=self.dtype, device=device)
+        m = ops.RoIPool((5, 5), 1).to(dtype=self.dtype, device=device)
 
         def func(input):
             return m(input, rois)
@@ -208,7 +208,7 @@ class ROIPoolTester(unittest.TestCase):
         assert gradcheck(func, (x.permute(0, 1, 3, 2),)), 'gradcheck failed for roi_pool CUDA'
 
 
-class ROIAlignTester(unittest.TestCase):
+class RoIAlignTester(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         torch.manual_seed(123)
@@ -272,13 +272,13 @@ class ROIAlignTester(unittest.TestCase):
         gt_y_single = self.gt_y_single.to(device)
 
         pool_h, pool_w = (5, 5)
-        roi_align = ops.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        roi_align = ops.RoIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
         y = roi_align(x, single_roi)
 
-        assert torch.allclose(gt_y_single, y), 'ROIAlign layer incorrect for single ROI on CPU'
+        assert torch.allclose(gt_y_single, y), 'RoIAlign layer incorrect for single ROI on CPU'
 
         y = roi_align(x.transpose(2, 3).contiguous().transpose(2, 3), single_roi)
-        assert torch.allclose(gt_y_single, y), 'ROIAlign layer incorrect for single ROI on CPU'
+        assert torch.allclose(gt_y_single, y), 'RoIAlign layer incorrect for single ROI on CPU'
 
     def test_roi_align_cpu(self):
         device = torch.device('cpu')
@@ -287,13 +287,13 @@ class ROIAlignTester(unittest.TestCase):
         gt_y_multiple = self.gt_y_multiple.to(device)
 
         pool_h, pool_w = (5, 5)
-        roi_align = ops.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        roi_align = ops.RoIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
         y = roi_align(x, rois)
 
-        assert torch.allclose(gt_y_multiple, y), 'ROIAlign layer incorrect for multiple ROIs on CPU'
+        assert torch.allclose(gt_y_multiple, y), 'RoIAlign layer incorrect for multiple ROIs on CPU'
 
         y = roi_align(x.transpose(2, 3).contiguous().transpose(2, 3), rois)
-        assert torch.allclose(gt_y_multiple, y), 'ROIAlign layer incorrect for multiple ROIs on CPU'
+        assert torch.allclose(gt_y_multiple, y), 'RoIAlign layer incorrect for multiple ROIs on CPU'
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_align_basic_cuda(self):
@@ -303,13 +303,13 @@ class ROIAlignTester(unittest.TestCase):
         gt_y_single = self.gt_y_single.to(device)
 
         pool_h, pool_w = (5, 5)
-        roi_align = ops.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        roi_align = ops.RoIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
         y = roi_align(x, single_roi)
 
-        assert torch.allclose(gt_y_single, y), 'ROIAlign layer incorrect for single ROI on CUDA'
+        assert torch.allclose(gt_y_single, y), 'RoIAlign layer incorrect for single ROI on CUDA'
 
         y = roi_align(x.transpose(2, 3).contiguous().transpose(2, 3), single_roi)
-        assert torch.allclose(gt_y_single, y), 'ROIAlign layer incorrect for single ROI on CUDA'
+        assert torch.allclose(gt_y_single, y), 'RoIAlign layer incorrect for single ROI on CUDA'
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_align_cuda(self):
@@ -319,21 +319,21 @@ class ROIAlignTester(unittest.TestCase):
         gt_y_multiple = self.gt_y_multiple.to(device)
 
         pool_h, pool_w = (5, 5)
-        roi_align = ops.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        roi_align = ops.RoIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
         y = roi_align(x, rois)
 
-        assert torch.allclose(gt_y_multiple, y), 'ROIAlign layer incorrect for multiple ROIs on CUDA'
+        assert torch.allclose(gt_y_multiple, y), 'RoIAlign layer incorrect for multiple ROIs on CUDA'
 
         y = roi_align(x.transpose(2, 3).contiguous().transpose(2, 3), rois)
-        assert torch.allclose(gt_y_multiple, y), 'ROIAlign layer incorrect for multiple ROIs on CUDA'
+        assert torch.allclose(gt_y_multiple, y), 'RoIAlign layer incorrect for multiple ROIs on CUDA'
 
     def test_roi_align_gradient_cpu(self):
         """
-        Compute gradients for ROIAlign with multiple bounding boxes on CPU
+        Compute gradients for RoIAlign with multiple bounding boxes on CPU
         """
         device = torch.device('cpu')
         pool_h, pool_w = (5, 5)
-        roi_align = ops.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        roi_align = ops.RoIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
 
         x = self.x.to(device).clone()
         rois = self.rois.to(device)
@@ -344,29 +344,29 @@ class ROIAlignTester(unittest.TestCase):
         s = y.sum()
         s.backward()
 
-        assert torch.allclose(x.grad, gt_grad), 'gradient incorrect for ROIAlign CPU'
+        assert torch.allclose(x.grad, gt_grad), 'gradient incorrect for RoIAlign CPU'
 
     def test_roi_align_gradcheck_cpu(self):
         dtype = torch.float64
         device = torch.device('cpu')
-        m = ops.ROIAlign((5, 5), 0.5, 1).to(dtype=dtype, device=device)
+        m = ops.RoIAlign((5, 5), 0.5, 1).to(dtype=dtype, device=device)
         x = torch.rand(1, 1, 10, 10, dtype=dtype, device=device, requires_grad=True)
         rois = self.rois.to(device=device, dtype=dtype)
 
         def func(input):
             return m(input, rois)
 
-        assert gradcheck(func, (x,)), 'gradcheck failed for ROIAlign CPU'
-        assert gradcheck(func, (x.transpose(2, 3),)), 'gradcheck failed for ROIAlign CPU'
+        assert gradcheck(func, (x,)), 'gradcheck failed for RoIAlign CPU'
+        assert gradcheck(func, (x.transpose(2, 3),)), 'gradcheck failed for RoIAlign CPU'
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_align_gradient_cuda(self):
         """
-        Compute gradients for ROIAlign with multiple bounding boxes on the GPU
+        Compute gradients for RoIAlign with multiple bounding boxes on the GPU
         """
         device = torch.device('cuda')
         pool_h, pool_w = (5, 5)
-        roi_align = ops.ROIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
+        roi_align = ops.RoIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2).to(device=device)
 
         x = self.x.to(device).clone()
         rois = self.rois.to(device)
@@ -377,21 +377,21 @@ class ROIAlignTester(unittest.TestCase):
         s = y.sum()
         s.backward()
 
-        assert torch.allclose(x.grad, gt_grad), 'gradient incorrect for ROIAlign CUDA'
+        assert torch.allclose(x.grad, gt_grad), 'gradient incorrect for RoIAlign CUDA'
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_align_gradcheck_cuda(self):
         dtype = torch.float64
         device = torch.device('cuda')
-        m = ops.ROIAlign((5, 5), 0.5, 1).to(dtype=dtype, device=device)
+        m = ops.RoIAlign((5, 5), 0.5, 1).to(dtype=dtype, device=device)
         x = torch.rand(1, 1, 10, 10, dtype=dtype, device=device, requires_grad=True)
         rois = self.rois.to(device=device, dtype=dtype)
 
         def func(input):
             return m(input, rois)
 
-        assert gradcheck(func, (x,)), 'gradcheck failed for ROIAlign CUDA'
-        assert gradcheck(func, (x.transpose(2, 3),)), 'gradcheck failed for ROIAlign CUDA'
+        assert gradcheck(func, (x,)), 'gradcheck failed for RoIAlign CUDA'
+        assert gradcheck(func, (x.transpose(2, 3),)), 'gradcheck failed for RoIAlign CUDA'
 
 
 class NMSTester(unittest.TestCase):

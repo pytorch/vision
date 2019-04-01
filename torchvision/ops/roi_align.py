@@ -7,9 +7,10 @@ from torch.autograd.function import once_differentiable
 from torch.nn.modules.utils import _pair
 
 from torchvision import _C
+from ._utils import convert_boxes_to_roi_format
 
 
-class _ROIAlign(Function):
+class _RoIAlignFunction(Function):
     @staticmethod
     def forward(ctx, input, roi, output_size, spatial_scale, sampling_ratio):
         ctx.save_for_backward(roi)
@@ -36,12 +37,39 @@ class _ROIAlign(Function):
         return grad_input, None, None, None, None
 
 
-roi_align = _ROIAlign.apply
+def roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1):
+    """
+    Performs Region of Interest (RoI) Align operator described in Mask R-CNN
+
+    Arguments:
+        input (Tensor[N, C, H, W]): input tensor
+        boxes (Tensor[K, 5] or List[Tensor[L, 4]]): the box coordinates in x1,y1,x2,y2
+            format where the regions will be taken from. If a single Tensor is passed,
+            then the first column should contain the batch index. If a list of Tensors
+            is passed, then each Tensor will correspond to the boxes for an element i
+            in a batch
+        output_size (int or Tuple[int, int]): the size of the output after the cropping
+            is performed
+        spatial_scale (float): a scaling factor that maps the input coordinates to
+            the box coordinates. Default: 1.0
+        sampling_ratio (int): number of sampling points in the interpolation grid
+            used to compute the output value of each pooled output bin. If > 0,
+            then exactly sampling_ratio x sampling_ratio grid points are used. If
+            <= 0, then an adaptive number of grid points are used (computed as
+            ceil(roi_width / pooled_w), and likewise for height). Default: -1
+    """
+    rois = boxes
+    if not isinstance(rois, torch.Tensor):
+        rois = convert_boxes_to_roi_format(rois)
+    return _RoIAlignFunction.apply(input, rois, output_size, spatial_scale, sampling_ratio)
 
 
-class ROIAlign(nn.Module):
+class RoIAlign(nn.Module):
+    """
+    See roi_align
+    """
     def __init__(self, output_size, spatial_scale, sampling_ratio):
-        super(ROIAlign, self).__init__()
+        super(RoIAlign, self).__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale
         self.sampling_ratio = sampling_ratio

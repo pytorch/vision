@@ -1,8 +1,8 @@
 from .nms import nms
-from .roi_align import roi_align, ROIAlign
-from .roi_pool import roi_pool, ROIPool
+from .roi_align import roi_align, RoIAlign
+from .roi_pool import roi_pool, RoIPool
 
 
 __all__ = [
-    'nms', 'roi_align', 'ROIAlign', 'roi_pool', 'ROIPool'
+    'nms', 'roi_align', 'RoIAlign', 'roi_pool', 'RoIPool'
 ]
