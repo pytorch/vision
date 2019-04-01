@@ -15,10 +15,9 @@ add_executable(convertmodels torchvision/csrc/convert_models/convert_models.cpp)
 target_link_libraries(convertmodels "${PROJECT_NAME}")
 target_link_libraries(convertmodels "${TORCH_LIBRARIES}")
 
-find_package(pybind11 REQUIRED)
-add_executable(testmodels test/test_models.cpp)
-target_link_libraries(testmodels "${PROJECT_NAME}")
-target_link_libraries(testmodels "${TORCH_LIBRARIES}")
+#add_executable(testmodels test/test_models.cpp)
+#target_link_libraries(testmodels "${PROJECT_NAME}")
+#target_link_libraries(testmodels "${TORCH_LIBRARIES}")
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME})

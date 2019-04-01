@@ -31,7 +31,7 @@ AlexNetImpl::AlexNetImpl(int64_t num_classes) {
       torch::nn::Linear(4096, num_classes));
 
   register_module("features", features);
-  register_module("clasifier", classifier);
+  register_module("classifier", classifier);
 }
 
 torch::Tensor AlexNetImpl::forward(torch::Tensor x) {
