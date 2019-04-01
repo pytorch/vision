@@ -396,18 +396,53 @@ class RoIAlignTester(unittest.TestCase):
 
 
 class NMSTester(unittest.TestCase):
+    def reference_nms(self, boxes, scores, iou_threshold):
+        """
+        Args:
+            box_scores (N, 5): boxes in corner-form and probabilities.
+            iou_threshold: intersection over union threshold.
+        Returns:
+             picked: a list of indexes of the kept boxes
+        """
+        picked = []
+        _, indexes = scores.sort(descending=True)
+        while len(indexes) > 0:
+            current = indexes[0]
+            picked.append(current.item())
+            if len(indexes) == 1:
+                break
+            current_box = boxes[current, :]
+            indexes = indexes[1:]
+            rest_boxes = boxes[indexes, :]
+            iou = ops.box_iou(rest_boxes, current_box.unsqueeze(0))
+            indexes = indexes[iou <= iou_threshold]
+
+        return torch.as_tensor(sorted(picked))
+
+    def _create_tensors(self, N):
+        boxes = torch.rand(N, 4) * 100
+        boxes[:, 2:] += torch.rand(N, 2) * 100
+        scores = torch.rand(N)
+        return boxes, scores
+
+    def test_nms(self):
+        boxes, scores = self._create_tensors(1000)
+        err_msg = 'NMS incompatible between CPU and reference implementation for IoU={}'
+        for iou in [0.2, 0.5, 0.8]:
+            keep_ref = self.reference_nms(boxes, scores, iou)
+            keep = ops.nms(boxes, scores, iou)
+            assert torch.allclose(keep, keep_ref), err_msg.format(iou)
+
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_nms_cuda(self):
-        x = torch.rand(10, 4) * 100
-        x[:, 2:] += torch.rand(10, 2) * 100
-        scores = torch.rand(10)
+        boxes, scores = self._create_tensors(1000)
+        err_msg = 'NMS incompatible between CPU and CUDA for IoU={}'
 
-        r_cpu = ops.nms(x, scores, 0.3)
-        r_cuda = ops.nms(x.cuda(), scores.cuda(), 0.3)
+        for iou in [0.2, 0.5, 0.8]:
+            r_cpu = ops.nms(boxes, scores, iou)
+            r_cuda = ops.nms(boxes.cuda(), scores.cuda(), iou)
 
-        assert torch.allclose(r_cpu, r_cuda.cpu()), 'NMS incompatible between CPU and CUDA'
-        r_cuda = ops.nms(x.cuda().half(), scores.cuda().half(), 0.3)
-        assert torch.allclose(r_cpu, r_cuda.cpu()), 'NMS incompatible between CPU and CUDA'
+            assert torch.allclose(r_cpu, r_cuda.cpu()), err_msg.format(iou)
 
 
 if __name__ == '__main__':

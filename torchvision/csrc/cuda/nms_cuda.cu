@@ -14,10 +14,10 @@ template <typename T>
 __device__ inline float devIoU(T const* const a, T const* const b) {
   T left = max(a[0], b[0]), right = min(a[2], b[2]);
   T top = max(a[1], b[1]), bottom = min(a[3], b[3]);
-  T width = max(right - left + 1, (T)0), height = max(bottom - top + 1, (T)0);
+  T width = max(right - left, (T)0), height = max(bottom - top, (T)0);
   T interS = width * height;
-  T Sa = (a[2] - a[0] + 1) * (a[3] - a[1] + 1);
-  T Sb = (b[2] - b[0] + 1) * (b[3] - b[1] + 1);
+  T Sa = (a[2] - a[0]) * (a[3] - a[1]);
+  T Sb = (b[2] - b[0]) * (b[3] - b[1]);
   return interS / (Sa + Sb - interS);
 }
 

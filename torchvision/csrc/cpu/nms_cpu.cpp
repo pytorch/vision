@@ -18,7 +18,7 @@ at::Tensor nms_cpu_kernel(
   auto x2_t = dets.select(1, 2).contiguous();
   auto y2_t = dets.select(1, 3).contiguous();
 
-  at::Tensor areas_t = (x2_t - x1_t + 1) * (y2_t - y1_t + 1);
+  at::Tensor areas_t = (x2_t - x1_t) * (y2_t - y1_t);
 
   auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
 
@@ -52,8 +52,8 @@ at::Tensor nms_cpu_kernel(
       auto xx2 = std::min(ix2, x2[j]);
       auto yy2 = std::min(iy2, y2[j]);
 
-      auto w = std::max(static_cast<scalar_t>(0), xx2 - xx1 + 1);
-      auto h = std::max(static_cast<scalar_t>(0), yy2 - yy1 + 1);
+      auto w = std::max(static_cast<scalar_t>(0), xx2 - xx1);
+      auto h = std::max(static_cast<scalar_t>(0), yy2 - yy1);
       auto inter = w * h;
       auto ovr = inter / (iarea + areas[j] - inter);
       if (ovr >= threshold)
