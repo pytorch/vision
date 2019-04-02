@@ -112,9 +112,9 @@ class MNASNet(torch.nn.Module):
             nn.Conv2d(depths[5], 1280, 1, padding=0, stride=1, bias=False),
             nn.BatchNorm2d(1280, momentum=_BN_MOMENTUM),
             nn.ReLU(inplace=True),
-            nn.AdaptiveAvgPool2d(1)
         ]
         self.layers = nn.Sequential(*layers)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
         if dropout > 0.0:
             self.classifier = nn.Sequential(
                 nn.Dropout(inplace=True, p=0.2),
@@ -125,10 +125,12 @@ class MNASNet(torch.nn.Module):
         self._initialize_weights()
 
     def features(self, x):
-        return self.layers.forward(x).squeeze()
+        return self.layers.forward(x)
 
     def forward(self, x):
-        return self.classifier(self.features(x))
+        x = self.features(x)
+        x = self.avgpool(x).squeeze()
+        return self.classifier(x)
 
     def _initialize_weights(self):
         for m in self.modules():
