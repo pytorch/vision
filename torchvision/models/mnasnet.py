@@ -3,14 +3,20 @@ import math
 import torch
 import torch.nn as nn
 
-# Paper suggests 0.9997 momentum, for TensFlow. Equivalent PyTorch
-# momentum is 1.0 - tensorflow.
+
+__all__ = ['MNASNet', 'MNASNet0_5', 'MNASNet0_75', 'MNASNet1_0', 'MNASNet1_3']
+
+# Paper suggests 0.9997 momentum, for TensFlow. Equivalent PyTorch momentum is
+# 1.0 - tensorflow.
 _BN_MOMENTUM = 1 - 0.9997
 
-class _InvertedResidual(nn.Module):
 
-    def __init__(self, in_ch: int, out_ch: int, kernel_size: int, stride: int,
-                 expansion_factor: int, bn_momentum: float = 0.1) -> None:
+class _InvertedResidual(nn.Module):
+    """ Inverted residual block from MobileNetV2 and MNASNet papers. This can
+    be used to implement MobileNet V2, if ReLU is replaced with ReLU6. """
+
+    def __init__(self, in_ch, out_ch, kernel_size, stride, expansion_factor,
+                 bn_momentum=0.1):
         super().__init__()
         assert stride in [1, 2]
         assert kernel_size in [3, 5]
@@ -30,31 +36,30 @@ class _InvertedResidual(nn.Module):
             nn.Conv2d(mid_ch, out_ch, 1, bias=False),
             nn.BatchNorm2d(out_ch, momentum=bn_momentum))
 
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
+    def forward(self, input):
         if self.apply_residual:
             return self.layers.forward(input) + input
         else:
             return self.layers.forward(input)
 
 
-def _stack(in_ch: int, out_ch: int, kernel_size: int, stride: int,
-          exp_factor: int, repeats: int, bn_momentum: float) -> nn.Sequential:
+def _stack(in_ch, out_ch, kernel_size, stride, exp_factor, repeats,
+           bn_momentum):
     """ Creates a stack of inverted residuals as seen in e.g. MobileNetV2 or
-    MNasNet. """
+    MNASNet. """
     assert repeats >= 1
     # First one has no skip, because feature map size changes.
-    first = InvertedResidual(in_ch, out_ch, kernel_size, stride, exp_factor,
-                             bn_momentum=bn_momentum)
+    first = _InvertedResidual(in_ch, out_ch, kernel_size, stride, exp_factor,
+                              bn_momentum=bn_momentum)
     remaining = []
     for _ in range(1, repeats):
         remaining.append(
-            InvertedResidual(out_ch, out_ch, kernel_size, 1, exp_factor,
-                             bn_momentum=bn_momentum))
+            _InvertedResidual(out_ch, out_ch, kernel_size, 1, exp_factor,
+                              bn_momentum=bn_momentum))
     return nn.Sequential(first, *remaining)
 
 
-def _round_to_multiple_of(val: float, divisor: int,
-                          round_up_bias: float = 0.9) -> int:
+def _round_to_multiple_of(val, divisor, round_up_bias=0.9):
     """ Asymmetric rounding to make `val` divisible by `divisor`. With default
     bias, will round up, unless the number is no more than 10% greater than the
     smaller divisible value, i.e. (83, 8) -> 80, but (84, 8) -> 88. """
@@ -63,15 +68,15 @@ def _round_to_multiple_of(val: float, divisor: int,
     return new_val if new_val >= round_up_bias * val else new_val + divisor
 
 
-def _scale_depths(depths: List[int], alpha: float) -> List[int]:
+def _scale_depths(depths, alpha):
     """ Scales tensor depths as in reference MobileNet code, prefers rouding up
     rather than down. """
     return [_round_to_multiple_of(depth * alpha, 8) for depth in depths]
 
 
-class MNasNet(torch.nn.Module):
-    """ MNasNet, as described in https://arxiv.org/pdf/1807.11626.pdf.
-    >>> model = MNasNet(1000, 1.0)
+class MNASNet(torch.nn.Module):
+    """ MNASNet, as described in https://arxiv.org/pdf/1807.11626.pdf.
+    >>> model = MNASNet(1000, 1.0)
     >>> x = torch.rand(1, 3, 224, 224)
     >>> y = model.forward(x)
     >>> y.dim()
@@ -80,7 +85,7 @@ class MNasNet(torch.nn.Module):
     1000
     """
 
-    def __init__(self, num_classes: int, alpha: float, dropout:float=0.2) -> None:
+    def __init__(self, num_classes, alpha, dropout=0.2):
         super().__init__()
         self.alpha = alpha
         self.num_classes = num_classes
@@ -96,7 +101,7 @@ class MNasNet(torch.nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(32, 16, 1, padding=0, stride=1, bias=False),
             nn.BatchNorm2d(16, momentum=_BN_MOMENTUM),
-            # MNasNet blocks: stacks of inverted residuals.
+            # MNASNet blocks: stacks of inverted residuals.
             _stack(16, depths[0], 3, 2, 3, 3, _BN_MOMENTUM),
             _stack(depths[0], depths[1], 5, 2, 3, 3, _BN_MOMENTUM),
             _stack(depths[1], depths[2], 5, 2, 6, 3, _BN_MOMENTUM),
@@ -112,7 +117,8 @@ class MNasNet(torch.nn.Module):
         self.layers = nn.Sequential(*layers)
         if dropout > 0.0:
             self.classifier = nn.Sequential(
-                nn.Dropout(inplace=True, p=0.2), nn.Linear(1280, self.num_classes))
+                nn.Dropout(inplace=True, p=0.2),
+                nn.Linear(1280, self.num_classes))
         else:
             self.classifier = nn.Linear(1280, self.num_classes)
 
@@ -139,29 +145,30 @@ class MNasNet(torch.nn.Module):
                 m.weight.data.normal_(0, 0.01)
                 m.bias.data.zero_()
 
-class MNasNet0_5(MNasNet):
-    """ MNasNet with depth multiplier of 0.5. """
 
-    def __init__(self, num_classes: int) -> None:
+class MNASNet0_5(MNASNet):
+    """ MNASNet with depth multiplier of 0.5. """
+
+    def __init__(self, num_classes):
         super().__init__(num_classes, 0.5)
 
-class MNasNet0_75(MNasNet):
-    """ MNasNet with depth multiplier of 0.75. """
 
-    def __init__(self, num_classes: int) -> None:
+class MNASNet0_75(MNASNet):
+    """ MNASNet with depth multiplier of 0.75. """
+
+    def __init__(self, num_classes):
         super().__init__(num_classes, 0.75)
 
-class MNasNet1_0(MNasNet):
-    """ MNasNet with depth multiplier of 1.0. """
 
-    def __init__(self, num_classes: int) -> None:
+class MNASNet1_0(MNASNet):
+    """ MNASNet with depth multiplier of 1.0. """
+
+    def __init__(self, num_classes):
         super().__init__(num_classes, 1.0)
 
 
-class MNasNet1_3(MNasNet):
-    """ MNasNet with depth multiplier of 1.3. """
+class MNASNet1_3(MNASNet):
+    """ MNASNet with depth multiplier of 1.3. """
 
-    def __init__(self, num_classes: int) -> None:
+    def __init__(self, num_classes):
         super().__init__(num_classes, 1.3)
-
-
