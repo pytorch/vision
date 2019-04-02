@@ -27,16 +27,9 @@ def googlenet(pretrained=False, **kwargs):
             kwargs['transform_input'] = True
         if 'aux_logits' not in kwargs:
             kwargs['aux_logits'] = False
-        original_aux_logits = kwargs['aux_logits']
-        kwargs['aux_logits'] = True
         kwargs['init_weights'] = False
         model = GoogLeNet(**kwargs)
         model.load_state_dict(model_zoo.load_url(model_urls['googlenet']))
-        if not original_aux_logits:
-            kwargs['aux_logits'] = original_aux_logits
-            model.aux_logits = original_aux_logits
-            del model.aux1
-            del model.aux2
         return model
 
     return GoogLeNet(**kwargs)
@@ -69,9 +62,8 @@ class GoogLeNet(nn.Module):
         self.inception5a = Inception(832, 256, 160, 320, 32, 128, 128)
         self.inception5b = Inception(832, 384, 192, 384, 48, 128, 128)
 
-        if aux_logits:
-            self.aux1 = InceptionAux(512, num_classes)
-            self.aux2 = InceptionAux(528, num_classes)
+        self.aux1 = InceptionAux(512, num_classes)
+        self.aux2 = InceptionAux(528, num_classes)
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.dropout = nn.Dropout(0.2)
