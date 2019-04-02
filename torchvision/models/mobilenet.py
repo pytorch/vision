@@ -33,7 +33,6 @@ class InvertedResidual(nn.Module):
         ])
         self.conv = nn.Sequential(*layers)
 
-
     def forward(self, x):
         if self.use_res_connect:
             return x + self.conv(x)
