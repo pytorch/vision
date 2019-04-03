@@ -12,13 +12,12 @@ def has_file_allowed_extension(filename, extensions):
 
     Args:
         filename (string): path to a file
-        extensions (iterable of strings): extensions to consider (lowercase)
+        extensions (tuple of strings): extensions to consider (lowercase)
 
     Returns:
         bool: True if the filename ends with one of given extensions
     """
-    filename_lower = filename.lower()
-    return any(filename_lower.endswith(ext) for ext in extensions)
+    return filename.lower().endswith(extensions)
 
 
 def is_image_file(filename):
@@ -65,7 +64,7 @@ class DatasetFolder(data.Dataset):
     Args:
         root (string): Root directory path.
         loader (callable): A function to load a sample given its path.
-        extensions (list[string]): A list of allowed extensions.
+        extensions (tuple[string]): A list of allowed extensions.
         transform (callable, optional): A function/transform that takes in
             a sample and returns a transformed version.
             E.g, ``transforms.RandomCrop`` for images.
@@ -151,7 +150,7 @@ class DatasetFolder(data.Dataset):
         return fmt_str
 
 
-IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', 'webp']
+IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', 'webp')
 
 
 def pil_loader(path):
