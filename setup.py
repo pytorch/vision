@@ -7,6 +7,9 @@ from setuptools import setup, find_packages
 from pkg_resources import get_distribution, DistributionNotFound
 import subprocess
 
+import glob
+import torch
+from torch.utils.cpp_extension import CppExtension, CUDAExtension, CUDA_HOME
 
 def read(*names, **kwargs):
     with io.open(
@@ -69,6 +72,33 @@ pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
 
+def get_extensions():
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    extensions_dir = os.path.join(this_dir, 'test')
+
+    main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
+
+    sources = main_file
+    extension = CppExtension
+
+    extra_compile_args = {'cxx': []}
+    define_macros = []
+
+    sources = [os.path.join(extensions_dir, s) for s in sources]
+    include_dirs = [extensions_dir]
+
+    ext_modules = [
+        extension(
+            'torchvision._C',
+            sources,
+            include_dirs=include_dirs,
+            define_macros=define_macros,
+            extra_compile_args=extra_compile_args,
+        )
+    ]
+
+    return ext_modules
+
 setup(
     # Metadata
     name=package_name,
@@ -88,4 +118,7 @@ setup(
     extras_require={
         "scipy": ["scipy"],
     },
+    
+    ext_modules=get_extensions(),
+    cmdclass={'build_ext': torch.utils.cpp_extension.BuildExtension}
 )

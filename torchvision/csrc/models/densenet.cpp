@@ -15,18 +15,21 @@ struct _DenseLayerImpl : torch::nn::SequentialImpl {
       int64_t bn_size,
       double drop_rate)
       : drop_rate(drop_rate) {
-    push_back(torch::nn::BatchNorm(num_input_features));
-    push_back(torch::nn::Functional(modelsimpl::relu_));
+    push_back("norm1", torch::nn::BatchNorm(num_input_features));
+    push_back("relu1", torch::nn::Functional(modelsimpl::relu_));
     push_back(
+        "conv1",
         torch::nn::Conv2d(Options(num_input_features, bn_size * growth_rate, 1)
                               .stride(1)
                               .with_bias(false)));
-    push_back(torch::nn::BatchNorm(bn_size * growth_rate));
-    push_back(torch::nn::Functional(modelsimpl::relu_));
-    push_back(torch::nn::Conv2d(Options(bn_size * growth_rate, growth_rate, 3)
-                                    .stride(1)
-                                    .padding(1)
-                                    .with_bias(false)));
+    push_back("norm2", torch::nn::BatchNorm(bn_size * growth_rate));
+    push_back("relu2", torch::nn::Functional(modelsimpl::relu_));
+    push_back(
+        "conv2",
+        torch::nn::Conv2d(Options(bn_size * growth_rate, growth_rate, 3)
+                              .stride(1)
+                              .padding(1)
+                              .with_bias(false)));
   }
 
   torch::Tensor forward(torch::Tensor x) {
@@ -53,7 +56,7 @@ struct _DenseBlockImpl : torch::nn::SequentialImpl {
           growth_rate,
           bn_size,
           drop_rate);
-      push_back(layer);
+      push_back("denselayer" + std::to_string(i + 1), layer);
     }
   }
 
@@ -66,13 +69,15 @@ TORCH_MODULE(_DenseBlock);
 
 struct _TransitionImpl : torch::nn::SequentialImpl {
   _TransitionImpl(int64_t num_input_features, int64_t num_output_features) {
-    push_back(torch::nn::BatchNorm(num_input_features));
-    push_back(torch::nn::Functional(modelsimpl::relu_));
+    push_back("norm", torch::nn::BatchNorm(num_input_features));
+    push_back("relu ", torch::nn::Functional(modelsimpl::relu_));
     push_back(
+        "conv",
         torch::nn::Conv2d(Options(num_input_features, num_output_features, 1)
                               .stride(1)
                               .with_bias(false)));
-    push_back(torch::nn::Functional(torch::avg_pool2d, 2, 2, 0, false, true));
+    push_back(
+        "pool", torch::nn::Functional(torch::avg_pool2d, 2, 2, 0, false, true));
   }
 
   torch::Tensor forward(torch::Tensor x) {
@@ -90,14 +95,18 @@ DenseNetImpl::DenseNetImpl(
     int64_t bn_size,
     double drop_rate) {
   // First convolution
-  features = torch::nn::Sequential(
-      torch::nn::Conv2d(torch::nn::Conv2dOptions(3, num_init_features, 7)
+  features = torch::nn::Sequential();
+  features->push_back(
+      "conv0",
+      torch::nn::Conv2d(Options(3, num_init_features, 7)
                             .stride(2)
                             .padding(3)
-                            .with_bias(false)),
-      torch::nn::BatchNorm(num_init_features),
-      torch::nn::Functional(modelsimpl::relu_),
-      torch::nn::Functional(torch::max_pool2d, 3, 2, 1, 1, false));
+                            .with_bias(false)));
+
+  features->push_back("norm0", torch::nn::BatchNorm(num_init_features));
+  features->push_back("relu0", torch::nn::Functional(modelsimpl::relu_));
+  features->push_back(
+      "pool0", torch::nn::Functional(torch::max_pool2d, 3, 2, 1, 1, false));
 
   // Each denseblock
   auto num_features = num_init_features;
@@ -106,18 +115,18 @@ DenseNetImpl::DenseNetImpl(
     _DenseBlock block(
         num_layers, num_features, bn_size, growth_rate, drop_rate);
 
-    features->push_back(block);
+    features->push_back("denseblock" + std::to_string(i + 1), block);
     num_features = num_features + num_layers * growth_rate;
 
     if (i != block_config.size() - 1) {
       auto trans = _Transition(num_features, num_features / 2);
-      features->push_back(trans);
+      features->push_back("transition" + std::to_string(i + 1), trans);
       num_features = num_features / 2;
     }
   }
 
   // Final batch norm
-  features->push_back(torch::nn::BatchNorm(num_features));
+  features->push_back("norm5", torch::nn::BatchNorm(num_features));
   // Linear layer
   classifier = torch::nn::Linear(num_features, num_classes);
 
