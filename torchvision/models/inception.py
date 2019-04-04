@@ -1,3 +1,4 @@
+from collections import namedtuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -12,6 +13,8 @@ model_urls = {
     'inception_v3_google': 'https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth',
 }
 
+_InceptionOuputs = namedtuple('InceptionOuputs', ['logits', 'aux_logits'])
+
 
 def inception_v3(pretrained=False, **kwargs):
     r"""Inception v3 model architecture from
@@ -23,14 +26,24 @@ def inception_v3(pretrained=False, **kwargs):
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        aux_logits (bool): If True, add an auxiliary branch that can improve training.
+            Default: *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it
             was trained on ImageNet. Default: *False*
     """
     if pretrained:
         if 'transform_input' not in kwargs:
             kwargs['transform_input'] = True
+        if 'aux_logits' in kwargs:
+            original_aux_logits = kwargs['aux_logits']
+            kwargs['aux_logits'] = True
+        else:
+            original_aux_logits = True
         model = Inception3(**kwargs)
         model.load_state_dict(model_zoo.load_url(model_urls['inception_v3_google']))
+        if not original_aux_logits:
+            model.aux_logits = False
+            del model.AuxLogits
         return model
 
     return Inception3(**kwargs)
@@ -131,7 +144,7 @@ class Inception3(nn.Module):
         x = self.fc(x)
         # N x 1000 (num_classes)
         if self.training and self.aux_logits:
-            return x, aux
+            return _InceptionOuputs(x, aux)
         return x
 
 
