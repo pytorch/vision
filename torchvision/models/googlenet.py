@@ -1,4 +1,5 @@
 import warnings
+from collections import namedtuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,6 +11,8 @@ model_urls = {
     # GoogLeNet ported from TensorFlow
     'googlenet': 'https://download.pytorch.org/models/googlenet-1378be20.pth',
 }
+
+_GoogLeNetOuputs = namedtuple('GoogLeNetOuputs', ['logits', 'aux_logits2', 'aux_logits1'])
 
 
 def googlenet(pretrained=False, **kwargs):
@@ -150,7 +153,7 @@ class GoogLeNet(nn.Module):
         x = self.fc(x)
         # N x 1000 (num_classes)
         if self.training and self.aux_logits:
-            return x, aux2, aux1
+            return _GoogLeNetOuputs(x, aux2, aux1)
         return x
 
 

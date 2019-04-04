@@ -1,3 +1,4 @@
+from collections import namedtuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,6 +12,8 @@ model_urls = {
     # Inception v3 ported from TensorFlow
     'inception_v3_google': 'https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth',
 }
+
+_InceptionOuputs = namedtuple('InceptionOuputs', ['logits', 'aux_logits'])
 
 
 def inception_v3(pretrained=False, **kwargs):
@@ -141,7 +144,7 @@ class Inception3(nn.Module):
         x = self.fc(x)
         # N x 1000 (num_classes)
         if self.training and self.aux_logits:
-            return x, aux
+            return _InceptionOuputs(x, aux)
         return x
 
 
