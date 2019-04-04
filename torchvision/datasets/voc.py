@@ -2,7 +2,8 @@ import os
 import sys
 import tarfile
 import collections
-import torch.utils.data as data
+from .vision import VisionDataset
+
 if sys.version_info[0] == 2:
     import xml.etree.cElementTree as ET
 else:
@@ -51,7 +52,7 @@ DATASET_YEAR_DICT = {
 }
 
 
-class VOCSegmentation(data.Dataset):
+class VOCSegmentation(VisionDataset):
     """`Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_ Segmentation Dataset.
 
     Args:
@@ -74,13 +75,13 @@ class VOCSegmentation(data.Dataset):
                  download=False,
                  transform=None,
                  target_transform=None):
-        self.root = os.path.expanduser(root)
+        super(VOCSegmentation, self).__init__(root)
+        self.transform = transform
+        self.target_transform = target_transform
         self.year = year
         self.url = DATASET_YEAR_DICT[year]['url']
         self.filename = DATASET_YEAR_DICT[year]['filename']
         self.md5 = DATASET_YEAR_DICT[year]['md5']
-        self.transform = transform
-        self.target_transform = target_transform
         self.image_set = image_set
         base_dir = DATASET_YEAR_DICT[year]['base_dir']
         voc_root = os.path.join(self.root, base_dir)
@@ -133,7 +134,7 @@ class VOCSegmentation(data.Dataset):
         return len(self.images)
 
 
-class VOCDetection(data.Dataset):
+class VOCDetection(VisionDataset):
     """`Pascal VOC <http://host.robots.ox.ac.uk/pascal/VOC/>`_ Detection Dataset.
 
     Args:
@@ -157,13 +158,13 @@ class VOCDetection(data.Dataset):
                  download=False,
                  transform=None,
                  target_transform=None):
-        self.root = os.path.expanduser(root)
+        super(VOCDetection, self).__init__(root)
+        self.transform = transform
+        self.target_transform = target_transform
         self.year = year
         self.url = DATASET_YEAR_DICT[year]['url']
         self.filename = DATASET_YEAR_DICT[year]['filename']
         self.md5 = DATASET_YEAR_DICT[year]['md5']
-        self.transform = transform
-        self.target_transform = target_transform
         self.image_set = image_set
 
         base_dir = DATASET_YEAR_DICT[year]['base_dir']
@@ -228,8 +229,8 @@ class VOCDetection(data.Dataset):
                     def_dic[ind].append(v)
             voc_dict = {
                 node.tag:
-                {ind: v[0] if len(v) == 1 else v
-                 for ind, v in def_dic.items()}
+                    {ind: v[0] if len(v) == 1 else v
+                     for ind, v in def_dic.items()}
             }
         if node.text:
             text = node.text.strip()

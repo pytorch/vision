@@ -1,6 +1,6 @@
 from __future__ import print_function
+from .vision import VisionDataset
 import warnings
-import torch.utils.data as data
 from PIL import Image
 import os
 import os.path
@@ -11,7 +11,7 @@ import codecs
 from .utils import download_url, makedir_exist_ok
 
 
-class MNIST(data.Dataset):
+class MNIST(VisionDataset):
     """`MNIST <http://yann.lecun.com/exdb/mnist/>`_ Dataset.
 
     Args:
@@ -59,7 +59,7 @@ class MNIST(data.Dataset):
         return self.data
 
     def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
-        self.root = os.path.expanduser(root)
+        super(MNIST, self).__init__(root)
         self.transform = transform
         self.target_transform = target_transform
         self.train = train  # training set or test set
@@ -115,8 +115,10 @@ class MNIST(data.Dataset):
         return {_class: i for i, _class in enumerate(self.classes)}
 
     def _check_exists(self):
-        return os.path.exists(os.path.join(self.processed_folder, self.training_file)) and \
-            os.path.exists(os.path.join(self.processed_folder, self.test_file))
+        return (os.path.exists(os.path.join(self.processed_folder,
+                                            self.training_file)) and
+                os.path.exists(os.path.join(self.processed_folder,
+                                            self.test_file)))
 
     @staticmethod
     def extract_gzip(gzip_path, remove_finished=False):
@@ -161,17 +163,8 @@ class MNIST(data.Dataset):
 
         print('Done!')
 
-    def __repr__(self):
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        tmp = 'train' if self.train is True else 'test'
-        fmt_str += '    Split: {}\n'.format(tmp)
-        fmt_str += '    Root Location: {}\n'.format(self.root)
-        tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        return fmt_str
+    def extra_repr(self):
+        return "Split: {}".format("Train" if self.train is True else "Test")
 
 
 class FashionMNIST(MNIST):
