@@ -1,3 +1,5 @@
+import warnings
+from collections import namedtuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,21 +12,35 @@ model_urls = {
     'googlenet': 'https://download.pytorch.org/models/googlenet-1378be20.pth',
 }
 
+_GoogLeNetOuputs = namedtuple('GoogLeNetOuputs', ['logits', 'aux_logits2', 'aux_logits1'])
+
 
 def googlenet(pretrained=False, **kwargs):
     r"""GoogLeNet (Inception v1) model architecture from
     `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
+
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        aux_logits (bool): If True, adds two auxiliary branches that can improve training.
+            Default: *False* when pretrained is True otherwise *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it
-        was trained on ImageNet. Default: *False*
+            was trained on ImageNet. Default: *False*
     """
     if pretrained:
         if 'transform_input' not in kwargs:
             kwargs['transform_input'] = True
+        if 'aux_logits' not in kwargs:
+            kwargs['aux_logits'] = False
+        if kwargs['aux_logits']:
+            warnings.warn('auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them')
+        original_aux_logits = kwargs['aux_logits']
+        kwargs['aux_logits'] = True
         kwargs['init_weights'] = False
         model = GoogLeNet(**kwargs)
         model.load_state_dict(model_zoo.load_url(model_urls['googlenet']))
+        if not original_aux_logits:
+            model.aux_logits = False
+            del model.aux1, model.aux2
         return model
 
     return GoogLeNet(**kwargs)
@@ -56,11 +72,13 @@ class GoogLeNet(nn.Module):
 
         self.inception5a = Inception(832, 256, 160, 320, 32, 128, 128)
         self.inception5b = Inception(832, 384, 192, 384, 48, 128, 128)
+
         if aux_logits:
             self.aux1 = InceptionAux(512, num_classes)
             self.aux2 = InceptionAux(528, num_classes)
+
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.dropout = nn.Dropout(0.4)
+        self.dropout = nn.Dropout(0.2)
         self.fc = nn.Linear(1024, num_classes)
 
         if init_weights:
@@ -68,13 +86,13 @@ class GoogLeNet(nn.Module):
 
     def _initialize_weights(self):
         for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.xavier_uniform_(m.weight)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0.2)
-            elif isinstance(m, nn.Linear):
-                nn.init.xavier_uniform_(m.weight)
-                nn.init.constant_(m.bias, 0)
+            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+                import scipy.stats as stats
+                X = stats.truncnorm(-2, 2, scale=0.01)
+                values = torch.as_tensor(X.rvs(m.weight.numel()), dtype=m.weight.dtype)
+                values = values.view(m.weight.size())
+                with torch.no_grad():
+                    m.weight.copy_(values)
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
@@ -135,7 +153,7 @@ class GoogLeNet(nn.Module):
         x = self.fc(x)
         # N x 1000 (num_classes)
         if self.training and self.aux_logits:
-            return aux1, aux2, x
+            return _GoogLeNetOuputs(x, aux2, aux1)
         return x
 
 

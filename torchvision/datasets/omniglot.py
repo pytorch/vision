@@ -2,11 +2,11 @@ from __future__ import print_function
 from PIL import Image
 from os.path import join
 import os
-import torch.utils.data as data
+from .vision import VisionDataset
 from .utils import download_url, check_integrity, list_dir, list_files
 
 
-class Omniglot(data.Dataset):
+class Omniglot(VisionDataset):
     """`Omniglot <https://github.com/brendenlake/omniglot>`_ Dataset.
     Args:
         root (string): Root directory of dataset where directory
@@ -31,10 +31,10 @@ class Omniglot(data.Dataset):
     def __init__(self, root, background=True,
                  transform=None, target_transform=None,
                  download=False):
-        self.root = join(os.path.expanduser(root), self.folder)
-        self.background = background
+        super(Omniglot, self).__init__(join(os.path.expanduser(root), self.folder))
         self.transform = transform
         self.target_transform = target_transform
+        self.background = background
 
         if download:
             self.download()

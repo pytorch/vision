@@ -16,6 +16,7 @@ from .cityscapes import Cityscapes
 from .imagenet import ImageNet
 from .caltech import Caltech101, Caltech256
 from .celeba import CelebA
+from .sbd import SBDataset
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
@@ -24,4 +25,4 @@ __all__ = ('LSUN', 'LSUNClass',
            'MNIST', 'KMNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
            'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNet',
-           'Caltech101', 'Caltech256', 'CelebA')
+           'Caltech101', 'Caltech256', 'CelebA', 'SBDataset')
