@@ -32,7 +32,8 @@ def googlenet(pretrained=False, **kwargs):
         if 'aux_logits' not in kwargs:
             kwargs['aux_logits'] = False
         if kwargs['aux_logits']:
-            warnings.warn('auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them')
+            warnings.warn('auxiliary heads in the pretrained googlenet model are NOT pretrained, '
+                          'so make sure to train them')
         original_aux_logits = kwargs['aux_logits']
         kwargs['aux_logits'] = True
         kwargs['init_weights'] = False

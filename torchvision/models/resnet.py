@@ -107,7 +107,7 @@ class Bottleneck(nn.Module):
 class ResNet(nn.Module):
 
     def __init__(self, block, layers, num_classes=1000, zero_init_residual=False,
-            groups=1,width_per_group=64, norm_layer=None):
+                 groups=1, width_per_group=64, norm_layer=None):
         super(ResNet, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -240,13 +240,13 @@ def resnet152(pretrained=False, **kwargs):
 
 def resnext50_32x4d(pretrained=False, **kwargs):
     model = ResNet(Bottleneck, [3, 4, 6, 3], groups=4, width_per_group=32, **kwargs)
-    #if pretrained:
-    #    model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+    # if pretrained:
+    #     model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
 
 
 def resnext101_32x8d(pretrained=False, **kwargs):
     model = ResNet(Bottleneck, [3, 4, 23, 3], groups=8, width_per_group=32, **kwargs)
-    #if pretrained:
-    #    model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+    # if pretrained:
+    #     model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
     return model
