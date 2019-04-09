@@ -1,4 +1,4 @@
-import torch.utils.data as data
+from .vision import VisionDataset
 
 from PIL import Image
 
@@ -12,13 +12,12 @@ def has_file_allowed_extension(filename, extensions):
 
     Args:
         filename (string): path to a file
-        extensions (iterable of strings): extensions to consider (lowercase)
+        extensions (tuple of strings): extensions to consider (lowercase)
 
     Returns:
         bool: True if the filename ends with one of given extensions
     """
-    filename_lower = filename.lower()
-    return any(filename_lower.endswith(ext) for ext in extensions)
+    return filename.lower().endswith(extensions)
 
 
 def is_image_file(filename):
@@ -51,7 +50,7 @@ def make_dataset(dir, class_to_idx, extensions):
     return images
 
 
-class DatasetFolder(data.Dataset):
+class DatasetFolder(VisionDataset):
     """A generic data loader where the samples are arranged in this way: ::
 
         root/class_x/xxx.ext
@@ -65,7 +64,7 @@ class DatasetFolder(data.Dataset):
     Args:
         root (string): Root directory path.
         loader (callable): A function to load a sample given its path.
-        extensions (list[string]): A list of allowed extensions.
+        extensions (tuple[string]): A list of allowed extensions.
         transform (callable, optional): A function/transform that takes in
             a sample and returns a transformed version.
             E.g, ``transforms.RandomCrop`` for images.
@@ -80,13 +79,15 @@ class DatasetFolder(data.Dataset):
     """
 
     def __init__(self, root, loader, extensions, transform=None, target_transform=None):
+        super(DatasetFolder, self).__init__(root)
+        self.transform = transform
+        self.target_transform = target_transform
         classes, class_to_idx = self._find_classes(root)
         samples = make_dataset(root, class_to_idx, extensions)
         if len(samples) == 0:
-            raise(RuntimeError("Found 0 files in subfolders of: " + root + "\n"
-                               "Supported extensions are: " + ",".join(extensions)))
+            raise (RuntimeError("Found 0 files in subfolders of: " + root + "\n"
+                                "Supported extensions are: " + ",".join(extensions)))
 
-        self.root = root
         self.loader = loader
         self.extensions = extensions
 
@@ -94,9 +95,6 @@ class DatasetFolder(data.Dataset):
         self.class_to_idx = class_to_idx
         self.samples = samples
         self.targets = [s[1] for s in samples]
-
-        self.transform = transform
-        self.target_transform = target_transform
 
     def _find_classes(self, dir):
         """
@@ -140,18 +138,8 @@ class DatasetFolder(data.Dataset):
     def __len__(self):
         return len(self.samples)
 
-    def __repr__(self):
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        fmt_str += '    Root Location: {}\n'.format(self.root)
-        tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        return fmt_str
 
-
-IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', 'webp']
+IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
 
 
 def pil_loader(path):
@@ -202,6 +190,7 @@ class ImageFolder(DatasetFolder):
         class_to_idx (dict): Dict with items (class_name, class_index).
         imgs (list): List of (image path, class_index) tuples
     """
+
     def __init__(self, root, transform=None, target_transform=None,
                  loader=default_loader):
         super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS,

@@ -192,7 +192,7 @@ def normalize(tensor, mean, std, inplace=False):
     Args:
         tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
         mean (sequence): Sequence of means for each channel.
-        std (sequence): Sequence of standard deviations for each channely.
+        std (sequence): Sequence of standard deviations for each channel.
 
     Returns:
         Tensor: Normalized Tensor image.
@@ -345,10 +345,10 @@ def crop(img, i, j, h, w):
 
     Args:
         img (PIL Image): Image to be cropped.
-        i: Upper pixel coordinate.
-        j: Left pixel coordinate.
-        h: Height of the cropped image.
-        w: Width of the cropped image.
+        i (int): i in (i,j) i.e coordinates of the upper left corner.
+        j (int): j in (i,j) i.e coordinates of the upper left corner.
+        h (int): Height of the cropped image.
+        w (int): Width of the cropped image.
 
     Returns:
         PIL Image: Cropped image.
@@ -376,10 +376,10 @@ def resized_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
 
     Args:
         img (PIL Image): Image to be cropped.
-        i: i in (i,j) i.e coordinates of the upper left corner
-        j: j in (i,j) i.e coordinates of the upper left corner
-        h: Height of the cropped image.
-        w: Width of the cropped image.
+        i (int): i in (i,j) i.e coordinates of the upper left corner
+        j (int): j in (i,j) i.e coordinates of the upper left corner
+        h (int): Height of the cropped image.
+        w (int): Width of the cropped image.
         size (sequence or int): Desired output size. Same semantics as ``resize``.
         interpolation (int, optional): Desired interpolation. Default is
             ``PIL.Image.BILINEAR``.

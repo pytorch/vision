@@ -3,10 +3,10 @@ from six.moves import zip
 from .utils import download_url, check_integrity
 
 import os
-import torch.utils.data as data
+from .vision import VisionDataset
 
 
-class SBU(data.Dataset):
+class SBU(VisionDataset):
     """`SBU Captioned Photo <http://www.cs.virginia.edu/~vicente/sbucaptions/>`_ Dataset.
 
     Args:
@@ -24,8 +24,9 @@ class SBU(data.Dataset):
     filename = "SBUCaptionedPhotoDataset.tar.gz"
     md5_checksum = '9aec147b3488753cf758b4d493422285'
 
-    def __init__(self, root, transform=None, target_transform=None, download=True):
-        self.root = os.path.expanduser(root)
+    def __init__(self, root, transform=None, target_transform=None,
+                 download=True):
+        super(SBU, self).__init__(root)
         self.transform = transform
         self.target_transform = target_transform
 

@@ -2,11 +2,11 @@ import json
 import os
 from collections import namedtuple
 
-import torch.utils.data as data
+from .vision import VisionDataset
 from PIL import Image
 
 
-class Cityscapes(data.Dataset):
+class Cityscapes(VisionDataset):
     """`Cityscapes <http://www.cityscapes-dataset.com/>`_ Dataset.
 
     Args:
@@ -93,12 +93,12 @@ class Cityscapes(data.Dataset):
 
     def __init__(self, root, split='train', mode='fine', target_type='instance',
                  transform=None, target_transform=None):
-        self.root = os.path.expanduser(root)
+        super(Cityscapes, self).__init__(root)
+        self.transform = transform
+        self.target_transform = target_transform
         self.mode = 'gtFine' if mode == 'fine' else 'gtCoarse'
         self.images_dir = os.path.join(self.root, 'leftImg8bit', split)
         self.targets_dir = os.path.join(self.root, self.mode, split)
-        self.transform = transform
-        self.target_transform = target_transform
         self.target_type = target_type
         self.split = split
         self.images = []
@@ -171,18 +171,9 @@ class Cityscapes(data.Dataset):
     def __len__(self):
         return len(self.images)
 
-    def __repr__(self):
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        fmt_str += '    Split: {}\n'.format(self.split)
-        fmt_str += '    Mode: {}\n'.format(self.mode)
-        fmt_str += '    Type: {}\n'.format(self.target_type)
-        fmt_str += '    Root Location: {}\n'.format(self.root)
-        tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        return fmt_str
+    def extra_repr(self):
+        lines = ["Split: {split}", "Mode: {mode}", "Type: {target_type}"]
+        return '\n'.join(lines).format(**self.__dict__)
 
     def _load_json(self, path):
         with open(path, 'r') as file:

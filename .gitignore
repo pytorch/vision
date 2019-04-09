@@ -1,6 +1,7 @@
 build/
 dist/
 torchvision.egg-info/
+torchvision/version.py
 */**/__pycache__
 */**/*.pyc
 */**/*~
@@ -8,3 +9,4 @@ torchvision.egg-info/
 docs/build
 .coverage
 htmlcov
+.*.swp

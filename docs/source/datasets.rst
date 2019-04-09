@@ -181,3 +181,11 @@ Cityscapes
 .. autoclass:: Cityscapes
   :members: __getitem__
   :special-members:
+
+SBD
+~~~~~~
+
+
+.. autoclass:: SBDataset
+  :members: __getitem__
+  :special-members:

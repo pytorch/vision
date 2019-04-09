@@ -1,20 +1,21 @@
-import torch.utils.data as data
+from .vision import VisionDataset
 from PIL import Image
 import os
 import os.path
 import six
 import string
 import sys
+
 if sys.version_info[0] == 2:
     import cPickle as pickle
 else:
     import pickle
 
 
-class LSUNClass(data.Dataset):
+class LSUNClass(VisionDataset):
     def __init__(self, root, transform=None, target_transform=None):
         import lmdb
-        self.root = os.path.expanduser(root)
+        super(LSUNClass, self).__init__(root)
         self.transform = transform
         self.target_transform = target_transform
 
@@ -52,11 +53,8 @@ class LSUNClass(data.Dataset):
     def __len__(self):
         return self.length
 
-    def __repr__(self):
-        return self.__class__.__name__ + ' (' + self.root + ')'
 
-
-class LSUN(data.Dataset):
+class LSUN(VisionDataset):
     """
     `LSUN <http://lsun.cs.princeton.edu>`_ dataset.
 
@@ -72,13 +70,13 @@ class LSUN(data.Dataset):
 
     def __init__(self, root, classes='train',
                  transform=None, target_transform=None):
+        super(LSUN, self).__init__(root)
+        self.transform = transform
+        self.target_transform = target_transform
         categories = ['bedroom', 'bridge', 'church_outdoor', 'classroom',
                       'conference_room', 'dining_room', 'kitchen',
                       'living_room', 'restaurant', 'tower']
         dset_opts = ['train', 'val', 'test']
-        self.root = os.path.expanduser(root)
-        self.transform = transform
-        self.target_transform = target_transform
 
         if type(classes) == str and classes in dset_opts:
             if classes == 'test':
@@ -91,15 +89,15 @@ class LSUN(data.Dataset):
                 c_short.pop(len(c_short) - 1)
                 c_short = '_'.join(c_short)
                 if c_short not in categories:
-                    raise(ValueError('Unknown LSUN class: ' + c_short + '.'
-                                     'Options are: ' + str(categories)))
+                    raise (ValueError('Unknown LSUN class: ' + c_short + '.'
+                                      'Options are: ' + str(categories)))
                 c_short = c.split('_')
                 c_short = c_short.pop(len(c_short) - 1)
                 if c_short not in dset_opts:
-                    raise(ValueError('Unknown postfix: ' + c_short + '.'
-                                     'Options are: ' + str(dset_opts)))
+                    raise (ValueError('Unknown postfix: ' + c_short + '.'
+                                      'Options are: ' + str(dset_opts)))
         else:
-            raise(ValueError('Unknown option for classes'))
+            raise (ValueError('Unknown option for classes'))
         self.classes = classes
 
         # for each class, create an LSUNClassDataset
@@ -145,13 +143,5 @@ class LSUN(data.Dataset):
     def __len__(self):
         return self.length
 
-    def __repr__(self):
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        fmt_str += '    Root Location: {}\n'.format(self.root)
-        fmt_str += '    Classes: {}\n'.format(self.classes)
-        tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        return fmt_str
+    def extra_repr(self):
+        return "Classes: {classes}".format(**self.__dict__)
