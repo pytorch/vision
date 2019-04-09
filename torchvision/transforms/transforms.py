@@ -27,7 +27,7 @@ else:
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
-           "AffineTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale"]
+           "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -710,7 +710,7 @@ class TenCrop(object):
         return self.__class__.__name__ + '(size={0}, vertical_flip={1})'.format(self.size, self.vertical_flip)
 
 
-class AffineTransformation(object):
+class LinearTransformation(object):
     """Transform a tensor image with a square transformation matrix and a mean_vector computed
     offline.
     Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
@@ -761,17 +761,6 @@ class AffineTransformation(object):
         format_string += (str(self.transformation_matrix.tolist()) + ')')
         format_string += (", (mean_vector=" + str(self.mean_vector.tolist()) + ')')
         return format_string
-
-
-class LinearTransformation(AffineTransformation):
-    """
-    Note: This transform is deprecated in favor of AffineTransformation.
-    """
-
-    def __init__(self, transformation_matrix):
-        warnings.warn("The use of the transforms.LinearTransformation transform is deprecated, " +
-                      "please use transforms.AffineTransformation instead.")
-        super(LinearTransformation, self).__init__(transformation_matrix, torch.zeros_like(transformation_matrix[0]))
 
 
 class ColorJitter(object):
