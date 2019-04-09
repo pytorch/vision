@@ -3,7 +3,10 @@ from torchvision import datasets
 from torchvision import transforms
 from torchvision import utils
 
-from .version import __version__  # noqa: F401
+try:
+    from .version import __version__  # noqa: F401
+except:
+    pass
 
 _image_backend = 'PIL'
 
