@@ -5,7 +5,7 @@ from torchvision import utils
 
 try:
     from .version import __version__  # noqa: F401
-except:
+except ImportError:
     pass
 
 _image_backend = 'PIL'
