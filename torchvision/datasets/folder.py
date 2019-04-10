@@ -1,6 +1,8 @@
 from .vision import VisionDataset
 
 from PIL import Image
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 import os
 import os.path
