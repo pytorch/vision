@@ -1,3 +1,4 @@
+import os
 import torch
 import torchvision.utils as utils
 import unittest
@@ -34,6 +35,13 @@ class Tester(unittest.TestCase):
 
         assert torch.equal(norm_max, rounded_grid_max), 'Normalized max is not equal to 1'
         assert torch.equal(norm_min, rounded_grid_min), 'Normalized min is not equal to 0'
+
+    def test_save_image(self):
+        t = torch.rand(2, 3, 64, 64)
+        file_name = 'test_image.png'
+        utils.save_image(t, file_name)
+        assert os.path.exists(file_name), 'The image is not present after save'
+        os.remove(file_name)
 
 
 if __name__ == '__main__':
