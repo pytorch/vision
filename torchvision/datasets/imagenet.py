@@ -132,25 +132,8 @@ class ImageNet(ImageFolder):
     def split_folder(self):
         return os.path.join(self.root, self.split)
 
-    def __repr__(self):
-        head = "Dataset " + self.__class__.__name__
-        body = ["Number of datapoints: {}".format(self.__len__())]
-        if self.root is not None:
-            body.append("Root location: {}".format(self.root))
-        body += ["Split: {}".format(self.split)]
-        if hasattr(self, 'transform') and self.transform is not None:
-            body += self._format_transform_repr(self.transform,
-                                                "Transforms: ")
-        if hasattr(self, 'target_transform') and self.target_transform is not None:
-            body += self._format_transform_repr(self.target_transform,
-                                                "Target transforms: ")
-        lines = [head] + [" " * 4 + line for line in body]
-        return '\n'.join(lines)
-
-    def _format_transform_repr(self, transform, head):
-        lines = transform.__repr__().splitlines()
-        return (["{}{}".format(head, lines[0])] +
-                ["{}{}".format(" " * len(head), line) for line in lines[1:]])
+    def extra_repr(self):
+        return "Split: {split}".format(**self.__dict__)
 
 
 def extract_tar(src, dest=None, gzip=None, delete=False):

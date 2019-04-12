@@ -1,5 +1,5 @@
 import os
-import torch.utils.data as data
+from .vision import VisionDataset
 
 import numpy as np
 
@@ -8,7 +8,7 @@ from .utils import download_url
 from .voc import download_extract
 
 
-class SBDataset(data.Dataset):
+class SBDataset(VisionDataset):
     """`Semantic Boundaries Dataset <http://home.bharathh.info/pubs/codes/SBD/download.html>`_
 
     The SBD currently contains annotations from 11355 images taken from the PASCAL VOC 2011 dataset.
@@ -62,10 +62,11 @@ class SBDataset(data.Dataset):
             raise RuntimeError("Scipy is not found. This dataset needs to have scipy installed: "
                                "pip install scipy")
 
+        super(SBDataset, self).__init__(root)
+
         if mode not in ("segmentation", "boundaries"):
             raise ValueError("Argument mode should be 'segmentation' or 'boundaries'")
 
-        self.root = os.path.expanduser(root)
         self.xy_transform = xy_transform
         self.image_set = image_set
         self.mode = mode
@@ -121,3 +122,7 @@ class SBDataset(data.Dataset):
 
     def __len__(self):
         return len(self.images)
+
+    def extra_repr(self):
+        lines = ["Image set: {image_set}", "Mode: {mode}"]
+        return '\n'.join(lines).format(**self.__dict__)
