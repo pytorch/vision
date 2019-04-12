@@ -8,8 +8,10 @@ __all__ = ['ShuffleNetV2', 'shufflenetv2',
            'shufflenetv2_x1_5', 'shufflenetv2_x2_0']
 
 model_urls = {
-    'shufflenetv2_x0.5': 'https://github.com/barrh/Shufflenet-v2-Pytorch/releases/download/v0.1.0/shufflenetv2_x0.5-f707e7126e.pt',
-    'shufflenetv2_x1.0': 'https://github.com/barrh/Shufflenet-v2-Pytorch/releases/download/v0.1.0/shufflenetv2_x1-5666bf0f80.pt',
+    'shufflenetv2_x0.5':
+        'https://github.com/barrh/Shufflenet-v2-Pytorch/releases/download/v0.1.0/shufflenetv2_x0.5-f707e7126e.pt',
+    'shufflenetv2_x1.0':
+        'https://github.com/barrh/Shufflenet-v2-Pytorch/releases/download/v0.1.0/shufflenetv2_x1-5666bf0f80.pt',
     'shufflenetv2_x1.5': None,
     'shufflenetv2_x2.0': None,
 }
@@ -40,7 +42,7 @@ class InvertedResidual(nn.Module):
         self.stride = stride
 
         branch_features = oup // 2
-        assert (self.stride != 1) or (inp == branch_features<<1)
+        assert (self.stride != 1) or (inp == branch_features << 1)
 
         pw_conv11 = functools.partial(nn.Conv2d, kernel_size=1, stride=1, padding=0, bias=False)
         dw_conv33 = functools.partial(self.depthwise_conv,
@@ -105,9 +107,9 @@ class ShuffleNetV2(nn.Module):
         stage_names = ['stage{}'.format(i) for i in [2, 3, 4]]
         stage_repeats = [4, 8, 4]
         for name, repeats, output_channels in zip(
-                    stage_names, stage_repeats, self.stage_out_channels[1:]):
+                stage_names, stage_repeats, self.stage_out_channels[1:]):
             seq = [InvertedResidual(input_channels, output_channels, 2)]
-            for i in range(repeats-1):
+            for i in range(repeats - 1):
                 seq.append(InvertedResidual(output_channels, output_channels, 1))
             setattr(self, name, nn.Sequential(*seq))
             input_channels = output_channels
@@ -121,7 +123,7 @@ class ShuffleNetV2(nn.Module):
 
         if (input_size % 32):
             raise ValueError('illegal input_size')
-        self.globalpool = nn.AvgPool2d(int(input_size/32))
+        self.globalpool = nn.AvgPool2d(int(input_size / 32))
 
         # expected ifm size is: channels x 1 x 1
         self.fc = nn.Linear(self.stage_out_channels[-1], num_classes)
@@ -141,7 +143,7 @@ class ShuffleNetV2(nn.Module):
     @staticmethod
     def _getStages(mult):
         stages = {
-            '0.5': [24,  48,  96, 192, 1024],
+            '0.5': [24, 48, 96, 192, 1024],
             '1.0': [24, 116, 232, 464, 1024],
             '1.5': [24, 176, 352, 704, 1024],
             '2.0': [24, 244, 488, 976, 2048],
