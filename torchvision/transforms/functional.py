@@ -409,14 +409,14 @@ def hflip(img):
 
 def _get_perspective_coeffs(startpoints, endpoints):
     """Helper function to get the coefficients (a, b, c, d, e, f, g, h) for the perspective transforms.
-    
-    In Perspective Transform each pixel (x, y) in the orignal image gets transformed as, 
+
+    In Perspective Transform each pixel (x, y) in the orignal image gets transformed as,
      (x, y) -> ( (ax + by + c) / (gx + hy + 1), (dx + ey + f) / (gx + hy + 1) )
 
     Args:
         List containing [top-left, top-right, bottom-right, bottom-left] of the orignal image,
         List containing [top-left, top-right, bottom-right, bottom-left] of the transformed
-                    image
+                   image
     Returns:
         octuple (a, b, c, d, e, f, g, h) for transforming each pixel.
     """
