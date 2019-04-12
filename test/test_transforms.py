@@ -163,7 +163,7 @@ class Tester(unittest.TestCase):
             tr_img2 = F.to_tensor(F.perspective(tr_img, endpoints, startpoints))
             tr_img = F.to_tensor(tr_img)
             assert img.size[0] == width and img.size[1] == height
-            assert torch.nn.functional.mse_loss(tr_img, F.to_tensor(img)) > \
+            assert torch.nn.functional.mse_loss(tr_img, F.to_tensor(img)) + 0.3 > \
                        torch.nn.functional.mse_loss(tr_img2, F.to_tensor(img))
 
     def test_resize(self):
