@@ -82,10 +82,10 @@ class DatasetFolder(VisionDataset):
         super(DatasetFolder, self).__init__(root)
         self.transform = transform
         self.target_transform = target_transform
-        classes, class_to_idx = self._find_classes(root)
-        samples = make_dataset(root, class_to_idx, extensions)
+        classes, class_to_idx = self._find_classes(self.root)
+        samples = make_dataset(self.root, class_to_idx, extensions)
         if len(samples) == 0:
-            raise (RuntimeError("Found 0 files in subfolders of: " + root + "\n"
+            raise (RuntimeError("Found 0 files in subfolders of: " + self.root + "\n"
                                 "Supported extensions are: " + ",".join(extensions)))
 
         self.loader = loader
