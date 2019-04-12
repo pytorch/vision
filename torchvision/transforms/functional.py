@@ -406,6 +406,7 @@ def hflip(img):
 
     return img.transpose(Image.FLIP_LEFT_RIGHT)
 
+
 def _get_perspective_coeffs(startpoints, endpoints):
     """Helper function to get the coefficients (a, b, c, d, e, f, g, h) for the perspective transforms.
     
@@ -429,6 +430,7 @@ def _get_perspective_coeffs(startpoints, endpoints):
     B = torch.tensor(startpoints, dtype=torch.float).view(8)
     res = torch.gels(B, A)[0]
     return res.squeeze_(1).tolist()
+
 
 def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC):
     """Perform perspective transform of the given PIL Image.
