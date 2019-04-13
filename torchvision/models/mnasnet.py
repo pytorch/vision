@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 
-__all__ = ['MNASNet', 'MNASNet0_5', 'MNASNet0_75', 'MNASNet1_0', 'MNASNet1_3']
+__all__ = ['MNASNet', 'mnasnet0_5', 'mnasnet0_75', 'mnasnet1_0', 'mnasnet1_3']
 
 # Paper suggests 0.9997 momentum, for TensFlow. Equivalent PyTorch momentum is
 # 1.0 - tensorflow.
