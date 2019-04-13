@@ -17,7 +17,7 @@ class _InvertedResidual(nn.Module):
 
     def __init__(self, in_ch, out_ch, kernel_size, stride, expansion_factor,
                  bn_momentum=0.1):
-        super().__init__()
+        super(_InvertedResidual, self).__init__()
         assert stride in [1, 2]
         assert kernel_size in [3, 5]
         mid_ch = in_ch * expansion_factor
@@ -86,7 +86,7 @@ class MNASNet(torch.nn.Module):
     """
 
     def __init__(self, num_classes, alpha, dropout=0.2):
-        super().__init__()
+        super(MNASNet, self).__init__()
         self.alpha = alpha
         self.num_classes = num_classes
         depths = _scale_depths([24, 40, 80, 96, 192, 320], alpha)
@@ -148,29 +148,21 @@ class MNASNet(torch.nn.Module):
                 m.bias.data.zero_()
 
 
-class MNASNet0_5(MNASNet):
+def mnasnet0_5(num_classes):
     """ MNASNet with depth multiplier of 0.5. """
-
-    def __init__(self, num_classes):
-        super().__init__(num_classes, 0.5)
+    return MNASNet(num_classes, alpha=0.5)
 
 
-class MNASNet0_75(MNASNet):
+def mnasnet0_75(num_classes):
     """ MNASNet with depth multiplier of 0.75. """
-
-    def __init__(self, num_classes):
-        super().__init__(num_classes, 0.75)
+    return MNASNet(num_classes, alpha=0.75)
 
 
-class MNASNet1_0(MNASNet):
+def mnasnet1_0(num_classes):
     """ MNASNet with depth multiplier of 1.0. """
-
-    def __init__(self, num_classes):
-        super().__init__(num_classes, 1.0)
+    return MNASNet(num_classes, alpha=1.0)
 
 
-class MNASNet1_3(MNASNet):
+def mnasnet1_3(num_classes):
     """ MNASNet with depth multiplier of 1.3. """
-
-    def __init__(self, num_classes):
-        super().__init__(num_classes, 1.3)
+    return MNASNet(num_classes, alpha=1.3)
