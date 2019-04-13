@@ -6,7 +6,7 @@ import torch.nn as nn
 
 __all__ = ['MNASNet', 'mnasnet0_5', 'mnasnet0_75', 'mnasnet1_0', 'mnasnet1_3']
 
-# Paper suggests 0.9997 momentum, for TensFlow. Equivalent PyTorch momentum is
+# Paper suggests 0.9997 momentum, for TensorFlow. Equivalent PyTorch momentum is
 # 1.0 - tensorflow.
 _BN_MOMENTUM = 1 - 0.9997
 
