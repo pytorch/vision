@@ -29,12 +29,13 @@ def conv1x1(in_planes, out_planes, stride=1):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1, norm_layer=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
+                 base_width=64, norm_layer=None):
         super(BasicBlock, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
-        if groups != 1:
-            raise ValueError('BasicBlock only supports groups=1')
+        if groups != 1 or base_width != 64:
+            raise ValueError('BasicBlock only supports groups=1 and base_width=64')
         # Both self.conv1 and self.downsample layers downsample the input when stride != 1
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = norm_layer(planes)
@@ -66,16 +67,18 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1, norm_layer=None):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
+                 base_width=64, norm_layer=None):
         super(Bottleneck, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
+        width = int(planes * (base_width / 64)) * groups
         # Both self.conv2 and self.downsample layers downsample the input when stride != 1
-        self.conv1 = conv1x1(inplanes, planes)
-        self.bn1 = norm_layer(planes)
-        self.conv2 = conv3x3(planes, planes, stride, groups)
-        self.bn2 = norm_layer(planes)
-        self.conv3 = conv1x1(planes, planes * self.expansion)
+        self.conv1 = conv1x1(inplanes, width)
+        self.bn1 = norm_layer(width)
+        self.conv2 = conv3x3(width, width, stride, groups)
+        self.bn2 = norm_layer(width)
+        self.conv3 = conv1x1(width, planes * self.expansion)
         self.bn3 = norm_layer(planes * self.expansion)
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
@@ -111,19 +114,21 @@ class ResNet(nn.Module):
         super(ResNet, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
-        planes = [int(width_per_group * groups * 2 ** i) for i in range(4)]
-        self.inplanes = planes[0]
-        self.conv1 = nn.Conv2d(3, planes[0], kernel_size=7, stride=2, padding=3,
+
+        self.inplanes = 64
+        self.groups = groups
+        self.base_width = width_per_group
+        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
                                bias=False)
-        self.bn1 = norm_layer(planes[0])
+        self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, planes[0], layers[0], groups=groups, norm_layer=norm_layer)
-        self.layer2 = self._make_layer(block, planes[1], layers[1], stride=2, groups=groups, norm_layer=norm_layer)
-        self.layer3 = self._make_layer(block, planes[2], layers[2], stride=2, groups=groups, norm_layer=norm_layer)
-        self.layer4 = self._make_layer(block, planes[3], layers[3], stride=2, groups=groups, norm_layer=norm_layer)
+        self.layer1 = self._make_layer(block, 64, layers[0], norm_layer=norm_layer)
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2, norm_layer=norm_layer)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2, norm_layer=norm_layer)
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=2, norm_layer=norm_layer)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(planes[3] * block.expansion, num_classes)
+        self.fc = nn.Linear(512 * block.expansion, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -142,7 +147,7 @@ class ResNet(nn.Module):
                 elif isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block, planes, blocks, stride=1, groups=1, norm_layer=None):
+    def _make_layer(self, block, planes, blocks, stride=1, norm_layer=None):
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         downsample = None
@@ -153,10 +158,12 @@ class ResNet(nn.Module):
             )
 
         layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample, groups, norm_layer))
+        layers.append(block(self.inplanes, planes, stride, downsample, self.groups,
+                            self.base_width, norm_layer))
         self.inplanes = planes * block.expansion
         for _ in range(1, blocks):
-            layers.append(block(self.inplanes, planes, groups=groups, norm_layer=norm_layer))
+            layers.append(block(self.inplanes, planes, groups=self.groups,
+                                base_width=self.base_width, norm_layer=norm_layer))
 
         return nn.Sequential(*layers)
 
@@ -239,14 +246,14 @@ def resnet152(pretrained=False, **kwargs):
 
 
 def resnext50_32x4d(pretrained=False, **kwargs):
-    model = ResNet(Bottleneck, [3, 4, 6, 3], groups=4, width_per_group=32, **kwargs)
+    model = ResNet(Bottleneck, [3, 4, 6, 3], groups=32, width_per_group=4, **kwargs)
     # if pretrained:
-    #     model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+    #     model.load_state_dict(model_zoo.load_url(model_urls['resnext50_32x4d']))
     return model
 
 
 def resnext101_32x8d(pretrained=False, **kwargs):
-    model = ResNet(Bottleneck, [3, 4, 23, 3], groups=8, width_per_group=32, **kwargs)
+    model = ResNet(Bottleneck, [3, 4, 23, 3], groups=32, width_per_group=8, **kwargs)
     # if pretrained:
-    #     model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+    #     model.load_state_dict(model_zoo.load_url(model_urls['resnext101_32x8d']))
     return model
