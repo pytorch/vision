@@ -115,12 +115,9 @@ class MNASNet(torch.nn.Module):
         ]
         self.layers = nn.Sequential(*layers)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
-        if dropout > 0.0:
-            self.classifier = nn.Sequential(
-                nn.Dropout(inplace=True, p=0.2),
-                nn.Linear(1280, self.num_classes))
-        else:
-            self.classifier = nn.Linear(1280, self.num_classes)
+        self.classifier = nn.Sequential(
+            nn.Dropout(inplace=True, p=dropout),
+            nn.Linear(1280, self.num_classes))
 
         self._initialize_weights()
 
