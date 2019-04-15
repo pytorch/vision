@@ -3,7 +3,6 @@ import math
 import torch
 import torch.nn as nn
 
-
 __all__ = ['MNASNet', 'mnasnet0_5', 'mnasnet0_75', 'mnasnet1_0', 'mnasnet1_3']
 
 # Paper suggests 0.9997 momentum, for TensorFlow. Equivalent PyTorch momentum is
@@ -89,6 +88,7 @@ class MNASNet(torch.nn.Module):
         super(MNASNet, self).__init__()
         self.alpha = alpha
         self.num_classes = num_classes
+        self.dropout = dropout
         depths = _scale_depths([24, 40, 80, 96, 192, 320], alpha)
         layers = [
             # First layer: regular conv.
@@ -115,9 +115,7 @@ class MNASNet(torch.nn.Module):
         ]
         self.layers = nn.Sequential(*layers)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
-        self.classifier = nn.Sequential(
-            nn.Dropout(inplace=True, p=dropout),
-            nn.Linear(1280, self.num_classes))
+        self.classifier = nn.Linear(1280, self.num_classes)
 
         self._initialize_weights()
 
@@ -127,6 +125,9 @@ class MNASNet(torch.nn.Module):
     def forward(self, x):
         x = self.features(x)
         x = self.avgpool(x).squeeze()
+        if self.dropout > 0.0:
+            x = nn.functional.dropout(x, p=self.dropout, training=self.training,
+                                      inplace=True)
         return self.classifier(x)
 
     def _initialize_weights(self):
