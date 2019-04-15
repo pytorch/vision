@@ -121,12 +121,7 @@ class ShuffleNetV2(nn.Module):
             nn.ReLU(inplace=True),
         )
 
-        if (input_size % 32):
-            raise ValueError('illegal input_size')
-        self.globalpool = nn.AvgPool2d(int(input_size / 32))
-
-        # expected ifm size is: channels x 1 x 1
-        self.fc = nn.Linear(self.stage_out_channels[-1], num_classes)
+        self.fc = nn.Linear(output_channels, num_classes)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -135,8 +130,7 @@ class ShuffleNetV2(nn.Module):
         x = self.stage3(x)
         x = self.stage4(x)
         x = self.conv5(x)
-        x = self.globalpool(x)
-        x = x.view(-1, self.stage_out_channels[-1])
+        x = x.mean([2, 3])  # globalpool
         x = self.fc(x)
         return x
 
