@@ -111,17 +111,17 @@ class MNASNet(torch.nn.Module):
             nn.ReLU(inplace=True),
         ]
         self.layers = nn.Sequential(*layers)
-        self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.classifier = nn.Linear(1280, self.num_classes)
 
         self._initialize_weights()
 
     def features(self, x):
-        return self.layers.forward(x)
+        return self.layers(x)
 
     def forward(self, x):
         x = self.features(x)
-        x = self.avgpool(x).squeeze()
+        # Equivalent to global avgpool and removing H and W dimensions.
+        x = x.mean([2, 3])
         if self.dropout > 0.0:
             x = nn.functional.dropout(x, p=self.dropout, training=self.training,
                                       inplace=True)
