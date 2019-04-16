@@ -11,8 +11,6 @@ _BN_MOMENTUM = 1 - 0.9997
 
 
 class _InvertedResidual(nn.Module):
-    """ Inverted residual block from MobileNetV2 and MNASNet papers. This can
-    be used to implement MobileNet V2, if ReLU is replaced with ReLU6. """
 
     def __init__(self, in_ch, out_ch, kernel_size, stride, expansion_factor,
                  bn_momentum=0.1):
@@ -37,15 +35,14 @@ class _InvertedResidual(nn.Module):
 
     def forward(self, input):
         if self.apply_residual:
-            return self.layers.forward(input) + input
+            return self.layers(input) + input
         else:
-            return self.layers.forward(input)
+            return self.layers(input)
 
 
 def _stack(in_ch, out_ch, kernel_size, stride, exp_factor, repeats,
            bn_momentum):
-    """ Creates a stack of inverted residuals as seen in e.g. MobileNetV2 or
-    MNASNet. """
+    """ Creates a stack of inverted residuals. """
     assert repeats >= 1
     # First one has no skip, because feature map size changes.
     first = _InvertedResidual(in_ch, out_ch, kernel_size, stride, exp_factor,
