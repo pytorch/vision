@@ -118,7 +118,7 @@ class DenseNet(nn.Module):
 
 
 def _load_state_dict(model, model_url):
-    # '.'s are no longer allowed in module names, but pervious _DenseLayer
+    # '.'s are no longer allowed in module names, but previous _DenseLayer
     # has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.
     # They are also in the checkpoints in model_urls. This pattern is used
     # to find such keys.
