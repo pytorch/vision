@@ -83,13 +83,20 @@ TORCH_MODULE(InceptionAux);
 
 } // namespace _inceptionimpl
 
+struct InceptionV3Output {
+  torch::Tensor output;
+  torch::Tensor aux;
+};
+
 // Inception v3 model architecture from
 //"Rethinking the Inception Architecture for Computer Vision"
 //<http://arxiv.org/abs/1512.00567>
 struct InceptionV3Impl : torch::nn::Module {
   bool aux_logits, transform_input;
+
   _inceptionimpl::BasicConv2d Conv2d_1a_3x3{nullptr}, Conv2d_2a_3x3{nullptr},
       Conv2d_2b_3x3{nullptr}, Conv2d_3b_1x1{nullptr}, Conv2d_4a_3x3{nullptr};
+
   _inceptionimpl::InceptionA Mixed_5b{nullptr}, Mixed_5c{nullptr},
       Mixed_5d{nullptr};
   _inceptionimpl::InceptionB Mixed_6a{nullptr};
@@ -97,6 +104,7 @@ struct InceptionV3Impl : torch::nn::Module {
       Mixed_6d{nullptr}, Mixed_6e{nullptr};
   _inceptionimpl::InceptionD Mixed_7a{nullptr};
   _inceptionimpl::InceptionE Mixed_7b{nullptr}, Mixed_7c{nullptr};
+
   torch::nn::Linear fc{nullptr};
 
   _inceptionimpl::InceptionAux AuxLogits{nullptr};
@@ -106,7 +114,7 @@ struct InceptionV3Impl : torch::nn::Module {
       bool aux_logits = true,
       bool transform_input = false);
 
-  std::vector<torch::Tensor> forward(torch::Tensor x);
+  InceptionV3Output forward(torch::Tensor x);
 };
 
 TORCH_MODULE(InceptionV3);

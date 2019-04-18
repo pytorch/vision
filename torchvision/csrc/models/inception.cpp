@@ -2,6 +2,7 @@
 
 namespace vision {
 namespace models {
+
 using Options = torch::nn::Conv2dOptions;
 
 namespace _inceptionimpl {
@@ -296,7 +297,7 @@ InceptionV3Impl::InceptionV3Impl(
   register_module("fc", fc);
 }
 
-std::vector<at::Tensor> InceptionV3Impl::forward(torch::Tensor x) {
+InceptionV3Output InceptionV3Impl::forward(torch::Tensor x) {
   if (transform_input) {
     auto x_ch0 = torch::unsqueeze(x.select(1, 0), 1) * (0.229 / 0.5) +
         (0.485 - 0.5) / 0.5;
@@ -360,7 +361,7 @@ std::vector<at::Tensor> InceptionV3Impl::forward(torch::Tensor x) {
 
   if (is_training() && aux_logits)
     return {x, aux};
-  return {x};
+  return {x, {}};
 }
 
 // namespace _inceptionimpl

@@ -3,7 +3,9 @@
 
 #include "alexnet.h"
 #include "densenet.h"
+#include "googlenet.h"
 #include "inception.h"
+#include "mobilenet.h"
 #include "resnet.h"
 #include "squeezenet.h"
 #include "vgg.h"
