@@ -156,7 +156,7 @@ def download_and_extract_tar(url, download_root, extract_root=None, filename=Non
                              md5=None, **kwargs):
     download_root = os.path.expanduser(download_root)
     if extract_root is None:
-        extract_root = extract_root
+        extract_root = download_root
     if filename is None:
         filename = os.path.basename(url)
 
