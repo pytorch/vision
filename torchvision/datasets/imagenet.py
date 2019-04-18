@@ -45,7 +45,7 @@ class ImageNet(ImageFolder):
         classes (list): List of the class names.
         class_to_idx (dict): Dict with items (class_name, class_index).
         wnids (list): List of the WordNet IDs.
-        class_to_idx (dict): Dict with items (wordnet_id, wordnet_id_index).
+        wnid_to_idx (dict): Dict with items (wordnet_id, class_index).
         imgs (list): List of (image path, class_index) tuples
         targets (list): The class_index value for each image in the dataset
     """
