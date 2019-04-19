@@ -84,7 +84,7 @@ torch::Tensor InceptionAuxImpl::forward(at::Tensor x) {
 
 } // namespace _googlenetimpl
 
-GoogLeNet::GoogLeNet(
+GoogLeNetImpl::GoogLeNetImpl(
     int64_t num_classes,
     bool aux_logits,
     bool transform_input,
@@ -142,7 +142,7 @@ GoogLeNet::GoogLeNet(
     _initialize_weights();
 }
 
-void GoogLeNet::_initialize_weights() {
+void GoogLeNetImpl::_initialize_weights() {
   for (auto& module : modules(/*include_self=*/false)) {
     if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
       torch::nn::init::normal_(M->weight);
@@ -154,7 +154,7 @@ void GoogLeNet::_initialize_weights() {
   }
 }
 
-GoogLeNetOutput GoogLeNet::forward(torch::Tensor x) {
+GoogLeNetOutput GoogLeNetImpl::forward(torch::Tensor x) {
   if (transform_input) {
     auto x_ch0 = torch::unsqueeze(x.select(1, 0), 1) * (0.229 / 0.5) +
         (0.485 - 0.5) / 0.5;

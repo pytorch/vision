@@ -46,4 +46,7 @@ test_model(models.densenet169(pretrained), x, _C.forward_densenet169, 'Densenet1
 test_model(models.densenet201(pretrained), x, _C.forward_densenet201, 'Densenet201')
 test_model(models.densenet161(pretrained), x, _C.forward_densenet161, 'Densenet161')
 
+test_model(models.mobilenet_v2(pretrained), x, _C.forward_mobilenetv2, 'MobileNet')
+
+test_model(models.googlenet(pretrained), x, _C.forward_googlenet, 'GoogLeNet')
 test_model(models.inception_v3(pretrained), x, _C.forward_inceptionv3, 'Inceptionv3')

@@ -52,6 +52,10 @@ int main(int argc, const char* argv[]) {
   convert_and_save_model<DenseNet161>(
       "densenet161_python.pt", "densenet161_cpp.pt");
 
+  convert_and_save_model<MobileNetV2>(
+      "mobilenetv2_python.pt", "mobilenetv2_cpp.pt");
+
+  convert_and_save_model<GoogLeNet>("googlenet_python.pt", "googlenet_cpp.pt");
   convert_and_save_model<InceptionV3>(
       "inceptionv3_python.pt", "inceptionv3_cpp.pt");
 

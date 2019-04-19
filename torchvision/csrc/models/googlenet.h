@@ -8,8 +8,8 @@ namespace models {
 
 namespace _googlenetimpl {
 struct BasicConv2dImpl : torch::nn::Module {
-  torch::nn::Conv2d conv;
-  torch::nn::BatchNorm bn;
+  torch::nn::Conv2d conv{nullptr};
+  torch::nn::BatchNorm bn{nullptr};
 
   BasicConv2dImpl(torch::nn::Conv2dOptions options);
 
@@ -37,8 +37,8 @@ struct InceptionImpl : torch::nn::Module {
 TORCH_MODULE(Inception);
 
 struct InceptionAuxImpl : torch::nn::Module {
-  BasicConv2d conv;
-  torch::nn::Linear fc1, fc2;
+  BasicConv2d conv{nullptr};
+  torch::nn::Linear fc1{nullptr}, fc2{nullptr};
 
   InceptionAuxImpl(int64_t in_channels, int64_t num_classes);
 
@@ -55,7 +55,7 @@ struct GoogLeNetOutput {
   torch::Tensor aux2;
 };
 
-struct GoogLeNet : torch::nn::Module {
+struct GoogLeNetImpl : torch::nn::Module {
   bool aux_logits, transform_input;
 
   _googlenetimpl::BasicConv2d conv1{nullptr}, conv2{nullptr}, conv3{nullptr};
@@ -70,7 +70,7 @@ struct GoogLeNet : torch::nn::Module {
   torch::nn::Dropout dropout{nullptr};
   torch::nn::Linear fc{nullptr};
 
-  GoogLeNet(
+  GoogLeNetImpl(
       int64_t num_classes = 1000,
       bool aux_logits = true,
       bool transform_input = false,
@@ -80,6 +80,9 @@ struct GoogLeNet : torch::nn::Module {
 
   GoogLeNetOutput forward(torch::Tensor x);
 };
+
+TORCH_MODULE(GoogLeNet);
+
 } // namespace models
 } // namespace vision
 

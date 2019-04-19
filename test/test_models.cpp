@@ -79,10 +79,19 @@ torch::Tensor forward_densenet161(torch::Tensor x) {
   return forward_model<DenseNet161>(input_path, x);
 }
 
+torch::Tensor forward_mobilenetv2(torch::Tensor x) {
+  return forward_model<MobileNetV2>(input_path, x);
+}
+
+torch::Tensor forward_googlenet(torch::Tensor x) {
+  GoogLeNet network;
+  torch::load(input_path, x);
+  return network->forward(x).output;
+}
 torch::Tensor forward_inceptionv3(torch::Tensor x) {
   InceptionV3 network;
   torch::load(input_path, x);
-  return network->forward(x)[0];
+  return network->forward(x).output;
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
@@ -112,5 +121,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("forward_densenet201", &forward_densenet201, "forward_densenet201");
   m.def("forward_densenet161", &forward_densenet161, "forward_densenet161");
 
+  m.def("forward_mobilenetv2", &forward_mobilenetv2, "forward_mobilenetv2");
+
+  m.def("forward_googlenet", &forward_googlenet, "forward_googlenet");
   m.def("forward_inceptionv3", &forward_inceptionv3, "forward_inceptionv3");
 }

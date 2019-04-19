@@ -14,6 +14,7 @@ struct ConvBNReLUImpl : torch::nn::SequentialImpl {
       int64_t stride = 1,
       int64_t groups = 1) {
     auto padding = (kernel_size - 1) / 2;
+
     push_back(torch::nn::Conv2d(Options(in_planes, out_planes, kernel_size)
                                     .stride(stride)
                                     .padding(padding)
@@ -48,13 +49,10 @@ struct InvertedResidualImpl : torch::nn::Module {
     assert(stride == 1 || stride == 2);
     auto hidden_dim = int64_t(std::round(input * expand_ratio));
 
-    if (double_compare(expand_ratio, 1))
-      // pw
+    if (!double_compare(expand_ratio, 1))
       conv->push_back(ConvBNReLU(input, hidden_dim, 1));
 
-    // dw
     conv->push_back(ConvBNReLU(hidden_dim, hidden_dim, 3, stride, hidden_dim));
-    // pw-linear
     conv->push_back(torch::nn::Conv2d(
         Options(hidden_dim, output, 1).stride(1).padding(0).with_bias(false)));
     conv->push_back(torch::nn::BatchNorm(output));
@@ -100,9 +98,9 @@ MobileNetV2Impl::MobileNetV2Impl(int64_t num_classes, double width_mult) {
           Block(input_channel, output_channel, stride, setting[0]));
       input_channel = output_channel;
     }
-
-    features->push_back(ConvBNReLU(input_channel, this->last_channel, 1));
   }
+
+  features->push_back(ConvBNReLU(input_channel, this->last_channel, 1));
 
   classifier->push_back(torch::nn::Dropout(0.2));
   classifier->push_back(torch::nn::Linear(this->last_channel, num_classes));

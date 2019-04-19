@@ -9,7 +9,7 @@ struct MobileNetV2Impl : torch::nn::Module {
   int64_t last_channel;
   torch::nn::Sequential features, classifier;
 
-  MobileNetV2Impl(int64_t num_classes, double width_mult = 1.0);
+  MobileNetV2Impl(int64_t num_classes = 1000, double width_mult = 1.0);
 
   torch::Tensor forward(torch::Tensor x);
 };
