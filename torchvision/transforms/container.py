@@ -1,31 +1,19 @@
+import warnings
 import random
 
-__all__ = ['Compose', 'RandomTransforms', 'RandomApply', 'RandomOrder',
-           'RandomChoice']
+__all__ = ['TransformContainer', 'Compose', 'RandomTransforms', 'RandomApply',
+           'RandomOrder', 'RandomChoice']
 
 
-class Compose(object):
-    """Composes several transforms together.
-
-    Args:
-        transforms (list of ``Transform`` objects): list of transforms to compose.
-
-    Example:
-        >>> transforms.Compose([
-        >>>     transforms.CenterCrop(10),
-        >>>     transforms.ToTensor(),
-        >>> ])
-    """
+class TransformContainer(object):
     _repr_indent = 4
 
     def __init__(self, transforms):
         assert isinstance(transforms, (list, tuple))
         self.transforms = transforms
 
-    def __call__(self, img):
-        for t in self.transforms:
-            img = t(img)
-        return img
+    def __call__(self, *args, **kwargs):
+        raise NotImplementedError
 
     def __repr__(self):
         head = ["{0}({1}".format(self.__class__.__name__, self.extra_repr())]
@@ -38,17 +26,35 @@ class Compose(object):
         return ""
 
 
-class RandomTransforms(Compose):
-    """Base class for a list of transformations with randomness
+class Compose(TransformContainer):
+    """Composes several transforms together.
 
     Args:
-        transforms (list or tuple): list of transformations
+        transforms (list of ``Transform`` objects): list of transforms to compose.
+
+    Example:
+        >>> transforms.Compose([
+        >>>     transforms.CenterCrop(10),
+        >>>     transforms.ToTensor(),
+        >>> ])
     """
-    def __call__(self, *args, **kwargs):
-        raise NotImplementedError()
+    def __call__(self, img):
+        for t in self.transforms:
+            img = t(img)
+        return img
 
 
-class RandomApply(RandomTransforms):
+class RandomTransforms(Compose):
+    """
+    Note: This transform container is deprecated in favor of TransformContainer.
+    """
+    def __init__(self, *args, **kwargs):
+        warnings.warn("The use of the transforms.RandomTransforms transform is "
+                      "deprecated, please use transforms.TransformContainer instead.")
+        super(RandomTransforms, self).__init__(*args, **kwargs)
+
+
+class RandomApply(TransformContainer):
     """Apply randomly a list of transformations with a given probability
 
     Args:
@@ -71,7 +77,7 @@ class RandomApply(RandomTransforms):
         return "p={p}".format(**self.__dict__)
 
 
-class RandomOrder(RandomTransforms):
+class RandomOrder(TransformContainer):
     """Apply a list of transformations in a random order
     """
 
@@ -83,7 +89,7 @@ class RandomOrder(RandomTransforms):
         return img
 
 
-class RandomChoice(RandomTransforms):
+class RandomChoice(TransformContainer):
     """Apply single transformation randomly picked from a list
     """
 
