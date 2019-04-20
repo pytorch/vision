@@ -15,7 +15,7 @@ import warnings
 from copy import copy
 
 from . import functional as F
-from .container import  Compose
+from .container import Compose
 
 if sys.version_info < (3, 3):
     Sequence = collections.Sequence
