@@ -52,11 +52,25 @@ torch::Tensor forward_resnet34(const std::string& input_path, torch::Tensor x) {
 torch::Tensor forward_resnet50(const std::string& input_path, torch::Tensor x) {
   return forward_model<ResNet50>(input_path, x);
 }
-torch::Tensor forward_resnet101(const std::string& input_path, torch::Tensor x) {
+torch::Tensor forward_resnet101(
+    const std::string& input_path,
+    torch::Tensor x) {
   return forward_model<ResNet101>(input_path, x);
 }
-torch::Tensor forward_resnet152(const std::string& input_path, torch::Tensor x) {
+torch::Tensor forward_resnet152(
+    const std::string& input_path,
+    torch::Tensor x) {
   return forward_model<ResNet152>(input_path, x);
+}
+torch::Tensor forward_resnext50_32x4d(
+    const std::string& input_path,
+    torch::Tensor x) {
+  return forward_model<ResNext50_32x4d>(input_path, x);
+}
+torch::Tensor forward_resnext101_32x8d(
+    const std::string& input_path,
+    torch::Tensor x) {
+  return forward_model<ResNext101_32x8d>(input_path, x);
 }
 
 torch::Tensor forward_squeezenet1_0(torch::Tensor x) {
@@ -112,9 +126,19 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("forward_resnet50", &forward_resnet50, "forward_resnet50");
   m.def("forward_resnet101", &forward_resnet101, "forward_resnet101");
   m.def("forward_resnet152", &forward_resnet152, "forward_resnet152");
+  m.def(
+      "forward_resnext50_32x4d",
+      &forward_resnext50_32x4d,
+      "forward_resnext50_32x4d");
+  m.def(
+      "forward_resnext101_32x8d",
+      &forward_resnext101_32x8d,
+      "forward_resnext101_32x8d");
 
-  m.def("forward_squeezenet1_0", &forward_squeezenet1_0, "forward_squeezenet1_0");
-  m.def("forward_squeezenet1_1", &forward_squeezenet1_1, "forward_squeezenet1_1");
+  m.def(
+      "forward_squeezenet1_0", &forward_squeezenet1_0, "forward_squeezenet1_0");
+  m.def(
+      "forward_squeezenet1_1", &forward_squeezenet1_1, "forward_squeezenet1_1");
 
   m.def("forward_densenet121", &forward_densenet121, "forward_densenet121");
   m.def("forward_densenet169", &forward_densenet169, "forward_densenet169");

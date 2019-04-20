@@ -37,6 +37,8 @@ test_model(models.resnet34(pretrained), x, _C.forward_resnet34, 'Resnet34')
 test_model(models.resnet50(pretrained), x, _C.forward_resnet50, 'Resnet50')
 test_model(models.resnet101(pretrained), x, _C.forward_resnet101, 'Resnet101')
 test_model(models.resnet152(pretrained), x, _C.forward_resnet152, 'Resnet152')
+test_model(models.resnext50_32x4d(pretrained), x, _C.forward_resnext50_32x4d, 'ResNext50_32x4d')
+test_model(models.resnext101_32x8d(pretrained), x, _C.forward_resnext101_32x8d, 'ResNext101_32x8d')
 
 test_model(models.squeezenet1_0(pretrained), x, _C.forward_squeezenet1_0, 'Squeezenet1.0')
 test_model(models.squeezenet1_1(pretrained), x, _C.forward_squeezenet1_1, 'Squeezenet1.1')
