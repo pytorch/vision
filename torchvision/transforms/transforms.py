@@ -10,11 +10,12 @@ except ImportError:
     accimage = None
 import numpy as np
 import numbers
-import types
 import collections
 import warnings
+from copy import copy
 
 from . import functional as F
+from .container import  Compose
 
 if sys.version_info < (3, 3):
     Sequence = collections.Sequence
@@ -24,10 +25,11 @@ else:
     Iterable = collections.abc.Iterable
 
 
-__all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
-           "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
-           "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
-           "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale"]
+__all__ = ["ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop",
+           "Pad", "Lambda", "RandomCrop", "RandomHorizontalFlip", "RandomVerticalFlip",
+           "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
+           "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine",
+           "Grayscale", "RandomGrayscale"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -39,37 +41,18 @@ _pil_interpolation_to_str = {
 }
 
 
-class Compose(object):
-    """Composes several transforms together.
-
-    Args:
-        transforms (list of ``Transform`` objects): list of transforms to compose.
-
-    Example:
-        >>> transforms.Compose([
-        >>>     transforms.CenterCrop(10),
-        >>>     transforms.ToTensor(),
-        >>> ])
-    """
-
-    def __init__(self, transforms):
-        self.transforms = transforms
-
-    def __call__(self, img):
-        for t in self.transforms:
-            img = t(img)
-        return img
+class Transform(object):
+    def __call__(self, *args):
+        raise NotImplementedError
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + '('
-        for t in self.transforms:
-            format_string += '\n'
-            format_string += '    {0}'.format(t)
-        format_string += '\n)'
-        return format_string
+        return "{0}({1})".format(self.__class__.__name__, self.extra_repr())
+
+    def extra_repr(self):
+        return ""
 
 
-class ToTensor(object):
+class ToTensor(Transform):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
 
     Converts a PIL Image or numpy.ndarray (H x W x C) in the range
@@ -89,9 +72,6 @@ class ToTensor(object):
             Tensor: Converted image.
         """
         return F.to_tensor(pic)
-
-    def __repr__(self):
-        return self.__class__.__name__ + '()'
 
 
 class ToPILImage(object):
@@ -125,12 +105,8 @@ class ToPILImage(object):
         """
         return F.to_pil_image(pic, self.mode)
 
-    def __repr__(self):
-        format_string = self.__class__.__name__ + '('
-        if self.mode is not None:
-            format_string += 'mode={0}'.format(self.mode)
-        format_string += ')'
-        return format_string
+    def extra_repr(self):
+        return "mode={mode}".format(**self.__dict__) if self.mode is not None else ""
 
 
 class Normalize(object):
@@ -162,8 +138,8 @@ class Normalize(object):
         """
         return F.normalize(tensor, self.mean, self.std, self.inplace)
 
-    def __repr__(self):
-        return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
+    def extra_repr(self):
+        return "mean={mean}, std={std}".format(**self.__dict__)
 
 
 class Resize(object):
@@ -194,9 +170,10 @@ class Resize(object):
         """
         return F.resize(img, self.size, self.interpolation)
 
-    def __repr__(self):
-        interpolate_str = _pil_interpolation_to_str[self.interpolation]
-        return self.__class__.__name__ + '(size={0}, interpolation={1})'.format(self.size, interpolate_str)
+    def extra_repr(self):
+        dct = copy(self.__dict__)
+        dct['interpolation'] = _pil_interpolation_to_str[self.interpolation]
+        return "size={size}, interpolation={interpolation}".format(**dct)
 
 
 class Scale(Resize):
@@ -234,8 +211,8 @@ class CenterCrop(object):
         """
         return F.center_crop(img, self.size)
 
-    def __repr__(self):
-        return self.__class__.__name__ + '(size={0})'.format(self.size)
+    def extra_repr(self):
+        return "size={size}".format(**self.__dict__)
 
 
 class Pad(object):
@@ -290,9 +267,9 @@ class Pad(object):
         """
         return F.pad(img, self.padding, self.fill, self.padding_mode)
 
-    def __repr__(self):
-        return self.__class__.__name__ + '(padding={0}, fill={1}, padding_mode={2})'.\
-            format(self.padding, self.fill, self.padding_mode)
+    def extra_repr(self):
+        return ("padding={padding}, fill={fill}, "
+                "padding_mode={padding_mode}").format(**self.__dict__)
 
 
 class Lambda(object):
@@ -308,80 +285,6 @@ class Lambda(object):
 
     def __call__(self, img):
         return self.lambd(img)
-
-    def __repr__(self):
-        return self.__class__.__name__ + '()'
-
-
-class RandomTransforms(object):
-    """Base class for a list of transformations with randomness
-
-    Args:
-        transforms (list or tuple): list of transformations
-    """
-
-    def __init__(self, transforms):
-        assert isinstance(transforms, (list, tuple))
-        self.transforms = transforms
-
-    def __call__(self, *args, **kwargs):
-        raise NotImplementedError()
-
-    def __repr__(self):
-        format_string = self.__class__.__name__ + '('
-        for t in self.transforms:
-            format_string += '\n'
-            format_string += '    {0}'.format(t)
-        format_string += '\n)'
-        return format_string
-
-
-class RandomApply(RandomTransforms):
-    """Apply randomly a list of transformations with a given probability
-
-    Args:
-        transforms (list or tuple): list of transformations
-        p (float): probability
-    """
-
-    def __init__(self, transforms, p=0.5):
-        super(RandomApply, self).__init__(transforms)
-        self.p = p
-
-    def __call__(self, img):
-        if self.p < random.random():
-            return img
-        for t in self.transforms:
-            img = t(img)
-        return img
-
-    def __repr__(self):
-        format_string = self.__class__.__name__ + '('
-        format_string += '\n    p={}'.format(self.p)
-        for t in self.transforms:
-            format_string += '\n'
-            format_string += '    {0}'.format(t)
-        format_string += '\n)'
-        return format_string
-
-
-class RandomOrder(RandomTransforms):
-    """Apply a list of transformations in a random order
-    """
-    def __call__(self, img):
-        order = list(range(len(self.transforms)))
-        random.shuffle(order)
-        for i in order:
-            img = self.transforms[i](img)
-        return img
-
-
-class RandomChoice(RandomTransforms):
-    """Apply single transformation randomly picked from a list
-    """
-    def __call__(self, img):
-        t = random.choice(self.transforms)
-        return t(img)
 
 
 class RandomCrop(object):
@@ -472,8 +375,8 @@ class RandomCrop(object):
 
         return F.crop(img, i, j, h, w)
 
-    def __repr__(self):
-        return self.__class__.__name__ + '(size={0}, padding={1})'.format(self.size, self.padding)
+    def extra_repr(self):
+        return "size={size}, padding={padding}".format(**self.__dict__)
 
 
 class RandomHorizontalFlip(object):
@@ -498,8 +401,8 @@ class RandomHorizontalFlip(object):
             return F.hflip(img)
         return img
 
-    def __repr__(self):
-        return self.__class__.__name__ + '(p={})'.format(self.p)
+    def extra_repr(self):
+        return "p={p}".format(**self.__dict__)
 
 
 class RandomVerticalFlip(object):
@@ -524,8 +427,8 @@ class RandomVerticalFlip(object):
             return F.vflip(img)
         return img
 
-    def __repr__(self):
-        return self.__class__.__name__ + '(p={})'.format(self.p)
+    def extra_repr(self):
+        return "p={p}".format(**self.__dict__)
 
 
 class RandomResizedCrop(object):
@@ -609,13 +512,13 @@ class RandomResizedCrop(object):
         i, j, h, w = self.get_params(img, self.scale, self.ratio)
         return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
 
-    def __repr__(self):
-        interpolate_str = _pil_interpolation_to_str[self.interpolation]
-        format_string = self.__class__.__name__ + '(size={0}'.format(self.size)
-        format_string += ', scale={0}'.format(tuple(round(s, 4) for s in self.scale))
-        format_string += ', ratio={0}'.format(tuple(round(r, 4) for r in self.ratio))
-        format_string += ', interpolation={0})'.format(interpolate_str)
-        return format_string
+    def extra_repr(self):
+        dct = copy(self.__dict__)
+        dct['scale'] = str(tuple(round(s, 4) for s in self.scale))
+        dct['ratio'] = str(tuple(round(s, 4) for s in self.ratio))
+        dct['interpolation'] = _pil_interpolation_to_str[self.interpolation]
+        return ("size={size}, scale={scale}, ratio={ratio}, "
+                "interpolation={interpolation}").format(**dct)
 
 
 class RandomSizedCrop(RandomResizedCrop):
@@ -663,8 +566,8 @@ class FiveCrop(object):
     def __call__(self, img):
         return F.five_crop(img, self.size)
 
-    def __repr__(self):
-        return self.__class__.__name__ + '(size={0})'.format(self.size)
+    def extra_repr(self):
+        return "size={size}".format(**self.__dict__)
 
 
 class TenCrop(object):
@@ -706,8 +609,8 @@ class TenCrop(object):
     def __call__(self, img):
         return F.ten_crop(img, self.size, self.vertical_flip)
 
-    def __repr__(self):
-        return self.__class__.__name__ + '(size={0}, vertical_flip={1})'.format(self.size, self.vertical_flip)
+    def extra_repr(self):
+        return "size={size}, vertical_flip={vertical_flip}".format(**self.__dict__)
 
 
 class LinearTransformation(object):
@@ -756,11 +659,12 @@ class LinearTransformation(object):
         tensor = transformed_tensor.view(tensor.size())
         return tensor
 
-    def __repr__(self):
-        format_string = self.__class__.__name__ + '(transformation_matrix='
-        format_string += (str(self.transformation_matrix.tolist()) + ')')
-        format_string += (", (mean_vector=" + str(self.mean_vector.tolist()) + ')')
-        return format_string
+    def extra_repr(self):
+        dct = copy(self.__dict__)
+        dct['transformation_matrix'] = str(self.transformation_matrix.tolist())
+        dct['mean_vector'] = str(self.mean_vector.tolist())
+        return ("transformation_matrix={transformation_matrix}, "
+                "mean_vector={mean_vector}").format(**dct)
 
 
 class ColorJitter(object):
@@ -851,13 +755,9 @@ class ColorJitter(object):
                                     self.saturation, self.hue)
         return transform(img)
 
-    def __repr__(self):
-        format_string = self.__class__.__name__ + '('
-        format_string += 'brightness={0}'.format(self.brightness)
-        format_string += ', contrast={0}'.format(self.contrast)
-        format_string += ', saturation={0}'.format(self.saturation)
-        format_string += ', hue={0})'.format(self.hue)
-        return format_string
+    def extra_repr(self):
+        return ("brightness={brightness}, contrast={contrast}, "
+                "saturation={saturation}, hue={hue}").format(**self.__dict__)
 
 
 class RandomRotation(object):
@@ -919,14 +819,11 @@ class RandomRotation(object):
 
         return F.rotate(img, angle, self.resample, self.expand, self.center)
 
-    def __repr__(self):
-        format_string = self.__class__.__name__ + '(degrees={0}'.format(self.degrees)
-        format_string += ', resample={0}'.format(self.resample)
-        format_string += ', expand={0}'.format(self.expand)
+    def extra_repr(self):
+        s = "degrees={degrees}, resample={resample}, expand={expand}"
         if self.center is not None:
-            format_string += ', center={0}'.format(self.center)
-        format_string += ')'
-        return format_string
+            s += ", center={center}"
+        return s.format(**self.__dict__)
 
 
 class RandomAffine(object):
@@ -1033,22 +930,21 @@ class RandomAffine(object):
         ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img.size)
         return F.affine(img, *ret, resample=self.resample, fillcolor=self.fillcolor)
 
-    def __repr__(self):
-        s = '{name}(degrees={degrees}'
+    def extra_repr(self):
+        dct = copy(self.__dict__)
+        s = "degrees={degrees}"
         if self.translate is not None:
-            s += ', translate={translate}'
+            s += ", translate={translate}"
         if self.scale is not None:
-            s += ', scale={scale}'
+            s += ", scale={scale}"
         if self.shear is not None:
-            s += ', shear={shear}'
+            s += ", shear={shear}"
         if self.resample > 0:
-            s += ', resample={resample}'
+            s += ", resample={resample}"
+            dct['resample'] = _pil_interpolation_to_str[self.resample]
         if self.fillcolor != 0:
-            s += ', fillcolor={fillcolor}'
-        s += ')'
-        d = dict(self.__dict__)
-        d['resample'] = _pil_interpolation_to_str[d['resample']]
-        return s.format(name=self.__class__.__name__, **d)
+            s += ", fillcolor={fillcolor}"
+        return s.format(**dct)
 
 
 class Grayscale(object):
@@ -1077,8 +973,8 @@ class Grayscale(object):
         """
         return F.to_grayscale(img, num_output_channels=self.num_output_channels)
 
-    def __repr__(self):
-        return self.__class__.__name__ + '(num_output_channels={0})'.format(self.num_output_channels)
+    def extra_repr(self):
+        return "num_output_channels={num_output_channels}".format(**self.__dict__)
 
 
 class RandomGrayscale(object):
@@ -1111,5 +1007,5 @@ class RandomGrayscale(object):
             return F.to_grayscale(img, num_output_channels=num_output_channels)
         return img
 
-    def __repr__(self):
-        return self.__class__.__name__ + '(p={0})'.format(self.p)
+    def extra_repr(self):
+        return "p={p}".format(**self.__dict__)
