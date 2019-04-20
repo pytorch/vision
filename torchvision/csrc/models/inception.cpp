@@ -224,17 +224,19 @@ InceptionAuxImpl::InceptionAuxImpl(int64_t in_channels, int64_t num_classes)
 }
 
 torch::Tensor InceptionAuxImpl::forward(torch::Tensor x) {
-  // 17 x 17 x 768
+  // N x 768 x 17 x 17
   x = torch::avg_pool2d(x, 5, 3);
-  // 5 x 5 x 768
+  // N x 768 x 5 x 5
   x = conv0->forward(x);
-  // 5 x 5 x 128
+  // N x 128 x 5 x 5
   x = conv1->forward(x);
-  // 1 x 1 x 768
+  // N x 768 x 1 x 1
+  x = torch::adaptive_avg_pool2d(x, {1, 1});
+  // N x 768 x 1 x 1
   x = x.view({x.size(0), -1});
-  // 768
+  // N x 768
   x = fc->forward(x);
-  // 1000 (num_classes)
+  // N x 1000 (num_classes)
   return x;
 }
 
@@ -309,55 +311,57 @@ InceptionV3Output InceptionV3Impl::forward(torch::Tensor x) {
     x = torch::cat({x_ch0, x_ch1, x_ch2}, 1);
   }
 
-  // 299 x 299 x 3
+  // N x 3 x 299 x 299
   x = Conv2d_1a_3x3->forward(x);
-  // 149 x 149 x 32
+  // N x 32 x 149 x 149
   x = Conv2d_2a_3x3->forward(x);
-  // 147 x 147 x 32
+  // N x 32 x 147 x 147
   x = Conv2d_2b_3x3->forward(x);
-  // 147 x 147 x 64
+  // N x 64 x 147 x 147
   x = torch::max_pool2d(x, 3, 2);
-  // 73 x 73 x 64
+  // N x 64 x 73 x 73
   x = Conv2d_3b_1x1->forward(x);
-  // 73 x 73 x 80
+  // N x 80 x 73 x 73
   x = Conv2d_4a_3x3->forward(x);
-  // 71 x 71 x 192
+  // N x 192 x 71 x 71
   x = torch::max_pool2d(x, 3, 2);
-  // 35 x 35 x 192
+  // N x 192 x 35 x 35
   x = Mixed_5b->forward(x);
-  // 35 x 35 x 256
+  // N x 256 x 35 x 35
   x = Mixed_5c->forward(x);
-  // 35 x 35 x 288
+  // N x 288 x 35 x 35
   x = Mixed_5d->forward(x);
-  // 35 x 35 x 288
+  // N x 288 x 35 x 35
   x = Mixed_6a->forward(x);
-  // 17 x 17 x 768
+  // N x 768 x 17 x 17
   x = Mixed_6b->forward(x);
-  // 17 x 17 x 768
+  // N x 768 x 17 x 17
   x = Mixed_6c->forward(x);
-  // 17 x 17 x 768
+  // N x 768 x 17 x 17
   x = Mixed_6d->forward(x);
-  // 17 x 17 x 768
+  // N x 768 x 17 x 17
   x = Mixed_6e->forward(x);
-  // 17 x 17 x 768
+  // N x 768 x 17 x 17
+
   torch::Tensor aux;
   if (is_training() && aux_logits)
     aux = AuxLogits->forward(x);
-  // 17 x 17 x 768
+
+  // N x 768 x 17 x 17
   x = Mixed_7a->forward(x);
-  // 8 x 8 x 1280
+  // N x 1280 x 8 x 8
   x = Mixed_7b->forward(x);
-  // 8 x 8 x 2048
+  // N x 2048 x 8 x 8
   x = Mixed_7c->forward(x);
-  // 8 x 8 x 2048
-  x = torch::avg_pool2d(x, 8);
-  // 1 x 1 x 2048
+  // N x 2048 x 8 x 8
+  x = torch::adaptive_avg_pool2d(x, {1, 1});
+  // N x 2048 x 1 x 1
   x = torch::dropout(x, 0.5, is_training());
-  // 1 x 1 x 2048
+  // N x 2048 x 1 x 1
   x = x.view({x.size(0), -1});
-  // 2048
+  // N x 2048
   x = fc->forward(x);
-  // 1000 (num_classes)
+  // N x 1000 (num_classes)
 
   if (is_training() && aux_logits)
     return {x, aux};

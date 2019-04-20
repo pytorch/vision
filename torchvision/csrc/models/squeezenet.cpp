@@ -74,7 +74,7 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
     assert(false);
   }
 
-  // Final convolution is initialized differently form the rest
+  // Final convolution is initialized differently from the rest
   auto final_conv =
       torch::nn::Conv2d(torch::nn::Conv2dOptions(512, num_classes, 1));
 
@@ -102,7 +102,7 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
 torch::Tensor SqueezeNetImpl::forward(torch::Tensor x) {
   x = features->forward(x);
   x = classifier->forward(x);
-  return x.view({x.size(0), num_classes});
+  return x.view({x.size(0), -1});
 }
 
 SqueezeNet1_0Impl::SqueezeNet1_0Impl(int64_t num_classes)

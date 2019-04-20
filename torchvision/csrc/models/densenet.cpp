@@ -148,7 +148,9 @@ DenseNetImpl::DenseNetImpl(
 torch::Tensor DenseNetImpl::forward(torch::Tensor x) {
   auto features = this->features->forward(x);
   auto out = torch::relu_(features);
-  out = torch::adaptive_avg_pool2d(out, {1, 1}).view({features.size(0), -1});
+  out = torch::adaptive_avg_pool2d(out, {1, 1});
+
+  out = out.view({features.size(0), -1});
   out = this->classifier->forward(out);
   return out;
 }
