@@ -36,7 +36,8 @@ AlexNetImpl::AlexNetImpl(int64_t num_classes) {
 
 torch::Tensor AlexNetImpl::forward(torch::Tensor x) {
   x = features->forward(x);
-  x = x.view({x.size(0), 256 * 6 * 6});
+  x = torch::adaptive_avg_pool2d(x, {6, 6});
+  x = x.view({x.size(0), -1});
   x = classifier->forward(x);
 
   return x;

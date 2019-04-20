@@ -72,6 +72,7 @@ VGGImpl::VGGImpl(
 
 torch::Tensor VGGImpl::forward(torch::Tensor x) {
   x = features->forward(x);
+  x = torch::adaptive_avg_pool2d(x, {7, 7});
   x = x.view({x.size(0), -1});
   x = classifier->forward(x);
   return x;
