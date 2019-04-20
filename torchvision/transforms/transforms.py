@@ -74,7 +74,7 @@ class ToTensor(Transform):
         return F.to_tensor(pic)
 
 
-class ToPILImage(object):
+class ToPILImage(Transform):
     """Convert a tensor or an ndarray to PIL Image.
 
     Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
@@ -109,7 +109,7 @@ class ToPILImage(object):
         return "mode={mode}".format(**self.__dict__) if self.mode is not None else ""
 
 
-class Normalize(object):
+class Normalize(Transform):
     """Normalize a tensor image with mean and standard deviation.
     Given mean: ``(M1,...,Mn)`` and std: ``(S1,..,Sn)`` for ``n`` channels, this transform
     will normalize each channel of the input ``torch.*Tensor`` i.e.
@@ -142,7 +142,7 @@ class Normalize(object):
         return "mean={mean}, std={std}".format(**self.__dict__)
 
 
-class Resize(object):
+class Resize(Transform):
     """Resize the input PIL Image to the given size.
 
     Args:
@@ -186,7 +186,7 @@ class Scale(Resize):
         super(Scale, self).__init__(*args, **kwargs)
 
 
-class CenterCrop(object):
+class CenterCrop(Transform):
     """Crops the given PIL Image at the center.
 
     Args:
@@ -215,7 +215,7 @@ class CenterCrop(object):
         return "size={size}".format(**self.__dict__)
 
 
-class Pad(object):
+class Pad(Transform):
     """Pad the given PIL Image on all sides with the given "pad" value.
 
     Args:
@@ -272,7 +272,7 @@ class Pad(object):
                 "padding_mode={padding_mode}").format(**self.__dict__)
 
 
-class Lambda(object):
+class Lambda(Transform):
     """Apply a user-defined lambda as a transform.
 
     Args:
@@ -280,14 +280,14 @@ class Lambda(object):
     """
 
     def __init__(self, lambd):
-        assert callable(lambd), repr(type(lambd).__name__) + " object is not callable"
+        assert callable(lambd), repr(type(lambd).__name__) + " Transform is not callable"
         self.lambd = lambd
 
     def __call__(self, img):
         return self.lambd(img)
 
 
-class RandomCrop(object):
+class RandomCrop(Transform):
     """Crop the given PIL Image at a random location.
 
     Args:
@@ -379,7 +379,7 @@ class RandomCrop(object):
         return "size={size}, padding={padding}".format(**self.__dict__)
 
 
-class RandomHorizontalFlip(object):
+class RandomHorizontalFlip(Transform):
     """Horizontally flip the given PIL Image randomly with a given probability.
 
     Args:
@@ -405,7 +405,7 @@ class RandomHorizontalFlip(object):
         return "p={p}".format(**self.__dict__)
 
 
-class RandomVerticalFlip(object):
+class RandomVerticalFlip(Transform):
     """Vertically flip the given PIL Image randomly with a given probability.
 
     Args:
@@ -431,7 +431,7 @@ class RandomVerticalFlip(object):
         return "p={p}".format(**self.__dict__)
 
 
-class RandomResizedCrop(object):
+class RandomResizedCrop(Transform):
     """Crop the given PIL Image to random size and aspect ratio.
 
     A crop of random size (default: of 0.08 to 1.0) of the original size and a random
@@ -531,7 +531,7 @@ class RandomSizedCrop(RandomResizedCrop):
         super(RandomSizedCrop, self).__init__(*args, **kwargs)
 
 
-class FiveCrop(object):
+class FiveCrop(Transform):
     """Crop the given PIL Image into four corners and the central crop
 
     .. Note::
@@ -570,7 +570,7 @@ class FiveCrop(object):
         return "size={size}".format(**self.__dict__)
 
 
-class TenCrop(object):
+class TenCrop(Transform):
     """Crop the given PIL Image into four corners and the central crop plus the flipped version of
     these (horizontal flipping is used by default)
 
@@ -613,7 +613,7 @@ class TenCrop(object):
         return "size={size}, vertical_flip={vertical_flip}".format(**self.__dict__)
 
 
-class LinearTransformation(object):
+class LinearTransformation(Transform):
     """Transform a tensor image with a square transformation matrix and a mean_vector computed
     offline.
     Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
@@ -667,7 +667,7 @@ class LinearTransformation(object):
                 "mean_vector={mean_vector}").format(**dct)
 
 
-class ColorJitter(object):
+class ColorJitter(Transform):
     """Randomly change the brightness, contrast and saturation of an image.
 
     Args:
@@ -760,7 +760,7 @@ class ColorJitter(object):
                 "saturation={saturation}, hue={hue}").format(**self.__dict__)
 
 
-class RandomRotation(object):
+class RandomRotation(Transform):
     """Rotate the image by angle.
 
     Args:
@@ -826,7 +826,7 @@ class RandomRotation(object):
         return s.format(**self.__dict__)
 
 
-class RandomAffine(object):
+class RandomAffine(Transform):
     """Random affine transformation of the image keeping center invariant
 
     Args:
@@ -947,7 +947,7 @@ class RandomAffine(object):
         return s.format(**dct)
 
 
-class Grayscale(object):
+class Grayscale(Transform):
     """Convert image to grayscale.
 
     Args:
@@ -977,7 +977,7 @@ class Grayscale(object):
         return "num_output_channels={num_output_channels}".format(**self.__dict__)
 
 
-class RandomGrayscale(object):
+class RandomGrayscale(Transform):
     """Randomly convert image to grayscale with a probability of p (default 0.1).
 
     Args:
