@@ -7,43 +7,31 @@ import torch.utils.model_zoo as model_zoo
 import torchvision
 
 
-class ResNet(torchvision.models.resnet.ResNet):
-    def __init__(self, block, layers, dilated=False, return_layers=None):
-        assert len(layers) == 4
-        super(ResNet, self).__init__(
-                block,
-                layers,
-        )
-        del self.avgpool
-        del self.fc
+class IntermediateLayerGetter(nn.ModuleDict):
+    """
+    Module wrapper that returns intermediate layers from a model
 
-        if not return_layers:
-            return_layers = "layer4"
-        if isinstance(return_layers, str):
-            return_layers = {return_layers: "out"}
-        assert set(return_layers).issubset([name for name, _ in self.named_children()])
-        self.return_layers = return_layers
+    It has a strong assumption that the modules have been registered
+    into the model in the same order as they are used.
+    This means that one should **not** reuse the same nn.Module
+    twice in the forward if you want this to work
+    """
+    def __init__(self, model, return_layers):
+        if not set(return_layers).issubset([name for name, _ in model.named_children()]):
+            raise ValueError("return_layers are not present in model")
 
-        if dilated:
-            assert block is torchvision.models.resnet.Bottleneck
-            self._add_dilation()
+        orig_return_layers = return_layers
+        return_layers = {k:v for k, v in return_layers.items()}
+        layers = OrderedDict()
+        for name, module in model.named_children():
+            layers[name] = module
+            if name in return_layers:
+                del return_layers[name]
+            if not return_layers:
+                break
 
-    def _add_dilation(self):
-        d = (2, 2)
-        self.layer3[0].downsample[0].stride = (1, 1)
-        self.layer3[0].conv2.stride = (1, 1)
-        for b in self.layer3[1:]:
-            b.conv2.padding = d
-            b.conv2.dilation = d
-        self.layer4[0].downsample[0].stride = (1, 1)
-        self.layer4[0].conv2.stride = (1, 1)
-        self.layer4[0].conv2.dilation = (2, 2)
-        self.layer4[0].conv2.padding = d
-        self.layer4[0].conv2.dilation = d
-        d = (4, 4)
-        for b in self.layer4[1:]:
-            b.conv2.padding = d
-            b.conv2.dilation = d
+        super(IntermediateLayerGetter, self).__init__(layers)
+        self.return_layers = orig_return_layers
 
     def forward(self, x):
         out = OrderedDict()
@@ -163,30 +151,24 @@ class ASPP(nn.Module):
 
 def get_resnet(name, aux=False):
     import re
-    model_list = {
-        '18': (torchvision.models.resnet.BasicBlock, [2, 2, 2, 2]),
-        '50': (torchvision.models.resnet.Bottleneck, [3, 4, 6, 3]),
-        '101': (torchvision.models.resnet.Bottleneck, [3, 4, 23, 3]),
-    }
     matcher = re.compile('resnet(\d+)')
     match = matcher.match(name)
     if not match:
         raise ValueError("Invalid ResNet type {}".format(name))
 
     backbone_name = match.group(0)
-    num_layers = match.group(1)
+
+    d = None
+    if 'dilated' in name:
+        d = [False, True, True]
+
+    model = getattr(torchvision.models, backbone_name)(pretrained=True,
+                                                       replace_stride_with_dilation=d)
 
     return_layers = {'layer4': 'out'}
     if aux:
         return_layers['layer3'] = 'aux'
-    dilated = True if 'dilated' in name else False
-    block, layers = model_list[num_layers]
-
-    model = ResNet(block, layers, dilated=dilated, return_layers=return_layers)
-
-    state_dict = model_zoo.load_url(torchvision.models.resnet.model_urls[backbone_name])
-    model.load_state_dict(state_dict, strict=False)
-
+    model = IntermediateLayerGetter(model, return_layers=return_layers)
     return model
 
 
