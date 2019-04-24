@@ -49,7 +49,7 @@ def roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1):
             is passed, then each Tensor will correspond to the boxes for an element i
             in a batch
         output_size (int or Tuple[int, int]): the size of the output after the cropping
-            is performed
+            is performed, as (height, width)
         spatial_scale (float): a scaling factor that maps the input coordinates to
             the box coordinates. Default: 1.0
         sampling_ratio (int): number of sampling points in the interpolation grid
