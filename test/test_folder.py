@@ -35,7 +35,8 @@ class Tester(unittest.TestCase):
 
         outputs = sorted([dataset[i] for i in range(len(dataset))])
         self.assertEqual(imgs, outputs)
-	dataset = ImageFolder(Tester.root, loader=lambda x: x, is_valid_file = lambda x: True)
+
+        dataset = ImageFolder(Tester.root, loader=lambda x: x, is_valid_file=lambda x: True)
         self.assertEqual(sorted(Tester.classes), sorted(dataset.classes))
         for cls in Tester.classes:
             self.assertEqual(cls, dataset.classes[dataset.class_to_idx[cls]])
