@@ -95,6 +95,7 @@ def box_area(boxes):
     """
     return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 
+
 # implementation from https://github.com/kuangliu/torchcv/blob/master/torchcv/utils/box.py
 # with slight modifications
 def box_iou(boxes1, boxes2):
@@ -109,9 +110,6 @@ def box_iou(boxes1, boxes2):
         iou (Tensor[N, M]): the NxM matrix containing the pairwise
             IoU values for every element in boxes1 and boxes2
     """
-    N = len(boxes1)
-    M = len(boxes2)
-
     area1 = box_area(boxes1)
     area2 = box_area(boxes2)
 
