@@ -211,12 +211,12 @@ class ImageFolder(DatasetFolder):
 
     def __init__(self, root, transform=None, target_transform=None,
                  loader=default_loader, is_valid_file=None):
-        if(is_valid_file==None):
+        if is_valid_file==None:
             super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS,
                                           transform=transform,
                                           target_transform=target_transform)
         else:
-            super(ImageFolder, self).__init__(root, loader, None, is_valid_file
+            super(ImageFolder, self).__init__(root, loader, None,
                                           transform=transform,
-                                          target_transform=target_transform)
+                                          target_transform=target_transform, is_valid_file)
         self.imgs = self.samples
