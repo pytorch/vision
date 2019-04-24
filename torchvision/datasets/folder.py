@@ -35,16 +35,16 @@ def is_image_file(filename):
 def make_dataset(dir, class_to_idx, extensions, is_valid_file=None):
     images = []
     dir = os.path.expanduser(dir)
-    if extensions == None and is_valid_file == None:
+    if extensions is None and is_valid_file is None:
         raise ValueError("Both extensions and is_valid_file cannot be None")
-    if extensions != None and is_valid_file != None:
+    if extensions is not None and is_valid_file is not None:
         raise ValueError("One of the extensions and is_valid_file should be None")
 
     for target in sorted(class_to_idx.keys()):
         d = os.path.join(dir, target)
         if not os.path.isdir(d):
             continue
-        if extensions != None:
+        if extensions is not None:
             for root, _, fnames in sorted(os.walk(d)):
                 for fname in sorted(fnames):
                     if has_file_allowed_extension(fname, extensions):
@@ -211,12 +211,13 @@ class ImageFolder(DatasetFolder):
 
     def __init__(self, root, transform=None, target_transform=None,
                  loader=default_loader, is_valid_file=None):
-        if is_valid_file==None:
+        if is_valid_file is None:
             super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS,
-                                          transform=transform,
-                                          target_transform=target_transform)
+                                              transform=transform,
+                                              target_transform=target_transform)
         else:
             super(ImageFolder, self).__init__(root, loader, None,
-                                          transform=transform,
-                                          target_transform=target_transform, is_valid_file=is_valid_file)
+                                              transform=transform,
+                                              target_transform=target_transform,
+                                              is_valid_file=is_valid_file)
         self.imgs = self.samples
