@@ -88,9 +88,7 @@ at::Tensor nms_cuda(const at::Tensor boxes, float nms_overlap_thresh) {
   at::Tensor mask =
       at::empty({boxes_num * col_blocks}, boxes.options().dtype(at::kLong));
 
-  dim3 blocks(
-      at::cuda::ATenCeilDiv(boxes_num, threadsPerBlock),
-      at::cuda::ATenCeilDiv(boxes_num, threadsPerBlock));
+  dim3 blocks(col_blocks, col_blocks);
   dim3 threads(threadsPerBlock);
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 

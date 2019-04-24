@@ -30,7 +30,7 @@ def batched_nms(boxes, scores, idxs, iou_threshold):
     Performs non-maximum suppression in a batched fashion.
 
     Each index value correspond to a category, and NMS
-    will not happen between elements of different categories.
+    will not be applied between elements of different categories.
 
     Arguments:
         boxes (Tensor[N, 4]): boxes where NMS will be performed
