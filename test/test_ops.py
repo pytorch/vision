@@ -414,10 +414,10 @@ class NMSTester(unittest.TestCase):
             current_box = boxes[current, :]
             indexes = indexes[1:]
             rest_boxes = boxes[indexes, :]
-            iou = ops.box_iou(rest_boxes, current_box.unsqueeze(0))
+            iou = ops.box_iou(rest_boxes, current_box.unsqueeze(0)).squeeze(1)
             indexes = indexes[iou <= iou_threshold]
 
-        return torch.as_tensor(sorted(picked))
+        return torch.as_tensor(picked)
 
     def _create_tensors(self, N):
         boxes = torch.rand(N, 4) * 100
