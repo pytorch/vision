@@ -20,11 +20,6 @@ ARCHIVE_DICT = {
     }
 }
 
-META_DICT = {
-    'filename': 'meta.bin',
-    'md5': '7e0d3cf156177e4fc47011cdd30ce706',
-}
-
 
 class ImageNet(ImageFolder):
     """`ImageNet <http://image-net.org/>`_ 2012 Classification Dataset.
@@ -70,7 +65,7 @@ class ImageNet(ImageFolder):
                              for cls in clss}
 
     def download(self):
-        if not self._check_meta_file_integrity():
+        if not check_integrity(self.meta_file):
             tmpdir = os.path.join(self.root, 'tmp')
 
             archive_dict = ARCHIVE_DICT['devkit']
@@ -102,13 +97,10 @@ class ImageNet(ImageFolder):
 
     @property
     def meta_file(self):
-        return os.path.join(self.root, META_DICT['filename'])
-
-    def _check_meta_file_integrity(self):
-        return check_integrity(self.meta_file, META_DICT['md5'])
+        return os.path.join(self.root, 'meta.bin')
 
     def _load_meta_file(self):
-        if self._check_meta_file_integrity():
+        if check_integrity(self.meta_file):
             return torch.load(self.meta_file)
         else:
             raise RuntimeError("Meta file not found or corrupted.",
