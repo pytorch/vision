@@ -32,7 +32,7 @@ def is_image_file(filename):
     return has_file_allowed_extension(filename, IMG_EXTENSIONS)
 
 
-def make_dataset(dir, class_to_idx, extensions, is_valid_file=None):
+def make_dataset(dir, class_to_idx, extensions=None, is_valid_file=None):
     images = []
     dir = os.path.expanduser(dir)
     if extensions is None and is_valid_file is None:
@@ -45,19 +45,14 @@ def make_dataset(dir, class_to_idx, extensions, is_valid_file=None):
         if not os.path.isdir(d):
             continue
         if extensions is not None:
-            for root, _, fnames in sorted(os.walk(d)):
-                for fname in sorted(fnames):
-                    if has_file_allowed_extension(fname, extensions):
-                        path = os.path.join(root, fname)
-                        item = (path, class_to_idx[target])
-                        images.append(item)
-        else:
-            for root, _, fnames in sorted(os.walk(d)):
-                for fname in sorted(fnames):
-                    path = os.path.join(root, fname)
-                    if is_valid_file(path):
-                        item = (path, class_to_idx[target])
-                        images.append(item)
+            def is_valid_file(x):
+                return has_file_allowed_extension(x, extensions)
+        for root, _, fnames in sorted(os.walk(d)):
+            for fname in sorted(fnames):
+                path = os.path.join(root, fname)
+                if is_valid_file(path):
+                    item = (path, class_to_idx[target])
+                    images.append(item)
 
     return images
 
@@ -211,13 +206,8 @@ class ImageFolder(DatasetFolder):
 
     def __init__(self, root, transform=None, target_transform=None,
                  loader=default_loader, is_valid_file=None):
-        if is_valid_file is None:
-            super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS,
-                                              transform=transform,
-                                              target_transform=target_transform)
-        else:
-            super(ImageFolder, self).__init__(root, loader, None,
-                                              transform=transform,
-                                              target_transform=target_transform,
-                                              is_valid_file=is_valid_file)
+        super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS if is_valid_file is None else None,
+                                          transform=transform,
+                                          target_transform=target_transform,
+                                          is_valid_file=is_valid_file)
         self.imgs = self.samples
