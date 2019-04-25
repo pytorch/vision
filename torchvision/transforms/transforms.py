@@ -541,7 +541,7 @@ class RandomPerspective(object):
 
     """
 
-    def __init__(self, interpolation=Image.BICUBIC, p=0.5, distortion_scale=0.5):
+    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=Image.BICUBIC):
         self.p = p
         self.interpolation = interpolation
         self.distortion_scale = distortion_scale
