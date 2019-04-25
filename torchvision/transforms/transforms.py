@@ -534,11 +534,11 @@ class RandomPerspective(object):
 
     Args:
         interpolation : Default- Image.BICUBIC
-    
+
         p (float): probability of the image being perspectively transformed. Default value is 0.5
 
         distortion_scale(float): it controls the degree of distortion and ranges from 0 to 1. Default value is 0.5.
-    
+
     """
 
     def __init__(self, interpolation=Image.BICUBIC, p=0.5, distortion_scale=0.5):
@@ -577,14 +577,14 @@ class RandomPerspective(object):
         """
         half_height = int(height / 2)
         half_width = int(width / 2)
-        topleft = (random.randint(0, int(distortion_scale * half_width)), \
-         random.randint(0, int(distortion_scale * half_height)))
-        topright = (random.randint(width - int(distortion_scale * half_width) - 1, width - 1), \
-         random.randint(0, int(distortion_scale * half_height)))
-        botright = (random.randint(width - int(distortion_scale * half_width) - 1, width - 1), \
-            random.randint(height - int(distortion_scale * half_height) - 1, height - 1))
-        botleft = (random.randint(0, int(distortion_scale * half_width)), \
-            random.randint(height - int(distortion_scale * half_height) - 1, height - 1))
+        topleft = (random.randint(0, int(distortion_scale * half_width)),
+                random.randint(0, int(distortion_scale * half_height)))
+        topright = (random.randint(width - int(distortion_scale * half_width) - 1, width - 1),
+                random.randint(0, int(distortion_scale * half_height)))
+        botright = (random.randint(width - int(distortion_scale * half_width) - 1, width - 1),
+                random.randint(height - int(distortion_scale * half_height) - 1, height - 1))
+        botleft = (random.randint(0, int(distortion_scale * half_width)),
+                random.randint(height - int(distortion_scale * half_height) - 1, height - 1))
         startpoints = [(0, 0), (width - 1, 0), (width - 1, height - 1), (0, height - 1)]
         endpoints = [topleft, topright, botright, botleft]
         return startpoints, endpoints

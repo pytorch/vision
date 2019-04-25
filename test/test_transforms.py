@@ -158,7 +158,7 @@ class Tester(unittest.TestCase):
             to_pil_image = transforms.ToPILImage()
             img = to_pil_image(img)
             perp = transforms.RandomPerspective()
-            startpoints, endpoints = perp.get_params(width, height)
+            startpoints, endpoints = perp.get_params(width, height, 0.5)
             tr_img = F.perspective(img, startpoints, endpoints)
             tr_img2 = F.to_tensor(F.perspective(tr_img, endpoints, startpoints))
             tr_img = F.to_tensor(tr_img)
