@@ -150,6 +150,22 @@ class Tester(unittest.TestCase):
             assert (min(aspect_ratio_range) - epsilon <= aspect_ratio_obtained <= max(aspect_ratio_range) + epsilon or
                     aspect_ratio_obtained == 1.0)
 
+    def test_randomperspective(self):
+        for i in range(10):
+            height = random.randint(24, 32) * 2
+            width = random.randint(24, 32) * 2
+            img = torch.ones(3, height, width)
+            to_pil_image = transforms.ToPILImage()
+            img = to_pil_image(img)
+            perp = transforms.RandomPerspective()
+            startpoints, endpoints = perp.get_params(width, height, 0.5)
+            tr_img = F.perspective(img, startpoints, endpoints)
+            tr_img2 = F.to_tensor(F.perspective(tr_img, endpoints, startpoints))
+            tr_img = F.to_tensor(tr_img)
+            assert img.size[0] == width and img.size[1] == height
+            assert torch.nn.functional.mse_loss(tr_img, F.to_tensor(img)) + 0.3 > \
+                torch.nn.functional.mse_loss(tr_img2, F.to_tensor(img))
+
     def test_resize(self):
         height = random.randint(24, 32) * 2
         width = random.randint(24, 32) * 2
