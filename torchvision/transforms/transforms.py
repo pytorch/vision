@@ -537,7 +537,7 @@ class RandomPerspective(object):
         
         p (float): probability of the image being perspectively transformed. Default value is 0.5
         
-        distortion_scale(float): it controls the degree of distortion and ranges from 0 to 1.
+        distortion_scale(float): it controls the degree of distortion and ranges from 0 to 1. Default value is 0.5.
     
     """
 
@@ -559,12 +559,12 @@ class RandomPerspective(object):
 
         if random.random() < self.p:
             width, height = img.size
-            startpoints, endpoints = self.get_params(width, height)
+            startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
             return F.perspective(img, startpoints, endpoints, self.interpolation)
         return img
 
     @staticmethod
-    def get_params(width, height):
+    def get_params(width, height, distortion_scale):
         """Get parameters for ``perspective`` for a random perspective transform.
 
         Args:
@@ -577,10 +577,10 @@ class RandomPerspective(object):
         """
         half_height = int(height / 2)
         half_width = int(width / 2)
-        topleft = (random.randint(0, distortion_scale * half_width), random.randint(0, distortion_scale * half_height))
-        topright = (random.randint(width - distortion_scale * half_width - 1, width - 1), random.randint(0, distortion_scale * half_height))
-        botright = (random.randint(width - distortion_scale * half_width - 1, width - 1), random.randint(height - distortion_scale * half_height - 1, height - 1))
-        botleft = (random.randint(0, distortion_scale * half_width), random.randint(height - distortion_scale * half_height - 1, height - 1))
+        topleft = (random.randint(0, int(distortion_scale * half_width)), random.randint(0, int(distortion_scale * half_height)))
+        topright = (random.randint(width - int(distortion_scale * half_width) - 1, width - 1), random.randint(0, int(distortion_scale * half_height)))
+        botright = (random.randint(width - int(distortion_scale * half_width) - 1, width - 1), random.randint(height - int(distortion_scale * half_height) - 1, height - 1))
+        botleft = (random.randint(0, int(distortion_scale * half_width)), random.randint(height - int(distortion_scale * half_height) - 1, height - 1))
         startpoints = [(0, 0), (width - 1, 0), (width - 1, height - 1), (0, height - 1)]
         endpoints = [topleft, topright, botright, botleft]
         return startpoints, endpoints
