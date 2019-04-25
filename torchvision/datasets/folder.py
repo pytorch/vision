@@ -35,10 +35,8 @@ def is_image_file(filename):
 def make_dataset(dir, class_to_idx, extensions=None, is_valid_file=None):
     images = []
     dir = os.path.expanduser(dir)
-    if extensions is None and is_valid_file is None:
-        raise ValueError("Both extensions and is_valid_file cannot be None")
-    if extensions is not None and is_valid_file is not None:
-        raise ValueError("One of the extensions and is_valid_file should be None")
+    if not ((extensions is None) ^ (is_valid_file is None)):
+        raise ValueError("Both extensions and is_valid_file cannot be None or not None at the same time")
     if extensions is not None:
         def is_valid_file(x):
             return has_file_allowed_extension(x, extensions)
