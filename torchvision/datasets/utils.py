@@ -17,20 +17,26 @@ def gen_bar_updater():
     return bar_update
 
 
+def calc_md5(fpath, chunk_size=1024*1024):
+    md5 = hashlib.md5()
+    with open(fpath, 'rb') as f:
+        for chunk in iter(lambda: f.read(chunk_size), b''):
+            md5.update(chunk)
+    return md5.hexdigest()
+
+
+def check_md5(fpath, md5, **kwargs):
+    return md5 == calc_md5(fpath, **kwargs)
+
+
 def check_integrity(fpath, md5=None):
-    if md5 is None:
-        return True
     if not os.path.isfile(fpath):
         return False
-    md5o = hashlib.md5()
-    with open(fpath, 'rb') as f:
-        # read in 1MB chunks
-        for chunk in iter(lambda: f.read(1024 * 1024), b''):
-            md5o.update(chunk)
-    md5c = md5o.hexdigest()
-    if md5c != md5:
-        return False
-    return True
+    else:
+        if md5 is None:
+            return True
+        else:
+            return check_md5(fpath, md5)
 
 
 def makedir_exist_ok(dirpath):
