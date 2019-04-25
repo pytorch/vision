@@ -49,7 +49,7 @@ class CocoCaptions(VisionDataset):
         self.target_transform = target_transform
         from pycocotools.coco import COCO
         self.coco = COCO(annFile)
-        self.ids = list(self.coco.imgs.keys())
+        self.ids = list(sorted(self.coco.imgs.keys()))
 
     def __getitem__(self, index):
         """
@@ -98,7 +98,7 @@ class CocoDetection(VisionDataset):
         self.target_transform = target_transform
         from pycocotools.coco import COCO
         self.coco = COCO(annFile)
-        self.ids = list(self.coco.imgs.keys())
+        self.ids = list(sorted(self.coco.imgs.keys()))
 
     def __getitem__(self, index):
         """
