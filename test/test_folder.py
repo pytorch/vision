@@ -36,6 +36,20 @@ class Tester(unittest.TestCase):
         outputs = sorted([dataset[i] for i in range(len(dataset))])
         self.assertEqual(imgs, outputs)
 
+        dataset = ImageFolder(Tester.root, loader=lambda x: x, is_valid_file=lambda x: True)
+        self.assertEqual(sorted(Tester.classes), sorted(dataset.classes))
+        for cls in Tester.classes:
+            self.assertEqual(cls, dataset.classes[dataset.class_to_idx[cls]])
+        class_a_idx = dataset.class_to_idx['a']
+        class_b_idx = dataset.class_to_idx['b']
+        imgs_a = [(img_path, class_a_idx)for img_path in Tester.class_a_images]
+        imgs_b = [(img_path, class_b_idx)for img_path in Tester.class_b_images]
+        imgs = sorted(imgs_a + imgs_b)
+        self.assertEqual(imgs, dataset.imgs)
+
+        outputs = sorted([dataset[i] for i in range(len(dataset))])
+        self.assertEqual(imgs, outputs)
+
     def test_transform(self):
         return_value = get_file_path_2('test/assets/dataset/a/a1.png')
 
