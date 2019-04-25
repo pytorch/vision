@@ -39,14 +39,13 @@ def make_dataset(dir, class_to_idx, extensions=None, is_valid_file=None):
         raise ValueError("Both extensions and is_valid_file cannot be None")
     if extensions is not None and is_valid_file is not None:
         raise ValueError("One of the extensions and is_valid_file should be None")
-
+    if extensions is not None:
+        def is_valid_file(x):
+            return has_file_allowed_extension(x, extensions)
     for target in sorted(class_to_idx.keys()):
         d = os.path.join(dir, target)
         if not os.path.isdir(d):
             continue
-        if extensions is not None:
-            def is_valid_file(x):
-                return has_file_allowed_extension(x, extensions)
         for root, _, fnames in sorted(os.walk(d)):
             for fname in sorted(fnames):
                 path = os.path.join(root, fname)
