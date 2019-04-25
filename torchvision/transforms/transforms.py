@@ -578,13 +578,13 @@ class RandomPerspective(object):
         half_height = int(height / 2)
         half_width = int(width / 2)
         topleft = (random.randint(0, int(distortion_scale * half_width)),
-                  random.randint(0, int(distortion_scale * half_height)))
+                   random.randint(0, int(distortion_scale * half_height)))
         topright = (random.randint(width - int(distortion_scale * half_width) - 1, width - 1),
                     random.randint(0, int(distortion_scale * half_height)))
         botright = (random.randint(width - int(distortion_scale * half_width) - 1, width - 1),
                     random.randint(height - int(distortion_scale * half_height) - 1, height - 1))
         botleft = (random.randint(0, int(distortion_scale * half_width)),
-                  random.randint(height - int(distortion_scale * half_height) - 1, height - 1))
+                   random.randint(height - int(distortion_scale * half_height) - 1, height - 1))
         startpoints = [(0, 0), (width - 1, 0), (width - 1, height - 1), (0, height - 1)]
         endpoints = [topleft, topright, botright, botleft]
         return startpoints, endpoints
