@@ -72,13 +72,14 @@ def clip_boxes_to_image(boxes, size):
     Returns:
         clipped_boxes (Tensor[N, 4])
     """
-    boxes_x = boxes[:, 0::2]
-    boxes_y = boxes[:, 1::2]
+    dim = boxes.dim()
+    boxes_x = boxes[..., 0::2]
+    boxes_y = boxes[..., 1::2]
     height, width = size
     boxes_x = boxes_x.clamp(min=0, max=width)
-    boxes_y = boxes_x.clamp(min=0, max=height)
-    clipped_boxes = torch.stack((boxes_x, boxes_y), dim=2)
-    return clipped_boxes.reshape(-1, 4)
+    boxes_y = boxes_y.clamp(min=0, max=height)
+    clipped_boxes = torch.stack((boxes_x, boxes_y), dim=dim)
+    return clipped_boxes.reshape(boxes.shape)
 
 
 def box_area(boxes):

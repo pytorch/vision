@@ -26,7 +26,7 @@ class RoIPoolTester(unittest.TestCase):
                     start_h, end_h = int(roi[2].item()), int(roi[4].item()) + 1
                     start_w, end_w = int(roi[1].item()), int(roi[3].item()) + 1
                     roi_x = x[roi[0].long(), :, start_h:end_h, start_w:end_w]
-                    bin_h, bin_w = roi_x.size(-2) / pool_h, roi_x.size(-1) / pool_w
+                    bin_h, bin_w = roi_x.size(-2) / float(pool_h), roi_x.size(-1) / float(pool_w)
 
                     for j in range(0, pool_h):
                         cj = slice(int(np.floor(j * bin_h)), int(np.ceil((j + 1) * bin_h)))
