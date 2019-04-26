@@ -49,12 +49,12 @@ void RoIPoolForward(
         wend = std::min(std::max(wend + roi_start_w, 0), width);
         bool is_empty = (hend <= hstart) || (wend <= wstart);
 
-        // Define an empty pooling region to be zero
-        T maxval = is_empty ? 0 : -FLT_MAX;
-        // If nothing is pooled, argmax = -1 causes nothing to be backprop'd
-        int maxidx = -1;
-
         for (int c = 0; c < channels; ++c) {
+          // Define an empty pooling region to be zero
+          T maxval = is_empty ? 0 : -FLT_MAX;
+          // If nothing is pooled, argmax = -1 causes nothing to be backprop'd
+          int maxidx = -1;
+
           const T* input_offset =
               input + (roi_batch_ind * channels + c) * height * width;
 

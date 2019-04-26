@@ -15,7 +15,8 @@ class RoIPoolTester(unittest.TestCase):
 
     def slow_roi_pooling(self, x, rois, pool_h, pool_w, spatial_scale=1,
                          device=torch.device('cpu'), dtype=torch.float64):
-        y = torch.zeros(rois.size(0), x.size(1), pool_h, pool_w, dtype=dtype, device=device)
+        c = x.size(1)
+        y = torch.zeros(rois.size(0), c, pool_h, pool_w, dtype=dtype, device=device)
 
         rois = torch.round(rois * spatial_scale)
 
@@ -24,14 +25,16 @@ class RoIPoolTester(unittest.TestCase):
                 if roi[0] == n:
                     start_h, end_h = int(roi[2].item()), int(roi[4].item()) + 1
                     start_w, end_w = int(roi[1].item()), int(roi[3].item()) + 1
-                    roi_x = x[roi[0].long():roi[0].long() + 1, :, start_h:end_h, start_w:end_w]
-                    bin_h, bin_w = roi_x.size(2) / pool_h, roi_x.size(3) / pool_w
+                    roi_x = x[roi[0].long(), :, start_h:end_h, start_w:end_w]
+                    bin_h, bin_w = roi_x.size(-2) / pool_h, roi_x.size(-1) / pool_w
 
                     for j in range(0, pool_h):
                         cj = slice(int(np.floor(j * bin_h)), int(np.ceil((j + 1) * bin_h)))
                         for i in range(0, pool_w):
                             ci = slice(int(np.floor(i * bin_w)), int(np.ceil((i + 1) * bin_w)))
-                            y[r, :, j, i] = torch.max(y[r, :, j, i], torch.max(roi_x[:, :, cj, ci]))
+                            t = roi_x[:, cj, ci].reshape(c, -1)
+                            if t.numel() > 0:
+                                y[r, :, j, i] = torch.max(t, 1)[0]
         return y
 
     def test_roi_pool_basic_cpu(self):
@@ -74,6 +77,34 @@ class RoIPoolTester(unittest.TestCase):
         y = roi_pool(x.permute(0, 1, 3, 2), rois)
         gt_y = self.slow_roi_pooling(x.permute(0, 1, 3, 2), rois, pool_h, pool_w, device=device, dtype=self.dtype)
         assert torch.allclose(gt_y, y), 'RoIPool layer incorrect on CPU for batch > 1'
+
+    def test_roi_pool_cpu_empty_rois(self):
+        device = torch.device('cpu')
+        x = torch.tensor(
+            [[[[0.1767, 1.2851, 4.2325, 4.8645, 7.1496]],
+              [[2.5916, 4.3361, 3.8143, 6.1329, 2.0230]],
+              [[1.4492, 3.3384, 4.0816, 6.3116, 5.1068]]]],
+            dtype=self.dtype, device=device)
+        rois = torch.tensor(
+            [[0., 1., 0., 4., 0.],
+             [0., 2., 0., 3., 0.],
+             [0., 0., 0., 0., 0.],
+             [0., 0., 0., 0., 0.],
+             [0., 2., 0., 2., 0.]],
+            dtype=self.dtype, device=device)
+
+        pool_h, pool_w = (1, 2)
+        roi_pool = ops.RoIPool((pool_h, pool_w), 1)
+        y = roi_pool(x, rois)
+
+        gt_y = self.slow_roi_pooling(x, rois, pool_h, pool_w, device=device, dtype=self.dtype)
+
+        assert torch.allclose(gt_y, y), 'RoIPool layer incorrect on CPU empty rois'
+
+        # non-contiguous
+        y = roi_pool(x.permute(0, 1, 3, 2), rois)
+        gt_y = self.slow_roi_pooling(x.permute(0, 1, 3, 2), rois, pool_h, pool_w, device=device, dtype=self.dtype)
+        assert torch.allclose(gt_y, y), 'RoIPool layer incorrect on CPU for empty rois non-contiguous'
 
     def test_roi_pool_gradient_cpu(self):
         device = torch.device('cpu')
