@@ -72,9 +72,9 @@ class SqueezeNet(nn.Module):
                 Fire(512, 64, 256, 256),
             )
         else:
-            #FIXME: Is this needed? SqueezeNet should only be called from the
-            #FIXME: squeezenet1_x() functions
-            #FIXME: This checking is not done for the other models
+            # FIXME: Is this needed? SqueezeNet should only be called from the
+            # FIXME: squeezenet1_x() functions
+            # FIXME: This checking is not done for the other models
             raise ValueError("Unsupported SqueezeNet version {version}:"
                              "1_0 or 1_1 expected".format(version=version))
 
