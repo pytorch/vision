@@ -10,45 +10,6 @@ import random
 from pycocotools import mask as coco_mask
 
 
-class VOC(torchvision.datasets.VOCSegmentation):
-    def __init__(self, root, image_set='train', transforms=None):
-        super(VOC, self).__init__(root, image_set=image_set)
-        self.transforms = transforms
-
-    def __getitem__(self, idx):
-        image, target = super(VOC, self).__getitem__(idx)
-        if self.transforms is not None:
-            image, target = self.transforms(image, target)
-        return image, target
-
-    @property
-    def num_classes(self):
-        return 21
-
-class SBDD(object):
-    def __init__(self, root, image_set='train', transforms=None):
-        self.root = root
-        with open(os.path.join(root, image_set + '.txt')) as f:
-            self.ids = f.readlines()
-        self.ids = [x.strip() for x in self.ids]
-        self.transforms = transforms
-
-    def __getitem__(self, idx):
-        img_id = self.ids[idx]
-        image = Image.open(os.path.join(self.root, 'img', img_id + '.jpg')).convert('RGB')
-        target = Image.open(os.path.join(self.root, 'cls', img_id + '.png'))
-        if self.transforms is not None:
-            image, target = self.transforms(image, target)
-        return image, target
-
-    def __len__(self):
-        return len(self.ids)
-
-    @property
-    def num_classes(self):
-        return 21
-
-
 def has_valid_annotation(anno):
     # if it's empty, there is no annotation
     if len(anno) == 0:
@@ -71,35 +32,41 @@ def convert_polys_to_mask(anno, h, w, categories):
         target = torch.where(target == 0, m.any(dim=2) * c, target)
     return target
 
+def _coco_remove_images_without_annotations(dataset):
+    ids = []
+    for img_id in dataset.ids:
+        ann_ids = dataset.coco.getAnnIds(imgIds=img_id, iscrowd=None)
+        anno = dataset.coco.loadAnns(ann_ids)
+        anno = [obj for obj in anno if obj["category_id"] in dataset.CAT_LIST]
+        if has_valid_annotation(anno):
+            ids.append(img_id)
+    dataset.ids = ids
+    return dataset
+
+
+def convert_polys_to_mask_transform(image, anno, self):
+    w, h = image.size
+    target = convert_polys_to_mask(anno, h, w, self.CAT_LIST)
+    target = Image.fromarray(target.numpy())
+    return image, target
+
 
 class _COCO(torchvision.datasets.CocoDetection):
 
     CAT_LIST = [0, 5, 2, 16, 9, 44, 6, 3, 17, 62, 21, 67, 18, 19, 4,
                 1, 64, 20, 63, 7, 72]
-    NUM_CLASS = 21
     def __init__(self, root, ann_file, remove_images_without_annotations, transforms=None):
         super(_COCO, self).__init__(root, ann_file)
-        # sort indices for reproducible results
-        self.ids = sorted(self.ids)
         # filter images without detection annotations
         if remove_images_without_annotations:
-            ids = []
-            for img_id in self.ids:
-                ann_ids = self.coco.getAnnIds(imgIds=img_id, iscrowd=None)
-                anno = self.coco.loadAnns(ann_ids)
-                anno = [obj for obj in anno if obj["category_id"] in self.CAT_LIST]
-                if has_valid_annotation(anno):
-                    ids.append(img_id)
-            self.ids = ids
+            _coco_remove_images_without_annotations(self)
 
         self.transforms = transforms
 
     def __getitem__(self, idx):
         image, anno = super(_COCO, self).__getitem__(idx)
 
-        w, h = image.size
-        target = convert_polys_to_mask(anno, h, w, self.CAT_LIST)
-        target = Image.fromarray(target.numpy())
+        image, target = convert_polys_to_mask_transform(image, anno, self)
 
         if self.transforms is not None:
             image, target = self.transforms(image, target)

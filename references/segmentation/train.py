@@ -13,14 +13,18 @@ import utils
 
 
 def get_dataset(name, image_set, transform):
+    def sbd(*args, **kwargs):
+        return torchvision.datasets.SBDataset(*args, mode='segmentation', **kwargs)
     paths = {
-        "voc": ('/datasets01/VOC/060817/', datasets.VOC),
-        "voc_aug": ('/datasets01/SBDD/072318/', datasets.SBDD),
+        "voc": ('/datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation),
+        "voc_aug": ('/datasets01/SBDD/072318/', sbd),
         "coco": ('/datasets01/COCO/060817/', datasets.COCO)
     }
     p, ds_fn = paths[name]
 
-    return ds_fn(p, image_set, transforms=transform)
+    ds = ds_fn(p, image_set=image_set, transforms=transform)
+    ds.num_classes = 21
+    return ds
 
 
 def criterion(inputs, target):
