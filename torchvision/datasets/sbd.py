@@ -54,7 +54,7 @@ class SBDataset(VisionDataset):
                  image_set='train',
                  mode='boundaries',
                  download=False,
-                 xy_transform=None, **kwargs):
+                 transforms=None):
 
         try:
             from scipy.io import loadmat
@@ -63,12 +63,11 @@ class SBDataset(VisionDataset):
             raise RuntimeError("Scipy is not found. This dataset needs to have scipy installed: "
                                "pip install scipy")
 
-        super(SBDataset, self).__init__(root)
+        super(SBDataset, self).__init__(root, transforms)
 
         if mode not in ("segmentation", "boundaries"):
             raise ValueError("Argument mode should be 'segmentation' or 'boundaries'")
 
-        self.xy_transform = xy_transform
         self.image_set = image_set
         self.mode = mode
         self.num_classes = 20
@@ -120,8 +119,8 @@ class SBDataset(VisionDataset):
         img = Image.open(self.images[index]).convert('RGB')
         target = self._get_target(self.masks[index])
 
-        if self.xy_transform is not None:
-            img, target = self.xy_transform(img, target)
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
 
         return img, target
 
