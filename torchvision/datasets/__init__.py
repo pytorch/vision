@@ -17,6 +17,7 @@ from .imagenet import ImageNet
 from .caltech import Caltech101, Caltech256
 from .celeba import CelebA
 from .sbd import SBDataset
+from .vision import VisionDataset
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
