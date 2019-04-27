@@ -18,7 +18,7 @@ def get_dataset(name, image_set, transform):
     paths = {
         "voc": ('/datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation),
         "voc_aug": ('/datasets01/SBDD/072318/', sbd),
-        "coco": ('/datasets01/COCO/060817/', datasets.COCO)
+        "coco": ('/datasets01/COCO/022719/', datasets.get_coco)
     }
     p, ds_fn = paths[name]
 
@@ -106,8 +106,8 @@ def main(args):
 
     device = torch.device(args.device)
 
-    dataset = get_dataset(args.dataset, "train", datasets.Transform(0.5))
-    dataset_test = get_dataset(args.dataset, "val", datasets.Transform())
+    dataset = get_dataset(args.dataset, "train", datasets.get_transform(train=True))
+    dataset_test = get_dataset(args.dataset, "val", datasets.get_transform(train=False))
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
