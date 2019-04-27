@@ -1,5 +1,6 @@
 import copy
 import torch
+import torch.utils.data
 import torchvision
 from PIL import Image
 from torchvision import transforms as T
@@ -11,24 +12,7 @@ import random
 from pycocotools import mask as coco_mask
 
 
-def convert_polys_to_mask(segmentations, categories, h, w):
-    target = torch.zeros((h, w), dtype=torch.uint8)
-    for segm, cat in zip(segmentations, categories):
-        m = convert_coco_poly_to_mask(segm, h, w)
-        target = torch.where(target == 0, m * cat, target)
-        # can also cat and do a max over dim 2
-    return target
-
-def convert_coco_poly_to_mask(polygons, height, width):
-    rles = coco_mask.frPyObjects(polygons, height, width)
-    mask = coco_mask.decode(rles)
-    if len(mask.shape) < 3:
-        mask = mask[..., None]
-    mask = torch.as_tensor(mask)
-    mask = mask.any(dim=2)
-    return mask
-
-class FilterAndRemapCategories(object):
+class FilterAndRemapCocoCategories(object):
     def __init__(self, categories, remap=True):
         self.categories = categories
         self.remap = remap
@@ -43,34 +27,63 @@ class FilterAndRemapCategories(object):
         return image, anno
 
 
-class ConvertPolysToMask(object):
+def convert_coco_poly_to_mask(segmentations, height, width):
+    masks = []
+    for polygons in segmentations:
+        rles = coco_mask.frPyObjects(polygons, height, width)
+        mask = coco_mask.decode(rles)
+        if len(mask.shape) < 3:
+            mask = mask[..., None]
+        mask = torch.as_tensor(mask, dtype=torch.uint8)
+        mask = mask.any(dim=2)
+        masks.append(mask)
+    if masks:
+        masks = torch.stack(masks, dim=0)
+    else:
+        masks = torch.zeros((0, height, width), dtype=torch.uint8)
+    return masks
+
+
+class ConvertCocoPolysToMask(object):
     def __call__(self, image, anno):
         w, h = image.size
         segmentations = [obj["segmentation"] for obj in anno]
         cats = [obj["category_id"] for obj in anno]
-        target = convert_polys_to_mask(segmentations, cats, h, w)
+        if segmentations:
+            masks = convert_coco_poly_to_mask(segmentations, h, w)
+            cats = torch.as_tensor(cats, dtype=masks.dtype)
+            # merge all instance masks into a single segmentation map
+            # with its corresponding categories
+            target, _ = (masks * cats[:, None, None]).max(dim=0)
+            # discard overlapping instances
+            target[masks.sum(0) > 1] = 255
+        else:
+            target = torch.zeros((h, w), dtype=torch.uint8)
         target = Image.fromarray(target.numpy())
         return image, target
 
-def _coco_has_valid_annotation(anno):
-    # if it's empty, there is no annotation
-    if len(anno) == 0:
-        return False
-    # if more than 1k pixels occupied in the image
-    return sum(obj["area"] for obj in anno) > 1000
 
 def _coco_remove_images_without_annotations(dataset, cat_list=None):
+    def _has_valid_annotation(anno):
+        # if it's empty, there is no annotation
+        if len(anno) == 0:
+            return False
+        # if more than 1k pixels occupied in the image
+        return sum(obj["area"] for obj in anno) > 1000
+
     assert isinstance(dataset, torchvision.datasets.CocoDetection)
     ids = []
-    for img_id in dataset.ids:
+    for ds_idx, img_id in enumerate(dataset.ids):
         ann_ids = dataset.coco.getAnnIds(imgIds=img_id, iscrowd=None)
         anno = dataset.coco.loadAnns(ann_ids)
         if cat_list:
             anno = [obj for obj in anno if obj["category_id"] in cat_list]
-        if _coco_has_valid_annotation(anno):
-            ids.append(img_id)
-    dataset.ids = ids
+        if _has_valid_annotation(anno):
+            ids.append(ds_idx)
+
+    dataset = torch.utils.data.Subset(dataset, ids)
     return dataset
+
 
 def get_coco(root, image_set, transforms):
     PATHS = {
@@ -82,18 +95,19 @@ def get_coco(root, image_set, transforms):
                 1, 64, 20, 63, 7, 72]
 
     transforms = Compose([
-        FilterAndRemapCategories(CAT_LIST, remap=True),
-        ConvertPolysToMask(),
+        FilterAndRemapCocoCategories(CAT_LIST, remap=True),
+        ConvertCocoPolysToMask(),
         transforms
     ])
 
     img_folder, ann_file = PATHS[image_set]
     img_folder = os.path.join(root, img_folder)
     ann_file = os.path.join(root, ann_file)
+
     dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
 
-    #if image_set == "train":
-    #    _coco_remove_images_without_annotations(dataset, CAT_LIST)
+    if image_set == "train":
+        dataset = _coco_remove_images_without_annotations(dataset, CAT_LIST)
 
     return dataset
 
@@ -117,6 +131,7 @@ class Compose(object):
             image, target = t(image, target)
         return image, target
 
+
 class RandomResize(object):
     def __init__(self, min_size, max_size=None):
         self.min_size = min_size
@@ -130,6 +145,7 @@ class RandomResize(object):
         target = T.functional.resize(target, size, interpolation=Image.NEAREST)
         return image, target
 
+
 class RandomHorizontalFlip(object):
     def __init__(self, flip_prob):
         self.flip_prob = flip_prob
@@ -139,6 +155,7 @@ class RandomHorizontalFlip(object):
             image = T.functional.hflip(image)
             target = T.functional.hflip(target)
         return image, target
+
 
 class RandomCrop(object):
     def __init__(self, size):
@@ -152,11 +169,13 @@ class RandomCrop(object):
         target = T.functional.crop(target, *crop_params)
         return image, target
 
+
 class ToTensor(object):
     def __call__(self, image, target):
         image = T.functional.to_tensor(image)
         target = torch.as_tensor(np.asarray(target), dtype=torch.int64)
         return image, target
+
 
 class Normalize(object):
     def __init__(self, mean, std):

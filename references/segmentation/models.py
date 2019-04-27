@@ -43,6 +43,40 @@ class IntermediateLayerGetter(nn.ModuleDict):
         return out
 
 
+class Classifier(nn.Module):
+    def __init__(self, module, classes):
+        super(Classifier, self).__init__()
+        assert isinstance(module, (nn.Conv2d, nn.Linear))
+        self.module = module
+        self.classes = classes
+
+    def forward(self, x):
+        return self.module(x)
+
+    def reset_classes(self, new_classes):
+        matches = []
+        for cl in new_classes:
+            if cl in self.classes:
+                matches.append(self.classes.index(cl))
+            else:
+                matches.append(-1)
+
+        matches = torch.as_tensor(matches)
+
+        weight = self.module.weight.detach()
+        new_weight = weight[matches]
+        # TODO need to random init -1
+        self.module.weight = nn.Parameter(new_weight)
+        if hasattr('bias', self.module):
+            bias = self.module.bias.detach()
+            new_bias = bias[matches]
+            # TODO need to random init -1
+            self.module.bias = nn.Parameter(new_bias)
+
+        self.classes = new_classes
+
+
+
 class SegmentationModel(nn.Module):
     def __init__(self, backbone, head):
         super(SegmentationModel, self).__init__()
