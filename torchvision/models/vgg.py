@@ -90,7 +90,7 @@ def _vgg(arch, cfg, batch_norm, pretrained, progress, **kwargs):
     if pretrained:
         state_dict = hub.load_state_dict_from_url(model_urls[arch],
                                                   progress=progress)
-        model.load(state_dict)
+        model.load_state_dict(state_dict)
     return model
 
 
