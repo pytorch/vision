@@ -7,6 +7,7 @@ import torch.utils.model_zoo as model_zoo
 import torchvision
 
 
+# TODO should we remove the unused parameters or not?
 class IntermediateLayerGetter(nn.ModuleDict):
     """
     Module wrapper that returns intermediate layers from a model
@@ -43,62 +44,78 @@ class IntermediateLayerGetter(nn.ModuleDict):
         return out
 
 
-class Classifier(nn.Module):
-    def __init__(self, module, classes):
-        super(Classifier, self).__init__()
-        assert isinstance(module, (nn.Conv2d, nn.Linear))
-        self.module = module
-        self.classes = classes
+def return_intermediate_outputs(model, return_layers):
+    class StopForward(Exception):
+        pass
 
-    def forward(self, x):
-        return self.module(x)
+    import types
 
-    def reset_classes(self, new_classes):
-        matches = []
-        for cl in new_classes:
-            if cl in self.classes:
-                matches.append(self.classes.index(cl))
-            else:
-                matches.append(-1)
+    outputs = OrderedDict()
 
-        matches = torch.as_tensor(matches)
+    def clear_outputs():
+        def fn(module, input):
+            outputs.clear()
+        return fn
 
-        weight = self.module.weight.detach()
-        new_weight = weight[matches]
-        # TODO need to random init -1
-        self.module.weight = nn.Parameter(new_weight)
-        if hasattr('bias', self.module):
-            bias = self.module.bias.detach()
-            new_bias = bias[matches]
-            # TODO need to random init -1
-            self.module.bias = nn.Parameter(new_bias)
+    def store_output(name, is_last):
+        def fn(module, input, output):
+            outputs[name] = output
+            if is_last:
+                raise StopForward()
+        return fn
 
-        self.classes = new_classes
+    old_forward = model.forward
+    def new_call(self, *args, **kwargs):
+        try:
+            output = old_forward(*args, **kwargs)
+        except StopForward:
+            output = outputs
+        return outputs
+
+    # have to monkey-patch forward because can't monkey patch
+    # __call__ on instances
+    model.forward = types.MethodType(new_call, model)
+
+    model.register_forward_pre_hook(clear_outputs())
+    for name, module in model.named_modules():
+        if name in return_layers:
+            out_name = return_layers[name]
+            del return_layers[name]
+            is_last = len(return_layers) == 0
+            module.register_forward_hook(store_output(out_name, is_last))
 
 
-class SegmentationModel(nn.Module):
-    def __init__(self, backbone, head):
-        super(SegmentationModel, self).__init__()
+class _SimpleSegmentationModel(nn.Module):
+    def __init__(self, backbone, classifier, aux_classifier=None):
+        super(_SimpleSegmentationModel, self).__init__()
         self.backbone = backbone
-        self.head = head
+        self.classifier = classifier
+        self.aux_classifier = aux_classifier
 
     def forward(self, x):
         input_shape = x.shape[-2:]
+        # contract: features is a dict of tensors
         features = self.backbone(x)
 
-        # contract: features is a dict of tensors
-        # the names from the classifiers in self will be matched to those
-        # in the features dict
-        assert len(features) == len(self.head)
-        assert len(set(features).difference(set(self.head))) == 0
-
         result = OrderedDict()
-        for key, module in self.head.items():
-            x = features[key]
-            x = module(x)
+        x = features["out"]
+        x = self.classifier(x)
+        x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
+        result["out"] = x
+
+        if self.aux_classifier is not None:
+            x = features["aux"]
+            x = self.aux_classifier(x)
             x = F.interpolate(x, size=input_shape, mode='bilinear', align_corners=False)
-            result[key] = x
+            result["aux"] = x
+
         return result
+
+class FCN(_SimpleSegmentationModel):
+    pass
+
+class DeepLabV3(_SimpleSegmentationModel):
+    pass
 
 
 class FCNHead(nn.Sequential):
@@ -113,6 +130,12 @@ class FCNHead(nn.Sequential):
         ]
 
         super(FCNHead, self).__init__(*layers)
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
 
 
 class DeepLabHead(nn.Sequential):
@@ -124,6 +147,12 @@ class DeepLabHead(nn.Sequential):
             nn.ReLU(),
             nn.Conv2d(256, num_classes, 1)
         )
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
 
 
 class ASPPConv(nn.Sequential):
@@ -182,47 +211,55 @@ class ASPP(nn.Module):
         return self.project(res)
 
 
-def get_resnet(name, aux=False):
-    import re
-    matcher = re.compile('resnet(\d+)')
-    match = matcher.match(name)
-    if not match:
-        raise ValueError("Invalid ResNet type {}".format(name))
-
-    backbone_name = match.group(0)
-
-    d = None
-    if 'dilated' in name:
-        d = [False, True, True]
-
-    model = getattr(torchvision.models, backbone_name)(pretrained=True,
-                                                       replace_stride_with_dilation=d)
+def _seg_resnet(name, backbone_name, num_classes, aux):
+    backbone = torchvision.models.__dict__[backbone_name](
+        pretrained=True,
+        replace_stride_with_dilation=[False, True, True])
 
     return_layers = {'layer4': 'out'}
     if aux:
         return_layers['layer3'] = 'aux'
-    model = IntermediateLayerGetter(model, return_layers=return_layers)
+    backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
+    # return_intermediate_outputs(backbone, return_layers)
+
+    classifiers = nn.ModuleDict()
+    aux_classifier = None
+    if aux:
+        inplanes = 1024
+        aux_classifier = FCNHead(inplanes, num_classes)
+
+    model_map = {
+        'deeplab': (DeepLabHead, DeepLabV3),
+        'fcn': (FCNHead, FCN),
+    }
+    inplanes = 2048
+    classifier = model_map[name][0](inplanes, num_classes)
+    base_model = model_map[name][1]
+
+    model = base_model(backbone, classifier, aux_classifier)
     return model
 
 
-def get_model(name, backbone, num_classes, aux=False):
-    if 'resnet' in backbone:
-        backbone = get_resnet(backbone, aux)
+def fcn_resnet50(pretrained=False, num_classes=21, aux_loss=None):
+    model = _seg_resnet("fcn", "resnet50", num_classes, aux_loss)
+    if pretrained:
+        pass
+    return model
 
-    inv_return_layers = {v: k for k, v in backbone.return_layers.items()}
-    classifiers = nn.ModuleDict()
-    if aux:
-        layer_name = inv_return_layers['aux']
-        inplanes = getattr(backbone, layer_name).outplanes
-        classifiers['aux'] = FCNHead(inplanes, num_classes)
+def fcn_resnet101(pretrained=False, num_classes=21, aux_loss=None):
+    model = _seg_resnet("fcn", "resnet101", num_classes, aux_loss)
+    if pretrained:
+        pass
+    return model
 
-    model_map = {
-        'deeplab': DeepLabHead,
-        'fcn': FCNHead,
-    }
-    layer_name = inv_return_layers['out']
-    inplanes = getattr(backbone, layer_name).outplanes
-    classifiers['out'] = model_map[name](inplanes, num_classes)
+def deeplabv3_resnet50(pretrained=False, num_classes=21, aux_loss=None):
+    model = _seg_resnet("deeplab", "resnet50", num_classes, aux_loss)
+    if pretrained:
+        pass
+    return model
 
-    model = SegmentationModel(backbone, classifiers)
+def deeplablv3_resnet101(pretrained=False, num_classes=21, aux_loss=None):
+    model = _seg_resnet("deeplab", "resnet101", num_classes, aux_loss)
+    if pretrained:
+        pass
     return model

@@ -184,9 +184,7 @@ class ResNet(nn.Module):
                                 base_width=self.base_width, dilation=self.dilation,
                                 norm_layer=norm_layer))
 
-        layers = nn.Sequential(*layers)
-        layers.outplanes = self.inplanes
-        return layers
+        return nn.Sequential(*layers)
 
     def forward(self, x):
         x = self.conv1(x)

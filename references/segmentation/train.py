@@ -128,7 +128,7 @@ def main(args):
             sampler=test_sampler, num_workers=args.workers,
             collate_fn=utils.collate_fn)
 
-    model = models.get_model(args.model, args.backbone, num_classes=dataset.num_classes, aux=args.aux_loss)
+    model = models.__dict__[args.model](num_classes=dataset.num_classes, aux_loss=args.aux_loss)
     model.to(device)
     if args.distributed:
         model = torch.nn.utils.convert_sync_batchnorm(model)
@@ -144,11 +144,11 @@ def main(args):
 
     params_to_optimize = [
         {"params": [p for p in model_without_ddp.backbone.parameters() if p.requires_grad]},
-        {"params": [p for p in model_without_ddp.head['out'].parameters() if p.requires_grad]},
+        {"params": [p for p in model_without_ddp.classifier.parameters() if p.requires_grad]},
     ]
     if args.aux_loss:
-        params_to_optimize.append(
-            {"params": [p for p in model_without_ddp.head['aux'].parameters() if p.requires_grad], "lr": args.lr * 10})
+        params = [p for p in model_without_ddp.aux_classifier.parameters() if p.requires_grad]
+        params_to_optimize.append({"params": params, "lr": args.lr * 10})
     optimizer = torch.optim.SGD(
         params_to_optimize,
         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
@@ -181,11 +181,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='PyTorch Segmentation Training')
 
     parser.add_argument('--dataset', default='voc', help='dataset')
-    parser.add_argument('--model', default='fcn', help='model')
-    parser.add_argument('--backbone', default='resnet101', help='backbone')
+    parser.add_argument('--model', default='fcn_resnet101', help='model')
     parser.add_argument('--aux-loss', action='store_true', help='auxiliar loss')
     parser.add_argument('--device', default='cuda', help='device')
-    parser.add_argument('-b', '--batch-size', default=16, type=int)
+    parser.add_argument('-b', '--batch-size', default=8, type=int)
     parser.add_argument('--epochs', default=30, type=int, metavar='N',
                         help='number of total epochs to run')
 
