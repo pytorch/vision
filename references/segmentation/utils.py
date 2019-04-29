@@ -8,7 +8,6 @@ import errno
 import os
 
 
-
 class SmoothedValue(object):
     """Track a series of values and provide access to smoothed values over a
     window or the global series average.
@@ -77,14 +76,16 @@ class ConfusionMatrix(object):
 
     def __str__(self):
         acc_global, acc, iu = self.compute()
-        return ('global correct: {:.1f}\n'
-               'average row correct: {}\n'
-               'IoU: {}\n'
-               'mean IoU: {:.1f}').format(
-                       acc_global.item() * 100,
-                       ['{:.1f}'.format(i) for i in (acc * 100).tolist()],
-                       ['{:.1f}'.format(i) for i in (iu * 100).tolist()],
-                       iu.mean().item() * 100)
+        return (
+            'global correct: {:.1f}\n'
+            'average row correct: {}\n'
+            'IoU: {}\n'
+            'mean IoU: {:.1f}').format(
+                acc_global.item() * 100,
+                ['{:.1f}'.format(i) for i in (acc * 100).tolist()],
+                ['{:.1f}'.format(i) for i in (iu * 100).tolist()],
+                iu.mean().item() * 100)
+
 
 class MetricLogger(object):
     def __init__(self, delimiter="\t"):
@@ -152,7 +153,6 @@ class MetricLogger(object):
         print('{} Total time: {}'.format(header, total_time_str))
 
 
-
 def cat_list(images, fill_value=0):
     max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
     batch_shape = (len(images),) + max_size
@@ -161,11 +161,13 @@ def cat_list(images, fill_value=0):
         pad_img[..., :img.shape[-2], :img.shape[-1]].copy_(img)
     return batched_imgs
 
+
 def collate_fn(batch):
     images, targets = list(zip(*batch))
     batched_imgs = cat_list(images, fill_value=0)
     batched_targets = cat_list(targets, fill_value=255)
     return batched_imgs, batched_targets
+
 
 def mkdir(path):
     try:

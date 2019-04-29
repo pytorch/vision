@@ -86,10 +86,12 @@ def suppress_output(is_master):
     __builtin__.print = print
 
     torch_save = torch.save
+
     def save(*args, **kwargs):
         if is_master:
             torch_save(*args, **kwargs)
     torch.save = save
+
 
 def main(args):
     args.gpu = args.local_rank
@@ -116,11 +118,15 @@ def main(args):
         train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
 
-    data_loader = torch.utils.data.DataLoader(dataset, batch_size=args.batch_size,
-            sampler=train_sampler, num_workers=args.workers, collate_fn=utils.collate_fn, drop_last=True)
+    data_loader = torch.utils.data.DataLoader(
+            dataset, batch_size=args.batch_size,
+            sampler=train_sampler, num_workers=args.workers,
+            collate_fn=utils.collate_fn, drop_last=True)
 
-    data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=1,
-            sampler=test_sampler, num_workers=args.workers, collate_fn=utils.collate_fn)
+    data_loader_test = torch.utils.data.DataLoader(
+            dataset_test, batch_size=1,
+            sampler=test_sampler, num_workers=args.workers,
+            collate_fn=utils.collate_fn)
 
     model = models.get_model(args.model, args.backbone, num_classes=dataset.num_classes, aux=args.aux_loss)
     model.to(device)
@@ -147,8 +153,9 @@ def main(args):
         params_to_optimize,
         lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer,
-            lambda x: (1 - x / (len(data_loader) * args.epochs)) ** 0.9)
+    lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
+        optimizer,
+        lambda x: (1 - x / (len(data_loader) * args.epochs)) ** 0.9)
 
     start_time = time.time()
     for epoch in range(args.epochs):
@@ -156,8 +163,13 @@ def main(args):
         with torch.no_grad():
             confmat = evaluate(model, data_loader_test, device=device, num_classes=dataset.num_classes)
         print(confmat)
-        torch.save({'model': model_without_ddp.state_dict(), 'optimizer': optimizer.state_dict(), 'args': args},
-                os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
+        torch.save(
+            {
+                'model': model_without_ddp.state_dict(),
+                'optimizer': optimizer.state_dict(),
+                'args': args
+            },
+            os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
@@ -195,7 +207,6 @@ if __name__ == "__main__":
 
     if args.output_dir:
         utils.mkdir(args.output_dir)
-
 
     import os
     num_gpus = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1

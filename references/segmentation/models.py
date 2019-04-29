@@ -21,7 +21,7 @@ class IntermediateLayerGetter(nn.ModuleDict):
             raise ValueError("return_layers are not present in model")
 
         orig_return_layers = return_layers
-        return_layers = {k:v for k, v in return_layers.items()}
+        return_layers = {k: v for k, v in return_layers.items()}
         layers = OrderedDict()
         for name, module in model.named_children():
             layers[name] = module
@@ -74,7 +74,6 @@ class Classifier(nn.Module):
             self.module.bias = nn.Parameter(new_bias)
 
         self.classes = new_classes
-
 
 
 class SegmentationModel(nn.Module):
@@ -227,4 +226,3 @@ def get_model(name, backbone, num_classes, aux=False):
 
     model = SegmentationModel(backbone, classifiers)
     return model
-
