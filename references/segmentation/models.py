@@ -3,7 +3,6 @@ from collections import OrderedDict
 import torch
 from torch import nn
 from torch.nn import functional as F
-import torch.utils.model_zoo as model_zoo
 import torchvision
 
 
@@ -42,47 +41,6 @@ class IntermediateLayerGetter(nn.ModuleDict):
                 out_name = self.return_layers[name]
                 out[out_name] = x
         return out
-
-
-def return_intermediate_outputs(model, return_layers):
-    class StopForward(Exception):
-        pass
-
-    import types
-
-    outputs = OrderedDict()
-
-    def clear_outputs():
-        def fn(module, input):
-            outputs.clear()
-        return fn
-
-    def store_output(name, is_last):
-        def fn(module, input, output):
-            outputs[name] = output
-            if is_last:
-                raise StopForward()
-        return fn
-
-    old_forward = model.forward
-    def new_call(self, *args, **kwargs):
-        try:
-            output = old_forward(*args, **kwargs)
-        except StopForward:
-            output = outputs
-        return outputs
-
-    # have to monkey-patch forward because can't monkey patch
-    # __call__ on instances
-    model.forward = types.MethodType(new_call, model)
-
-    model.register_forward_pre_hook(clear_outputs())
-    for name, module in model.named_modules():
-        if name in return_layers:
-            out_name = return_layers[name]
-            del return_layers[name]
-            is_last = len(return_layers) == 0
-            module.register_forward_hook(store_output(out_name, is_last))
 
 
 class _SimpleSegmentationModel(nn.Module):
@@ -211,7 +169,7 @@ class ASPP(nn.Module):
         return self.project(res)
 
 
-def _seg_resnet(name, backbone_name, num_classes, aux):
+def _segm_resnet(name, backbone_name, num_classes, aux):
     backbone = torchvision.models.__dict__[backbone_name](
         pretrained=True,
         replace_stride_with_dilation=[False, True, True])
@@ -220,7 +178,6 @@ def _seg_resnet(name, backbone_name, num_classes, aux):
     if aux:
         return_layers['layer3'] = 'aux'
     backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
-    # return_intermediate_outputs(backbone, return_layers)
 
     classifiers = nn.ModuleDict()
     aux_classifier = None
@@ -241,25 +198,25 @@ def _seg_resnet(name, backbone_name, num_classes, aux):
 
 
 def fcn_resnet50(pretrained=False, num_classes=21, aux_loss=None):
-    model = _seg_resnet("fcn", "resnet50", num_classes, aux_loss)
+    model = _segm_resnet("fcn", "resnet50", num_classes, aux_loss)
     if pretrained:
         pass
     return model
 
 def fcn_resnet101(pretrained=False, num_classes=21, aux_loss=None):
-    model = _seg_resnet("fcn", "resnet101", num_classes, aux_loss)
+    model = _segm_resnet("fcn", "resnet101", num_classes, aux_loss)
     if pretrained:
         pass
     return model
 
 def deeplabv3_resnet50(pretrained=False, num_classes=21, aux_loss=None):
-    model = _seg_resnet("deeplab", "resnet50", num_classes, aux_loss)
+    model = _segm_resnet("deeplab", "resnet50", num_classes, aux_loss)
     if pretrained:
         pass
     return model
 
 def deeplablv3_resnet101(pretrained=False, num_classes=21, aux_loss=None):
-    model = _seg_resnet("deeplab", "resnet101", num_classes, aux_loss)
+    model = _segm_resnet("deeplab", "resnet101", num_classes, aux_loss)
     if pretrained:
         pass
     return model
