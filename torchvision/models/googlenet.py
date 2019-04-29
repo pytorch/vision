@@ -3,7 +3,7 @@ from collections import namedtuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch import hub
+from .utils import load_state_dict_from_url
 
 __all__ = ['GoogLeNet', 'googlenet']
 
@@ -39,8 +39,8 @@ def googlenet(pretrained=False, progress=True, **kwargs):
         kwargs['aux_logits'] = True
         kwargs['init_weights'] = False
         model = GoogLeNet(**kwargs)
-        state_dict = hub.load_state_dict_from_url(model_urls['googlenet'],
-                                                  progress=progress)
+        state_dict = load_state_dict_from_url(model_urls['googlenet'],
+                                              progress=progress)
         model.load_state_dict(state_dict)
         if not original_aux_logits:
             model.aux_logits = False

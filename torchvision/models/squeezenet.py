@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-from torch import hub
+from .utils import load_state_dict_from_url
 
 __all__ = ['SqueezeNet', 'squeezenet1_0', 'squeezenet1_1']
 
@@ -106,8 +106,8 @@ def _squeezenet(version, pretrained, progress, **kwargs):
     model = SqueezeNet(version, **kwargs)
     if pretrained:
         arch = 'squeezenet' + version
-        state_dict = hub.load_state_dict_from_url(model_urls[arch],
-                                                  progress=progress)
+        state_dict = load_state_dict_from_url(model_urls[arch],
+                                              progress=progress)
         model.load_state_dict(state_dict)
     return model
 

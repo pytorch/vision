@@ -2,7 +2,7 @@ import re
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch import hub
+from .utils import load_state_dict_from_url
 from collections import OrderedDict
 
 __all__ = ['DenseNet', 'densenet121', 'densenet169', 'densenet201', 'densenet161']
@@ -131,7 +131,7 @@ def _load_state_dict(model, model_url, progress):
     pattern = re.compile(
         r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
 
-    state_dict = hub.load_state_dict_from_url(model_url, progress=progress)
+    state_dict = load_state_dict_from_url(model_url, progress=progress)
     for key in list(state_dict.keys()):
         res = pattern.match(key)
         if res:
