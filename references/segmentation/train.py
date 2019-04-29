@@ -9,6 +9,7 @@ import torchvision
 
 import datasets
 import models
+import transforms as T
 import utils
 
 
@@ -16,15 +17,32 @@ def get_dataset(name, image_set, transform):
     def sbd(*args, **kwargs):
         return torchvision.datasets.SBDataset(*args, mode='segmentation', **kwargs)
     paths = {
-        "voc": ('/datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation),
-        "voc_aug": ('/datasets01/SBDD/072318/', sbd),
-        "coco": ('/datasets01/COCO/022719/', datasets.get_coco)
+        "voc": ('/datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation, 21),
+        "voc_aug": ('/datasets01/SBDD/072318/', sbd, 21),
+        "coco": ('/datasets01/COCO/022719/', datasets.get_coco, 21)
     }
-    p, ds_fn = paths[name]
+    p, ds_fn, num_classes = paths[name]
 
     ds = ds_fn(p, image_set=image_set, transforms=transform)
-    ds.num_classes = 21
-    return ds
+    return ds, num_classes
+
+
+def get_transform(train):
+    base_size = 520
+    crop_size = 480
+
+    min_size = int((0.5 if train else 1.0) * base_size)
+    max_size = int((2.0 if train else 1.0) * base_size)
+    transforms = []
+    transforms.append(T.RandomResize(min_size, max_size))
+    if train:
+        transforms.append(T.RandomHorizontalFlip(0.5))
+        transforms.append(T.RandomCrop(crop_size))
+    transforms.append(T.ToTensor())
+    transforms.append(T.Normalize(mean=[0.485, 0.456, 0.406],
+                                  std=[0.229, 0.224, 0.225]))
+
+    return T.Compose(transforms)
 
 
 def criterion(inputs, target):
@@ -73,26 +91,6 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
         metric_logger.update(loss=loss.item())
 
 
-def suppress_output(is_master):
-    """Suppress printing on the current device. Force printing with `force=True`."""
-    import builtins as __builtin__
-    builtin_print = __builtin__.print
-
-    def print(*args, **kwargs):
-        force = kwargs.pop('force', False)
-        if is_master or force:
-            builtin_print(*args, **kwargs)
-
-    __builtin__.print = print
-
-    torch_save = torch.save
-
-    def save(*args, **kwargs):
-        if is_master:
-            torch_save(*args, **kwargs)
-    torch.save = save
-
-
 def main(args):
     args.gpu = args.local_rank
 
@@ -104,12 +102,12 @@ def main(args):
         print('| distributed init (rank {}): {}'.format(
             args.rank, dist_url), flush=True)
         torch.distributed.init_process_group(backend=args.dist_backend, init_method=dist_url)
-        suppress_output(args.rank == 0)
+        utils.suppress_output(args.rank == 0)
 
     device = torch.device(args.device)
 
-    dataset = get_dataset(args.dataset, "train", datasets.get_transform(train=True))
-    dataset_test = get_dataset(args.dataset, "val", datasets.get_transform(train=False))
+    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(train=True))
+    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(train=False))
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
@@ -128,7 +126,7 @@ def main(args):
             sampler=test_sampler, num_workers=args.workers,
             collate_fn=utils.collate_fn)
 
-    model = models.__dict__[args.model](num_classes=dataset.num_classes, aux_loss=args.aux_loss)
+    model = models.__dict__[args.model](num_classes=num_classes, aux_loss=args.aux_loss)
     model.to(device)
     if args.distributed:
         model = torch.nn.utils.convert_sync_batchnorm(model)

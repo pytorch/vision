@@ -1,3 +1,4 @@
+from __future__ import print_function
 from collections import defaultdict, deque
 import datetime
 import math
@@ -175,3 +176,22 @@ def mkdir(path):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+
+def suppress_output(is_master):
+    """Suppress printing on the current device. Force printing with `force=True`."""
+    import builtins as __builtin__
+    builtin_print = __builtin__.print
+
+    def print(*args, **kwargs):
+        force = kwargs.pop('force', False)
+        if is_master or force:
+            builtin_print(*args, **kwargs)
+
+    __builtin__.print = print
+
+    torch_save = torch.save
+
+    def save(*args, **kwargs):
+        if is_master:
+            torch_save(*args, **kwargs)
+    torch.save = save

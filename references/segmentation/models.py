@@ -179,7 +179,6 @@ def _segm_resnet(name, backbone_name, num_classes, aux):
         return_layers['layer3'] = 'aux'
     backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
-    classifiers = nn.ModuleDict()
     aux_classifier = None
     if aux:
         inplanes = 1024
@@ -203,17 +202,20 @@ def fcn_resnet50(pretrained=False, num_classes=21, aux_loss=None):
         pass
     return model
 
+
 def fcn_resnet101(pretrained=False, num_classes=21, aux_loss=None):
     model = _segm_resnet("fcn", "resnet101", num_classes, aux_loss)
     if pretrained:
         pass
     return model
 
+
 def deeplabv3_resnet50(pretrained=False, num_classes=21, aux_loss=None):
     model = _segm_resnet("deeplab", "resnet50", num_classes, aux_loss)
     if pretrained:
         pass
     return model
+
 
 def deeplablv3_resnet101(pretrained=False, num_classes=21, aux_loss=None):
     model = _segm_resnet("deeplab", "resnet101", num_classes, aux_loss)

@@ -3,13 +3,12 @@ import torch
 import torch.utils.data
 import torchvision
 from PIL import Image
-from torchvision import transforms as T
 
 import os
-import numpy as np
-import random
 
 from pycocotools import mask as coco_mask
+
+from transforms import Compose
 
 
 class FilterAndRemapCocoCategories(object):
@@ -110,96 +109,3 @@ def get_coco(root, image_set, transforms):
         dataset = _coco_remove_images_without_annotations(dataset, CAT_LIST)
 
     return dataset
-
-
-def pad_if_smaller(img, size, fill=0):
-    min_size = min(img.size)
-    if min_size < size:
-        ow, oh = img.size
-        padh = size - oh if oh < size else 0
-        padw = size - ow if ow < size else 0
-        img = T.functional.pad(img, (0, 0, padw, padh), fill=fill)
-    return img
-
-
-class Compose(object):
-    def __init__(self, transforms):
-        self.transforms = transforms
-
-    def __call__(self, image, target):
-        for t in self.transforms:
-            image, target = t(image, target)
-        return image, target
-
-
-class RandomResize(object):
-    def __init__(self, min_size, max_size=None):
-        self.min_size = min_size
-        if max_size is None:
-            max_size = min_size
-        self.max_size = max_size
-
-    def __call__(self, image, target):
-        size = random.randint(self.min_size, self.max_size)
-        image = T.functional.resize(image, size)
-        target = T.functional.resize(target, size, interpolation=Image.NEAREST)
-        return image, target
-
-
-class RandomHorizontalFlip(object):
-    def __init__(self, flip_prob):
-        self.flip_prob = flip_prob
-
-    def __call__(self, image, target):
-        if random.random() < self.flip_prob:
-            image = T.functional.hflip(image)
-            target = T.functional.hflip(target)
-        return image, target
-
-
-class RandomCrop(object):
-    def __init__(self, size):
-        self.size = size
-
-    def __call__(self, image, target):
-        image = pad_if_smaller(image, self.size)
-        target = pad_if_smaller(target, self.size, fill=255)
-        crop_params = T.RandomCrop.get_params(image, (self.size, self.size))
-        image = T.functional.crop(image, *crop_params)
-        target = T.functional.crop(target, *crop_params)
-        return image, target
-
-
-class ToTensor(object):
-    def __call__(self, image, target):
-        image = T.functional.to_tensor(image)
-        target = torch.as_tensor(np.asarray(target), dtype=torch.int64)
-        return image, target
-
-
-class Normalize(object):
-    def __init__(self, mean, std):
-        self.mean = mean
-        self.std = std
-
-    def __call__(self, image, target):
-        image = T.functional.normalize(image, mean=self.mean, std=self.std)
-        return image, target
-
-
-def get_transform(train):
-    base_size = 520
-    crop_size = 480
-
-    min_size = int((0.5 if train else 1.0) * base_size)
-    max_size = int((2.0 if train else 1.0) * base_size)
-    transforms = []
-    transforms.append(RandomResize(min_size, max_size))
-    if train:
-        transforms.append(RandomHorizontalFlip(0.5))
-        transforms.append(RandomCrop(crop_size))
-    transforms.append(ToTensor())
-    transforms.append(Normalize(mean=[0.485, 0.456, 0.406],
-                                std=[0.229, 0.224, 0.225]))
-
-    return Compose(transforms)
