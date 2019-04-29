@@ -7,3 +7,4 @@ from .densenet import *
 from .googlenet import *
 from .mobilenet import *
 from .shufflenetv2 import *
+from .segmentation import *

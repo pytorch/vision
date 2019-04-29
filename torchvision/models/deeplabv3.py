@@ -3,44 +3,6 @@ from collections import OrderedDict
 import torch
 from torch import nn
 from torch.nn import functional as F
-import torchvision
-
-
-# TODO should we remove the unused parameters or not?
-class IntermediateLayerGetter(nn.ModuleDict):
-    """
-    Module wrapper that returns intermediate layers from a model
-
-    It has a strong assumption that the modules have been registered
-    into the model in the same order as they are used.
-    This means that one should **not** reuse the same nn.Module
-    twice in the forward if you want this to work
-    """
-    def __init__(self, model, return_layers):
-        if not set(return_layers).issubset([name for name, _ in model.named_children()]):
-            raise ValueError("return_layers are not present in model")
-
-        orig_return_layers = return_layers
-        return_layers = {k: v for k, v in return_layers.items()}
-        layers = OrderedDict()
-        for name, module in model.named_children():
-            layers[name] = module
-            if name in return_layers:
-                del return_layers[name]
-            if not return_layers:
-                break
-
-        super(IntermediateLayerGetter, self).__init__(layers)
-        self.return_layers = orig_return_layers
-
-    def forward(self, x):
-        out = OrderedDict()
-        for name, module in self.named_children():
-            x = module(x)
-            if name in self.return_layers:
-                out_name = self.return_layers[name]
-                out[out_name] = x
-        return out
 
 
 class _SimpleSegmentationModel(nn.Module):
@@ -114,9 +76,9 @@ class DeepLabHead(nn.Sequential):
 
 
 class ASPPConv(nn.Sequential):
-    def __init__(self, in_channels, out_channels, atrous_rate):
+    def __init__(self, in_channels, out_channels, dilation):
         modules = [
-            nn.Conv2d(in_channels, out_channels, 3, padding=atrous_rate, dilation=atrous_rate, bias=False),
+            nn.Conv2d(in_channels, out_channels, 3, padding=dilation, dilation=dilation, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU()
         ]
@@ -167,58 +129,3 @@ class ASPP(nn.Module):
             res.append(conv(x))
         res = torch.cat(res, dim=1)
         return self.project(res)
-
-
-def _segm_resnet(name, backbone_name, num_classes, aux):
-    backbone = torchvision.models.__dict__[backbone_name](
-        pretrained=True,
-        replace_stride_with_dilation=[False, True, True])
-
-    return_layers = {'layer4': 'out'}
-    if aux:
-        return_layers['layer3'] = 'aux'
-    backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
-
-    aux_classifier = None
-    if aux:
-        inplanes = 1024
-        aux_classifier = FCNHead(inplanes, num_classes)
-
-    model_map = {
-        'deeplab': (DeepLabHead, DeepLabV3),
-        'fcn': (FCNHead, FCN),
-    }
-    inplanes = 2048
-    classifier = model_map[name][0](inplanes, num_classes)
-    base_model = model_map[name][1]
-
-    model = base_model(backbone, classifier, aux_classifier)
-    return model
-
-
-def fcn_resnet50(pretrained=False, num_classes=21, aux_loss=None):
-    model = _segm_resnet("fcn", "resnet50", num_classes, aux_loss)
-    if pretrained:
-        pass
-    return model
-
-
-def fcn_resnet101(pretrained=False, num_classes=21, aux_loss=None):
-    model = _segm_resnet("fcn", "resnet101", num_classes, aux_loss)
-    if pretrained:
-        pass
-    return model
-
-
-def deeplabv3_resnet50(pretrained=False, num_classes=21, aux_loss=None):
-    model = _segm_resnet("deeplab", "resnet50", num_classes, aux_loss)
-    if pretrained:
-        pass
-    return model
-
-
-def deeplablv3_resnet101(pretrained=False, num_classes=21, aux_loss=None):
-    model = _segm_resnet("deeplab", "resnet101", num_classes, aux_loss)
-    if pretrained:
-        pass
-    return model

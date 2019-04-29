@@ -8,7 +8,6 @@ from torch import nn
 import torchvision
 
 import datasets
-import models
 import transforms as T
 import utils
 
@@ -126,7 +125,7 @@ def main(args):
             sampler=test_sampler, num_workers=args.workers,
             collate_fn=utils.collate_fn)
 
-    model = models.__dict__[args.model](num_classes=num_classes, aux_loss=args.aux_loss)
+    model = torchvision.models.__dict__[args.model](num_classes=num_classes, aux_loss=args.aux_loss)
     model.to(device)
     if args.distributed:
         model = torch.nn.utils.convert_sync_batchnorm(model)
