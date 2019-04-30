@@ -26,4 +26,4 @@ __all__ = ('LSUN', 'LSUNClass',
            'MNIST', 'KMNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
            'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNet',
-           'Caltech101', 'Caltech256', 'CelebA', 'SBDataset')
+           'Caltech101', 'Caltech256', 'CelebA', 'SBDataset', 'VisionDataset')
