@@ -51,7 +51,7 @@ def deeplabv3_resnet50(pretrained=False, num_classes=21, aux_loss=None):
     return model
 
 
-def deeplablv3_resnet101(pretrained=False, num_classes=21, aux_loss=None):
+def deeplabv3_resnet101(pretrained=False, num_classes=21, aux_loss=None):
     model = _segm_resnet("deeplab", "resnet101", num_classes, aux_loss)
     if pretrained:
         pass

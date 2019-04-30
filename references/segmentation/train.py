@@ -7,7 +7,7 @@ import torch.utils.data
 from torch import nn
 import torchvision
 
-import datasets
+from coco_utils import get_coco
 import transforms as T
 import utils
 
@@ -18,7 +18,7 @@ def get_dataset(name, image_set, transform):
     paths = {
         "voc": ('/datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation, 21),
         "voc_aug": ('/datasets01/SBDD/072318/', sbd, 21),
-        "coco": ('/datasets01/COCO/022719/', datasets.get_coco, 21)
+        "coco": ('/datasets01/COCO/022719/', get_coco, 21)
     }
     p, ds_fn, num_classes = paths[name]
 
@@ -158,7 +158,7 @@ def main(args):
     for epoch in range(args.epochs):
         train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, args.print_freq)
         with torch.no_grad():
-            confmat = evaluate(model, data_loader_test, device=device, num_classes=dataset.num_classes)
+            confmat = evaluate(model, data_loader_test, device=device, num_classes=num_classes)
         print(confmat)
         torch.save(
             {

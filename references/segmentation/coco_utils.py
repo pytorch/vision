@@ -86,9 +86,9 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
 
 def get_coco(root, image_set, transforms):
     PATHS = {
-        # "train": ("train2017", os.path.join("annotations", "instances_train2017.json")),
+        "train": ("train2017", os.path.join("annotations", "instances_train2017.json")),
         "val": ("val2017", os.path.join("annotations", "instances_val2017.json")),
-        "train": ("val2017", os.path.join("annotations", "instances_val2017.json"))
+        # "train": ("val2017", os.path.join("annotations", "instances_val2017.json"))
     }
     CAT_LIST = [0, 5, 2, 16, 9, 44, 6, 3, 17, 62, 21, 67, 18, 19, 4,
                 1, 64, 20, 63, 7, 72]
