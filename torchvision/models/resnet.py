@@ -1,5 +1,5 @@
 import torch.nn as nn
-import torch.utils.model_zoo as model_zoo
+from .utils import load_state_dict_from_url
 
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
@@ -204,75 +204,79 @@ class ResNet(nn.Module):
         return x
 
 
-def resnet18(pretrained=False, **kwargs):
+def _resnet(arch, inplanes, planes, pretrained, progress, **kwargs):
+    model = ResNet(inplanes, planes, **kwargs)
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls[arch],
+                                              progress=progress)
+        model.load_state_dict(state_dict)
+    return model
+
+
+def resnet18(pretrained=False, progress=True, **kwargs):
     """Constructs a ResNet-18 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
     """
-    model = ResNet(BasicBlock, [2, 2, 2, 2], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet18']))
-    return model
+    return _resnet('resnet18', BasicBlock, [2, 2, 2, 2], pretrained, progress,
+                   **kwargs)
 
 
-def resnet34(pretrained=False, **kwargs):
+def resnet34(pretrained=False, progress=True, **kwargs):
     """Constructs a ResNet-34 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
     """
-    model = ResNet(BasicBlock, [3, 4, 6, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet34']))
-    return model
+    return _resnet('resnet34', BasicBlock, [3, 4, 6, 3], pretrained, progress,
+                   **kwargs)
 
 
-def resnet50(pretrained=False, **kwargs):
+def resnet50(pretrained=False, progress=True, **kwargs):
     """Constructs a ResNet-50 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
     """
-    model = ResNet(Bottleneck, [3, 4, 6, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
-    return model
+    return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress,
+                   **kwargs)
 
 
-def resnet101(pretrained=False, **kwargs):
+def resnet101(pretrained=False, progress=True, **kwargs):
     """Constructs a ResNet-101 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
     """
-    model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet101']))
-    return model
+    return _resnet('resnet101', Bottleneck, [3, 4, 23, 3], pretrained, progress,
+                   **kwargs)
 
 
-def resnet152(pretrained=False, **kwargs):
+def resnet152(pretrained=False, progress=True, **kwargs):
     """Constructs a ResNet-152 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
     """
-    model = ResNet(Bottleneck, [3, 8, 36, 3], **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['resnet152']))
-    return model
+    return _resnet('resnet152', Bottleneck, [3, 8, 36, 3], pretrained, progress,
+                   **kwargs)
 
 
-def resnext50_32x4d(pretrained=False, **kwargs):
-    model = ResNet(Bottleneck, [3, 4, 6, 3], groups=32, width_per_group=4, **kwargs)
-    # if pretrained:
-    #     model.load_state_dict(model_zoo.load_url(model_urls['resnext50_32x4d']))
-    return model
+def resnext50_32x4d(**kwargs):
+    kwargs['groups'] = 32
+    kwargs['width_per_group'] = 4
+    return _resnet('resnext50_32x4d', Bottleneck, [3, 4, 6, 3],
+                   pretrained=False, progress=True, **kwargs)
 
 
-def resnext101_32x8d(pretrained=False, **kwargs):
-    model = ResNet(Bottleneck, [3, 4, 23, 3], groups=32, width_per_group=8, **kwargs)
-    # if pretrained:
-    #     model.load_state_dict(model_zoo.load_url(model_urls['resnext101_32x8d']))
-    return model
+def resnext101_32x8d(**kwargs):
+    kwargs['groups'] = 32
+    kwargs['width_per_group'] = 8
+    return _resnet('resnext101_32x8d', Bottleneck, [3, 4, 23, 3],
+                   pretrained=False, progress=True, **kwargs)
