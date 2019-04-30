@@ -31,6 +31,10 @@ inline torch::Tensor max_pool2d(
   return torch::max_pool2d(x, kernel_size, stride);
 }
 
+inline bool double_compare(double a, double b) {
+  return double(std::abs(a - b)) < std::numeric_limits<double>::epsilon();
+};
+
 } // namespace modelsimpl
 } // namespace models
 } // namespace vision

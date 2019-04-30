@@ -34,11 +34,7 @@ struct Fire : torch::nn::Module {
 
 SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
     : num_classes(num_classes) {
-  auto double_compare = [](double a, double b) {
-    return double(std::abs(a - b)) < std::numeric_limits<double>::epsilon();
-  };
-
-  if (double_compare(version, 1.0)) {
+  if (modelsimpl::double_compare(version, 1.0)) {
     features = torch::nn::Sequential(
         torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 96, 7).stride(2)),
         torch::nn::Functional(modelsimpl::relu_),
@@ -53,7 +49,7 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
         Fire(384, 64, 256, 256),
         torch::nn::Functional(torch::max_pool2d, 3, 2, 0, 1, true),
         Fire(512, 64, 256, 256));
-  } else if (double_compare(version, 1.1)) {
+  } else if (modelsimpl::double_compare(version, 1.1)) {
     features = torch::nn::Sequential(
         torch::nn::Conv2d(torch::nn::Conv2dOptions(3, 64, 3).stride(2)),
         torch::nn::Functional(modelsimpl::relu_),
