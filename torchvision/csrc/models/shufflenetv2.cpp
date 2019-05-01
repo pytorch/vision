@@ -35,11 +35,11 @@ torch::nn::Conv2d conv33(int64_t input, int64_t output, int64_t stride) {
   return torch::nn::Conv2d(opts);
 }
 
-struct InvertedResidualImpl : torch::nn::Module {
+struct ShuffleNetV2InvertedResidualImpl : torch::nn::Module {
   int64_t stride;
   torch::nn::Sequential branch1{nullptr}, branch2{nullptr};
 
-  InvertedResidualImpl(int64_t inp, int64_t oup, int64_t stride)
+  ShuffleNetV2InvertedResidualImpl(int64_t inp, int64_t oup, int64_t stride)
       : stride(stride) {
     if (stride < 1 || stride > 3) {
       std::cerr << "illegal stride value'" << std::endl;
@@ -68,7 +68,7 @@ struct InvertedResidualImpl : torch::nn::Module {
         torch::nn::BatchNorm(branch_features),
         torch::nn::Functional(modelsimpl::relu_));
 
-    if (branch1)
+    if (!branch1.is_empty())
       register_module("branch1", branch1);
 
     register_module("branch2", branch2);
@@ -83,12 +83,12 @@ struct InvertedResidualImpl : torch::nn::Module {
     } else
       out = torch::cat({branch1->forward(x), branch2->forward(x)}, 1);
 
-    out = channel_shuffle(x, 2);
+    out = channel_shuffle(out, 2);
     return out;
   }
 };
 
-TORCH_MODULE(InvertedResidual);
+TORCH_MODULE(ShuffleNetV2InvertedResidual);
 
 static std::unordered_map<double, std::vector<int64_t>> channels = {
     {0.5, {24, 48, 96, 192, 1024}},
@@ -124,19 +124,19 @@ ShuffleNetV2Impl::ShuffleNetV2Impl(
 
   input_channels = output_channels;
   std::vector<int64_t> stage_repeats = {4, 8, 4};
-  std::vector<torch::nn::Sequential*> stages = {&stage2, &stage3, &stage4};
+  std::vector<torch::nn::Sequential> stages = {stage2, stage3, stage4};
 
   for (size_t i = 0; i < stages.size(); ++i) {
-    auto seq = stages[i];
+    auto& seq = stages[i];
     auto repeats = stage_repeats[i];
     auto output_channels = stage_out_channels[i + 1];
 
-    *seq = torch::nn::Sequential(
-        InvertedResidual(input_channels, output_channels, 2));
+    seq->push_back(
+        ShuffleNetV2InvertedResidual(input_channels, output_channels, 2));
 
     for (size_t j = 0; j < size_t(repeats - 1); ++j)
-      seq->get()->push_back(
-          InvertedResidual(output_channels, output_channels, 1));
+      seq->push_back(
+          ShuffleNetV2InvertedResidual(output_channels, output_channels, 1));
 
     input_channels = output_channels;
   }

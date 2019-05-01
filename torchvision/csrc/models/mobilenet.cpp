@@ -31,12 +31,12 @@ struct ConvBNReLUImpl : torch::nn::SequentialImpl {
 
 TORCH_MODULE(ConvBNReLU);
 
-struct InvertedResidualImpl : torch::nn::Module {
+struct MobileNetInvertedResidualImpl : torch::nn::Module {
   int64_t stride;
   bool use_res_connect;
   torch::nn::Sequential conv;
 
-  InvertedResidualImpl(
+  MobileNetInvertedResidualImpl(
       int64_t input,
       int64_t output,
       int64_t stride,
@@ -67,10 +67,10 @@ struct InvertedResidualImpl : torch::nn::Module {
   }
 };
 
-TORCH_MODULE(InvertedResidual);
+TORCH_MODULE(MobileNetInvertedResidual);
 
 MobileNetV2Impl::MobileNetV2Impl(int64_t num_classes, double width_mult) {
-  using Block = InvertedResidual;
+  using Block = MobileNetInvertedResidual;
   int64_t input_channel = 32;
   int64_t last_channel = 1280;
 
