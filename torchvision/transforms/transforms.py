@@ -782,10 +782,11 @@ class LinearTransformation(object):
     subtract mean_vector from it which is then followed by computing the dot
     product with the transformation matrix and then reshaping the tensor to its
     original shape.
+
     Applications:
-        - whitening transformation: Suppose X is a column vector zero-centered data.
-                 Then compute the data covariance matrix [D x D] with torch.mm(X.t(), X),
-                 perform SVD on this matrix and pass it as transformation_matrix.
+        whitening transformation: Suppose X is a column vector zero-centered data.
+            Then compute the data covariance matrix [D x D] with torch.mm(X.t(), X),
+            perform SVD on this matrix and pass it as transformation_matrix.
     Args:
         transformation_matrix (Tensor): tensor [D x D], D = C x H x W
         mean_vector (Tensor): tensor [D], D = C x H x W
