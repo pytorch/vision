@@ -165,16 +165,16 @@ def shufflenetv2(pretrained=False, num_classes=1000, width_mult=1, **kwargs):
 
 
 def shufflenetv2_x0_5(pretrained=False, num_classes=1000, **kwargs):
-    return shufflenetv2(pretrained, num_classes, input_size, 0.5)
+    return shufflenetv2(pretrained, num_classes, 0.5)
 
 
 def shufflenetv2_x1_0(pretrained=False, num_classes=1000, **kwargs):
-    return shufflenetv2(pretrained, num_classes, input_size, 1)
+    return shufflenetv2(pretrained, num_classes, 1)
 
 
 def shufflenetv2_x1_5(pretrained=False, num_classes=1000, **kwargs):
-    return shufflenetv2(pretrained, num_classes, input_size, 1.5)
+    return shufflenetv2(pretrained, num_classes, 1.5)
 
 
 def shufflenetv2_x2_0(pretrained=False, num_classes=1000, **kwargs):
-    return shufflenetv2(pretrained, num_classes, input_size, 2)
+    return shufflenetv2(pretrained, num_classes, 2)
