@@ -20,11 +20,6 @@ ARCHIVE_DICT = {
     }
 }
 
-META_DICT = {
-    'filename': 'meta.bin',
-    'md5': '7e0d3cf156177e4fc47011cdd30ce706',
-}
-
 
 class ImageNet(ImageFolder):
     """`ImageNet <http://image-net.org/>`_ 2012 Classification Dataset.
@@ -45,7 +40,7 @@ class ImageNet(ImageFolder):
         classes (list): List of the class names.
         class_to_idx (dict): Dict with items (class_name, class_index).
         wnids (list): List of the WordNet IDs.
-        class_to_idx (dict): Dict with items (wordnet_id, wordnet_id_index).
+        wnid_to_idx (dict): Dict with items (wordnet_id, class_index).
         imgs (list): List of (image path, class_index) tuples
         targets (list): The class_index value for each image in the dataset
     """
@@ -70,7 +65,7 @@ class ImageNet(ImageFolder):
                              for cls in clss}
 
     def download(self):
-        if not self._check_meta_file_integrity():
+        if not check_integrity(self.meta_file):
             tmpdir = os.path.join(self.root, 'tmp')
 
             archive_dict = ARCHIVE_DICT['devkit']
@@ -102,13 +97,10 @@ class ImageNet(ImageFolder):
 
     @property
     def meta_file(self):
-        return os.path.join(self.root, META_DICT['filename'])
-
-    def _check_meta_file_integrity(self):
-        return check_integrity(self.meta_file, META_DICT['md5'])
+        return os.path.join(self.root, 'meta.bin')
 
     def _load_meta_file(self):
-        if self._check_meta_file_integrity():
+        if check_integrity(self.meta_file):
             return torch.load(self.meta_file)
         else:
             raise RuntimeError("Meta file not found or corrupted.",
@@ -132,25 +124,8 @@ class ImageNet(ImageFolder):
     def split_folder(self):
         return os.path.join(self.root, self.split)
 
-    def __repr__(self):
-        head = "Dataset " + self.__class__.__name__
-        body = ["Number of datapoints: {}".format(self.__len__())]
-        if self.root is not None:
-            body.append("Root location: {}".format(self.root))
-        body += ["Split: {}".format(self.split)]
-        if hasattr(self, 'transform') and self.transform is not None:
-            body += self._format_transform_repr(self.transform,
-                                                "Transforms: ")
-        if hasattr(self, 'target_transform') and self.target_transform is not None:
-            body += self._format_transform_repr(self.target_transform,
-                                                "Target transforms: ")
-        lines = [head] + [" " * 4 + line for line in body]
-        return '\n'.join(lines)
-
-    def _format_transform_repr(self, transform, head):
-        lines = transform.__repr__().splitlines()
-        return (["{}{}".format(head, lines[0])] +
-                ["{}{}".format(" " * len(head), line) for line in lines[1:]])
+    def extra_repr(self):
+        return "Split: {split}".format(**self.__dict__)
 
 
 def extract_tar(src, dest=None, gzip=None, delete=False):
@@ -173,7 +148,7 @@ def download_and_extract_tar(url, download_root, extract_root=None, filename=Non
                              md5=None, **kwargs):
     download_root = os.path.expanduser(download_root)
     if extract_root is None:
-        extract_root = extract_root
+        extract_root = download_root
     if filename is None:
         filename = os.path.basename(url)
 

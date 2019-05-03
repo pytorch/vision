@@ -2,7 +2,7 @@ from collections import namedtuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.model_zoo as model_zoo
+from .utils import load_state_dict_from_url
 
 
 __all__ = ['Inception3', 'inception_v3']
@@ -16,7 +16,7 @@ model_urls = {
 _InceptionOuputs = namedtuple('InceptionOuputs', ['logits', 'aux_logits'])
 
 
-def inception_v3(pretrained=False, **kwargs):
+def inception_v3(pretrained=False, progress=True, **kwargs):
     r"""Inception v3 model architecture from
     `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
 
@@ -26,6 +26,7 @@ def inception_v3(pretrained=False, **kwargs):
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
         aux_logits (bool): If True, add an auxiliary branch that can improve training.
             Default: *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it
@@ -40,7 +41,9 @@ def inception_v3(pretrained=False, **kwargs):
         else:
             original_aux_logits = True
         model = Inception3(**kwargs)
-        model.load_state_dict(model_zoo.load_url(model_urls['inception_v3_google']))
+        state_dict = load_state_dict_from_url(model_urls['inception_v3_google'],
+                                              progress=progress)
+        model.load_state_dict(state_dict)
         if not original_aux_logits:
             model.aux_logits = False
             del model.AuxLogits

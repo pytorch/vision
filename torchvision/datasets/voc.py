@@ -74,10 +74,9 @@ class VOCSegmentation(VisionDataset):
                  image_set='train',
                  download=False,
                  transform=None,
-                 target_transform=None):
-        super(VOCSegmentation, self).__init__(root)
-        self.transform = transform
-        self.target_transform = target_transform
+                 target_transform=None,
+                 transforms=None):
+        super(VOCSegmentation, self).__init__(root, transforms, transform, target_transform)
         self.year = year
         self.url = DATASET_YEAR_DICT[year]['url']
         self.filename = DATASET_YEAR_DICT[year]['filename']
@@ -122,11 +121,8 @@ class VOCSegmentation(VisionDataset):
         img = Image.open(self.images[index]).convert('RGB')
         target = Image.open(self.masks[index])
 
-        if self.transform is not None:
-            img = self.transform(img)
-
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
 
         return img, target
 
@@ -157,10 +153,9 @@ class VOCDetection(VisionDataset):
                  image_set='train',
                  download=False,
                  transform=None,
-                 target_transform=None):
-        super(VOCDetection, self).__init__(root)
-        self.transform = transform
-        self.target_transform = target_transform
+                 target_transform=None,
+                 transforms=None):
+        super(VOCDetection, self).__init__(root, transforms, transform, target_transform)
         self.year = year
         self.url = DATASET_YEAR_DICT[year]['url']
         self.filename = DATASET_YEAR_DICT[year]['filename']
@@ -208,11 +203,8 @@ class VOCDetection(VisionDataset):
         target = self.parse_voc_xml(
             ET.parse(self.annotations[index]).getroot())
 
-        if self.transform is not None:
-            img = self.transform(img)
-
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
 
         return img, target
 

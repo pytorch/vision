@@ -1,11 +1,11 @@
 import torch
-import torch.utils.data as data
 import os
 import PIL
+from .vision import VisionDataset
 from .utils import download_file_from_google_drive, check_integrity
 
 
-class CelebA(data.Dataset):
+class CelebA(VisionDataset):
     """`Large-scale CelebFaces Attributes (CelebA) Dataset <http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html>`_ Dataset.
 
     Args:
@@ -53,7 +53,7 @@ class CelebA(data.Dataset):
                  transform=None, target_transform=None,
                  download=False):
         import pandas
-        self.root = os.path.expanduser(root)
+        super(CelebA, self).__init__(root)
         self.split = split
         if isinstance(target_type, list):
             self.target_type = target_type
@@ -158,14 +158,6 @@ class CelebA(data.Dataset):
     def __len__(self):
         return len(self.attr)
 
-    def __repr__(self):
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        fmt_str += '    Target type: {}\n'.format(self.target_type)
-        fmt_str += '    Split: {}\n'.format(self.split)
-        fmt_str += '    Root Location: {}\n'.format(self.root)
-        tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        return fmt_str
+    def extra_repr(self):
+        lines = ["Target type: {target_type}", "Split: {split}"]
+        return '\n'.join(lines).format(**self.__dict__)

@@ -1,5 +1,5 @@
 import torch.nn as nn
-import torch.utils.model_zoo as model_zoo
+from .utils import load_state_dict_from_url
 
 
 __all__ = [
@@ -75,7 +75,7 @@ def make_layers(cfg, batch_norm=False):
     return nn.Sequential(*layers)
 
 
-cfg = {
+cfgs = {
     'A': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
     'B': [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
     'D': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
@@ -83,113 +83,92 @@ cfg = {
 }
 
 
-def vgg11(pretrained=False, **kwargs):
+def _vgg(arch, cfg, batch_norm, pretrained, progress, **kwargs):
+    if pretrained:
+        kwargs['init_weights'] = False
+    model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls[arch],
+                                              progress=progress)
+        model.load_state_dict(state_dict)
+    return model
+
+
+def vgg11(pretrained=False, progress=True, **kwargs):
     """VGG 11-layer model (configuration "A")
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
     """
-    if pretrained:
-        kwargs['init_weights'] = False
-    model = VGG(make_layers(cfg['A']), **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg11']))
-    return model
+    return _vgg('vgg11', 'A', False, pretrained, progress, **kwargs)
 
 
-def vgg11_bn(pretrained=False, **kwargs):
+def vgg11_bn(pretrained=False, progress=True, **kwargs):
     """VGG 11-layer model (configuration "A") with batch normalization
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
     """
-    if pretrained:
-        kwargs['init_weights'] = False
-    model = VGG(make_layers(cfg['A'], batch_norm=True), **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg11_bn']))
-    return model
+    return _vgg('vgg11_bn', 'A', True, pretrained, progress, **kwargs)
 
 
-def vgg13(pretrained=False, **kwargs):
+def vgg13(pretrained=False, progress=True, **kwargs):
     """VGG 13-layer model (configuration "B")
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
     """
-    if pretrained:
-        kwargs['init_weights'] = False
-    model = VGG(make_layers(cfg['B']), **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg13']))
-    return model
+    return _vgg('vgg13', 'B', False, pretrained, progress, **kwargs)
 
 
-def vgg13_bn(pretrained=False, **kwargs):
+def vgg13_bn(pretrained=False, progress=True, **kwargs):
     """VGG 13-layer model (configuration "B") with batch normalization
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
     """
-    if pretrained:
-        kwargs['init_weights'] = False
-    model = VGG(make_layers(cfg['B'], batch_norm=True), **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg13_bn']))
-    return model
+    return _vgg('vgg13_bn', 'B', True, pretrained, progress, **kwargs)
 
 
-def vgg16(pretrained=False, **kwargs):
+def vgg16(pretrained=False, progress=True, **kwargs):
     """VGG 16-layer model (configuration "D")
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
     """
-    if pretrained:
-        kwargs['init_weights'] = False
-    model = VGG(make_layers(cfg['D']), **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg16']))
-    return model
+    return _vgg('vgg16', 'D', False, pretrained, progress, **kwargs)
 
 
-def vgg16_bn(pretrained=False, **kwargs):
+def vgg16_bn(pretrained=False, progress=True, **kwargs):
     """VGG 16-layer model (configuration "D") with batch normalization
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
     """
-    if pretrained:
-        kwargs['init_weights'] = False
-    model = VGG(make_layers(cfg['D'], batch_norm=True), **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg16_bn']))
-    return model
+    return _vgg('vgg16_bn', 'D', True, pretrained, progress, **kwargs)
 
 
-def vgg19(pretrained=False, **kwargs):
+def vgg19(pretrained=False, progress=True, **kwargs):
     """VGG 19-layer model (configuration "E")
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
     """
-    if pretrained:
-        kwargs['init_weights'] = False
-    model = VGG(make_layers(cfg['E']), **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg19']))
-    return model
+    return _vgg('vgg19', 'E', False, pretrained, progress, **kwargs)
 
 
-def vgg19_bn(pretrained=False, **kwargs):
+def vgg19_bn(pretrained=False, progress=True, **kwargs):
     """VGG 19-layer model (configuration 'E') with batch normalization
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
     """
-    if pretrained:
-        kwargs['init_weights'] = False
-    model = VGG(make_layers(cfg['E'], batch_norm=True), **kwargs)
-    if pretrained:
-        model.load_state_dict(model_zoo.load_url(model_urls['vgg19_bn']))
-    return model
+    return _vgg('vgg19_bn', 'E', True, pretrained, progress, **kwargs)
