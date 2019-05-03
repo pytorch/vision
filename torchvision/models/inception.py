@@ -63,9 +63,9 @@ class Inception3(nn.Module):
         self.Conv2d_2b_3x3 = BasicConv2d(32, 64, kernel_size=3, padding=1)
         self.Conv2d_3b_1x1 = BasicConv2d(64, 80, kernel_size=1)
         self.Conv2d_4a_3x3 = BasicConv2d(80, 192, kernel_size=3)
-        self.Mixed_5b = InceptionA(192, pool_features=32)
-        self.Mixed_5c = InceptionA(256, pool_features=64)
-        self.Mixed_5d = InceptionA(288, pool_features=64)
+        self.Mixed_5a = InceptionA(192, pool_features=32)
+        self.Mixed_5b = InceptionA(256, pool_features=64)
+        self.Mixed_5c = InceptionA(288, pool_features=64)
         self.Mixed_6a = InceptionB(288)
         self.Mixed_6b = InceptionC(768, channels_7x7=128)
         self.Mixed_6c = InceptionC(768, channels_7x7=160)
@@ -112,11 +112,11 @@ class Inception3(nn.Module):
         # N x 192 x 71 x 71
         x = F.max_pool2d(x, kernel_size=3, stride=2)
         # N x 192 x 35 x 35
-        x = self.Mixed_5b(x)
+        x = self.Mixed_5a(x)
         # N x 256 x 35 x 35
-        x = self.Mixed_5c(x)
+        x = self.Mixed_5b(x)
         # N x 288 x 35 x 35
-        x = self.Mixed_5d(x)
+        x = self.Mixed_5c(x)
         # N x 288 x 35 x 35
         x = self.Mixed_6a(x)
         # N x 768 x 17 x 17
