@@ -83,9 +83,6 @@ class MNASNet(torch.nn.Module):
 
     def __init__(self, num_classes, alpha, dropout=0.2):
         super(MNASNet, self).__init__()
-        self.alpha = alpha
-        self.num_classes = num_classes
-        self.dropout = dropout
         depths = _scale_depths([24, 40, 80, 96, 192, 320], alpha)
         layers = [
             # First layer: regular conv.
@@ -112,8 +109,8 @@ class MNASNet(torch.nn.Module):
         ]
         self.layers = nn.Sequential(*layers)
         self.classifier = nn.Sequential(
-            nn.Dropout(p=self.dropout, inplace=True),
-            nn.Linear(1280, self.num_classes))
+            nn.Dropout(p=dropout, inplace=True),
+            nn.Linear(1280, num_classes))
         self._initialize_weights()
 
     def forward(self, x):
