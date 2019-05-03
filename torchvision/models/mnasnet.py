@@ -74,7 +74,7 @@ class MNASNet(torch.nn.Module):
     """ MNASNet, as described in https://arxiv.org/pdf/1807.11626.pdf.
     >>> model = MNASNet(1000, 1.0)
     >>> x = torch.rand(1, 3, 224, 224)
-    >>> y = model.forward(x)
+    >>> y = model(x)
     >>> y.dim()
     1
     >>> y.nelement()
@@ -111,20 +111,14 @@ class MNASNet(torch.nn.Module):
             nn.ReLU(inplace=True),
         ]
         self.layers = nn.Sequential(*layers)
-        self.classifier = nn.Linear(1280, self.num_classes)
-
+        self.classifier = nn.Sequential(nn.Dropout(p=self.dropout, inplace=True),
+                                        nn.Linear(1280, self.num_classes))
         self._initialize_weights()
 
-    def features(self, x):
-        return self.layers(x)
-
     def forward(self, x):
-        x = self.features(x)
+        x = self.layers(x)
         # Equivalent to global avgpool and removing H and W dimensions.
         x = x.mean([2, 3])
-        if self.dropout > 0.0:
-            x = nn.functional.dropout(x, p=self.dropout, training=self.training,
-                                      inplace=True)
         return self.classifier(x)
 
     def _initialize_weights(self):
