@@ -111,8 +111,9 @@ class MNASNet(torch.nn.Module):
             nn.ReLU(inplace=True),
         ]
         self.layers = nn.Sequential(*layers)
-        self.classifier = nn.Sequential(nn.Dropout(p=self.dropout, inplace=True),
-                                        nn.Linear(1280, self.num_classes))
+        self.classifier = nn.Sequential(
+            nn.Dropout(p=self.dropout, inplace=True),
+            nn.Linear(1280, self.num_classes))
         self._initialize_weights()
 
     def forward(self, x):
