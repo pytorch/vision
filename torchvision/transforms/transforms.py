@@ -572,7 +572,7 @@ class RandomPerspective(object):
             height : height of the image.
 
         Returns:
-            List containing [top-left, top-right, bottom-right, bottom-left] of the orignal image,
+            List containing [top-left, top-right, bottom-right, bottom-left] of the original image,
             List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image.
         """
         half_height = int(height / 2)
@@ -745,7 +745,7 @@ class TenCrop(object):
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
             made.
-        vertical_flip(bool): Use vertical flipping instead of horizontal
+        vertical_flip (bool): Use vertical flipping instead of horizontal
 
     Example:
          >>> transform = Compose([
@@ -975,6 +975,7 @@ class RandomRotation(object):
 
     def __call__(self, img):
         """
+        Args:
             img (PIL Image): Image to be rotated.
 
         Returns:
