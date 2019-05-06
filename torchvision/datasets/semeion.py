@@ -39,7 +39,7 @@ class SEMEION(VisionDataset):
 
         self.data = []
         self.labels = []
-        fp = os.path.join(root, self.filename)
+        fp = os.path.join(self.root, self.filename)
         data = np.loadtxt(fp)
         # convert value to 8 bit unsigned integer
         # color (white #255) the pixels

@@ -27,7 +27,8 @@ else:
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
-           "AffineTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale"]
+           "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
+           "RandomPerspective"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -528,6 +529,70 @@ class RandomVerticalFlip(object):
         return self.__class__.__name__ + '(p={})'.format(self.p)
 
 
+class RandomPerspective(object):
+    """Performs Perspective transformation of the given PIL Image randomly with a given probability.
+
+    Args:
+        interpolation : Default- Image.BICUBIC
+
+        p (float): probability of the image being perspectively transformed. Default value is 0.5
+
+        distortion_scale(float): it controls the degree of distortion and ranges from 0 to 1. Default value is 0.5.
+
+    """
+
+    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=Image.BICUBIC):
+        self.p = p
+        self.interpolation = interpolation
+        self.distortion_scale = distortion_scale
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL Image): Image to be Perspectively transformed.
+
+        Returns:
+            PIL Image: Random perspectivley transformed image.
+        """
+        if not F._is_pil_image(img):
+            raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+        if random.random() < self.p:
+            width, height = img.size
+            startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
+            return F.perspective(img, startpoints, endpoints, self.interpolation)
+        return img
+
+    @staticmethod
+    def get_params(width, height, distortion_scale):
+        """Get parameters for ``perspective`` for a random perspective transform.
+
+        Args:
+            width : width of the image.
+            height : height of the image.
+
+        Returns:
+            List containing [top-left, top-right, bottom-right, bottom-left] of the orignal image,
+            List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image.
+        """
+        half_height = int(height / 2)
+        half_width = int(width / 2)
+        topleft = (random.randint(0, int(distortion_scale * half_width)),
+                   random.randint(0, int(distortion_scale * half_height)))
+        topright = (random.randint(width - int(distortion_scale * half_width) - 1, width - 1),
+                    random.randint(0, int(distortion_scale * half_height)))
+        botright = (random.randint(width - int(distortion_scale * half_width) - 1, width - 1),
+                    random.randint(height - int(distortion_scale * half_height) - 1, height - 1))
+        botleft = (random.randint(0, int(distortion_scale * half_width)),
+                   random.randint(height - int(distortion_scale * half_height) - 1, height - 1))
+        startpoints = [(0, 0), (width - 1, 0), (width - 1, height - 1), (0, height - 1)]
+        endpoints = [topleft, topright, botright, botleft]
+        return startpoints, endpoints
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(p={})'.format(self.p)
+
+
 class RandomResizedCrop(object):
     """Crop the given PIL Image to random size and aspect ratio.
 
@@ -710,17 +775,18 @@ class TenCrop(object):
         return self.__class__.__name__ + '(size={0}, vertical_flip={1})'.format(self.size, self.vertical_flip)
 
 
-class AffineTransformation(object):
+class LinearTransformation(object):
     """Transform a tensor image with a square transformation matrix and a mean_vector computed
     offline.
     Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
     subtract mean_vector from it which is then followed by computing the dot
     product with the transformation matrix and then reshaping the tensor to its
     original shape.
+
     Applications:
-        - whitening transformation: Suppose X is a column vector zero-centered data.
-                 Then compute the data covariance matrix [D x D] with torch.mm(X.t(), X),
-                 perform SVD on this matrix and pass it as transformation_matrix.
+        whitening transformation: Suppose X is a column vector zero-centered data.
+            Then compute the data covariance matrix [D x D] with torch.mm(X.t(), X),
+            perform SVD on this matrix and pass it as transformation_matrix.
     Args:
         transformation_matrix (Tensor): tensor [D x D], D = C x H x W
         mean_vector (Tensor): tensor [D], D = C x H x W
@@ -761,17 +827,6 @@ class AffineTransformation(object):
         format_string += (str(self.transformation_matrix.tolist()) + ')')
         format_string += (", (mean_vector=" + str(self.mean_vector.tolist()) + ')')
         return format_string
-
-
-class LinearTransformation(AffineTransformation):
-    """
-    Note: This transform is deprecated in favor of AffineTransformation.
-    """
-
-    def __init__(self, transformation_matrix):
-        warnings.warn("The use of the transforms.LinearTransformation transform is deprecated, " +
-                      "please use transforms.AffineTransformation instead.")
-        super(LinearTransformation, self).__init__(transformation_matrix, torch.zeros_like(transformation_matrix[0]))
 
 
 class ColorJitter(object):

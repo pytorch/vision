@@ -38,6 +38,8 @@ Transforms on PIL Image
 
 .. autoclass:: RandomOrder
 
+.. autoclass:: RandomPerspective
+
 .. autoclass:: RandomResizedCrop
 
 .. autoclass:: RandomRotation

@@ -2,19 +2,12 @@ from __future__ import print_function
 from PIL import Image
 import os
 import os.path
-import numpy as np
-import sys
-if sys.version_info[0] == 2:
-    import cPickle as pickle
-else:
-    import pickle
-import collections
 
-import torch.utils.data as data
-from .utils import download_url, check_integrity, makedir_exist_ok
+from .vision import VisionDataset
+from .utils import download_url, makedir_exist_ok
 
 
-class Caltech101(data.Dataset):
+class Caltech101(VisionDataset):
     """`Caltech 101 <http://www.vision.caltech.edu/Image_Datasets/Caltech101/>`_ Dataset.
 
     Args:
@@ -36,7 +29,7 @@ class Caltech101(data.Dataset):
     def __init__(self, root, target_type="category",
                  transform=None, target_transform=None,
                  download=False):
-        self.root = os.path.join(os.path.expanduser(root), "caltech101")
+        super(Caltech101, self).__init__(os.path.join(root, 'caltech101'))
         makedir_exist_ok(self.root)
         if isinstance(target_type, list):
             self.target_type = target_type
@@ -138,19 +131,11 @@ class Caltech101(data.Dataset):
         with tarfile.open(os.path.join(self.root, "101_Annotations.tar"), "r:") as tar:
             tar.extractall(path=self.root)
 
-    def __repr__(self):
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        fmt_str += '    Target type: {}\n'.format(self.target_type)
-        fmt_str += '    Root Location: {}\n'.format(self.root)
-        tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        return fmt_str
+    def extra_repr(self):
+        return "Target type: {target_type}".format(**self.__dict__)
 
 
-class Caltech256(data.Dataset):
+class Caltech256(VisionDataset):
     """`Caltech 256 <http://www.vision.caltech.edu/Image_Datasets/Caltech256/>`_ Dataset.
 
     Args:
@@ -168,7 +153,7 @@ class Caltech256(data.Dataset):
     def __init__(self, root,
                  transform=None, target_transform=None,
                  download=False):
-        self.root = os.path.join(os.path.expanduser(root), "caltech256")
+        super(Caltech256, self).__init__(os.path.join(root, 'caltech256'))
         makedir_exist_ok(self.root)
         self.transform = transform
         self.target_transform = target_transform
@@ -233,13 +218,3 @@ class Caltech256(data.Dataset):
         # extract file
         with tarfile.open(os.path.join(self.root, "256_ObjectCategories.tar"), "r:") as tar:
             tar.extractall(path=self.root)
-
-    def __repr__(self):
-        fmt_str = 'Dataset ' + self.__class__.__name__ + '\n'
-        fmt_str += '    Number of datapoints: {}\n'.format(self.__len__())
-        fmt_str += '    Root Location: {}\n'.format(self.root)
-        tmp = '    Transforms (if any): '
-        fmt_str += '{0}{1}\n'.format(tmp, self.transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        tmp = '    Target Transforms (if any): '
-        fmt_str += '{0}{1}'.format(tmp, self.target_transform.__repr__().replace('\n', '\n' + ' ' * len(tmp)))
-        return fmt_str
