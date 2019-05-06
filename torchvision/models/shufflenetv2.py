@@ -146,7 +146,7 @@ class ShuffleNetV2(nn.Module):
         return stages[str(mult)]
 
 
-def _shufflenetv2(width_mult=1.0, pretrained, progress):
+def _shufflenetv2(pretrained, progress, width_mult=1.0):
     model = ShuffleNetV2(width_mult=width_mult)
 
     if pretrained:
@@ -164,16 +164,16 @@ def _shufflenetv2(width_mult=1.0, pretrained, progress):
 
 
 def shufflenetv2_x0_5(pretrained=False, progress=True):
-    return _shufflenetv2(0.5, pretrained, progress)
+    return _shufflenetv2(pretrained, progress, 0.5)
 
 
 def shufflenetv2_x1_0(pretrained=False, progress=True):
-    return _shufflenetv2(1.0, pretrained, progress)
+    return _shufflenetv2(pretrained, progress, 1.0)
 
 
 def shufflenetv2_x1_5(pretrained=False, progress=True):
-    return _shufflenetv2(1.5, pretrained, progress)
+    return _shufflenetv2(pretrained, progress, 1.5)
 
 
 def shufflenetv2_x2_0(pretrained=False, progress=True):
-    return _shufflenetv2(2.0, pretrained, progress)
+    return _shufflenetv2(pretrained, progress, 2.0)
