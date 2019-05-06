@@ -146,11 +146,11 @@ class ShuffleNetV2(nn.Module):
         return stages[str(mult)]
 
 
-def _shufflenetv2(version, pretrained=False, progress, width_mult=1.0):
+def _shufflenetv2(width_mult=1.0, pretrained, progress):
     model = ShuffleNetV2(width_mult=width_mult)
 
     if pretrained:
-        arch = 'shufflenetv2_x' + version
+        arch = 'shufflenetv2_x' + str(width_mult)
         try:
             model_url = model_urls[arch]
         except KeyError:
@@ -164,16 +164,16 @@ def _shufflenetv2(version, pretrained=False, progress, width_mult=1.0):
 
 
 def shufflenetv2_x0_5(pretrained=False, progress=True):
-    return _shufflenetv2('0.5', pretrained, progress, 0.5)
+    return _shufflenetv2(0.5, pretrained, progress)
 
 
 def shufflenetv2_x1_0(pretrained=False, progress=True):
-    return _shufflenetv2('1.0', pretrained, progress, 1.0)
+    return _shufflenetv2(1.0, pretrained, progress)
 
 
 def shufflenetv2_x1_5(pretrained=False, progress=True):
-    return _shufflenetv2('1.5', pretrained, progress, 1.5)
+    return _shufflenetv2(1.5, pretrained, progress)
 
 
 def shufflenetv2_x2_0(pretrained=False, progress=True):
-    return _shufflenetv2('2.0', pretrained, progress, 2.0)
+    return _shufflenetv2(2.0, pretrained, progress)
