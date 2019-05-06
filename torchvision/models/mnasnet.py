@@ -2,8 +2,18 @@ import math
 
 import torch
 import torch.nn as nn
+from .utils import load_state_dict_from_url
 
 __all__ = ['MNASNet', 'mnasnet0_5', 'mnasnet0_75', 'mnasnet1_0', 'mnasnet1_3']
+
+_MODEL_URLS = {
+    "mnasnet0_5":
+    "https://github.com/1e100/mnasnet_trainer/releases/download/v0.1/mnasnet0.5_top1_67.592-7c6cb539b9.pth",
+    "mnasnet0_75": None,
+    "mnasnet1_0":
+    "https://github.com/1e100/mnasnet_trainer/releases/download/v0.1/mnasnet1.0_top1_73.512-f206786ef8.pth",
+    "mnasnet1_3": None
+}
 
 # Paper suggests 0.9997 momentum, for TensorFlow. Equivalent PyTorch momentum is
 # 1.0 - tensorflow.
@@ -81,7 +91,7 @@ class MNASNet(torch.nn.Module):
     1000
     """
 
-    def __init__(self, num_classes, alpha, dropout=0.2):
+    def __init__(self, alpha, num_classes=1000, dropout=0.2):
         super(MNASNet, self).__init__()
         depths = _scale_depths([24, 40, 80, 96, 192, 320], alpha)
         layers = [
@@ -108,9 +118,8 @@ class MNASNet(torch.nn.Module):
             nn.ReLU(inplace=True),
         ]
         self.layers = nn.Sequential(*layers)
-        self.classifier = nn.Sequential(
-            nn.Dropout(p=dropout, inplace=True),
-            nn.Linear(1280, num_classes))
+        self.classifier = nn.Sequential(nn.Dropout(p=dropout, inplace=True),
+                                        nn.Linear(1280, num_classes))
         self._initialize_weights()
 
     def forward(self, x):
@@ -135,21 +144,41 @@ class MNASNet(torch.nn.Module):
                 m.bias.data.zero_()
 
 
-def mnasnet0_5(num_classes):
+def _load_pretrained(model_name, model):
+    if model_name not in _MODEL_URLS or _MODEL_URLS[model_name] is None:
+        raise ValueError(
+            "No checkpoint is available for model type {}".format(model_name))
+    checkpoint_url = _MODEL_URLS[model_name]
+    model.load_state_dict(torch.utils.model_zoo.load_url(checkpoint_url))
+
+
+def mnasnet0_5(pretrained=False, **kwargs):
     """ MNASNet with depth multiplier of 0.5. """
-    return MNASNet(num_classes, alpha=0.5)
+    model = MNASNet(0.5, **kwargs)
+    if pretrained:
+        _load_pretrained("mnasnet0_5", model)
+    return model
 
 
-def mnasnet0_75(num_classes):
+def mnasnet0_75(pretrained=False, **kwargs):
     """ MNASNet with depth multiplier of 0.75. """
-    return MNASNet(num_classes, alpha=0.75)
+    model = MNASNet(0.75, **kwargs)
+    if pretrained:
+        _load_pretrained("mnasnet0_75", model)
+    return model
 
 
-def mnasnet1_0(num_classes):
+def mnasnet1_0(pretrained=False, **kwargs):
     """ MNASNet with depth multiplier of 1.0. """
-    return MNASNet(num_classes, alpha=1.0)
+    model = MNASNet(1.0, **kwargs)
+    if pretrained:
+        _load_pretrained("mnasnet1_0", model)
+    return model
 
 
-def mnasnet1_3(num_classes):
+def mnasnet1_3(pretrained=False, **kwargs):
     """ MNASNet with depth multiplier of 1.3. """
-    return MNASNet(num_classes, alpha=1.3)
+    model = MNASNet(1.3, **kwargs)
+    if pretrained:
+        _load_pretrained("mnasnet1_3", model)
+    return model
