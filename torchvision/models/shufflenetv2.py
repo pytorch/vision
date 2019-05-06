@@ -144,8 +144,8 @@ class ShuffleNetV2(nn.Module):
         return stages[str(mult)]
 
 
-def _shufflenetv2(pretrained, progress, width_mult=1.0):
-    model = ShuffleNetV2(width_mult=width_mult)
+def _shufflenetv2(pretrained, progress, width_mult, **kwargs):
+    model = ShuffleNetV2(width_mult=width_mult, **kwargs)
 
     if pretrained:
         arch = 'shufflenetv2_x' + str(width_mult)
@@ -159,17 +159,17 @@ def _shufflenetv2(pretrained, progress, width_mult=1.0):
     return model
 
 
-def shufflenetv2_x0_5(pretrained=False, progress=True):
-    return _shufflenetv2(pretrained, progress, 0.5)
+def shufflenetv2_x0_5(pretrained=False, progress=True, **kwargs):
+    return _shufflenetv2(pretrained, progress, 0.5, **kwargs)
 
 
-def shufflenetv2_x1_0(pretrained=False, progress=True):
-    return _shufflenetv2(pretrained, progress, 1.0)
+def shufflenetv2_x1_0(pretrained=False, progress=True, **kwargs):
+    return _shufflenetv2(pretrained, progress, 1.0, **kwargs)
 
 
-def shufflenetv2_x1_5(pretrained=False, progress=True):
-    return _shufflenetv2(pretrained, progress, 1.5)
+def shufflenetv2_x1_5(pretrained=False, progress=True, **kwargs):
+    return _shufflenetv2(pretrained, progress, 1.5, **kwargs)
 
 
-def shufflenetv2_x2_0(pretrained=False, progress=True):
-    return _shufflenetv2(pretrained, progress, 2.0)
+def shufflenetv2_x2_0(pretrained=False, progress=True, **kwargs):
+    return _shufflenetv2(pretrained, progress, 2.0, **kwargs)
