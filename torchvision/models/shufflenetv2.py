@@ -4,9 +4,7 @@ import torch
 import torch.nn as nn
 from .utils import load_state_dict_from_url
 
-__all__ = ['ShuffleNetV2', 'shufflenetv2',
-           'shufflenetv2_x0_5', 'shufflenetv2_x1_0',
-           'shufflenetv2_x1_5', 'shufflenetv2_x2_0']
+__all__ = ['ShuffleNetV2', 'shufflenetv2_x0_5', 'shufflenetv2_x1_0', 'shufflenetv2_x1_5', 'shufflenetv2_x2_0']
 
 model_urls = {
     'shufflenetv2_x0.5':
@@ -151,14 +149,12 @@ def _shufflenetv2(pretrained, progress, width_mult=1.0):
 
     if pretrained:
         arch = 'shufflenetv2_x' + str(width_mult)
-        try:
-            model_url = model_urls[arch]
-        except KeyError:
-            raise ValueError('model {} is not support'.format(model_type))
+        model_url = model_urls[arch]
         if model_url is None:
-            raise NotImplementedError('pretrained {} is not supported'.format(model_type))
-        state_dict = load_state_dict_from_url(model_urls, progress=progress)
-        model.load_state_dict(state_dict)
+            raise NotImplementedError('pretrained {} is not supported as of now'.format(arch))
+        else:
+            state_dict = load_state_dict_from_url(model_urls, progress=progress)
+            model.load_state_dict(state_dict)
 
     return model
 
