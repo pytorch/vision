@@ -141,7 +141,7 @@ def main(args):
 
     params_to_optimize = [
         {"params": [p for p in model_without_ddp.backbone.parameters() if p.requires_grad]},
-        {"params": [p for p in model_without_ddp.classifier.parameters() if p.requires_grad], "lr": args.lr * 10},
+        {"params": [p for p in model_without_ddp.classifier.parameters() if p.requires_grad], "lr": args.lr * 1},
     ]
     if args.aux_loss:
         params = [p for p in model_without_ddp.aux_classifier.parameters() if p.requires_grad]
