@@ -2,6 +2,7 @@ import functools
 
 import torch
 import torch.nn as nn
+from .utils import load_state_dict_from_url
 
 __all__ = ['ShuffleNetV2', 'shufflenetv2',
            'shufflenetv2_x0_5', 'shufflenetv2_x1_0',
@@ -89,7 +90,7 @@ class ShuffleNetV2(nn.Module):
         super(ShuffleNetV2, self).__init__()
 
         try:
-            self.stage_out_channels = self._getStages(float(width_mult))
+            self.stage_out_channels = self._getStages(width_mult)
         except KeyError:
             raise ValueError('width_mult {} is not supported'.format(width_mult))
 
@@ -145,36 +146,34 @@ class ShuffleNetV2(nn.Module):
         return stages[str(mult)]
 
 
-def shufflenetv2(pretrained=False, num_classes=1000, width_mult=1, **kwargs):
-    model = ShuffleNetV2(num_classes=num_classes, width_mult=width_mult)
+def _shufflenetv2(version, pretrained=False, progress, width_mult=1.0):
+    model = ShuffleNetV2(width_mult=width_mult)
 
     if pretrained:
-        # change width_mult to float
-        if isinstance(width_mult, int):
-            width_mult = float(width_mult)
-        model_type = ('_'.join([ShuffleNetV2.__name__, 'x' + str(width_mult)]))
+        arch = 'shufflenetv2_x' + version
         try:
-            model_url = model_urls[model_type.lower()]
+            model_url = model_urls[arch]
         except KeyError:
             raise ValueError('model {} is not support'.format(model_type))
         if model_url is None:
             raise NotImplementedError('pretrained {} is not supported'.format(model_type))
-        model.load_state_dict(torch.utils.model_zoo.load_url(model_url))
+        state_dict = load_state_dict_from_url(model_urls, progress=progress)
+        model.load_state_dict(state_dict)
 
     return model
 
 
-def shufflenetv2_x0_5(pretrained=False, num_classes=1000, **kwargs):
-    return shufflenetv2(pretrained, num_classes, 0.5)
+def shufflenetv2_x0_5(pretrained=False, progress=True):
+    return _shufflenetv2('0.5', pretrained, progress, 0.5)
 
 
-def shufflenetv2_x1_0(pretrained=False, num_classes=1000, **kwargs):
-    return shufflenetv2(pretrained, num_classes, 1)
+def shufflenetv2_x1_0(pretrained=False, progress=True):
+    return _shufflenetv2('1.0', pretrained, progress, 1.0)
 
 
-def shufflenetv2_x1_5(pretrained=False, num_classes=1000, **kwargs):
-    return shufflenetv2(pretrained, num_classes, 1.5)
+def shufflenetv2_x1_5(pretrained=False, progress=True):
+    return _shufflenetv2('1.5', pretrained, progress, 1.5)
 
 
-def shufflenetv2_x2_0(pretrained=False, num_classes=1000, **kwargs):
-    return shufflenetv2(pretrained, num_classes, 2)
+def shufflenetv2_x2_0(pretrained=False, progress=True):
+    return _shufflenetv2('2.0', pretrained, progress, 2.0)
