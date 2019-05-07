@@ -34,10 +34,10 @@ class Fire(nn.Module):
 
 class SqueezeNet(nn.Module):
 
-    def __init__(self, arch, num_classes=1000):
+    def __init__(self, version='1_0', num_classes=1000):
         super(SqueezeNet, self).__init__()
         self.num_classes = num_classes
-        if arch == 'squeezenet1_0':
+        if version == '1_0':
             self.features = nn.Sequential(
                 nn.Conv2d(3, 96, kernel_size=7, stride=2),
                 nn.ReLU(inplace=True),
@@ -94,10 +94,12 @@ class SqueezeNet(nn.Module):
         return x.view(x.size(0), -1)
 
 
-def _squeezenet(arch, pretrained, progress, **kwargs):
-    model = SqueezeNet(arch, **kwargs)
+def _squeezenet(version, pretrained, progress, **kwargs):
+    model = SqueezeNet(version, **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        arch = 'squeezenet' + version
+        state_dict = load_state_dict_from_url(model_urls[arch],
+                                              progress=progress)
         model.load_state_dict(state_dict)
     return model
 
@@ -111,7 +113,7 @@ def squeezenet1_0(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _squeezenet('squeezenet1_0', pretrained, progress, **kwargs)
+    return _squeezenet('1_0', pretrained, progress, **kwargs)
 
 
 def squeezenet1_1(pretrained=False, progress=True, **kwargs):
@@ -124,4 +126,4 @@ def squeezenet1_1(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _squeezenet('squeezenet1_1', pretrained, progress, **kwargs)
+    return _squeezenet('1_1', pretrained, progress, **kwargs)
