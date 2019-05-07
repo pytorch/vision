@@ -73,38 +73,56 @@ torch::Tensor forward_resnext101_32x8d(
   return forward_model<ResNext101_32x8d>(input_path, x);
 }
 
-torch::Tensor forward_squeezenet1_0(torch::Tensor x) {
+torch::Tensor forward_squeezenet1_0(
+    const std::string& input_path,
+    torch::Tensor x) {
   return forward_model<SqueezeNet1_0>(input_path, x);
 }
-torch::Tensor forward_squeezenet1_1(torch::Tensor x) {
+torch::Tensor forward_squeezenet1_1(
+    const std::string& input_path,
+    torch::Tensor x) {
   return forward_model<SqueezeNet1_1>(input_path, x);
 }
 
-torch::Tensor forward_densenet121(torch::Tensor x) {
+torch::Tensor forward_densenet121(
+    const std::string& input_path,
+    torch::Tensor x) {
   return forward_model<DenseNet121>(input_path, x);
 }
-torch::Tensor forward_densenet169(torch::Tensor x) {
+torch::Tensor forward_densenet169(
+    const std::string& input_path,
+    torch::Tensor x) {
   return forward_model<DenseNet169>(input_path, x);
 }
-torch::Tensor forward_densenet201(torch::Tensor x) {
+torch::Tensor forward_densenet201(
+    const std::string& input_path,
+    torch::Tensor x) {
   return forward_model<DenseNet201>(input_path, x);
 }
-torch::Tensor forward_densenet161(torch::Tensor x) {
+torch::Tensor forward_densenet161(
+    const std::string& input_path,
+    torch::Tensor x) {
   return forward_model<DenseNet161>(input_path, x);
 }
 
-torch::Tensor forward_mobilenetv2(torch::Tensor x) {
+torch::Tensor forward_mobilenetv2(
+    const std::string& input_path,
+    torch::Tensor x) {
   return forward_model<MobileNetV2>(input_path, x);
 }
 
-torch::Tensor forward_googlenet(torch::Tensor x) {
+torch::Tensor forward_googlenet(
+    const std::string& input_path,
+    torch::Tensor x) {
   GoogLeNet network;
-  torch::load(input_path, x);
+  torch::load(network, input_path);
   return network->forward(x).output;
 }
-torch::Tensor forward_inceptionv3(torch::Tensor x) {
+torch::Tensor forward_inceptionv3(
+    const std::string& input_path,
+    torch::Tensor x) {
   InceptionV3 network;
-  torch::load(input_path, x);
+  torch::load(network, input_path);
   return network->forward(x).output;
 }
 
