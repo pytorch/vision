@@ -150,23 +150,19 @@ def _shufflenetv2(arch, pretrained, progress, *args, **kwargs):
 
 def shufflenetv2_x0_5(pretrained=False, progress=True, **kwargs):
     return _shufflenetv2('shufflenetv2_x0.5', pretrained, progress,
-                         [4, 8, 4], [24, 48, 96, 192, 1024],
-                         num_classes=1000, **kwargs)
+                         [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
 
 
 def shufflenetv2_x1_0(pretrained=False, progress=True, **kwargs):
     return _shufflenetv2('shufflenetv2_x1.0', pretrained, progress,
-                         [4, 8, 4], [24, 116, 232, 464, 1024],
-                         num_classes=1000, **kwargs)
+                         [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
 
 
 def shufflenetv2_x1_5(pretrained=False, progress=True, **kwargs):
     return _shufflenetv2('shufflenetv2_x1.5', pretrained, progress,
-                         [4, 8, 4], [24, 176, 352, 704, 1024],
-                         num_classes=1000, **kwargs)
+                         [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
 
 
 def shufflenetv2_x2_0(pretrained=False, progress=True, **kwargs):
     return _shufflenetv2('shufflenetv2_x2.0', pretrained, progress,
-                         [4, 8, 4], [24, 244, 488, 976, 2048],
-                         num_classes=1000, **kwargs)
+                         [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)
