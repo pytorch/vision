@@ -19,11 +19,9 @@ class Fire(nn.Module):
         self.inplanes = inplanes
         self.squeeze = nn.Conv2d(inplanes, squeeze_planes, kernel_size=1)
         self.squeeze_activation = nn.ReLU(inplace=True)
-        self.expand1x1 = nn.Conv2d(squeeze_planes, expand1x1_planes,
-                                   kernel_size=1)
+        self.expand1x1 = nn.Conv2d(squeeze_planes, expand1x1_planes, kernel_size=1)
         self.expand1x1_activation = nn.ReLU(inplace=True)
-        self.expand3x3 = nn.Conv2d(squeeze_planes, expand3x3_planes,
-                                   kernel_size=3, padding=1)
+        self.expand3x3 = nn.Conv2d(squeeze_planes, expand3x3_planes, kernel_size=3, padding=1)
         self.expand3x3_activation = nn.ReLU(inplace=True)
 
     def forward(self, x):
@@ -36,10 +34,10 @@ class Fire(nn.Module):
 
 class SqueezeNet(nn.Module):
 
-    def __init__(self, version='1_0', num_classes=1000):
+    def __init__(self, version, num_classes=1000):
         super(SqueezeNet, self).__init__()
         self.num_classes = num_classes
-        if version == '1_0':
+        if version == 'squeezenet1_0':
             self.features = nn.Sequential(
                 nn.Conv2d(3, 96, kernel_size=7, stride=2),
                 nn.ReLU(inplace=True),
@@ -55,7 +53,7 @@ class SqueezeNet(nn.Module):
                 nn.MaxPool2d(kernel_size=3, stride=2, ceil_mode=True),
                 Fire(512, 64, 256, 256),
             )
-        elif version == '1_1':
+        else:
             self.features = nn.Sequential(
                 nn.Conv2d(3, 64, kernel_size=3, stride=2),
                 nn.ReLU(inplace=True),
@@ -71,12 +69,6 @@ class SqueezeNet(nn.Module):
                 Fire(384, 64, 256, 256),
                 Fire(512, 64, 256, 256),
             )
-        else:
-            # FIXME: Is this needed? SqueezeNet should only be called from the
-            # FIXME: squeezenet1_x() functions
-            # FIXME: This checking is not done for the other models
-            raise ValueError("Unsupported SqueezeNet version {version}:"
-                             "1_0 or 1_1 expected".format(version=version))
 
         # Final convolution is initialized differently from the rest
         final_conv = nn.Conv2d(512, self.num_classes, kernel_size=1)
@@ -105,9 +97,7 @@ class SqueezeNet(nn.Module):
 def _squeezenet(version, pretrained, progress, **kwargs):
     model = SqueezeNet(version, **kwargs)
     if pretrained:
-        arch = 'squeezenet' + version
-        state_dict = load_state_dict_from_url(model_urls[arch],
-                                              progress=progress)
+        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
 
@@ -121,7 +111,7 @@ def squeezenet1_0(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _squeezenet('1_0', pretrained, progress, **kwargs)
+    return _squeezenet('squeezenet1_0', pretrained, progress, **kwargs)
 
 
 def squeezenet1_1(pretrained=False, progress=True, **kwargs):
@@ -134,4 +124,4 @@ def squeezenet1_1(pretrained=False, progress=True, **kwargs):
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _squeezenet('1_1', pretrained, progress, **kwargs)
+    return _squeezenet('squeezenet1_1', pretrained, progress, **kwargs)
