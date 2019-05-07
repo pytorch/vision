@@ -34,10 +34,10 @@ class Fire(nn.Module):
 
 class SqueezeNet(nn.Module):
 
-    def __init__(self, version, num_classes=1000):
+    def __init__(self, arch, num_classes=1000):
         super(SqueezeNet, self).__init__()
         self.num_classes = num_classes
-        if version == 'squeezenet1_0':
+        if arch == 'squeezenet1_0':
             self.features = nn.Sequential(
                 nn.Conv2d(3, 96, kernel_size=7, stride=2),
                 nn.ReLU(inplace=True),
@@ -94,8 +94,8 @@ class SqueezeNet(nn.Module):
         return x.view(x.size(0), -1)
 
 
-def _squeezenet(version, pretrained, progress, **kwargs):
-    model = SqueezeNet(version, **kwargs)
+def _squeezenet(arch, pretrained, progress, **kwargs):
+    model = SqueezeNet(arch, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
