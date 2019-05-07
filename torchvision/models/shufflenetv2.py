@@ -84,10 +84,10 @@ class InvertedResidual(nn.Module):
 
 
 class ShuffleNetV2(nn.Module):
-    def __init__(self, num_classes=1000, width_mult='1.0'):
+    def __init__(self, stage_out_channels, num_classes=1000):
         super(ShuffleNetV2, self).__init__()
 
-        self.stage_out_channels = self._getStages(width_mult)
+        self.stage_out_channels = stage_out_channels
         input_channels = 3
         output_channels = self.stage_out_channels[0]
 
@@ -130,22 +130,11 @@ class ShuffleNetV2(nn.Module):
         x = self.fc(x)
         return x
 
-    @staticmethod
-    def _getStages(mult):
-        stages = {
-            '0.5': [24, 48, 96, 192, 1024],
-            '1.0': [24, 116, 232, 464, 1024],
-            '1.5': [24, 176, 352, 704, 1024],
-            '2.0': [24, 244, 488, 976, 2048],
-        }
-        return stages[mult]
 
-
-def _shufflenetv2(pretrained, progress, width_mult, **kwargs):
-    model = ShuffleNetV2(width_mult=width_mult, **kwargs)
+def _shufflenetv2(arch, pretrained, progress, stage_out_channels, **kwargs):
+    model = ShuffleNetV2(stage_out_channels=stage_out_channels, **kwargs)
 
     if pretrained:
-        arch = 'shufflenetv2_x' + width_mult
         model_url = model_urls[arch]
         if model_url is None:
             raise NotImplementedError('pretrained {} is not supported as of now'.format(arch))
@@ -157,16 +146,16 @@ def _shufflenetv2(pretrained, progress, width_mult, **kwargs):
 
 
 def shufflenetv2_x0_5(pretrained=False, progress=True, **kwargs):
-    return _shufflenetv2(pretrained, progress, '0.5', **kwargs)
+    return _shufflenetv2('shufflenetv2_x0.5', pretrained, progress, [24, 48, 96, 192, 1024], **kwargs)
 
 
 def shufflenetv2_x1_0(pretrained=False, progress=True, **kwargs):
-    return _shufflenetv2(pretrained, progress, '1.0', **kwargs)
+    return _shufflenetv2('shufflenetv2_x1.0', pretrained, progress, [24, 116, 232, 464, 1024], **kwargs)
 
 
 def shufflenetv2_x1_5(pretrained=False, progress=True, **kwargs):
-    return _shufflenetv2(pretrained, progress, '1.5', **kwargs)
+    return _shufflenetv2('shufflenetv2_x1.5', pretrained, progress, [24, 176, 352, 704, 1024], **kwargs)
 
 
 def shufflenetv2_x2_0(pretrained=False, progress=True, **kwargs):
-    return _shufflenetv2(pretrained, progress, '2.0', **kwargs)
+    return _shufflenetv2('shufflenetv2_x2.0', pretrained, progress, [24, 244, 488, 976, 2048], **kwargs)
