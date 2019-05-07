@@ -3,9 +3,9 @@ from . import resnet
 from .deeplabv3 import FCN, FCNHead, DeepLabHead, DeepLabV3
 
 
-def _segm_resnet(name, backbone_name, num_classes, aux):
+def _segm_resnet(name, backbone_name, num_classes, aux, pretrained_backbone=True):
     backbone = resnet.__dict__[backbone_name](
-        pretrained=True,
+        pretrained=pretrained_backbone,
         replace_stride_with_dilation=[False, True, True])
 
     return_layers = {'layer4': 'out'}
@@ -30,29 +30,29 @@ def _segm_resnet(name, backbone_name, num_classes, aux):
     return model
 
 
-def fcn_resnet50(pretrained=False, num_classes=21, aux_loss=None):
-    model = _segm_resnet("fcn", "resnet50", num_classes, aux_loss)
+def fcn_resnet50(pretrained=False, num_classes=21, aux_loss=None, **kwargs):
+    model = _segm_resnet("fcn", "resnet50", num_classes, aux_loss, **kwargs)
     if pretrained:
         pass
     return model
 
 
-def fcn_resnet101(pretrained=False, num_classes=21, aux_loss=None):
-    model = _segm_resnet("fcn", "resnet101", num_classes, aux_loss)
+def fcn_resnet101(pretrained=False, num_classes=21, aux_loss=None, **kwargs):
+    model = _segm_resnet("fcn", "resnet101", num_classes, aux_loss, **kwargs)
     if pretrained:
         pass
     return model
 
 
-def deeplabv3_resnet50(pretrained=False, num_classes=21, aux_loss=None):
-    model = _segm_resnet("deeplab", "resnet50", num_classes, aux_loss)
+def deeplabv3_resnet50(pretrained=False, num_classes=21, aux_loss=None, **kwargs):
+    model = _segm_resnet("deeplab", "resnet50", num_classes, aux_loss, **kwargs)
     if pretrained:
         pass
     return model
 
 
-def deeplabv3_resnet101(pretrained=False, num_classes=21, aux_loss=None):
-    model = _segm_resnet("deeplab", "resnet101", num_classes, aux_loss)
+def deeplabv3_resnet101(pretrained=False, num_classes=21, aux_loss=None, **kwargs):
+    model = _segm_resnet("deeplab", "resnet101", num_classes, aux_loss, **kwargs)
     if pretrained:
         pass
     return model

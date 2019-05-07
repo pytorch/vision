@@ -31,8 +31,10 @@ class _SimpleSegmentationModel(nn.Module):
 
         return result
 
+
 class FCN(_SimpleSegmentationModel):
     pass
+
 
 class DeepLabV3(_SimpleSegmentationModel):
     pass
@@ -50,12 +52,14 @@ class FCNHead(nn.Sequential):
         ]
 
         super(FCNHead, self).__init__(*layers)
+        """
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
+        """
 
 
 class DeepLabHead(nn.Sequential):
@@ -67,12 +71,14 @@ class DeepLabHead(nn.Sequential):
             nn.ReLU(),
             nn.Conv2d(256, num_classes, 1)
         )
+        """
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
+        """
 
 
 class ASPPConv(nn.Sequential):
