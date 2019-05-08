@@ -18,7 +18,7 @@ from coco_utils import get_coco
 import utils
 
 
-from maskrcnn_benchmark.data.datasets.evaluation.coco.coco_eval import do_coco_evaluation as _evaluate
+from maskrcnn_benchmark.data.datasets.evaluation.coco.coco_eval2 import do_coco_evaluation as _evaluate
 
 
 def get_dataset(name, image_set, transform):
@@ -141,7 +141,7 @@ def main(args):
         collate_fn=utils.BatchCollator(32))
 
     data_loader_test = torch.utils.data.DataLoader(
-        dataset_test, batch_size=args.batch_size,
+        dataset_test, batch_size=1,#args.batch_size,
         sampler=test_sampler, num_workers=args.workers,
         collate_fn=utils.BatchCollator(32))
 
@@ -174,6 +174,7 @@ def main(args):
     if args.test_only:
         from maskrcnn_benchmark.utils.model_serialization import load_state_dict
         state_dict = torch.load('/checkpoint/fmassa/jobs/detectron_logs/detectron_12296927/model_final.pth')
+        # state_dict = torch.load('maskrcnn-benchmark/model_final.pth')
         # load_state_dict(model, state_dict['model'])
         evaluate(model, criterion, data_loader_test, device=device)
         return
@@ -218,7 +219,7 @@ if __name__ == "__main__":
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
-    parser.add_argument('--lr-step-size', default=6, type=int, help='decrease lr every step-size epochs')
+    parser.add_argument('--lr-step-size', default=8, type=int, help='decrease lr every step-size epochs')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')

@@ -56,6 +56,8 @@ class ConvertCocoPolysToMask(object):
     def __call__(self, image, anno):
         w, h = image.size
 
+        anno = [obj for obj in anno if obj['iscrowd'] == 0]
+
         boxes = [obj["bbox"] for obj in anno]
         boxes = torch.as_tensor(boxes).reshape(-1, 4)  # guard against no boxes
         boxes[:, 2:] += boxes[:, :2]
@@ -64,7 +66,7 @@ class ConvertCocoPolysToMask(object):
         classes = torch.tensor(classes)
 
         image_id = [obj["image_id"] for obj in anno]
-        image_id.append(-1)
+        image_id.append(-1)  # FIXME hack for empty annotations!!!
         image_id = torch.tensor(image_id)
 
         segmentations = [obj["segmentation"] for obj in anno]
@@ -131,7 +133,7 @@ class Resize(object):
         scale_factor = self.min_size / min_size
         if max_size * scale_factor > self.max_size:
             scale_factor = self.max_size / max_size
-        image = torch.nn.functional.interpolate(image[None], scale_factor=scale_factor)[0]
+        image = torch.nn.functional.interpolate(image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
         mask = target["masks"]
         if mask.numel() > 0:
             mask = torch.nn.functional.interpolate(mask[None].float(), scale_factor=scale_factor)[0].byte()
@@ -142,6 +144,18 @@ class Resize(object):
         target["boxes"] = bbox
         return image, target
 
+
+# TODO finish
+class RandomHorizontalFlip(object):
+    def __call__(self, image, target):
+        if random.random() < 0.5:
+            height, width = image.shape[-2:]
+            image = image.flip(-1)
+            target["masks"] = target["masks"].flip(-1)
+            bbox = target["boxes"]
+            bbox[:, [0, 2]] = width - bbox[:, [2, 0]]
+            target["boxes"] = bbox
+        return image, target
         
 
 def get_coco(root, image_set, transforms):
@@ -161,7 +175,9 @@ def get_coco(root, image_set, transforms):
     # CAT_LIST = [i for i in range(91)]
 
     t = [FilterAndRemapCocoCategories(CAT_LIST, remap=True), ConvertCocoPolysToMask()]
-    transforms = Resize()
+
+    transforms = Resize(800, 1333 if image_set == "train" else 1000)
+
     if transforms is not None:
         t.append(transforms)
     transforms = Compose(t)
