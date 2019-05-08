@@ -187,9 +187,11 @@ def main(args):
                 'lr_scheduler': lr_scheduler.state_dict(),
                 'epoch': epoch,
                 'args': args}
-            utils.save_on_master(checkpoint,
+            utils.save_on_master(
+                checkpoint,
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
-            utils.save_on_master(checkpoint,
+            utils.save_on_master(
+                checkpoint,
                 os.path.join(args.output_dir, 'checkpoint.pth'))
 
     total_time = time.time() - start_time
