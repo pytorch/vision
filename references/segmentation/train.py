@@ -60,14 +60,15 @@ def evaluate(model, data_loader, device, num_classes):
     confmat = utils.ConfusionMatrix(num_classes)
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
-    for image, target in metric_logger.log_every(data_loader, 100, header):
-        image, target = image.to(device), target.to(device)
-        output = model(image)
-        output = output['out']
+    with torch.no_grad():
+        for image, target in metric_logger.log_every(data_loader, 100, header):
+            image, target = image.to(device), target.to(device)
+            output = model(image)
+            output = output['out']
 
-        confmat.update(target.flatten(), output.argmax(1).flatten())
+            confmat.update(target.flatten(), output.argmax(1).flatten())
 
-    confmat.reduce_from_all_processes()
+        confmat.reduce_from_all_processes()
 
     return confmat
 
@@ -75,6 +76,7 @@ def evaluate(model, data_loader, device, num_classes):
 def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, print_freq):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
+    metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
     header = 'Epoch: [{}]'.format(epoch)
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
         image, target = image.to(device), target.to(device)
@@ -87,21 +89,15 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
 
         lr_scheduler.step()
 
-        metric_logger.update(loss=loss.item())
+        metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
 
 
 def main(args):
-    args.gpu = args.local_rank
+    if args.output_dir:
+        utils.mkdir(args.output_dir)
 
-    if args.distributed:
-        args.rank = int(os.environ["RANK"])
-        torch.cuda.set_device(args.gpu)
-        args.dist_backend = 'nccl'
-        dist_url = 'env://'
-        print('| distributed init (rank {}): {}'.format(
-            args.rank, dist_url), flush=True)
-        torch.distributed.init_process_group(backend=args.dist_backend, init_method=dist_url)
-        utils.suppress_output(args.rank == 0)
+    utils.init_distributed_mode(args)
+    print(args)
 
     device = torch.device(args.device)
 
@@ -139,9 +135,14 @@ def main(args):
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
 
+    if args.test_only:
+        confmat = evaluate(model, data_loader_test, device=device, num_classes=num_classes)
+        print(confmat)
+        return
+
     params_to_optimize = [
         {"params": [p for p in model_without_ddp.backbone.parameters() if p.requires_grad]},
-        {"params": [p for p in model_without_ddp.classifier.parameters() if p.requires_grad], "lr": args.lr * 1},
+        {"params": [p for p in model_without_ddp.classifier.parameters() if p.requires_grad]},
     ]
     if args.aux_loss:
         params = [p for p in model_without_ddp.aux_classifier.parameters() if p.requires_grad]
@@ -156,14 +157,16 @@ def main(args):
 
     start_time = time.time()
     for epoch in range(args.epochs):
+        if args.distributed:
+            train_sampler.set_epoch(epoch)
         train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, args.print_freq)
-        with torch.no_grad():
-            confmat = evaluate(model, data_loader_test, device=device, num_classes=num_classes)
+        confmat = evaluate(model, data_loader_test, device=device, num_classes=num_classes)
         print(confmat)
-        torch.save(
+        utils.save_on_master(
             {
                 'model': model_without_ddp.state_dict(),
                 'optimizer': optimizer.state_dict(),
+                'epoch': epoch,
                 'args': args
             },
             os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
@@ -173,7 +176,7 @@ def main(args):
     print('Training time {}'.format(total_time_str))
 
 
-if __name__ == "__main__":
+def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='PyTorch Segmentation Training')
 
@@ -196,16 +199,21 @@ if __name__ == "__main__":
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
-    parser.add_argument('--local_rank', default=0, type=int, help='print frequency')
+    parser.add_argument(
+        "--test-only",
+        dest="test_only",
+        help="Only test the model",
+        action="store_true",
+    )
+    # distributed training parameters
+    parser.add_argument('--world-size', default=1, type=int,
+                        help='number of distributed processes')
+    parser.add_argument('--dist-url', default='env://', help='url used to set up distributed training')
 
     args = parser.parse_args()
-    print(args)
+    return args
 
-    if args.output_dir:
-        utils.mkdir(args.output_dir)
 
-    import os
-    num_gpus = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
-    args.distributed = num_gpus > 1
-
+if __name__ == "__main__":
+    args = parse_args()
     main(args)

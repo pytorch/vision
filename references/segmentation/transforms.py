@@ -65,6 +65,16 @@ class RandomCrop(object):
         return image, target
 
 
+class CenterCrop(object):
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, image, target):
+        image = F.center_crop(image, self.size)
+        target = F.center_crop(target, self.size)
+        return image, target
+
+
 class ToTensor(object):
     def __call__(self, image, target):
         image = F.to_tensor(image)
