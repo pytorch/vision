@@ -45,6 +45,8 @@ def batched_nms(boxes, scores, idxs, iou_threshold):
             the elements that have been kept by NMS, sorted
             in decreasing order of scores
     """
+    if boxes.numel() == 0:
+        return torch.empty((0,), dtype=torch.int64, device=boxes.device)
     # strategy: in order to perform NMS independently per class.
     # we add an offset to all the boxes. The offset is dependent
     # only on the class idx, and is large enough so that boxes
