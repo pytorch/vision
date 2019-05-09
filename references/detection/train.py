@@ -59,7 +59,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
     header = 'Epoch: [{}]'.format(epoch)
     if epoch == 0:
         warmup_factor = 1. / 1000
-        warmup_iters = 1000
+        warmup_iters = min(1000, len(data_loader) - 1)
         def f(x):
             if x >= warmup_iters:
                 return 1
@@ -97,6 +97,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
 
 
+import coco_eval
 def evaluate(model, criterion, data_loader, device):
     cpu_device = torch.device("cpu")
     model.eval()
@@ -117,7 +118,6 @@ def evaluate(model, criterion, data_loader, device):
             break
         dataset = dataset.dataset
 
-    import coco_eval
     coco_evaluator = coco_eval.CocoEvaluator(dataset.coco, "bbox")
 
     with torch.no_grad():
@@ -131,6 +131,7 @@ def evaluate(model, criterion, data_loader, device):
             for o, t in zip(outputs, targets):
                 o["original_image_size"] = t["original_image_size"]
                 o["labels"] = CAT_LIST[o["labels"]]
+
             res = {target["image_id"][0].item(): output for target, output in zip(targets, outputs)}
             # results_dict.update(res)
             coco_evaluator.append(res)

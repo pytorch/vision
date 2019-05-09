@@ -1,4 +1,5 @@
 import utils
+import numpy as np
 import copy
 import torch
 import time
@@ -147,10 +148,6 @@ def loadRes(self, resFile):
     createIndex(res)
     return res
 
-#################################################################
-# end of straight copy from pycocotools, just removing the prints
-#################################################################
-
 
 def evaluate(self):
     '''
@@ -190,11 +187,16 @@ def evaluate(self):
              for areaRng in p.areaRng
              for imgId in p.imgIds
          ]
+    # this is NOT in the pycocotools code, but could be done outside
     evalImgs = np.asarray(evalImgs).reshape(len(catIds), len(p.areaRng), len(p.imgIds))
     self._paramsEval = copy.deepcopy(self.params)
     toc = time.time()
     # print('DONE (t={:0.2f}s).'.format(toc-tic))
     return p.imgIds, evalImgs
+
+#################################################################
+# end of straight copy from pycocotools, just removing the prints
+#################################################################
 
 def merge(img_ids, eval_imgs):
     all_img_ids = utils.all_gather(img_ids)
@@ -217,7 +219,7 @@ def merge(img_ids, eval_imgs):
 
     return merged_img_ids, merged_eval_imgs
 
-import numpy as np
+
 def create_common_coco_eval(coco_eval, img_ids, eval_imgs):
     img_ids, eval_imgs = merge(img_ids, eval_imgs)
     img_ids = list(img_ids)
@@ -232,15 +234,15 @@ def create_common_coco_eval(coco_eval, img_ids, eval_imgs):
 import json
 import tempfile
 class CocoEvaluator(object):
-
     def __init__(self, coco_gt, iou_type):
 
         from pycocotools.cocoeval import COCOeval
 
+        coco_gt = copy.deepcopy(coco_gt)
         self.coco_gt = coco_gt
         self.coco_eval = COCOeval(coco_gt, iouType=iou_type)
 
-        self.img_ids = []#sorted(coco_gt.getImgIds())
+        self.img_ids = []
         self.eval_imgs = []
 
 
@@ -256,7 +258,7 @@ class CocoEvaluator(object):
                 json.dump(results, f)
 
             # coco_dt = self.coco_gt.loadRes(str(file_path))
-            coco_dt = loadRes(self.coco_gt, str(file_path))
+            coco_dt = loadRes(self.coco_gt, str(file_path)) if results else COCO()
             self.coco_eval.cocoDt = coco_dt
             self.coco_eval.params.imgIds = list(img_ids)
             img_ids, eval_imgs = evaluate(self.coco_eval)

@@ -38,7 +38,6 @@ class Resize(object):
         return image, target
 
 
-# TODO finish
 class RandomHorizontalFlip(object):
     def __init__(self, prob):
         self.prob = prob
