@@ -35,10 +35,7 @@ def get_dataset(name, image_set, transform):
 
 def get_transform(train):
     min_size = 800
-    if train:
-        max_size = 1333
-    else:
-        max_size = 1000
+    max_size = 1333
     transforms = []
     transforms.append(T.ToTensor())
     transforms.append(T.Resize(min_size, max_size))
@@ -182,7 +179,8 @@ def main(args):
     optimizer = torch.optim.SGD(
         params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
+    # lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
+    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=args.lr_steps, gamma=args.lr_gamma)
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
@@ -192,7 +190,7 @@ def main(args):
 
     if args.test_only:
         from maskrcnn_benchmark.utils.model_serialization import load_state_dict
-        state_dict = torch.load('/checkpoint/fmassa/jobs/detectron_logs/detectron_12296927/model_final.pth')
+        # state_dict = torch.load('/checkpoint/fmassa/jobs/detectron_logs/detectron_12296927/model_final.pth')
         # state_dict = torch.load('maskrcnn-benchmark/model_final.pth')
         # load_state_dict(model, state_dict['model'])
         evaluate(model, criterion, data_loader_test, device=device)
@@ -228,7 +226,7 @@ if __name__ == "__main__":
     parser.add_argument('--model', default='resnet18', help='model')
     parser.add_argument('--device', default='cuda', help='device')
     parser.add_argument('-b', '--batch-size', default=2, type=int)
-    parser.add_argument('--epochs', default=12, type=int, metavar='N',
+    parser.add_argument('--epochs', default=13, type=int, metavar='N',
                         help='number of total epochs to run')
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                         help='number of data loading workers (default: 16)')
@@ -239,6 +237,7 @@ if __name__ == "__main__":
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
     parser.add_argument('--lr-step-size', default=8, type=int, help='decrease lr every step-size epochs')
+    parser.add_argument('--lr-steps', default=[8, 11], nargs='+', type=int, help='decrease lr every step-size epochs')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
