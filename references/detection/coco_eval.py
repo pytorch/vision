@@ -101,14 +101,22 @@ def merge(img_ids, eval_imgs):
 
     merged_eval_imgs = []
     for p in all_eval_imgs:
-        merged_eval_imgs.extend(p)
+        merged_eval_imgs.append(p)
+
+    merged_img_ids = np.array(merged_img_ids)
+    merged_eval_imgs = np.concatenate(merged_eval_imgs, 2)
+
+    # keep only unique (and in sorted order) images
+    merged_img_ids, idx = np.unique(merged_img_ids, return_index=True)
+    merged_eval_imgs = merged_eval_imgs[..., idx]
 
     return merged_img_ids, merged_eval_imgs
 
 import numpy as np
 def create_common_coco_eval(coco_eval, img_ids, eval_imgs):
     img_ids, eval_imgs = merge(img_ids, eval_imgs)
-    img_ids = list(np.unique(img_ids))
+    img_ids = list(img_ids)
+    eval_imgs = list(eval_imgs.flatten())
 
     coco_eval.evalImgs = eval_imgs
     coco_eval.params.imgIds = img_ids
@@ -153,7 +161,7 @@ class CocoEvaluator(object):
 
     def synchronize_between_processes(self):
         self.eval_imgs = np.concatenate(self.eval_imgs, 2)
-        self.eval_imgs = list(self.eval_imgs.flatten())
+        # self.eval_imgs = list(self.eval_imgs.flatten())
         create_common_coco_eval(self.coco_eval, self.img_ids, self.eval_imgs)
 
     def accumulate(self):
