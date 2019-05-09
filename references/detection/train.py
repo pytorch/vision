@@ -55,9 +55,22 @@ def get_transform(train):
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, print_freq):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
-    metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
+    metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
+    if epoch == 0:
+        warmup_factor = 1. / 3
+        warmup_iters = 500
+        def f(x):
+            if x >= warmup_iters:
+                return 1
+            alpha = float(x) / warmup_iters
+            return warmup_factor * (1 - alpha) + alpha
+        lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, f)
+
     for images, targets in metric_logger.log_every(data_loader, print_freq, header):
+        if epoch == 0:
+            lr_scheduler.step()
+
         images = images.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
@@ -230,7 +243,7 @@ if __name__ == "__main__":
                         help='number of total epochs to run')
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                         help='number of data loading workers (default: 16)')
-    parser.add_argument('--lr', default=0.02 / 8, type=float, help='initial learning rate')
+    parser.add_argument('--lr', default=0.02, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                         help='momentum')
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
