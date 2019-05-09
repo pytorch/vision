@@ -109,6 +109,17 @@ def evaluate(model, criterion, data_loader, device):
         40, 41, 42, 43, 44, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
         58, 59, 60, 61, 62, 63, 64, 65, 67, 70, 72, 73, 74, 75, 76, 77, 78,
         79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90], device=device)
+
+
+    dataset = data_loader.dataset
+    while True:
+        if isinstance(dataset, torchvision.datasets.CocoDetection):
+            break
+        dataset = dataset.dataset
+
+    import coco_eval
+    coco_evaluator = coco_eval.CocoEvaluator(dataset.coco, "bbox")
+
     with torch.no_grad():
         for image, targets in metric_logger.log_every(data_loader, 100, header):
             image = image.to(device, non_blocking=True)
@@ -120,12 +131,14 @@ def evaluate(model, criterion, data_loader, device):
             for o, t in zip(outputs, targets):
                 o["original_image_size"] = t["original_image_size"]
                 o["labels"] = CAT_LIST[o["labels"]]
+            res = {target["image_id"][0].item(): output for target, output in zip(targets, outputs)}
+            results_dict.update(res)
+            coco_evaluator.append(res)
 
-            results_dict.update(
-                {target["image_id"][0].item(): output for target, output in zip(targets, outputs)})
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     results_dict.synchronize_between_processes()
+
     if -1 in results_dict:
         del results_dict[-1]
 
@@ -137,11 +150,9 @@ def evaluate(model, criterion, data_loader, device):
     )
     output_folder = None
 
-    dataset = data_loader.dataset
-    while True:
-        if isinstance(dataset, torchvision.datasets.CocoDetection):
-            break
-        dataset = dataset.dataset
+    coco_evaluator.synchronize_between_processes()
+    coco_evaluator.accumulate()
+    coco_evaluator.summarize()
 
     return _evaluate(dataset=dataset,
                     predictions=results_dict,
@@ -208,10 +219,11 @@ def main(args):
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
 
     if args.test_only:
-        # from maskrcnn_benchmark.utils.model_serialization import load_state_dict
-        # state_dict = torch.load('/checkpoint/fmassa/jobs/detectron_logs/detectron_12296927/model_final.pth')
+        from maskrcnn_benchmark.utils.model_serialization import load_state_dict
+        state_dict = torch.load('/checkpoint/fmassa/jobs/detectron_logs/detectron_12296927/model_final.pth',
+            map_location=torch.device("cpu"))
         # state_dict = torch.load('maskrcnn-benchmark/model_final.pth')
-        # load_state_dict(model, state_dict['model'])
+        load_state_dict(model, state_dict['model'])
         evaluate(model, criterion, data_loader_test, device=device)
         return
 
