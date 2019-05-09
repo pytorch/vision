@@ -16,7 +16,7 @@ from torchvision import transforms
 from coco_utils import get_coco
 
 import utils
-
+import transforms as T
 
 from maskrcnn_benchmark.data.datasets.evaluation.coco.coco_eval2 import do_coco_evaluation as _evaluate
 
@@ -31,6 +31,28 @@ def get_dataset(name, image_set, transform):
 
     ds = ds_fn(p, image_set=image_set, transforms=transform)
     return ds, num_classes
+
+
+def get_transform(train):
+    min_size = 800
+    if train:
+        max_size = 1333
+    else:
+        max_size = 1000
+    transforms = []
+    transforms.append(T.ToTensor())
+    transforms.append(T.Resize(min_size, max_size))
+    # if train:
+    #     transforms.append(T.RandomHorizontalFlip(0.5))
+
+    if True:
+        transforms.append(T.BGR255())
+        transforms.append(T.Normalize(mean=[102.9801, 115.9465, 122.7717],
+                                      std=[1., 1., 1.]))
+    else:
+        transforms.append(T.Normalize(mean=[0.485, 0.456, 0.406],
+                                      std=[0.229, 0.224, 0.225]))
+    return T.Compose(transforms)
 
 
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, print_freq):
@@ -121,8 +143,8 @@ def main(args):
     print("Loading data")
 
     args.dataset = "coco"
-    dataset, num_classes = get_dataset(args.dataset, "train", None)
-    dataset_test, _ = get_dataset(args.dataset, "val", None)
+    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(train=True))
+    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(train=False))
 
     print("Creating data loaders")
     if args.distributed:
@@ -172,7 +194,7 @@ def main(args):
         from maskrcnn_benchmark.utils.model_serialization import load_state_dict
         state_dict = torch.load('/checkpoint/fmassa/jobs/detectron_logs/detectron_12296927/model_final.pth')
         # state_dict = torch.load('maskrcnn-benchmark/model_final.pth')
-        load_state_dict(model, state_dict['model'])
+        # load_state_dict(model, state_dict['model'])
         evaluate(model, criterion, data_loader_test, device=device)
         return
 

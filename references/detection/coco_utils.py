@@ -9,6 +9,7 @@ import os
 from pycocotools import mask as coco_mask
 
 # from transforms import Compose
+import transforms as T
 
 
 class FilterAndRemapCocoCategories(object):
@@ -44,15 +45,6 @@ def convert_coco_poly_to_mask(segmentations, height, width):
 
 
 class ConvertCocoPolysToMask(object):
-    def __init__(self):
-        # self.normalize = torchvision.transforms.Normalize(
-        #     mean=[0.485, 0.456, 0.406],
-        #     std=[0.229, 0.224, 0.225])
-
-        self.normalize = torchvision.transforms.Normalize(
-            mean=[102.9801, 115.9465, 122.7717],
-            std=[1., 1., 1.])
-
     def __call__(self, image, anno):
         w, h = image.size
 
@@ -78,11 +70,6 @@ class ConvertCocoPolysToMask(object):
         target["masks"] = masks
         target["image_id"] = image_id
         target["original_image_size"] = torch.tensor([h, w])
-
-        # FIXME
-        image = torchvision.transforms.functional.to_tensor(image)
-        image = image[[2, 1, 0]] * 255
-        image = self.normalize(image)
 
         return image, target
 
@@ -111,51 +98,6 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
 
     dataset = torch.utils.data.Subset(dataset, ids)
     return dataset
-
-
-class Compose(object):
-    def __init__(self, transforms):
-        self.transforms = transforms
-
-    def __call__(self, image, target):
-        for t in self.transforms:
-            image, target = t(image, target)
-        return image, target
-
-class Resize(object):
-    def __init__(self, min_size=800, max_size=1333):
-        self.min_size = min_size
-        self.max_size = max_size
-
-    def __call__(self, image, target):
-        min_size = min(image.shape[-2:])
-        max_size = max(image.shape[-2:])
-        scale_factor = self.min_size / min_size
-        if max_size * scale_factor > self.max_size:
-            scale_factor = self.max_size / max_size
-        image = torch.nn.functional.interpolate(image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
-        mask = target["masks"]
-        if mask.numel() > 0:
-            mask = torch.nn.functional.interpolate(mask[None].float(), scale_factor=scale_factor)[0].byte()
-        else:
-            mask = torch.empty((0, image.shape[-2], image.shape[-1]), dtype=torch.uint8)
-        bbox = target["boxes"] * scale_factor
-        target["masks"] = mask
-        target["boxes"] = bbox
-        return image, target
-
-
-# TODO finish
-class RandomHorizontalFlip(object):
-    def __call__(self, image, target):
-        if random.random() < 0.5:
-            height, width = image.shape[-2:]
-            image = image.flip(-1)
-            target["masks"] = target["masks"].flip(-1)
-            bbox = target["boxes"]
-            bbox[:, [0, 2]] = width - bbox[:, [2, 0]]
-            target["boxes"] = bbox
-        return image, target
         
 
 def get_coco(root, image_set, transforms):
@@ -176,11 +118,9 @@ def get_coco(root, image_set, transforms):
 
     t = [FilterAndRemapCocoCategories(CAT_LIST, remap=True), ConvertCocoPolysToMask()]
 
-    transforms = Resize(800, 1333 if image_set == "train" else 1000)
-
     if transforms is not None:
         t.append(transforms)
-    transforms = Compose(t)
+    transforms = T.Compose(t)
 
     img_folder, ann_file = PATHS[image_set]
     img_folder = os.path.join(root, img_folder)
@@ -191,6 +131,6 @@ def get_coco(root, image_set, transforms):
     if image_set == "train":
         dataset = _coco_remove_images_without_annotations(dataset, CAT_LIST)
 
-    dataset = torch.utils.data.Subset(dataset, [i for i in range(50)])
+    dataset = torch.utils.data.Subset(dataset, [i for i in range(52)])
 
     return dataset
