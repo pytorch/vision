@@ -58,8 +58,8 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
     if epoch == 0:
-        warmup_factor = 1. / 3
-        warmup_iters = 500
+        warmup_factor = 1. / 1000
+        warmup_iters = 1000
         def f(x):
             if x >= warmup_iters:
                 return 1
@@ -78,16 +78,22 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
 
         losses = sum(loss for loss in loss_dict.values())
 
-        loss_value = losses.item()
+        # reduce losses over all GPUs for logging purposes
+        loss_dict_reduced = utils.reduce_dict(loss_dict)
+        losses_reduced = sum(loss for loss in loss_dict_reduced.values())
+
+        loss_value = losses_reduced.item()
+
         if not math.isfinite(loss_value):
             print("Loss is {}, stopping training".format(loss_value))
+            print(loss_dict_reduced)
             sys.exit(1)
 
         optimizer.zero_grad()
         losses.backward()
         optimizer.step()
 
-        metric_logger.update(loss=losses, **loss_dict)
+        metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
 
 
@@ -202,7 +208,7 @@ def main(args):
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
 
     if args.test_only:
-        from maskrcnn_benchmark.utils.model_serialization import load_state_dict
+        # from maskrcnn_benchmark.utils.model_serialization import load_state_dict
         # state_dict = torch.load('/checkpoint/fmassa/jobs/detectron_logs/detectron_12296927/model_final.pth')
         # state_dict = torch.load('maskrcnn-benchmark/model_final.pth')
         # load_state_dict(model, state_dict['model'])

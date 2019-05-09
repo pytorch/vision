@@ -53,6 +53,8 @@ class ConvertCocoPolysToMask(object):
         boxes = [obj["bbox"] for obj in anno]
         boxes = torch.as_tensor(boxes).reshape(-1, 4)  # guard against no boxes
         boxes[:, 2:] += boxes[:, :2]
+        boxes[:, 0::2].clamp_(min=0, max=w)
+        boxes[:, 1::2].clamp_(min=0, max=h)
 
         classes = [obj["category_id"] for obj in anno]
         classes = torch.tensor(classes)
@@ -63,6 +65,12 @@ class ConvertCocoPolysToMask(object):
 
         segmentations = [obj["segmentation"] for obj in anno]
         masks = convert_coco_poly_to_mask(segmentations, h, w)
+
+        keep = (boxes[:, 3] > boxes[:, 1]) & (boxes[:, 2] > boxes[:, 0])
+        boxes = boxes[keep]
+        classes = classes[keep]
+        masks = masks[keep]
+        # image_id?
 
         target = {}
         target["boxes"] = boxes
