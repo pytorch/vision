@@ -64,7 +64,7 @@ def evaluate(model, criterion, data_loader, device):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
-    results_dict = {}
+    results_dict = utils.Dict()
     CAT_LIST = torch.tensor([
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19,
         20, 21, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 39,
@@ -75,7 +75,7 @@ def evaluate(model, criterion, data_loader, device):
         for image, targets in metric_logger.log_every(data_loader, 100, header):
             image = image.to(device, non_blocking=True)
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-            outputs = model(image) # TODO remove target?
+            outputs = model(image)
 
             outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
 
@@ -83,11 +83,11 @@ def evaluate(model, criterion, data_loader, device):
                 o["original_image_size"] = t["original_image_size"]
                 o["labels"] = CAT_LIST[o["labels"]]
 
-            #acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
             results_dict.update(
                 {target["image_id"][0].item(): output for target, output in zip(targets, outputs)})
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
+    results_dict.synchronize_between_processes()
     if -1 in results_dict:
         del results_dict[-1]
 
@@ -109,9 +109,6 @@ def evaluate(model, criterion, data_loader, device):
                     predictions=results_dict,
                     output_folder=output_folder,
                     **extra_args)
-    # print(' * Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f}'
-    #       .format(top1=metric_logger.acc1, top5=metric_logger.acc5))
-    # return #metric_logger.acc1.global_avg
 
 
 def main(args):
@@ -175,7 +172,7 @@ def main(args):
         from maskrcnn_benchmark.utils.model_serialization import load_state_dict
         state_dict = torch.load('/checkpoint/fmassa/jobs/detectron_logs/detectron_12296927/model_final.pth')
         # state_dict = torch.load('maskrcnn-benchmark/model_final.pth')
-        # load_state_dict(model, state_dict['model'])
+        load_state_dict(model, state_dict['model'])
         evaluate(model, criterion, data_loader_test, device=device)
         return
 
