@@ -42,8 +42,8 @@ def get_transform(train):
     transforms = []
     transforms.append(T.ToTensor())
     transforms.append(T.Resize(min_size, max_size))
-    # if train:
-    #     transforms.append(T.RandomHorizontalFlip(0.5))
+    if train:
+        transforms.append(T.RandomHorizontalFlip(0.5))
 
     if True:
         transforms.append(T.BGR255())
@@ -205,7 +205,7 @@ def main(args):
             train_sampler.set_epoch(epoch)
         lr_scheduler.step()
         train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq)
-        if epoch == args.epochs - 1:
+        if True: # epoch == args.epochs - 1:
             evaluate(model, criterion, data_loader_test, device=device)
         if args.output_dir:
             utils.save_on_master({
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     parser.add_argument('-b', '--batch-size', default=2, type=int)
     parser.add_argument('--epochs', default=12, type=int, metavar='N',
                         help='number of total epochs to run')
-    parser.add_argument('-j', '--workers', default=16, type=int, metavar='N',
+    parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                         help='number of data loading workers (default: 16)')
     parser.add_argument('--lr', default=0.02 / 8, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
