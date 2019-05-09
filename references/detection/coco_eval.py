@@ -46,6 +46,111 @@ def prepare_for_coco_detection(predictions):
         )
     return coco_results
 
+#################################################################
+# From pycocotools, just removed the prints
+#################################################################
+
+# Ideally, pycocotools wouldn't have hard-coded prints
+# so that we could avoid copy-pasting those two functions
+from collections import defaultdict
+def createIndex(self):
+    # create index
+    # print('creating index...')
+    anns, cats, imgs = {}, {}, {}
+    imgToAnns,catToImgs = defaultdict(list),defaultdict(list)
+    if 'annotations' in self.dataset:
+        for ann in self.dataset['annotations']:
+            imgToAnns[ann['image_id']].append(ann)
+            anns[ann['id']] = ann
+
+    if 'images' in self.dataset:
+        for img in self.dataset['images']:
+            imgs[img['id']] = img
+
+    if 'categories' in self.dataset:
+        for cat in self.dataset['categories']:
+            cats[cat['id']] = cat
+
+    if 'annotations' in self.dataset and 'categories' in self.dataset:
+        for ann in self.dataset['annotations']:
+            catToImgs[ann['category_id']].append(ann['image_id'])
+
+    # print('index created!')
+
+    # create class members
+    self.anns = anns
+    self.imgToAnns = imgToAnns
+    self.catToImgs = catToImgs
+    self.imgs = imgs
+    self.cats = cats
+
+
+from pycocotools.coco import COCO
+def loadRes(self, resFile):
+    """
+    Load result file and return a result api object.
+    :param   resFile (str)     : file name of result file
+    :return: res (obj)         : result api object
+    """
+    res = COCO()
+    res.dataset['images'] = [img for img in self.dataset['images']]
+
+    # print('Loading and preparing results...')
+    tic = time.time()
+    if type(resFile) == str or type(resFile) == unicode:
+        anns = json.load(open(resFile))
+    elif type(resFile) == np.ndarray:
+        anns = self.loadNumpyAnnotations(resFile)
+    else:
+        anns = resFile
+    assert type(anns) == list, 'results in not an array of objects'
+    annsImgIds = [ann['image_id'] for ann in anns]
+    assert set(annsImgIds) == (set(annsImgIds) & set(self.getImgIds())), \
+           'Results do not correspond to current coco set'
+    if 'caption' in anns[0]:
+        imgIds = set([img['id'] for img in res.dataset['images']]) & set([ann['image_id'] for ann in anns])
+        res.dataset['images'] = [img for img in res.dataset['images'] if img['id'] in imgIds]
+        for id, ann in enumerate(anns):
+            ann['id'] = id+1
+    elif 'bbox' in anns[0] and not anns[0]['bbox'] == []:
+        res.dataset['categories'] = copy.deepcopy(self.dataset['categories'])
+        for id, ann in enumerate(anns):
+            bb = ann['bbox']
+            x1, x2, y1, y2 = [bb[0], bb[0]+bb[2], bb[1], bb[1]+bb[3]]
+            if not 'segmentation' in ann:
+                ann['segmentation'] = [[x1, y1, x1, y2, x2, y2, x2, y1]]
+            ann['area'] = bb[2]*bb[3]
+            ann['id'] = id+1
+            ann['iscrowd'] = 0
+    elif 'segmentation' in anns[0]:
+        res.dataset['categories'] = copy.deepcopy(self.dataset['categories'])
+        for id, ann in enumerate(anns):
+            # now only support compressed RLE format as segmentation results
+            ann['area'] = maskUtils.area(ann['segmentation'])
+            if not 'bbox' in ann:
+                ann['bbox'] = maskUtils.toBbox(ann['segmentation'])
+            ann['id'] = id+1
+            ann['iscrowd'] = 0
+    elif 'keypoints' in anns[0]:
+        res.dataset['categories'] = copy.deepcopy(self.dataset['categories'])
+        for id, ann in enumerate(anns):
+            s = ann['keypoints']
+            x = s[0::3]
+            y = s[1::3]
+            x0,x1,y0,y1 = np.min(x), np.max(x), np.min(y), np.max(y)
+            ann['area'] = (x1-x0)*(y1-y0)
+            ann['id'] = id + 1
+            ann['bbox'] = [x0,y0,x1-x0,y1-y0]
+    # print('DONE (t={:0.2f}s)'.format(time.time()- tic))
+
+    res.dataset['annotations'] = anns
+    createIndex(res)
+    return res
+
+#################################################################
+# end of straight copy from pycocotools, just removing the prints
+#################################################################
+
 
 def evaluate(self):
     '''
@@ -130,7 +235,6 @@ class CocoEvaluator(object):
 
     def __init__(self, coco_gt, iou_type):
 
-        # from pycocotools.coco import COCO
         from pycocotools.cocoeval import COCOeval
 
         self.coco_gt = coco_gt
@@ -151,17 +255,16 @@ class CocoEvaluator(object):
             with open(file_path, "w") as f:
                 json.dump(results, f)
 
-            coco_dt = self.coco_gt.loadRes(str(file_path))
+            # coco_dt = self.coco_gt.loadRes(str(file_path))
+            coco_dt = loadRes(self.coco_gt, str(file_path))
             self.coco_eval.cocoDt = coco_dt
             self.coco_eval.params.imgIds = list(img_ids)
             img_ids, eval_imgs = evaluate(self.coco_eval)
             self.img_ids.extend(img_ids)
-            # self.eval_imgs.extend(eval_imgs)
             self.eval_imgs.append(eval_imgs)
 
     def synchronize_between_processes(self):
         self.eval_imgs = np.concatenate(self.eval_imgs, 2)
-        # self.eval_imgs = list(self.eval_imgs.flatten())
         create_common_coco_eval(self.coco_eval, self.img_ids, self.eval_imgs)
 
     def accumulate(self):
@@ -169,7 +272,3 @@ class CocoEvaluator(object):
 
     def summarize(self):
         self.coco_eval.summarize()
-
-    # def __repr__(self):
-    #     return repr(self.coco_eval)
-
