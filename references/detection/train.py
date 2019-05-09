@@ -132,12 +132,12 @@ def evaluate(model, criterion, data_loader, device):
                 o["original_image_size"] = t["original_image_size"]
                 o["labels"] = CAT_LIST[o["labels"]]
             res = {target["image_id"][0].item(): output for target, output in zip(targets, outputs)}
-            results_dict.update(res)
+            # results_dict.update(res)
             coco_evaluator.append(res)
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
-    results_dict.synchronize_between_processes()
+    # results_dict.synchronize_between_processes()
 
     if -1 in results_dict:
         del results_dict[-1]
@@ -153,7 +153,7 @@ def evaluate(model, criterion, data_loader, device):
     coco_evaluator.synchronize_between_processes()
     coco_evaluator.accumulate()
     coco_evaluator.summarize()
-
+    return coco_evaluator
     return _evaluate(dataset=dataset,
                     predictions=results_dict,
                     output_folder=output_folder,
