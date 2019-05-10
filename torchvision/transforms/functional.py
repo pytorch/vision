@@ -247,7 +247,7 @@ def resize(img, size, interpolation=Image.BILINEAR, bigger=False):
                 ow = int(size * w / h)
                 return img.resize((ow, oh), interpolation)
         else:
-            if (w <= h and w == size) or (h <= w and h == size):
+            if (w <= h and h == size) or (h <= w and w == size):
                 return img
             if w < h:
                 oh = size
