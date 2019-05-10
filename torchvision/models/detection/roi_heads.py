@@ -7,9 +7,7 @@ from torchvision.ops import boxes as box_ops
 from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops import roi_align
 
-from .box_coder import BoxCoder
-from .balanced_positive_negative_sampler import BalancedPositiveNegativeSampler
-from .matcher import Matcher
+from . import _utils as det_utils
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
@@ -254,18 +252,18 @@ class RoIHeads(torch.nn.Module):
 
         self.box_similarity = box_ops.box_iou
         # assign ground-truth boxes for each proposal
-        self.proposal_matcher = Matcher(
+        self.proposal_matcher = det_utils.Matcher(
             fg_iou_thresh,
             bg_iou_thresh,
             allow_low_quality_matches=False)
 
-        self.fg_bg_sampler = BalancedPositiveNegativeSampler(
+        self.fg_bg_sampler = det_utils.BalancedPositiveNegativeSampler(
             batch_size_per_image,
             positive_fraction)
 
         if bbox_reg_weights is None:
             bbox_reg_weights = (10., 10., 5., 5.)
-        self.box_coder = BoxCoder(bbox_reg_weights)
+        self.box_coder = det_utils.BoxCoder(bbox_reg_weights)
 
         self.box_roi_pool = box_roi_pool
         self.box_head = box_head

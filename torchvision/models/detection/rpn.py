@@ -5,9 +5,7 @@ from torch import nn
 
 from torchvision.ops import boxes as box_ops
 
-from .box_coder import BoxCoder
-from .balanced_positive_negative_sampler import BalancedPositiveNegativeSampler
-from .matcher import Matcher
+from . import _utils as det_utils
 
 
 class AnchorGenerator(nn.Module):
@@ -202,18 +200,18 @@ class RegionProposalNetwork(torch.nn.Module):
         super(RegionProposalNetwork, self).__init__()
         self.anchor_generator = anchor_generator
         self.head = head
-        self.box_coder = BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
+        self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
 
         # used during training
         self.box_similarity = box_ops.box_iou
 
-        self.proposal_matcher = Matcher(
+        self.proposal_matcher = det_utils.Matcher(
             fg_iou_thresh,
             bg_iou_thresh,
             allow_low_quality_matches=True,
         )
 
-        self.fg_bg_sampler = BalancedPositiveNegativeSampler(
+        self.fg_bg_sampler = det_utils.BalancedPositiveNegativeSampler(
             batch_size_per_image, positive_fraction
         )
         # used during testing
