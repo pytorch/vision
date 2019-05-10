@@ -12,7 +12,7 @@ class FPN(nn.Module):
     """
 
     def __init__(
-        self, in_channels_list, out_channels, conv_block, top_blocks=None
+        self, in_channels_list, out_channels, top_blocks=None
     ):
         """
         Arguments:
@@ -29,10 +29,17 @@ class FPN(nn.Module):
         for in_channels in in_channels_list:
             if in_channels == 0:
                 continue
-            inner_block_module = conv_block(in_channels, out_channels, 1)
-            layer_block_module = conv_block(out_channels, out_channels, 3, 1)
+            inner_block_module = nn.Conv2d(in_channels, out_channels, 1)
+            layer_block_module = nn.Conv2d(out_channels, out_channels, 3, padding=1)
             self.inner_blocks.append(inner_block_module)
             self.layer_blocks.append(layer_block_module)
+
+        # initialize parameters now to avoid modifying the initialization of top_blocks
+        for m in self.children():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_uniform_(m.weight, a=1)
+                nn.init.constant_(m.bias, 0)
+
         self.top_blocks = top_blocks
 
     def forward(self, x):

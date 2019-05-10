@@ -16,35 +16,6 @@ from torchvision.ops import misc as misc_nn_ops
 from maskrcnn_benchmark.layers import FrozenBatchNorm2d
 
 
-def conv_with_kaiming_uniform(use_gn=False, use_relu=False):
-    def make_conv(
-        in_channels, out_channels, kernel_size, stride=1, dilation=1
-    ):
-        conv = nn.Conv2d(
-            in_channels,
-            out_channels,
-            kernel_size=kernel_size,
-            stride=stride,
-            padding=dilation * (kernel_size - 1) // 2,
-            dilation=dilation,
-            bias=False if use_gn else True
-        )
-        # Caffe2 implementation uses XavierFill, which in fact
-        # corresponds to kaiming_uniform_ in PyTorch
-        nn.init.kaiming_uniform_(conv.weight, a=1)
-        if not use_gn:
-            nn.init.constant_(conv.bias, 0)
-        module = [conv,]
-        if use_gn:
-            module.append(group_norm(out_channels))
-        if use_relu:
-            module.append(nn.ReLU(inplace=True))
-        if len(module) > 1:
-            return nn.Sequential(*module)
-        return conv
-
-    return make_conv
-
 def load_resnet_c2_format(f):
     from maskrcnn_benchmark.utils.c2_model_loading import _load_c2_pickled_weights, _C2_STAGE_NAMES, _rename_weights_for_resnet
     state_dict = _load_c2_pickled_weights(f)
@@ -65,8 +36,6 @@ def build_resnet_fpn_backbone(backbone_name):
         pretrained=True,
         norm_layer=FrozenBatchNorm2d)
 
-    # del backbone.avgpool
-    # del backbone.fc
 
     if False:
         state_dict = load_resnet_c2_format('/private/home/fmassa/.torch/models/R-50.pkl')
@@ -89,26 +58,27 @@ def build_resnet_fpn_backbone(backbone_name):
             in_channels_stage2 * 8,
         ],
         out_channels=out_channels,
-        conv_block=conv_with_kaiming_uniform(),
         top_blocks=fpn_module.LastLevelMaxPool(),
     )
     model = nn.Sequential(OrderedDict([("body", body), ("fpn", fpn)]))
     model.out_channels = out_channels
     return model
 
-def build_backbone_with_fpn(backbone, return_layers, in_channels_list, out_channels):
-    body = IntermediateLayerGetter(backbone, return_layers=return_layers)
-    fpn = fpn_module.FPN(
-        in_channels_list=in_channels_list,
-        out_channels=out_channels,
-        conv_block=conv_with_kaiming_uniform(),
-        top_blocks=fpn_module.LastLevelMaxPool(),
-    )
-    model = nn.Sequential(OrderedDict([("body", body), ("fpn", fpn)]))
-    model.out_channels = out_channels
-    return model
 
-def build_resnet_fpn_backbone_(backbone_name):
+class BackboneWithFPN(nn.Sequential):
+    def __init__(self, backbone, return_layers, in_channels_list, out_channels):
+        body = IntermediateLayerGetter(backbone, return_layers=return_layers)
+        fpn = fpn_module.FPN(
+            in_channels_list=in_channels_list,
+            out_channels=out_channels,
+            top_blocks=fpn_module.LastLevelMaxPool(),
+        )
+        super(BackboneWithFPN, self).__init__(OrderedDict(
+            [("body", body), ("fpn", fpn)]))
+        self.out_channels = out_channels
+
+
+def _resnet_fpn_backbone(backbone_name):
     from .. import resnet
     backbone = resnet.__dict__[backbone_name](
         # pretrained=False,
@@ -122,23 +92,18 @@ def build_resnet_fpn_backbone_(backbone_name):
     return_layers = {'layer1': 0, 'layer2': 1, 'layer3': 2, 'layer4': 3}
 
     in_channels_stage2 = 256
-    out_channels = 256
     in_channels_list=[
         in_channels_stage2,
         in_channels_stage2 * 2,
         in_channels_stage2 * 4,
         in_channels_stage2 * 8,
     ]
-    return build_backbone_with_fpn(backbone, return_layers, in_channels_list, out_channels)
-
-
-class FasterRCNN(GeneralizedRCNN):
-    pass
-
+    out_channels = 256
+    return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels)
 
 
 class MaskRCNN(GeneralizedRCNN):
-    def __init__(self, backbone, num_classes,
+    def __init__(self, backbone, num_classes=None,
                  #
                  rpn_anchor_generator=None, rpn_head=None,
                  rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,
@@ -155,6 +120,21 @@ class MaskRCNN(GeneralizedRCNN):
                  #
                  mask_roi_pool=None, mask_head=None, mask_predictor=None,
                  mask_discretization_size=28):
+
+        if not hasattr(backbone, "out_channels"):
+            raise ValueError("backbone should contain an attribute out_channels "
+                "specifying the number of output channels (assumed to be the "
+                "same for all the levels)")
+
+        assert isinstance(rpn_anchor_generator, (AnchorGenerator, type(None)))
+        assert isinstance(box_roi_pool, (Pooler, type(None)))
+        assert isinstance(mask_roi_pool, (Pooler, type(None)))
+
+        if num_classes is not None:
+            if box_predictor is not None:
+                raise ValueError("num_classes should be None when box_predictor is specified")
+            if mask_predictor is not None:
+                raise ValueError("num_classes should be None when mask_predictor is specified")
 
         out_channels = backbone.out_channels
 
@@ -213,6 +193,7 @@ class MaskRCNN(GeneralizedRCNN):
             mask_predictor = MaskRCNNC4Predictor(out_channels, mask_dim_reduced, num_classes)
 
         roi_heads = RoIHeads(
+            # Box
             box_roi_pool, box_head, box_predictor,
             box_fg_iou_thresh, box_bg_iou_thresh,
             box_batch_size_per_image, box_positive_fraction,
@@ -222,19 +203,9 @@ class MaskRCNN(GeneralizedRCNN):
             mask_roi_pool,
             mask_head,
             mask_predictor,
-            mask_discretization_size
-            )
+            mask_discretization_size)
 
         super(MaskRCNN, self).__init__(backbone, rpn, roi_heads)
-
-
-
-def maskrcnn_resnet50_fpn(pretrained=False, num_classes=81, **kwargs):
-    backbone = build_resnet_fpn_backbone('resnet50')
-    model = MaskRCNN(backbone, num_classes, **kwargs)
-    if pretrained:
-        pass
-    return model
 
 
 class TwoMLPHead(nn.Module):
@@ -309,3 +280,10 @@ class MaskRCNNC4Predictor(nn.Sequential):
             if "weight" in name:
                 nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
 
+
+def maskrcnn_resnet50_fpn(pretrained=False, num_classes=81, **kwargs):
+    backbone = _resnet_fpn_backbone('resnet50')
+    model = MaskRCNN(backbone, num_classes, **kwargs)
+    if pretrained:
+        pass
+    return model

@@ -275,15 +275,22 @@ class RoIHeads(torch.nn.Module):
         self.nms_thresh = nms_thresh
         self.detections_per_img = detections_per_img
 
-        self.has_mask = False
-
-        # masks
-        if mask_predictor is not None:
-            self.has_mask = True
         self.mask_roi_pool = mask_roi_pool
         self.mask_head = mask_head
         self.mask_predictor = mask_predictor
         self.mask_discretization_size = mask_discretization_size
+
+    @property
+    def has_mask(self):
+        if self.mask_roi_pool is None:
+            return False
+        if self.mask_head is None:
+            return False
+        if self.mask_predictor is None:
+            return False
+        if self.mask_discretization_size is None:
+            return False
+        return True
 
     def assign_targets_to_proposals(self, proposals, gt_boxes, gt_labels):
         matched_idxs = []
