@@ -24,8 +24,8 @@ import transforms as T
 def get_dataset(name, image_set, transform):
     paths = {
         # "voc": ('/datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation, 21),
-        # "voc_aug": ('/datasets01/SBDD/072318/', sbd, 21),
         "coco": ('/datasets01/COCO/022719/', get_coco, 81)
+        # "coco": ('/datasets01/COCO/022719/', get_coco, 91)
     }
     p, ds_fn, num_classes = paths[name]
 
@@ -141,13 +141,8 @@ def evaluate(model, data_loader, device):
                 o["original_image_size"] = t["original_image_size"]
                 o["labels"] = CAT_LIST[o["labels"]]
 
-            # res = {target["image_id"][0].item(): output for target, output in zip(targets, outputs)}
             res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
-            # FIXME this is a hack! we should unconditionally append
-            # if -1 in res:
-            #     del res[-1]
-            if res:
-                coco_evaluator.update(res)
+            coco_evaluator.update(res)
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
