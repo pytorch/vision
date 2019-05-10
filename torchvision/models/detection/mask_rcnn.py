@@ -49,7 +49,8 @@ class MaskRCNN(GeneralizedRCNN):
                  mask_discretization_size=28):
 
         if not hasattr(backbone, "out_channels"):
-            raise ValueError("backbone should contain an attribute out_channels "
+            raise ValueError(
+                "backbone should contain an attribute out_channels "
                 "specifying the number of output channels (assumed to be the "
                 "same for all the levels)")
 
@@ -221,7 +222,7 @@ def _resnet_fpn_backbone(backbone_name):
     return_layers = {'layer1': 0, 'layer2': 1, 'layer3': 2, 'layer4': 3}
 
     in_channels_stage2 = 256
-    in_channels_list=[
+    in_channels_list = [
         in_channels_stage2,
         in_channels_stage2 * 2,
         in_channels_stage2 * 4,

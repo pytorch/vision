@@ -187,13 +187,13 @@ def concat_box_prediction_layers(box_cls, box_regression):
 class RegionProposalNetwork(torch.nn.Module):
 
     def __init__(self,
-            anchor_generator,
-            head,
-            #
-            fg_iou_thresh, bg_iou_thresh,
-            batch_size_per_image, positive_fraction,
-            #
-            pre_nms_top_n, post_nms_top_n, nms_thresh):
+                 anchor_generator,
+                 head,
+                 #
+                 fg_iou_thresh, bg_iou_thresh,
+                 batch_size_per_image, positive_fraction,
+                 #
+                 pre_nms_top_n, post_nms_top_n, nms_thresh):
         """
         Arguments:
         """
@@ -279,7 +279,10 @@ class RegionProposalNetwork(torch.nn.Module):
         objectness = objectness.detach()
         objectness = objectness.reshape(num_images, -1)
 
-        levels = [torch.full((n,), idx, dtype=torch.int64, device=device) for idx, n in enumerate(num_anchors_per_level)]
+        levels = [
+            torch.full((n,), idx, dtype=torch.int64, device=device)
+            for idx, n in enumerate(num_anchors_per_level)
+        ]
         levels = torch.cat(levels, 0)
         levels = levels.reshape(1, -1).expand_as(objectness)
 
@@ -341,7 +344,6 @@ class RegionProposalNetwork(torch.nn.Module):
 
         return objectness_loss, box_loss
 
-
     def forward(self, images, features, targets=None):
         """
         Arguments:
@@ -365,7 +367,7 @@ class RegionProposalNetwork(torch.nn.Module):
         num_images = len(anchors)
         num_anchors_per_level = [o[0].numel() for o in objectness]
         objectness, pred_bbox_deltas = \
-                concat_box_prediction_layers(objectness, pred_bbox_deltas)
+            concat_box_prediction_layers(objectness, pred_bbox_deltas)
         # apply pred_bbox_deltas to anchors to obtain the decoded proposals
         # note that we detach the deltas because Faster R-CNN do not backprop through
         # the proposals

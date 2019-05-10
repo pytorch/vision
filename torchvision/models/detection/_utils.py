@@ -77,8 +77,8 @@ def encode_boxes(reference_boxes, proposals, weights):
     reference boxes
 
     Arguments:
-	reference_boxes (Tensor): reference boxes
-	proposals (Tensor): boxes to be encoded
+        reference_boxes (Tensor): reference boxes
+        proposals (Tensor): boxes to be encoded
     """
 
     # perform some unpacking to make it JIT-fusion friendly

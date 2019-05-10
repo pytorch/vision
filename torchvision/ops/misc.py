@@ -86,9 +86,9 @@ def interpolate(
         if size is not None and scale_factor is not None:
             raise ValueError("only one of size or scale_factor should be defined")
         if (
-            scale_factor is not None
-            and isinstance(scale_factor, tuple)
-            and len(scale_factor) != dim
+            scale_factor is not None and
+            isinstance(scale_factor, tuple) and
+            len(scale_factor) != dim
         ):
             raise ValueError(
                 "scale_factor shape must match input shape. "

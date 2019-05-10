@@ -134,8 +134,10 @@ class MultiScaleRoIAlign(nn.Module):
             idx_in_level = torch.nonzero(levels == level).squeeze(1)
             rois_per_level = rois[idx_in_level]
 
-            result[idx_in_level] = roi_align(per_level_feature, rois_per_level,
+            result[idx_in_level] = roi_align(
+                per_level_feature, rois_per_level,
                 output_size=self.output_size,
-                spatial_scale=scale, sampling_ratio=self.sampling_ratio)
+                spatial_scale=scale, sampling_ratio=self.sampling_ratio
+            )
 
         return result

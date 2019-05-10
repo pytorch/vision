@@ -102,7 +102,10 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
     """
 
     labels = [l[idxs] for l, idxs in zip(gt_labels, mask_matched_idxs)]
-    mask_targets = [project_masks_on_boxes(m, p, i, discretization_size) for m, p, i in zip(gt_masks, proposals, mask_matched_idxs)]
+    mask_targets = [
+        project_masks_on_boxes(m, p, i, discretization_size)
+        for m, p, i in zip(gt_masks, proposals, mask_matched_idxs)
+    ]
 
     labels = torch.cat(labels, dim=0)
     mask_targets = torch.cat(mask_targets, dim=0)
@@ -184,7 +187,7 @@ def paste_mask_in_image(mask, box, im_h, im_w, thresh=0.5, padding=1):
     y_1 = min(box[3] + 1, im_h)
 
     im_mask[y_0:y_1, x_0:x_1] = mask[
-        (y_0 - box[1]) : (y_1 - box[1]), (x_0 - box[0]) : (x_1 - box[0])
+        (y_0 - box[1]):(y_1 - box[1]), (x_0 - box[0]):(x_1 - box[0])
     ]
     return im_mask
 
@@ -231,23 +234,22 @@ class Masker(object):
 
 class RoIHeads(torch.nn.Module):
     def __init__(self,
-            box_roi_pool,
-            box_head,
-            box_predictor,
-            # Faster R-CNN training
-            fg_iou_thresh, bg_iou_thresh,
-            batch_size_per_image, positive_fraction,
-            bbox_reg_weights,
-            # Faster R-CNN inference
-            score_thresh,
-            nms_thresh,
-            detections_per_img,
-            # Mask
-            mask_roi_pool=None,
-            mask_head=None,
-            mask_predictor=None,
-            mask_discretization_size=None,
-            ):
+                 box_roi_pool,
+                 box_head,
+                 box_predictor,
+                 # Faster R-CNN training
+                 fg_iou_thresh, bg_iou_thresh,
+                 batch_size_per_image, positive_fraction,
+                 bbox_reg_weights,
+                 # Faster R-CNN inference
+                 score_thresh,
+                 nms_thresh,
+                 detections_per_img,
+                 # Mask
+                 mask_roi_pool=None,
+                 mask_head=None,
+                 mask_predictor=None,
+                 mask_discretization_size=None):
         super(RoIHeads, self).__init__()
 
         self.box_similarity = box_ops.box_iou
@@ -470,8 +472,9 @@ class RoIHeads(torch.nn.Module):
             if self.training:
                 gt_masks = [t["masks"] for t in targets]
                 gt_labels = [t["labels"] for t in targets]
-                loss_mask = maskrcnn_loss(mask_logits, mask_proposals,
-                        gt_masks, gt_labels, mask_matched_idxs, self.mask_discretization_size)
+                loss_mask = maskrcnn_loss(
+                    mask_logits, mask_proposals,
+                    gt_masks, gt_labels, mask_matched_idxs, self.mask_discretization_size)
                 loss_mask = dict(loss_mask=loss_mask)
             else:
                 labels = [r["labels"] for r in result]
