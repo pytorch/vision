@@ -6,6 +6,7 @@ import torch.nn.functional as F
 
 from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops import MultiScaleRoIAlign
+from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastLevelMaxPool
 
 from .generalized_rcnn import GeneralizedRCNN
 from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
@@ -13,16 +14,15 @@ from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
 from .roi_heads import RoIHeads
 
 from .._utils import IntermediateLayerGetter
-from . import fpn as fpn_module
 
 
 class BackboneWithFPN(nn.Sequential):
     def __init__(self, backbone, return_layers, in_channels_list, out_channels):
         body = IntermediateLayerGetter(backbone, return_layers=return_layers)
-        fpn = fpn_module.FeaturePyramidNetwork(
+        fpn = FeaturePyramidNetwork(
             in_channels_list=in_channels_list,
             out_channels=out_channels,
-            extra_blocks=fpn_module.LastLevelMaxPool(),
+            extra_blocks=LastLevelMaxPool(),
         )
         super(BackboneWithFPN, self).__init__(OrderedDict(
             [("body", body), ("fpn", fpn)]))
