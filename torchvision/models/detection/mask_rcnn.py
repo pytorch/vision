@@ -1,7 +1,10 @@
+from collections import OrderedDict
+
 import torch
 from torch import nn
 import torch.nn.functional as F
-from collections import OrderedDict
+
+from torchvision.ops import misc as misc_nn_ops
 
 from .generalized_rcnn import GeneralizedRCNN
 from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
@@ -10,8 +13,6 @@ from .roi_heads import RoIHeads
 
 from .._utils import IntermediateLayerGetter
 from . import fpn as fpn_module
-
-from torchvision.ops import misc as misc_nn_ops
 
 
 class BackboneWithFPN(nn.Sequential):
@@ -25,30 +26,6 @@ class BackboneWithFPN(nn.Sequential):
         super(BackboneWithFPN, self).__init__(OrderedDict(
             [("body", body), ("fpn", fpn)]))
         self.out_channels = out_channels
-
-
-def _resnet_fpn_backbone(backbone_name):
-    from .. import resnet
-    backbone = resnet.__dict__[backbone_name](
-        # pretrained=False,
-        pretrained=True,
-        norm_layer=misc_nn_ops.FrozenBatchNorm2d)
-    # freeze layers
-    for name, parameter in backbone.named_parameters():
-        if 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
-            parameter.requires_grad_(False)
-
-    return_layers = {'layer1': 0, 'layer2': 1, 'layer3': 2, 'layer4': 3}
-
-    in_channels_stage2 = 256
-    in_channels_list=[
-        in_channels_stage2,
-        in_channels_stage2 * 2,
-        in_channels_stage2 * 4,
-        in_channels_stage2 * 8,
-    ]
-    out_channels = 256
-    return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels)
 
 
 class MaskRCNN(GeneralizedRCNN):
@@ -228,6 +205,30 @@ class MaskRCNNC4Predictor(nn.Sequential):
         for name, param in self.named_parameters():
             if "weight" in name:
                 nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
+
+
+def _resnet_fpn_backbone(backbone_name):
+    from .. import resnet
+    backbone = resnet.__dict__[backbone_name](
+        # pretrained=False,
+        pretrained=True,
+        norm_layer=misc_nn_ops.FrozenBatchNorm2d)
+    # freeze layers
+    for name, parameter in backbone.named_parameters():
+        if 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
+            parameter.requires_grad_(False)
+
+    return_layers = {'layer1': 0, 'layer2': 1, 'layer3': 2, 'layer4': 3}
+
+    in_channels_stage2 = 256
+    in_channels_list=[
+        in_channels_stage2,
+        in_channels_stage2 * 2,
+        in_channels_stage2 * 4,
+        in_channels_stage2 * 8,
+    ]
+    out_channels = 256
+    return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels)
 
 
 def maskrcnn_resnet50_fpn(pretrained=False, num_classes=81, **kwargs):
