@@ -10,7 +10,6 @@ from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastL
 
 from .generalized_rcnn import GeneralizedRCNN
 from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
-
 from .roi_heads import RoIHeads
 
 from .._utils import IntermediateLayerGetter
