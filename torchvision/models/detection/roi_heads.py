@@ -436,7 +436,6 @@ class RoIHeads(torch.nn.Module):
         class_logits, box_regression = self.box_predictor(box_features)
 
         result, losses = [], {}
-        output = []
         if self.training:
             loss_classifier, loss_box_reg = fastrcnn_loss(
                 class_logits, box_regression, labels, regression_targets)
@@ -445,12 +444,14 @@ class RoIHeads(torch.nn.Module):
             boxes, scores, labels = self.postprocess_detections(class_logits, box_regression, proposals, image_shapes)
             num_images = len(boxes)
             for i in range(num_images):
-                r = {}
-                r["boxes"] = boxes[i]
-                r["labels"] = labels[i]
-                r["scores"] = scores[i]
-                r["image_size"] = torch.as_tensor(image_shapes[i])
-                result.append(r)
+                result.append(
+                    dict(
+                        boxes=boxes[i],
+                        labels=labels[i],
+                        scores=scores[i],
+                        image_size=torch.as_tensor(image_shapes[i])
+                    )
+                )
 
         if self.has_mask:
             mask_proposals = [p["boxes"] for p in result]

@@ -273,7 +273,6 @@ class RegionProposalNetwork(torch.nn.Module):
 
     def filter_proposals(self, proposals, objectness, image_shapes, num_anchors_per_level):
         num_images = proposals.shape[0]
-        num_levels = len(num_anchors_per_level)
         device = proposals.device
         # do not backprop throught objectness
         objectness = objectness.detach()
@@ -380,7 +379,7 @@ class RegionProposalNetwork(torch.nn.Module):
             labels, matched_gt_boxes = self.assign_targets_to_anchors(anchors, targets)
             regression_targets = self.box_coder.encode(matched_gt_boxes, anchors)
             loss_objectness, loss_rpn_box_reg = self.compute_loss(
-                    objectness, pred_bbox_deltas, labels, regression_targets)
+                objectness, pred_bbox_deltas, labels, regression_targets)
             losses = {
                 "loss_objectness": loss_objectness,
                 "loss_rpn_box_reg": loss_rpn_box_reg,
