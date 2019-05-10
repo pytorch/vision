@@ -422,7 +422,7 @@ class RoIHeads(torch.nn.Module):
         if self.training:
             proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
 
-        box_features = self.box_roi_pool(features, proposals)
+        box_features = self.box_roi_pool(features, proposals, image_shapes)
         box_features = self.box_head(box_features)
         class_logits, box_regression = self.box_predictor(box_features)
 
@@ -455,7 +455,7 @@ class RoIHeads(torch.nn.Module):
                     mask_proposals.append(proposals[img_id][pos])
                     mask_matched_idxs.append(matched_idxs[img_id][pos])
 
-            mask_features = self.mask_roi_pool(features, mask_proposals)
+            mask_features = self.mask_roi_pool(features, mask_proposals, image_shapes)
             mask_features = self.mask_head(mask_features)
             mask_logits = self.mask_predictor(mask_features)
 

@@ -1,4 +1,4 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+from collections import OrderedDict
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -38,12 +38,15 @@ class FPN(nn.Module):
     def forward(self, x):
         """
         Arguments:
-            x (list[Tensor]): feature maps for each feature level.
+            x (OrderedDict[Tensor]): feature maps for each feature level.
         Returns:
-            results (tuple[Tensor]): feature maps after FPN layers.
+            results (OrderedDict[Tensor]): feature maps after FPN layers.
                 They are ordered from highest resolution first.
         """
-        x = [v for k, v in x.items()]  # TODO maybe change / improve
+        # unpack OrderedDict into two lists for easier handling
+        names = list(x.keys())
+        x = list(x.values())
+
         last_inner = self.inner_blocks[-1](x[-1])
         results = []
         results.append(self.layer_blocks[-1](last_inner))
@@ -61,11 +64,15 @@ class FPN(nn.Module):
         if isinstance(self.top_blocks, LastLevelP6P7):
             last_results = self.top_blocks(x[-1], results[-1])
             results.extend(last_results)
+            names.extend(["p6", "p7"])
         elif isinstance(self.top_blocks, LastLevelMaxPool):
             last_results = self.top_blocks(results[-1])
             results.extend(last_results)
+            names.append("pool")
 
-        return tuple(results)
+        r = OrderedDict([(k, v) for k, v in zip(names, results)])
+
+        return r
 
 
 class LastLevelMaxPool(nn.Module):

@@ -359,6 +359,8 @@ class RegionProposalNetwork(torch.nn.Module):
             losses (dict[Tensor]): the losses for the model during training. During
                 testing, it is an empty dict.
         """
+        # RPN uses all feature maps that are available
+        features = list(features.values())
         objectness, pred_bbox_deltas = self.head(features)
         anchors = self.anchor_generator(images, features)
 

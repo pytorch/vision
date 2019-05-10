@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from torchvision.ops import RoIAlign
+from torchvision.ops import RoIAlign, roi_align
 
 from torchvision.ops.boxes import box_area
 
@@ -52,7 +52,7 @@ class Pooler(nn.Module):
     which is available thanks to the BoxList.
     """
 
-    def __init__(self, output_size, scales, sampling_ratio):
+    def __init__(self, featmap_names, output_size, sampling_ratio):
         """
         Arguments:
             output_size (list[tuple[int]] or list[int]): output size for the pooled region
@@ -60,20 +60,11 @@ class Pooler(nn.Module):
             sampling_ratio (int): sampling ratio for ROIAlign
         """
         super(Pooler, self).__init__()
-        poolers = []
-        for scale in scales:
-            poolers.append(
-                RoIAlign(
-                    output_size, spatial_scale=scale, sampling_ratio=sampling_ratio
-                )
-            )
-        self.poolers = nn.ModuleList(poolers)
+        self.featmap_names = featmap_names
+        self.sampling_ratio = sampling_ratio
         self.output_size = output_size
-        # get the levels in the feature map by leveraging the fact that the network always
-        # downsamples by a factor of 2 at each level.
-        lvl_min = -torch.log2(torch.tensor(scales[0], dtype=torch.float32)).item()
-        lvl_max = -torch.log2(torch.tensor(scales[-1], dtype=torch.float32)).item()
-        self.map_levels = LevelMapper(lvl_min, lvl_max)
+        self.scales = None
+        self.map_levels = None
 
     def convert_to_roi_format(self, boxes):
         concat_boxes = torch.cat(boxes, dim=0)
@@ -88,19 +79,43 @@ class Pooler(nn.Module):
         rois = torch.cat([ids, concat_boxes], dim=1)
         return rois
 
-    def forward(self, x, boxes):
+    def infer_scale(self, feature, original_size):
+        # assumption: the scale is of the form 2 ** (-k), with k integer
+        size = feature.shape[-2:]
+        possible_scales = []
+        for s1, s2 in zip(size, original_size):
+            approx_scale = float(s1) / s2
+            scale = 2 ** torch.tensor(approx_scale).log2().round().item()
+            possible_scales.append(scale)
+        assert possible_scales[0] == possible_scales[1]
+        return possible_scales[0]
+
+    def setup_scales(self, features, image_shapes):
+        original_input_shape = tuple(max(s) for s in zip(*image_shapes))
+        scales = [self.infer_scale(feat, original_input_shape) for feat in features]
+        # get the levels in the feature map by leveraging the fact that the network always
+        # downsamples by a factor of 2 at each level.
+        lvl_min = -torch.log2(torch.tensor(scales[0], dtype=torch.float32)).item()
+        lvl_max = -torch.log2(torch.tensor(scales[-1], dtype=torch.float32)).item()
+        self.scales = scales
+        self.map_levels = LevelMapper(lvl_min, lvl_max)
+
+    def forward(self, x, boxes, image_shapes):
         """
         Arguments:
-            x (list[Tensor]): feature maps for each level
+            x (OrderedDict[Tensor]): feature maps for each level
             boxes (list[BoxList]): boxes to be used to perform the pooling operation.
         Returns:
             result (Tensor)
         """
-        num_levels = len(self.poolers)
+        x = [v for k, v in x.items() if k in self.featmap_names]
+        num_levels = len(x)
         rois = self.convert_to_roi_format(boxes)
         if num_levels == 1:
             return self.poolers[0](x[0], rois)
 
+        if self.scales is None:
+            self.setup_scales(x, image_shapes)
         levels = self.map_levels(boxes)
 
         num_rois = len(rois)
@@ -113,9 +128,13 @@ class Pooler(nn.Module):
             dtype=dtype,
             device=device,
         )
-        for level, (per_level_feature, pooler) in enumerate(zip(x, self.poolers)):
+
+        for level, (per_level_feature, scale) in enumerate(zip(x, self.scales)):
             idx_in_level = torch.nonzero(levels == level).squeeze(1)
             rois_per_level = rois[idx_in_level]
-            result[idx_in_level] = pooler(per_level_feature, rois_per_level)
+
+            result[idx_in_level] = roi_align(per_level_feature, rois_per_level,
+                output_size=(output_size, output_size),
+                spatial_scale=scale, sampling_ratio=self.sampling_ratio)
 
         return result

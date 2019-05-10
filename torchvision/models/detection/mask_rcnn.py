@@ -143,14 +143,16 @@ class MaskRCNN(GeneralizedRCNN):
                  rpn_fg_iou_thresh=0.7, rpn_bg_iou_thresh=0.3,
                  rpn_batch_size_per_image=256, rpn_positive_fraction=0.5,
                  #
-                 box_resolution=7, box_scales=None, box_sampling_ratio=2,
+                 box_featnames=None,
+                 box_resolution=7, box_sampling_ratio=2,
                  representation_size=1024,
                  box_score_thresh=0.05, box_nms_thresh=0.5, box_detections_per_img=100,
                  box_fg_iou_thresh=0.5, box_bg_iou_thresh=0.5,
                  box_batch_size_per_image=512, box_positive_fraction=0.25,
                  bbox_reg_weights=None,
                  #
-                 mask_resolution=14, mask_scales=None, mask_sampling_ratio=2,
+                 mask_featnames=None,
+                 mask_resolution=14, mask_sampling_ratio=2,
                  mask_layers=None, mask_dilation=1,
                  mask_discretization_size=28):
         out_channels = backbone.out_channels
@@ -165,7 +167,8 @@ class MaskRCNN(GeneralizedRCNN):
         )
         roi_heads = build_roi_heads(
             out_channels, num_classes,
-            box_resolution, box_scales, box_sampling_ratio,
+            box_featnames,
+            box_resolution, box_sampling_ratio,
             representation_size,
             box_score_thresh, box_nms_thresh, box_detections_per_img,
             box_fg_iou_thresh, box_bg_iou_thresh,
@@ -173,7 +176,8 @@ class MaskRCNN(GeneralizedRCNN):
             bbox_reg_weights,
             #
             True,
-            mask_resolution, mask_scales, mask_sampling_ratio,
+            mask_featnames,
+            mask_resolution, mask_sampling_ratio,
             mask_layers, mask_dilation,
             mask_discretization_size
         )
@@ -294,7 +298,8 @@ class MaskRCNNC4Predictor(nn.Sequential):
 
 
 def build_roi_heads(in_channels, num_classes,
-                    resolution=7, scales=None, sampling_ratio=2,
+                    box_featnames=None,
+                    resolution=7, sampling_ratio=2,
                     representation_size=1024,
                     score_thresh=0.05, nms_thresh=0.5, detections_per_img=100,
                     fg_iou_thresh=0.5, bg_iou_thresh=0.5,
@@ -302,26 +307,27 @@ def build_roi_heads(in_channels, num_classes,
                     bbox_reg_weights=None,
                     #
                     mask_on=True,
-                    mask_resolution=14, mask_scales=None, mask_sampling_ratio=2,
+                    mask_featnames=None,
+                    mask_resolution=14, mask_sampling_ratio=2,
                     mask_layers=None, mask_dilation=1,
                     mask_discretization_size=28
                     ):
 
-    if scales is None:
-        scales = (0.25, 0.125, 0.0625, 0.03125)
+    if box_featnames is None:
+        box_featnames = [0, 1, 2, 3]
 
     if bbox_reg_weights is None:
         bbox_reg_weights = (10., 10., 5., 5.)
 
-    if mask_scales is None:
-        mask_scales = scales
+    if mask_featnames is None:
+        mask_featnames = box_featnames
 
     if mask_layers is None:
         mask_layers = (256, 256, 256, 256)
 
     pooler = Pooler(
+        featmap_names=box_featnames,
         output_size=(resolution, resolution),
-        scales=scales,
         sampling_ratio=sampling_ratio,
     )
     feature_extractor = TwoMLPHead(
@@ -336,8 +342,8 @@ def build_roi_heads(in_channels, num_classes,
     mask_predictor = None
     if mask_on:
         mask_pooler = Pooler(
+            featmap_names=mask_featnames,
             output_size=(mask_resolution, mask_resolution),
-            scales=mask_scales,
             sampling_ratio=mask_sampling_ratio,
         )
 
