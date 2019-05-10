@@ -77,6 +77,7 @@ requirements.append(pillow_req + pillow_ver)
 
 def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
+
     test_dir = os.path.join(this_dir, 'test')
     extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
 
