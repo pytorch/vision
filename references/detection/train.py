@@ -141,10 +141,11 @@ def evaluate(model, data_loader, device):
                 o["original_image_size"] = t["original_image_size"]
                 o["labels"] = CAT_LIST[o["labels"]]
 
-            res = {target["image_id"][0].item(): output for target, output in zip(targets, outputs)}
+            # res = {target["image_id"][0].item(): output for target, output in zip(targets, outputs)}
+            res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
             # FIXME this is a hack! we should unconditionally append
-            if -1 in res:
-                del res[-1]
+            # if -1 in res:
+            #     del res[-1]
             if res:
                 coco_evaluator.update(res)
 

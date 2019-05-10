@@ -17,14 +17,17 @@ class FilterAndRemapCocoCategories(object):
         self.categories = categories
         self.remap = remap
 
-    def __call__(self, image, anno):
+    def __call__(self, image, target):
+        anno = target["annotations"]
         anno = [obj for obj in anno if obj["category_id"] in self.categories]
         if not self.remap:
-            return image, anno
+            target["annotations"] = anno
+            return image, target
         anno = copy.deepcopy(anno)
         for obj in anno:
             obj["category_id"] = self.categories.index(obj["category_id"])
-        return image, anno
+        target["annotations"] = anno
+        return image, target
 
 
 def convert_coco_poly_to_mask(segmentations, height, width):
@@ -45,8 +48,15 @@ def convert_coco_poly_to_mask(segmentations, height, width):
 
 
 class ConvertCocoPolysToMask(object):
-    def __call__(self, image, anno):
+    def __call__(self, image, target):
         w, h = image.size
+
+        # image_id = [obj["image_id"] for obj in anno]
+        image_id = target["image_id"]
+        # image_id.append(-1)  # FIXME hack for empty annotations!!!
+        image_id = torch.tensor(image_id)
+
+        anno = target["annotations"]
 
         anno = [obj for obj in anno if obj['iscrowd'] == 0]
 
@@ -59,10 +69,6 @@ class ConvertCocoPolysToMask(object):
         classes = [obj["category_id"] for obj in anno]
         classes = torch.tensor(classes)
 
-        image_id = [obj["image_id"] for obj in anno]
-        image_id.append(-1)  # FIXME hack for empty annotations!!!
-        image_id = torch.tensor(image_id)
-
         segmentations = [obj["segmentation"] for obj in anno]
         masks = convert_coco_poly_to_mask(segmentations, h, w)
 
@@ -70,7 +76,6 @@ class ConvertCocoPolysToMask(object):
         boxes = boxes[keep]
         classes = classes[keep]
         masks = masks[keep]
-        # image_id?
 
         target = {}
         target["boxes"] = boxes
@@ -109,6 +114,20 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
     return dataset
 
 
+class CocoDetection(torchvision.datasets.CocoDetection):
+    def __init__(self, img_folder, ann_file, transforms):
+        super(CocoDetection, self).__init__(img_folder, ann_file)
+        self._transforms = transforms
+
+    def __getitem__(self, idx):
+        img, target = super(CocoDetection, self).__getitem__(idx)
+        image_id = self.ids[idx]
+        target = dict(image_id=image_id, annotations=target)
+        if self._transforms is not None:
+            img, target = self._transforms(img, target)
+        return img, target
+
+
 def get_coco(root, image_set, transforms):
     PATHS = {
         "train": ("train2017", os.path.join("annotations", "instances_train2017.json")),
@@ -135,7 +154,7 @@ def get_coco(root, image_set, transforms):
     img_folder = os.path.join(root, img_folder)
     ann_file = os.path.join(root, ann_file)
 
-    dataset = torchvision.datasets.CocoDetection(img_folder, ann_file, transforms=transforms)
+    dataset = CocoDetection(img_folder, ann_file, transforms=transforms)
 
     if image_set == "train":
         dataset = _coco_remove_images_without_annotations(dataset, CAT_LIST)
