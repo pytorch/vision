@@ -70,13 +70,6 @@ class GroupedBatchSampler(BatchSampler):
         return len(self.sampler) // self.batch_size
 
 
-def _quantize(x, bins):
-    bins = copy.deepcopy(bins)
-    bins = sorted(bins)
-    quantized = list(map(lambda y: bisect.bisect_right(bins, y), x))
-    return quantized
-
-
 def _compute_aspect_ratios_slow(dataset, indices=None):
     print("Your dataset doesn't support the fast path for "
         "computing the aspect ratios, so will iterate over "
@@ -163,6 +156,13 @@ def compute_aspect_ratios(dataset, indices=None):
 
     # slow path
     return _compute_aspect_ratios_slow(dataset, indices)
+
+
+def _quantize(x, bins):
+    bins = copy.deepcopy(bins)
+    bins = sorted(bins)
+    quantized = list(map(lambda y: bisect.bisect_right(bins, y), x))
+    return quantized
 
 
 def create_aspect_ratio_groups(dataset, k=0):
