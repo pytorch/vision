@@ -1,10 +1,11 @@
 from collections import OrderedDict
+
 import torch
 import torch.nn.functional as F
 from torch import nn
 
 
-class FPN(nn.Module):
+class FeaturePyramidNetwork(nn.Module):
     """
     Module that adds FPN on top of a list of feature maps.
     The feature maps are currently supposed to be in increasing depth
@@ -12,18 +13,18 @@ class FPN(nn.Module):
     """
 
     def __init__(
-        self, in_channels_list, out_channels, top_blocks=None
+        self, in_channels_list, out_channels, extra_blocks=None
     ):
         """
         Arguments:
             in_channels_list (list[int]): number of channels for each feature map that
                 will be fed
             out_channels (int): number of channels of the FPN representation
-            top_blocks (nn.Module or None): if provided, an extra operation will
+            extra_blocks (nn.Module or None): if provided, an extra operation will
                 be performed on the output of the last (smallest resolution)
                 FPN output, and the result will extend the result list
         """
-        super(FPN, self).__init__()
+        super(FeaturePyramidNetwork, self).__init__()
         self.inner_blocks = nn.ModuleList()
         self.layer_blocks = nn.ModuleList()
         for in_channels in in_channels_list:
@@ -40,7 +41,7 @@ class FPN(nn.Module):
                 nn.init.kaiming_uniform_(m.weight, a=1)
                 nn.init.constant_(m.bias, 0)
 
-        self.top_blocks = top_blocks
+        self.extra_blocks = extra_blocks
 
     def forward(self, x):
         """
@@ -68,23 +69,20 @@ class FPN(nn.Module):
             last_inner = inner_lateral + inner_top_down
             results.insert(0, layer_block(last_inner))
 
-        if isinstance(self.top_blocks, LastLevelP6P7):
-            last_results = self.top_blocks(x[-1], results[-1])
-            results.extend(last_results)
-            names.extend(["p6", "p7"])
-        elif isinstance(self.top_blocks, LastLevelMaxPool):
-            last_results = self.top_blocks(results[-1])
-            results.extend(last_results)
-            names.append("pool")
+        if self.extra_blocks is not None:
+            results, names = self.extra_blocks(results, x, names)
 
-        r = OrderedDict([(k, v) for k, v in zip(names, results)])
+        # make it back an OrderedDict
+        out = OrderedDict([(k, v) for k, v in zip(names, results)])
 
-        return r
+        return out
 
 
 class LastLevelMaxPool(nn.Module):
-    def forward(self, x):
-        return [F.max_pool2d(x, 1, 2, 0)]
+    def forward(self, x, y, names):
+        names.append("pool")
+        x.append(F.max_pool2d(x[-1], 1, 2, 0))
+        return x, names
 
 
 class LastLevelP6P7(nn.Module):
@@ -100,8 +98,11 @@ class LastLevelP6P7(nn.Module):
             nn.init.constant_(module.bias, 0)
         self.use_P5 = in_channels == out_channels
 
-    def forward(self, c5, p5):
+    def forward(self, p, c, names):
+        p5, c5 = p[-1], c[-1]
         x = p5 if self.use_P5 else c5
         p6 = self.p6(x)
         p7 = self.p7(F.relu(p6))
-        return [p6, p7]
+        p.extend([p6, p7])
+        names.extend(["p6", "p7"])
+        return p, names

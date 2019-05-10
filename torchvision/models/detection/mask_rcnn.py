@@ -19,10 +19,10 @@ from . import fpn as fpn_module
 class BackboneWithFPN(nn.Sequential):
     def __init__(self, backbone, return_layers, in_channels_list, out_channels):
         body = IntermediateLayerGetter(backbone, return_layers=return_layers)
-        fpn = fpn_module.FPN(
+        fpn = fpn_module.FeaturePyramidNetwork(
             in_channels_list=in_channels_list,
             out_channels=out_channels,
-            top_blocks=fpn_module.LastLevelMaxPool(),
+            extra_blocks=fpn_module.LastLevelMaxPool(),
         )
         super(BackboneWithFPN, self).__init__(OrderedDict(
             [("body", body), ("fpn", fpn)]))
