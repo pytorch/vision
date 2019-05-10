@@ -10,19 +10,6 @@ from .balanced_positive_negative_sampler import BalancedPositiveNegativeSampler
 from .matcher import Matcher
 
 
-def generate_anchors(scales, aspect_ratios, device="cpu"):
-    scales = torch.as_tensor(scales, dtype=torch.float32, device=device)
-    aspect_ratios = torch.as_tensor(aspect_ratios, dtype=torch.float32, device=device)
-    h_ratios = torch.sqrt(aspect_ratios)
-    w_ratios = 1 / h_ratios
-
-    ws = (w_ratios[:, None] * scales[None, :]).view(-1)
-    hs = (h_ratios[:, None] * scales[None, :]).view(-1)
-
-    base_anchors = torch.stack([-ws, -hs, ws, hs], dim=1) / 2
-    return base_anchors.round()
-
-
 class AnchorGenerator(nn.Module):
     """
     For a set of image sizes and feature maps, computes a set
@@ -49,11 +36,24 @@ class AnchorGenerator(nn.Module):
         self.cell_anchors = None
         self._cache = {}
 
+    @staticmethod
+    def generate_anchors(scales, aspect_ratios, device="cpu"):
+        scales = torch.as_tensor(scales, dtype=torch.float32, device=device)
+        aspect_ratios = torch.as_tensor(aspect_ratios, dtype=torch.float32, device=device)
+        h_ratios = torch.sqrt(aspect_ratios)
+        w_ratios = 1 / h_ratios
+
+        ws = (w_ratios[:, None] * scales[None, :]).view(-1)
+        hs = (h_ratios[:, None] * scales[None, :]).view(-1)
+
+        base_anchors = torch.stack([-ws, -hs, ws, hs], dim=1) / 2
+        return base_anchors.round()
+
     def set_cell_anchors(self, device):
         if self.cell_anchors is not None:
             return self.cell_anchors
         cell_anchors = [
-            generate_anchors(
+            self.generate_anchors(
                 sizes,
                 aspect_ratios,
                 device

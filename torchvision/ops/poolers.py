@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from torchvision.ops import RoIAlign, roi_align
+from torchvision.ops import roi_align
 
 from torchvision.ops.boxes import box_area
 
@@ -42,7 +42,7 @@ class LevelMapper(object):
         return target_lvls.to(torch.int64) - self.k_min
 
 
-class Pooler(nn.Module):
+class MultiScaleRoIAlign(nn.Module):
     """
     Pooler for Detection with or without FPN.
     It currently hard-code ROIAlign in the implementation,
@@ -59,7 +59,7 @@ class Pooler(nn.Module):
             scales (list[float]): scales for each Pooler
             sampling_ratio (int): sampling ratio for ROIAlign
         """
-        super(Pooler, self).__init__()
+        super(MultiScaleRoIAlign, self).__init__()
         if isinstance(output_size, int):
             output_size = (output_size, output_size)
         self.featmap_names = featmap_names

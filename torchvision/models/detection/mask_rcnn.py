@@ -5,10 +5,11 @@ from torch import nn
 import torch.nn.functional as F
 
 from torchvision.ops import misc as misc_nn_ops
+from torchvision.ops import MultiScaleRoIAlign
 
 from .generalized_rcnn import GeneralizedRCNN
 from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
-from .poolers import Pooler
+
 from .roi_heads import RoIHeads
 
 from .._utils import IntermediateLayerGetter
@@ -53,8 +54,8 @@ class MaskRCNN(GeneralizedRCNN):
                 "same for all the levels)")
 
         assert isinstance(rpn_anchor_generator, (AnchorGenerator, type(None)))
-        assert isinstance(box_roi_pool, (Pooler, type(None)))
-        assert isinstance(mask_roi_pool, (Pooler, type(None)))
+        assert isinstance(box_roi_pool, (MultiScaleRoIAlign, type(None)))
+        assert isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None)))
 
         if num_classes is not None:
             if box_predictor is not None:
@@ -85,7 +86,7 @@ class MaskRCNN(GeneralizedRCNN):
             rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh)
 
         if box_roi_pool is None:
-            box_roi_pool = Pooler(
+            box_roi_pool = MultiScaleRoIAlign(
                 featmap_names=[0, 1, 2, 3],
                 output_size=7,
                 sampling_ratio=2)
@@ -104,7 +105,7 @@ class MaskRCNN(GeneralizedRCNN):
                 num_classes)
 
         if mask_roi_pool is None:
-            mask_roi_pool = Pooler(
+            mask_roi_pool = MultiScaleRoIAlign(
                 featmap_names=[0, 1, 2, 3],
                 output_size=14,
                 sampling_ratio=2)
