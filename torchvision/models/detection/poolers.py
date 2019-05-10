@@ -60,9 +60,11 @@ class Pooler(nn.Module):
             sampling_ratio (int): sampling ratio for ROIAlign
         """
         super(Pooler, self).__init__()
+        if isinstance(output_size, int):
+            output_size = (output_size, output_size)
         self.featmap_names = featmap_names
         self.sampling_ratio = sampling_ratio
-        self.output_size = output_size
+        self.output_size = tuple(output_size)
         self.scales = None
         self.map_levels = None
 
@@ -120,11 +122,10 @@ class Pooler(nn.Module):
 
         num_rois = len(rois)
         num_channels = x[0].shape[1]
-        output_size = self.output_size[0]
 
         dtype, device = x[0].dtype, x[0].device
         result = torch.zeros(
-            (num_rois, num_channels, output_size, output_size),
+            (num_rois, num_channels,) + self.output_size,
             dtype=dtype,
             device=device,
         )
@@ -134,7 +135,7 @@ class Pooler(nn.Module):
             rois_per_level = rois[idx_in_level]
 
             result[idx_in_level] = roi_align(per_level_feature, rois_per_level,
-                output_size=(output_size, output_size),
+                output_size=self.output_size,
                 spatial_scale=scale, sampling_ratio=self.sampling_ratio)
 
         return result

@@ -132,55 +132,98 @@ def build_resnet_fpn_backbone_(backbone_name):
     return build_backbone_with_fpn(backbone, return_layers, in_channels_list, out_channels)
 
 
+class FasterRCNN(GeneralizedRCNN):
+    pass
+
+
+
 class MaskRCNN(GeneralizedRCNN):
-    def __init__(self,
-                 backbone, num_classes,
+    def __init__(self, backbone, num_classes,
                  #
-                 rpn_anchor_sizes=None, rpn_aspect_ratios=None,
+                 rpn_anchor_generator=None, rpn_head=None,
                  rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,
                  rpn_post_nms_top_n_train=2000, rpn_post_nms_top_n_test=1000,
                  rpn_nms_thresh=0.7,
                  rpn_fg_iou_thresh=0.7, rpn_bg_iou_thresh=0.3,
                  rpn_batch_size_per_image=256, rpn_positive_fraction=0.5,
                  #
-                 box_featnames=None,
-                 box_resolution=7, box_sampling_ratio=2,
-                 representation_size=1024,
+                 box_roi_pool=None, box_head=None, box_predictor=None,
                  box_score_thresh=0.05, box_nms_thresh=0.5, box_detections_per_img=100,
                  box_fg_iou_thresh=0.5, box_bg_iou_thresh=0.5,
                  box_batch_size_per_image=512, box_positive_fraction=0.25,
                  bbox_reg_weights=None,
                  #
-                 mask_featnames=None,
-                 mask_resolution=14, mask_sampling_ratio=2,
-                 mask_layers=None, mask_dilation=1,
+                 mask_roi_pool=None, mask_head=None, mask_predictor=None,
                  mask_discretization_size=28):
+
         out_channels = backbone.out_channels
-        rpn = build_rpn(
-            out_channels,
-            rpn_anchor_sizes, rpn_aspect_ratios,
-            rpn_pre_nms_top_n_train, rpn_pre_nms_top_n_test,
-            rpn_post_nms_top_n_train, rpn_post_nms_top_n_test,
-            rpn_nms_thresh,
+
+        if rpn_anchor_generator is None:
+            anchor_sizes = ((32,), (64,), (128,), (256,), (512,))
+            aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
+            rpn_anchor_generator = AnchorGenerator(
+                anchor_sizes, aspect_ratios
+            )
+        if rpn_head is None:
+            rpn_head = RPNHead(
+                out_channels, rpn_anchor_generator.num_anchors_per_location()[0]
+            )
+
+        rpn_pre_nms_top_n = dict(training=rpn_pre_nms_top_n_train, testing=rpn_pre_nms_top_n_test)
+        rpn_post_nms_top_n = dict(training=rpn_post_nms_top_n_train, testing=rpn_post_nms_top_n_test)
+
+        rpn = RegionProposalNetwork(
+            rpn_anchor_generator, rpn_head,
             rpn_fg_iou_thresh, rpn_bg_iou_thresh,
             rpn_batch_size_per_image, rpn_positive_fraction,
-        )
-        roi_heads = build_roi_heads(
-            out_channels, num_classes,
-            box_featnames,
-            box_resolution, box_sampling_ratio,
-            representation_size,
-            box_score_thresh, box_nms_thresh, box_detections_per_img,
+            rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh)
+
+        if box_roi_pool is None:
+            box_roi_pool = Pooler(
+                featmap_names=[0, 1, 2, 3],
+                output_size=7,
+                sampling_ratio=2)
+
+        if box_head is None:
+            resolution = box_roi_pool.output_size[0]
+            representation_size = 1024
+            box_head = TwoMLPHead(
+                out_channels * resolution ** 2,
+                representation_size)
+
+        if box_predictor is None:
+            representation_size = 1024
+            box_predictor = FastRCNNPredictor(
+                representation_size,
+                num_classes)
+
+        if mask_roi_pool is None:
+            mask_roi_pool = Pooler(
+                featmap_names=[0, 1, 2, 3],
+                output_size=14,
+                sampling_ratio=2)
+
+        if mask_head is None:
+            mask_layers = (256, 256, 256, 256)
+            mask_dilation = 1
+            mask_head = MaskRCNNHeads(out_channels, mask_layers, mask_dilation)
+
+        if mask_predictor is None:
+            mask_dim_reduced = 256  # == mask_layers[-1]
+            mask_predictor = MaskRCNNC4Predictor(out_channels, mask_dim_reduced, num_classes)
+
+        roi_heads = RoIHeads(
+            box_roi_pool, box_head, box_predictor,
             box_fg_iou_thresh, box_bg_iou_thresh,
             box_batch_size_per_image, box_positive_fraction,
             bbox_reg_weights,
-            #
-            True,
-            mask_featnames,
-            mask_resolution, mask_sampling_ratio,
-            mask_layers, mask_dilation,
+            box_score_thresh, box_nms_thresh, box_detections_per_img,
+            # Mask
+            mask_roi_pool,
+            mask_head,
+            mask_predictor,
             mask_discretization_size
-        )
+            )
 
         super(MaskRCNN, self).__init__(backbone, rpn, roi_heads)
 
@@ -192,36 +235,6 @@ def maskrcnn_resnet50_fpn(pretrained=False, num_classes=81, **kwargs):
     if pretrained:
         pass
     return model
-
-
-def build_rpn(in_channels,
-              anchor_sizes=None, aspect_ratios=None,
-              pre_nms_top_n_train=2000, pre_nms_top_n_test=1000,
-              post_nms_top_n_train=2000, post_nms_top_n_test=1000,
-              nms_thresh=0.7,
-              fg_iou_thresh=0.7, bg_iou_thresh=0.3,
-              batch_size_per_image=256, positive_fraction=0.5):
-
-    if anchor_sizes is None:
-        anchor_sizes = ((32,), (64,), (128,), (256,), (512,))
-    if aspect_ratios is None:
-        aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
-
-    anchor_generator = AnchorGenerator(
-        anchor_sizes, aspect_ratios
-    )
-
-    head = RPNHead(
-        in_channels, anchor_generator.num_anchors_per_location()[0]
-    )
-
-    pre_nms_top_n = dict(training=pre_nms_top_n_train, testing=pre_nms_top_n_test)
-    post_nms_top_n = dict(training=post_nms_top_n_train, testing=post_nms_top_n_test)
-
-    return RegionProposalNetwork(anchor_generator, head,
-            fg_iou_thresh, bg_iou_thresh,
-            batch_size_per_image, positive_fraction,
-            pre_nms_top_n, post_nms_top_n, nms_thresh)
 
 
 class TwoMLPHead(nn.Module):
@@ -296,69 +309,3 @@ class MaskRCNNC4Predictor(nn.Sequential):
             if "weight" in name:
                 nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
 
-
-def build_roi_heads(in_channels, num_classes,
-                    box_featnames=None,
-                    resolution=7, sampling_ratio=2,
-                    representation_size=1024,
-                    score_thresh=0.05, nms_thresh=0.5, detections_per_img=100,
-                    fg_iou_thresh=0.5, bg_iou_thresh=0.5,
-                    batch_size_per_image=512, positive_fraction=0.25,
-                    bbox_reg_weights=None,
-                    #
-                    mask_on=True,
-                    mask_featnames=None,
-                    mask_resolution=14, mask_sampling_ratio=2,
-                    mask_layers=None, mask_dilation=1,
-                    mask_discretization_size=28
-                    ):
-
-    if box_featnames is None:
-        box_featnames = [0, 1, 2, 3]
-
-    if bbox_reg_weights is None:
-        bbox_reg_weights = (10., 10., 5., 5.)
-
-    if mask_featnames is None:
-        mask_featnames = box_featnames
-
-    if mask_layers is None:
-        mask_layers = (256, 256, 256, 256)
-
-    pooler = Pooler(
-        featmap_names=box_featnames,
-        output_size=(resolution, resolution),
-        sampling_ratio=sampling_ratio,
-    )
-    feature_extractor = TwoMLPHead(
-            in_channels * resolution ** 2,
-            representation_size)
-    box_predictor = FastRCNNPredictor(
-            representation_size,
-            num_classes)
-
-    mask_pooler = None
-    mask_head = None
-    mask_predictor = None
-    if mask_on:
-        mask_pooler = Pooler(
-            featmap_names=mask_featnames,
-            output_size=(mask_resolution, mask_resolution),
-            sampling_ratio=mask_sampling_ratio,
-        )
-
-        mask_head = MaskRCNNHeads(in_channels, mask_layers, mask_dilation)
-        mask_dim_reduced = mask_layers[-1]
-        mask_predictor = MaskRCNNC4Predictor(in_channels, mask_dim_reduced, num_classes)
-
-    return RoIHeads(pooler, feature_extractor, box_predictor,
-            fg_iou_thresh, bg_iou_thresh, batch_size_per_image, positive_fraction, bbox_reg_weights,
-            score_thresh,
-            nms_thresh,
-            detections_per_img,
-            # Mask
-            mask_pooler,
-            mask_head,
-            mask_predictor,
-            mask_discretization_size
-            )
