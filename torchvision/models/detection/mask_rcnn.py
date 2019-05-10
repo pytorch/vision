@@ -13,57 +13,6 @@ from . import fpn as fpn_module
 
 from torchvision.ops import misc as misc_nn_ops
 
-from maskrcnn_benchmark.layers import FrozenBatchNorm2d
-
-
-def load_resnet_c2_format(f):
-    from maskrcnn_benchmark.utils.c2_model_loading import _load_c2_pickled_weights, _C2_STAGE_NAMES, _rename_weights_for_resnet
-    state_dict = _load_c2_pickled_weights(f)
-    conv_body = "R-50-FPN"
-    arch = conv_body.replace("-C4", "").replace("-C5", "").replace("-FPN", "")
-    arch = arch.replace("-RETINANET", "")
-    stages = _C2_STAGE_NAMES[arch]
-    state_dict = _rename_weights_for_resnet(state_dict, stages)
-    return state_dict
-
-def build_resnet_fpn_backbone(backbone_name):
-    from .. import resnet
-    from .._utils import IntermediateLayerGetter
-    from . import fpn as fpn_module
-
-    backbone = resnet.__dict__[backbone_name](
-        # pretrained=False,
-        pretrained=True,
-        norm_layer=FrozenBatchNorm2d)
-
-
-    if False:
-        state_dict = load_resnet_c2_format('/private/home/fmassa/.torch/models/R-50.pkl')
-        from maskrcnn_benchmark.utils.model_serialization import load_state_dict
-        load_state_dict(backbone, state_dict)
-
-    return_layers = {'layer1': 0, 'layer2': 1, 'layer3': 2, 'layer4': 3}
-    body = IntermediateLayerGetter(backbone, return_layers=return_layers)
-    for name, parameter in body.named_parameters():
-        if 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
-            parameter.requires_grad_(False)
-
-    in_channels_stage2 = 256  # cfg.MODEL.RESNETS.RES2_OUT_CHANNELS
-    out_channels = 256  # cfg.MODEL.RESNETS.BACKBONE_OUT_CHANNELS
-    fpn = fpn_module.FPN(
-        in_channels_list=[
-            in_channels_stage2,
-            in_channels_stage2 * 2,
-            in_channels_stage2 * 4,
-            in_channels_stage2 * 8,
-        ],
-        out_channels=out_channels,
-        top_blocks=fpn_module.LastLevelMaxPool(),
-    )
-    model = nn.Sequential(OrderedDict([("body", body), ("fpn", fpn)]))
-    model.out_channels = out_channels
-    return model
-
 
 class BackboneWithFPN(nn.Sequential):
     def __init__(self, backbone, return_layers, in_channels_list, out_channels):
@@ -83,7 +32,7 @@ def _resnet_fpn_backbone(backbone_name):
     backbone = resnet.__dict__[backbone_name](
         # pretrained=False,
         pretrained=True,
-        norm_layer=FrozenBatchNorm2d)
+        norm_layer=misc_nn_ops.FrozenBatchNorm2d)
     # freeze layers
     for name, parameter in backbone.named_parameters():
         if 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
