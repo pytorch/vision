@@ -15,6 +15,7 @@ from torchvision import transforms
 
 from coco_utils import get_coco
 from coco_eval import CocoEvaluator
+from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 
 import utils
 import transforms as T
@@ -110,13 +111,18 @@ def evaluate(model, data_loader, device):
         79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90], device=device)
 
     dataset = data_loader.dataset
-    while True:
+    for i in range(10):
         if isinstance(dataset, torchvision.datasets.CocoDetection):
             break
-        dataset = dataset.dataset
+        if isinstance(dataset, torch.utils.data.Subset):
+            dataset = dataset.dataset
+    assert isinstance(dataset, torchvision.datasets.CocoDetection)
 
-    # coco_evaluator = CocoEvaluator(dataset.coco, ("bbox",))
-    coco_evaluator = CocoEvaluator(dataset.coco, ("bbox", "segm"))
+    iou_types = ("bbox",)
+    if isinstance(model, torchvision.models.detection.MaskRCNN):
+        iou_types = ("bbox", "segm")
+
+    coco_evaluator = CocoEvaluator(dataset.coco, iou_types)
 
     with torch.no_grad():
         for image, targets in metric_logger.log_every(data_loader, 100, header):
@@ -173,9 +179,15 @@ def main(args):
         train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
 
+    if args.aspect_ratio_group_factor >= 0:
+        group_ids = create_aspect_ratio_groups(dataset, k=args.aspect_ratio_group_factor)
+        train_batch_sampler = GroupedBatchSampler(train_sampler, group_ids, args.batch_size)
+    else:
+        train_batch_sampler = torch.utils.data.BatchSampler(
+            train_sampler, args.batch_size, drop_last=True)
+
     data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=args.batch_size,
-        sampler=train_sampler, num_workers=args.workers, drop_last=True,
+        dataset, batch_sampler=train_batch_sampler, num_workers=args.workers,
         collate_fn=utils.BatchCollator(32))
 
     data_loader_test = torch.utils.data.DataLoader(
@@ -256,6 +268,7 @@ if __name__ == "__main__":
     parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
+    parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
     parser.add_argument(
         "--test-only",
         dest="test_only",

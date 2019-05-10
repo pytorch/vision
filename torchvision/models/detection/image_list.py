@@ -49,8 +49,6 @@ def to_image_list(tensors, size_divisible=0):
     elif isinstance(tensors, (tuple, list)):
         max_size = tuple(max(s) for s in zip(*[img.shape for img in tensors]))
 
-        # TODO Ideally, just remove this and let me model handle arbitrary
-        # input sizs
         if size_divisible > 0:
             import math
 
