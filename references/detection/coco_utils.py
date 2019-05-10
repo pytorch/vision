@@ -140,7 +140,7 @@ def get_coco(root, image_set, transforms):
         58, 59, 60, 61, 62, 63, 64, 65, 67, 70, 72, 73, 74, 75, 76, 77, 78,
         79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
 
-    # CAT_LIST = [i for i in range(91)]
+    CAT_LIST = [i for i in range(91)]
 
     t = [FilterAndRemapCocoCategories(CAT_LIST, remap=True), ConvertCocoPolysToMask()]
 

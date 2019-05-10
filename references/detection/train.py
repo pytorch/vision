@@ -24,8 +24,8 @@ import transforms as T
 def get_dataset(name, image_set, transform):
     paths = {
         # "voc": ('/datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation, 21),
-        "coco": ('/datasets01/COCO/022719/', get_coco, 81)
-        # "coco": ('/datasets01/COCO/022719/', get_coco, 91)
+        # "coco": ('/datasets01/COCO/022719/', get_coco, 81)
+        "coco": ('/datasets01/COCO/022719/', get_coco, 91)
     }
     p, ds_fn, num_classes = paths[name]
 
@@ -139,7 +139,7 @@ def evaluate(model, data_loader, device):
 
             for o, t in zip(outputs, targets):
                 o["original_image_size"] = t["original_image_size"]
-                o["labels"] = CAT_LIST[o["labels"]]
+                # o["labels"] = CAT_LIST[o["labels"]]
 
             res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
             coco_evaluator.update(res)
