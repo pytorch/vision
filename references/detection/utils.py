@@ -1,6 +1,10 @@
+from __future__ import print_function
+
 from collections import defaultdict, deque
 import datetime
+import pickle
 import time
+
 import torch
 import torch.distributed as dist
 
@@ -71,7 +75,7 @@ class SmoothedValue(object):
             max=self.max,
             value=self.value)
 
-import pickle
+
 def all_gather(data):
     """
     Run all_gather on arbitrary picklable data (not necessarily tensors)
@@ -114,13 +118,14 @@ def all_gather(data):
 
     return data_list
 
+
 def reduce_dict(input_dict, average=True):
     """
     Args:
         input_dict (dict): all the values will be reduced
         average (bool): whether to do average or sum
-    Reduce the values in the dictionary from all processes so that process with rank
-    0 has the averaged results. Returns a dict with the same fields as
+    Reduce the values in the dictionary from all processes so that all processes
+    have the averaged results. Returns a dict with the same fields as
     input_dict, after reduction.
     """
     world_size = get_world_size()
@@ -134,20 +139,11 @@ def reduce_dict(input_dict, average=True):
             names.append(k)
             values.append(input_dict[k])
         values = torch.stack(values, dim=0)
-        # dist.reduce(values, dst=0)
         dist.all_reduce(values)
         if average:
-            # only main process gets accumulated, so only divide by
-            # world_size in this case
             values /= world_size
         reduced_dict = {k: v for k, v in zip(names, values)}
     return reduced_dict
-
-class Dict(dict):
-    def synchronize_between_processes(self):
-        all_data = all_gather(self)
-        for data in all_data:
-            self.update(data)
 
 
 class MetricLogger(object):
@@ -208,7 +204,7 @@ class MetricLogger(object):
             data_time.update(time.time() - end)
             yield obj
             iter_time.update(time.time() - end)
-            if i % print_freq == 0:
+            if i % print_freq == 0 or i == len(iterable) - 1:
                 eta_seconds = iter_time.global_avg * (len(iterable) - i)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
                 print(log_msg.format(
@@ -221,23 +217,6 @@ class MetricLogger(object):
         total_time = time.time() - start_time
         total_time_str = str(datetime.timedelta(seconds=int(total_time)))
         print('{} Total time: {}'.format(header, total_time_str))
-
-
-def accuracy(output, target, topk=(1,)):
-    """Computes the accuracy over the k top predictions for the specified values of k"""
-    with torch.no_grad():
-        maxk = max(topk)
-        batch_size = target.size(0)
-
-        _, pred = output.topk(maxk, 1, True, True)
-        pred = pred.t()
-        correct = pred.eq(target[None])
-
-        res = []
-        for k in topk:
-            correct_k = correct[:k].flatten().sum(dtype=torch.float32)
-            res.append(correct_k * (100.0 / batch_size))
-        return res
 
 
 class BatchCollator(object):
@@ -254,10 +233,7 @@ class BatchCollator(object):
         transposed_batch = list(zip(*batch))
         images = torchvision.models.detection.image_list.to_image_list(transposed_batch[0], self.size_divisible)
         targets = transposed_batch[1]
-        # img_ids = transposed_batch[2]
-        return images, targets# , img_ids
-
-
+        return images, targets
 
 
 def mkdir(path):

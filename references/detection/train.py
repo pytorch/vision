@@ -14,11 +14,10 @@ import torchvision.models.detection.mask_rcnn
 from torchvision import transforms
 
 from coco_utils import get_coco
+from coco_eval import CocoEvaluator
 
 import utils
 import transforms as T
-
-from maskrcnn_benchmark.data.datasets.evaluation.coco.coco_eval2 import do_coco_evaluation as _evaluate
 
 
 def get_dataset(name, image_set, transform):
@@ -52,7 +51,7 @@ def get_transform(train):
     return T.Compose(transforms)
 
 
-def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, print_freq):
+def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -97,13 +96,11 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
 
 
-import coco_eval
-def evaluate(model, criterion, data_loader, device):
+def evaluate(model, data_loader, device):
     cpu_device = torch.device("cpu")
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
-    results_dict = utils.Dict()
     CAT_LIST = torch.tensor([
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19,
         20, 21, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 39,
@@ -118,47 +115,41 @@ def evaluate(model, criterion, data_loader, device):
             break
         dataset = dataset.dataset
 
-    coco_evaluator = coco_eval.CocoEvaluator(dataset.coco, "bbox")
+    # coco_evaluator = CocoEvaluator(dataset.coco, "bbox")
+    coco_evaluator = CocoEvaluator(dataset.coco, ("bbox", "segm"))
 
     with torch.no_grad():
         for image, targets in metric_logger.log_every(data_loader, 100, header):
             image = image.to(device, non_blocking=True)
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+            model_time = time.time()
             outputs = model(image)
 
             outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+            model_time = time.time() - model_time
+
+            metric_logger.update(model_time=model_time)
 
             for o, t in zip(outputs, targets):
                 o["original_image_size"] = t["original_image_size"]
                 o["labels"] = CAT_LIST[o["labels"]]
 
             res = {target["image_id"][0].item(): output for target, output in zip(targets, outputs)}
-            # results_dict.update(res)
-            coco_evaluator.append(res)
+            # FIXME this is a hack! we should unconditionally append
+            if -1 in res:
+                del res[-1]
+            if res:
+                coco_evaluator.update(res)
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
-    # results_dict.synchronize_between_processes()
-
-    if -1 in results_dict:
-        del results_dict[-1]
-
-    extra_args = dict(
-        box_only=False,
-        iou_types=("bbox",),
-        expected_results=None,
-        expected_results_sigma_tol=None,
-    )
-    output_folder = None
-
     coco_evaluator.synchronize_between_processes()
+
+    # accumulate predictions from all images
     coco_evaluator.accumulate()
     coco_evaluator.summarize()
     return coco_evaluator
-    return _evaluate(dataset=dataset,
-                    predictions=results_dict,
-                    output_folder=output_folder,
-                    **extra_args)
 
 
 def main(args):
@@ -188,7 +179,7 @@ def main(args):
         collate_fn=utils.BatchCollator(32))
 
     data_loader_test = torch.utils.data.DataLoader(
-        dataset_test, batch_size=1,#args.batch_size,
+        dataset_test, batch_size=1,
         sampler=test_sampler, num_workers=args.workers,
         collate_fn=utils.BatchCollator(32))
 
@@ -196,6 +187,7 @@ def main(args):
     # model = torchvision.models.__dict__[args.model]()
     model = torchvision.models.detection.mask_rcnn.maskrcnn_resnet50_fpn(num_classes=num_classes)
     model.to(device)
+
     # if args.distributed:
     #     model = torch.nn.utils.convert_sync_batchnorm(model)
 
@@ -203,8 +195,6 @@ def main(args):
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
-
-    criterion = nn.CrossEntropyLoss()
 
     params = [p for p in model.parameters() if p.requires_grad]
     optimizer = torch.optim.SGD(
@@ -220,12 +210,7 @@ def main(args):
         lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
 
     if args.test_only:
-        from maskrcnn_benchmark.utils.model_serialization import load_state_dict
-        state_dict = torch.load('/checkpoint/fmassa/jobs/detectron_logs/detectron_12296927/model_final.pth',
-            map_location=torch.device("cpu"))
-        # state_dict = torch.load('maskrcnn-benchmark/model_final.pth')
-        load_state_dict(model, state_dict['model'])
-        evaluate(model, criterion, data_loader_test, device=device)
+        evaluate(model, data_loader_test, device=device)
         return
 
     print("Start training")
@@ -234,9 +219,7 @@ def main(args):
         if args.distributed:
             train_sampler.set_epoch(epoch)
         lr_scheduler.step()
-        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq)
-        if True: # epoch == args.epochs - 1:
-            evaluate(model, criterion, data_loader_test, device=device)
+        train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
         if args.output_dir:
             utils.save_on_master({
                 'model': model_without_ddp.state_dict(),
@@ -244,6 +227,9 @@ def main(args):
                 'lr_scheduler': lr_scheduler.state_dict(),
                 'args': args},
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
+
+        # evaluate after every epoch
+        evaluate(model, data_loader_test, device=device)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))

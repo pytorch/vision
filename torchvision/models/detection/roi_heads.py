@@ -12,49 +12,6 @@ from .balanced_positive_negative_sampler import BalancedPositiveNegativeSampler
 from .matcher import Matcher
 
 
-class TwoMLPHead(nn.Module):
-    """
-    Heads for FPN for classification
-    """
-
-    def __init__(self,
-            # head
-            in_channels, representation_size
-            ):
-        super(TwoMLPHead, self).__init__()
-
-        self.fc6 = nn.Linear(in_channels, representation_size)
-        self.fc7 = nn.Linear(representation_size, representation_size)
-        self.out_channels = representation_size
-
-    def forward(self, x):
-        x = x.view(x.size(0), -1)
-
-        x = F.relu(self.fc6(x))
-        x = F.relu(self.fc7(x))
-
-        return x
-
-
-class FastRCNNPredictor(nn.Module):
-    def __init__(self, in_channels, num_classes, cls_agnostic_bbox_reg):
-        super(FastRCNNPredictor, self).__init__()
-        representation_size = in_channels
-
-        self.cls_score = nn.Linear(representation_size, num_classes)
-        num_bbox_reg_classes = 2 if cls_agnostic_bbox_reg else num_classes
-        self.bbox_pred = nn.Linear(representation_size, num_bbox_reg_classes * 4)
-
-    def forward(self, x):
-        if x.ndimension() == 4:
-            assert list(x.shape[2:]) == [1, 1]
-            x = x.view(x.size(0), -1)
-        scores = self.cls_score(x)
-        bbox_deltas = self.bbox_pred(x)
-
-        return scores, bbox_deltas
-
-
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     """
     Computes the loss for Faster R-CNN.
@@ -89,61 +46,6 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     box_loss = box_loss / labels.numel()
 
     return classification_loss, box_loss
-
-
-
-class MaskRCNNHeads(nn.ModuleDict):
-    """
-    Heads for FPN for classification
-    """
-
-    def __init__(self, in_channels, layers, dilation):
-        """
-        Arguments:
-            num_classes (int): number of output classes
-            input_size (int): number of channels of the input once it's flattened
-            representation_size (int): size of the intermediate representation
-        """
-        super(MaskRCNNHeads, self).__init__()
-
-        input_size = in_channels
-
-        next_feature = input_size
-        for layer_idx, layer_features in enumerate(layers, 1):
-            layer_name = "mask_fcn{}".format(layer_idx)
-            conv = misc_nn_ops.Conv2d(next_feature, layer_features, kernel_size=3,
-                    stride=1, padding=dilation, dilation=dilation)
-            nn.init.kaiming_normal_(
-                conv.weight, mode="fan_out", nonlinearity="relu"
-            )
-            self[layer_name] = conv
-            next_feature = layer_features
-        self.out_channels = layer_features
-
-    def forward(self, x):
-        for module in self.values():
-            x = F.relu(module(x))
-
-        return x
-
-
-class MaskRCNNC4Predictor(nn.Module):
-    def __init__(self, in_channels, dim_reduced, num_classes):
-        super(MaskRCNNC4Predictor, self).__init__()
-        num_inputs = in_channels
-
-        self.conv5_mask = misc_nn_ops.ConvTranspose2d(num_inputs, dim_reduced, 2, 2, 0)
-        self.mask_fcn_logits = misc_nn_ops.Conv2d(dim_reduced, num_classes, 1, 1, 0)
-
-        for name, param in self.named_parameters():
-            if "weight" in name:
-                # Caffe2 implementation uses MSRAFill, which in fact
-                # corresponds to kaiming_normal_ in PyTorch
-                nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
-
-    def forward(self, x):
-        x = F.relu(self.conv5_mask(x))
-        return self.mask_fcn_logits(x)
 
 
 def maskrcnn_inference(x, labels):
@@ -218,9 +120,6 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
     return mask_loss
 
 
-
-
-
 # the next two functions should be merged inside Masker
 # but are kept here for the moment while we need them
 # temporarily gor paste_mask_in_image
@@ -291,26 +190,6 @@ def paste_mask_in_image(mask, box, im_h, im_w, thresh=0.5, padding=1):
     ]
     return im_mask
 
-from torchvision import _C
-def paste_plenty_of_masks(masks, boxes, im_h, im_w, thresh=0.5):
-    device = boxes.device
-    dtype = boxes.dtype
-    masks = masks.to(boxes)
-    num_boxes = len(boxes)
-    idxs = torch.arange(num_boxes, dtype=dtype, device=device)[:, None]
-    boxes = boxes.clone()
-    # masks, scale = expand_masks(masks, padding=1)
-    # boxes = expand_boxes(boxes, scale)
-    # boxes[:, 2:] += 1
-    rois = torch.cat((idxs, boxes), dim=1)
-    m_h, m_w = masks.shape[-2:]
-    sampling_ratio = 0
-    res = _C.roi_align_backward(masks, rois, 1, m_h, m_w, num_boxes, 1, im_h, im_w, sampling_ratio)
-    scaling_factor = torch.ceil((boxes[:, 2] - boxes[:, 0]) / m_w) * torch.ceil((boxes[:, 3] - boxes[:, 1]) / m_h)
-    res = res * scaling_factor.view(-1, 1, 1, 1)
-    if thresh >= 0:
-        res = res > thresh
-    return res
 
 class Masker(object):
     """
@@ -318,16 +197,13 @@ class Masker(object):
     specified by the bounding boxes
     """
 
-    def __init__(self, threshold=0.5, padding=1, mode=0):
+    def __init__(self, threshold=0.5, padding=1):
         self.threshold = threshold
         self.padding = padding
-        self.mode = mode
 
     def forward_single_image(self, masks, prediction):
         # boxes = boxes.convert("xyxy")
         im_h, im_w = prediction["image_size"].tolist()
-        if self.mode == 1:
-            return paste_plenty_of_masks(masks, prediction["boxes"], im_h, im_w, self.threshold)
         res = [
             paste_mask_in_image(mask[0], box, im_h, im_w, self.threshold, self.padding)
             for mask, box in zip(masks, prediction["boxes"])

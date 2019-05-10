@@ -186,7 +186,7 @@ def concat_box_prediction_layers(box_cls, box_regression):
     return box_cls, box_regression
 
 
-class RPN(torch.nn.Module):
+class RegionProposalNetwork(torch.nn.Module):
 
     def __init__(self,
             anchor_generator,
@@ -199,7 +199,7 @@ class RPN(torch.nn.Module):
         """
         Arguments:
         """
-        super(RPN, self).__init__()
+        super(RegionProposalNetwork, self).__init__()
         self.anchor_generator = anchor_generator
         self.head = head
         self.box_coder = BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
