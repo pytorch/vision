@@ -7,7 +7,7 @@ from torch import nn
 
 class FeaturePyramidNetwork(nn.Module):
     """
-    Module that adds FPN on top of a list of feature maps.
+    Module that adds a FPN on top of a list of feature maps.
     The feature maps are currently supposed to be in increasing depth
     order, and must be consecutive
     """
@@ -20,9 +20,10 @@ class FeaturePyramidNetwork(nn.Module):
             in_channels_list (list[int]): number of channels for each feature map that
                 will be fed
             out_channels (int): number of channels of the FPN representation
-            extra_blocks (nn.Module or None): if provided, an extra operation will
-                be performed on the output of the last (smallest resolution)
-                FPN output, and the result will extend the result list
+            extra_blocks (ExtraFPNBlock or None): if provided, extra operations will
+                be performed. It is expected to take the fpn features, the original
+                features and the names of the original features as input, and returns
+                a new list of feature maps and their corresponding names
         """
         super(FeaturePyramidNetwork, self).__init__()
         self.inner_blocks = nn.ModuleList()
@@ -41,6 +42,8 @@ class FeaturePyramidNetwork(nn.Module):
                 nn.init.kaiming_uniform_(m.weight, a=1)
                 nn.init.constant_(m.bias, 0)
 
+        if extra_blocks is not None:
+            assert isinstance(extra_blocks, ExtraFPNBlock)
         self.extra_blocks = extra_blocks
 
     def forward(self, x):
@@ -78,14 +81,19 @@ class FeaturePyramidNetwork(nn.Module):
         return out
 
 
-class LastLevelMaxPool(nn.Module):
+class ExtraFPNBlock(nn.Module):
+    def forward(self, results, x, names):
+        pass
+
+
+class LastLevelMaxPool(ExtraFPNBlock):
     def forward(self, x, y, names):
         names.append("pool")
         x.append(F.max_pool2d(x[-1], 1, 2, 0))
         return x, names
 
 
-class LastLevelP6P7(nn.Module):
+class LastLevelP6P7(ExtraFPNBlock):
     """
     This module is used in RetinaNet to generate extra layers, P6 and P7.
     """
