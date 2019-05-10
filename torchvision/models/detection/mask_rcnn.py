@@ -16,6 +16,9 @@ from .roi_heads import RoIHeads
 from .._utils import IntermediateLayerGetter
 
 
+__all__ = ["MaskRCNN", "maskrcnn_resnet50_fpn"]
+
+
 class BackboneWithFPN(nn.Sequential):
     def __init__(self, backbone, return_layers, in_channels_list, out_channels):
         body = IntermediateLayerGetter(backbone, return_layers=return_layers)

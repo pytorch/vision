@@ -115,7 +115,7 @@ def evaluate(model, data_loader, device):
             break
         dataset = dataset.dataset
 
-    # coco_evaluator = CocoEvaluator(dataset.coco, "bbox")
+    # coco_evaluator = CocoEvaluator(dataset.coco, ("bbox",))
     coco_evaluator = CocoEvaluator(dataset.coco, ("bbox", "segm"))
 
     with torch.no_grad():
@@ -184,12 +184,8 @@ def main(args):
         collate_fn=utils.BatchCollator(32))
 
     print("Creating model")
-    # model = torchvision.models.__dict__[args.model]()
-    model = torchvision.models.detection.mask_rcnn.maskrcnn_resnet50_fpn(num_classes=num_classes)
+    model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes)
     model.to(device)
-
-    # if args.distributed:
-    #     model = torch.nn.utils.convert_sync_batchnorm(model)
 
     model_without_ddp = model
     if args.distributed:
@@ -240,8 +236,8 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description='PyTorch Detection Training')
 
-    parser.add_argument('--data-path', default='/datasets01/imagenet_full_size/061417/', help='dataset')
-    parser.add_argument('--model', default='resnet18', help='model')
+    parser.add_argument('--data-path', default='/datasets01/COCO/022719/', help='dataset')
+    parser.add_argument('--model', default='maskrcnn_resnet50_fpn', help='model')
     parser.add_argument('--device', default='cuda', help='device')
     parser.add_argument('-b', '--batch-size', default=2, type=int)
     parser.add_argument('--epochs', default=13, type=int, metavar='N',
