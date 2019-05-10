@@ -209,7 +209,7 @@ def normalize(tensor, mean, std, inplace=False):
     return tensor
 
 
-def resize(img, size, interpolation=Image.BILINEAR):
+def resize(img, size, interpolation=Image.BILINEAR, bigger=False):
     r"""Resize the input PIL Image to the given size.
 
     Args:
@@ -221,6 +221,9 @@ def resize(img, size, interpolation=Image.BILINEAR):
             :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`
         interpolation (int, optional): Desired interpolation. Default is
             ``PIL.Image.BILINEAR``
+        bigger (bool, optional): Match desired output size to bigger edge when size is an int.
+        i.e, if height > width, then image will be rescaled to
+        :math:`\left(\text{size}, \text{size} \times \frac{\text{width}}{\text{height}}\right)`
 
     Returns:
         PIL Image: Resized image.

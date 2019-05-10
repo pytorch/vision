@@ -178,12 +178,16 @@ class Resize(object):
             (size * height / width, size)
         interpolation (int, optional): Desired interpolation. Default is
             ``PIL.Image.BILINEAR``
+        bigger (bool, optional): Match desired output size to bigger edge when size is an int.
+            i.e, if height > width, then image will be rescaled to
+            (size, size * width / weight)
     """
 
-    def __init__(self, size, interpolation=Image.BILINEAR):
+    def __init__(self, size, interpolation=Image.BILINEAR, bigger=False):
         assert isinstance(size, int) or (isinstance(size, Iterable) and len(size) == 2)
         self.size = size
         self.interpolation = interpolation
+        self.bigger = bigger
 
     def __call__(self, img):
         """
@@ -193,7 +197,7 @@ class Resize(object):
         Returns:
             PIL Image: Rescaled image.
         """
-        return F.resize(img, self.size, self.interpolation)
+        return F.resize(img, self.size, self.interpolation, self.bigger)
 
     def __repr__(self):
         interpolate_str = _pil_interpolation_to_str[self.interpolation]
