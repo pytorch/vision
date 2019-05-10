@@ -16,7 +16,7 @@ from .roi_heads import RoIHeads
 from .._utils import IntermediateLayerGetter
 
 
-__all__ = ["MaskRCNN", "maskrcnn_resnet50_fpn"]
+__all__ = ["FasterRCNN", "MaskRCNN", "fasterrcnn_resnet50_fpn", "maskrcnn_resnet50_fpn"]
 
 
 class BackboneWithFPN(nn.Sequential):
@@ -32,7 +32,7 @@ class BackboneWithFPN(nn.Sequential):
         self.out_channels = out_channels
 
 
-class MaskRCNN(GeneralizedRCNN):
+class FasterRCNN(GeneralizedRCNN):
     def __init__(self, backbone, num_classes=None,
                  #
                  rpn_anchor_generator=None, rpn_head=None,
@@ -46,10 +46,7 @@ class MaskRCNN(GeneralizedRCNN):
                  box_score_thresh=0.05, box_nms_thresh=0.5, box_detections_per_img=100,
                  box_fg_iou_thresh=0.5, box_bg_iou_thresh=0.5,
                  box_batch_size_per_image=512, box_positive_fraction=0.25,
-                 bbox_reg_weights=None,
-                 #
-                 mask_roi_pool=None, mask_head=None, mask_predictor=None,
-                 mask_discretization_size=28):
+                 bbox_reg_weights=None):
 
         if not hasattr(backbone, "out_channels"):
             raise ValueError(
@@ -59,13 +56,10 @@ class MaskRCNN(GeneralizedRCNN):
 
         assert isinstance(rpn_anchor_generator, (AnchorGenerator, type(None)))
         assert isinstance(box_roi_pool, (MultiScaleRoIAlign, type(None)))
-        assert isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None)))
 
         if num_classes is not None:
             if box_predictor is not None:
                 raise ValueError("num_classes should be None when box_predictor is specified")
-            if mask_predictor is not None:
-                raise ValueError("num_classes should be None when mask_predictor is specified")
 
         out_channels = backbone.out_channels
 
@@ -108,6 +102,44 @@ class MaskRCNN(GeneralizedRCNN):
                 representation_size,
                 num_classes)
 
+        roi_heads = RoIHeads(
+            # Box
+            box_roi_pool, box_head, box_predictor,
+            box_fg_iou_thresh, box_bg_iou_thresh,
+            box_batch_size_per_image, box_positive_fraction,
+            bbox_reg_weights,
+            box_score_thresh, box_nms_thresh, box_detections_per_img)
+
+        super(FasterRCNN, self).__init__(backbone, rpn, roi_heads)
+
+
+class MaskRCNN(FasterRCNN):
+    def __init__(self, backbone, num_classes=None,
+                 #
+                 rpn_anchor_generator=None, rpn_head=None,
+                 rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,
+                 rpn_post_nms_top_n_train=2000, rpn_post_nms_top_n_test=1000,
+                 rpn_nms_thresh=0.7,
+                 rpn_fg_iou_thresh=0.7, rpn_bg_iou_thresh=0.3,
+                 rpn_batch_size_per_image=256, rpn_positive_fraction=0.5,
+                 #
+                 box_roi_pool=None, box_head=None, box_predictor=None,
+                 box_score_thresh=0.05, box_nms_thresh=0.5, box_detections_per_img=100,
+                 box_fg_iou_thresh=0.5, box_bg_iou_thresh=0.5,
+                 box_batch_size_per_image=512, box_positive_fraction=0.25,
+                 bbox_reg_weights=None,
+                 #
+                 mask_roi_pool=None, mask_head=None, mask_predictor=None,
+                 mask_discretization_size=28):
+
+        assert isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None)))
+
+        if num_classes is not None:
+            if mask_predictor is not None:
+                raise ValueError("num_classes should be None when mask_predictor is specified")
+
+        out_channels = backbone.out_channels
+
         if mask_roi_pool is None:
             mask_roi_pool = MultiScaleRoIAlign(
                 featmap_names=[0, 1, 2, 3],
@@ -123,20 +155,26 @@ class MaskRCNN(GeneralizedRCNN):
             mask_dim_reduced = 256  # == mask_layers[-1]
             mask_predictor = MaskRCNNC4Predictor(out_channels, mask_dim_reduced, num_classes)
 
-        roi_heads = RoIHeads(
-            # Box
-            box_roi_pool, box_head, box_predictor,
-            box_fg_iou_thresh, box_bg_iou_thresh,
-            box_batch_size_per_image, box_positive_fraction,
-            bbox_reg_weights,
-            box_score_thresh, box_nms_thresh, box_detections_per_img,
-            # Mask
-            mask_roi_pool,
-            mask_head,
-            mask_predictor,
-            mask_discretization_size)
+        super(MaskRCNN, self).__init__(
+                 backbone, num_classes,
+                 #
+                 rpn_anchor_generator, rpn_head,
+                 rpn_pre_nms_top_n_train, rpn_pre_nms_top_n_test,
+                 rpn_post_nms_top_n_train, rpn_post_nms_top_n_test,
+                 rpn_nms_thresh,
+                 rpn_fg_iou_thresh, rpn_bg_iou_thresh,
+                 rpn_batch_size_per_image, rpn_positive_fraction,
+                 #
+                 box_roi_pool, box_head, box_predictor,
+                 box_score_thresh, box_nms_thresh, box_detections_per_img,
+                 box_fg_iou_thresh, box_bg_iou_thresh,
+                 box_batch_size_per_image, box_positive_fraction,
+                 bbox_reg_weights)
 
-        super(MaskRCNN, self).__init__(backbone, rpn, roi_heads)
+        self.roi_heads.mask_roi_pool = mask_roi_pool
+        self.roi_heads.mask_head = mask_head
+        self.roi_heads.mask_predictor = mask_predictor
+        self.roi_heads.mask_discretization_size = mask_discretization_size
 
 
 class TwoMLPHead(nn.Module):
@@ -233,6 +271,14 @@ def _resnet_fpn_backbone(backbone_name):
     ]
     out_channels = 256
     return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels)
+
+
+def fasterrcnn_resnet50_fpn(pretrained=False, num_classes=81, **kwargs):
+    backbone = _resnet_fpn_backbone('resnet50')
+    model = FasterRCNN(backbone, num_classes, **kwargs)
+    if pretrained:
+        pass
+    return model
 
 
 def maskrcnn_resnet50_fpn(pretrained=False, num_classes=81, **kwargs):
