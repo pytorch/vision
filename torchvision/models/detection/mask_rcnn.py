@@ -183,9 +183,9 @@ class MaskRCNNHeads(nn.Sequential):
         next_feature = in_channels
         for layer_idx, layer_features in enumerate(layers, 1):
             layer_name = "mask_fcn{}".format(layer_idx)
-            conv = misc_nn_ops.Conv2d(next_feature, layer_features, kernel_size=3,
-                    stride=1, padding=dilation, dilation=dilation)
-            d["mask_fcn{}".format(layer_idx)] = conv
+            d["mask_fcn{}".format(layer_idx)] = misc_nn_ops.Conv2d(
+                next_feature, layer_features, kernel_size=3,
+                stride=1, padding=dilation, dilation=dilation)
             d["relu{}".format(layer_idx)] = nn.ReLU(inplace=True)
             next_feature = layer_features
 
@@ -211,7 +211,6 @@ class MaskRCNNC4Predictor(nn.Sequential):
 def _resnet_fpn_backbone(backbone_name):
     from .. import resnet
     backbone = resnet.__dict__[backbone_name](
-        # pretrained=False,
         pretrained=True,
         norm_layer=misc_nn_ops.FrozenBatchNorm2d)
     # freeze layers

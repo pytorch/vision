@@ -85,6 +85,7 @@ class ConvertCocoPolysToMask(object):
 def _coco_remove_images_without_annotations(dataset, cat_list=None):
     def _has_only_empty_bbox(anno):
         return all(any(o <= 1 for o in obj["bbox"][2:]) for obj in anno)
+
     def _has_valid_annotation(anno):
         # if it's empty, there is no annotation
         if len(anno) == 0:
@@ -106,7 +107,7 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
 
     dataset = torch.utils.data.Subset(dataset, ids)
     return dataset
-        
+
 
 def get_coco(root, image_set, transforms):
     PATHS = {
@@ -139,6 +140,6 @@ def get_coco(root, image_set, transforms):
     if image_set == "train":
         dataset = _coco_remove_images_without_annotations(dataset, CAT_LIST)
 
-    # dataset = torch.utils.data.Subset(dataset, [i for i in range(200)])
+    # dataset = torch.utils.data.Subset(dataset, [i for i in range(50)])
 
     return dataset
