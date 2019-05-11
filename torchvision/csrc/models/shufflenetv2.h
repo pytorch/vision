@@ -7,46 +7,32 @@ namespace vision {
 namespace models {
 
 struct ShuffleNetV2Impl : torch::nn::Module {
-  std::vector<int64_t> stage_out_channels;
-  std::vector<int64_t> _get_stages(double mult);
-
+  std::vector<int64_t> _stage_out_channels;
   torch::nn::Sequential conv1{nullptr}, stage2, stage3, stage4, conv5{nullptr};
   torch::nn::Linear fc{nullptr};
 
   ShuffleNetV2Impl(
-      int64_t num_classes = 1000,
-      int64_t input_size = 224,
-      double width_mult = 1);
+      const std::vector<int64_t>& stage_repeats,
+      const std::vector<int64_t>& stage_out_channels,
+      int64_t num_classes = 1000);
 
   torch::Tensor forward(torch::Tensor x);
 };
 
 struct ShuffleNetV2_x0_5Impl : ShuffleNetV2Impl {
-  ShuffleNetV2_x0_5Impl(
-      int64_t num_classes = 1000,
-      int64_t input_size = 224,
-      double width_mult = .5);
+  ShuffleNetV2_x0_5Impl(int64_t num_classes = 1000);
 };
 
 struct ShuffleNetV2_x1_0Impl : ShuffleNetV2Impl {
-  ShuffleNetV2_x1_0Impl(
-      int64_t num_classes = 1000,
-      int64_t input_size = 224,
-      double width_mult = 1);
+  ShuffleNetV2_x1_0Impl(int64_t num_classes = 1000);
 };
 
 struct ShuffleNetV2_x1_5Impl : ShuffleNetV2Impl {
-  ShuffleNetV2_x1_5Impl(
-      int64_t num_classes = 1000,
-      int64_t input_size = 224,
-      double width_mult = 1.5);
+  ShuffleNetV2_x1_5Impl(int64_t num_classes = 1000);
 };
 
 struct ShuffleNetV2_x2_0Impl : ShuffleNetV2Impl {
-  ShuffleNetV2_x2_0Impl(
-      int64_t num_classes = 1000,
-      int64_t input_size = 224,
-      double width_mult = 2);
+  ShuffleNetV2_x2_0Impl(int64_t num_classes = 1000);
 };
 
 TORCH_MODULE(ShuffleNetV2);

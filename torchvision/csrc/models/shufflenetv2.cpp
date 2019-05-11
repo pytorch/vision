@@ -90,29 +90,25 @@ struct ShuffleNetV2InvertedResidualImpl : torch::nn::Module {
 
 TORCH_MODULE(ShuffleNetV2InvertedResidual);
 
-static std::unordered_map<double, std::vector<int64_t>> channels = {
-    {0.5, {24, 48, 96, 192, 1024}},
-    {1.0, {24, 116, 232, 464, 1024}},
-    {1.5, {24, 176, 352, 704, 1024}},
-    {2.0, {24, 244, 488, 976, 2048}}};
-
-std::vector<int64_t> ShuffleNetV2Impl::_get_stages(double mult) {
-  for (const auto& P : channels)
-    if (modelsimpl::double_compare(mult, P.first))
-      return P.second;
-
-  std::cerr << "width_mult" << mult << "is not supported" << std::endl;
-  assert(false);
-}
-
 ShuffleNetV2Impl::ShuffleNetV2Impl(
-    int64_t num_classes,
-    int64_t input_size,
-    double width_mult) {
-  stage_out_channels = _get_stages(width_mult);
+    const std::vector<int64_t>& stage_repeats,
+    const std::vector<int64_t>& stage_out_channels,
+    int64_t num_classes) {
+  if (stage_repeats.size() != 3) {
+    std::cerr << "expected stage_repeats as vector of 3 positive ints"
+              << std::endl;
+    assert(false);
+  }
 
+  if (stage_out_channels.size() != 5) {
+    std::cerr << "expected stage_out_channels as vector of 5 positive ints"
+              << std::endl;
+    assert(false);
+  }
+
+  _stage_out_channels = stage_out_channels;
   int64_t input_channels = 3;
-  auto output_channels = stage_out_channels[0];
+  auto output_channels = _stage_out_channels[0];
 
   conv1 = torch::nn::Sequential(
       torch::nn::Conv2d(Options(input_channels, output_channels, 3)
@@ -123,13 +119,12 @@ ShuffleNetV2Impl::ShuffleNetV2Impl(
       torch::nn::Functional(modelsimpl::relu_));
 
   input_channels = output_channels;
-  std::vector<int64_t> stage_repeats = {4, 8, 4};
   std::vector<torch::nn::Sequential> stages = {stage2, stage3, stage4};
 
   for (size_t i = 0; i < stages.size(); ++i) {
     auto& seq = stages[i];
     auto repeats = stage_repeats[i];
-    auto output_channels = stage_out_channels[i + 1];
+    auto output_channels = _stage_out_channels[i + 1];
 
     seq->push_back(
         ShuffleNetV2InvertedResidual(input_channels, output_channels, 2));
@@ -141,7 +136,7 @@ ShuffleNetV2Impl::ShuffleNetV2Impl(
     input_channels = output_channels;
   }
 
-  output_channels = stage_out_channels.back();
+  output_channels = _stage_out_channels.back();
   conv5 = torch::nn::Sequential(
       torch::nn::Conv2d(Options(input_channels, output_channels, 1)
                             .stride(1)
@@ -174,29 +169,17 @@ torch::Tensor ShuffleNetV2Impl::forward(torch::Tensor x) {
   return x;
 }
 
-ShuffleNetV2_x0_5Impl::ShuffleNetV2_x0_5Impl(
-    int64_t num_classes,
-    int64_t input_size,
-    double width_mult)
-    : ShuffleNetV2Impl(num_classes, input_size, width_mult) {}
+ShuffleNetV2_x0_5Impl::ShuffleNetV2_x0_5Impl(int64_t num_classes)
+    : ShuffleNetV2Impl({4, 8, 4}, {24, 48, 96, 192, 1024}, num_classes) {}
 
-ShuffleNetV2_x1_0Impl::ShuffleNetV2_x1_0Impl(
-    int64_t num_classes,
-    int64_t input_size,
-    double width_mult)
-    : ShuffleNetV2Impl(num_classes, input_size, width_mult) {}
+ShuffleNetV2_x1_0Impl::ShuffleNetV2_x1_0Impl(int64_t num_classes)
+    : ShuffleNetV2Impl({4, 8, 4}, {24, 116, 232, 464, 1024}, num_classes) {}
 
-ShuffleNetV2_x1_5Impl::ShuffleNetV2_x1_5Impl(
-    int64_t num_classes,
-    int64_t input_size,
-    double width_mult)
-    : ShuffleNetV2Impl(num_classes, input_size, width_mult) {}
+ShuffleNetV2_x1_5Impl::ShuffleNetV2_x1_5Impl(int64_t num_classes)
+    : ShuffleNetV2Impl({4, 8, 4}, {24, 176, 352, 704, 1024}, num_classes) {}
 
-ShuffleNetV2_x2_0Impl::ShuffleNetV2_x2_0Impl(
-    int64_t num_classes,
-    int64_t input_size,
-    double width_mult)
-    : ShuffleNetV2Impl(num_classes, input_size, width_mult) {}
+ShuffleNetV2_x2_0Impl::ShuffleNetV2_x2_0Impl(int64_t num_classes)
+    : ShuffleNetV2Impl({4, 8, 4}, {24, 244, 488, 976, 2048}, num_classes) {}
 
 } // namespace models
 } // namespace vision
