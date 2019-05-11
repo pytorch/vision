@@ -42,7 +42,7 @@ def get_transform(train):
     if train:
         transforms.append(T.RandomHorizontalFlip(0.5))
 
-    if True:
+    if False:
         transforms.append(T.BGR255())
         transforms.append(T.Normalize(mean=[102.9801, 115.9465, 122.7717],
                                       std=[1., 1., 1.]))
@@ -118,8 +118,12 @@ def evaluate(model, data_loader, device):
             dataset = dataset.dataset
     assert isinstance(dataset, torchvision.datasets.CocoDetection)
 
+
+    model_without_ddp = model
+    if isinstance(model, torch.nn.parallel.DistributedDataParallel):
+        model_without_ddp = model.module
     iou_types = ("bbox",)
-    if isinstance(model, torchvision.models.detection.MaskRCNN):
+    if isinstance(model_without_ddp, torchvision.models.detection.MaskRCNN):
         iou_types = ("bbox", "segm")
 
     coco_evaluator = CocoEvaluator(dataset.coco, iou_types)
