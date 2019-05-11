@@ -194,3 +194,7 @@ ssTEM
 
 .. note ::
     This requires `skimage` to be installed
+
+.. autoclass:: ssTEM
+   :members: __getitem__
+   :special-members:
