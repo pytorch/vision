@@ -72,18 +72,22 @@ class GroupedBatchSampler(BatchSampler):
 
 def _compute_aspect_ratios_slow(dataset, indices=None):
     print("Your dataset doesn't support the fast path for "
-        "computing the aspect ratios, so will iterate over "
-        "the full dataset and load every image instead. "
-        "This might take some time...")
+          "computing the aspect ratios, so will iterate over "
+          "the full dataset and load every image instead. "
+          "This might take some time...")
     if indices is None:
         indices = range(len(dataset))
+
     class SubsetSampler(Sampler):
         def __init__(self, indices):
             self.indices = indices
+
         def __iter__(self):
             return iter(self.indices)
+
         def __len__(self):
             return len(self.indices)
+
     sampler = SubsetSampler(indices)
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=1, sampler=sampler,
@@ -127,7 +131,7 @@ def _compute_aspect_ratios_voc_dataset(dataset, indices=None):
     aspect_ratios = []
     for i in indices:
         # this doesn't load the data into memory, because PIL loads it lazily
-        width, height = Image.open(self.images[i]).size
+        width, height = Image.open(dataset.images[i]).size
         aspect_ratio = float(height) / float(width)
         aspect_ratios.append(aspect_ratio)
     return aspect_ratios
