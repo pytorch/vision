@@ -18,6 +18,7 @@ from .caltech import Caltech101, Caltech256
 from .celeba import CelebA
 from .sbd import SBDataset
 from .vision import VisionDataset
+from .sstem import ssTEM
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',

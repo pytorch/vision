@@ -188,3 +188,9 @@ SBD
 .. autoclass:: SBDataset
   :members: __getitem__
   :special-members:
+
+ssTEM
+~~~~~
+
+.. note ::
+    This requires `skimage` to be installed
