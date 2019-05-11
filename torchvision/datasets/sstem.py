@@ -3,13 +3,13 @@ from __future__ import print_function
 import os
 
 from PIL import Image
-import skimage
 import torch.utils.data as data
 
 from .utils import download_url, check_integrity
+from .vision import VisionDataset
 
 
-class ssTEM(data.Dataset):
+class ssTEM(VisionDataset):
     """Dataset for `ISBI Challenge: Segmentation of neuronal structures
     in EM stacks <http://brainiac2.mit.edu/isbi_challenge/>`_.
 
@@ -18,10 +18,8 @@ class ssTEM(data.Dataset):
             to if download is set to True.
         train (bool, optional): If True, creates dataset from training set,
             otherwise creates from test set.
-        transform (callable, optional): A function/transform that takes in a
-            PIL image and returns a transformed version.
-        target_transform (callable, optional): A function/transform that takes
-            in the target and transforms it.
+        transforms (callable, optional): A function/transform that takes in
+            two PIL images and returns transformed versions.
         download (bool, optional): If true, downloads the dataset from the
             internet and puts it in root directory. If dataset is already
             downloaded, it is not downloaded again.
@@ -47,12 +45,13 @@ class ssTEM(data.Dataset):
         }
     }
 
-    def __init__(self, root, train=True, transform=None, target_transform=None,
-                 download=False):
+    def __init__(self, root, train=True, transforms=None, download=False):
+        # Lazy import
+        import skimage.io
+
         self.root = os.path.expanduser(root)
         self.train = train
-        self.transform = transform
-        self.target_transform = target_transform
+        self.transforms = transforms
 
         if download:
             self.download()
@@ -80,17 +79,13 @@ class ssTEM(data.Dataset):
         img = self.data[index]
         img = Image.fromarray(img)
 
-        if self.transform is not None:
-            img = self.transform(img)
+        target = None
+        if self.train:
+            target = self.labels[index]
+            target = Image.fromarray(img)
 
-        if not self.train:
-            return img
-
-        target = self.labels[index]
-        target = Image.fromarray(img)
-
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
 
         return img, target
 
