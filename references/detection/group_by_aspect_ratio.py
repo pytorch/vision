@@ -58,7 +58,10 @@ class GroupedBatchSampler(BatchSampler):
         expected_num_batches = len(self)
         num_remaining = expected_num_batches - num_batches
         if num_remaining > 0:
-            for group_id, buffer_per_group in self.buffer_per_group.items():
+            # for the remaining batches, take first the buffers with largest number
+            # of elements
+            for group_id, buffer_per_group in sorted(self.buffer_per_group.items(),
+                                                     key=lambda x: len(x), reverse=True):
                 remaining = self.batch_size - len(buffer_per_group)
                 buffer_per_group.extend(self.samples_per_group[group_id][:remaining])
                 yield buffer_per_group
