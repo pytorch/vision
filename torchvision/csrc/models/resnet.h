@@ -181,7 +181,7 @@ torch::Tensor ResNetImpl<Block>::forward(torch::Tensor x) {
   x = layer4->forward(x);
 
   x = torch::adaptive_avg_pool2d(x, {1, 1});
-  x = x.view({x.size(0), -1});
+  x = x.reshape({x.size(0), -1});
   x = fc->forward(x);
 
   return x;
