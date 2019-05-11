@@ -118,7 +118,6 @@ def evaluate(model, data_loader, device):
             dataset = dataset.dataset
     assert isinstance(dataset, torchvision.datasets.CocoDetection)
 
-
     model_without_ddp = model
     if isinstance(model, torch.nn.parallel.DistributedDataParallel):
         model_without_ddp = model.module
