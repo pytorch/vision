@@ -7,5 +7,6 @@ from .densenet import *
 from .googlenet import *
 from .mobilenet import *
 from .shufflenetv2 import *
+from .unet import *
 from . import segmentation
 from . import detection

@@ -24,6 +24,7 @@ architectures for image classification:
 -  `ShuffleNet`_ v2
 -  `MobileNet`_ v2
 -  `ResNeXt`_
+-  `UNet`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -40,6 +41,7 @@ You can construct a model with random weights by calling its constructor:
     shufflenet = models.shufflenet_v2_x1_0()
     mobilenet = models.mobilenet_v2()
     resnext50_32x4d = models.resnext50_32x4d()
+    unet = model.unet23()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -65,7 +67,7 @@ This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
 Some models use modules which have different training and evaluation
 behavior, such as batch normalization. To switch between these modes, use
 ``model.train()`` or ``model.eval()`` as appropriate. See
-:meth:`~torch.nn.Module.train` or :meth:`~torch.nn.Module.eval` for details. 
+:meth:`~torch.nn.Module.train` or :meth:`~torch.nn.Module.eval` for details.
 
 All pre-trained models expect input images normalized in the same way,
 i.e. mini-batches of 3-channel RGB images of shape (3 x H x W),
@@ -124,6 +126,7 @@ ResNeXt-101-32x8d                 20.69           5.47
 .. _ShuffleNet: https://arxiv.org/abs/1807.11164
 .. _MobileNet: https://arxiv.org/abs/1801.04381
 .. _ResNeXt: https://arxiv.org/abs/1611.05431
+.. _UNet: https://arxiv.org/abs/1505.04597
 
 .. currentmodule:: torchvision.models
 
@@ -359,3 +362,12 @@ Keypoint R-CNN
 
 .. autofunction:: torchvision.models.detection.keypointrcnn_resnet50_fpn
 
+UNet
+____
+
+.. autofunction:: unet8
+.. autofunction:: unet13
+.. autofunction:: unet18
+.. autofunction:: unet23
+.. autofunction:: unet28
+.. autofunction:: unet33
