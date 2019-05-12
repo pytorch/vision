@@ -148,7 +148,7 @@ def _load_pretrained(model_name, model):
         raise ValueError(
             "No checkpoint is available for model type {}".format(model_name))
     checkpoint_url = _MODEL_URLS[model_name]
-    model.load_state_dict(torch.utils.model_zoo.load_url(checkpoint_url))
+    model.load_state_dict(load_state_dict_from_url(checkpoint_url))
 
 
 def mnasnet0_5(pretrained=False, **kwargs):
