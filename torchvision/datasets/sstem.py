@@ -49,6 +49,8 @@ class ssTEM(VisionDataset):
         # Lazy import
         import skimage.io
 
+        super(ssTEM, self).__init__(root, transforms)
+
         self.root = os.path.expanduser(root)
         self.train = train
         self.transforms = transforms
