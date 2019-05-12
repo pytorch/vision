@@ -51,9 +51,7 @@ class ssTEM(VisionDataset):
 
         super(ssTEM, self).__init__(root, transforms)
 
-        self.root = os.path.expanduser(root)
         self.train = train
-        self.transforms = transforms
 
         if download:
             self.download()
