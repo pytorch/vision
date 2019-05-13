@@ -13,7 +13,7 @@ import torchvision.models.detection.mask_rcnn
 
 from torchvision import transforms
 
-from coco_utils import get_coco
+from coco_utils import get_coco, get_coco_kp
 from coco_eval import CocoEvaluator
 from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 
@@ -25,7 +25,8 @@ def get_dataset(name, image_set, transform):
     paths = {
         # "voc": ('/datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation, 21),
         # "coco": ('/datasets01/COCO/022719/', get_coco, 81)
-        "coco": ('/datasets01/COCO/022719/', get_coco, 91)
+        "coco": ('/datasets01/COCO/022719/', get_coco, 91),
+        "coco_kp": ('/datasets01/COCO/022719/', get_coco_kp, 2)
     }
     p, ds_fn, num_classes = paths[name]
 
@@ -38,9 +39,9 @@ def get_transform(train):
     max_size = 1333
     transforms = []
     transforms.append(T.ToTensor())
-    transforms.append(T.Resize(min_size, max_size))
-    if train:
-        transforms.append(T.RandomHorizontalFlip(0.5))
+    #transforms.append(T.Resize(min_size, max_size))
+    #if train:
+    #    transforms.append(T.RandomHorizontalFlip(0.5))
 
     if False:
         transforms.append(T.BGR255())
@@ -127,6 +128,8 @@ def evaluate(model, data_loader, device):
     iou_types = ("bbox",)
     if isinstance(model_without_ddp, torchvision.models.detection.MaskRCNN):
         iou_types = ("bbox", "segm")
+    if isinstance(model_without_ddp, torchvision.models.detection.KeypointRCNN):
+        iou_types = ("bbox", "keypoints")
 
     coco_evaluator = CocoEvaluator(dataset.coco, iou_types)
 
@@ -170,7 +173,6 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    args.dataset = "coco"
     dataset, num_classes = get_dataset(args.dataset, "train", get_transform(train=True))
     dataset_test, _ = get_dataset(args.dataset, "val", get_transform(train=False))
 
@@ -253,6 +255,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='PyTorch Detection Training')
 
     parser.add_argument('--data-path', default='/datasets01/COCO/022719/', help='dataset')
+    parser.add_argument('--dataset', default='coco', help='dataset')
     parser.add_argument('--model', default='maskrcnn_resnet50_fpn', help='model')
     parser.add_argument('--device', default='cuda', help='device')
     parser.add_argument('-b', '--batch-size', default=2, type=int)

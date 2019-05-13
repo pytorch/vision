@@ -64,6 +64,8 @@ class CocoEvaluator(object):
             return self.prepare_for_coco_detection(predictions)
         elif iou_type == "segm":
             return self.prepare_for_coco_segmentation(predictions)
+        elif iou_type == "keypoints":
+            return self.prepare_for_coco_keypoint(predictions)
         else:
             raise ValueError("Unknown iou type {}".format(iou_type))
 
@@ -144,6 +146,37 @@ class CocoEvaluator(object):
             )
         return coco_results
 
+    def prepare_for_coco_keypoint(self, predictions):
+        coco_results = []
+        for original_id, prediction in predictions.items():
+            if len(prediction) == 0:
+                continue
+
+            image_height, image_width = prediction["original_image_size"]
+
+            boxes = prediction["boxes"]
+            c_height, c_width = prediction["image_size"]
+            boxes = resize_boxes(boxes, (c_width, c_height), (image_width, image_height))
+            boxes = convert_to_xywh(boxes).tolist()
+            scores = prediction["scores"].tolist()
+            labels = prediction["labels"].tolist()
+            keypoints = prediction["keypoints"]
+            keypoints = resize_keypoints(keypoints, (c_width, c_height), (image_width, image_height))
+            keypoints = keypoints.flatten(start_dim=1).tolist()
+
+            coco_results.extend(
+                [
+                    {
+                        "image_id": original_id,
+                        "category_id": labels[k],
+                        'keypoints': keypoint,
+                        "score": scores[k],
+                    }
+                    for k, keypoint in enumerate(keypoints)
+                ]
+            )
+        return coco_results
+
 
 def resize_boxes(boxes, original_size, new_size):
     ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size))
@@ -159,6 +192,16 @@ def resize_boxes(boxes, original_size, new_size):
 def convert_to_xywh(boxes):
     xmin, ymin, xmax, ymax = boxes.unbind(1)
     return torch.stack((xmin, ymin, xmax - xmin, ymax - ymin), dim=1)
+
+
+
+def resize_keypoints(keypoints, original_size, new_size):
+    ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size))
+    ratio_w, ratio_h = ratios
+    resized_data = keypoints.clone()
+    resized_data[..., 0] *= ratio_w
+    resized_data[..., 1] *= ratio_h
+    return resized_data
 
 
 def merge(img_ids, eval_imgs):

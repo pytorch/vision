@@ -121,6 +121,142 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
     return mask_loss
 
 
+
+# TODO make this nicer, this is a direct translation from C2 (but removing the inner loop)
+def keypoints_to_heat_map(keypoints, rois, heatmap_size):
+    if rois.numel() == 0:
+        return rois.new().long(), rois.new().long()
+    offset_x = rois[:, 0]
+    offset_y = rois[:, 1]
+    scale_x = heatmap_size / (rois[:, 2] - rois[:, 0])
+    scale_y = heatmap_size / (rois[:, 3] - rois[:, 1])
+
+    offset_x = offset_x[:, None]
+    offset_y = offset_y[:, None]
+    scale_x = scale_x[:, None]
+    scale_y = scale_y[:, None]
+
+    x = keypoints[..., 0]
+    y = keypoints[..., 1]
+
+    x_boundary_inds = x == rois[:, 2][:, None]
+    y_boundary_inds = y == rois[:, 3][:, None]
+
+    x = (x - offset_x) * scale_x
+    x = x.floor().long()
+    y = (y - offset_y) * scale_y
+    y = y.floor().long()
+
+    x[x_boundary_inds] = heatmap_size - 1
+    y[y_boundary_inds] = heatmap_size - 1
+
+    valid_loc = (x >= 0) & (y >= 0) & (x < heatmap_size) & (y < heatmap_size)
+    vis = keypoints[..., 2] > 0
+    valid = (valid_loc & vis).long()
+
+    lin_ind = y * heatmap_size + x
+    heatmaps = lin_ind * valid
+
+    return heatmaps, valid
+
+import numpy as np
+import cv2
+def heatmaps_to_keypoints(maps, rois):
+    """Extract predicted keypoint locations from heatmaps. Output has shape
+    (#rois, 4, #keypoints) with the 4 rows corresponding to (x, y, logit, prob)
+    for each keypoint.
+    """
+    # This function converts a discrete image coordinate in a HEATMAP_SIZE x
+    # HEATMAP_SIZE image to a continuous keypoint coordinate. We maintain
+    # consistency with keypoints_to_heatmap_labels by using the conversion from
+    # Heckbert 1990: c = d + 0.5, where d is a discrete coordinate and c is a
+    # continuous coordinate.
+    maps = maps.detach().cpu().numpy()
+    rois = rois.detach().cpu().numpy()
+    offset_x = rois[:, 0]
+    offset_y = rois[:, 1]
+
+    widths = rois[:, 2] - rois[:, 0]
+    heights = rois[:, 3] - rois[:, 1]
+    widths = np.maximum(widths, 1)
+    heights = np.maximum(heights, 1)
+    widths_ceil = np.ceil(widths)
+    heights_ceil = np.ceil(heights)
+
+    # NCHW to NHWC for use with OpenCV
+    maps = np.transpose(maps, [0, 2, 3, 1])
+    num_keypoints = maps.shape[3]
+    xy_preds = np.zeros((len(rois), 3, num_keypoints), dtype=np.float32)
+    end_scores = np.zeros((len(rois), num_keypoints), dtype=np.float32)
+    for i in range(len(rois)):
+        roi_map_width = widths_ceil[i]
+        roi_map_height = heights_ceil[i]
+        width_correction = widths[i] / roi_map_width
+        height_correction = heights[i] / roi_map_height
+        roi_map = cv2.resize(
+            maps[i], (roi_map_width, roi_map_height), interpolation=cv2.INTER_CUBIC
+        )
+        # Bring back to CHW
+        roi_map = np.transpose(roi_map, [2, 0, 1])
+        # roi_map_probs = scores_to_probs(roi_map.copy())
+        w = roi_map.shape[2]
+        pos = roi_map.reshape(num_keypoints, -1).argmax(axis=1)
+        x_int = pos % w
+        y_int = (pos - x_int) // w
+        # assert (roi_map_probs[k, y_int, x_int] ==
+        #         roi_map_probs[k, :, :].max())
+        x = (x_int + 0.5) * width_correction
+        y = (y_int + 0.5) * height_correction
+        xy_preds[i, 0, :] = x + offset_x[i]
+        xy_preds[i, 1, :] = y + offset_y[i]
+        xy_preds[i, 2, :] = 1
+        end_scores[i, :] = roi_map[np.arange(num_keypoints), y_int, x_int]
+
+    return torch.as_tensor(np.transpose(xy_preds, [0, 2, 1])), torch.as_tensor(end_scores)
+
+def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, gt_labels, keypoint_matched_idxs, discretization_size):
+    heatmaps = []
+    valid = []
+    labels = [l[idxs] for l, idxs in zip(gt_labels, keypoint_matched_idxs)]
+    for proposals_per_image, gt_kp_in_image, midx in zip(proposals, gt_keypoints, keypoint_matched_idxs):
+        kp = gt_kp_in_image[midx]
+        heatmaps_per_image, valid_per_image = keypoints_to_heat_map(
+            kp, proposals_per_image, discretization_size
+        )
+        heatmaps.append(heatmaps_per_image.view(-1))
+        valid.append(valid_per_image.view(-1))
+
+    keypoint_targets = torch.cat(heatmaps, dim=0)
+    valid = torch.cat(valid, dim=0).to(dtype=torch.uint8)
+    valid = torch.nonzero(valid).squeeze(1)
+
+    # torch.mean (in binary_cross_entropy_with_logits) does'nt
+    # accept empty tensors, so handle it sepaartely
+    if keypoint_targets.numel() == 0 or len(valid) == 0:
+        return keypoint_logits.sum() * 0
+
+    N, K, H, W = keypoint_logits.shape
+    keypoint_logits = keypoint_logits.view(N * K, H * W)
+
+    keypoint_loss = F.cross_entropy(keypoint_logits[valid], keypoint_targets[valid])
+    return keypoint_loss
+
+
+def keypointrcnn_inference(x, boxes):
+    kp_probs = []
+    kp_scores = []
+
+    boxes_per_image = [len(box) for box in boxes]
+    x2 = x.split(boxes_per_image, dim=0)
+
+    for xx, bb in zip(x2, boxes):
+        kp_prob, scores = heatmaps_to_keypoints(xx, bb)
+        kp_probs.append(kp_prob)
+        kp_scores.append(scores)
+
+    return kp_probs, kp_scores
+
+
 # the next two functions should be merged inside Masker
 # but are kept here for the moment while we need them
 # temporarily gor paste_mask_in_image
@@ -249,7 +385,11 @@ class RoIHeads(torch.nn.Module):
                  mask_roi_pool=None,
                  mask_head=None,
                  mask_predictor=None,
-                 mask_discretization_size=None):
+                 mask_discretization_size=None,
+                 keypoint_roi_pool=None,
+                 keypoint_head=None,
+                 keypoint_predictor=None,
+                 ):
         super(RoIHeads, self).__init__()
 
         self.box_similarity = box_ops.box_iou
@@ -280,6 +420,11 @@ class RoIHeads(torch.nn.Module):
         self.mask_predictor = mask_predictor
         self.mask_discretization_size = mask_discretization_size
 
+
+        self.keypoint_roi_pool = keypoint_roi_pool
+        self.keypoint_head = keypoint_head
+        self.keypoint_predictor = keypoint_predictor
+
     @property
     def has_mask(self):
         if self.mask_roi_pool is None:
@@ -291,6 +436,19 @@ class RoIHeads(torch.nn.Module):
         if self.mask_discretization_size is None:
             return False
         return True
+
+    @property
+    def has_keypoint(self):
+        if self.keypoint_roi_pool is None:
+            return False
+        if self.keypoint_head is None:
+            return False
+        if self.keypoint_predictor is None:
+            return False
+        if self.keypoint_discretization_size is None:
+            return False
+        return True
+
 
     def assign_targets_to_proposals(self, proposals, gt_boxes, gt_labels):
         matched_idxs = []
@@ -459,11 +617,11 @@ class RoIHeads(torch.nn.Module):
                 # during training, only focus on positive boxes
                 num_images = len(proposals)
                 mask_proposals = []
-                mask_matched_idxs = []
+                pos_matched_idxs = []
                 for img_id in range(num_images):
                     pos = torch.nonzero(labels[img_id] > 0).squeeze(1)
                     mask_proposals.append(proposals[img_id][pos])
-                    mask_matched_idxs.append(matched_idxs[img_id][pos])
+                    pos_matched_idxs.append(matched_idxs[img_id][pos])
 
             mask_features = self.mask_roi_pool(features, mask_proposals, image_shapes)
             mask_features = self.mask_head(mask_features)
@@ -475,7 +633,7 @@ class RoIHeads(torch.nn.Module):
                 gt_labels = [t["labels"] for t in targets]
                 loss_mask = maskrcnn_loss(
                     mask_logits, mask_proposals,
-                    gt_masks, gt_labels, mask_matched_idxs, self.mask_discretization_size)
+                    gt_masks, gt_labels, pos_matched_idxs, self.mask_discretization_size)
                 loss_mask = dict(loss_mask=loss_mask)
             else:
                 labels = [r["labels"] for r in result]
@@ -484,5 +642,37 @@ class RoIHeads(torch.nn.Module):
                     r["mask"] = mask_prob
 
             losses.update(loss_mask)
+
+        if self.has_keypoint:
+            keypoint_proposals = [p["boxes"] for p in result]
+            if self.training:
+                # during training, only focus on positive boxes
+                num_images = len(proposals)
+                keypoint_proposals = []
+                pos_matched_idxs = []
+                for img_id in range(num_images):
+                    pos = torch.nonzero(labels[img_id] > 0).squeeze(1)
+                    keypoint_proposals.append(proposals[img_id][pos])
+                    pos_matched_idxs.append(matched_idxs[img_id][pos])
+
+            keypoint_features = self.keypoint_roi_pool(features, keypoint_proposals, image_shapes)
+            keypoint_features = self.keypoint_head(keypoint_features)
+            keypoint_logits = self.keypoint_predictor(keypoint_features)
+
+            loss_keypoint = {}
+            if self.training:
+                gt_keypoints = [t["keypoints"] for t in targets]
+                gt_labels = [t["labels"] for t in targets]
+                loss_keypoint = keypointrcnn_loss(
+                    keypoint_logits, keypoint_proposals,
+                    gt_keypoints, gt_labels, pos_matched_idxs, self.keypoint_discretization_size)
+                loss_keypoint = dict(loss_keypoint=loss_keypoint)
+            else:
+                keypoints_probs, kp_scores = keypointrcnn_inference(keypoint_logits, keypoint_proposals)
+                for keypoint_prob, kps, r in zip(keypoints_probs, kp_scores, result):
+                    r["keypoints"] = keypoint_prob
+                    r["keypoints_scores"] = kps
+
+            losses.update(loss_keypoint)
 
         return result, losses
