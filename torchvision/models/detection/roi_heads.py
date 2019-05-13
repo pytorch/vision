@@ -159,8 +159,7 @@ def keypoints_to_heat_map(keypoints, rois, heatmap_size):
 
     return heatmaps, valid
 
-import numpy as np
-import cv2
+
 def heatmaps_to_keypoints(maps, rois):
     """Extract predicted keypoint locations from heatmaps. Output has shape
     (#rois, 4, #keypoints) with the 4 rows corresponding to (x, y, logit, prob)
@@ -171,48 +170,42 @@ def heatmaps_to_keypoints(maps, rois):
     # consistency with keypoints_to_heatmap_labels by using the conversion from
     # Heckbert 1990: c = d + 0.5, where d is a discrete coordinate and c is a
     # continuous coordinate.
-    maps = maps.detach().cpu().numpy()
-    rois = rois.detach().cpu().numpy()
     offset_x = rois[:, 0]
     offset_y = rois[:, 1]
 
     widths = rois[:, 2] - rois[:, 0]
     heights = rois[:, 3] - rois[:, 1]
-    widths = np.maximum(widths, 1)
-    heights = np.maximum(heights, 1)
-    widths_ceil = np.ceil(widths)
-    heights_ceil = np.ceil(heights)
+    widths = widths.clamp(min=1)
+    heights = heights.clamp(min=1)
+    widths_ceil = widths.ceil()
+    heights_ceil = heights.ceil()
 
-    # NCHW to NHWC for use with OpenCV
-    maps = np.transpose(maps, [0, 2, 3, 1])
-    num_keypoints = maps.shape[3]
-    xy_preds = np.zeros((len(rois), 3, num_keypoints), dtype=np.float32)
-    end_scores = np.zeros((len(rois), num_keypoints), dtype=np.float32)
+    num_keypoints = maps.shape[1]
+    xy_preds = torch.zeros((len(rois), 3, num_keypoints), dtype=torch.float32, device=maps.device)
+    end_scores = torch.zeros((len(rois), num_keypoints), dtype=torch.float32, device=maps.device)
     for i in range(len(rois)):
-        roi_map_width = widths_ceil[i]
-        roi_map_height = heights_ceil[i]
+        roi_map_width = int(widths_ceil[i].item())
+        roi_map_height = int(heights_ceil[i].item())
         width_correction = widths[i] / roi_map_width
         height_correction = heights[i] / roi_map_height
-        roi_map = cv2.resize(
-            maps[i], (roi_map_width, roi_map_height), interpolation=cv2.INTER_CUBIC
-        )
-        # Bring back to CHW
-        roi_map = np.transpose(roi_map, [2, 0, 1])
+        roi_map = torch.nn.functional.interpolate(
+            maps[i][None], size=(roi_map_height, roi_map_width), mode='bicubic', align_corners=False)[0]
         # roi_map_probs = scores_to_probs(roi_map.copy())
         w = roi_map.shape[2]
-        pos = roi_map.reshape(num_keypoints, -1).argmax(axis=1)
+        pos = roi_map.reshape(num_keypoints, -1).argmax(dim=1)
         x_int = pos % w
         y_int = (pos - x_int) // w
         # assert (roi_map_probs[k, y_int, x_int] ==
         #         roi_map_probs[k, :, :].max())
-        x = (x_int + 0.5) * width_correction
-        y = (y_int + 0.5) * height_correction
+        x = (x_int.float() + 0.5) * width_correction
+        y = (y_int.float() + 0.5) * height_correction
         xy_preds[i, 0, :] = x + offset_x[i]
         xy_preds[i, 1, :] = y + offset_y[i]
         xy_preds[i, 2, :] = 1
-        end_scores[i, :] = roi_map[np.arange(num_keypoints), y_int, x_int]
+        end_scores[i, :] = roi_map[torch.arange(num_keypoints), y_int, x_int]
 
-    return torch.as_tensor(np.transpose(xy_preds, [0, 2, 1])), torch.as_tensor(end_scores)
+    return xy_preds.permute(0, 2, 1), end_scores
+
 
 def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, gt_labels, keypoint_matched_idxs, discretization_size):
     heatmaps = []
