@@ -36,20 +36,20 @@ class GroupedBatchSampler(BatchSampler):
         self.group_ids = group_ids
         self.batch_size = batch_size
 
-        self.buffer_per_group = defaultdict(list)
-        self.samples_per_group = defaultdict(list)
-
     def __iter__(self):
+        buffer_per_group = defaultdict(list)
+        samples_per_group = defaultdict(list)
+
         num_batches = 0
         for idx in self.sampler:
             group_id = self.group_ids[idx]
-            buffer_for_group = self.buffer_per_group[group_id]
-            buffer_for_group.append(idx)
-            self.samples_per_group[group_id].append(idx)
-            if len(buffer_for_group) == self.batch_size:
-                yield buffer_for_group
+            buffer_per_group[group_id].append(idx)
+            samples_per_group[group_id].append(idx)
+            if len(buffer_per_group[group_id]) == self.batch_size:
+                yield buffer_per_group[group_id]
                 num_batches += 1
-                del self.buffer_per_group[group_id]
+                del buffer_per_group[group_id]
+            assert len(buffer_per_group[group_id]) < self.batch_size
 
         # now we have run out of elements that satisfy
         # the group criteria, let's return the remaining
@@ -60,14 +60,17 @@ class GroupedBatchSampler(BatchSampler):
         if num_remaining > 0:
             # for the remaining batches, take first the buffers with largest number
             # of elements
-            for group_id, buffer_per_group in sorted(self.buffer_per_group.items(),
-                                                     key=lambda x: len(x), reverse=True):
-                remaining = self.batch_size - len(buffer_per_group)
-                buffer_per_group.extend(self.samples_per_group[group_id][:remaining])
-                yield buffer_per_group
+            for group_id, _ in sorted(buffer_per_group.items(),
+                                      key=lambda x: len(x[1]), reverse=True):
+                remaining = self.batch_size - len(buffer_per_group[group_id])
+                buffer_per_group[group_id].extend(
+                    samples_per_group[group_id][:remaining])
+                assert len(buffer_per_group[group_id]) == self.batch_size
+                yield buffer_per_group[group_id]
                 num_remaining -= 1
                 if num_remaining == 0:
                     break
+        assert num_remaining == 0
 
     def __len__(self):
         return len(self.sampler) // self.batch_size
