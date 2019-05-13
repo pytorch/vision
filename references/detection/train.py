@@ -99,6 +99,9 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
 
 
 def evaluate(model, data_loader, device):
+    n_threads = torch.get_num_threads()
+    # FIXME remove this and make paste_masks_in_image run on the GPU
+    torch.set_num_threads(1)
     cpu_device = torch.device("cpu")
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -154,6 +157,7 @@ def evaluate(model, data_loader, device):
     # accumulate predictions from all images
     coco_evaluator.accumulate()
     coco_evaluator.summarize()
+    torch.set_num_threads(n_threads)
     return coco_evaluator
 
 
@@ -236,7 +240,8 @@ def main(args):
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
 
         # evaluate after every epoch
-        evaluate(model, data_loader_test, device=device)
+        # evaluate(model, data_loader_test, device=device)
+    evaluate(model, data_loader_test, device=device)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
@@ -267,7 +272,7 @@ if __name__ == "__main__":
     parser.add_argument('--print-freq', default=20, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
-    parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
+    parser.add_argument('--aspect-ratio-group-factor', default=0, type=int)
     parser.add_argument(
         "--test-only",
         dest="test_only",
