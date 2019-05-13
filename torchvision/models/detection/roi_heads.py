@@ -282,12 +282,7 @@ def expand_masks(mask, padding):
     return padded_mask, scale
 
 
-def paste_mask_in_image(mask, box, im_h, im_w, thresh=0.5, padding=1):
-    padded_mask, scale = expand_masks(mask[None], padding=padding)
-    mask = padded_mask[0, 0]
-    box = expand_boxes(box[None], scale)[0]
-    box = box.to(dtype=torch.int32)
-
+def paste_mask_in_image(mask, box, im_h, im_w):
     TO_REMOVE = 1
     w = int(box[2] - box[0] + TO_REMOVE)
     h = int(box[3] - box[1] + TO_REMOVE)
@@ -302,14 +297,7 @@ def paste_mask_in_image(mask, box, im_h, im_w, thresh=0.5, padding=1):
     mask = misc_nn_ops.interpolate(mask, size=(h, w), mode='bilinear', align_corners=False)
     mask = mask[0][0]
 
-    if thresh >= 0:
-        mask = mask > thresh
-    else:
-        # for visualization and debugging, we also
-        # allow it to return an unmodified mask
-        mask = (mask * 255).to(torch.uint8)
-
-    im_mask = torch.zeros((im_h, im_w), dtype=torch.uint8)
+    im_mask = torch.zeros((im_h, im_w), dtype=mask.dtype, device=mask.device)
     x_0 = max(box[0], 0)
     x_1 = min(box[2] + 1, im_w)
     y_0 = max(box[1], 0)
@@ -321,44 +309,19 @@ def paste_mask_in_image(mask, box, im_h, im_w, thresh=0.5, padding=1):
     return im_mask
 
 
-class Masker(object):
-    """
-    Projects a set of masks in an image on the locations
-    specified by the bounding boxes
-    """
-
-    def __init__(self, threshold=0.5, padding=1):
-        self.threshold = threshold
-        self.padding = padding
-
-    def forward_single_image(self, masks, prediction):
-        # boxes = boxes.convert("xyxy")
-        im_h, im_w = prediction["image_size"].tolist()
-        res = [
-            paste_mask_in_image(mask[0], box, im_h, im_w, self.threshold, self.padding)
-            for mask, box in zip(masks, prediction["boxes"])
-        ]
-        if len(res) > 0:
-            res = torch.stack(res, dim=0)[:, None]
-        else:
-            res = masks.new_empty((0, 1, masks.shape[-2], masks.shape[-1]))
-        return res
-
-    def __call__(self, masks, prediction):
-        if isinstance(prediction, dict):
-            prediction = [prediction]
-
-        # Make some sanity check
-        assert len(prediction) == len(masks), "Masks and boxes should have the same length."
-
-        # TODO:  Is this JIT compatible?
-        # If not we should make it compatible.
-        results = []
-        for mask, p in zip(masks, prediction):
-            assert mask.shape[0] == len(p["boxes"]), "Number of objects should be the same."
-            result = self.forward_single_image(mask, p)
-            results.append(result)
-        return results
+def paste_masks_in_image(masks, boxes, img_shape, padding=1):
+    masks, scale = expand_masks(masks, padding=padding)
+    boxes = expand_boxes(boxes, scale).to(dtype=torch.int64).tolist()
+    im_h, im_w = img_shape.tolist()
+    res = [
+        paste_mask_in_image0(m[0], b, im_h, im_w)
+        for m, b in zip(masks, boxes)
+    ]
+    if len(res) > 0:
+        res = torch.stack(res, dim=0)[:, None]
+    else:
+        res = masks.new_empty((0, 1, im_h, im_w))
+    return res
 
 
 class RoIHeads(torch.nn.Module):

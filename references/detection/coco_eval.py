@@ -98,8 +98,7 @@ class CocoEvaluator(object):
         return coco_results
 
     def prepare_for_coco_segmentation(self, predictions):
-        from torchvision.models.detection.roi_heads import Masker
-        masker = Masker(threshold=0.5, padding=1)
+        from torchvision.models.detection.roi_heads import paste_masks_in_image
         coco_results = []
         for original_id, prediction in predictions.items():
             if len(prediction) == 0:
@@ -116,12 +115,8 @@ class CocoEvaluator(object):
 
             # Masker is necessary only if masks haven't been already resized.
             if list(masks.shape[-2:]) != [image_height, image_width]:
-                prediction = dict(
-                    boxes=boxes, mask=masks,
-                    image_size=torch.as_tensor((image_height, image_width)),
-                    scores=scores, labels=labels)
-                masks = masker(masks.expand(1, -1, -1, -1, -1), prediction)
-                masks = masks[0]
+                masks = paste_masks_in_image(masks, boxes, (image_height.item(), image_width.item())) > 0.5
+            # masks = masks > 0.5
 
             scores = prediction["scores"].tolist()
             labels = prediction["labels"].tolist()
