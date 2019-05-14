@@ -232,7 +232,8 @@ class BatchCollator(object):
 
     def __call__(self, batch):
         transposed_batch = list(zip(*batch))
-        images = torchvision.models.detection.image_list.to_image_list(transposed_batch[0], self.size_divisible)
+        # images = torchvision.models.detection.image_list.to_image_list(transposed_batch[0], self.size_divisible)
+        images = transposed_batch[0]
         targets = transposed_batch[1]
         return images, targets
 

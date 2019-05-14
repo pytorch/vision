@@ -23,9 +23,7 @@ import transforms as T
 
 def get_dataset(name, image_set, transform):
     paths = {
-        # "voc": ('/datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation, 21),
-        "coco": ('/datasets01/COCO/022719/', get_coco, 81),
-        # "coco": ('/datasets01/COCO/022719/', get_coco, 91),
+        "coco": ('/datasets01/COCO/022719/', get_coco, 91),
         "coco_kp": ('/datasets01/COCO/022719/', get_coco_kp, 2)
     }
     p, ds_fn, num_classes = paths[name]
@@ -39,17 +37,11 @@ def get_transform(train):
     max_size = 1333
     transforms = []
     transforms.append(T.ToTensor())
-    transforms.append(T.Resize(min_size, max_size))
+    # transforms.append(T.Resize(min_size, max_size))
     if train:
         transforms.append(T.RandomHorizontalFlip(0.5))
-
-    if False:
-        transforms.append(T.BGR255())
-        transforms.append(T.Normalize(mean=[102.9801, 115.9465, 122.7717],
-                                      std=[1., 1., 1.]))
-    else:
-        transforms.append(T.Normalize(mean=[0.485, 0.456, 0.406],
-                                      std=[0.229, 0.224, 0.225]))
+    transforms.append(T.Normalize(mean=[0.485, 0.456, 0.406],
+                                  std=[0.229, 0.224, 0.225]))
     return T.Compose(transforms)
 
 
@@ -73,7 +65,8 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
         if epoch == 0:
             lr_scheduler.step()
 
-        images = images.to(device)
+        # images = images.to(device)
+        images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         loss_dict = model(images, targets)
@@ -107,12 +100,6 @@ def evaluate(model, data_loader, device):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
-    CAT_LIST = torch.tensor([
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19,
-        20, 21, 22, 23, 24, 25, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38, 39,
-        40, 41, 42, 43, 44, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
-        58, 59, 60, 61, 62, 63, 64, 65, 67, 70, 72, 73, 74, 75, 76, 77, 78,
-        79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90], device=device)
 
     dataset = data_loader.dataset
     for i in range(10):
@@ -135,9 +122,11 @@ def evaluate(model, data_loader, device):
 
     with torch.no_grad():
         for image, targets in metric_logger.log_every(data_loader, 100, header):
-            image = image.to(device, non_blocking=True)
+            # image = image.to(device, non_blocking=True)
+            image = list(img.to(device) for img in image)
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
+            torch.cuda.synchronize()
             model_time = time.time()
             # outputs = model(image)
             ois = [t["original_image_size"] for t in targets]
@@ -148,15 +137,18 @@ def evaluate(model, data_loader, device):
 
             metric_logger.update(model_time=model_time)
 
-            for o, t in zip(outputs, targets):
-                o["original_image_size"] = t["original_image_size"]
-                o["labels"] = CAT_LIST[o["labels"]]
+            # for o, t in zip(outputs, targets):
+            #     o["original_image_size"] = t["original_image_size"]
 
             res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
+            evaluator_time = time.time()
             coco_evaluator.update(res)
+            evaluator_time = time.time() - evaluator_time
+            metric_logger.update(evaluator_time=evaluator_time)
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
+    print("Averaged stats:", metric_logger)
     coco_evaluator.synchronize_between_processes()
 
     # accumulate predictions from all images
@@ -244,7 +236,7 @@ def main(args):
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
 
         # evaluate after every epoch
-        evaluate(model, data_loader_test, device=device)
+        # evaluate(model, data_loader_test, device=device)
     evaluate(model, data_loader_test, device=device)
 
     total_time = time.time() - start_time

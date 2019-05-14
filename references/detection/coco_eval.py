@@ -75,10 +75,10 @@ class CocoEvaluator(object):
             if len(prediction) == 0:
                 continue
 
-            image_height, image_width = prediction["original_image_size"]
+            # image_height, image_width = prediction["original_image_size"]
 
             boxes = prediction["boxes"]
-            c_height, c_width = prediction["image_size"]
+            # c_height, c_width = prediction["image_size"]
             # boxes = resize_boxes(boxes, (c_width, c_height), (image_width, image_height))
             boxes = convert_to_xywh(boxes).tolist()
             scores = prediction["scores"].tolist()
@@ -104,10 +104,10 @@ class CocoEvaluator(object):
             if len(prediction) == 0:
                 continue
 
-            image_height, image_width = prediction["original_image_size"]
+            # image_height, image_width = prediction["original_image_size"]
 
             boxes = prediction["boxes"]
-            c_height, c_width = prediction["image_size"]
+            # c_height, c_width = prediction["image_size"]
             # boxes = resize_boxes(boxes, (c_width, c_height), (image_width, image_height))
             scores = prediction["scores"]
             labels = prediction["labels"]
@@ -147,10 +147,10 @@ class CocoEvaluator(object):
             if len(prediction) == 0:
                 continue
 
-            image_height, image_width = prediction["original_image_size"]
+            # image_height, image_width = prediction["original_image_size"]
 
             boxes = prediction["boxes"]
-            c_height, c_width = prediction["image_size"]
+            # c_height, c_width = prediction["image_size"]
             # boxes = resize_boxes(boxes, (c_width, c_height), (image_width, image_height))
             boxes = convert_to_xywh(boxes).tolist()
             scores = prediction["scores"].tolist()

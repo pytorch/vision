@@ -302,7 +302,8 @@ def paste_mask_in_image(mask, box, im_h, im_w):
 def paste_masks_in_image(masks, boxes, img_shape, padding=1):
     masks, scale = expand_masks(masks, padding=padding)
     boxes = expand_boxes(boxes, scale).to(dtype=torch.int64).tolist()
-    im_h, im_w = img_shape.tolist()
+    # im_h, im_w = img_shape.tolist()
+    im_h, im_w = img_shape
     res = [
         paste_mask_in_image(m[0], b, im_h, im_w)
         for m, b in zip(masks, boxes)
@@ -615,7 +616,6 @@ class RoIHeads(torch.nn.Module):
             losses.update(loss_keypoint)
 
         return result, losses
-
 
     def predict(self, features, proposals, image_shapes, original_image_sizes):
         result, _ = self(features, proposals, image_shapes)
