@@ -79,7 +79,7 @@ class CocoEvaluator(object):
 
             boxes = prediction["boxes"]
             c_height, c_width = prediction["image_size"]
-            boxes = resize_boxes(boxes, (c_width, c_height), (image_width, image_height))
+            # boxes = resize_boxes(boxes, (c_width, c_height), (image_width, image_height))
             boxes = convert_to_xywh(boxes).tolist()
             scores = prediction["scores"].tolist()
             labels = prediction["labels"].tolist()
@@ -98,7 +98,7 @@ class CocoEvaluator(object):
         return coco_results
 
     def prepare_for_coco_segmentation(self, predictions):
-        from torchvision.models.detection.roi_heads import paste_masks_in_image
+        # from torchvision.models.detection.roi_heads import paste_masks_in_image
         coco_results = []
         for original_id, prediction in predictions.items():
             if len(prediction) == 0:
@@ -108,15 +108,15 @@ class CocoEvaluator(object):
 
             boxes = prediction["boxes"]
             c_height, c_width = prediction["image_size"]
-            boxes = resize_boxes(boxes, (c_width, c_height), (image_width, image_height))
+            # boxes = resize_boxes(boxes, (c_width, c_height), (image_width, image_height))
             scores = prediction["scores"]
             labels = prediction["labels"]
             masks = prediction["mask"]
 
             # Masker is necessary only if masks haven't been already resized.
-            if list(masks.shape[-2:]) != [image_height, image_width]:
-                masks = paste_masks_in_image(masks, boxes, (image_height.item(), image_width.item())) > 0.5
-            # masks = masks > 0.5
+            # if list(masks.shape[-2:]) != [image_height, image_width]:
+            #     masks = paste_masks_in_image(masks, boxes, (image_height.item(), image_width.item())) > 0.5
+            masks = masks > 0.5
 
             scores = prediction["scores"].tolist()
             labels = prediction["labels"].tolist()
@@ -151,12 +151,12 @@ class CocoEvaluator(object):
 
             boxes = prediction["boxes"]
             c_height, c_width = prediction["image_size"]
-            boxes = resize_boxes(boxes, (c_width, c_height), (image_width, image_height))
+            # boxes = resize_boxes(boxes, (c_width, c_height), (image_width, image_height))
             boxes = convert_to_xywh(boxes).tolist()
             scores = prediction["scores"].tolist()
             labels = prediction["labels"].tolist()
             keypoints = prediction["keypoints"]
-            keypoints = resize_keypoints(keypoints, (c_width, c_height), (image_width, image_height))
+            # keypoints = resize_keypoints(keypoints, (c_width, c_height), (image_width, image_height))
             keypoints = keypoints.flatten(start_dim=1).tolist()
 
             coco_results.extend(
@@ -173,6 +173,7 @@ class CocoEvaluator(object):
         return coco_results
 
 
+# TODO DO NOT REPLACE THIS WITH THE OTHER ONE WITHOUT INVERTING THE SIZE REPRESENTATION!!!
 def resize_boxes(boxes, original_size, new_size):
     ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size))
     ratio_width, ratio_height = ratios

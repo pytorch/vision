@@ -24,8 +24,8 @@ import transforms as T
 def get_dataset(name, image_set, transform):
     paths = {
         # "voc": ('/datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation, 21),
-        # "coco": ('/datasets01/COCO/022719/', get_coco, 81)
-        "coco": ('/datasets01/COCO/022719/', get_coco, 91),
+        "coco": ('/datasets01/COCO/022719/', get_coco, 81),
+        # "coco": ('/datasets01/COCO/022719/', get_coco, 91),
         "coco_kp": ('/datasets01/COCO/022719/', get_coco_kp, 2)
     }
     p, ds_fn, num_classes = paths[name]
@@ -39,9 +39,9 @@ def get_transform(train):
     max_size = 1333
     transforms = []
     transforms.append(T.ToTensor())
-    #transforms.append(T.Resize(min_size, max_size))
-    #if train:
-    #    transforms.append(T.RandomHorizontalFlip(0.5))
+    transforms.append(T.Resize(min_size, max_size))
+    if train:
+        transforms.append(T.RandomHorizontalFlip(0.5))
 
     if False:
         transforms.append(T.BGR255())
@@ -139,7 +139,9 @@ def evaluate(model, data_loader, device):
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
             model_time = time.time()
-            outputs = model(image)
+            # outputs = model(image)
+            ois = [t["original_image_size"] for t in targets]
+            outputs = model(image, original_image_sizes=ois)
 
             outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
             model_time = time.time() - model_time
@@ -148,7 +150,7 @@ def evaluate(model, data_loader, device):
 
             for o, t in zip(outputs, targets):
                 o["original_image_size"] = t["original_image_size"]
-                # o["labels"] = CAT_LIST[o["labels"]]
+                o["labels"] = CAT_LIST[o["labels"]]
 
             res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
             coco_evaluator.update(res)
@@ -242,7 +244,7 @@ def main(args):
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
 
         # evaluate after every epoch
-        # evaluate(model, data_loader_test, device=device)
+        evaluate(model, data_loader_test, device=device)
     evaluate(model, data_loader_test, device=device)
 
     total_time = time.time() - start_time

@@ -625,3 +625,41 @@ class RoIHeads(torch.nn.Module):
             losses.update(loss_keypoint)
 
         return result, losses
+
+
+    def predict(self, features, proposals, image_shapes, original_image_sizes):
+        result, _ = self(features, proposals, image_shapes)
+        for i, (pred, im_s, o_im_s) in enumerate(zip(result, image_shapes, original_image_sizes)):
+            boxes = pred["boxes"]
+            boxes = resize_boxes(boxes, im_s, o_im_s)
+            result[i]["boxes"] = boxes
+            if self.has_mask:
+                masks = pred["mask"]
+                masks = paste_masks_in_image(masks, boxes, o_im_s)
+                result[i]["mask"] = masks
+            if self.has_keypoint:
+                keypoints = pred["keypoints"]
+                keypoints = resize_keypoints(keypoints, im_s, o_im_s)
+                result[i]["keypoints"] = keypoints
+        return result, _
+
+
+def resize_keypoints(keypoints, original_size, new_size):
+    ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size))
+    ratio_h, ratio_w = ratios
+    resized_data = keypoints.clone()
+    resized_data[..., 0] *= ratio_w
+    resized_data[..., 1] *= ratio_h
+    return resized_data
+
+
+def resize_boxes(boxes, original_size, new_size):
+    ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size))
+    # ratio_width, ratio_height = ratios
+    ratio_height, ratio_width = ratios
+    xmin, ymin, xmax, ymax = boxes.unbind(1)
+    xmin = xmin * ratio_width
+    xmax = xmax * ratio_width
+    ymin = ymin * ratio_height
+    ymax = ymax * ratio_height
+    return torch.stack((xmin, ymin, xmax, ymax), dim=1)
