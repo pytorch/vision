@@ -121,11 +121,7 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
     return mask_loss
 
 
-
-# TODO make this nicer, this is a direct translation from C2 (but removing the inner loop)
-def keypoints_to_heat_map(keypoints, rois, heatmap_size):
-    if rois.numel() == 0:
-        return rois.new().long(), rois.new().long()
+def keypoints_to_heatmap(keypoints, rois, heatmap_size):
     offset_x = rois[:, 0]
     offset_y = rois[:, 1]
     scale_x = heatmap_size / (rois[:, 2] - rois[:, 0])
@@ -213,7 +209,7 @@ def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, gt_labels, keypo
     labels = [l[idxs] for l, idxs in zip(gt_labels, keypoint_matched_idxs)]
     for proposals_per_image, gt_kp_in_image, midx in zip(proposals, gt_keypoints, keypoint_matched_idxs):
         kp = gt_kp_in_image[midx]
-        heatmaps_per_image, valid_per_image = keypoints_to_heat_map(
+        heatmaps_per_image, valid_per_image = keypoints_to_heatmap(
             kp, proposals_per_image, discretization_size
         )
         heatmaps.append(heatmaps_per_image.view(-1))
@@ -434,12 +430,6 @@ class RoIHeads(torch.nn.Module):
         return sampled_inds
 
     def add_gt_proposals(self, proposals, gt_boxes):
-        """
-        Arguments:
-            proposals: list[BoxList]
-            targets: list[BoxList]
-        """
-
         proposals = [
             torch.cat((proposal, gt_box))
             for proposal, gt_box in zip(proposals, gt_boxes)
