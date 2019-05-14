@@ -271,14 +271,9 @@ def expand_boxes(boxes, scale):
 
 
 def expand_masks(mask, padding):
-    N = mask.shape[0]
     M = mask.shape[-1]
-    pad2 = 2 * padding
-    scale = float(M + pad2) / M
-    if padding == 0:
-        return mask[:, None], 1
-    padded_mask = mask.new_zeros((N, 1, M + pad2, M + pad2))
-    padded_mask[:, :, padding:-padding, padding:-padding] = mask
+    scale = float(M + 2 * padding) / M
+    padded_mask = torch.nn.functional.pad(mask, (padding,) * 4)
     return padded_mask, scale
 
 
@@ -293,7 +288,6 @@ def paste_mask_in_image(mask, box, im_h, im_w):
     mask = mask.expand((1, 1, -1, -1))
 
     # Resize mask
-    mask = mask.to(torch.float32)
     mask = misc_nn_ops.interpolate(mask, size=(h, w), mode='bilinear', align_corners=False)
     mask = mask[0][0]
 
@@ -314,7 +308,7 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
     boxes = expand_boxes(boxes, scale).to(dtype=torch.int64).tolist()
     im_h, im_w = img_shape.tolist()
     res = [
-        paste_mask_in_image0(m[0], b, im_h, im_w)
+        paste_mask_in_image(m[0], b, im_h, im_w)
         for m, b in zip(masks, boxes)
     ]
     if len(res) > 0:
@@ -375,7 +369,6 @@ class RoIHeads(torch.nn.Module):
         self.mask_head = mask_head
         self.mask_predictor = mask_predictor
         self.mask_discretization_size = mask_discretization_size
-
 
         self.keypoint_roi_pool = keypoint_roi_pool
         self.keypoint_head = keypoint_head
