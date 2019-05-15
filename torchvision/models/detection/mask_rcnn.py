@@ -300,8 +300,8 @@ class MaskRCNNHeads(nn.Sequential):
         for name, param in self.named_parameters():
             if "weight" in name:
                 nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
-            elif "bias" in name:
-                nn.init.constant_(param, 0)
+            # elif "bias" in name:
+            #     nn.init.constant_(param, 0)
 
 
 class MaskRCNNC4Predictor(nn.Sequential):
@@ -315,8 +315,8 @@ class MaskRCNNC4Predictor(nn.Sequential):
         for name, param in self.named_parameters():
             if "weight" in name:
                 nn.init.kaiming_normal_(param, mode="fan_out", nonlinearity="relu")
-            elif "bias" in name:
-                nn.init.constant_(param, 0)
+            # elif "bias" in name:
+            #     nn.init.constant_(param, 0)
 
 
 class KeypointRCNNHeads(nn.Sequential):
