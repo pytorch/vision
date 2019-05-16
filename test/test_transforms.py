@@ -1326,10 +1326,6 @@ class Tester(unittest.TestCase):
         img_re = transforms.RandomErasing(value=0)(img)
         assert img_re.size(0) == 3
 
-        # Test Set 2: Erasing with random value
-        img_re = transforms.RandomErasing(value='random')(img)
-        assert img_re.size(0) == 3
-
 
 if __name__ == '__main__':
     unittest.main()
