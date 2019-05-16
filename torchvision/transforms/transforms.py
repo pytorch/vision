@@ -1177,6 +1177,9 @@ class RandomGrayscale(object):
         if random.random() < self.p:
             return F.to_grayscale(img, num_output_channels=num_output_channels)
         return img
+    
+    def __repr__(self):
+        return self.__class__.__name__ + '(p={0})'.format(self.p)
 
 
 class RandomErasing(object):
@@ -1250,6 +1253,3 @@ class RandomErasing(object):
             x, y, h, w, v = self.get_params(img, sl=self.sl, sh=self.sh, r1=self.r1, value=self.value)
             return F.erase(img, x, y, h, w, v)
         return img
-
-    def __repr__(self):
-        return self.__class__.__name__ + '(p={0})'.format(self.p)
