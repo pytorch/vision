@@ -1316,7 +1316,7 @@ class Tester(unittest.TestCase):
 
         # Checking if RandomGrayscale can be printed as string
         trans3.__repr__()
-        
+
     def test_random_erasing(self):
         """Unit tests for random erasing transform"""
 
