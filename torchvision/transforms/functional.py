@@ -796,3 +796,21 @@ def to_grayscale(img, num_output_channels=1):
         raise ValueError('num_output_channels should be either 1 or 3')
 
     return img
+
+
+def erase(img, x, y, w, h, value=0):
+    """ Erase the given Image with given value.
+        'Random Erasing Data Augmentation' by Zhong et al.
+        See https://arxiv.org/pdf/1708.04896.pdf
+     Args:
+        img (Tensor): Image to be erased.
+        x: Upper pixel coordinate.
+        y: Left pixel coordinate.
+        w: Width of the erased image.
+        h: Height of the erased image.
+        value: Erasing value.
+     Returns:
+        Erased Image.
+    """
+    img[:, y:y + h, x:x + w] = value
+    return img
