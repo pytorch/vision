@@ -1320,16 +1320,15 @@ class Tester(unittest.TestCase):
     def test_random_erasing(self):
         """Unit tests for random erasing transform"""
 
-        img = torch.rand([3, 20, 20])
+        img = torch.rand([3, 224, 224])
 
         # Test Set 1: Erasing with int value
         img_re = transforms.RandomErasing(value=0)(img)
+        assert img_re.size(0) == 3
 
         # Test Set 2: Erasing with random value
         img_re = transforms.RandomErasing(value='random')(img)
-
-        # Test Set 3: Erasing with tuple value
-        img_re = transforms.RandomErasing(value=(0.2, 0.2, 0.2))(img)
+        assert img_re.size(0) == 3
 
 
 if __name__ == '__main__':
