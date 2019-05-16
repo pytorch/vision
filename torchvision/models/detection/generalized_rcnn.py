@@ -8,6 +8,7 @@ from torch import nn
 
 from .image_list import to_image_list
 from torchvision.ops import misc as misc_nn_ops
+from .roi_heads import paste_masks_in_image
 
 
 class GeneralizedRCNN(nn.Module):
@@ -23,7 +24,7 @@ class GeneralizedRCNN(nn.Module):
     def __init__(self, backbone, rpn, roi_heads):
         super(GeneralizedRCNN, self).__init__()
 
-        self.preprocess = Transform()
+        self.transformer = Transform()
         self.backbone = backbone
         self.rpn = rpn
         self.roi_heads = roi_heads
@@ -43,13 +44,12 @@ class GeneralizedRCNN(nn.Module):
         """
         if self.training and targets is None:
             raise ValueError("In training mode, targets should be passed")
-        # images = to_image_list(images)
         original_image_sizes = [img.shape[-2:] for img in images]
-        images, targets = self.preprocess(images, targets)
+        images, targets = self.transformer(images, targets)
         features = self.backbone(images.tensors)
         proposals, proposal_losses = self.rpn(images, features, targets)
         detections, detector_losses = self.roi_heads(features, proposals, images.image_sizes, targets)
-        detections = self.roi_heads.postprocess(detections, images.image_sizes, original_image_sizes)
+        detections = self.transformer.postprocess(detections, images.image_sizes, original_image_sizes)
 
         losses = {}
         losses.update(detector_losses)
@@ -63,71 +63,85 @@ class GeneralizedRCNN(nn.Module):
 
 from .image_list import ImageList
 class Transform(nn.Module):
-    def __init__(self, min_size=800, max_size=1333):
+    def __init__(self, min_size=800.0, max_size=1333.0):
         super(Transform, self).__init__()
         self.min_size = min_size
         self.max_size = max_size
 
     def forward(self, images, targets=None):
         for i in range(len(images)):
-            image = images[i]
-            h, w = image.shape[-2:]
-            min_size = min(image.shape[-2:])
-            max_size = max(image.shape[-2:])
-            scale_factor = self.min_size / min_size
-            if max_size * scale_factor > self.max_size:
-                scale_factor = self.max_size / max_size
-            image = torch.nn.functional.interpolate(
-                image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
-
-            images[i] = image
-            if targets is None:
-                continue
-
-            target = targets[i]
-
-            bbox = target["boxes"]
-            bbox = bbox * scale_factor  # resize_boxes(bbox, (h, w), image.shape[-2:])
-            target["boxes"] = bbox
-
-            if "masks" in target:
-                mask = target["masks"]
-                mask = misc_nn_ops.interpolate(mask[None].float(), scale_factor=scale_factor)[0].byte()
-                target["masks"] = mask
-
-            if "keypoints" in target:
-                keypoints = target["keypoints"]
-                keypoints = resize_keypoints(keypoints, (h, w), image.shape[-2:])
-                target["keypoints"] = keypoints
-
-            targets[i] = target
-
+            target = targets[i] if targets is not None else targets
+            images[i], target = self.single_image(images[i], target)
+            if targets is not None:
+                targets[i] = target
         image_sizes = [img.shape[-2:] for img in images]
         images = self.batch_images(images)
         image_list = ImageList(images, image_sizes)
-        # return images, image_sizes, original_image_sizes, targets
         return image_list, targets
+
+    def single_image(self, image, target):
+        h, w = image.shape[-2:]
+        min_size = min(image.shape[-2:])
+        max_size = max(image.shape[-2:])
+        scale_factor = self.min_size / min_size
+        if max_size * scale_factor > self.max_size:
+            scale_factor = self.max_size / max_size
+        image = torch.nn.functional.interpolate(
+            image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
+
+        if target is None:
+            return image, target
+
+        bbox = target["boxes"]
+        bbox = bbox * scale_factor  # resize_boxes(bbox, (h, w), image.shape[-2:])
+        target["boxes"] = bbox
+
+        if "masks" in target:
+            mask = target["masks"]
+            mask = misc_nn_ops.interpolate(mask[None].float(), scale_factor=scale_factor)[0].byte()
+            target["masks"] = mask
+
+        if "keypoints" in target:
+            keypoints = target["keypoints"]
+            keypoints = resize_keypoints(keypoints, (h, w), image.shape[-2:])
+            target["keypoints"] = keypoints
+        return image, target
 
     def batch_images(self, images, size_divisible=32):
         # concatenate
         max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
 
-        if size_divisible > 0:
-            import math
+        import math
 
-            stride = size_divisible
-            max_size = list(max_size)
-            max_size[1] = int(math.ceil(max_size[1] / stride) * stride)
-            max_size[2] = int(math.ceil(max_size[2] / stride) * stride)
-            max_size = tuple(max_size)
+        stride = size_divisible
+        max_size = list(max_size)
+        max_size[1] = int(math.ceil(max_size[1] / stride) * stride)
+        max_size[2] = int(math.ceil(max_size[2] / stride) * stride)
+        max_size = tuple(max_size)
 
         batch_shape = (len(images),) + max_size
         batched_imgs = images[0].new(*batch_shape).zero_()
         for img, pad_img in zip(images, batched_imgs):
             pad_img[: img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)
 
-        # image_sizes = [im.shape[-2:] for im in tensors]
         return batched_imgs
+
+    def postprocess(self, result, image_shapes, original_image_sizes):
+        if self.training:
+            return result
+        for i, (pred, im_s, o_im_s) in enumerate(zip(result, image_shapes, original_image_sizes)):
+            boxes = pred["boxes"]
+            boxes = resize_boxes(boxes, im_s, o_im_s)
+            result[i]["boxes"] = boxes
+            if "mask" in pred:
+                masks = pred["mask"]
+                masks = paste_masks_in_image(masks, boxes, o_im_s)
+                result[i]["mask"] = masks
+            if "keypoints" in pred:
+                keypoints = pred["keypoints"]
+                keypoints = resize_keypoints(keypoints, im_s, o_im_s)
+                result[i]["keypoints"] = keypoints
+        return result
 
 
 def resize_keypoints(keypoints, original_size, new_size):
