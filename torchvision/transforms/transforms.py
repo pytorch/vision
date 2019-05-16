@@ -1181,7 +1181,7 @@ class RandomGrayscale(object):
 
 class RandomErasing(object):
     """ Randomly selects a rectangle region in an image and erases its pixels.
-        'Random Erasing Data Augmentation' by Zhong et al.
+        'Random Erasing Data Augmentation' by Zhong et al. Arxiv 2017.
         See https://arxiv.org/pdf/1708.04896.pdf
     Args:
          probability: The probability that the Random Erasing operation will be performed.
