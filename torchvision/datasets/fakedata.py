@@ -1,9 +1,9 @@
 import torch
-import torch.utils.data as data
+from .vision import VisionDataset
 from .. import transforms
 
 
-class FakeData(data.Dataset):
+class FakeData(VisionDataset):
     """A fake dataset that returns randomly generated images and returns them as PIL images
 
     Args:
@@ -21,6 +21,9 @@ class FakeData(data.Dataset):
 
     def __init__(self, size=1000, image_size=(3, 224, 224), num_classes=10,
                  transform=None, target_transform=None, random_offset=0):
+        super(FakeData, self).__init__(None)
+        self.transform = transform
+        self.target_transform = target_transform
         self.size = size
         self.num_classes = num_classes
         self.image_size = image_size
@@ -37,10 +40,12 @@ class FakeData(data.Dataset):
             tuple: (image, target) where target is class_index of the target class.
         """
         # create random image that is consistent with the index id
+        if index >= len(self):
+            raise IndexError("{} index out of range".format(self.__class__.__name__))
         rng_state = torch.get_rng_state()
         torch.manual_seed(index + self.random_offset)
         img = torch.randn(*self.image_size)
-        target = torch.Tensor(1).random_(0, self.num_classes)[0]
+        target = torch.randint(0, self.num_classes, size=(1,), dtype=torch.long)[0]
         torch.set_rng_state(rng_state)
 
         # convert to PIL Image

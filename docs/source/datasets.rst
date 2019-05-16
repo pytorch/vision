@@ -4,11 +4,11 @@ torchvision.datasets
 All datasets are subclasses of :class:`torch.utils.data.Dataset`
 i.e, they have ``__getitem__`` and ``__len__`` methods implemented.
 Hence, they can all be passed to a :class:`torch.utils.data.DataLoader`
-which can load multiple samples parallelly using ``torch.multiprocessing`` workers. 
+which can load multiple samples parallelly using ``torch.multiprocessing`` workers.
 For example: ::
-    
-    imagenet_data = torchvision.datasets.ImageFolder('path/to/imagenet_root/')
-    data_loader = torch.utils.data.DataLoader(imagenet_data, 
+
+    imagenet_data = torchvision.datasets.ImageNet('path/to/imagenet_root/')
+    data_loader = torch.utils.data.DataLoader(imagenet_data,
                                               batch_size=4,
                                               shuffle=True,
                                               num_workers=args.nThreads)
@@ -22,7 +22,7 @@ All the datasets have almost similar API. They all have two common arguments:
 ``transform`` and  ``target_transform`` to transform the input and target respectively.
 
 
-.. currentmodule:: torchvision.datasets 
+.. currentmodule:: torchvision.datasets
 
 
 MNIST
@@ -35,10 +35,20 @@ Fashion-MNIST
 
 .. autoclass:: FashionMNIST
 
+KMNIST
+~~~~~~~~~~~~~
+
+.. autoclass:: KMNIST
+
 EMNIST
 ~~~~~~
 
 .. autoclass:: EMNIST
+
+FakeData
+~~~~~~~~
+
+.. autoclass:: FakeData
 
 COCO
 ~~~~
@@ -78,16 +88,23 @@ ImageFolder
   :members: __getitem__
   :special-members:
 
+DatasetFolder
+~~~~~~~~~~~~~
+
+.. autoclass:: DatasetFolder
+  :members: __getitem__
+  :special-members:
+
+
 
 Imagenet-12
 ~~~~~~~~~~~
 
-This should simply be implemented with an ``ImageFolder`` dataset.
-The data is preprocessed `as described
-here <https://github.com/facebook/fb.resnet.torch/blob/master/INSTALL.md#download-the-imagenet-dataset>`__
+.. autoclass:: ImageNet
 
-`Here is an
-example <https://github.com/pytorch/examples/blob/27e2a46c1d1505324032b1d94fc6ce24d5b67e97/imagenet/main.py#L48-L62>`__.
+.. note ::
+    This requires `scipy` to be installed
+
 
 CIFAR
 ~~~~~
@@ -122,3 +139,52 @@ PhotoTour
   :members: __getitem__
   :special-members:
 
+SBU
+~~~
+
+
+.. autoclass:: SBU
+  :members: __getitem__
+  :special-members:
+
+Flickr
+~~~~~~
+
+
+.. autoclass:: Flickr8k
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: Flickr30k
+  :members: __getitem__
+  :special-members:
+
+VOC
+~~~~~~
+
+
+.. autoclass:: VOCSegmentation
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: VOCDetection
+  :members: __getitem__
+  :special-members:
+
+Cityscapes
+~~~~~~~~~~
+
+.. note ::
+    Requires Cityscape to be downloaded.
+
+.. autoclass:: Cityscapes
+  :members: __getitem__
+  :special-members:
+
+SBD
+~~~~~~
+
+
+.. autoclass:: SBDataset
+  :members: __getitem__
+  :special-members:

@@ -10,6 +10,8 @@ architectures:
 -  `SqueezeNet`_
 -  `DenseNet`_
 -  `Inception`_ v3
+-  `GoogLeNet`_
+-  `ShuffleNet`_ v2
 
 You can construct a model with random weights by calling its constructor:
 
@@ -22,6 +24,8 @@ You can construct a model with random weights by calling its constructor:
     squeezenet = models.squeezenet1_0()
     densenet = models.densenet161()
     inception = models.inception_v3()
+    googlenet = models.googlenet()
+    shufflenet = models.shufflenetv2()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -35,6 +39,17 @@ These can be constructed by passing ``pretrained=True``:
     vgg16 = models.vgg16(pretrained=True)
     densenet = models.densenet161(pretrained=True)
     inception = models.inception_v3(pretrained=True)
+    googlenet = models.googlenet(pretrained=True)
+    shufflenet = models.shufflenetv2(pretrained=True)
+
+Instancing a pre-trained model will download its weights to a cache directory.
+This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
+:func:`torch.utils.model_zoo.load_url` for details.
+
+Some models use modules which have different training and evaluation
+behavior, such as batch normalization. To switch between these modes, use
+``model.train()`` or ``model.eval()`` as appropriate. See
+:meth:`~torch.nn.Module.train` or :meth:`~torch.nn.Module.eval` for details. 
 
 All pre-trained models expect input images normalized in the same way,
 i.e. mini-batches of 3-channel RGB images of shape (3 x H x W),
@@ -75,6 +90,8 @@ Densenet-169                      24.00           7.00
 Densenet-201                      22.80           6.43
 Densenet-161                      22.35           6.20
 Inception v3                      22.55           6.44
+GoogleNet                         30.22           10.47
+ShuffleNet V2                     30.64           11.68
 ================================  =============   =============
 
 
@@ -84,6 +101,8 @@ Inception v3                      22.55           6.44
 .. _SqueezeNet: https://arxiv.org/abs/1602.07360
 .. _DenseNet: https://arxiv.org/abs/1608.06993
 .. _Inception: https://arxiv.org/abs/1512.00567
+.. _GoogLeNet: https://arxiv.org/abs/1409.4842
+.. _ShuffleNet: https://arxiv.org/abs/1807.11164
 
 .. currentmodule:: torchvision.models
 
@@ -132,4 +151,14 @@ Inception v3
 ------------
 
 .. autofunction:: inception_v3
+
+GoogLeNet
+------------
+
+.. autofunction:: googlenet
+
+ShuffleNet v2
+-------------
+
+.. autofunction:: shufflenet
 

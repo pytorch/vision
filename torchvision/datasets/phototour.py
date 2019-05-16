@@ -1,15 +1,14 @@
 import os
-import errno
 import numpy as np
 from PIL import Image
 
 import torch
-import torch.utils.data as data
+from .vision import VisionDataset
 
-from .utils import download_url, check_integrity
+from .utils import download_url
 
 
-class PhotoTour(data.Dataset):
+class PhotoTour(VisionDataset):
     """`Learning Local Image Descriptors Data <http://phototour.cs.washington.edu/patches/default.htm>`_ Dataset.
 
 
@@ -66,14 +65,14 @@ class PhotoTour(data.Dataset):
     matches_files = 'm50_100000_100000_0.txt'
 
     def __init__(self, root, name, train=True, transform=None, download=False):
-        self.root = os.path.expanduser(root)
+        super(PhotoTour, self).__init__(root)
+        self.transform = transform
         self.name = name
         self.data_dir = os.path.join(self.root, name)
         self.data_down = os.path.join(self.root, '{}.zip'.format(name))
         self.data_file = os.path.join(self.root, '{}.pt'.format(name))
 
         self.train = train
-        self.transform = transform
         self.mean = self.mean[name]
         self.std = self.std[name]
 
@@ -152,10 +151,14 @@ class PhotoTour(data.Dataset):
         with open(self.data_file, 'wb') as f:
             torch.save(dataset, f)
 
+    def extra_repr(self):
+        return "Split: {}".format("Train" if self.train is True else "Test")
+
 
 def read_image_file(data_dir, image_ext, n):
     """Return a Tensor containing the patches
     """
+
     def PIL2array(_img):
         """Convert PIL image type to numpy 2D array
         """
@@ -201,6 +204,7 @@ def read_matches_files(data_dir, matches_file):
     matches = []
     with open(os.path.join(data_dir, matches_file), 'r') as f:
         for line in f:
-            l = line.split()
-            matches.append([int(l[0]), int(l[3]), int(l[1] == l[4])])
+            line_split = line.split()
+            matches.append([int(line_split[0]), int(line_split[3]),
+                            int(line_split[1] == line_split[4])])
     return torch.LongTensor(matches)

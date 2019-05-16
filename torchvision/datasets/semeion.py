@@ -2,19 +2,12 @@ from __future__ import print_function
 from PIL import Image
 import os
 import os.path
-import errno
 import numpy as np
-import sys
-if sys.version_info[0] == 2:
-    import cPickle as pickle
-else:
-    import pickle
-
-import torch.utils.data as data
+from .vision import VisionDataset
 from .utils import download_url, check_integrity
 
 
-class SEMEION(data.Dataset):
+class SEMEION(VisionDataset):
     """`SEMEION <http://archive.ics.uci.edu/ml/datasets/semeion+handwritten+digit>`_ Dataset.
     Args:
         root (string): Root directory of dataset where directory
@@ -31,8 +24,9 @@ class SEMEION(data.Dataset):
     filename = "semeion.data"
     md5_checksum = 'cb545d371d2ce14ec121470795a77432'
 
-    def __init__(self, root, transform=None, target_transform=None, download=True):
-        self.root = os.path.expanduser(root)
+    def __init__(self, root, transform=None, target_transform=None,
+                 download=True):
+        super(SEMEION, self).__init__(root)
         self.transform = transform
         self.target_transform = target_transform
 
@@ -45,7 +39,7 @@ class SEMEION(data.Dataset):
 
         self.data = []
         self.labels = []
-        fp = os.path.join(root, self.filename)
+        fp = os.path.join(self.root, self.filename)
         data = np.loadtxt(fp)
         # convert value to 8 bit unsigned integer
         # color (white #255) the pixels
@@ -60,7 +54,7 @@ class SEMEION(data.Dataset):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        img, target = self.data[index], self.labels[index]
+        img, target = self.data[index], int(self.labels[index])
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image

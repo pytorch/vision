@@ -1,10 +1,10 @@
-import torch.utils.data as data
+from .vision import VisionDataset
 from PIL import Image
 import os
 import os.path
 
 
-class CocoCaptions(data.Dataset):
+class CocoCaptions(VisionDataset):
     """`MS Coco Captions <http://mscoco.org/dataset/#captions-challenge2015>`_ Dataset.
 
     Args:
@@ -42,13 +42,12 @@ class CocoCaptions(data.Dataset):
             u'A mountain view with a plume of smoke in the background']
 
     """
-    def __init__(self, root, annFile, transform=None, target_transform=None):
+
+    def __init__(self, root, annFile, transform=None, target_transform=None, transforms=None):
+        super(CocoCaptions, self).__init__(root, transforms, transform, target_transform)
         from pycocotools.coco import COCO
-        self.root = os.path.expanduser(root)
         self.coco = COCO(annFile)
-        self.ids = list(self.coco.imgs.keys())
-        self.transform = transform
-        self.target_transform = target_transform
+        self.ids = list(sorted(self.coco.imgs.keys()))
 
     def __getitem__(self, index):
         """
@@ -67,11 +66,9 @@ class CocoCaptions(data.Dataset):
         path = coco.loadImgs(img_id)[0]['file_name']
 
         img = Image.open(os.path.join(self.root, path)).convert('RGB')
-        if self.transform is not None:
-            img = self.transform(img)
 
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
 
         return img, target
 
@@ -79,7 +76,7 @@ class CocoCaptions(data.Dataset):
         return len(self.ids)
 
 
-class CocoDetection(data.Dataset):
+class CocoDetection(VisionDataset):
     """`MS Coco Detection <http://mscoco.org/dataset/#detections-challenge2016>`_ Dataset.
 
     Args:
@@ -91,13 +88,11 @@ class CocoDetection(data.Dataset):
             target and transforms it.
     """
 
-    def __init__(self, root, annFile, transform=None, target_transform=None):
+    def __init__(self, root, annFile, transform=None, target_transform=None, transforms=None):
+        super(CocoDetection, self).__init__(root, transforms, transform, target_transform)
         from pycocotools.coco import COCO
-        self.root = root
         self.coco = COCO(annFile)
-        self.ids = list(self.coco.imgs.keys())
-        self.transform = transform
-        self.target_transform = target_transform
+        self.ids = list(sorted(self.coco.imgs.keys()))
 
     def __getitem__(self, index):
         """
@@ -115,11 +110,8 @@ class CocoDetection(data.Dataset):
         path = coco.loadImgs(img_id)[0]['file_name']
 
         img = Image.open(os.path.join(self.root, path)).convert('RGB')
-        if self.transform is not None:
-            img = self.transform(img)
-
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
 
         return img, target
 

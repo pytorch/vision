@@ -1,9 +1,13 @@
 from torchvision import models
 from torchvision import datasets
+from torchvision import ops
 from torchvision import transforms
 from torchvision import utils
 
-__version__ = '0.2.0'
+try:
+    from .version import __version__  # noqa: F401
+except ImportError:
+    pass
 
 _image_backend = 'PIL'
 

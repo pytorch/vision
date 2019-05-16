@@ -1,5 +1,5 @@
 from __future__ import print_function
-import torch.utils.data as data
+from .vision import VisionDataset
 from PIL import Image
 import os
 import os.path
@@ -7,7 +7,7 @@ import numpy as np
 from .utils import download_url, check_integrity
 
 
-class SVHN(data.Dataset):
+class SVHN(VisionDataset):
     """`SVHN <http://ufldl.stanford.edu/housenumbers/>`_ Dataset.
     Note: The SVHN dataset assigns the label `10` to the digit `0`. However, in this Dataset,
     we assign the label `0` to the digit `0` to be compatible with PyTorch loss functions which
@@ -41,7 +41,7 @@ class SVHN(data.Dataset):
 
     def __init__(self, root, split='train',
                  transform=None, target_transform=None, download=False):
-        self.root = os.path.expanduser(root)
+        super(SVHN, self).__init__(root)
         self.transform = transform
         self.target_transform = target_transform
         self.split = split  # training set or test set or extra set
@@ -89,7 +89,7 @@ class SVHN(data.Dataset):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        img, target = self.data[index], self.labels[index]
+        img, target = self.data[index], int(self.labels[index])
 
         # doing this so that it is consistent with all other datasets
         # to return a PIL Image
@@ -115,3 +115,6 @@ class SVHN(data.Dataset):
     def download(self):
         md5 = self.split_list[self.split][2]
         download_url(self.url, self.root, self.filename, md5)
+
+    def extra_repr(self):
+        return "Split: {split}".format(**self.__dict__)

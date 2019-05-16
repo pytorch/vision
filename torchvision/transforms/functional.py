@@ -1,17 +1,23 @@
 from __future__ import division
 import torch
+import sys
 import math
-import random
-from PIL import Image, ImageOps, ImageEnhance
+from PIL import Image, ImageOps, ImageEnhance, PILLOW_VERSION
 try:
     import accimage
 except ImportError:
     accimage = None
 import numpy as np
 import numbers
-import types
 import collections
 import warnings
+
+if sys.version_info < (3, 3):
+    Sequence = collections.Sequence
+    Iterable = collections.Iterable
+else:
+    Sequence = collections.abc.Sequence
+    Iterable = collections.abc.Iterable
 
 
 def _is_pil_image(img):
@@ -45,9 +51,15 @@ def to_tensor(pic):
 
     if isinstance(pic, np.ndarray):
         # handle numpy array
+        if pic.ndim == 2:
+            pic = pic[:, :, None]
+
         img = torch.from_numpy(pic.transpose((2, 0, 1)))
         # backward compatibility
-        return img.float().div(255)
+        if isinstance(img, torch.ByteTensor):
+            return img.float().div(255)
+        else:
+            return img
 
     if accimage is not None and isinstance(pic, accimage.Image):
         nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
@@ -59,9 +71,13 @@ def to_tensor(pic):
         img = torch.from_numpy(np.array(pic, np.int32, copy=False))
     elif pic.mode == 'I;16':
         img = torch.from_numpy(np.array(pic, np.int16, copy=False))
+    elif pic.mode == 'F':
+        img = torch.from_numpy(np.array(pic, np.float32, copy=False))
+    elif pic.mode == '1':
+        img = 255 * torch.from_numpy(np.array(pic, np.uint8, copy=False))
     else:
         img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
-    # PIL image mode: 1, L, P, I, F, RGB, YCbCr, RGBA, CMYK
+    # PIL image mode: L, LA, P, I, F, RGB, YCbCr, RGBA, CMYK
     if pic.mode == 'YCbCr':
         nchannel = 3
     elif pic.mode == 'I;16':
@@ -81,24 +97,40 @@ def to_tensor(pic):
 def to_pil_image(pic, mode=None):
     """Convert a tensor or an ndarray to PIL Image.
 
-    See :class:`~torchvision.transforms.ToPIlImage` for more details.
+    See :class:`~torchvision.transforms.ToPILImage` for more details.
 
     Args:
         pic (Tensor or numpy.ndarray): Image to be converted to PIL Image.
         mode (`PIL.Image mode`_): color space and pixel depth of input data (optional).
 
-    .. _PIL.Image mode: http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#modes
+    .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
 
     Returns:
         PIL Image: Image converted to PIL Image.
     """
-    if not(_is_numpy_image(pic) or _is_tensor_image(pic)):
+    if not(isinstance(pic, torch.Tensor) or isinstance(pic, np.ndarray)):
         raise TypeError('pic should be Tensor or ndarray. Got {}.'.format(type(pic)))
+
+    elif isinstance(pic, torch.Tensor):
+        if pic.ndimension() not in {2, 3}:
+            raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndimension()))
+
+        elif pic.ndimension() == 2:
+            # if 2D image, add channel dimension (CHW)
+            pic = pic.unsqueeze(0)
+
+    elif isinstance(pic, np.ndarray):
+        if pic.ndim not in {2, 3}:
+            raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
+
+        elif pic.ndim == 2:
+            # if 2D image, add channel dimension (HWC)
+            pic = np.expand_dims(pic, 2)
 
     npimg = pic
     if isinstance(pic, torch.FloatTensor):
         pic = pic.mul(255).byte()
-    if torch.is_tensor(pic):
+    if isinstance(pic, torch.Tensor):
         npimg = np.transpose(pic.numpy(), (1, 2, 0))
 
     if not isinstance(npimg, np.ndarray):
@@ -110,9 +142,9 @@ def to_pil_image(pic, mode=None):
         npimg = npimg[:, :, 0]
         if npimg.dtype == np.uint8:
             expected_mode = 'L'
-        if npimg.dtype == np.int16:
+        elif npimg.dtype == np.int16:
             expected_mode = 'I;16'
-        if npimg.dtype == np.int32:
+        elif npimg.dtype == np.int32:
             expected_mode = 'I'
         elif npimg.dtype == np.float32:
             expected_mode = 'F'
@@ -121,8 +153,16 @@ def to_pil_image(pic, mode=None):
                              .format(mode, np.dtype, expected_mode))
         mode = expected_mode
 
+    elif npimg.shape[2] == 2:
+        permitted_2_channel_modes = ['LA']
+        if mode is not None and mode not in permitted_2_channel_modes:
+            raise ValueError("Only modes {} are supported for 2D inputs".format(permitted_2_channel_modes))
+
+        if mode is None and npimg.dtype == np.uint8:
+            mode = 'LA'
+
     elif npimg.shape[2] == 4:
-        permitted_4_channel_modes = ['RGBA', 'CMYK']
+        permitted_4_channel_modes = ['RGBA', 'CMYK', 'RGBX']
         if mode is not None and mode not in permitted_4_channel_modes:
             raise ValueError("Only modes {} are supported for 4D inputs".format(permitted_4_channel_modes))
 
@@ -141,29 +181,36 @@ def to_pil_image(pic, mode=None):
     return Image.fromarray(npimg, mode=mode)
 
 
-def normalize(tensor, mean, std):
+def normalize(tensor, mean, std, inplace=False):
     """Normalize a tensor image with mean and standard deviation.
 
-    See ``Normalize`` for more details.
+    .. note::
+        This transform acts out of place by default, i.e., it does not mutates the input tensor.
+
+    See :class:`~torchvision.transforms.Normalize` for more details.
 
     Args:
         tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
         mean (sequence): Sequence of means for each channel.
-        std (sequence): Sequence of standard deviations for each channely.
+        std (sequence): Sequence of standard deviations for each channel.
 
     Returns:
         Tensor: Normalized Tensor image.
     """
     if not _is_tensor_image(tensor):
         raise TypeError('tensor is not a torch image.')
-    # TODO: make efficient
-    for t, m, s in zip(tensor, mean, std):
-        t.sub_(m).div_(s)
+
+    if not inplace:
+        tensor = tensor.clone()
+
+    mean = torch.as_tensor(mean, dtype=torch.float32, device=tensor.device)
+    std = torch.as_tensor(std, dtype=torch.float32, device=tensor.device)
+    tensor.sub_(mean[:, None, None]).div_(std[:, None, None])
     return tensor
 
 
 def resize(img, size, interpolation=Image.BILINEAR):
-    """Resize the input PIL Image to the given size.
+    r"""Resize the input PIL Image to the given size.
 
     Args:
         img (PIL Image): Image to be resized.
@@ -171,7 +218,7 @@ def resize(img, size, interpolation=Image.BILINEAR):
             (h, w), the output size will be matched to this. If size is an int,
             the smaller edge of the image will be matched to this number maintaing
             the aspect ratio. i.e, if height > width, then image will be rescaled to
-            (size * height / width, size)
+            :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`
         interpolation (int, optional): Desired interpolation. Default is
             ``PIL.Image.BILINEAR``
 
@@ -180,7 +227,7 @@ def resize(img, size, interpolation=Image.BILINEAR):
     """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-    if not (isinstance(size, int) or (isinstance(size, collections.Iterable) and len(size) == 2)):
+    if not (isinstance(size, int) or (isinstance(size, Iterable) and len(size) == 2)):
         raise TypeError('Got inappropriate size arg: {}'.format(size))
 
     if isinstance(size, int):
@@ -205,8 +252,8 @@ def scale(*args, **kwargs):
     return resize(*args, **kwargs)
 
 
-def pad(img, padding, fill=0):
-    """Pad the given PIL Image on all sides with the given "pad" value.
+def pad(img, padding, fill=0, padding_mode='constant'):
+    r"""Pad the given PIL Image on all sides with specified padding mode and fill value.
 
     Args:
         img (PIL Image): Image to be padded.
@@ -215,8 +262,24 @@ def pad(img, padding, fill=0):
             on left/right and top/bottom respectively. If a tuple of length 4 is provided
             this is the padding for the left, top, right and bottom borders
             respectively.
-        fill: Pixel fill value. Default is 0. If a tuple of
+        fill: Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
+            This value is only used when the padding_mode is constant
+        padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+
+            - constant: pads with a constant value, this value is specified with fill
+
+            - edge: pads with the last value on the edge of the image
+
+            - reflect: pads with reflection of image (without repeating the last value on the edge)
+
+                       padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+                       will result in [3, 2, 1, 2, 3, 4, 3, 2]
+
+            - symmetric: pads with reflection of image (repeating the last value on the edge)
+
+                         padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+                         will result in [2, 1, 1, 2, 3, 4, 4, 3]
 
     Returns:
         PIL Image: Padded image.
@@ -228,12 +291,53 @@ def pad(img, padding, fill=0):
         raise TypeError('Got inappropriate padding arg')
     if not isinstance(fill, (numbers.Number, str, tuple)):
         raise TypeError('Got inappropriate fill arg')
+    if not isinstance(padding_mode, str):
+        raise TypeError('Got inappropriate padding_mode arg')
 
-    if isinstance(padding, collections.Sequence) and len(padding) not in [2, 4]:
+    if isinstance(padding, Sequence) and len(padding) not in [2, 4]:
         raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
                          "{} element tuple".format(len(padding)))
 
-    return ImageOps.expand(img, border=padding, fill=fill)
+    assert padding_mode in ['constant', 'edge', 'reflect', 'symmetric'], \
+        'Padding mode should be either constant, edge, reflect or symmetric'
+
+    if padding_mode == 'constant':
+        if img.mode == 'P':
+            palette = img.getpalette()
+            image = ImageOps.expand(img, border=padding, fill=fill)
+            image.putpalette(palette)
+            return image
+
+        return ImageOps.expand(img, border=padding, fill=fill)
+    else:
+        if isinstance(padding, int):
+            pad_left = pad_right = pad_top = pad_bottom = padding
+        if isinstance(padding, Sequence) and len(padding) == 2:
+            pad_left = pad_right = padding[0]
+            pad_top = pad_bottom = padding[1]
+        if isinstance(padding, Sequence) and len(padding) == 4:
+            pad_left = padding[0]
+            pad_top = padding[1]
+            pad_right = padding[2]
+            pad_bottom = padding[3]
+
+        if img.mode == 'P':
+            palette = img.getpalette()
+            img = np.asarray(img)
+            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
+            img = Image.fromarray(img)
+            img.putpalette(palette)
+            return img
+
+        img = np.asarray(img)
+        # RGB image
+        if len(img.shape) == 3:
+            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), padding_mode)
+        # Grayscale image
+        if len(img.shape) == 2:
+            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
+
+        return Image.fromarray(img)
 
 
 def crop(img, i, j, h, w):
@@ -241,10 +345,10 @@ def crop(img, i, j, h, w):
 
     Args:
         img (PIL Image): Image to be cropped.
-        i: Upper pixel coordinate.
-        j: Left pixel coordinate.
-        h: Height of the cropped image.
-        w: Width of the cropped image.
+        i (int): i in (i,j) i.e coordinates of the upper left corner.
+        j (int): j in (i,j) i.e coordinates of the upper left corner.
+        h (int): Height of the cropped image.
+        w (int): Width of the cropped image.
 
     Returns:
         PIL Image: Cropped image.
@@ -268,15 +372,15 @@ def center_crop(img, output_size):
 def resized_crop(img, i, j, h, w, size, interpolation=Image.BILINEAR):
     """Crop the given PIL Image and resize it to desired size.
 
-    Notably used in RandomResizedCrop.
+    Notably used in :class:`~torchvision.transforms.RandomResizedCrop`.
 
     Args:
         img (PIL Image): Image to be cropped.
-        i: Upper pixel coordinate.
-        j: Left pixel coordinate.
-        h: Height of the cropped image.
-        w: Width of the cropped image.
-        size (sequence or int): Desired output size. Same semantics as ``scale``.
+        i (int): i in (i,j) i.e coordinates of the upper left corner
+        j (int): j in (i,j) i.e coordinates of the upper left corner
+        h (int): Height of the cropped image.
+        w (int): Width of the cropped image.
+        size (sequence or int): Desired output size. Same semantics as ``resize``.
         interpolation (int, optional): Desired interpolation. Default is
             ``PIL.Image.BILINEAR``.
     Returns:
@@ -301,6 +405,49 @@ def hflip(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     return img.transpose(Image.FLIP_LEFT_RIGHT)
+
+
+def _get_perspective_coeffs(startpoints, endpoints):
+    """Helper function to get the coefficients (a, b, c, d, e, f, g, h) for the perspective transforms.
+
+    In Perspective Transform each pixel (x, y) in the orignal image gets transformed as,
+     (x, y) -> ( (ax + by + c) / (gx + hy + 1), (dx + ey + f) / (gx + hy + 1) )
+
+    Args:
+        List containing [top-left, top-right, bottom-right, bottom-left] of the orignal image,
+        List containing [top-left, top-right, bottom-right, bottom-left] of the transformed
+                   image
+    Returns:
+        octuple (a, b, c, d, e, f, g, h) for transforming each pixel.
+    """
+    matrix = []
+
+    for p1, p2 in zip(endpoints, startpoints):
+        matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0] * p1[0], -p2[0] * p1[1]])
+        matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]])
+
+    A = torch.tensor(matrix, dtype=torch.float)
+    B = torch.tensor(startpoints, dtype=torch.float).view(8)
+    res = torch.gels(B, A)[0]
+    return res.squeeze_(1).tolist()
+
+
+def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC):
+    """Perform perspective transform of the given PIL Image.
+
+    Args:
+        img (PIL Image): Image to be transformed.
+        coeffs (tuple) : 8-tuple (a, b, c, d, e, f, g, h) which contains the coefficients.
+                            for a perspective transform.
+        interpolation: Default- Image.BICUBIC
+    Returns:
+        PIL Image:  Perspectively transformed Image.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    coeffs = _get_perspective_coeffs(startpoints, endpoints)
+    return img.transform(img.size, Image.PERSPECTIVE, coeffs, interpolation)
 
 
 def vflip(img):
@@ -329,9 +476,10 @@ def five_crop(img, size):
        size (sequence or int): Desired output size of the crop. If size is an
            int instead of sequence like (h, w), a square crop (size, size) is
            made.
+
     Returns:
-        tuple: tuple (tl, tr, bl, br, center) corresponding top left,
-            top right, bottom left, bottom right and center crop.
+       tuple: tuple (tl, tr, bl, br, center)
+                Corresponding top left, top right, bottom left, bottom right and center crop.
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
@@ -352,24 +500,23 @@ def five_crop(img, size):
 
 
 def ten_crop(img, size, vertical_flip=False):
-    """Crop the given PIL Image into four corners and the central crop plus the
-       flipped version of these (horizontal flipping is used by default).
+    r"""Crop the given PIL Image into four corners and the central crop plus the
+        flipped version of these (horizontal flipping is used by default).
 
     .. Note::
         This transform returns a tuple of images and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
 
-       Args:
-           size (sequence or int): Desired output size of the crop. If size is an
-               int instead of sequence like (h, w), a square crop (size, size) is
-               made.
-           vertical_flip (bool): Use vertical flipping instead of horizontal
+    Args:
+       size (sequence or int): Desired output size of the crop. If size is an
+            int instead of sequence like (h, w), a square crop (size, size) is
+            made.
+       vertical_flip (bool): Use vertical flipping instead of horizontal
 
-        Returns:
-            tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip,
-                br_flip, center_flip) corresponding top left, top right,
-                bottom left, bottom right and center crop and same for the
-                flipped image.
+    Returns:
+       tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip)
+                Corresponding top left, top right, bottom left, bottom right and center crop
+                and same for the flipped image.
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
@@ -457,7 +604,9 @@ def adjust_hue(img, hue_factor):
     `hue_factor` is the amount of shift in H channel and must be in the
     interval `[-0.5, 0.5]`.
 
-    See https://en.wikipedia.org/wiki/Hue for more details on Hue.
+    See `Hue`_ for more details.
+
+    .. _Hue: https://en.wikipedia.org/wiki/Hue
 
     Args:
         img (PIL Image): PIL Image to be adjusted.
@@ -493,20 +642,23 @@ def adjust_hue(img, hue_factor):
 
 
 def adjust_gamma(img, gamma, gain=1):
-    """Perform gamma correction on an image.
+    r"""Perform gamma correction on an image.
 
     Also known as Power Law Transform. Intensities in RGB mode are adjusted
     based on the following equation:
 
-        I_out = 255 * gain * ((I_in / 255) ** gamma)
+    .. math::
+        I_{\text{out}} = 255 \times \text{gain} \times \left(\frac{I_{\text{in}}}{255}\right)^{\gamma}
 
-    See https://en.wikipedia.org/wiki/Gamma_correction for more details.
+    See `Gamma Correction`_ for more details.
+
+    .. _Gamma Correction: https://en.wikipedia.org/wiki/Gamma_correction
 
     Args:
         img (PIL Image): PIL Image to be adjusted.
-        gamma (float): Non negative real number. gamma larger than 1 make the
-            shadows darker, while gamma smaller than 1 make dark regions
-            lighter.
+        gamma (float): Non negative real number, same as :math:`\gamma` in the equation.
+            gamma larger than 1 make the shadows darker,
+            while gamma smaller than 1 make dark regions lighter.
         gain (float): The constant multiplier.
     """
     if not _is_pil_image(img):
@@ -518,11 +670,10 @@ def adjust_gamma(img, gamma, gain=1):
     input_mode = img.mode
     img = img.convert('RGB')
 
-    np_img = np.array(img, dtype=np.float32)
-    np_img = 255 * gain * ((np_img / 255) ** gamma)
-    np_img = np.uint8(np.clip(np_img, 0, 255))
+    gamma_map = [255 * gain * pow(ele / 255., gamma) for ele in range(256)] * 3
+    img = img.point(gamma_map)  # use PIL's point-function to accelerate this part
 
-    img = Image.fromarray(np_img, 'RGB').convert(input_mode)
+    img = img.convert(input_mode)
     return img
 
 
@@ -532,11 +683,10 @@ def rotate(img, angle, resample=False, expand=False, center=None):
 
     Args:
         img (PIL Image): PIL Image to be rotated.
-        angle ({float, int}): In degrees degrees counter clockwise order.
-        resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
-            An optional resampling filter.
-            See http://pillow.readthedocs.io/en/3.4.x/handbook/concepts.html#filters
-            If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
+        angle (float or int): In degrees degrees counter clockwise order.
+        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
+            An optional resampling filter. See `filters`_ for more information.
+            If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
@@ -544,12 +694,80 @@ def rotate(img, angle, resample=False, expand=False, center=None):
         center (2-tuple, optional): Optional center of rotation.
             Origin is the upper left corner.
             Default is the center of the image.
+
+    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
+
     """
 
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     return img.rotate(angle, resample, expand, center)
+
+
+def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
+    # Helper method to compute inverse matrix for affine transformation
+
+    # As it is explained in PIL.Image.rotate
+    # We need compute INVERSE of affine transformation matrix: M = T * C * RSS * C^-1
+    # where T is translation matrix: [1, 0, tx | 0, 1, ty | 0, 0, 1]
+    #       C is translation matrix to keep center: [1, 0, cx | 0, 1, cy | 0, 0, 1]
+    #       RSS is rotation with scale and shear matrix
+    #       RSS(a, scale, shear) = [ cos(a)*scale    -sin(a + shear)*scale     0]
+    #                              [ sin(a)*scale    cos(a + shear)*scale     0]
+    #                              [     0                  0          1]
+    # Thus, the inverse is M^-1 = C * RSS^-1 * C^-1 * T^-1
+
+    angle = math.radians(angle)
+    shear = math.radians(shear)
+    scale = 1.0 / scale
+
+    # Inverted rotation matrix with scale and shear
+    d = math.cos(angle + shear) * math.cos(angle) + math.sin(angle + shear) * math.sin(angle)
+    matrix = [
+        math.cos(angle + shear), math.sin(angle + shear), 0,
+        -math.sin(angle), math.cos(angle), 0
+    ]
+    matrix = [scale / d * m for m in matrix]
+
+    # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
+    matrix[2] += matrix[0] * (-center[0] - translate[0]) + matrix[1] * (-center[1] - translate[1])
+    matrix[5] += matrix[3] * (-center[0] - translate[0]) + matrix[4] * (-center[1] - translate[1])
+
+    # Apply center translation: C * RSS^-1 * C^-1 * T^-1
+    matrix[2] += center[0]
+    matrix[5] += center[1]
+    return matrix
+
+
+def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
+    """Apply affine transformation on the image keeping image center invariant
+
+    Args:
+        img (PIL Image): PIL Image to be rotated.
+        angle (float or int): rotation angle in degrees between -180 and 180, clockwise direction.
+        translate (list or tuple of integers): horizontal and vertical translations (post-rotation translation)
+        scale (float): overall scale
+        shear (float): shear angle value in degrees between -180 to 180, clockwise direction.
+        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
+            An optional resampling filter.
+            See `filters`_ for more information.
+            If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
+        fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    assert isinstance(translate, (tuple, list)) and len(translate) == 2, \
+        "Argument translate should be a list or tuple of length 2"
+
+    assert scale > 0.0, "Argument scale should be positive"
+
+    output_size = img.size
+    center = (img.size[0] * 0.5 + 0.5, img.size[1] * 0.5 + 0.5)
+    matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
+    kwargs = {"fillcolor": fillcolor} if PILLOW_VERSION[0] >= '5' else {}
+    return img.transform(output_size, Image.AFFINE, matrix, resample, **kwargs)
 
 
 def to_grayscale(img, num_output_channels=1):
@@ -559,9 +777,10 @@ def to_grayscale(img, num_output_channels=1):
         img (PIL Image): Image to be converted to grayscale.
 
     Returns:
-        PIL Image:  Grayscale version of the image.
-                    if num_output_channels == 1 : returned image is single channel
-                    if num_output_channels == 3 : returned image is 3 channel with r == g == b
+        PIL Image: Grayscale version of the image.
+            if num_output_channels = 1 : returned image is single channel
+
+            if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
