@@ -1255,4 +1255,3 @@ class RandomErasing(object):
             x, y, h, w, v = self.get_params(img, sl=self.sl, sh=self.sh, r1=self.r1, value=self.value)
             return F.erase(img, x, y, h, w, v)
         return img
-
