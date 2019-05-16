@@ -185,12 +185,12 @@ def main(args):
 
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_sampler=train_batch_sampler, num_workers=args.workers,
-        collate_fn=utils.BatchCollator(32))
+        collate_fn=utils.collate_fn)
 
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test, batch_size=1,
         sampler=test_sampler, num_workers=args.workers,
-        collate_fn=utils.BatchCollator(32))
+        collate_fn=utils.collate_fn)
 
     print("Creating model")
     model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes)

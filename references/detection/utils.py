@@ -8,8 +8,6 @@ import time
 import torch
 import torch.distributed as dist
 
-import torchvision.models.detection.image_list
-
 import errno
 import os
 
@@ -220,22 +218,8 @@ class MetricLogger(object):
             header, total_time_str, total_time / len(iterable)))
 
 
-class BatchCollator(object):
-    """
-    From a list of samples from the dataset,
-    returns the batched images and targets.
-    This should be passed to the DataLoader
-    """
-
-    def __init__(self, size_divisible=0):
-        self.size_divisible = size_divisible
-
-    def __call__(self, batch):
-        transposed_batch = list(zip(*batch))
-        # images = torchvision.models.detection.image_list.to_image_list(transposed_batch[0], self.size_divisible)
-        images = transposed_batch[0]
-        targets = transposed_batch[1]
-        return images, targets
+def collate_fn(batch):
+    return tuple(zip(*batch))
 
 
 def mkdir(path):
