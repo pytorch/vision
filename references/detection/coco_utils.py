@@ -91,9 +91,14 @@ class ConvertCocoPolysToMask(object):
         target["labels"] = classes
         target["masks"] = masks
         target["image_id"] = image_id
-        target["original_image_size"] = torch.tensor([h, w])
         if keypoints is not None:
             target["keypoints"] = keypoints
+
+        # for conversion to coco api
+        area = torch.tensor([obj["area"] for obj in anno])
+        iscrowd = torch.tensor([obj["iscrowd"] for obj in anno])
+        target["area"] = area
+        target["iscrowd"] = iscrowd
 
         return image, target
 
@@ -135,6 +140,47 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
 
     dataset = torch.utils.data.Subset(dataset, ids)
     return dataset
+
+
+import tqdm
+def convert_to_coco_api(ds):
+    from pycocotools.coco import COCO
+
+    coco_ds = COCO()
+    ann_id = 0
+    dataset = {'images': [], 'categories': [], 'annotations': []}
+    categories = set()
+    for img_idx in tqdm.tqdm(range(len(ds))):
+        # find better way to get target
+        # targets = ds.get_annotations(img_idx)
+        _, targets = ds[img_idx]
+        image_id = targets["image_id"].item()
+        img_dict = {}
+        img_dict['id'] = image_id  # img_idx
+        dataset['images'].append(img_dict)
+        bboxes = targets["boxes"]
+        bboxes[:, 2:] += bboxes[:, :2]
+        bboxes = bboxes.tolist()
+        labels = targets['labels'].tolist()
+        areas = targets['area'].tolist()
+        iscrowd = targets['iscrowd'].tolist()
+        segmentations = targets['masks']
+        num_objs = len(bboxes)
+        for i in range(num_objs):
+            ann = {}
+            ann['image_id'] = image_id  # img_idx
+            ann['bbox'] = bboxes[i]
+            ann['category_id'] = labels[i]
+            categories.add(labels[i])
+            ann['area'] = areas[i]
+            ann['iscrowd'] = iscrowd[i]
+            ann['id'] = ann_id
+            dataset['annotations'].append(ann)
+            ann_id += 1
+    dataset['categories'] = [{'id':i} for i in sorted(categories)]
+    coco_ds.dataset = dataset
+    coco_ds.createIndex()
+    return coco_ds
 
 
 class CocoDetection(torchvision.datasets.CocoDetection):

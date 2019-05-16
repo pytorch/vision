@@ -13,7 +13,7 @@ import torchvision.models.detection.mask_rcnn
 
 from torchvision import transforms
 
-from coco_utils import get_coco, get_coco_kp
+from coco_utils import get_coco, get_coco_kp, convert_to_coco_api
 from coco_eval import CocoEvaluator
 from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 
@@ -92,6 +92,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
 
 
 def _get_coco_from_dataset(dataset):
+    # return convert_to_coco_api(dataset)
     for i in range(10):
         if isinstance(dataset, torchvision.datasets.CocoDetection):
             break
@@ -234,8 +235,8 @@ def main(args):
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
 
         # evaluate after every epoch
-        # evaluate(model, data_loader_test, device=device)
-    evaluate(model, data_loader_test, device=device)
+        evaluate(model, data_loader_test, device=device)
+    # evaluate(model, data_loader_test, device=device)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
