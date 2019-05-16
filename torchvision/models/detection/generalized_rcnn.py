@@ -28,7 +28,7 @@ class GeneralizedRCNN(nn.Module):
         self.rpn = rpn
         self.roi_heads = roi_heads
 
-    def forward(self, images, targets=None, original_image_sizes=None):
+    def forward(self, images, targets=None):
         """
         Arguments:
             images (list[Tensor] or ImageList): images to be processed
@@ -44,15 +44,12 @@ class GeneralizedRCNN(nn.Module):
         if self.training and targets is None:
             raise ValueError("In training mode, targets should be passed")
         # images = to_image_list(images)
-        images, original_image_sizes, targets = self.preprocess(images, targets)
+        original_image_sizes = [img.shape[-2:] for img in images]
+        images, targets = self.preprocess(images, targets)
         features = self.backbone(images.tensors)
         proposals, proposal_losses = self.rpn(images, features, targets)
-        # if original_image_sizes is not None:
-        if not self.training:
-            detections, _ = self.roi_heads.predict(features, proposals, images.image_sizes, original_image_sizes)
-            detector_losses = {}
-        else:
-            detections, detector_losses = self.roi_heads(features, proposals, images.image_sizes, targets)
+        detections, detector_losses = self.roi_heads(features, proposals, images.image_sizes, targets)
+        detections = self.roi_heads.postprocess(detections, images.image_sizes, original_image_sizes)
 
         losses = {}
         losses.update(detector_losses)
@@ -71,8 +68,7 @@ class Transform(nn.Module):
         self.min_size = min_size
         self.max_size = max_size
 
-    def forward(self, images, targets):
-        original_image_sizes = [img.shape[-2:] for img in images]
+    def forward(self, images, targets=None):
         for i in range(len(images)):
             image = images[i]
             h, w = image.shape[-2:]
@@ -110,7 +106,7 @@ class Transform(nn.Module):
         images = self.batch_images(images)
         image_list = ImageList(images, image_sizes)
         # return images, image_sizes, original_image_sizes, targets
-        return image_list, original_image_sizes, targets
+        return image_list, targets
 
     def batch_images(self, images, size_divisible=32):
         # concatenate

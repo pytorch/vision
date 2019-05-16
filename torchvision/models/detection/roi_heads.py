@@ -617,8 +617,9 @@ class RoIHeads(torch.nn.Module):
 
         return result, losses
 
-    def predict(self, features, proposals, image_shapes, original_image_sizes):
-        result, _ = self(features, proposals, image_shapes)
+    def postprocess(self, result, image_shapes, original_image_sizes):
+        if self.training:
+            return result
         for i, (pred, im_s, o_im_s) in enumerate(zip(result, image_shapes, original_image_sizes)):
             boxes = pred["boxes"]
             boxes = resize_boxes(boxes, im_s, o_im_s)
@@ -631,7 +632,7 @@ class RoIHeads(torch.nn.Module):
                 keypoints = pred["keypoints"]
                 keypoints = resize_keypoints(keypoints, im_s, o_im_s)
                 result[i]["keypoints"] = keypoints
-        return result, _
+        return result
 
 
 def resize_keypoints(keypoints, original_size, new_size):
