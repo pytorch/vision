@@ -91,7 +91,7 @@ class Transform(nn.Module):
             target = targets[i]
 
             bbox = target["boxes"]
-            bbox = resize_boxes(bbox, (h, w), image.shape[-2:])
+            bbox = bbox * scale_factor  # resize_boxes(bbox, (h, w), image.shape[-2:])
             target["boxes"] = bbox
 
             if "masks" in target:
