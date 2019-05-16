@@ -75,11 +75,7 @@ class CocoEvaluator(object):
             if len(prediction) == 0:
                 continue
 
-            # image_height, image_width = prediction["original_image_size"]
-
             boxes = prediction["boxes"]
-            # c_height, c_width = prediction["image_size"]
-            # boxes = resize_boxes(boxes, (c_width, c_height), (image_width, image_height))
             boxes = convert_to_xywh(boxes).tolist()
             scores = prediction["scores"].tolist()
             labels = prediction["labels"].tolist()
@@ -104,18 +100,11 @@ class CocoEvaluator(object):
             if len(prediction) == 0:
                 continue
 
-            # image_height, image_width = prediction["original_image_size"]
-
             boxes = prediction["boxes"]
-            # c_height, c_width = prediction["image_size"]
-            # boxes = resize_boxes(boxes, (c_width, c_height), (image_width, image_height))
             scores = prediction["scores"]
             labels = prediction["labels"]
             masks = prediction["mask"]
 
-            # Masker is necessary only if masks haven't been already resized.
-            # if list(masks.shape[-2:]) != [image_height, image_width]:
-            #     masks = paste_masks_in_image(masks, boxes, (image_height.item(), image_width.item())) > 0.5
             masks = masks > 0.5
 
             scores = prediction["scores"].tolist()
@@ -147,16 +136,11 @@ class CocoEvaluator(object):
             if len(prediction) == 0:
                 continue
 
-            # image_height, image_width = prediction["original_image_size"]
-
             boxes = prediction["boxes"]
-            # c_height, c_width = prediction["image_size"]
-            # boxes = resize_boxes(boxes, (c_width, c_height), (image_width, image_height))
             boxes = convert_to_xywh(boxes).tolist()
             scores = prediction["scores"].tolist()
             labels = prediction["labels"].tolist()
             keypoints = prediction["keypoints"]
-            # keypoints = resize_keypoints(keypoints, (c_width, c_height), (image_width, image_height))
             keypoints = keypoints.flatten(start_dim=1).tolist()
 
             coco_results.extend(
@@ -173,31 +157,9 @@ class CocoEvaluator(object):
         return coco_results
 
 
-# TODO DO NOT REPLACE THIS WITH THE OTHER ONE WITHOUT INVERTING THE SIZE REPRESENTATION!!!
-def resize_boxes(boxes, original_size, new_size):
-    ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size))
-    ratio_width, ratio_height = ratios
-    xmin, ymin, xmax, ymax = boxes.unbind(1)
-    xmin = xmin * ratio_width
-    xmax = xmax * ratio_width
-    ymin = ymin * ratio_height
-    ymax = ymax * ratio_height
-    return torch.stack((xmin, ymin, xmax, ymax), dim=1)
-
-
 def convert_to_xywh(boxes):
     xmin, ymin, xmax, ymax = boxes.unbind(1)
     return torch.stack((xmin, ymin, xmax - xmin, ymax - ymin), dim=1)
-
-
-
-def resize_keypoints(keypoints, original_size, new_size):
-    ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size))
-    ratio_w, ratio_h = ratios
-    resized_data = keypoints.clone()
-    resized_data[..., 0] *= ratio_w
-    resized_data[..., 1] *= ratio_h
-    return resized_data
 
 
 def merge(img_ids, eval_imgs):
