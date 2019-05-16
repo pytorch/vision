@@ -1316,6 +1316,20 @@ class Tester(unittest.TestCase):
 
         # Checking if RandomGrayscale can be printed as string
         trans3.__repr__()
+        
+    def test_random_erasing(self):
+        """Unit tests for random erasing transform"""
+
+        img = torch.rand([3, 20, 20])
+
+        # Test Set 1: Erasing with int value
+        img_re = transforms.RandomErasing(value=0)(img)
+
+        # Test Set 2: Erasing with random value
+        img_re = transforms.RandomErasing(value='random')(img)
+
+        # Test Set 3: Erasing with tuple value
+        img_re = transforms.RandomErasing(value=(0.2, 0.2, 0.2))(img)
 
 
 if __name__ == '__main__':
