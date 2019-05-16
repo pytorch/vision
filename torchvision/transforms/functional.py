@@ -798,7 +798,7 @@ def to_grayscale(img, num_output_channels=1):
     return img
 
 
-def erase(img, x, y, w, h, value=0):
+def erase(img, x, y, h, w, value=0):
     """ Erase the given Image with given value.
         'Random Erasing Data Augmentation' by Zhong et al.
         See https://arxiv.org/pdf/1708.04896.pdf
@@ -812,5 +812,5 @@ def erase(img, x, y, w, h, value=0):
      Returns:
         Erased Image.
     """
-    img[:, y:y + h, x:x + w] = value
+    img[:, x:x + h, y:y + w] = value
     return img
