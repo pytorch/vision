@@ -108,8 +108,8 @@ def main(args):
     for epoch in range(args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        lr_scheduler.step()
         train_one_epoch(model, optimizer, data_loader, device, epoch, args.print_freq)
+        lr_scheduler.step()
         if args.output_dir:
             utils.save_on_master({
                 'model': model_without_ddp.state_dict(),
