@@ -159,12 +159,9 @@ ResNetImpl<Block>::ResNetImpl(
   // https://arxiv.org/abs/1706.02677
   if (zero_init_residual)
     for (auto& module : modules(/*include_self=*/false)) {
-      if (_resnetimpl::Bottleneck* M =
-              dynamic_cast<_resnetimpl::Bottleneck*>(module.get()))
+      if (auto* M = dynamic_cast<_resnetimpl::Bottleneck*>(module.get()))
         torch::nn::init::constant_(M->bn3->weight, 0);
-      else if (
-          _resnetimpl::BasicBlock* M =
-              dynamic_cast<_resnetimpl::BasicBlock*>(module.get()))
+      else if (auto* M = dynamic_cast<_resnetimpl::BasicBlock*>(module.get()))
         torch::nn::init::constant_(M->bn2->weight, 0);
     }
 }

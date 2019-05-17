@@ -79,14 +79,14 @@ def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
 
     test_dir = os.path.join(this_dir, 'test')
-    extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
+    tests = glob.glob(os.path.join(test_dir, '*.cpp'))
 
-    test_file = glob.glob(os.path.join(test_dir, '*.cpp'))
+    extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
     source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
     source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
 
-    sources = main_file + source_cpu + test_file
+    sources = main_file + source_cpu
     extension = CppExtension
 
     define_macros = []
@@ -104,6 +104,12 @@ def get_extensions():
         extension(
             'torchvision._C',
             sources,
+            include_dirs=include_dirs,
+            define_macros=define_macros,
+        ),
+        extension(
+            'torchvision._C_tests',
+            tests,
             include_dirs=include_dirs,
             define_macros=define_macros,
         )
