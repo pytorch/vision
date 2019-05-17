@@ -79,7 +79,13 @@ def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
 
     test_dir = os.path.join(this_dir, 'test')
-    tests = glob.glob(os.path.join(test_dir, '*.cpp'))
+    models_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'models')
+    test_file = glob.glob(os.path.join(test_dir, '*.cpp'))
+    source_models = glob.glob(os.path.join(models_dir, '*.cpp'))
+
+    test_file = [os.path.join(test_dir, s) for s in test_file]
+    source_models = [os.path.join(models_dir, s) for s in source_models]
+    tests = test_file + source_models
 
     extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
