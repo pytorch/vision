@@ -7,8 +7,8 @@ import torch.utils.data
 import torchvision
 
 from pycocotools import mask as coco_mask
+from pycocotools.coco import COCO
 
-# from transforms import Compose
 import transforms as T
 
 
@@ -144,8 +144,6 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
 
 import tqdm
 def convert_to_coco_api(ds):
-    from pycocotools.coco import COCO
-
     coco_ds = COCO()
     ann_id = 0
     dataset = {'images': [], 'categories': [], 'annotations': []}
@@ -156,10 +154,10 @@ def convert_to_coco_api(ds):
         _, targets = ds[img_idx]
         image_id = targets["image_id"].item()
         img_dict = {}
-        img_dict['id'] = image_id  # img_idx
+        img_dict['id'] = image_id
         dataset['images'].append(img_dict)
         bboxes = targets["boxes"]
-        bboxes[:, 2:] += bboxes[:, :2]
+        bboxes[:, 2:] -= bboxes[:, :2]
         bboxes = bboxes.tolist()
         labels = targets['labels'].tolist()
         areas = targets['area'].tolist()
@@ -168,7 +166,7 @@ def convert_to_coco_api(ds):
         num_objs = len(bboxes)
         for i in range(num_objs):
             ann = {}
-            ann['image_id'] = image_id  # img_idx
+            ann['image_id'] = image_id
             ann['bbox'] = bboxes[i]
             ann['category_id'] = labels[i]
             categories.add(labels[i])
@@ -181,6 +179,17 @@ def convert_to_coco_api(ds):
     coco_ds.dataset = dataset
     coco_ds.createIndex()
     return coco_ds
+
+
+def get_coco_api_from_dataset(dataset):
+    for i in range(10):
+        if isinstance(dataset, torchvision.datasets.CocoDetection):
+            break
+        if isinstance(dataset, torch.utils.data.Subset):
+            dataset = dataset.dataset
+    if isinstance(dataset, torchvision.datasets.CocoDetection):
+        return dataset.coco
+    return convert_to_coco_api(dataset)
 
 
 class CocoDetection(torchvision.datasets.CocoDetection):
