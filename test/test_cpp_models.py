@@ -17,7 +17,8 @@ def test_model(model, tensor, func, name):
     assert torch.allclose(py_output, cpp_output), 'Output mismatch of ' + name + ' models'
 
 
-image_path = os.path.join(os.getcwd(), 'assets', 'grace_hopper_517x606.jpg')
+image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         'assets', 'grace_hopper_517x606.jpg')
 image = Image.open(image_path)
 image = image.resize((224, 224))
 x = F.to_tensor(image)
