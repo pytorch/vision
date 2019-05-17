@@ -17,8 +17,7 @@ def test_model(model, tensor, func, name):
     assert torch.allclose(py_output, cpp_output), 'Output mismatch of ' + name + ' models'
 
 
-image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         'assets', 'grace_hopper_517x606.jpg')
+image_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
 image = Image.open(image_path)
 image = image.resize((224, 224))
 x = F.to_tensor(image)
@@ -43,8 +42,8 @@ test_model(models.resnet34(pretrained), x, _C_tests.forward_resnet34, 'Resnet34'
 test_model(models.resnet50(pretrained), x, _C_tests.forward_resnet50, 'Resnet50')
 test_model(models.resnet101(pretrained), x, _C_tests.forward_resnet101, 'Resnet101')
 test_model(models.resnet152(pretrained), x, _C_tests.forward_resnet152, 'Resnet152')
-test_model(models.resnext50_32x4d(pretrained), x, _C_tests.forward_resnext50_32x4d, 'ResNext50_32x4d')
-test_model(models.resnext101_32x8d(pretrained), x, _C_tests.forward_resnext101_32x8d, 'ResNext101_32x8d')
+test_model(models.resnext50_32x4d(), x, _C_tests.forward_resnext50_32x4d, 'ResNext50_32x4d')
+test_model(models.resnext101_32x8d(), x, _C_tests.forward_resnext101_32x8d, 'ResNext101_32x8d')
 
 test_model(models.squeezenet1_0(pretrained), x, _C_tests.forward_squeezenet1_0, 'Squeezenet1.0')
 test_model(models.squeezenet1_1(pretrained), x, _C_tests.forward_squeezenet1_1, 'Squeezenet1.1')
@@ -57,4 +56,11 @@ test_model(models.densenet161(pretrained), x, _C_tests.forward_densenet161, 'Den
 test_model(models.mobilenet_v2(pretrained), x, _C_tests.forward_mobilenetv2, 'MobileNet')
 
 test_model(models.googlenet(pretrained), x, _C_tests.forward_googlenet, 'GoogLeNet')
+
+image = Image.open(image_path)
+image = image.resize((299, 299))
+x = F.to_tensor(image)
+x = x.view(1, 3, 299, 299)
+x = torch.cat([x, x], 0)
+
 test_model(models.inception_v3(pretrained), x, _C_tests.forward_inceptionv3, 'Inceptionv3')
