@@ -1,4 +1,5 @@
 import torch
+import os
 from torchvision import models, transforms, _C_tests
 
 from PIL import Image
@@ -6,6 +7,7 @@ import torchvision.transforms.functional as F
 
 
 def test_model(model, tensor, func, name):
+    model.eval()
     traced_script_module = torch.jit.trace(model, tensor)
     traced_script_module.save("model.pt")
 
@@ -15,7 +17,8 @@ def test_model(model, tensor, func, name):
     assert torch.allclose(py_output, cpp_output), 'Output mismatch of ' + name + ' models'
 
 
-image = Image.open('assets/grace_hopper_517x606.jpg')
+image_path = os.path.join(os.getcwd(), 'assets', 'grace_hopper_517x606.jpg')
+image = Image.open(image_path)
 image = image.resize((224, 224))
 x = F.to_tensor(image)
 x = x.view(1, 3, 224, 224)
