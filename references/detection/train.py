@@ -36,8 +36,6 @@ def get_transform(train):
     transforms.append(T.ToTensor())
     if train:
         transforms.append(T.RandomHorizontalFlip(0.5))
-    transforms.append(T.Normalize(mean=[0.485, 0.456, 0.406],
-                                  std=[0.229, 0.224, 0.225]))
     return T.Compose(transforms)
 
 

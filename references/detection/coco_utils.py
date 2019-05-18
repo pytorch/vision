@@ -162,7 +162,8 @@ def convert_to_coco_api(ds):
         labels = targets['labels'].tolist()
         areas = targets['area'].tolist()
         iscrowd = targets['iscrowd'].tolist()
-        segmentations = targets['masks']
+        if 'masks' in targets:
+            segmentations = targets['masks']
         num_objs = len(bboxes)
         for i in range(num_objs):
             ann = {}

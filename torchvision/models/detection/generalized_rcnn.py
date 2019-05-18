@@ -21,10 +21,11 @@ class GeneralizedRCNN(nn.Module):
         detections / masks from it.
     """
 
-    def __init__(self, backbone, rpn, roi_heads):
+    def __init__(self, backbone, rpn, roi_heads, transform=None):
         super(GeneralizedRCNN, self).__init__()
-
-        self.transformer = Transform()
+        if transform is None:
+            transform = Transform()
+        self.transform = transform
         self.backbone = backbone
         self.rpn = rpn
         self.roi_heads = roi_heads
@@ -45,11 +46,11 @@ class GeneralizedRCNN(nn.Module):
         if self.training and targets is None:
             raise ValueError("In training mode, targets should be passed")
         original_image_sizes = [img.shape[-2:] for img in images]
-        images, targets = self.transformer(images, targets)
+        images, targets = self.transform(images, targets)
         features = self.backbone(images.tensors)
         proposals, proposal_losses = self.rpn(images, features, targets)
         detections, detector_losses = self.roi_heads(features, proposals, images.image_sizes, targets)
-        detections = self.transformer.postprocess(detections, images.image_sizes, original_image_sizes)
+        detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
 
         losses = {}
         losses.update(detector_losses)
@@ -63,15 +64,25 @@ class GeneralizedRCNN(nn.Module):
 
 from .image_list import ImageList
 class Transform(nn.Module):
-    def __init__(self, min_size=800.0, max_size=1333.0):
+    def __init__(self, min_size=800.0, max_size=1333.0,
+                 image_mean=None, image_std=None):
         super(Transform, self).__init__()
         self.min_size = min_size
         self.max_size = max_size
+        if image_mean is None:
+            image_mean = [0.485, 0.456, 0.406]
+        if image_std is None:
+            image_std = [0.229, 0.224, 0.225]
+        self.image_mean = image_mean
+        self.image_std = image_std
 
     def forward(self, images, targets=None):
         for i in range(len(images)):
+            image = images[i]
             target = targets[i] if targets is not None else targets
-            images[i], target = self.single_image(images[i], target)
+            image = self.normalize(image)
+            image, target = self.resize(image, target)
+            images[i] = image
             if targets is not None:
                 targets[i] = target
         image_sizes = [img.shape[-2:] for img in images]
@@ -79,7 +90,13 @@ class Transform(nn.Module):
         image_list = ImageList(images, image_sizes)
         return image_list, targets
 
-    def single_image(self, image, target):
+    def normalize(self, image):
+        dtype, device = image.dtype, image.device
+        mean = torch.as_tensor(self.image_mean, dtype=dtype, device=device)
+        std = torch.as_tensor(self.image_std, dtype=dtype, device=device)
+        return (image - mean[:, None, None]) / std[:, None, None]
+
+    def resize(self, image, target):
         h, w = image.shape[-2:]
         min_size = min(image.shape[-2:])
         max_size = max(image.shape[-2:])

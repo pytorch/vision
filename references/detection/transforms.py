@@ -35,7 +35,8 @@ class RandomHorizontalFlip(object):
             bbox = target["boxes"]
             bbox[:, [0, 2]] = width - bbox[:, [2, 0]]
             target["boxes"] = bbox
-            target["masks"] = target["masks"].flip(-1)
+            if "masks" in target:
+                target["masks"] = target["masks"].flip(-1)
             if "keypoints" in target:
                 keypoints = target["keypoints"]
                 keypoints = _flip_coco_person_keypoints(keypoints, width)
@@ -46,14 +47,4 @@ class RandomHorizontalFlip(object):
 class ToTensor(object):
     def __call__(self, image, target):
         image = F.to_tensor(image)
-        return image, target
-
-
-class Normalize(object):
-    def __init__(self, mean, std):
-        self.mean = mean
-        self.std = std
-
-    def __call__(self, image, target):
-        image = F.normalize(image, mean=self.mean, std=self.std)
         return image, target
