@@ -159,7 +159,7 @@ def compute_aspect_ratios(dataset, indices=None):
         return _compute_aspect_ratios_coco_dataset(dataset, indices)
 
     if isinstance(dataset, torchvision.datasets.VOCDetection):
-        return _compute_aspect_ratios_coco_dataset(dataset, indices)
+        return _compute_aspect_ratios_voc_dataset(dataset, indices)
 
     if isinstance(dataset, torch.utils.data.Subset):
         return _compute_aspect_ratios_subset_dataset(dataset, indices)
