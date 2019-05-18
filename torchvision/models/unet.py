@@ -8,9 +8,9 @@ __all__ = ['UNet', 'unet8', 'unet13', 'unet18', 'unet23', 'unet28', 'unet33']
 def double_conv(in_channels, out_channels):
     return nn.Sequential(
         nn.Conv2d(in_channels, out_channels, 3),
-        nn.ReLU(),
+        nn.ReLU(inplace=True),
         nn.Conv2d(out_channels, out_channels, 3),
-        nn.ReLU()
+        nn.ReLU(inplace=True)
     )
 
 
@@ -52,7 +52,7 @@ class Expand(nn.Module):
         assert in_channels > out_channels
 
         self.upconv = nn.ConvTranspose2d(in_channels, out_channels, 2, 2)
-        self.relu = nn.ReLU()
+        self.relu = nn.ReLU(inplace=True)
         self.conv = double_conv(in_channels, out_channels)
 
     def forward(self, x, out):
