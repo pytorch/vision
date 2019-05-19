@@ -131,4 +131,3 @@ def maskrcnn_resnet50_fpn(pretrained=False, num_classes=81, pretrained_backbone=
     if pretrained:
         pass
     return model
-

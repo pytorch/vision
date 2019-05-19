@@ -155,4 +155,3 @@ def fasterrcnn_resnet50_fpn(pretrained=False, num_classes=81, pretrained_backbon
     if pretrained:
         pass
     return model
-
