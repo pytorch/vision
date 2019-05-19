@@ -547,7 +547,6 @@ class RoIHeads(torch.nn.Module):
                         boxes=boxes[i],
                         labels=labels[i],
                         scores=scores[i],
-                        image_size=torch.as_tensor(image_shapes[i])
                     )
                 )
 

@@ -11,6 +11,7 @@ from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastL
 from .generalized_rcnn import GeneralizedRCNN
 from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
 from .roi_heads import RoIHeads
+from .transform import GeneralizedRCNNTransform
 
 from .._utils import IntermediateLayerGetter
 
@@ -36,6 +37,9 @@ class BackboneWithFPN(nn.Sequential):
 
 class FasterRCNN(GeneralizedRCNN):
     def __init__(self, backbone, num_classes=None,
+                 # transform parameters
+                 min_size=800, max_size=1333,
+                 image_mean=None, image_std=None,
                  # RPN parameters
                  rpn_anchor_generator=None, rpn_head=None,
                  rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,
@@ -112,11 +116,20 @@ class FasterRCNN(GeneralizedRCNN):
             bbox_reg_weights,
             box_score_thresh, box_nms_thresh, box_detections_per_img)
 
-        super(FasterRCNN, self).__init__(backbone, rpn, roi_heads)
+        if image_mean is None:
+            image_mean = [0.485, 0.456, 0.406]
+        if image_std is None:
+            image_std = [0.229, 0.224, 0.225]
+        transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
+
+        super(FasterRCNN, self).__init__(backbone, rpn, roi_heads, transform)
 
 
 class MaskRCNN(FasterRCNN):
     def __init__(self, backbone, num_classes=None,
+                 # transform parameters
+                 min_size=800, max_size=1333,
+                 image_mean=None, image_std=None,
                  # RPN parameters
                  rpn_anchor_generator=None, rpn_head=None,
                  rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,
@@ -159,6 +172,9 @@ class MaskRCNN(FasterRCNN):
 
         super(MaskRCNN, self).__init__(
             backbone, num_classes,
+            # transform parameters
+            min_size, max_size,
+            image_mean, image_std,
             # RPN-specific parameters
             rpn_anchor_generator, rpn_head,
             rpn_pre_nms_top_n_train, rpn_pre_nms_top_n_test,
@@ -181,6 +197,9 @@ class MaskRCNN(FasterRCNN):
 
 class KeypointRCNN(FasterRCNN):
     def __init__(self, backbone, num_classes=None,
+                 # transform parameters
+                 min_size=800, max_size=1333,
+                 image_mean=None, image_std=None,
                  # RPN parameters
                  rpn_anchor_generator=None, rpn_head=None,
                  rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,
@@ -223,6 +242,9 @@ class KeypointRCNN(FasterRCNN):
 
         super(KeypointRCNN, self).__init__(
             backbone, num_classes,
+            # transform parameters
+            min_size, max_size,
+            image_mean, image_std,
             # RPN-specific parameters
             rpn_anchor_generator, rpn_head,
             rpn_pre_nms_top_n_train, rpn_pre_nms_top_n_test,

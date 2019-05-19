@@ -3,28 +3,26 @@
 Implements the Generalized R-CNN framework
 """
 
+from collections import OrderedDict
 import torch
 from torch import nn
-
-from .image_list import to_image_list
-from torchvision.ops import misc as misc_nn_ops
-from .roi_heads import paste_masks_in_image
 
 
 class GeneralizedRCNN(nn.Module):
     """
-    Main class for Generalized R-CNN. Currently supports boxes and masks.
-    It consists of three main parts:
-    - backbone
-    - rpn
-    - heads: takes the features + the proposals from the RPN and computes
-        detections / masks from it.
+    Main class for Generalized R-CNN.
+
+    Arguments:
+        backbone (nn.Module):
+        rpn (nn.Module):
+        heads (nn.Module): takes the features + the proposals from the RPN and computes
+            detections / masks from it.
+        transform (nn.Module): performs the data transformation from the inputs to feed into
+            the model
     """
 
-    def __init__(self, backbone, rpn, roi_heads, transform=None):
+    def __init__(self, backbone, rpn, roi_heads, transform):
         super(GeneralizedRCNN, self).__init__()
-        if transform is None:
-            transform = Transform()
         self.transform = transform
         self.backbone = backbone
         self.rpn = rpn
@@ -33,8 +31,8 @@ class GeneralizedRCNN(nn.Module):
     def forward(self, images, targets=None):
         """
         Arguments:
-            images (list[Tensor] or ImageList): images to be processed
-            targets (list[BoxList]): ground-truth boxes present in the image (optional)
+            images (list[Tensor]): images to be processed
+            targets (list[Dict[Tensor]]): ground-truth boxes present in the image (optional)
 
         Returns:
             result (list[BoxList] or dict[Tensor]): the output from the model.
@@ -48,6 +46,8 @@ class GeneralizedRCNN(nn.Module):
         original_image_sizes = [img.shape[-2:] for img in images]
         images, targets = self.transform(images, targets)
         features = self.backbone(images.tensors)
+        if isinstance(features, torch.Tensor):
+            features = OrderedDict([(0, features)])
         proposals, proposal_losses = self.rpn(images, features, targets)
         detections, detector_losses = self.roi_heads(features, proposals, images.image_sizes, targets)
         detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
@@ -60,122 +60,3 @@ class GeneralizedRCNN(nn.Module):
             return losses
 
         return detections
-
-
-from .image_list import ImageList
-class Transform(nn.Module):
-    def __init__(self, min_size=800.0, max_size=1333.0,
-                 image_mean=None, image_std=None):
-        super(Transform, self).__init__()
-        self.min_size = min_size
-        self.max_size = max_size
-        if image_mean is None:
-            image_mean = [0.485, 0.456, 0.406]
-        if image_std is None:
-            image_std = [0.229, 0.224, 0.225]
-        self.image_mean = image_mean
-        self.image_std = image_std
-
-    def forward(self, images, targets=None):
-        for i in range(len(images)):
-            image = images[i]
-            target = targets[i] if targets is not None else targets
-            image = self.normalize(image)
-            image, target = self.resize(image, target)
-            images[i] = image
-            if targets is not None:
-                targets[i] = target
-        image_sizes = [img.shape[-2:] for img in images]
-        images = self.batch_images(images)
-        image_list = ImageList(images, image_sizes)
-        return image_list, targets
-
-    def normalize(self, image):
-        dtype, device = image.dtype, image.device
-        mean = torch.as_tensor(self.image_mean, dtype=dtype, device=device)
-        std = torch.as_tensor(self.image_std, dtype=dtype, device=device)
-        return (image - mean[:, None, None]) / std[:, None, None]
-
-    def resize(self, image, target):
-        h, w = image.shape[-2:]
-        min_size = min(image.shape[-2:])
-        max_size = max(image.shape[-2:])
-        scale_factor = self.min_size / min_size
-        if max_size * scale_factor > self.max_size:
-            scale_factor = self.max_size / max_size
-        image = torch.nn.functional.interpolate(
-            image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
-
-        if target is None:
-            return image, target
-
-        bbox = target["boxes"]
-        bbox = resize_boxes(bbox, (h, w), image.shape[-2:])
-        target["boxes"] = bbox
-
-        if "masks" in target:
-            mask = target["masks"]
-            mask = misc_nn_ops.interpolate(mask[None].float(), scale_factor=scale_factor)[0].byte()
-            target["masks"] = mask
-
-        if "keypoints" in target:
-            keypoints = target["keypoints"]
-            keypoints = resize_keypoints(keypoints, (h, w), image.shape[-2:])
-            target["keypoints"] = keypoints
-        return image, target
-
-    def batch_images(self, images, size_divisible=32):
-        # concatenate
-        max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
-
-        import math
-
-        stride = size_divisible
-        max_size = list(max_size)
-        max_size[1] = int(math.ceil(max_size[1] / stride) * stride)
-        max_size[2] = int(math.ceil(max_size[2] / stride) * stride)
-        max_size = tuple(max_size)
-
-        batch_shape = (len(images),) + max_size
-        batched_imgs = images[0].new(*batch_shape).zero_()
-        for img, pad_img in zip(images, batched_imgs):
-            pad_img[: img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)
-
-        return batched_imgs
-
-    def postprocess(self, result, image_shapes, original_image_sizes):
-        if self.training:
-            return result
-        for i, (pred, im_s, o_im_s) in enumerate(zip(result, image_shapes, original_image_sizes)):
-            boxes = pred["boxes"]
-            boxes = resize_boxes(boxes, im_s, o_im_s)
-            result[i]["boxes"] = boxes
-            if "mask" in pred:
-                masks = pred["mask"]
-                masks = paste_masks_in_image(masks, boxes, o_im_s)
-                result[i]["mask"] = masks
-            if "keypoints" in pred:
-                keypoints = pred["keypoints"]
-                keypoints = resize_keypoints(keypoints, im_s, o_im_s)
-                result[i]["keypoints"] = keypoints
-        return result
-
-
-def resize_keypoints(keypoints, original_size, new_size):
-    ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size))
-    ratio_h, ratio_w = ratios
-    resized_data = keypoints.clone()
-    resized_data[..., 0] *= ratio_w
-    resized_data[..., 1] *= ratio_h
-    return resized_data
-
-
-def resize_boxes(boxes, original_size, new_size):
-    ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size))
-    ratio_height, ratio_width = ratios
-    xmin, ymin, xmax, ymax = boxes.unbind(1)
-    xmin = xmin * ratio_width
-    xmax = xmax * ratio_width
-    ymin = ymin * ratio_height
-    ymax = ymax * ratio_height
-    return torch.stack((xmin, ymin, xmax, ymax), dim=1)
