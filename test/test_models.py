@@ -40,7 +40,6 @@ class Tester(unittest.TestCase):
         out = model(x)
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
 
-
     def _test_detection_model(self, name):
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
         model.eval()

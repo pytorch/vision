@@ -66,6 +66,10 @@ class FasterRCNN(GeneralizedRCNN):
         if num_classes is not None:
             if box_predictor is not None:
                 raise ValueError("num_classes should be None when box_predictor is specified")
+        else:
+            if box_predictor is None:
+                raise ValueError("num_classes should not be None when box_predictor "
+                                 "is not specified")
 
         out_channels = backbone.out_channels
 

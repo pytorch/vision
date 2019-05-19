@@ -94,7 +94,6 @@ class CocoEvaluator(object):
         return coco_results
 
     def prepare_for_coco_segmentation(self, predictions):
-        # from torchvision.models.detection.roi_heads import paste_masks_in_image
         coco_results = []
         for original_id, prediction in predictions.items():
             if len(prediction) == 0:
