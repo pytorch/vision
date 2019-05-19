@@ -1,3 +1,4 @@
+import random
 import math
 import torch
 from torch import nn
@@ -10,8 +11,10 @@ from .roi_heads import paste_masks_in_image
 class GeneralizedRCNNTransform(nn.Module):
     def __init__(self, min_size, max_size, image_mean, image_std):
         super(GeneralizedRCNNTransform, self).__init__()
-        self.min_size = float(min_size)
-        self.max_size = float(max_size)
+        if not isinstance(min_size, (list, tuple)):
+            min_size = (min_size,)
+        self.min_size = min_size
+        self.max_size = max_size
         self.image_mean = image_mean
         self.image_std = image_std
 
@@ -40,9 +43,14 @@ class GeneralizedRCNNTransform(nn.Module):
 
     def resize(self, image, target):
         h, w = image.shape[-2:]
-        min_size = min(image.shape[-2:])
-        max_size = max(image.shape[-2:])
-        scale_factor = self.min_size / min_size
+        min_size = float(min(image.shape[-2:]))
+        max_size = float(max(image.shape[-2:]))
+        if self.training:
+            size = random.choice(self.min_size)
+        else:
+            # FIXME assume for now that testing uses the largest scale
+            size = self.min_size[-1]
+        scale_factor = size / min_size
         if max_size * scale_factor > self.max_size:
             scale_factor = self.max_size / max_size
         image = torch.nn.functional.interpolate(
