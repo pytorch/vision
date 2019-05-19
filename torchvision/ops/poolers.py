@@ -113,11 +113,17 @@ class MultiScaleRoIAlign(nn.Module):
         x = [v for k, v in x.items() if k in self.featmap_names]
         num_levels = len(x)
         rois = self.convert_to_roi_format(boxes)
-        if num_levels == 1:
-            return self.poolers[0](x[0], rois)
-
         if self.scales is None:
             self.setup_scales(x, image_shapes)
+
+        if num_levels == 1:
+            return roi_align(
+                x[0], rois,
+                output_size=self.output_size,
+                spatial_scale=self.scales[0],
+                sampling_ratio=self.sampling_ratio
+            )
+
         levels = self.map_levels(boxes)
 
         num_rois = len(rois)
