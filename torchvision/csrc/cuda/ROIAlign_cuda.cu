@@ -396,7 +396,7 @@ at::Tensor ROIAlign_backward_cuda(
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIAlign_backward", [&] {
     RoIAlignBackward<scalar_t><<<grid, block, 0, stream>>>(
         grad.numel(),
-        grad.contiguous().data<scalar_t>(),
+        grad.data<scalar_t>(),
         spatial_scale,
         channels,
         height,
