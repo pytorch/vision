@@ -147,7 +147,7 @@ def main(args):
     model = torchvision.models.__dict__[args.model]()
     model.to(device)
     if args.distributed and args.sync_bn:
-        model = torch.nn.utils.convert_sync_batchnorm(model)
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     model_without_ddp = model
     if args.distributed:
@@ -177,8 +177,8 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        lr_scheduler.step()
         train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq)
+        lr_scheduler.step()
         evaluate(model, criterion, data_loader_test, device=device)
         if args.output_dir:
             checkpoint = {
