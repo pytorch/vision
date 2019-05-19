@@ -4,13 +4,15 @@ import torch
 import torch.nn as nn
 from .utils import load_state_dict_from_url
 
-__all__ = ['ShuffleNetV2', 'shufflenetv2_x0_5', 'shufflenetv2_x1_0', 'shufflenetv2_x1_5', 'shufflenetv2_x2_0']
+
+__all__ = [
+    'ShuffleNetV2', 'shufflenet_v2_x0_5', 'shufflenet_v2_x1_0',
+    'shufflenet_v2_x1_5', 'shufflenet_v2_x2_0'
+]
 
 model_urls = {
-    'shufflenetv2_x0.5':
-        'https://github.com/barrh/Shufflenet-v2-Pytorch/releases/download/v0.1.0/shufflenetv2_x0.5-f707e7126e.pt',
-    'shufflenetv2_x1.0':
-        'https://github.com/barrh/Shufflenet-v2-Pytorch/releases/download/v0.1.0/shufflenetv2_x1-5666bf0f80.pt',
+    'shufflenetv2_x0.5': 'https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth',
+    'shufflenetv2_x1.0': 'https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth',
     'shufflenetv2_x1.5': None,
     'shufflenetv2_x2.0': None,
 }
@@ -142,27 +144,27 @@ def _shufflenetv2(arch, pretrained, progress, *args, **kwargs):
         if model_url is None:
             raise NotImplementedError('pretrained {} is not supported as of now'.format(arch))
         else:
-            state_dict = load_state_dict_from_url(model_urls, progress=progress)
+            state_dict = load_state_dict_from_url(model_url, progress=progress)
             model.load_state_dict(state_dict)
 
     return model
 
 
-def shufflenetv2_x0_5(pretrained=False, progress=True, **kwargs):
+def shufflenet_v2_x0_5(pretrained=False, progress=True, **kwargs):
     return _shufflenetv2('shufflenetv2_x0.5', pretrained, progress,
                          [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
 
 
-def shufflenetv2_x1_0(pretrained=False, progress=True, **kwargs):
+def shufflenet_v2_x1_0(pretrained=False, progress=True, **kwargs):
     return _shufflenetv2('shufflenetv2_x1.0', pretrained, progress,
                          [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
 
 
-def shufflenetv2_x1_5(pretrained=False, progress=True, **kwargs):
+def shufflenet_v2_x1_5(pretrained=False, progress=True, **kwargs):
     return _shufflenetv2('shufflenetv2_x1.5', pretrained, progress,
                          [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
 
 
-def shufflenetv2_x2_0(pretrained=False, progress=True, **kwargs):
+def shufflenet_v2_x2_0(pretrained=False, progress=True, **kwargs):
     return _shufflenetv2('shufflenetv2_x2.0', pretrained, progress,
                          [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)

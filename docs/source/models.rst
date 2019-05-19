@@ -12,6 +12,8 @@ architectures:
 -  `Inception`_ v3
 -  `GoogLeNet`_
 -  `ShuffleNet`_ v2
+-  `MobileNet`_ v2
+-  `ResNeXt`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -25,7 +27,9 @@ You can construct a model with random weights by calling its constructor:
     densenet = models.densenet161()
     inception = models.inception_v3()
     googlenet = models.googlenet()
-    shufflenet = models.shufflenetv2()
+    shufflenet = models.shufflenet_v2_x1_0()
+    mobilenet = models.mobilenet_v2()
+    resnext50_32x4d = models.resnext50_32x4d()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -40,7 +44,9 @@ These can be constructed by passing ``pretrained=True``:
     densenet = models.densenet161(pretrained=True)
     inception = models.inception_v3(pretrained=True)
     googlenet = models.googlenet(pretrained=True)
-    shufflenet = models.shufflenetv2(pretrained=True)
+    shufflenet = models.shufflenet_v2_x1_0(pretrained=True)
+    mobilenet = models.mobilenet_v2(pretrained=True)
+    resnext50_32x4d = models.resnext50_32x4d(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
@@ -92,6 +98,9 @@ Densenet-161                      22.35           6.20
 Inception v3                      22.55           6.44
 GoogleNet                         30.22           10.47
 ShuffleNet V2                     30.64           11.68
+MobileNet V2                      28.12           9.71
+ResNeXt-50-32x4d                  22.38           6.30
+ResNeXt-101-32x8d                 20.69           5.47
 ================================  =============   =============
 
 
@@ -103,6 +112,8 @@ ShuffleNet V2                     30.64           11.68
 .. _Inception: https://arxiv.org/abs/1512.00567
 .. _GoogLeNet: https://arxiv.org/abs/1409.4842
 .. _ShuffleNet: https://arxiv.org/abs/1807.11164
+.. _MobileNet: https://arxiv.org/abs/1801.04381
+.. _ResNeXt: https://arxiv.org/abs/1611.05431
 
 .. currentmodule:: torchvision.models
 
@@ -161,4 +172,15 @@ ShuffleNet v2
 -------------
 
 .. autofunction:: shufflenet
+
+MobileNet v2
+-------------
+
+.. autofunction:: mobilenet_v2
+
+ResNext
+-------------
+
+.. autofunction:: resnext50_32x4d
+.. autofunction:: resnext101_32x8d
 
