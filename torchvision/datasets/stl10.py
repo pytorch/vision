@@ -54,7 +54,7 @@ class STL10(CIFAR10):
         self.transform = transform
         self.target_transform = target_transform
         self.split = split  # train/test/unlabeled set
-        self.folds = folds # one of the 10 pre-defined folds or the full dataset
+        self.folds = folds  # one of the 10 pre-defined folds or the full dataset
 
         if download:
             self.download()
