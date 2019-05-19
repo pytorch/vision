@@ -100,7 +100,6 @@ class CocoEvaluator(object):
             if len(prediction) == 0:
                 continue
 
-            boxes = prediction["boxes"]
             scores = prediction["scores"]
             labels = prediction["labels"]
             masks = prediction["mask"]

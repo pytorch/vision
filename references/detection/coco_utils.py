@@ -162,9 +162,7 @@ def convert_to_coco_api(ds):
         labels = targets['labels'].tolist()
         areas = targets['area'].tolist()
         iscrowd = targets['iscrowd'].tolist()
-        if 'masks' in targets:
-            # TODO need to serialize masks as well
-            segmentations = targets['masks']
+        # TODO need to add masks as well
         num_objs = len(bboxes)
         for i in range(num_objs):
             ann = {}

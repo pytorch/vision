@@ -203,10 +203,9 @@ def heatmaps_to_keypoints(maps, rois):
     return xy_preds.permute(0, 2, 1), end_scores
 
 
-def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, gt_labels, keypoint_matched_idxs, discretization_size):
+def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched_idxs, discretization_size):
     heatmaps = []
     valid = []
-    labels = [l[idxs] for l, idxs in zip(gt_labels, keypoint_matched_idxs)]
     for proposals_per_image, gt_kp_in_image, midx in zip(proposals, gt_keypoints, keypoint_matched_idxs):
         kp = gt_kp_in_image[midx]
         heatmaps_per_image, valid_per_image = keypoints_to_heatmap(
@@ -600,10 +599,9 @@ class RoIHeads(torch.nn.Module):
             loss_keypoint = {}
             if self.training:
                 gt_keypoints = [t["keypoints"] for t in targets]
-                gt_labels = [t["labels"] for t in targets]
                 loss_keypoint = keypointrcnn_loss(
                     keypoint_logits, keypoint_proposals,
-                    gt_keypoints, gt_labels, pos_matched_idxs, self.keypoint_discretization_size)
+                    gt_keypoints, pos_matched_idxs, self.keypoint_discretization_size)
                 loss_keypoint = dict(loss_keypoint=loss_keypoint)
             else:
                 keypoints_probs, kp_scores = keypointrcnn_inference(keypoint_logits, keypoint_proposals)
