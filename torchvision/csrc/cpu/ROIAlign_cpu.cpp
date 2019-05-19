@@ -456,7 +456,7 @@ at::Tensor ROIAlign_backward_cpu(
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIAlign_forward", [&] {
     ROIAlignBackward<scalar_t>(
         grad.numel(),
-        grad.contiguous().data<scalar_t>(),
+        grad.data<scalar_t>(),
         spatial_scale,
         channels,
         height,

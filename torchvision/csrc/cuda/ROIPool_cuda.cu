@@ -221,7 +221,7 @@ at::Tensor ROIPool_backward_cuda(
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIPool_backward", [&] {
     RoIPoolBackward<scalar_t><<<grid, block, 0, stream>>>(
         grad.numel(),
-        grad.contiguous().data<scalar_t>(),
+        grad.data<scalar_t>(),
         argmax.contiguous().data<int>(),
         num_rois,
         spatial_scale,

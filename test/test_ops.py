@@ -135,6 +135,41 @@ class RoIPoolTester(unittest.TestCase):
 
         assert torch.allclose(x.grad, gt_grad), 'gradient incorrect for roi_pool'
 
+    def test_roi_pool_align_non_cont_grad_cpu(self):
+        devices = ['cpu']
+        if torch.cuda.is_available():
+            devices.append('cuda')
+
+        for d in devices:
+            device = torch.device(d)
+            rois = torch.tensor([
+                [0, 0, 0, 9, 9],
+                [0, 0, 5, 5, 9],
+                [0, 5, 5, 9, 9]], dtype=self.dtype, device=device)
+
+            grad_cont = torch.rand(3, 1, 5, 5, dtype=self.dtype, device=device)
+            grad = grad_cont.permute(2, 1, 3, 0).contiguous().permute(3, 1, 0, 2)
+
+            for op in ['RoIPool', 'RoIAlign']:
+                x = torch.rand(1, 1, 10, 10, dtype=self.dtype, device=device, requires_grad=True)
+                kwargs = {}
+                if op == 'RoIAlign':
+                    kwargs['sampling_ratio'] = 1
+                m = getattr(ops, op)((5, 5), 1, **kwargs)
+
+                y = m(x, rois)
+                y.backward(grad_cont)
+
+                g1 = x.grad.detach().clone()
+                del x.grad
+
+                y = m(x, rois)
+                y.backward(grad)
+
+                g2 = x.grad.detach().clone()
+                del x.grad
+                assert torch.allclose(g1, g2), 'gradient incorrect for {}'.format(op)
+
     def test_roi_pool_gradcheck_cpu(self):
         device = torch.device('cpu')
         x = torch.rand(1, 1, 10, 10, dtype=self.dtype, device=device, requires_grad=True)
