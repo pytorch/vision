@@ -1186,8 +1186,6 @@ class RandomErasing(object):
     """ Randomly selects a rectangle region in an image and erases its pixels.
         'Random Erasing Data Augmentation' by Zhong et al. Arxiv 2017.
         See https://arxiv.org/pdf/1708.04896.pdf
-        'Improved Regularization of Convolutional Neural Networks with Cutout' by DeVries. Arxiv 2017.
-        See https://arxiv.org/pdf/1708.04552.pdf
     Args:
          probability: The probability that the Random Erasing operation will be performed.
          sl: Minimum proportion of erased area against input image.
