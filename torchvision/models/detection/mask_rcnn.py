@@ -383,10 +383,10 @@ class KeypointRCNNPredictor(nn.Module):
         return x
 
 
-def _resnet_fpn_backbone(backbone_name):
+def _resnet_fpn_backbone(backbone_name, pretrained):
     from .. import resnet
     backbone = resnet.__dict__[backbone_name](
-        pretrained=True,
+        pretrained=pretrained,
         norm_layer=misc_nn_ops.FrozenBatchNorm2d)
     # freeze layers
     for name, parameter in backbone.named_parameters():
@@ -406,24 +406,25 @@ def _resnet_fpn_backbone(backbone_name):
     return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels)
 
 
-def fasterrcnn_resnet50_fpn(pretrained=False, num_classes=81, **kwargs):
-    backbone = _resnet_fpn_backbone('resnet50')
+def fasterrcnn_resnet50_fpn(pretrained=False, num_classes=81, pretrained_backbone=True, **kwargs):
+    backbone = _resnet_fpn_backbone('resnet50', pretrained_backbone)
     model = FasterRCNN(backbone, num_classes, **kwargs)
     if pretrained:
         pass
     return model
 
 
-def maskrcnn_resnet50_fpn(pretrained=False, num_classes=81, **kwargs):
-    backbone = _resnet_fpn_backbone('resnet50')
+def maskrcnn_resnet50_fpn(pretrained=False, num_classes=81, pretrained_backbone=True, **kwargs):
+    backbone = _resnet_fpn_backbone('resnet50', pretrained_backbone)
     model = MaskRCNN(backbone, num_classes, **kwargs)
     if pretrained:
         pass
     return model
 
 
-def keypointrcnn_resnet50_fpn(pretrained=False, num_classes=2, num_keypoints=17, **kwargs):
-    backbone = _resnet_fpn_backbone('resnet50')
+def keypointrcnn_resnet50_fpn(pretrained=False, num_classes=2, num_keypoints=17,
+                              pretrained_backbone=True, **kwargs):
+    backbone = _resnet_fpn_backbone('resnet50', pretrained_backbone)
     model = KeypointRCNN(backbone, num_classes, num_keypoints=num_keypoints, **kwargs)
     if pretrained:
         pass
