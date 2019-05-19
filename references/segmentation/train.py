@@ -124,7 +124,7 @@ def main(args):
     model = torchvision.models.segmentation.__dict__[args.model](num_classes=num_classes, aux_loss=args.aux_loss)
     model.to(device)
     if args.distributed:
-        model = torch.nn.utils.convert_sync_batchnorm(model)
+        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
