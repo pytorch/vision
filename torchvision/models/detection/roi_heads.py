@@ -395,7 +395,6 @@ class RoIHeads(torch.nn.Module):
             return False
         return True
 
-
     def assign_targets_to_proposals(self, proposals, gt_boxes, gt_labels):
         matched_idxs = []
         labels = []

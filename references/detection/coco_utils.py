@@ -111,6 +111,7 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
         return sum(sum(1 for v in ann["keypoints"][2::3] if v > 0) for ann in anno)
 
     min_keypoints_per_image = 10
+
     def _has_valid_annotation(anno):
         # if it's empty, there is no annotation
         if len(anno) == 0:
@@ -142,13 +143,12 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
     return dataset
 
 
-import tqdm
 def convert_to_coco_api(ds):
     coco_ds = COCO()
     ann_id = 0
     dataset = {'images': [], 'categories': [], 'annotations': []}
     categories = set()
-    for img_idx in tqdm.tqdm(range(len(ds))):
+    for img_idx in range(len(ds)):
         # find better way to get target
         # targets = ds.get_annotations(img_idx)
         _, targets = ds[img_idx]
@@ -163,6 +163,7 @@ def convert_to_coco_api(ds):
         areas = targets['area'].tolist()
         iscrowd = targets['iscrowd'].tolist()
         if 'masks' in targets:
+            # TODO need to serialize masks as well
             segmentations = targets['masks']
         num_objs = len(bboxes)
         for i in range(num_objs):
@@ -176,7 +177,7 @@ def convert_to_coco_api(ds):
             ann['id'] = ann_id
             dataset['annotations'].append(ann)
             ann_id += 1
-    dataset['categories'] = [{'id':i} for i in sorted(categories)]
+    dataset['categories'] = [{'id': i} for i in sorted(categories)]
     coco_ds.dataset = dataset
     coco_ds.createIndex()
     return coco_ds
@@ -233,6 +234,7 @@ def get_coco(root, image_set, transforms, mode='instances'):
     # dataset = torch.utils.data.Subset(dataset, [i for i in range(500)])
 
     return dataset
+
 
 def get_coco_kp(root, image_set, transforms):
     return get_coco(root, image_set, transforms, mode="person_keypoints")
