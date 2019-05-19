@@ -10,6 +10,7 @@ template <typename Model>
 torch::Tensor forward_model(const std::string& input_path, torch::Tensor x) {
   Model network;
   torch::load(network, input_path);
+  network->eval();
   return network->forward(x);
 }
 
@@ -116,6 +117,7 @@ torch::Tensor forward_googlenet(
     torch::Tensor x) {
   GoogLeNet network;
   torch::load(network, input_path);
+  network->eval();
   return network->forward(x).output;
 }
 torch::Tensor forward_inceptionv3(
@@ -123,6 +125,7 @@ torch::Tensor forward_inceptionv3(
     torch::Tensor x) {
   InceptionV3 network;
   torch::load(network, input_path);
+  network->eval();
   return network->forward(x).output;
 }
 
