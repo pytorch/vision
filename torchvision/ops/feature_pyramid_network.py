@@ -7,24 +7,43 @@ from torch import nn
 
 class FeaturePyramidNetwork(nn.Module):
     """
-    Module that adds a FPN on top of a list of feature maps.
+    Module that adds a FPN from on top of a set of feature maps. This is based on
+    `"Feature Pyramid Network for Object Detection" <https://arxiv.org/abs/1612.03144>`_.
+
     The feature maps are currently supposed to be in increasing depth
-    order, and must be consecutive
+    order.
+
+    The input to the model is expected to be an OrderedDict[Tensor], containing
+    the feature maps on top of which the FPN will be added.
+
+    Arguments:
+        in_channels_list (list[int]): number of channels for each feature map that
+            is passed to the module
+        out_channels (int): number of channels of the FPN representation
+        extra_blocks (ExtraFPNBlock or None): if provided, extra operations will
+            be performed. It is expected to take the fpn features, the original
+            features and the names of the original features as input, and returns
+            a new list of feature maps and their corresponding names
+
+    Examples::
+
+        >>> m = torchvision.ops.FeaturePyramidNetwork([10, 20, 30], 5)
+        >>> # get some dummy data
+        >>> x = OrderedDict()
+        >>> x['feat0'] = torch.rand(1, 10, 64, 64)
+        >>> x['feat2'] = torch.rand(1, 20, 16, 16)
+        >>> x['feat3'] = torch.rand(1, 30, 8, 8)
+        >>> # compute the FPN on top of x
+        >>> output = m(x)
+        >>> print([(k, v.shape) for k, v in output.items()])
+        >>> # returns
+        >>>   [('feat0', torch.Size([1, 5, 64, 64])),
+        >>>    ('feat2', torch.Size([1, 5, 16, 16])),
+        >>>    ('feat3', torch.Size([1, 5, 8, 8]))]
+
     """
 
-    def __init__(
-        self, in_channels_list, out_channels, extra_blocks=None
-    ):
-        """
-        Arguments:
-            in_channels_list (list[int]): number of channels for each feature map that
-                will be fed
-            out_channels (int): number of channels of the FPN representation
-            extra_blocks (ExtraFPNBlock or None): if provided, extra operations will
-                be performed. It is expected to take the fpn features, the original
-                features and the names of the original features as input, and returns
-                a new list of feature maps and their corresponding names
-        """
+    def __init__(self, in_channels_list, out_channels, extra_blocks=None):
         super(FeaturePyramidNetwork, self).__init__()
         self.inner_blocks = nn.ModuleList()
         self.layer_blocks = nn.ModuleList()
@@ -48,8 +67,11 @@ class FeaturePyramidNetwork(nn.Module):
 
     def forward(self, x):
         """
+        Computes the FPN for a set of feature maps.
+
         Arguments:
             x (OrderedDict[Tensor]): feature maps for each feature level.
+
         Returns:
             results (OrderedDict[Tensor]): feature maps after FPN layers.
                 They are ordered from highest resolution first.
@@ -82,11 +104,28 @@ class FeaturePyramidNetwork(nn.Module):
 
 
 class ExtraFPNBlock(nn.Module):
+    """
+    Base class for the extra block in the FPN.
+
+    Arguments:
+        results (List[Tensor]): the result of the FPN
+        x (List[Tensor]): the original feature maps
+        names (List[str]): the names for each one of the
+            original feature maps
+
+    Returns:
+        results (List[Tensor]): the extended set of results
+            of the FPN
+        names (List[str]): the extended set of names for the results
+    """
     def forward(self, results, x, names):
         pass
 
 
 class LastLevelMaxPool(ExtraFPNBlock):
+    """
+    Applies a max_pool2d on top of the last feature map
+    """
     def forward(self, x, y, names):
         names.append("pool")
         x.append(F.max_pool2d(x[-1], 1, 2, 0))

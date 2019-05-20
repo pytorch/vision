@@ -28,6 +28,11 @@ class _NewEmptyTensorOp(torch.autograd.Function):
 
 
 class Conv2d(torch.nn.Conv2d):
+    """
+    Equivalent to nn.Conv2d, but with support for empty batch sizes.
+    This will eventually be supported natively by PyTorch, and this
+    class can go away.
+    """
     def forward(self, x):
         if x.numel() > 0:
             return super(Conv2d, self).forward(x)
@@ -44,6 +49,11 @@ class Conv2d(torch.nn.Conv2d):
 
 
 class ConvTranspose2d(torch.nn.ConvTranspose2d):
+    """
+    Equivalent to nn.ConvTranspose2d, but with support for empty batch sizes.
+    This will eventually be supported natively by PyTorch, and this
+    class can go away.
+    """
     def forward(self, x):
         if x.numel() > 0:
             return super(ConvTranspose2d, self).forward(x)
@@ -65,6 +75,11 @@ class ConvTranspose2d(torch.nn.ConvTranspose2d):
 
 
 class BatchNorm2d(torch.nn.BatchNorm2d):
+    """
+    Equivalent to nn.BatchNorm2d, but with support for empty batch sizes.
+    This will eventually be supported natively by PyTorch, and this
+    class can go away.
+    """
     def forward(self, x):
         if x.numel() > 0:
             return super(BatchNorm2d, self).forward(x)
@@ -76,6 +91,11 @@ class BatchNorm2d(torch.nn.BatchNorm2d):
 def interpolate(
     input, size=None, scale_factor=None, mode="nearest", align_corners=None
 ):
+    """
+    Equivalent to nn.functional.interpolate, but with support for empty batch sizes.
+    This will eventually be supported natively by PyTorch, and this
+    class can go away.
+    """
     if input.numel() > 0:
         return torch.nn.functional.interpolate(
             input, size, scale_factor, mode, align_corners
