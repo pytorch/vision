@@ -79,7 +79,7 @@ class FasterRCNN(GeneralizedRCNN):
         box_roi_pool (MultiScaleRoIAlign): the module which crops and resizes the feature maps in
             the locations indicated by the bounding boxes
         box_head (nn.Module): module that takes the cropped feature maps as input
-        box_predictor (nn.Module): module that takes the output of box_head and returns the 
+        box_predictor (nn.Module): module that takes the output of box_head and returns the
             classification logits and box regression deltas.
         box_score_thresh (float): during inference, only return proposals with a classification score
             greater than box_score_thresh
