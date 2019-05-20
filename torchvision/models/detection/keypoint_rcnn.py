@@ -35,7 +35,6 @@ class KeypointRCNN(FasterRCNN):
                  bbox_reg_weights=None,
                  # keypoint parameters
                  keypoint_roi_pool=None, keypoint_head=None, keypoint_predictor=None,
-                 keypoint_discretization_size=56,
                  num_keypoints=17):
 
         assert isinstance(keypoint_roi_pool, (MultiScaleRoIAlign, type(None)))
@@ -84,7 +83,6 @@ class KeypointRCNN(FasterRCNN):
         self.roi_heads.keypoint_roi_pool = keypoint_roi_pool
         self.roi_heads.keypoint_head = keypoint_head
         self.roi_heads.keypoint_predictor = keypoint_predictor
-        self.roi_heads.keypoint_discretization_size = keypoint_discretization_size
 
 
 class KeypointRCNNHeads(nn.Sequential):

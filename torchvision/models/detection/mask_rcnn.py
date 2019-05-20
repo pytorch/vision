@@ -36,8 +36,7 @@ class MaskRCNN(FasterRCNN):
                  box_batch_size_per_image=512, box_positive_fraction=0.25,
                  bbox_reg_weights=None,
                  # Mask parameters
-                 mask_roi_pool=None, mask_head=None, mask_predictor=None,
-                 mask_discretization_size=28):
+                 mask_roi_pool=None, mask_head=None, mask_predictor=None):
 
         assert isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None)))
 
@@ -84,7 +83,6 @@ class MaskRCNN(FasterRCNN):
         self.roi_heads.mask_roi_pool = mask_roi_pool
         self.roi_heads.mask_head = mask_head
         self.roi_heads.mask_predictor = mask_predictor
-        self.roi_heads.mask_discretization_size = mask_discretization_size
 
 
 class MaskRCNNHeads(nn.Sequential):
