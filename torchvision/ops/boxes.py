@@ -59,6 +59,17 @@ def batched_nms(boxes, scores, idxs, iou_threshold):
 
 
 def remove_small_boxes(boxes, min_size):
+    """
+    Remove boxes which contains at least one side smaller than min_size.
+
+    Arguments:
+        boxes (Tensor[N, 4]): boxes in [x0, y0, x1, y1] format
+        min_size (int): minimum size
+
+    Returns:
+        keep (Tensor[K]): indices of the boxes that have both sides
+            larger than min_size
+    """
     ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
     keep = (ws >= min_size) & (hs >= min_size)
     keep = keep.nonzero().squeeze(1)
@@ -67,9 +78,11 @@ def remove_small_boxes(boxes, min_size):
 
 def clip_boxes_to_image(boxes, size):
     """
+    Clip boxes so that they lie inside an image of size `size`.
+
     Arguments:
-        boxes (Tensor[N, 4])
-        size (Tuple[height, width])
+        boxes (Tensor[N, 4]): boxes in [x0, y0, x1, y1] format
+        size (Tuple[height, width]): size of the image
 
     Returns:
         clipped_boxes (Tensor[N, 4])

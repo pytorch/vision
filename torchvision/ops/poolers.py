@@ -4,24 +4,22 @@ import torch.nn.functional as F
 from torch import nn
 
 from torchvision.ops import roi_align
-
 from torchvision.ops.boxes import box_area
 
 
 class LevelMapper(object):
     """Determine which FPN level each RoI in a set of RoIs should map to based
     on the heuristic in the FPN paper.
+
+    Arguments:
+        k_min (int)
+        k_max (int)
+        canonical_scale (int)
+        canonical_level (int)
+        eps (float)
     """
 
     def __init__(self, k_min, k_max, canonical_scale=224, canonical_level=4, eps=1e-6):
-        """
-        Arguments:
-            k_min (int)
-            k_max (int)
-            canonical_scale (int)
-            canonical_level (int)
-            eps (float)
-        """
         self.k_min = k_min
         self.k_max = k_max
         self.s0 = canonical_scale
@@ -44,21 +42,34 @@ class LevelMapper(object):
 
 class MultiScaleRoIAlign(nn.Module):
     """
-    Pooler for Detection with or without FPN.
-    It currently hard-code ROIAlign in the implementation,
-    but that can be made more generic later on.
-    Also, the requirement of passing the scales is not strictly necessary, as they
-    can be inferred from the size of the feature map / size of original image,
-    which is available thanks to the BoxList.
+    Multi-scale RoIAlign pooling, which is useful for detection with or without FPN.
+
+    It infers the scale of the pooling via the heuristics present in the FPN paper.
+
+    Arguments:
+        featmap_names (List[str]): the names of the feature maps that will be used
+            for the pooling.
+        output_size (List[Tuple[int, int]] or List[int]): output size for the pooled region
+        sampling_ratio (int): sampling ratio for ROIAlign
+
+    Examples::
+
+        >>> m = torchvision.ops.MultiScaleRoIAlign(['feat1', 'feat3'], 3, 2)
+        >>> i = OrderedDict()
+        >>> i['feat1'] = torch.rand(1, 5, 64, 64)
+        >>> i['feat2'] = torch.rand(1, 5, 32, 32)  # this feature won't be used in the pooling
+        >>> i['feat3'] = torch.rand(1, 5, 16, 16)
+        >>> # create some random bounding boxes
+        >>> boxes = torch.rand(6, 4) * 256; boxes[:, 2:] += boxes[:, :2]
+        >>> # original image size, before computing the feature maps
+        >>> image_sizes = [(512, 512)]
+        >>> output = m(i, [boxes], image_sizes)
+        >>> print(output.shape)
+        >>> torch.Size([6, 5, 3, 3])
+
     """
 
     def __init__(self, featmap_names, output_size, sampling_ratio):
-        """
-        Arguments:
-            output_size (list[tuple[int]] or list[int]): output size for the pooled region
-            scales (list[float]): scales for each Pooler
-            sampling_ratio (int): sampling ratio for ROIAlign
-        """
         super(MultiScaleRoIAlign, self).__init__()
         if isinstance(output_size, int):
             output_size = (output_size, output_size)
@@ -105,8 +116,14 @@ class MultiScaleRoIAlign(nn.Module):
     def forward(self, x, boxes, image_shapes):
         """
         Arguments:
-            x (OrderedDict[Tensor]): feature maps for each level
-            boxes (list[BoxList]): boxes to be used to perform the pooling operation.
+            x (OrderedDict[Tensor]): feature maps for each level. They are assumed to have
+                all the same number of channels, but they can have different sizes.
+            boxes (List[Tensor[N, 4]]): boxes to be used to perform the pooling operation, in
+                [x0, y0, x1, y1] format and in the image reference size, not the feature map
+                reference.
+            image_shapes (List[Tuple[height, width]]): the sizes of each image before they
+                have been fed to a CNN to obtain feature maps. This allows us to infer the
+                scale factor for each one of the levels to be pooled.
         Returns:
             result (Tensor)
         """

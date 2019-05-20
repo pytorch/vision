@@ -10,8 +10,22 @@ from . import _utils as det_utils
 
 class AnchorGenerator(nn.Module):
     """
-    For a set of image sizes and feature maps, computes a set
-    of anchors
+    Module that generates anchors for a set of feature maps and
+    image sizes.
+
+    The module support computing anchors at multiple sizes and aspect ratios
+    per feature map.
+
+    sizes and aspect_ratios should have the same number of elements, and it should
+    correspond to the number of feature maps.
+
+    sizes[i] and aspect_ratios[i] can have an arbitrary number of elements,
+    and AnchorGenerator will output a set of sizes[i] * aspect_ratios[i] anchors
+    per spatial location for feature map i.
+
+    Arguments:
+        sizes (Tuple[Tuple[int]]):
+        aspect_ratios (Tuple[Tuple[float]]):
     """
 
     def __init__(
@@ -115,14 +129,13 @@ class AnchorGenerator(nn.Module):
 class RPNHead(nn.Module):
     """
     Adds a simple RPN Head with classification and regression heads
+
+    Arguments:
+        in_channels (int): number of channels of the input feature
+        num_anchors (int): number of anchors to be predicted
     """
 
     def __init__(self, in_channels, num_anchors):
-        """
-        Arguments:
-            in_channels (int): number of channels of the input feature
-            num_anchors (int): number of anchors to be predicted
-        """
         super(RPNHead, self).__init__()
         self.conv = nn.Conv2d(
             in_channels, in_channels, kernel_size=3, stride=1, padding=1
@@ -185,6 +198,30 @@ def concat_box_prediction_layers(box_cls, box_regression):
 
 
 class RegionProposalNetwork(torch.nn.Module):
+    """
+    Implements Region Proposal Network (RPN).
+
+    Arguments:
+        anchor_generator (AnchorGenerator): module that generates the anchors for a set of feature
+            maps.
+        head (nn.Module): module that computes the objectness and regression deltas
+        fg_iou_thresh (float): minimum IoU between the anchor and the GT box so that they can be
+            considered as positive during training of the RPN.
+        bg_iou_thresh (float): maximum IoU between the anchor and the GT box so that they can be
+            considered as negative during training of the RPN.
+        batch_size_per_image (int): number of anchors that are sampled during training of the RPN
+            for computing the loss
+        positive_fraction (float): proportion of positive anchors in a mini-batch during training
+            of the RPN
+        pre_nms_top_n (Dict[int]): number of proposals to keep before applying NMS. It should
+            contain two fields: training and testing, to allow for different values depending
+            on training or evaluation
+        post_nms_top_n (Dict[int]): number of proposals to keep after applying NMS. It should
+            contain two fields: training and testing, to allow for different values depending
+            on training or evaluation
+        nms_thresh (float): NMS threshold used for postprocessing the RPN proposals
+
+    """
 
     def __init__(self,
                  anchor_generator,
@@ -194,9 +231,6 @@ class RegionProposalNetwork(torch.nn.Module):
                  batch_size_per_image, positive_fraction,
                  #
                  pre_nms_top_n, post_nms_top_n, nms_thresh):
-        """
-        Arguments:
-        """
         super(RegionProposalNetwork, self).__init__()
         self.anchor_generator = anchor_generator
         self.head = head
@@ -310,10 +344,10 @@ class RegionProposalNetwork(torch.nn.Module):
     def compute_loss(self, objectness, pred_bbox_deltas, labels, regression_targets):
         """
         Arguments:
-            anchors (list[list[BoxList]])
-            objectness (list[Tensor])
-            pred_bbox_deltas (list[Tensor])
-            targets (list[BoxList])
+            objectness (Tensor)
+            pred_bbox_deltas (Tensor)
+            labels (List[Tensor])
+            regression_targets (List[Tensor])
 
         Returns:
             objectness_loss (Tensor)
@@ -347,15 +381,17 @@ class RegionProposalNetwork(torch.nn.Module):
         """
         Arguments:
             images (ImageList): images for which we want to compute the predictions
-            features (list[Tensor]): features computed from the images that are
+            features (List[Tensor]): features computed from the images that are
                 used for computing the predictions. Each tensor in the list
                 correspond to different feature levels
-            targets (list[BoxList): ground-truth boxes present in the image (optional)
+            targets (List[Dict[Tensor]): ground-truth boxes present in the image (optional).
+                If provided, each element in the dict should contain a field `boxes`,
+                with the locations of the ground-truth boxes.
 
         Returns:
-            boxes (list[BoxList]): the predicted boxes from the RPN, one BoxList per
+            boxes (List[Tensor]): the predicted boxes from the RPN, one Tensor per
                 image.
-            losses (dict[Tensor]): the losses for the model during training. During
+            losses (Dict[Tensor]): the losses for the model during training. During
                 testing, it is an empty dict.
         """
         # RPN uses all feature maps that are available
