@@ -4,6 +4,8 @@ from torch import nn
 from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops import MultiScaleRoIAlign
 
+from ..utils import load_state_dict_from_url
+
 from .faster_rcnn import FasterRCNN
 from .backbone_utils import resnet_fpn_backbone
 
@@ -127,10 +129,22 @@ class KeypointRCNNPredictor(nn.Module):
         return x
 
 
-def keypointrcnn_resnet50_fpn(pretrained=False, num_classes=2, num_keypoints=17,
+model_urls = {
+    'keypointrcnn_resnet50_fpn_coco':
+        'https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-9f466800.pth',
+}
+
+
+def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
+                              num_classes=2, num_keypoints=17,
                               pretrained_backbone=True, **kwargs):
+    if pretrained:
+        # no need to download the backbone if pretrained is set
+        pretrained_backbone = False
     backbone = resnet_fpn_backbone('resnet50', pretrained_backbone)
     model = KeypointRCNN(backbone, num_classes, num_keypoints=num_keypoints, **kwargs)
     if pretrained:
-        pass
+        state_dict = load_state_dict_from_url(model_urls['keypointrcnn_resnet50_fpn_coco'],
+                                              progress=progress)
+        model.load_state_dict(state_dict)
     return model
