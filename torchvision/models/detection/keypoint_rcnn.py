@@ -16,7 +16,7 @@ __all__ = [
 class KeypointRCNN(FasterRCNN):
     def __init__(self, backbone, num_classes=None,
                  # transform parameters
-                 min_size=800, max_size=1333,
+                 min_size=None, max_size=1333,
                  image_mean=None, image_std=None,
                  # RPN parameters
                  rpn_anchor_generator=None, rpn_head=None,
@@ -37,6 +37,8 @@ class KeypointRCNN(FasterRCNN):
                  num_keypoints=17):
 
         assert isinstance(keypoint_roi_pool, (MultiScaleRoIAlign, type(None)))
+        if min_size is None:
+            min_size = (640, 672, 704, 736, 768, 800)
 
         if num_classes is not None:
             if keypoint_predictor is not None:
