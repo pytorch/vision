@@ -125,7 +125,7 @@ class MaskRCNNPredictor(nn.Sequential):
             #     nn.init.constant_(param, 0)
 
 
-def maskrcnn_resnet50_fpn(pretrained=False, num_classes=81, pretrained_backbone=True, **kwargs):
+def maskrcnn_resnet50_fpn(pretrained=False, num_classes=91, pretrained_backbone=True, **kwargs):
     backbone = resnet_fpn_backbone('resnet50', pretrained_backbone)
     model = MaskRCNN(backbone, num_classes, **kwargs)
     if pretrained:

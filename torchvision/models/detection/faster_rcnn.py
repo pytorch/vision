@@ -7,6 +7,8 @@ import torch.nn.functional as F
 from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops import MultiScaleRoIAlign
 
+from ..utils import load_state_dict_from_url
+
 from .generalized_rcnn import GeneralizedRCNN
 from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
 from .roi_heads import RoIHeads
@@ -149,9 +151,21 @@ class FastRCNNPredictor(nn.Module):
         return scores, bbox_deltas
 
 
-def fasterrcnn_resnet50_fpn(pretrained=False, num_classes=81, pretrained_backbone=True, **kwargs):
+model_urls = {
+    'fasterrcnn_resnet50_fpn_coco':
+        'https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth',
+}
+
+
+def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
+                            num_classes=91, pretrained_backbone=True, **kwargs):
+    if pretrained:
+        # no need to download the backbone if pretrained is set
+        pretrained_backbone = False
     backbone = resnet_fpn_backbone('resnet50', pretrained_backbone)
     model = FasterRCNN(backbone, num_classes, **kwargs)
     if pretrained:
-        pass
+        state_dict = load_state_dict_from_url(model_urls['fasterrcnn_resnet50_fpn_coco'],
+                                              progress=progress)
+        model.load_state_dict(state_dict)
     return model
