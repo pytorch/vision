@@ -9,6 +9,17 @@ from .roi_heads import paste_masks_in_image
 
 
 class GeneralizedRCNNTransform(nn.Module):
+    """
+    Performs input / target transformation before feeding the data to a GeneralizedRCNN
+    model.
+
+    The transformations it perform are:
+        - input normalization (mean subtraction and std division)
+        - input / target resizing to match min_size / max_size
+
+    It returns a ImageList for the inputs, and a List[Dict[Tensor]] for the targets
+    """
+
     def __init__(self, min_size, max_size, image_mean, image_std):
         super(GeneralizedRCNNTransform, self).__init__()
         if not isinstance(min_size, (list, tuple)):
