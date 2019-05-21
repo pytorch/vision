@@ -76,7 +76,8 @@ def main(args):
         collate_fn=utils.collate_fn)
 
     print("Creating model")
-    model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes)
+    model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes,
+                                                              pretrained=args.pretrained)
     model.to(device)
 
     model_without_ddp = model
@@ -154,6 +155,12 @@ if __name__ == "__main__":
         "--test-only",
         dest="test_only",
         help="Only test the model",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--pretrained",
+        dest="pretrained",
+        help="Use pre-trained models from the modelzoo",
         action="store_true",
     )
 
