@@ -573,7 +573,7 @@ class RoIHeads(torch.nn.Module):
                 labels = [r["labels"] for r in result]
                 masks_probs = maskrcnn_inference(mask_logits, labels)
                 for mask_prob, r in zip(masks_probs, result):
-                    r["mask"] = mask_prob
+                    r["masks"] = mask_prob
 
             losses.update(loss_mask)
 

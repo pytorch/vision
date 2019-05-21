@@ -121,7 +121,9 @@ def main(args):
         sampler=test_sampler, num_workers=args.workers,
         collate_fn=utils.collate_fn)
 
-    model = torchvision.models.segmentation.__dict__[args.model](num_classes=num_classes, aux_loss=args.aux_loss)
+    model = torchvision.models.segmentation.__dict__[args.model](num_classes=num_classes,
+                                                                 aux_loss=args.aux_loss,
+                                                                 pretrained=args.pretrained)
     model.to(device)
     if args.distributed:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -203,6 +205,12 @@ def parse_args():
         "--test-only",
         dest="test_only",
         help="Only test the model",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--pretrained",
+        dest="pretrained",
+        help="Use pre-trained models from the modelzoo",
         action="store_true",
     )
     # distributed training parameters

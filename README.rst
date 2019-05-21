@@ -19,6 +19,8 @@ The torchvision package consists of popular datasets, model architectures, and c
 Installation
 ============
 
+TorchVision requires PyTorch 1.1 or newer.
+
 Anaconda:
 
 .. code:: bash
@@ -36,6 +38,8 @@ From source:
 .. code:: bash
 
     python setup.py install
+    # or, for OSX
+    # MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py install
 
 
 Image Backend

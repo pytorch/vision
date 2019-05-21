@@ -108,7 +108,7 @@ class ToPILImage(object):
              - If the input has 3 channels, the ``mode`` is assumed to be ``RGB``.
              - If the input has 2 channels, the ``mode`` is assumed to be ``LA``.
              - If the input has 1 channel, the ``mode`` is determined by the data type (i.e ``int``, ``float``,
-              ``short``).
+               ``short``).
 
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
@@ -785,8 +785,9 @@ class LinearTransformation(object):
 
     Applications:
         whitening transformation: Suppose X is a column vector zero-centered data.
-            Then compute the data covariance matrix [D x D] with torch.mm(X.t(), X),
-            perform SVD on this matrix and pass it as transformation_matrix.
+        Then compute the data covariance matrix [D x D] with torch.mm(X.t(), X),
+        perform SVD on this matrix and pass it as transformation_matrix.
+
     Args:
         transformation_matrix (Tensor): tensor [D x D], D = C x H x W
         mean_vector (Tensor): tensor [D], D = C x H x W
