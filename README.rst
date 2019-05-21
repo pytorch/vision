@@ -37,6 +37,9 @@ From source:
 
     python setup.py install
 
+By default, GPU support is built if CUDA is found and ``torch.cuda.is_available()`` is true.
+It's possible to force building GPU support by setting ``FORCE_CUDA=1`` environment variable,
+which is useful when building a docker image.
 
 Image Backend
 =============
