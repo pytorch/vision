@@ -8,3 +8,5 @@ from .googlenet import *
 from .mobilenet import *
 from .mnasnet import *
 from .shufflenetv2 import *
+from . import segmentation
+from . import detection
