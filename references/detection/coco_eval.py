@@ -101,7 +101,7 @@ class CocoEvaluator(object):
 
             scores = prediction["scores"]
             labels = prediction["labels"]
-            masks = prediction["mask"]
+            masks = prediction["masks"]
 
             masks = masks > 0.5
 

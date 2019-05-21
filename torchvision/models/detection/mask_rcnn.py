@@ -43,7 +43,7 @@ class MaskRCNN(FasterRCNN):
           0 and H and 0 and W
         - labels (Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores or each prediction
-        - mask (Tensor[N, H, W]): the predicted masks for each instance, in 0-1 range. In order to
+        - masks (Tensor[N, H, W]): the predicted masks for each instance, in 0-1 range. In order to
           obtain the final segmentation masks, the soft masks can be thresholded, generally
           with a value of 0.5 (mask >= 0.5)
 
@@ -249,7 +249,7 @@ def maskrcnn_resnet50_fpn(pretrained=False, progress=True,
           ``0`` and ``H`` and ``0`` and ``W``
         - labels (``Tensor[N]``): the predicted labels for each image
         - scores (``Tensor[N]``): the scores or each prediction
-        - mask (``Tensor[N, H, W]``): the predicted masks for each instance, in ``0-1`` range. In order to
+        - masks (``Tensor[N, H, W]``): the predicted masks for each instance, in ``0-1`` range. In order to
           obtain the final segmentation masks, the soft masks can be thresholded, generally
           with a value of 0.5 (``mask >= 0.5``)
 
