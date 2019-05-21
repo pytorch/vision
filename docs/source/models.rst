@@ -319,6 +319,27 @@ keypoints in the following order:
         'right_ankle'
     ]
 
+Runtime characteristics
+-----------------------
+
+The implementations of the models for object detection, instance segmentation
+and keypoint detection are efficient.
+
+In the following table, we use 8 V100 GPUs, with CUDA 10.0 and CUDNN 7.4 to
+report the results. During training, we use a batch size of 2 per GPU, and
+during testing a batch size of 1 is used.
+
+For test time, we report the time for the model evaluation and postprocessing
+(including mask pasting in image), but not the time for computing the
+precision-recall.
+
+==============================  ===================  ==================  ===========
+Network                         train time (s / it)  test time (s / it)  memory (GB)
+==============================  ===================  ==================  ===========
+Faster R-CNN ResNet-50 FPN      0.2288               0.0590              5.2
+Mask R-CNN ResNet-50 FPN        0.2728               0.0903              5.4
+Keypoint R-CNN ResNet-50 FPN    0.3789               0.1242              6.8
+==============================  ===================  ==================  ===========
 
 
 Faster R-CNN
