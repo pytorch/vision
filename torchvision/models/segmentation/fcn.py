@@ -3,7 +3,22 @@ from torch import nn
 from ._utils import _SimpleSegmentationModel
 
 
+__all__ = ["FCN"]
+
+
 class FCN(_SimpleSegmentationModel):
+    """
+    Implements a Fully-Convolutional Network for semantic segmentation.
+
+    Arguments:
+        backbone (nn.Module): the network used to compute the features for the model.
+            The backbone should return an OrderedDict[Tensor], with the key being
+            "out" for the last feature map used, and "aux" if an auxiliary classifier
+            is used.
+        classifier (nn.Module): module that takes the "out" element returned from
+            the backbone and returns a dense prediction.
+        aux_classifier (nn.Module, optional): auxiliary classifier used during training
+    """
     pass
 
 
