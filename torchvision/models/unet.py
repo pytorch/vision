@@ -72,13 +72,13 @@ class UNet(nn.Module):
 
     Args:
         in_channels (int, optional): number of channels in input image
-        out_channels (int, optional): number of channels in output segmentation
+        num_classes (int, optional): number of classes in output segmentation
         start_channels (int, optional): power of 2 channels to start with
         depth (int, optional): number of contractions/expansions
         p (float, optional): dropout probability
     """
 
-    def __init__(self, in_channels=1, out_channels=2, start_channels=6,
+    def __init__(self, in_channels=1, num_classes=2, start_channels=6,
                  depth=4, p=0.5):
         super(UNet, self).__init__()
 
@@ -96,7 +96,7 @@ class UNet(nn.Module):
             Expand(2 ** d, 2 ** (d - 1)) for d in range(
                 start_channels + depth, start_channels, -1)
         ])
-        self.conv2 = nn.Conv2d(2 ** start_channels, out_channels, 1)
+        self.conv2 = nn.Conv2d(2 ** start_channels, num_classes, 1)
         self.softmax = nn.LogSoftmax(dim=1)
 
         # Initialize weights
