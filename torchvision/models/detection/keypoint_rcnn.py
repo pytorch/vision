@@ -26,22 +26,23 @@ class KeypointRCNN(FasterRCNN):
 
     During training, the model expects both the input tensors, as well as a targets dictionary,
     containing:
-        boxes (Tensor[N, 4]): the ground-truth boxes in [x0, y0, x1, y1] format, with values
-            between 0 and H and 0 and W
-        labels (Tensor[N]): the class label for each ground-truth box
-        keypoints (Tensor[N, K, 3]): the K keypoints location for each of the N instances, in the
-            format [x, y, visibility], where visibility=0 means that the keypoint is not visible.
+        - boxes (Tensor[N, 4]): the ground-truth boxes in [x0, y0, x1, y1] format, with values
+          between 0 and H and 0 and W
+        - labels (Tensor[N]): the class label for each ground-truth box
+        - keypoints (Tensor[N, K, 3]): the K keypoints location for each of the N instances, in the
+          format [x, y, visibility], where visibility=0 means that the keypoint is not visible.
+
     The model returns a Dict[Tensor] during training, containing the classification and regression
     losses for both the RPN and the R-CNN, and the keypoint loss.
 
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
     follows:
-        boxes (Tensor[N, 4]): the predicted boxes in [x0, y0, x1, y1] format, with values between
-            0 and H and 0 and W
-        labels (Tensor[N]): the predicted labels for each image
-        scores (Tensor[N]): the scores or each prediction
-        keypoints (Tensor[N, K, 3]): the locations of the predicted keypoints, in [x, y, v] format.
+        - boxes (Tensor[N, 4]): the predicted boxes in [x0, y0, x1, y1] format, with values between
+          0 and H and 0 and W
+        - labels (Tensor[N]): the predicted labels for each image
+        - scores (Tensor[N]): the scores or each prediction
+        - keypoints (Tensor[N, K, 3]): the locations of the predicted keypoints, in [x, y, v] format.
 
     Arguments:
         backbone (nn.Module): the network used to compute the features for the model.
@@ -227,6 +228,38 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
                               pretrained_backbone=True, **kwargs):
     """
     Constructs a Keypoint R-CNN model with a ResNet-50-FPN backbone.
+
+    The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
+    image, and should be in ``0-1`` range. Different images can have different sizes.
+
+    The behavior of the model changes depending if it is in training or evaluation mode.
+
+    During training, the model expects both the input tensors, as well as a targets dictionary,
+    containing:
+        - boxes (``Tensor[N, 4]``): the ground-truth boxes in ``[x0, y0, x1, y1]`` format, with values
+          between ``0`` and ``H`` and ``0`` and ``W``
+        - labels (``Tensor[N]``): the class label for each ground-truth box
+        - keypoints (``Tensor[N, K, 3]``): the ``K`` keypoints location for each of the ``N`` instances, in the
+          format ``[x, y, visibility]``, where ``visibility=0`` means that the keypoint is not visible.
+
+    The model returns a ``Dict[Tensor]`` during training, containing the classification and regression
+    losses for both the RPN and the R-CNN, and the keypoint loss.
+
+    During inference, the model requires only the input tensors, and returns the post-processed
+    predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as
+    follows:
+        - boxes (``Tensor[N, 4]``): the predicted boxes in ``[x0, y0, x1, y1]`` format, with values between
+          ``0`` and ``H`` and ``0`` and ``W``
+        - labels (``Tensor[N]``): the predicted labels for each image
+        - scores (``Tensor[N]``): the scores or each prediction
+        - keypoints (``Tensor[N, K, 3]``): the locations of the predicted keypoints, in ``[x, y, v]`` format.
+
+    Example::
+
+        >>> model = torchvision.models.detection.keypointrcnn_resnet50_fpn(pretrained=True)
+        >>> model.eval()
+        >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
+        >>> predictions = model(x)
 
     Arguments:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
