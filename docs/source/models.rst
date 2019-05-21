@@ -171,7 +171,10 @@ GoogLeNet
 ShuffleNet v2
 -------------
 
-.. autofunction:: shufflenet
+.. autofunction:: shufflenet_v2_x0_5
+.. autofunction:: shufflenet_v2_x1_0
+.. autofunction:: shufflenet_v2_x1_5
+.. autofunction:: shufflenet_v2_x2_0
 
 MobileNet v2
 -------------
