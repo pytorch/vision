@@ -335,6 +335,7 @@ class Tester(unittest.TestCase):
         # Checking if Lambda can be printed as string
         trans.__repr__()
 
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_apply(self):
         random_state = random.getstate()
         random.seed(42)
@@ -360,6 +361,7 @@ class Tester(unittest.TestCase):
         # Checking if RandomApply can be printed as string
         random_apply_transform.__repr__()
 
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_choice(self):
         random_state = random.getstate()
         random.seed(42)
@@ -395,6 +397,7 @@ class Tester(unittest.TestCase):
         # Checking if RandomChoice can be printed as string
         random_choice_transform.__repr__()
 
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_order(self):
         random_state = random.getstate()
         random.seed(42)
