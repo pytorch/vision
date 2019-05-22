@@ -62,7 +62,7 @@ write_version_file()
 
 readme = open('README.rst').read()
 
-pytorch_package_name = os.getenv('TORCHVISION_PYTORCH_DEPENDENCY_NAME', 'torch')
+pytorch_package_name = os.getenv('TORCHVISION_PYTORCH_DEPENDENCY_NAME', 'torch >= 1.1.0')
 
 requirements = [
     'numpy',
