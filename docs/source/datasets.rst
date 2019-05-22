@@ -97,7 +97,7 @@ DatasetFolder
 
 
 
-Imagenet-12
+ImageNet
 ~~~~~~~~~~~
 
 .. autoclass:: ImageNet
