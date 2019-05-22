@@ -54,6 +54,9 @@ def write_version_file():
     with open(version_path, 'w') as f:
         f.write("__version__ = '{}'\n".format(version))
         f.write("git_version = {}\n".format(repr(sha)))
+        f.write("from torchvision import _C\n")
+        f.write("if hasattr(_C, 'CUDA_VERSION'):\n")
+        f.write("    cuda = _C.CUDA_VERSION\n")
 
 
 write_version_file()
