@@ -1,8 +1,18 @@
 torchvision.models
-==================
+##################
+
+
+The models subpackage contains definitions of models for addressing
+different tasks, including: image classification, pixelwise semantic
+segmentation, object detection, instance segmentation and person
+keypoint detection.
+
+
+Classification
+==============
 
 The models subpackage contains definitions for the following model
-architectures:
+architectures for image classification:
 
 -  `AlexNet`_
 -  `VGG`_
@@ -171,7 +181,10 @@ GoogLeNet
 ShuffleNet v2
 -------------
 
-.. autofunction:: shufflenet
+.. autofunction:: shufflenet_v2_x0_5
+.. autofunction:: shufflenet_v2_x1_0
+.. autofunction:: shufflenet_v2_x1_5
+.. autofunction:: shufflenet_v2_x2_0
 
 MobileNet v2
 -------------
@@ -179,8 +192,170 @@ MobileNet v2
 .. autofunction:: mobilenet_v2
 
 ResNext
--------------
+-------
 
 .. autofunction:: resnext50_32x4d
 .. autofunction:: resnext101_32x8d
+
+
+Semantic Segmentation
+=====================
+
+As with image classification models, all pre-trained models expect input images normalized in the same way.
+The images have to be loaded in to a range of ``[0, 1]`` and then normalized using
+``mean = [0.485, 0.456, 0.406]`` and ``std = [0.229, 0.224, 0.225]``.
+They have been trained on images resized such that their minimum size is 520.
+
+The pre-trained models have been trained on a subset of COCO train2017, on the 20 categories that are
+present in the Pascal VOC dataset. You can see more information on how the subset has been selected in
+``references/segmentation/coco_utils.py``. The classes that the pre-trained model outputs are the following,
+in order:
+
+  .. code-block:: python
+
+      ['__background__', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
+       'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
+       'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor']
+
+The accuracies of the pre-trained models evaluated on COCO val2017 are as follows
+
+================================  =============  ====================
+Network                           mean IoU       global pixelwise acc
+================================  =============  ====================
+FCN ResNet101                     63.7           91.9
+DeepLabV3 ResNet101               67.4           92.4
+================================  =============  ====================
+
+
+Fully Convolutional Networks
+----------------------------
+
+.. autofunction:: torchvision.models.segmentation.fcn_resnet50
+.. autofunction:: torchvision.models.segmentation.fcn_resnet101
+
+
+DeepLabV3
+---------
+
+.. autofunction:: torchvision.models.segmentation.deeplabv3_resnet50
+.. autofunction:: torchvision.models.segmentation.deeplabv3_resnet101
+
+
+Object Detection, Instance Segmentation and Person Keypoint Detection
+=====================================================================
+
+The pre-trained models for detection, instance segmentation and
+keypoint detection are initialized with the classification models
+in torchvision.
+
+The models expect a list of ``Tensor[C, H, W]``, in the range ``0-1``.
+The models internally resize the images so that they have a minimum size
+of ``800``. This option can be changed by passing the option ``min_size``
+to the constructor of the models.
+
+
+For object detection and instance segmentation, the pre-trained
+models return the predictions of the following classes:
+
+  .. code-block:: python
+
+      COCO_INSTANCE_CATEGORY_NAMES = [
+          '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
+          'train', 'truck', 'boat', 'traffic', 'light', 'fire', 'hydrant', 'N/A', 'stop',
+          'sign', 'parking', 'meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
+          'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack', 'umbrella', 'N/A', 'N/A',
+          'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports', 'ball',
+          'kite', 'baseball', 'bat', 'baseball', 'glove', 'skateboard', 'surfboard', 'tennis',
+          'racket', 'bottle', 'N/A', 'wine', 'glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
+          'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot', 'dog', 'pizza',
+          'donut', 'cake', 'chair', 'couch', 'potted', 'plant', 'bed', 'N/A', 'dining', 'table',
+          'N/A', 'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell',
+          'phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A', 'book',
+          'clock', 'vase', 'scissors', 'teddy', 'bear', 'hair', 'drier', 'toothbrush'
+      ]
+
+
+Here are the summary of the accuracies for the models trained on
+the instances set of COCO train2017 and evaluated on COCO val2017.
+
+================================  =======  ========  ===========
+Network                           box AP   mask AP   keypoint AP
+================================  =======  ========  ===========
+Faster R-CNN ResNet-50 FPN        37.0     -         -
+Mask R-CNN ResNet-50 FPN          37.9     34.6      -
+================================  =======  ========  ===========
+
+For person keypoint detection, the accuracies for the pre-trained
+models are as follows
+
+================================  =======  ========  ===========
+Network                           box AP   mask AP   keypoint AP
+================================  =======  ========  ===========
+Keypoint R-CNN ResNet-50 FPN      54.6     -         65.0
+================================  =======  ========  ===========
+
+For person keypoint detection, the pre-trained model return the
+keypoints in the following order:
+
+  .. code-block:: python
+
+    COCO_PERSON_KEYPOINT_NAMES = [
+        'nose',
+        'left_eye',
+        'right_eye',
+        'left_ear',
+        'right_ear',
+        'left_shoulder',
+        'right_shoulder',
+        'left_elbow',
+        'right_elbow',
+        'left_wrist',
+        'right_wrist',
+        'left_hip',
+        'right_hip',
+        'left_knee',
+        'right_knee',
+        'left_ankle',
+        'right_ankle'
+    ]
+
+Runtime characteristics
+-----------------------
+
+The implementations of the models for object detection, instance segmentation
+and keypoint detection are efficient.
+
+In the following table, we use 8 V100 GPUs, with CUDA 10.0 and CUDNN 7.4 to
+report the results. During training, we use a batch size of 2 per GPU, and
+during testing a batch size of 1 is used.
+
+For test time, we report the time for the model evaluation and postprocessing
+(including mask pasting in image), but not the time for computing the
+precision-recall.
+
+==============================  ===================  ==================  ===========
+Network                         train time (s / it)  test time (s / it)  memory (GB)
+==============================  ===================  ==================  ===========
+Faster R-CNN ResNet-50 FPN      0.2288               0.0590              5.2
+Mask R-CNN ResNet-50 FPN        0.2728               0.0903              5.4
+Keypoint R-CNN ResNet-50 FPN    0.3789               0.1242              6.8
+==============================  ===================  ==================  ===========
+
+
+Faster R-CNN
+------------
+
+.. autofunction:: torchvision.models.detection.fasterrcnn_resnet50_fpn
+
+
+Mask R-CNN
+----------
+
+.. autofunction:: torchvision.models.detection.maskrcnn_resnet50_fpn
+
+
+Keypoint R-CNN
+--------------
+
+.. autofunction:: torchvision.models.detection.keypointrcnn_resnet50_fpn
 

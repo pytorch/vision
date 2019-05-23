@@ -29,7 +29,7 @@ def get_dist(pkgname):
         return None
 
 
-version = '0.2.3a0'
+version = '0.3.0a0'
 sha = 'Unknown'
 package_name = os.getenv('TORCHVISION_PACKAGE_NAME', 'torchvision')
 
@@ -56,6 +56,9 @@ def write_version_file():
     with open(version_path, 'w') as f:
         f.write("__version__ = '{}'\n".format(version))
         f.write("git_version = {}\n".format(repr(sha)))
+        f.write("from torchvision import _C\n")
+        f.write("if hasattr(_C, 'CUDA_VERSION'):\n")
+        f.write("    cuda = _C.CUDA_VERSION\n")
 
 
 write_version_file()
@@ -88,10 +91,20 @@ def get_extensions():
 
     define_macros = []
 
+    extra_compile_args = {}
     if (torch.cuda.is_available() and CUDA_HOME is not None) or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
         sources += source_cuda
         define_macros += [('WITH_CUDA', None)]
+        nvcc_flags = os.getenv('NVCC_FLAGS', '')
+        if nvcc_flags == '':
+            nvcc_flags = []
+        else:
+            nvcc_flags = nvcc_flags.split(' ')
+        extra_compile_args = {
+            'cxx': ['-O0'],
+            'nvcc': nvcc_flags,
+        }
 
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
@@ -103,6 +116,7 @@ def get_extensions():
             sources,
             include_dirs=include_dirs,
             define_macros=define_macros,
+            extra_compile_args=extra_compile_args,
         )
     ]
 

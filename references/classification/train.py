@@ -144,7 +144,7 @@ def main(args):
         sampler=test_sampler, num_workers=args.workers, pin_memory=True)
 
     print("Creating model")
-    model = torchvision.models.__dict__[args.model]()
+    model = torchvision.models.__dict__[args.model](pretrained=args.pretrained)
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -240,6 +240,12 @@ def parse_args():
         "--test-only",
         dest="test_only",
         help="Only test the model",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--pretrained",
+        dest="pretrained",
+        help="Use pre-trained models from the modelzoo",
         action="store_true",
     )
 

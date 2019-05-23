@@ -90,7 +90,7 @@ def project_masks_on_boxes(gt_masks, boxes, matched_idxs, M):
     return roi_align(gt_masks, rois, (M, M), 1)[:, 0]
 
 
-def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs, discretization_size):
+def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs):
     """
     Arguments:
         proposals (list[BoxList])
@@ -101,6 +101,7 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
         mask_loss (Tensor): scalar tensor containing the loss
     """
 
+    discretization_size = mask_logits.shape[-1]
     labels = [l[idxs] for l, idxs in zip(gt_labels, mask_matched_idxs)]
     mask_targets = [
         project_masks_on_boxes(m, p, i, discretization_size)
@@ -203,7 +204,10 @@ def heatmaps_to_keypoints(maps, rois):
     return xy_preds.permute(0, 2, 1), end_scores
 
 
-def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched_idxs, discretization_size):
+def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched_idxs):
+    N, K, H, W = keypoint_logits.shape
+    assert H == W
+    discretization_size = H
     heatmaps = []
     valid = []
     for proposals_per_image, gt_kp_in_image, midx in zip(proposals, gt_keypoints, keypoint_matched_idxs):
@@ -223,7 +227,6 @@ def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched
     if keypoint_targets.numel() == 0 or len(valid) == 0:
         return keypoint_logits.sum() * 0
 
-    N, K, H, W = keypoint_logits.shape
     keypoint_logits = keypoint_logits.view(N * K, H * W)
 
     keypoint_loss = F.cross_entropy(keypoint_logits[valid], keypoint_targets[valid])
@@ -331,7 +334,6 @@ class RoIHeads(torch.nn.Module):
                  mask_roi_pool=None,
                  mask_head=None,
                  mask_predictor=None,
-                 mask_discretization_size=None,
                  keypoint_roi_pool=None,
                  keypoint_head=None,
                  keypoint_predictor=None,
@@ -364,7 +366,6 @@ class RoIHeads(torch.nn.Module):
         self.mask_roi_pool = mask_roi_pool
         self.mask_head = mask_head
         self.mask_predictor = mask_predictor
-        self.mask_discretization_size = mask_discretization_size
 
         self.keypoint_roi_pool = keypoint_roi_pool
         self.keypoint_head = keypoint_head
@@ -378,8 +379,6 @@ class RoIHeads(torch.nn.Module):
             return False
         if self.mask_predictor is None:
             return False
-        if self.mask_discretization_size is None:
-            return False
         return True
 
     @property
@@ -389,8 +388,6 @@ class RoIHeads(torch.nn.Module):
         if self.keypoint_head is None:
             return False
         if self.keypoint_predictor is None:
-            return False
-        if self.keypoint_discretization_size is None:
             return False
         return True
 
@@ -570,13 +567,13 @@ class RoIHeads(torch.nn.Module):
                 gt_labels = [t["labels"] for t in targets]
                 loss_mask = maskrcnn_loss(
                     mask_logits, mask_proposals,
-                    gt_masks, gt_labels, pos_matched_idxs, self.mask_discretization_size)
+                    gt_masks, gt_labels, pos_matched_idxs)
                 loss_mask = dict(loss_mask=loss_mask)
             else:
                 labels = [r["labels"] for r in result]
                 masks_probs = maskrcnn_inference(mask_logits, labels)
                 for mask_prob, r in zip(masks_probs, result):
-                    r["mask"] = mask_prob
+                    r["masks"] = mask_prob
 
             losses.update(loss_mask)
 
@@ -601,7 +598,7 @@ class RoIHeads(torch.nn.Module):
                 gt_keypoints = [t["keypoints"] for t in targets]
                 loss_keypoint = keypointrcnn_loss(
                     keypoint_logits, keypoint_proposals,
-                    gt_keypoints, pos_matched_idxs, self.keypoint_discretization_size)
+                    gt_keypoints, pos_matched_idxs)
                 loss_keypoint = dict(loss_keypoint=loss_keypoint)
             else:
                 keypoints_probs, kp_scores = keypointrcnn_inference(keypoint_logits, keypoint_proposals)

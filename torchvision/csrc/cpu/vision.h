@@ -43,4 +43,4 @@ at::Tensor ROIAlign_backward_cpu(
 at::Tensor nms_cpu(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const float threshold);
+    const float iou_threshold);
