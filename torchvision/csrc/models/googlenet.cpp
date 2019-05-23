@@ -43,6 +43,11 @@ InceptionImpl::InceptionImpl(
   branch4->push_back(
       torch::nn::Functional(torch::max_pool2d, 3, 1, 1, 1, true));
   branch4->push_back(BasicConv2d(Options(in_channels, pool_proj, 1)));
+
+  register_module("branch1", branch1);
+  register_module("branch2", branch2);
+  register_module("branch3", branch3);
+  register_module("branch4", branch4);
 }
 
 torch::Tensor InceptionImpl::forward(torch::Tensor x) {
@@ -145,12 +150,15 @@ GoogLeNetImpl::GoogLeNetImpl(
 void GoogLeNetImpl::_initialize_weights() {
   for (auto& module : modules(/*include_self=*/false)) {
     if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
-      torch::nn::init::normal_(M->weight);
+      torch::nn::init::normal_(M->weight); // Note: used instead of truncated
+                                           // normal initialization
+    else if (auto M = dynamic_cast<torch::nn::LinearImpl*>(module.get()))
+      torch::nn::init::normal_(M->weight); // Note: used instead of truncated
+                                           // normal initialization
     else if (auto M = dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
       torch::nn::init::ones_(M->weight);
       torch::nn::init::zeros_(M->bias);
-    } else if (auto M = dynamic_cast<torch::nn::LinearImpl*>(module.get()))
-      torch::nn::init::normal_(M->weight);
+    }
   }
 }
 
