@@ -47,6 +47,11 @@ class CocoCaptions(VisionDataset):
     def __init__(self, root, annFile, transform=None, target_transform=None, transforms=None):
         super(CocoCaptions, self).__init__(root, transforms, transform, target_transform)
         from pycocotools.coco import COCO
+        self.root_zip = None
+        self.root_zip_filename = self.root + ".zip"
+        if os.path.exists(self.root_zip_filename):
+            self.root_zip = ForkSafeZipLookup(self.root_zip_filename)
+            print("Using ZIP file for data source:", self.root + ".zip", file=sys.stderr)
         self.coco = COCO(annFile)
         self.ids = list(sorted(self.coco.imgs.keys()))
 
@@ -66,7 +71,11 @@ class CocoCaptions(VisionDataset):
 
         path = coco.loadImgs(img_id)[0]['file_name']
 
-        img = Image.open(os.path.join(self.root, path)).convert('RGB')
+        if self.root_zip is not None:
+            f = self.root_zip[os.path.split(self.root)[1] + "/" + path]
+            img = Image.open(f).convert('RGB')
+        else:
+            img = Image.open(os.path.join(self.root, path)).convert('RGB')
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)
