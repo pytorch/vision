@@ -3,6 +3,10 @@ import os.path
 import hashlib
 import errno
 from torch.utils.model_zoo import tqdm
+import zipfile
+import threading
+import io
+import struct
 
 
 def gen_bar_updater():
@@ -189,3 +193,39 @@ def _save_response_content(response, destination, chunk_size=32768):
                 progress += len(chunk)
                 pbar.update(progress - pbar.n)
         pbar.close()
+
+
+# thread-safe/multiprocessing-safe
+class ForkSafeZipLookup(object):
+    def __init__(self, filename):
+        self.root_zip_filename = filename
+        self.root_zip_lookup = {}
+        self.root_zip = {}
+
+        with zipfile.ZipFile(filename, "r") as root_zip:
+            for info in root_zip.infolist():
+                if info.is_dir():
+                    continue
+                if info.compress_type != zipfile.ZIP_STORED:
+                    raise ValueError("Only uncompressed ZIP file supported: " + info.filename)
+                if info.compress_size != info.file_size:
+                    raise ValueError("Must be the same when uncompressed")
+                self.root_zip_lookup[info.filename] = (info.header_offset, info.compress_size)
+
+
+    def __getitem__(self, path):
+        key = (os.getpid(), threading.get_ident())
+        if key not in self.root_zip:
+            self.root_zip[key] = open(self.root_zip_filename, "rb")
+        z = self.root_zip[key]
+        header_offset, size = self.root_zip_lookup[path]
+
+        z.seek(header_offset)
+        fheader = z.read(zipfile.sizeFileHeader)
+        fheader = struct.unpack(zipfile.structFileHeader, fheader)
+        offset = header_offset + zipfile.sizeFileHeader + fheader[zipfile._FH_FILENAME_LENGTH] + fheader[zipfile._FH_EXTRA_FIELD_LENGTH]
+
+        z.seek(offset)
+        f = io.BytesIO(z.read(size))
+        f.name = path
+        return f
