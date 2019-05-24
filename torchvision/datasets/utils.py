@@ -213,7 +213,6 @@ class ForkSafeZipLookup(object):
                     raise ValueError("Must be the same when uncompressed")
                 self.root_zip_lookup[info.filename] = (info.header_offset, info.compress_size)
 
-
     def __getitem__(self, path):
         key = (os.getpid(), threading.get_ident())
         if key not in self.root_zip:
@@ -224,7 +223,8 @@ class ForkSafeZipLookup(object):
         z.seek(header_offset)
         fheader = z.read(zipfile.sizeFileHeader)
         fheader = struct.unpack(zipfile.structFileHeader, fheader)
-        offset = header_offset + zipfile.sizeFileHeader + fheader[zipfile._FH_FILENAME_LENGTH] + fheader[zipfile._FH_EXTRA_FIELD_LENGTH]
+        offset = header_offset + zipfile.sizeFileHeader + fheader[zipfile._FH_FILENAME_LENGTH] + \
+            fheader[zipfile._FH_EXTRA_FIELD_LENGTH]
 
         z.seek(offset)
         f = io.BytesIO(z.read(size))

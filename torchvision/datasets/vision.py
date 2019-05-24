@@ -25,13 +25,12 @@ class VisionDataset(data.Dataset):
         if has_separate_transform:
             transforms = StandardTransform(transform, target_transform)
         self.transforms = transforms
-        
+
         self.root_zip = None
         self.root_zipfilename = root_zipfilename
         if self.root_zipfilename is not None and os.path.exists(self.root_zipfilename):
             self.root_zip = ForkSafeZipLookup(self.root_zipfilename)
             print("Using ZIP file for data source:", self.root_zipfilename)
-
 
     def __getitem__(self, index):
         raise NotImplementedError

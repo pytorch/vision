@@ -44,7 +44,8 @@ class CocoCaptions(VisionDataset):
     """
 
     def __init__(self, root, annFile, transform=None, target_transform=None, transforms=None):
-        super(CocoCaptions, self).__init__(root, transforms, transform, target_transform, root_zipfilename=self.root + ".zip")
+        super(CocoCaptions, self).__init__(root, transforms, transform, target_transform,
+                                           root_zipfilename=self.root + ".zip")
         from pycocotools.coco import COCO
         self.coco = COCO(annFile)
         self.ids = list(sorted(self.coco.imgs.keys()))
@@ -93,7 +94,8 @@ class CocoDetection(VisionDataset):
     """
 
     def __init__(self, root, annFile, transform=None, target_transform=None, transforms=None):
-        super(CocoDetection, self).__init__(root, transforms, transform, target_transform, root_zipfilename=self.root + ".zip")
+        super(CocoDetection, self).__init__(root, transforms, transform, target_transform,
+                                            root_zipfilename=self.root + ".zip")
         from pycocotools.coco import COCO
         self.coco = COCO(annFile)
         self.ids = list(sorted(self.coco.imgs.keys()))

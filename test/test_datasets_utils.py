@@ -41,7 +41,7 @@ class Tester(unittest.TestCase):
         utils.download_url(url, temp_dir)
         assert not len(os.listdir(temp_dir)) == 0, 'The downloaded root directory is empty after download.'
         shutil.rmtree(temp_dir)
-        
+
     def test_ziplookup(self):
         temp_dir = tempfile.mkdtemp()
         temp_filename = os.path.join(temp_dir, "ziplookup.zip")
@@ -52,7 +52,7 @@ class Tester(unittest.TestCase):
             z.write(TEST_FILE, "hopper79.jpg")
             z.write(TEST_FILE, "somepath/hopper.jpg")
             z.close()
-            
+
             lookup = utils.ForkSafeZipLookup(temp_filename)
             f = lookup["hopper.jpg"]
             assert f.name.endswith(".jpg")
