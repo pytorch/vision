@@ -66,11 +66,7 @@ class CocoCaptions(VisionDataset):
 
         path = coco.loadImgs(img_id)[0]['file_name']
 
-        if self.root_zip is not None:
-            f = self.root_zip[os.path.split(self.root)[1] + "/" + path]
-            img = Image.open(f).convert('RGB')
-        else:
-            img = Image.open(os.path.join(self.root, path)).convert('RGB')
+        img = Image.open(self.get_path_or_fp(path, addLastRootElement=True)).convert('RGB')
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)

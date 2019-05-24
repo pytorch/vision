@@ -64,12 +64,8 @@ class Omniglot(VisionDataset):
             tuple: (image, target) where target is index of the target character class.
         """
         image_name, character_class = self._flat_character_images[index]
-        if self.root_zip is not None:
-            image_path_or_file = self.root_zip[join(self._get_target_folder(), self._characters[character_class],
-                                                    image_name)]
-        else:
-            image_path_or_file = join(self.target_folder, self._characters[character_class], image_name)
-        image = Image.open(image_path_or_file, mode='r').convert('L')
+        image_path_or_fp = self.get_path_or_fp(self._get_target_folder(), self._characters[character_class], image_name)
+        image = Image.open(image_path_or_fp, mode='r').convert('L')
 
         if self.transform:
             image = self.transform(image)

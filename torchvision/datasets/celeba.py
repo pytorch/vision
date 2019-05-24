@@ -53,8 +53,9 @@ class CelebA(VisionDataset):
                  transform=None, target_transform=None,
                  download=False):
         import pandas
+        root = os.path.join(root, self.base_folder)
         super(CelebA, self).__init__(root,
-                                     root_zipfilename=os.path.join(self.root, self.base_folder, "img_align_celeba.zip"))
+                                     root_zipfilename=os.path.join(self.root, "img_align_celeba.zip"))
         self.split = split
         if isinstance(target_type, list):
             self.target_type = target_type
@@ -83,19 +84,19 @@ class CelebA(VisionDataset):
             raise ValueError('Wrong split entered! Please use split="train" '
                              'or split="valid" or split="test"')
 
-        with open(os.path.join(self.root, self.base_folder, "list_eval_partition.txt"), "r") as f:
+        with open(os.path.join(self.root, "list_eval_partition.txt"), "r") as f:
             splits = pandas.read_csv(f, delim_whitespace=True, header=None, index_col=0)
 
-        with open(os.path.join(self.root, self.base_folder, "identity_CelebA.txt"), "r") as f:
+        with open(os.path.join(self.root, "identity_CelebA.txt"), "r") as f:
             self.identity = pandas.read_csv(f, delim_whitespace=True, header=None, index_col=0)
 
-        with open(os.path.join(self.root, self.base_folder, "list_bbox_celeba.txt"), "r") as f:
+        with open(os.path.join(self.root, "list_bbox_celeba.txt"), "r") as f:
             self.bbox = pandas.read_csv(f, delim_whitespace=True, header=1, index_col=0)
 
-        with open(os.path.join(self.root, self.base_folder, "list_landmarks_align_celeba.txt"), "r") as f:
+        with open(os.path.join(self.root, "list_landmarks_align_celeba.txt"), "r") as f:
             self.landmarks_align = pandas.read_csv(f, delim_whitespace=True, header=1)
 
-        with open(os.path.join(self.root, self.base_folder, "list_attr_celeba.txt"), "r") as f:
+        with open(os.path.join(self.root, "list_attr_celeba.txt"), "r") as f:
             self.attr = pandas.read_csv(f, delim_whitespace=True, header=1)
 
         mask = (splits[1] == split)
@@ -108,7 +109,7 @@ class CelebA(VisionDataset):
 
     def _check_integrity(self):
         for (_, md5, filename) in self.file_list:
-            fpath = os.path.join(self.root, self.base_folder, filename)
+            fpath = os.path.join(self.root, filename)
             _, ext = os.path.splitext(filename)
             # Allow original archive to be deleted (zip and 7z)
             # Only need the extracted images
@@ -116,7 +117,7 @@ class CelebA(VisionDataset):
                 return False
 
         # Should check a hash of the images
-        return os.path.isdir(os.path.join(self.root, self.base_folder, "img_align_celeba"))
+        return os.path.isdir(os.path.join(self.root, "img_align_celeba"))
 
     def download(self):
         import zipfile
@@ -126,17 +127,13 @@ class CelebA(VisionDataset):
             return
 
         for (file_id, md5, filename) in self.file_list:
-            download_file_from_google_drive(file_id, os.path.join(self.root, self.base_folder), filename, md5)
+            download_file_from_google_drive(file_id, self.root, filename, md5)
 
-        with zipfile.ZipFile(os.path.join(self.root, self.base_folder, "img_align_celeba.zip"), "r") as f:
-            f.extractall(os.path.join(self.root, self.base_folder))
+        with zipfile.ZipFile(os.path.join(self.root, "img_align_celeba.zip"), "r") as f:
+            f.extractall(self.root)
 
     def __getitem__(self, index):
-        if self.root_zip is not None:
-            f = self.root_zip[os.path.join("img_align_celeba", self.filename[index])]
-            X = PIL.Image.open(f)
-        else:
-            X = PIL.Image.open(os.path.join(self.root, self.base_folder, "img_align_celeba", self.filename[index]))
+        X = PIL.Image.open(self.get_path_or_fp("img_align_celeba", self.filename[index]))
 
         target = []
         for t in self.target_type:

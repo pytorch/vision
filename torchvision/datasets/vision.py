@@ -32,6 +32,14 @@ class VisionDataset(data.Dataset):
             self.root_zip = ZipLookup(self.root_zipfilename)
             print("Using ZIP file for data source:", self.root_zipfilename)
 
+    def get_path_or_fp(self, *path_components, addLastRootElement=False):
+        if self.root_zip is not None:
+            if addLastRootElement:
+                path_components.insert(0, os.path.split(self.root)[1])
+            return self.root_zip["/".join(path_components)]
+        else:
+            return os.path.join(self.root, *path_components)
+
     def __getitem__(self, index):
         raise NotImplementedError
 
