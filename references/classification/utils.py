@@ -162,11 +162,7 @@ def accuracy(output, target, topk=(1,)):
 
 
 def mkdir(path):
-    try:
-        os.makedirs(path)
-    except OSError as e:
-        if e.errno != errno.EEXIST:
-            raise
+    os.makedirs(path, exist_ok=True)
 
 
 def setup_for_distributed(is_master):
