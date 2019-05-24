@@ -1,6 +1,7 @@
 import os
 import torch
 import torch.utils.data as data
+from .utils import ForkSafeZipLookup
 
 
 class VisionDataset(data.Dataset):

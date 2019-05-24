@@ -2,7 +2,6 @@ from .vision import VisionDataset
 from PIL import Image
 import os
 import os.path
-from .utils import ForkSafeZipLookup
 
 
 class CocoCaptions(VisionDataset):
