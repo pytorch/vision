@@ -45,13 +45,8 @@ class CocoCaptions(VisionDataset):
     """
 
     def __init__(self, root, annFile, transform=None, target_transform=None, transforms=None):
-        super(CocoCaptions, self).__init__(root, transforms, transform, target_transform)
+        super(CocoCaptions, self).__init__(root, transforms, transform, target_transform, root_zipfilename=self.root + ".zip")
         from pycocotools.coco import COCO
-        self.root_zip = None
-        self.root_zip_filename = self.root + ".zip"
-        if os.path.exists(self.root_zip_filename):
-            self.root_zip = ForkSafeZipLookup(self.root_zip_filename)
-            print("Using ZIP file for data source:", self.root + ".zip", file=sys.stderr)
         self.coco = COCO(annFile)
         self.ids = list(sorted(self.coco.imgs.keys()))
 
@@ -99,13 +94,8 @@ class CocoDetection(VisionDataset):
     """
 
     def __init__(self, root, annFile, transform=None, target_transform=None, transforms=None):
-        super(CocoDetection, self).__init__(root, transforms, transform, target_transform)
+        super(CocoDetection, self).__init__(root, transforms, transform, target_transform, root_zipfilename=self.root + ".zip")
         from pycocotools.coco import COCO
-        self.root_zip = None
-        self.root_zip_filename = self.root + ".zip"
-        if os.path.exists(self.root_zip_filename):
-            self.root_zip = ForkSafeZipLookup(self.root_zip_filename)
-            print("Using ZIP file for data source:", self.root + ".zip", file=sys.stderr)
         self.coco = COCO(annFile)
         self.ids = list(sorted(self.coco.imgs.keys()))
 

@@ -53,7 +53,7 @@ class CelebA(VisionDataset):
                  transform=None, target_transform=None,
                  download=False):
         import pandas
-        super(CelebA, self).__init__(root)
+        super(CelebA, self).__init__(root, root_zipfilename=os.path.join(self.root, self.base_folder, "img_align_celeba.zip"))
         self.split = split
         if isinstance(target_type, list):
             self.target_type = target_type
@@ -131,7 +131,11 @@ class CelebA(VisionDataset):
             f.extractall(os.path.join(self.root, self.base_folder))
 
     def __getitem__(self, index):
-        X = PIL.Image.open(os.path.join(self.root, self.base_folder, "img_align_celeba", self.filename[index]))
+        if self.root_zip is not None:
+            f = self.root_zip[os.path.join("img_align_celeba", self.filename[index])]
+            X = PIL.Image.open(f)
+        else:
+            X = PIL.Image.open(os.path.join(self.root, self.base_folder, "img_align_celeba", self.filename[index]))
 
         target = []
         for t in self.target_type:
