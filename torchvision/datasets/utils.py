@@ -4,7 +4,6 @@ import hashlib
 import errno
 from torch.utils.model_zoo import tqdm
 import zipfile
-import threading
 import io
 import struct
 
