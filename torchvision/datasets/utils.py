@@ -204,7 +204,8 @@ class ForkSafeZipLookup(object):
 
         with zipfile.ZipFile(filename, "r") as root_zip:
             for info in root_zip.infolist():
-                if info.is_dir():
+                if info.filename[-1] == '/':
+                    # skip directories
                     continue
                 if info.compress_type != zipfile.ZIP_STORED:
                     raise ValueError("Only uncompressed ZIP file supported: " + info.filename)
