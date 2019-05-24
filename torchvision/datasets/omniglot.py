@@ -31,10 +31,11 @@ class Omniglot(VisionDataset):
     def __init__(self, root, background=True,
                  transform=None, target_transform=None,
                  download=False):
-        super(Omniglot, self).__init__(join(root, self.folder))
+        self.background = background
+        super(Omniglot, self).__init__(join(root, self.folder),
+                                       root_zipfilename=join(self.root, self._get_target_folder() + ".zip"))
         self.transform = transform
         self.target_transform = target_transform
-        self.background = background
 
         if download:
             self.download()
@@ -63,8 +64,12 @@ class Omniglot(VisionDataset):
             tuple: (image, target) where target is index of the target character class.
         """
         image_name, character_class = self._flat_character_images[index]
-        image_path = join(self.target_folder, self._characters[character_class], image_name)
-        image = Image.open(image_path, mode='r').convert('L')
+        if self.root_zip is not None:
+            image_path_or_file = self.root_zip[join(self._get_target_folder(), self._characters[character_class],
+                                                    image_name)]
+        else:
+            image_path_or_file = join(self.target_folder, self._characters[character_class], image_name)
+        image = Image.open(image_path_or_file, mode='r').convert('L')
 
         if self.transform:
             image = self.transform(image)
