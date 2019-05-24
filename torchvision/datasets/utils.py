@@ -195,12 +195,11 @@ def _save_response_content(response, destination, chunk_size=32768):
         pbar.close()
 
 
-# thread-safe/multiprocessing-safe
-class ForkSafeZipLookup(object):
+# thread-safe/multiprocessing-safe (unlike a Python ZipFile instance)
+class ZipLookup(object):
     def __init__(self, filename):
         self.root_zip_filename = filename
         self.root_zip_lookup = {}
-        self.root_zip = {}
 
         with zipfile.ZipFile(filename, "r") as root_zip:
             for info in root_zip.infolist():
@@ -214,10 +213,7 @@ class ForkSafeZipLookup(object):
                 self.root_zip_lookup[info.filename] = (info.header_offset, info.compress_size)
 
     def __getitem__(self, path):
-        key = (os.getpid(), threading.get_ident())
-        if key not in self.root_zip:
-            self.root_zip[key] = open(self.root_zip_filename, "rb")
-        z = self.root_zip[key]
+        z = open(self.root_zip_filename, "rb")
         header_offset, size = self.root_zip_lookup[path]
 
         z.seek(header_offset)
@@ -229,4 +225,5 @@ class ForkSafeZipLookup(object):
         z.seek(offset)
         f = io.BytesIO(z.read(size))
         f.name = path
+        z.close()
         return f

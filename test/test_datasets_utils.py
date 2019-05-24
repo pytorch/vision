@@ -53,7 +53,7 @@ class Tester(unittest.TestCase):
             z.write(TEST_FILE, "somepath/hopper.jpg")
             z.close()
 
-            lookup = utils.ForkSafeZipLookup(temp_filename)
+            lookup = utils.ZipLookup(temp_filename)
             f = lookup["hopper.jpg"]
             assert f.name.endswith(".jpg")
             f = lookup["somepath/hopper.jpg"]
