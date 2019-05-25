@@ -91,8 +91,8 @@ class GeneralizedRCNNTransform(nn.Module):
 
         stride = size_divisible
         max_size = list(max_size)
-        max_size[1] = int(math.ceil(max_size[1] / stride) * stride)
-        max_size[2] = int(math.ceil(max_size[2] / stride) * stride)
+        max_size[1] = int(math.ceil(float(max_size[1]) / stride) * stride)
+        max_size[2] = int(math.ceil(float(max_size[2]) / stride) * stride)
         max_size = tuple(max_size)
 
         batch_shape = (len(images),) + max_size
