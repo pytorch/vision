@@ -50,12 +50,25 @@ class InvertedResidual(nn.Module):
 
 
 class MobileNetV2(nn.Module):
-    def __init__(self, inverted_residual_setting, num_classes=1000, width_mult=1.0):
+    def __init__(self, num_classes=1000, width_mult=1.0, inverted_residual_setting=None):
         super(MobileNetV2, self).__init__()
         block = InvertedResidual
         input_channel = 32
         last_channel = 1280
 
+        if inverted_residual_setting is None:
+            inverted_residual_setting = [
+                # t, c, n, s
+                [1, 16, 1, 1],
+                [6, 24, 2, 2],
+                [6, 32, 3, 2],
+                [6, 64, 4, 2],
+                [6, 96, 3, 1],
+                [6, 160, 3, 2],
+                [6, 320, 1, 1],
+            ]
+
+        # only check the first element, assuming user knows t,c,n,s are required
         if len(inverted_residual_setting) == 0 or len(inverted_residual_setting[0]) != 4:
             raise ValueError("inverted_residual_setting should be non-empty "
                              "or a 4-element list, got {}".format(inverted_residual_setting))
@@ -102,7 +115,7 @@ class MobileNetV2(nn.Module):
         return x
 
 
-def mobilenet_v2(pretrained=False, progress=True, inverted_residual_setting=None, **kwargs):
+def mobilenet_v2(pretrained=False, progress=True, **kwargs):
     """
     Constructs a MobileNetV2 architecture from
     `"MobileNetV2: Inverted Residuals and Linear Bottlenecks" <https://arxiv.org/abs/1801.04381>`_.
@@ -111,21 +124,7 @@ def mobilenet_v2(pretrained=False, progress=True, inverted_residual_setting=None
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    default_setting = [
-        # t, c, n, s
-        [1, 16, 1, 1],
-        [6, 24, 2, 2],
-        [6, 32, 3, 2],
-        [6, 64, 4, 2],
-        [6, 96, 3, 1],
-        [6, 160, 3, 2],
-        [6, 320, 1, 1],
-    ]
-
-    setting = default_setting if inverted_residual_setting is None else inverted_residual_setting
-
-    model = MobileNetV2(setting, **kwargs)
-
+    model = MobileNetV2(**kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls['mobilenet_v2'],
                                               progress=progress)
