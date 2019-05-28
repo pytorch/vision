@@ -54,8 +54,7 @@ class CelebA(VisionDataset):
                  download=False):
         import pandas
         root = os.path.join(root, self.base_folder)
-        super(CelebA, self).__init__(root,
-                                     root_zipfilename=os.path.join(self.root, "img_align_celeba.zip"))
+        super(CelebA, self).__init__(root, root_zipfilename=os.path.join(root, "img_align_celeba.zip"))
         self.split = split
         if isinstance(target_type, list):
             self.target_type = target_type
