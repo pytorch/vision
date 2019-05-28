@@ -33,7 +33,7 @@ before_install:
       pip uninstall -y pillow && CC="cc -march=native" pip install --force-reinstall pillow-simd
     fi
   - pip install future
-  - pip install pandas
+  - pip install pandas tqdm
   - pip install pytest pytest-cov codecov
 
 
