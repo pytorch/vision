@@ -58,10 +58,9 @@ class Tester(unittest.TestCase):
             with zipfile.ZipFile(temp_filename2) as u:
                 for info in u.infolist():
                     assert info.compress_type == zipfile.ZIP_STORED
-            lookup = utils.ZipLookup(temp_filename2)
+            _ = utils.ZipLookup(temp_filename2)
         finally:
             shutil.rmtree(temp_dir)
-
 
     def test_ziplookup(self):
         temp_dir = tempfile.mkdtemp()
