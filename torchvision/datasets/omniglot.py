@@ -3,7 +3,7 @@ from PIL import Image
 from os.path import join
 import os
 from .vision import VisionDataset
-from .utils import download_url, check_integrity, list_dir, list_files
+from .utils import download_url, check_integrity, list_dir, list_files, convert_zip_to_uncompressed_zip
 
 
 class Omniglot(VisionDataset):
@@ -93,10 +93,7 @@ class Omniglot(VisionDataset):
         org_filename = zip_filename + '.org'
         url = self.download_url_prefix + '/' + zip_filename
         download_url(url, self.root, org_filename, self.zips_md5[filename])
-        with zipfile.ZipFile(join(self.root, org_filename), 'r') as zip_file:
-            with zipfile.ZipFile(join(self.root, zip_filename), 'w', zipfile.ZIP_STORED) as out_file:
-                for item in zip_file.infolist():
-                    out_file.writestr(item, zip_file.read(item))
+        convert_zip_to_uncompressed_zip(join(self.root, org_filename), join(self.root, zip_filename))
         print('Extracting downloaded file: ' + join(self.root, zip_filename))
         with zipfile.ZipFile(join(self.root, zip_filename), 'r') as zip_file:
             zip_file.extractall(self.root)

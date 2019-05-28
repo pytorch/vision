@@ -194,6 +194,13 @@ def _save_response_content(response, destination, chunk_size=32768):
         pbar.close()
 
 
+def convert_zip_to_uncompressed_zip(org_filename, zip_filename):
+    with zipfile.ZipFile(org_filename, 'r') as zip_file:
+        with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_STORED) as out_file:
+            for item in zip_file.infolist():
+                out_file.writestr(item.filename, zip_file.read(item))
+
+
 # thread-safe/multiprocessing-safe (unlike a Python ZipFile instance)
 class ZipLookup(object):
     def __init__(self, filename):
