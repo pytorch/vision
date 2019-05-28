@@ -77,7 +77,7 @@ class Omniglot(VisionDataset):
 
     def _check_integrity(self):
         zip_filename = self._get_target_folder()
-        if not check_integrity(join(self.root, zip_filename + '.zip'), self.zips_md5[zip_filename]):
+        if not check_integrity(join(self.root, zip_filename + '.zip.org'), self.zips_md5[zip_filename]):
             return False
         return True
 
@@ -90,8 +90,13 @@ class Omniglot(VisionDataset):
 
         filename = self._get_target_folder()
         zip_filename = filename + '.zip'
+        org_filename = zip_filename + '.org'
         url = self.download_url_prefix + '/' + zip_filename
-        download_url(url, self.root, zip_filename, self.zips_md5[filename])
+        download_url(url, self.root, org_filename, self.zips_md5[filename])
+        with zipfile.ZipFile(join(self.root, org_filename), 'r') as zip_file:
+            with zipfile.ZipFile(join(self.root, zip_filename), 'w', zipfile.ZIP_STORED) as out_file:
+                for item in zip_file.infolist():
+                    out_file.writestr(item, zip_file.read(item))
         print('Extracting downloaded file: ' + join(self.root, zip_filename))
         with zipfile.ZipFile(join(self.root, zip_filename), 'r') as zip_file:
             zip_file.extractall(self.root)
