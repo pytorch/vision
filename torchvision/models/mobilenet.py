@@ -57,8 +57,8 @@ class MobileNetV2(nn.Module):
         last_channel = 1280
         
         if len(inverted_residual_setting) == 0 or len(inverted_residual_setting[0]) != 4:
-          raise ValueError("inverted_residual_setting should be non-empty "
-                           "or a 4-element list, got {}".format(inverted_residual_setting))
+            raise ValueError("inverted_residual_setting should be non-empty "
+                             "or a 4-element list, got {}".format(inverted_residual_setting))
 
         # building first layer
         input_channel = int(input_channel * width_mult)
