@@ -8,8 +8,7 @@ import gzip
 import numpy as np
 import torch
 import codecs
-from .utils import download_url, makedir_exist_ok
-from .utils import download_and_extract, extract_file
+from .utils import download_and_extract, extract_file, makedir_exist_ok
 
 
 class MNIST(VisionDataset):
@@ -121,15 +120,6 @@ class MNIST(VisionDataset):
                 os.path.exists(os.path.join(self.processed_folder,
                                             self.test_file)))
 
-    @staticmethod
-    def extract_gzip(gzip_path, remove_finished=False):
-        print('Extracting {}'.format(gzip_path))
-        with open(gzip_path.replace('.gz', ''), 'wb') as out_f, \
-                gzip.GzipFile(gzip_path) as zip_f:
-            out_f.write(zip_f.read())
-        if remove_finished:
-            os.unlink(gzip_path)
-
     def download(self):
         """Download the MNIST data if it doesn't exist in processed_folder already."""
 
@@ -142,7 +132,7 @@ class MNIST(VisionDataset):
         # download files
         for url in self.urls:
             filename = url.rpartition('/')[2]
-            download_and_extract(url, root=self.raw_folder, filename=filename, md5=None)
+            download_and_extract(url, root=self.raw_folder, filename=filename)
 
         # process and save as torch files
         print('Processing...')
@@ -272,18 +262,13 @@ class EMNIST(MNIST):
         # download files
         filename = self.url.rpartition('/')[2]
         file_path = os.path.join(self.raw_folder, filename)
-        #download_url(self.url, root=self.raw_folder, filename=filename, md5=None)
 
         print('Extracting zip archive')
-        #with zipfile.ZipFile(file_path) as zip_f:
-        #    zip_f.extractall(self.raw_folder)
-        #os.unlink(file_path)
-        download_and_extract(self.url, root=self.raw_folder, filename="kmnist.zip", md5=None)
+        download_and_extract(self.url, root=self.raw_folder, filename="kmnist.zip", remove_finished=True)
         gzip_folder = os.path.join(self.raw_folder, 'gzip')
         for gzip_file in os.listdir(gzip_folder):
             if gzip_file.endswith('.gz'):
                 extract_file(os.path.join(gzip_folder, gzip_file), gzip_folder)
-            #    self.extract_gzip(gzip_path=os.path.join(gzip_folder, gzip_file))
 
         # process and save as torch files
         for split in self.splits:

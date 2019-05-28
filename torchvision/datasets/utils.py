@@ -194,19 +194,32 @@ def _save_response_content(response, destination, chunk_size=32768):
 import tarfile
 import zipfile
 import gzip
+
+def _is_tar(filename):
+    return filename.endswith(".tar")
+
+def _is_targz(filename):
+    return filename.endswith(".tar.gz")
+
+def _is_gzip(filename):
+    return filename.endswith(".gz") and not filename.endswith(".tar.gz")
+
+def _is_zip(filename):
+    return filename.endswith(".zip")
+
 def extract_file(from_path, to_path, remove_finished=False):
     # TODO make it more robust wrt tar.gz
-    if from_path.endswith(".tar"):
+    if _is_tar(from_path):
         with tarfile.open(from_path, 'r:') as tar:
             tar.extractall(path=to_path)
-    elif from_path.endswith(".tar.gz"):
+    elif _is_targz(from_path):
         with tarfile.open(from_path, 'r:gz') as tar:
             tar.extractall(path=to_path)
-    elif from_path.endswith(".gz"):
+    elif _is_gzip(from_path):
         to_path = os.path.join(to_path, os.path.splitext(os.path.basename(from_path))[0])
         with open(to_path, "wb") as out_f, gzip.GzipFile(from_path) as zip_f:
             out_f.write(zip_f.read())
-    elif from_path.endswith("zip"):
+    elif _is_zip(from_path):
         with zipfile.ZipFile(from_path, 'r') as z:
             z.extractall(to_path)
     else:
@@ -215,6 +228,6 @@ def extract_file(from_path, to_path, remove_finished=False):
     if remove_finished:
         os.unlink(from_path)
 
-def download_and_extract(url, root, filename, md5=None):
+def download_and_extract(url, root, filename, md5=None, remove_finished=False):
     download_url(url, root, filename, md5)
-    extract_file(os.path.join(root, filename), root)
+    extract_file(os.path.join(root, filename), root, remove_finished)
