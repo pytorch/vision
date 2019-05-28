@@ -66,7 +66,7 @@ class CocoCaptions(VisionDataset):
 
         path = coco.loadImgs(img_id)[0]['file_name']
 
-        img = Image.open(self.get_path_or_fp(path, addLastRootElement=True)).convert('RGB')
+        img = Image.open(self.get_path_or_fp(path)).convert('RGB')
 
         if self.transforms is not None:
             img, target = self.transforms(img, target)
@@ -111,7 +111,7 @@ class CocoDetection(VisionDataset):
 
         path = coco.loadImgs(img_id)[0]['file_name']
 
-        img = Image.open(self.get_path_or_fp(path, addLastRootElement=True)).convert('RGB')
+        img = Image.open(self.get_path_or_fp(path)).convert('RGB')
         if self.transforms is not None:
             img, target = self.transforms(img, target)
 

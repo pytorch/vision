@@ -32,10 +32,12 @@ class VisionDataset(data.Dataset):
             self.root_zip = ZipLookup(self.root_zipfilename)
             print("Using ZIP file for data source:", self.root_zipfilename)
 
-    def get_path_or_fp(self, *path_components, addLastRootElement=False):
+    def get_path_or_fp(self, *path_components):
         if self.root_zip is not None:
-            if addLastRootElement:
-                path_components.insert(0, os.path.split(self.root)[1])
+            key1 = "/".join(path_components)
+            if key1 in self.root_zip:
+                return self.root_zip[key1]
+            path_components.insert(0, os.path.split(self.root)[1])
             return self.root_zip["/".join(path_components)]
         else:
             return os.path.join(self.root, *path_components)
