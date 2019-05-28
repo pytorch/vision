@@ -38,8 +38,10 @@ class VisionDataset(data.Dataset):
             try:
                 return self.root_zip[key1]
             except KeyError:
-                path_components.insert(0, os.path.split(self.root)[1])
-                return self.root_zip["/".join(path_components)]
+                key2 = [os.path.split(self.root)[1]]
+                key2.extend(path_components)
+                key2 = "/".join(key2)
+                return self.root_zip[key2]
         else:
             return os.path.join(self.root, *path_components)
 
