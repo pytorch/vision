@@ -15,6 +15,7 @@ class Tester(unittest.TestCase):
 
         # 2nd time, the ZIP file will be detected (because now it has been downloaded)
         ds2 = datasets.CelebA(root=temp_dir, download=True)
+        assert ds2.root_zip is not None, "Transparant ZIP reading support broken: ZIP file not found"
         assert len(ds2) == 162770
         assert ds2[40711] is not None
         shutil.rmtree(temp_dir)
@@ -27,6 +28,7 @@ class Tester(unittest.TestCase):
 
         # 2nd time, the ZIP file will be detected (because now it has been downloaded)
         ds2 = datasets.Omniglot(root=temp_dir, download=True)
+        assert ds2.root_zip is not None, "Transparant ZIP reading support broken: ZIP file not found"
         assert len(ds2) == 19280
         assert ds2[4071] is not None
         shutil.rmtree(temp_dir)
