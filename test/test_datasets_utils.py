@@ -42,6 +42,27 @@ class Tester(unittest.TestCase):
         assert not len(os.listdir(temp_dir)) == 0, 'The downloaded root directory is empty after download.'
         shutil.rmtree(temp_dir)
 
+    def test_convert_zip_to_uncompressed_zip(self):
+        temp_dir = tempfile.mkdtemp()
+        temp_filename = os.path.join(temp_dir, "convert.zip")
+        temp_filename2 = os.path.join(temp_dir, "converted.zip")
+        try:
+            z = zipfile.ZipFile(temp_filename, "w", zipfile.ZIP_DEFLATED, allowZip64=True)
+            z.write(TEST_FILE, "hopper.jpg")
+            z.write(TEST_FILE)
+            z.write(TEST_FILE, "hopper79.jpg")
+            z.write(TEST_FILE, "somepath/hopper.jpg")
+            z.close()
+
+            utils.convert_zip_to_uncompressed_zip(temp_filename, temp_filename2)
+            with zipfile.ZipFile(temp_filename2) as u:
+                for info in u.infolist():
+                    assert info.compress_type == zipfile.ZIP_STORED
+            lookup = utils.ZipLookup(temp_filename2)
+        finally:
+            shutil.rmtree(temp_dir)
+
+
     def test_ziplookup(self):
         temp_dir = tempfile.mkdtemp()
         temp_filename = os.path.join(temp_dir, "ziplookup.zip")
