@@ -27,7 +27,7 @@ class VisionDataset(data.Dataset):
         self.transforms = transforms
 
         self.root_zip = None
-        self.root_zipfilename = root_zipfilename
+        self.root_zipfilename = os.path.realpath(root_zipfilename)
         if self.root_zipfilename is not None and os.path.exists(self.root_zipfilename):
             self.root_zip = ZipLookup(self.root_zipfilename)
             print("Using ZIP file for data source:", self.root_zipfilename)
