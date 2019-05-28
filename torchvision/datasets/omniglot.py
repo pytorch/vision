@@ -33,7 +33,7 @@ class Omniglot(VisionDataset):
                  download=False):
         self.background = background
         super(Omniglot, self).__init__(join(root, self.folder),
-                                       root_zipfilename=join(self.root, self._get_target_folder() + ".zip"))
+                                       root_zipfilename=join(root, self.folder, self._get_target_folder() + ".zip"))
         self.transform = transform
         self.target_transform = target_transform
 
