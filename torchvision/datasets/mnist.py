@@ -4,7 +4,6 @@ import warnings
 from PIL import Image
 import os
 import os.path
-import gzip
 import numpy as np
 import torch
 import codecs
@@ -251,7 +250,6 @@ class EMNIST(MNIST):
     def download(self):
         """Download the EMNIST data if it doesn't exist in processed_folder already."""
         import shutil
-        import zipfile
 
         if self._check_exists():
             return
@@ -260,11 +258,8 @@ class EMNIST(MNIST):
         makedir_exist_ok(self.processed_folder)
 
         # download files
-        filename = self.url.rpartition('/')[2]
-        file_path = os.path.join(self.raw_folder, filename)
-
-        print('Extracting zip archive')
-        download_and_extract(self.url, root=self.raw_folder, filename="kmnist.zip", remove_finished=True)
+        print('Downloading and extracting zip archive')
+        download_and_extract(self.url, root=self.raw_folder, filename="emnist.zip", remove_finished=True)
         gzip_folder = os.path.join(self.raw_folder, 'gzip')
         for gzip_file in os.listdir(gzip_folder):
             if gzip_file.endswith('.gz'):

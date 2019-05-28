@@ -1,7 +1,11 @@
 import os
 import os.path
 import hashlib
+import gzip
 import errno
+import tarfile
+import zipfile
+
 from torch.utils.model_zoo import tqdm
 
 
@@ -191,24 +195,23 @@ def _save_response_content(response, destination, chunk_size=32768):
         pbar.close()
 
 
-import tarfile
-import zipfile
-import gzip
-
 def _is_tar(filename):
     return filename.endswith(".tar")
+
 
 def _is_targz(filename):
     return filename.endswith(".tar.gz")
 
+
 def _is_gzip(filename):
     return filename.endswith(".gz") and not filename.endswith(".tar.gz")
+
 
 def _is_zip(filename):
     return filename.endswith(".zip")
 
+
 def extract_file(from_path, to_path, remove_finished=False):
-    # TODO make it more robust wrt tar.gz
     if _is_tar(from_path):
         with tarfile.open(from_path, 'r:') as tar:
             tar.extractall(path=to_path)
@@ -223,10 +226,11 @@ def extract_file(from_path, to_path, remove_finished=False):
         with zipfile.ZipFile(from_path, 'r') as z:
             z.extractall(to_path)
     else:
-        raise ValueError("Not supported")
+        raise ValueError("Extraction of {} not supported".format(from_path))
 
     if remove_finished:
         os.unlink(from_path)
+
 
 def download_and_extract(url, root, filename, md5=None, remove_finished=False):
     download_url(url, root, filename, md5)
