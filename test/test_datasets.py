@@ -17,14 +17,6 @@ class Tester(unittest.TestCase):
         self.assertTrue(isinstance(target, int))
         shutil.rmtree(tmp_dir)
 
-    def test_emnist(self):
-        tmp_dir = tempfile.mkdtemp()
-        dataset = torchvision.datasets.EMNIST(tmp_dir, split='byclass', download=True)
-        img, target = dataset[0]
-        self.assertTrue(isinstance(img, PIL.Image.Image))
-        self.assertTrue(isinstance(target, int))
-        shutil.rmtree(tmp_dir)
-
     def test_kmnist(self):
         tmp_dir = tempfile.mkdtemp()
         dataset = torchvision.datasets.KMNIST(tmp_dir, download=True)
