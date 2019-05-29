@@ -234,4 +234,5 @@ def extract_file(from_path, to_path, remove_finished=False):
 
 def download_and_extract(url, root, filename, md5=None, remove_finished=False):
     download_url(url, root, filename, md5)
+    print("Extracting {} to {}".format(os.path.join(root, filename), root))
     extract_file(os.path.join(root, filename), root, remove_finished)
