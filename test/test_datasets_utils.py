@@ -4,6 +4,8 @@ import tempfile
 import torchvision.datasets.utils as utils
 import unittest
 import zipfile
+import tarfile
+import gzip
 
 TEST_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                          'assets', 'grace_hopper_517x606.jpg')
@@ -86,6 +88,47 @@ class Tester(unittest.TestCase):
             del lookup
         finally:
             shutil.rmtree(temp_dir)
+
+    def test_extract_zip(self):
+        temp_dir = tempfile.mkdtemp()
+        with tempfile.NamedTemporaryFile(suffix='.zip') as f:
+            with zipfile.ZipFile(f, 'w') as zf:
+                zf.writestr('file.tst', 'this is the content')
+            utils.extract_file(f.name, temp_dir)
+            assert os.path.exists(os.path.join(temp_dir, 'file.tst'))
+            with open(os.path.join(temp_dir, 'file.tst'), 'r') as nf:
+                data = nf.read()
+            assert data == 'this is the content'
+        shutil.rmtree(temp_dir)
+
+    def test_extract_tar(self):
+        for ext, mode in zip(['.tar', '.tar.gz'], ['w', 'w:gz']):
+            temp_dir = tempfile.mkdtemp()
+            with tempfile.NamedTemporaryFile() as bf:
+                bf.write("this is the content".encode())
+                bf.seek(0)
+                with tempfile.NamedTemporaryFile(suffix=ext) as f:
+                    with tarfile.open(f.name, mode=mode) as zf:
+                        zf.add(bf.name, arcname='file.tst')
+                    utils.extract_file(f.name, temp_dir)
+                    assert os.path.exists(os.path.join(temp_dir, 'file.tst'))
+                    with open(os.path.join(temp_dir, 'file.tst'), 'r') as nf:
+                        data = nf.read()
+                    assert data == 'this is the content', data
+            shutil.rmtree(temp_dir)
+
+    def test_extract_gzip(self):
+        temp_dir = tempfile.mkdtemp()
+        with tempfile.NamedTemporaryFile(suffix='.gz') as f:
+            with gzip.GzipFile(f.name, 'wb') as zf:
+                zf.write('this is the content'.encode())
+            utils.extract_file(f.name, temp_dir)
+            f_name = os.path.join(temp_dir, os.path.splitext(os.path.basename(f.name))[0])
+            assert os.path.exists(f_name)
+            with open(os.path.join(f_name), 'r') as nf:
+                data = nf.read()
+            assert data == 'this is the content', data
+        shutil.rmtree(temp_dir)
 
 
 if __name__ == '__main__':
