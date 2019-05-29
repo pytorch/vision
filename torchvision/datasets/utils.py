@@ -7,7 +7,6 @@ import tarfile
 import zipfile
 
 from torch.utils.model_zoo import tqdm
-import zipfile
 import io
 import struct
 

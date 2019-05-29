@@ -6,6 +6,7 @@ import unittest
 
 import torchvision
 
+
 class Tester(unittest.TestCase):
 
     def test_mnist(self):
