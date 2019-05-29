@@ -46,7 +46,7 @@ class STL10(CIFAR10):
             raise ValueError('Split "{}" not found. Valid splits are: {}'.format(
                 split, ', '.join(self.splits),
             ))
-        self.root = os.path.expanduser(root)
+        super(STL10, self).__init__(root)
         self.transform = transform
         self.target_transform = target_transform
         self.split = split  # train/test/unlabeled set
