@@ -77,7 +77,7 @@ class Omniglot(VisionDataset):
 
     def _check_integrity(self):
         zip_filename = self._get_target_folder()
-        if not check_integrity(join(self.root, zip_filename + '.zip.org'), self.zips_md5[zip_filename]):
+        if not check_integrity(join(self.root, zip_filename + '.org.zip'), self.zips_md5[zip_filename]):
             return False
         return True
 
@@ -88,7 +88,7 @@ class Omniglot(VisionDataset):
 
         filename = self._get_target_folder()
         zip_filename = filename + '.zip'
-        org_filename = zip_filename + '.org'
+        org_filename = filename + '.org.zip'
         url = self.download_url_prefix + '/' + zip_filename
         download_and_extract(url, self.root, org_filename, self.zips_md5[filename])
         convert_zip_to_uncompressed_zip(join(self.root, org_filename), join(self.root, zip_filename))
