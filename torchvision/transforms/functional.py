@@ -804,8 +804,7 @@ def erase(img, x, y, h, w, value=0):
         See https://arxiv.org/pdf/1708.04896.pdf
      Args:
         img (Tensor): Image to be erased.
-        x: Upper pixel coordinate.
-        y: Left pixel coordinate.
+        x, y: Upper left pixel coordinate.
         w: Width of the erased image.
         h: Height of the erased image.
         value: Erasing value.
