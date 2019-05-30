@@ -11,26 +11,38 @@ from torchvision import transforms
 
 import utils
 
+try:
+    from apex import amp, optimizers
+except ImportError:
+    print("Please install apex from https://www.github.com/nvidia/apex to enable mixed precision training.")
 
-def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, print_freq):
+
+def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, print_freq, apex=False):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
+    metric_logger.add_meter('img/s', utils.SmoothedValue(window_size=10, fmt='{value}'))
+
     header = 'Epoch: [{}]'.format(epoch)
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
         image, target = image.to(device), target.to(device)
         output = model(image)
         loss = criterion(output, target)
 
+        start_time = time.time()
         optimizer.zero_grad()
-        loss.backward()
+        if apex:
+            with amp.scale_loss(loss, optimizer) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            loss.backward()
         optimizer.step()
 
         acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
         batch_size = image.shape[0]
         metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
-        metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
+        metric_logger.meters['img/s'].update(batch_size/(time.time()-start_time))
 
 
 def evaluate(model, criterion, data_loader, device):
@@ -161,6 +173,12 @@ def main(args):
 
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
 
+    if args.apex:
+        model, optimizer = amp.initialize(model, optimizer,
+                                          opt_level=args.apex_opt_level,
+                                          keep_batchnorm_fp32=args.apex_keep_batchnorm_fp32,
+                                          )
+
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
         model_without_ddp.load_state_dict(checkpoint['model'])
@@ -177,7 +195,7 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq)
+        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq, args.apex)
         lr_scheduler.step()
         evaluate(model, criterion, data_loader_test, device=device)
         if args.output_dir:
@@ -248,6 +266,17 @@ def parse_args():
         help="Use pre-trained models from the modelzoo",
         action="store_true",
     )
+
+    # Mixed precision training parameters
+    parser.add_argument('--apex', action='store_true',
+                        help='Use apex for mixed precision training')
+    parser.add_argument('--apex-opt-level', default='O3', type=str,
+                        help='For apex mixed precision training'
+                             'O0 for FP32 training, O3 for FP16 training'
+                             'for further detail, see https://github.com/NVIDIA/apex/tree/master/examples/imagenet'
+                        )
+    parser.add_argument('--apex-keep-batchnorm-fp32', type=str, default=None,
+                        help='For apex, keep batch-norm operations in FP32')
 
     # distributed training parameters
     parser.add_argument('--world-size', default=1, type=int,
