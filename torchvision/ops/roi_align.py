@@ -6,7 +6,7 @@ from torch.autograd.function import once_differentiable
 
 from torch.nn.modules.utils import _pair
 
-from torchvision import _C
+from torchvision.extension import _lazy_import
 from ._utils import convert_boxes_to_roi_format
 
 
@@ -18,6 +18,7 @@ class _RoIAlignFunction(Function):
         ctx.spatial_scale = spatial_scale
         ctx.sampling_ratio = sampling_ratio
         ctx.input_shape = input.size()
+        _C = _lazy_import()
         output = _C.roi_align_forward(
             input, roi, spatial_scale,
             output_size[0], output_size[1], sampling_ratio)
@@ -31,6 +32,7 @@ class _RoIAlignFunction(Function):
         spatial_scale = ctx.spatial_scale
         sampling_ratio = ctx.sampling_ratio
         bs, ch, h, w = ctx.input_shape
+        _C = _lazy_import()
         grad_input = _C.roi_align_backward(
             grad_output, rois, spatial_scale,
             output_size[0], output_size[1], bs, ch, h, w, sampling_ratio)
