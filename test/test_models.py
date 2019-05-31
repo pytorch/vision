@@ -60,6 +60,24 @@ class Tester(unittest.TestCase):
         new_model = torch.nn.Sequential(layers)
         return new_model
 
+    def test_efficient_densenet(self):
+        input_shape = (1, 3, 300, 300)
+        x = torch.rand(input_shape)
+
+        model1 = models.__dict__[name](num_classes=50, efficient=True)
+        params = model1.state_dict()
+        model1.eval()
+        out1 = model1(x)
+        
+        model2 = models.__dict__[name](num_classes=50, efficient=False)
+        model2.load_state_dict(params)
+        model2.eval()
+        out2 = model2(x)
+        
+        max_diff = (out1 - out2).abs().max()
+        
+        self.assertTrue(max_diff < 1e-5)
+
     def test_resnet_dilation(self):
         # TODO improve tests to also check that each layer has the right dimensionality
         for i in product([False, True], [False, True], [False, True]):
