@@ -1,7 +1,7 @@
 import os
 import torch
 import torch.utils.data as data
-from .utils import ZipLookup
+from .utils import ZipLookup, _is_zip
 
 
 class VisionDataset(data.Dataset):
@@ -27,7 +27,10 @@ class VisionDataset(data.Dataset):
         self.transforms = transforms
 
         self.root_zip = None
-        if root_zipfilename is not None and os.path.exists(root_zipfilename):
+        if _is_zip(self.root):
+            self.root_zip = ZipLookup(os.path.realpath(self.root))
+            print("Using ZIP file for data source:", self.root)
+        elif root_zipfilename is not None and os.path.exists(root_zipfilename):
             self.root_zip = ZipLookup(os.path.realpath(root_zipfilename))
             print("Using ZIP file for data source:", root_zipfilename)
 

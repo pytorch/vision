@@ -85,6 +85,8 @@ class Tester(unittest.TestCase):
                 assert False, "Should not return something for non-existant file"
             except KeyError:
                 pass
+            assert "hopper.jpg" in lookup.keys()
+            assert "somepath/hopper.jpg" in lookup.keys()
             del lookup
         finally:
             shutil.rmtree(temp_dir)

@@ -279,3 +279,6 @@ class ZipLookup(object):
         f.name = path
         z.close()
         return f
+
+    def keys(self):
+        return self.root_zip_lookup.keys()
