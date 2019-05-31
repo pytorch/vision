@@ -4,7 +4,7 @@ import os
 import os.path
 
 from .vision import VisionDataset
-from .utils import download_and_extract, makedir_exist_ok
+from .utils import download_and_extract_archive, makedir_exist_ok
 
 
 class Caltech101(VisionDataset):
@@ -113,12 +113,12 @@ class Caltech101(VisionDataset):
             print('Files already downloaded and verified')
             return
 
-        download_and_extract(
+        download_and_extract_archive(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz",
             self.root,
             "101_ObjectCategories.tar.gz",
             "b224c7392d521a49829488ab0f1120d9")
-        download_and_extract(
+        download_and_extract_archive(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/Annotations.tar",
             self.root,
             "101_Annotations.tar",
@@ -201,7 +201,7 @@ class Caltech256(VisionDataset):
             print('Files already downloaded and verified')
             return
 
-        download_and_extract(
+        download_and_extract_archive(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech256/256_ObjectCategories.tar",
             self.root,
             "256_ObjectCategories.tar",
