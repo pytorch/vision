@@ -36,8 +36,10 @@ class Tester(unittest.TestCase):
     def test_imagenet(self):
         tmp_dir = tempfile.mkdtemp()
         archive_dict = torchvision.datasets.imagenet.ARCHIVE_DICT
-        archive_dict['train']['url'] = 'https://github.com/pmeier/vision/blob/imagenet_test/test/assets/dataset/fakedata/imagenet/ILSVRC2012_img_train.tar'
-        archive_dict['val']['url'] = 'https://github.com/pmeier/vision/blob/imagenet_test/test/assets/dataset/fakedata/imagenet/ILSVRC2012_img_val.tar'
+        archive_dict['train']['url'] = ('https://github.com/pmeier/vision/blob/imagenet_test/'
+                                        'test/assets/dataset/fakedata/imagenet/ILSVRC2012_img_train.tar')
+        archive_dict['val']['url'] = ('https://github.com/pmeier/vision/blob/imagenet_test/'
+                                      'test/assets/dataset/fakedata/imagenet/ILSVRC2012_img_val.tar')
 
         dataset_train = torchvision.datasets.ImageNet(tmp_dir, split='train', download=True)
         self.assertEqual(len(dataset_train), 3)

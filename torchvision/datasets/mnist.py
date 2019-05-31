@@ -259,7 +259,8 @@ class EMNIST(MNIST):
 
         # download files
         print('Downloading and extracting zip archive')
-        download_and_extract_archive(self.url, download_root=self.raw_folder, filename="emnist.zip", remove_finished=True)
+        download_and_extract_archive(self.url, download_root=self.raw_folder, filename="emnist.zip",
+                                     remove_finished=True)
         gzip_folder = os.path.join(self.raw_folder, 'gzip')
         for gzip_file in os.listdir(gzip_folder):
             if gzip_file.endswith('.gz'):
