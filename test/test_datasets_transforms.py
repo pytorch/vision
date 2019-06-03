@@ -3,7 +3,7 @@ import shutil
 import contextlib
 import tempfile
 import unittest
-from torchvision.datasets import *
+from torchvision.datasets import ImageFolder
 
 FAKEDATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             'assets', 'fakedata')

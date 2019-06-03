@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import mock
 import PIL
-from torchvision.datasets import *
+import torchvision
 
 FAKEDATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             'assets', 'fakedata')
@@ -32,7 +32,7 @@ class Tester(unittest.TestCase):
                                    for file in ('a1.png', 'a2.png', 'a3.png')]
             class_b_image_files = [os.path.join(root, 'b', file)
                                    for file in ('b1.png', 'b2.png', 'b3.png', 'b4.png')]
-            dataset = ImageFolder(root, loader=lambda x: x)
+            dataset = torchvision.datasets.ImageFolder(root, loader=lambda x: x)
 
             # test if all classes are present
             self.assertEqual(classes, sorted(dataset.classes))
@@ -54,8 +54,8 @@ class Tester(unittest.TestCase):
             self.assertEqual(imgs, outputs)
 
             # redo all tests with specified valid image files
-            dataset = ImageFolder(root, loader=lambda x: x,
-                                  is_valid_file=lambda x: '3' in x)
+            dataset = torchvision.datasets.ImageFolder(root, loader=lambda x: x,
+                                                       is_valid_file=lambda x: '3' in x)
             self.assertEqual(classes, sorted(dataset.classes))
 
             class_a_idx = dataset.class_to_idx['a']
@@ -72,7 +72,7 @@ class Tester(unittest.TestCase):
 
     def test_mnist(self):
         with tmp_dir() as root:
-            dataset = MNIST(root, download=True)
+            dataset = torchvision.datasets.MNIST(root, download=True)
             self.assertEqual(len(dataset), 60000)
             img, target = dataset[0]
             self.assertTrue(isinstance(img, PIL.Image.Image))
@@ -80,14 +80,14 @@ class Tester(unittest.TestCase):
 
     def test_kmnist(self):
         with tmp_dir() as root:
-            dataset = KMNIST(root, download=True)
+            dataset = torchvision.datasets.KMNIST(root, download=True)
             img, target = dataset[0]
             self.assertTrue(isinstance(img, PIL.Image.Image))
             self.assertTrue(isinstance(target, int))
 
     def test_fashionmnist(self):
         with tmp_dir() as root:
-            dataset = FashionMNIST(root, download=True)
+            dataset = torchvision.datasets.FashionMNIST(root, download=True)
             img, target = dataset[0]
             self.assertTrue(isinstance(img, PIL.Image.Image))
             self.assertTrue(isinstance(target, int))
@@ -95,14 +95,14 @@ class Tester(unittest.TestCase):
     @mock.patch('torchvision.datasets.utils.download_url')
     def test_imagenet(self, mock_download):
         with tmp_dir(src=os.path.join(FAKEDATA_DIR, 'imagenet')) as root:
-            dataset = ImageNet(root, split='train', download=True)
+            dataset = torchvision.datasets.ImageNet(root, split='train', download=True)
             self.assertEqual(len(dataset), 3)
             img, target = dataset[0]
             self.assertTrue(isinstance(img, PIL.Image.Image))
             self.assertTrue(isinstance(target, int))
             self.assertEqual(dataset.class_to_idx['Tinca tinca'], target)
 
-            dataset = ImageNet(root, split='val', download=True)
+            dataset = torchvision.datasets.ImageNet(root, split='val', download=True)
             self.assertEqual(len(dataset), 3)
             img, target = dataset[0]
             self.assertTrue(isinstance(img, PIL.Image.Image))
