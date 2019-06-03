@@ -12,30 +12,30 @@ FAKEDATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 
 class Tester(unittest.TestCase):
 
-    # def test_mnist(self):
-    #     tmp_dir = tempfile.mkdtemp()
-    #     dataset = torchvision.datasets.MNIST(tmp_dir, download=True)
-    #     self.assertEqual(len(dataset), 60000)
-    #     img, target = dataset[0]
-    #     self.assertTrue(isinstance(img, PIL.Image.Image))
-    #     self.assertTrue(isinstance(target, int))
-    #     shutil.rmtree(tmp_dir)
-    #
-    # def test_kmnist(self):
-    #     tmp_dir = tempfile.mkdtemp()
-    #     dataset = torchvision.datasets.KMNIST(tmp_dir, download=True)
-    #     img, target = dataset[0]
-    #     self.assertTrue(isinstance(img, PIL.Image.Image))
-    #     self.assertTrue(isinstance(target, int))
-    #     shutil.rmtree(tmp_dir)
-    #
-    # def test_fashionmnist(self):
-    #     tmp_dir = tempfile.mkdtemp()
-    #     dataset = torchvision.datasets.FashionMNIST(tmp_dir, download=True)
-    #     img, target = dataset[0]
-    #     self.assertTrue(isinstance(img, PIL.Image.Image))
-    #     self.assertTrue(isinstance(target, int))
-    #     shutil.rmtree(tmp_dir)
+    def test_mnist(self):
+        tmp_dir = tempfile.mkdtemp()
+        dataset = torchvision.datasets.MNIST(tmp_dir, download=True)
+        self.assertEqual(len(dataset), 60000)
+        img, target = dataset[0]
+        self.assertTrue(isinstance(img, PIL.Image.Image))
+        self.assertTrue(isinstance(target, int))
+        shutil.rmtree(tmp_dir)
+
+    def test_kmnist(self):
+        tmp_dir = tempfile.mkdtemp()
+        dataset = torchvision.datasets.KMNIST(tmp_dir, download=True)
+        img, target = dataset[0]
+        self.assertTrue(isinstance(img, PIL.Image.Image))
+        self.assertTrue(isinstance(target, int))
+        shutil.rmtree(tmp_dir)
+
+    def test_fashionmnist(self):
+        tmp_dir = tempfile.mkdtemp()
+        dataset = torchvision.datasets.FashionMNIST(tmp_dir, download=True)
+        img, target = dataset[0]
+        self.assertTrue(isinstance(img, PIL.Image.Image))
+        self.assertTrue(isinstance(target, int))
+        shutil.rmtree(tmp_dir)
 
     @mock.patch('torchvision.datasets.utils.download_url')
     def test_imagenet(self, mock_download):
