@@ -201,6 +201,12 @@ ResNext
 Semantic Segmentation
 =====================
 
+The models subpackage contains definitions for the following model
+architectures for semantic segmentation:
+
+- `FCN ResNet101 <https://arxiv.org/abs/1411.4038>`_
+- `DeepLabV3 ResNet101 <https://arxiv.org/abs/1706.05587>`_
+
 As with image classification models, all pre-trained models expect input images normalized in the same way.
 The images have to be loaded in to a range of ``[0, 1]`` and then normalized using
 ``mean = [0.485, 0.456, 0.406]`` and ``std = [0.229, 0.224, 0.225]``.
@@ -243,6 +249,12 @@ DeepLabV3
 
 Object Detection, Instance Segmentation and Person Keypoint Detection
 =====================================================================
+
+The models subpackage contains definitions for the following model
+architectures for detection:
+
+- `Faster R-CNN ResNet-50 FPN <https://arxiv.org/abs/1506.01497>`_
+- `Mask R-CNN ResNet-50 FPN <https://arxiv.org/abs/1703.06870>`_
 
 The pre-trained models for detection, instance segmentation and
 keypoint detection are initialized with the classification models
