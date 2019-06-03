@@ -7,7 +7,7 @@ import os.path
 import numpy as np
 import torch
 import codecs
-from .utils import download_and_extract, extract_file, makedir_exist_ok
+from .utils import download_and_extract_archive, extract_archive, makedir_exist_ok
 
 
 class MNIST(VisionDataset):
@@ -131,7 +131,7 @@ class MNIST(VisionDataset):
         # download files
         for url in self.urls:
             filename = url.rpartition('/')[2]
-            download_and_extract(url, root=self.raw_folder, filename=filename)
+            download_and_extract_archive(url, download_root=self.raw_folder, filename=filename)
 
         # process and save as torch files
         print('Processing...')
@@ -259,11 +259,12 @@ class EMNIST(MNIST):
 
         # download files
         print('Downloading and extracting zip archive')
-        download_and_extract(self.url, root=self.raw_folder, filename="emnist.zip", remove_finished=True)
+        download_and_extract_archive(self.url, download_root=self.raw_folder, filename="emnist.zip",
+                                     remove_finished=True)
         gzip_folder = os.path.join(self.raw_folder, 'gzip')
         for gzip_file in os.listdir(gzip_folder):
             if gzip_file.endswith('.gz'):
-                extract_file(os.path.join(gzip_folder, gzip_file), gzip_folder)
+                extract_archive(os.path.join(gzip_folder, gzip_file), gzip_folder)
 
         # process and save as torch files
         for split in self.splits:

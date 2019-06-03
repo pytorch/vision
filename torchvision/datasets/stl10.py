@@ -5,7 +5,7 @@ import os.path
 import numpy as np
 
 from .vision import VisionDataset
-from .utils import check_integrity, download_and_extract
+from .utils import check_integrity, download_and_extract_archive
 
 
 class STL10(VisionDataset):
@@ -152,7 +152,7 @@ class STL10(VisionDataset):
         if self._check_integrity():
             print('Files already downloaded and verified')
             return
-        download_and_extract(self.url, self.root, self.filename, self.tgz_md5)
+        download_and_extract_archive(self.url, self.root, self.filename, self.tgz_md5)
 
     def extra_repr(self):
         return "Split: {split}".format(**self.__dict__)

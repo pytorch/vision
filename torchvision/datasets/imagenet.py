@@ -1,9 +1,10 @@
 from __future__ import print_function
 import os
 import shutil
+import tempfile
 import torch
 from .folder import ImageFolder
-from .utils import check_integrity, download_url
+from .utils import check_integrity, download_and_extract_archive, extract_archive
 
 ARCHIVE_DICT = {
     'train': {
@@ -66,23 +67,23 @@ class ImageNet(ImageFolder):
 
     def download(self):
         if not check_integrity(self.meta_file):
-            tmpdir = os.path.join(self.root, 'tmp')
+            tmp_dir = tempfile.mkdtemp()
 
             archive_dict = ARCHIVE_DICT['devkit']
-            download_and_extract_tar(archive_dict['url'], self.root,
-                                     extract_root=tmpdir,
-                                     md5=archive_dict['md5'])
+            download_and_extract_archive(archive_dict['url'], self.root,
+                                         extract_root=tmp_dir,
+                                         md5=archive_dict['md5'])
             devkit_folder = _splitexts(os.path.basename(archive_dict['url']))[0]
-            meta = parse_devkit(os.path.join(tmpdir, devkit_folder))
+            meta = parse_devkit(os.path.join(tmp_dir, devkit_folder))
             self._save_meta_file(*meta)
 
-            shutil.rmtree(tmpdir)
+            shutil.rmtree(tmp_dir)
 
         if not os.path.isdir(self.split_folder):
             archive_dict = ARCHIVE_DICT[self.split]
-            download_and_extract_tar(archive_dict['url'], self.root,
-                                     extract_root=self.split_folder,
-                                     md5=archive_dict['md5'])
+            download_and_extract_archive(archive_dict['url'], self.root,
+                                         extract_root=self.split_folder,
+                                         md5=archive_dict['md5'])
 
             if self.split == 'train':
                 prepare_train_folder(self.split_folder)
@@ -128,36 +129,6 @@ class ImageNet(ImageFolder):
         return "Split: {split}".format(**self.__dict__)
 
 
-def extract_tar(src, dest=None, gzip=None, delete=False):
-    import tarfile
-
-    if dest is None:
-        dest = os.path.dirname(src)
-    if gzip is None:
-        gzip = src.lower().endswith('.gz')
-
-    mode = 'r:gz' if gzip else 'r'
-    with tarfile.open(src, mode) as tarfh:
-        tarfh.extractall(path=dest)
-
-    if delete:
-        os.remove(src)
-
-
-def download_and_extract_tar(url, download_root, extract_root=None, filename=None,
-                             md5=None, **kwargs):
-    download_root = os.path.expanduser(download_root)
-    if extract_root is None:
-        extract_root = download_root
-    if filename is None:
-        filename = os.path.basename(url)
-
-    if not check_integrity(os.path.join(download_root, filename), md5):
-        download_url(url, download_root, filename=filename, md5=md5)
-
-    extract_tar(os.path.join(download_root, filename), extract_root, **kwargs)
-
-
 def parse_devkit(root):
     idx_to_wnid, wnid_to_classes = parse_meta(root)
     val_idcs = parse_val_groundtruth(root)
@@ -189,7 +160,7 @@ def parse_val_groundtruth(devkit_root, path='data',
 
 def prepare_train_folder(folder):
     for archive in [os.path.join(folder, archive) for archive in os.listdir(folder)]:
-        extract_tar(archive, os.path.splitext(archive)[0], delete=True)
+        extract_archive(archive, os.path.splitext(archive)[0], remove_finished=True)
 
 
 def prepare_val_folder(folder, wnids):

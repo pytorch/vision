@@ -49,7 +49,7 @@ class Tester(unittest.TestCase):
         with tempfile.NamedTemporaryFile(suffix='.zip') as f:
             with zipfile.ZipFile(f, 'w') as zf:
                 zf.writestr('file.tst', 'this is the content')
-            utils.extract_file(f.name, temp_dir)
+            utils.extract_archive(f.name, temp_dir)
             assert os.path.exists(os.path.join(temp_dir, 'file.tst'))
             with open(os.path.join(temp_dir, 'file.tst'), 'r') as nf:
                 data = nf.read()
@@ -65,7 +65,7 @@ class Tester(unittest.TestCase):
                 with tempfile.NamedTemporaryFile(suffix=ext) as f:
                     with tarfile.open(f.name, mode=mode) as zf:
                         zf.add(bf.name, arcname='file.tst')
-                    utils.extract_file(f.name, temp_dir)
+                    utils.extract_archive(f.name, temp_dir)
                     assert os.path.exists(os.path.join(temp_dir, 'file.tst'))
                     with open(os.path.join(temp_dir, 'file.tst'), 'r') as nf:
                         data = nf.read()
@@ -77,7 +77,7 @@ class Tester(unittest.TestCase):
         with tempfile.NamedTemporaryFile(suffix='.gz') as f:
             with gzip.GzipFile(f.name, 'wb') as zf:
                 zf.write('this is the content'.encode())
-            utils.extract_file(f.name, temp_dir)
+            utils.extract_archive(f.name, temp_dir)
             f_name = os.path.join(temp_dir, os.path.splitext(os.path.basename(f.name))[0])
             assert os.path.exists(f_name)
             with open(os.path.join(f_name), 'r') as nf:
