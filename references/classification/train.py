@@ -2,6 +2,7 @@ from __future__ import print_function
 import datetime
 import os
 import time
+import sys
 
 import torch
 import torch.utils.data
@@ -12,9 +13,9 @@ from torchvision import transforms
 import utils
 
 try:
-    from apex import amp, optimizers
+    from apex import amp
 except ImportError:
-    print("Please install apex from https://www.github.com/nvidia/apex to enable mixed-precision training.")
+    amp = None
 
 
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, print_freq, apex=False):
@@ -81,6 +82,14 @@ def _get_cache_path(filepath):
 
 
 def main(args):
+    if args.apex:
+        if (sys.version_info < (3, 0)):
+            print("Apex currently only supports Python 3. Aborting.")
+            return
+        if amp is None:
+            print("Please install apex from https://www.github.com/nvidia/apex to enable mixed-precision training.")
+            return
+
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
