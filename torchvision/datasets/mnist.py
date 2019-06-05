@@ -4,6 +4,8 @@ import warnings
 from PIL import Image
 import os
 import os.path
+import gzip
+import lzma
 import numpy as np
 import torch
 import codecs
@@ -290,21 +292,59 @@ def get_int(b):
     return int(codecs.encode(b, 'hex'), 16)
 
 
+def open_maybe_compressed_file(path):
+    """Return a file object that possibly decompresses 'path' on the fly.
+       Decompression occurs when argument `path` is a string and ends with '.gz' or '.xz'.
+    """
+    if type(path) != str: 
+        return path
+    if path.endswith('.gz'): 
+        return gzip.open(path, 'rb')
+    if path.endswith('.xz'):
+        return lzma.open(path, 'rb')
+    return open(path, 'rb')
+
+
+def read_sn3_pascalvincent_tensor(path):
+    """Read a SN3 file in "Pascal Vincent" format (Lush file 'libidx/idx-io.lsh').
+       Argument may be a filename, compressed filename, or file object.
+    """
+    ## typemap
+    if not hasattr(read_sn3_pascalvincent_tensor, 'typemap'):
+        read_sn3_pascalvincent_tensor.typemap = {
+            8:  ( torch.uint8, np.uint8, np.uint8 ),
+            9:  ( torch.int8, np.int8, np.int8 ),
+            11: ( torch.int16, np.dtype('>i2'), 'i2'),
+            12: ( torch.int32, np.dtype('>i4'), 'i4'),
+            13: ( torch.float32, np.dtype('>f4'), 'f4'),
+            14: ( torch.float64, np.dtype('>f8'), 'f8') }
+    ## read
+    with open_maybe_compressed_file(path) as f:
+        data = f.read()
+    ## parse
+    magic = get_int(data[0:4])
+    nd = magic % 256
+    ty = magic // 256
+    assert nd >= 1 and nd <= 3
+    assert ty >= 8 and ty <= 14
+    m = read_sn3_pascalvincent_tensor.typemap[magic // 256]
+    s = [ get_int(data[4*(i+1):4*(i+2)]) for i in range(nd) ]
+    parsed = np.frombuffer(data, dtype=m[1], offset=4*(nd+1))
+    return torch.from_numpy(parsed.astype(m[2])).view(*s)
+
+
 def read_label_file(path):
     with open(path, 'rb') as f:
-        data = f.read()
-        assert get_int(data[:4]) == 2049
-        length = get_int(data[4:8])
-        parsed = np.frombuffer(data, dtype=np.uint8, offset=8)
-        return torch.from_numpy(parsed).view(length).long()
+        x = read_sn3_pascalvincent_tensor(f)
+    assert(x.dtype == torch.uint8)
+    assert(x.ndimension() == 1)
+    return x.long()
 
 
 def read_image_file(path):
     with open(path, 'rb') as f:
-        data = f.read()
-        assert get_int(data[:4]) == 2051
-        length = get_int(data[4:8])
-        num_rows = get_int(data[8:12])
-        num_cols = get_int(data[12:16])
-        parsed = np.frombuffer(data, dtype=np.uint8, offset=16)
-        return torch.from_numpy(parsed).view(length, num_rows, num_cols)
+        x = read_sn3_pascalvincent_tensor(f)
+    assert(x.dtype == torch.uint8)
+    assert(x.ndimension() == 3)
+    return x
+
