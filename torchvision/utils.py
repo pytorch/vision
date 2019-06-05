@@ -11,16 +11,16 @@ def make_grid(tensor, nrow=8, padding=2,
         tensor (Tensor or list): 4D mini-batch Tensor of shape (B x C x H x W)
             or a list of images all of the same size.
         nrow (int, optional): Number of images displayed in each row of the grid.
-            The Final grid size is (B / nrow, nrow). Default is 8.
-        padding (int, optional): amount of padding. Default is 2.
+            The final grid size is ``(B / nrow, nrow)``. Default: ``8``.
+        padding (int, optional): amount of padding. Default: ``2``.
         normalize (bool, optional): If True, shift the image to the range (0, 1),
-            by subtracting the minimum and dividing by the maximum pixel value.
+            by the min and max values specified by :attr:`range`. Default: ``False``.
         range (tuple, optional): tuple (min, max) where min and max are numbers,
             then these numbers are used to normalize the image. By default, min and max
             are computed from the tensor.
-        scale_each (bool, optional): If True, scale each image in the batch of
-            images separately rather than the (min, max) over all images.
-        pad_value (float, optional): Value for the padded pixels.
+        scale_each (bool, optional): If ``True``, scale each image in the batch of
+            images separately rather than the (min, max) over all images. Default: ``False``.
+        pad_value (float, optional): Value for the padded pixels. Default: ``0``.
 
     Example:
         See this notebook `here <https://gist.github.com/anonymous/bf16430f7750c023141c562f3e9f2a91>`_

@@ -27,6 +27,7 @@ class Cityscapes(VisionDataset):
         Get semantic segmentation target
 
         .. code-block:: python
+
             dataset = Cityscapes('./data/cityscapes', split='train', mode='fine',
                                  target_type='semantic')
 
@@ -35,6 +36,7 @@ class Cityscapes(VisionDataset):
         Get multiple targets
 
         .. code-block:: python
+
             dataset = Cityscapes('./data/cityscapes', split='train', mode='fine',
                                  target_type=['instance', 'color', 'polygon'])
 
@@ -43,6 +45,7 @@ class Cityscapes(VisionDataset):
         Validate on the "coarse" set
 
         .. code-block:: python
+
             dataset = Cityscapes('./data/cityscapes', split='val', mode='coarse',
                                  target_type='semantic')
 

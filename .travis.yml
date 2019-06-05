@@ -1,5 +1,6 @@
 language: python
 
+dist: xenial
 matrix:
   include:
     - env: LINT_CHECK
@@ -31,7 +32,9 @@ before_install:
     if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
       pip uninstall -y pillow && CC="cc -march=native" pip install --force-reinstall pillow-simd
     fi
+  - pip install future
   - pip install pytest pytest-cov codecov
+  - pip install mock
 
 
 install:
