@@ -376,11 +376,11 @@ class QMNIST(MNIST):
         targets = read_sn3_pascalvincent_tensor(files[1]).long()
         assert(targets.ndimension() == 2)
         if self.what == 'test10k':
-            data = data[0:10000,:,:]
-            targets = targets[0:10000,:]
+            data = data[0:10000,:,:].clone()
+            targets = targets[0:10000,:].clone()
         if self.what == 'test50k':
-            data = data[10000:,:,:]
-            targets = targets[10000:,:]
+            data = data[10000:,:,:].clone()
+            targets = targets[10000:,:].clone()
         with open(os.path.join(self.processed_folder, self.data_file), 'wb') as f:
             torch.save((data, targets), f)
 
