@@ -1017,7 +1017,7 @@ class RandomAffine(object):
             An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
         fillcolor (tuple or int): Optional fill color (Tuple for RGB Image And int for grayscale) for the area
-        	outside the transform in the output image.(Pillow>=5.0.0)
+            outside the transform in the output image.(Pillow>=5.0.0)
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
