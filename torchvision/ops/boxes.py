@@ -1,5 +1,5 @@
 import torch
-from torchvision import _C
+from torchvision.extension import _lazy_import
 
 
 def nms(boxes, scores, iou_threshold):
@@ -22,6 +22,7 @@ def nms(boxes, scores, iou_threshold):
             of the elements that have been kept
             by NMS, sorted in decreasing order of scores
     """
+    _C = _lazy_import()
     return _C.nms(boxes, scores, iou_threshold)
 
 
@@ -45,6 +46,8 @@ def batched_nms(boxes, scores, idxs, iou_threshold):
             the elements that have been kept by NMS, sorted
             in decreasing order of scores
     """
+    if boxes.numel() == 0:
+        return torch.empty((0,), dtype=torch.int64, device=boxes.device)
     # strategy: in order to perform NMS independently per class.
     # we add an offset to all the boxes. The offset is dependent
     # only on the class idx, and is large enough so that boxes
@@ -57,6 +60,17 @@ def batched_nms(boxes, scores, idxs, iou_threshold):
 
 
 def remove_small_boxes(boxes, min_size):
+    """
+    Remove boxes which contains at least one side smaller than min_size.
+
+    Arguments:
+        boxes (Tensor[N, 4]): boxes in [x0, y0, x1, y1] format
+        min_size (int): minimum size
+
+    Returns:
+        keep (Tensor[K]): indices of the boxes that have both sides
+            larger than min_size
+    """
     ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
     keep = (ws >= min_size) & (hs >= min_size)
     keep = keep.nonzero().squeeze(1)
@@ -65,9 +79,11 @@ def remove_small_boxes(boxes, min_size):
 
 def clip_boxes_to_image(boxes, size):
     """
+    Clip boxes so that they lie inside an image of size `size`.
+
     Arguments:
-        boxes (Tensor[N, 4])
-        size (Tuple[height, width])
+        boxes (Tensor[N, 4]): boxes in [x0, y0, x1, y1] format
+        size (Tuple[height, width]): size of the image
 
     Returns:
         clipped_boxes (Tensor[N, 4])

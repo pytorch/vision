@@ -205,7 +205,7 @@ at::Tensor ROIPool_backward_cpu(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIPool_backward", [&] {
     RoIPoolBackward<scalar_t>(
-        grad.contiguous().data<scalar_t>(),
+        grad.data<scalar_t>(),
         argmax.data<int>(),
         num_rois,
         channels,

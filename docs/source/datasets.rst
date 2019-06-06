@@ -97,7 +97,7 @@ DatasetFolder
 
 
 
-Imagenet-12
+ImageNet
 ~~~~~~~~~~~
 
 .. autoclass:: ImageNet
@@ -186,5 +186,12 @@ SBD
 
 
 .. autoclass:: SBDataset
+  :members: __getitem__
+  :special-members:
+
+USPS
+~~~~~
+
+.. autoclass:: USPS
   :members: __getitem__
   :special-members:

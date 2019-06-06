@@ -24,7 +24,7 @@ __device__ inline float devIoU(T const* const a, T const* const b) {
 template <typename T>
 __global__ void nms_kernel(
     const int n_boxes,
-    const float nms_overlap_thresh,
+    const float iou_threshold,
     const T* dev_boxes,
     unsigned long long* dev_mask) {
   const int row_start = blockIdx.y;
@@ -37,24 +37,22 @@ __global__ void nms_kernel(
   const int col_size =
       min(n_boxes - col_start * threadsPerBlock, threadsPerBlock);
 
-  __shared__ T block_boxes[threadsPerBlock * 5];
+  __shared__ T block_boxes[threadsPerBlock * 4];
   if (threadIdx.x < col_size) {
-    block_boxes[threadIdx.x * 5 + 0] =
-        dev_boxes[(threadsPerBlock * col_start + threadIdx.x) * 5 + 0];
-    block_boxes[threadIdx.x * 5 + 1] =
-        dev_boxes[(threadsPerBlock * col_start + threadIdx.x) * 5 + 1];
-    block_boxes[threadIdx.x * 5 + 2] =
-        dev_boxes[(threadsPerBlock * col_start + threadIdx.x) * 5 + 2];
-    block_boxes[threadIdx.x * 5 + 3] =
-        dev_boxes[(threadsPerBlock * col_start + threadIdx.x) * 5 + 3];
-    block_boxes[threadIdx.x * 5 + 4] =
-        dev_boxes[(threadsPerBlock * col_start + threadIdx.x) * 5 + 4];
+    block_boxes[threadIdx.x * 4 + 0] =
+        dev_boxes[(threadsPerBlock * col_start + threadIdx.x) * 4 + 0];
+    block_boxes[threadIdx.x * 4 + 1] =
+        dev_boxes[(threadsPerBlock * col_start + threadIdx.x) * 4 + 1];
+    block_boxes[threadIdx.x * 4 + 2] =
+        dev_boxes[(threadsPerBlock * col_start + threadIdx.x) * 4 + 2];
+    block_boxes[threadIdx.x * 4 + 3] =
+        dev_boxes[(threadsPerBlock * col_start + threadIdx.x) * 4 + 3];
   }
   __syncthreads();
 
   if (threadIdx.x < row_size) {
     const int cur_box_idx = threadsPerBlock * row_start + threadIdx.x;
-    const T* cur_box = dev_boxes + cur_box_idx * 5;
+    const T* cur_box = dev_boxes + cur_box_idx * 4;
     int i = 0;
     unsigned long long t = 0;
     int start = 0;
@@ -62,7 +60,7 @@ __global__ void nms_kernel(
       start = threadIdx.x + 1;
     }
     for (i = start; i < col_size; i++) {
-      if (devIoU<T>(cur_box, block_boxes + i * 5) > nms_overlap_thresh) {
+      if (devIoU<T>(cur_box, block_boxes + i * 4) > iou_threshold) {
         t |= 1ULL << i;
       }
     }
@@ -71,33 +69,34 @@ __global__ void nms_kernel(
   }
 }
 
-// boxes is a N x 5 tensor
-at::Tensor nms_cuda(const at::Tensor boxes, float nms_overlap_thresh) {
+at::Tensor nms_cuda(const at::Tensor& dets,
+    const at::Tensor& scores,
+    float iou_threshold) {
   using scalar_t = float;
-  AT_ASSERTM(boxes.type().is_cuda(), "boxes must be a CUDA tensor");
-  at::cuda::CUDAGuard device_guard(boxes.device());
+  AT_ASSERTM(dets.type().is_cuda(), "dets must be a CUDA tensor");
+  AT_ASSERTM(scores.type().is_cuda(), "scores must be a CUDA tensor");
+  at::cuda::CUDAGuard device_guard(dets.device());
 
-  auto scores = boxes.select(1, 4);
   auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
-  auto boxes_sorted = boxes.index_select(0, order_t);
+  auto dets_sorted = dets.index_select(0, order_t);
 
-  int boxes_num = boxes.size(0);
+  int dets_num = dets.size(0);
 
-  const int col_blocks = at::cuda::ATenCeilDiv(boxes_num, threadsPerBlock);
+  const int col_blocks = at::cuda::ATenCeilDiv(dets_num, threadsPerBlock);
 
   at::Tensor mask =
-      at::empty({boxes_num * col_blocks}, boxes.options().dtype(at::kLong));
+      at::empty({dets_num * col_blocks}, dets.options().dtype(at::kLong));
 
   dim3 blocks(col_blocks, col_blocks);
   dim3 threads(threadsPerBlock);
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      boxes_sorted.type(), "nms_kernel_cuda", [&] {
+      dets_sorted.type(), "nms_kernel_cuda", [&] {
         nms_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
-            boxes_num,
-            nms_overlap_thresh,
-            boxes_sorted.data<scalar_t>(),
+            dets_num,
+            iou_threshold,
+            dets_sorted.data<scalar_t>(),
             (unsigned long long*)mask.data<int64_t>());
       });
 
@@ -108,11 +107,11 @@ at::Tensor nms_cuda(const at::Tensor boxes, float nms_overlap_thresh) {
   memset(&remv[0], 0, sizeof(unsigned long long) * col_blocks);
 
   at::Tensor keep =
-      at::empty({boxes_num}, boxes.options().dtype(at::kLong).device(at::kCPU));
+      at::empty({dets_num}, dets.options().dtype(at::kLong).device(at::kCPU));
   int64_t* keep_out = keep.data<int64_t>();
 
   int num_to_keep = 0;
-  for (int i = 0; i < boxes_num; i++) {
+  for (int i = 0; i < dets_num; i++) {
     int nblock = i / threadsPerBlock;
     int inblock = i % threadsPerBlock;
 
@@ -126,8 +125,7 @@ at::Tensor nms_cuda(const at::Tensor boxes, float nms_overlap_thresh) {
   }
 
   AT_CUDA_CHECK(cudaGetLastError());
-  return
-      order_t
-          .index({keep.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep)
-                      .to(order_t.device(), keep.scalar_type())});
+  return order_t.index(
+      {keep.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep)
+           .to(order_t.device(), keep.scalar_type())});
 }

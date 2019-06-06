@@ -1,0 +1,53 @@
+package:
+  name: torchvision{{ environ.get('TORCHVISION_PACKAGE_SUFFIX') }}
+  version: "{{ environ.get('TORCHVISION_BUILD_VERSION') }}"
+
+source:
+ git_rev: v{{ environ.get('TORCHVISION_BUILD_VERSION') }}
+ git_url: https://github.com/pytorch/vision.git
+   
+
+requirements:
+  build:
+    - {{ compiler('c') }} # [win]
+
+  host:
+    - python
+    - setuptools
+    - pytorch{{ environ.get('TORCHVISION_PACKAGE_SUFFIX') }} >=1.1.0
+{{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
+
+  run:
+    - python
+    - pillow >=4.1.1
+    - numpy >=1.11
+    - pytorch{{ environ.get('TORCHVISION_PACKAGE_SUFFIX') }} >=1.1.0
+    - six
+{{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
+
+build:
+  number: {{ environ.get('TORCHVISION_BUILD_NUMBER') }}
+  string: py{{py}}_cu{{ environ['CUDA_VERSION'] }}_{{environ.get('TORCHVISION_BUILD_NUMBER')}}
+  script: python setup.py install --single-version-externally-managed --record=record.txt # [not win]
+  script_env:
+    - CUDA_VERSION
+
+test:
+  imports:
+    - torchvision
+    - torchvision.datasets
+    - torchvision.transforms
+  source_files:
+    - test
+  requires:
+    - pytest
+    - scipy
+  commands:
+    pytest .
+
+
+about:
+  home: https://github.com/pytorch/vision
+  license: BSD
+  license_file: LICENSE
+  summary: 'image and video datasets and models for torch deep learning'

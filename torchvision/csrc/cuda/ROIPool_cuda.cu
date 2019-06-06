@@ -146,7 +146,10 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(
   auto output_size = num_rois * pooled_height * pooled_width * channels;
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
-  dim3 grid(std::min(at::cuda::ATenCeilDiv(output_size, 512L), 4096L));
+  dim3 grid(std::min(
+      at::cuda::ATenCeilDiv(
+          static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
+      static_cast<int64_t>(4096)));
   dim3 block(512);
 
   if (output.numel() == 0) {
@@ -204,7 +207,10 @@ at::Tensor ROIPool_backward_cuda(
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
-  dim3 grid(std::min(at::cuda::ATenCeilDiv(grad.numel(), 512L), 4096L));
+  dim3 grid(std::min(
+      at::cuda::ATenCeilDiv(
+          static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
+      static_cast<int64_t>(4096)));
   dim3 block(512);
 
   // handle possibly empty gradients
@@ -221,7 +227,7 @@ at::Tensor ROIPool_backward_cuda(
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIPool_backward", [&] {
     RoIPoolBackward<scalar_t><<<grid, block, 0, stream>>>(
         grad.numel(),
-        grad.contiguous().data<scalar_t>(),
+        grad.data<scalar_t>(),
         argmax.contiguous().data<int>(),
         num_rois,
         spatial_scale,

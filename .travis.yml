@@ -34,6 +34,7 @@ before_install:
     fi
   - pip install future
   - pip install pytest pytest-cov codecov
+  - pip install mock
 
 
 install:

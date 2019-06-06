@@ -1,4 +1,13 @@
 from torch import nn
+from .utils import load_state_dict_from_url
+
+
+__all__ = ['MobileNetV2', 'mobilenet_v2']
+
+
+model_urls = {
+    'mobilenet_v2': 'https://download.pytorch.org/models/mobilenet_v2-b0353104.pth',
+}
 
 
 class ConvBNReLU(nn.Sequential):
@@ -99,5 +108,18 @@ class MobileNetV2(nn.Module):
         return x
 
 
-def mobilenet_v2(pretrained=False, **kwargs):
-    return MobileNetV2(**kwargs)
+def mobilenet_v2(pretrained=False, progress=True, **kwargs):
+    """
+    Constructs a MobileNetV2 architecture from
+    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks" <https://arxiv.org/abs/1801.04381>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    model = MobileNetV2(**kwargs)
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls['mobilenet_v2'],
+                                              progress=progress)
+        model.load_state_dict(state_dict)
+    return model
