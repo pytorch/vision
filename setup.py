@@ -29,7 +29,7 @@ def get_dist(pkgname):
         return None
 
 
-version = '0.2.3a0'
+version = '0.3.0a0'
 sha = 'Unknown'
 package_name = os.getenv('TORCHVISION_PACKAGE_NAME', 'torchvision')
 
@@ -56,6 +56,9 @@ def write_version_file():
     with open(version_path, 'w') as f:
         f.write("__version__ = '{}'\n".format(version))
         f.write("git_version = {}\n".format(repr(sha)))
+        f.write("from torchvision import _C\n")
+        f.write("if hasattr(_C, 'CUDA_VERSION'):\n")
+        f.write("    cuda = _C.CUDA_VERSION\n")
 
 
 write_version_file()
@@ -77,6 +80,14 @@ requirements.append(pillow_req + pillow_ver)
 
 def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
+    extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
+
+    main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
+    source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
+    source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
+
+    sources = main_file + source_cpu
+    extension = CppExtension
 
     test_dir = os.path.join(this_dir, 'test')
     models_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'models')
@@ -87,24 +98,27 @@ def get_extensions():
     source_models = [os.path.join(models_dir, s) for s in source_models]
     tests = test_file + source_models
 
-    extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
-    main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
-    source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
-    source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
-
-    sources = main_file + source_cpu
-    extension = CppExtension
-
     define_macros = []
 
-    if torch.cuda.is_available() and CUDA_HOME is not None:
+    extra_compile_args = {}
+    if (torch.cuda.is_available() and CUDA_HOME is not None) or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
         sources += source_cuda
         define_macros += [('WITH_CUDA', None)]
+        nvcc_flags = os.getenv('NVCC_FLAGS', '')
+        if nvcc_flags == '':
+            nvcc_flags = []
+        else:
+            nvcc_flags = nvcc_flags.split(' ')
+        extra_compile_args = {
+            'cxx': ['-O0'],
+            'nvcc': nvcc_flags,
+        }
 
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs = [extensions_dir]
+    tests_include_dirs = [test_dir, models_dir]
 
     ext_modules = [
         extension(
@@ -112,12 +126,14 @@ def get_extensions():
             sources,
             include_dirs=include_dirs,
             define_macros=define_macros,
+            extra_compile_args=extra_compile_args,
         ),
         extension(
             'torchvision._C_tests',
             tests,
-            include_dirs=include_dirs,
+            include_dirs=tests_include_dirs,
             define_macros=define_macros,
+            extra_compile_args=extra_compile_args,
         )
     ]
 
