@@ -44,7 +44,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
         metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
         metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
-        metric_logger.meters['img/s'].update(batch_size/(time.time()-start_time))
+        metric_logger.meters['img/s'].update(batch_size / (time.time() - start_time))
 
 
 def evaluate(model, criterion, data_loader, device):
@@ -83,12 +83,11 @@ def _get_cache_path(filepath):
 
 def main(args):
     if args.apex:
-        if (sys.version_info < (3, 0)):
-            print("Apex currently only supports Python 3. Aborting.")
-            return
+        if sys.version_info < (3, 0):
+            raise RuntimeError("Apex currently only supports Python 3. Aborting.")
         if amp is None:
-            print("Please install apex from https://www.github.com/nvidia/apex to enable mixed-precision training.")
-            return
+            raise RuntimeError("Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
+                               "to enable mixed-precision training.")
 
     if args.output_dir:
         utils.mkdir(args.output_dir)
