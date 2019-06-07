@@ -98,7 +98,8 @@ class DenseNet(nn.Module):
           (i.e. bn_size * k features in the bottleneck layer)
         drop_rate (float) - dropout rate after each dense layer
         num_classes (int) - number of classification classes
-        memory_efficient (bool) - set to True to use checkpointing. Much more memory efficient, but slower. Default: *False*
+        memory_efficient (bool) - set to True to use checkpointing. Much more memory efficient,
+          but slower. Default: *False*
     """
 
     def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16),
