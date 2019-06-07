@@ -71,6 +71,13 @@ class Tester(unittest.TestCase):
             f = 2 ** sum(i)
             self.assertEqual(out.shape, (1, 2048, 7 * f, 7 * f))
 
+    def test_mobilenetv2_residual_setting(self):
+        model = models.__dict__["mobilenet_v2"](inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
+        model.eval()
+        x = torch.rand(1, 3, 224, 224)
+        out = model(x)
+        self.assertEqual(out.shape[-1], 1000)
+
 
 for model_name in get_available_classification_models():
     # for-loop bodies don't define scopes, so we have to save the variables
