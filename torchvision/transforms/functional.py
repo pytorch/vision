@@ -798,18 +798,22 @@ def to_grayscale(img, num_output_channels=1):
     return img
 
 
-def erase(img, x, y, h, w, value=0):
-    """ Erase the given Image with given value.
-        'Random Erasing Data Augmentation' by Zhong et al.
-        See https://arxiv.org/pdf/1708.04896.pdf
-     Args:
-        img (Tensor): Image to be erased.
-        x, y: Upper left pixel coordinate.
-        w: Width of the erased image.
-        h: Height of the erased image.
-        value: Erasing value.
-     Returns:
-        Erased Image.
+def erase(img, i, j, h, w, v):
+    """ Erase the input Tensor Image with given value.
+
+    Args:
+        img (Tensor Image): Tensor image of size (C, H, W) to be erased
+        i (int): i in (i,j) i.e coordinates of the upper left corner.
+        j (int): j in (i,j) i.e coordinates of the upper left corner.
+        h (int): Height of the erased region.
+        w (int): Width of the erased region.
+        v: Erasing value.
+
+    Returns:
+        Tensor Image: Erased image.
     """
-    img[:, x:x + h, y:y + w] = value
+    if not isinstance(img, torch.Tensor):
+        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+
+    img[:, i:i + h, j:j + w] = v
     return img
