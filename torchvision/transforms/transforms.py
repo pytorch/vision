@@ -1184,15 +1184,15 @@ class RandomGrayscale(object):
 
 class RandomErasing(object):
     """ Randomly selects a rectangle region in an image and erases its pixels.
-        'Random Erasing Data Augmentation' by Zhong et al. Arxiv 2017.
+        'Random Erasing Data Augmentation' by Zhong et al.
         See https://arxiv.org/pdf/1708.04896.pdf
     Args:
-         probability: The probability that the Random Erasing operation will be performed.
-         sl: Minimum proportion of erased area against input image.
-         sh: Maximum proportion of erased area against input image.
-         r1: Minimum aspect ratio of erased area.
-         values: Erasing value. Default is 0. If a tuple of
-            length 3, it is used to erase R, G, B channels respectively.
+         p: probability that the random erasing operation will be performed.
+         scale: range of proportion of erased area against input image.
+         ratio: range of aspect ratio of erased area.
+         value: erasing value. Default is 0. If a single int, it is used to
+            erase all pixels. If a tuple of length 3, it is used to erase
+            R, G, B channels respectively.
             If a str of 'random', erasing each pixel with random values.
     Returns:
         Erased Image.
@@ -1205,51 +1205,59 @@ class RandomErasing(object):
         >>> ])
     """
 
-    def __init__(self, probability=0.5, sl=0.02, sh=0.4, r1=0.3, value=0):
-        assert isinstance(value, (numbers.Number, str, tuple))
-        self.probability = probability
-        self.sl = sl
-        self.sh = sh
-        self.r1 = r1
+    def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 1. / 0.3), value=0):
+        assert isinstance(value, (numbers.Number, str, tuple, list))
+        if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
+            warnings.warn("range should be of kind (min, max)")
+        if scale[0] < 0 or scale[1] > 1:
+            raise ValueError("range of scale should be between 0 and 1")
+
+        self.p = p
+        self.scale = scale
+        self.ratio = ratio
         self.value = value
 
     @staticmethod
-    def get_params(img, sl=0.02, sh=0.4, r1=0.3, value=0):
+    def get_params(img, scale, ratio, value=0):
         """Get parameters for ``erase`` for a random erasing.
+
         Args:
-            img (Tensor): Image to be erased.
-            output_size (tuple): Expected output size and erasing value of the erase.
+            img (Tensor): Tensor image of size (C, H, W) to be erased.
+            scale: range of proportion of erased area against input image.
+            ratio: range of aspect ratio of erased area.
+
         Returns:
-            tuple: params (x, y, h, w, v) to be passed to ``erase`` for random erasing.
+            tuple: params (i, j, h, w, v) to be passed to ``erase`` for random erasing.
         """
+        area = img.shape[1] * img.shape[2]
+
         while True:
-            area = img.size()[1] * img.size()[2]
+            erase_area = random.uniform(scale[0], scale[1]) * area
+            aspect_ratio = random.uniform(ratio[0], ratio[1])
 
-            target_area = random.uniform(sl, sh) * area
-            aspect_ratio = random.uniform(r1, 1 / r1)
+            h = int(round(math.sqrt(erase_area * aspect_ratio)))
+            w = int(round(math.sqrt(erase_area / aspect_ratio)))
 
-            h = int(round(math.sqrt(target_area * aspect_ratio)))
-            w = int(round(math.sqrt(target_area / aspect_ratio)))
-
-            if w < img.size()[2] and h < img.size()[1]:
-                x = random.randint(0, img.size()[1] - h)
-                y = random.randint(0, img.size()[2] - w)
+            if h < img.shape[1] and w < img.shape[2]:
+                i = random.randint(0, img.shape[1] - h)
+                j = random.randint(0, img.shape[2] - w)
                 if isinstance(value, numbers.Number):
                     v = value
-                elif isinstance(value, str):
-                    v = torch.empty([img.size()[0], h, w], dtype=torch.float32).normal_()
-                elif isinstance(value, tuple):
-                    v = torch.FloatTensor(value).view(-1, 1, 1).expand(-1, h, w)
-                return x, y, h, w, v
+                elif isinstance(value, torch._six.string_classes):
+                    v = torch.rand(img.size()[0], h, w)
+                elif isinstance(value, (list, tuple)):
+                    v = torch.tensor(value, dtype=torch.float32).view(-1, 1, 1).expand(-1, h, w)
+                return i, j, h, w, v
 
     def __call__(self, img):
         """
         Args:
-            img (Tensor): Image to be erased.
+            img (Tensor): Tensor image of size (C, H, W) to be erased.
+
         Returns:
-            Image (Tensor): Erased image.
+            img (Tensor): Erased Tensor image.
         """
-        if random.uniform(0, 1) < self.probability:
-            x, y, h, w, v = self.get_params(img, sl=self.sl, sh=self.sh, r1=self.r1, value=self.value)
+        if random.uniform(0, 1) < self.p:
+            x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value)
             return F.erase(img, x, y, h, w, v)
         return img
