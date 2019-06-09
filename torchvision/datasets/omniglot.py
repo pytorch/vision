@@ -88,7 +88,7 @@ class Omniglot(VisionDataset):
         filename = self._get_target_folder()
         zip_filename = filename + '.zip'
         url = self.download_url_prefix + '/' + zip_filename
-        download_and_extract_archive(url, self.root, zip_filename, self.zips_md5[filename])
+        download_and_extract_archive(url, self.root, filename=zip_filename, md5=self.zips_md5[filename])
 
     def _get_target_folder(self):
         return 'images_background' if self.background else 'images_evaluation'
