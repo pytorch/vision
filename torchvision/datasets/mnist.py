@@ -417,7 +417,7 @@ def open_maybe_compressed_file(path):
     return open(path, 'rb')
 
 
-def read_sn3_pascalvincent_tensor(path):
+def read_sn3_pascalvincent_tensor(path, strict=True):
     """Read a SN3 file in "Pascal Vincent" format (Lush file 'libidx/idx-io.lsh').
        Argument may be a filename, compressed filename, or file object.
     """
@@ -441,13 +441,14 @@ def read_sn3_pascalvincent_tensor(path):
     assert ty >= 8 and ty <= 14
     m = read_sn3_pascalvincent_tensor.typemap[ty]
     s = [ get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd) ]
-    parsed = np.frombuffer(data, dtype=m[1], offset=4*(nd+1))
-    return torch.from_numpy(parsed.astype(m[2])).view(*s)
+    parsed = np.frombuffer(data, dtype=m[1], offset=(4 * (nd + 1)))
+    assert parsed.shape[0] == np.prod(s) or not strict
+    return torch.from_numpy(parsed.astype(m[2], copy=False)).view(*s)
 
 
 def read_label_file(path):
     with open(path, 'rb') as f:
-        x = read_sn3_pascalvincent_tensor(f)
+        x = read_sn3_pascalvincent_tensor(f, strict=False)
     assert(x.dtype == torch.uint8)
     assert(x.ndimension() == 1)
     return x.long()
@@ -455,7 +456,7 @@ def read_label_file(path):
 
 def read_image_file(path):
     with open(path, 'rb') as f:
-        x = read_sn3_pascalvincent_tensor(f)
+        x = read_sn3_pascalvincent_tensor(f, strict=False)
     assert(x.dtype == torch.uint8)
     assert(x.ndimension() == 3)
     return x
