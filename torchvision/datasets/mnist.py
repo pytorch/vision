@@ -4,8 +4,6 @@ import warnings
 from PIL import Image
 import os
 import os.path
-import gzip
-import lzma
 import numpy as np
 import torch
 import codecs
@@ -408,11 +406,13 @@ def open_maybe_compressed_file(path):
     """Return a file object that possibly decompresses 'path' on the fly.
        Decompression occurs when argument `path` is a string and ends with '.gz' or '.xz'.
     """
-    if type(path) != str: 
+    if not isinstance(path, torch._six.string_classes):
         return path
     if path.endswith('.gz'): 
+        import gzip
         return gzip.open(path, 'rb')
     if path.endswith('.xz'):
+        import lzma
         return lzma.open(path, 'rb')
     return open(path, 'rb')
 
@@ -440,7 +440,7 @@ def read_sn3_pascalvincent_tensor(path):
     assert nd >= 1 and nd <= 3
     assert ty >= 8 and ty <= 14
     m = read_sn3_pascalvincent_tensor.typemap[magic // 256]
-    s = [ get_int(data[4*(i+1):4*(i+2)]) for i in range(nd) ]
+    s = [ get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd) ]
     parsed = np.frombuffer(data, dtype=m[1], offset=4*(nd+1))
     return torch.from_numpy(parsed.astype(m[2])).view(*s)
 
