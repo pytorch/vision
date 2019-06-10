@@ -7,7 +7,7 @@ from PIL import Image
 import torchvision.transforms.functional as F
 
 
-def test_model(model, tensor, func, name):
+def process_model(model, tensor, func, name):
     model.eval()
     traced_script_module = torch.jit.trace(model, tensor)
     traced_script_module.save("model.pt")
@@ -40,80 +40,80 @@ class Tester(unittest.TestCase):
     image = read_image1()
 
     def test_alexnet(self):
-        test_model(models.alexnet(self.pretrained), self.image, _C_tests.forward_alexnet, 'Alexnet')
+        process_model(models.alexnet(self.pretrained), self.image, _C_tests.forward_alexnet, 'Alexnet')
 
     def test_vgg11(self):
-        test_model(models.vgg11(self.pretrained), self.image, _C_tests.forward_vgg11, 'VGG11')
+        process_model(models.vgg11(self.pretrained), self.image, _C_tests.forward_vgg11, 'VGG11')
 
     def test_vgg13(self):
-        test_model(models.vgg13(self.pretrained), self.image, _C_tests.forward_vgg13, 'VGG13')
+        process_model(models.vgg13(self.pretrained), self.image, _C_tests.forward_vgg13, 'VGG13')
 
     def test_vgg16(self):
-        test_model(models.vgg16(self.pretrained), self.image, _C_tests.forward_vgg16, 'VGG16')
+        process_model(models.vgg16(self.pretrained), self.image, _C_tests.forward_vgg16, 'VGG16')
 
     def test_vgg19(self):
-        test_model(models.vgg19(self.pretrained), self.image, _C_tests.forward_vgg19, 'VGG19')
+        process_model(models.vgg19(self.pretrained), self.image, _C_tests.forward_vgg19, 'VGG19')
 
     def test_vgg11_bn(self):
-        test_model(models.vgg11_bn(self.pretrained), self.image, _C_tests.forward_vgg11bn, 'VGG11BN')
+        process_model(models.vgg11_bn(self.pretrained), self.image, _C_tests.forward_vgg11bn, 'VGG11BN')
 
     def test_vgg13_bn(self):
-        test_model(models.vgg13_bn(self.pretrained), self.image, _C_tests.forward_vgg13bn, 'VGG13BN')
+        process_model(models.vgg13_bn(self.pretrained), self.image, _C_tests.forward_vgg13bn, 'VGG13BN')
 
     def test_vgg16_bn(self):
-        test_model(models.vgg16_bn(self.pretrained), self.image, _C_tests.forward_vgg16bn, 'VGG16BN')
+        process_model(models.vgg16_bn(self.pretrained), self.image, _C_tests.forward_vgg16bn, 'VGG16BN')
 
     def test_vgg19_bn(self):
-        test_model(models.vgg19_bn(self.pretrained), self.image, _C_tests.forward_vgg19bn, 'VGG19BN')
+        process_model(models.vgg19_bn(self.pretrained), self.image, _C_tests.forward_vgg19bn, 'VGG19BN')
 
     def test_resnet18(self):
-        test_model(models.resnet18(self.pretrained), self.image, _C_tests.forward_resnet18, 'Resnet18')
+        process_model(models.resnet18(self.pretrained), self.image, _C_tests.forward_resnet18, 'Resnet18')
 
     def test_resnet34(self):
-        test_model(models.resnet34(self.pretrained), self.image, _C_tests.forward_resnet34, 'Resnet34')
+        process_model(models.resnet34(self.pretrained), self.image, _C_tests.forward_resnet34, 'Resnet34')
 
     def test_resnet50(self):
-        test_model(models.resnet50(self.pretrained), self.image, _C_tests.forward_resnet50, 'Resnet50')
+        process_model(models.resnet50(self.pretrained), self.image, _C_tests.forward_resnet50, 'Resnet50')
 
     def test_resnet101(self):
-        test_model(models.resnet101(self.pretrained), self.image, _C_tests.forward_resnet101, 'Resnet101')
+        process_model(models.resnet101(self.pretrained), self.image, _C_tests.forward_resnet101, 'Resnet101')
 
     def test_resnet152(self):
-        test_model(models.resnet152(self.pretrained), self.image, _C_tests.forward_resnet152, 'Resnet152')
+        process_model(models.resnet152(self.pretrained), self.image, _C_tests.forward_resnet152, 'Resnet152')
 
     def test_resnext50_32x4d(self):
-        test_model(models.resnext50_32x4d(), self.image, _C_tests.forward_resnext50_32x4d, 'ResNext50_32x4d')
+        process_model(models.resnext50_32x4d(), self.image, _C_tests.forward_resnext50_32x4d, 'ResNext50_32x4d')
 
     def test_resnext101_32x8d(self):
-        test_model(models.resnext101_32x8d(), self.image, _C_tests.forward_resnext101_32x8d, 'ResNext101_32x8d')
+        process_model(models.resnext101_32x8d(), self.image, _C_tests.forward_resnext101_32x8d, 'ResNext101_32x8d')
 
     def test_squeezenet1_0(self):
-        test_model(models.squeezenet1_0(self.pretrained), self.image, _C_tests.forward_squeezenet1_0, 'Squeezenet1.0')
+        process_model(models.squeezenet1_0(self.pretrained), self.image, _C_tests.forward_squeezenet1_0, 'Squeezenet1.0')
 
     def test_squeezenet1_1(self):
-        test_model(models.squeezenet1_1(self.pretrained), self.image, _C_tests.forward_squeezenet1_1, 'Squeezenet1.1')
+        process_model(models.squeezenet1_1(self.pretrained), self.image, _C_tests.forward_squeezenet1_1, 'Squeezenet1.1')
 
     def test_densenet121(self):
-        test_model(models.densenet121(self.pretrained), self.image, _C_tests.forward_densenet121, 'Densenet121')
+        process_model(models.densenet121(self.pretrained), self.image, _C_tests.forward_densenet121, 'Densenet121')
 
     def test_densenet169(self):
-        test_model(models.densenet169(self.pretrained), self.image, _C_tests.forward_densenet169, 'Densenet169')
+        process_model(models.densenet169(self.pretrained), self.image, _C_tests.forward_densenet169, 'Densenet169')
 
     def test_densenet201(self):
-        test_model(models.densenet201(self.pretrained), self.image, _C_tests.forward_densenet201, 'Densenet201')
+        process_model(models.densenet201(self.pretrained), self.image, _C_tests.forward_densenet201, 'Densenet201')
 
     def test_densenet161(self):
-        test_model(models.densenet161(self.pretrained), self.image, _C_tests.forward_densenet161, 'Densenet161')
+        process_model(models.densenet161(self.pretrained), self.image, _C_tests.forward_densenet161, 'Densenet161')
 
     def test_mobilenet_v2(self):
-        test_model(models.mobilenet_v2(self.pretrained), self.image, _C_tests.forward_mobilenetv2, 'MobileNet')
+        process_model(models.mobilenet_v2(self.pretrained), self.image, _C_tests.forward_mobilenetv2, 'MobileNet')
 
     def test_googlenet(self):
-        test_model(models.googlenet(self.pretrained), self.image, _C_tests.forward_googlenet, 'GoogLeNet')
+        process_model(models.googlenet(self.pretrained), self.image, _C_tests.forward_googlenet, 'GoogLeNet')
 
     def test_inception_v3(self):
         self.image = read_image2()
-        test_model(models.inception_v3(self.pretrained), self.image, _C_tests.forward_inceptionv3, 'Inceptionv3')
+        process_model(models.inception_v3(self.pretrained), self.image, _C_tests.forward_inceptionv3, 'Inceptionv3')
 
 
 if __name__ == '__main__':
