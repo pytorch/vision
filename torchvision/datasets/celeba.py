@@ -88,12 +88,12 @@ class CelebA(VisionDataset):
         fn = partial(os.path.join, self.root, self.base_folder)
         splits = pandas.read_csv(fn("list_eval_partition.txt"), delim_whitespace=True, header=None, index_col=0)
         identity = pandas.read_csv(fn("identity_CelebA.txt"), delim_whitespace=True, header=None, index_col=0)
-        bbox = pandas.read_csv(fn("list_bbox_celeba.txt"), "r"), delim_whitespace=True, header=1, index_col=0)
+        bbox = pandas.read_csv(fn("list_bbox_celeba.txt"), delim_whitespace=True, header=1, index_col=0)
         landmarks_align = pandas.read_csv(fn("list_landmarks_align_celeba.txt"), delim_whitespace=True, header=1)
         attr = pandas.read_csv(fn("list_attr_celeba.txt"), delim_whitespace=True, header=1)
 
         mask = slice(None) if split is None else (splits[1] == split)
-        
+
         self.filename = splits[mask].index.values
         self.identity = torch.as_tensor(identity[mask].values)
         self.bbox = torch.as_tensor(bbox[mask].values)
