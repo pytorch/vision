@@ -439,7 +439,7 @@ def read_sn3_pascalvincent_tensor(path):
     ty = magic // 256
     assert nd >= 1 and nd <= 3
     assert ty >= 8 and ty <= 14
-    m = read_sn3_pascalvincent_tensor.typemap[magic // 256]
+    m = read_sn3_pascalvincent_tensor.typemap[ty]
     s = [ get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd) ]
     parsed = np.frombuffer(data, dtype=m[1], offset=4*(nd+1))
     return torch.from_numpy(parsed.astype(m[2])).view(*s)
