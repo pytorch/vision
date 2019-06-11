@@ -423,8 +423,8 @@ def read_sn3_pascalvincent_tensor(path, strict=True):
     # typemap
     if not hasattr(read_sn3_pascalvincent_tensor, 'typemap'):
         read_sn3_pascalvincent_tensor.typemap = {
-            8:  (torch.uint8, np.uint8, np.uint8),
-            9:  (torch.int8, np.int8, np.int8),
+            8: (torch.uint8, np.uint8, np.uint8),
+            9: (torch.int8, np.int8, np.int8),
             11: (torch.int16, np.dtype('>i2'), 'i2'),
             12: (torch.int32, np.dtype('>i4'), 'i4'),
             13: (torch.float32, np.dtype('>f4'), 'f4'),
