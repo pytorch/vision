@@ -89,6 +89,15 @@ def get_extensions():
     sources = main_file + source_cpu
     extension = CppExtension
 
+    test_dir = os.path.join(this_dir, 'test')
+    models_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'models')
+    test_file = glob.glob(os.path.join(test_dir, '*.cpp'))
+    source_models = glob.glob(os.path.join(models_dir, '*.cpp'))
+
+    test_file = [os.path.join(test_dir, s) for s in test_file]
+    source_models = [os.path.join(models_dir, s) for s in source_models]
+    tests = test_file + source_models
+
     define_macros = []
 
     extra_compile_args = {}
@@ -109,12 +118,20 @@ def get_extensions():
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs = [extensions_dir]
+    tests_include_dirs = [test_dir, models_dir]
 
     ext_modules = [
         extension(
             'torchvision._C',
             sources,
             include_dirs=include_dirs,
+            define_macros=define_macros,
+            extra_compile_args=extra_compile_args,
+        ),
+        extension(
+            'torchvision._C_tests',
+            tests,
+            include_dirs=tests_include_dirs,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
         )
