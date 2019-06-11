@@ -299,12 +299,24 @@ def resnext101_32x8d(pretrained=False, progress=True, **kwargs):
 
 
 def wide_resnet50_2(pretrained=False, progress=True, **kwargs):
+    """Constructs a Wide ResNet-50-2 model.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
     kwargs['width_per_group'] = 64 * 2
     return _resnet('wide_resnet50_2', Bottleneck, [3, 4, 6, 3],
                    pretrained, progress, **kwargs)
 
 
 def wide_resnet101_2(pretrained=False, progress=True, **kwargs):
+    """Constructs a Wide ResNet-101-2 model.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
     kwargs['width_per_group'] = 64 * 2
     return _resnet('wide_resnet101_2', Bottleneck, [3, 4, 23, 3],
                    pretrained, progress, **kwargs)
