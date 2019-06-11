@@ -318,28 +318,27 @@ class QMNIST(MNIST):
     """
 
     subsets = {
-        'train':'train',
-        'test':'test', 'test10k':'test', 'test50k':'test',
-        'nist':'nist'
+        'train': 'train',
+        'test': 'test', 'test10k': 'test', 'test50k': 'test',
+        'nist': 'nist'
     }
     urls = {
-        'train' : [ 'https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-images-idx3-ubyte.gz',
-                    'https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-labels-idx2-int.gz' ] ,
-        'test' :  [ 'https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-images-idx3-ubyte.gz',
-                    'https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-labels-idx2-int.gz' ] ,
-        'nist' :   [ 'https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-images-idx3-ubyte.xz',
-                    'https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-labels-idx2-int.xz']
+        'train': ['https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-images-idx3-ubyte.gz',
+                  'https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-labels-idx2-int.gz'],
+        'test': ['https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-images-idx3-ubyte.gz',
+                 'https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-labels-idx2-int.gz'],
+        'nist': ['https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-images-idx3-ubyte.xz',
+                 'https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-labels-idx2-int.xz']
     }
     classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
                '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
-
 
     def __init__(self, root, what=None, compat=True, train=True, **kwargs):
         if what is None:
             what = 'train' if train else 'test'
         if not self.subsets.get(what):
             raise RuntimeError("Argument 'what' should be one of: \n  " +
-                               repr(tuple(self.subsets.keys())) )
+                               repr(tuple(self.subsets.keys())))
         self.what = what
         self.compat = compat
         self.data_file = what + '.pt'
@@ -374,11 +373,11 @@ class QMNIST(MNIST):
         targets = read_sn3_pascalvincent_tensor(files[1]).long()
         assert(targets.ndimension() == 2)
         if self.what == 'test10k':
-            data = data[0:10000,:,:].clone()
-            targets = targets[0:10000,:].clone()
+            data = data[0:10000, :, :].clone()
+            targets = targets[0:10000, :].clone()
         if self.what == 'test50k':
-            data = data[10000:,:,:].clone()
-            targets = targets[10000:,:].clone()
+            data = data[10000:, :, :].clone()
+            targets = targets[10000:, :].clone()
         with open(os.path.join(self.processed_folder, self.data_file), 'wb') as f:
             torch.save((data, targets), f)
 
@@ -408,7 +407,7 @@ def open_maybe_compressed_file(path):
     """
     if not isinstance(path, torch._six.string_classes):
         return path
-    if path.endswith('.gz'): 
+    if path.endswith('.gz'):
         import gzip
         return gzip.open(path, 'rb')
     if path.endswith('.xz'):
@@ -421,26 +420,26 @@ def read_sn3_pascalvincent_tensor(path, strict=True):
     """Read a SN3 file in "Pascal Vincent" format (Lush file 'libidx/idx-io.lsh').
        Argument may be a filename, compressed filename, or file object.
     """
-    ## typemap
+    # typemap
     if not hasattr(read_sn3_pascalvincent_tensor, 'typemap'):
         read_sn3_pascalvincent_tensor.typemap = {
-            8:  ( torch.uint8, np.uint8, np.uint8 ),
-            9:  ( torch.int8, np.int8, np.int8 ),
-            11: ( torch.int16, np.dtype('>i2'), 'i2'),
-            12: ( torch.int32, np.dtype('>i4'), 'i4'),
-            13: ( torch.float32, np.dtype('>f4'), 'f4'),
-            14: ( torch.float64, np.dtype('>f8'), 'f8') }
-    ## read
+            8:  (torch.uint8, np.uint8, np.uint8),
+            9:  (torch.int8, np.int8, np.int8),
+            11: (torch.int16, np.dtype('>i2'), 'i2'),
+            12: (torch.int32, np.dtype('>i4'), 'i4'),
+            13: (torch.float32, np.dtype('>f4'), 'f4'),
+            14: (torch.float64, np.dtype('>f8'), 'f8')}
+    # read
     with open_maybe_compressed_file(path) as f:
         data = f.read()
-    ## parse
+    # parse
     magic = get_int(data[0:4])
     nd = magic % 256
     ty = magic // 256
     assert nd >= 1 and nd <= 3
     assert ty >= 8 and ty <= 14
     m = read_sn3_pascalvincent_tensor.typemap[ty]
-    s = [ get_int(data[4 * (i + 1) : 4 * (i + 2)]) for i in range(nd) ]
+    s = [get_int(data[4 * (i + 1): 4 * (i + 2)]) for i in range(nd)]
     parsed = np.frombuffer(data, dtype=m[1], offset=(4 * (nd + 1)))
     assert parsed.shape[0] == np.prod(s) or not strict
     return torch.from_numpy(parsed.astype(m[2], copy=False)).view(*s)
@@ -460,4 +459,3 @@ def read_image_file(path):
     assert(x.dtype == torch.uint8)
     assert(x.ndimension() == 3)
     return x
-
