@@ -116,13 +116,13 @@ class Caltech101(VisionDataset):
         download_and_extract_archive(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz",
             self.root,
-            "101_ObjectCategories.tar.gz",
-            "b224c7392d521a49829488ab0f1120d9")
+            filename="101_ObjectCategories.tar.gz",
+            md5="b224c7392d521a49829488ab0f1120d9")
         download_and_extract_archive(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/Annotations.tar",
             self.root,
-            "101_Annotations.tar",
-            "6f83eeb1f24d99cab4eb377263132c91")
+            filename="101_Annotations.tar",
+            md5="6f83eeb1f24d99cab4eb377263132c91")
 
     def extra_repr(self):
         return "Target type: {target_type}".format(**self.__dict__)
@@ -204,5 +204,5 @@ class Caltech256(VisionDataset):
         download_and_extract_archive(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech256/256_ObjectCategories.tar",
             self.root,
-            "256_ObjectCategories.tar",
-            "67b4f42ca05d46448c6bb8ecd2220f6d")
+            filename="256_ObjectCategories.tar",
+            md5="67b4f42ca05d46448c6bb8ecd2220f6d")

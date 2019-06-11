@@ -152,7 +152,7 @@ class STL10(VisionDataset):
         if self._check_integrity():
             print('Files already downloaded and verified')
             return
-        download_and_extract_archive(self.url, self.root, self.filename, self.tgz_md5)
+        download_and_extract_archive(self.url, self.root, filename=self.filename, md5=self.tgz_md5)
 
     def extra_repr(self):
         return "Split: {split}".format(**self.__dict__)
