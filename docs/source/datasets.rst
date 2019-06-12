@@ -45,6 +45,11 @@ EMNIST
 
 .. autoclass:: EMNIST
 
+QMNIST
+~~~~~~
+
+.. autoclass:: QMNIST
+
 FakeData
 ~~~~~~~~
 
