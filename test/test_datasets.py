@@ -97,7 +97,7 @@ def cifar_root(version):
 
     def _make_data_file(file, target_key):
         obj = {
-            'data': np.zeros((1, 32*32*3), dtype=np.uint8),
+            'data': np.zeros((1, 32 * 32 * 3), dtype=np.uint8),
             target_key: [0]
         }
         _make_pickled_file(obj, file)
