@@ -7,6 +7,7 @@ import mock
 import PIL
 import torch
 import torchvision
+from torchvision.datasets.utils import extract_archive
 
 FAKEDATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                             'assets', 'fakedata')
@@ -152,6 +153,50 @@ class Tester(unittest.TestCase):
             self.assertTrue(isinstance(img, PIL.Image.Image))
             self.assertTrue(isinstance(target, int))
             self.assertEqual(dataset.class_to_idx['Tinca tinca'], target)
+
+    @mock.patch('torchvision.datasets.cifar.check_integrity')
+    @mock.patch('torchvision.datasets.cifar.CIFAR10._check_integrity')
+    def test_cifar10(self, mock_ext_check, mock_int_check):
+        mock_ext_check.return_value = True
+        mock_int_check.return_value = True
+        with tmp_dir(src=os.path.join(FAKEDATA_DIR, 'cifar', 'cifar10')) as root:
+            extract_archive(os.path.join(root, 'cifar-10-python.tar.gz'))
+
+            dataset = torchvision.datasets.CIFAR10(root, train=True, download=True)
+            self.assertEqual(len(dataset), 5)
+            img, target = dataset[0]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
+            self.assertTrue(isinstance(target, int))
+            self.assertEqual(dataset.class_to_idx['fakedata'], target)
+
+            dataset = torchvision.datasets.CIFAR10(root, train=False, download=True)
+            self.assertEqual(len(dataset), 1)
+            img, target = dataset[0]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
+            self.assertTrue(isinstance(target, int))
+            self.assertEqual(dataset.class_to_idx['fakedata'], target)
+
+    @mock.patch('torchvision.datasets.cifar.check_integrity')
+    @mock.patch('torchvision.datasets.cifar.CIFAR10._check_integrity')
+    def test_cifar100(self, mock_ext_check, mock_int_check):
+        mock_ext_check.return_value = True
+        mock_int_check.return_value = True
+        with tmp_dir(src=os.path.join(FAKEDATA_DIR, 'cifar', 'cifar100')) as root:
+            extract_archive(os.path.join(root, 'cifar-100-python.tar.gz'))
+
+            dataset = torchvision.datasets.CIFAR100(root, train=True, download=True)
+            self.assertEqual(len(dataset), 3)
+            img, target = dataset[0]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
+            self.assertTrue(isinstance(target, int))
+            self.assertEqual(dataset.class_to_idx['fakedata'], target)
+
+            dataset = torchvision.datasets.CIFAR100(root, train=False, download=True)
+            self.assertEqual(len(dataset), 3)
+            img, target = dataset[0]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
+            self.assertTrue(isinstance(target, int))
+            self.assertEqual(dataset.class_to_idx['fakedata'], target)
 
 
 if __name__ == '__main__':
