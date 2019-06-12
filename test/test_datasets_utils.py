@@ -51,7 +51,6 @@ class Tester(unittest.TestCase):
                 warnings.warn(msg, RuntimeWarning)
                 raise unittest.SkipTest(msg)
 
-
     def test_download_url_retry_http(self):
         with get_tmp_dir() as temp_dir:
             url = "https://github.com/pytorch/vision/archive/master.zip"

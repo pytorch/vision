@@ -14,4 +14,3 @@ def get_tmp_dir(src=None, **kwargs):
         yield tmp_dir
     finally:
         shutil.rmtree(tmp_dir)
-
