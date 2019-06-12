@@ -5,6 +5,7 @@ import contextlib
 import tempfile
 import unittest
 import mock
+from collections import namedtuple
 import numpy as np
 import PIL
 import torch
@@ -69,7 +70,7 @@ def get_mnist_data(num_images, cls_name, **kwargs):
 
 @contextlib.contextmanager
 def cifar_root(version):
-    def _get_mode_params(version):
+    def _get_version_params(version):
         if version == 'CIFAR10':
             return {
                 'base_folder': 'cifar-10-batches-py',
@@ -108,7 +109,7 @@ def cifar_root(version):
         }
         _make_pickled_file(obj, file)
 
-    params = _get_mode_params(version)
+    params = _get_version_params(version)
     with tmp_dir() as root:
         base_folder = os.path.join(root, params['base_folder'])
         os.mkdir(base_folder)
