@@ -302,6 +302,11 @@ def resnext101_32x8d(pretrained=False, progress=True, **kwargs):
 def wide_resnet50_2(pretrained=False, progress=True, **kwargs):
     """Constructs a Wide ResNet-50-2 model.
 
+    The model is the same as ResNet except for the bottleneck number of channels
+    which is twice larger in every block. The number of channels in outer 1x1
+    convolutions is the same, e.g. last block in ResNet-50 has 2048-512-2048
+    channels, and in Wide ResNet-50-2 has 2048-1024-2018.
+
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
@@ -313,6 +318,11 @@ def wide_resnet50_2(pretrained=False, progress=True, **kwargs):
 
 def wide_resnet101_2(pretrained=False, progress=True, **kwargs):
     """Constructs a Wide ResNet-101-2 model.
+
+    The model is the same as ResNet except for the bottleneck number of channels
+    which is twice larger in every block. The number of channels in outer 1x1
+    convolutions is the same, e.g. last block in ResNet-50 has 2048-512-2048
+    channels, and in Wide ResNet-50-2 has 2048-1024-2018.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
