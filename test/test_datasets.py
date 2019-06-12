@@ -95,7 +95,7 @@ def cifar_root(version):
         _make_pickled_file(obj, file)
 
     params = _get_version_params(version)
-    with tmp_dir() as root:
+    with get_tmp_dir() as root:
         base_folder = os.path.join(root, params['base_folder'])
         os.mkdir(base_folder)
 
