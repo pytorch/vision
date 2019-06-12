@@ -18,7 +18,7 @@ try:
 except ImportError:
     stats = None
 
-GRACE_HOPPER = get_file_path_2('assets/grace_hopper_517x606.jpg')
+GRACE_HOPPER = get_file_path_2('assets', 'grace_hopper_517x606.jpg')
 
 
 class Tester(unittest.TestCase):

@@ -18,7 +18,7 @@ else:
 from common_utils import get_tmp_dir
 
 FAKEDATA_DIR = get_file_path_2(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'fakedata'))
+    os.path.dirname(os.path.abspath(__file__)), 'assets', 'fakedata')
 
 
 @contextlib.contextmanager

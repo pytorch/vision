@@ -18,7 +18,7 @@ else:
 
 
 TEST_FILE = get_file_path_2(
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg'))
+    os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
 
 
 class Tester(unittest.TestCase):
