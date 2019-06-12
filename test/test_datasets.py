@@ -5,7 +5,6 @@ import contextlib
 import tempfile
 import unittest
 import mock
-from collections import namedtuple
 import numpy as np
 import PIL
 import torch
