@@ -1,4 +1,5 @@
 from __future__ import division
+import os
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
@@ -18,7 +19,8 @@ try:
 except ImportError:
     stats = None
 
-GRACE_HOPPER = get_file_path_2('assets/grace_hopper_517x606.jpg')
+GRACE_HOPPER = get_file_path_2(
+    os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
 
 
 class Tester(unittest.TestCase):

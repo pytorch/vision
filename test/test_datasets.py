@@ -1,14 +1,13 @@
 import os
 import sys
-import shutil
 import contextlib
-import tempfile
 import unittest
 import mock
 import numpy as np
 import PIL
 import torch
 import torchvision
+from torch._utils_internal import get_file_path_2
 
 PYTHON2 = sys.version_info[0] == 2
 if PYTHON2:
@@ -16,20 +15,10 @@ if PYTHON2:
 else:
     import pickle
 
-FAKEDATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            'assets', 'fakedata')
+from common_utils import get_tmp_dir
 
-
-@contextlib.contextmanager
-def tmp_dir(src=None, **kwargs):
-    tmp_dir = tempfile.mkdtemp(**kwargs)
-    if src is not None:
-        os.rmdir(tmp_dir)
-        shutil.copytree(src, tmp_dir)
-    try:
-        yield tmp_dir
-    finally:
-        shutil.rmtree(tmp_dir)
+FAKEDATA_DIR = get_file_path_2(
+    os.path.dirname(os.path.abspath(__file__)), 'assets', 'fakedata')
 
 
 @contextlib.contextmanager
@@ -54,17 +43,14 @@ def get_mnist_data(num_images, cls_name, **kwargs):
             f.write(_encode(num_images))
             f.write(labels.numpy().tobytes())
 
-    tmp_dir = tempfile.mkdtemp(**kwargs)
-    raw_dir = os.path.join(tmp_dir, cls_name, "raw")
-    os.makedirs(raw_dir)
-    _make_image_file(os.path.join(raw_dir, "train-images-idx3-ubyte"), num_images)
-    _make_label_file(os.path.join(raw_dir, "train-labels-idx1-ubyte"), num_images)
-    _make_image_file(os.path.join(raw_dir, "t10k-images-idx3-ubyte"), num_images)
-    _make_label_file(os.path.join(raw_dir, "t10k-labels-idx1-ubyte"), num_images)
-    try:
+    with get_tmp_dir() as tmp_dir:
+        raw_dir = os.path.join(tmp_dir, cls_name, "raw")
+        os.makedirs(raw_dir)
+        _make_image_file(os.path.join(raw_dir, "train-images-idx3-ubyte"), num_images)
+        _make_label_file(os.path.join(raw_dir, "train-labels-idx1-ubyte"), num_images)
+        _make_image_file(os.path.join(raw_dir, "t10k-images-idx3-ubyte"), num_images)
+        _make_label_file(os.path.join(raw_dir, "t10k-labels-idx1-ubyte"), num_images)
         yield tmp_dir
-    finally:
-        shutil.rmtree(tmp_dir)
 
 
 @contextlib.contextmanager
@@ -109,7 +95,7 @@ def cifar_root(version):
         _make_pickled_file(obj, file)
 
     params = _get_version_params(version)
-    with tmp_dir() as root:
+    with get_tmp_dir() as root:
         base_folder = os.path.join(root, params['base_folder'])
         os.mkdir(base_folder)
 
@@ -124,7 +110,7 @@ def cifar_root(version):
 
 class Tester(unittest.TestCase):
     def test_imagefolder(self):
-        with tmp_dir(src=os.path.join(FAKEDATA_DIR, 'imagefolder')) as root:
+        with get_tmp_dir(src=os.path.join(FAKEDATA_DIR, 'imagefolder')) as root:
             classes = sorted(['a', 'b'])
             class_a_image_files = [os.path.join(root, 'a', file)
                                    for file in ('a1.png', 'a2.png', 'a3.png')]
@@ -200,7 +186,7 @@ class Tester(unittest.TestCase):
 
     @mock.patch('torchvision.datasets.utils.download_url')
     def test_imagenet(self, mock_download):
-        with tmp_dir(src=os.path.join(FAKEDATA_DIR, 'imagenet')) as root:
+        with get_tmp_dir(src=os.path.join(FAKEDATA_DIR, 'imagenet')) as root:
             dataset = torchvision.datasets.ImageNet(root, split='train', download=True)
             self.assertEqual(len(dataset), 3)
             img, target = dataset[0]
