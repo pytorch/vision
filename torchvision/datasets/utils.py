@@ -82,7 +82,7 @@ def download_url(url, root, filename=None, md5=None):
                 url, fpath,
                 reporthook=gen_bar_updater()
             )
-        except OSError:
+        except urllib.error.URLError as e:
             if url[:5] == 'https':
                 url = url.replace('https:', 'http:')
                 print('Failed download. Trying https -> http instead.'
@@ -91,6 +91,8 @@ def download_url(url, root, filename=None, md5=None):
                     url, fpath,
                     reporthook=gen_bar_updater()
                 )
+            else:
+                raise e
 
 
 def list_dir(root, prefix=False):
