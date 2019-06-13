@@ -195,7 +195,6 @@ def imagenet_root():
         yield root
 
 
-
 class Tester(unittest.TestCase):
     def test_imagefolder(self):
         with tmp_dir(src=os.path.join(FAKEDATA_DIR, 'imagefolder')) as root:
