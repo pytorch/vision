@@ -437,8 +437,8 @@ def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC):
 
     Args:
         img (PIL Image): Image to be transformed.
-        coeffs (tuple) : 8-tuple (a, b, c, d, e, f, g, h) which contains the coefficients.
-                            for a perspective transform.
+        startpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the orignal image
+        endpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image
         interpolation: Default- Image.BICUBIC
     Returns:
         PIL Image:  Perspectively transformed Image.
