@@ -6,6 +6,7 @@ import contextlib
 import tarfile
 import numpy as np
 import PIL
+from PIL import Image
 import torch
 from torch._utils_internal import get_file_path_2
 import torchvision
@@ -115,7 +116,7 @@ def imagenet_root():
     CLS = 'fakedata'
 
     def _make_image(file):
-        PIL.Image.fromarray(np.zeros((32, 32, 3), dtype=np.uint8)).save(file)
+        Image.fromarray(np.zeros((32, 32, 3), dtype=np.uint8)).save(file)
 
     def _make_tar(archive, content, arcname=None, compress=False):
         mode = 'w:gz' if compress else 'w'
