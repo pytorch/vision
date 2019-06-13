@@ -31,15 +31,11 @@ def _is_tensor_image(img):
     return torch.is_tensor(img) and img.ndimension() == 3
 
 
-def _is_numpy_image(img):
-    return isinstance(img, np.ndarray) and (img.ndim in {2, 3})
-
-
 def _is_numpy(img):
     return isinstance(img, np.ndarray)
 
 
-def _is_numpy_image_dim(img):
+def _is_numpy_image(img):
     return img.ndim in {2, 3}
 
 
@@ -57,7 +53,7 @@ def to_tensor(pic):
     if not(_is_pil_image(pic) or _is_numpy(pic)):
         raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
 
-    if _is_numpy(pic) and not _is_numpy_image_dim(pic):
+    if _is_numpy(pic) and not _is_numpy_image(pic):
         raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
         
     if isinstance(pic, np.ndarray):
