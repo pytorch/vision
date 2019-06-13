@@ -62,6 +62,12 @@ class Tester(unittest.TestCase):
                 warnings.warn(msg, RuntimeWarning)
                 raise unittest.SkipTest(msg)
 
+    def test_download_url_dont_exist(self):
+        with get_tmp_dir() as temp_dir:
+            url = "http://github.com/pytorch/vision/archive/this_doesnt_exist.zip"
+            with self.assertRaises(URLError) as cm:
+                utils.download_url(url, temp_dir)
+
     def test_extract_zip(self):
         with get_tmp_dir() as temp_dir:
             with tempfile.NamedTemporaryFile(suffix='.zip') as f:
