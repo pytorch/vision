@@ -809,6 +809,15 @@ class Tester(unittest.TestCase):
         # Checking if Normalize can be printed as string
         transforms.Normalize(mean, std).__repr__()
 
+    def test_normalize_different_dtype(self):
+        for dtype1 in [torch.float32, torch.float64]:
+            img = torch.rand(3, 10, 10, dtype=dtype1)
+            for dtype2 in [torch.int64, torch.float32, torch.float64]:
+                mean = torch.tensor([1, 2, 3], dtype=dtype2)
+                std = torch.tensor([1, 2, 1], dtype=dtype2)
+                # checks that it doesn't crash
+                r = transforms.functional.normalize(img, mean, std)
+
     def test_adjust_brightness(self):
         x_shape = [2, 2, 3]
         x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]

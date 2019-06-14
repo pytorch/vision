@@ -203,8 +203,9 @@ def normalize(tensor, mean, std, inplace=False):
     if not inplace:
         tensor = tensor.clone()
 
-    mean = torch.as_tensor(mean, dtype=torch.float32, device=tensor.device)
-    std = torch.as_tensor(std, dtype=torch.float32, device=tensor.device)
+    dtype = tensor.dtype
+    mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
+    std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
     tensor.sub_(mean[:, None, None]).div_(std[:, None, None])
     return tensor
 
