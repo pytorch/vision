@@ -434,7 +434,7 @@ class Tester(unittest.TestCase):
         with self.assertRaises(ValueError):
             trans(np.array([height]))
             trans(np.array([1, 1, height, width]))
-            
+
         for channels in test_channels:
             input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
             img = transforms.ToPILImage()(input_data)

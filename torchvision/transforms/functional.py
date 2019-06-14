@@ -55,7 +55,7 @@ def to_tensor(pic):
 
     if _is_numpy(pic) and not _is_numpy_image(pic):
         raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
-        
+
     if isinstance(pic, np.ndarray):
         # handle numpy array
         if pic.ndim == 2:
