@@ -3,6 +3,7 @@ from torchvision import datasets
 from torchvision import ops
 from torchvision import transforms
 from torchvision import utils
+from torchvision import io
 
 try:
     from .version import __version__  # noqa: F401
