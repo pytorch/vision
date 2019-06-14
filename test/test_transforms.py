@@ -816,7 +816,7 @@ class Tester(unittest.TestCase):
                 mean = torch.tensor([1, 2, 3], dtype=dtype2)
                 std = torch.tensor([1, 2, 1], dtype=dtype2)
                 # checks that it doesn't crash
-                r = transforms.functional.normalize(img, mean, std)
+                transforms.functional.normalize(img, mean, std)
 
     def test_adjust_brightness(self):
         x_shape = [2, 2, 3]
