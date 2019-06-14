@@ -141,7 +141,7 @@ class Tester(unittest.TestCase):
         img = to_pil_image(img)
         size = 100
         epsilon = 0.05
-        for i in range(10):
+        for _ in range(10):
             scale_min = round(random.random(), 2)
             scale_range = (scale_min, scale_min + round(random.random(), 2))
             aspect_min = max(round(random.random(), 2), epsilon)
@@ -153,7 +153,7 @@ class Tester(unittest.TestCase):
                     aspect_ratio_obtained == 1.0)
 
     def test_randomperspective(self):
-        for i in range(10):
+        for _ in range(10):
             height = random.randint(24, 32) * 2
             width = random.randint(24, 32) * 2
             img = torch.ones(3, height, width)
