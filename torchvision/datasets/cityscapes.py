@@ -2,8 +2,10 @@ import json
 import os
 from collections import namedtuple
 
-from .vision import VisionDataset
+import torch
 from PIL import Image
+
+from .vision import VisionDataset
 
 
 class Cityscapes(VisionDataset):
@@ -173,6 +175,58 @@ class Cityscapes(VisionDataset):
 
     def __len__(self):
         return len(self.images)
+
+    @staticmethod
+    def convert_id_to_train_id(target):
+        target_copy = target.clone()
+
+        for cls in Cityscapes.classes:
+            target_copy[target == cls.id] = cls.train_id
+
+        return target_copy
+
+    @staticmethod
+    def convert_train_id_to_id(target):
+        target_copy = target.clone()
+
+        for cls in Cityscapes.classes:
+            target_copy[target == cls.train_id] = cls.id
+
+        return target_copy
+
+    @staticmethod
+    def get_class_from_name(name):
+        for cls in Cityscapes.classes:
+            if cls.name == name:
+                return cls
+        return None
+
+    @staticmethod
+    def get_class_from_id(id):
+        for cls in Cityscapes.classes:
+            if cls.id == id:
+                return cls
+        return None
+
+    @staticmethod
+    def get_class_from_train_id(train_id):
+        for cls in Cityscapes.classes:
+            if cls.train_id == train_id:
+                return cls
+        return None
+
+    @staticmethod
+    def get_colormap():
+        cmap = torch.zeros([256, 3], dtype=torch.uint8)
+
+        for cls in Cityscapes.classes:
+            cmap[cls.id, :] = torch.tensor(cls.color)
+
+        return cmap
+
+    @staticmethod
+    def num_classes():
+        return len([cls for cls in Cityscapes.classes if not cls.ignore_in_eval])
 
     def extra_repr(self):
         lines = ["Split: {split}", "Mode: {mode}", "Type: {target_type}"]
