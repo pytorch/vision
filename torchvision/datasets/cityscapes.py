@@ -95,8 +95,8 @@ class Cityscapes(VisionDataset):
     ]
 
     def __init__(self, root, split='train', mode='fine', target_type='instance',
-                 transform=None, target_transform=None):
-        super(Cityscapes, self).__init__(root)
+                 transform=None, target_transform=None, transforms=None):
+        super(Cityscapes, self).__init__(root, transforms, transform, target_transform)
         self.transform = transform
         self.target_transform = target_transform
         self.mode = 'gtFine' if mode == 'fine' else 'gtCoarse'
@@ -163,11 +163,8 @@ class Cityscapes(VisionDataset):
 
         target = tuple(targets) if len(targets) > 1 else targets[0]
 
-        if self.transform:
-            image = self.transform(image)
-
-        if self.target_transform:
-            target = self.target_transform(target)
+        if self.transforms is not None:
+            image, target = self.transforms(image, target)
 
         return image, target
 
