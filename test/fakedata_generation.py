@@ -29,7 +29,7 @@ def mnist_root(num_images, cls_name):
             f.write(img.numpy().tobytes())
 
     def _make_label_file(filename, num_images):
-        labels = torch.randint(0, 10, size=(num_images,), dtype=torch.uint8)
+        labels = torch.zeros((num_images,), dtype=torch.uint8)
         with open(filename, "wb") as f:
             f.write(_encode(2049))  # magic header
             f.write(_encode(num_images))
