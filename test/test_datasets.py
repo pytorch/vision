@@ -9,15 +9,13 @@ from common_utils import get_tmp_dir
 from fakedata_generation import mnist_root, cifar_root, imagenet_root
 
 
-def generic_dataset_test(tester, dataset, num_images=1, cls='fakedata'):
-    tester.assertEqual(len(dataset), num_images)
-    img, target = dataset[0]
-    tester.assertTrue(isinstance(img, PIL.Image.Image))
-    tester.assertTrue(isinstance(target, int))
-    tester.assertEqual(dataset.class_to_idx[cls], target)
-
-
 class Tester(unittest.TestCase):
+    def generic_classification_dataset_test(self, dataset, num_images=1):
+        self.assertEqual(len(dataset), num_images)
+        img, target = dataset[0]
+        self.assertTrue(isinstance(img, PIL.Image.Image))
+        self.assertTrue(isinstance(target, int))
+
     def test_imagefolder(self):
         # TODO: create the fake data on-the-fly
         FAKEDATA_DIR = get_file_path_2(
@@ -72,33 +70,36 @@ class Tester(unittest.TestCase):
         num_examples = 30
         with mnist_root(num_examples, "MNIST") as root:
             dataset = torchvision.datasets.MNIST(root, download=True)
-            generic_dataset_test(self, dataset, num_images=num_examples,
-                                 cls=dataset.classes[0])
+            self.generic_classification_dataset_test(dataset, num_images=num_examples)
+            img, target = dataset[0]
+            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
     def test_kmnist(self, mock_download_extract):
         num_examples = 30
         with mnist_root(num_examples, "KMNIST") as root:
             dataset = torchvision.datasets.KMNIST(root, download=True)
-            generic_dataset_test(self, dataset, num_images=num_examples,
-                                 cls=dataset.classes[0])
+            self.generic_classification_dataset_test(dataset, num_images=num_examples)
+            img, target = dataset[0]
+            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
     def test_fashionmnist(self, mock_download_extract):
         num_examples = 30
         with mnist_root(num_examples, "FashionMNIST") as root:
             dataset = torchvision.datasets.FashionMNIST(root, download=True)
-            generic_dataset_test(self, dataset, num_images=num_examples,
-                                 cls=dataset.classes[0])
+            self.generic_classification_dataset_test(dataset, num_images=num_examples)
+            img, target = dataset[0]
+            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
     @mock.patch('torchvision.datasets.utils.download_url')
     def test_imagenet(self, mock_download):
         with imagenet_root() as root:
             dataset = torchvision.datasets.ImageNet(root, split='train', download=True)
-            generic_dataset_test(self, dataset)
+            self.generic_classification_dataset_test(dataset)
 
             dataset = torchvision.datasets.ImageNet(root, split='val', download=True)
-            generic_dataset_test(self, dataset)
+            self.generic_classification_dataset_test(dataset)
 
     @mock.patch('torchvision.datasets.cifar.check_integrity')
     @mock.patch('torchvision.datasets.cifar.CIFAR10._check_integrity')
@@ -107,10 +108,14 @@ class Tester(unittest.TestCase):
         mock_int_check.return_value = True
         with cifar_root('CIFAR10') as root:
             dataset = torchvision.datasets.CIFAR10(root, train=True, download=True)
-            generic_dataset_test(self, dataset, num_images=5)
+            self.generic_classification_dataset_test(dataset, num_images=5)
+            img, target = dataset[0]
+            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
             dataset = torchvision.datasets.CIFAR10(root, train=False, download=True)
-            generic_dataset_test(self, dataset)
+            self.generic_classification_dataset_test(dataset)
+            img, target = dataset[0]
+            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
     @mock.patch('torchvision.datasets.cifar.check_integrity')
     @mock.patch('torchvision.datasets.cifar.CIFAR10._check_integrity')
@@ -119,10 +124,14 @@ class Tester(unittest.TestCase):
         mock_int_check.return_value = True
         with cifar_root('CIFAR100') as root:
             dataset = torchvision.datasets.CIFAR100(root, train=True, download=True)
-            generic_dataset_test(self, dataset)
+            self.generic_classification_dataset_test(dataset)
+            img, target = dataset[0]
+            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
             dataset = torchvision.datasets.CIFAR100(root, train=False, download=True)
-            generic_dataset_test(self, dataset)
+            self.generic_classification_dataset_test(dataset)
+            img, target = dataset[0]
+            self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
 
 if __name__ == '__main__':
