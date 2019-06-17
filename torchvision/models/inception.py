@@ -13,7 +13,7 @@ model_urls = {
     'inception_v3_google': 'https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth',
 }
 
-_InceptionOuputs = namedtuple('InceptionOuputs', ['logits', 'aux_logits'])
+_InceptionOutputs = namedtuple('InceptionOutputs', ['logits', 'aux_logits'])
 
 
 def inception_v3(pretrained=False, progress=True, **kwargs):
@@ -147,7 +147,7 @@ class Inception3(nn.Module):
         x = self.fc(x)
         # N x 1000 (num_classes)
         if self.training and self.aux_logits:
-            return _InceptionOuputs(x, aux)
+            return _InceptionOutputs(x, aux)
         return x
 
 
