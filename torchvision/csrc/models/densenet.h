@@ -2,6 +2,7 @@
 #define DENSENET_H
 
 #include <torch/torch.h>
+#include "general.h"
 
 namespace vision {
 namespace models {
@@ -18,7 +19,7 @@ namespace models {
 //     bn_size (int) - multiplicative factor for number of bottle neck layers
 //         (i.e. bn_size * k features in the bottleneck layer)
 //     drop_rate (float) - dropout rate after each dense layer
-struct DenseNetImpl : torch::nn::Module {
+struct VISION_API DenseNetImpl : torch::nn::Module {
   torch::nn::Sequential features{nullptr};
   torch::nn::Linear classifier{nullptr};
 
@@ -33,7 +34,7 @@ struct DenseNetImpl : torch::nn::Module {
   torch::Tensor forward(torch::Tensor x);
 };
 
-struct DenseNet121Impl : DenseNetImpl {
+struct VISION_API DenseNet121Impl : DenseNetImpl {
   DenseNet121Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
@@ -43,7 +44,7 @@ struct DenseNet121Impl : DenseNetImpl {
       double drop_rate = 0);
 };
 
-struct DenseNet169Impl : DenseNetImpl {
+struct VISION_API DenseNet169Impl : DenseNetImpl {
   DenseNet169Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
@@ -53,7 +54,7 @@ struct DenseNet169Impl : DenseNetImpl {
       double drop_rate = 0);
 };
 
-struct DenseNet201Impl : DenseNetImpl {
+struct VISION_API DenseNet201Impl : DenseNetImpl {
   DenseNet201Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
@@ -63,7 +64,7 @@ struct DenseNet201Impl : DenseNetImpl {
       double drop_rate = 0);
 };
 
-struct DenseNet161Impl : DenseNetImpl {
+struct VISION_API DenseNet161Impl : DenseNetImpl {
   DenseNet161Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 48,

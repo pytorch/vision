@@ -2,10 +2,11 @@
 #define MOBILENET_H
 
 #include <torch/torch.h>
+#include "general.h"
 
 namespace vision {
 namespace models {
-struct MobileNetV2Impl : torch::nn::Module {
+struct VISION_API MobileNetV2Impl : torch::nn::Module {
   int64_t last_channel;
   torch::nn::Sequential features, classifier;
 
