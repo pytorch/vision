@@ -8,7 +8,6 @@ file(GLOB_RECURSE HEADERS torchvision/csrc/vision.h)
 file(GLOB_RECURSE MODELS_HEADERS torchvision/csrc/models/*.h)
 file(GLOB_RECURSE MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.cpp)
 
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 add_library (${PROJECT_NAME} SHARED ${MODELS_SOURCES})
 target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}")
 
