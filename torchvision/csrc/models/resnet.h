@@ -68,7 +68,7 @@ struct VISION_API Bottleneck : torch::nn::Module {
 } // namespace _resnetimpl
 
 template <typename Block>
-struct VISION_API ResNetImpl : torch::nn::Module {
+struct ResNetImpl : torch::nn::Module {
   int64_t groups, base_width, inplanes;
   torch::nn::Conv2d conv1;
   torch::nn::BatchNorm bn1;
