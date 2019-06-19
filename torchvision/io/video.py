@@ -5,6 +5,15 @@ import math
 
 
 def write_video(filename, video_array, fps):
+    """
+    Writes a 4d tensor in a video file
+
+    Arguments:
+        filename (str): path where the video will be saved
+        video_array (Tensor[T, H, W, C]): tensor containing the individual frames,
+            as a uint8 tensor in [T, H, W, C] format
+        fps (Number): frames per second
+    """
     video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy()
 
     container = av.open(filename, mode='w')
@@ -45,6 +54,20 @@ def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
 
 
 def read_video(filename, start_pts=0, end_pts=math.inf):
+    """
+    Reads a video from a file, returning both the video frames as well as
+    the audio frames
+
+    Arguments:
+        filename (str): path to the video file
+        start_pts (int, optional): the start presentation time of the video
+        end_pts (int, optional): the end presentation time
+
+    Returns:
+        vframes (Tensor[T, H, W, C]): the `T` video frames
+        aframes (Tensor[K, L]): the audio frames, where `K` is the number of channels
+            and `L` is the number of points
+    """
     container = av.open(filename)
 
     video_frames = []
