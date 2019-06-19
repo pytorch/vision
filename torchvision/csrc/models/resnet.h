@@ -2,6 +2,7 @@
 #define RESNET_H
 
 #include <torch/torch.h>
+#include "general.h"
 
 namespace vision {
 namespace models {
@@ -19,7 +20,7 @@ torch::nn::Conv2d conv3x3(
 // 1x1 convolution
 torch::nn::Conv2d conv1x1(int64_t in, int64_t out, int64_t stride = 1);
 
-struct BasicBlock : torch::nn::Module {
+struct VISION_API BasicBlock : torch::nn::Module {
   template <typename Block>
   friend struct vision::models::ResNetImpl;
 
@@ -42,7 +43,7 @@ struct BasicBlock : torch::nn::Module {
   torch::Tensor forward(torch::Tensor x);
 };
 
-struct Bottleneck : torch::nn::Module {
+struct VISION_API Bottleneck : torch::nn::Module {
   template <typename Block>
   friend struct vision::models::ResNetImpl;
 
@@ -184,40 +185,40 @@ torch::Tensor ResNetImpl<Block>::forward(torch::Tensor x) {
   return x;
 }
 
-struct ResNet18Impl : ResNetImpl<_resnetimpl::BasicBlock> {
+struct VISION_API ResNet18Impl : ResNetImpl<_resnetimpl::BasicBlock> {
   ResNet18Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
-struct ResNet34Impl : ResNetImpl<_resnetimpl::BasicBlock> {
+struct VISION_API ResNet34Impl : ResNetImpl<_resnetimpl::BasicBlock> {
   ResNet34Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
-struct ResNet50Impl : ResNetImpl<_resnetimpl::Bottleneck> {
+struct VISION_API ResNet50Impl : ResNetImpl<_resnetimpl::Bottleneck> {
   ResNet50Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
-struct ResNet101Impl : ResNetImpl<_resnetimpl::Bottleneck> {
+struct VISION_API ResNet101Impl : ResNetImpl<_resnetimpl::Bottleneck> {
   ResNet101Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
-struct ResNet152Impl : ResNetImpl<_resnetimpl::Bottleneck> {
+struct VISION_API ResNet152Impl : ResNetImpl<_resnetimpl::Bottleneck> {
   ResNet152Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
 };
 
-struct ResNext50_32x4dImpl : ResNetImpl<_resnetimpl::Bottleneck> {
+struct VISION_API ResNext50_32x4dImpl : ResNetImpl<_resnetimpl::Bottleneck> {
   ResNext50_32x4dImpl(
       int64_t num_classes = 1000,
       bool zero_init_residual = false);
 };
 
-struct ResNext101_32x8dImpl : ResNetImpl<_resnetimpl::Bottleneck> {
+struct VISION_API ResNext101_32x8dImpl : ResNetImpl<_resnetimpl::Bottleneck> {
   ResNext101_32x8dImpl(
       int64_t num_classes = 1000,
       bool zero_init_residual = false);
 };
 
 template <typename Block>
-struct ResNet : torch::nn::ModuleHolder<ResNetImpl<Block>> {
+struct VISION_API ResNet : torch::nn::ModuleHolder<ResNetImpl<Block>> {
   using torch::nn::ModuleHolder<ResNetImpl<Block>>::ModuleHolder;
 };
 

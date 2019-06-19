@@ -2,12 +2,13 @@
 #define GOOGLENET_H
 
 #include <torch/torch.h>
+#include "general.h"
 
 namespace vision {
 namespace models {
 
 namespace _googlenetimpl {
-struct BasicConv2dImpl : torch::nn::Module {
+struct VISION_API BasicConv2dImpl : torch::nn::Module {
   torch::nn::Conv2d conv{nullptr};
   torch::nn::BatchNorm bn{nullptr};
 
@@ -18,7 +19,7 @@ struct BasicConv2dImpl : torch::nn::Module {
 
 TORCH_MODULE(BasicConv2d);
 
-struct InceptionImpl : torch::nn::Module {
+struct VISION_API InceptionImpl : torch::nn::Module {
   BasicConv2d branch1{nullptr};
   torch::nn::Sequential branch2, branch3, branch4;
 
@@ -36,7 +37,7 @@ struct InceptionImpl : torch::nn::Module {
 
 TORCH_MODULE(Inception);
 
-struct InceptionAuxImpl : torch::nn::Module {
+struct VISION_API InceptionAuxImpl : torch::nn::Module {
   BasicConv2d conv{nullptr};
   torch::nn::Linear fc1{nullptr}, fc2{nullptr};
 
@@ -49,13 +50,13 @@ TORCH_MODULE(InceptionAux);
 
 } // namespace _googlenetimpl
 
-struct GoogLeNetOutput {
+struct VISION_API GoogLeNetOutput {
   torch::Tensor output;
   torch::Tensor aux1;
   torch::Tensor aux2;
 };
 
-struct GoogLeNetImpl : torch::nn::Module {
+struct VISION_API GoogLeNetImpl : torch::nn::Module {
   bool aux_logits, transform_input;
 
   _googlenetimpl::BasicConv2d conv1{nullptr}, conv2{nullptr}, conv3{nullptr};

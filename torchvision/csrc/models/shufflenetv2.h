@@ -2,11 +2,12 @@
 #define SHUFFLENETV2_H
 
 #include <torch/torch.h>
+#include "general.h"
 
 namespace vision {
 namespace models {
 
-struct ShuffleNetV2Impl : torch::nn::Module {
+struct VISION_API ShuffleNetV2Impl : torch::nn::Module {
   std::vector<int64_t> _stage_out_channels;
   torch::nn::Sequential conv1{nullptr}, stage2, stage3, stage4, conv5{nullptr};
   torch::nn::Linear fc{nullptr};
@@ -19,19 +20,19 @@ struct ShuffleNetV2Impl : torch::nn::Module {
   torch::Tensor forward(torch::Tensor x);
 };
 
-struct ShuffleNetV2_x0_5Impl : ShuffleNetV2Impl {
+struct VISION_API ShuffleNetV2_x0_5Impl : ShuffleNetV2Impl {
   ShuffleNetV2_x0_5Impl(int64_t num_classes = 1000);
 };
 
-struct ShuffleNetV2_x1_0Impl : ShuffleNetV2Impl {
+struct VISION_API ShuffleNetV2_x1_0Impl : ShuffleNetV2Impl {
   ShuffleNetV2_x1_0Impl(int64_t num_classes = 1000);
 };
 
-struct ShuffleNetV2_x1_5Impl : ShuffleNetV2Impl {
+struct VISION_API ShuffleNetV2_x1_5Impl : ShuffleNetV2Impl {
   ShuffleNetV2_x1_5Impl(int64_t num_classes = 1000);
 };
 
-struct ShuffleNetV2_x2_0Impl : ShuffleNetV2Impl {
+struct VISION_API ShuffleNetV2_x2_0Impl : ShuffleNetV2Impl {
   ShuffleNetV2_x2_0Impl(int64_t num_classes = 1000);
 };
 

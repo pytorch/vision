@@ -2,10 +2,11 @@
 #define VGG_H
 
 #include <torch/torch.h>
+#include "general.h"
 
 namespace vision {
 namespace models {
-struct VGGImpl : torch::nn::Module {
+struct VISION_API VGGImpl : torch::nn::Module {
   torch::nn::Sequential features{nullptr}, classifier{nullptr};
 
   void _initialize_weights();
@@ -19,42 +20,42 @@ struct VGGImpl : torch::nn::Module {
 };
 
 // VGG 11-layer model (configuration "A")
-struct VGG11Impl : VGGImpl {
+struct VISION_API VGG11Impl : VGGImpl {
   VGG11Impl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 13-layer model (configuration "B")
-struct VGG13Impl : VGGImpl {
+struct VISION_API VGG13Impl : VGGImpl {
   VGG13Impl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 16-layer model (configuration "D")
-struct VGG16Impl : VGGImpl {
+struct VISION_API VGG16Impl : VGGImpl {
   VGG16Impl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 19-layer model (configuration "E")
-struct VGG19Impl : VGGImpl {
+struct VISION_API VGG19Impl : VGGImpl {
   VGG19Impl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 11-layer model (configuration "A") with batch normalization
-struct VGG11BNImpl : VGGImpl {
+struct VISION_API VGG11BNImpl : VGGImpl {
   VGG11BNImpl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 13-layer model (configuration "B") with batch normalization
-struct VGG13BNImpl : VGGImpl {
+struct VISION_API VGG13BNImpl : VGGImpl {
   VGG13BNImpl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 16-layer model (configuration "D") with batch normalization
-struct VGG16BNImpl : VGGImpl {
+struct VISION_API VGG16BNImpl : VGGImpl {
   VGG16BNImpl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
 // VGG 19-layer model (configuration 'E') with batch normalization
-struct VGG19BNImpl : VGGImpl {
+struct VISION_API VGG19BNImpl : VGGImpl {
   VGG19BNImpl(int64_t num_classes = 1000, bool initialize_weights = true);
 };
 
