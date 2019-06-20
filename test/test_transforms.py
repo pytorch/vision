@@ -434,6 +434,13 @@ class Tester(unittest.TestCase):
         height, width = 4, 4
         trans = transforms.ToTensor()
 
+        with self.assertRaises(TypeError):
+            trans(np.random.rand(1, height, width).tolist())
+
+        with self.assertRaises(ValueError):
+            trans(np.random.rand(height))
+            trans(np.random.rand(1, 1, height, width))
+
         for channels in test_channels:
             input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
             img = transforms.ToPILImage()(input_data)
