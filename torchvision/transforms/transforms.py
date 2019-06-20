@@ -652,10 +652,10 @@ class RandomResizedCrop(object):
         in_ratio = img.size[0] / img.size[1]
         if (in_ratio < min(ratio)):
             w = img.size[0]
-            h = w / min(ratio)
+            h = int(round(w / min(ratio)))
         elif (in_ratio > max(ratio)):
             h = img.size[1]
-            w = h * max(ratio)
+            w = int(round(h * max(ratio)))
         else:  # whole image
             w = img.size[0]
             h = img.size[1]

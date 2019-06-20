@@ -147,10 +147,14 @@ class Tester(unittest.TestCase):
             aspect_min = max(round(random.random(), 2), epsilon)
             aspect_ratio_range = (aspect_min, aspect_min + round(random.random(), 2))
             randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range)
-            _, _, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
+            i, j, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
             aspect_ratio_obtained = w / h
             assert (min(aspect_ratio_range) - epsilon <= aspect_ratio_obtained <= max(aspect_ratio_range) + epsilon or
                     aspect_ratio_obtained == 1.0)
+            assert isinstance(i, int)
+            assert isinstance(j, int)
+            assert isinstance(h, int)
+            assert isinstance(w, int)
 
     def test_randomperspective(self):
         for _ in range(10):
