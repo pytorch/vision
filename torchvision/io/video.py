@@ -103,3 +103,14 @@ def read_video(filename, start_pts=0, end_pts=math.inf):
 
     # return video_frames, audio_frames
     return vframes, aframes
+
+
+def read_video_timestamps(filename):
+    container = av.open(filename)
+
+    video_frames = []
+    if container.streams.video:
+        video_frames = _read_from_stream(container, 0, math.inf,
+                                         container.streams.video[0], {'video': 0})
+    container.close()
+    return [x.pts for x in video_frames]

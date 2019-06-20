@@ -29,6 +29,18 @@ class Tester(unittest.TestCase):
             # 5 in 0-255 range
             self.assertTrue((data.float() - lv.float()).abs().max() < 5)
 
+    def test_read_timestamps(self):
+        with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
+            data = self._create_video_frames(10, 300, 300)
+            io.write_video(f.name, data, fps=5)
+
+            lv = io.read_video_timestamps(f.name)
+            print(lv)
+            import av
+            container = av.open(f.name)
+            from IPython import embed; embed()
+
+
 
 if __name__ == '__main__':
     unittest.main()
