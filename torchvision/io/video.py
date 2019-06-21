@@ -80,6 +80,10 @@ def read_video(filename, start_pts=0, end_pts=math.inf):
         aframes (Tensor[K, L]): the audio frames, where `K` is the number of channels
             and `L` is the number of points
     """
+    if end_pts < start_pts:
+        raise ValueError("end_pts should be larger than start_pts, got "
+                         "start_pts={} and end_pts={}".format(start_pts, end_pts))
+
     container = av.open(filename)
 
     video_frames = []

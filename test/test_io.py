@@ -46,9 +46,12 @@ class Tester(unittest.TestCase):
 
             pts = io.read_video_timestamps(f.name)
 
-            lv, _ = io.read_video(f.name, pts[4], pts[7])
-            self.assertEqual(len(lv), 4)
-            self.assertTrue((data[4:8].float() - lv.float()).abs().max() < self.TOLERANCE)
+            for start in range(5):
+                for l in range(1, 4):
+                    lv, _ = io.read_video(f.name, pts[start], pts[start + l - 1])
+                    s_data = data[start:(start + l)]
+                    self.assertEqual(len(lv), l)
+                    self.assertTrue((s_data.float() - lv.float()).abs().max() < self.TOLERANCE)
 
             lv, _ = io.read_video(f.name, pts[4] + 1, pts[7])
             self.assertEqual(len(lv), 4)

@@ -35,6 +35,7 @@ before_install:
   - pip install future
   - pip install pytest pytest-cov codecov
   - pip install mock
+  - conda install av -c conda-forge
 
 
 install:
