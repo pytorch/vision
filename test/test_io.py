@@ -6,6 +6,9 @@ import unittest
 
 
 class Tester(unittest.TestCase):
+    # compression adds artifacts, thus we add a tolerance of
+    # 5 in 0-255 range
+    TOLERANCE = 5
 
     def _create_video_frames(self, num_frames, height, width):
         y, x = torch.meshgrid(torch.linspace(-2, 2, height), torch.linspace(-2, 2, width))
@@ -25,21 +28,31 @@ class Tester(unittest.TestCase):
 
             lv, _ = io.read_video(f.name)
 
-            # compression adds artifacts, thus we add a tolerance of
-            # 5 in 0-255 range
-            self.assertTrue((data.float() - lv.float()).abs().max() < 5)
+            self.assertTrue((data.float() - lv.float()).abs().max() < self.TOLERANCE)
 
     def test_read_timestamps(self):
         with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
             data = self._create_video_frames(10, 300, 300)
             io.write_video(f.name, data, fps=5)
 
-            lv = io.read_video_timestamps(f.name)
-            print(lv)
-            import av
-            container = av.open(f.name)
-            from IPython import embed; embed()
+            pts = io.read_video_timestamps(f.name)
+            self.assertEqual(pts, [0, 2048, 4096, 6144, 8192, 10240, 12288, 14336, 16384, 18432])
 
+
+    def test_read_partial_video(self):
+        with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
+            data = self._create_video_frames(10, 300, 300)
+            io.write_video(f.name, data, fps=5)
+
+            pts = io.read_video_timestamps(f.name)
+
+            lv, _ = io.read_video(f.name, pts[4], pts[7])
+            self.assertEqual(len(lv), 4)
+            self.assertTrue((data[4:8].float() - lv.float()).abs().max() < self.TOLERANCE)
+
+            lv, _ = io.read_video(f.name, pts[4] + 1, pts[7])
+            self.assertEqual(len(lv), 4)
+            self.assertTrue((data[4:8].float() - lv.float()).abs().max() < self.TOLERANCE)
 
 
 if __name__ == '__main__':

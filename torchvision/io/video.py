@@ -55,11 +55,12 @@ def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
         if frame.pts < start_offset:
             first_frame = frame
             continue
-        if first_frame and first_frame.pts < start_offset:
-            audio_frames.append(first_frame)
+        if first_frame and first_frame.pts < start_offset:# and frame.pts > start_offset:
+            if frame.pts != start_offset:
+                frames.append(first_frame)
             first_frame = None
         frames.append(frame)
-        if frame.pts > end_offset:
+        if frame.pts >= end_offset:
             break
     return frames
 
