@@ -65,6 +65,19 @@ def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
     return frames
 
 
+def _align_audio_frames(aframes, audio_frames, ref_start, ref_end):
+    start, end = audio_frames[0].pts, audio_frames[-1].pts
+    total_aframes = aframes.shape[1]
+    step_per_aframe = (end - start + 1) / total_aframes
+    s_idx = 0
+    e_idx = total_aframes
+    if start < ref_start:
+        s_idx = int((ref_start - start) / step_per_aframe)
+    if end > ref_end:
+        e_idx = int((ref_end - end) / step_per_aframe)
+    return aframes[:, s_idx:e_idx]
+
+
 def read_video(filename, start_pts=0, end_pts=math.inf):
     """
     Reads a video from a file, returning both the video frames as well as
@@ -103,10 +116,10 @@ def read_video(filename, start_pts=0, end_pts=math.inf):
     if aframes:
         aframes = np.concatenate(aframes, 1)
         aframes = torch.as_tensor(aframes)
+        aframes = _align_audio_frames(aframes, audio_frames, start_pts, end_pts)
     else:
         aframes = torch.empty((1, 0), dtype=torch.float32)
 
-    # return video_frames, audio_frames
     return vframes, aframes
 
 
