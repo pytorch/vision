@@ -124,6 +124,18 @@ def read_video(filename, start_pts=0, end_pts=math.inf):
 
 
 def read_video_timestamps(filename):
+    """
+    List the video frames timestamps.
+
+    Note that the function decodes the whole video frame-by-frame.
+
+    Arguments:
+        filename (str): path to the video file
+
+    Returns:
+        pts (List[int]): presentation timestamps for each one of the frames
+            in the video.
+    """
     container = av.open(filename)
 
     video_frames = []
