@@ -24,6 +24,7 @@ architectures for image classification:
 -  `ShuffleNet`_ v2
 -  `MobileNet`_ v2
 -  `ResNeXt`_
+-  `MNASNet`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -40,6 +41,7 @@ You can construct a model with random weights by calling its constructor:
     shufflenet = models.shufflenet_v2_x1_0()
     mobilenet = models.mobilenet_v2()
     resnext50_32x4d = models.resnext50_32x4d()
+    mnasnet = models.mnasnet1_0()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -57,6 +59,7 @@ These can be constructed by passing ``pretrained=True``:
     shufflenet = models.shufflenet_v2_x1_0(pretrained=True)
     mobilenet = models.mobilenet_v2(pretrained=True)
     resnext50_32x4d = models.resnext50_32x4d(pretrained=True)
+    mnasnet = models.mnasnet1_0(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
@@ -111,6 +114,7 @@ ShuffleNet V2                     30.64           11.68
 MobileNet V2                      28.12           9.71
 ResNeXt-50-32x4d                  22.38           6.30
 ResNeXt-101-32x8d                 20.69           5.47
+MNASNet 1.0                       26.49           8.456
 ================================  =============   =============
 
 
@@ -124,6 +128,7 @@ ResNeXt-101-32x8d                 20.69           5.47
 .. _ShuffleNet: https://arxiv.org/abs/1807.11164
 .. _MobileNet: https://arxiv.org/abs/1801.04381
 .. _ResNeXt: https://arxiv.org/abs/1611.05431
+.. _MNASNet: https://arxiv.org/abs/1807.11626
 
 .. currentmodule:: torchvision.models
 
@@ -196,6 +201,14 @@ ResNext
 
 .. autofunction:: resnext50_32x4d
 .. autofunction:: resnext101_32x8d
+
+MNASNet
+--------
+
+.. autofunction:: mnasnet0_5
+.. autofunction:: mnasnet0_75
+.. autofunction:: mnasnet1_0
+.. autofunction:: mnasnet1_3
 
 
 Semantic Segmentation
