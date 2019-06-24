@@ -1,9 +1,21 @@
-import av
 import gc
 import torch
 import numpy as np
 import math
 
+try:
+    import av
+except ImportError:
+    av = None
+
+
+def _check_av_available():
+    if av is None:
+        raise ImportError("""\
+PyAV is not installed, and is necessary for the video operations in torchvision.
+See https://github.com/mikeboers/PyAV#installation for instructions on how to
+install PyAV on your system.
+""")
 
 # PyAV has some reference cycles
 _CALLED_TIMES = 0
@@ -20,6 +32,7 @@ def write_video(filename, video_array, fps):
             as a uint8 tensor in [T, H, W, C] format
         fps (Number): frames per second
     """
+    _check_av_available()
     video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy()
 
     container = av.open(filename, mode='w')
@@ -93,6 +106,8 @@ def read_video(filename, start_pts=0, end_pts=math.inf):
         aframes (Tensor[K, L]): the audio frames, where `K` is the number of channels
             and `L` is the number of points
     """
+    _check_av_available()
+
     if end_pts < start_pts:
         raise ValueError("end_pts should be larger than start_pts, got "
                          "start_pts={} and end_pts={}".format(start_pts, end_pts))
@@ -136,6 +151,7 @@ def read_video_timestamps(filename):
         pts (List[int]): presentation timestamps for each one of the frames
             in the video.
     """
+    _check_av_available()
     container = av.open(filename)
 
     video_frames = []
