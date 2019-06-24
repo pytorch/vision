@@ -804,3 +804,24 @@ def to_grayscale(img, num_output_channels=1):
         raise ValueError('num_output_channels should be either 1 or 3')
 
     return img
+
+
+def erase(img, i, j, h, w, v):
+    """ Erase the input Tensor Image with given value.
+
+    Args:
+        img (Tensor Image): Tensor image of size (C, H, W) to be erased
+        i (int): i in (i,j) i.e coordinates of the upper left corner.
+        j (int): j in (i,j) i.e coordinates of the upper left corner.
+        h (int): Height of the erased region.
+        w (int): Width of the erased region.
+        v: Erasing value.
+
+    Returns:
+        Tensor Image: Erased image.
+    """
+    if not isinstance(img, torch.Tensor):
+        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+
+    img[:, i:i + h, j:j + w] = v
+    return img

@@ -63,6 +63,8 @@ Transforms on torch.\*Tensor
 	:members: __call__
 	:special-members:
 
+.. autoclass:: RandomErasing
+
 Conversion Transforms
 ---------------------
 
