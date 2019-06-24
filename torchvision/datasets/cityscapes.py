@@ -99,8 +99,6 @@ class Cityscapes(VisionDataset):
     def __init__(self, root, split='train', mode='fine', target_type='instance',
                  transform=None, target_transform=None, transforms=None):
         super(Cityscapes, self).__init__(root, transforms, transform, target_transform)
-        self.transform = transform
-        self.target_transform = target_transform
         self.mode = 'gtFine' if mode == 'fine' else 'gtCoarse'
         self.images_dir = os.path.join(self.root, 'leftImg8bit', split)
         self.targets_dir = os.path.join(self.root, self.mode, split)
