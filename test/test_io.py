@@ -5,6 +5,12 @@ import torchvision.io as io
 import unittest
 
 
+try:
+    import av
+except ImportError:
+    av = None
+
+
 class Tester(unittest.TestCase):
     # compression adds artifacts, thus we add a tolerance of
     # 5 in 0-255 range
@@ -21,6 +27,7 @@ class Tester(unittest.TestCase):
 
         return torch.stack(data, 0)
 
+    @unittest.skipIf(av is None, "PyAV unavailable")
     def test_write_read_video(self):
         with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
             data = self._create_video_frames(10, 300, 300)
@@ -30,14 +37,26 @@ class Tester(unittest.TestCase):
 
             self.assertTrue((data.float() - lv.float()).abs().max() < self.TOLERANCE)
 
+    @unittest.skipIf(av is None, "PyAV unavailable")
     def test_read_timestamps(self):
         with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
             data = self._create_video_frames(10, 300, 300)
             io.write_video(f.name, data, fps=5)
 
             pts = io.read_video_timestamps(f.name)
-            self.assertEqual(pts, [0, 2048, 4096, 6144, 8192, 10240, 12288, 14336, 16384, 18432])
 
+            # note: not all formats/codecs provide accurate information for computing the
+            # timestamps. For the format that we use here, this information is available,
+            # so we use it as a baseline
+            container = av.open(f.name)
+            stream = container.streams[0]
+            pts_step = int(round(float(1 / (stream.average_rate * stream.time_base))))
+            num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
+            expected_pts = [i * pts_step for i in range(num_frames)]
+
+            self.assertEqual(pts, expected_pts)
+
+    @unittest.skipIf(av is None, "PyAV unavailable")
     def test_read_partial_video(self):
         with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
             data = self._create_video_frames(10, 300, 300)
