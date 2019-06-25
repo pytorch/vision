@@ -1,8 +1,8 @@
 #pragma once
-#include "cpu/vision.h"
+#include "cpu/vision_cpu.h"
 
 #ifdef WITH_CUDA
-#include "cuda/vision.h"
+#include "cuda/vision_cpu.h"
 #endif
 
 at::Tensor nms(
