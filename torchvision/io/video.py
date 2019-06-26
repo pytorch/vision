@@ -1,7 +1,6 @@
 import gc
 import torch
 import numpy as np
-import math
 
 try:
     import av
@@ -92,7 +91,7 @@ def _align_audio_frames(aframes, audio_frames, ref_start, ref_end):
     return aframes[:, s_idx:e_idx]
 
 
-def read_video(filename, start_pts=0, end_pts=math.inf):
+def read_video(filename, start_pts=0, end_pts=None):
     """
     Reads a video from a file, returning both the video frames as well as
     the audio frames
@@ -111,6 +110,9 @@ def read_video(filename, start_pts=0, end_pts=math.inf):
             - audio_fps (int)
     """
     _check_av_available()
+
+    if end_pts is None:
+        end_pts = float("inf")
 
     if end_pts < start_pts:
         raise ValueError("end_pts should be larger than start_pts, got "
@@ -163,7 +165,7 @@ def read_video_timestamps(filename):
 
     video_frames = []
     if container.streams.video:
-        video_frames = _read_from_stream(container, 0, math.inf,
+        video_frames = _read_from_stream(container, 0, float("inf"),
                                          container.streams.video[0], {'video': 0})
     container.close()
     return [x.pts for x in video_frames]
