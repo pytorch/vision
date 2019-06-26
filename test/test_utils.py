@@ -43,6 +43,12 @@ class Tester(unittest.TestCase):
             utils.save_image(t, f.name)
             assert os.path.exists(f.name), 'The image is not present after save'
 
+    def test_save_image_single_pixel(self):
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            t = torch.rand(1, 3, 1, 1)
+            utils.save_image(t, f.name)
+            assert os.path.exists(f.name), 'The pixel image is not present after save'
+
 
 if __name__ == '__main__':
     unittest.main()
