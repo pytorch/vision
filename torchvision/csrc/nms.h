@@ -2,7 +2,7 @@
 #include "cpu/vision_cpu.h"
 
 #ifdef WITH_CUDA
-#include "cuda/vision_cpu.h"
+#include "cuda/vision_cuda.h"
 #endif
 
 at::Tensor nms(
