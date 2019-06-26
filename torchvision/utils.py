@@ -67,7 +67,7 @@ def make_grid(tensor, nrow=8, padding=2,
             norm_range(tensor, range)
 
     if tensor.size(0) == 1:
-        return tensor.squeeze()
+        return tensor.squeeze(0)
 
     # make the mini-batch of images into a grid
     nmaps = tensor.size(0)
