@@ -1,3 +1,4 @@
+import torch
 from .._utils import IntermediateLayerGetter
 from ..utils import load_state_dict_from_url
 from .. import resnet
@@ -43,7 +44,7 @@ def _segm_resnet(name, backbone_name, num_classes, aux, pretrained_backbone=True
     return model
 
 
-def _load_model(arch_type, backbone, pretrained, progress, num_classes, aux_loss, **kwargs):
+def _load_model(arch_type, backbone, pretrained, progress, pretrained_model_path, num_classes, aux_loss, **kwargs):
     if pretrained:
         aux_loss = True
     model = _segm_resnet(arch_type, backbone, num_classes, aux_loss, **kwargs)
@@ -53,12 +54,15 @@ def _load_model(arch_type, backbone, pretrained, progress, num_classes, aux_loss
         if model_url is None:
             raise NotImplementedError('pretrained {} is not supported as of now'.format(arch))
         else:
-            state_dict = load_state_dict_from_url(model_url, progress=progress)
-            model.load_state_dict(state_dict)
+            if pretrained_model_path is None:
+                state_dict = load_state_dict_from_url(model_url, progress=progress)
+                model.load_state_dict(state_dict)
+            else:
+                model.load_state_dict(torch.load(pretrained_model_path))
     return model
 
 
-def fcn_resnet50(pretrained=False, progress=True,
+def fcn_resnet50(pretrained=False, progress=True, pretrained_model_path=None,
                  num_classes=21, aux_loss=None, **kwargs):
     """Constructs a Fully-Convolutional Network model with a ResNet-50 backbone.
 
@@ -66,11 +70,12 @@ def fcn_resnet50(pretrained=False, progress=True,
         pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _load_model('fcn', 'resnet50', pretrained, progress, num_classes, aux_loss, **kwargs)
+    return _load_model('fcn', 'resnet50', pretrained, progress, pretrained_model_path, num_classes, aux_loss, **kwargs)
 
 
-def fcn_resnet101(pretrained=False, progress=True,
+def fcn_resnet101(pretrained=False, progress=True, pretrained_model_path=None,
                   num_classes=21, aux_loss=None, **kwargs):
     """Constructs a Fully-Convolutional Network model with a ResNet-101 backbone.
 
@@ -78,11 +83,12 @@ def fcn_resnet101(pretrained=False, progress=True,
         pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _load_model('fcn', 'resnet101', pretrained, progress, num_classes, aux_loss, **kwargs)
+    return _load_model('fcn', 'resnet101', pretrained, progress, pretrained_model_path, num_classes, aux_loss, **kwargs)
 
 
-def deeplabv3_resnet50(pretrained=False, progress=True,
+def deeplabv3_resnet50(pretrained=False, progress=True, pretrained_model_path=None,
                        num_classes=21, aux_loss=None, **kwargs):
     """Constructs a DeepLabV3 model with a ResNet-50 backbone.
 
@@ -90,11 +96,12 @@ def deeplabv3_resnet50(pretrained=False, progress=True,
         pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _load_model('deeplabv3', 'resnet50', pretrained, progress, num_classes, aux_loss, **kwargs)
+    return _load_model('deeplabv3', 'resnet50', pretrained, progress, pretrained_model_path, num_classes, aux_loss, **kwargs)
 
 
-def deeplabv3_resnet101(pretrained=False, progress=True,
+def deeplabv3_resnet101(pretrained=False, progress=True, pretrained_model_path=None,
                         num_classes=21, aux_loss=None, **kwargs):
     """Constructs a DeepLabV3 model with a ResNet-101 backbone.
 
@@ -102,5 +109,6 @@ def deeplabv3_resnet101(pretrained=False, progress=True,
         pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _load_model('deeplabv3', 'resnet101', pretrained, progress, num_classes, aux_loss, **kwargs)
+    return _load_model('deeplabv3', 'resnet101', pretrained, progress, pretrained_model_path, num_classes, aux_loss, **kwargs)

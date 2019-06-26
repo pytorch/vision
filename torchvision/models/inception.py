@@ -16,7 +16,7 @@ model_urls = {
 _InceptionOutputs = namedtuple('InceptionOutputs', ['logits', 'aux_logits'])
 
 
-def inception_v3(pretrained=False, progress=True, **kwargs):
+def inception_v3(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     r"""Inception v3 model architecture from
     `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
 
@@ -27,6 +27,7 @@ def inception_v3(pretrained=False, progress=True, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
         aux_logits (bool): If True, add an auxiliary branch that can improve training.
             Default: *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it
@@ -41,9 +42,12 @@ def inception_v3(pretrained=False, progress=True, **kwargs):
         else:
             original_aux_logits = True
         model = Inception3(**kwargs)
-        state_dict = load_state_dict_from_url(model_urls['inception_v3_google'],
-                                              progress=progress)
-        model.load_state_dict(state_dict)
+        if pretrained_model_path is None:
+            state_dict = load_state_dict_from_url(model_urls['inception_v3_google'],
+                                                  progress=progress)
+            model.load_state_dict(state_dict)
+        else:
+            model.load_state_dict(torch.load(pretrained_model_path))
         if not original_aux_logits:
             model.aux_logits = False
             del model.AuxLogits

@@ -143,41 +143,44 @@ class MNASNet(torch.nn.Module):
                 nn.init.zeros_(m.bias)
 
 
-def _load_pretrained(model_name, model, progress):
+def _load_pretrained(model_name, model, progress, pretrained_model_path):
     if model_name not in _MODEL_URLS or _MODEL_URLS[model_name] is None:
         raise ValueError(
             "No checkpoint is available for model type {}".format(model_name))
     checkpoint_url = _MODEL_URLS[model_name]
-    model.load_state_dict(load_state_dict_from_url(checkpoint_url, progress=progress))
+    if pretrained_model_path is None:
+        model.load_state_dict(load_state_dict_from_url(checkpoint_url, progress=progress))
+    else:
+        model.load_state_dict(torch.load(pretrained_model_path))
 
 
-def mnasnet0_5(pretrained=False, progress=True, **kwargs):
+def mnasnet0_5(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """ MNASNet with depth multiplier of 0.5. """
     model = MNASNet(0.5, **kwargs)
     if pretrained:
-        _load_pretrained("mnasnet0_5", model, progress)
+        _load_pretrained("mnasnet0_5", model, progress, pretrained_model_path)
     return model
 
 
-def mnasnet0_75(pretrained=False, progress=True, **kwargs):
+def mnasnet0_75(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """ MNASNet with depth multiplier of 0.75. """
     model = MNASNet(0.75, **kwargs)
     if pretrained:
-        _load_pretrained("mnasnet0_75", model, progress)
+        _load_pretrained("mnasnet0_75", model, progress, pretrained_model_path)
     return model
 
 
-def mnasnet1_0(pretrained=False, progress=True, **kwargs):
+def mnasnet1_0(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """ MNASNet with depth multiplier of 1.0. """
     model = MNASNet(1.0, **kwargs)
     if pretrained:
-        _load_pretrained("mnasnet1_0", model, progress)
+        _load_pretrained("mnasnet1_0", model, progress, pretrained_model_path)
     return model
 
 
-def mnasnet1_3(pretrained=False, progress=True, **kwargs):
+def mnasnet1_3(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """ MNASNet with depth multiplier of 1.3. """
     model = MNASNet(1.3, **kwargs)
     if pretrained:
-        _load_pretrained("mnasnet1_3", model, progress)
+        _load_pretrained("mnasnet1_3", model, progress, pretrained_model_path)
     return model

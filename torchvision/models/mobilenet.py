@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 from .utils import load_state_dict_from_url
 
@@ -115,7 +116,7 @@ class MobileNetV2(nn.Module):
         return x
 
 
-def mobilenet_v2(pretrained=False, progress=True, **kwargs):
+def mobilenet_v2(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """
     Constructs a MobileNetV2 architecture from
     `"MobileNetV2: Inverted Residuals and Linear Bottlenecks" <https://arxiv.org/abs/1801.04381>`_.
@@ -123,10 +124,14 @@ def mobilenet_v2(pretrained=False, progress=True, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
     model = MobileNetV2(**kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls['mobilenet_v2'],
-                                              progress=progress)
-        model.load_state_dict(state_dict)
+        if pretrained_model_path is None:
+            state_dict = load_state_dict_from_url(model_urls['mobilenet_v2'],
+                                                  progress=progress)
+            model.load_state_dict(state_dict)
+        else:
+            model.load_state_dict(torch.load(pretrained_model_path))
     return model

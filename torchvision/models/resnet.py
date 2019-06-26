@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from .utils import load_state_dict_from_url
 
@@ -206,91 +207,101 @@ class ResNet(nn.Module):
         return x
 
 
-def _resnet(arch, block, layers, pretrained, progress, **kwargs):
+def _resnet(arch, block, layers, pretrained, progress, pretrained_model_path, **kwargs):
     model = ResNet(block, layers, **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls[arch],
-                                              progress=progress)
-        model.load_state_dict(state_dict)
+        if pretrained_model_path is None:
+            state_dict = load_state_dict_from_url(model_urls[arch],
+                                                  progress=progress)
+            model.load_state_dict(state_dict)
+        else:
+            model.load_state_dict(torch.load(pretrained_model_path))
     return model
 
 
-def resnet18(pretrained=False, progress=True, **kwargs):
+def resnet18(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """Constructs a ResNet-18 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _resnet('resnet18', BasicBlock, [2, 2, 2, 2], pretrained, progress,
+    return _resnet('resnet18', BasicBlock, [2, 2, 2, 2], pretrained, progress, pretrained_model_path,
                    **kwargs)
 
 
-def resnet34(pretrained=False, progress=True, **kwargs):
+def resnet34(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """Constructs a ResNet-34 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _resnet('resnet34', BasicBlock, [3, 4, 6, 3], pretrained, progress,
+    return _resnet('resnet34', BasicBlock, [3, 4, 6, 3], pretrained, progress, pretrained_model_path,
                    **kwargs)
 
 
-def resnet50(pretrained=False, progress=True, **kwargs):
+def resnet50(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """Constructs a ResNet-50 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress,
+    return _resnet('resnet50', Bottleneck, [3, 4, 6, 3], pretrained, progress, pretrained_model_path,
                    **kwargs)
 
 
-def resnet101(pretrained=False, progress=True, **kwargs):
+def resnet101(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """Constructs a ResNet-101 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _resnet('resnet101', Bottleneck, [3, 4, 23, 3], pretrained, progress,
+    return _resnet('resnet101', Bottleneck, [3, 4, 23, 3], pretrained, progress, pretrained_model_path,
                    **kwargs)
 
 
-def resnet152(pretrained=False, progress=True, **kwargs):
+def resnet152(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """Constructs a ResNet-152 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _resnet('resnet152', Bottleneck, [3, 8, 36, 3], pretrained, progress,
+    return _resnet('resnet152', Bottleneck, [3, 8, 36, 3], pretrained, progress, pretrained_model_path,
                    **kwargs)
 
 
-def resnext50_32x4d(pretrained=False, progress=True, **kwargs):
+def resnext50_32x4d(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """Constructs a ResNeXt-50 32x4d model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
     kwargs['groups'] = 32
     kwargs['width_per_group'] = 4
     return _resnet('resnext50_32x4d', Bottleneck, [3, 4, 6, 3],
-                   pretrained, progress, **kwargs)
+                   pretrained, progress, pretrained_model_path, **kwargs)
 
 
-def resnext101_32x8d(pretrained=False, progress=True, **kwargs):
+def resnext101_32x8d(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """Constructs a ResNeXt-101 32x8d model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
     kwargs['groups'] = 32
     kwargs['width_per_group'] = 8
     return _resnet('resnext101_32x8d', Bottleneck, [3, 4, 23, 3],
-                   pretrained, progress, **kwargs)
+                   pretrained, progress, pretrained_model_path, **kwargs)

@@ -288,7 +288,7 @@ model_urls = {
 }
 
 
-def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
+def fasterrcnn_resnet50_fpn(pretrained=False, progress=True, pretrained_model_path=None,
                             num_classes=91, pretrained_backbone=True, **kwargs):
     """
     Constructs a Faster R-CNN model with a ResNet-50-FPN backbone.
@@ -325,6 +325,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
     Arguments:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
     if pretrained:
         # no need to download the backbone if pretrained is set
@@ -332,7 +333,10 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
     backbone = resnet_fpn_backbone('resnet50', pretrained_backbone)
     model = FasterRCNN(backbone, num_classes, **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls['fasterrcnn_resnet50_fpn_coco'],
-                                              progress=progress)
-        model.load_state_dict(state_dict)
+        if pretrained_model_path is None:
+            state_dict = load_state_dict_from_url(model_urls['fasterrcnn_resnet50_fpn_coco'],
+                                                  progress=progress)
+            model.load_state_dict(state_dict)
+        else:
+            model.load_state_dict(torch.load(pretrained_model_path))
     return model

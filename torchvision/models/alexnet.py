@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from .utils import load_state_dict_from_url
 
@@ -48,17 +49,21 @@ class AlexNet(nn.Module):
         return x
 
 
-def alexnet(pretrained=False, progress=True, **kwargs):
+def alexnet(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     r"""AlexNet model architecture from the
     `"One weird trick..." <https://arxiv.org/abs/1404.5997>`_ paper.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
     model = AlexNet(**kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls['alexnet'],
-                                              progress=progress)
-        model.load_state_dict(state_dict)
+        if pretrained_model_path is None:
+            state_dict = load_state_dict_from_url(model_urls['alexnet'],
+                                                  progress=progress)
+            model.load_state_dict(state_dict)
+        else:
+            model.load_state_dict(torch.load(pretrained_model_path))
     return model

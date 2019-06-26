@@ -102,17 +102,20 @@ class SqueezeNet(nn.Module):
         return x.view(x.size(0), -1)
 
 
-def _squeezenet(version, pretrained, progress, **kwargs):
+def _squeezenet(version, pretrained, progress, pretrained_model_path, **kwargs):
     model = SqueezeNet(version, **kwargs)
     if pretrained:
         arch = 'squeezenet' + version
-        state_dict = load_state_dict_from_url(model_urls[arch],
-                                              progress=progress)
-        model.load_state_dict(state_dict)
+        if pretrained_model_path is None:
+            state_dict = load_state_dict_from_url(model_urls[arch],
+                                                  progress=progress)
+            model.load_state_dict(state_dict)
+        else:
+            model.load_state_dict(torch.load(pretrained_model_path))
     return model
 
 
-def squeezenet1_0(pretrained=False, progress=True, **kwargs):
+def squeezenet1_0(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     r"""SqueezeNet model architecture from the `"SqueezeNet: AlexNet-level
     accuracy with 50x fewer parameters and <0.5MB model size"
     <https://arxiv.org/abs/1602.07360>`_ paper.
@@ -120,11 +123,12 @@ def squeezenet1_0(pretrained=False, progress=True, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _squeezenet('1_0', pretrained, progress, **kwargs)
+    return _squeezenet('1_0', pretrained, progress, pretrained_model_path, **kwargs)
 
 
-def squeezenet1_1(pretrained=False, progress=True, **kwargs):
+def squeezenet1_1(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     r"""SqueezeNet 1.1 model from the `official SqueezeNet repo
     <https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1>`_.
     SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters
@@ -133,5 +137,6 @@ def squeezenet1_1(pretrained=False, progress=True, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _squeezenet('1_1', pretrained, progress, **kwargs)
+    return _squeezenet('1_1', pretrained, progress, pretrained_model_path, **kwargs)

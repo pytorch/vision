@@ -131,7 +131,7 @@ class ShuffleNetV2(nn.Module):
         return x
 
 
-def _shufflenetv2(arch, pretrained, progress, *args, **kwargs):
+def _shufflenetv2(arch, pretrained, progress, pretrained_model_path, *args, **kwargs):
     model = ShuffleNetV2(*args, **kwargs)
 
     if pretrained:
@@ -139,13 +139,16 @@ def _shufflenetv2(arch, pretrained, progress, *args, **kwargs):
         if model_url is None:
             raise NotImplementedError('pretrained {} is not supported as of now'.format(arch))
         else:
-            state_dict = load_state_dict_from_url(model_url, progress=progress)
-            model.load_state_dict(state_dict)
+            if pretrained_model_path is None:
+                state_dict = load_state_dict_from_url(model_url, progress=progress)
+                model.load_state_dict(state_dict)
+            else:
+                model.load_state_dict(torch.load(pretrained_model_path))
 
     return model
 
 
-def shufflenet_v2_x0_5(pretrained=False, progress=True, **kwargs):
+def shufflenet_v2_x0_5(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """
     Constructs a ShuffleNetV2 with 0.5x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
@@ -154,12 +157,13 @@ def shufflenet_v2_x0_5(pretrained=False, progress=True, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _shufflenetv2('shufflenetv2_x0.5', pretrained, progress,
+    return _shufflenetv2('shufflenetv2_x0.5', pretrained, progress, pretrained_model_path,
                          [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
 
 
-def shufflenet_v2_x1_0(pretrained=False, progress=True, **kwargs):
+def shufflenet_v2_x1_0(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """
     Constructs a ShuffleNetV2 with 1.0x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
@@ -168,12 +172,13 @@ def shufflenet_v2_x1_0(pretrained=False, progress=True, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _shufflenetv2('shufflenetv2_x1.0', pretrained, progress,
+    return _shufflenetv2('shufflenetv2_x1.0', pretrained, progress, pretrained_model_path,
                          [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
 
 
-def shufflenet_v2_x1_5(pretrained=False, progress=True, **kwargs):
+def shufflenet_v2_x1_5(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """
     Constructs a ShuffleNetV2 with 1.5x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
@@ -182,12 +187,13 @@ def shufflenet_v2_x1_5(pretrained=False, progress=True, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _shufflenetv2('shufflenetv2_x1.5', pretrained, progress,
+    return _shufflenetv2('shufflenetv2_x1.5', pretrained, progress, pretrained_model_path,
                          [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
 
 
-def shufflenet_v2_x2_0(pretrained=False, progress=True, **kwargs):
+def shufflenet_v2_x2_0(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     """
     Constructs a ShuffleNetV2 with 2.0x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
@@ -196,6 +202,7 @@ def shufflenet_v2_x2_0(pretrained=False, progress=True, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _shufflenetv2('shufflenetv2_x2.0', pretrained, progress,
+    return _shufflenetv2('shufflenetv2_x2.0', pretrained, progress, pretrained_model_path,
                          [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)

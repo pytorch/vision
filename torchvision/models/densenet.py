@@ -159,7 +159,7 @@ class DenseNet(nn.Module):
         return out
 
 
-def _load_state_dict(model, model_url, progress):
+def _load_state_dict(model, model_url, progress, pretrained_model_path):
     # '.'s are no longer allowed in module names, but previous _DenseLayer
     # has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.
     # They are also in the checkpoints in model_urls. This pattern is used
@@ -167,7 +167,10 @@ def _load_state_dict(model, model_url, progress):
     pattern = re.compile(
         r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
 
-    state_dict = load_state_dict_from_url(model_url, progress=progress)
+    if pretrained_model_path is None:
+        state_dict = load_state_dict_from_url(model_url, progress=progress)
+    else:
+        state_dict = torch.load(pretrained_model_path)
     for key in list(state_dict.keys()):
         res = pattern.match(key)
         if res:
@@ -177,57 +180,61 @@ def _load_state_dict(model, model_url, progress):
     model.load_state_dict(state_dict)
 
 
-def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, progress,
+def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, progress, pretrained_model_path,
               **kwargs):
     model = DenseNet(growth_rate, block_config, num_init_features, **kwargs)
     if pretrained:
-        _load_state_dict(model, model_urls[arch], progress)
+        _load_state_dict(model, model_urls[arch], progress, pretrained_model_path)
     return model
 
 
-def densenet121(pretrained=False, progress=True, **kwargs):
+def densenet121(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     r"""Densenet-121 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _densenet('densenet121', 32, (6, 12, 24, 16), 64, pretrained, progress,
+    return _densenet('densenet121', 32, (6, 12, 24, 16), 64, pretrained, progress, pretrained_model_path,
                      **kwargs)
 
 
-def densenet161(pretrained=False, progress=True, **kwargs):
+def densenet161(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     r"""Densenet-161 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _densenet('densenet161', 48, (6, 12, 36, 24), 96, pretrained, progress,
+    return _densenet('densenet161', 48, (6, 12, 36, 24), 96, pretrained, progress, pretrained_model_path,
                      **kwargs)
 
 
-def densenet169(pretrained=False, progress=True, **kwargs):
+def densenet169(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     r"""Densenet-169 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _densenet('densenet169', 32, (6, 12, 32, 32), 64, pretrained, progress,
+    return _densenet('densenet169', 32, (6, 12, 32, 32), 64, pretrained, progress, pretrained_model_path,
                      **kwargs)
 
 
-def densenet201(pretrained=False, progress=True, **kwargs):
+def densenet201(pretrained=False, progress=True, pretrained_model_path=None, **kwargs):
     r"""Densenet-201 model from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _densenet('densenet201', 32, (6, 12, 48, 32), 64, pretrained, progress,
+    return _densenet('densenet201', 32, (6, 12, 48, 32), 64, pretrained, progress, pretrained_model_path,
                      **kwargs)
