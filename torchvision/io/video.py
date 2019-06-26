@@ -17,6 +17,7 @@ See https://github.com/mikeboers/PyAV#installation for instructions on how to
 install PyAV on your system.
 """)
 
+
 # PyAV has some reference cycles
 _CALLED_TIMES = 0
 _GC_COLLECTION_INTERVAL = 20
@@ -105,6 +106,9 @@ def read_video(filename, start_pts=0, end_pts=math.inf):
         vframes (Tensor[T, H, W, C]): the `T` video frames
         aframes (Tensor[K, L]): the audio frames, where `K` is the number of channels
             and `L` is the number of points
+        info (Dict): metadata for the video and audio. Can contain the fields
+            - video_fps (float)
+            - audio_fps (int)
     """
     _check_av_available()
 
@@ -113,15 +117,18 @@ def read_video(filename, start_pts=0, end_pts=math.inf):
                          "start_pts={} and end_pts={}".format(start_pts, end_pts))
 
     container = av.open(filename)
+    info = {}
 
     video_frames = []
     if container.streams.video:
         video_frames = _read_from_stream(container, start_pts, end_pts,
                                          container.streams.video[0], {'video': 0})
+        info["video_fps"] = float(container.streams.video[0].average_rate)
     audio_frames = []
     if container.streams.audio:
         audio_frames = _read_from_stream(container, start_pts, end_pts,
                                          container.streams.audio[0], {'audio': 0})
+        info["audio_fps"] = container.streams.audio[0].rate
 
     container.close()
 
@@ -135,7 +142,7 @@ def read_video(filename, start_pts=0, end_pts=math.inf):
     else:
         aframes = torch.empty((1, 0), dtype=torch.float32)
 
-    return vframes, aframes
+    return vframes, aframes, info
 
 
 def read_video_timestamps(filename):

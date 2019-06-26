@@ -13,8 +13,8 @@ except ImportError:
 
 class Tester(unittest.TestCase):
     # compression adds artifacts, thus we add a tolerance of
-    # 5 in 0-255 range
-    TOLERANCE = 5
+    # 6 in 0-255 range
+    TOLERANCE = 6
 
     def _create_video_frames(self, num_frames, height, width):
         y, x = torch.meshgrid(torch.linspace(-2, 2, height), torch.linspace(-2, 2, width))
@@ -33,9 +33,10 @@ class Tester(unittest.TestCase):
             data = self._create_video_frames(10, 300, 300)
             io.write_video(f.name, data, fps=5)
 
-            lv, _ = io.read_video(f.name)
+            lv, _, info = io.read_video(f.name)
 
             self.assertTrue((data.float() - lv.float()).abs().max() < self.TOLERANCE)
+            self.assertEqual(info["video_fps"], 5)
 
     @unittest.skipIf(av is None, "PyAV unavailable")
     def test_read_timestamps(self):
@@ -66,12 +67,12 @@ class Tester(unittest.TestCase):
 
             for start in range(5):
                 for l in range(1, 4):
-                    lv, _ = io.read_video(f.name, pts[start], pts[start + l - 1])
+                    lv, _, _ = io.read_video(f.name, pts[start], pts[start + l - 1])
                     s_data = data[start:(start + l)]
                     self.assertEqual(len(lv), l)
                     self.assertTrue((s_data.float() - lv.float()).abs().max() < self.TOLERANCE)
 
-            lv, _ = io.read_video(f.name, pts[4] + 1, pts[7])
+            lv, _, _ = io.read_video(f.name, pts[4] + 1, pts[7])
             self.assertEqual(len(lv), 4)
             self.assertTrue((data[4:8].float() - lv.float()).abs().max() < self.TOLERANCE)
 
