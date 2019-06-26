@@ -72,7 +72,8 @@ def fcn_resnet50(pretrained=False, progress=True, pretrained_model_path=None,
         progress (bool): If True, displays a progress bar of the download to stderr
         pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _load_model('fcn', 'resnet50', pretrained, progress, pretrained_model_path, num_classes, aux_loss, **kwargs)
+    return _load_model('fcn', 'resnet50', pretrained, progress, pretrained_model_path,
+                       num_classes, aux_loss, **kwargs)
 
 
 def fcn_resnet101(pretrained=False, progress=True, pretrained_model_path=None,
@@ -85,7 +86,8 @@ def fcn_resnet101(pretrained=False, progress=True, pretrained_model_path=None,
         progress (bool): If True, displays a progress bar of the download to stderr
         pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _load_model('fcn', 'resnet101', pretrained, progress, pretrained_model_path, num_classes, aux_loss, **kwargs)
+    return _load_model('fcn', 'resnet101', pretrained, progress, pretrained_model_path,
+                       num_classes, aux_loss, **kwargs)
 
 
 def deeplabv3_resnet50(pretrained=False, progress=True, pretrained_model_path=None,
@@ -98,7 +100,8 @@ def deeplabv3_resnet50(pretrained=False, progress=True, pretrained_model_path=No
         progress (bool): If True, displays a progress bar of the download to stderr
         pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _load_model('deeplabv3', 'resnet50', pretrained, progress, pretrained_model_path, num_classes, aux_loss, **kwargs)
+    return _load_model('deeplabv3', 'resnet50', pretrained, progress, pretrained_model_path,
+                       num_classes, aux_loss, **kwargs)
 
 
 def deeplabv3_resnet101(pretrained=False, progress=True, pretrained_model_path=None,
@@ -111,4 +114,5 @@ def deeplabv3_resnet101(pretrained=False, progress=True, pretrained_model_path=N
         progress (bool): If True, displays a progress bar of the download to stderr
         pretrained_model_path (string): If provided, loads a pre-trained model from it rather than download it
     """
-    return _load_model('deeplabv3', 'resnet101', pretrained, progress, pretrained_model_path, num_classes, aux_loss, **kwargs)
+    return _load_model('deeplabv3', 'resnet101', pretrained, progress, pretrained_model_path,
+                       num_classes, aux_loss, **kwargs)
