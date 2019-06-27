@@ -133,6 +133,52 @@ class Tester(unittest.TestCase):
             img, target = dataset[0]
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
+    def test_tripletdataset(self):
+        FAKEDATA_DIR = get_file_path_2(
+            os.path.dirname(os.path.abspath(__file__)), 'assets', 'fakedata')
+
+        with get_tmp_dir(src=os.path.join(FAKEDATA_DIR, 'imagefolder')) as root:
+            classes = sorted(['a', 'b'])
+            num_triplets = 100
+            class_a_image_files = [os.path.join(root, 'a', file)
+                                   for file in ('a1.png', 'a2.png', 'a3.png')]
+            class_b_image_files = [os.path.join(root, 'b', file)
+                                   for file in ('b1.png', 'b2.png', 'b3.png', 'b4.png')]
+            dataset = torchvision.datasets.TripletDataset(root, lambda x: x, num_triplets, extensions=('.png'))
+
+            # test if all images were detected correctly
+            class_a_idx = dataset.class_to_idx['a']
+            class_b_idx = dataset.class_to_idx['b']
+            self.assertEqual(class_a_image_files, dataset.class_samples[class_a_idx])
+            self.assertEqual(class_b_image_files, dataset.class_samples[class_b_idx])
+
+            # test if the dataset outputs triplets of correct form
+            for triplet in dataset:
+                anc, pos, neg = tuple(os.path.split(path)[1] for path in triplet)
+                # must belong to same class
+                self.assertEqual(anc[0], pos[0])
+
+                # none should be same
+                self.assertNotEqual(anc, pos)
+                self.assertNotEqual(anc, neg)
+                self.assertNotEqual(pos, neg)
+
+            # redo all tests with specified valid image files
+            dataset = torchvision.datasets.TripletDataset(root, lambda x: x, num_triplets, is_valid_file=lambda x: '3' in x)
+
+            class_a_idx = dataset.class_to_idx['a']
+            class_b_idx = dataset.class_to_idx['b']
+            imgs_a = [img_file for img_file in class_a_image_files if '3' in img_file]
+            imgs_b = [img_file for img_file in class_b_image_files if '3' in img_file]
+            self.assertEqual(imgs_a, dataset.class_samples[class_a_idx])
+            self.assertEqual(imgs_b, dataset.class_samples[class_b_idx])
+
+            for triplet in dataset:
+                anc, pos, neg = tuple(os.path.split(path)[1] for path in triplet)
+                self.assertEqual(anc[0], pos[0])
+                self.assertNotEqual(anc, pos)
+                self.assertNotEqual(anc, neg)
+                self.assertNotEqual(pos, neg)
 
 if __name__ == '__main__':
     unittest.main()

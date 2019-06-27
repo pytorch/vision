@@ -110,8 +110,8 @@ class TripletDataset(data.IterableDataset, DatasetFolder):
                                              is_valid_file=is_valid_file)
         self.num_triplets = num_triplets
 
-        class_samples = get_class_samples(len(self.classes), self.samples)
-        self.samples = generate_triplets(class_samples, self.num_triplets)
+        self.class_samples = get_class_samples(len(self.classes), self.samples)
+        self.samples = generate_triplets(self.class_samples, self.num_triplets)
 
     def __iter__(self):
         worker_info = data.get_worker_info()
@@ -126,7 +126,6 @@ class TripletDataset(data.IterableDataset, DatasetFolder):
         return (self[i] for i in range(iter_start, iter_end))
 
     def __getitem__(self, index):
-        #raise TypeError(f"'{self.__class__.__name__}' object is not subscriptable")
         triplet_paths = self.samples[index]
         triplet = tuple(self.loader(path) for path in triplet_paths)
         if self.transform is not None:
