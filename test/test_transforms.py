@@ -1350,7 +1350,7 @@ class Tester(unittest.TestCase):
         # Test Set 1: Erasing with int value
         img_re = transforms.RandomErasing(value=0)
         i, j, h, w, v = img_re.get_params(img, scale=img_re.scale, ratio=img_re.ratio, value=img_re.value)
-        
+
         # Check if the unerased region is preserved
         img_output = F.erase(img, i, j, h, w, v)
         erased_region = torch.zeros([3, 60, 60], dtype=torch.float32)
