@@ -19,6 +19,7 @@ from .celeba import CelebA
 from .sbd import SBDataset
 from .vision import VisionDataset
 from .usps import USPS
+from .triplet import TripletDataset
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
@@ -28,4 +29,4 @@ __all__ = ('LSUN', 'LSUNClass',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
            'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNet',
            'Caltech101', 'Caltech256', 'CelebA', 'SBDataset', 'VisionDataset',
-           'USPS')
+           'USPS', 'TripletDataset')
