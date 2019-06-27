@@ -36,7 +36,7 @@ class SBDataset(VisionDataset):
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
-        xy_transform (callable, optional): A function/transform that takes input sample and its target as entry
+        transforms (callable, optional): A function/transform that takes input sample and its target as entry
             and returns a transformed version. Input sample is PIL image and target is a numpy array
             if `mode='boundaries'` or PIL image if `mode='segmentation'`.
     """

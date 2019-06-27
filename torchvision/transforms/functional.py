@@ -31,8 +31,12 @@ def _is_tensor_image(img):
     return torch.is_tensor(img) and img.ndimension() == 3
 
 
+def _is_numpy(img):
+    return isinstance(img, np.ndarray)
+
+
 def _is_numpy_image(img):
-    return isinstance(img, np.ndarray) and (img.ndim in {2, 3})
+    return img.ndim in {2, 3}
 
 
 def to_tensor(pic):
@@ -46,8 +50,11 @@ def to_tensor(pic):
     Returns:
         Tensor: Converted image.
     """
-    if not(_is_pil_image(pic) or _is_numpy_image(pic)):
+    if not(_is_pil_image(pic) or _is_numpy(pic)):
         raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
+
+    if _is_numpy(pic) and not _is_numpy_image(pic):
+        raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
 
     if isinstance(pic, np.ndarray):
         # handle numpy array
@@ -203,8 +210,9 @@ def normalize(tensor, mean, std, inplace=False):
     if not inplace:
         tensor = tensor.clone()
 
-    mean = torch.as_tensor(mean, dtype=torch.float32, device=tensor.device)
-    std = torch.as_tensor(std, dtype=torch.float32, device=tensor.device)
+    dtype = tensor.dtype
+    mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
+    std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
     tensor.sub_(mean[:, None, None]).div_(std[:, None, None])
     return tensor
 
@@ -437,8 +445,8 @@ def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC):
 
     Args:
         img (PIL Image): Image to be transformed.
-        coeffs (tuple) : 8-tuple (a, b, c, d, e, f, g, h) which contains the coefficients.
-                            for a perspective transform.
+        startpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the orignal image
+        endpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image
         interpolation: Default- Image.BICUBIC
     Returns:
         PIL Image:  Perspectively transformed Image.
@@ -795,4 +803,25 @@ def to_grayscale(img, num_output_channels=1):
     else:
         raise ValueError('num_output_channels should be either 1 or 3')
 
+    return img
+
+
+def erase(img, i, j, h, w, v):
+    """ Erase the input Tensor Image with given value.
+
+    Args:
+        img (Tensor Image): Tensor image of size (C, H, W) to be erased
+        i (int): i in (i,j) i.e coordinates of the upper left corner.
+        j (int): j in (i,j) i.e coordinates of the upper left corner.
+        h (int): Height of the erased region.
+        w (int): Width of the erased region.
+        v: Erasing value.
+
+    Returns:
+        Tensor Image: Erased image.
+    """
+    if not isinstance(img, torch.Tensor):
+        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+
+    img[:, i:i + h, j:j + w] = v
     return img

@@ -28,7 +28,7 @@ __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", 
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
            "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
-           "RandomPerspective"]
+           "RandomPerspective", "RandomErasing"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -652,10 +652,10 @@ class RandomResizedCrop(object):
         in_ratio = img.size[0] / img.size[1]
         if (in_ratio < min(ratio)):
             w = img.size[0]
-            h = w / min(ratio)
+            h = int(round(w / min(ratio)))
         elif (in_ratio > max(ratio)):
             h = img.size[1]
-            w = h * max(ratio)
+            w = int(round(h * max(ratio)))
         else:  # whole image
             w = img.size[0]
             h = img.size[1]
@@ -1016,7 +1016,8 @@ class RandomAffine(object):
         resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
             An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
-        fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
+        fillcolor (tuple or int): Optional fill color (Tuple for RGB Image And int for grayscale) for the area
+            outside the transform in the output image.(Pillow>=5.0.0)
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -1181,3 +1182,84 @@ class RandomGrayscale(object):
 
     def __repr__(self):
         return self.__class__.__name__ + '(p={0})'.format(self.p)
+
+
+class RandomErasing(object):
+    """ Randomly selects a rectangle region in an image and erases its pixels.
+        'Random Erasing Data Augmentation' by Zhong et al.
+        See https://arxiv.org/pdf/1708.04896.pdf
+    Args:
+         p: probability that the random erasing operation will be performed.
+         scale: range of proportion of erased area against input image.
+         ratio: range of aspect ratio of erased area.
+         value: erasing value. Default is 0. If a single int, it is used to
+            erase all pixels. If a tuple of length 3, it is used to erase
+            R, G, B channels respectively.
+            If a str of 'random', erasing each pixel with random values.
+    Returns:
+        Erased Image.
+    # Examples:
+        >>> transform = transforms.Compose([
+        >>> transforms.RandomHorizontalFlip(),
+        >>> transforms.ToTensor(),
+        >>> transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        >>> transforms.RandomErasing(),
+        >>> ])
+    """
+
+    def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 1. / 0.3), value=0):
+        assert isinstance(value, (numbers.Number, str, tuple, list))
+        if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
+            warnings.warn("range should be of kind (min, max)")
+        if scale[0] < 0 or scale[1] > 1:
+            raise ValueError("range of scale should be between 0 and 1")
+
+        self.p = p
+        self.scale = scale
+        self.ratio = ratio
+        self.value = value
+
+    @staticmethod
+    def get_params(img, scale, ratio, value=0):
+        """Get parameters for ``erase`` for a random erasing.
+
+        Args:
+            img (Tensor): Tensor image of size (C, H, W) to be erased.
+            scale: range of proportion of erased area against input image.
+            ratio: range of aspect ratio of erased area.
+
+        Returns:
+            tuple: params (i, j, h, w, v) to be passed to ``erase`` for random erasing.
+        """
+        area = img.shape[1] * img.shape[2]
+
+        while True:
+            erase_area = random.uniform(scale[0], scale[1]) * area
+            aspect_ratio = random.uniform(ratio[0], ratio[1])
+
+            h = int(round(math.sqrt(erase_area * aspect_ratio)))
+            w = int(round(math.sqrt(erase_area / aspect_ratio)))
+
+            if h < img.shape[1] and w < img.shape[2]:
+                i = random.randint(0, img.shape[1] - h)
+                j = random.randint(0, img.shape[2] - w)
+                if isinstance(value, numbers.Number):
+                    v = value
+                elif isinstance(value, torch._six.string_classes):
+                    v = torch.rand(img.size()[0], h, w)
+                elif isinstance(value, (list, tuple)):
+                    v = torch.tensor(value, dtype=torch.float32).view(-1, 1, 1).expand(-1, h, w)
+                return i, j, h, w, v
+
+    def __call__(self, img):
+        """
+        Args:
+            img (Tensor): Tensor image of size (C, H, W) to be erased.
+
+        Returns:
+            img (Tensor): Erased Tensor image.
+        """
+        if random.uniform(0, 1) < self.p:
+            x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value)
+            return F.erase(img, x, y, h, w, v)
+        return img

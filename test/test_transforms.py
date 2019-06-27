@@ -1,4 +1,5 @@
 from __future__ import division
+import os
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
@@ -18,7 +19,8 @@ try:
 except ImportError:
     stats = None
 
-GRACE_HOPPER = get_file_path_2('assets/grace_hopper_517x606.jpg')
+GRACE_HOPPER = get_file_path_2(
+    os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
 
 
 class Tester(unittest.TestCase):
@@ -139,19 +141,23 @@ class Tester(unittest.TestCase):
         img = to_pil_image(img)
         size = 100
         epsilon = 0.05
-        for i in range(10):
+        for _ in range(10):
             scale_min = round(random.random(), 2)
             scale_range = (scale_min, scale_min + round(random.random(), 2))
             aspect_min = max(round(random.random(), 2), epsilon)
             aspect_ratio_range = (aspect_min, aspect_min + round(random.random(), 2))
             randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range)
-            _, _, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
+            i, j, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
             aspect_ratio_obtained = w / h
             assert (min(aspect_ratio_range) - epsilon <= aspect_ratio_obtained <= max(aspect_ratio_range) + epsilon or
                     aspect_ratio_obtained == 1.0)
+            assert isinstance(i, int)
+            assert isinstance(j, int)
+            assert isinstance(h, int)
+            assert isinstance(w, int)
 
     def test_randomperspective(self):
-        for i in range(10):
+        for _ in range(10):
             height = random.randint(24, 32) * 2
             width = random.randint(24, 32) * 2
             img = torch.ones(3, height, width)
@@ -335,6 +341,7 @@ class Tester(unittest.TestCase):
         # Checking if Lambda can be printed as string
         trans.__repr__()
 
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_apply(self):
         random_state = random.getstate()
         random.seed(42)
@@ -360,6 +367,7 @@ class Tester(unittest.TestCase):
         # Checking if RandomApply can be printed as string
         random_apply_transform.__repr__()
 
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_choice(self):
         random_state = random.getstate()
         random.seed(42)
@@ -395,6 +403,7 @@ class Tester(unittest.TestCase):
         # Checking if RandomChoice can be printed as string
         random_choice_transform.__repr__()
 
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_order(self):
         random_state = random.getstate()
         random.seed(42)
@@ -424,6 +433,13 @@ class Tester(unittest.TestCase):
         test_channels = [1, 3, 4]
         height, width = 4, 4
         trans = transforms.ToTensor()
+
+        with self.assertRaises(TypeError):
+            trans(np.random.rand(1, height, width).tolist())
+
+        with self.assertRaises(ValueError):
+            trans(np.random.rand(height))
+            trans(np.random.rand(1, 1, height, width))
 
         for channels in test_channels:
             input_data = torch.ByteTensor(channels, height, width).random_(0, 255).float().div_(255)
@@ -803,6 +819,15 @@ class Tester(unittest.TestCase):
 
         # Checking if Normalize can be printed as string
         transforms.Normalize(mean, std).__repr__()
+
+    def test_normalize_different_dtype(self):
+        for dtype1 in [torch.float32, torch.float64]:
+            img = torch.rand(3, 10, 10, dtype=dtype1)
+            for dtype2 in [torch.int64, torch.float32, torch.float64]:
+                mean = torch.tensor([1, 2, 3], dtype=dtype2)
+                std = torch.tensor([1, 2, 1], dtype=dtype2)
+                # checks that it doesn't crash
+                transforms.functional.normalize(img, mean, std)
 
     def test_adjust_brightness(self):
         x_shape = [2, 2, 3]
@@ -1316,6 +1341,23 @@ class Tester(unittest.TestCase):
 
         # Checking if RandomGrayscale can be printed as string
         trans3.__repr__()
+
+    def test_random_erasing(self):
+        """Unit tests for random erasing transform"""
+
+        img = torch.rand([3, 224, 224])
+
+        # Test Set 1: Erasing with int value
+        img_re = transforms.RandomErasing(value=0)(img)
+        assert img_re.size(0) == 3
+
+        # Test Set 2: Erasing with random value
+        img_re = transforms.RandomErasing(value='random')(img)
+        assert img_re.size(0) == 3
+
+        # Test Set 3: Erasing with tuple value
+        img_re = transforms.RandomErasing(value=(0.2, 0.2, 0.2))(img)
+        assert img_re.size(0) == 3
 
 
 if __name__ == '__main__':

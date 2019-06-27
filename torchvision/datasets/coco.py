@@ -14,6 +14,8 @@ class CocoCaptions(VisionDataset):
             and returns a transformed version. E.g, ``transforms.ToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
+        transforms (callable, optional): A function/transform that takes input sample and its target as entry
+            and returns a transformed version.
 
     Example:
 
@@ -86,6 +88,8 @@ class CocoDetection(VisionDataset):
             and returns a transformed version. E.g, ``transforms.ToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
+        transforms (callable, optional): A function/transform that takes input sample and its target as entry
+            and returns a transformed version.
     """
 
     def __init__(self, root, annFile, transform=None, target_transform=None, transforms=None):

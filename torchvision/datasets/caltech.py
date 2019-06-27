@@ -4,7 +4,7 @@ import os
 import os.path
 
 from .vision import VisionDataset
-from .utils import download_url, makedir_exist_ok
+from .utils import download_and_extract_archive, makedir_exist_ok
 
 
 class Caltech101(VisionDataset):
@@ -109,27 +109,20 @@ class Caltech101(VisionDataset):
         return len(self.index)
 
     def download(self):
-        import tarfile
-
         if self._check_integrity():
             print('Files already downloaded and verified')
             return
 
-        download_url("http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz",
-                     self.root,
-                     "101_ObjectCategories.tar.gz",
-                     "b224c7392d521a49829488ab0f1120d9")
-        download_url("http://www.vision.caltech.edu/Image_Datasets/Caltech101/Annotations.tar",
-                     self.root,
-                     "101_Annotations.tar",
-                     "6f83eeb1f24d99cab4eb377263132c91")
-
-        # extract file
-        with tarfile.open(os.path.join(self.root, "101_ObjectCategories.tar.gz"), "r:gz") as tar:
-            tar.extractall(path=self.root)
-
-        with tarfile.open(os.path.join(self.root, "101_Annotations.tar"), "r:") as tar:
-            tar.extractall(path=self.root)
+        download_and_extract_archive(
+            "http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz",
+            self.root,
+            filename="101_ObjectCategories.tar.gz",
+            md5="b224c7392d521a49829488ab0f1120d9")
+        download_and_extract_archive(
+            "http://www.vision.caltech.edu/Image_Datasets/Caltech101/Annotations.tar",
+            self.root,
+            filename="101_Annotations.tar",
+            md5="6f83eeb1f24d99cab4eb377263132c91")
 
     def extra_repr(self):
         return "Target type: {target_type}".format(**self.__dict__)
@@ -204,17 +197,12 @@ class Caltech256(VisionDataset):
         return len(self.index)
 
     def download(self):
-        import tarfile
-
         if self._check_integrity():
             print('Files already downloaded and verified')
             return
 
-        download_url("http://www.vision.caltech.edu/Image_Datasets/Caltech256/256_ObjectCategories.tar",
-                     self.root,
-                     "256_ObjectCategories.tar",
-                     "67b4f42ca05d46448c6bb8ecd2220f6d")
-
-        # extract file
-        with tarfile.open(os.path.join(self.root, "256_ObjectCategories.tar"), "r:") as tar:
-            tar.extractall(path=self.root)
+        download_and_extract_archive(
+            "http://www.vision.caltech.edu/Image_Datasets/Caltech256/256_ObjectCategories.tar",
+            self.root,
+            filename="256_ObjectCategories.tar",
+            md5="67b4f42ca05d46448c6bb8ecd2220f6d")

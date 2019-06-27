@@ -3,7 +3,7 @@ from PIL import Image
 from os.path import join
 import os
 from .vision import VisionDataset
-from .utils import download_url, check_integrity, list_dir, list_files
+from .utils import download_and_extract_archive, check_integrity, list_dir, list_files
 
 
 class Omniglot(VisionDataset):
@@ -81,8 +81,6 @@ class Omniglot(VisionDataset):
         return True
 
     def download(self):
-        import zipfile
-
         if self._check_integrity():
             print('Files already downloaded and verified')
             return
@@ -90,10 +88,7 @@ class Omniglot(VisionDataset):
         filename = self._get_target_folder()
         zip_filename = filename + '.zip'
         url = self.download_url_prefix + '/' + zip_filename
-        download_url(url, self.root, zip_filename, self.zips_md5[filename])
-        print('Extracting downloaded file: ' + join(self.root, zip_filename))
-        with zipfile.ZipFile(join(self.root, zip_filename), 'r') as zip_file:
-            zip_file.extractall(self.root)
+        download_and_extract_archive(url, self.root, filename=zip_filename, md5=self.zips_md5[filename])
 
     def _get_target_folder(self):
         return 'images_background' if self.background else 'images_evaluation'

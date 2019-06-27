@@ -12,7 +12,7 @@ model_urls = {
     'googlenet': 'https://download.pytorch.org/models/googlenet-1378be20.pth',
 }
 
-_GoogLeNetOuputs = namedtuple('GoogLeNetOuputs', ['logits', 'aux_logits2', 'aux_logits1'])
+_GoogLeNetOutputs = namedtuple('GoogLeNetOutputs', ['logits', 'aux_logits2', 'aux_logits1'])
 
 
 def googlenet(pretrained=False, progress=True, **kwargs):
@@ -157,7 +157,7 @@ class GoogLeNet(nn.Module):
         x = self.fc(x)
         # N x 1000 (num_classes)
         if self.training and self.aux_logits:
-            return _GoogLeNetOuputs(x, aux2, aux1)
+            return _GoogLeNetOutputs(x, aux2, aux1)
         return x
 
 
