@@ -1345,11 +1345,19 @@ class Tester(unittest.TestCase):
     def test_random_erasing(self):
         """Unit tests for random erasing transform"""
 
-        img = torch.rand([3, 224, 224])
+        img = torch.rand([3, 60, 60])
 
         # Test Set 1: Erasing with int value
-        img_re = transforms.RandomErasing(value=0)(img)
-        assert img_re.size(0) == 3
+        img_re = transforms.RandomErasing(value=0)
+        i, j, h, w, v = img_re.get_params(img, scale=img_re.scale, ratio=img_re.ratio, value=img_re.value)
+        
+        # Check if the unerased region is preserved
+        img_output = F.erase(img, i, j, h, w, v)
+        erased_region = torch.zeros([3, 60, 60], dtype=torch.float32)
+        erased_region[:, i:i + h, j:j + w] = v
+
+        assert torch.equal(img - img_output, erased_region)
+        assert img_output.size(0) == 3
 
         # Test Set 2: Erasing with random value
         img_re = transforms.RandomErasing(value='random')(img)
