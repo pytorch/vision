@@ -8,6 +8,15 @@ from torch.distributions.multinomial import Multinomial
 from torch.distributions.bernoulli import Bernoulli
 
 def get_class_samples(num_classes, samples):
+    """Bins samples with respect to classes
+
+    Args:
+        num_classes (int): number of classes
+        samples (list[tuple]): (sample, class_idx) tuples
+
+    Returns:
+        list[list]: Bins of sample paths, binned by class_idx
+    """
     class_samples = [[] for _ in range(num_classes)]
     for sample_path, class_idx in samples:
         class_samples[class_idx].append(sample_path)
@@ -15,6 +24,17 @@ def get_class_samples(num_classes, samples):
     return class_samples
 
 def get_sampled_indices(dist, num_samples):
+    """
+    Samples from distribution till the number of the non-zero entries in the sample
+    equals num_samples
+
+    Args:
+        dist (torch.distributions.distribution.Distribution): A pytorch distribution
+        num_samples (int): number of non-zero samples needed
+
+    Returns:
+        list: indices of the non-zero samples
+    """
     sample = dist.sample().nonzero().view(-1)
     while len(sample) != num_samples:
         sample = dist.sample().nonzero().view(-1)
@@ -22,6 +42,15 @@ def get_sampled_indices(dist, num_samples):
     return sample.tolist()
 
 def generate_triplets(class_samples, num_triplets):
+    """Generates a set of triplets from bins of samples
+
+    Args:
+        class_samples (list[list]): bins of samples, binned by class
+        num_triplets (int): number of triplets to be generated
+
+    Returns:
+        list[tuple]: triplets of the form (anchor, positive, negative)
+    """
     triplets = []
     class_dist = Multinomial(2, torch.Tensor([1.] * len(class_samples)))
     swap = Bernoulli(torch.Tensor([0.5]))
@@ -46,6 +75,34 @@ def generate_triplets(class_samples, num_triplets):
     return triplets
 
 class TripletDataset(data.IterableDataset, DatasetFolder):
+    """
+    A dataset with samples of the form (anchor, positive, negative), where anchor and
+    positive are samples of the same class, and negative is a sample of another class.
+    The dataset reads samples from a directory arranged in the following manner: ::
+
+        root/class_x/xxx.ext
+        root/class_x/xxy.ext
+        root/class_x/xxz.ext
+
+        root/class_y/123.ext
+        root/class_y/nsdf3.ext
+        root/class_y/asd932_.ext
+
+    Args:
+        root (string): Root directory path.
+        loader (callable): A function to load a sample given its path.
+        extensions (tuple[string]): A list of allowed extensions,
+        transform (callable, optional): A function/transform that takes in
+            a sample and returns a transformed version.
+            E.g, ``transforms.RandomCrop`` for images.
+        is_valid_file (callable, optional): A function that takes the path of an Image
+        file and checks if the file is a valid_file. Both extensions and is_valid_file
+        should not be passed.
+
+    Attributes:
+        samples (list[tuple]): List of (anchor, positive, negative) triplets
+    """
+        
     def __init__(self, root, loader, num_triplets, extensions=None, transform=None, is_valid_file=None):
         super(TripletDataset, self).__init__(root, loader,
                                              extensions=extensions,
