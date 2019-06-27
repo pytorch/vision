@@ -93,27 +93,28 @@ class MNASNet(torch.nn.Module):
 
     def __init__(self, alpha, num_classes=1000, dropout=0.2):
         super(MNASNet, self).__init__()
-        depths = _scale_depths([24, 40, 80, 96, 192, 320], alpha)
+        depths = _scale_depths([32, 16, 24, 40, 80, 96, 192, 320], alpha)
         layers = [
             # First layer: regular conv.
-            nn.Conv2d(3, 32, 3, padding=1, stride=2, bias=False),
-            nn.BatchNorm2d(32, momentum=_BN_MOMENTUM),
+            nn.Conv2d(3, depths[0], 3, padding=1, stride=2, bias=False),
+            nn.BatchNorm2d(depths[0], momentum=_BN_MOMENTUM),
             nn.ReLU(inplace=True),
             # Depthwise separable, no skip.
-            nn.Conv2d(32, 32, 3, padding=1, stride=1, groups=32, bias=False),
-            nn.BatchNorm2d(32, momentum=_BN_MOMENTUM),
+            nn.Conv2d(depths[0], depths[0], 3, padding=1, stride=1,
+                      groups=depths[0], bias=False),
+            nn.BatchNorm2d(depths[0], momentum=_BN_MOMENTUM),
             nn.ReLU(inplace=True),
-            nn.Conv2d(32, 16, 1, padding=0, stride=1, bias=False),
-            nn.BatchNorm2d(16, momentum=_BN_MOMENTUM),
+            nn.Conv2d(depths[0], depths[1], 1, padding=0, stride=1, bias=False),
+            nn.BatchNorm2d(depths[1], momentum=_BN_MOMENTUM),
             # MNASNet blocks: stacks of inverted residuals.
-            _stack(16, depths[0], 3, 2, 3, 3, _BN_MOMENTUM),
-            _stack(depths[0], depths[1], 5, 2, 3, 3, _BN_MOMENTUM),
-            _stack(depths[1], depths[2], 5, 2, 6, 3, _BN_MOMENTUM),
-            _stack(depths[2], depths[3], 3, 1, 6, 2, _BN_MOMENTUM),
-            _stack(depths[3], depths[4], 5, 2, 6, 4, _BN_MOMENTUM),
-            _stack(depths[4], depths[5], 3, 1, 6, 1, _BN_MOMENTUM),
+            _stack(depths[1], depths[2], 3, 2, 3, 3, _BN_MOMENTUM),
+            _stack(depths[2], depths[3], 5, 2, 3, 3, _BN_MOMENTUM),
+            _stack(depths[3], depths[4], 5, 2, 6, 3, _BN_MOMENTUM),
+            _stack(depths[4], depths[5], 3, 1, 6, 2, _BN_MOMENTUM),
+            _stack(depths[5], depths[6], 5, 2, 6, 4, _BN_MOMENTUM),
+            _stack(depths[6], depths[7], 3, 1, 6, 1, _BN_MOMENTUM),
             # Final mapping to classifier input.
-            nn.Conv2d(depths[5], 1280, 1, padding=0, stride=1, bias=False),
+            nn.Conv2d(depths[7], 1280, 1, padding=0, stride=1, bias=False),
             nn.BatchNorm2d(1280, momentum=_BN_MOMENTUM),
             nn.ReLU(inplace=True),
         ]
@@ -148,7 +149,8 @@ def _load_pretrained(model_name, model, progress):
         raise ValueError(
             "No checkpoint is available for model type {}".format(model_name))
     checkpoint_url = _MODEL_URLS[model_name]
-    model.load_state_dict(load_state_dict_from_url(checkpoint_url, progress=progress))
+    model.load_state_dict(
+        load_state_dict_from_url(checkpoint_url, progress=progress))
 
 
 def mnasnet0_5(pretrained=False, progress=True, **kwargs):
