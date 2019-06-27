@@ -107,7 +107,7 @@ class TripletDataset(data.IterableDataset, DatasetFolder):
     Attributes:
         samples (list[tuple]): List of (anchor, positive, negative) triplets
     """
-        
+
     def __init__(self, root, loader, num_triplets, extensions=None, transform=None, is_valid_file=None):
         super(TripletDataset, self).__init__(root, loader,
                                              extensions=extensions,

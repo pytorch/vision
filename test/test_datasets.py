@@ -138,7 +138,6 @@ class Tester(unittest.TestCase):
             os.path.dirname(os.path.abspath(__file__)), 'assets', 'fakedata')
 
         with get_tmp_dir(src=os.path.join(FAKEDATA_DIR, 'imagefolder')) as root:
-            classes = sorted(['a', 'b'])
             num_triplets = 100
             class_a_image_files = [os.path.join(root, 'a', file)
                                    for file in ('a1.png', 'a2.png', 'a3.png')]
@@ -164,7 +163,9 @@ class Tester(unittest.TestCase):
                 self.assertNotEqual(pos, neg)
 
             # redo all tests with specified valid image files
-            dataset = torchvision.datasets.TripletDataset(root, lambda x: x, num_triplets, is_valid_file=lambda x: '3' in x)
+            dataset = torchvision.datasets.TripletDataset(root, lambda x: x,
+                                                          num_triplets,
+                                                          is_valid_file=lambda x: '3' in x)
 
             class_a_idx = dataset.class_to_idx['a']
             class_b_idx = dataset.class_to_idx['b']
@@ -179,6 +180,7 @@ class Tester(unittest.TestCase):
                 self.assertNotEqual(anc, pos)
                 self.assertNotEqual(anc, neg)
                 self.assertNotEqual(pos, neg)
+
 
 if __name__ == '__main__':
     unittest.main()
