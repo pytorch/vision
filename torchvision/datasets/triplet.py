@@ -1,11 +1,13 @@
 from .folder import DatasetFolder
 
-import math
+from torch.distributions.multinomial import Multinomial
+from torch.distributions.bernoulli import Bernoulli
+
 import torch
 import torch.utils.data as data
 
-from torch.distributions.multinomial import Multinomial
-from torch.distributions.bernoulli import Bernoulli
+import math
+
 
 def get_class_samples(num_classes, samples):
     """Bins samples with respect to classes
@@ -22,6 +24,7 @@ def get_class_samples(num_classes, samples):
         class_samples[class_idx].append(sample_path)
 
     return class_samples
+
 
 def get_sampled_indices(dist, num_samples):
     """
@@ -40,6 +43,7 @@ def get_sampled_indices(dist, num_samples):
         sample = dist.sample().nonzero().view(-1)
 
     return sample.tolist()
+
 
 def generate_triplets(class_samples, num_triplets):
     """Generates a set of triplets from bins of samples
@@ -73,6 +77,7 @@ def generate_triplets(class_samples, num_triplets):
         triplets.append(triplet)
 
     return triplets
+
 
 class TripletDataset(data.IterableDataset, DatasetFolder):
     """
