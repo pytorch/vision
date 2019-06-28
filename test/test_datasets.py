@@ -144,8 +144,7 @@ class Tester(unittest.TestCase):
             class_b_image_files = [os.path.join(root, 'b', file)
                                    for file in ('b1.png', 'b2.png', 'b3.png', 'b4.png')]
             dset_f = torchvision.datasets.DatasetFolder(root, lambda x: x, extensions=('.png'))
-            dataset = torchvision.datasets.TripletDataset(dset_f, lambda x: x, num_triplets,
-                                                          len(dset_f.classes))
+            dataset = torchvision.datasets.TripletDataset(dset_f, lambda x: x, num_triplets)
 
             # test if all images were detected correctly
             class_a_idx = dset_f.class_to_idx['a']

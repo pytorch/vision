@@ -2,9 +2,10 @@ import torch
 import torch.utils.data as data
 
 import math
+from collections import defaultdict
 
 
-def get_class_samples(num_classes, samples):
+def get_class_samples(samples):
     """Bins samples with respect to classes
 
     Args:
@@ -14,7 +15,7 @@ def get_class_samples(num_classes, samples):
     Returns:
         list[list]: Bins of sample paths, binned by class_idx
     """
-    class_samples = [[] for _ in range(num_classes)]
+    class_samples = defaultdict(list)
     for sample_path, class_idx in samples:
         class_samples[class_idx].append(sample_path)
 
@@ -50,7 +51,6 @@ class TripletDataset(data.IterableDataset):
         dset (Dataset): Dataset object where __getitem__ returns (sample_path, class_idx) tuple.
         loader (callable): A function to load a sample given its path.
         num_triplets (int): Number of triplets to generate before raising StopIteration.
-        num_classes (int): Number of classes in dset.
         transform (callable, optional): A function/transform that takes in
             a sample and returns a transformed version.
             E.g, ``transforms.RandomCrop`` for images.
@@ -59,12 +59,12 @@ class TripletDataset(data.IterableDataset):
         samples (list[tuple]): List of (anchor, positive, negative) triplets
     """
 
-    def __init__(self, dset, loader, num_triplets, num_classes, transform=None):
+    def __init__(self, dset, loader, num_triplets, transform=None):
         super(TripletDataset, self).__init__()
         self.loader = loader
         self.transform = transform
         self.num_triplets = num_triplets
-        self.class_samples = get_class_samples(num_classes, dset)
+        self.class_samples = get_class_samples(dset)
 
     def __iter__(self):
         worker_info = data.get_worker_info()
