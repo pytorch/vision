@@ -1,5 +1,3 @@
-from .folder import DatasetFolder
-
 import torch
 import torch.utils.data as data
 
@@ -42,7 +40,7 @@ def generate_triplet(class_samples):
     return (pos_samples[anc_idx], pos_samples[pos_idx], neg_samples[neg_idx])
 
 
-class TripletDataset(data.IterableDataset, DatasetFolder):
+class TripletDataset(data.IterableDataset):
     """
     A dataset with samples of the form (anchor, positive, negative), where anchor and
     positive are samples of the same class, and negative is a sample of another class.
@@ -71,13 +69,12 @@ class TripletDataset(data.IterableDataset, DatasetFolder):
         samples (list[tuple]): List of (anchor, positive, negative) triplets
     """
 
-    def __init__(self, root, loader, num_triplets, extensions=None, transform=None, is_valid_file=None):
-        super(TripletDataset, self).__init__(root, loader,
-                                             extensions=extensions,
-                                             transform=transform,
-                                             is_valid_file=is_valid_file)
+    def __init__(self, dset, loader, num_triplets, num_classes, transform=None):
+        super(TripletDataset, self).__init__()
+        self.loader = loader
+        self.transform = transform
         self.num_triplets = num_triplets
-        self.class_samples = get_class_samples(len(self.classes), self.samples)
+        self.class_samples = get_class_samples(num_classes, dset)
 
     def __iter__(self):
         worker_info = data.get_worker_info()
