@@ -26,7 +26,7 @@ before_install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch scipy -c pytorch
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch-nightly scipy -c pytorch
   - source activate test-environment
   - |
     if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
