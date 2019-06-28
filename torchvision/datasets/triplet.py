@@ -27,10 +27,9 @@ def generate_triplet(class_samples):
 
     Args:
         class_samples (list[list]): bins of samples, binned by class
-        num_triplets (int): number of triplets to be generated
 
     Returns:
-        list[tuple]: triplets of the form (anchor, positive, negative)
+        tuple(str): triplet of the form (anchor, positive, negative)
     """
     pos_cls, neg_cls = torch.multinomial(torch.ones(len(class_samples)), 2).tolist()
     pos_samples, neg_samples = class_samples[pos_cls], class_samples[neg_cls]
