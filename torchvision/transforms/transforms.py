@@ -1196,6 +1196,8 @@ class RandomErasing(object):
             erase all pixels. If a tuple of length 3, it is used to erase
             R, G, B channels respectively.
             If a str of 'random', erasing each pixel with random values.
+         inplace: boolean to make this transform inplace.Default set to False.
+
     Returns:
         Erased Image.
     # Examples:
@@ -1207,7 +1209,7 @@ class RandomErasing(object):
         >>> ])
     """
 
-    def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 1. / 0.3), value=0):
+    def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 1. / 0.3), value=0, inplace=False):
         assert isinstance(value, (numbers.Number, str, tuple, list))
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
             warnings.warn("range should be of kind (min, max)")
@@ -1218,6 +1220,7 @@ class RandomErasing(object):
         self.scale = scale
         self.ratio = ratio
         self.value = value
+        self.inplace = inplace
 
     @staticmethod
     def get_params(img, scale, ratio, value=0):
@@ -1261,5 +1264,5 @@ class RandomErasing(object):
         """
         if random.uniform(0, 1) < self.p:
             x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value)
-            return F.erase(img, x, y, h, w, v)
+            return F.erase(img, x, y, h, w, v, self.inplace)
         return img
