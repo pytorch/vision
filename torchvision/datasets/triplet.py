@@ -69,14 +69,13 @@ class TripletDataset(data.IterableDataset):
     def __iter__(self):
         worker_info = data.get_worker_info()
         if worker_info is None:
-            iter_start = 0
-            iter_end = self.num_triplets
+            num_iters = self.num_triplets
         else:
-            per_worker = int(math.ceil(self.num_triplets / float(worker_info.num_workers)))
-            iter_start = worker_info.id * per_worker
-            iter_end = min(iter_start + per_worker, self.num_triplets)
+            num_iters = int(math.ceil(self.num_triplets / float(worker_info.num_workers)))
+            if worker_info.id == worker_info.num_workers - 1:
+                num_iters = self.num_triplets - num_iters * worker_info.id
 
-        return (self.load(generate_triplet(self.class_samples)) for _ in range(iter_start, iter_end))
+        return (self.load(generate_triplet(self.class_samples)) for _ in range(num_iters))
 
     def load(self, triplet_paths):
         triplet = tuple(self.loader(path) for path in triplet_paths)

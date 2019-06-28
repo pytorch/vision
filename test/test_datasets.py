@@ -4,6 +4,7 @@ import mock
 import PIL
 from PIL import Image
 from torch._utils_internal import get_file_path_2
+from torch.utils.data import DataLoader
 import torchvision
 from common_utils import get_tmp_dir
 from fakedata_generation import mnist_root, cifar_root, imagenet_root
@@ -162,6 +163,18 @@ class Tester(unittest.TestCase):
                 self.assertNotEqual(anc, pos)
                 self.assertNotEqual(anc, neg)
                 self.assertNotEqual(pos, neg)
+
+            # Check with dataloader with more workers
+            num_triplets = 101
+            dataset = torchvision.datasets.TripletDataset(dset_f, lambda x: x, num_triplets)
+            loader = DataLoader(dataset, batch_size=32, num_workers=4, collate_fn=lambda x: x)
+
+            # Check that no samples are missed while splitting work
+            num_samples = 0
+            for triplet_batch in loader:
+                num_samples += len(triplet_batch)
+
+            self.assertEqual(num_samples, num_triplets)
 
 
 if __name__ == '__main__':
