@@ -822,7 +822,7 @@ class Tester(unittest.TestCase):
 
         # Checking the optional in-place behaviour
         tensor = torch.rand((1, 16, 16))
-        tensor_inplace = transforms.Normalize((0.5), (0.5), inplace=True)(tensor)
+        tensor_inplace = transforms.Normalize((0.5,), (0.5,), inplace=True)(tensor)
         assert torch.equal(tensor, tensor_inplace)
 
     def test_normalize_different_dtype(self):
