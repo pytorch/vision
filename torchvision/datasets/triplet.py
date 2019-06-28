@@ -1,8 +1,5 @@
 from .folder import DatasetFolder
 
-from torch.distributions.multinomial import Multinomial
-from torch.distributions.bernoulli import Bernoulli
-
 import torch
 import torch.utils.data as data
 
@@ -26,25 +23,6 @@ def get_class_samples(num_classes, samples):
     return class_samples
 
 
-def get_sampled_indices(dist, num_samples):
-    """
-    Samples from distribution till the number of the non-zero entries in the sample
-    equals num_samples
-
-    Args:
-        dist (torch.distributions.distribution.Distribution): A pytorch distribution
-        num_samples (int): number of non-zero samples needed
-
-    Returns:
-        list: indices of the non-zero samples
-    """
-    sample = dist.sample().nonzero().view(-1)
-    while len(sample) != num_samples:
-        sample = dist.sample().nonzero().view(-1)
-
-    return sample.tolist()
-
-
 def generate_triplets(class_samples, num_triplets):
     """Generates a set of triplets from bins of samples
 
@@ -56,22 +34,12 @@ def generate_triplets(class_samples, num_triplets):
         list[tuple]: triplets of the form (anchor, positive, negative)
     """
     triplets = []
-    class_dist = Multinomial(2, torch.Tensor([1.] * len(class_samples)))
-    swap = Bernoulli(torch.Tensor([0.5]))
     for _ in range(num_triplets):
-        pos_cls, neg_cls = get_sampled_indices(class_dist, 2)
-        if swap.sample().item() == 1:
-            pos_cls, neg_cls = neg_cls, pos_cls
-
+        pos_cls, neg_cls = torch.multinomial(torch.ones(len(class_samples)), 2).tolist()
         pos_samples, neg_samples = class_samples[pos_cls], class_samples[neg_cls]
 
-        pos_dist = Multinomial(2, torch.Tensor([1.] * len(pos_samples)))
-        neg_dist = Multinomial(1, torch.Tensor([1.] * len(neg_samples)))
-
-        anc_idx, pos_idx = get_sampled_indices(pos_dist, 2)
-        neg_idx = get_sampled_indices(neg_dist, 1)[0]
-        if swap.sample().item() == 1:
-            anc_idx, pos_idx = pos_idx, anc_idx
+        anc_idx, pos_idx = torch.multinomial(torch.ones(len(pos_samples)), 2).tolist()
+        neg_idx = torch.multinomial(torch.ones(len(neg_samples)), 1).item()
 
         triplet = (pos_samples[anc_idx], pos_samples[pos_idx], neg_samples[neg_idx])
         triplets.append(triplet)
