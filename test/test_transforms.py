@@ -1372,5 +1372,6 @@ class Tester(unittest.TestCase):
         img_re = transforms.RandomErasing(value=(0.2), inplace=True)(img)
         assert torch.equal(img_re, img)
 
+
 if __name__ == '__main__':
     unittest.main()
