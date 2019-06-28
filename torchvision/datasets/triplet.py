@@ -23,8 +23,8 @@ def get_class_samples(num_classes, samples):
     return class_samples
 
 
-def generate_triplets(class_samples, num_triplets):
-    """Generates a set of triplets from bins of samples
+def generate_triplet(class_samples):
+    """Generates a triplet from bins of samples
 
     Args:
         class_samples (list[list]): bins of samples, binned by class
@@ -33,18 +33,13 @@ def generate_triplets(class_samples, num_triplets):
     Returns:
         list[tuple]: triplets of the form (anchor, positive, negative)
     """
-    triplets = []
-    for _ in range(num_triplets):
-        pos_cls, neg_cls = torch.multinomial(torch.ones(len(class_samples)), 2).tolist()
-        pos_samples, neg_samples = class_samples[pos_cls], class_samples[neg_cls]
+    pos_cls, neg_cls = torch.multinomial(torch.ones(len(class_samples)), 2).tolist()
+    pos_samples, neg_samples = class_samples[pos_cls], class_samples[neg_cls]
 
-        anc_idx, pos_idx = torch.multinomial(torch.ones(len(pos_samples)), 2).tolist()
-        neg_idx = torch.multinomial(torch.ones(len(neg_samples)), 1).item()
+    anc_idx, pos_idx = torch.multinomial(torch.ones(len(pos_samples)), 2).tolist()
+    neg_idx = torch.multinomial(torch.ones(len(neg_samples)), 1).item()
 
-        triplet = (pos_samples[anc_idx], pos_samples[pos_idx], neg_samples[neg_idx])
-        triplets.append(triplet)
-
-    return triplets
+    return (pos_samples[anc_idx], pos_samples[pos_idx], neg_samples[neg_idx])
 
 
 class TripletDataset(data.IterableDataset, DatasetFolder):
@@ -82,9 +77,7 @@ class TripletDataset(data.IterableDataset, DatasetFolder):
                                              transform=transform,
                                              is_valid_file=is_valid_file)
         self.num_triplets = num_triplets
-
         self.class_samples = get_class_samples(len(self.classes), self.samples)
-        self.samples = generate_triplets(self.class_samples, self.num_triplets)
 
     def __iter__(self):
         worker_info = data.get_worker_info()
@@ -96,10 +89,9 @@ class TripletDataset(data.IterableDataset, DatasetFolder):
             iter_start = worker_info.id * per_worker
             iter_end = min(iter_start + per_worker, self.num_triplets)
 
-        return (self[i] for i in range(iter_start, iter_end))
+        return (self.load(generate_triplet(self.class_samples)) for _ in range(iter_start, iter_end))
 
-    def __getitem__(self, index):
-        triplet_paths = self.samples[index]
+    def load(self, triplet_paths):
         triplet = tuple(self.loader(path) for path in triplet_paths)
         if self.transform is not None:
             triplet = tuple(self.transform(img) for img in triplet)
