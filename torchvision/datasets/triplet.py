@@ -44,26 +44,16 @@ class TripletDataset(data.IterableDataset):
     """
     A dataset with samples of the form (anchor, positive, negative), where anchor and
     positive are samples of the same class, and negative is a sample of another class.
-    The dataset reads samples from a directory arranged in the following manner: ::
-
-        root/class_x/xxx.ext
-        root/class_x/xxy.ext
-        root/class_x/xxz.ext
-
-        root/class_y/123.ext
-        root/class_y/nsdf3.ext
-        root/class_y/asd932_.ext
+    TripletDataset reads fram Dataset `dset` where `dset[i]` returns (sample_path, class_idx).
 
     Args:
-        root (string): Root directory path.
+        dset (Dataset): Dataset object where __getitem__ returns (sample_path, class_idx) tuple.
         loader (callable): A function to load a sample given its path.
-        extensions (tuple[string]): A list of allowed extensions,
+        num_triplets (int): Number of triplets to generate before raising StopIteration.
+        num_classes (int): Number of classes in dset.
         transform (callable, optional): A function/transform that takes in
             a sample and returns a transformed version.
             E.g, ``transforms.RandomCrop`` for images.
-        is_valid_file (callable, optional): A function that takes the path of an Image
-        file and checks if the file is a valid_file. Both extensions and is_valid_file
-        should not be passed.
 
     Attributes:
         samples (list[tuple]): List of (anchor, positive, negative) triplets
