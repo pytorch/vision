@@ -820,6 +820,11 @@ class Tester(unittest.TestCase):
         # Checking if Normalize can be printed as string
         transforms.Normalize(mean, std).__repr__()
 
+        # Checking the optional in-place behaviour
+        tensor = torch.rand((1, 16, 16))
+        tensor_inplace = transforms.Normalize((0.5), (0.5), inplace=True)
+        assert torch.equal(tensor, tensor_inplace)
+
     def test_normalize_different_dtype(self):
         for dtype1 in [torch.float32, torch.float64]:
             img = torch.rand(3, 10, 10, dtype=dtype1)

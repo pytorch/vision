@@ -146,6 +146,8 @@ class Normalize(object):
     Args:
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
+        inplace(bool,optional): Bool to make this operation in-place.
+
     """
 
     def __init__(self, mean, std, inplace=False):

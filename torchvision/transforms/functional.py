@@ -200,6 +200,7 @@ def normalize(tensor, mean, std, inplace=False):
         tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
+        inplace(bool,optional): Bool to make this operation inplace.
 
     Returns:
         Tensor: Normalized Tensor image.
