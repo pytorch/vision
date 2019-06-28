@@ -79,7 +79,7 @@ def generate_triplets(class_samples, num_triplets):
     return triplets
 
 
-class TripletDataset(data.IterableDataset, DatasetFolder):
+class TripletDataset(DatasetFolder):
     """
     A dataset with samples of the form (anchor, positive, negative), where anchor and
     positive are samples of the same class, and negative is a sample of another class.
