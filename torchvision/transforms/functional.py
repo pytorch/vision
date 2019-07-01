@@ -200,6 +200,7 @@ def normalize(tensor, mean, std, inplace=False):
         tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
+        inplace(bool,optional): Bool to make this operation inplace.
 
     Returns:
         Tensor: Normalized Tensor image.
@@ -806,7 +807,7 @@ def to_grayscale(img, num_output_channels=1):
     return img
 
 
-def erase(img, i, j, h, w, v):
+def erase(img, i, j, h, w, v, inplace=False):
     """ Erase the input Tensor Image with given value.
 
     Args:
@@ -816,12 +817,16 @@ def erase(img, i, j, h, w, v):
         h (int): Height of the erased region.
         w (int): Width of the erased region.
         v: Erasing value.
+        inplace(bool,optional): For in-place operations. By default is set False.
 
     Returns:
         Tensor Image: Erased image.
     """
     if not isinstance(img, torch.Tensor):
         raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+
+    if not inplace:
+        img = img.clone()
 
     img[:, i:i + h, j:j + w] = v
     return img
