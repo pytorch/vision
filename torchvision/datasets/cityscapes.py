@@ -1,6 +1,7 @@
 import json
 import os
 from collections import namedtuple
+import zipfile
 
 from .vision import VisionDataset
 from PIL import Image
@@ -125,8 +126,19 @@ class Cityscapes(VisionDataset):
                              ' or "color"')
 
         if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
-            raise RuntimeError('Dataset not found or incomplete. Please make sure all required folders for the'
-                               ' specified "split" and "mode" are inside the "root" directory')
+            image_dir_zip = os.path.join(self.root, 'leftImg8bit') + '_trainvaltest.zip'
+
+            if self.mode == 'gtFine':
+                target_dir_zip = os.path.join(self.root, self.mode) + '_trainvaltest.zip'
+            elif self.mode == 'gtCoarse':
+                target_dir_zip = os.path.join(self.root, self.mode)
+
+            if os.path.isfile(image_dir_zip) and os.path.isfile(target_dir_zip):
+                extract_cityscapes_zip(zip_location=image_dir_zip, root=self.root)
+                extract_cityscapes_zip(zip_location=target_dir_zip, root=self.root)
+            else:
+                raise RuntimeError('Dataset not found or incomplete. Please make sure all required folders for the'
+                                   ' specified "split" and "mode" are inside the "root" directory')
 
         for city in os.listdir(self.images_dir):
             img_dir = os.path.join(self.images_dir, city)
@@ -189,3 +201,9 @@ class Cityscapes(VisionDataset):
             return '{}_color.png'.format(mode)
         else:
             return '{}_polygons.json'.format(mode)
+
+
+def extract_cityscapes_zip(zip_location, root):
+    zip_file = zipfile.ZipFile(zip_location, 'r')
+    zip_file.extractall(root)
+    zip_file.close()
