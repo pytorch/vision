@@ -30,6 +30,7 @@ class TripletDataset(data.IterableDataset):
     Args:
         dset (Dataset): Dataset object where __getitem__ returns (sample_path, class_idx) tuple.
         num_triplets (int): Number of triplets to generate before raising StopIteration.
+        groups (list[int]): list where the ith entry is the group_id of the ith sample in dset.
         transform (callable, optional): A function/transform that takes in
             a sample and returns a transformed version.
             E.g, ``transforms.RandomCrop`` for images.
