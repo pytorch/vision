@@ -153,6 +153,6 @@ class FrozenBatchNorm2d(torch.jit.ScriptModule):
         b = self.bias.reshape(1, -1, 1, 1)
         rv = self.running_var.reshape(1, -1, 1, 1)
         rm = self.running_mean.reshape(1, -1, 1, 1)
-        scale = w * rv.rsqrt()
+        scale = w / rv.rsqrt()
         bias = b - rm * scale
         return x * scale + bias
