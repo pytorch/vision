@@ -22,24 +22,6 @@ def get_class_samples(samples):
     return class_samples
 
 
-def generate_triplet(class_samples):
-    """Generates a triplet from bins of samples
-
-    Args:
-        class_samples (list[list]): bins of samples, binned by class
-
-    Returns:
-        tuple(str): triplet of the form (anchor, positive, negative)
-    """
-    pos_cls, neg_cls = torch.multinomial(torch.ones(len(class_samples)), 2).tolist()
-    pos_samples, neg_samples = class_samples[pos_cls], class_samples[neg_cls]
-
-    anc_idx, pos_idx = torch.multinomial(torch.ones(len(pos_samples)), 2).tolist()
-    neg_idx = torch.multinomial(torch.ones(len(neg_samples)), 1).item()
-
-    return (pos_samples[anc_idx], pos_samples[pos_idx], neg_samples[neg_idx])
-
-
 class TripletDataset(data.IterableDataset):
     """
     A dataset with samples of the form (anchor, positive, negative), where anchor and
@@ -74,7 +56,24 @@ class TripletDataset(data.IterableDataset):
             if worker_info.id == worker_info.num_workers - 1:
                 num_iters = self.num_triplets - num_iters * worker_info.id
 
-        return (self.load(generate_triplet(self.class_samples)) for _ in range(num_iters))
+        return (self.load(self.generate_triplet()) for _ in range(num_iters))
+
+    def generate_triplet(self):
+        """Generates a triplet from bins of samples
+
+        Args:
+            class_samples (list[list]): bins of samples, binned by class
+
+        Returns:
+            tuple(str): triplet of the form (anchor, positive, negative)
+        """
+        pos_cls, neg_cls = torch.multinomial(torch.ones(len(self.class_samples)), 2).tolist()
+        pos_samples, neg_samples = self.class_samples[pos_cls], self.class_samples[neg_cls]
+
+        anc_idx, pos_idx = torch.multinomial(torch.ones(len(pos_samples)), 2).tolist()
+        neg_idx = torch.multinomial(torch.ones(len(neg_samples)), 1).item()
+
+        return (pos_samples[anc_idx], pos_samples[pos_idx], neg_samples[neg_idx])
 
     def load(self, triplet_paths):
         triplet = tuple(self.loader(path) for path in triplet_paths)
