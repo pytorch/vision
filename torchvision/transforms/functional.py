@@ -728,14 +728,20 @@ def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     # Thus, the inverse is M^-1 = C * RSS^-1 * C^-1 * T^-1
 
     angle = math.radians(angle)
-    shear = math.radians(shear)
+    print(shear)
+    if isinstance(shear, (tuple, list)) and len(shear) == 2:
+        shear = [math.radians(s) for s in shear]
+    else:
+        shear = math.radians(shear)
+        shear = [shear, 0]
     scale = 1.0 / scale
 
     # Inverted rotation matrix with scale and shear
-    d = math.cos(angle + shear) * math.cos(angle) + math.sin(angle + shear) * math.sin(angle)
+    d = math.cos(angle + shear[0]) * math.cos(angle + shear[1]) + \
+        math.sin(angle + shear[0]) * math.sin(angle + shear[1])
     matrix = [
-        math.cos(angle + shear), math.sin(angle + shear), 0,
-        -math.sin(angle), math.cos(angle), 0
+        math.cos(angle + shear[0]), math.sin(angle + shear[0]), 0,
+        -math.sin(angle + shear[1]), math.cos(angle + shear[1]), 0
     ]
     matrix = [scale / d * m for m in matrix]
 
@@ -757,7 +763,9 @@ def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
         angle (float or int): rotation angle in degrees between -180 and 180, clockwise direction.
         translate (list or tuple of integers): horizontal and vertical translations (post-rotation translation)
         scale (float): overall scale
-        shear (float): shear angle value in degrees between -180 to 180, clockwise direction.
+        shear (float or tuple or list): shear angle value in degrees between -180 to 180, clockwise direction.
+        If a tuple of list is specified, the first value corresponds to a shear parallel to the x axis, while
+        the second value corresponds to a shear parallel to the y axis.
         resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
             An optional resampling filter.
             See `filters`_ for more information.
