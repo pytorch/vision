@@ -140,18 +140,24 @@ class Tester(unittest.TestCase):
 
         with get_tmp_dir(src=os.path.join(FAKEDATA_DIR, 'imagefolder')) as root:
             num_triplets = 1000
+
+            def transform(triplet):
+                return tuple(sample[0] for sample in triplet)
+
             class_a_image_files = [os.path.join(root, 'a', file)
                                    for file in ('a1.png', 'a2.png', 'a3.png')]
             class_b_image_files = [os.path.join(root, 'b', file)
                                    for file in ('b1.png', 'b2.png', 'b3.png', 'b4.png')]
             dset_f = torchvision.datasets.DatasetFolder(root, lambda x: x, extensions=('.png'))
-            dataset = torchvision.datasets.TripletDataset(dset_f, lambda x: x, num_triplets)
+            dataset = torchvision.datasets.TripletDataset(dset_f, num_triplets, dset_f.targets, transform=transform)
 
             # test if all images were detected correctly
             class_a_idx = dset_f.class_to_idx['a']
             class_b_idx = dset_f.class_to_idx['b']
-            self.assertEqual(class_a_image_files, dataset.class_samples[class_a_idx])
-            self.assertEqual(class_b_image_files, dataset.class_samples[class_b_idx])
+            trip_dset_a = [dset_f[i][0] for i in dataset.groups[class_a_idx]]
+            trip_dset_b = [dset_f[i][0] for i in dataset.groups[class_b_idx]]
+            self.assertEqual(class_a_image_files, trip_dset_a)
+            self.assertEqual(class_b_image_files, trip_dset_b)
 
             # test if the dataset outputs triplets of correct form
             for triplet in dataset:
@@ -166,7 +172,7 @@ class Tester(unittest.TestCase):
 
             # Check with dataloader with more workers
             num_triplets = 101
-            dataset = torchvision.datasets.TripletDataset(dset_f, lambda x: x, num_triplets)
+            dataset = torchvision.datasets.TripletDataset(dset_f, num_triplets, dset_f.targets)
             loader = DataLoader(dataset, batch_size=32, num_workers=4, collate_fn=lambda x: x)
 
             # Check that no samples are missed while splitting work
