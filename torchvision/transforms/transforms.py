@@ -1015,7 +1015,7 @@ class RandomAffine(object):
         shear (sequence or float or int, optional): Range of degrees to select from.
             If shear is a number, a shear parallel to the x axis in the range (-shear, +shear)
             will be apllied. Else if shear is a tuple or list of 2 values a shear parallel to the x axis in the
-            range (shear[0], shear[1]) will be applied. Else if shear is a tuple or list of 4 values, 
+            range (shear[0], shear[1]) will be applied. Else if shear is a tuple or list of 4 values,
             a x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
             Will not apply shear by default
         resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
@@ -1061,12 +1061,12 @@ class RandomAffine(object):
                 self.shear = (-shear, shear)
             else:
                 assert isinstance(shear, (tuple, list)) and \
-                       (len(shear) == 2 or len(shear) == 4), \
+                    (len(shear) == 2 or len(shear) == 4), \
                     "shear should be a list or tuple and it must be of length 2 or 4."
                 # X-Axis shear with [min, max]
-                if len(shear)==2:
+                if len(shear) == 2:
                     self.shear = [shear[0], shear[1], 0., 0.]
-                elif len(shear)==4:
+                elif len(shear) == 4:
                     self.shear = [s for s in shear]
         else:
             self.shear = shear
@@ -1096,9 +1096,9 @@ class RandomAffine(object):
             scale = 1.0
 
         if shears is not None:
-            if len(shears)==2:
+            if len(shears) == 2:
                 shear = [random.uniform(shears[0], shears[1]), 0.]
-            elif len(shears)==4:
+            elif len(shears) == 4:
                 shear = [random.uniform(shears[0], shears[1]),
                          random.uniform(shears[2], shears[3])]
         else:

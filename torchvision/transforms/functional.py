@@ -722,18 +722,21 @@ def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     # where T is translation matrix: [1, 0, tx | 0, 1, ty | 0, 0, 1]
     #       C is translation matrix to keep center: [1, 0, cx | 0, 1, cy | 0, 0, 1]
     #       RSS is rotation with scale and shear matrix
-    #       RSS(a, scale, shear) = [ cos(a)*scale    -sin(a + shear)*scale     0]
-    #                              [ sin(a)*scale    cos(a + shear)*scale     0]
+    #       RSS(a, scale, shear) = [ cos(a + shear_y)*scale    -sin(a + shear_x)*scale     0]
+    #                              [ sin(a + shear_y)*scale    cos(a + shear_x)*scale     0]
     #                              [     0                  0          1]
     # Thus, the inverse is M^-1 = C * RSS^-1 * C^-1 * T^-1
 
     angle = math.radians(angle)
-    print(shear)
     if isinstance(shear, (tuple, list)) and len(shear) == 2:
         shear = [math.radians(s) for s in shear]
-    else:
+    elif isinstance(shear, numbers.Number):
         shear = math.radians(shear)
         shear = [shear, 0]
+    else:
+        raise ValueError(
+            "Shear should be a single value or a tuple/list containing " +
+            "two values. Got {}".format(shear))
     scale = 1.0 / scale
 
     # Inverted rotation matrix with scale and shear
