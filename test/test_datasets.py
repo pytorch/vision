@@ -185,5 +185,6 @@ class Tester(unittest.TestCase):
                     self.assertTrue(isinstance(output[1][1], dict))  # polygon
                     self.assertTrue(isinstance(output[1][2], PIL.Image.Image))  # color
 
+
 if __name__ == '__main__':
     unittest.main()
