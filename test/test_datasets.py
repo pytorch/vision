@@ -170,6 +170,20 @@ class Tester(unittest.TestCase):
                     self.assertTrue(isinstance(polygon_target['imgHeight'], int))
                     self.assertTrue(isinstance(polygon_target['objects'], list))
 
+                    # Test multiple target types
+                    targets_combo = ['semantic', 'polygon', 'color']
+                    multiple_types_dataset = torchvision.datasets.Cityscapes(root, split=split,
+                                                                             target_type=targets_combo,
+                                                                             mode=mode)
+                    output = multiple_types_dataset[0]
+                    self.assertTrue(isinstance(output, tuple))
+                    self.assertTrue(len(output) == 2)
+                    self.assertTrue(isinstance(output[0], PIL.Image.Image))
+                    self.assertTrue(isinstance(output[1], tuple))
+                    self.assertTrue(len(output[1]) == 3)
+                    self.assertTrue(isinstance(output[1][0], PIL.Image.Image))  # semantic
+                    self.assertTrue(isinstance(output[1][1], dict))  # polygon
+                    self.assertTrue(isinstance(output[1][2], PIL.Image.Image))  # color
 
 if __name__ == '__main__':
     unittest.main()
