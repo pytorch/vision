@@ -49,7 +49,6 @@ class Tester(unittest.TestCase):
         ])
         self.assertTrue(r.equal(expected))
 
-
     def test_video_clips(self):
         with get_list_of_videos(num_videos=3) as video_list:
             video_clips = VideoClips(video_list, 5, 5)

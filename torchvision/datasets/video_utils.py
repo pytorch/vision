@@ -60,8 +60,8 @@ class VideoClips(object):
         for video_pts in self.video_pts:
             clips = unfold(video_pts, num_frames, step, dilation)
             self.clips.append(clips)
-        l = torch.as_tensor([len(v) for v in self.clips])
-        self.cumulative_sizes = l.cumsum(0).tolist()
+        clip_lengths = torch.as_tensor([len(v) for v in self.clips])
+        self.cumulative_sizes = clip_lengths.cumsum(0).tolist()
 
     def __len__(self):
         return self.num_clips()

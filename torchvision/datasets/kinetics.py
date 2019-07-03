@@ -13,7 +13,7 @@ class KineticsVideo(VisionDataset):
         class_to_idx = {classes[i]: i for i in range(len(classes))}
         self.samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file=None)
         self.classes = classes
-        self.class_to_idx = class_to_idx
+        video_list = [x[0] for x in self.samples]
         self.video_clips = VideoClips(video_list, frames_per_clip, step_between_clips)
 
     def __len__(self):
