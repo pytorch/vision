@@ -115,6 +115,9 @@ def get_extensions():
             'nvcc': nvcc_flags,
         }
 
+    if sys.platform == 'win32':
+        define_macros += [('torchvision_EXPORTS', None)]
+
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs = [extensions_dir]
