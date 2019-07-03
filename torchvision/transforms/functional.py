@@ -31,6 +31,15 @@ def _is_tensor_image(img):
     return torch.is_tensor(img) and img.ndimension() == 3
 
 
+def _get_image_size(img):
+    if _is_pil_image(img):
+        return img.size
+    elif isinstance(img, torch.Tensor) and img.dim() > 2:
+        return img.shape[-2:][::-1]
+    else:
+        raise TypeError("Unexpected type {}".format(type(img)))
+
+
 def _is_numpy(img):
     return isinstance(img, np.ndarray)
 
@@ -234,25 +243,41 @@ def resize(img, size, interpolation=Image.BILINEAR):
     Returns:
         PIL Image: Resized image.
     """
-    if not _is_pil_image(img):
+    if not (_is_pil_image(img) or isinstance(img, torch.Tensor)):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
     if not (isinstance(size, int) or (isinstance(size, Iterable) and len(size) == 2)):
         raise TypeError('Got inappropriate size arg: {}'.format(size))
 
     if isinstance(size, int):
-        w, h = img.size
+        w, h = _get_image_size(img)
         if (w <= h and w == size) or (h <= w and h == size):
             return img
         if w < h:
             ow = size
             oh = int(size * h / w)
-            return img.resize((ow, oh), interpolation)
         else:
             oh = size
             ow = int(size * w / h)
-            return img.resize((ow, oh), interpolation)
-    else:
+        size = (oh, ow)
+    if _is_pil_image(img):
         return img.resize(size[::-1], interpolation)
+
+    # tensor codepath
+    # TODO maybe move this outside
+    _PIL_TO_TORCH_INTERP_MODE = {
+        Image.NEAREST: "nearest",
+        Image.BILINEAR: "bilinear"
+    }
+    should_unsqueeze = False
+    if img.dim() == 3:
+        img = img[None]
+        should_unsqueeze = True
+    out = torch.nn.functional.interpolate(img, size=size,
+                                          mode=_PIL_TO_TORCH_INTERP_MODE[interpolation],
+                                          align_corners=False)
+    if should_unsqueeze:
+        out = out[0]
+    return out
 
 
 def scale(*args, **kwargs):
