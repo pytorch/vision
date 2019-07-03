@@ -1087,15 +1087,15 @@ class Tester(unittest.TestCase):
 
         def _test_transformation(a, t, s, sh):
             a_rad = math.radians(a)
-            s_rad = math.radians(sh)
+            s_rad = [math.radians(sh_) for sh_ in sh]
             # 1) Check transformation matrix:
             c_matrix = np.array([[1.0, 0.0, cnt[0]], [0.0, 1.0, cnt[1]], [0.0, 0.0, 1.0]])
             c_inv_matrix = np.linalg.inv(c_matrix)
             t_matrix = np.array([[1.0, 0.0, t[0]],
                                  [0.0, 1.0, t[1]],
                                  [0.0, 0.0, 1.0]])
-            r_matrix = np.array([[s * math.cos(a_rad), -s * math.sin(a_rad + s_rad), 0.0],
-                                 [s * math.sin(a_rad), s * math.cos(a_rad + s_rad), 0.0],
+            r_matrix = np.array([[s * math.cos(a_rad + s_rad[1]), -s * math.sin(a_rad + s_rad[0]), 0.0],
+                                 [s * math.sin(a_rad + s_rad[1]), s * math.cos(a_rad + s_rad[0]), 0.0],
                                  [0.0, 0.0, 1.0]])
             true_matrix = np.dot(t_matrix, np.dot(c_matrix, np.dot(r_matrix, c_inv_matrix)))
             result_matrix = _to_3x3_inv(F._get_inverse_affine_matrix(center=cnt, angle=a,
@@ -1124,18 +1124,18 @@ class Tester(unittest.TestCase):
 
         # Test rotation
         a = 45
-        _test_transformation(a=a, t=(0, 0), s=1.0, sh=0.0)
+        _test_transformation(a=a, t=(0, 0), s=1.0, sh=(0.0, 0.0))
 
         # Test translation
         t = [10, 15]
-        _test_transformation(a=0.0, t=t, s=1.0, sh=0.0)
+        _test_transformation(a=0.0, t=t, s=1.0, sh=(0.0, 0.0))
 
         # Test scale
         s = 1.2
-        _test_transformation(a=0.0, t=(0.0, 0.0), s=s, sh=0.0)
+        _test_transformation(a=0.0, t=(0.0, 0.0), s=s, sh=(0.0, 0.0))
 
         # Test shear
-        sh = 45.0
+        sh = [45.0, 25.0]
         _test_transformation(a=0.0, t=(0.0, 0.0), s=1.0, sh=sh)
 
         # Test rotation, scale, translation, shear
@@ -1143,7 +1143,7 @@ class Tester(unittest.TestCase):
             for t1 in range(-10, 10, 5):
                 for s in [0.75, 0.98, 1.0, 1.1, 1.2]:
                     for sh in range(-15, 15, 5):
-                        _test_transformation(a=a, t=(t1, t1), s=s, sh=sh)
+                        _test_transformation(a=a, t=(t1, t1), s=s, sh=(sh, sh))
 
     def test_random_rotation(self):
 
@@ -1182,11 +1182,12 @@ class Tester(unittest.TestCase):
             transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=-7)
             transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10])
             transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10])
+            transforms.RandomAffine([-90, 90], translate=[0.2, 0.2], scale=[0.5, 0.5], shear=[-10, 0, 10, 0, 10])
 
         x = np.zeros((100, 100, 3), dtype=np.uint8)
         img = F.to_pil_image(x)
 
-        t = transforms.RandomAffine(10, translate=[0.5, 0.3], scale=[0.7, 1.3], shear=[-10, 10])
+        t = transforms.RandomAffine(10, translate=[0.5, 0.3], scale=[0.7, 1.3], shear=[-10, 10, 20, 40])
         for _ in range(100):
             angle, translations, scale, shear = t.get_params(t.degrees, t.translate, t.scale, t.shear,
                                                              img_size=img.size)
@@ -1196,7 +1197,8 @@ class Tester(unittest.TestCase):
             assert -img.size[1] * 0.5 <= translations[1] <= img.size[1] * 0.5, \
                 "{} vs {}".format(translations[1], img.size[1] * 0.5)
             assert 0.7 < scale < 1.3
-            assert -10 < shear < 10
+            assert -10 < shear[0] < 10
+            assert -20 < shear[1] < 40
 
         # Checking if RandomAffine can be printed as string
         t.__repr__()
