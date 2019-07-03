@@ -30,17 +30,19 @@ class GeneralizedRCNNTransform(nn.Module):
         self.image_std = image_std
 
     def forward(self, images, targets=None):
+        transformed_images = []
         for i in range(len(images)):
-            image = images[i]
+            image = images[i].clone()
             target = targets[i] if targets is not None else targets
             if image.dim() != 3:
                 raise ValueError("images is expected to be a list of 3d tensors "
                                  "of shape [C, H, W], got {}".format(image.shape))
             image = self.normalize(image)
             image, target = self.resize(image, target)
-            images[i] = image
+            transformed_images.append(image)
             if targets is not None:
                 targets[i] = target
+        images = transformed_images
         image_sizes = [img.shape[-2:] for img in images]
         images = self.batch_images(images)
         image_list = ImageList(images, image_sizes)
