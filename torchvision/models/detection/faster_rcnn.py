@@ -32,7 +32,7 @@ class FasterRCNN(GeneralizedRCNN):
 
     During training, the model expects both the input tensors, as well as a targets dictionary,
     containing:
-        - boxes (Tensor[N, 4], dtype = float32): the ground-truth boxes in [x0, y0, x1, y1] format, with values
+        - boxes (FloatTensor[N, 4]): the ground-truth boxes in [x0, y0, x1, y1] format, with values
           between 0 and H and 0 and W
         - labels (Tensor[N]): the class label for each ground-truth box
 
@@ -42,7 +42,7 @@ class FasterRCNN(GeneralizedRCNN):
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
     follows:
-        - boxes (Tensor[N, 4], dtype = float32): the predicted boxes in [x0, y0, x1, y1] format, with values between
+        - boxes (FloatdtypeTensor[N, 4]): the predicted boxes in [x0, y0, x1, y1] format, with values between
           0 and H and 0 and W
         - labels (Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores or each prediction
@@ -147,7 +147,7 @@ class FasterRCNN(GeneralizedRCNN):
                  # RPN parameters
                  rpn_anchor_generator=None, rpn_head=None,
                  rpn_pre_nms_top_n_train=2000, rpn_pre_nms_top_n_test=1000,
-                 rpn_post_nms_top_n_train=2000, rpn_post_nms_top_n_test=1000,
+                 rpn_post_nmsdtype_top_n_train=2000, rpn_post_nms_top_n_test=1000,
                  rpn_nms_thresh=0.7,
                  rpn_fg_iou_thresh=0.7, rpn_bg_iou_thresh=0.3,
                  rpn_batch_size_per_image=256, rpn_positive_fraction=0.5,
@@ -300,7 +300,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
 
     During training, the model expects both the input tensors, as well as a targets dictionary,
     containing:
-        - boxes (``Tensor[N, 4], dtype = float32``): the ground-truth boxes in ``[x0, y0, x1, y1]`` format, with values
+        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x0, y0, x1, y1]`` format, with values
           between ``0`` and ``H`` and ``0`` and ``W``
         - labels (``Tensor[N]``): the class label for each ground-truth box
 
@@ -310,7 +310,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as
     follows:
-        - boxes (``Tensor[N, 4], dtype = float32``): the predicted boxes in ``[x0, y0, x1, y1]`` format, with values between
+        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x0, y0, x1, y1]`` format, with values between
           ``0`` and ``H`` and ``0`` and ``W``
         - labels (``Tensor[N]``): the predicted labels for each image
         - scores (``Tensor[N]``): the scores or each prediction
