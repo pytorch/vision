@@ -38,8 +38,7 @@ def check_integrity(fpath, md5=None):
         return False
     if md5 is None:
         return True
-    else:
-        return check_md5(fpath, md5)
+    return check_md5(fpath, md5)
 
 
 def makedir_exist_ok(dirpath):
@@ -74,7 +73,7 @@ def download_url(url, root, filename=None, md5=None):
     makedir_exist_ok(root)
 
     # downloads file
-    if os.path.isfile(fpath) and check_integrity(fpath, md5):
+    if check_integrity(fpath, md5):
         print('Using downloaded and verified file: ' + fpath)
     else:
         try:
@@ -83,7 +82,7 @@ def download_url(url, root, filename=None, md5=None):
                 url, fpath,
                 reporthook=gen_bar_updater()
             )
-        except OSError:
+        except urllib.error.URLError as e:
             if url[:5] == 'https':
                 url = url.replace('https:', 'http:')
                 print('Failed download. Trying https -> http instead.'
@@ -92,6 +91,8 @@ def download_url(url, root, filename=None, md5=None):
                     url, fpath,
                     reporthook=gen_bar_updater()
                 )
+            else:
+                raise e
 
 
 def list_dir(root, prefix=False):
@@ -211,9 +212,12 @@ def _is_zip(filename):
     return filename.endswith(".zip")
 
 
-def extract_file(from_path, to_path, remove_finished=False):
+def extract_archive(from_path, to_path=None, remove_finished=False):
+    if to_path is None:
+        to_path = os.path.dirname(from_path)
+
     if _is_tar(from_path):
-        with tarfile.open(from_path, 'r:') as tar:
+        with tarfile.open(from_path, 'r') as tar:
             tar.extractall(path=to_path)
     elif _is_targz(from_path):
         with tarfile.open(from_path, 'r:gz') as tar:
@@ -229,10 +233,19 @@ def extract_file(from_path, to_path, remove_finished=False):
         raise ValueError("Extraction of {} not supported".format(from_path))
 
     if remove_finished:
-        os.unlink(from_path)
+        os.remove(from_path)
 
 
-def download_and_extract(url, root, filename, md5=None, remove_finished=False):
-    download_url(url, root, filename, md5)
-    print("Extracting {} to {}".format(os.path.join(root, filename), root))
-    extract_file(os.path.join(root, filename), root, remove_finished)
+def download_and_extract_archive(url, download_root, extract_root=None, filename=None,
+                                 md5=None, remove_finished=False):
+    download_root = os.path.expanduser(download_root)
+    if extract_root is None:
+        extract_root = download_root
+    if not filename:
+        filename = os.path.basename(url)
+
+    download_url(url, download_root, filename, md5)
+
+    archive = os.path.join(download_root, filename)
+    print("Extracting {} to {}".format(archive, extract_root))
+    extract_archive(archive, extract_root, remove_finished)

@@ -101,7 +101,7 @@ def _compute_aspect_ratios_slow(dataset, indices=None):
         collate_fn=lambda x: x[0])
     aspect_ratios = []
     with tqdm(total=len(dataset)) as pbar:
-        for i, (img, _) in enumerate(data_loader):
+        for _i, (img, _) in enumerate(data_loader):
             pbar.update(1)
             height, width = img.shape[-2:]
             aspect_ratio = float(height) / float(width)

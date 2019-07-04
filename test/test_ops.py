@@ -14,7 +14,9 @@ class RoIPoolTester(unittest.TestCase):
         cls.dtype = torch.float64
 
     def slow_roi_pooling(self, x, rois, pool_h, pool_w, spatial_scale=1,
-                         device=torch.device('cpu'), dtype=torch.float64):
+                         device=None, dtype=torch.float64):
+        if device is None:
+            device = torch.device("cpu")
         c = x.size(1)
         y = torch.zeros(rois.size(0), c, pool_h, pool_w, dtype=dtype, device=device)
 

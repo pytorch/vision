@@ -31,8 +31,12 @@ def _is_tensor_image(img):
     return torch.is_tensor(img) and img.ndimension() == 3
 
 
+def _is_numpy(img):
+    return isinstance(img, np.ndarray)
+
+
 def _is_numpy_image(img):
-    return isinstance(img, np.ndarray) and (img.ndim in {2, 3})
+    return img.ndim in {2, 3}
 
 
 def to_tensor(pic):
@@ -46,8 +50,11 @@ def to_tensor(pic):
     Returns:
         Tensor: Converted image.
     """
-    if not(_is_pil_image(pic) or _is_numpy_image(pic)):
+    if not(_is_pil_image(pic) or _is_numpy(pic)):
         raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
+
+    if _is_numpy(pic) and not _is_numpy_image(pic):
+        raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
 
     if isinstance(pic, np.ndarray):
         # handle numpy array
@@ -193,6 +200,7 @@ def normalize(tensor, mean, std, inplace=False):
         tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
+        inplace(bool,optional): Bool to make this operation inplace.
 
     Returns:
         Tensor: Normalized Tensor image.
@@ -203,8 +211,9 @@ def normalize(tensor, mean, std, inplace=False):
     if not inplace:
         tensor = tensor.clone()
 
-    mean = torch.as_tensor(mean, dtype=torch.float32, device=tensor.device)
-    std = torch.as_tensor(std, dtype=torch.float32, device=tensor.device)
+    dtype = tensor.dtype
+    mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
+    std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
     tensor.sub_(mean[:, None, None]).div_(std[:, None, None])
     return tensor
 
@@ -437,8 +446,8 @@ def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC):
 
     Args:
         img (PIL Image): Image to be transformed.
-        coeffs (tuple) : 8-tuple (a, b, c, d, e, f, g, h) which contains the coefficients.
-                            for a perspective transform.
+        startpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the orignal image
+        endpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image
         interpolation: Default- Image.BICUBIC
     Returns:
         PIL Image:  Perspectively transformed Image.
@@ -713,20 +722,29 @@ def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     # where T is translation matrix: [1, 0, tx | 0, 1, ty | 0, 0, 1]
     #       C is translation matrix to keep center: [1, 0, cx | 0, 1, cy | 0, 0, 1]
     #       RSS is rotation with scale and shear matrix
-    #       RSS(a, scale, shear) = [ cos(a)*scale    -sin(a + shear)*scale     0]
-    #                              [ sin(a)*scale    cos(a + shear)*scale     0]
+    #       RSS(a, scale, shear) = [ cos(a + shear_y)*scale    -sin(a + shear_x)*scale     0]
+    #                              [ sin(a + shear_y)*scale    cos(a + shear_x)*scale     0]
     #                              [     0                  0          1]
     # Thus, the inverse is M^-1 = C * RSS^-1 * C^-1 * T^-1
 
     angle = math.radians(angle)
-    shear = math.radians(shear)
+    if isinstance(shear, (tuple, list)) and len(shear) == 2:
+        shear = [math.radians(s) for s in shear]
+    elif isinstance(shear, numbers.Number):
+        shear = math.radians(shear)
+        shear = [shear, 0]
+    else:
+        raise ValueError(
+            "Shear should be a single value or a tuple/list containing " +
+            "two values. Got {}".format(shear))
     scale = 1.0 / scale
 
     # Inverted rotation matrix with scale and shear
-    d = math.cos(angle + shear) * math.cos(angle) + math.sin(angle + shear) * math.sin(angle)
+    d = math.cos(angle + shear[0]) * math.cos(angle + shear[1]) + \
+        math.sin(angle + shear[0]) * math.sin(angle + shear[1])
     matrix = [
-        math.cos(angle + shear), math.sin(angle + shear), 0,
-        -math.sin(angle), math.cos(angle), 0
+        math.cos(angle + shear[0]), math.sin(angle + shear[0]), 0,
+        -math.sin(angle + shear[1]), math.cos(angle + shear[1]), 0
     ]
     matrix = [scale / d * m for m in matrix]
 
@@ -748,7 +766,9 @@ def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
         angle (float or int): rotation angle in degrees between -180 and 180, clockwise direction.
         translate (list or tuple of integers): horizontal and vertical translations (post-rotation translation)
         scale (float): overall scale
-        shear (float): shear angle value in degrees between -180 to 180, clockwise direction.
+        shear (float or tuple or list): shear angle value in degrees between -180 to 180, clockwise direction.
+        If a tuple of list is specified, the first value corresponds to a shear parallel to the x axis, while
+        the second value corresponds to a shear parallel to the y axis.
         resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
             An optional resampling filter.
             See `filters`_ for more information.
@@ -795,4 +815,29 @@ def to_grayscale(img, num_output_channels=1):
     else:
         raise ValueError('num_output_channels should be either 1 or 3')
 
+    return img
+
+
+def erase(img, i, j, h, w, v, inplace=False):
+    """ Erase the input Tensor Image with given value.
+
+    Args:
+        img (Tensor Image): Tensor image of size (C, H, W) to be erased
+        i (int): i in (i,j) i.e coordinates of the upper left corner.
+        j (int): j in (i,j) i.e coordinates of the upper left corner.
+        h (int): Height of the erased region.
+        w (int): Width of the erased region.
+        v: Erasing value.
+        inplace(bool,optional): For in-place operations. By default is set False.
+
+    Returns:
+        Tensor Image: Erased image.
+    """
+    if not isinstance(img, torch.Tensor):
+        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+
+    if not inplace:
+        img = img.clone()
+
+    img[:, i:i + h, j:j + w] = v
     return img
