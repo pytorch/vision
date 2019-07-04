@@ -39,6 +39,7 @@ class GeneralizedRCNNTransform(nn.Module):
                                  "of shape [C, H, W], got {}".format(image.shape))
             image = self.normalize(image)
             image, target = self.resize(image, target)
+            images[i] = image
             if targets is not None:
                 targets[i] = target
 
