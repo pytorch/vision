@@ -47,7 +47,7 @@ class Tester(unittest.TestCase):
         x = torch.rand(input_shape)
         model_input = [x]
         out = model(model_input)
-        self.assertEqual(model_input[0], x)
+        self.assertIs(model_input[0], x)
         self.assertEqual(len(out), 1)
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
