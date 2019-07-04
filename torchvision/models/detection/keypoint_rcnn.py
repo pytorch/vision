@@ -26,7 +26,7 @@ class KeypointRCNN(FasterRCNN):
 
     During training, the model expects both the input tensors, as well as a targets dictionary,
     containing:
-        - boxes (Tensor[N, 4]): the ground-truth boxes in [x0, y0, x1, y1] format, with values
+        - boxes (Tensor[N, 4], dtype = float32): the ground-truth boxes in [x0, y0, x1, y1] format, with values
           between 0 and H and 0 and W
         - labels (Tensor[N]): the class label for each ground-truth box
         - keypoints (Tensor[N, K, 3]): the K keypoints location for each of the N instances, in the
@@ -38,7 +38,7 @@ class KeypointRCNN(FasterRCNN):
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
     follows:
-        - boxes (Tensor[N, 4]): the predicted boxes in [x0, y0, x1, y1] format, with values between
+        - boxes (Tensor[N, 4], dtype = float32): the predicted boxes in [x0, y0, x1, y1] format, with values between
           0 and H and 0 and W
         - labels (Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores or each prediction
@@ -276,7 +276,7 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
 
     During training, the model expects both the input tensors, as well as a targets dictionary,
     containing:
-        - boxes (``Tensor[N, 4]``): the ground-truth boxes in ``[x0, y0, x1, y1]`` format, with values
+        - boxes (``Tensor[N, 4], dtype = float32``): the ground-truth boxes in ``[x0, y0, x1, y1]`` format, with values
           between ``0`` and ``H`` and ``0`` and ``W``
         - labels (``Tensor[N]``): the class label for each ground-truth box
         - keypoints (``Tensor[N, K, 3]``): the ``K`` keypoints location for each of the ``N`` instances, in the
@@ -288,7 +288,7 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as
     follows:
-        - boxes (``Tensor[N, 4]``): the predicted boxes in ``[x0, y0, x1, y1]`` format, with values between
+        - boxes (``Tensor[N, 4], dtype = float32``): the predicted boxes in ``[x0, y0, x1, y1]`` format, with values between
           ``0`` and ``H`` and ``0`` and ``W``
         - labels (``Tensor[N]``): the predicted labels for each image
         - scores (``Tensor[N]``): the scores or each prediction
