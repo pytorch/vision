@@ -127,15 +127,16 @@ class Cityscapes(VisionDataset):
                              ' or "color"')
 
         if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
+
             if split == 'train_extra':
-                image_dir_zip = os.path.join(self.root, 'leftImg8bit') + '_trainextra.zip'
+                image_dir_zip = os.path.join(self.root, 'leftImg8bit{}'.format('_trainextra.zip'))
             else:
-                image_dir_zip = os.path.join(self.root, 'leftImg8bit') + '_trainvaltest.zip'
+                image_dir_zip = os.path.join(self.root, 'leftImg8bit{}'.format('_trainvaltest.zip'))
 
             if self.mode == 'gtFine':
-                target_dir_zip = os.path.join(self.root, self.mode) + '_trainvaltest.zip'
+                target_dir_zip = os.path.join(self.root, '{}{}'.format(self.mode, '_trainvaltest.zip'))
             elif self.mode == 'gtCoarse':
-                target_dir_zip = os.path.join(self.root, self.mode)
+                target_dir_zip = os.path.join(self.root, '{}{}'.format(self.mode, '.zip'))
 
             if os.path.isfile(image_dir_zip) and os.path.isfile(target_dir_zip):
                 extract_archive(from_path=image_dir_zip, to_path=self.root)

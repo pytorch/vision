@@ -1,12 +1,13 @@
 import os
 import unittest
 import mock
+import numpy as np
 import PIL
 from PIL import Image
 from torch._utils_internal import get_file_path_2
 import torchvision
 from common_utils import get_tmp_dir
-from fakedata_generation import mnist_root, cifar_root, imagenet_root
+from fakedata_generation import mnist_root, cifar_root, imagenet_root, cityscapes_root
 
 
 class Tester(unittest.TestCase):
@@ -15,6 +16,12 @@ class Tester(unittest.TestCase):
         img, target = dataset[0]
         self.assertTrue(isinstance(img, PIL.Image.Image))
         self.assertTrue(isinstance(target, int))
+
+    def generic_segmentation_dataset_test(self, dataset, num_images=1):
+        self.assertEqual(len(dataset), num_images)
+        img, target = dataset[0]
+        self.assertTrue(isinstance(img, PIL.Image.Image))
+        self.assertTrue(isinstance(target, PIL.Image.Image))
 
     def test_imagefolder(self):
         # TODO: create the fake data on-the-fly
@@ -132,6 +139,51 @@ class Tester(unittest.TestCase):
             self.generic_classification_dataset_test(dataset)
             img, target = dataset[0]
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
+
+    def test_cityscapes(self):
+        with cityscapes_root() as root:
+
+            for mode in ['coarse', 'fine']:
+
+                if mode == 'coarse':
+                    splits = ['train', 'train_extra', 'val']
+                else:
+                    splits = ['train', 'val', 'test']
+
+                for split in splits:
+                    for target_type in ['semantic', 'instance']:
+                        dataset = torchvision.datasets.Cityscapes(root, split=split,
+                                                                  target_type=target_type, mode=mode)
+                        self.generic_segmentation_dataset_test(dataset, num_images=2)
+
+                    color_dataset = torchvision.datasets.Cityscapes(root, split=split,
+                                                                    target_type='color', mode=mode)
+                    color_img, color_target = color_dataset[0]
+                    self.assertTrue(isinstance(color_img, PIL.Image.Image))
+                    self.assertTrue(np.array(color_target).shape[2] == 4)
+
+                    polygon_dataset = torchvision.datasets.Cityscapes(root, split=split,
+                                                                      target_type='polygon', mode=mode)
+                    polygon_img, polygon_target = polygon_dataset[0]
+                    self.assertTrue(isinstance(polygon_img, PIL.Image.Image))
+                    self.assertTrue(isinstance(polygon_target, dict))
+                    self.assertTrue(isinstance(polygon_target['imgHeight'], int))
+                    self.assertTrue(isinstance(polygon_target['objects'], list))
+
+                    # Test multiple target types
+                    targets_combo = ['semantic', 'polygon', 'color']
+                    multiple_types_dataset = torchvision.datasets.Cityscapes(root, split=split,
+                                                                             target_type=targets_combo,
+                                                                             mode=mode)
+                    output = multiple_types_dataset[0]
+                    self.assertTrue(isinstance(output, tuple))
+                    self.assertTrue(len(output) == 2)
+                    self.assertTrue(isinstance(output[0], PIL.Image.Image))
+                    self.assertTrue(isinstance(output[1], tuple))
+                    self.assertTrue(len(output[1]) == 3)
+                    self.assertTrue(isinstance(output[1][0], PIL.Image.Image))  # semantic
+                    self.assertTrue(isinstance(output[1][1], dict))  # polygon
+                    self.assertTrue(isinstance(output[1][2], PIL.Image.Image))  # color
 
 
 if __name__ == '__main__':
