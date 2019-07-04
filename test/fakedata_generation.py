@@ -242,6 +242,7 @@ def cityscapes_root():
 
         yield tmp_dir
 
+
 @contextlib.contextmanager
 def svhn_root():
     import scipy.io as sio
