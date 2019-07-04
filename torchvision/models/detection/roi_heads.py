@@ -527,12 +527,13 @@ class RoIHeads(torch.nn.Module):
             image_shapes (List[Tuple[H, W]])
             targets (List[Dict])
         """
-        assert target["boxes"].dtype == torch.float32, 'target["boxes"] must of float type'
-        assert target["labels"].dtype == torch.int64, 'target["labels"] must of int64 type'
-        if self.has_mask:
-            assert target["masks"].dtype == torch.uint8, 'target["masks"] must of uint8 type'
-        if self.has_keypoint:
-            assert target["keypoints"].dtype == torch.float32, 'target["keypoints"] must of float type'
+        if targets is not None:
+            assert targets["boxes"].dtype == torch.float32, 'targets["boxes"] must of float type'
+            assert targets["labels"].dtype == torch.int64, 'targets["labels"] must of int64 type'
+            if self.has_mask:
+                assert targets["masks"].dtype == torch.uint8, 'targets["masks"] must of uint8 type'
+            if self.has_keypoint:
+                assert targets["keypoints"].dtype == torch.float32, 'targets["keypoints"] must of float type'
 
         if self.training:
             proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
