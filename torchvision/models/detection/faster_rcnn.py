@@ -42,7 +42,7 @@ class FasterRCNN(GeneralizedRCNN):
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
     follows:
-        - boxes (FloatdtypeTensor[N, 4]): the predicted boxes in [x0, y0, x1, y1] format, with values between
+        - boxes (FloatTensor[N, 4]): the predicted boxes in [x0, y0, x1, y1] format, with values between
           0 and H and 0 and W
         - labels (Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores or each prediction
