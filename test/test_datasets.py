@@ -193,6 +193,12 @@ class Tester(unittest.TestCase):
             dataset = torchvision.datasets.SVHN(root, split="train")
             self.generic_classification_dataset_test(dataset, num_images=2)
 
+            dataset = torchvision.datasets.SVHN(root, split="test")
+            self.generic_classification_dataset_test(dataset, num_images=2)
+
+            dataset = torchvision.datasets.SVHN(root, split="extra")
+            self.generic_classification_dataset_test(dataset, num_images=2)
+
 
 if __name__ == '__main__':
     unittest.main()
