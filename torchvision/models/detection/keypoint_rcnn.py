@@ -279,7 +279,7 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x0, y0, x1, y1]`` format, with values
           between ``0`` and ``H`` and ``0`` and ``W``
         - labels (``Tensor[N]``): the class label for each ground-truth box
-        - keypoints (``Tensor[N, K, 3]``): the ``K`` keypoints location for each of the ``N`` instances, in the
+        - keypoints (``FloatTensor[N, K, 3]``): the ``K`` keypoints location for each of the ``N`` instances, in the
           format ``[x, y, visibility]``, where ``visibility=0`` means that the keypoint is not visible.
 
     The model returns a ``Dict[Tensor]`` during training, containing the classification and regression
@@ -292,7 +292,7 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
           ``0`` and ``H`` and ``0`` and ``W``
         - labels (``Tensor[N]``): the predicted labels for each image
         - scores (``Tensor[N]``): the scores or each prediction
-        - keypoints (``Tensor[N, K, 3]``): the locations of the predicted keypoints, in ``[x, y, v]`` format.
+        - keypoints (``FloatTensor[N, K, 3]``): the locations of the predicted keypoints, in ``[x, y, v]`` format.
 
     Example::
 
