@@ -192,7 +192,7 @@ def densenet121(pretrained=False, progress=True, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-	memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
+        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
     return _densenet('densenet121', 32, (6, 12, 24, 16), 64, pretrained, progress,
@@ -206,7 +206,7 @@ def densenet161(pretrained=False, progress=True, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-	memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
+        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
     return _densenet('densenet161', 48, (6, 12, 36, 24), 96, pretrained, progress,
@@ -220,7 +220,7 @@ def densenet169(pretrained=False, progress=True, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-	memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
+        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
     return _densenet('densenet169', 32, (6, 12, 32, 32), 64, pretrained, progress,
@@ -234,7 +234,7 @@ def densenet201(pretrained=False, progress=True, **kwargs):
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
-	memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
+        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
     return _densenet('densenet201', 32, (6, 12, 48, 32), 64, pretrained, progress,
