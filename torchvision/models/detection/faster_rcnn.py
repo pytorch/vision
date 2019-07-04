@@ -34,7 +34,7 @@ class FasterRCNN(GeneralizedRCNN):
     containing:
         - boxes (FloatTensor[N, 4]): the ground-truth boxes in [x0, y0, x1, y1] format, with values
           between 0 and H and 0 and W
-        - labels (Tensor[N]): the class label for each ground-truth box
+        - labels (Int64Tensor[N]): the class label for each ground-truth box
 
     The model returns a Dict[Tensor] during training, containing the classification and regression
     losses for both the RPN and the R-CNN.
@@ -44,7 +44,7 @@ class FasterRCNN(GeneralizedRCNN):
     follows:
         - boxes (FloatTensor[N, 4]): the predicted boxes in [x0, y0, x1, y1] format, with values between
           0 and H and 0 and W
-        - labels (Tensor[N]): the predicted labels for each image
+        - labels (Int64Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores or each prediction
 
     Arguments:
@@ -302,7 +302,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
     containing:
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x0, y0, x1, y1]`` format, with values
           between ``0`` and ``H`` and ``0`` and ``W``
-        - labels (``Tensor[N]``): the class label for each ground-truth box
+        - labels (``Int64Tensor[N]``): the class label for each ground-truth box
 
     The model returns a ``Dict[Tensor]`` during training, containing the classification and regression
     losses for both the RPN and the R-CNN.
@@ -312,7 +312,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
     follows:
         - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x0, y0, x1, y1]`` format, with values between
           ``0`` and ``H`` and ``0`` and ``W``
-        - labels (``Tensor[N]``): the predicted labels for each image
+        - labels (``Int64Tensor[N]``): the predicted labels for each image
         - scores (``Tensor[N]``): the scores or each prediction
 
     Example::
