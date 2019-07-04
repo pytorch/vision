@@ -17,6 +17,8 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     Arguments:
         class_logits (Tensor)
         box_regression (Tensor)
+        labels (list[BoxList])
+        regression_targets (Tensor)
 
     Returns:
         classification_loss (Tensor)
@@ -55,7 +57,7 @@ def maskrcnn_inference(x, labels):
 
     Arguments:
         x (Tensor): the mask logits
-        boxes (list[BoxList]): bounding boxes that are used as
+        labels (list[BoxList]): bounding boxes that are used as
             reference, one for ech image
 
     Returns:
@@ -250,7 +252,7 @@ def keypointrcnn_inference(x, boxes):
 
 # the next two functions should be merged inside Masker
 # but are kept here for the moment while we need them
-# temporarily gor paste_mask_in_image
+# temporarily for paste_mask_in_image
 def expand_boxes(boxes, scale):
     w_half = (boxes[:, 2] - boxes[:, 0]) * .5
     h_half = (boxes[:, 3] - boxes[:, 1]) * .5
@@ -525,6 +527,13 @@ class RoIHeads(torch.nn.Module):
             image_shapes (List[Tuple[H, W]])
             targets (List[Dict])
         """
+        assert target["boxes"].dtype == torch.float32, 'target["boxes"] must of float type'
+        assert target["labels"].dtype == torch.int64, 'target["labels"] must of int64 type'
+        if self.has_mask:
+            assert target["masks"].dtype == torch.uint8, 'target["masks"] must of uint8 type'
+        if self.has_keypoint:
+            assert target["keypoints"].dtype == torch.float32, 'target["keypoints"] must of float type'
+
         if self.training:
             proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
 
