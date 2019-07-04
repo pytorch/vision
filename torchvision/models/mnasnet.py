@@ -132,21 +132,6 @@ class MNASNet(torch.nn.Module):
     def _initialize_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
-                m.weight.data.normal_(0, math.sqrt(2. / n))
-                if m.bias is not None:
-                    m.bias.data.zero_()
-            elif isinstance(m, nn.BatchNorm2d):
-                m.weight.data.fill_(1)
-                m.bias.data.zero_()
-            elif isinstance(m, nn.Linear):
-                m.weight.data.normal_(0, 0.01)
-                m.bias.data.zero_()
-
-"""
-    def _initialize_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out",
                                         nonlinearity="relu")
                 if m.bias is not None:
@@ -155,9 +140,9 @@ class MNASNet(torch.nn.Module):
                 nn.init.ones_(m.weight)
                 nn.init.zeros_(m.bias)
             elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0.01)
+                nn.init.xavier_uniform_(m.weight, mode="fan_out",
+                                        nonlinearity="sigmoid")
                 nn.init.zeros_(m.bias)
-"""
 
 
 def _load_pretrained(model_name, model, progress):
