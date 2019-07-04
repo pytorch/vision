@@ -24,7 +24,7 @@ class KeypointRCNN(FasterRCNN):
 
     The behavior of the model changes depending if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets dictionary,
+    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
         - boxes (FloatTensor[N, 4]): the ground-truth boxes in [x0, y0, x1, y1] format, with values
           between 0 and H and 0 and W
@@ -274,7 +274,7 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
 
     The behavior of the model changes depending if it is in training or evaluation mode.
 
-    During training, the model expects both the input tensors, as well as a targets dictionary,
+    During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x0, y0, x1, y1]`` format, with values
           between ``0`` and ``H`` and ``0`` and ``W``
