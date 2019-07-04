@@ -119,8 +119,8 @@ class MNASNet(torch.nn.Module):
             nn.ReLU(inplace=True),
         ]
         self.layers = nn.Sequential(*layers)
-        self.classifier = nn.Sequential(nn.Dropout(p=dropout, inplace=True),
-                                        nn.Linear(1280, num_classes))
+        self.classifier = nn.Sequential(
+            nn.Dropout(p=dropout, inplace=True), nn.Linear(1280, num_classes))
         self._initialize_weights()
 
     def forward(self, x):
@@ -140,8 +140,8 @@ class MNASNet(torch.nn.Module):
                 nn.init.ones_(m.weight)
                 nn.init.zeros_(m.bias)
             elif isinstance(m, nn.Linear):
-                nn.init.xavier_uniform_(m.weight, mode="fan_out",
-                                        nonlinearity="sigmoid")
+                nn.init.kaiming_uniform_(m.weight, mode="fan_out",
+                                         nonlinearity="sigmoid")
                 nn.init.zeros_(m.bias)
 
 
