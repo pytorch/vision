@@ -1223,7 +1223,7 @@ class RandomErasing(object):
         >>> ])
     """
 
-    def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 1. / 0.3), value=0, inplace=False):
+    def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0, inplace=False):
         assert isinstance(value, (numbers.Number, str, tuple, list))
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
             warnings.warn("range should be of kind (min, max)")
