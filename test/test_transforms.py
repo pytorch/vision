@@ -1381,7 +1381,7 @@ class Tester(unittest.TestCase):
 
         # Test Set 6: Checking when no erased region is selected
         img = torch.rand([3, 300, 1])
-        img_re = transforms.RandomErasing(ratio=(0.3, 1.0), value='random')(img)
+        img_re = transforms.RandomErasing(ratio=(0.1, 0.2), value='random')(img)
         assert torch.equal(img_re, img)
 
 
