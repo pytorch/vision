@@ -1,3 +1,5 @@
+import os
+
 import torch
 from torch.optim import Adam
 from torch.utils.data import DataLoader
@@ -30,61 +32,63 @@ def train_epoch(model, optimizer, criterion, data_loader, device, epoch, print_f
         running_frac_pos_triplets += float(frac_pos_triplets)
 
         if i % print_freq == print_freq - 1:
-            epoch_percent = 100.0 * i / len(data_loader)
+            i += 1
             avg_loss = running_loss / print_freq
             avg_trip = 100.0 * running_frac_pos_triplets / print_freq
-            print(f'[{epoch:d}, {epoch_percent:.0f}%] | loss: {avg_loss:.4f} | % avg hard trips: {avg_trip:.2f}%')
+            print(f'[{epoch:d}, {i:d}] | loss: {avg_loss:.4f} | % avg hard triplets: {avg_trip:.2f}%')
+            running_loss = 0
+            running_frac_pos_triplets = 0
 
 
 @torch.no_grad()
 def evaluate(model, dataset, device):
     model.eval()
+    embeds, labels = None, None
     dist_fn = PairwiseDistance(2)
     dists, targets = None, None
 
-    loader_1 = DataLoader(dataset, batch_size=1, shuffle=False)
-    for i, data in enumerate(loader_1):
-        anchor_img, anchor_label = data[0].to(device), data[1].item()
-        anchor_out = model(anchor_img)
-        del anchor_img
+    loader = DataLoader(dataset, batch_size=512, shuffle=False, num_workers=4)
+    for data in loader:
+        samples, _labels = data[0].to(device), data[1]
+        out = model(samples)
+        embeds = torch.cat((embeds, out), dim=0) if embeds is not None else out
+        labels = torch.cat((labels, _labels), dim=0) if labels is not None else _labels
 
-        dset_subset = Subset(dataset, list(range(i + 1, len(dataset))))
-        loader_2 = DataLoader(dset_subset, batch_size=64, shuffle=False)
-        for data in loader_2:
-            compare_imgs, compare_labels = data[0].to(device), data[1].to(device)
-            compare_out = model(compare_imgs)
+    dists = torch.cdist(embeds, embeds)
 
-            batch_dist = dist_fn(anchor_out, compare_out).cpu()
-            dists = torch.cat((dists, batch_dist)) if dists is not None else batch_dist
+    labels = labels.unsqueeze(0)
+    targets = labels == labels.t()
 
-            batch_labels = (compare_labels == anchor_label).cpu()
-            targets = torch.cat((targets, batch_labels)) if targets is not None else batch_labels
+    mask = torch.ones(dists.size()).triu() - torch.eye(dists.size(0))
+    dists = dists[mask == 1]
+    targets = targets[mask == 1]
 
     best_thresh = 0.01
     best_correct = 0
     for thresh in torch.arange(0.0, 1.51, 0.01):
-        predictions = dists <= thresh
-        correct = torch.sum(predictions == targets)
+        predictions = dists <= thresh.to(device)
+        correct = torch.sum(predictions == targets.to(device)).item()
         if correct > best_correct:
             best_thresh = thresh
             best_correct = correct
 
-    accuracy = best_correct / dists.size(0)
-    print(f'accuracy: {accuracy}%, threshold: {best_thresh}')
+    accuracy = 100.0 * best_correct / dists.size(0)
+    print(f'accuracy: {accuracy:.3f}%, threshold: {best_thresh:.2f}')
 
 
 def save(model, epoch, save_dir, file_name):
-    pass
-
-
-def tuple_transform(tpl):
-    sample1, sample2 = tpl
-    img1, img2 = sample1[0], sample2[0]
-    target = 1. if sample1[1] == sample2[1] else 0.
-    return (img1, img2, target)
+    file_name = 'epoch_' + str(epoch) + '__' + file_name
+    save_path = os.path.join(save_dir, file_name)
+    torch.save(model.state_dict(), save_path)
 
 
 def main():
+    p = 8
+    k = 8
+    batch_size = p * k
+    print_freq = 200
+    epochs = 5
+
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     model = EmbeddingNet()
@@ -100,18 +104,21 @@ def main():
     train_dataset = FashionMNIST('./datasets/train', train=True, transform=transform, download=True)
     test_dataset = FashionMNIST('./datasets/test', train=False, transform=transform, download=True)
 
-    p = 16
-    k = 4
-    print_freq = 300
-    epochs = 10
 
-    train_sampler = PKSampler(train_dataset.targets, p, k)
-    train_loader = DataLoader(train_dataset, batch_size=p * k, sampler=train_sampler)
+    targets = train_dataset.targets.tolist()
+    train_loader = DataLoader(train_dataset, batch_size=batch_size,
+                              sampler=PKSampler(targets, p, k),
+                              num_workers=4)
 
-    print(len(test_dataset))
-    for epoch in range(epochs):
-        #train_epoch(model, optimizer, criterion, train_loader, device, epoch, print_freq)
+    for epoch in range(1, epochs + 1):
+        print('Training...')
+        train_epoch(model, optimizer, criterion, train_loader, device, epoch, print_freq)
+
+        print('Evaluating...')
         evaluate(model, test_dataset, device)
+
+        print('Saving...')
+        save(model, epoch, './saved_models/', 'testnet.pth')
 
 
 if __name__ == '__main__':
