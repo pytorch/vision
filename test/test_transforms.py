@@ -1378,6 +1378,11 @@ class Tester(unittest.TestCase):
         # Test Set 5: Testing the inplace behaviour
         img_re = transforms.RandomErasing(value=(0.2), inplace=True)(img)
         assert torch.equal(img_re, img)
+        
+        # Test Set 6: Checking when no erased region is selected
+        img = torch.rand([3, 300, 1])
+        img_re = transforms.RandomErasing(ratio=(0.3, 1.0), value='random')(img)
+        assert torch.equal(img_re, img)
 
 
 if __name__ == '__main__':
