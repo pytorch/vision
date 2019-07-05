@@ -1210,7 +1210,7 @@ class RandomErasing(object):
             erase all pixels. If a tuple of length 3, it is used to erase
             R, G, B channels respectively.
             If a str of 'random', erasing each pixel with random values.
-         inplace: boolean to make this transform inplace.Default set to False.
+         inplace: boolean to make this transform inplace. Default set to False.
 
     Returns:
         Erased Image.
