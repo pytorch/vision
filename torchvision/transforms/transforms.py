@@ -1250,10 +1250,10 @@ class RandomErasing(object):
         Returns:
             tuple: params (i, j, h, w, v) to be passed to ``erase`` for random erasing.
         """
-        img_b, img_h, img_w = img.shape
+        img_c, img_h, img_w = img.shape
         area = img_h * img_w
 
-        while True:
+        for attempt in range(10):
             erase_area = random.uniform(scale[0], scale[1]) * area
             aspect_ratio = random.uniform(ratio[0], ratio[1])
 
@@ -1266,10 +1266,13 @@ class RandomErasing(object):
                 if isinstance(value, numbers.Number):
                     v = value
                 elif isinstance(value, torch._six.string_classes):
-                    v = torch.rand(img_b, h, w)
+                    v = torch.empty([img_c, h, w], dtype=torch.float32).normal_()
                 elif isinstance(value, (list, tuple)):
                     v = torch.tensor(value, dtype=torch.float32).view(-1, 1, 1).expand(-1, h, w)
                 return i, j, h, w, v
+
+        # Return original image
+        return 0, 0, img_h, img_w, img
 
     def __call__(self, img):
         """
