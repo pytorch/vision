@@ -828,7 +828,7 @@ def erase(img, i, j, h, w, v, inplace=False):
         h (int): Height of the erased region.
         w (int): Width of the erased region.
         v: Erasing value.
-        inplace(bool,optional): For in-place operations. By default is set False.
+        inplace(bool, optional): For in-place operations. By default is set False.
 
     Returns:
         Tensor Image: Erased image.
