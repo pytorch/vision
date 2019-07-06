@@ -113,38 +113,39 @@ void MNASNetImpl::_initialize_weights()
     }
 }
 
+#define BN_MOMENTUM 1 - 0.9997
+
 MNASNetImpl::MNASNetImpl(double alpha, double dropout, int64_t num_classes)
 {
-    auto BN_MOMENTUM = 1 - 0.9997;
     auto depths = scale_depths({24, 40, 80, 96, 192, 320}, alpha);
 
-    layers = torch::nn::Sequential(
-        torch::nn::Conv2d(
-            Options(3, 32, 3).padding(1).stride(2).with_bias(false)),
-        torch::nn::BatchNorm(
-            torch::nn::BatchNormOptions(32).momentum(BN_MOMENTUM)),
-        torch::nn::Functional(modelsimpl::relu_),
-        torch::nn::Conv2d(
-            Options(32, 32, 3).padding(1).stride(1).groups(32).with_bias(
-                false)),
-        torch::nn::BatchNorm(
-            torch::nn::BatchNormOptions(32).momentum(BN_MOMENTUM)),
-        torch::nn::Functional(modelsimpl::relu_),
-        torch::nn::Conv2d(
-            Options(32, 16, 1).padding(0).stride(1).with_bias(false)),
-        torch::nn::BatchNorm(
-            torch::nn::BatchNormOptions(16).momentum(BN_MOMENTUM)),
-        stack(16, depths[0], 3, 2, 3, 3, BN_MOMENTUM),
-        stack(depths[0], depths[1], 5, 2, 3, 3, BN_MOMENTUM),
-        stack(depths[1], depths[2], 5, 2, 6, 3, BN_MOMENTUM),
-        stack(depths[2], depths[3], 3, 1, 6, 2, BN_MOMENTUM),
-        stack(depths[3], depths[4], 5, 2, 6, 4, BN_MOMENTUM),
-        stack(depths[4], depths[5], 3, 1, 6, 1, BN_MOMENTUM),
-        torch::nn::Conv2d(
-            Options(depths[5], 1280, 1).padding(0).stride(1).with_bias(false)),
-        torch::nn::BatchNorm(
-            torch::nn::BatchNormOptions(1280).momentum(BN_MOMENTUM)),
-        torch::nn::Functional(modelsimpl::relu_));
+    layers->push_back(torch::nn::Conv2d(
+        Options(3, 32, 3).padding(1).stride(2).with_bias(false)));
+    layers->push_back(torch::nn::BatchNorm(
+        torch::nn::BatchNormOptions(32).momentum(BN_MOMENTUM)));
+    layers->push_back(torch::nn::Functional(modelsimpl::relu_));
+    layers->push_back(torch::nn::Conv2d(
+        Options(32, 32, 3).padding(1).stride(1).groups(32).with_bias(false)));
+    layers->push_back(torch::nn::BatchNorm(
+        torch::nn::BatchNormOptions(32).momentum(BN_MOMENTUM)));
+    layers->push_back(torch::nn::Functional(modelsimpl::relu_));
+    layers->push_back(torch::nn::Conv2d(
+        Options(32, 16, 1).padding(0).stride(1).with_bias(false)));
+    layers->push_back(torch::nn::BatchNorm(
+        torch::nn::BatchNormOptions(16).momentum(BN_MOMENTUM)));
+
+    layers->push_back(stack(16, depths[0], 3, 2, 3, 3, BN_MOMENTUM));
+    layers->push_back(stack(depths[0], depths[1], 5, 2, 3, 3, BN_MOMENTUM));
+    layers->push_back(stack(depths[1], depths[2], 5, 2, 6, 3, BN_MOMENTUM));
+    layers->push_back(stack(depths[2], depths[3], 3, 1, 6, 2, BN_MOMENTUM));
+    layers->push_back(stack(depths[3], depths[4], 5, 2, 6, 4, BN_MOMENTUM));
+    layers->push_back(stack(depths[4], depths[5], 3, 1, 6, 1, BN_MOMENTUM));
+
+    layers->push_back(torch::nn::Conv2d(
+        Options(depths[5], 1280, 1).padding(0).stride(1).with_bias(false)));
+    layers->push_back(torch::nn::BatchNorm(
+        torch::nn::BatchNormOptions(1280).momentum(BN_MOMENTUM)));
+    layers->push_back(torch::nn::Functional(modelsimpl::relu_));
 
     classifier = torch::nn::Sequential(torch::nn::Dropout(dropout),
                                        torch::nn::Linear(1280, num_classes));
@@ -155,7 +156,7 @@ MNASNetImpl::MNASNetImpl(double alpha, double dropout, int64_t num_classes)
     _initialize_weights();
 }
 
-at::Tensor MNASNetImpl::forward(at::Tensor x)
+torch::Tensor MNASNetImpl::forward(torch::Tensor x)
 {
     x = layers->forward(x);
     x = x.mean({2, 3});
