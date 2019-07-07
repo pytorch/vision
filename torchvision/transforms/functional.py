@@ -135,7 +135,7 @@ def to_pil_image(pic, mode=None):
             pic = np.expand_dims(pic, 2)
 
     npimg = pic
-    if isinstance(pic, torch.FloatTensor):
+    if isinstance(pic, torch.FloatTensor) and mode is not 'F':
         pic = pic.mul(255).byte()
     if isinstance(pic, torch.Tensor):
         npimg = np.transpose(pic.numpy(), (1, 2, 0))
