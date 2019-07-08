@@ -44,7 +44,6 @@ def train_epoch(model, optimizer, criterion, data_loader, device, epoch, print_f
 def evaluate(model, dataset, device):
     model.eval()
     embeds, labels = None, None
-    dist_fn = PairwiseDistance(2)
     dists, targets = None, None
 
     loader = DataLoader(dataset, batch_size=512, shuffle=False, num_workers=4)
@@ -103,7 +102,6 @@ def main(args):
 
     train_dataset = FashionMNIST(args.train_data, train=True, transform=transform, download=True)
     test_dataset = FashionMNIST(args.test_data, train=False, transform=transform, download=True)
-
 
     targets = train_dataset.targets.tolist()
     train_loader = DataLoader(train_dataset, batch_size=batch_size,
