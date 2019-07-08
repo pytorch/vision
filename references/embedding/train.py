@@ -82,27 +82,27 @@ def save(model, epoch, save_dir, file_name):
     torch.save(model.state_dict(), save_path)
 
 
-def main():
-    p = 8
-    k = 8
-    batch_size = p * k
-    print_freq = 200
-    epochs = 5
-
+def main(args):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    p = args.labels_per_batch
+    k = args.samples_per_label
+    batch_size = p * k
 
     model = EmbeddingNet()
+    if args.resume:
+        model.load_state_dict(torch.load(args.resume))
+
     model.to(device)
 
-    criterion = TripletMarginLoss(margin=0.2)
-    optimizer = Adam(model.parameters(), lr=0.0001)
+    criterion = TripletMarginLoss(margin=args.margin)
+    optimizer = Adam(model.parameters(), lr=args.lr)
 
     transform = transforms.Compose([transforms.Lambda(lambda image: image.convert('RGB')),
                                     transforms.Resize((224, 224)),
                                     transforms.ToTensor()])
 
-    train_dataset = FashionMNIST('./datasets/train', train=True, transform=transform, download=True)
-    test_dataset = FashionMNIST('./datasets/test', train=False, transform=transform, download=True)
+    train_dataset = FashionMNIST(args.train_data, train=True, transform=transform, download=True)
+    test_dataset = FashionMNIST(args.test_data, train=False, transform=transform, download=True)
 
 
     targets = train_dataset.targets.tolist()
@@ -110,16 +110,42 @@ def main():
                               sampler=PKSampler(targets, p, k),
                               num_workers=4)
 
-    for epoch in range(1, epochs + 1):
+    for epoch in range(1, args.epochs + 1):
         print('Training...')
-        train_epoch(model, optimizer, criterion, train_loader, device, epoch, print_freq)
+        train_epoch(model, optimizer, criterion, train_loader, device, epoch, args.print_freq)
 
         print('Evaluating...')
         evaluate(model, test_dataset, device)
 
         print('Saving...')
-        save(model, epoch, './saved_models/', 'testnet.pth')
+        save(model, epoch, args.save_dir, 'ckpt.pth')
+
+
+def parse_args():
+    import argparse
+    parser = argparse.ArgumentParser(description='PyTorch Embedding Learning')
+
+    parser.add_argument('--train-data', default='/tmp/pyemb/train/',
+                        help='FashionMNIST train dataset path')
+    parser.add_argument('--test-data', default='/tmp/pyemb/test/',
+                        help='FashionMNIST test dataset path')
+    parser.add_argument('-p', '--labels-per-batch', default=8, type=int,
+                        help='Number of unique labels/classes per batch')
+    parser.add_argument('-k', '--samples-per-label', default=8, type=int,
+                        help='Number of samples per label in a batch')
+    parser.add_argument('--epochs', default=10, type=int, metavar='N',
+                        help='Number of training epochs to run')
+    parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
+                        help='Number of data loading workers')
+    parser.add_argument('--lr', default=0.0001, type=float, help='Learning rate')
+    parser.add_argument('--margin', default=0.2, type=float, help='Triplet loss margin')
+    parser.add_argument('--print-freq', default=20, type=int, help='Print frequency')
+    parser.add_argument('--save-dir', default='.', help='Model save directory')
+    parser.add_argument('--resume', default='', help='Resume from checkpoint')
+
+    return parser.parse_args()
 
 
 if __name__ == '__main__':
-    main()
+    args = parse_args()
+    main(args)
