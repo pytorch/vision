@@ -530,9 +530,9 @@ class Tester(unittest.TestCase):
                 assert np.allclose(expected_output, to_tensor(img).numpy())
         # 'F' mode for torch.FloatTensor
         img_F_mode = transforms.ToPILImage(mode='F')(img_data_float)
-        assert img_F_mode == 'F'
+        assert img_F_mode.mode == 'F'
         assert np.allclose(np.array(Image.fromarray(img_data_float.squeeze(0).numpy(), mode='F')),
-              np.array(img_F_mode))
+                np.array(img_F_mode))
 
     def test_1_channel_ndarray_to_pil_image(self):
         img_data_float = torch.Tensor(4, 4, 1).uniform_().numpy()
