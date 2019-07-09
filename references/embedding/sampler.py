@@ -30,6 +30,16 @@ def create_groups(groups, k):
 
 
 class PKSampler(Sampler):
+    """
+    Randomly samples from a dataset  while ensuring that each batch (of size p * k)
+    includes samples from exactly p labels, with k samples for each label.
+
+    Args:
+        groups (list[int]): List where the ith entry is the group_id/label of the ith sample in the dataset.
+        p (int): Number of labels/groups to be sampled from in a batch
+        k (int): Number of samples for each label/group in a batch
+    """
+
     def __init__(self, groups, p, k):
         self.p = p
         self.k = k
