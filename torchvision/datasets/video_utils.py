@@ -1,5 +1,6 @@
 import bisect
 import torch
+import torch.utils.data
 from torchvision.io import read_video_timestamps, read_video
 
 
@@ -7,6 +8,10 @@ def unfold(tensor, size, step, dilation):
     """
     similar to tensor.unfold, but with the dilation
     and specialized for 1d tensors
+
+    Returns all consecutive windows of `size` elements, with
+    `step` between windows. The distance between each element
+    in a window is given by `dilation`.
     """
     assert tensor.dim() == 1
     o_stride = tensor.stride(0)
@@ -100,6 +105,9 @@ class VideoClips(object):
             info (Dict)
             video_idx (int): index of the video in `video_paths`
         """
+        if idx >= self.num_clips():
+            raise IndexError("Index {} out of range "
+                             "({} number of clips)".format(idx, self.num_clips()))
         video_idx, clip_idx = self.get_clip_location(idx)
         video_path = self.video_paths[video_idx]
         clip_pts = self.clips[video_idx][clip_idx]
@@ -108,3 +116,38 @@ class VideoClips(object):
         # TODO change video_fps in info?
         assert len(video) == self.num_frames
         return video, audio, info, video_idx
+
+
+class RandomMaxVideoClipSampler(torch.utils.data.Sampler):
+    """
+    Samples at most `max_video_clips_per_video` clips for each video randomly
+
+    Arguments:
+        video_clips (VideoClips): video clips to sample from
+        max_clips_per_video (int): maximum number of clips to be sampled per video
+    """
+    def __init__(self, video_clips, max_clips_per_video):
+        if not isinstance(video_clips, VideoClips):
+            raise TypeError("Expected video_clips to be an instance of VideoClips, "
+                            "got {}".format(type(video_clips)))
+        self.video_clips = video_clips
+        self.max_clips_per_video = max_clips_per_video
+
+    def __iter__(self):
+        idxs = []
+        s = 0
+        # select at most max_clips_per_video for each video, randomly
+        for c in self.video_clips.clips:
+            length = len(c)
+            size = min(length, self.max_clips_per_video)
+            sampled = torch.randperm(length)[:size] + s
+            s += length
+            idxs.append(sampled)
+        idxs = torch.cat(idxs)
+        # shuffle all clips randomly
+        perm = torch.randperm(len(idxs))
+        idxs = idxs[perm].tolist()
+        return iter(idxs)
+
+    def __len__(self):
+        return sum(min(len(c), self.max_clips_per_video) for c in self.video_clips.clips)
