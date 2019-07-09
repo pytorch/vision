@@ -100,9 +100,13 @@ def main(args):
                                     transforms.Resize((224, 224)),
                                     transforms.ToTensor()])
 
-    train_dataset = FashionMNIST(args.train_data, train=True, transform=transform, download=True)
-    test_dataset = FashionMNIST(args.test_data, train=False, transform=transform, download=True)
+    # Using FMNIST to demonstrate embedding learning using triplet loss. This dataset can
+    # be replaced with any classification dataset.
+    train_dataset = FashionMNIST(args.dataset_dir, train=True, transform=transform, download=True)
+    test_dataset = FashionMNIST(args.dataset_dir, train=False, transform=transform, download=True)
 
+    # targets is a list where the i_th element corresponds to the label of i_th dataset
+    # element. Most classification datasets have this attribute.
     targets = train_dataset.targets.tolist()
     train_loader = DataLoader(train_dataset, batch_size=batch_size,
                               sampler=PKSampler(targets, p, k),
@@ -126,10 +130,8 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='PyTorch Embedding Learning')
 
-    parser.add_argument('--train-data', default='/tmp/pyemb/train/',
-                        help='FashionMNIST train dataset path')
-    parser.add_argument('--test-data', default='/tmp/pyemb/test/',
-                        help='FashionMNIST test dataset path')
+    parser.add_argument('--dataset-dir', default='/tmp/fmnist/',
+                        help='FashionMNIST dataset directory path')
     parser.add_argument('-p', '--labels-per-batch', default=8, type=int,
                         help='Number of unique labels/classes per batch')
     parser.add_argument('-k', '--samples-per-label', default=8, type=int,
