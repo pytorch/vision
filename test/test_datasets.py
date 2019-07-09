@@ -7,7 +7,8 @@ from PIL import Image
 from torch._utils_internal import get_file_path_2
 import torchvision
 from common_utils import get_tmp_dir
-from fakedata_generation import mnist_root, cifar_root, imagenet_root, cityscapes_root
+from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
+    cityscapes_root, svhn_root
 
 
 class Tester(unittest.TestCase):
@@ -184,6 +185,19 @@ class Tester(unittest.TestCase):
                     self.assertTrue(isinstance(output[1][0], PIL.Image.Image))  # semantic
                     self.assertTrue(isinstance(output[1][1], dict))  # polygon
                     self.assertTrue(isinstance(output[1][2], PIL.Image.Image))  # color
+
+    @mock.patch('torchvision.datasets.SVHN._check_integrity')
+    def test_svhn(self, mock_check):
+        mock_check.return_value = True
+        with svhn_root() as root:
+            dataset = torchvision.datasets.SVHN(root, split="train")
+            self.generic_classification_dataset_test(dataset, num_images=2)
+
+            dataset = torchvision.datasets.SVHN(root, split="test")
+            self.generic_classification_dataset_test(dataset, num_images=2)
+
+            dataset = torchvision.datasets.SVHN(root, split="extra")
+            self.generic_classification_dataset_test(dataset, num_images=2)
 
 
 if __name__ == '__main__':

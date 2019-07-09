@@ -241,3 +241,20 @@ def cityscapes_root():
                                          '{city}_000000_000000_leftImg8bit.png'.format(city=city)))
 
         yield tmp_dir
+
+
+@contextlib.contextmanager
+def svhn_root():
+    import scipy.io as sio
+
+    def _make_mat(file):
+        images = np.zeros((32, 32, 3, 2), dtype=np.uint8)
+        targets = np.zeros((2,), dtype=np.uint8)
+        sio.savemat(file, {'X': images, 'y': targets})
+
+    with get_tmp_dir() as root:
+        _make_mat(os.path.join(root, "train_32x32.mat"))
+        _make_mat(os.path.join(root, "test_32x32.mat"))
+        _make_mat(os.path.join(root, "extra_32x32.mat"))
+
+        yield root
