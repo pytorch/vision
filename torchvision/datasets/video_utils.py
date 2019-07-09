@@ -118,7 +118,7 @@ class VideoClips(object):
         return video, audio, info, video_idx
 
 
-class RandomMaxVideoClipSampler(torch.utils.data.Sampler):
+class RandomClipSampler(torch.utils.data.Sampler):
     """
     Samples at most `max_video_clips_per_video` clips for each video randomly
 
