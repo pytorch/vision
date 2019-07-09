@@ -3,8 +3,6 @@ import os
 import torch
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-from torch.utils.data.dataset import Subset
-from torch.nn.modules.distance import PairwiseDistance
 
 import torchvision.transforms as transforms
 from torchvision.datasets import FashionMNIST
