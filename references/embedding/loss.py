@@ -3,15 +3,12 @@
     https://github.com/omoindrot/tensorflow-triplet-loss
 '''
 import torch
-from torch.nn.modules.loss import _Loss
-from torch._jit_internal import weak_module, weak_script_method
+import torch.nn as nn
 
 
-@weak_module
-class TripletMarginLoss(_Loss):
-    def __init__(self, margin=1.0, p=2., mining='batch_all',
-                 size_average=None, reduce=None, reduction='mean'):
-        super(TripletMarginLoss, self).__init__(size_average, reduce, reduction)
+class TripletMarginLoss(nn.Module):
+    def __init__(self, margin=1.0, p=2., mining='batch_all'):
+        super(TripletMarginLoss, self).__init__()
         self.margin = margin
         self.p = p
         self.mining = mining
@@ -21,7 +18,6 @@ class TripletMarginLoss(_Loss):
         if mining == 'batch_hard':
             self.loss_fn = batch_hard_triplet_loss
 
-    @weak_script_method
     def forward(self, embeddings, labels):
         return self.loss_fn(labels, embeddings, self.margin, self.p)
 
