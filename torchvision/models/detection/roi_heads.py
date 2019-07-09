@@ -531,8 +531,6 @@ class RoIHeads(torch.nn.Module):
             for t in targets:
                 assert t["boxes"].dtype.is_floating_point, 'target boxes must of float type'
                 assert t["labels"].dtype == torch.int64, 'target labels must of int64 type'
-                if self.has_mask:
-                    assert t["masks"].dtype == torch.uint8, 'target masks must of uint8 type'
                 if self.has_keypoint:
                     assert t["keypoints"].dtype == torch.float32, 'target keypoints must of float type'
 
