@@ -39,12 +39,11 @@ def train_epoch(model, optimizer, criterion, data_loader, device, epoch, print_f
 
 
 @torch.no_grad()
-def evaluate(model, dataset, device):
+def evaluate(model, loader, device):
     model.eval()
     embeds, labels = None, None
     dists, targets = None, None
 
-    loader = DataLoader(dataset, batch_size=512, shuffle=False, num_workers=4)
     for data in loader:
         samples, _labels = data[0].to(device), data[1]
         out = model(samples)
@@ -104,14 +103,17 @@ def main(args):
     targets = train_dataset.targets.tolist()
     train_loader = DataLoader(train_dataset, batch_size=batch_size,
                               sampler=PKSampler(targets, p, k),
-                              num_workers=4)
+                              num_workers=args.workers)
+    test_loader = DataLoader(test_dataset, batch_size=args.eval_batch_size,
+                             shuffle=False,
+                             num_workers=args.workers)
 
     for epoch in range(1, args.epochs + 1):
         print('Training...')
         train_epoch(model, optimizer, criterion, train_loader, device, epoch, args.print_freq)
 
         print('Evaluating...')
-        evaluate(model, test_dataset, device)
+        evaluate(model, test_loader, device)
 
         print('Saving...')
         save(model, epoch, args.save_dir, 'ckpt.pth')
@@ -129,6 +131,7 @@ def parse_args():
                         help='Number of unique labels/classes per batch')
     parser.add_argument('-k', '--samples-per-label', default=8, type=int,
                         help='Number of samples per label in a batch')
+    parser.add_argument('--eval-batch-size', default=512, type=int)
     parser.add_argument('--epochs', default=10, type=int, metavar='N',
                         help='Number of training epochs to run')
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
