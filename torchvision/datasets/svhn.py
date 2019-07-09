@@ -66,20 +66,20 @@ class SVHN(VisionDataset):
         import scipy.io as sio
 
         # reading(loading) mat file as array
-        loaded_mat = sio.loadmat(os.path.join(self.root, self.filename),
-                                 squeeze_me=True)
-        data, targets = loaded_mat['X'], loaded_mat['y']
+        loaded_mat = sio.loadmat(os.path.join(self.root, self.filename))
 
-        # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        self.data = [Image.fromarray(image.squeeze(3))
-                     for image in np.split(data, len(targets), axis=3)]
+        self.data = loaded_mat['X']
+        # loading from the .mat file gives an np array of type np.uint8
+        # converting to np.int64, so that we have a LongTensor after
+        # the conversion from the numpy array
+        # the squeeze is needed to obtain a 1D tensor
+        self.labels = loaded_mat['y'].astype(np.int64).squeeze()
 
         # the svhn dataset assigns the class label "10" to the digit 0
         # this makes it inconsistent with several loss functions
         # which expect the class labels to be in the range [0, C-1]
-        np.place(targets, targets == 10, 0)
-        self.targets = [int(target) for target in targets]
+        np.place(self.labels, self.labels == 10, 0)
+        self.data = np.transpose(self.data, (3, 2, 0, 1))
 
     def __getitem__(self, index):
         """
@@ -89,7 +89,11 @@ class SVHN(VisionDataset):
         Returns:
             tuple: (image, target) where target is index of the target class.
         """
-        img, target = self.data[index], self.targets[index]
+        img, target = self.data[index], int(self.labels[index])
+
+        # doing this so that it is consistent with all other datasets
+        # to return a PIL Image
+        img = Image.fromarray(np.transpose(img, (1, 2, 0)))
 
         if self.transform is not None:
             img = self.transform(img)

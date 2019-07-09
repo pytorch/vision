@@ -94,10 +94,6 @@ class CIFAR10(VisionDataset):
         self.data = np.vstack(self.data).reshape(-1, 3, 32, 32)
         self.data = self.data.transpose((0, 2, 3, 1))  # convert to HWC
 
-        # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        self.data = [Image.fromarray(image) for image in self.data]
-
         self._load_meta()
 
     def _load_meta(self):
@@ -122,6 +118,10 @@ class CIFAR10(VisionDataset):
             tuple: (image, target) where target is index of the target class.
         """
         img, target = self.data[index], self.targets[index]
+
+        # doing this so that it is consistent with all other datasets
+        # to return a PIL Image
+        img = Image.fromarray(img)
 
         if self.transform is not None:
             img = self.transform(img)
