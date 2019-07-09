@@ -173,48 +173,35 @@ class Tester(unittest.TestCase):
                 torch.nn.functional.mse_loss(tr_img2, F.to_tensor(img))
 
     def test_resize(self):
+        def resize_helper(size, is_pil=True):
+            t = [transforms.Resize(size)]
+            if is_pil:
+                t.insert(0, transforms.ToPILImage())
+                t.append(transforms.ToTensor())
+            return transforms.Compose(t)
+
         height = random.randint(24, 32) * 2
         width = random.randint(24, 32) * 2
+
         osize = random.randint(5, 12) * 2
-
-        img = torch.ones(3, height, width)
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize(osize),
-            transforms.ToTensor(),
-        ])(img)
-        assert osize in result.size()
-        if height < width:
-            assert result.size(1) <= result.size(2)
-        elif width < height:
-            assert result.size(1) >= result.size(2)
-
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize([osize, osize]),
-            transforms.ToTensor(),
-        ])(img)
-        assert osize in result.size()
-        assert result.size(1) == osize
-        assert result.size(2) == osize
-
         oheight = random.randint(5, 12) * 2
         owidth = random.randint(5, 12) * 2
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize((oheight, owidth)),
-            transforms.ToTensor(),
-        ])(img)
-        assert result.size(1) == oheight
-        assert result.size(2) == owidth
 
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize([oheight, owidth]),
-            transforms.ToTensor(),
-        ])(img)
-        assert result.size(1) == oheight
-        assert result.size(2) == owidth
+        img = torch.rand(3, height, width)
+
+        for is_pil in [True, False]:
+            result = resize_helper(osize, is_pil)(img)
+            assert osize in result.size()
+            if height < width:
+                assert result.size(1) <= result.size(2)
+            elif width < height:
+                assert result.size(1) >= result.size(2)
+
+            for size in [[osize, osize], (oheight, owidth), [oheight, owidth]]:
+                result = resize_helper(size, is_pil)(img)
+                assert result.size(1) == size[0]
+                assert result.size(2) == size[1]
+
 
     def test_random_crop(self):
         height = random.randint(10, 32) * 2
