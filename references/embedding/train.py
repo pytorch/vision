@@ -41,14 +41,17 @@ def train_epoch(model, optimizer, criterion, data_loader, device, epoch, print_f
 @torch.no_grad()
 def evaluate(model, loader, device):
     model.eval()
-    embeds, labels = None, None
+    embeds, labels = [], []
     dists, targets = None, None
 
     for data in loader:
         samples, _labels = data[0].to(device), data[1]
         out = model(samples)
-        embeds = torch.cat((embeds, out), dim=0) if embeds is not None else out
-        labels = torch.cat((labels, _labels), dim=0) if labels is not None else _labels
+        embeds.append(out)
+        labels.append(_labels)
+
+    embeds = torch.cat(embeds, dim=0)
+    labels = torch.cat(labels, dim=0)
 
     dists = torch.cdist(embeds, embeds)
 
