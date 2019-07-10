@@ -113,9 +113,12 @@ def main(args):
     train_dataset = FashionMNIST(args.dataset_dir, train=True, transform=transform, download=True)
     test_dataset = FashionMNIST(args.dataset_dir, train=False, transform=transform, download=True)
 
-    # targets is a list where the i_th element corresponds to the label of i_th dataset
-    # element. Most classification datasets have this attribute.
+    # targets is a list where the i_th element corresponds to the label of i_th dataset element.
+    # This is required for PKSampler to randomly sample from exactly p classes. You will need to
+    # construct targets while building your dataset. Some datasets (such as ImageFolder) have a
+    # targets attribute with the same format.
     targets = train_dataset.targets.tolist()
+
     train_loader = DataLoader(train_dataset, batch_size=batch_size,
                               sampler=PKSampler(targets, p, k),
                               num_workers=args.workers)
