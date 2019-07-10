@@ -191,16 +191,28 @@ class Tester(unittest.TestCase):
 
         for is_pil in [True, False]:
             result = resize_helper(osize, is_pil)(img)
-            assert osize in result.size()
+            self.assertIn(osize, result.size())
             if height < width:
-                assert result.size(1) <= result.size(2)
+                self.assertTrue(result.size(1) <= result.size(2))
             elif width < height:
-                assert result.size(1) >= result.size(2)
+                self.assertTrue(result.size(1) >= result.size(2))
 
             for size in [[osize, osize], (oheight, owidth), [oheight, owidth]]:
                 result = resize_helper(size, is_pil)(img)
-                assert result.size(1) == size[0]
-                assert result.size(2) == size[1]
+                self.assertTrue(result.size(1) == size[0])
+                self.assertTrue(result.size(2) == size[1])
+
+        # test resize on 3d and 4d images for tensor inputs
+        t = resize_helper((oheight, owidth), is_pil=False)
+        img = torch.rand(3, height, width)
+        r = t(img)
+        self.assertEqual(tuple(r.shape), (3, oheight, owidth))
+        img = torch.rand(1, 3, height, width)
+        r = t(img)
+        self.assertEqual(tuple(r.shape), (1, 3, oheight, owidth))
+        img = torch.rand(2, 3, height, width)
+        r = t(img)
+        self.assertEqual(tuple(r.shape), (2, 3, oheight, owidth))
 
 
     def test_random_crop(self):
