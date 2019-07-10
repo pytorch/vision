@@ -159,13 +159,16 @@ def read_video_timestamps(filename):
     Returns:
         pts (List[int]): presentation timestamps for each one of the frames
             in the video.
+        video_fps (int): the frame rate for the video
     """
     _check_av_available()
     container = av.open(filename)
 
     video_frames = []
+    video_fps = None
     if container.streams.video:
         video_frames = _read_from_stream(container, 0, float("inf"),
                                          container.streams.video[0], {'video': 0})
+        video_fps = float(container.streams.video[0].average_rate)
     container.close()
-    return [x.pts for x in video_frames]
+    return [x.pts for x in video_frames], video_fps

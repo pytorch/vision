@@ -10,7 +10,7 @@ from common_utils import get_tmp_dir
 
 
 @contextlib.contextmanager
-def get_list_of_videos(num_videos=5, sizes=None):
+def get_list_of_videos(num_videos=5, sizes=None, fps=None):
     with get_tmp_dir() as tmp_dir:
         names = []
         for i in range(num_videos):
@@ -18,10 +18,14 @@ def get_list_of_videos(num_videos=5, sizes=None):
                 size = 5 * (i + 1)
             else:
                 size = sizes[i]
+            if fps is None:
+                f = 5
+            else:
+                f = fps[i]
             data = torch.randint(0, 255, (size, 300, 400, 3), dtype=torch.uint8)
             name = os.path.join(tmp_dir, "{}.mp4".format(i))
             names.append(name)
-            io.write_video(name, data, fps=5)
+            io.write_video(name, data, fps=f)
 
         yield names
 
@@ -103,6 +107,17 @@ class Tester(unittest.TestCase):
             v_idxs, count = torch.unique(videos, return_counts=True)
             self.assertTrue(v_idxs.equal(torch.tensor([0, 1])))
             self.assertTrue(count.equal(torch.tensor([3, 3])))
+
+    def test_video_clips_custom_fps(self):
+        with get_list_of_videos(num_videos=3, sizes=[12, 12, 12], fps=[3, 4, 6]) as video_list:
+            num_frames = 4
+            for fps in [1, 3, 4, 10]:
+                video_clips = VideoClips(video_list, num_frames, num_frames, fps)
+                for i in range(video_clips.num_clips()):
+                    video, audio, info, video_idx = video_clips.get_clip(i)
+                    self.assertEqual(video.shape[0], num_frames)
+                    self.assertEqual(info["video_fps"], fps)
+                    # TODO add tests checking that the content is right
 
 
 if __name__ == '__main__':

@@ -28,6 +28,8 @@ class VideoClips(object):
     Given a list of video files, computes all consecutive subvideos of size
     `clip_length_in_frames`, where the distance between each subvideo in the
     same video is defined by `frames_between_clips`.
+    If `frame_rate` is specified, it will also resample all the videos to have
+    the same frame rate, and the clips will refer to this frame rate.
 
     Creating this instance the first time is time-consuming, as it needs to
     decode all the videos in `video_paths`. It is recommended that you
@@ -35,20 +37,31 @@ class VideoClips(object):
 
     Recreating the clips for different clip lengths is fast, and can be done
     with the `compute_clips` method.
+
+    Arguments:
+        video_paths (List[str]): paths to the video files
+        clip_length_in_frames (int): size of a clip in number of frames
+        frames_between_clips (int): step (in frames) between each clip
+        frame_rate (int, optional): if specified, it will resample the video
+            so that it has `frame_rate`, and then the clips will be defined
+            on the resampled video
     """
-    def __init__(self, video_paths, clip_length_in_frames=16, frames_between_clips=1):
+    def __init__(self, video_paths, clip_length_in_frames=16, frames_between_clips=1,
+                 frame_rate=None):
         self.video_paths = video_paths
         self._compute_frame_pts()
-        self.compute_clips(clip_length_in_frames, frames_between_clips)
+        self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate)
 
     def _compute_frame_pts(self):
         self.video_pts = []
+        self.video_fps = []
         # TODO maybe paralellize this
         for video_file in self.video_paths:
-            clips = read_video_timestamps(video_file)
+            clips, fps = read_video_timestamps(video_file)
             self.video_pts.append(torch.as_tensor(clips))
+            self.video_fps.append(fps)
 
-    def compute_clips(self, num_frames, step, dilation=1):
+    def compute_clips(self, num_frames, step, frame_rate=None):
         """
         Compute all consecutive sequences of clips from video_pts.
 
@@ -60,9 +73,14 @@ class VideoClips(object):
         """
         self.num_frames = num_frames
         self.step = step
-        self.dilation = dilation
+        self.frame_rate = frame_rate
         self.clips = []
-        for video_pts in self.video_pts:
+        for video_pts, fps in zip(self.video_pts, self.video_fps):
+            if frame_rate is not None:
+                # divup, == int(ceil(fps / frame_rate))
+                dilation = max(int((fps + frame_rate - 1) // frame_rate), 1)
+            else:
+                dilation = 1
             clips = unfold(video_pts, num_frames, step, dilation)
             self.clips.append(clips)
         clip_lengths = torch.as_tensor([len(v) for v in self.clips])
@@ -92,6 +110,21 @@ class VideoClips(object):
             clip_idx = idx - self.cumulative_sizes[video_idx - 1]
         return video_idx, clip_idx
 
+    def resample_video(self, video, original_fps, new_fps):
+        """
+        Resamples a video so that it matches a new fps specified
+        """
+        step = original_fps / new_fps
+        if step.is_integer():
+            # optimization: if step is integer, don't need to perform
+            # advanced indexing
+            step = int(step)
+            return video[::step]
+        idxs = torch.arange(self.num_frames, dtype=torch.float32) * step
+        idxs = idxs.floor().to(torch.int64)
+        video = video[idxs]
+        return video
+
     def get_clip(self, idx):
         """
         Gets a subclip from a list of videos.
@@ -112,8 +145,10 @@ class VideoClips(object):
         video_path = self.video_paths[video_idx]
         clip_pts = self.clips[video_idx][clip_idx]
         video, audio, info = read_video(video_path, clip_pts[0].item(), clip_pts[-1].item())
-        video = video[::self.dilation]
-        # TODO change video_fps in info?
+        if self.frame_rate is not None:
+            fps = self.video_fps[video_idx]
+            video = self.resample_video(video, fps, self.frame_rate)
+            info["video_fps"] = self.frame_rate
         assert len(video) == self.num_frames
         return video, audio, info, video_idx
 
