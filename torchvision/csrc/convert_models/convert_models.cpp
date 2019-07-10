@@ -72,5 +72,14 @@ int main(int argc, const char* argv[]) {
   convert_and_save_model<InceptionV3>(
       "inceptionv3_python.pt", "inceptionv3_cpp.pt");
 
+  convert_and_save_model<MNASNet0_5>(
+      "mnasnet0_5_python.pt", "mnasnet0_5_cpp.pt");
+  convert_and_save_model<MNASNet0_75>(
+      "mnasnet0_75_python.pt", "mnasnet0_75_cpp.pt");
+  convert_and_save_model<MNASNet1_0>(
+      "mnasnet1_0_python.pt", "mnasnet1_0_cpp.pt");
+  convert_and_save_model<MNASNet1_3>(
+      "mnasnet1_3_python.pt", "mnasnet1_3_cpp.pt");
+
   return 0;
 }
