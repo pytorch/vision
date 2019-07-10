@@ -38,6 +38,22 @@ def train_epoch(model, optimizer, criterion, data_loader, device, epoch, print_f
             running_frac_pos_triplets = 0
 
 
+
+def find_best_threshold(dists, targets, device):
+    best_thresh = 0.01
+    best_correct = 0
+    for thresh in torch.arange(0.0, 1.51, 0.01):
+        predictions = dists <= thresh.to(device)
+        correct = torch.sum(predictions == targets.to(device)).item()
+        if correct > best_correct:
+            best_thresh = thresh
+            best_correct = correct
+
+    accuracy = 100.0 * best_correct / dists.size(0)
+
+    return best_thresh, accuracy
+
+
 @torch.no_grad()
 def evaluate(model, loader, device):
     model.eval()
@@ -62,17 +78,9 @@ def evaluate(model, loader, device):
     dists = dists[mask == 1]
     targets = targets[mask == 1]
 
-    best_thresh = 0.01
-    best_correct = 0
-    for thresh in torch.arange(0.0, 1.51, 0.01):
-        predictions = dists <= thresh.to(device)
-        correct = torch.sum(predictions == targets.to(device)).item()
-        if correct > best_correct:
-            best_thresh = thresh
-            best_correct = correct
+    threshold, accuracy = find_best_threshold(dists, targets, device)
 
-    accuracy = 100.0 * best_correct / dists.size(0)
-    print('accuracy: {:.3f}%, threshold: {:.2f}'.format(accuracy, best_thresh))
+    print('accuracy: {:.3f}%, threshold: {:.2f}'.format(accuracy, threshold))
 
 
 def save(model, epoch, save_dir, file_name):
