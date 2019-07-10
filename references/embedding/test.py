@@ -12,7 +12,7 @@ class Tester(unittest.TestCase):
 
     def test_pksampler(self):
         p, k = 16, 4
-        
+
         # Ensure sampler does not allow p to be greater than num_classes
         dataset = FakeData(size=100, num_classes=10, image_size=(3, 1, 1))
         targets = [target.item() for _, target in dataset]

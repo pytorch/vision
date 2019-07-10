@@ -38,7 +38,6 @@ def train_epoch(model, optimizer, criterion, data_loader, device, epoch, print_f
             running_frac_pos_triplets = 0
 
 
-
 def find_best_threshold(dists, targets, device):
     best_thresh = 0.01
     best_correct = 0
