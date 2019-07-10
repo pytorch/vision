@@ -45,6 +45,9 @@ class PKSampler(Sampler):
         self.k = k
         self.groups = create_groups(groups, self.k)
 
+        # Ensures there are enough classes to sample from
+        assert len(self.groups) >= p
+
     def __iter__(self):
         # Shuffle samples within groups
         for key in self.groups:
