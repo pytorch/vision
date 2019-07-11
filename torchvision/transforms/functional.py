@@ -387,16 +387,19 @@ def crop(img, i, j, h, w):
     Returns:
         PIL Image: Cropped image.
     """
-    if not _is_pil_image(img):
+    if not (_is_pil_image(img) or isinstance(img, torch.Tensor)):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    return img.crop((j, i, j + w, i + h))
+    if _is_pil_image(img):
+        return img.crop((j, i, j + w, i + h))
+
+    return im[..., i:(i + h), j:(j + w)]
 
 
 def center_crop(img, output_size):
     if isinstance(output_size, numbers.Number):
         output_size = (int(output_size), int(output_size))
-    w, h = img.size
+    w, h = _get_image_size(img)
     th, tw = output_size
     i = int(round((h - th) / 2.))
     j = int(round((w - tw) / 2.))

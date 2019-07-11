@@ -23,6 +23,14 @@ GRACE_HOPPER = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
 
 
+def transform_helper(t, is_pil=True):
+    t = [t]
+    if is_pil:
+        t.insert(0, transforms.ToPILImage())
+        t.append(transforms.ToTensor())
+    return transforms.Compose(t)
+
+
 class Tester(unittest.TestCase):
 
     def test_crop(self):
@@ -190,7 +198,7 @@ class Tester(unittest.TestCase):
         img = torch.rand(3, height, width)
 
         for is_pil in [True, False]:
-            result = resize_helper(osize, is_pil)(img)
+            result = transform_helper(transforms.Resize(osize), is_pil)(img)
             self.assertIn(osize, result.size())
             if height < width:
                 self.assertTrue(result.size(1) <= result.size(2))
@@ -198,12 +206,12 @@ class Tester(unittest.TestCase):
                 self.assertTrue(result.size(1) >= result.size(2))
 
             for size in [[osize, osize], (oheight, owidth), [oheight, owidth]]:
-                result = resize_helper(size, is_pil)(img)
+                result = transform_helper(transforms.Resize(size), is_pil)(img)
                 self.assertTrue(result.size(1) == size[0])
                 self.assertTrue(result.size(2) == size[1])
 
         # test resize on 3d and 4d images for tensor inputs
-        t = resize_helper((oheight, owidth), is_pil=False)
+        t = transform_helper(transforms.Resize((oheight, owidth)), is_pil=False)
         img = torch.rand(3, height, width)
         r = t(img)
         self.assertEqual(tuple(r.shape), (3, oheight, owidth))
