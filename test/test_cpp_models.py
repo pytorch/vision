@@ -113,6 +113,18 @@ class Tester(unittest.TestCase):
     def test_googlenet(self):
         process_model(models.googlenet(self.pretrained), self.image, _C_tests.forward_googlenet, 'GoogLeNet')
 
+    def test_mnasnet0_5(self):
+        process_model(models.mnasnet0_5(self.pretrained), self.image, _C_tests.forward_mnasnet0_5, 'MNASNet0_5')
+
+    def test_mnasnet0_75(self):
+        process_model(models.mnasnet0_75(self.pretrained), self.image, _C_tests.forward_mnasnet0_75, 'MNASNet0_75')
+
+    def test_mnasnet1_0(self):
+        process_model(models.mnasnet1_0(self.pretrained), self.image, _C_tests.forward_mnasnet1_0, 'MNASNet1_0')
+        
+    def test_mnasnet1_3(self):
+        process_model(models.mnasnet1_3(self.pretrained), self.image, _C_tests.forward_mnasnet1_3, 'MNASNet1_3')
+
     def test_inception_v3(self):
         self.image = read_image2()
         process_model(models.inception_v3(self.pretrained), self.image, _C_tests.forward_inceptionv3, 'Inceptionv3')

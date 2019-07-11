@@ -29,11 +29,12 @@ struct MNASNetInvertedResidualImpl : torch::nn::Module {
         torch::nn::BatchNormOptions(mid).momentum(bn_momentum)));
     layers->push_back(
         torch::nn::Functional(torch::nn::Functional(modelsimpl::relu_)));
-    torch::nn::Conv2d(torch::nn::Conv2d(Options(mid, mid, kernel)
-                                            .padding(kernel / 2)
-                                            .stride(stride)
-                                            .groups(mid)
-                                            .with_bias(false)));
+    layers->push_back(
+        torch::nn::Conv2d(torch::nn::Conv2d(Options(mid, mid, kernel)
+                                                .padding(kernel / 2)
+                                                .stride(stride)
+                                                .groups(mid)
+                                                .with_bias(false))));
     layers->push_back(torch::nn::BatchNorm(
         torch::nn::BatchNormOptions(mid).momentum(bn_momentum)));
     layers->push_back(
@@ -90,7 +91,6 @@ int64_t round_to_multiple_of(
     int64_t val,
     int64_t divisor,
     double round_up_bias = .9) {
-  // TODO check / and //
   assert(0.0 < round_up_bias && round_up_bias < 1.0);
   auto new_val = std::max(divisor, (val + divisor / 2) / divisor * divisor);
   return new_val >= round_up_bias * val ? new_val : new_val + divisor;
