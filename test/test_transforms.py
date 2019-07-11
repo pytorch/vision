@@ -36,43 +36,32 @@ class Tester(unittest.TestCase):
     def test_crop(self):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
-        oheight = random.randint(5, (height - 2) / 2) * 2
-        owidth = random.randint(5, (width - 2) / 2) * 2
 
-        img = torch.ones(3, height, width)
-        oh1 = (height - oheight) // 2
-        ow1 = (width - owidth) // 2
-        imgnarrow = img[:, oh1:oh1 + oheight, ow1:ow1 + owidth]
-        imgnarrow.fill_(0)
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.CenterCrop((oheight, owidth)),
-            transforms.ToTensor(),
-        ])(img)
-        assert result.sum() == 0, "height: " + str(height) + " width: " \
-                                  + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
-        oheight += 1
-        owidth += 1
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.CenterCrop((oheight, owidth)),
-            transforms.ToTensor(),
-        ])(img)
-        sum1 = result.sum()
-        assert sum1 > 1, "height: " + str(height) + " width: " \
-                         + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
-        oheight += 1
-        owidth += 1
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.CenterCrop((oheight, owidth)),
-            transforms.ToTensor(),
-        ])(img)
-        sum2 = result.sum()
-        assert sum2 > 0, "height: " + str(height) + " width: " \
-                         + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
-        assert sum2 > sum1, "height: " + str(height) + " width: " \
-                            + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
+        for is_pil in [True, False]:
+            oheight = random.randint(5, (height - 2) / 2) * 2
+            owidth = random.randint(5, (width - 2) / 2) * 2
+            img = torch.ones(3, height, width)
+            oh1 = (height - oheight) // 2
+            ow1 = (width - owidth) // 2
+            imgnarrow = img[:, oh1:oh1 + oheight, ow1:ow1 + owidth]
+            imgnarrow.fill_(0)
+            result = transform_helper(transforms.CenterCrop((oheight, owidth)), is_pil)(img)
+            assert result.sum() == 0, "height: " + str(height) + " width: " \
+                                      + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
+            oheight += 1
+            owidth += 1
+            result = transform_helper(transforms.CenterCrop((oheight, owidth)), is_pil)(img)
+            sum1 = result.sum()
+            assert sum1 > 1, "height: " + str(height) + " width: " \
+                             + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
+            oheight += 1
+            owidth += 1
+            result = transform_helper(transforms.CenterCrop((oheight, owidth)), is_pil)(img)
+            sum2 = result.sum()
+            assert sum2 > 0, "height: " + str(height) + " width: " \
+                             + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
+            assert sum2 > sum1, "height: " + str(height) + " width: " \
+                                + str(width) + " oheight: " + str(oheight) + " owidth: " + str(owidth)
 
     def test_five_crop(self):
         to_pil_image = transforms.ToPILImage()
@@ -181,13 +170,6 @@ class Tester(unittest.TestCase):
                 torch.nn.functional.mse_loss(tr_img2, F.to_tensor(img))
 
     def test_resize(self):
-        def resize_helper(size, is_pil=True):
-            t = [transforms.Resize(size)]
-            if is_pil:
-                t.insert(0, transforms.ToPILImage())
-                t.append(transforms.ToTensor())
-            return transforms.Compose(t)
-
         height = random.randint(24, 32) * 2
         width = random.randint(24, 32) * 2
 

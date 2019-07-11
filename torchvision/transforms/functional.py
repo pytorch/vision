@@ -393,7 +393,7 @@ def crop(img, i, j, h, w):
     if _is_pil_image(img):
         return img.crop((j, i, j + w, i + h))
 
-    return im[..., i:(i + h), j:(j + w)]
+    return img[..., i:(i + h), j:(j + w)]
 
 
 def center_crop(img, output_size):
