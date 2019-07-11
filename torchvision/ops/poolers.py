@@ -119,7 +119,7 @@ class MultiScaleRoIAlign(nn.Module):
             x (OrderedDict[Tensor]): feature maps for each level. They are assumed to have
                 all the same number of channels, but they can have different sizes.
             boxes (List[Tensor[N, 4]]): boxes to be used to perform the pooling operation, in
-                [x0, y0, x1, y1] format and in the image reference size, not the feature map
+                (x1, y1, x2, y2) format and in the image reference size, not the feature map
                 reference.
             image_shapes (List[Tuple[height, width]]): the sizes of each image before they
                 have been fed to a CNN to obtain feature maps. This allows us to infer the
