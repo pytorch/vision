@@ -214,7 +214,6 @@ class Tester(unittest.TestCase):
         r = t(img)
         self.assertEqual(tuple(r.shape), (2, 3, oheight, owidth))
 
-
     def test_random_crop(self):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
