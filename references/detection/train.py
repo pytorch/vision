@@ -1,4 +1,4 @@
-"""PyTorch Detection Training.
+r"""PyTorch Detection Training.
 
 To run in a multi-gpu environment, use the distributed launcher::
 
