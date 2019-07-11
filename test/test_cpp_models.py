@@ -121,7 +121,7 @@ class Tester(unittest.TestCase):
 
     def test_mnasnet1_0(self):
         process_model(models.mnasnet1_0(self.pretrained), self.image, _C_tests.forward_mnasnet1_0, 'MNASNet1_0')
-        
+
     def test_mnasnet1_3(self):
         process_model(models.mnasnet1_3(self.pretrained), self.image, _C_tests.forward_mnasnet1_3, 'MNASNet1_3')
 
