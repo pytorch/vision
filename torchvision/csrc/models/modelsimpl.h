@@ -15,7 +15,7 @@ inline torch::Tensor& relu_(torch::Tensor x) {
 }
 
 inline torch::Tensor relu6_(torch::Tensor x) {
-  return torch::clamp_(x, 0, 6);
+  return x.clamp_(0, 6);
 }
 
 inline torch::Tensor adaptive_avg_pool2d(
