@@ -1,4 +1,3 @@
-import PIL
 import os
 import shutil
 import tempfile

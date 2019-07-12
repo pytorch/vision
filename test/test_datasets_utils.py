@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+import shutil
 import torchvision.datasets.utils as utils
 import unittest
 import zipfile
