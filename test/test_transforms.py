@@ -84,7 +84,6 @@ class Tester(unittest.TestCase):
             for crop in results:
                 assert crop.size == (crop_w, crop_h)
 
-            to_pil_image = transforms.ToPILImage()
             tl = to_pil_image(img[:, 0:crop_h, 0:crop_w])
             tr = to_pil_image(img[:, 0:crop_h, w - crop_w:])
             bl = to_pil_image(img[:, h - crop_h:, 0:crop_w])

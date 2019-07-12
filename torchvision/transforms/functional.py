@@ -438,10 +438,13 @@ def hflip(img):
     Returns:
         PIL Image:  Horizontall flipped image.
     """
-    if not _is_pil_image(img):
+    if not (_is_pil_image(img) or isinstance(img, torch.Tensor)):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    return img.transpose(Image.FLIP_LEFT_RIGHT)
+    if _is_pil_image(img):
+        return img.transpose(Image.FLIP_LEFT_RIGHT)
+
+    return img.flip(dims=(-1,))
 
 
 def _get_perspective_coeffs(startpoints, endpoints):
@@ -496,10 +499,13 @@ def vflip(img):
     Returns:
         PIL Image:  Vertically flipped image.
     """
-    if not _is_pil_image(img):
+    if not (_is_pil_image(img) or isinstance(img, torch.Tensor)):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    return img.transpose(Image.FLIP_TOP_BOTTOM)
+    if _is_pil_image(img):
+        return img.transpose(Image.FLIP_TOP_BOTTOM)
+
+    return img.flip(dims=(-2,))
 
 
 def five_crop(img, size):
