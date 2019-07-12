@@ -64,6 +64,8 @@ class VideoClips(object):
     def compute_clips(self, num_frames, step, frame_rate=None):
         """
         Compute all consecutive sequences of clips from video_pts.
+        Always returns clips of size `num_frames`, meaning that the
+        last few frames in a video can potentially be dropped.
 
         Arguments:
             num_frames (int): number of frames for the clip
