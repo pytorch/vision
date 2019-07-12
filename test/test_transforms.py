@@ -724,6 +724,27 @@ class Tester(unittest.TestCase):
         with self.assertRaises(ValueError):
             transforms.ToPILImage()(np.ones([1, 4, 4, 3]))
 
+    def _test_flip(self, method):
+        img = torch.rand(3, 10, 10)
+        pil_img = transforms.functional.to_pil_image(img)
+
+        func = getattr(transforms.functional, method)
+
+        f_img = func(img)
+        f_pil_img = func(pil_img)
+        f_pil_img = transforms.functional.to_tensor(f_pil_img)
+        # there are rounding differences with PIL due to uint8 conversion
+        self.assertTrue((f_img - f_pil_img).abs().max() < 1.0 / 255)
+
+        ff_img = func(f_img)
+        self.assertTrue(img.equal(ff_img))
+
+    def test_vertical_flip(self):
+        self._test_flip('vflip')
+
+    def test_horizontal_flip(self):
+        self._test_flip('hflip')
+
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_vertical_flip(self):
         random_state = random.getstate()
