@@ -98,7 +98,6 @@ class MNASNet(torch.nn.Module):
             # First layer: regular conv.
             nn.Conv2d(3, depths[0], 3, padding=1, stride=2, bias=False),
             nn.BatchNorm2d(depths[0], momentum=_BN_MOMENTUM),
-            nn.ReLU(inplace=True),
             # Depthwise separable, no skip.
             nn.Conv2d(depths[0], depths[0], 3, padding=1, stride=1,
                       groups=depths[0], bias=False),
