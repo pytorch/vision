@@ -30,7 +30,7 @@ class GeneralizedRCNNTransform(nn.Module):
         self.image_std = image_std
 
     def forward(self, images, targets=None):
-        images = images[:]
+        images = [img for img in images]
         for i in range(len(images)):
             image = images[i]
             target = targets[i] if targets is not None else targets
