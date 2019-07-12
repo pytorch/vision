@@ -150,7 +150,7 @@ class MaskRCNN(FasterRCNN):
     """
     def __init__(self, backbone, num_classes=None,
                  # transform parameters
-                 min_size=800, max_size=1333,
+                 min_size=800, max_size=1312,
                  image_mean=None, image_std=None,
                  # RPN parameters
                  rpn_anchor_generator=None, rpn_head=None,
