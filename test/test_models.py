@@ -45,7 +45,9 @@ class Tester(unittest.TestCase):
         model.eval()
         input_shape = (3, 300, 300)
         x = torch.rand(input_shape)
-        out = model([x])
+        model_input = [x]
+        out = model(model_input)
+        self.assertIs(model_input[0], x)
         self.assertEqual(len(out), 1)
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
@@ -60,6 +62,26 @@ class Tester(unittest.TestCase):
         new_model = torch.nn.Sequential(layers)
         return new_model
 
+    def test_memory_efficient_densenet(self):
+        input_shape = (1, 3, 300, 300)
+        x = torch.rand(input_shape)
+
+        for name in ['densenet121', 'densenet169', 'densenet201', 'densenet161']:
+            model1 = models.__dict__[name](num_classes=50, memory_efficient=True)
+            params = model1.state_dict()
+            model1.eval()
+            out1 = model1(x)
+            out1.sum().backward()
+
+            model2 = models.__dict__[name](num_classes=50, memory_efficient=False)
+            model2.load_state_dict(params)
+            model2.eval()
+            out2 = model2(x)
+
+            max_diff = (out1 - out2).abs().max()
+
+            self.assertTrue(max_diff < 1e-5)
+
     def test_resnet_dilation(self):
         # TODO improve tests to also check that each layer has the right dimensionality
         for i in product([False, True], [False, True], [False, True]):
@@ -70,6 +92,13 @@ class Tester(unittest.TestCase):
             out = model(x)
             f = 2 ** sum(i)
             self.assertEqual(out.shape, (1, 2048, 7 * f, 7 * f))
+
+    def test_mobilenetv2_residual_setting(self):
+        model = models.__dict__["mobilenet_v2"](inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
+        model.eval()
+        x = torch.rand(1, 3, 224, 224)
+        out = model(x)
+        self.assertEqual(out.shape[-1], 1000)
 
 
 for model_name in get_available_classification_models():

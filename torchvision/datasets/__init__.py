@@ -4,7 +4,7 @@ from .zippedfolder import ZippedImageFolder
 from .coco import CocoCaptions, CocoDetection
 from .cifar import CIFAR10, CIFAR100
 from .stl10 import STL10
-from .mnist import MNIST, EMNIST, FashionMNIST, KMNIST
+from .mnist import MNIST, EMNIST, FashionMNIST, KMNIST, QMNIST
 from .svhn import SVHN
 from .phototour import PhotoTour
 from .fakedata import FakeData
@@ -24,7 +24,7 @@ from .usps import USPS
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'ZippedImageFolder', 'FakeData',
            'CocoCaptions', 'CocoDetection',
-           'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST',
+           'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST', 'QMNIST',
            'MNIST', 'KMNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
            'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNet',

@@ -11,9 +11,9 @@ matrix:
     - python: "2.7"
       env: IMAGE_BACKEND=Pillow-SIMD
     - python: "2.7"
-    - python: "3.5"
+    - python: "3.6"
       env: IMAGE_BACKEND=Pillow-SIMD
-    - python: "3.5"
+    - python: "3.6"
 
 before_install:
   - sudo apt-get update
@@ -35,6 +35,8 @@ before_install:
   - pip install future
   - pip install pandas tqdm
   - pip install pytest pytest-cov codecov
+  - pip install mock
+  - conda install av -c conda-forge
 
 
 install:

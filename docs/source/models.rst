@@ -24,6 +24,8 @@ architectures for image classification:
 -  `ShuffleNet`_ v2
 -  `MobileNet`_ v2
 -  `ResNeXt`_
+-  `Wide ResNet`_
+-  `MNASNet`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -40,6 +42,8 @@ You can construct a model with random weights by calling its constructor:
     shufflenet = models.shufflenet_v2_x1_0()
     mobilenet = models.mobilenet_v2()
     resnext50_32x4d = models.resnext50_32x4d()
+    wide_resnet50_2 = models.wide_resnet50_2()
+    mnasnet = models.mnasnet1_0()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -57,6 +61,8 @@ These can be constructed by passing ``pretrained=True``:
     shufflenet = models.shufflenet_v2_x1_0(pretrained=True)
     mobilenet = models.mobilenet_v2(pretrained=True)
     resnext50_32x4d = models.resnext50_32x4d(pretrained=True)
+    wide_resnet50_2 = models.wide_resnet50_2(pretrained=True)
+    mnasnet = models.mnasnet1_0(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
@@ -111,6 +117,9 @@ ShuffleNet V2                     30.64           11.68
 MobileNet V2                      28.12           9.71
 ResNeXt-50-32x4d                  22.38           6.30
 ResNeXt-101-32x8d                 20.69           5.47
+Wide ResNet-50-2                  21.49           5.91
+Wide ResNet-101-2                 21.16           5.72
+MNASNet 1.0                       26.49           8.456
 ================================  =============   =============
 
 
@@ -124,6 +133,7 @@ ResNeXt-101-32x8d                 20.69           5.47
 .. _ShuffleNet: https://arxiv.org/abs/1807.11164
 .. _MobileNet: https://arxiv.org/abs/1801.04381
 .. _ResNeXt: https://arxiv.org/abs/1611.05431
+.. _MNASNet: https://arxiv.org/abs/1807.11626
 
 .. currentmodule:: torchvision.models
 
@@ -197,9 +207,29 @@ ResNext
 .. autofunction:: resnext50_32x4d
 .. autofunction:: resnext101_32x8d
 
+Wide ResNet
+-----------
+
+.. autofunction:: wide_resnet50_2
+.. autofunction:: wide_resnet101_2
+
+MNASNet
+--------
+
+.. autofunction:: mnasnet0_5
+.. autofunction:: mnasnet0_75
+.. autofunction:: mnasnet1_0
+.. autofunction:: mnasnet1_3
+
 
 Semantic Segmentation
 =====================
+
+The models subpackage contains definitions for the following model
+architectures for semantic segmentation:
+
+- `FCN ResNet101 <https://arxiv.org/abs/1411.4038>`_
+- `DeepLabV3 ResNet101 <https://arxiv.org/abs/1706.05587>`_
 
 As with image classification models, all pre-trained models expect input images normalized in the same way.
 The images have to be loaded in to a range of ``[0, 1]`` and then normalized using
@@ -244,6 +274,12 @@ DeepLabV3
 Object Detection, Instance Segmentation and Person Keypoint Detection
 =====================================================================
 
+The models subpackage contains definitions for the following model
+architectures for detection:
+
+- `Faster R-CNN ResNet-50 FPN <https://arxiv.org/abs/1506.01497>`_
+- `Mask R-CNN ResNet-50 FPN <https://arxiv.org/abs/1703.06870>`_
+
 The pre-trained models for detection, instance segmentation and
 keypoint detection are initialized with the classification models
 in torchvision.
@@ -261,17 +297,17 @@ models return the predictions of the following classes:
 
       COCO_INSTANCE_CATEGORY_NAMES = [
           '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-          'train', 'truck', 'boat', 'traffic', 'light', 'fire', 'hydrant', 'N/A', 'stop',
-          'sign', 'parking', 'meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
+          'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
+          'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
           'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack', 'umbrella', 'N/A', 'N/A',
-          'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports', 'ball',
-          'kite', 'baseball', 'bat', 'baseball', 'glove', 'skateboard', 'surfboard', 'tennis',
-          'racket', 'bottle', 'N/A', 'wine', 'glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-          'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot', 'dog', 'pizza',
-          'donut', 'cake', 'chair', 'couch', 'potted', 'plant', 'bed', 'N/A', 'dining', 'table',
-          'N/A', 'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell',
-          'phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A', 'book',
-          'clock', 'vase', 'scissors', 'teddy', 'bear', 'hair', 'drier', 'toothbrush'
+          'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
+          'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
+          'bottle', 'N/A', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
+          'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
+          'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'N/A', 'dining table',
+          'N/A', 'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
+          'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A', 'book',
+          'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
       ]
 
 

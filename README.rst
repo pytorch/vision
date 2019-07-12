@@ -59,6 +59,20 @@ Torchvision currently supports the following image backends:
 .. _Pillow-SIMD : https://github.com/uploadcare/pillow-simd
 .. _accimage: https://github.com/pytorch/accimage
 
+C++ API
+=============
+TorchVision also offers a C++ API that contains C++ equivalent of python models. 
+
+Installation From source:
+
+.. code:: bash
+
+    mkdir build
+    cd build
+    cmake ..
+    make 
+    make install
+
 Documentation
 =============
 You can find the API documentation on the pytorch website: http://pytorch.org/docs/master/torchvision/
