@@ -10,11 +10,13 @@ from torch._utils_internal import get_file_path_2
 
 
 class Tester(unittest.TestCase):
-    root = os.path.normpath(get_file_path_2('test/assets/dataset/'))
+    FAKEDATA_DIR = get_file_path_2(
+            os.path.dirname(os.path.abspath(__file__)), 'assets', 'fakedata')
+    root = os.path.normpath(FAKEDATA_DIR)
     classes = ['a', 'b']
-    class_a_images = [os.path.normpath(get_file_path_2(os.path.join('test/assets/dataset/a/', path)))
+    class_a_images = [os.path.normpath(get_file_path_2(os.path.join(root, 'imagefolder/a/', path)))
                       for path in ['a1.png', 'a2.png', 'a3.png']]
-    class_b_images = [os.path.normpath(get_file_path_2(os.path.join('test/assets/dataset/b/', path)))
+    class_b_images = [os.path.normpath(get_file_path_2(os.path.join(root, 'imagefolder/b/', path)))
                       for path in ['b1.png', 'b2.png', 'b3.png', 'b4.png']]
 
     def test_zipped_image_folder(self):
@@ -33,8 +35,8 @@ class Tester(unittest.TestCase):
                 self.assertEqual(cls, dataset.classes[dataset.class_to_idx[cls]])
             class_a_idx = dataset.class_to_idx['a']
             class_b_idx = dataset.class_to_idx['b']
-            imgs_a = [(img_path.replace('test/assets/dataset/', ''), class_a_idx)for img_path in Tester.class_a_images]
-            imgs_b = [(img_path.replace('test/assets/dataset/', ''), class_b_idx)for img_path in Tester.class_b_images]
+            imgs_a = [(img_path.replace(os.path.join(root, 'imagefolder/'), ''), class_a_idx) for img_path in Tester.class_a_images]
+            imgs_b = [(img_path.replace(os.path.join(root, 'imagefolder/'), ''), class_b_idx) for img_path in Tester.class_b_images]
             imgs = sorted(imgs_a + imgs_b)
             self.assertEqual(imgs, dataset.imgs)
         finally:
