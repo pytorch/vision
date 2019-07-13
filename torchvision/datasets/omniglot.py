@@ -90,7 +90,7 @@ class Omniglot(VisionDataset):
         zip_filename = filename + '.zip'
         org_filename = filename + '.org.zip'
         url = self.download_url_prefix + '/' + zip_filename
-        download_and_extract_archive(url, self.root, filename=zip_filename, md5=self.zips_md5[filename])
+        download_and_extract_archive(url, self.root, filename=org_filename, md5=self.zips_md5[filename])
         convert_zip_to_uncompressed_zip(join(self.root, org_filename), join(self.root, zip_filename))
 
     def _get_target_folder(self):
