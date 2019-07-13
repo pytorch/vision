@@ -87,6 +87,12 @@ class Tester(unittest.TestCase):
     def test_resnext101_32x8d(self):
         process_model(models.resnext101_32x8d(), self.image, _C_tests.forward_resnext101_32x8d, 'ResNext101_32x8d')
 
+    def test_wide_resnet50_2(self):
+        process_model(models.wide_resnet50_2(), self.image, _C_tests.forward_wide_resnet50_2, 'WideResNet50_2')
+
+    def test_wide_resnet101_2(self):
+        process_model(models.wide_resnet101_2(), self.image, _C_tests.forward_wide_resnet101_2, 'WideResNet101_2')
+
     def test_squeezenet1_0(self):
         process_model(models.squeezenet1_0(self.pretrained), self.image,
                       _C_tests.forward_squeezenet1_0, 'Squeezenet1.0')

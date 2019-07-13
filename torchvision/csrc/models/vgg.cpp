@@ -79,7 +79,7 @@ torch::Tensor VGGImpl::forward(torch::Tensor x) {
 }
 
 // clang-format off
-static std::unordered_map<char, std::vector<int>> cfg = {
+static std::unordered_map<char, std::vector<int>> cfgs = {
   {'A', {64, -1, 128, -1, 256, 256, -1, 512, 512, -1, 512, 512, -1}},
   {'B', {64, 64, -1, 128, 128, -1, 256, 256, -1, 512, 512, -1, 512, 512, -1}},
   {'D', {64, 64, -1, 128, 128, -1, 256, 256, 256, -1, 512, 512, 512, -1, 512, 512, 512, -1}},
@@ -87,28 +87,28 @@ static std::unordered_map<char, std::vector<int>> cfg = {
 // clang-format on
 
 VGG11Impl::VGG11Impl(int64_t num_classes, bool initialize_weights)
-    : VGGImpl(makeLayers(cfg['A']), num_classes, initialize_weights) {}
+    : VGGImpl(makeLayers(cfgs['A']), num_classes, initialize_weights) {}
 
 VGG13Impl::VGG13Impl(int64_t num_classes, bool initialize_weights)
-    : VGGImpl(makeLayers(cfg['B']), num_classes, initialize_weights) {}
+    : VGGImpl(makeLayers(cfgs['B']), num_classes, initialize_weights) {}
 
 VGG16Impl::VGG16Impl(int64_t num_classes, bool initialize_weights)
-    : VGGImpl(makeLayers(cfg['D']), num_classes, initialize_weights) {}
+    : VGGImpl(makeLayers(cfgs['D']), num_classes, initialize_weights) {}
 
 VGG19Impl::VGG19Impl(int64_t num_classes, bool initialize_weights)
-    : VGGImpl(makeLayers(cfg['E']), num_classes, initialize_weights) {}
+    : VGGImpl(makeLayers(cfgs['E']), num_classes, initialize_weights) {}
 
 VGG11BNImpl::VGG11BNImpl(int64_t num_classes, bool initialize_weights)
-    : VGGImpl(makeLayers(cfg['A'], true), num_classes, initialize_weights) {}
+    : VGGImpl(makeLayers(cfgs['A'], true), num_classes, initialize_weights) {}
 
 VGG13BNImpl::VGG13BNImpl(int64_t num_classes, bool initialize_weights)
-    : VGGImpl(makeLayers(cfg['B'], true), num_classes, initialize_weights) {}
+    : VGGImpl(makeLayers(cfgs['B'], true), num_classes, initialize_weights) {}
 
 VGG16BNImpl::VGG16BNImpl(int64_t num_classes, bool initialize_weights)
-    : VGGImpl(makeLayers(cfg['D'], true), num_classes, initialize_weights) {}
+    : VGGImpl(makeLayers(cfgs['D'], true), num_classes, initialize_weights) {}
 
 VGG19BNImpl::VGG19BNImpl(int64_t num_classes, bool initialize_weights)
-    : VGGImpl(makeLayers(cfg['E'], true), num_classes, initialize_weights) {}
+    : VGGImpl(makeLayers(cfgs['E'], true), num_classes, initialize_weights) {}
 
 } // namespace models
 } // namespace vision

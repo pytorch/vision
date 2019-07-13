@@ -145,5 +145,15 @@ ResNext101_32x8dImpl::ResNext101_32x8dImpl(
     bool zero_init_residual)
     : ResNetImpl({3, 4, 23, 3}, num_classes, zero_init_residual, 32, 8) {}
 
+WideResNet50_2Impl::WideResNet50_2Impl(
+    int64_t num_classes,
+    bool zero_init_residual)
+    : ResNetImpl({3, 4, 6, 3}, num_classes, zero_init_residual, 1, 64 * 2) {}
+
+WideResNet101_2Impl::WideResNet101_2Impl(
+    int64_t num_classes,
+    bool zero_init_residual)
+    : ResNetImpl({3, 4, 23, 3}, num_classes, zero_init_residual, 1, 64 * 2) {}
+
 } // namespace models
 } // namespace vision
