@@ -39,6 +39,7 @@ _pil_interpolation_to_str = {
     Image.BOX: 'PIL.Image.BOX',
 }
 
+
 class AbstractTransform(object):
     """Base class for all transforms.
 
@@ -52,7 +53,7 @@ class AbstractTransform(object):
     def __init__(self):
         pass
 
-    def __call__(self, img, keypoints = None):
+    def __call__(self, img, keypoints=None):
         kp = []
         if keypoints is not None:
             kp = keypoints
@@ -60,6 +61,7 @@ class AbstractTransform(object):
         if keypoints is not None:
             return img, kp
         return img
+
 
 class Compose(AbstractTransform):
     """Composes several transforms together.
@@ -1076,8 +1078,8 @@ class RandomRotation(AbstractTransform):
             x, y = pointPair
             x -= self.center[0]
             y -= self.center[1]
-            pointPair[0] = math.cos(inrad) * x  - math.sin(inrad) * y
-            pointPair[1] = math.sin(inrad) * x  + math.cos(inrad) * y
+            pointPair[0] = math.cos(inrad) * x - math.sin(inrad) * y
+            pointPair[1] = math.sin(inrad) * x + math.cos(inrad) * y
             pointPair[0] += self.center[0]
             pointPair[1] += self.center[1]
         return F.rotate(img, angle, self.resample, self.expand, self.center), keypoints
