@@ -1,6 +1,7 @@
 #ifndef DATASETSIMPL_H
 #define DATASETSIMPL_H
 
+#include <opencv2/opencv.hpp>
 #include <torch/torch.h>
 #include <filesystem>
 
@@ -12,49 +13,41 @@ namespace vision {
 namespace datasets {
 namespace datasetsimpl {
 
-inline std::vector<std::string> lsdir(const std::string& path) {
-  std::vector<std::string> list;
-  for (const auto& ent : std::filesystem::directory_iterator(path))
-    list.push_back(ent.path().filename());
-  return list;
-}
+std::vector<std::string> lsdir(const std::string& path);
 
-inline std::string tolower(std::string str) {
-  std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-  return str;
-}
+std::string tolower(std::string str);
 
-inline void sort_names(std::vector<std::string>& data) {
-  auto comp = [](const std::string& A, const std::string& B) {
-    return tolower(A) < tolower(B);
-  };
-  std::sort(data.begin(), data.end(), comp);
-}
+void sort_names(std::vector<std::string>& data);
 
-inline bool isdir(const std::string& path) {
-  return std::filesystem::is_directory(path);
-}
+bool isdir(const std::string& path);
 
-inline bool isfile(const std::string& path) {
-  return std::filesystem::is_regular_file(path);
-}
+bool isfile(const std::string& path);
 
-inline bool exists(const std::string& path) {
-  return std::filesystem::exists(path);
-}
+bool exists(const std::string& path);
 
-inline bool mkpath(const std::string& path) {
-  return std::filesystem::create_directories(path);
-}
+bool mkpath(const std::string& path);
+
+std::string absolute_path(const std::string& path);
 
 inline std::string join(const std::string& str) {
   return str;
 }
-
 template <typename... Tail>
 inline std::string join(const std::string& head, Tail&&... tail) {
   return std::filesystem::path(head).append(join(tail...)).string();
 }
+
+torch::Tensor read_image(
+    const std::string& path,
+    std::function<cv::Mat(const cv::Mat&)> transform);
+
+std::function<cv::Mat(const cv::Mat&)> make_transform(
+    int width,
+    int height,
+    cv::ColorConversionCodes code);
+
+inline auto rgb_transform = make_transform(224, 224, cv::COLOR_BGR2RGB);
+inline auto gray_transform = make_transform(224, 224, cv::COLOR_BGR2GRAY);
 
 } // namespace datasetsimpl
 } // namespace datasets

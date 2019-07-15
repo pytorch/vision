@@ -3,8 +3,9 @@ project(torchvision)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(Torch REQUIRED)
+find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs)
 
-file(GLOB HEADERS torchvision/csrc/vision.h)
+file(GLOB HEADERS torchvision/csrc/vision.h torchvision/csrc/general.h)
 
 file(GLOB MODELS_HEADERS torchvision/csrc/models/*.h)
 file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.cpp)
@@ -14,12 +15,8 @@ file(GLOB DATASETS_SOURCES torchvision/csrc/datasets/*.h torchvision/csrc/datase
 
 add_library (${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${DATASETS_SOURCES})
 target_link_libraries(${PROJECT_NAME} stdc++fs)
+target_link_libraries(${PROJECT_NAME} "${OpenCV_LIBS}")
 target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}")
-
-add_executable(test test.cpp)
-target_link_libraries(test stdc++fs)
-target_link_libraries(test "${PROJECT_NAME}")
-target_link_libraries(test "${TORCH_LIBRARIES}")
 
 add_executable(convertmodels torchvision/csrc/convert_models/convert_models.cpp)
 target_link_libraries(convertmodels "${PROJECT_NAME}")

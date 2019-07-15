@@ -2,7 +2,7 @@
 #define MNASNET_H
 
 #include <torch/torch.h>
-#include "general.h"
+#include "../general.h"
 
 namespace vision {
 namespace models {
