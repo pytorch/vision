@@ -3,9 +3,18 @@
 
 #include <torch/torch.h>
 
-struct Caltech101 : torch::data::Dataset<Caltech101>
-{
-    Caltech101();
+namespace vision {
+namespace datasets {
+
+struct Caltech101 : torch::data::Dataset<Caltech101> {
+  std::string root;
+
+  Caltech101(const std::string& root);
+
+  bool checkIntegrity();
 };
 
-#endif  // CALTECH_H
+} // namespace datasets
+} // namespace vision
+
+#endif // CALTECH_H
