@@ -328,14 +328,15 @@ class Tester(unittest.TestCase):
             transforms.Pad((1, 2, 3, 4, 5))
 
     def test_lambda(self):
-        trans = transforms.Lambda(lambda x: x.add(10))
+        trans = transforms.Lambda(lambda x, a: (x.add(10), a))
         x = torch.randn(10)
-        y = trans(x)
+        a = []
+        y, a = trans(x, a)
         assert (y.equal(torch.add(x, 10)))
 
-        trans = transforms.Lambda(lambda x: x.add_(10))
+        trans = transforms.Lambda(lambda x, a: (x.add_(10), a))
         x = torch.randn(10)
-        y = trans(x)
+        y, a = trans(x, a)
         assert (y.equal(x))
 
         # Checking if Lambda can be printed as string
