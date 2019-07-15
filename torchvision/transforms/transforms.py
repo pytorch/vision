@@ -346,7 +346,7 @@ class Pad(AbstractTransform):
             format(self.padding, self.fill, self.padding_mode)
 
 
-class Lambda(object):
+class Lambda(AbstractTransform):
     """Apply a user-defined lambda as a transform.
 
     Args:
@@ -357,7 +357,7 @@ class Lambda(object):
         assert callable(lambd), repr(type(lambd).__name__) + " object is not callable"
         self.lambd = lambd
 
-    def __call__(self, *args, **kwargs):
+    def run(self, *args, **kwargs):
         return self.lambd(*args, **kwargs)
 
     def __repr__(self):
@@ -403,8 +403,8 @@ class RandomApply(RandomTransforms):
         if self.p < random.random():
             return img, keypoints
         for t in self.transforms:
-            img = t(img, keypoints)
-        return img
+            img, keypoints = t(img, keypoints)
+        return img, keypoints
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
@@ -590,8 +590,8 @@ class RandomVerticalFlip(AbstractTransform):
         if random.random() < self.p:
             for pointPair in keypoints:
                 pointPair[1] = img.height - pointPair[1]
-            return F.vflip(img)
-        return img
+            return F.vflip(img), keypoints
+        return img, keypoints
 
     def __repr__(self):
         return self.__class__.__name__ + '(p={})'.format(self.p)
@@ -810,8 +810,8 @@ class FiveCrop(AbstractTransform):
             assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
             self.size = size
 
-    def run(self, img):
-        return F.five_crop(img, self.size)
+    def run(self, img, keypoints):
+        return F.five_crop(img, self.size), keypoints
 
     def __repr__(self):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
@@ -853,8 +853,8 @@ class TenCrop(AbstractTransform):
             self.size = size
         self.vertical_flip = vertical_flip
 
-    def run(self, img):
-        return F.ten_crop(img, self.size, self.vertical_flip)
+    def run(self, img, keypoints):
+        return F.ten_crop(img, self.size, self.vertical_flip), keypoints
 
     def __repr__(self):
         return self.__class__.__name__ + '(size={0}, vertical_flip={1})'.format(self.size, self.vertical_flip)
@@ -972,19 +972,19 @@ class ColorJitter(AbstractTransform):
 
         if brightness is not None:
             brightness_factor = random.uniform(brightness[0], brightness[1])
-            transforms.append(Lambda(lambda img: F.adjust_brightness(img, brightness_factor)))
+            transforms.append(Lambda(lambda img, anno: (F.adjust_brightness(img, brightness_factor), anno)))
 
         if contrast is not None:
             contrast_factor = random.uniform(contrast[0], contrast[1])
-            transforms.append(Lambda(lambda img: F.adjust_contrast(img, contrast_factor)))
+            transforms.append(Lambda(lambda img, anno: (F.adjust_contrast(img, contrast_factor), anno)))
 
         if saturation is not None:
             saturation_factor = random.uniform(saturation[0], saturation[1])
-            transforms.append(Lambda(lambda img: F.adjust_saturation(img, saturation_factor)))
+            transforms.append(Lambda(lambda img, anno: (F.adjust_saturation(img, saturation_factor), anno)))
 
         if hue is not None:
             hue_factor = random.uniform(hue[0], hue[1])
-            transforms.append(Lambda(lambda img: F.adjust_hue(img, hue_factor)))
+            transforms.append(Lambda(lambda img, anno: (F.adjust_hue(img, hue_factor), anno)))
 
         random.shuffle(transforms)
         transform = Compose(transforms)
