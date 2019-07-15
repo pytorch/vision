@@ -65,8 +65,8 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
         Fire(384, 64, 256, 256),
         Fire(512, 64, 256, 256));
   } else {
-    std::cerr << "Wrong version number is passed th SqueeseNet constructor!"
-              << std::endl;
+    std::cerr << "Unsupported SqueezeNet version " << version
+              << ". 1_0 or 1_1 expected" << std::endl;
     assert(false);
   }
 

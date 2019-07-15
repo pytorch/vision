@@ -41,6 +41,10 @@ int main(int argc, const char* argv[]) {
       "resnext50_32x4d_python.pt", "resnext50_32x4d_cpp.pt");
   convert_and_save_model<ResNext101_32x8d>(
       "resnext101_32x8d_python.pt", "resnext101_32x8d_cpp.pt");
+  convert_and_save_model<WideResNet50_2>(
+      "wide_resnet50_2_python.pt", "wide_resnet50_2_cpp.pt");
+  convert_and_save_model<WideResNet101_2>(
+      "wide_resnet101_2_python.pt", "wide_resnet101_2_cpp.pt");
 
   convert_and_save_model<SqueezeNet1_0>(
       "squeezenet1_0_python.pt", "squeezenet1_0_cpp.pt");

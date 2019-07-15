@@ -217,6 +217,18 @@ struct VISION_API ResNext101_32x8dImpl : ResNetImpl<_resnetimpl::Bottleneck> {
       bool zero_init_residual = false);
 };
 
+struct VISION_API WideResNet50_2Impl : ResNetImpl<_resnetimpl::Bottleneck> {
+  WideResNet50_2Impl(
+      int64_t num_classes = 1000,
+      bool zero_init_residual = false);
+};
+
+struct VISION_API WideResNet101_2Impl : ResNetImpl<_resnetimpl::Bottleneck> {
+  WideResNet101_2Impl(
+      int64_t num_classes = 1000,
+      bool zero_init_residual = false);
+};
+
 template <typename Block>
 struct VISION_API ResNet : torch::nn::ModuleHolder<ResNetImpl<Block>> {
   using torch::nn::ModuleHolder<ResNetImpl<Block>>::ModuleHolder;
@@ -229,6 +241,8 @@ TORCH_MODULE(ResNet101);
 TORCH_MODULE(ResNet152);
 TORCH_MODULE(ResNext50_32x4d);
 TORCH_MODULE(ResNext101_32x8d);
+TORCH_MODULE(WideResNet50_2);
+TORCH_MODULE(WideResNet101_2);
 
 } // namespace models
 } // namespace vision

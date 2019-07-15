@@ -73,6 +73,16 @@ torch::Tensor forward_resnext101_32x8d(
     torch::Tensor x) {
   return forward_model<ResNext101_32x8d>(input_path, x);
 }
+torch::Tensor forward_wide_resnet50_2(
+    const std::string& input_path,
+    torch::Tensor x) {
+  return forward_model<WideResNet50_2>(input_path, x);
+}
+torch::Tensor forward_wide_resnet101_2(
+    const std::string& input_path,
+    torch::Tensor x) {
+  return forward_model<WideResNet101_2>(input_path, x);
+}
 
 torch::Tensor forward_squeezenet1_0(
     const std::string& input_path,
@@ -168,6 +178,14 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
       "forward_resnext101_32x8d",
       &forward_resnext101_32x8d,
       "forward_resnext101_32x8d");
+  m.def(
+      "forward_wide_resnet50_2",
+      &forward_wide_resnet50_2,
+      "forward_wide_resnet50_2");
+  m.def(
+      "forward_wide_resnet101_2",
+      &forward_wide_resnet101_2,
+      "forward_wide_resnet101_2");
 
   m.def(
       "forward_squeezenet1_0", &forward_squeezenet1_0, "forward_squeezenet1_0");
