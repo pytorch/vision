@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(torchvision)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 
 find_package(Torch REQUIRED)
 find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs)
@@ -14,7 +14,6 @@ file(GLOB DATASETS_HEADERS torchvision/csrc/datasets/*.h)
 file(GLOB DATASETS_SOURCES torchvision/csrc/datasets/*.h torchvision/csrc/datasets/*.cpp)
 
 add_library (${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${DATASETS_SOURCES})
-target_link_libraries(${PROJECT_NAME} stdc++fs)
 target_link_libraries(${PROJECT_NAME} "${OpenCV_LIBS}")
 target_link_libraries(${PROJECT_NAME} "${TORCH_LIBRARIES}")
 

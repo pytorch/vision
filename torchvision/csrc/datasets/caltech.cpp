@@ -10,12 +10,6 @@ Caltech101::Caltech101(
   root = datasetsimpl::absolute_path(datasetsimpl::join(root, "caltech101"));
   this->root = root;
 
-  TORCH_CHECK(
-      datasetsimpl::mkpath(root),
-      "Failed to create directory \"",
-      root,
-      "\" for Caltech101 dataset");
-
   TORCH_CHECK(checkIntegrity(), "Caltech101 dataset not found or corrupted.")
 
   categories =

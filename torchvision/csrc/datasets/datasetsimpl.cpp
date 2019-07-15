@@ -1,10 +1,27 @@
 #include "datasetsimpl.h"
 
+#include <dirent.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 std::vector<std::string> vision::datasets::datasetsimpl::lsdir(
     const std::string& path) {
   std::vector<std::string> list;
-  for (const auto& ent : std::filesystem::directory_iterator(path))
-    list.push_back(ent.path().filename());
+  DIR* dp;
+  struct dirent* ep;
+
+  dp = opendir(path.c_str());
+  if (dp != nullptr) {
+    while ((ep = readdir(dp))) {
+      std::string name = ep->d_name;
+      if (name != "." && name != "..")
+        list.emplace_back(std::move(name));
+    }
+
+    (void)closedir(dp);
+  }
+
   return list;
 }
 
@@ -22,21 +39,22 @@ void vision::datasets::datasetsimpl::sort_names(
 }
 
 bool vision::datasets::datasetsimpl::isdir(const std::string& path) {
-  return std::filesystem::is_directory(path);
+  struct stat st;
+  if (stat(path.c_str(), &st) == 0)
+    return st.st_mode & S_IFDIR;
+  return false;
 }
 
 bool vision::datasets::datasetsimpl::isfile(const std::string& path) {
-  return std::filesystem::is_regular_file(path);
+  struct stat st;
+  if (stat(path.c_str(), &st) == 0)
+    return st.st_mode & S_IFREG;
+  return false;
 }
 
 bool vision::datasets::datasetsimpl::exists(const std::string& path) {
-  return std::filesystem::exists(path);
-}
-
-bool vision::datasets::datasetsimpl::mkpath(const std::string& path) {
-  if (exists(path))
-    return true;
-  return std::filesystem::create_directories(path);
+  struct stat st;
+  return stat(path.c_str(), &st) == 0;
 }
 
 torch::Tensor vision::datasets::datasetsimpl::read_image(
@@ -44,8 +62,6 @@ torch::Tensor vision::datasets::datasetsimpl::read_image(
     std::function<cv::Mat(const cv::Mat&)> transform) {
   auto mat = cv::imread(path);
   TORCH_CHECK(!mat.empty(), "Failed to read image \"", path, "\".");
-
-  // TODO make channels variable
 
   mat = transform(mat);
   std::vector<torch::Tensor> tensors;
@@ -63,7 +79,9 @@ torch::Tensor vision::datasets::datasetsimpl::read_image(
 
 std::string vision::datasets::datasetsimpl::absolute_path(
     const std::string& path) {
-  return std::filesystem::absolute(path).string();
+  char rpath[PATH_MAX];
+  realpath(path.c_str(), rpath);
+  return std::string(rpath);
 }
 
 std::function<cv::Mat(const cv::Mat&)> vision::datasets::datasetsimpl::

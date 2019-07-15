@@ -3,7 +3,6 @@
 
 #include <opencv2/opencv.hpp>
 #include <torch/torch.h>
-#include <filesystem>
 
 #ifndef TORCH_CHECK
 #define TORCH_CHECK AT_CHECK
@@ -25,8 +24,6 @@ bool isfile(const std::string& path);
 
 bool exists(const std::string& path);
 
-bool mkpath(const std::string& path);
-
 std::string absolute_path(const std::string& path);
 
 inline std::string join(const std::string& str) {
@@ -34,7 +31,7 @@ inline std::string join(const std::string& str) {
 }
 template <typename... Tail>
 inline std::string join(const std::string& head, Tail&&... tail) {
-  return std::filesystem::path(head).append(join(tail...)).string();
+  return head + "/" + join(std::forward<Tail>(tail)...);
 }
 
 torch::Tensor read_image(
@@ -46,8 +43,8 @@ std::function<cv::Mat(const cv::Mat&)> make_transform(
     int height,
     cv::ColorConversionCodes code);
 
-inline auto rgb_transform = make_transform(224, 224, cv::COLOR_BGR2RGB);
-inline auto gray_transform = make_transform(224, 224, cv::COLOR_BGR2GRAY);
+static auto rgb_transform = make_transform(224, 224, cv::COLOR_BGR2RGB);
+static auto gray_transform = make_transform(224, 224, cv::COLOR_BGR2GRAY);
 
 } // namespace datasetsimpl
 } // namespace datasets
