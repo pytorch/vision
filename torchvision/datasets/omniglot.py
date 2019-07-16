@@ -30,9 +30,8 @@ class Omniglot(VisionDataset):
 
     def __init__(self, root, background=True, transforms=None, transform=None,
                  target_transform=None, download=False):
-        super(Omniglot, self).__init__(join(root, self.folder), transforms=transforms,
-                                       transform=transform,
-                                       target_transform=target_transform)
+        super(Omniglot, self).__init__(join(root, self.folder), transforms, transform,
+                                       target_transform)
         self.background = background
 
         if download:

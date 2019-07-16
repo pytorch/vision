@@ -22,8 +22,7 @@ class FakeData(VisionDataset):
     def __init__(self, size=1000, image_size=(3, 224, 224), num_classes=10,
                  transforms=None, transform=None, target_transform=None,
                  random_offset=0):
-        super(FakeData, self).__init__(None, transforms=transforms, transform=transform,
-                                       target_transform=target_transform)
+        super(FakeData, self).__init__(None, transforms, transform, target_transform)
         self.size = size
         self.num_classes = num_classes
         self.image_size = image_size

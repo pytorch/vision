@@ -51,8 +51,7 @@ class CelebA(VisionDataset):
     def __init__(self, root, split="train", target_type="attr", transforms=None,
                  transform=None, target_transform=None, download=False):
         import pandas
-        super(CelebA, self).__init__(root, transforms=transforms, transform=transform,
-                                     target_transform=target_transform)
+        super(CelebA, self).__init__(root, transforms, transform, target_transform)
         self.split = split
         if isinstance(target_type, list):
             self.target_type = target_type

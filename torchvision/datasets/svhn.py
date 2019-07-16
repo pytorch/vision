@@ -41,8 +41,7 @@ class SVHN(VisionDataset):
 
     def __init__(self, root, split='train', transforms=None,
                  transform=None, target_transform=None, download=False):
-        super(SVHN, self).__init__(root, transforms=transforms, transform=transform,
-                                   target_transform=target_transform)
+        super(SVHN, self).__init__(root, transforms, transform, target_transform)
         self.split = split  # training set or test set or extra set
 
         if self.split not in self.split_list:
