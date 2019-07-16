@@ -80,20 +80,21 @@ def _get_cache_path(filepath):
     cache_path = os.path.expanduser(cache_path)
     return cache_path
 
-
 def main(args):
+    if args.output_dir:
+        utils.mkdir(args.output_dir)
+
+    utils.init_distributed_mode(args)
+    print(args)
+
     if args.apex:
         if sys.version_info < (3, 0):
             raise RuntimeError("Apex currently only supports Python 3. Aborting.")
         if amp is None:
             raise RuntimeError("Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
                                "to enable mixed-precision training.")
-
-    if args.output_dir:
-        utils.mkdir(args.output_dir)
-
-    utils.init_distributed_mode(args)
-    print(args)
+        if args.distributed:
+            torch.cuda.set_device(args.gpu)
 
     device = torch.device(args.device)
 
@@ -170,11 +171,6 @@ def main(args):
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
-    model_without_ddp = model
-    if args.distributed:
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
-        model_without_ddp = model.module
-
     criterion = nn.CrossEntropyLoss()
 
     optimizer = torch.optim.SGD(
@@ -186,6 +182,10 @@ def main(args):
         model, optimizer = amp.initialize(model, optimizer,
                                           opt_level=args.apex_opt_level
                                           )
+    model_without_ddp = model
+    if args.distributed:
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+        model_without_ddp = model.module
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')
