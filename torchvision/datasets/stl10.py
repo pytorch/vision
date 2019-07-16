@@ -46,15 +46,14 @@ class STL10(VisionDataset):
     ]
     splits = ('train', 'train+unlabeled', 'unlabeled', 'test')
 
-    def __init__(self, root, split='train', folds=None,
+    def __init__(self, root, split='train', folds=None, transforms=None,
                  transform=None, target_transform=None, download=False):
         if split not in self.splits:
             raise ValueError('Split "{}" not found. Valid splits are: {}'.format(
                 split, ', '.join(self.splits),
             ))
-        super(STL10, self).__init__(root)
-        self.transform = transform
-        self.target_transform = target_transform
+        super(STL10, self).__init__(root, transforms=transforms, transform=transform,
+                                    target_transform=target_transform)
         self.split = split  # train/test/unlabeled set
         self.folds = folds  # one of the 10 pre-defined folds or the full dataset
 

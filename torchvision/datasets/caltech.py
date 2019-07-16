@@ -26,17 +26,16 @@ class Caltech101(VisionDataset):
             downloaded again.
     """
 
-    def __init__(self, root, target_type="category",
-                 transform=None, target_transform=None,
-                 download=False):
-        super(Caltech101, self).__init__(os.path.join(root, 'caltech101'))
+    def __init__(self, root, target_type="category", transforms=None, transform=None,
+                 target_transform=None, download=False):
+        super(Caltech101, self).__init__(os.path.join(root, 'caltech101'),
+                                         transforms=transforms, transform=transform,
+                                         target_transform=target_transform)
         makedir_exist_ok(self.root)
         if isinstance(target_type, list):
             self.target_type = target_type
         else:
             self.target_type = [target_type]
-        self.transform = transform
-        self.target_transform = target_transform
 
         if download:
             self.download()

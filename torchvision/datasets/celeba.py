@@ -48,20 +48,16 @@ class CelebA(VisionDataset):
         ("0B7EVK8r0v71pY0NSMzRuSXJEVkk", "d32c9cbf5e040fd4025c592c306e6668", "list_eval_partition.txt"),
     ]
 
-    def __init__(self, root,
-                 split="train",
-                 target_type="attr",
-                 transform=None, target_transform=None,
-                 download=False):
+    def __init__(self, root, split="train", target_type="attr", transforms=None,
+                 transform=None, target_transform=None, download=False):
         import pandas
-        super(CelebA, self).__init__(root)
+        super(CelebA, self).__init__(root, transforms=transforms, transform=transform,
+                                     target_transform=target_transform)
         self.split = split
         if isinstance(target_type, list):
             self.target_type = target_type
         else:
             self.target_type = [target_type]
-        self.transform = transform
-        self.target_transform = target_transform
 
         if download:
             self.download()
@@ -69,9 +65,6 @@ class CelebA(VisionDataset):
         if not self._check_integrity():
             raise RuntimeError('Dataset not found or corrupted.' +
                                ' You can use download=True to download it')
-
-        self.transform = transform
-        self.target_transform = target_transform
 
         if split.lower() == "train":
             split = 0
