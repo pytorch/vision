@@ -26,11 +26,11 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
 
     header = 'Epoch: [{}]'.format(epoch)
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
+        start_time = time.time()
         image, target = image.to(device), target.to(device)
         output = model(image)
         loss = criterion(output, target)
 
-        start_time = time.time()
         optimizer.zero_grad()
         if apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
