@@ -1,4 +1,4 @@
-# Embedding Learning Using Triplet Loss #
+# Similarity Learning Using Triplet Loss #
 
 In this reference, we use triplet loss to learn embeddings which can be used to differentiate images. This learning technique was popularized by [FaceNet: A Unified Embedding for Face Recognition and Clustering](https://arxiv.org/abs/1503.03832) and has been quite effective in learning embeddings to differentiate between faces.
 
