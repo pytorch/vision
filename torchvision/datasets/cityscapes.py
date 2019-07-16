@@ -1,7 +1,9 @@
 import json
 import os
 from collections import namedtuple
+import zipfile
 
+from .utils import extract_archive
 from .vision import VisionDataset
 from PIL import Image
 
@@ -21,6 +23,8 @@ class Cityscapes(VisionDataset):
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
+        transforms (callable, optional): A function/transform that takes input sample and its target as entry
+            and returns a transformed version.
 
     Examples:
 
@@ -95,10 +99,8 @@ class Cityscapes(VisionDataset):
     ]
 
     def __init__(self, root, split='train', mode='fine', target_type='instance',
-                 transform=None, target_transform=None):
-        super(Cityscapes, self).__init__(root)
-        self.transform = transform
-        self.target_transform = target_transform
+                 transform=None, target_transform=None, transforms=None):
+        super(Cityscapes, self).__init__(root, transforms, transform, target_transform)
         self.mode = 'gtFine' if mode == 'fine' else 'gtCoarse'
         self.images_dir = os.path.join(self.root, 'leftImg8bit', split)
         self.targets_dir = os.path.join(self.root, self.mode, split)
@@ -125,8 +127,23 @@ class Cityscapes(VisionDataset):
                              ' or "color"')
 
         if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
-            raise RuntimeError('Dataset not found or incomplete. Please make sure all required folders for the'
-                               ' specified "split" and "mode" are inside the "root" directory')
+
+            if split == 'train_extra':
+                image_dir_zip = os.path.join(self.root, 'leftImg8bit{}'.format('_trainextra.zip'))
+            else:
+                image_dir_zip = os.path.join(self.root, 'leftImg8bit{}'.format('_trainvaltest.zip'))
+
+            if self.mode == 'gtFine':
+                target_dir_zip = os.path.join(self.root, '{}{}'.format(self.mode, '_trainvaltest.zip'))
+            elif self.mode == 'gtCoarse':
+                target_dir_zip = os.path.join(self.root, '{}{}'.format(self.mode, '.zip'))
+
+            if os.path.isfile(image_dir_zip) and os.path.isfile(target_dir_zip):
+                extract_archive(from_path=image_dir_zip, to_path=self.root)
+                extract_archive(from_path=target_dir_zip, to_path=self.root)
+            else:
+                raise RuntimeError('Dataset not found or incomplete. Please make sure all required folders for the'
+                                   ' specified "split" and "mode" are inside the "root" directory')
 
         for city in os.listdir(self.images_dir):
             img_dir = os.path.join(self.images_dir, city)
@@ -163,11 +180,8 @@ class Cityscapes(VisionDataset):
 
         target = tuple(targets) if len(targets) > 1 else targets[0]
 
-        if self.transform:
-            image = self.transform(image)
-
-        if self.target_transform:
-            target = self.target_transform(target)
+        if self.transforms is not None:
+            image, target = self.transforms(image, target)
 
         return image, target
 

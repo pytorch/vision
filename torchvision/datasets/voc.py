@@ -66,6 +66,8 @@ class VOCSegmentation(VisionDataset):
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
+        transforms (callable, optional): A function/transform that takes input sample and its target as entry
+            and returns a transformed version.
     """
 
     def __init__(self,
@@ -145,6 +147,8 @@ class VOCDetection(VisionDataset):
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, required): A function/transform that takes in the
             target and transforms it.
+        transforms (callable, optional): A function/transform that takes input sample and its target as entry
+            and returns a transformed version.
     """
 
     def __init__(self,

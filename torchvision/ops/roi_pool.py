@@ -6,7 +6,7 @@ from torch.autograd.function import once_differentiable
 
 from torch.nn.modules.utils import _pair
 
-from torchvision import _C
+from torchvision.extension import _lazy_import
 from ._utils import convert_boxes_to_roi_format
 
 
@@ -16,6 +16,7 @@ class _RoIPoolFunction(Function):
         ctx.output_size = _pair(output_size)
         ctx.spatial_scale = spatial_scale
         ctx.input_shape = input.size()
+        _C = _lazy_import()
         output, argmax = _C.roi_pool_forward(
             input, rois, spatial_scale,
             output_size[0], output_size[1])
@@ -29,6 +30,7 @@ class _RoIPoolFunction(Function):
         output_size = ctx.output_size
         spatial_scale = ctx.spatial_scale
         bs, ch, h, w = ctx.input_shape
+        _C = _lazy_import()
         grad_input = _C.roi_pool_backward(
             grad_output, rois, argmax, spatial_scale,
             output_size[0], output_size[1], bs, ch, h, w)
@@ -41,7 +43,7 @@ def roi_pool(input, boxes, output_size, spatial_scale=1.0):
 
     Arguments:
         input (Tensor[N, C, H, W]): input tensor
-        boxes (Tensor[K, 5] or List[Tensor[L, 4]]): the box coordinates in x1,y1,x2,y2
+        boxes (Tensor[K, 5] or List[Tensor[L, 4]]): the box coordinates in (x1, y1, x2, y2)
             format where the regions will be taken from. If a single Tensor is passed,
             then the first column should contain the batch index. If a list of Tensors
             is passed, then each Tensor will correspond to the boxes for an element i
