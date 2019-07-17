@@ -80,6 +80,7 @@ def _get_cache_path(filepath):
     cache_path = os.path.expanduser(cache_path)
     return cache_path
 
+
 def main(args):
     if args.output_dir:
         utils.mkdir(args.output_dir)
