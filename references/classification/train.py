@@ -82,18 +82,18 @@ def _get_cache_path(filepath):
 
 
 def main(args):
-    if args.output_dir:
-        utils.mkdir(args.output_dir)
-
-    utils.init_distributed_mode(args)
-    print(args)
-
     if args.apex:
         if sys.version_info < (3, 0):
             raise RuntimeError("Apex currently only supports Python 3. Aborting.")
         if amp is None:
             raise RuntimeError("Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
                                "to enable mixed-precision training.")
+
+    if args.output_dir:
+        utils.mkdir(args.output_dir)
+
+    utils.init_distributed_mode(args)
+    print(args)
 
     device = torch.device(args.device)
 
