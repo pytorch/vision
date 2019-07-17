@@ -93,8 +93,6 @@ def main(args):
         if amp is None:
             raise RuntimeError("Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
                                "to enable mixed-precision training.")
-        if args.distributed:
-            torch.cuda.set_device(args.gpu)
 
     device = torch.device(args.device)
 
