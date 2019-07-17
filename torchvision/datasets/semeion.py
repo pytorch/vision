@@ -24,7 +24,7 @@ class SEMEION(VisionDataset):
     filename = "semeion.data"
     md5_checksum = 'cb545d371d2ce14ec121470795a77432'
 
-    def __init__(self, root, transforms=None, transform=None, target_transform=None,
+    def __init__(self, root, transform=None, target_transform=None, transforms=None,
                  download=True):
         super(SEMEION, self).__init__(root, transforms, transform, target_transform)
 

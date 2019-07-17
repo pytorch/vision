@@ -37,8 +37,8 @@ class USPS(VisionDataset):
         ],
     }
 
-    def __init__(self, root, train=True, transforms=None, transform=None,
-                 target_transform=None, download=False):
+    def __init__(self, root, train=True, transform=None, target_transform=None,
+                 transforms=None, download=False):
         super(USPS, self).__init__(root, transforms, transform, target_transform)
         split = 'train' if train else 'test'
         url, filename, checksum = self.split_list[split]

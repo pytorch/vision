@@ -46,8 +46,8 @@ class STL10(VisionDataset):
     ]
     splits = ('train', 'train+unlabeled', 'unlabeled', 'test')
 
-    def __init__(self, root, split='train', folds=None, transforms=None,
-                 transform=None, target_transform=None, download=False):
+    def __init__(self, root, split='train', folds=None, transform=None,
+                 target_transform=None, transforms=None, download=False):
         if split not in self.splits:
             raise ValueError('Split "{}" not found. Valid splits are: {}'.format(
                 split, ', '.join(self.splits),

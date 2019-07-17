@@ -39,8 +39,8 @@ class SVHN(VisionDataset):
         'extra': ["http://ufldl.stanford.edu/housenumbers/extra_32x32.mat",
                   "extra_32x32.mat", "a93ce644f1a588dc4d68dda5feec44a7"]}
 
-    def __init__(self, root, split='train', transforms=None,
-                 transform=None, target_transform=None, download=False):
+    def __init__(self, root, split='train', transform=None, target_transform=None,
+                 transforms=None, download=False):
         super(SVHN, self).__init__(root, transforms, transform, target_transform)
         self.split = split  # training set or test set or extra set
 

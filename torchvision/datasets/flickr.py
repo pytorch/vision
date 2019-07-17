@@ -62,8 +62,8 @@ class Flickr8k(VisionDataset):
             target and transforms it.
     """
 
-    def __init__(self, root, ann_file, transforms=None, transform=None,
-                 target_transform=None):
+    def __init__(self, root, ann_file, transform=None, target_transform=None,
+                 transforms=None):
         super(Flickr8k, self).__init__(root, transforms, transform, target_transform)
         self.ann_file = os.path.expanduser(ann_file)
 

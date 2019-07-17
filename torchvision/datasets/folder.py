@@ -86,8 +86,8 @@ class DatasetFolder(VisionDataset):
         targets (list): The class_index value for each image in the dataset
     """
 
-    def __init__(self, root, loader, extensions=None, transforms=None,
-                 transform=None, target_transform=None, is_valid_file=None):
+    def __init__(self, root, loader, extensions=None, transform=None,
+                 target_transform=None, transforms=None, is_valid_file=None):
         super(DatasetFolder, self).__init__(root, transforms, transform,
                                             target_transform)
         classes, class_to_idx = self._find_classes(self.root)
@@ -201,7 +201,7 @@ class ImageFolder(DatasetFolder):
         imgs (list): List of (image path, class_index) tuples
     """
 
-    def __init__(self, root, transforms=None, transform=None, target_transform=None,
+    def __init__(self, root, transform=None, target_transform=None, transforms=None,
                  loader=default_loader, is_valid_file=None):
         super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS if is_valid_file is None else None,
                                           transforms=transforms,

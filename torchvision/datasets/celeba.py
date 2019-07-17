@@ -48,8 +48,8 @@ class CelebA(VisionDataset):
         ("0B7EVK8r0v71pY0NSMzRuSXJEVkk", "d32c9cbf5e040fd4025c592c306e6668", "list_eval_partition.txt"),
     ]
 
-    def __init__(self, root, split="train", target_type="attr", transforms=None,
-                 transform=None, target_transform=None, download=False):
+    def __init__(self, root, split="train", target_type="attr", transform=None,
+                 target_transform=None, transforms=None, download=False):
         import pandas
         super(CelebA, self).__init__(root, transforms, transform, target_transform)
         self.split = split

@@ -26,8 +26,8 @@ class Caltech101(VisionDataset):
             downloaded again.
     """
 
-    def __init__(self, root, target_type="category", transforms=None, transform=None,
-                 target_transform=None, download=False):
+    def __init__(self, root, target_type="category", transform=None,
+                 target_transform=None, transforms=None, download=False):
         super(Caltech101, self).__init__(os.path.join(root, 'caltech101'), transforms,
                                          transform, target_transform)
         makedir_exist_ok(self.root)
@@ -141,7 +141,7 @@ class Caltech256(VisionDataset):
             downloaded again.
     """
 
-    def __init__(self, root, transforms=None, transform=None, target_transform=None,
+    def __init__(self, root, transform=None, target_transform=None, transforms=None,
                  download=False):
         super(Caltech256, self).__init__(os.path.join(root, 'caltech256'), transforms,
                                          transform, target_transform)
