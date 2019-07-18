@@ -55,7 +55,8 @@ class CIFAR10(VisionDataset):
     def __init__(self, root, train=True, transform=None, target_transform=None,
                  download=False):
 
-        super(CIFAR10, self).__init__(root, transforms, transform, target_transform)
+        super(CIFAR10, self).__init__(root, transform=transform,
+                                      target_transform=target_transform)
 
         self.train = train  # training set or test set
 

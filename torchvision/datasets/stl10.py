@@ -52,7 +52,8 @@ class STL10(VisionDataset):
             raise ValueError('Split "{}" not found. Valid splits are: {}'.format(
                 split, ', '.join(self.splits),
             ))
-        super(STL10, self).__init__(root, transforms, transform, target_transform)
+        super(STL10, self).__init__(root, transform=transform,
+                                    target_transform=target_transform)
         self.split = split  # train/test/unlabeled set
         self.folds = folds  # one of the 10 pre-defined folds or the full dataset
 

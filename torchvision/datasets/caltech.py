@@ -28,8 +28,9 @@ class Caltech101(VisionDataset):
 
     def __init__(self, root, target_type="category", transform=None,
                  target_transform=None, download=False):
-        super(Caltech101, self).__init__(os.path.join(root, 'caltech101'), transforms,
-                                         transform, target_transform)
+        super(Caltech101, self).__init__(os.path.join(root, 'caltech101'),
+                                         transform=transform,
+                                         target_transform=target_transform)
         makedir_exist_ok(self.root)
         if isinstance(target_type, list):
             self.target_type = target_type
