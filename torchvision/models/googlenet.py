@@ -151,7 +151,7 @@ class GoogLeNet(nn.Module):
 
         x = self.avgpool(x)
         # N x 1024 x 1 x 1
-        x = x.view(x.size(0), -1)
+        x = torch.flatten(x, 1)
         # N x 1024
         x = self.dropout(x)
         x = self.fc(x)
@@ -208,7 +208,7 @@ class InceptionAux(nn.Module):
         # aux1: N x 512 x 4 x 4, aux2: N x 528 x 4 x 4
         x = self.conv(x)
         # N x 128 x 4 x 4
-        x = x.view(x.size(0), -1)
+        x = torch.flatten(x, 1)
         # N x 2048
         x = F.relu(self.fc1(x), inplace=True)
         # N x 2048
