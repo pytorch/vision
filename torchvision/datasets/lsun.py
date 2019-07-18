@@ -15,8 +15,7 @@ else:
 class LSUNClass(VisionDataset):
     def __init__(self, root, transform=None, target_transform=None):
         import lmdb
-        super(LSUNClass, self).__init__(root, transforms=transforms,
-                                        transform=transform,
+        super(LSUNClass, self).__init__(root, transform=transform,
                                         target_transform=target_transform)
 
         self.env = lmdb.open(root, max_readers=1, readonly=True, lock=False,
