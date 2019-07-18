@@ -49,7 +49,7 @@ class CelebA(VisionDataset):
     ]
 
     def __init__(self, root, split="train", target_type="attr", transform=None,
-                 target_transform=None, transforms=None, download=False):
+                 target_transform=None, download=False):
         import pandas
         super(CelebA, self).__init__(root, transforms, transform, target_transform)
         self.split = split
