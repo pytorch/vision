@@ -44,7 +44,7 @@ class Tester(unittest.TestCase):
             data = self._create_video_frames(10, 300, 300)
             io.write_video(f.name, data, fps=5)
 
-            pts = io.read_video_timestamps(f.name)
+            pts, _ = io.read_video_timestamps(f.name)
 
             # note: not all formats/codecs provide accurate information for computing the
             # timestamps. For the format that we use here, this information is available,
@@ -63,7 +63,7 @@ class Tester(unittest.TestCase):
             data = self._create_video_frames(10, 300, 300)
             io.write_video(f.name, data, fps=5)
 
-            pts = io.read_video_timestamps(f.name)
+            pts, _ = io.read_video_timestamps(f.name)
 
             for start in range(5):
                 for l in range(1, 4):
