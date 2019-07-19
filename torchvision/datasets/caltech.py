@@ -142,10 +142,10 @@ class Caltech256(VisionDataset):
             downloaded again.
     """
 
-    def __init__(self, root, transform=None, target_transform=None, transforms=None,
-                 download=False):
-        super(Caltech256, self).__init__(os.path.join(root, 'caltech256'), transforms,
-                                         transform, target_transform)
+    def __init__(self, root, transform=None, target_transform=None, download=False):
+        super(Caltech256, self).__init__(os.path.join(root, 'caltech256'),
+                                         transform=transform,
+                                         target_transform=target_transform)
         makedir_exist_ok(self.root)
 
         if download:
