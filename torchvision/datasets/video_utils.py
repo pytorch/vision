@@ -126,7 +126,7 @@ class VideoClips(object):
 
     @staticmethod
     def _resample_video_idx(num_frames, original_fps, new_fps):
-        step = original_fps / new_fps
+        step = float(original_fps) / new_fps
         if step.is_integer():
             # optimization: if step is integer, don't need to perform
             # advanced indexing
