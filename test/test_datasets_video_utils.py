@@ -145,5 +145,6 @@ class Tester(unittest.TestCase):
         self.assertTrue(clips.equal(idxs))
         self.assertTrue(idxs.flatten().equal(resampled_idxs))
 
+
 if __name__ == '__main__':
     unittest.main()
