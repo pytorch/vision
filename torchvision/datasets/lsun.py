@@ -15,9 +15,8 @@ else:
 class LSUNClass(VisionDataset):
     def __init__(self, root, transform=None, target_transform=None):
         import lmdb
-        super(LSUNClass, self).__init__(root)
-        self.transform = transform
-        self.target_transform = target_transform
+        super(LSUNClass, self).__init__(root, transform=transform,
+                                        target_transform=target_transform)
 
         self.env = lmdb.open(root, max_readers=1, readonly=True, lock=False,
                              readahead=False, meminit=False)
@@ -68,11 +67,9 @@ class LSUN(VisionDataset):
             target and transforms it.
     """
 
-    def __init__(self, root, classes='train',
-                 transform=None, target_transform=None):
-        super(LSUN, self).__init__(root)
-        self.transform = transform
-        self.target_transform = target_transform
+    def __init__(self, root, classes='train', transform=None, target_transform=None):
+        super(LSUN, self).__init__(root, transform=transform,
+                                   target_transform=target_transform)
         categories = ['bedroom', 'bridge', 'church_outdoor', 'classroom',
                       'conference_room', 'dining_room', 'kitchen',
                       'living_room', 'restaurant', 'tower']

@@ -57,10 +57,10 @@ class MNIST(VisionDataset):
         warnings.warn("test_data has been renamed data")
         return self.data
 
-    def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
-        super(MNIST, self).__init__(root)
-        self.transform = transform
-        self.target_transform = target_transform
+    def __init__(self, root, train=True, transform=None, target_transform=None,
+                 download=False):
+        super(MNIST, self).__init__(root, transform=transform,
+                                    target_transform=target_transform)
         self.train = train  # training set or test set
 
         if download:
