@@ -1,10 +1,11 @@
 import bisect
+import math
 import torch
 import torch.utils.data
 from torchvision.io import read_video_timestamps, read_video
 
 
-def unfold(tensor, size, step, dilation):
+def unfold(tensor, size, step, dilation=1):
     """
     similar to tensor.unfold, but with the dilation
     and specialized for 1d tensors
@@ -61,6 +62,20 @@ class VideoClips(object):
             self.video_pts.append(torch.as_tensor(clips))
             self.video_fps.append(fps)
 
+    @staticmethod
+    def compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate):
+        if frame_rate is None:
+            frame_rate = fps
+        total_frames = len(video_pts) * (float(frame_rate) / fps)
+        idxs = VideoClips._resample_video_idx(int(math.floor(total_frames)), fps, frame_rate)
+        video_pts = video_pts[idxs]
+        clips = unfold(video_pts, num_frames, step)
+        if isinstance(idxs, slice):
+            idxs = [idxs] * len(clips)
+        else:
+            idxs = unfold(idxs, num_frames, step)
+        return clips, idxs
+
     def compute_clips(self, num_frames, step, frame_rate=None):
         """
         Compute all consecutive sequences of clips from video_pts.
@@ -77,14 +92,11 @@ class VideoClips(object):
         self.step = step
         self.frame_rate = frame_rate
         self.clips = []
+        self.resampling_idxs = []
         for video_pts, fps in zip(self.video_pts, self.video_fps):
-            if frame_rate is not None:
-                # divup, == int(ceil(fps / frame_rate))
-                dilation = max(int((fps + frame_rate - 1) // frame_rate), 1)
-            else:
-                dilation = 1
-            clips = unfold(video_pts, num_frames, step, dilation)
+            clips, idxs = self.compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate)
             self.clips.append(clips)
+            self.resampling_idxs.append(idxs)
         clip_lengths = torch.as_tensor([len(v) for v in self.clips])
         self.cumulative_sizes = clip_lengths.cumsum(0).tolist()
 
@@ -112,20 +124,17 @@ class VideoClips(object):
             clip_idx = idx - self.cumulative_sizes[video_idx - 1]
         return video_idx, clip_idx
 
-    def resample_video(self, video, original_fps, new_fps):
-        """
-        Resamples a video so that it matches a new fps specified
-        """
+    @staticmethod
+    def _resample_video_idx(num_frames, original_fps, new_fps):
         step = original_fps / new_fps
         if step.is_integer():
             # optimization: if step is integer, don't need to perform
             # advanced indexing
             step = int(step)
-            return video[::step]
-        idxs = torch.arange(self.num_frames, dtype=torch.float32) * step
+            return slice(None, None, step)
+        idxs = torch.arange(num_frames, dtype=torch.float32) * step
         idxs = idxs.floor().to(torch.int64)
-        video = video[idxs]
-        return video
+        return idxs
 
     def get_clip(self, idx):
         """
@@ -148,8 +157,10 @@ class VideoClips(object):
         clip_pts = self.clips[video_idx][clip_idx]
         video, audio, info = read_video(video_path, clip_pts[0].item(), clip_pts[-1].item())
         if self.frame_rate is not None:
-            fps = self.video_fps[video_idx]
-            video = self.resample_video(video, fps, self.frame_rate)
+            resampling_idx = self.resampling_idxs[video_idx][clip_idx]
+            if isinstance(resampling_idx, torch.Tensor):
+                resampling_idx = resampling_idx - resampling_idx[0]
+            video = video[resampling_idx]
             info["video_fps"] = self.frame_rate
         assert len(video) == self.num_frames
         return video, audio, info, video_idx

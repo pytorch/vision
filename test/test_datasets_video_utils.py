@@ -119,6 +119,31 @@ class Tester(unittest.TestCase):
                     self.assertEqual(info["video_fps"], fps)
                     # TODO add tests checking that the content is right
 
+    def test_compute_clips_for_video(self):
+        video_pts = torch.arange(30)
+        # case 1: single clip
+        num_frames = 13
+        orig_fps = 30
+        duration = float(len(video_pts)) / orig_fps
+        new_fps = 13
+        clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames,
+                                                         orig_fps, new_fps)
+        resampled_idxs = VideoClips._resample_video_idx(int(duration * new_fps), orig_fps, new_fps)
+        self.assertEqual(len(clips), 1)
+        self.assertTrue(clips.equal(idxs))
+        self.assertTrue(idxs[0].equal(resampled_idxs))
+
+        # case 2: all frames appear only once
+        num_frames = 4
+        orig_fps = 30
+        duration = float(len(video_pts)) / orig_fps
+        new_fps = 12
+        clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames,
+                                                         orig_fps, new_fps)
+        resampled_idxs = VideoClips._resample_video_idx(int(duration * new_fps), orig_fps, new_fps)
+        self.assertEqual(len(clips), 3)
+        self.assertTrue(clips.equal(idxs))
+        self.assertTrue(idxs.flatten().equal(resampled_idxs))
 
 if __name__ == '__main__':
     unittest.main()
