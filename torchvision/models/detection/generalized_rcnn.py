@@ -45,12 +45,12 @@ class GeneralizedRCNN(nn.Module):
             raise ValueError("In training mode, targets should be passed")
         original_image_sizes = [img.shape[-2:] for img in images]
         images, targets = self.transform(images, targets)
-        features = self.backbone(images.tensors)
+        features = self.backbone(images)
         if isinstance(features, torch.Tensor):
             features = OrderedDict([(0, features)])
         proposals, proposal_losses = self.rpn(images, features, targets)
-        detections, detector_losses = self.roi_heads(features, proposals, images.image_sizes, targets)
-        detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
+        detections, detector_losses = self.roi_heads(features, proposals, images.nested_size(), targets)
+        detections = self.transform.postprocess(detections, images.nested_size(), original_image_sizes)
 
         losses = {}
         losses.update(detector_losses)

@@ -44,8 +44,7 @@ class GeneralizedRCNNTransform(nn.Module):
                 targets[i] = target
 
         image_sizes = [img.shape[-2:] for img in images]
-        images = self.batch_images(images)
-        image_list = ImageList(images, image_sizes)
+        image_list = torch.nestedtensor(images)
         return image_list, targets
 
     def normalize(self, image):
@@ -86,23 +85,6 @@ class GeneralizedRCNNTransform(nn.Module):
             keypoints = resize_keypoints(keypoints, (h, w), image.shape[-2:])
             target["keypoints"] = keypoints
         return image, target
-
-    def batch_images(self, images, size_divisible=32):
-        # concatenate
-        max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
-
-        stride = size_divisible
-        max_size = list(max_size)
-        max_size[1] = int(math.ceil(float(max_size[1]) / stride) * stride)
-        max_size[2] = int(math.ceil(float(max_size[2]) / stride) * stride)
-        max_size = tuple(max_size)
-
-        batch_shape = (len(images),) + max_size
-        batched_imgs = images[0].new(*batch_shape).zero_()
-        for img, pad_img in zip(images, batched_imgs):
-            pad_img[: img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)
-
-        return batched_imgs
 
     def postprocess(self, result, image_shapes, original_image_sizes):
         if self.training:

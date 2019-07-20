@@ -13,14 +13,4 @@ class ImageList(object):
     """
 
     def __init__(self, tensors, image_sizes):
-        """
-        Arguments:
-            tensors (tensor)
-            image_sizes (list[tuple[int, int]])
-        """
-        self.tensors = tensors
-        self.image_sizes = image_sizes
-
-    def to(self, *args, **kwargs):
-        cast_tensor = self.tensors.to(*args, **kwargs)
-        return ImageList(cast_tensor, self.image_sizes)
+        raise NotImplementedError("")
