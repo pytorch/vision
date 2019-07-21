@@ -59,7 +59,7 @@ struct MobileNetInvertedResidualImpl : torch::nn::Module {
       return double(std::abs(a - b)) < std::numeric_limits<double>::epsilon();
     };
 
-    assert(stride == 1 || stride == 2);
+    TORCH_CHECK(stride == 1 || stride == 2);
     auto hidden_dim = int64_t(std::round(input * expand_ratio));
 
     if (!double_compare(expand_ratio, 1))
@@ -103,10 +103,9 @@ MobileNetV2Impl::MobileNetV2Impl(
         {6, 320, 1, 1},
     };
 
-  if (inverted_residual_settings[0].size() != 4) {
-    std::cerr << "inverted_residual_settings should contain 4-element vectors";
-    assert(false);
-  }
+  TORCH_CHECK(
+      inverted_residual_settings[0].size() == 4,
+      "inverted_residual_settings should contain 4-element vectors");
 
   input_channel = make_divisible(input_channel * width_mult, round_nearest);
   this->last_channel =
