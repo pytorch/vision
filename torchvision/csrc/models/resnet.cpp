@@ -1,5 +1,7 @@
 #include "resnet.h"
 
+#include "modelsimpl.h"
+
 namespace vision {
 namespace models {
 namespace _resnetimpl {
