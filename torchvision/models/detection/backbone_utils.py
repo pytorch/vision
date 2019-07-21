@@ -41,7 +41,7 @@ class BackboneWithFPN(nn.Sequential):
 
 
 def resnet_fpn_backbone(backbone_name, pretrained):
-    backbone: resnet.ResNet = resnet.__dict__[backbone_name](
+    backbone = resnet.__dict__[backbone_name](
         pretrained=pretrained,
         norm_layer=misc_nn_ops.FrozenBatchNorm2d)
     # freeze layers
