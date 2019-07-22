@@ -38,7 +38,7 @@ class ImageNet(ImageFolder):
         loader (callable, optional): A function to load an image given its path.
 
      Attributes:
-        classes (list): List of the class names.
+        classes (list): List of the class name tuples.
         class_to_idx (dict): Dict with items (class_name, class_index).
         wnids (list): List of the WordNet IDs.
         wnid_to_idx (dict): Dict with items (wordnet_id, class_index).
@@ -57,12 +57,11 @@ class ImageNet(ImageFolder):
         super(ImageNet, self).__init__(self.split_folder, **kwargs)
         self.root = root
 
-        idcs = [idx for _, idx in self.imgs]
         self.wnids = self.classes
-        self.wnid_to_idx = {wnid: idx for idx, wnid in zip(idcs, self.wnids)}
+        self.wnid_to_idx = self.class_to_idx
         self.classes = [wnid_to_classes[wnid] for wnid in self.wnids]
         self.class_to_idx = {cls: idx
-                             for clss, idx in zip(self.classes, idcs)
+                             for idx, clss in enumerate(self.classes)
                              for cls in clss}
 
     def download(self):
