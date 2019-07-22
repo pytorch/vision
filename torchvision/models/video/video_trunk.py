@@ -1,7 +1,10 @@
+import inspect
 import torch
 import torch.nn as nn
 
 from .video_stems import get_default_stem
+from ._utils import Conv3DNoTemporal
+
 
 BLOCK_CONFIG = {
     10: (1, 1, 1, 1),
@@ -20,16 +23,16 @@ class BasicBlock(nn.Module):
     expansion = 1
 
     def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None):
-        midplanes = (inplanes*planes*3*3*3) // (inplanes*3*3 + 3*planes)
+        midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Sequential(
-            conv_builder(inplanes, planes, midplanes, stride),
+            conv_builder.get_conv(inplanes, planes, midplanes, stride),
             nn.BatchNorm3d(planes),
             nn.ReLU(inplace=True)
         )
         self.conv2 = nn.Sequential(
-            conv_builder(planes, planes, midplanes),
+            conv_builder.get_conv(planes, planes, midplanes),
             nn.BatchNorm3d(planes)
         )
         self.relu = nn.ReLU(inplace=True)
@@ -43,7 +46,7 @@ class BasicBlock(nn.Module):
         out = self.conv2(out)
         if self.downsample is not None:
             residual = self.downsample(x)
- 
+
         out += residual
         out = self.relu(out)
 
@@ -56,7 +59,7 @@ class Bottleneck(nn.Module):
     def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None):
 
         super(Bottleneck, self).__init__()
-        midplanes = (inplanes*planes*3*3*3) // (inplanes*3*3 + 3*planes)
+        midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 
         # 1x1x1
         self.conv1 = nn.Sequential(
@@ -66,15 +69,15 @@ class Bottleneck(nn.Module):
         )
         # Second kernel
         self.conv2 = nn.Sequential(
-            conv_builder(planes, planes, midplanes, stride),
+            conv_builder.get_conv(planes, planes, midplanes, stride),
             nn.BatchNorm3d(planes),
             nn.ReLU(inplace=True)
         )
 
         # 1x1x1
         self.conv3 = nn.Sequential(
-            nn.Conv3d(planes, planes * 4, kernel_size=1, bias=False),
-            nn.BatchNorm3d(planes * 4)
+            nn.Conv3d(planes, planes * self.expansion, kernel_size=1, bias=False),
+            nn.BatchNorm3d(planes * self.expansion)
         )
         self.relu = nn.ReLU(inplace=True)
         self.downsample = downsample
@@ -98,12 +101,12 @@ class Bottleneck(nn.Module):
 
 class VideoTrunkBuilder(nn.Module):
 
-    def __init__(self, block, conv_makers, model_depth, 
+    def __init__(self, block, conv_makers, model_depth,
                  stem=None,
-                 num_classes=400, 
+                 num_classes=400,
                  zero_init_residual=False):
-        """Generic resnet video generator. 
-        
+        """Generic resnet video generator.
+
         Args:
             block (nn.Module): resnet building block
             conv_makers (list(functions)): generator function for each layer
@@ -111,7 +114,7 @@ class VideoTrunkBuilder(nn.Module):
             stem (nn.Sequential, optional): Resnet stem, if None, defaults to conv-bn-relu. Defaults to None.
             num_classes (int, optional): Dimension of the final FC layer. Defaults to 400.
             zero_init_residual (bool, optional): Zero init bottleneck residual BN. Defaults to False.
-        """ 
+        """
         super(VideoTrunkBuilder, self).__init__()
         layers = BLOCK_CONFIG[model_depth]
         self.inplanes = 64
@@ -139,7 +142,7 @@ class VideoTrunkBuilder(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x)
-        
+
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
@@ -155,12 +158,10 @@ class VideoTrunkBuilder(nn.Module):
     def _make_layer(self, block, conv_builder, planes, blocks, stride=1):
         downsample = None
 
-        # How do we shortcut the resnet
-        # TODO: make sure that R2+1D is not weird about this
         if stride != 1 or self.inplanes != planes * block.expansion:
             ds_stride = stride
             # 2D convolutions should not be downsampled along temporal axis
-            if conv_builder.__name__ == "video_2d_conv":
+            if isinstance(conv_builder, Conv3DNoTemporal):
                 ds_stride = (1, stride, stride)
             downsample = nn.Sequential(
                 nn.Conv3d(self.inplanes, planes * block.expansion,
@@ -174,8 +175,8 @@ class VideoTrunkBuilder(nn.Module):
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes, conv_builder))
 
-        return nn.Sequential(*layers)    
-        
+        return nn.Sequential(*layers)
+
     def _initialize_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv3d):
