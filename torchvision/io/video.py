@@ -4,6 +4,7 @@ import numpy as np
 
 try:
     import av
+    av.logging.set_level(av.logging.ERROR)
 except ImportError:
     av = None
 
@@ -118,7 +119,7 @@ def read_video(filename, start_pts=0, end_pts=None):
         raise ValueError("end_pts should be larger than start_pts, got "
                          "start_pts={} and end_pts={}".format(start_pts, end_pts))
 
-    container = av.open(filename)
+    container = av.open(filename, metadata_errors='ignore')
     info = {}
 
     video_frames = []
@@ -162,7 +163,7 @@ def read_video_timestamps(filename):
         video_fps (int): the frame rate for the video
     """
     _check_av_available()
-    container = av.open(filename)
+    container = av.open(filename, metadata_errors='ignore')
 
     video_frames = []
     video_fps = None
