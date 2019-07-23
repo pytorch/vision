@@ -72,8 +72,8 @@ struct ResNetImpl : torch::nn::Module {
   int64_t groups, base_width, inplanes;
   torch::nn::Conv2d conv1;
   torch::nn::BatchNorm bn1;
-  torch::nn::Linear fc;
   torch::nn::Sequential layer1, layer2, layer3, layer4;
+  torch::nn::Linear fc;
 
   torch::nn::Sequential _make_layer(
       int64_t planes,

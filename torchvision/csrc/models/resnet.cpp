@@ -1,5 +1,7 @@
 #include "resnet.h"
 
+#include "modelsimpl.h"
+
 namespace vision {
 namespace models {
 namespace _resnetimpl {
@@ -30,11 +32,9 @@ BasicBlock::BasicBlock(
     int64_t groups,
     int64_t base_width)
     : stride(stride), downsample(downsample) {
-  if (groups != 1 || base_width != 64) {
-    std::cerr << "BasicBlock only supports groups=1 and base_width=64"
-              << std::endl;
-    assert(false);
-  }
+  TORCH_CHECK(
+      groups == 1 && base_width == 64,
+      "BasicBlock only supports groups=1 and base_width=64");
 
   // Both conv1 and downsample layers downsample the input when stride != 1
   conv1 = conv3x3(inplanes, planes, stride);
