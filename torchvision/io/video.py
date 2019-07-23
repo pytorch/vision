@@ -63,20 +63,31 @@ def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
         gc.collect()
 
     container.seek(start_offset, any_frame=False, backward=True, stream=stream)
-    frames = []
-    first_frame = None
+    frames = {}
+    should_buffer = False
+    max_buffer_size = 5
+    if stream.type == "video":
+        # videos with b frames can have out-of-order pts
+        # so need to buffer some extra frames to sort everything
+        # properly
+        should_buffer = stream.codec_context.has_b_frames
+    buffer_count = 0
     for idx, frame in enumerate(container.decode(**stream_name)):
-        if frame.pts < start_offset:
-            first_frame = frame
-            continue
-        if first_frame and first_frame.pts < start_offset:
-            if frame.pts != start_offset:
-                frames.append(first_frame)
-            first_frame = None
-        frames.append(frame)
+        frames[frame.pts] = frame
         if frame.pts >= end_offset:
+            if should_buffer and buffer_count < max_buffer_size:
+                buffer_count += 1
+                continue
             break
-    return frames
+    # ensure that the results are sorted wrt the pts
+    result = [frames[i] for i in sorted(frames) if start_offset <= frames[i].pts <= end_offset]
+    if start_offset > 0 and start_offset not in frames:
+        # if there is no frame that exactly matches the pts of start_offset
+        # add the last frame smaller than start_offset, to guarantee that
+        # we will have all the necessary data. This is most useful for audio
+        first_frame_pts = max(i for i in frames if i < start_offset)
+        result.insert(0, frames[first_frame_pts])
+    return result
 
 
 def _align_audio_frames(aframes, audio_frames, ref_start, ref_end):
