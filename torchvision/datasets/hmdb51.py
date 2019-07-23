@@ -54,9 +54,3 @@ class HMDB51(VisionDataset):
         label = self.samples[video_idx][1]
 
         return video, audio, label
-
-
-if __name__ == "__main__":
-    # from torchvision.datasets.hmdb51 import HMDB51
-    d = HMDB51("/datasets01_101/hmdb51/112018/data", "/datasets01_101/hmdb51/112018/splits", 16, 16)
-    d[3]

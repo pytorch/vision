@@ -47,8 +47,3 @@ class UCF101(VisionDataset):
         label = self.samples[video_idx][1]
 
         return video, audio, label
-
-if __name__ == "__main__":
-    from torchvision.datasets.ucf101 import UCF101
-    d = UCF101("/private/home/bkorbar/data/video/ucf101/data", "/private/home/bkorbar/data/video/ucf101/orig_annotations", 16, 16)
-    d[3]
