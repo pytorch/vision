@@ -62,15 +62,22 @@ def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
     if _CALLED_TIMES % _GC_COLLECTION_INTERVAL == _GC_COLLECTION_INTERVAL - 1:
         gc.collect()
 
-    container.seek(start_offset, any_frame=False, backward=True, stream=stream)
     frames = {}
     should_buffer = False
     max_buffer_size = 5
     if stream.type == "video":
+        # TODO consider also using stream.codec_context.codec.reorder
         # videos with b frames can have out-of-order pts
         # so need to buffer some extra frames to sort everything
         # properly
         should_buffer = stream.codec_context.has_b_frames
+    seek_offset = start_offset
+    if should_buffer:
+        # FIXME this is kind of a hack, but we will jump to the previous keyframe
+        # so this will be safe
+        seek_offset = max(seek_offset - max_buffer_size, 0)
+    # TODO check if stream needs to always be the video stream here or not
+    container.seek(seek_offset, any_frame=False, backward=True, stream=stream)
     buffer_count = 0
     for idx, frame in enumerate(container.decode(**stream_name)):
         frames[frame.pts] = frame
