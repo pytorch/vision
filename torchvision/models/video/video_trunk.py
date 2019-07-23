@@ -27,12 +27,12 @@ class BasicBlock(nn.Module):
 
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Sequential(
-            conv_builder.get_conv(inplanes, planes, midplanes, stride),
+            conv_builder(inplanes, planes, midplanes, stride),
             nn.BatchNorm3d(planes),
             nn.ReLU(inplace=True)
         )
         self.conv2 = nn.Sequential(
-            conv_builder.get_conv(planes, planes, midplanes),
+            conv_builder(planes, planes, midplanes),
             nn.BatchNorm3d(planes)
         )
         self.relu = nn.ReLU(inplace=True)
@@ -69,7 +69,7 @@ class Bottleneck(nn.Module):
         )
         # Second kernel
         self.conv2 = nn.Sequential(
-            conv_builder.get_conv(planes, planes, midplanes, stride),
+            conv_builder(planes, planes, midplanes, stride),
             nn.BatchNorm3d(planes),
             nn.ReLU(inplace=True)
         )
@@ -159,10 +159,7 @@ class VideoTrunkBuilder(nn.Module):
         downsample = None
 
         if stride != 1 or self.inplanes != planes * block.expansion:
-            ds_stride = stride
-            # 2D convolutions should not be downsampled along temporal axis
-            if isinstance(conv_builder, Conv3DNoTemporal):
-                ds_stride = (1, stride, stride)
+            ds_stride = conv_builder.get_downsample_stride(stride)
             downsample = nn.Sequential(
                 nn.Conv3d(self.inplanes, planes * block.expansion,
                           kernel_size=1, stride=ds_stride, bias=False),

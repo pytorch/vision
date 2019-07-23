@@ -18,7 +18,7 @@ def r2plus1d(model_depth, use_pool1=False, **kwargs):
     Returns:
         nn.Module: An R(2+1)D video backbone
     """
-    convs = [Conv2Plus1D()] * 4
+    convs = [Conv2Plus1D] * 4
     if model_depth < 50:
         block = BasicBlock
     else:

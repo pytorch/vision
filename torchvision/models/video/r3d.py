@@ -19,7 +19,7 @@ def r3d(model_depth, use_pool1=False, **kwargs):
         nn.Module: R3D network trunk
     """
 
-    conv_makers = [Conv3DSimple()] * 4
+    conv_makers = [Conv3DSimple] * 4
     if model_depth < 50:
         block = BasicBlock
     else:

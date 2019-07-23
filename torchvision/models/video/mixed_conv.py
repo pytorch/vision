@@ -21,9 +21,9 @@ def mcX(model_depth, X=3, use_pool1=False, **kwargs):
         nn.Module: mcX video trunk
     """
     assert X > 1 and X <= 5
-    conv_makers = [Conv3DSimple()] * (X - 2)
+    conv_makers = [Conv3DSimple] * (X - 2)
     while len(conv_makers) < 5:
-        conv_makers.append(Conv3DNoTemporal())
+        conv_makers.append(Conv3DNoTemporal)
 
     if model_depth < 50:
         block = BasicBlock
@@ -50,9 +50,9 @@ def rmcX(model_depth, X=3, use_pool1=False, **kwargs):
     """
     assert X > 1 and X <= 5
 
-    conv_makers = [Conv3DNoTemporal()] * (X - 2)
+    conv_makers = [Conv3DNoTemporal] * (X - 2)
     while len(conv_makers) < 5:
-        conv_makers.append(Conv3DSimple())
+        conv_makers.append(Conv3DSimple)
 
     if model_depth < 50:
         block = BasicBlock
