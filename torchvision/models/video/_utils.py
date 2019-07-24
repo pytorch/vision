@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 
-__all__ = ["Conv3DSimple", "Conv3DNoTemporal"]
+__all__ = ["Conv3DSimple", "Conv2Plus1D", "Conv3DNoTemporal"]
 
 
 class Conv3DSimple(nn.Conv3d):
