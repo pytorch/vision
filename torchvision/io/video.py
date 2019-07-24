@@ -1,3 +1,4 @@
+import re
 import gc
 import torch
 import numpy as np
@@ -68,18 +69,34 @@ def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
     should_buffer = False
     max_buffer_size = 5
     if stream.type == "video":
-        # TODO consider also using stream.codec_context.codec.reorder
-        # videos with b frames can have out-of-order pts
+        # DivX-style packed B-frames can have out-of-order pts (2 frames in a single pkt)
         # so need to buffer some extra frames to sort everything
         # properly
-        should_buffer = stream.codec_context.has_b_frames
+        extradata = stream.codec_context.extradata
+        # overly complicated way of finding if `divx_packed` is set, following
+        # https://github.com/FFmpeg/FFmpeg/commit/d5a21172283572af587b3d939eba0091484d3263
+        if extradata and b"DivX" in extradata:
+            # can't use regex directly because of some weird characters sometimes...
+            pos = extradata.find(b"DivX")
+            d = extradata[pos:]
+            o = re.search(b"DivX(\d+)Build(\d+)(\w)", d)
+            if o is None:
+                o = re.search(b"DivX(\d+)b(\d+)(\w)", d)
+            if o is not None:
+                should_buffer = o.group(3) == b"p"
     seek_offset = start_offset
+    # some files don't seek to the right location, so better be safe here
+    seek_offset = max(seek_offset - 1, 0)
     if should_buffer:
         # FIXME this is kind of a hack, but we will jump to the previous keyframe
         # so this will be safe
         seek_offset = max(seek_offset - max_buffer_size, 0)
-    # TODO check if stream needs to always be the video stream here or not
-    container.seek(seek_offset, any_frame=False, backward=True, stream=stream)
+    try:
+        # TODO check if stream needs to always be the video stream here or not
+        container.seek(seek_offset, any_frame=False, backward=True, stream=stream)
+    except av.AVError:
+        print("Corrupted file?", container.name)
+        return []
     buffer_count = 0
     for idx, frame in enumerate(container.decode(**stream_name)):
         frames[frame.pts] = frame
