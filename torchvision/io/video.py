@@ -23,7 +23,7 @@ _CALLED_TIMES = 0
 _GC_COLLECTION_INTERVAL = 20
 
 
-def write_video(filename, video_array, fps):
+def write_video(filename, video_array, fps, video_codec='libx264', options=None):
     """
     Writes a 4d tensor in [T, H, W, C] format in a video file
 
@@ -38,13 +38,15 @@ def write_video(filename, video_array, fps):
 
     container = av.open(filename, mode='w')
 
-    stream = container.add_stream('mpeg4', rate=fps)
+    stream = container.add_stream(video_codec, rate=fps)
     stream.width = video_array.shape[2]
     stream.height = video_array.shape[1]
-    stream.pix_fmt = 'yuv420p'
+    stream.pix_fmt = 'yuv420p' if video_codec != 'libx264rgb' else 'rgb24'
+    stream.options = options or {}
 
     for img in video_array:
         frame = av.VideoFrame.from_ndarray(img, format='rgb24')
+        frame.pict_type = 'NONE'
         for packet in stream.encode(frame):
             container.mux(packet)
 
