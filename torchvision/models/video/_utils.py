@@ -20,15 +20,12 @@ class Conv3DSimple(nn.Conv3d):
             padding=padding,
             bias=False)
 
-    def forward(self, x):
-        return super().forward(x)
-
     @staticmethod
     def get_downsample_stride(stride):
-        return stride
+        return (stride, stride, stride)
 
 
-class Conv2Plus1D(nn.Module):
+class Conv2Plus1D(nn.Sequential):
 
     def __init__(self,
                  in_planes,
@@ -36,8 +33,7 @@ class Conv2Plus1D(nn.Module):
                  midplanes,
                  stride=1,
                  padding=1):
-        super(Conv2Plus1D, self).__init__()
-        self.conv1 = nn.Sequential(
+        conv1 = [
             nn.Conv3d(in_planes, midplanes, kernel_size=(1, 3, 3),
                       stride=(1, stride, stride), padding=(0, padding, padding),
                       bias=False),
@@ -46,14 +42,12 @@ class Conv2Plus1D(nn.Module):
             nn.Conv3d(midplanes, out_planes, kernel_size=(3, 1, 1),
                       stride=(stride, 1, 1), padding=(padding, 0, 0),
                       bias=False)
-        )
-
-    def forward(self, x):
-        return self.conv1(x)
+        ]
+        super(Conv2Plus1D, self).__init__(*conv1)
 
     @staticmethod
     def get_downsample_stride(stride):
-        return stride
+        return (stride, stride, stride)
 
 
 class Conv3DNoTemporal(nn.Conv3d):
@@ -72,9 +66,6 @@ class Conv3DNoTemporal(nn.Conv3d):
             stride=(1, stride, stride),
             padding=(0, padding, padding),
             bias=False)
-
-    def forward(self, x):
-        return super().forward(x)
 
     @staticmethod
     def get_downsample_stride(stride):
