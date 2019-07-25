@@ -49,7 +49,7 @@ class ImageNet(ImageFolder):
 
     def __init__(self, root, split='train', download=False, **kwargs):
         root = self.root = os.path.expanduser(root)
-        self.split = verify_str_arg(split, ("train", "val"), "split")
+        self.split = verify_str_arg(split, "split", ("train", "val"))
 
         if download:
             self.download()

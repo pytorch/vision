@@ -3,7 +3,7 @@ import os
 from collections import namedtuple
 import zipfile
 
-from .utils import extract_archive, verify_str_arg
+from .utils import extract_archive, verify_str_arg, iterable_to_str
 from .vision import VisionDataset
 from PIL import Image
 
@@ -109,18 +109,20 @@ class Cityscapes(VisionDataset):
         self.images = []
         self.targets = []
 
-        verify_str_arg(mode, ("fine", "coarse"), "mode")
+        verify_str_arg(mode, "mode", ("fine", "coarse"))
         if mode == "fine":
-            # TODO: add condition "invalid argument of mode == fine ..."
-            verify_str_arg(split, ("train", "test", "val"), "split")
+            valid_modes = ("train", "test", "val")
         else:
-            # TODO: add condition "invalid argument of mode == coarse ..."
-            verify_str_arg(split, ("train", "train_extra", "val"), "split")
+            valid_modes = ("train", "train_extra", "val")
+        msg = ("Unknown value '{}' for argument split if mode is '{}'. "
+               "Valid values are {{{}}}.")
+        msg = msg.format(split, mode, iterable_to_str(valid_modes))
+        verify_str_arg(split, "split", valid_modes, msg)
 
         if not isinstance(target_type, list):
             self.target_type = [target_type]
-        [verify_str_arg(value, ("instance", "semantic", "polygon", "color"),
-                        "target_type")
+        [verify_str_arg(value, "target_type",
+                        ("instance", "semantic", "polygon", "color"))
          for value in self.target_type]
 
         if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):

@@ -64,9 +64,9 @@ class SBDataset(VisionDataset):
                                "pip install scipy")
 
         super(SBDataset, self).__init__(root, transforms)
-        self.image_set = verify_str_arg(image_set, ("train", "val", "train_noval"),
-                                        "image_set")
-        self.mode = verify_str_arg(mode, ("segmentation", "boundaries"), "mode")
+        self.image_set = verify_str_arg(image_set, "image_set",
+                                        ("train", "val", "train_noval"))
+        self.mode = verify_str_arg(mode, "mode", ("segmentation", "boundaries"))
         self.num_classes = 20
 
         sbd_root = self.root

@@ -50,7 +50,7 @@ class STL10(VisionDataset):
                  target_transform=None, download=False):
         super(STL10, self).__init__(root, transform=transform,
                                     target_transform=target_transform)
-        self.split = verify_str_arg(split, self.splits, "split")
+        self.split = verify_str_arg(split, "split", self.splits)
         self.folds = folds  # one of the 10 pre-defined folds or the full dataset
 
         if download:

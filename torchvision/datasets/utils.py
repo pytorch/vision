@@ -252,14 +252,30 @@ def download_and_extract_archive(url, download_root, extract_root=None, filename
     extract_archive(archive, extract_root, remove_finished)
 
 
-def verify_str_arg(value, valid_values, arg):
+def iterable_to_str(iterable):
+    return "'" + "', '".join([str(item) for item in iterable]) + "'"
+
+
+def verify_str_arg(value, arg=None, valid_values=None, custom_msg=None):
     if not isinstance(value, torch._six.string_classes):
-        msg = "Expected type str for argument {}, ".format(arg)
-        msg += "but got type {}.".format(type(value))
+        if arg is None:
+            msg = "Expected type str, but got type {type}."
+        else:
+            msg = "Expected type str for argument {arg}, but got type {type}."
+        msg = msg.format(type=type(value), arg=arg)
         raise ValueError(msg)
-    # TODO: Should we call .lower() on value and valid_values?
+
+    if valid_values is None:
+        return value
+
     if value not in valid_values:
-        msg = "Unknown value {} for argument {}. ".format(value, arg)
-        msg += "Valid values are {{{}}}.".format(", ".join(valid_values))
+        if custom_msg is not None:
+            msg = custom_msg
+        else:
+            msg = ("Unknown value '{value}' for argument {arg}. "
+                   "Valid values are {{{valid_values}}}.")
+            msg = msg.format(value=value, arg=arg,
+                             valid_values=iterable_to_str(valid_values))
         raise ValueError(msg)
+
     return value

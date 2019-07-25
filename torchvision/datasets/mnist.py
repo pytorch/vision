@@ -231,7 +231,7 @@ class EMNIST(MNIST):
     splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
 
     def __init__(self, root, split, **kwargs):
-        self.split = verify_str_arg(split, self.splits, "split")
+        self.split = verify_str_arg(split, "split", self.splits)
         self.training_file = self._training_file(split)
         self.test_file = self._test_file(split)
         super(EMNIST, self).__init__(root, **kwargs)
@@ -333,7 +333,7 @@ class QMNIST(MNIST):
     def __init__(self, root, what=None, compat=True, train=True, **kwargs):
         if what is None:
             what = 'train' if train else 'test'
-        self.what = verify_str_arg(what, tuple(self.subsets.keys()), "what")
+        self.what = verify_str_arg(what, "what", tuple(self.subsets.keys()))
         self.compat = compat
         self.data_file = what + '.pt'
         self.training_file = self.data_file

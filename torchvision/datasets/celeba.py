@@ -72,9 +72,8 @@ class CelebA(VisionDataset):
             "test": 2,
             "all": None,
         }
-        split = split_map[verify_str_arg(split.lower(),
-                                         ("train", "valid", "test", "all"),
-                                         "split")]
+        split = split_map[verify_str_arg(split.lower(), "split",
+                                         ("train", "valid", "test", "all"))]
 
         fn = partial(os.path.join, self.root, self.base_folder)
         splits = pandas.read_csv(fn("list_eval_partition.txt"), delim_whitespace=True, header=None, index_col=0)

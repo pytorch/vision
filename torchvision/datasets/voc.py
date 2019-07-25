@@ -83,8 +83,8 @@ class VOCSegmentation(VisionDataset):
         self.url = DATASET_YEAR_DICT[year]['url']
         self.filename = DATASET_YEAR_DICT[year]['filename']
         self.md5 = DATASET_YEAR_DICT[year]['md5']
-        self.image_set = verify_str_arg(image_set, ("train", "trainval", "val"),
-                                        "image_set")
+        self.image_set = verify_str_arg(image_set, "image_set",
+                                        ("train", "trainval", "val"))
         base_dir = DATASET_YEAR_DICT[year]['base_dir']
         voc_root = os.path.join(self.root, base_dir)
         image_dir = os.path.join(voc_root, 'JPEGImages')
