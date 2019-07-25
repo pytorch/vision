@@ -89,6 +89,7 @@ class Caltech101(VisionDataset):
                                                      "annotation_{:04d}.mat".format(self.index[index])))
                 target.append(data["obj_contour"])
             else:
+                # TODO: refactor with utils.verify_str_arg
                 raise ValueError("Target type \"{}\" is not recognized.".format(t))
         target = tuple(target) if len(target) > 1 else target[0]
 

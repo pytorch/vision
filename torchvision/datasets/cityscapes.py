@@ -3,7 +3,7 @@ import os
 from collections import namedtuple
 import zipfile
 
-from .utils import extract_archive
+from .utils import extract_archive, verify_str_arg
 from .vision import VisionDataset
 from PIL import Image
 
@@ -109,22 +109,19 @@ class Cityscapes(VisionDataset):
         self.images = []
         self.targets = []
 
-        if mode not in ['fine', 'coarse']:
-            raise ValueError('Invalid mode! Please use mode="fine" or mode="coarse"')
-
-        if mode == 'fine' and split not in ['train', 'test', 'val']:
-            raise ValueError('Invalid split for mode "fine"! Please use split="train", split="test"'
-                             ' or split="val"')
-        elif mode == 'coarse' and split not in ['train', 'train_extra', 'val']:
-            raise ValueError('Invalid split for mode "coarse"! Please use split="train", split="train_extra"'
-                             ' or split="val"')
+        verify_str_arg(mode, ("fine", "coarse"), "mode")
+        if mode == "fine":
+            # TODO: add condition "invalid argument of mode == fine ..."
+            verify_str_arg(split, ("train", "test", "val"), "split")
+        else:
+            # TODO: add condition "invalid argument of mode == coarse ..."
+            verify_str_arg(split, ("train", "train_extra", "val"), "split")
 
         if not isinstance(target_type, list):
             self.target_type = [target_type]
-
-        if not all(t in ['instance', 'semantic', 'polygon', 'color'] for t in self.target_type):
-            raise ValueError('Invalid value for "target_type"! Valid values are: "instance", "semantic", "polygon"'
-                             ' or "color"')
+        [verify_str_arg(value, ("instance", "semantic", "polygon", "color"),
+                        "target_type")
+         for value in self.target_type]
 
         if not os.path.isdir(self.images_dir) or not os.path.isdir(self.targets_dir):
 

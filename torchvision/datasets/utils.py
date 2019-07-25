@@ -6,6 +6,7 @@ import errno
 import tarfile
 import zipfile
 
+import torch
 from torch.utils.model_zoo import tqdm
 
 
@@ -249,3 +250,16 @@ def download_and_extract_archive(url, download_root, extract_root=None, filename
     archive = os.path.join(download_root, filename)
     print("Extracting {} to {}".format(archive, extract_root))
     extract_archive(archive, extract_root, remove_finished)
+
+
+def verify_str_arg(value, valid_values, arg):
+    if not isinstance(value, torch._six.string_classes):
+        msg = "Expected type str for argument {}, ".format(arg)
+        msg += "but got type {}.".format(type(value))
+        raise ValueError(msg)
+    # Should we call .lower()?
+    if value not in valid_values:
+        msg = "Unknown value {} for argument {}. ".format(value, arg)
+        msg += "Valid values are {{}}.".format(", ".join(valid_values))
+        raise ValueError(msg)
+    return value

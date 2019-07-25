@@ -5,7 +5,7 @@ import os.path
 import numpy as np
 
 from .vision import VisionDataset
-from .utils import check_integrity, download_and_extract_archive
+from .utils import check_integrity, download_and_extract_archive, verify_str_arg
 
 
 class STL10(VisionDataset):
@@ -48,13 +48,9 @@ class STL10(VisionDataset):
 
     def __init__(self, root, split='train', folds=None, transform=None,
                  target_transform=None, download=False):
-        if split not in self.splits:
-            raise ValueError('Split "{}" not found. Valid splits are: {}'.format(
-                split, ', '.join(self.splits),
-            ))
         super(STL10, self).__init__(root, transform=transform,
                                     target_transform=target_transform)
-        self.split = split  # train/test/unlabeled set
+        self.split = verify_str_arg(split, self.splits, "split")
         self.folds = folds  # one of the 10 pre-defined folds or the full dataset
 
         if download:
@@ -167,4 +163,6 @@ class STL10(VisionDataset):
                     list_idx = np.fromstring(str_idx, dtype=np.uint8, sep=' ')
                     self.data, self.labels = self.data[list_idx, :, :, :], self.labels[list_idx]
             else:
+                # FIXME: docstring allows None for folds (it is even the default value)
+                #  Is this intended?
                 raise ValueError('Folds "{}" not found. Valid splits are: 0-9.'.format(folds))

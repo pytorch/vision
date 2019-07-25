@@ -4,7 +4,7 @@ from PIL import Image
 import os
 import os.path
 import numpy as np
-from .utils import download_url, check_integrity
+from .utils import download_url, check_integrity, verify_str_arg
 
 
 class SVHN(VisionDataset):
@@ -43,12 +43,7 @@ class SVHN(VisionDataset):
                  download=False):
         super(SVHN, self).__init__(root, transform=transform,
                                    target_transform=target_transform)
-        self.split = split  # training set or test set or extra set
-
-        if self.split not in self.split_list:
-            raise ValueError('Wrong split entered! Please use split="train" '
-                             'or split="extra" or split="test"')
-
+        self.split = verify_str_arg(split, ("train", "extra", "test"), "split")
         self.url = self.split_list[split][0]
         self.filename = self.split_list[split][1]
         self.file_md5 = self.split_list[split][2]

@@ -5,7 +5,7 @@ from .vision import VisionDataset
 import numpy as np
 
 from PIL import Image
-from .utils import download_url
+from .utils import download_url, verify_str_arg
 from .voc import download_extract
 
 
@@ -65,11 +65,11 @@ class SBDataset(VisionDataset):
 
         super(SBDataset, self).__init__(root, transforms)
 
-        if mode not in ("segmentation", "boundaries"):
-            raise ValueError("Argument mode should be 'segmentation' or 'boundaries'")
-
-        self.image_set = image_set
-        self.mode = mode
+        # FIXME: Is it common to not have the *.txt of the image_set in the root folder?
+        #  Previous code checked for this, but only reported a wrong value for image_set
+        self.image_set = verify_str_arg(image_set, ("train", "val", "train_noval"),
+                                        "image_set")
+        self.mode = verify_str_arg(mode, ("segmentation", "boundaries"), "mode")
         self.num_classes = 20
 
         sbd_root = self.root
@@ -90,11 +90,6 @@ class SBDataset(VisionDataset):
                                ' You can use download=True to download it')
 
         split_f = os.path.join(sbd_root, image_set.rstrip('\n') + '.txt')
-
-        if not os.path.exists(split_f):
-            raise ValueError(
-                'Wrong image_set entered! Please use image_set="train" '
-                'or image_set="val" or image_set="train_noval"')
 
         with open(os.path.join(split_f), "r") as f:
             file_names = [x.strip() for x in f.readlines()]

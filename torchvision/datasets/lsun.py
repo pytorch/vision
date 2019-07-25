@@ -11,6 +11,8 @@ if sys.version_info[0] == 2:
 else:
     import pickle
 
+from .utils import verify_str_arg
+
 
 class LSUNClass(VisionDataset):
     def __init__(self, root, transform=None, target_transform=None):
@@ -75,27 +77,28 @@ class LSUN(VisionDataset):
                       'living_room', 'restaurant', 'tower']
         dset_opts = ['train', 'val', 'test']
 
-        if type(classes) == str and classes in dset_opts:
+        try:
+            verify_str_arg(classes, dset_opts, "classes")
             if classes == 'test':
                 classes = [classes]
             else:
                 classes = [c + '_' + classes for c in categories]
-        elif type(classes) == list:
-            for c in classes:
-                c_short = c.split('_')
-                c_short.pop(len(c_short) - 1)
-                c_short = '_'.join(c_short)
-                if c_short not in categories:
-                    raise (ValueError('Unknown LSUN class: ' + c_short + '.'
-                                      'Options are: ' + str(categories)))
-                c_short = c.split('_')
-                c_short = c_short.pop(len(c_short) - 1)
-                if c_short not in dset_opts:
-                    raise (ValueError('Unknown postfix: ' + c_short + '.'
-                                      'Options are: ' + str(dset_opts)))
-        else:
-            raise (ValueError('Unknown option for classes'))
-        self.classes = classes
+        except ValueError:
+            # Should this check for Iterable instead of list?
+            if isinstance(classes, list):
+                for c in classes:
+                    # This assumes each item is a str (or subclass)
+                    # Should this also be checked?
+                    c_short = c.split('_')
+                    category, dset_opt = '_'.join(c_short[:-1]), c_short[-1]
+                    # TODO: "LSUN class" and "postfix" are not arguments.
+                    # TODO: adapt verify_str_arg to refelct this
+                    verify_str_arg(category, categories, "LSUN class")
+                    verify_str_arg(c_short, categories, "postfix")
+            else:
+                raise
+        finally:
+            self.classes = classes
 
         # for each class, create an LSUNClassDataset
         self.dbs = []

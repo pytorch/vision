@@ -4,7 +4,8 @@ import shutil
 import tempfile
 import torch
 from .folder import ImageFolder
-from .utils import check_integrity, download_and_extract_archive, extract_archive
+from .utils import check_integrity, download_and_extract_archive, extract_archive, \
+    verify_str_arg
 
 ARCHIVE_DICT = {
     'train': {
@@ -48,7 +49,7 @@ class ImageNet(ImageFolder):
 
     def __init__(self, root, split='train', download=False, **kwargs):
         root = self.root = os.path.expanduser(root)
-        self.split = self._verify_split(split)
+        self.split = verify_str_arg(split, ("train", "val"), "split")
 
         if download:
             self.download()
@@ -108,17 +109,6 @@ class ImageNet(ImageFolder):
 
     def _save_meta_file(self, wnid_to_class, val_wnids):
         torch.save((wnid_to_class, val_wnids), self.meta_file)
-
-    def _verify_split(self, split):
-        if split not in self.valid_splits:
-            msg = "Unknown split {} .".format(split)
-            msg += "Valid splits are {{}}.".format(", ".join(self.valid_splits))
-            raise ValueError(msg)
-        return split
-
-    @property
-    def valid_splits(self):
-        return 'train', 'val'
 
     @property
     def split_folder(self):
