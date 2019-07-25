@@ -83,6 +83,8 @@ class VOCSegmentation(VisionDataset):
         self.url = DATASET_YEAR_DICT[year]['url']
         self.filename = DATASET_YEAR_DICT[year]['filename']
         self.md5 = DATASET_YEAR_DICT[year]['md5']
+        # FIXME: Is it common to not have the *.txt of the image_set in the root folder?
+        #  Previous code checked for this, but only reported a wrong value for image_set
         self.image_set = verify_str_arg(image_set, ("train", "trainval", "val"),
                                         "image_set")
         base_dir = DATASET_YEAR_DICT[year]['base_dir']
