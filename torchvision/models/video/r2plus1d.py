@@ -31,4 +31,13 @@ def _r2plus1d(model_depth, use_pool1=False, **kwargs):
 
 
 def r2plus1d_18(use_pool1=False, **kwargs):
+    """Constructor for the 18 layer deep R(2+1)D network as in
+    https://arxiv.org/abs/1711.11248
+
+    Args:
+        use_pool1 (bool, optional): Include pooling in the resnet stem. Defaults to False.
+
+    Returns:
+        nn.Module: R(2+1)D-18 network
+    """
     return _r2plus1d(18, use_pool1, **kwargs)

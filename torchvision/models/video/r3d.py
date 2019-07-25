@@ -31,4 +31,13 @@ def _r3d(model_depth, use_pool1=False, **kwargs):
 
 
 def r3d_18(use_pool1=False, **kwargs):
+    """Construct 18 layer Resnet3D model as in
+    https://arxiv.org/abs/1711.11248
+
+    Args:
+        use_pool1 (bool, optional): Include pooling in resnet stem. Defaults to False.
+
+    Returns:
+        nn.Module: R3D-18 network
+    """
     return _r3d(18, use_pool1, **kwargs)

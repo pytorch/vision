@@ -66,4 +66,13 @@ def _rmcX(model_depth, X=3, use_pool1=False, **kwargs):
 
 
 def mc3_18(use_pool1=False, **kwargs):
+    """Constructor for 18 layer Mixed Convolution network as in
+    https://arxiv.org/abs/1711.11248
+
+    Args:
+        use_pool1 (bool, optional): Include pooling in the resnet stem. Defaults to False.
+
+    Returns:
+        nn.Module: MC3 Network definitino
+    """
     return _mcX(18, 3, use_pool1, **kwargs)
