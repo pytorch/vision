@@ -157,6 +157,6 @@ class FrozenBatchNorm2d(torch.nn.Module):
         bias = b - rm * scale
 
         # Manual outer broadcasting
-        scale = torch.nestedtensor(len(x) * scale.unbind())    
-        bias = torch.nestedtensor(len(x) * bias.unbind())    
+        scale = torch.nested_tensor(len(x) * scale.unbind())
+        bias = torch.nested_tensor(len(x) * bias.unbind())
         return x * scale + bias

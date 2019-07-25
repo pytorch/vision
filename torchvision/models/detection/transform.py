@@ -7,6 +7,7 @@ from torchvision.ops import misc as misc_nn_ops
 from .image_list import ImageList
 from .roi_heads import paste_masks_in_image
 
+torch = torch.nested.monkey_patch(torch)
 
 class GeneralizedRCNNTransform(nn.Module):
     """
@@ -44,7 +45,7 @@ class GeneralizedRCNNTransform(nn.Module):
                 targets[i] = target
 
         image_sizes = [img.shape[-2:] for img in images]
-        image_list = torch.nestedtensor(images)
+        image_list = torch.nested_tensor(images)
         return image_list, targets
 
     def normalize(self, image):
