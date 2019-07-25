@@ -4,7 +4,7 @@ import os
 import os.path
 
 from .vision import VisionDataset
-from .utils import download_and_extract_archive, makedir_exist_ok
+from .utils import download_and_extract_archive, makedir_exist_ok, verify_str_arg
 
 
 class Caltech101(VisionDataset):
@@ -32,10 +32,10 @@ class Caltech101(VisionDataset):
                                          transform=transform,
                                          target_transform=target_transform)
         makedir_exist_ok(self.root)
-        if isinstance(target_type, list):
-            self.target_type = target_type
-        else:
-            self.target_type = [target_type]
+        if not isinstance(target_type, list):
+            target_type = [target_type]
+        self.target_type = [verify_str_arg(t, "target_type", ("category", "annotation"))
+                            for t in target_type]
 
         if download:
             self.download()
@@ -88,9 +88,6 @@ class Caltech101(VisionDataset):
                                                      self.annotation_categories[self.y[index]],
                                                      "annotation_{:04d}.mat".format(self.index[index])))
                 target.append(data["obj_contour"])
-            else:
-                # TODO: refactor with utils.verify_str_arg
-                raise ValueError("Target type \"{}\" is not recognized.".format(t))
         target = tuple(target) if len(target) > 1 else target[0]
 
         if self.transform is not None:
