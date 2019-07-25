@@ -6,6 +6,7 @@ import torchvision.datasets.utils as utils
 import torchvision.io as io
 import unittest
 import sys
+import warnings
 
 from common_utils import get_tmp_dir
 
