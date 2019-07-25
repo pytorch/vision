@@ -260,6 +260,6 @@ def verify_str_arg(value, valid_values, arg):
     # TODO: Should we call .lower() on value and valid_values?
     if value not in valid_values:
         msg = "Unknown value {} for argument {}. ".format(value, arg)
-        msg += "Valid values are {{}}.".format(", ".join(valid_values))
+        msg += "Valid values are {{{}}}.".format(", ".join(valid_values))
         raise ValueError(msg)
     return value
