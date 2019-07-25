@@ -79,9 +79,9 @@ def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
             # can't use regex directly because of some weird characters sometimes...
             pos = extradata.find(b"DivX")
             d = extradata[pos:]
-            o = re.search(b"DivX(\d+)Build(\d+)(\w)", d)
+            o = re.search(br"DivX(\d+)Build(\d+)(\w)", d)
             if o is None:
-                o = re.search(b"DivX(\d+)b(\d+)(\w)", d)
+                o = re.search(br"DivX(\d+)b(\d+)(\w)", d)
             if o is not None:
                 should_buffer = o.group(3) == b"p"
     seek_offset = start_offset
