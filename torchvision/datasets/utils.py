@@ -257,7 +257,7 @@ def verify_str_arg(value, valid_values, arg):
         msg = "Expected type str for argument {}, ".format(arg)
         msg += "but got type {}.".format(type(value))
         raise ValueError(msg)
-    # Should we call .lower()?
+    # TODO: Should we call .lower() on value and valid_values?
     if value not in valid_values:
         msg = "Unknown value {} for argument {}. ".format(value, arg)
         msg += "Valid values are {{}}.".format(", ".join(valid_values))

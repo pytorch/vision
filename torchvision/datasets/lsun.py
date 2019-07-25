@@ -84,17 +84,17 @@ class LSUN(VisionDataset):
             else:
                 classes = [c + '_' + classes for c in categories]
         except ValueError:
-            # Should this check for Iterable instead of list?
+            # TODO: Should this check for Iterable instead of list?
             if isinstance(classes, list):
                 for c in classes:
-                    # This assumes each item is a str (or subclass)
-                    # Should this also be checked?
+                    # TODO: This assumes each item is a str (or subclass). Should this
+                    #   also be checked?
                     c_short = c.split('_')
                     category, dset_opt = '_'.join(c_short[:-1]), c_short[-1]
                     # TODO: "LSUN class" and "postfix" are not arguments.
-                    # TODO: adapt verify_str_arg to refelct this
+                    #  verify_str_arg needs to be adapted to reflect this
                     verify_str_arg(category, categories, "LSUN class")
-                    verify_str_arg(c_short, categories, "postfix")
+                    verify_str_arg(dset_opt, dset_opts, "postfix")
             else:
                 raise
         finally:
