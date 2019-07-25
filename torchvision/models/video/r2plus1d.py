@@ -5,10 +5,10 @@ from .video_stems import get_r2plus1d_stem
 from .video_trunk import VideoTrunkBuilder, BasicBlock, Bottleneck
 
 
-__all__ = ["r2plus1d"]
+__all__ = ["r2plus1d_18"]
 
 
-def r2plus1d(model_depth, use_pool1=False, **kwargs):
+def _r2plus1d(model_depth, use_pool1=False, **kwargs):
     """Constructor for R(2+1)D network as described in
     https://arxiv.org/abs/1711.11248
 
@@ -28,3 +28,7 @@ def r2plus1d(model_depth, use_pool1=False, **kwargs):
         block=block, conv_makers=convs, model_depth=model_depth,
         stem=get_r2plus1d_stem(use_pool1), **kwargs)
     return model
+
+
+def r2plus1d_18(use_pool1=False, **kwargs):
+    return _r2plus1d(18, use_pool1, **kwargs)

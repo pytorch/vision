@@ -61,15 +61,12 @@ class Tester(unittest.TestCase):
     def _test_video_model(self, name):
         # the default input shape is
         # bs * num_channels * clip_len * h *w
-        for framesize in [112, 224]:
-            for framelen in [8, 16, 32]:
-                input_shape = (1, 3, framelen, framesize, framesize)
-                # test both basicblock and Bottleneck
-                for depth in [18, 50]:
-                    model = models.video.__dict__[name](depth, num_classes=50)
-                    x = torch.rand(input_shape)
-                    out = model(x)
-                    self.assertEqual(out.shape[-1], 50)
+        input_shape = (1, 3, 8, 112, 112)
+        # test both basicblock and Bottleneck
+        model = models.video.__dict__[name](num_classes=50)
+        x = torch.rand(input_shape)
+        out = model(x)
+        self.assertEqual(out.shape[-1], 50)
 
     def _make_sliced_model(self, model, stop_layer):
         layers = OrderedDict()

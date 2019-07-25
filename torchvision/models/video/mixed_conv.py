@@ -5,10 +5,10 @@ from .video_stems import get_default_stem
 from .video_trunk import VideoTrunkBuilder, BasicBlock, Bottleneck
 
 
-__all__ = ["mcX", "rmcX"]
+__all__ = ["mc3_18"]
 
 
-def mcX(model_depth, X=3, use_pool1=False, **kwargs):
+def _mcX(model_depth, X=3, use_pool1=False, **kwargs):
     """Generate mixed convolution network as in
         https://arxiv.org/abs/1711.11248
 
@@ -36,7 +36,7 @@ def mcX(model_depth, X=3, use_pool1=False, **kwargs):
     return model
 
 
-def rmcX(model_depth, X=3, use_pool1=False, **kwargs):
+def _rmcX(model_depth, X=3, use_pool1=False, **kwargs):
     """Generate reverse mixed convolution network as in
         https://arxiv.org/abs/1711.11248
 
@@ -63,3 +63,7 @@ def rmcX(model_depth, X=3, use_pool1=False, **kwargs):
                               stem=get_default_stem(use_pool1=use_pool1), **kwargs)
 
     return model
+
+
+def mc3_18(use_pool1=False, **kwargs):
+    return _mcX(18, 3, use_pool1, **kwargs)

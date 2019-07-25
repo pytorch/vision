@@ -4,10 +4,10 @@ from ._utils import Conv3DSimple
 from .video_stems import get_default_stem
 from .video_trunk import VideoTrunkBuilder, BasicBlock, Bottleneck
 
-__all__ = ["r3d"]
+__all__ = ["r3d_18"]
 
 
-def r3d(model_depth, use_pool1=False, **kwargs):
+def _r3d(model_depth, use_pool1=False, **kwargs):
     """Constructor of a r3d network as in
     https://arxiv.org/abs/1711.11248
 
@@ -28,3 +28,7 @@ def r3d(model_depth, use_pool1=False, **kwargs):
     model = VideoTrunkBuilder(block=block, conv_makers=conv_makers, model_depth=model_depth,
                               stem=get_default_stem(use_pool1=use_pool1), **kwargs)
     return model
+
+
+def r3d_18(use_pool1=False, **kwargs):
+    return _r3d(18, use_pool1, **kwargs)
