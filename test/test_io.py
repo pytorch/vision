@@ -52,12 +52,12 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
         yield f.name, data
 
 
+@unittest.skipIf(av is None, "PyAV unavailable")
 class Tester(unittest.TestCase):
     # compression adds artifacts, thus we add a tolerance of
     # 6 in 0-255 range
     TOLERANCE = 6
 
-    @unittest.skipIf(av is None, "PyAV unavailable")
     def test_write_read_video(self):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
             lv, _, info = io.read_video(f_name)
@@ -65,7 +65,6 @@ class Tester(unittest.TestCase):
             self.assertTrue(data.equal(lv))
             self.assertEqual(info["video_fps"], 5)
 
-    @unittest.skipIf(av is None, "PyAV unavailable")
     def test_read_timestamps(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name)
@@ -81,7 +80,6 @@ class Tester(unittest.TestCase):
 
             self.assertEqual(pts, expected_pts)
 
-    @unittest.skipIf(av is None, "PyAV unavailable")
     def test_read_partial_video(self):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name)
@@ -96,7 +94,6 @@ class Tester(unittest.TestCase):
             self.assertEqual(len(lv), 4)
             self.assertTrue(data[4:8].equal(lv))
 
-    @unittest.skipIf(av is None, "PyAV unavailable")
     def test_read_partial_video_bframes(self):
         # do not use lossless encoding, to test the presence of B-frames
         options = {'bframes': '16', 'keyint': '10', 'min-keyint': '4'}
@@ -113,7 +110,6 @@ class Tester(unittest.TestCase):
             self.assertEqual(len(lv), 4)
             self.assertTrue((data[4:8].float() - lv.float()).abs().max() < self.TOLERANCE)
 
-    @unittest.skipIf(av is None, "PyAV unavailable")
     def test_read_packed_b_frames_divx_file(self):
         with get_tmp_dir() as temp_dir:
             name = "hmdb51_Turnk_r_Pippi_Michel_cartwheel_f_cm_np2_le_med_6.avi"
@@ -128,6 +124,23 @@ class Tester(unittest.TestCase):
                 msg = "could not download test file '{}'".format(url)
                 warnings.warn(msg, RuntimeWarning)
                 raise unittest.SkipTest(msg)
+
+    def test_read_timestamps_from_packet(self):
+        with temp_video(10, 300, 300, 5, video_codec='mpeg4') as (f_name, data):
+            pts, _ = io.read_video_timestamps(f_name)
+
+            # note: not all formats/codecs provide accurate information for computing the
+            # timestamps. For the format that we use here, this information is available,
+            # so we use it as a baseline
+            container = av.open(f_name)
+            stream = container.streams[0]
+            # make sure we went through the optimized codepath
+            self.assertIn(b'Lavc', stream.codec_context.extradata)
+            pts_step = int(round(float(1 / (stream.average_rate * stream.time_base))))
+            num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
+            expected_pts = [i * pts_step for i in range(num_frames)]
+
+            self.assertEqual(pts, expected_pts)
 
     # TODO add tests for audio
 

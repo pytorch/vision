@@ -185,6 +185,15 @@ def read_video(filename, start_pts=0, end_pts=None):
     return vframes, aframes, info
 
 
+def _can_read_timestamps_from_packets(container):
+    extradata = container.streams[0].codec_context.extradata
+    if extradata is None:
+        return False
+    if b"Lavc" in extradata:
+        return True
+    return False
+
+
 def read_video_timestamps(filename):
     """
     List the video frames timestamps.
@@ -205,8 +214,12 @@ def read_video_timestamps(filename):
     video_frames = []
     video_fps = None
     if container.streams.video:
-        video_frames = _read_from_stream(container, 0, float("inf"),
-                                         container.streams.video[0], {'video': 0})
+        if _can_read_timestamps_from_packets(container):
+            # fast path
+            video_frames = [x for x in container.demux(video=0) if x.pts is not None]
+        else:
+            video_frames = _read_from_stream(container, 0, float("inf"),
+                                             container.streams.video[0], {'video': 0})
         video_fps = float(container.streams.video[0].average_rate)
     container.close()
     return [x.pts for x in video_frames], video_fps
