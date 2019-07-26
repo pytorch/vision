@@ -7,7 +7,8 @@ import os.path
 import numpy as np
 import torch
 import codecs
-from .utils import download_url, download_and_extract_archive, extract_archive, makedir_exist_ok
+from .utils import download_url, download_and_extract_archive, extract_archive, \
+    makedir_exist_ok, verify_str_arg
 
 
 class MNIST(VisionDataset):
@@ -230,11 +231,7 @@ class EMNIST(MNIST):
     splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
 
     def __init__(self, root, split, **kwargs):
-        if split not in self.splits:
-            raise ValueError('Split "{}" not found. Valid splits are: {}'.format(
-                split, ', '.join(self.splits),
-            ))
-        self.split = split
+        self.split = verify_str_arg(split, "split", self.splits)
         self.training_file = self._training_file(split)
         self.test_file = self._test_file(split)
         super(EMNIST, self).__init__(root, **kwargs)
@@ -336,10 +333,7 @@ class QMNIST(MNIST):
     def __init__(self, root, what=None, compat=True, train=True, **kwargs):
         if what is None:
             what = 'train' if train else 'test'
-        if not self.subsets.get(what):
-            raise RuntimeError("Argument 'what' should be one of: \n  " +
-                               repr(tuple(self.subsets.keys())))
-        self.what = what
+        self.what = verify_str_arg(what, "what", tuple(self.subsets.keys()))
         self.compat = compat
         self.data_file = what + '.pt'
         self.training_file = self.data_file

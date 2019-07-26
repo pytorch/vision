@@ -11,6 +11,8 @@ if sys.version_info[0] == 2:
 else:
     import pickle
 
+from .utils import verify_str_arg, iterable_to_str
+
 
 class LSUNClass(VisionDataset):
     def __init__(self, root, transform=None, target_transform=None):
@@ -75,27 +77,31 @@ class LSUN(VisionDataset):
                       'living_room', 'restaurant', 'tower']
         dset_opts = ['train', 'val', 'test']
 
-        if type(classes) == str and classes in dset_opts:
+        try:
+            verify_str_arg(classes, "classes", dset_opts)
             if classes == 'test':
                 classes = [classes]
             else:
                 classes = [c + '_' + classes for c in categories]
-        elif type(classes) == list:
+        except ValueError:
+            # TODO: Should this check for Iterable instead of list?
+            if not isinstance(classes, list):
+                raise ValueError
             for c in classes:
+                # TODO: This assumes each item is a str (or subclass). Should this
+                #   also be checked?
                 c_short = c.split('_')
-                c_short.pop(len(c_short) - 1)
-                c_short = '_'.join(c_short)
-                if c_short not in categories:
-                    raise (ValueError('Unknown LSUN class: ' + c_short + '.'
-                                      'Options are: ' + str(categories)))
-                c_short = c.split('_')
-                c_short = c_short.pop(len(c_short) - 1)
-                if c_short not in dset_opts:
-                    raise (ValueError('Unknown postfix: ' + c_short + '.'
-                                      'Options are: ' + str(dset_opts)))
-        else:
-            raise (ValueError('Unknown option for classes'))
-        self.classes = classes
+                category, dset_opt = '_'.join(c_short[:-1]), c_short[-1]
+                msg_fmtstr = "Unknown value '{}' for {}. Valid values are {{{}}}."
+
+                msg = msg_fmtstr.format(category, "LSUN class",
+                                        iterable_to_str(categories))
+                verify_str_arg(category, valid_values=categories, custom_msg=msg)
+
+                msg = msg_fmtstr.format(dset_opt, "postfix", iterable_to_str(dset_opts))
+                verify_str_arg(dset_opt, valid_values=dset_opts, custom_msg=msg)
+        finally:
+            self.classes = classes
 
         # for each class, create an LSUNClassDataset
         self.dbs = []

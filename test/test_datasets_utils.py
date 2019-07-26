@@ -107,6 +107,11 @@ class Tester(unittest.TestCase):
                     data = nf.read()
                 self.assertEqual(data, 'this is the content')
 
+    def test_verify_str_arg(self):
+        self.assertEqual("a", utils.verify_str_arg("a", "arg", ("a",)))
+        self.assertRaises(ValueError, utils.verify_str_arg, 0, ("a",), "arg")
+        self.assertRaises(ValueError, utils.verify_str_arg, "b", ("a",), "arg")
+
 
 if __name__ == '__main__':
     unittest.main()
