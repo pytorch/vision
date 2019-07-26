@@ -2,9 +2,18 @@ import os
 import contextlib
 import tempfile
 import torch
+import torchvision.datasets.utils as utils
 import torchvision.io as io
 import unittest
+import sys
+import warnings
 
+from common_utils import get_tmp_dir
+
+if sys.version_info < (3,):
+    from urllib2 import URLError
+else:
+    from urllib.error import URLError
 
 try:
     import av
@@ -103,6 +112,22 @@ class Tester(unittest.TestCase):
             lv, _, _ = io.read_video(f_name, pts[4] + 1, pts[7])
             self.assertEqual(len(lv), 4)
             self.assertTrue((data[4:8].float() - lv.float()).abs().max() < self.TOLERANCE)
+
+    @unittest.skipIf(av is None, "PyAV unavailable")
+    def test_read_packed_b_frames_divx_file(self):
+        with get_tmp_dir() as temp_dir:
+            name = "hmdb51_Turnk_r_Pippi_Michel_cartwheel_f_cm_np2_le_med_6.avi"
+            f_name = os.path.join(temp_dir, name)
+            url = "https://download.pytorch.org/vision_tests/io/" + name
+            try:
+                utils.download_url(url, temp_dir)
+                pts, fps = io.read_video_timestamps(f_name)
+                self.assertEqual(pts, sorted(pts))
+                self.assertEqual(fps, 30)
+            except URLError:
+                msg = "could not download test file '{}'".format(url)
+                warnings.warn(msg, RuntimeWarning)
+                raise unittest.SkipTest(msg)
 
     # TODO add tests for audio
 

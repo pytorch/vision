@@ -84,6 +84,10 @@ class VideoClips(object):
 
     @staticmethod
     def compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate):
+        if fps is None:
+            # if for some reason the video doesn't have fps (because doesn't have a video stream)
+            # set the fps to 1. The value doesn't matter, because video_pts is empty anyway
+            fps = 1
         if frame_rate is None:
             frame_rate = fps
         total_frames = len(video_pts) * (float(frame_rate) / fps)
