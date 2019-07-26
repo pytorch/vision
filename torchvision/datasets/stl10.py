@@ -51,7 +51,7 @@ class STL10(VisionDataset):
         super(STL10, self).__init__(root, transform=transform,
                                     target_transform=target_transform)
         self.split = verify_str_arg(split, "split", self.splits)
-        self.folds = folds  # one of the 10 pre-defined folds or the full dataset
+        self.folds = self._verify_folds(folds)
 
         if download:
             self.download()
@@ -88,6 +88,19 @@ class STL10(VisionDataset):
         if os.path.isfile(class_file):
             with open(class_file) as f:
                 self.classes = f.read().splitlines()
+
+    def _verify_folds(self, folds):
+        if folds is None:
+            return folds
+        elif isinstance(folds, int):
+            if folds in range(10):
+                return folds
+            msg = ("Value for argument folds should be in the range [0, 10), "
+                   "but got {}.")
+            raise ValueError(msg.format(folds))
+        else:
+            msg = "Expected type None or int for argument folds, but got type {}."
+            raise ValueError(msg.format(type(folds)))
 
     def __getitem__(self, index):
         """
@@ -154,15 +167,11 @@ class STL10(VisionDataset):
 
     def __load_folds(self, folds):
         # loads one of the folds if specified
-        if isinstance(folds, int):
-            if folds >= 0 and folds < 10:
-                path_to_folds = os.path.join(
-                    self.root, self.base_folder, self.folds_list_file)
-                with open(path_to_folds, 'r') as f:
-                    str_idx = f.read().splitlines()[folds]
-                    list_idx = np.fromstring(str_idx, dtype=np.uint8, sep=' ')
-                    self.data, self.labels = self.data[list_idx, :, :, :], self.labels[list_idx]
-            else:
-                # FIXME: docstring allows None for folds (it is even the default value)
-                #  Is this intended?
-                raise ValueError('Folds "{}" not found. Valid splits are: 0-9.'.format(folds))
+        if folds is None:
+            return
+        path_to_folds = os.path.join(
+            self.root, self.base_folder, self.folds_list_file)
+        with open(path_to_folds, 'r') as f:
+            str_idx = f.read().splitlines()[folds]
+            list_idx = np.fromstring(str_idx, dtype=np.uint8, sep=' ')
+            self.data, self.labels = self.data[list_idx, :, :, :], self.labels[list_idx]
