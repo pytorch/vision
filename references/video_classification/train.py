@@ -8,9 +8,13 @@ import torch
 import torch.utils.data
 from torch import nn
 import torchvision
+import torchvision.datasets.video_utils
 from torchvision import transforms
 
 import utils
+from sampler import DistributedSampler, SequentialClipSampler
+from scheduler import WarmupMultiStepLR
+import transforms as T
 
 try:
     from apex import amp
@@ -18,17 +22,17 @@ except ImportError:
     amp = None
 
 
-def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, print_freq, apex=False):
+def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, apex=False):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
-    metric_logger.add_meter('img/s', utils.SmoothedValue(window_size=10, fmt='{value}'))
+    metric_logger.add_meter('img/s', utils.SmoothedValue(window_size=10, fmt='{value:.3f}'))
 
     header = 'Epoch: [{}]'.format(epoch)
-    for image, target in metric_logger.log_every(data_loader, print_freq, header):
+    for video, target in metric_logger.log_every(data_loader, print_freq, header):
         start_time = time.time()
-        image, target = image.to(device), target.to(device)
-        output = model(image)
+        video, target = video.to(device), target.to(device)
+        output = model(video)
         loss = criterion(output, target)
 
         optimizer.zero_grad()
@@ -40,11 +44,12 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
         optimizer.step()
 
         acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
-        batch_size = image.shape[0]
+        batch_size = video.shape[0]
         metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
         metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
         metric_logger.meters['img/s'].update(batch_size / (time.time() - start_time))
+        lr_scheduler.step()
 
 
 def evaluate(model, criterion, data_loader, device):
@@ -101,20 +106,32 @@ def main(args):
 
     # Data loading code
     print("Loading data")
-    traindir = os.path.join(args.data_path, 'train')
-    valdir = os.path.join(args.data_path, 'val')
+    traindir = os.path.join(args.data_path, 'train_avi-480p')
+    valdir = os.path.join(args.data_path, 'val_avi-480p')
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
 
     print("Loading training data")
     st = time.time()
     cache_path = _get_cache_path(traindir)
+    dataset = torch.load("/private/home/fmassa/github/vision/kinetics_train.pth")
+    # dataset = torch.load("/private/home/fmassa/github/vision/kinetics_val.pth")
+    dataset.video_clips.compute_clips(16, 1, frame_rate=15)
+    dataset.transform = torchvision.transforms.Compose([
+        T.ToFloatTensorInZeroOne(),
+        T.Resize((128, 171)),
+        T.RandomHorizontalFlip(),
+        T.Normalize((0.43216, 0.394666, 0.37645), (0.22803, 0.22145, 0.216989)),
+        T.RandomCrop((112, 112))
+    ])
+
+    """
     if args.cache_dataset and os.path.exists(cache_path):
         # Attention, as the transforms are also cached!
         print("Loading dataset_train from {}".format(cache_path))
         dataset, _ = torch.load(cache_path)
     else:
-        dataset = torchvision.datasets.ImageFolder(
+        dataset = torchvision.datasets.Kinetics(
             traindir,
             transforms.Compose([
                 transforms.RandomResizedCrop(224),
@@ -126,17 +143,29 @@ def main(args):
             print("Saving dataset_train to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset, traindir), cache_path)
+    """
     print("Took", time.time() - st)
 
     print("Loading validation data")
     cache_path = _get_cache_path(valdir)
+    dataset_test = torch.load("/private/home/fmassa/github/vision/kinetics_val.pth")
+    dataset_test.video_clips.compute_clips(16, 1, frame_rate=15)
+    dataset_test.transform = torchvision.transforms.Compose([
+        T.ToFloatTensorInZeroOne(),
+        T.Resize((128, 171)),
+        T.Normalize((0.43216, 0.394666, 0.37645), (0.22803, 0.22145, 0.216989)),
+        T.CenterCrop((112, 112))
+    ])
+    """
     if args.cache_dataset and os.path.exists(cache_path):
         # Attention, as the transforms are also cached!
         print("Loading dataset_test from {}".format(cache_path))
         dataset_test, _ = torch.load(cache_path)
     else:
-        dataset_test = torchvision.datasets.ImageFolder(
+        dataset_test = torchvision.datasets.Kinetics(
             valdir,
+            args.frames_per_clip,
+            1,
             transforms.Compose([
                 transforms.Resize(256),
                 transforms.CenterCrop(224),
@@ -147,14 +176,13 @@ def main(args):
             print("Saving dataset_test to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset_test, valdir), cache_path)
-
+    """
     print("Creating data loaders")
+    train_sampler = torchvision.datasets.video_utils.RandomClipSampler(dataset.video_clips, args.clips_per_video)
+    test_sampler = SequentialClipSampler(dataset_test.video_clips, args.clips_per_video)
     if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
-    else:
-        train_sampler = torch.utils.data.RandomSampler(dataset)
-        test_sampler = torch.utils.data.SequentialSampler(dataset_test)
+        train_sampler = DistributedSampler(train_sampler)
+        test_sampler = DistributedSampler(test_sampler)
 
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=args.batch_size,
@@ -165,22 +193,30 @@ def main(args):
         sampler=test_sampler, num_workers=args.workers, pin_memory=True)
 
     print("Creating model")
-    model = torchvision.models.__dict__[args.model](pretrained=args.pretrained)
+    # model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
+    model = torchvision.models.video.__dict__[args.model]()
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     criterion = nn.CrossEntropyLoss()
 
+    lr = args.lr * args.world_size
     optimizer = torch.optim.SGD(
-        model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+        model.parameters(), lr=lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
     if args.apex:
         model, optimizer = amp.initialize(model, optimizer,
                                           opt_level=args.apex_opt_level
                                           )
 
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
+    # per iteration, not per epoch
+    warmup_epochs = 10
+    warmup_iters = warmup_epochs * len(data_loader)
+    lr_milestones = [len(data_loader) * m for m in args.lr_milestones]
+    lr_scheduler = WarmupMultiStepLR(
+        optimizer, milestones=lr_milestones, gamma=args.lr_gamma,
+        warmup_iters=warmup_iters, warmup_factor=1e-5)
 
     model_without_ddp = model
     if args.distributed:
@@ -203,8 +239,7 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq, args.apex)
-        lr_scheduler.step()
+        train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, args.print_freq, args.apex)
         evaluate(model, criterion, data_loader_test, device=device)
         if args.output_dir:
             checkpoint = {
@@ -229,21 +264,25 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='PyTorch Classification Training')
 
-    parser.add_argument('--data-path', default='/datasets01/imagenet_full_size/061417/', help='dataset')
-    parser.add_argument('--model', default='resnet18', help='model')
+    parser.add_argument('--data-path', default='/datasets01_101/kinetics/070618/', help='dataset')
+    parser.add_argument('--model', default='r2plus1d_18', help='model')
     parser.add_argument('--device', default='cuda', help='device')
-    parser.add_argument('-b', '--batch-size', default=32, type=int)
-    parser.add_argument('--epochs', default=90, type=int, metavar='N',
+    parser.add_argument('--clip-len', default=8, type=int, metavar='N',
+                        help='number of frames per clip')
+    parser.add_argument('--clips-per-video', default=5, type=int, metavar='N',
+                        help='maximum number of clips per video to consider')
+    parser.add_argument('-b', '--batch-size', default=24, type=int)
+    parser.add_argument('--epochs', default=45, type=int, metavar='N',
                         help='number of total epochs to run')
-    parser.add_argument('-j', '--workers', default=16, type=int, metavar='N',
+    parser.add_argument('-j', '--workers', default=10, type=int, metavar='N',
                         help='number of data loading workers (default: 16)')
-    parser.add_argument('--lr', default=0.1, type=float, help='initial learning rate')
+    parser.add_argument('--lr', default=0.01, type=float, help='initial learning rate')
     parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                         help='momentum')
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                         metavar='W', help='weight decay (default: 1e-4)',
                         dest='weight_decay')
-    parser.add_argument('--lr-step-size', default=30, type=int, help='decrease lr every step-size epochs')
+    parser.add_argument('--lr-milestones', nargs='+', default=[20, 30, 40], type=int, help='decrease lr on milestones')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
