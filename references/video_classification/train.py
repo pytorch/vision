@@ -99,6 +99,8 @@ def main(args):
 
     utils.init_distributed_mode(args)
     print(args)
+    print("torch version: ", torch.__version__)
+    print("torchvision version: ", torchvision.__version__)
 
     device = torch.device(args.device)
 
