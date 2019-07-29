@@ -6,60 +6,61 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-std::vector<std::string> vision::datasets::datasetsimpl::lsdir(
-    const std::string& path) {
+namespace vision {
+namespace datasets {
+namespace datasetsimpl {
+std::vector<std::string> lsdir(const std::string& path) {
   std::vector<std::string> list;
-  DIR* dp;
-  struct dirent* ep;
+  auto dp = opendir(path.c_str());
 
-  dp = opendir(path.c_str());
   if (dp != nullptr) {
-    while ((ep = readdir(dp))) {
+    auto ep = readdir(dp);
+
+    while (ep != nullptr) {
       std::string name = ep->d_name;
       if (name != "." && name != "..")
         list.emplace_back(std::move(name));
     }
 
-    (void)closedir(dp);
+    closedir(dp);
   }
 
   return list;
 }
 
-std::string vision::datasets::datasetsimpl::tolower(std::string str) {
+std::string tolower(std::string str) {
   std::transform(str.begin(), str.end(), str.begin(), ::tolower);
   return str;
 }
 
-void vision::datasets::datasetsimpl::sort_names(
-    std::vector<std::string>& data) {
-  auto comp = [](const std::string& A, const std::string& B) {
-    return tolower(A) < tolower(B);
-  };
+inline bool comp(const std::string& A, const std::string& B) {
+  return tolower(A) < tolower(B);
+};
+
+void sort_names(std::vector<std::string>& data) {
   std::sort(data.begin(), data.end(), comp);
 }
 
-bool vision::datasets::datasetsimpl::isdir(const std::string& path) {
+bool isdir(const std::string& path) {
   struct stat st;
   if (stat(path.c_str(), &st) == 0)
     return st.st_mode & S_IFDIR;
   return false;
 }
 
-bool vision::datasets::datasetsimpl::isfile(const std::string& path) {
+bool isfile(const std::string& path) {
   struct stat st;
   if (stat(path.c_str(), &st) == 0)
     return st.st_mode & S_IFREG;
   return false;
 }
 
-bool vision::datasets::datasetsimpl::exists(const std::string& path) {
+bool exists(const std::string& path) {
   struct stat st;
   return stat(path.c_str(), &st) == 0;
 }
 
-torch::Tensor vision::datasets::datasetsimpl::read_image(
-    const std::string& path) {
+torch::Tensor read_image(const std::string& path) {
   auto mat = cv::imread(path);
   TORCH_CHECK(!mat.empty(), "Failed to read image \"", path, "\".");
 
@@ -78,9 +79,12 @@ torch::Tensor vision::datasets::datasetsimpl::read_image(
   return output / 255;
 }
 
-std::string vision::datasets::datasetsimpl::absolute_path(
-    const std::string& path) {
+std::string absolute_path(const std::string& path) {
   char rpath[PATH_MAX];
   realpath(path.c_str(), rpath);
   return std::string(rpath);
 }
+
+} // namespace datasetsimpl
+} // namespace datasets
+} // namespace vision
