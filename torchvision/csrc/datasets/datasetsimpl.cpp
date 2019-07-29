@@ -1,6 +1,7 @@
 #include "datasetsimpl.h"
 
 #include <dirent.h>
+#include <opencv2/opencv.hpp>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -58,12 +59,11 @@ bool vision::datasets::datasetsimpl::exists(const std::string& path) {
 }
 
 torch::Tensor vision::datasets::datasetsimpl::read_image(
-    const std::string& path,
-    std::function<cv::Mat(const cv::Mat&)> transform) {
+    const std::string& path) {
   auto mat = cv::imread(path);
   TORCH_CHECK(!mat.empty(), "Failed to read image \"", path, "\".");
 
-  mat = transform(mat);
+  cv::cvtColor(mat, mat, cv::COLOR_BGR2RGB);
   std::vector<torch::Tensor> tensors;
   std::vector<cv::Mat> channels(size_t(mat.channels()));
   cv::split(mat, channels);
@@ -72,9 +72,10 @@ torch::Tensor vision::datasets::datasetsimpl::read_image(
     tensors.push_back(
         torch::from_blob(channel.ptr(), {mat.rows, mat.cols}, torch::kUInt8));
 
-  return torch::cat(tensors)
-      .view({mat.channels(), mat.rows, mat.cols})
-      .to(torch::kFloat);
+  auto output = torch::cat(tensors)
+                    .view({mat.channels(), mat.rows, mat.cols})
+                    .to(torch::kFloat);
+  return output / 255;
 }
 
 std::string vision::datasets::datasetsimpl::absolute_path(
@@ -82,14 +83,4 @@ std::string vision::datasets::datasetsimpl::absolute_path(
   char rpath[PATH_MAX];
   realpath(path.c_str(), rpath);
   return std::string(rpath);
-}
-
-std::function<cv::Mat(const cv::Mat&)> vision::datasets::datasetsimpl::
-    make_transform(int width, int height, cv::ColorConversionCodes code) {
-  return [width, height, code](const cv::Mat& mat) {
-    cv::Mat new_mat;
-    cv::resize(mat, new_mat, cv::Size(width, height));
-    cv::cvtColor(new_mat, new_mat, code);
-    return new_mat;
-  };
 }

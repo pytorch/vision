@@ -1,7 +1,6 @@
 #ifndef DATASETSIMPL_H
 #define DATASETSIMPL_H
 
-#include <opencv2/opencv.hpp>
 #include <torch/torch.h>
 
 #ifndef TORCH_CHECK
@@ -34,17 +33,7 @@ inline std::string join(const std::string& head, Tail&&... tail) {
   return head + "/" + join(std::forward<Tail>(tail)...);
 }
 
-torch::Tensor read_image(
-    const std::string& path,
-    std::function<cv::Mat(const cv::Mat&)> transform);
-
-std::function<cv::Mat(const cv::Mat&)> make_transform(
-    int width,
-    int height,
-    cv::ColorConversionCodes code);
-
-static auto rgb_transform = make_transform(224, 224, cv::COLOR_BGR2RGB);
-static auto gray_transform = make_transform(224, 224, cv::COLOR_BGR2GRAY);
+torch::Tensor read_image(const std::string& path);
 
 } // namespace datasetsimpl
 } // namespace datasets
