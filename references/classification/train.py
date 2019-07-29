@@ -26,11 +26,11 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
 
     header = 'Epoch: [{}]'.format(epoch)
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
+        start_time = time.time()
         image, target = image.to(device), target.to(device)
         output = model(image)
         loss = criterion(output, target)
 
-        start_time = time.time()
         optimizer.zero_grad()
         if apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -170,22 +170,22 @@ def main(args):
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
-    model_without_ddp = model
-    if args.distributed:
-        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
-        model_without_ddp = model.module
-
     criterion = nn.CrossEntropyLoss()
 
     optimizer = torch.optim.SGD(
         model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
-
     if args.apex:
         model, optimizer = amp.initialize(model, optimizer,
                                           opt_level=args.apex_opt_level
                                           )
+
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
+
+    model_without_ddp = model
+    if args.distributed:
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
+        model_without_ddp = model.module
 
     if args.resume:
         checkpoint = torch.load(args.resume, map_location='cpu')

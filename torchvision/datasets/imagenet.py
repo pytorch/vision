@@ -4,7 +4,8 @@ import shutil
 import tempfile
 import torch
 from .folder import ImageFolder
-from .utils import check_integrity, download_and_extract_archive, extract_archive
+from .utils import check_integrity, download_and_extract_archive, extract_archive, \
+    verify_str_arg
 
 ARCHIVE_DICT = {
     'train': {
@@ -38,7 +39,7 @@ class ImageNet(ImageFolder):
         loader (callable, optional): A function to load an image given its path.
 
      Attributes:
-        classes (list): List of the class names.
+        classes (list): List of the class name tuples.
         class_to_idx (dict): Dict with items (class_name, class_index).
         wnids (list): List of the WordNet IDs.
         wnid_to_idx (dict): Dict with items (wordnet_id, class_index).
@@ -48,7 +49,7 @@ class ImageNet(ImageFolder):
 
     def __init__(self, root, split='train', download=False, **kwargs):
         root = self.root = os.path.expanduser(root)
-        self.split = self._verify_split(split)
+        self.split = verify_str_arg(split, "split", ("train", "val"))
 
         if download:
             self.download()
@@ -57,12 +58,11 @@ class ImageNet(ImageFolder):
         super(ImageNet, self).__init__(self.split_folder, **kwargs)
         self.root = root
 
-        idcs = [idx for _, idx in self.imgs]
         self.wnids = self.classes
-        self.wnid_to_idx = {wnid: idx for idx, wnid in zip(idcs, self.wnids)}
+        self.wnid_to_idx = self.class_to_idx
         self.classes = [wnid_to_classes[wnid] for wnid in self.wnids]
         self.class_to_idx = {cls: idx
-                             for clss, idx in zip(self.classes, idcs)
+                             for idx, clss in enumerate(self.classes)
                              for cls in clss}
 
     def download(self):
@@ -109,17 +109,6 @@ class ImageNet(ImageFolder):
 
     def _save_meta_file(self, wnid_to_class, val_wnids):
         torch.save((wnid_to_class, val_wnids), self.meta_file)
-
-    def _verify_split(self, split):
-        if split not in self.valid_splits:
-            msg = "Unknown split {} .".format(split)
-            msg += "Valid splits are {{}}.".format(", ".join(self.valid_splits))
-            raise ValueError(msg)
-        return split
-
-    @property
-    def valid_splits(self):
-        return 'train', 'val'
 
     @property
     def split_folder(self):

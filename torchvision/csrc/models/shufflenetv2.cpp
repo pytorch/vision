@@ -41,13 +41,10 @@ struct ShuffleNetV2InvertedResidualImpl : torch::nn::Module {
 
   ShuffleNetV2InvertedResidualImpl(int64_t inp, int64_t oup, int64_t stride)
       : stride(stride) {
-    if (stride < 1 || stride > 3) {
-      std::cerr << "illegal stride value'" << std::endl;
-      assert(false);
-    }
+    TORCH_CHECK(stride >= 1 && stride <= 3, "illegal stride value");
 
     auto branch_features = oup / 2;
-    assert(stride != 1 || inp == branch_features << 1);
+    TORCH_CHECK(stride != 1 || inp == branch_features << 1);
 
     if (stride > 1) {
       branch1 = torch::nn::Sequential(
@@ -94,17 +91,13 @@ ShuffleNetV2Impl::ShuffleNetV2Impl(
     const std::vector<int64_t>& stage_repeats,
     const std::vector<int64_t>& stage_out_channels,
     int64_t num_classes) {
-  if (stage_repeats.size() != 3) {
-    std::cerr << "expected stage_repeats as vector of 3 positive ints"
-              << std::endl;
-    assert(false);
-  }
+  TORCH_CHECK(
+      stage_repeats.size() == 3,
+      "expected stage_repeats as vector of 3 positive ints");
 
-  if (stage_out_channels.size() != 5) {
-    std::cerr << "expected stage_out_channels as vector of 5 positive ints"
-              << std::endl;
-    assert(false);
-  }
+  TORCH_CHECK(
+      stage_out_channels.size() == 5,
+      "expected stage_out_channels as vector of 5 positive ints");
 
   _stage_out_channels = stage_out_channels;
   int64_t input_channels = 3;
