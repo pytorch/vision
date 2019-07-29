@@ -78,6 +78,9 @@ class DatasetFolder(VisionDataset):
         is_valid_file (callable, optional): A function that takes path of an Image file
             and check if the file is a valid_file (used to check of corrupt files)
             both extensions and is_valid_file should not be passed.
+        class_type (string, optional): A specification of how to return the classes.
+            If set to 'input' the labels will be the samples, which may be used e.g.
+            when training an autoencoder. Defaults to numerical.
 
      Attributes:
         classes (list): List of the class names.
@@ -87,7 +90,7 @@ class DatasetFolder(VisionDataset):
     """
 
     def __init__(self, root, loader, extensions=None, transform=None,
-                 target_transform=None, is_valid_file=None):
+                 target_transform=None, is_valid_file=None, class_type="numerical"):
         super(DatasetFolder, self).__init__(root, transform=transform,
                                             target_transform=target_transform)
         classes, class_to_idx = self._find_classes(self.root)
@@ -99,6 +102,7 @@ class DatasetFolder(VisionDataset):
         self.loader = loader
         self.extensions = extensions
 
+        self.class_type = class_type
         self.classes = classes
         self.class_to_idx = class_to_idx
         self.samples = samples
@@ -140,6 +144,9 @@ class DatasetFolder(VisionDataset):
             sample = self.transform(sample)
         if self.target_transform is not None:
             target = self.target_transform(target)
+
+        if self.class_type == "input":
+            return sample, sample
 
         return sample, target
 
@@ -193,7 +200,10 @@ class ImageFolder(DatasetFolder):
             target and transforms it.
         loader (callable, optional): A function to load an image given its path.
         is_valid_file (callable, optional): A function that takes path of an Image file
-            and check if the file is a valid_file (used to check of corrupt files)
+            and check if the file is a valid_file (used to check of corrupt files).
+        class_type (string, optional): A specification of how to return the classes.
+            If set to 'input' the labels will be the samples, which may be used e.g.
+            when training an autoencoder. Defaults to numerical.
 
      Attributes:
         classes (list): List of the class names.
@@ -202,9 +212,10 @@ class ImageFolder(DatasetFolder):
     """
 
     def __init__(self, root, transform=None, target_transform=None,
-                 loader=default_loader, is_valid_file=None):
+                 loader=default_loader, is_valid_file=None, class_type="numerical"):
         super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS if is_valid_file is None else None,
                                           transform=transform,
                                           target_transform=target_transform,
-                                          is_valid_file=is_valid_file)
+                                          is_valid_file=is_valid_file,
+                                          class_type=class_type)
         self.imgs = self.samples
