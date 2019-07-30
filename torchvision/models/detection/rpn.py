@@ -79,26 +79,29 @@ class AnchorGenerator(nn.Module):
 
     def grid_anchors(self, grid_sizes, strides):
         anchors = []
-        for size, stride, base_anchors in zip(
+        for sizes, strides, base_anchors in zip(
             grid_sizes, strides, self.cell_anchors
         ):
-            grid_height, grid_width = size
-            stride_height, stride_width = stride
-            device = base_anchors.device
-            shifts_x = torch.arange(
-                0, grid_width, dtype=torch.float32, device=device
-            ) * stride_width
-            shifts_y = torch.arange(
-                0, grid_height, dtype=torch.float32, device=device
-            ) * stride_height
-            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
-            shift_x = shift_x.reshape(-1)
-            shift_y = shift_y.reshape(-1)
-            shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
+            for size, stride, base_anchor in zip(
+                sizes, strides, base_anchors
+            ):
+                grid_height, grid_width = size
+                stride_height, stride_width = stride
+                device = base_anchor.device
+                shifts_x = torch.arange(
+                    0, grid_width, dtype=torch.float32, device=device
+                ) * stride_width
+                shifts_y = torch.arange(
+                    0, grid_height, dtype=torch.float32, device=device
+                ) * stride_height
+                shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
+                shift_x = shift_x.reshape(-1)
+                shift_y = shift_y.reshape(-1)
+                shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
 
-            anchors.append(
-                (shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)).reshape(-1, 4)
-            )
+                anchors.append(
+                    (shifts.view(-1, 1, 4) + base_anchor.view(1, -1, 4)).reshape(-1, 4)
+                )
 
         return anchors
 
@@ -111,17 +114,21 @@ class AnchorGenerator(nn.Module):
         return anchors
 
     def forward(self, image_list, feature_maps):
-        grid_sizes = tuple([feature_map.shape[-2:] for feature_map in feature_maps])
-        image_size = image_list.tensors.shape[-2:]
-        strides = tuple((image_size[0] / g[0], image_size[1] / g[1]) for g in grid_sizes)
+        grid_sizes = tuple([tuple(map(lambda x: x[-2:], feature_map.nested_size())) for feature_map in feature_maps])
+        image_sizes = tuple(map(lambda x: x[-2:], image_list.nested_size()))
+        strides = []
+        for grid_size, image_size in zip(grid_sizes, image_sizes):
+            strides.append(tuple((image_size[0] / g[0], image_size[1] / g[1]) for g in grid_size))
+        strides = tuple(strides)
         self.set_cell_anchors(feature_maps[0].device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
         anchors = []
-        for i, (image_height, image_width) in enumerate(image_list.image_sizes):
-            anchors_in_image = []
-            for anchors_per_feature_map in anchors_over_all_feature_maps:
-                anchors_in_image.append(anchors_per_feature_map)
-            anchors.append(anchors_in_image)
+        for image_sizes in image_list.nested_size():
+            for _, (image_height, image_width) in enumerate([image_sizes[-2:] for i in range(image_sizes[0])]):
+                anchors_in_image = []
+                for anchors_per_feature_map in anchors_over_all_feature_maps:
+                    anchors_in_image.append(anchors_per_feature_map)
+                anchors.append(anchors_in_image)
         anchors = [torch.cat(anchors_per_image) for anchors_per_image in anchors]
         return anchors
 
@@ -394,6 +401,7 @@ class RegionProposalNetwork(torch.nn.Module):
             losses (Dict[Tensor]): the losses for the model during training. During
                 testing, it is an empty dict.
         """
+
         # RPN uses all feature maps that are available
         features = list(features.values())
         objectness, pred_bbox_deltas = self.head(features)
