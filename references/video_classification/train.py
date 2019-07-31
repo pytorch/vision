@@ -12,7 +12,7 @@ import torchvision.datasets.video_utils
 from torchvision import transforms
 
 import utils
-from sampler import DistributedSampler, SequentialClipSampler
+from sampler import DistributedSampler, UniformClipSampler
 from scheduler import WarmupMultiStepLR
 import transforms as T
 
@@ -73,7 +73,7 @@ def evaluate(model, criterion, data_loader, device):
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
 
-    print(' * Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f}'
+    print(' * Clip Acc@1 {top1.global_avg:.3f} Clip Acc@5 {top5.global_avg:.3f}'
           .format(top1=metric_logger.acc1, top5=metric_logger.acc5))
     return metric_logger.acc1.global_avg
 
@@ -81,7 +81,7 @@ def evaluate(model, criterion, data_loader, device):
 def _get_cache_path(filepath):
     import hashlib
     h = hashlib.sha1(filepath.encode()).hexdigest()
-    cache_path = os.path.join("~", ".torch", "vision", "datasets", "imagefolder", h[:10] + ".pt")
+    cache_path = os.path.join("~", ".torch", "vision", "datasets", "kinetics", h[:10] + ".pt")
     cache_path = os.path.expanduser(cache_path)
     return cache_path
 
@@ -110,78 +110,69 @@ def main(args):
     print("Loading data")
     traindir = os.path.join(args.data_path, 'train_avi-480p')
     valdir = os.path.join(args.data_path, 'val_avi-480p')
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+    normalize = T.Normalize(mean=[0.43216, 0.394666, 0.37645],
+                            std=[0.22803, 0.22145, 0.216989])
 
     print("Loading training data")
     st = time.time()
     cache_path = _get_cache_path(traindir)
-    dataset = torch.load("/private/home/fmassa/github/vision/kinetics_train.pth")
-    # dataset = torch.load("/private/home/fmassa/github/vision/kinetics_val.pth")
-    dataset.video_clips.compute_clips(16, 1, frame_rate=15)
-    dataset.transform = torchvision.transforms.Compose([
+    transform_train = torchvision.transforms.Compose([
         T.ToFloatTensorInZeroOne(),
         T.Resize((128, 171)),
         T.RandomHorizontalFlip(),
-        T.Normalize((0.43216, 0.394666, 0.37645), (0.22803, 0.22145, 0.216989)),
+        normalize,
         T.RandomCrop((112, 112))
     ])
 
-    """
     if args.cache_dataset and os.path.exists(cache_path):
-        # Attention, as the transforms are also cached!
         print("Loading dataset_train from {}".format(cache_path))
         dataset, _ = torch.load(cache_path)
+        dataset.transform = transform_train
     else:
-        dataset = torchvision.datasets.Kinetics(
+        dataset = torchvision.datasets.KineticsVideo(
             traindir,
-            transforms.Compose([
-                transforms.RandomResizedCrop(224),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                normalize,
-            ]))
+            frames_per_clip=args.clip_len,
+            step_between_clips=1,
+            transform=transform_train
+        )
         if args.cache_dataset:
             print("Saving dataset_train to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset, traindir), cache_path)
-    """
+    dataset.video_clips.compute_clips(args.clip_len, 1, frame_rate=15)
+
     print("Took", time.time() - st)
 
     print("Loading validation data")
     cache_path = _get_cache_path(valdir)
-    dataset_test = torch.load("/private/home/fmassa/github/vision/kinetics_val.pth")
-    dataset_test.video_clips.compute_clips(16, 1, frame_rate=15)
-    dataset_test.transform = torchvision.transforms.Compose([
+
+    transform_test = torchvision.transforms.Compose([
         T.ToFloatTensorInZeroOne(),
         T.Resize((128, 171)),
-        T.Normalize((0.43216, 0.394666, 0.37645), (0.22803, 0.22145, 0.216989)),
+        normalize,
         T.CenterCrop((112, 112))
     ])
-    """
+
     if args.cache_dataset and os.path.exists(cache_path):
-        # Attention, as the transforms are also cached!
         print("Loading dataset_test from {}".format(cache_path))
         dataset_test, _ = torch.load(cache_path)
+        dataset_test.transform = transform_test
     else:
-        dataset_test = torchvision.datasets.Kinetics(
+        dataset_test = torchvision.datasets.KineticsVideo(
             valdir,
-            args.frames_per_clip,
-            1,
-            transforms.Compose([
-                transforms.Resize(256),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                normalize,
-            ]))
+            frames_per_clip=args.clip_len,
+            step_between_clips=1,
+            transform=transform_test
+        )
         if args.cache_dataset:
             print("Saving dataset_test to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset_test, valdir), cache_path)
-    """
+    dataset_test.video_clips.compute_clips(args.clip_len, 1, frame_rate=15)
+
     print("Creating data loaders")
     train_sampler = torchvision.datasets.video_utils.RandomClipSampler(dataset.video_clips, args.clips_per_video)
-    test_sampler = SequentialClipSampler(dataset_test.video_clips, args.clips_per_video)
+    test_sampler = UniformClipSampler(dataset_test.video_clips, args.clips_per_video)
     if args.distributed:
         train_sampler = DistributedSampler(train_sampler)
         test_sampler = DistributedSampler(test_sampler)
@@ -212,9 +203,9 @@ def main(args):
                                           opt_level=args.apex_opt_level
                                           )
 
-    # per iteration, not per epoch
-    warmup_epochs = 10
-    warmup_iters = warmup_epochs * len(data_loader)
+    # convert scheduler to be per iteration, not per epoch, for warmup that lasts
+    # between different epochs
+    warmup_iters = args.lr_warmup_epochs * len(data_loader)
     lr_milestones = [len(data_loader) * m for m in args.lr_milestones]
     lr_scheduler = WarmupMultiStepLR(
         optimizer, milestones=lr_milestones, gamma=args.lr_gamma,
@@ -286,6 +277,7 @@ def parse_args():
                         dest='weight_decay')
     parser.add_argument('--lr-milestones', nargs='+', default=[20, 30, 40], type=int, help='decrease lr on milestones')
     parser.add_argument('--lr-gamma', default=0.1, type=float, help='decrease lr by a factor of lr-gamma')
+    parser.add_argument('--lr-warmup-epochs', default=10, type=int, help='number of warmup epochs')
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')

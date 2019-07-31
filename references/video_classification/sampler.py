@@ -59,7 +59,7 @@ class DistributedSampler(Sampler):
         self.epoch = epoch
 
 
-class SequentialClipSampler(torch.utils.data.Sampler):
+class UniformClipSampler(torch.utils.data.Sampler):
     """
     Samples at most `max_video_clips_per_video` clips for each video, equally spaced
     Arguments:
