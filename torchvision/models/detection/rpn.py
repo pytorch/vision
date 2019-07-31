@@ -166,10 +166,10 @@ class RPNHead(nn.Module):
         return logits, bbox_reg
 
 
-def permute_and_flatten(layer, N, A, C, H, W):
-    layer = layer.view(N, -1, C, H, W)
-    layer = layer.permute(0, 3, 4, 1, 2)
-    layer = layer.reshape(N, -1, C)
+def permute_and_flatten(layer, A, C, H, W):
+    layer = layer.view(-1, C, H, W)
+    layer = layer.permute(2, 3, 0, 1)
+    layer = layer.reshape(-1, C)
     return layer
 
 
@@ -180,27 +180,30 @@ def concat_box_prediction_layers(box_cls, box_regression):
     # same format as the labels. Note that the labels are computed for
     # all feature levels concatenated, so we keep the same representation
     # for the objectness and the box_regression
-    for box_cls_per_level, box_regression_per_level in zip(
+    for all_box_cls_per_level, all_box_regression_per_level in zip(
         box_cls, box_regression
     ):
-        N, AxC, H, W = box_cls_per_level.shape
-        Ax4 = box_regression_per_level.shape[1]
-        A = Ax4 // 4
-        C = AxC // A
-        box_cls_per_level = permute_and_flatten(
-            box_cls_per_level, N, A, C, H, W
-        )
-        box_cls_flattened.append(box_cls_per_level)
+        for box_cls_per_level, box_regression_per_level in zip(
+            all_box_cls_per_level.unbind(), all_box_regression_per_level.unbind()
+        ):
+            AxC, H, W = box_cls_per_level.shape
+            Ax4 = box_regression_per_level.shape[0]
+            A = Ax4 // 4
+            C = AxC // A
+            box_cls_per_level = permute_and_flatten(
+                box_cls_per_level, A, C, H, W
+            )
+            box_cls_flattened.append(box_cls_per_level)
 
-        box_regression_per_level = permute_and_flatten(
-            box_regression_per_level, N, A, 4, H, W
-        )
-        box_regression_flattened.append(box_regression_per_level)
+            box_regression_per_level = permute_and_flatten(
+                box_regression_per_level, A, 4, H, W
+            )
+            box_regression_flattened.append(box_regression_per_level)
     # concatenate on the first dimension (representing the feature levels), to
     # take into account the way the labels were generated (with all feature maps
     # being concatenated as well)
-    box_cls = torch.cat(box_cls_flattened, dim=1).reshape(-1, C)
-    box_regression = torch.cat(box_regression_flattened, dim=1).reshape(-1, 4)
+    box_cls = torch.cat(box_cls_flattened).reshape(-1, C)
+    box_regression = torch.cat(box_regression_flattened).reshape(-1, 4)
     return box_cls, box_regression
 
 
@@ -408,7 +411,7 @@ class RegionProposalNetwork(torch.nn.Module):
         anchors = self.anchor_generator(images, features)
 
         num_images = len(anchors)
-        num_anchors_per_level = [o[0].numel() for o in objectness]
+        num_anchors_per_level = [o.unbind()[0].numel() for o in objectness]
         objectness, pred_bbox_deltas = \
             concat_box_prediction_layers(objectness, pred_bbox_deltas)
         # apply pred_bbox_deltas to anchors to obtain the decoded proposals
