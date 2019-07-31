@@ -6,6 +6,7 @@ import sys
 
 import torch
 import torch.utils.data
+from torch.utils.data.dataloader import default_collate
 from torch import nn
 import torchvision
 import torchvision.datasets.video_utils
@@ -57,16 +58,16 @@ def evaluate(model, criterion, data_loader, device):
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
     with torch.no_grad():
-        for image, target in metric_logger.log_every(data_loader, 100, header):
-            image = image.to(device, non_blocking=True)
+        for video, target in metric_logger.log_every(data_loader, 100, header):
+            video = video.to(device, non_blocking=True)
             target = target.to(device, non_blocking=True)
-            output = model(image)
+            output = model(video)
             loss = criterion(output, target)
 
             acc1, acc5 = utils.accuracy(output, target, topk=(1, 5))
             # FIXME need to take into account that the datasets
             # could have been padded in distributed setup
-            batch_size = image.shape[0]
+            batch_size = video.shape[0]
             metric_logger.update(loss=loss.item())
             metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
             metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
@@ -84,6 +85,12 @@ def _get_cache_path(filepath):
     cache_path = os.path.join("~", ".torch", "vision", "datasets", "kinetics", h[:10] + ".pt")
     cache_path = os.path.expanduser(cache_path)
     return cache_path
+
+
+def collate_fn(batch):
+    # remove audio from the batch
+    batch = [(d[0], d[2]) for d in batch]
+    return default_collate(batch)
 
 
 def main(args):
@@ -185,11 +192,13 @@ def main(args):
 
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=args.batch_size,
-        sampler=train_sampler, num_workers=args.workers, pin_memory=True)
+        sampler=train_sampler, num_workers=args.workers,
+        pin_memory=True, collate_fn=collate_fn)
 
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test, batch_size=args.batch_size,
-        sampler=test_sampler, num_workers=args.workers, pin_memory=True)
+        sampler=test_sampler, num_workers=args.workers,
+        pin_memory=True, collate_fn=collate_fn)
 
     print("Creating model")
     # model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
@@ -267,7 +276,7 @@ def parse_args():
     parser.add_argument('--data-path', default='/datasets01_101/kinetics/070618/', help='dataset')
     parser.add_argument('--model', default='r2plus1d_18', help='model')
     parser.add_argument('--device', default='cuda', help='device')
-    parser.add_argument('--clip-len', default=8, type=int, metavar='N',
+    parser.add_argument('--clip-len', default=16, type=int, metavar='N',
                         help='number of frames per clip')
     parser.add_argument('--clips-per-video', default=5, type=int, metavar='N',
                         help='maximum number of clips per video to consider')
