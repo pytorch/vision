@@ -213,4 +213,3 @@ class VideoClips(object):
             info["video_fps"] = self.frame_rate
         assert len(video) == self.num_frames, "{} x {}".format(video.shape, self.num_frames)
         return video, audio, info, video_idx
-

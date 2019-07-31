@@ -98,7 +98,7 @@ class RandomClipSampler(torch.utils.data.Sampler):
         max_clips_per_video (int): maximum number of clips to be sampled per video
     """
     def __init__(self, video_clips, max_clips_per_video):
-        if not isinstance(video_clips, VideoClips):
+        if not isinstance(video_clips, torchvision.datasets.video_utils.VideoClips):
             raise TypeError("Expected video_clips to be an instance of VideoClips, "
                             "got {}".format(type(video_clips)))
         self.video_clips = video_clips

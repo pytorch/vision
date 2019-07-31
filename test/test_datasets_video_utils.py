@@ -84,7 +84,7 @@ class Tester(unittest.TestCase):
     def test_video_sampler(self):
         with get_list_of_videos(num_videos=3, sizes=[25, 25, 25]) as video_list:
             video_clips = VideoClips(video_list, 5, 5)
-            sampler = RandomClipSampler(video_clips, 3)
+            sampler = RandomClipSampler(video_clips, 3)  # noqa: F821
             self.assertEqual(len(sampler), 3 * 3)
             indices = torch.tensor(list(iter(sampler)))
             videos = indices // 5
@@ -96,7 +96,7 @@ class Tester(unittest.TestCase):
     def test_video_sampler_unequal(self):
         with get_list_of_videos(num_videos=3, sizes=[10, 25, 25]) as video_list:
             video_clips = VideoClips(video_list, 5, 5)
-            sampler = RandomClipSampler(video_clips, 3)
+            sampler = RandomClipSampler(video_clips, 3)  # noqa: F821
             self.assertEqual(len(sampler), 2 + 3 + 3)
             indices = list(iter(sampler))
             self.assertIn(0, indices)
