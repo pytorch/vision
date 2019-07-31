@@ -13,7 +13,7 @@ import torchvision.datasets.video_utils
 from torchvision import transforms
 
 import utils
-from sampler import DistributedSampler, UniformClipSampler
+from sampler import DistributedSampler, UniformClipSampler, RandomClipSampler
 from scheduler import WarmupMultiStepLR
 import transforms as T
 
@@ -184,7 +184,7 @@ def main(args):
     dataset_test.video_clips.compute_clips(args.clip_len, 1, frame_rate=15)
 
     print("Creating data loaders")
-    train_sampler = torchvision.datasets.video_utils.RandomClipSampler(dataset.video_clips, args.clips_per_video)
+    train_sampler = RandomClipSampler(dataset.video_clips, args.clips_per_video)
     test_sampler = UniformClipSampler(dataset_test.video_clips, args.clips_per_video)
     if args.distributed:
         train_sampler = DistributedSampler(train_sampler)

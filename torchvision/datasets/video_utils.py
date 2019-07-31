@@ -1,7 +1,6 @@
 import bisect
 import math
 import torch
-import torch.utils.data
 from torchvision.io import read_video_timestamps, read_video
 
 from .utils import tqdm
@@ -214,38 +213,3 @@ class VideoClips(object):
             info["video_fps"] = self.frame_rate
         assert len(video) == self.num_frames, "{} x {}".format(video.shape, self.num_frames)
         return video, audio, info, video_idx
-
-
-class RandomClipSampler(torch.utils.data.Sampler):
-    """
-    Samples at most `max_video_clips_per_video` clips for each video randomly
-
-    Arguments:
-        video_clips (VideoClips): video clips to sample from
-        max_clips_per_video (int): maximum number of clips to be sampled per video
-    """
-    def __init__(self, video_clips, max_clips_per_video):
-        if not isinstance(video_clips, VideoClips):
-            raise TypeError("Expected video_clips to be an instance of VideoClips, "
-                            "got {}".format(type(video_clips)))
-        self.video_clips = video_clips
-        self.max_clips_per_video = max_clips_per_video
-
-    def __iter__(self):
-        idxs = []
-        s = 0
-        # select at most max_clips_per_video for each video, randomly
-        for c in self.video_clips.clips:
-            length = len(c)
-            size = min(length, self.max_clips_per_video)
-            sampled = torch.randperm(length)[:size] + s
-            s += length
-            idxs.append(sampled)
-        idxs = torch.cat(idxs)
-        # shuffle all clips randomly
-        perm = torch.randperm(len(idxs))
-        idxs = idxs[perm].tolist()
-        return iter(idxs)
-
-    def __len__(self):
-        return sum(min(len(c), self.max_clips_per_video) for c in self.video_clips.clips)
