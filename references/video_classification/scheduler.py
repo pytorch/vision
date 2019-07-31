@@ -2,7 +2,6 @@ import torch
 from bisect import bisect_right
 
 
-# TODO: Is there a warmup in the multistep LR code
 class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
     def __init__(
         self,
@@ -41,8 +40,8 @@ class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
                 alpha = float(self.last_epoch) / self.warmup_iters
                 warmup_factor = self.warmup_factor * (1 - alpha) + alpha
         return [
-            base_lr
-            * warmup_factor
-            * self.gamma ** bisect_right(self.milestones, self.last_epoch)
+            base_lr *
+            warmup_factor *
+            self.gamma ** bisect_right(self.milestones, self.last_epoch)
             for base_lr in self.base_lrs
         ]

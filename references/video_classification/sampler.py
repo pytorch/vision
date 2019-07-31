@@ -37,7 +37,6 @@ class DistributedSampler(Sampler):
         else:
             indices = list(range(len(self.dataset)))
 
-
         # add extra samples to make it evenly divisible
         indices += indices[:(self.total_size - len(indices))]
         assert len(indices) == self.total_size
