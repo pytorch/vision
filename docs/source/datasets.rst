@@ -200,3 +200,11 @@ USPS
 .. autoclass:: USPS
   :members: __getitem__
   :special-members:
+
+
+Kinetics-400
+~~~~~
+
+.. autoclass:: Kinetics400
+  :members: __getitem__
+  :special-members:

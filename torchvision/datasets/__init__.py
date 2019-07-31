@@ -19,7 +19,7 @@ from .celeba import CelebA
 from .sbd import SBDataset
 from .vision import VisionDataset
 from .usps import USPS
-from .kinetics import KineticsVideo
+from .kinetics import Kinetics400
 from .hmdb51 import HMDB51
 from .ucf101 import UCF101
 
@@ -31,4 +31,4 @@ __all__ = ('LSUN', 'LSUNClass',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
            'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNet',
            'Caltech101', 'Caltech256', 'CelebA', 'SBDataset', 'VisionDataset',
-           'USPS', 'KineticsVideo', 'HMDB51', 'UCF101')
+           'USPS', 'Kinetics400', 'HMDB51', 'UCF101')
