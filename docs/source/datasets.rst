@@ -203,8 +203,25 @@ USPS
 
 
 Kinetics-400
-~~~~~
+~~~~~~~~~~~~
 
 .. autoclass:: Kinetics400
+  :members: __getitem__
+  :special-members:
+
+
+
+HMDB51
+~~~~~~~
+
+.. autoclass:: HMDB51
+  :members: __getitem__
+  :special-members:
+
+
+UCF101
+~~~~~~~
+
+.. autoclass:: UCF101
   :members: __getitem__
   :special-members:
