@@ -21,7 +21,7 @@ install PyAV on your system.
 
 # PyAV has some reference cycles
 _CALLED_TIMES = 0
-_GC_COLLECTION_INTERVAL = 20
+_GC_COLLECTION_INTERVAL = 10
 
 
 def write_video(filename, video_array, fps, video_codec='libx264', options=None):
@@ -95,7 +95,8 @@ def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
         # TODO check if stream needs to always be the video stream here or not
         container.seek(seek_offset, any_frame=False, backward=True, stream=stream)
     except av.AVError:
-        print("Corrupted file?", container.name)
+        # TODO add some warnings in this case
+        # print("Corrupted file?", container.name)
         return []
     buffer_count = 0
     for idx, frame in enumerate(container.decode(**stream_name)):

@@ -4,6 +4,8 @@ import torch
 import torch.utils.data
 from torchvision.io import read_video_timestamps, read_video
 
+from .utils import tqdm
+
 
 def unfold(tensor, size, step, dilation=1):
     """
@@ -59,11 +61,33 @@ class VideoClips(object):
     def _compute_frame_pts(self):
         self.video_pts = []
         self.video_fps = []
-        # TODO maybe paralellize this
-        for video_file in self.video_paths:
-            clips, fps = read_video_timestamps(video_file)
-            self.video_pts.append(torch.as_tensor(clips))
-            self.video_fps.append(fps)
+
+        # strategy: use a DataLoader to parallelize read_video_timestamps
+        # so need to create a dummy dataset first
+        class DS(object):
+            def __init__(self, x):
+                self.x = x
+
+            def __len__(self):
+                return len(self.x)
+
+            def __getitem__(self, idx):
+                return read_video_timestamps(self.x[idx])
+
+        import torch.utils.data
+        dl = torch.utils.data.DataLoader(
+            DS(self.video_paths),
+            batch_size=16,
+            num_workers=torch.get_num_threads(),
+            collate_fn=lambda x: x)
+
+        with tqdm(total=len(dl)) as pbar:
+            for batch in dl:
+                pbar.update(1)
+                clips, fps = list(zip(*batch))
+                clips = [torch.as_tensor(c) for c in clips]
+                self.video_pts.extend(clips)
+                self.video_fps.extend(fps)
 
     def _init_from_metadata(self, metadata):
         assert len(self.video_paths) == len(metadata["video_pts"])
