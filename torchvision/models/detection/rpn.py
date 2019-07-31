@@ -167,9 +167,9 @@ class RPNHead(nn.Module):
 
 
 def permute_and_flatten(layer, A, C, H, W):
-    layer = layer.view(-1, C, H, W)
-    layer = layer.permute(2, 3, 0, 1)
-    layer = layer.reshape(-1, C)
+    layer = layer.view(1, -1, C, H, W)
+    layer = layer.permute(0, 3, 4, 1, 2)
+    layer = layer.reshape(1, -1, C)
     return layer
 
 
@@ -202,8 +202,8 @@ def concat_box_prediction_layers(box_cls, box_regression):
     # concatenate on the first dimension (representing the feature levels), to
     # take into account the way the labels were generated (with all feature maps
     # being concatenated as well)
-    box_cls = torch.cat(box_cls_flattened).reshape(-1, C)
-    box_regression = torch.cat(box_regression_flattened).reshape(-1, 4)
+    box_cls = torch.cat(box_cls_flattened, dim=1).reshape(-1, C)
+    box_regression = torch.cat(box_regression_flattened, dim=1).reshape(-1, 4)
     return box_cls, box_regression
 
 
