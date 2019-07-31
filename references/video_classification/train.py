@@ -26,7 +26,7 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value}'))
-    metric_logger.add_meter('img/s', utils.SmoothedValue(window_size=10, fmt='{value:.3f}'))
+    metric_logger.add_meter('clips/s', utils.SmoothedValue(window_size=10, fmt='{value:.3f}'))
 
     header = 'Epoch: [{}]'.format(epoch)
     for video, target in metric_logger.log_every(data_loader, print_freq, header):
@@ -48,7 +48,7 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
         metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
         metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
         metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
-        metric_logger.meters['img/s'].update(batch_size / (time.time() - start_time))
+        metric_logger.meters['clips/s'].update(batch_size / (time.time() - start_time))
         lr_scheduler.step()
 
 
@@ -129,6 +129,9 @@ def main(args):
         dataset, _ = torch.load(cache_path)
         dataset.transform = transform_train
     else:
+        if args.distributed:
+            print("It is recommended to pre-compute the dataset cache "
+                  "on a single-gpu first, as it will be faster")
         dataset = torchvision.datasets.KineticsVideo(
             traindir,
             frames_per_clip=args.clip_len,
@@ -158,6 +161,9 @@ def main(args):
         dataset_test, _ = torch.load(cache_path)
         dataset_test.transform = transform_test
     else:
+        if args.distributed:
+            print("It is recommended to pre-compute the dataset cache "
+                  "on a single-gpu first, as it will be faster")
         dataset_test = torchvision.datasets.KineticsVideo(
             valdir,
             frames_per_clip=args.clip_len,
@@ -232,7 +238,8 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, args.print_freq, args.apex)
+        train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader,
+                        device, epoch, args.print_freq, args.apex)
         evaluate(model, criterion, data_loader_test, device=device)
         if args.output_dir:
             checkpoint = {
