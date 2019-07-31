@@ -30,7 +30,7 @@ def resize(vid, size, interpolation='bilinear'):
         scale = float(size) / min(vid.shape[-2:])
         size = None
     return torch.nn.functional.interpolate(
-            vid, size=size, scale_factor=scale, mode=interpolation, align_corners=False)
+        vid, size=size, scale_factor=scale, mode=interpolation, align_corners=False)
 
 
 def pad(vid, padding, fill=0, padding_mode="constant"):
