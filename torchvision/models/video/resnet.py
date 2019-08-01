@@ -77,6 +77,7 @@ class Conv3DNoTemporal(nn.Conv3d):
     def get_downsample_stride(stride):
         return (1, stride, stride)
 
+
 class BasicBlock(nn.Module):
 
     expansion = 1
@@ -292,7 +293,7 @@ def r3d_18(pretrained=False, progress=True, **kwargs):
     Returns:
         nn.Module: R3D-18 network
     """
-    
+
     return _video_resnet('r3d_18',
                          pretrained, progress,
                          block=BasicBlock,
