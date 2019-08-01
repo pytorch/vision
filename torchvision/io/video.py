@@ -28,11 +28,14 @@ def write_video(filename, video_array, fps, video_codec='libx264', options=None)
     """
     Writes a 4d tensor in [T, H, W, C] format in a video file
 
-    Arguments:
-        filename (str): path where the video will be saved
-        video_array (Tensor[T, H, W, C]): tensor containing the individual frames,
-            as a uint8 tensor in [T, H, W, C] format
-        fps (Number): frames per second
+    Parameters
+    ----------
+    filename : str
+        path where the video will be saved
+    video_array : Tensor[T, H, W, C]
+        tensor containing the individual frames, as a uint8 tensor in [T, H, W, C] format
+    fps : Number
+        frames per second
     """
     _check_av_available()
     video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy()
@@ -135,18 +138,25 @@ def read_video(filename, start_pts=0, end_pts=None):
     Reads a video from a file, returning both the video frames as well as
     the audio frames
 
-    Arguments:
-        filename (str): path to the video file
-        start_pts (int, optional): the start presentation time of the video
-        end_pts (int, optional): the end presentation time
+    Parameters
+    ----------
+    filename : str
+        path to the video file
+    start_pts : int, optional
+        the start presentation time of the video
+    end_pts : int, optional
+        the end presentation time
 
-    Returns:
-        vframes (Tensor[T, H, W, C]): the `T` video frames
-        aframes (Tensor[K, L]): the audio frames, where `K` is the number of channels
-            and `L` is the number of points
-        info (Dict): metadata for the video and audio. Can contain the fields
-            - video_fps (float)
-            - audio_fps (int)
+    Returns
+    -------
+    vframes : Tensor[T, H, W, C]
+        the `T` video frames
+    aframes : Tensor[K, L]
+        the audio frames, where `K` is the number of channels and `L` is the
+        number of points
+    info : Dict
+        metadata for the video and audio. Can contain the fields video_fps (float)
+        and audio_fps (int)
     """
     _check_av_available()
 
@@ -201,13 +211,18 @@ def read_video_timestamps(filename):
 
     Note that the function decodes the whole video frame-by-frame.
 
-    Arguments:
-        filename (str): path to the video file
+    Parameters
+    ----------
+    filename : str
+        path to the video file
 
-    Returns:
-        pts (List[int]): presentation timestamps for each one of the frames
-            in the video.
-        video_fps (int): the frame rate for the video
+    Returns
+    -------
+    pts : List[int]
+        presentation timestamps for each one of the frames in the video.
+    video_fps : int
+        the frame rate for the video
+
     """
     _check_av_available()
     container = av.open(filename, metadata_errors='ignore')
