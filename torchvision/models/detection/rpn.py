@@ -161,11 +161,14 @@ class RPNHead(nn.Module):
 
 
 def permute_and_flatten(layer, N, A, C, H, W):
-    import pdb; pdb.set_trace()
-    layer = layer.view(N, -1, C, H, W)
-    layer = layer.permute(0, 3, 4, 1, 2)
-    layer = layer.reshape(N, -1, C)
-    return layer
+    layers = list(map(lambda x: x.view(-1, C, H, W), layer.unbind()))
+    # layer = layer.view(N, -1, C, H, W)
+    layers = list(map(lambda x: x.permute(2, 3, 0, 1), layers))
+    # layer = layer.permute(0, 3, 4, 1, 2)
+    # import pdb; pdb.set_trace()
+    layers = list(map(lambda x: x.reshape(-1, C), layers))
+    # layer = layer.reshape(N, -1, C)
+    return torch.as_nested_tensor(layers)
 
 
 def concat_box_prediction_layers(box_cls, box_regression):
@@ -195,8 +198,11 @@ def concat_box_prediction_layers(box_cls, box_regression):
     # concatenate on the first dimension (representing the feature levels), to
     # take into account the way the labels were generated (with all feature maps
     # being concatenated as well)
-    box_cls = torch.cat(box_cls_flattened, dim=1).reshape(-1, C)
-    box_regression = torch.cat(box_regression_flattened, dim=1).reshape(-1, 4)
+    box_cls = torch.cat(list(map(lambda x: torch.stack(x.unbind()), box_cls_flattened)), dim=1).reshape(-1, C)
+    # box_cls = torch.cat(box_cls_flattened, dim=1).reshape(-1, C)
+    box_regression = torch.cat(list(map(lambda x: torch.stack(x.unbind()), box_regression_flattened)), dim=1).reshape(-1, 4)
+    # box_regression = torch.cat(box_regression_flattened, dim=1).reshape(-1, 4)
+    import pdb; pdb.set_trace()
     return box_cls, box_regression
 
 

@@ -13,6 +13,8 @@ from ._utils import convert_boxes_to_roi_format
 class _RoIAlignFunction(Function):
     @staticmethod
     def forward(ctx, input, roi, output_size, spatial_scale, sampling_ratio):
+        # roi_align_forward is written in C++ and we don't have NestedTensor support for that
+        input = torch.stack(input.unbind())
         ctx.save_for_backward(roi)
         ctx.output_size = _pair(output_size)
         ctx.spatial_scale = spatial_scale

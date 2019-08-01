@@ -94,7 +94,8 @@ class MultiScaleRoIAlign(nn.Module):
 
     def infer_scale(self, feature, original_size):
         # assumption: the scale is of the form 2 ** (-k), with k integer
-        size = feature.shape[-2:]
+        # size = feature.shape[-2:]
+        size = feature.nested_size()[0][-2:]
         possible_scales = []
         for s1, s2 in zip(size, original_size):
             approx_scale = float(s1) / s2
@@ -144,7 +145,8 @@ class MultiScaleRoIAlign(nn.Module):
         levels = self.map_levels(boxes)
 
         num_rois = len(rois)
-        num_channels = x[0].shape[1]
+        # num_channels = x[0].shape[1]
+        num_channels = x[0].nested_size()[0][0]
 
         dtype, device = x[0].dtype, x[0].device
         result = torch.zeros(
