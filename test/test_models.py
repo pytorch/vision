@@ -61,7 +61,7 @@ class Tester(unittest.TestCase):
     def _test_video_model(self, name):
         # the default input shape is
         # bs * num_channels * clip_len * h *w
-        input_shape = (1, 3, 8, 112, 112)
+        input_shape = (1, 3, 4, 112, 112)
         # test both basicblock and Bottleneck
         model = models.video.__dict__[name](num_classes=50)
         x = torch.rand(input_shape)
@@ -144,6 +144,7 @@ for model_name in get_available_detection_models():
         self._test_detection_model(model_name)
 
     setattr(Tester, "test_" + model_name, do_test)
+
 
 for model_name in get_available_video_models():
 
