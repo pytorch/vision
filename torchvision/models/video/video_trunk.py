@@ -120,9 +120,9 @@ class VideoTrunkBuilder(nn.Module):
         self.inplanes = 64
 
         if stem is None:
-            self.conv1 = get_default_stem()
-        else:
-            self.conv1 = stem
+            stem = get_default_stem()
+
+        self.conv1 = stem
 
         self.layer1 = self._make_layer(block, conv_makers[0], 64, layers[0], stride=1)
         self.layer2 = self._make_layer(block, conv_makers[1], 128, layers[1], stride=2)

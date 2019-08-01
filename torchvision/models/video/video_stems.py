@@ -17,7 +17,7 @@ def get_default_stem(use_pool1=False):
         nn.BatchNorm3d(64),
         nn.ReLU(inplace=True)]
     if use_pool1:
-        m.append(nn. MaxPool3d(kernel_size=(3, 3, 3), stride=2, padding=1))
+        m.append(nn.MaxPool3d(kernel_size=(3, 3, 3), stride=2, padding=1))
     return nn.Sequential(*m)
 
 
@@ -44,5 +44,5 @@ def get_r2plus1d_stem(use_pool1=False):
         nn.ReLU(inplace=True)]
 
     if use_pool1:
-        m.append(nn. MaxPool3d(kernel_size=(3, 3, 3), stride=2, padding=1))
+        m.append(nn.MaxPool3d(kernel_size=(3, 3, 3), stride=2, padding=1))
     return nn.Sequential(*m)
