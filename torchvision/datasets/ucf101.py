@@ -8,10 +8,46 @@ from .vision import VisionDataset
 
 
 class UCF101(VisionDataset):
+    """
+    UCF101 <https://www.crcv.ucf.edu/data/UCF101.php>`_ dataset.
+
+    UCF101 is an action recognition video dataset.
+    This dataset consider every video as a collection of video clips of fixed size, specified
+    by ``frames_per_clip``, where the step in frames between each clip is given by
+    ``step_between_clips``.
+
+    To give an example, for 2 videos with 10 and 15 frames respectively, if ``frames_per_clip=5``
+    and ``step_between_clips=5``, the dataset size will be (2 + 3) = 5, where the first two
+    elements will come from video 1, and the next three elements from video 2.
+    Note that we drop clips which do not have exactly ``frames_per_clip`` elements, so not all
+    frames in a video might be present.
+
+    Internally, it uses a VideoClips object to handle clip creation.
+
+    Args:
+        root (string): Root directory of the UCF101 Dataset.
+        annotation_path (str): path to the folder containing the split files
+        frames_per_clip (int): number of frames in a clip.
+        step_between_clips (int, optional): number of frames between each clip.
+        fold (int, optional): which fold to use. Should be between 1 and 3.
+        train (bool, optional): if ``True``, creates a dataset from the train split,
+            otherwise from the ``test`` split.
+        transform (callable, optional): A function/transform that  takes in a TxHxWxC video
+            and returns a transformed version.
+
+    Returns:
+        video (Tensor[T, H, W, C]): the `T` video frames
+        audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
+            and `L` is the number of points
+        label (int): class of the video clip
+    """
 
     def __init__(self, root, annotation_path, frames_per_clip, step_between_clips=1,
-                 fold=1, train=True):
+                 fold=1, train=True, transform=None):
         super(UCF101, self).__init__(root)
+        if not 1 <= fold <= 3:
+            raise ValueError("fold should be between 1 and 3, got {}".format(fold))
+
         extensions = ('avi',)
         self.fold = fold
         self.train = train
@@ -24,6 +60,7 @@ class UCF101(VisionDataset):
         video_clips = VideoClips(video_list, frames_per_clip, step_between_clips)
         indices = self._select_fold(video_list, annotation_path, fold, train)
         self.video_clips = video_clips.subset(indices)
+        self.transform = transform
 
     def _select_fold(self, video_list, annotation_path, fold, train):
         name = "train" if train else "test"
@@ -45,5 +82,8 @@ class UCF101(VisionDataset):
     def __getitem__(self, idx):
         video, audio, info, video_idx = self.video_clips.get_clip(idx)
         label = self.samples[video_idx][1]
+
+        if self.transform is not None:
+            video = self.transform(video)
 
         return video, audio, label
