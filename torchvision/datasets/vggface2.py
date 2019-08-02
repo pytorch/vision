@@ -20,14 +20,14 @@ class VGGFace2(ImageFolder):
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.ToTensor``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
-        bb_target_crop (boolean, optional): Crops bounding box from image as target.
-        bb_landmarks_csv (string, optional): path to downloaded bb landmarks. Required
+        bbox_crop (boolean, optional): Crops bounding box from image as target.
+        bbox_csv (string, optional): path to downloaded bb landmarks. Required
             if ``bbox`` is in target_type or bb_target_crop is True.
 
     '''
 
     def __init__(self, root, target_type='id', transform=None,
-                 target_transform=None, bb_crop=False, bb_landmarks_csv=None):
+                 target_transform=None, bbox_crop=False, bbox_csv=None):
         super(VGGFace2, self).__init__(root, transform=transform,
                                        target_transform=target_transform)
 
@@ -36,14 +36,20 @@ class VGGFace2(ImageFolder):
         else:
             self.target_type = [target_type]
 
-        self.bb_crop = bb_crop
-        self.get_bbox = self.bb_crop or 'bbox' in self.target_type
+        self.bbox_crop = bbox_crop
+        self.get_bbox = self.bbox_crop or 'bbox' in self.target_type
 
         if self.get_bbox:
+            if bbox_csv is None:
+                raise ValueError("bbox_csv cannot be None if 'bbox' "
+                                 "in target_type or bbox_crop=True")
+
             self.bb_data = {}
-            with open(bb_landmarks_csv, newline='') as csvfile:
+            with open(bbox_csv, newline='') as csvfile:
                 reader = csv.reader(csvfile)
+                next(reader)
                 for path, x, y, w, h in reader:
+                    path = os.path.join(self.root, path) + '.jpg'
                     self.bb_data[path] = (int(x), int(y), int(w), int(h))
 
     def __getitem__(self, index):
@@ -51,9 +57,9 @@ class VGGFace2(ImageFolder):
         sample = self.loader(path)
 
         if self.get_bbox:
-            bbox = self.bb_data[os.path.join(self.root, path) + '.jpg']
+            bbox = self.bb_data[path]
 
-        if self.bb_crop:
+        if self.bbox_crop:
             x, y, w, h = bbox
             sample = F.crop(sample, x, y, h, w)
 
@@ -70,4 +76,4 @@ class VGGFace2(ImageFolder):
         if self.target_transform is not None:
             target = self.target_transform(target)
 
-        return sample, target
+        return (sample, *target)
