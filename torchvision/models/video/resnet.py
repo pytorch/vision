@@ -311,7 +311,7 @@ def mc3_18(pretrained=False, progress=True, **kwargs):
         progress (bool): If True, displays a progress bar of the download to stderr
 
     Returns:
-        nn.Module: MC3 Network definitino
+        nn.Module: MC3 Network definition
     """
     return _video_resnet('mc3_18',
                          pretrained, progress,

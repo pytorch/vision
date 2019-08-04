@@ -201,8 +201,7 @@ def main(args):
         pin_memory=True, collate_fn=collate_fn)
 
     print("Creating model")
-    # model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
-    model = torchvision.models.video.__dict__[args.model]()
+    model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
