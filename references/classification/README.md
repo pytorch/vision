@@ -1,5 +1,10 @@
 # Image classification reference training scripts
 
+This folder contains reference training scripts for image classification.
+They serve as a log of how to train specific models, as provide baseline
+training and evaluation scripts to quickly bootstrap research.
+
+Except otherwise noted, all models have been trained on 8x V100 GPUs.
 
 ### ResNext-50 32x4d
 ```
