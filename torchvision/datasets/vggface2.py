@@ -100,7 +100,7 @@ class VGGFace2(ImageFolder):
         if self.target_transform is not None:
             target = self.target_transform(target)
 
-        return (sample, *target)
+        return tuple([sample] + target)
 
     def __len__(self):
         return len(self.samples)
