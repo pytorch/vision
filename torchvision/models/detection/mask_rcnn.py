@@ -31,7 +31,7 @@ class MaskRCNN(FasterRCNN):
         - boxes (FloatTensor[N, 4]): the ground-truth boxes in [x1, y1, x2, y2] format, with values
           between 0 and H and 0 and W
         - labels (Int64Tensor[N]): the class label for each ground-truth box
-        - masks (UInt8Tensor[N, 1, H, W]): the segmentation binary masks for each instance
+        - masks (UInt8Tensor[N, H, W]): the segmentation binary masks for each instance
 
     The model returns a Dict[Tensor] during training, containing the classification and regression
     losses for both the RPN and the R-CNN, and the mask loss.
@@ -278,7 +278,7 @@ def maskrcnn_resnet50_fpn(pretrained=False, progress=True,
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with values
           between ``0`` and ``H`` and ``0`` and ``W``
         - labels (``Int64Tensor[N]``): the class label for each ground-truth box
-        - masks (``UInt8Tensor[N, 1, H, W]``): the segmentation binary masks for each instance
+        - masks (``UInt8Tensor[N, H, W]``): the segmentation binary masks for each instance
 
     The model returns a ``Dict[Tensor]`` during training, containing the classification and regression
     losses for both the RPN and the R-CNN, and the mask loss.
