@@ -11,6 +11,13 @@ from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
     cityscapes_root, svhn_root
 
 
+try:
+    import scipy
+    HAS_SCIPY = True
+except ImportError:
+    HAS_SCIPY = False
+
+
 class Tester(unittest.TestCase):
     def generic_classification_dataset_test(self, dataset, num_images=1):
         self.assertEqual(len(dataset), num_images)
@@ -101,6 +108,7 @@ class Tester(unittest.TestCase):
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
     @mock.patch('torchvision.datasets.utils.download_url')
+    @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
     def test_imagenet(self, mock_download):
         with imagenet_root() as root:
             dataset = torchvision.datasets.ImageNet(root, split='train', download=True)
@@ -187,6 +195,7 @@ class Tester(unittest.TestCase):
                     self.assertTrue(isinstance(output[1][2], PIL.Image.Image))  # color
 
     @mock.patch('torchvision.datasets.SVHN._check_integrity')
+    @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
     def test_svhn(self, mock_check):
         mock_check.return_value = True
         with svhn_root() as root:
