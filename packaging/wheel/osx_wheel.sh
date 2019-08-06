@@ -12,7 +12,7 @@ wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh &
 . ~/minconda_wheel_env_tmp/bin/activate
 
 
-export TORCHVISION_BUILD_VERSION="0.3.0"
+export TORCHVISION_BUILD_VERSION="0.4.0.dev$(date "+%Y%m%d")"
 export TORCHVISION_BUILD_NUMBER="1"
 export OUT_DIR=~/torchvision_wheels
 
@@ -20,7 +20,7 @@ export MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++
 
 pushd /tmp
 rm -rf vision
-git clone https://github.com/pytorch/vision -b v${TORCHVISION_BUILD_VERSION}
+git clone https://github.com/pytorch/vision
 pushd vision
 
 desired_pythons=( "2.7" "3.5" "3.6" "3.7" )
@@ -32,8 +32,16 @@ do
     conda create -yn $env_name python="$desired_python"
     conda activate $env_name
 
+    pip uninstall -y torch || true
+    pip uninstall -y torch_nightly || true
+
+    export TORCHVISION_PYTORCH_DEPENDENCY_NAME=torch_nightly
+    pip install torch_nightly -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+    export TORCHVISION_PYTORCH_DEPENDENCY_VERSION="$(pip show torch_nightly | grep ^Version: | sed 's/Version:  *//')"
+    echo "Building against ${TORCHAUDIO_PYTORCH_DEPENDENCY_VERSION}"
+
     # install torchvision dependencies
-    pip install torch ninja scipy pytest
+    pip install ninja scipy pytest
 
     python setup.py clean
     python setup.py bdist_wheel
