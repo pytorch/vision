@@ -7,8 +7,9 @@ from ..utils import load_state_dict_from_url
 __all__ = ['r3d_18', 'mc3_18', 'r2plus1d_18']
 
 model_urls = {
-    'resnet18': 'https://download.pytorch.org/models/',
-    'resnet34': 'https://download.pytorch.org/models/',
+    'r3d_18': 'https://download.pytorch.org/models/r3d_18-b3b3357e.pth',
+    'mc3_18': 'https://download.pytorch.org/models/mc3_18-a90a0ba3.pth',
+    'r2plus1d_18': 'https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth',
 }
 
 
