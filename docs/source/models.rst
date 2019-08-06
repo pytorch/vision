@@ -4,8 +4,8 @@ torchvision.models
 
 The models subpackage contains definitions of models for addressing
 different tasks, including: image classification, pixelwise semantic
-segmentation, object detection, instance segmentation and person
-keypoint detection.
+segmentation, object detection, instance segmentation, person
+keypoint detection and video classification.
 
 
 Classification
@@ -395,3 +395,51 @@ Keypoint R-CNN
 
 .. autofunction:: torchvision.models.detection.keypointrcnn_resnet50_fpn
 
+
+Video classification
+====================
+
+We provide models for action recognition pre-trained on Kinetics-400.
+They have all been trained with the scripts provided in ``references/video_classification``.
+
+All pre-trained models expect input images normalized in the same way,
+i.e. mini-batches of 3-channel RGB videos of shape (3 x T x H x W),
+where H and W are expected to be 112, and T is a number of video frames in a clip.
+The images have to be loaded in to a range of [0, 1] and then normalized
+using ``mean = [0.43216, 0.394666, 0.37645]`` and ``std = [0.22803, 0.22145, 0.216989]``.
+
+
+.. note::
+  The normalization parameters are different from the image classification ones, and correspond
+  to the mean and std from Kinetics-400.
+
+.. note::
+  For now, normalization code can be found in ``references/video_classification/transforms.py``,
+  see the ``Normalize`` function there. Note that it differs from standard normalization for
+  images because it assumes the video is 4d.
+
+Kinetics 1-crop accuracies for clip length 16 (16x112x112)
+
+================================  =============   =============
+Network                           Clip acc@1      Clip acc@5
+================================  =============   =============
+ResNet 3D 18                      52.75           75.45
+ResNet MC 18                      53.90           76.29
+ResNet (2+1)D                     57.50           78.81
+================================  =============   =============
+
+
+ResNet 3D
+----------
+
+.. autofunction:: torchvision.models.video.r3d_18
+
+ResNet Mixed Convolution
+------------------------
+
+.. autofunction:: torchvision.models.video.mc3_18
+
+ResNet (2+1)D
+-------------
+
+.. autofunction:: torchvision.models.video.r2plus1d_18
