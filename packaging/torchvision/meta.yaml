@@ -43,7 +43,7 @@ test:
     - scipy
     - mock
     - av
-    - certifi
+    - ca-certificates
   commands:
     pytest .
 
