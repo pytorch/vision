@@ -1,0 +1,130 @@
+version: 2.1
+
+# How to test the Linux jobs:
+#   - Install CircleCI local CLI: https://circleci.com/docs/2.0/local-cli/
+#   - circleci config process .circleci/config.yml > gen.yml && circleci local execute -c gen.yml --job binary_linux_wheel
+#     - Replace binary_linux_wheel with the name of the job you want to test
+
+binary_common: &binary_common
+  parameters:
+    # Edit these defaults to do a release`
+    build_version:
+      description: "version number of release binary; by default, build a nightly"
+      type: string
+      default: ""
+    pytorch_version:
+      description: "PyTorch version to build against; by default, use a nightly"
+      type: string
+      default: ""
+    # Don't edit these
+    python_version:
+      description: "Python version to build against (e.g., 3.7)"
+      type: string
+    cuda_version:
+      description: "CUDA version to build against (e.g., cpu or 10.0)"
+      type: string
+    unicode_abi:
+      description: "Python 2.7 wheel only: whether or not we are cp27mu (default: no)"
+      type: string
+      default: ""
+  environment:
+    PYTHON_VERSION: << parameters.python_version >>
+    BUILD_VERSION: << parameters.build_version >>
+    PYTORCH_VERSION: << parameters.pytorch_version >>
+    UNICODE_ABI: << parameters.unicode_abi >>
+    CUDA_VERSION: << parameters.cuda_version >>
+
+jobs:
+  circleci_consistency:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off jinja2
+            python .circleci/regenerate.py
+            git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
+
+  binary_linux_wheel:
+    <<: *binary_common
+    docker:
+      - image: "soumith/manylinux-cuda100"
+    resource_class: 2xlarge+
+    steps:
+      - checkout
+      - run: packaging/build_wheel.sh
+      - store_artifacts:
+          path: dist
+
+  binary_linux_conda:
+    <<: *binary_common
+    docker:
+      - image: "soumith/conda-cuda"
+    resource_class: 2xlarge+
+    steps:
+      - checkout
+      - run: packaging/build_conda.sh
+      - store_artifacts:
+          path: /opt/conda/conda-bld/linux-64
+
+  binary_macos_wheel:
+    <<: *binary_common
+    macos:
+      xcode: "9.0"
+    steps:
+      - checkout
+      - run:
+          # Cannot easily deduplicate this as source'ing activate
+          # will set environment variables which we need to propagate
+          # to build_wheel.sh
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            packaging/build_wheel.sh
+      - store_artifacts:
+          path: dist
+
+  binary_macos_conda:
+    <<: *binary_common
+    macos:
+      xcode: "9.0"
+    steps:
+      - checkout
+      - run:
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            conda install -yq conda-build
+            packaging/build_conda.sh
+      - store_artifacts:
+          path: /Users/distiller/miniconda3/conda-bld/osx-64
+
+workflows:
+  build:
+    jobs:
+      - circleci_consistency
+{%- for btype in ["wheel", "conda"] -%}
+{%-   for os in ["linux", "macos"] -%}
+{%-     for python_version in ["2.7", "3.5", "3.6", "3.7"] -%}
+{%-       for cuda_version in ["cpu", "10.0", "9.2"] -%}
+{%-         if os != "macos" or cuda_version == "cpu" %}
+      - binary_{{os}}_{{btype}}:
+          # TODO: cudacpu is ugly
+          name: binary_{{os}}_{{btype}}_py{{python_version}}_cuda{{cuda_version}}
+          python_version: "{{python_version}}"
+          cuda_version: "{{cuda_version}}"
+{%-           if btype == "wheel" and python_version == "2.7" %}
+      - binary_{{os}}_{{btype}}:
+          name: binary_{{os}}_{{btype}}_py{{python_version}}_cuda{{cuda_version}}_unicode
+          python_version: "{{python_version}}"
+          cuda_version: "{{cuda_version}}"
+          unicode_abi: "1"
+{%-           endif -%}
+{%-         endif -%}
+{%-       endfor -%}
+{%-     endfor -%}
+{%-   endfor -%}
+{%- endfor -%}

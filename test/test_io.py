@@ -17,6 +17,8 @@ else:
 
 try:
     import av
+    # Do a version test too
+    io.video._check_av_available()
 except ImportError:
     av = None
 
