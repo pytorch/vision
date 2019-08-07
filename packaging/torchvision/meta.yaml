@@ -42,6 +42,7 @@ test:
     - pytest
     - scipy
     - mock
+    - av
   commands:
     pytest .
 
