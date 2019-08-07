@@ -27,6 +27,10 @@ def _check_av_available():
         raise av
 
 
+def _av_available():
+    return not isinstance(av, Exception)
+
+
 # PyAV has some reference cycles
 _CALLED_TIMES = 0
 _GC_COLLECTION_INTERVAL = 10
