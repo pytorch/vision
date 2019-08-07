@@ -211,11 +211,11 @@ class InceptionAux(nn.Module):
         x = torch.flatten(x, 1)
         # N x 2048
         x = F.relu(self.fc1(x), inplace=True)
-        # N x 2048
-        x = F.dropout(x, 0.7, training=self.training)
-        # N x 2048
-        x = self.fc2(x)
         # N x 1024
+        x = F.dropout(x, 0.7, training=self.training)
+        # N x 1024
+        x = self.fc2(x)
+        # N x 1000 (num_classes)
 
         return x
 
