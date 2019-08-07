@@ -1,0 +1,4 @@
+jobs:
+  build:
+    steps:
+      - checkout
