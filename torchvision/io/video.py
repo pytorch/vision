@@ -6,17 +6,29 @@ import numpy as np
 try:
     import av
     av.logging.set_level(av.logging.ERROR)
+    if not hasattr(av.video.frame.VideoFrame, 'pict_type'):
+        av = ImportError("""\
+Your version of PyAV is too old for the necessary video operations in torchvision.
+If you are on Python 3.5, you will have to build from source (the conda-forge
+packages are not up-to-date).  See
+https://github.com/mikeboers/PyAV#installation for instructions on how to
+install PyAV on your system.
+""")
 except ImportError:
-    av = None
-
-
-def _check_av_available():
-    if av is None:
-        raise ImportError("""\
+    av = ImportError("""\
 PyAV is not installed, and is necessary for the video operations in torchvision.
 See https://github.com/mikeboers/PyAV#installation for instructions on how to
 install PyAV on your system.
 """)
+
+
+def _check_av_available():
+    if isinstance(av, Exception):
+        raise av
+
+
+def _av_available():
+    return not isinstance(av, Exception)
 
 
 # PyAV has some reference cycles

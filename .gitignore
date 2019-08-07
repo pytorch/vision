@@ -19,3 +19,4 @@ htmlcov
 */*.dylib*
 *.swp
 *.swo
+gen.yml
