@@ -79,6 +79,7 @@ if os.getenv('TORCHVISION_PYTORCH_DEPENDENCY_VERSION'):
 requirements = [
     'numpy',
     'six',
+    'opencv'
     pytorch_dep,
 ]
 
