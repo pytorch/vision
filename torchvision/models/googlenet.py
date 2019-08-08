@@ -175,7 +175,7 @@ class Inception(nn.Module):
 
         self.branch3 = nn.Sequential(
             BasicConv2d(in_channels, ch5x5red, kernel_size=1),
-            BasicConv2d(ch5x5red, ch5x5, kernel_size=3, padding=1)
+            BasicConv2d(ch5x5red, ch5x5, kernel_size=5, padding=2)
         )
 
         self.branch4 = nn.Sequential(
