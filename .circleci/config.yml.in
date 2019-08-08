@@ -210,20 +210,7 @@ jobs:
 
 workflows:
   build:
-{%- if False %}
     jobs:
       - circleci_consistency
       {{ workflows() }}
-
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 9 * * *"
-          filters:
-            branches:
-              only:
-                - master
-{%- endif %}
-    jobs:
-      - circleci_consistency
-      {{ workflows(prefix="nightly_", upload=True) }}
+      # workflows(prefix="nightly_", upload=True)
