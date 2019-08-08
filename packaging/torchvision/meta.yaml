@@ -27,7 +27,9 @@ build:
   string: py{{py}}_{{ environ['CU_VERSION'] }}
   script: python setup.py install --single-version-externally-managed --record=record.txt # [not win]
   script_env:
-    - CU_VERSION
+    - CUDA_HOME
+    - FORCE_CUDA
+    - NVCC_FLAGS
   features:
     {{ CONDA_CPUONLY_FEATURE }}
 

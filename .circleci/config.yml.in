@@ -143,6 +143,10 @@ jobs:
 
   # Requires org-member context
   binary_wheel_upload:
+    parameters:
+      subfolder:
+        description: "What whl subfolder to upload to, e.g., blank or cu100/ (trailing slash is important)"
+        type: string
     docker:
       - image: circleci/python:3.7
     steps:
@@ -158,9 +162,9 @@ jobs:
             export AWS_ACCESS_KEY_ID="${PYTORCH_BINARY_AWS_ACCESS_KEY_ID}"
             export AWS_SECRET_ACCESS_KEY="${PYTORCH_BINARY_AWS_SECRET_ACCESS_KEY}"
             set -x
-            #for pkg in ~/workspace/*.whl; do
-            #  aws s3 cp "$pkg" "s3://pytorch/whl/nightly/" --acl public-read
-            #done
+            for pkg in ~/workspace/*.whl; do
+              aws s3 cp "$pkg" "s3://pytorch/whl/nightly/<< parameters.subfolder >>" --acl public-read
+            done
 
 {%- macro workflow(btype, os, python_version, cu_version, unicode, prefix='', upload=False) %}
       - binary_{{os}}_{{btype}}:
@@ -180,6 +184,13 @@ jobs:
           context: org-member
           requires:
             - {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}
+{%-     if btype == 'wheel' %}
+{%-       if os == 'macos' %}
+          subfolder: ""
+{%-       else %}
+          subfolder: "{{cu_version}}/"
+{%-       endif %}
+{%-     endif %}
 {%-   endif %}
 {%- endmacro %}
 
