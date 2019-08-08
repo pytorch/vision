@@ -4,10 +4,8 @@ set -ex
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 . "$script_dir/pkg_helpers.bash"
 
-setup_python
-setup_cuda_suffix
-setup_build_version 0.4.0
-setup_macos
+setup_env 0.4.0
+setup_wheel_python
 pip_install numpy pyyaml future ninja
 setup_pip_pytorch_version
 python setup.py clean
