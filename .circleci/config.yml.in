@@ -164,7 +164,7 @@ jobs:
 
 {%- macro workflow(btype, os, python_version, cu_version, unicode, prefix='', upload=False) %}
       - binary_{{os}}_{{btype}}:
-          name: {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "_unicode" if unicode }}_{{cu_version}}
+          name: {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}
           python_version: "{{python_version}}"
           cu_version: "{{cu_version}}"
 {%-   if unicode %}
@@ -176,10 +176,10 @@ jobs:
 
 {%-   if upload %}
       - binary_{{btype}}_upload:
-          name: {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "_unicode" if unicode }}_{{cu_version}}_upload
+          name: {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}_upload
           context: org-member
           requires:
-            - {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "_unicode" if unicode }}_{{cu_version}}
+            - {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}
 {%-   endif %}
 {%- endmacro %}
 
@@ -199,7 +199,7 @@ jobs:
 
 workflows:
   build:
-{%- if False %}
+{%- if True %}
     jobs:
       - circleci_consistency
       {{ workflows() }}
