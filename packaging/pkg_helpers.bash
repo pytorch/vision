@@ -7,6 +7,7 @@
 # Inputs:
 #   CU_VERSION (cpu, cu92, cu100)
 #   NO_CUDA_PACKAGE (bool)
+#   BUILD_TYPE (conda, wheel)
 #
 # Outputs:
 #   VERSION_SUFFIX (e.g., "")
@@ -27,55 +28,56 @@
 # version of a Python package.  But that doesn't apply if you're on OS X,
 # since the default CU_VERSION on OS X is cpu.
 setup_cuda() {
-  if [[ "$(uname)" == Darwin ]] || [[ -n "$NO_CUDA_PACKAGE" ]]; then
-    if [[ "$CU_VERSION" != "cpu" ]]; then
-      echo "CU_VERSION on OS X / package with no CUDA must be cpu"
-      exit 1
+
+  # First, compute version suffixes.  By default, assume no version suffixes
+  export VERSION_SUFFIX=""
+  export PYTORCH_VERSION_SUFFIX=""
+  export WHEEL_DIR=""
+  # Wheel builds need suffixes (but not if they're on OS X, which never has suffix)
+  if [[ "$BUILD_TYPE" == "wheel" ]] && [[ "$(uname)" != Darwin ]]; then
+    # The default CUDA has no suffix
+    if [[ "$CU_VERSION" != "cu100" ]]; then
+      export PYTORCH_VERSION_SUFFIX="+$CU_VERSION"
     fi
-    if [[ "$(uname)" == Darwin ]]; then
-      export PYTORCH_VERSION_SUFFIX=""
-    else
-      export PYTORCH_VERSION_SUFFIX="+cpu"
+    # Match the suffix scheme of pytorch, unless this package does not have
+    # CUDA builds (in which case, use default)
+    if [[ -z "$NO_CUDA_PACKAGE" ]]; then
+      export VERSION_SUFFIX="$PYTORCH_VERSION_SUFFIX"
+      # If the suffix is non-empty, we will use a wheel subdirectory
+      if [[ -n "$PYTORCH_VERSION_SUFFIX" ]]; then
+        export WHEEL_DIR="$PYTORCH_VERSION_SUFFIX/"
+      fi
     fi
-    export VERSION_SUFFIX=""
-    # NB: When there is no CUDA package available, we put these
-    # packages in the top-level directory, so they are eligible
-    # for selection even if you are otherwise trying to install
-    # a cu100 stack.  This differs from when there ARE CUDA packages
-    # available; then we don't want the cpu package; we want
-    # to give you as much goodies as possible.
-    export WHEEL_DIR=""
-  else
-    case "$CU_VERSION" in
-      cu100)
-        export PYTORCH_VERSION_SUFFIX=""
-        export CUDA_HOME=/usr/local/cuda-10.0/
-        export FORCE_CUDA=1
-        # Hard-coding gencode flags is temporary situation until
-        # https://github.com/pytorch/pytorch/pull/23408 lands
-        export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_50,code=compute_50"
-        ;;
-      cu92)
-        export CUDA_HOME=/usr/local/cuda-9.2/
-        export PYTORCH_VERSION_SUFFIX="+cu92"
-        export FORCE_CUDA=1
-        export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_50,code=compute_50"
-        ;;
-      cpu)
-        export PYTORCH_VERSION_SUFFIX="+cpu"
-        ;;
-      *)
-        echo "Unrecognized CU_VERSION=$CU_VERSION"
-    esac
-    export VERSION_SUFFIX="$PYTORCH_VERSION_SUFFIX"
-    export WHEEL_DIR="$CU_VERSION/"
   fi
+
+  # Now work out the CUDA settings
+  case "$CU_VERSION" in
+    cu100)
+      export CUDA_HOME=/usr/local/cuda-10.0/
+      export FORCE_CUDA=1
+      # Hard-coding gencode flags is temporary situation until
+      # https://github.com/pytorch/pytorch/pull/23408 lands
+      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_50,code=compute_50"
+      ;;
+    cu92)
+      export CUDA_HOME=/usr/local/cuda-9.2/
+      export FORCE_CUDA=1
+      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_50,code=compute_50"
+      ;;
+    cpu)
+      ;;
+    *)
+      echo "Unrecognized CU_VERSION=$CU_VERSION"
+      exit 1
+      ;;
+  esac
 }
 
 # Populate build version if necessary, and add version suffix
 #
 # Inputs:
 #   BUILD_VERSION (e.g., 0.2.0 or empty)
+#   VERSION_SUFFIX (e.g., +cpu)
 #
 # Outputs:
 #   BUILD_VERSION (e.g., 0.2.0.dev20190807+cpu)
