@@ -31,7 +31,7 @@ def get_dist(pkgname):
 
 version = '0.4.0a0'
 sha = 'Unknown'
-package_name = os.getenv('TORCHVISION_PACKAGE_NAME', 'torchvision')
+package_name = 'torchvision'
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 
@@ -40,16 +40,8 @@ try:
 except Exception:
     pass
 
-if os.getenv('TORCHVISION_BUILD_VERSION'):
-    assert os.getenv('TORCHVISION_BUILD_NUMBER') is not None
-    build_number = int(os.getenv('TORCHVISION_BUILD_NUMBER'))
-    base_version = os.getenv('TORCHVISION_BUILD_VERSION')
-    version = base_version
-    if build_number > 1:
-        version += '.post' + str(build_number)
-    local_label = os.getenv('TORCHVISION_LOCAL_VERSION_LABEL')
-    if local_label is not None:
-        version += '+' + local_label
+if os.getenv('BUILD_VERSION'):
+    version = os.getenv('BUILD_VERSION')
 elif sha != 'Unknown':
     version += '+' + sha[:7]
 print("Building wheel {}-{}".format(package_name, version))
@@ -69,12 +61,9 @@ write_version_file()
 
 readme = open('README.rst').read()
 
-pytorch_dep = os.getenv('TORCHVISION_PYTORCH_DEPENDENCY_NAME', 'torch')
-if os.getenv('TORCHVISION_PYTORCH_DEPENDENCY_VERSION'):
-    pytorch_dep += "==" + os.getenv('TORCHVISION_PYTORCH_DEPENDENCY_VERSION')
-    # torchvision has CUDA bits, thus, we must specify a local dependency
-    if local_label is not None:
-        pytorch_dep += '+' + local_label
+pytorch_dep = 'torch'
+if os.getenv('PYTORCH_VERSION'):
+    pytorch_dep += "==" + os.getenv('PYTORCH_VERSION')
 
 requirements = [
     'numpy',
