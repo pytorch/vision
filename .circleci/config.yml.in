@@ -144,8 +144,8 @@ jobs:
   # Requires org-member context
   binary_wheel_upload:
     parameters:
-      cu_version:
-        description: "CUDA version we are uploading the wheel as"
+      subfolder:
+        description: "What whl subfolder to upload to, e.g., blank or cu100/ (trailing slash is important)"
         type: string
     docker:
       - image: circleci/python:3.7
@@ -163,7 +163,7 @@ jobs:
             export AWS_SECRET_ACCESS_KEY="${PYTORCH_BINARY_AWS_SECRET_ACCESS_KEY}"
             set -x
             for pkg in ~/workspace/*.whl; do
-              aws s3 cp "$pkg" "s3://pytorch/whl/nightly/<< parameters.cu_version >>/" --acl public-read
+              aws s3 cp "$pkg" "s3://pytorch/whl/nightly/<< parameters.subfolder >>" --acl public-read
             done
 
 {%- macro workflow(btype, os, python_version, cu_version, unicode, prefix='', upload=False) %}
@@ -185,7 +185,11 @@ jobs:
           requires:
             - {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}
 {%-     if btype == 'wheel' %}
-          cu_version: "{{cu_version}}"
+{%-       if os == 'macos' %}
+          subfolder: ""
+{%-       else %}
+          subfolder: "{{cu_version}}/"
+{%-       endif %}
 {%-     endif %}
 {%-   endif %}
 {%- endmacro %}

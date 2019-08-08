@@ -144,8 +144,8 @@ jobs:
   # Requires org-member context
   binary_wheel_upload:
     parameters:
-      cu_version:
-        description: "CUDA version we are uploading the wheel as"
+      subfolder:
+        description: "What whl subfolder to upload to, e.g., blank or cu100/ (trailing slash is important)"
         type: string
     docker:
       - image: circleci/python:3.7
@@ -163,7 +163,7 @@ jobs:
             export AWS_SECRET_ACCESS_KEY="${PYTORCH_BINARY_AWS_SECRET_ACCESS_KEY}"
             set -x
             for pkg in ~/workspace/*.whl; do
-              aws s3 cp "$pkg" "s3://pytorch/whl/nightly/<< parameters.cu_version >>/" --acl public-read
+              aws s3 cp "$pkg" "s3://pytorch/whl/nightly/<< parameters.subfolder >>" --acl public-read
             done
 
 workflows:
@@ -180,7 +180,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py2.7_cpu
-          cu_version: "cpu"
+          subfolder: "cpu/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py2.7u_cpu
           python_version: "2.7"
@@ -191,7 +191,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py2.7u_cpu
-          cu_version: "cpu"
+          subfolder: "cpu/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py2.7_cu92
           python_version: "2.7"
@@ -202,7 +202,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py2.7_cu92
-          cu_version: "cu92"
+          subfolder: "cu92/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py2.7u_cu92
           python_version: "2.7"
@@ -214,7 +214,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py2.7u_cu92
-          cu_version: "cu92"
+          subfolder: "cu92/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py2.7_cu100
           python_version: "2.7"
@@ -224,7 +224,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py2.7_cu100
-          cu_version: "cu100"
+          subfolder: "cu100/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py2.7u_cu100
           python_version: "2.7"
@@ -235,7 +235,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py2.7u_cu100
-          cu_version: "cu100"
+          subfolder: "cu100/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py3.5_cpu
           python_version: "3.5"
@@ -245,7 +245,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py3.5_cpu
-          cu_version: "cpu"
+          subfolder: "cpu/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py3.5_cu92
           python_version: "3.5"
@@ -256,7 +256,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py3.5_cu92
-          cu_version: "cu92"
+          subfolder: "cu92/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py3.5_cu100
           python_version: "3.5"
@@ -266,7 +266,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py3.5_cu100
-          cu_version: "cu100"
+          subfolder: "cu100/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py3.6_cpu
           python_version: "3.6"
@@ -276,7 +276,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py3.6_cpu
-          cu_version: "cpu"
+          subfolder: "cpu/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py3.6_cu92
           python_version: "3.6"
@@ -287,7 +287,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py3.6_cu92
-          cu_version: "cu92"
+          subfolder: "cu92/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py3.6_cu100
           python_version: "3.6"
@@ -297,7 +297,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py3.6_cu100
-          cu_version: "cu100"
+          subfolder: "cu100/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py3.7_cpu
           python_version: "3.7"
@@ -307,7 +307,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py3.7_cpu
-          cu_version: "cpu"
+          subfolder: "cpu/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py3.7_cu92
           python_version: "3.7"
@@ -318,7 +318,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py3.7_cu92
-          cu_version: "cu92"
+          subfolder: "cu92/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py3.7_cu100
           python_version: "3.7"
@@ -328,7 +328,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_wheel_py3.7_cu100
-          cu_version: "cu100"
+          subfolder: "cu100/"
       - binary_macos_wheel:
           name: nightly_binary_macos_wheel_py2.7_cpu
           python_version: "2.7"
@@ -338,7 +338,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_macos_wheel_py2.7_cpu
-          cu_version: "cpu"
+          subfolder: ""
       - binary_macos_wheel:
           name: nightly_binary_macos_wheel_py2.7u_cpu
           python_version: "2.7"
@@ -349,7 +349,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_macos_wheel_py2.7u_cpu
-          cu_version: "cpu"
+          subfolder: ""
       - binary_macos_wheel:
           name: nightly_binary_macos_wheel_py3.5_cpu
           python_version: "3.5"
@@ -359,7 +359,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_macos_wheel_py3.5_cpu
-          cu_version: "cpu"
+          subfolder: ""
       - binary_macos_wheel:
           name: nightly_binary_macos_wheel_py3.6_cpu
           python_version: "3.6"
@@ -369,7 +369,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_macos_wheel_py3.6_cpu
-          cu_version: "cpu"
+          subfolder: ""
       - binary_macos_wheel:
           name: nightly_binary_macos_wheel_py3.7_cpu
           python_version: "3.7"
@@ -379,7 +379,7 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_macos_wheel_py3.7_cpu
-          cu_version: "cpu"
+          subfolder: ""
       - binary_linux_conda:
           name: nightly_binary_linux_conda_py2.7_cpu
           python_version: "2.7"
