@@ -183,7 +183,7 @@ setup_conda_pytorch_constraint() {
   else
     export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-nightly"
   fi
-  if [[ "$CUDA_VERSION" == cpu ]]; then
+  if [[ "$CU_VERSION" == cpu ]]; then
     export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==$PYTORCH_VERSION${PYTORCH_VERSION_SUFFIX}"
     export CONDA_PYTORCH_CONSTRAINT="- pytorch==$PYTORCH_VERSION"
   else
@@ -198,16 +198,20 @@ setup_conda_cudatoolkit_constraint() {
   if [[ "$(uname)" == Darwin ]]; then
     export CONDA_CUDATOOLKIT_CONSTRAINT=""
   else
-    case "$CUDA_VERSION" in
-      10.0)
+    case "$CU_VERSION" in
+      cu100)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.0,<10.1 # [not osx]"
         ;;
-      9.2)
+      cu92)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=9.2,<9.3 # [not osx]"
         ;;
       cpu)
         export CONDA_CUDATOOLKIT_CONSTRAINT=""
         export CONDA_CPUONLY_FEATURE="- cpuonly"
+        ;;
+      *)
+        echo "Unrecognized CU_VERSION=$CU_VERSION"
+        exit 1
         ;;
     esac
   fi
