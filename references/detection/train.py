@@ -18,9 +18,10 @@ import torchvision.models.detection
 import torchvision.models.detection.mask_rcnn
 
 from coco_utils import get_coco, get_coco_kp
+from voc_utils import get_voc
 
 from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
-from engine import train_one_epoch, evaluate
+from engine import train_one_epoch, voc_evaluate, coco_evaluate
 
 import utils
 import transforms as T
@@ -29,7 +30,8 @@ import transforms as T
 def get_dataset(name, image_set, transform, data_path):
     paths = {
         "coco": (data_path, get_coco, 91),
-        "coco_kp": (data_path, get_coco_kp, 2)
+        "coco_kp": (data_path, get_coco_kp, 2),
+        "voc": (data_path, get_voc, 21)
     }
     p, ds_fn, num_classes = paths[name]
 
@@ -54,8 +56,8 @@ def main(args):
     # Data loading code
     print("Loading data")
 
-    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(train=True), args.data_path)
-    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(train=False), args.data_path)
+    dataset, num_classes = get_dataset(args.dataset, "train" if args.dataset=='coco' else 'trainval', get_transform(train=True), args.data_path)
+    dataset_test, _ = get_dataset(args.dataset, "val" if args.dataset=='coco' else 'test', get_transform(train=False), args.data_path)
 
     print("Creating data loaders")
     if args.distributed:
@@ -124,7 +126,13 @@ def main(args):
                 os.path.join(args.output_dir, 'model_{}.pth'.format(epoch)))
 
         # evaluate after every epoch
-        evaluate(model, data_loader_test, device=device)
+        if 'coco' in args.dataset:
+            coco_evaluate(model, data_loader_test, device=device)
+        elif 'voc' in args.dataset:
+            voc_evaluate(model, data_loader_test, device=device)
+        else:
+            print(f'No evaluation method available for the dataset {args.dataset}')
+
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))

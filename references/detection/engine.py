@@ -7,6 +7,7 @@ import torchvision.models.detection.mask_rcnn
 
 from coco_utils import get_coco_api_from_dataset
 from coco_eval import CocoEvaluator
+from voc_eval import _write_voc_results_file, _do_python_eval
 import utils
 
 
@@ -52,6 +53,67 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
         metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
 
+@torch.no_grad()
+def voc_evaluate(model, data_loader, device):
+    n_threads = torch.get_num_threads()
+    torch.set_num_threads(1)
+    cpu_device = torch.device("cpu")
+    model.eval()
+    metric_logger = utils.MetricLogger(delimiter="  ")
+    header = 'Test:'
+
+    all_boxes = [[] for i in range(21)]
+    image_index = []
+    for image, targets in metric_logger.log_every(data_loader, 100, header):
+        image = list(img.to(device) for img in image)
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+        torch.cuda.synchronize()
+        model_time = time.time()
+        outputs = model(image)
+
+        name = ''.join([chr(i) for i in targets[0]['name'].tolist()])
+        image_index.append(name)
+
+        outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+
+        image_boxes = [[] for i in range(21)]
+        for o in outputs:
+            for i in range(o['boxes'].shape[0]):
+                image_boxes[o['labels'][i]].extend([
+                    torch.cat([o['boxes'][i],o['scores'][i].unsqueeze(0)], dim=0)
+                ])
+
+        #makes sure that the all_boxes is filled with empty array when
+        #there are no boxes in image_boxes
+        for i in range(21):
+            if image_boxes[i] != []:
+                all_boxes[i].append([torch.stack(image_boxes[i])])
+            else:
+                all_boxes[i].append([])
+
+        model_time = time.time() - model_time
+
+    metric_logger.synchronize_between_processes()
+
+    all_boxes_gathered = utils.all_gather(all_boxes)
+    image_index_gathered = utils.all_gather(image_index)
+    
+    # results from all processes are gathered here
+    if utils.is_main_process():
+        all_boxes = [[] for i in range(21)]
+        for abgs in all_boxes_gathered:
+            for ab,abg in zip(all_boxes,abgs):
+                ab += abg
+        image_index = []
+        for iig in image_index_gathered:
+            image_index+=iig
+
+        _write_voc_results_file(all_boxes,image_index, data_loader.dataset.root, 
+                                data_loader.dataset._transforms.transforms[0].CLASSES)
+        _do_python_eval(data_loader)
+    torch.set_num_threads(n_threads)
+
 
 def _get_iou_types(model):
     model_without_ddp = model
@@ -66,7 +128,7 @@ def _get_iou_types(model):
 
 
 @torch.no_grad()
-def evaluate(model, data_loader, device):
+def coco_evaluate(model, data_loader, device):
     n_threads = torch.get_num_threads()
     # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
