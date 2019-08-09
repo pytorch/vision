@@ -87,6 +87,11 @@ class Tester(unittest.TestCase):
             v, a, info = io.read_video(f_name, stream='a')
             self.assertTrue(empty.equal(v))
 
+            # test for invalid stream specifier
+            self.assertRaises(ValueError, io.read_video, f_name, stream='')
+            self.assertRaises(ValueError, io.read_video, f_name, stream='va')
+            self.assertRaises(ValueError, io.read_video, f_name, stream=None)
+
     def test_read_timestamps(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name)
