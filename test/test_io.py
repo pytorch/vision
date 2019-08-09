@@ -67,6 +67,26 @@ class Tester(unittest.TestCase):
             self.assertTrue(data.equal(lv))
             self.assertEqual(info["video_fps"], 5)
 
+    def test_read_specify_stream(self):
+        empty = torch.empty((1, 0), dtype=torch.float32)
+
+        with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
+
+            # first test audio and video (no test for audio)
+            v, a, info = io.read_video(f_name, stream='av')
+            self.assertTrue(data.equal(v))
+            self.assertEqual(info["video_fps"], 5)
+
+            # test video only by checking for empty audio
+            v, a, info = io.read_video(f_name, stream='v')
+            self.assertTrue(data.equal(v))
+            self.assertEqual(info["video_fps"], 5)
+            self.assertTrue(empty.equal(a))
+
+            # test audio only by video being empty...
+            v, a, info = io.read_video(f_name, stream='a')
+            self.assertTrue(empty.equal(v))
+
     def test_read_timestamps(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name)
