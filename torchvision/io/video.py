@@ -184,7 +184,6 @@ def read_video(filename, start_pts=0, end_pts=None, stream='av'):
     if stream not in ['a', 'v', 'av']:
         raise ValueError("invalid stream specifier '{}' "
                          "must be 'a', 'v' or 'av'".format(stream))
-        
 
     container = av.open(filename, metadata_errors='ignore')
     info = {}
