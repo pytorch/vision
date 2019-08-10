@@ -7,11 +7,9 @@ from .utils import load_state_dict_from_url
 __all__ = ['MNASNet', 'mnasnet0_5', 'mnasnet0_75', 'mnasnet1_0', 'mnasnet1_3']
 
 _MODEL_URLS = {
-    "mnasnet0_5":
-    "https://download.pytorch.org/models/mnasnet0.5_top1_67.592-7c6cb539b9.pth",
+    "mnasnet0_5": "https://github.com/1e100/mnasnet_trainer/releases/download/v0.2/mnasnet0.5_top1_67.823-653d4e038a.pth",
     "mnasnet0_75": None,
-    "mnasnet1_0":
-    "https://download.pytorch.org/models/mnasnet1.0_top1_73.512-f206786ef8.pth",
+    "mnasnet1_0": None,
     "mnasnet1_3": None
 }
 
@@ -98,6 +96,7 @@ class MNASNet(torch.nn.Module):
             # First layer: regular conv.
             nn.Conv2d(3, depths[0], 3, padding=1, stride=2, bias=False),
             nn.BatchNorm2d(depths[0], momentum=_BN_MOMENTUM),
+            nn.ReLU(inplace=True),
             # Depthwise separable, no skip.
             nn.Conv2d(depths[0], depths[0], 3, padding=1, stride=1,
                       groups=depths[0], bias=False),
@@ -118,8 +117,8 @@ class MNASNet(torch.nn.Module):
             nn.ReLU(inplace=True),
         ]
         self.layers = nn.Sequential(*layers)
-        self.classifier = nn.Sequential(
-            nn.Dropout(p=dropout, inplace=True), nn.Linear(1280, num_classes))
+        self.classifier = nn.Sequential(nn.Dropout(p=dropout, inplace=True),
+                                        nn.Linear(1280, num_classes))
         self._initialize_weights()
 
     def forward(self, x):
