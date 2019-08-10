@@ -10,6 +10,7 @@ if(WITH_CUDA)
   add_definitions(-D__CUDA_NO_HALF_OPERATORS__)
 endif()
 
+find_package(PNG REQUIRED)
 find_package(Torch REQUIRED)
 find_package(pybind11 REQUIRED)
 
@@ -21,7 +22,15 @@ endif()
 file(GLOB MODELS_HEADERS torchvision/csrc/models/*.h)
 file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.cpp)
 
+file(GLOB IMAGE_HEADERS torchvision/csrc/image/*.h)
+file(GLOB IMAGE_SOURCES torchvision/csrc/image/*.h torchvision/csrc/image/*.cpp)
+
+add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${IMAGE_SOURCES})
+target_link_libraries(${PROJECT_NAME} PUBLIC "${PNG_LIBRARY}")
+target_link_libraries(${PROJECT_NAME} PUBLIC "${TORCH_LIBRARIES}")
+
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES})
+
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} pybind11::pybind11)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME TorchVision)
 
@@ -63,3 +72,4 @@ if(WITH_CUDA)
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/cuda)
 endif()
 install(FILES ${MODELS_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/models)
+include_directories(${PNG_INCLUDE_DIR})
