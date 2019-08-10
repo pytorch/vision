@@ -153,7 +153,13 @@ def _load_pretrained(model_name, model, progress):
 
 
 def mnasnet0_5(pretrained=False, progress=True, **kwargs):
-    """ MNASNet with depth multiplier of 0.5. """
+    """MNASNet with depth multiplier of 0.5 from
+    `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
+    <https://arxiv.org/pdf/1807.11626.pdf>`_.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
     model = MNASNet(0.5, **kwargs)
     if pretrained:
         _load_pretrained("mnasnet0_5", model, progress)
@@ -161,7 +167,13 @@ def mnasnet0_5(pretrained=False, progress=True, **kwargs):
 
 
 def mnasnet0_75(pretrained=False, progress=True, **kwargs):
-    """ MNASNet with depth multiplier of 0.75. """
+    """MNASNet with depth multiplier of 0.75 from
+    `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
+    <https://arxiv.org/pdf/1807.11626.pdf>`_.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
     model = MNASNet(0.75, **kwargs)
     if pretrained:
         _load_pretrained("mnasnet0_75", model, progress)
@@ -169,7 +181,13 @@ def mnasnet0_75(pretrained=False, progress=True, **kwargs):
 
 
 def mnasnet1_0(pretrained=False, progress=True, **kwargs):
-    """ MNASNet with depth multiplier of 1.0. """
+    """MNASNet with depth multiplier of 1.0 from
+    `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
+    <https://arxiv.org/pdf/1807.11626.pdf>`_.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
     model = MNASNet(1.0, **kwargs)
     if pretrained:
         _load_pretrained("mnasnet1_0", model, progress)
@@ -177,7 +195,13 @@ def mnasnet1_0(pretrained=False, progress=True, **kwargs):
 
 
 def mnasnet1_3(pretrained=False, progress=True, **kwargs):
-    """ MNASNet with depth multiplier of 1.3. """
+    """MNASNet with depth multiplier of 1.3 from
+    `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
+    <https://arxiv.org/pdf/1807.11626.pdf>`_.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
     model = MNASNet(1.3, **kwargs)
     if pretrained:
         _load_pretrained("mnasnet1_3", model, progress)

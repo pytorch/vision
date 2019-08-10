@@ -73,6 +73,16 @@ torch::Tensor forward_resnext101_32x8d(
     torch::Tensor x) {
   return forward_model<ResNext101_32x8d>(input_path, x);
 }
+torch::Tensor forward_wide_resnet50_2(
+    const std::string& input_path,
+    torch::Tensor x) {
+  return forward_model<WideResNet50_2>(input_path, x);
+}
+torch::Tensor forward_wide_resnet101_2(
+    const std::string& input_path,
+    torch::Tensor x) {
+  return forward_model<WideResNet101_2>(input_path, x);
+}
 
 torch::Tensor forward_squeezenet1_0(
     const std::string& input_path,
@@ -129,6 +139,19 @@ torch::Tensor forward_inceptionv3(
   return network->forward(x).output;
 }
 
+torch::Tensor forward_mnasnet0_5(const std::string& input_path, torch::Tensor x) {
+  return forward_model<MNASNet0_5>(input_path, x);
+}
+torch::Tensor forward_mnasnet0_75(const std::string& input_path, torch::Tensor x) {
+  return forward_model<MNASNet0_75>(input_path, x);
+}
+torch::Tensor forward_mnasnet1_0(const std::string& input_path, torch::Tensor x) {
+  return forward_model<MNASNet1_0>(input_path, x);
+}
+torch::Tensor forward_mnasnet1_3(const std::string& input_path, torch::Tensor x) {
+  return forward_model<MNASNet1_3>(input_path, x);
+}
+
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("forward_alexnet", &forward_alexnet, "forward_alexnet");
 
@@ -155,6 +178,14 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
       "forward_resnext101_32x8d",
       &forward_resnext101_32x8d,
       "forward_resnext101_32x8d");
+  m.def(
+      "forward_wide_resnet50_2",
+      &forward_wide_resnet50_2,
+      "forward_wide_resnet50_2");
+  m.def(
+      "forward_wide_resnet101_2",
+      &forward_wide_resnet101_2,
+      "forward_wide_resnet101_2");
 
   m.def(
       "forward_squeezenet1_0", &forward_squeezenet1_0, "forward_squeezenet1_0");
@@ -170,4 +201,9 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 
   m.def("forward_googlenet", &forward_googlenet, "forward_googlenet");
   m.def("forward_inceptionv3", &forward_inceptionv3, "forward_inceptionv3");
+
+  m.def("forward_mnasnet0_5", &forward_mnasnet0_5, "forward_mnasnet0_5");
+  m.def("forward_mnasnet0_75", &forward_mnasnet0_75, "forward_mnasnet0_75");
+  m.def("forward_mnasnet1_0", &forward_mnasnet1_0, "forward_mnasnet1_0");
+  m.def("forward_mnasnet1_3", &forward_mnasnet1_3, "forward_mnasnet1_3");
 }

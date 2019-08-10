@@ -77,7 +77,7 @@ struct _TransitionImpl : torch::nn::SequentialImpl {
                               .stride(1)
                               .with_bias(false)));
     push_back(
-        "pool", torch::nn::Functional(torch::avg_pool2d, 2, 2, 0, false, true));
+        "pool", torch::nn::Functional([](torch::Tensor input) { return torch::avg_pool2d(input, 2, 2, 0, false, true); }));
   }
 
   torch::Tensor forward(torch::Tensor x) {

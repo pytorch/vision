@@ -142,7 +142,7 @@ class Inception3(nn.Module):
         # N x 2048 x 1 x 1
         x = F.dropout(x, training=self.training)
         # N x 2048 x 1 x 1
-        x = x.view(x.size(0), -1)
+        x = torch.flatten(x, 1)
         # N x 2048
         x = self.fc(x)
         # N x 1000 (num_classes)
@@ -334,7 +334,7 @@ class InceptionAux(nn.Module):
         # Adaptive average pooling
         x = F.adaptive_avg_pool2d(x, (1, 1))
         # N x 768 x 1 x 1
-        x = x.view(x.size(0), -1)
+        x = torch.flatten(x, 1)
         # N x 768
         x = self.fc(x)
         # N x 1000

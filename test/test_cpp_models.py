@@ -2,6 +2,7 @@ import torch
 import os
 import unittest
 from torchvision import models, transforms, _C_tests
+import sys
 
 from PIL import Image
 import torchvision.transforms.functional as F
@@ -35,6 +36,10 @@ def read_image2():
     return torch.cat([x, x], 0)
 
 
+@unittest.skipIf(
+    sys.platform == "darwin" or True,
+    "C++ models are broken on OS X at the moment, and there's a BC breakage on master; "
+    "see https://github.com/pytorch/vision/issues/1191")
 class Tester(unittest.TestCase):
     pretrained = False
     image = read_image1()
@@ -87,6 +92,12 @@ class Tester(unittest.TestCase):
     def test_resnext101_32x8d(self):
         process_model(models.resnext101_32x8d(), self.image, _C_tests.forward_resnext101_32x8d, 'ResNext101_32x8d')
 
+    def test_wide_resnet50_2(self):
+        process_model(models.wide_resnet50_2(), self.image, _C_tests.forward_wide_resnet50_2, 'WideResNet50_2')
+
+    def test_wide_resnet101_2(self):
+        process_model(models.wide_resnet101_2(), self.image, _C_tests.forward_wide_resnet101_2, 'WideResNet101_2')
+
     def test_squeezenet1_0(self):
         process_model(models.squeezenet1_0(self.pretrained), self.image,
                       _C_tests.forward_squeezenet1_0, 'Squeezenet1.0')
@@ -112,6 +123,18 @@ class Tester(unittest.TestCase):
 
     def test_googlenet(self):
         process_model(models.googlenet(self.pretrained), self.image, _C_tests.forward_googlenet, 'GoogLeNet')
+
+    def test_mnasnet0_5(self):
+        process_model(models.mnasnet0_5(self.pretrained), self.image, _C_tests.forward_mnasnet0_5, 'MNASNet0_5')
+
+    def test_mnasnet0_75(self):
+        process_model(models.mnasnet0_75(self.pretrained), self.image, _C_tests.forward_mnasnet0_75, 'MNASNet0_75')
+
+    def test_mnasnet1_0(self):
+        process_model(models.mnasnet1_0(self.pretrained), self.image, _C_tests.forward_mnasnet1_0, 'MNASNet1_0')
+
+    def test_mnasnet1_3(self):
+        process_model(models.mnasnet1_3(self.pretrained), self.image, _C_tests.forward_mnasnet1_3, 'MNASNet1_3')
 
     def test_inception_v3(self):
         self.image = read_image2()

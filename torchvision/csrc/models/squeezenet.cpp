@@ -64,11 +64,12 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
         Fire(384, 48, 192, 192),
         Fire(384, 64, 256, 256),
         Fire(512, 64, 256, 256));
-  } else {
-    std::cerr << "Wrong version number is passed th SqueeseNet constructor!"
-              << std::endl;
-    assert(false);
-  }
+  } else
+    TORCH_CHECK(
+        false,
+        "Unsupported SqueezeNet version ",
+        version,
+        ". 1_0 or 1_1 expected");
 
   // Final convolution is initialized differently from the rest
   auto final_conv =
