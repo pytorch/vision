@@ -12,7 +12,7 @@ bool is_png(const void* data) {
   return png_sig_cmp(png_const_bytep(data), 0, 8) == 0;
 }
 
-torch::Tensor readpng(const void* data) {
+torch::Tensor read_png(const void* data) {
   struct Reader {
     png_const_bytep ptr;
   } reader;
@@ -28,17 +28,17 @@ torch::Tensor readpng(const void* data) {
   auto png_ptr =
       png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
   if (!png_ptr)
-    return torch::tensor({0});
+    return torch::empty({});
 
   auto info_ptr = png_create_info_struct(png_ptr);
   if (!info_ptr) {
     png_destroy_read_struct(&png_ptr, nullptr, nullptr);
-    return torch::tensor({0});
+    return torch::empty({});
   }
 
   if (setjmp(png_jmpbuf(png_ptr)) != 0) {
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    return torch::tensor({0});
+    return torch::empty({});
   }
 
   png_set_read_fn(png_ptr, &reader, read_callback);
@@ -60,7 +60,7 @@ torch::Tensor readpng(const void* data) {
 
   if (retval != 1 || color_type != PNG_COLOR_TYPE_RGB) {
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    return torch::tensor({0});
+    return torch::empty({});
   }
 
   auto tensor =

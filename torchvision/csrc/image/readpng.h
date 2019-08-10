@@ -9,7 +9,7 @@ namespace image {
 namespace impl {
 
 bool is_png(const void* data);
-torch::Tensor readpng(const void* data);
+torch::Tensor read_png(const void* data);
 
 } // namespace impl
 } // namespace image
