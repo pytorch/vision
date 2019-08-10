@@ -7,7 +7,7 @@ from .utils import load_state_dict_from_url
 __all__ = ['MNASNet', 'mnasnet0_5', 'mnasnet0_75', 'mnasnet1_0', 'mnasnet1_3']
 
 _MODEL_URLS = {
-    "mnasnet0_5": "https://github.com/1e100/mnasnet_trainer/releases/download/v0.2/mnasnet0.5_top1_67.823-653d4e038a.pth",
+    "mnasnet0_5": "https://github.com/1e100/mnasnet_trainer/releases/download/0.2/mnasnet0.5_top1_67.823-b7834e59f1.pth",
     "mnasnet0_75": None,
     "mnasnet1_0": None,
     "mnasnet1_3": None
