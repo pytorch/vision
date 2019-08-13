@@ -235,6 +235,8 @@ class EMNIST(MNIST):
         self.training_file = self._training_file(split)
         self.test_file = self._test_file(split)
         super(EMNIST, self).__init__(root, **kwargs)
+        self.mapping_file = self._mapping_file(split)
+        self.classes = torch.load(os.path.join(self.processed_folder,self.mapping_file))
 
     @staticmethod
     def _training_file(split):
@@ -243,6 +245,10 @@ class EMNIST(MNIST):
     @staticmethod
     def _test_file(split):
         return 'test_{}.pt'.format(split)
+    
+    @staticmethod
+    def _mapping_file(split):
+        return 'mapping_{}.pt'.format(split)
 
     def download(self):
         """Download the EMNIST data if it doesn't exist in processed_folder already."""
@@ -274,10 +280,13 @@ class EMNIST(MNIST):
                 read_image_file(os.path.join(gzip_folder, 'emnist-{}-test-images-idx3-ubyte'.format(split))),
                 read_label_file(os.path.join(gzip_folder, 'emnist-{}-test-labels-idx1-ubyte'.format(split)))
             )
+            mapping = read_mapping_file(os.path.join(gzip_folder, 'emnist-{}-mapping.txt'.format(split)))
             with open(os.path.join(self.processed_folder, self._training_file(split)), 'wb') as f:
                 torch.save(training_set, f)
             with open(os.path.join(self.processed_folder, self._test_file(split)), 'wb') as f:
                 torch.save(test_set, f)
+            with open(os.path.join(self.processed_folder, self._mapping_file(split)), 'wb') as f:
+                torch.save(mapping, f)
         shutil.rmtree(gzip_folder)
 
         print('Done!')
@@ -453,3 +462,11 @@ def read_image_file(path):
     assert(x.dtype == torch.uint8)
     assert(x.ndimension() == 3)
     return x
+
+def read_mapping_file(path):
+    with open(path, 'r') as f:
+        data = f.readlines()
+        classes = []
+        for line in data:
+            classes.append(chr(int(line.split(' ')[-1][:-1])))
+        return classes
