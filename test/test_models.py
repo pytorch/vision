@@ -35,7 +35,7 @@ torchub_models = {
     "densenet121": False,
     "resnet18": False,
     "alexnet": True,
-    "shufflenet_v2_x1_0": False,
+    "shufflenet_v2_x1_0": True,
     "squeezenet1_0": True,
     "vgg11": True,
     "inception_v3": False,
