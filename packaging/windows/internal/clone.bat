@@ -44,15 +44,11 @@ set PYTORCH_BRANCH=%last_commit%
 
 :latest_end
 
-IF "%BUILD_VISION%" == "" (
-    IF "%PYTORCH_BRANCH%" == "" (
-        set PYTORCH_BRANCH=v%PYTORCH_BUILD_VERSION%
-    )
-    git checkout %PYTORCH_BRANCH%
-    IF ERRORLEVEL 1 git checkout tags/%PYTORCH_BRANCH%
-) ELSE (
-    git checkout v%TORCHVISION_BUILD_VERSION%
+IF "%PYTORCH_BRANCH%" == "" (
+    set PYTORCH_BRANCH=v%TORCHVISION_BUILD_VERSION%
 )
+git checkout %PYTORCH_BRANCH%
+IF ERRORLEVEL 1 git checkout tags/%PYTORCH_BRANCH%
 
 :submodule
 

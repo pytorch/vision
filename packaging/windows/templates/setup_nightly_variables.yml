@@ -1,0 +1,7 @@
+steps:
+- task: BatchScript@1
+  displayName: 'Setup nightly variables'
+  inputs:
+    filename: 'windows/internal/nightly_defaults.bat'
+
+    modifyEnvironment: true

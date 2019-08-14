@@ -1,0 +1,8 @@
+parameters:
+  package: ''
+
+steps:
+- script: 'packaging/windows/internal/publish.bat'
+  displayName: 'Upload packages to Azure DevOps Repo'
+  env:
+    PACKAGEFULLNAME: ${{ parameters.package }}

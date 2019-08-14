@@ -1,0 +1,6 @@
+steps:
+- script: 'windows/internal/override_pytorch_version.bat'
+  displayName: 'Override PyTorch Build Version for Wheels'
+
+- script: 'echo $(PYTORCH_BUILD_VERSION)'
+  displayName: 'Show PyTorch Build Version'

@@ -8,15 +8,19 @@ set PYTHON_VERSION=%PYTHON_PREFIX:py=cp%
 if "%BUILD_VISION%" == "" (
     pip install future pytest coverage hypothesis protobuf
 ) ELSE (
-    pip install future pytest "pillow>=4.1.1"
+    pip install future pytest "pillow>=4.1.1" mock
 )
 
-
-for /F "delims=" %%i in ('where /R %SRC_DIR%\output\%CUDA_PREFIX% %MODULE_NAME%*%PYTHON_VERSION%*.whl') do pip install "%%i"
+for /F "delims=" %%i in ('where /R %SRC_DIR%\output\%CUDA_PREFIX% *%MODULE_NAME%*%PYTHON_VERSION%*.whl') do pip install "%%i"
 
 if ERRORLEVEL 1 exit /b 1
 
-if NOT "%BUILD_VISION%" == "" goto smoke_test_end
+if NOT "%BUILD_VISION%" == "" (
+    echo Smoke testing imports
+    python -c "import torchvision"
+    if ERRORLEVEL 1 exit /b 1
+    goto smoke_test_end
+)
 
 echo Smoke testing imports
 python -c "import torch"

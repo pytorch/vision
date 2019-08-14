@@ -1,0 +1,11 @@
+parameters:
+   msagent: false
+
+steps:
+- ${{ if eq(parameters.msagent, 'true') }}:
+  - task: BatchScript@1
+    displayName: 'Install 7Zip'
+    inputs:
+      filename: 'windows/internal/7z_install.bat'
+
+      modifyEnvironment: true
