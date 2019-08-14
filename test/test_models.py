@@ -24,6 +24,7 @@ def get_available_video_models():
     # TODO add a registration mechanism to torchvision.models
     return [k for k, v in models.video.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
+
 # model_name, expected to script without error
 torchub_models = {
     "deeplabv3_resnet101": False,
@@ -40,6 +41,7 @@ torchub_models = {
     "inception_v3": False,
 }
 
+
 class Tester(unittest.TestCase):
     def check_script(self, model, name):
         if name not in torchub_models:
@@ -47,7 +49,7 @@ class Tester(unittest.TestCase):
         scriptable = True
         try:
             torch.jit.script(model)
-        except Exception as e:
+        except Exception:
             scriptable = False
         self.assertEqual(torchub_models[name], scriptable)
 
