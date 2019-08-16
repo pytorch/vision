@@ -97,6 +97,7 @@ def save_image(tensor, filename, nrow=8, padding=2,
         **kwargs: Other arguments are documented in ``make_grid``.
     """
     from PIL import Image
+    tensor = tensor.clone()
     grid = make_grid(tensor, nrow=nrow, padding=padding, pad_value=pad_value,
                      normalize=normalize, range=range, scale_each=scale_each)
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
