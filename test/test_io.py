@@ -7,6 +7,7 @@ import torchvision.io as io
 import unittest
 import sys
 import warnings
+from fractions import Fraction
 
 from common_utils import get_tmp_dir
 
@@ -76,15 +77,16 @@ class Tester(unittest.TestCase):
             # so we use it as a baseline
             container = av.open(f_name)
             stream = container.streams[0]
-            pts_step = int(round(float(1 / (stream.average_rate * stream.time_base))))
             num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
-            expected_pts = [i * pts_step for i in range(num_frames)]
+            # pts is a global fraction of a second, we expect
+            # to see num_frames frames whose global pts is 1/fps
+            expected_pts = [Fraction(i, stream.average_rate) for i in range(num_frames)]
 
             self.assertEqual(pts, expected_pts)
 
     def test_read_partial_video(self):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
-            pts, _ = io.read_video_timestamps(f_name)
+            pts, fps = io.read_video_timestamps(f_name)
             for start in range(5):
                 for l in range(1, 4):
                     lv, _, _ = io.read_video(f_name, pts[start], pts[start + l - 1])
@@ -92,7 +94,7 @@ class Tester(unittest.TestCase):
                     self.assertEqual(len(lv), l)
                     self.assertTrue(s_data.equal(lv))
 
-            lv, _, _ = io.read_video(f_name, pts[4] + 1, pts[7])
+            lv, _, _ = io.read_video(f_name, pts[4] + 1 / (fps + 1), pts[7])
             self.assertEqual(len(lv), 4)
             self.assertTrue(data[4:8].equal(lv))
 
@@ -100,7 +102,7 @@ class Tester(unittest.TestCase):
         # do not use lossless encoding, to test the presence of B-frames
         options = {'bframes': '16', 'keyint': '10', 'min-keyint': '4'}
         with temp_video(100, 300, 300, 5, options=options) as (f_name, data):
-            pts, _ = io.read_video_timestamps(f_name)
+            pts, fps = io.read_video_timestamps(f_name)
             for start in range(0, 80, 20):
                 for l in range(1, 4):
                     lv, _, _ = io.read_video(f_name, pts[start], pts[start + l - 1])
@@ -108,7 +110,7 @@ class Tester(unittest.TestCase):
                     self.assertEqual(len(lv), l)
                     self.assertTrue((s_data.float() - lv.float()).abs().max() < self.TOLERANCE)
 
-            lv, _, _ = io.read_video(f_name, pts[4] + 1, pts[7])
+            lv, _, _ = io.read_video(f_name, pts[4] + 1 / (fps + 1), pts[7])
             self.assertEqual(len(lv), 4)
             self.assertTrue((data[4:8].float() - lv.float()).abs().max() < self.TOLERANCE)
 
@@ -138,13 +140,32 @@ class Tester(unittest.TestCase):
             stream = container.streams[0]
             # make sure we went through the optimized codepath
             self.assertIn(b'Lavc', stream.codec_context.extradata)
-            pts_step = int(round(float(1 / (stream.average_rate * stream.time_base))))
-            num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
-            expected_pts = [i * pts_step for i in range(num_frames)]
 
+            num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
+            # pts is a global fraction of a second, thus we expect
+            # to see num_frames frames whose global pts is 1/fps
+            expected_pts = [Fraction(i, stream.average_rate) for i in range(num_frames)]
             self.assertEqual(pts, expected_pts)
 
     # TODO add tests for audio
+    def test_audio_cutting(self):
+        with get_tmp_dir() as temp_dir:
+            name = "hmdb51_Turnk_r_Pippi_Michel_cartwheel_f_cm_np2_le_med_6.avi"
+            f_name = os.path.join(temp_dir, name)
+            url = "https://download.pytorch.org/vision_tests/io/" + name
+            try:
+                utils.download_url(url, temp_dir)
+                pts, fps = io.read_video_timestamps(f_name)
+                self.assertEqual(pts, sorted(pts))
+                self.assertEqual(fps, 30)
+            except URLError:
+                msg = "could not download test file '{}'".format(url)
+                warnings.warn(msg, RuntimeWarning)
+                raise unittest.SkipTest(msg)
+
+            lv, la, info = io.read_video(f_name, pts[3], pts[7])
+            # FIXME: add Another video - this one doesn't have audio
+            # self.assertEqual(lv/info['video_fps'], la/info['audio_fps'])
 
 
 if __name__ == '__main__':

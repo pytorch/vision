@@ -75,6 +75,7 @@ def write_video(filename, video_array, fps, video_codec='libx264', options=None)
 
 
 def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
+    # TODO: docs
     global _CALLED_TIMES, _GC_COLLECTION_INTERVAL
     _CALLED_TIMES += 1
     if _CALLED_TIMES % _GC_COLLECTION_INTERVAL == _GC_COLLECTION_INTERVAL - 1:
@@ -83,6 +84,15 @@ def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
     frames = {}
     should_buffer = False
     max_buffer_size = 5
+    # we expect the input offset to be in the global format (i.e. seconds)
+    # to get the correct frame we look for the frames corresponding to
+    # second / time_base
+    cur_time_base = stream.time_base
+    seek_offset = int(round(float(start_offset / cur_time_base)))
+    start_offset = int(round(float(start_offset / cur_time_base)))
+    if end_offset != float("inf"):
+        end_offset = int(round(float(end_offset / cur_time_base)))
+
     if stream.type == "video":
         # DivX-style packed B-frames can have out-of-order pts (2 frames in a single pkt)
         # so need to buffer some extra frames to sort everything
@@ -99,7 +109,7 @@ def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
                 o = re.search(br"DivX(\d+)b(\d+)(\w)", d)
             if o is not None:
                 should_buffer = o.group(3) == b"p"
-    seek_offset = start_offset
+
     # some files don't seek to the right location, so better be safe here
     seek_offset = max(seek_offset - 1, 0)
     if should_buffer:
@@ -129,10 +139,16 @@ def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
         # we will have all the necessary data. This is most useful for audio
         first_frame_pts = max(i for i in frames if i < start_offset)
         result.insert(0, frames[first_frame_pts])
+    # print(f'Seek off {seek_offset}, end off {end_offset}, result len {len(result)}')
     return result
 
 
 def _align_audio_frames(aframes, audio_frames, ref_start, ref_end):
+    # reference frames are global, here we convert them
+    # to a local audio representation pts values
+    ref_start = int(round(float(ref_start / audio_frames[0].time_base)))
+    ref_end = int(round(float(ref_end / audio_frames[0].time_base)))
+
     start, end = audio_frames[0].pts, audio_frames[-1].pts
     total_aframes = aframes.shape[1]
     step_per_aframe = (end - start + 1) / total_aframes
@@ -155,9 +171,9 @@ def read_video(filename, start_pts=0, end_pts=None):
     filename : str
         path to the video file
     start_pts : int, optional
-        the start presentation time of the video
+        the start presentation time of the video - global in seconds
     end_pts : int, optional
-        the end presentation time
+        the end presentation time - global in seconds
 
     Returns
     -------
@@ -232,6 +248,8 @@ def read_video_timestamps(filename):
     -------
     pts : List[int]
         presentation timestamps for each one of the frames in the video.
+        Note that these are returned as the TRUE timestamps, i.e.
+        w.r.t. the global presentation time, not as a function of the stream.
     video_fps : int
         the frame rate for the video
 
@@ -250,4 +268,4 @@ def read_video_timestamps(filename):
                                              container.streams.video[0], {'video': 0})
         video_fps = float(container.streams.video[0].average_rate)
     container.close()
-    return [x.pts for x in video_frames], video_fps
+    return [x.pts * x.time_base for x in video_frames], video_fps
