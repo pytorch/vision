@@ -10,16 +10,28 @@ retry () {
     $*  || (sleep 1 && $*) || (sleep 2 && $*) || (sleep 4 && $*) || (sleep 8 && $*)
 }
 
-if [ "$#" -ne 1 ]; then
-    echo "Illegal number of parameters. Pass cuda version"
-    echo "CUDA version should be M.m with no dot, e.g. '8.0' or 'cpu'"
-    exit 1
-fi
+# Parse arguments and determmine version
+###########################################################
+if [[ -n "$DESIRED_CUDA" && -n "$TORCHVISION_BUILD_VERSION" && -n "$TORCHVISION_BUILD_NUMBER" ]]; then
+    desired_cuda="$DESIRED_CUDA"
+    build_version="$PYTORCH_BUILD_VERSION"
+    build_number="$PYTORCH_BUILD_NUMBER"
+else
+    if [ "$#" -ne 3 ]; then
+        echo "Illegal number of parameters. Pass cuda version, pytorch version, build number"
+        echo "CUDA version should be Mm with no dot, e.g. '80'"
+        echo "DESIRED_PYTHON should be M.m, e.g. '2.7'"
+        exit 1
+    fi
 
-desired_cuda="$1"
+    desired_cuda="$1"
+    build_version="$2"
+    build_number="$3"
+fi
 if [[ "$desired_cuda" != cpu ]]; then
   desired_cuda="$(echo $desired_cuda | tr -d cuda. )"
 fi
+echo "Building cuda version $desired_cuda and torchvision version: $build_version build_number: $build_number"
 
 if [[ "$desired_cuda" == 'cpu' ]]; then
     cpu_only=1
@@ -42,8 +54,8 @@ else
     cuver="cu$cuda_nodot"
 fi
 
-export TORCHVISION_BUILD_VERSION="0.4.0"
-export TORCHVISION_BUILD_NUMBER=1
+export TORCHVISION_BUILD_VERSION=$build_version
+export TORCHVISION_BUILD_NUMBER=$build_number
 
 if [[ -z "$DESIRED_PYTHON" ]]; then
     DESIRED_PYTHON=('3.5' '3.6' '3.7')

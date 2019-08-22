@@ -67,21 +67,27 @@ FOR %%v IN (%DESIRED_PYTHON%) DO (
     conda create -n py!PYTHON_VERSION_STR! -y -q -c defaults -c conda-forge numpy>=1.11 mkl>=2018 python=%%v ca-certificates scipy av
 )
 
+:: Uncomment for stable releases
+:: FOR %%v IN (%DESIRED_PYTHON%) DO (
+::     set PYTHON_VERSION_STR=%%v
+::     set PYTHON_VERSION_STR=!PYTHON_VERSION_STR:.=!
+::     set "PATH=%CONDA_HOME%\envs\py!PYTHON_VERSION_STR!;%CONDA_HOME%\envs\py!PYTHON_VERSION_STR!\scripts;%CONDA_HOME%\envs\py!PYTHON_VERSION_STR!\Library\bin;%ORIG_PATH%"
+
+::     if "%CUDA_VERSION%" == "100" (
+::         set TORCH_WHEEL=https://download.pytorch.org/whl/%CUVER%/torch-1.2.0-cp!PYTHON_VERSION_STR!-cp!PYTHON_VERSION_STR!m-win_amd64.whl
+::     ) else (
+::         set TORCH_WHEEL=https://download.pytorch.org/whl/%CUVER%/torch-1.2.0%%2B%CUVER%-cp!PYTHON_VERSION_STR!-cp!PYTHON_VERSION_STR!m-win_amd64.whl
+::     )
+::     echo Installing !TORCH_WHEEL!...
+::     pip install "!TORCH_WHEEL!"
+:: )
+
+:: Uncomment for nightly releases
 FOR %%v IN (%DESIRED_PYTHON%) DO (
     set PYTHON_VERSION_STR=%%v
     set PYTHON_VERSION_STR=!PYTHON_VERSION_STR:.=!
     set "PATH=%CONDA_HOME%\envs\py!PYTHON_VERSION_STR!;%CONDA_HOME%\envs\py!PYTHON_VERSION_STR!\scripts;%CONDA_HOME%\envs\py!PYTHON_VERSION_STR!\Library\bin;%ORIG_PATH%"
 
-    :: Uncomment for stable releases
-    :: if "%CUDA_VERSION%" == "100" (
-    ::     set TORCH_WHEEL=https://download.pytorch.org/whl/%CUVER%/torch-1.2.0-cp!PYTHON_VERSION_STR!-cp!PYTHON_VERSION_STR!m-win_amd64.whl
-    :: ) else (
-    ::     set TORCH_WHEEL=https://download.pytorch.org/whl/%CUVER%/torch-1.2.0%%2B%CUVER%-cp!PYTHON_VERSION_STR!-cp!PYTHON_VERSION_STR!m-win_amd64.whl
-    :: )
-    :: echo Installing !TORCH_WHEEL!...
-    :: pip install "!TORCH_WHEEL!"
-
-    :: Uncomment for nightly releases
     set TORCH_WHEEL=torch -f https://download.pytorch.org/whl/nightly/%CUVER%/torch.html
     echo Installing !TORCH_WHEEL!...
     pip install !TORCH_WHEEL!
