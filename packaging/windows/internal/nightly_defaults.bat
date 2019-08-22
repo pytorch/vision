@@ -144,11 +144,11 @@ if "%CUDA_VERSION%" == "cpu" (
 ::       pytorch-nightly==1.0.0.dev20180908
 ::   or in manylinux like
 ::       torch_nightly-1.0.0.dev20180908-cp27-cp27m-linux_x86_64.whl
-if "%PYTORCH_BUILD_VERSION%" == "" set PYTORCH_BUILD_VERSION=0.5.0.dev%NIGHTLIES_DATE_COMPACT%
+if "%TORCHVISION_BUILD_VERSION%" == "" set TORCHVISION_BUILD_VERSION=0.5.0.dev%NIGHTLIES_DATE_COMPACT%
 
 if "%~1" == "Wheels" (
     if not "%CUDA_VERSION%" == "100" (
-        set PYTORCH_BUILD_VERSION=%PYTORCH_BUILD_VERSION%+%_DESIRED_CUDA%
+        set TORCHVISION_BUILD_VERSION=%PYTORCH_BUILD_VERSION%+%_DESIRED_CUDA%
     )
 )
 
@@ -159,13 +159,13 @@ if "%~1" == "Wheels" (
 ::   be set to '0' only if OVERRIDE_PACKAGE_VERSION is being used to bypass
 ::   all the version string logic in downstream scripts. Since we use the
 ::   override below, exporting this shouldn't actually matter.
-if "%PYTORCH_BUILD_NUMBER%" == "" set /a PYTORCH_BUILD_NUMBER=1
-if %PYTORCH_BUILD_NUMBER% GTR 1 set PYTORCH_BUILD_VERSION=%PYTORCH_BUILD_VERSION%%PYTORCH_BUILD_NUMBER%
+if "%TORCHVISION_BUILD_NUMBER%" == "" set /a TORCHVISION_BUILD_NUMBER=1
+if %PYTORCH_BUILD_NUMBER% GTR 1 set TORCHVISION_BUILD_VERSION=%TORCHVISION_BUILD_VERSION%%TORCHVISION_BUILD_NUMBER%
 
 :: The nightly builds use their own versioning logic, so we override whatever
 :: logic is in setup.py or other scripts
 :: TODO: Not supported yet
-set OVERRIDE_PACKAGE_VERSION=%PYTORCH_BUILD_VERSION%
+set OVERRIDE_PACKAGE_VERSION=%TORCHVISION_BUILD_VERSION%
 
 :: Build folder for conda builds to use
 if "%TORCH_CONDA_BUILD_FOLDER%" == "" set TORCH_CONDA_BUILD_FOLDER=torchvision
