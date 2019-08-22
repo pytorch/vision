@@ -1,4 +1,4 @@
-@echo off
+@echo on
 
 if "%~1"=="" goto arg_error
 if NOT "%~2"=="" goto arg_error
@@ -148,7 +148,7 @@ if "%TORCHVISION_BUILD_VERSION%" == "" set TORCHVISION_BUILD_VERSION=0.5.0.dev%N
 
 if "%~1" == "Wheels" (
     if not "%CUDA_VERSION%" == "100" (
-        set TORCHVISION_BUILD_VERSION=%PYTORCH_BUILD_VERSION%+%_DESIRED_CUDA%
+        set TORCHVISION_BUILD_VERSION=%TORCHVISION_BUILD_VERSION%+%_DESIRED_CUDA%
     )
 )
 
@@ -160,7 +160,7 @@ if "%~1" == "Wheels" (
 ::   all the version string logic in downstream scripts. Since we use the
 ::   override below, exporting this shouldn't actually matter.
 if "%TORCHVISION_BUILD_NUMBER%" == "" set /a TORCHVISION_BUILD_NUMBER=1
-if %PYTORCH_BUILD_NUMBER% GTR 1 set TORCHVISION_BUILD_VERSION=%TORCHVISION_BUILD_VERSION%%TORCHVISION_BUILD_NUMBER%
+if %TORCHVISION_BUILD_NUMBER% GTR 1 set TORCHVISION_BUILD_VERSION=%TORCHVISION_BUILD_VERSION%%TORCHVISION_BUILD_NUMBER%
 
 :: The nightly builds use their own versioning logic, so we override whatever
 :: logic is in setup.py or other scripts
