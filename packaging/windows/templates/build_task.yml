@@ -93,6 +93,8 @@ jobs:
   #   - template: override_pytorch_version.yml
 
   - template: setup_nightly_variables.yml
+    parameters:
+      package: ${{ parameters.package }}
 
   - ${{ if eq(parameters.package, 'Wheels') }}:
     - template: build_wheels.yml
