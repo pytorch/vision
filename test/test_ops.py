@@ -20,11 +20,10 @@ class RoIPoolTester(unittest.TestCase):
         c = x.size(1)
         y = torch.zeros(rois.size(0), c, pool_h, pool_w, dtype=dtype, device=device)
 
-        rois = torch.round(rois * spatial_scale)
-
-        for n in range(0, y.size(0)):
+        for n in range(0, x.size(0)):
             for r, roi in enumerate(rois):
                 if roi[0] == n:
+                    roi[1:] = torch.round(roi[1:] * spatial_scale)
                     start_h, end_h = int(roi[2].item()), int(roi[4].item()) + 1
                     start_w, end_w = int(roi[1].item()), int(roi[3].item()) + 1
                     roi_x = x[roi[0].long(), :, start_h:end_h, start_w:end_w]
@@ -56,6 +55,12 @@ class RoIPoolTester(unittest.TestCase):
         # non-contiguous
         y = roi_pool(x.permute(0, 1, 3, 2), rois)
         gt_y = self.slow_roi_pooling(x.permute(0, 1, 3, 2), rois, pool_h, pool_w, device=device, dtype=self.dtype)
+        assert torch.allclose(gt_y, y), 'RoIPool layer incorrect on CPU'
+
+        # spatial-scale != 1
+        y = ops.RoIPool((pool_h, pool_w), 2)(x.permute(0, 1, 3, 2), rois)
+        gt_y = self.slow_roi_pooling(x.permute(0, 1, 3, 2), rois, pool_h, pool_w,
+                                     spatial_scale=2, device=device, dtype=self.dtype)
         assert torch.allclose(gt_y, y), 'RoIPool layer incorrect on CPU'
 
     def test_roi_pool_cpu(self):
