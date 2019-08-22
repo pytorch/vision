@@ -110,23 +110,23 @@ jobs:
         msagent: ${{ parameters.msagent }}
 
   # If you want to upload binaries to S3 & Anaconda Cloud, please uncomment this section.
-  # - ${{ if and(eq(parameters.package, 'Wheels'), eq(parameters.spec, 'CPU')) }}:
-  #   - template: upload_to_s3.yml
-  #     parameters:
-  #       cuVer: '$(CUDA_VERSION)'
-  #       cudaVer: '$(CUDA_VERSION)'
+  - ${{ if and(eq(parameters.package, 'Wheels'), eq(parameters.spec, 'CPU')) }}:
+    - template: upload_to_s3.yml
+      parameters:
+        cuVer: '$(CUDA_VERSION)'
+        cudaVer: '$(CUDA_VERSION)'
 
-  # - ${{ if and(eq(parameters.package, 'Wheels'), ne(parameters.spec, 'CPU')) }}:
-  #   - template: upload_to_s3.yml
-  #     parameters:
-  #       cuVer: 'cu$(CUDA_VERSION)'
-  #       cudaVer: 'cuda$(CUDA_VERSION)'
+  - ${{ if and(eq(parameters.package, 'Wheels'), ne(parameters.spec, 'CPU')) }}:
+    - template: upload_to_s3.yml
+      parameters:
+        cuVer: 'cu$(CUDA_VERSION)'
+        cudaVer: 'cuda$(CUDA_VERSION)'
 
-  # - ${{ if eq(parameters.package, 'Conda') }}:
-  #   - template: upload_to_conda.yml
-  #     parameters:
-  #       user: $(peterjc_conda_username)
-  #       pass: $(peterjc_conda_password)
+  - ${{ if eq(parameters.package, 'Conda') }}:
+    - template: upload_to_conda.yml
+      parameters:
+        user: $(peterjc_conda_username)
+        pass: $(peterjc_conda_password)
 
   # If you want to upload binaries to Azure Git, please uncomment this section.
   # - ${{ if or(eq(parameters.package, 'Wheels'), eq(parameters.package, 'Conda')) }}:
