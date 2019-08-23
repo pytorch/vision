@@ -69,11 +69,11 @@ class _DenseBlock(nn.Module):
             self.add_module('denselayer%d' % (i + 1), layer)
 
     def forward(self, init_features):
-        features = [init_features]
+        features = init_features
         for name, layer in self.named_children():
-            new_features = layer(*features)
-            features.append(new_features)
-        return torch.cat(features, 1)
+            new_features = layer(features)
+            features = torch.cat([features, new_features],1)
+        return features
 
 
 class _Transition(nn.Sequential):
