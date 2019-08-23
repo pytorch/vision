@@ -72,7 +72,7 @@ class _DenseBlock(nn.Module):
         features = init_features
         for name, layer in self.named_children():
             new_features = layer(features)
-            features = torch.cat([features, new_features],1)
+            features = torch.cat([features, new_features], 1)
         return features
 
 
