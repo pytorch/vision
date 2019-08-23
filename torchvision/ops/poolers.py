@@ -3,8 +3,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from torchvision.ops import roi_align
-from torchvision.ops.boxes import box_area
+from .roi_align import roi_align
+from .boxes import box_area
 
 
 class LevelMapper(object):
