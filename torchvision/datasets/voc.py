@@ -197,9 +197,21 @@ class VOCDetection(VisionDataset):
         img = Image.open(self.images[index]).convert('RGB')
         target = self.parse_voc_xml(
             ET.parse(self.annotations[index]).getroot())
+        
+        has_transforms = self.transforms is not None
+        has_separate_transform = self.transform is not None or self.target_transform is not None
 
-        if self.transforms is not None:
+        if has_transforms and has_separate_transform:
+            raise ValueError("Only transforms or transform/target_transform can "
+                             "transform/target_transform need to use together"
+                             "be passed as argument")
+
+        if has_separate_transform:
             img, target = self.transforms(img, target)
+
+        if has_transforms:
+            img = self.transforms(img)
+            target = self.transforms(target)
 
         return img, target
 
