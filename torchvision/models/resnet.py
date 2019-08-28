@@ -34,6 +34,7 @@ def conv1x1(in_planes, out_planes, stride=1):
 
 class BasicBlock(nn.Module):
     expansion = 1
+    __constants__ = ['downsample']
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
                  base_width=64, dilation=1, norm_layer=None):
