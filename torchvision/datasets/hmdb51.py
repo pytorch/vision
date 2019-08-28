@@ -65,8 +65,8 @@ class HMDB51(VisionDataset):
         self.classes = classes
         video_list = [x[0] for x in self.samples]
         video_clips = VideoClips(video_list, frames_per_clip, step_between_clips)
-        indices = self._select_fold(video_list, annotation_path, fold, train)
-        self.video_clips = video_clips.subset(indices)
+        self.indices = self._select_fold(video_list, annotation_path, fold, train)
+        self.video_clips = video_clips.subset(self.indices)
         self.transform = transform
 
     def _select_fold(self, video_list, annotation_path, fold, train):
@@ -89,7 +89,7 @@ class HMDB51(VisionDataset):
 
     def __getitem__(self, idx):
         video, audio, info, video_idx = self.video_clips.get_clip(idx)
-        label = self.samples[video_idx][1]
+        label = self.samples[self.indices[video_idx]][1]
 
         if self.transform is not None:
             video = self.transform(video)
