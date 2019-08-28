@@ -35,8 +35,10 @@ before_install:
   - pip install future
   - pip install pytest pytest-cov codecov
   - pip install mock
-  - pip install onnx
-  - pip install onnxruntime
+  - |
+    if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then
+      pip install onnxruntime
+    fi
   - conda install av -c conda-forge
 
 

@@ -2,6 +2,11 @@ import numpy
 import io
 import torch
 from torchvision import ops
+
+# onnxruntime requires python 3.5 or above
+import sys
+if sys.version_info[0] < 3 or (sys.version_info[0] == 3 and sys.version_info[1] < 5):
+    sys.exit()
 import onnxruntime
 
 import unittest
