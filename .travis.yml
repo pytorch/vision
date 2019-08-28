@@ -35,6 +35,8 @@ before_install:
   - pip install future
   - pip install pytest pytest-cov codecov
   - pip install mock
+  - pip install onnx
+  - pip install onnxruntime
   - conda install av -c conda-forge
 
 
