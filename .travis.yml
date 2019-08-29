@@ -4,13 +4,6 @@ dist: xenial
 matrix:
   include:
     - env: CLANG_FORMAT_CHECK
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-trusty-7.0
-          packages:
-            - clang-7.0
-            - clang-format-7.0
       script: ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
     - env: LINT_CHECK
       python: "2.7"
