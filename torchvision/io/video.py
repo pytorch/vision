@@ -217,7 +217,6 @@ def read_video(filename, start_pts=0, end_pts=None, stream='av'):
     else:
         vframes = torch.empty((0, 1, 1, 3), dtype=torch.uint8)
 
-
     return vframes, aframes, info
 
 
