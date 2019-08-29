@@ -7,10 +7,10 @@ matrix:
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-5.0
+            - llvm-toolchain-trusty-7.0
           packages:
-            - clang-5.0
-            - clang-format-5.0
+            - clang-7.0
+            - clang-format-7.0
       script: ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
     - env: LINT_CHECK
       python: "2.7"
