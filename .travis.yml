@@ -3,7 +3,8 @@ language: python
 dist: xenial
 matrix:
   include:
-    - env: CLANG_FORMAT_CHECK
+    - env: FORMAT_CHECK
+      language: c++
       addons:
         apt:
           sources:
@@ -11,6 +12,8 @@ matrix:
           packages:
             - clang-7
             - clang-format-7
+      before_install: skip
+      install: skip
       script: ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
     - env: LINT_CHECK
       python: "2.7"
