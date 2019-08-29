@@ -96,19 +96,19 @@ at::Tensor nms_cuda(const at::Tensor& dets,
         nms_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
             dets_num,
             iou_threshold,
-            dets_sorted.data<scalar_t>(),
-            (unsigned long long*)mask.data<int64_t>());
+            dets_sorted.data_ptr<scalar_t>(),
+            (unsigned long long*)mask.data_ptr<int64_t>());
       });
 
   at::Tensor mask_cpu = mask.to(at::kCPU);
-  unsigned long long* mask_host = (unsigned long long*)mask_cpu.data<int64_t>();
+  unsigned long long* mask_host = (unsigned long long*)mask_cpu.data_ptr<int64_t>();
 
   std::vector<unsigned long long> remv(col_blocks);
   memset(&remv[0], 0, sizeof(unsigned long long) * col_blocks);
 
   at::Tensor keep =
       at::empty({dets_num}, dets.options().dtype(at::kLong).device(at::kCPU));
-  int64_t* keep_out = keep.data<int64_t>();
+  int64_t* keep_out = keep.data_ptr<int64_t>();
 
   int num_to_keep = 0;
   for (int i = 0; i < dets_num; i++) {
