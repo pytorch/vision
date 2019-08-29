@@ -4,7 +4,7 @@ dist: xenial
 matrix:
   include:
     - env: FORMAT_CHECK
-      language: c++
+      language: cpp
       addons:
         apt:
           sources:
