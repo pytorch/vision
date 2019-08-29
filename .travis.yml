@@ -3,6 +3,15 @@ language: python
 dist: xenial
 matrix:
   include:
+    - env: CLANG_FORMAT_CHECK
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0
+            - clang-format-5.0
+      script: ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
     - env: LINT_CHECK
       python: "2.7"
       install: pip install flake8
