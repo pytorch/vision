@@ -215,7 +215,8 @@ def read_video(filename, start_pts=0, end_pts=None, stream='av'):
     if vframes:
         vframes = torch.as_tensor(np.stack(vframes))
     else:
-        vframes = torch.empty((1, 0), dtype=torch.float32)
+        vframes = torch.empty((0, 1, 1, 3), dtype=torch.uint8)
+
 
     return vframes, aframes, info
 
