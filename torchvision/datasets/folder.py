@@ -75,7 +75,7 @@ class DatasetFolder(VisionDataset):
             E.g, ``transforms.RandomCrop`` for images.
         target_transform (callable, optional): A function/transform that takes
             in the target and transforms it.
-        is_valid_file (callable, optional): A function that takes path of an Image file
+        is_valid_file (callable, optional): A function that takes path of an file
             and check if the file is a valid_file (used to check of corrupt files)
             both extensions and is_valid_file should not be passed.
 
