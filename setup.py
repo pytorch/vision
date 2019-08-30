@@ -11,7 +11,7 @@ import glob
 import shutil
 
 import torch
-from torch.utils.cpp_extension import CppExtension, CUDAExtension, CUDA_HOME
+from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
 
 
 def read(*names, **kwargs):
@@ -121,6 +121,10 @@ def get_extensions():
     include_dirs = [extensions_dir]
     tests_include_dirs = [test_dir, models_dir]
 
+    # TorchVision video reader
+    video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
+    video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
+
     ext_modules = [
         extension(
             'torchvision._C',
@@ -135,7 +139,25 @@ def get_extensions():
             include_dirs=tests_include_dirs,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
-        )
+        ),
+        CppExtension(
+            'torchvision.video_reader',
+            video_reader_src,
+            include_dirs=[
+                video_reader_src_dir,
+                '/home/zyan3/local/anaconda3/envs/pytorch_py3/include',
+            ],
+            libraries=[
+                'glog',
+                'avcodec',
+                'avformat',
+                'avutil',
+                'swresample',
+                'swscale',
+            ],
+            extra_compile_args=["-std=c++14"],
+            extra_link_args=["-std=c++14"],
+        ),
     ]
 
     return ext_modules
@@ -176,5 +198,8 @@ setup(
         "scipy": ["scipy"],
     },
     ext_modules=get_extensions(),
-    cmdclass={'build_ext': torch.utils.cpp_extension.BuildExtension, 'clean': clean}
+    cmdclass={
+        'build_ext': BuildExtension.with_options(no_python_abi_suffix=True),
+        'clean': clean,
+    }
 )
