@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from torch import Tensor
 from .utils import load_state_dict_from_url
 
 
@@ -18,7 +17,7 @@ model_urls = {
 
 
 def channel_shuffle(x, groups):
-    # type: (Tensor, int) -> Tensor
+    # type: (torch.Tensor, int) -> torch.Tensor
     batchsize, num_channels, height, width = x.data.size()
     channels_per_group = num_channels // groups
 
