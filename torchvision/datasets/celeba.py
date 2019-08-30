@@ -3,7 +3,7 @@ import torch
 import os
 import PIL
 from .vision import VisionDataset
-from .utils import download_file_from_google_drive, check_integrity
+from .utils import download_file_from_google_drive, check_integrity, verify_str_arg
 
 
 class CelebA(VisionDataset):
@@ -48,21 +48,17 @@ class CelebA(VisionDataset):
         ("0B7EVK8r0v71pY0NSMzRuSXJEVkk", "d32c9cbf5e040fd4025c592c306e6668", "list_eval_partition.txt"),
     ]
 
-    def __init__(self, root,
-                 split="train",
-                 target_type="attr",
-                 transform=None, target_transform=None,
-                 download=False):
+    def __init__(self, root, split="train", target_type="attr", transform=None,
+                 target_transform=None, download=False):
         import pandas
         root = os.path.join(root, self.base_folder)
-        super(CelebA, self).__init__(root, root_zipfilename=os.path.join(root, "img_align_celeba.zip"))
+        super(CelebA, self).__init__(root, root_zipfilename=os.path.join(root, "img_align_celeba.zip"), transform=transform,
+                                     target_transform=target_transform)
         self.split = split
         if isinstance(target_type, list):
             self.target_type = target_type
         else:
             self.target_type = [target_type]
-        self.transform = transform
-        self.target_transform = target_transform
 
         if download:
             self.download()
@@ -71,20 +67,14 @@ class CelebA(VisionDataset):
             raise RuntimeError('Dataset not found or corrupted.' +
                                ' You can use download=True to download it')
 
-        self.transform = transform
-        self.target_transform = target_transform
-
-        if split.lower() == "train":
-            split = 0
-        elif split.lower() == "valid":
-            split = 1
-        elif split.lower() == "test":
-            split = 2
-        elif split.lower() == "all":
-            split = None
-        else:
-            raise ValueError('Wrong split entered! Please use "train", '
-                             '"valid", "test", or "all"')
+        split_map = {
+            "train": 0,
+            "valid": 1,
+            "test": 2,
+            "all": None,
+        }
+        split = split_map[verify_str_arg(split.lower(), "split",
+                                         ("train", "valid", "test", "all"))]
 
         fn = partial(os.path.join, self.root)
         splits = pandas.read_csv(fn("list_eval_partition.txt"), delim_whitespace=True, header=None, index_col=0)
@@ -142,6 +132,7 @@ class CelebA(VisionDataset):
             elif t == "landmarks":
                 target.append(self.landmarks_align[index, :])
             else:
+                # TODO: refactor with utils.verify_str_arg
                 raise ValueError("Target type \"{}\" is not recognized.".format(t))
         target = tuple(target) if len(target) > 1 else target[0]
 

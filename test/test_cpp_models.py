@@ -2,6 +2,7 @@ import torch
 import os
 import unittest
 from torchvision import models, transforms, _C_tests
+import sys
 
 from PIL import Image
 import torchvision.transforms.functional as F
@@ -35,6 +36,10 @@ def read_image2():
     return torch.cat([x, x], 0)
 
 
+@unittest.skipIf(
+    sys.platform == "darwin" or True,
+    "C++ models are broken on OS X at the moment, and there's a BC breakage on master; "
+    "see https://github.com/pytorch/vision/issues/1191")
 class Tester(unittest.TestCase):
     pretrained = False
     image = read_image1()
@@ -86,6 +91,12 @@ class Tester(unittest.TestCase):
 
     def test_resnext101_32x8d(self):
         process_model(models.resnext101_32x8d(), self.image, _C_tests.forward_resnext101_32x8d, 'ResNext101_32x8d')
+
+    def test_wide_resnet50_2(self):
+        process_model(models.wide_resnet50_2(), self.image, _C_tests.forward_wide_resnet50_2, 'WideResNet50_2')
+
+    def test_wide_resnet101_2(self):
+        process_model(models.wide_resnet101_2(), self.image, _C_tests.forward_wide_resnet101_2, 'WideResNet101_2')
 
     def test_squeezenet1_0(self):
         process_model(models.squeezenet1_0(self.pretrained), self.image,

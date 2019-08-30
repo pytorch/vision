@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from .utils import load_state_dict_from_url
 
@@ -203,7 +204,7 @@ class ResNet(nn.Module):
         x = self.layer4(x)
 
         x = self.avgpool(x)
-        x = x.reshape(x.size(0), -1)
+        x = torch.flatten(x, 1)
         x = self.fc(x)
 
         return x
@@ -220,7 +221,7 @@ def _resnet(arch, block, layers, pretrained, progress, **kwargs):
 
 def resnet18(pretrained=False, progress=True, **kwargs):
     r"""ResNet-18 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>'_
+    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -232,7 +233,7 @@ def resnet18(pretrained=False, progress=True, **kwargs):
 
 def resnet34(pretrained=False, progress=True, **kwargs):
     r"""ResNet-34 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>'_
+    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -244,7 +245,7 @@ def resnet34(pretrained=False, progress=True, **kwargs):
 
 def resnet50(pretrained=False, progress=True, **kwargs):
     r"""ResNet-50 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>'_
+    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -256,7 +257,7 @@ def resnet50(pretrained=False, progress=True, **kwargs):
 
 def resnet101(pretrained=False, progress=True, **kwargs):
     r"""ResNet-101 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>'_
+    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
@@ -268,7 +269,7 @@ def resnet101(pretrained=False, progress=True, **kwargs):
 
 def resnet152(pretrained=False, progress=True, **kwargs):
     r"""ResNet-152 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>'_
+    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet

@@ -17,8 +17,8 @@ struct MNASNetInvertedResidualImpl : torch::nn::Module {
       int64_t stride,
       double expansion_factor,
       double bn_momentum = 0.1) {
-    assert(stride == 1 || stride == 2);
-    assert(kernel == 3 || kernel == 5);
+    TORCH_CHECK(stride == 1 || stride == 2);
+    TORCH_CHECK(kernel == 3 || kernel == 5);
 
     auto mid = int64_t(input * expansion_factor);
     apply_residual = input == output && stride == 1;
@@ -74,7 +74,7 @@ StackSequentail stack(
     double exp_factor,
     int64_t repeats,
     double bn_momentum) {
-  assert(repeats >= 1);
+  TORCH_CHECK(repeats >= 1);
 
   StackSequentail seq;
   seq->push_back(MNASNetInvertedResidual(
@@ -91,7 +91,7 @@ int64_t round_to_multiple_of(
     int64_t val,
     int64_t divisor,
     double round_up_bias = .9) {
-  assert(0.0 < round_up_bias && round_up_bias < 1.0);
+  TORCH_CHECK(0.0 < round_up_bias && round_up_bias < 1.0);
   auto new_val = std::max(divisor, (val + divisor / 2) / divisor * divisor);
   return new_val >= round_up_bias * val ? new_val : new_val + divisor;
 }

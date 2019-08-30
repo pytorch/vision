@@ -1,0 +1,216 @@
+version: 2.1
+
+# How to test the Linux jobs:
+#   - Install CircleCI local CLI: https://circleci.com/docs/2.0/local-cli/
+#   - circleci config process .circleci/config.yml > gen.yml && circleci local execute -c gen.yml --job binary_linux_wheel_py3.7
+#     - Replace binary_linux_wheel_py3.7 with the name of the job you want to test.
+#       Job names are 'name:' key.
+
+binary_common: &binary_common
+  parameters:
+    # Edit these defaults to do a release`
+    build_version:
+      description: "version number of release binary; by default, build a nightly"
+      type: string
+      default: "0.4.0"
+    pytorch_version:
+      description: "PyTorch version to build against; by default, use a nightly"
+      type: string
+      default: "1.2.0"
+    # Don't edit these
+    python_version:
+      description: "Python version to build against (e.g., 3.7)"
+      type: string
+    cu_version:
+      description: "CUDA version to build against, in CU format (e.g., cpu or cu100)"
+      type: string
+    unicode_abi:
+      description: "Python 2.7 wheel only: whether or not we are cp27mu (default: no)"
+      type: string
+      default: ""
+    wheel_docker_image:
+      description: "Wheel only: what docker image to use"
+      type: string
+      default: "soumith/manylinux-cuda100"
+  environment:
+    PYTHON_VERSION: << parameters.python_version >>
+    BUILD_VERSION: << parameters.build_version >>
+    PYTORCH_VERSION: << parameters.pytorch_version >>
+    UNICODE_ABI: << parameters.unicode_abi >>
+    CU_VERSION: << parameters.cu_version >>
+
+jobs:
+  circleci_consistency:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off jinja2
+            python .circleci/regenerate.py
+            git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
+
+  binary_linux_wheel:
+    <<: *binary_common
+    docker:
+      - image: << parameters.wheel_docker_image >>
+    resource_class: 2xlarge+
+    steps:
+      - checkout
+      - run: packaging/build_wheel.sh
+      - store_artifacts:
+          path: dist
+      - persist_to_workspace:
+          root: dist
+          paths:
+            - "*"
+
+  binary_linux_conda:
+    <<: *binary_common
+    docker:
+      - image: "soumith/conda-cuda"
+    resource_class: 2xlarge+
+    steps:
+      - checkout
+      - run: packaging/build_conda.sh
+      - store_artifacts:
+          path: /opt/conda/conda-bld/linux-64
+      - persist_to_workspace:
+          root: /opt/conda/conda-bld/linux-64
+          paths:
+            - "*"
+
+  binary_macos_wheel:
+    <<: *binary_common
+    macos:
+      xcode: "9.0"
+    steps:
+      - checkout
+      - run:
+          # Cannot easily deduplicate this as source'ing activate
+          # will set environment variables which we need to propagate
+          # to build_wheel.sh
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            packaging/build_wheel.sh
+      - store_artifacts:
+          path: dist
+      - persist_to_workspace:
+          root: dist
+          paths:
+            - "*"
+
+  binary_macos_conda:
+    <<: *binary_common
+    macos:
+      xcode: "9.0"
+    steps:
+      - checkout
+      - run:
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            conda install -yq conda-build
+            packaging/build_conda.sh
+      - store_artifacts:
+          path: /Users/distiller/miniconda3/conda-bld/osx-64
+      - persist_to_workspace:
+          root: /Users/distiller/miniconda3/conda-bld/osx-64
+          paths:
+            - "*"
+
+  # Requires org-member context
+  binary_conda_upload:
+    docker:
+      - image: continuumio/miniconda
+    steps:
+      - attach_workspace:
+          at: ~/workspace
+      - run:
+          command: |
+            # Prevent credential from leaking
+            conda install -yq anaconda-client
+            set +x
+            anaconda login \
+                --username "$PYTORCH_BINARY_PJH5_CONDA_USERNAME" \
+                --password "$PYTORCH_BINARY_PJH5_CONDA_PASSWORD"
+            set -x
+            anaconda upload ~/workspace/*.tar.bz2 -u pytorch-nightly --label main --no-progress --force
+
+  # Requires org-member context
+  binary_wheel_upload:
+    parameters:
+      subfolder:
+        description: "What whl subfolder to upload to, e.g., blank or cu100/ (trailing slash is important)"
+        type: string
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - attach_workspace:
+          at: ~/workspace
+      - checkout
+      - run:
+          command: |
+            pip install --user awscli
+            export PATH="$HOME/.local/bin:$PATH"
+            # Prevent credential from leaking
+            set +x
+            export AWS_ACCESS_KEY_ID="${PYTORCH_BINARY_AWS_ACCESS_KEY_ID}"
+            export AWS_SECRET_ACCESS_KEY="${PYTORCH_BINARY_AWS_SECRET_ACCESS_KEY}"
+            set -x
+            for pkg in ~/workspace/*.whl; do
+              aws s3 cp "$pkg" "s3://pytorch/whl/nightly/<< parameters.subfolder >>" --acl public-read
+            done
+
+{%- macro workflow(btype, os, python_version, cu_version, unicode, prefix='', upload=False) %}
+      - binary_{{os}}_{{btype}}:
+          name: {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}
+          python_version: "{{python_version}}"
+          cu_version: "{{cu_version}}"
+{%-   if unicode %}
+          unicode_abi: "1"
+{%-   endif %}
+{%-   if cu_version == "cu92" %}
+          wheel_docker_image: "soumith/manylinux-cuda92"
+{%-   endif %}
+
+{%-   if upload %}
+      - binary_{{btype}}_upload:
+          name: {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}_upload
+          context: org-member
+          requires:
+            - {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}
+{%-     if btype == 'wheel' %}
+{%-       if os == 'macos' %}
+          subfolder: ""
+{%-       else %}
+          subfolder: "{{cu_version}}/"
+{%-       endif %}
+{%-     endif %}
+{%-   endif %}
+{%- endmacro %}
+
+{%- macro workflows(prefix='', upload=False) %}
+{%- for btype in ["wheel", "conda"] -%}
+{%-   for os in ["linux", "macos"] -%}
+{%-     for python_version in ["2.7", "3.5", "3.6", "3.7"] -%}
+{%-       for cu_version in (["cpu", "cu92", "cu100"] if os == "linux" else ["cpu"]) -%}
+{%-         for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]) -%}
+          {{ workflow(btype, os, python_version, cu_version, unicode, prefix=prefix, upload=upload) }}
+{%-         endfor -%}
+{%-     endfor -%}
+{%-     endfor -%}
+{%-   endfor -%}
+{%- endfor %}
+{%- endmacro %}
+
+workflows:
+  build:
+    jobs:
+      - circleci_consistency
+      {{ workflows() }}
+      # workflows(prefix="nightly_", upload=True)

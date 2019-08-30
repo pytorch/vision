@@ -9,7 +9,7 @@ from .vision import VisionDataset
 
 class USPS(VisionDataset):
     """`USPS <https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#usps>`_ Dataset.
-    The data-format is : [label [index:value ]*256 \n] * num_lines, where ``label`` lies in ``[1, 10]``.
+    The data-format is : [label [index:value ]*256 \\n] * num_lines, where ``label`` lies in ``[1, 10]``.
     The value for each pixel lies in ``[-1, 1]``. Here we transform the ``label`` into ``[0, 9]``
     and make pixel values in ``[0, 255]``.
 
@@ -37,8 +37,10 @@ class USPS(VisionDataset):
         ],
     }
 
-    def __init__(self, root, train=True, transform=None, target_transform=None, download=False):
-        super(USPS, self).__init__(root, transform=transform, target_transform=target_transform)
+    def __init__(self, root, train=True, transform=None, target_transform=None,
+                 download=False):
+        super(USPS, self).__init__(root, transform=transform,
+                                   target_transform=target_transform)
         split = 'train' if train else 'test'
         url, filename, checksum = self.split_list[split]
         full_path = os.path.join(self.root, filename)
