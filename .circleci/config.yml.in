@@ -12,11 +12,11 @@ binary_common: &binary_common
     build_version:
       description: "version number of release binary; by default, build a nightly"
       type: string
-      default: "0.4.0"
+      default: ""
     pytorch_version:
       description: "PyTorch version to build against; by default, use a nightly"
       type: string
-      default: "1.2.0"
+      default: ""
     # Don't edit these
     python_version:
       description: "Python version to build against (e.g., 3.7)"
@@ -210,7 +210,20 @@ jobs:
 
 workflows:
   build:
+{%- if True %}
     jobs:
       - circleci_consistency
       {{ workflows() }}
-      # workflows(prefix="nightly_", upload=True)
+
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 9 * * *"
+          filters:
+            branches:
+              only:
+                - master
+{%- endif %}
+    jobs:
+      - circleci_consistency
+      {{ workflows(prefix="nightly_", upload=True) }}

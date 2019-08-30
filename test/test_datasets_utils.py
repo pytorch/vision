@@ -8,6 +8,7 @@ import zipfile
 import tarfile
 import gzip
 import warnings
+from torch._six import PY2
 from torch._utils_internal import get_file_path_2
 
 from common_utils import get_tmp_dir
@@ -41,6 +42,7 @@ class Tester(unittest.TestCase):
         self.assertTrue(utils.check_integrity(existing_fpath))
         self.assertFalse(utils.check_integrity(nonexisting_fpath))
 
+    @unittest.skipIf(PY2, "https://github.com/pytorch/vision/issues/1268")
     def test_download_url(self):
         with get_tmp_dir() as temp_dir:
             url = "http://github.com/pytorch/vision/archive/master.zip"
@@ -52,6 +54,7 @@ class Tester(unittest.TestCase):
                 warnings.warn(msg, RuntimeWarning)
                 raise unittest.SkipTest(msg)
 
+    @unittest.skipIf(PY2, "https://github.com/pytorch/vision/issues/1268")
     def test_download_url_retry_http(self):
         with get_tmp_dir() as temp_dir:
             url = "https://github.com/pytorch/vision/archive/master.zip"

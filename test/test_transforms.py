@@ -141,8 +141,9 @@ class Tester(unittest.TestCase):
         img = to_pil_image(img)
         size = 100
         epsilon = 0.05
+        min_scale = 0.25
         for _ in range(10):
-            scale_min = round(random.random(), 2)
+            scale_min = max(round(random.random(), 2), min_scale)
             scale_range = (scale_min, scale_min + round(random.random(), 2))
             aspect_min = max(round(random.random(), 2), epsilon)
             aspect_ratio_range = (aspect_min, aspect_min + round(random.random(), 2))
