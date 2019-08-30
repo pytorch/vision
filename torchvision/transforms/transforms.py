@@ -645,7 +645,7 @@ class RandomResizedCrop(object):
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
 
-            if w <= img.size[0] and h <= img.size[1]:
+            if 0 < w <= img.size[0] and 0 < h <= img.size[1]:
                 i = random.randint(0, img.size[1] - h)
                 j = random.randint(0, img.size[0] - w)
                 return i, j, h, w
