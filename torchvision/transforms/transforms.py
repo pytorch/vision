@@ -639,7 +639,7 @@ class RandomResizedCrop(object):
 
         for attempt in range(10):
             target_area = random.uniform(*scale) * area
-            log_ratio = (math.log(ratio[0]), math.log(ratio[1]))
+            log_ratio = (math.log(min(ratio)), math.log(max(ratio)))
             aspect_ratio = math.exp(random.uniform(*log_ratio))
 
             w = int(round(math.sqrt(target_area * aspect_ratio)))
