@@ -103,3 +103,12 @@ def save_image(tensor, filename, nrow=8, padding=2,
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     im.save(filename)
+
+def show_batch(inp, title=None):
+    """Show single batch of tensors"""
+    grid = torchvision.utils.make_grid(inp, nrow=len(inp))
+    inp = grid.numpy().transpose((1, 2, 0))
+    plt.imshow(inp)
+    if title is not None:
+        plt.title(title)
+    plt.pause(0.001)  # pause a bit so that plots are updated
