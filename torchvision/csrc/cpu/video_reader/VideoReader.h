@@ -26,7 +26,7 @@ torch::List<torch::Tensor> readVideoFromMemory(
     /*
     Valid parameters values for rescaling video frames
     ___________________________________________________
-    |  width  |  height  | min_dimension |  algorithm           |
+    |  width  |  height  | min_dimension |  algorithm |
     |_________________________________________________|
     |  0  |  0  |     0        |   original           |
     |_________________________________________________|
