@@ -142,7 +142,7 @@ class Tester(unittest.TestCase):
         size = 100
         epsilon = 0.05
         min_scale = 0.25
-        for _ in range(1000):
+        for _ in range(10):
             scale_min = max(round(random.random(), 2), min_scale)
             scale_range = (scale_min, scale_min + round(random.random(), 2))
             aspect_min = max(round(random.random(), 2), epsilon)
