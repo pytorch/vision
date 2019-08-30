@@ -351,7 +351,7 @@ class RegionProposalNetwork(torch.nn.Module):
 
         Returns:
             objectness_loss (Tensor)
-            box_loss (Tensor
+            box_loss (Tensor)
         """
 
         sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
@@ -384,7 +384,7 @@ class RegionProposalNetwork(torch.nn.Module):
             features (List[Tensor]): features computed from the images that are
                 used for computing the predictions. Each tensor in the list
                 correspond to different feature levels
-            targets (List[Dict[Tensor]): ground-truth boxes present in the image (optional).
+            targets (List[Dict[Tensor]]): ground-truth boxes present in the image (optional).
                 If provided, each element in the dict should contain a field `boxes`,
                 with the locations of the ground-truth boxes.
 
