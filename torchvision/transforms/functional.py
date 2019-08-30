@@ -686,7 +686,7 @@ def adjust_gamma(img, gamma, gain=1):
     return img
 
 
-def rotate(img, angle, resample=False, expand=False, center=None):
+def rotate(img, angle, resample=False, expand=False, center=None, fill=0):
     """Rotate the image by angle.
 
 
@@ -703,6 +703,8 @@ def rotate(img, angle, resample=False, expand=False, center=None):
         center (2-tuple, optional): Optional center of rotation.
             Origin is the upper left corner.
             Default is the center of the image.
+        fill (3-tuple or int): RGB pixel fill value for area outside the rotated image.
+            If int, it is used for all channels respectively.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -711,7 +713,10 @@ def rotate(img, angle, resample=False, expand=False, center=None):
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    return img.rotate(angle, resample, expand, center)
+    if isinstance(fill, int):
+        fill = tuple([int] * 3)
+
+    return img.rotate(angle, resample, expand, center, fillcolor=fill)
 
 
 def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
