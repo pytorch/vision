@@ -24,10 +24,6 @@ class FfmpegVideoSampler : public FfmpegSampler {
     return inFormat_;
   }
 
-  const VideoFormat& getOutFormat() const {
-    return outFormat_;
-  }
-
  private:
   VideoFormat inFormat_;
   VideoFormat outFormat_;

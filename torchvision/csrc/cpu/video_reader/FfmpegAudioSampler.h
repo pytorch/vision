@@ -23,10 +23,6 @@ class FfmpegAudioSampler : public FfmpegSampler {
     return inFormat_;
   }
 
-  const AudioFormat& getOutFormat() const {
-    return outFormat_;
-  }
-
  private:
   int64_t getOutNumSamples(int inNumSamples) const;
 
