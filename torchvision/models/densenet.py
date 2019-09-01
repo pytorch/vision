@@ -160,7 +160,7 @@ class DenseNet(nn.Module):
         return out
 
 
-def _load_state_dict(model, model_url, progress):
+def _load_state_dict(model, model_url, pretrained_model_dir, progress):
     # '.'s are no longer allowed in module names, but previous _DenseLayer
     # has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.
     # They are also in the checkpoints in model_urls. This pattern is used
@@ -168,7 +168,7 @@ def _load_state_dict(model, model_url, progress):
     pattern = re.compile(
         r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
 
-    state_dict = load_state_dict_from_url(model_url, progress=progress)
+    state_dict = load_state_dict_from_url(model_url, model_dir=pretrained_model_dir, progress=progress)
     for key in list(state_dict.keys()):
         res = pattern.match(key)
         if res:
@@ -178,11 +178,11 @@ def _load_state_dict(model, model_url, progress):
     model.load_state_dict(state_dict)
 
 
-def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, progress,
+def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, pretrained_model_dir, progress,
               **kwargs):
     model = DenseNet(growth_rate, block_config, num_init_features, **kwargs)
     if pretrained:
-        _load_state_dict(model, model_urls[arch], progress)
+        _load_state_dict(model, model_urls[arch], pretrained_model_dir, progress)
     return model
 
 
