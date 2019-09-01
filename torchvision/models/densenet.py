@@ -178,7 +178,7 @@ def _load_state_dict(model, model_url, progress, cached_model_dir):
     model.load_state_dict(state_dict)
 
 
-def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, progress, cached_model_dir,
+def _densenet(arch, growth_rate, block_config, num_init_features, pretrained, progress, cached_model_dir=None,
               **kwargs):
     model = DenseNet(growth_rate, block_config, num_init_features, **kwargs)
     if pretrained:
