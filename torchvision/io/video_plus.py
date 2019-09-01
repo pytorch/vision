@@ -48,7 +48,7 @@ def _align_audio_frames(aframes, aframe_pts, audio_pts_range):
 
 def read_video_from_file(
     filename,
-    seek_frame_margin=4.0,
+    seek_frame_margin=0.25,
     video_width=0,
     video_height=0,
     video_min_dimension=0,
@@ -168,7 +168,7 @@ def read_video_timestamps_from_file(filename):
 
 def read_video_from_memory(
     file_buffer,
-    seek_frame_margin=4.0,
+    seek_frame_margin=0.25,
     video_width=0,
     video_height=0,
     video_min_dimension=0,
