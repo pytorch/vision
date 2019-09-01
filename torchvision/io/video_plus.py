@@ -33,6 +33,19 @@ def _fill_info(vtimebase, vfps, atimebase, asample_rate):
     return info
 
 
+def _align_audio_frames(aframes, aframe_pts, audio_pts_range):
+    start, end = aframe_pts[0], aframe_pts[-1]
+    num_samples = aframes.size(0)
+    step_per_aframe = float(end - start + 1) / float(num_samples)
+    s_idx = 0
+    e_idx = num_samples
+    if start < audio_pts_range[0]:
+        s_idx = int((audio_pts_range[0] - start ) / step_per_aframe)
+    if end > audio_pts_range[1]:
+        e_idx = int((audio_pts_range[1] - end) / step_per_aframe)
+    return aframes[s_idx:e_idx, :]
+
+
 def read_video_from_file(
     filename,
     seek_frame_margin=4.0,
@@ -40,11 +53,11 @@ def read_video_from_file(
     video_height=0,
     video_min_dimension=0,
     video_pts_range=(0, -1),
-    video_timebase=(0, 1),
+    video_timebase=Fraction(0, 1),
     audio_samples=0,
     audio_channels=0,
     audio_pts_range=(0, -1),
-    audio_timebase=(0, 1),
+    audio_timebase=Fraction(0, 1),
 ):
     """
     Reads a video from a file, returning both the video frames as well as
@@ -70,16 +83,16 @@ def read_video_from_file(
             are set to $video_width and $video_height, respectively
     video_pts_range : list(int), optional
         the start and end presentation timestamp of video stream
-    video_timebase: list(int), optional
-        numerator and denominator of timebase in video stream
+    video_timebase: Fraction, optional
+        a Fraction rational number which denotes timebase in video stream
     audio_samples: int, optional
         audio sampling rate
     audio_channels: int optional
         audio channels
     audio_pts_range : list(int), optional
         the start and end presentation timestamp of audio stream
-    audio_timebase: list(int), optional
-        numerator and denominator of time base in audio stream
+    audio_timebase: Fraction, optional
+        a Fraction rational number which denotes time base in audio stream
 
     Returns
     -------
@@ -104,17 +117,20 @@ def read_video_from_file(
         video_min_dimension,
         video_pts_range[0],
         video_pts_range[1],
-        video_timebase[0],
-        video_timebase[1],
+        video_timebase.numerator,
+        video_timebase.denominator,
         audio_samples,
         audio_channels,
         audio_pts_range[0],
         audio_pts_range[1],
-        audio_timebase[0],
-        audio_timebase[1],
+        audio_timebase.numerator,
+        audio_timebase.denominator,
     )
-    vframes, _vframe_pts, vtimebase, vfps, aframes, _aframe_pts, atimebase, asample_rate = result
+    vframes, _vframe_pts, vtimebase, vfps, aframes, aframe_pts, atimebase, asample_rate = result
     info = _fill_info(vtimebase, vfps, atimebase, asample_rate)
+    if aframes.numel() > 0:
+        # when audio stream is found
+        aframes = _align_audio_frames(aframes, aframe_pts, audio_pts_range)
     return vframes, aframes, info
 
 
@@ -157,11 +173,11 @@ def read_video_from_memory(
     video_height=0,
     video_min_dimension=0,
     video_pts_range=(0, -1),
-    video_timebase=(0, 1),
+    video_timebase=Fraction(0, 1),
     audio_samples=0,
     audio_channels=0,
     audio_pts_range=(0, -1),
-    audio_timebase=(0, 1),
+    audio_timebase=Fraction(0, 1),
 ):
     """
     Reads a video from memory, returning both the video frames as well as
@@ -187,16 +203,16 @@ def read_video_from_memory(
             are set to $video_width and $video_height, respectively
     video_pts_range : list(int), optional
         the start and end presentation timestamp of video stream
-    video_timebase: list(int), optional
-        numerator and denominator of timebase in video stream
+    video_timebase: Fraction, optional
+        a Fraction rational number which denotes timebase in video stream
     audio_samples: int, optional
         audio sampling rate
     audio_channels: int optional
         audio audio_channels
     audio_pts_range : list(int), optional
         the start and end presentation timestamp of audio stream
-    audio_timebase: list(int), optional
-        numerator and denominator of timebase in audio stream
+    audio_timebase: Fraction, optional
+        a Fraction rational number which denotes time base in audio stream
 
     Returns
     -------
@@ -224,18 +240,21 @@ def read_video_from_memory(
         video_min_dimension,
         video_pts_range[0],
         video_pts_range[1],
-        video_timebase[0],
-        video_timebase[1],
+        video_timebase.numerator,
+        video_timebase.denominator,
         audio_samples,
         audio_channels,
         audio_pts_range[0],
         audio_pts_range[1],
-        audio_timebase[0],
-        audio_timebase[1],
+        audio_timebase.numerator,
+        audio_timebase.denominator,
     )
 
-    vframes, _vframe_pts, vtimebase, vfps, aframes, _aframe_pts, atimebase, asample_rate = result
+    vframes, _vframe_pts, vtimebase, vfps, aframes, aframe_pts, atimebase, asample_rate = result
     info = _fill_info(vtimebase, vfps, atimebase, asample_rate)
+    if aframes.numel() > 0:
+        # when audio stream is found
+        aframes = _align_audio_frames(aframes, aframe_pts, audio_pts_range)
     return vframes, aframes, info
 
 

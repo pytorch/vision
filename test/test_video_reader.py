@@ -133,7 +133,7 @@ def _read_from_stream(
             pts
     """
     # seeking in the stream is imprecise. Thus, seek to an ealier PTS by a margin
-    margin = 1024
+    margin = 1
     seek_offset = max(start_pts - margin, 0)
 
     container.seek(seek_offset, any_frame=False, backward=True, stream=stream)
