@@ -1,5 +1,6 @@
 import os
 import contextlib
+import logging
 import tempfile
 import torch
 import torchvision.datasets.utils as utils
@@ -23,6 +24,9 @@ except ImportError:
     av = None
 
 
+log = logging.getLogger(__name__)
+
+
 def _create_video_frames(num_frames, height, width):
     y, x = torch.meshgrid(torch.linspace(-2, 2, height), torch.linspace(-2, 2, width))
     data = []
@@ -44,7 +48,9 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
         options = {'crf': '0'}
 
     if video_codec is None:
-        video_codec = 'libx264'
+        # when video_codec is not set, we assume it is libx264rgb which accepts
+        # RGB pixel formats as input instead of YUV
+        video_codec = 'libx264rgb'
     if options is None:
         options = {}
 
@@ -62,14 +68,15 @@ class Tester(unittest.TestCase):
 
     def test_write_read_video(self):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
-            lv, _, info = io.read_video(f_name)
+            lv, _, info = io.read_video_from_file(f_name)
 
             self.assertTrue(data.equal(lv))
             self.assertEqual(info["video_fps"], 5)
 
     def test_read_timestamps(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
-            pts, _ = io.read_video_timestamps(f_name)
+            # pts, _ = io.read_video_timestamps(f_name)
+            video_pts, _, _ = io.read_video_timestamps_from_file(f_name)
 
             # note: not all formats/codecs provide accurate information for computing the
             # timestamps. For the format that we use here, this information is available,
@@ -80,37 +87,37 @@ class Tester(unittest.TestCase):
             num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
             expected_pts = [i * pts_step for i in range(num_frames)]
 
-            self.assertEqual(pts, expected_pts)
+            self.assertEqual(video_pts, expected_pts)
 
     def test_read_partial_video(self):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
-            pts, _ = io.read_video_timestamps(f_name)
+            # pts, _ = io.read_video_timestamps(f_name)
+            video_pts, _, _ = io.read_video_timestamps_from_file(f_name)
             for start in range(5):
                 for l in range(1, 4):
-                    lv, _, _ = io.read_video(f_name, pts[start], pts[start + l - 1])
+                    # lv, _, _ = io.read_video(f_name, pts[start], pts[start + l - 1])
+                    lv, _, _ = io.read_video_from_file(
+                        f_name,
+                        video_pts_range=(video_pts[start], video_pts[start + l - 1]),
+                    )
                     s_data = data[start:(start + l)]
                     self.assertEqual(len(lv), l)
                     self.assertTrue(s_data.equal(lv))
-
-            lv, _, _ = io.read_video(f_name, pts[4] + 1, pts[7])
-            self.assertEqual(len(lv), 4)
-            self.assertTrue(data[4:8].equal(lv))
 
     def test_read_partial_video_bframes(self):
         # do not use lossless encoding, to test the presence of B-frames
         options = {'bframes': '16', 'keyint': '10', 'min-keyint': '4'}
         with temp_video(100, 300, 300, 5, options=options) as (f_name, data):
-            pts, _ = io.read_video_timestamps(f_name)
+            video_pts, _, _ = io.read_video_timestamps_from_file(f_name)
             for start in range(0, 80, 20):
                 for l in range(1, 4):
-                    lv, _, _ = io.read_video(f_name, pts[start], pts[start + l - 1])
+                    lv, _, _ = io.read_video_from_file(
+                        f_name,
+                        video_pts_range=(video_pts[start], video_pts[start + l - 1]),
+                    )
                     s_data = data[start:(start + l)]
                     self.assertEqual(len(lv), l)
                     self.assertTrue((s_data.float() - lv.float()).abs().max() < self.TOLERANCE)
-
-            lv, _, _ = io.read_video(f_name, pts[4] + 1, pts[7])
-            self.assertEqual(len(lv), 4)
-            self.assertTrue((data[4:8].float() - lv.float()).abs().max() < self.TOLERANCE)
 
     def test_read_packed_b_frames_divx_file(self):
         with get_tmp_dir() as temp_dir:
@@ -119,7 +126,9 @@ class Tester(unittest.TestCase):
             url = "https://download.pytorch.org/vision_tests/io/" + name
             try:
                 utils.download_url(url, temp_dir)
-                pts, fps = io.read_video_timestamps(f_name)
+                # pts, fps = io.read_video_timestamps(f_name)
+                pts, _, info = io.read_video_timestamps_from_file(f_name)
+                fps = info["video_fps"]
                 self.assertEqual(pts, sorted(pts))
                 self.assertEqual(fps, 30)
             except URLError:
@@ -129,7 +138,8 @@ class Tester(unittest.TestCase):
 
     def test_read_timestamps_from_packet(self):
         with temp_video(10, 300, 300, 5, video_codec='mpeg4') as (f_name, data):
-            pts, _ = io.read_video_timestamps(f_name)
+            # pts, _ = io.read_video_timestamps(f_name)
+            pts, _, _ = io.read_video_timestamps_from_file(f_name)
 
             # note: not all formats/codecs provide accurate information for computing the
             # timestamps. For the format that we use here, this information is available,
