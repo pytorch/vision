@@ -17,6 +17,7 @@ model_urls = {
 
 
 def channel_shuffle(x, groups):
+    # type: (torch.Tensor, int) -> torch.Tensor
     batchsize, num_channels, height, width = x.data.size()
     channels_per_group = num_channels // groups
 
@@ -51,6 +52,8 @@ class InvertedResidual(nn.Module):
                 nn.BatchNorm2d(branch_features),
                 nn.ReLU(inplace=True),
             )
+        else:
+            self.branch1 = nn.Sequential()
 
         self.branch2 = nn.Sequential(
             nn.Conv2d(inp if (self.stride > 1) else branch_features,
