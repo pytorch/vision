@@ -26,6 +26,8 @@ matrix:
     - python: "3.6"
       env: IMAGE_BACKEND=Pillow-SIMD
     - python: "3.6"
+    - python: "3.6"
+      os: osx
 
 before_install:
   - sudo apt-get update
