@@ -32,12 +32,16 @@ binary_common: &binary_common
       description: "Wheel only: what docker image to use"
       type: string
       default: "soumith/manylinux-cuda100"
+    resource_class:
+      type: string
+      default: "2xlarge+"
   environment:
     PYTHON_VERSION: << parameters.python_version >>
     BUILD_VERSION: << parameters.build_version >>
     PYTORCH_VERSION: << parameters.pytorch_version >>
     UNICODE_ABI: << parameters.unicode_abi >>
     CU_VERSION: << parameters.cu_version >>
+  resource_class: << parameters.resource_class >>
 
 jobs:
   circleci_consistency:
