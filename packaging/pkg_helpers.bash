@@ -45,7 +45,8 @@ setup_cuda() {
       export VERSION_SUFFIX="$PYTORCH_VERSION_SUFFIX"
       # If the suffix is non-empty, we will use a wheel subdirectory
       if [[ -n "$PYTORCH_VERSION_SUFFIX" ]]; then
-        export WHEEL_DIR="$PYTORCH_VERSION_SUFFIX/"
+        # export WHEEL_DIR="$PYTORCH_VERSION_SUFFIX/"
+        export WHEEL_DIR="$CU_VERSION/"
       fi
     fi
   fi
