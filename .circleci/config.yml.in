@@ -196,8 +196,8 @@ jobs:
 {%- macro workflows(prefix='', upload=False) %}
 {%- for btype in ["wheel", "conda"] -%}
 {%-   for os in ["linux", "macos"] -%}
-{%-     for python_version in ["2.7", "3.5", "3.6", "3.7"] -%}
-{%-       for cu_version in (["cpu", "cu92", "cu100"] if os == "linux" else ["cpu"]) -%}
+{%-     for python_version in ["3.6"] -%}
+{%-       for cu_version in (["cpu"]) -%}
 {%-         for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]) -%}
           {{ workflow(btype, os, python_version, cu_version, unicode, prefix=prefix, upload=upload) }}
 {%-         endfor -%}
