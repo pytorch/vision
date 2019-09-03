@@ -177,6 +177,9 @@ jobs:
 {%-   if cu_version == "cu92" %}
           wheel_docker_image: "soumith/manylinux-cuda92"
 {%-   endif %}
+{%-   if cu_version != "cpu" and btype != 'wheel' %}
+          resource_class: gpu.medium
+{%-   endif %}
 {%-   if upload %}
       - binary_{{btype}}_upload:
           name: {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}_upload
@@ -197,7 +200,7 @@ jobs:
 {%- for btype in ["wheel", "conda"] -%}
 {%-   for os in ["linux", "macos"] -%}
 {%-     for python_version in ["3.6"] -%}
-{%-       for cu_version in (["cpu"]) -%}
+{%-       for cu_version in (["cpu", "cu92", "cu100"] if os == "linux" else ["cpu"]) -%}
 {%-         for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]) -%}
           {{ workflow(btype, os, python_version, cu_version, unicode, prefix=prefix, upload=upload) }}
 {%-         endfor -%}

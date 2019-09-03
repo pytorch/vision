@@ -175,6 +175,15 @@ workflows:
           name: binary_linux_wheel_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+      - binary_linux_wheel:
+          name: binary_linux_wheel_py3.6_cu92
+          python_version: "3.6"
+          cu_version: "cu92"
+          wheel_docker_image: "soumith/manylinux-cuda92"
+      - binary_linux_wheel:
+          name: binary_linux_wheel_py3.6_cu100
+          python_version: "3.6"
+          cu_version: "cu100"
       - binary_macos_wheel:
           name: binary_macos_wheel_py3.6_cpu
           python_version: "3.6"
@@ -183,6 +192,17 @@ workflows:
           name: binary_linux_conda_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+      - binary_linux_conda:
+          name: binary_linux_conda_py3.6_cu92
+          python_version: "3.6"
+          cu_version: "cu92"
+          wheel_docker_image: "soumith/manylinux-cuda92"
+          resource_class: gpu.medium
+      - binary_linux_conda:
+          name: binary_linux_conda_py3.6_cu100
+          python_version: "3.6"
+          cu_version: "cu100"
+          resource_class: gpu.medium
       - binary_macos_conda:
           name: binary_macos_conda_py3.6_cpu
           python_version: "3.6"
@@ -209,6 +229,27 @@ workflows:
           requires:
             - nightly_binary_linux_wheel_py3.6_cpu
           subfolder: "cpu/"
+      - binary_linux_wheel:
+          name: nightly_binary_linux_wheel_py3.6_cu92
+          python_version: "3.6"
+          cu_version: "cu92"
+          wheel_docker_image: "soumith/manylinux-cuda92"
+      - binary_wheel_upload:
+          name: nightly_binary_linux_wheel_py3.6_cu92_upload
+          context: org-member
+          requires:
+            - nightly_binary_linux_wheel_py3.6_cu92
+          subfolder: "cu92/"
+      - binary_linux_wheel:
+          name: nightly_binary_linux_wheel_py3.6_cu100
+          python_version: "3.6"
+          cu_version: "cu100"
+      - binary_wheel_upload:
+          name: nightly_binary_linux_wheel_py3.6_cu100_upload
+          context: org-member
+          requires:
+            - nightly_binary_linux_wheel_py3.6_cu100
+          subfolder: "cu100/"
       - binary_macos_wheel:
           name: nightly_binary_macos_wheel_py3.6_cpu
           python_version: "3.6"
@@ -228,6 +269,27 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_conda_py3.6_cpu
+      - binary_linux_conda:
+          name: nightly_binary_linux_conda_py3.6_cu92
+          python_version: "3.6"
+          cu_version: "cu92"
+          wheel_docker_image: "soumith/manylinux-cuda92"
+          resource_class: gpu.medium
+      - binary_conda_upload:
+          name: nightly_binary_linux_conda_py3.6_cu92_upload
+          context: org-member
+          requires:
+            - nightly_binary_linux_conda_py3.6_cu92
+      - binary_linux_conda:
+          name: nightly_binary_linux_conda_py3.6_cu100
+          python_version: "3.6"
+          cu_version: "cu100"
+          resource_class: gpu.medium
+      - binary_conda_upload:
+          name: nightly_binary_linux_conda_py3.6_cu100_upload
+          context: org-member
+          requires:
+            - nightly_binary_linux_conda_py3.6_cu100
       - binary_macos_conda:
           name: nightly_binary_macos_conda_py3.6_cpu
           python_version: "3.6"
