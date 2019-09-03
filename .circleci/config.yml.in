@@ -177,11 +177,6 @@ jobs:
 {%-   if cu_version == "cu92" %}
           wheel_docker_image: "soumith/manylinux-cuda92"
 {%-   endif %}
-          filters:
-            branches:
-              only:
-                - master
-                - /ci-all\/.*/
 {%-   if upload %}
       - binary_{{btype}}_upload:
           name: {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}_upload
