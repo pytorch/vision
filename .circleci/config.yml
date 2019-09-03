@@ -175,159 +175,339 @@ workflows:
           name: binary_linux_wheel_py2.7_cpu
           python_version: "2.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py2.7u_cpu
           python_version: "2.7"
           cu_version: "cpu"
           unicode_abi: "1"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py2.7_cu92
           python_version: "2.7"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py2.7u_cu92
           python_version: "2.7"
           cu_version: "cu92"
           unicode_abi: "1"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py2.7_cu100
           python_version: "2.7"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py2.7u_cu100
           python_version: "2.7"
           cu_version: "cu100"
           unicode_abi: "1"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py3.5_cpu
           python_version: "3.5"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py3.5_cu92
           python_version: "3.5"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py3.5_cu100
           python_version: "3.5"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py3.6_cu92
           python_version: "3.6"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py3.6_cu100
           python_version: "3.6"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py3.7_cu92
           python_version: "3.7"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_wheel:
           name: binary_linux_wheel_py3.7_cu100
           python_version: "3.7"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_macos_wheel:
           name: binary_macos_wheel_py2.7_cpu
           python_version: "2.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_macos_wheel:
           name: binary_macos_wheel_py2.7u_cpu
           python_version: "2.7"
           cu_version: "cpu"
           unicode_abi: "1"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_macos_wheel:
           name: binary_macos_wheel_py3.5_cpu
           python_version: "3.5"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_macos_wheel:
           name: binary_macos_wheel_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_macos_wheel:
           name: binary_macos_wheel_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_conda:
           name: binary_linux_conda_py2.7_cpu
           python_version: "2.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_conda:
           name: binary_linux_conda_py2.7_cu92
           python_version: "2.7"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_conda:
           name: binary_linux_conda_py2.7_cu100
           python_version: "2.7"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_conda:
           name: binary_linux_conda_py3.5_cpu
           python_version: "3.5"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_conda:
           name: binary_linux_conda_py3.5_cu92
           python_version: "3.5"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_conda:
           name: binary_linux_conda_py3.5_cu100
           python_version: "3.5"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_conda:
           name: binary_linux_conda_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_conda:
           name: binary_linux_conda_py3.6_cu92
           python_version: "3.6"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_conda:
           name: binary_linux_conda_py3.6_cu100
           python_version: "3.6"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_conda:
           name: binary_linux_conda_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_conda:
           name: binary_linux_conda_py3.7_cu92
           python_version: "3.7"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_linux_conda:
           name: binary_linux_conda_py3.7_cu100
           python_version: "3.7"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_macos_conda:
           name: binary_macos_conda_py2.7_cpu
           python_version: "2.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_macos_conda:
           name: binary_macos_conda_py3.5_cpu
           python_version: "3.5"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_macos_conda:
           name: binary_macos_conda_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_macos_conda:
           name: binary_macos_conda_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
 
   nightly:
     triggers:
@@ -344,6 +524,11 @@ workflows:
           name: nightly_binary_linux_wheel_py2.7_cpu
           python_version: "2.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py2.7_cpu_upload
           context: org-member
@@ -355,6 +540,11 @@ workflows:
           python_version: "2.7"
           cu_version: "cpu"
           unicode_abi: "1"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py2.7u_cpu_upload
           context: org-member
@@ -366,6 +556,11 @@ workflows:
           python_version: "2.7"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py2.7_cu92_upload
           context: org-member
@@ -378,6 +573,11 @@ workflows:
           cu_version: "cu92"
           unicode_abi: "1"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py2.7u_cu92_upload
           context: org-member
@@ -388,6 +588,11 @@ workflows:
           name: nightly_binary_linux_wheel_py2.7_cu100
           python_version: "2.7"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py2.7_cu100_upload
           context: org-member
@@ -399,6 +604,11 @@ workflows:
           python_version: "2.7"
           cu_version: "cu100"
           unicode_abi: "1"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py2.7u_cu100_upload
           context: org-member
@@ -409,6 +619,11 @@ workflows:
           name: nightly_binary_linux_wheel_py3.5_cpu
           python_version: "3.5"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py3.5_cpu_upload
           context: org-member
@@ -420,6 +635,11 @@ workflows:
           python_version: "3.5"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py3.5_cu92_upload
           context: org-member
@@ -430,6 +650,11 @@ workflows:
           name: nightly_binary_linux_wheel_py3.5_cu100
           python_version: "3.5"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py3.5_cu100_upload
           context: org-member
@@ -440,6 +665,11 @@ workflows:
           name: nightly_binary_linux_wheel_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py3.6_cpu_upload
           context: org-member
@@ -451,6 +681,11 @@ workflows:
           python_version: "3.6"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py3.6_cu92_upload
           context: org-member
@@ -461,6 +696,11 @@ workflows:
           name: nightly_binary_linux_wheel_py3.6_cu100
           python_version: "3.6"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py3.6_cu100_upload
           context: org-member
@@ -471,6 +711,11 @@ workflows:
           name: nightly_binary_linux_wheel_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py3.7_cpu_upload
           context: org-member
@@ -482,6 +727,11 @@ workflows:
           python_version: "3.7"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py3.7_cu92_upload
           context: org-member
@@ -492,6 +742,11 @@ workflows:
           name: nightly_binary_linux_wheel_py3.7_cu100
           python_version: "3.7"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_linux_wheel_py3.7_cu100_upload
           context: org-member
@@ -502,6 +757,11 @@ workflows:
           name: nightly_binary_macos_wheel_py2.7_cpu
           python_version: "2.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_macos_wheel_py2.7_cpu_upload
           context: org-member
@@ -513,6 +773,11 @@ workflows:
           python_version: "2.7"
           cu_version: "cpu"
           unicode_abi: "1"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_macos_wheel_py2.7u_cpu_upload
           context: org-member
@@ -523,6 +788,11 @@ workflows:
           name: nightly_binary_macos_wheel_py3.5_cpu
           python_version: "3.5"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_macos_wheel_py3.5_cpu_upload
           context: org-member
@@ -533,6 +803,11 @@ workflows:
           name: nightly_binary_macos_wheel_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_macos_wheel_py3.6_cpu_upload
           context: org-member
@@ -543,6 +818,11 @@ workflows:
           name: nightly_binary_macos_wheel_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_wheel_upload:
           name: nightly_binary_macos_wheel_py3.7_cpu_upload
           context: org-member
@@ -553,6 +833,11 @@ workflows:
           name: nightly_binary_linux_conda_py2.7_cpu
           python_version: "2.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_linux_conda_py2.7_cpu_upload
           context: org-member
@@ -563,6 +848,11 @@ workflows:
           python_version: "2.7"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_linux_conda_py2.7_cu92_upload
           context: org-member
@@ -572,6 +862,11 @@ workflows:
           name: nightly_binary_linux_conda_py2.7_cu100
           python_version: "2.7"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_linux_conda_py2.7_cu100_upload
           context: org-member
@@ -581,6 +876,11 @@ workflows:
           name: nightly_binary_linux_conda_py3.5_cpu
           python_version: "3.5"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_linux_conda_py3.5_cpu_upload
           context: org-member
@@ -591,6 +891,11 @@ workflows:
           python_version: "3.5"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_linux_conda_py3.5_cu92_upload
           context: org-member
@@ -600,6 +905,11 @@ workflows:
           name: nightly_binary_linux_conda_py3.5_cu100
           python_version: "3.5"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_linux_conda_py3.5_cu100_upload
           context: org-member
@@ -609,6 +919,11 @@ workflows:
           name: nightly_binary_linux_conda_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_linux_conda_py3.6_cpu_upload
           context: org-member
@@ -619,6 +934,11 @@ workflows:
           python_version: "3.6"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_linux_conda_py3.6_cu92_upload
           context: org-member
@@ -628,6 +948,11 @@ workflows:
           name: nightly_binary_linux_conda_py3.6_cu100
           python_version: "3.6"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_linux_conda_py3.6_cu100_upload
           context: org-member
@@ -637,6 +962,11 @@ workflows:
           name: nightly_binary_linux_conda_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_linux_conda_py3.7_cpu_upload
           context: org-member
@@ -647,6 +977,11 @@ workflows:
           python_version: "3.7"
           cu_version: "cu92"
           wheel_docker_image: "soumith/manylinux-cuda92"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_linux_conda_py3.7_cu92_upload
           context: org-member
@@ -656,6 +991,11 @@ workflows:
           name: nightly_binary_linux_conda_py3.7_cu100
           python_version: "3.7"
           cu_version: "cu100"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_linux_conda_py3.7_cu100_upload
           context: org-member
@@ -665,6 +1005,11 @@ workflows:
           name: nightly_binary_macos_conda_py2.7_cpu
           python_version: "2.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_macos_conda_py2.7_cpu_upload
           context: org-member
@@ -674,6 +1019,11 @@ workflows:
           name: nightly_binary_macos_conda_py3.5_cpu
           python_version: "3.5"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_macos_conda_py3.5_cpu_upload
           context: org-member
@@ -683,6 +1033,11 @@ workflows:
           name: nightly_binary_macos_conda_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_macos_conda_py3.6_cpu_upload
           context: org-member
@@ -692,6 +1047,11 @@ workflows:
           name: nightly_binary_macos_conda_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
+          filters:
+            branches:
+              only:
+                - master
+                - /ci-all\/.*/
       - binary_conda_upload:
           name: nightly_binary_macos_conda_py3.7_cpu_upload
           context: org-member
