@@ -137,7 +137,7 @@ jobs:
 
           docker cp /home/circleci/project/. $id:/workspace
 
-          cat >/home/circleci/install_and_test.sh <<EOL
+          cat >/home/circleci/install_and_test.sh \<<EOL
           #!/bin/bash
           set -e
 
