@@ -1,8 +1,9 @@
 import bisect
 import math
 import torch
-import torch.utils.data
 from torchvision.io import read_video_timestamps, read_video
+
+from .utils import tqdm
 
 
 def unfold(tensor, size, step, dilation=1):
@@ -48,22 +49,68 @@ class VideoClips(object):
             on the resampled video
     """
     def __init__(self, video_paths, clip_length_in_frames=16, frames_between_clips=1,
-                 frame_rate=None):
+                 frame_rate=None, _precomputed_metadata=None):
         self.video_paths = video_paths
-        self._compute_frame_pts()
+        if _precomputed_metadata is None:
+            self._compute_frame_pts()
+        else:
+            self._init_from_metadata(_precomputed_metadata)
         self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate)
 
     def _compute_frame_pts(self):
         self.video_pts = []
         self.video_fps = []
-        # TODO maybe paralellize this
-        for video_file in self.video_paths:
-            clips, fps = read_video_timestamps(video_file)
-            self.video_pts.append(torch.as_tensor(clips))
-            self.video_fps.append(fps)
+
+        # strategy: use a DataLoader to parallelize read_video_timestamps
+        # so need to create a dummy dataset first
+        class DS(object):
+            def __init__(self, x):
+                self.x = x
+
+            def __len__(self):
+                return len(self.x)
+
+            def __getitem__(self, idx):
+                return read_video_timestamps(self.x[idx])
+
+        import torch.utils.data
+        dl = torch.utils.data.DataLoader(
+            DS(self.video_paths),
+            batch_size=16,
+            num_workers=torch.get_num_threads(),
+            collate_fn=lambda x: x)
+
+        with tqdm(total=len(dl)) as pbar:
+            for batch in dl:
+                pbar.update(1)
+                clips, fps = list(zip(*batch))
+                clips = [torch.as_tensor(c) for c in clips]
+                self.video_pts.extend(clips)
+                self.video_fps.extend(fps)
+
+    def _init_from_metadata(self, metadata):
+        assert len(self.video_paths) == len(metadata["video_pts"])
+        assert len(self.video_paths) == len(metadata["video_fps"])
+        self.video_pts = metadata["video_pts"]
+        self.video_fps = metadata["video_fps"]
+
+    def subset(self, indices):
+        video_paths = [self.video_paths[i] for i in indices]
+        video_pts = [self.video_pts[i] for i in indices]
+        video_fps = [self.video_fps[i] for i in indices]
+        metadata = {
+            "video_pts": video_pts,
+            "video_fps": video_fps
+        }
+        return type(self)(video_paths, self.num_frames, self.step, self.frame_rate,
+                          _precomputed_metadata=metadata)
 
     @staticmethod
     def compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate):
+        if fps is None:
+            # if for some reason the video doesn't have fps (because doesn't have a video stream)
+            # set the fps to 1. The value doesn't matter, because video_pts is empty anyway
+            fps = 1
         if frame_rate is None:
             frame_rate = fps
         total_frames = len(video_pts) * (float(frame_rate) / fps)
@@ -155,47 +202,14 @@ class VideoClips(object):
         video_idx, clip_idx = self.get_clip_location(idx)
         video_path = self.video_paths[video_idx]
         clip_pts = self.clips[video_idx][clip_idx]
-        video, audio, info = read_video(video_path, clip_pts[0].item(), clip_pts[-1].item())
+        start_pts = clip_pts[0].item()
+        end_pts = clip_pts[-1].item()
+        video, audio, info = read_video(video_path, start_pts, end_pts)
         if self.frame_rate is not None:
             resampling_idx = self.resampling_idxs[video_idx][clip_idx]
             if isinstance(resampling_idx, torch.Tensor):
                 resampling_idx = resampling_idx - resampling_idx[0]
             video = video[resampling_idx]
             info["video_fps"] = self.frame_rate
-        assert len(video) == self.num_frames
+        assert len(video) == self.num_frames, "{} x {}".format(video.shape, self.num_frames)
         return video, audio, info, video_idx
-
-
-class RandomClipSampler(torch.utils.data.Sampler):
-    """
-    Samples at most `max_video_clips_per_video` clips for each video randomly
-
-    Arguments:
-        video_clips (VideoClips): video clips to sample from
-        max_clips_per_video (int): maximum number of clips to be sampled per video
-    """
-    def __init__(self, video_clips, max_clips_per_video):
-        if not isinstance(video_clips, VideoClips):
-            raise TypeError("Expected video_clips to be an instance of VideoClips, "
-                            "got {}".format(type(video_clips)))
-        self.video_clips = video_clips
-        self.max_clips_per_video = max_clips_per_video
-
-    def __iter__(self):
-        idxs = []
-        s = 0
-        # select at most max_clips_per_video for each video, randomly
-        for c in self.video_clips.clips:
-            length = len(c)
-            size = min(length, self.max_clips_per_video)
-            sampled = torch.randperm(length)[:size] + s
-            s += length
-            idxs.append(sampled)
-        idxs = torch.cat(idxs)
-        # shuffle all clips randomly
-        perm = torch.randperm(len(idxs))
-        idxs = idxs[perm].tolist()
-        return iter(idxs)
-
-    def __len__(self):
-        return sum(min(len(c), self.max_clips_per_video) for c in self.video_clips.clips)

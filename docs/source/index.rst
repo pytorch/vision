@@ -9,7 +9,9 @@ architectures, and common image transformations for computer vision.
    :caption: Package Reference
 
    datasets
+   io
    models
+   ops
    transforms
    utils
 

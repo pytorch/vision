@@ -51,7 +51,7 @@ def resnet_fpn_backbone(backbone_name, pretrained):
 
     return_layers = {'layer1': 0, 'layer2': 1, 'layer3': 2, 'layer4': 3}
 
-    in_channels_stage2 = 256
+    in_channels_stage2 = backbone.inplanes // 8
     in_channels_list = [
         in_channels_stage2,
         in_channels_stage2 * 2,

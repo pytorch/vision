@@ -104,7 +104,7 @@ def _compute_aspect_ratios_slow(dataset, indices=None):
         for _i, (img, _) in enumerate(data_loader):
             pbar.update(1)
             height, width = img.shape[-2:]
-            aspect_ratio = float(height) / float(width)
+            aspect_ratio = float(width) / float(height)
             aspect_ratios.append(aspect_ratio)
     return aspect_ratios
 
@@ -115,7 +115,7 @@ def _compute_aspect_ratios_custom_dataset(dataset, indices=None):
     aspect_ratios = []
     for i in indices:
         height, width = dataset.get_height_and_width(i)
-        aspect_ratio = float(height) / float(width)
+        aspect_ratio = float(width) / float(height)
         aspect_ratios.append(aspect_ratio)
     return aspect_ratios
 
@@ -126,7 +126,7 @@ def _compute_aspect_ratios_coco_dataset(dataset, indices=None):
     aspect_ratios = []
     for i in indices:
         img_info = dataset.coco.imgs[dataset.ids[i]]
-        aspect_ratio = float(img_info["height"]) / float(img_info["width"])
+        aspect_ratio = float(img_info["width"]) / float(img_info["height"])
         aspect_ratios.append(aspect_ratio)
     return aspect_ratios
 
@@ -138,7 +138,7 @@ def _compute_aspect_ratios_voc_dataset(dataset, indices=None):
     for i in indices:
         # this doesn't load the data into memory, because PIL loads it lazily
         width, height = Image.open(dataset.images[i]).size
-        aspect_ratio = float(height) / float(width)
+        aspect_ratio = float(width) / float(height)
         aspect_ratios.append(aspect_ratio)
     return aspect_ratios
 

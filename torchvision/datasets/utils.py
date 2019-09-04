@@ -6,6 +6,7 @@ import errno
 import tarfile
 import zipfile
 
+import torch
 from torch.utils.model_zoo import tqdm
 
 
@@ -82,7 +83,7 @@ def download_url(url, root, filename=None, md5=None):
                 url, fpath,
                 reporthook=gen_bar_updater()
             )
-        except urllib.error.URLError as e:
+        except (urllib.error.URLError, IOError) as e:
             if url[:5] == 'https':
                 url = url.replace('https:', 'http:')
                 print('Failed download. Trying https -> http instead.'
@@ -249,3 +250,32 @@ def download_and_extract_archive(url, download_root, extract_root=None, filename
     archive = os.path.join(download_root, filename)
     print("Extracting {} to {}".format(archive, extract_root))
     extract_archive(archive, extract_root, remove_finished)
+
+
+def iterable_to_str(iterable):
+    return "'" + "', '".join([str(item) for item in iterable]) + "'"
+
+
+def verify_str_arg(value, arg=None, valid_values=None, custom_msg=None):
+    if not isinstance(value, torch._six.string_classes):
+        if arg is None:
+            msg = "Expected type str, but got type {type}."
+        else:
+            msg = "Expected type str for argument {arg}, but got type {type}."
+        msg = msg.format(type=type(value), arg=arg)
+        raise ValueError(msg)
+
+    if valid_values is None:
+        return value
+
+    if value not in valid_values:
+        if custom_msg is not None:
+            msg = custom_msg
+        else:
+            msg = ("Unknown value '{value}' for argument {arg}. "
+                   "Valid values are {{{valid_values}}}.")
+            msg = msg.format(value=value, arg=arg,
+                             valid_values=iterable_to_str(valid_values))
+        raise ValueError(msg)
+
+    return value

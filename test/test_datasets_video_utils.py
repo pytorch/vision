@@ -4,7 +4,7 @@ import torch
 import unittest
 
 from torchvision import io
-from torchvision.datasets.video_utils import VideoClips, unfold, RandomClipSampler
+from torchvision.datasets.video_utils import VideoClips, unfold
 
 from common_utils import get_tmp_dir
 
@@ -57,6 +57,7 @@ class Tester(unittest.TestCase):
         ])
         self.assertTrue(r.equal(expected))
 
+    @unittest.skipIf(not io.video._av_available(), "this test requires av")
     def test_video_clips(self):
         with get_list_of_videos(num_videos=3) as video_list:
             video_clips = VideoClips(video_list, 5, 5)
@@ -80,10 +81,11 @@ class Tester(unittest.TestCase):
                 self.assertEqual(video_idx, v_idx)
                 self.assertEqual(clip_idx, c_idx)
 
+    @unittest.skip("Moved to reference scripts for now")
     def test_video_sampler(self):
         with get_list_of_videos(num_videos=3, sizes=[25, 25, 25]) as video_list:
             video_clips = VideoClips(video_list, 5, 5)
-            sampler = RandomClipSampler(video_clips, 3)
+            sampler = RandomClipSampler(video_clips, 3)  # noqa: F821
             self.assertEqual(len(sampler), 3 * 3)
             indices = torch.tensor(list(iter(sampler)))
             videos = indices // 5
@@ -91,10 +93,11 @@ class Tester(unittest.TestCase):
             self.assertTrue(v_idxs.equal(torch.tensor([0, 1, 2])))
             self.assertTrue(count.equal(torch.tensor([3, 3, 3])))
 
+    @unittest.skip("Moved to reference scripts for now")
     def test_video_sampler_unequal(self):
         with get_list_of_videos(num_videos=3, sizes=[10, 25, 25]) as video_list:
             video_clips = VideoClips(video_list, 5, 5)
-            sampler = RandomClipSampler(video_clips, 3)
+            sampler = RandomClipSampler(video_clips, 3)  # noqa: F821
             self.assertEqual(len(sampler), 2 + 3 + 3)
             indices = list(iter(sampler))
             self.assertIn(0, indices)
@@ -108,6 +111,7 @@ class Tester(unittest.TestCase):
             self.assertTrue(v_idxs.equal(torch.tensor([0, 1])))
             self.assertTrue(count.equal(torch.tensor([3, 3])))
 
+    @unittest.skipIf(not io.video._av_available(), "this test requires av")
     def test_video_clips_custom_fps(self):
         with get_list_of_videos(num_videos=3, sizes=[12, 12, 12], fps=[3, 4, 6]) as video_list:
             num_frames = 4

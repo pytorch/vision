@@ -3,6 +3,10 @@
 
 #include <torch/torch.h>
 
+#ifndef TORCH_CHECK
+#define TORCH_CHECK AT_CHECK
+#endif
+
 namespace vision {
 namespace models {
 namespace modelsimpl {

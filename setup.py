@@ -29,9 +29,9 @@ def get_dist(pkgname):
         return None
 
 
-version = '0.3.0a0'
+version = '0.5.0a0'
 sha = 'Unknown'
-package_name = os.getenv('TORCHVISION_PACKAGE_NAME', 'torchvision')
+package_name = 'torchvision'
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 
@@ -40,12 +40,8 @@ try:
 except Exception:
     pass
 
-if os.getenv('TORCHVISION_BUILD_VERSION'):
-    assert os.getenv('TORCHVISION_BUILD_NUMBER') is not None
-    build_number = int(os.getenv('TORCHVISION_BUILD_NUMBER'))
-    version = os.getenv('TORCHVISION_BUILD_VERSION')
-    if build_number > 1:
-        version += '.post' + str(build_number)
+if os.getenv('BUILD_VERSION'):
+    version = os.getenv('BUILD_VERSION')
 elif sha != 'Unknown':
     version += '+' + sha[:7]
 print("Building wheel {}-{}".format(package_name, version))
@@ -65,12 +61,14 @@ write_version_file()
 
 readme = open('README.rst').read()
 
-pytorch_package_name = os.getenv('TORCHVISION_PYTORCH_DEPENDENCY_NAME', 'torch')
+pytorch_dep = 'torch'
+if os.getenv('PYTORCH_VERSION'):
+    pytorch_dep += "==" + os.getenv('PYTORCH_VERSION')
 
 requirements = [
     'numpy',
     'six',
-    pytorch_package_name,
+    pytorch_dep,
 ]
 
 pillow_ver = ' >= 4.1.1'

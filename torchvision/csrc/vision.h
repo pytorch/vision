@@ -3,4 +3,4 @@
 
 #include <torchvision/models/models.h>
 
-#endif  // VISION_H
+#endif // VISION_H
