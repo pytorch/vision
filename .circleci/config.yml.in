@@ -81,6 +81,32 @@ jobs:
           paths:
             - "*"
 
+  binary_linux_conda_cuda:
+    <<: *binary_common
+    machine:
+      image: ubuntu-1604:201903-01
+    resource_class: gpu.medium
+    steps:
+    - checkout
+    - run:
+        name: Build
+        command: |
+          set -e
+          docker --version
+          # from https://github.com/NVIDIA/nvidia-docker#ubuntu-16041804-debian-jessiestretchbuster
+          # Add the package repositories
+          distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+          curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+          curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+
+          sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+          sudo systemctl restart docker
+
+          docker --version
+          # start
+          docker pull soumith/conda-cuda >/dev/null
+
+
   binary_macos_wheel:
     <<: *binary_common
     macos:
@@ -222,6 +248,10 @@ workflows:
           name: torchvision_linux_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+      - binary_linux_conda_cuda:
+          name: torchvision_linux_py3.6_cu100
+          python_version: "3.6"
+          cu_version: "cu100"
 
   nightly:
     triggers:
