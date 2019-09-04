@@ -92,8 +92,29 @@ jobs:
         name: Build
         command: |
           set -e
-          docker --version
-          # from https://github.com/NVIDIA/nvidia-docker#ubuntu-16041804-debian-jessiestretchbuster
+
+          curl -L https://packagecloud.io/circleci/trusty/gpgkey | sudo apt-key add -
+          curl -L https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+
+          sudo apt-get update
+
+          sudo apt-get install \
+              apt-transport-https \
+              ca-certificates \
+              curl \
+              gnupg-agent \
+              software-properties-common
+
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+          sudo add-apt-repository \
+             "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+             $(lsb_release -cs) \
+             stable"
+
+          sudo apt-get update
+          sudo apt-get install docker-ce docker-ce-cli containerd.io
+
           # Add the package repositories
           distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
           curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
@@ -102,9 +123,49 @@ jobs:
           sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
           sudo systemctl restart docker
 
-          docker --version
-          # start
-          docker pull soumith/conda-cuda >/dev/null
+
+          DRIVER_FN="NVIDIA-Linux-x86_64-410.104.run"
+          wget "https://s3.amazonaws.com/ossci-linux/nvidia_driver/$DRIVER_FN"
+          sudo /bin/bash "$DRIVER_FN" -s --no-drm || (sudo cat /var/log/nvidia-installer.log && false)
+          nvidia-smi
+
+          # export DOCKER_IMAGE=nvidia/cuda:10.0-base
+          export DOCKER_IMAGE=soumith/conda-cuda
+          docker pull $DOCKER_IMAGE >/dev/null
+
+          export id=$(docker run --gpus all -t -d ${DOCKER_IMAGE})
+
+          docker cp /home/circleci/project/. $id:/workspace
+
+          cat >/home/circleci/install_and_test.sh <<EOL
+          #!/bin/bash
+          set -e
+
+          curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+          sh conda.sh -b
+          source \$HOME/miniconda3/bin/activate
+
+          /workspace/packaging/conda/switch_cuda_version.sh 10.0
+
+          conda install -y pytorch cudatoolkit=10.0 -c pytorch-nightly
+
+          # for torchvision tests
+          conda install -y pytest mock scipy
+
+          # torchvision dependency on av
+          conda install -y av -c conda-forge
+
+          cd /workspace
+
+          python setup.py install
+
+          pytest test/
+          EOL
+
+          chmod +x /home/circleci/install_and_test.sh
+          docker cp /home/circleci/install_and_test.sh $id:/
+
+          docker exec $id /install_and_test.sh
 
 
   binary_macos_wheel:
@@ -249,8 +310,8 @@ workflows:
           python_version: "3.6"
           cu_version: "cpu"
       - binary_linux_conda_cuda:
-          name: torchvision_linux_py3.6_cu100
-          python_version: "3.6"
+          name: torchvision_linux_py3.7_cu100
+          python_version: "3.7"
           cu_version: "cu100"
 
   nightly:
