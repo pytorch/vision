@@ -473,9 +473,9 @@ workflows:
               only:
                 - master
       - binary_linux_conda:
-        name: torchvision_linux_py3.6_cpu
-        python_version: "3.6"
-        cu_version: "cpu"
+          name: torchvision_linux_py3.6_cpu
+          python_version: "3.6"
+          cu_version: "cpu"
 
   nightly:
     triggers:
