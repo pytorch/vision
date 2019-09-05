@@ -6,6 +6,9 @@ version: 2.1
 #     - Replace binary_linux_wheel_py3.7 with the name of the job you want to test.
 #       Job names are 'name:' key.
 
+orbs:
+  win: circleci/windows@1.0.0
+
 binary_common: &binary_common
   parameters:
     # Edit these defaults to do a release`
@@ -149,6 +152,15 @@ jobs:
           export VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e UNICODE_ABI -e CU_VERSION"
 
           docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${DOCKER_IMAGE} ./packaging/build_conda.sh
+
+  binary_win_conda:
+    <<: *binary_common
+    executor:
+      name: win/vs2019
+      shell: bash.exe
+    steps:
+      - checkout
+
 
   binary_macos_wheel:
     <<: *binary_common
