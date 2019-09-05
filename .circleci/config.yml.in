@@ -308,6 +308,10 @@ workflows:
           python_version: "3.7"
           # cu_version: "cu100"
           cu_version: "cpu"  # FIXME temporary
+      - binary_win_conda:
+          name: torchvision_win_py3.6_cpu
+          python_version: "3.6"
+          cu_version: "cpu"
 
   nightly:
     triggers:
