@@ -89,7 +89,7 @@ jobs:
     steps:
     - checkout
     - run:
-        name: Build
+        name: Setup environment
         command: |
           set -e
 
@@ -125,51 +125,29 @@ jobs:
           sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit=${NVIDIA_CONTAINER_VERSION}
           sudo systemctl restart docker
 
-
           DRIVER_FN="NVIDIA-Linux-x86_64-410.104.run"
           wget "https://s3.amazonaws.com/ossci-linux/nvidia_driver/$DRIVER_FN"
           sudo /bin/bash "$DRIVER_FN" -s --no-drm || (sudo cat /var/log/nvidia-installer.log && false)
           nvidia-smi
 
-          # export DOCKER_IMAGE=nvidia/cuda:10.0-base
+    - run:
+        name: Pull docker image
+        command: |
+          set -e
           export DOCKER_IMAGE=soumith/conda-cuda
           echo Pulling docker image $DOCKER_IMAGE
           docker pull $DOCKER_IMAGE >/dev/null
 
-          export id=$(docker run --gpus all -t -d ${DOCKER_IMAGE})
-
-          docker cp /home/circleci/project/. $id:/workspace
-
-          cat >/home/circleci/install_and_test.sh \<<EOL
-          #!/bin/bash
+    - run:
+        name: Build and run tests
+        command: |
           set -e
 
-          curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-          sh conda.sh -b
-          source \$HOME/miniconda3/bin/activate
+          cd ${HOME}/project/
 
-          /workspace/packaging/conda/switch_cuda_version.sh 10.0
+          export VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e UNICODE_ABI -e CU_VERSION"
 
-          conda install -y pytorch cudatoolkit=10.0 -c pytorch-nightly
-
-          # for torchvision tests
-          conda install -y pytest mock scipy
-
-          # torchvision dependency on av
-          conda install -y av -c conda-forge
-
-          cd /workspace
-
-          python setup.py install
-
-          pytest test/
-          EOL
-
-          chmod +x /home/circleci/install_and_test.sh
-          docker cp /home/circleci/install_and_test.sh $id:/
-
-          docker exec $id /install_and_test.sh
-
+          docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${DOCKER_IMAGE} ./packaging/build_conda.sh
 
   binary_macos_wheel:
     <<: *binary_common
@@ -315,7 +293,8 @@ workflows:
       - binary_linux_conda_cuda:
           name: torchvision_linux_py3.7_cu100
           python_version: "3.7"
-          cu_version: "cu100"
+          # cu_version: "cu100"
+          cu_version: "cpu"  # FIXME temporary
 
   nightly:
     triggers:
