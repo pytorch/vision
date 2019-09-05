@@ -113,14 +113,16 @@ jobs:
              stable"
 
           sudo apt-get update
-          sudo apt-get install docker-ce docker-ce-cli containerd.io
+          export DOCKER_VERSION="5:19.03.2~3-0~ubuntu-xenial"
+          sudo apt-get install docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io
 
           # Add the package repositories
           distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
           curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
           curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
 
-          sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+          export NVIDIA_CONTAINER_VERSION="1.0.3-1"
+          sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit=${NVIDIA_CONTAINER_VERSION}
           sudo systemctl restart docker
 
 
@@ -131,6 +133,7 @@ jobs:
 
           # export DOCKER_IMAGE=nvidia/cuda:10.0-base
           export DOCKER_IMAGE=soumith/conda-cuda
+          echo Pulling docker image $DOCKER_IMAGE
           docker pull $DOCKER_IMAGE >/dev/null
 
           export id=$(docker run --gpus all -t -d ${DOCKER_IMAGE})
