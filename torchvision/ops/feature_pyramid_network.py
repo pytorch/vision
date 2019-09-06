@@ -89,7 +89,8 @@ class FeaturePyramidNetwork(nn.Module):
             if not inner_block:
                 continue
             inner_lateral = inner_block(feature)
-            feat_shape = inner_lateral.shape[-2:]
+            # feat_shape = inner_lateral.shape[-2:]
+            feat_shape = list(map(lambda x: x[-2:], inner_lateral.nested_size()))
             inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
             last_inner = inner_lateral + inner_top_down
             results.insert(0, layer_block(last_inner))

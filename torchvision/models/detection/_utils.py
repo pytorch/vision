@@ -71,7 +71,6 @@ class BalancedPositiveNegativeSampler(object):
         return pos_idx, neg_idx
 
 
-@torch.jit.script
 def encode_boxes(reference_boxes, proposals, weights):
     # type: (torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
     """

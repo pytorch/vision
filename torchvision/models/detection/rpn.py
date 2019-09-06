@@ -111,8 +111,9 @@ class AnchorGenerator(nn.Module):
         return anchors
 
     def forward(self, image_list, feature_maps):
-        grid_sizes = tuple([feature_map.shape[-2:] for feature_map in feature_maps])
-        image_size = image_list.tensors.shape[-2:]
+        # grid_sizes = tuple([feature_map.shape[-2:] for feature_map in feature_maps])
+        grid_sizes = tuple([tuple(map(lambda x: x[-2:], feature_map.nested_size()))[0] for feature_map in feature_maps])
+        image_size = image_list.shape[-2:]
         strides = tuple((image_size[0] / g[0], image_size[1] / g[1]) for g in grid_sizes)
         self.set_cell_anchors(feature_maps[0].device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
@@ -160,10 +161,14 @@ class RPNHead(nn.Module):
 
 
 def permute_and_flatten(layer, N, A, C, H, W):
-    layer = layer.view(N, -1, C, H, W)
-    layer = layer.permute(0, 3, 4, 1, 2)
-    layer = layer.reshape(N, -1, C)
-    return layer
+    layers = list(map(lambda x: x.view(-1, C, H, W), layer.unbind()))
+    # layer = layer.view(N, -1, C, H, W)
+    layers = list(map(lambda x: x.permute(2, 3, 0, 1), layers))
+    # layer = layer.permute(0, 3, 4, 1, 2)
+    # import pdb; pdb.set_trace()
+    layers = list(map(lambda x: x.reshape(-1, C), layers))
+    # layer = layer.reshape(N, -1, C)
+    return torch.as_nested_tensor(layers)
 
 
 def concat_box_prediction_layers(box_cls, box_regression):
@@ -176,8 +181,9 @@ def concat_box_prediction_layers(box_cls, box_regression):
     for box_cls_per_level, box_regression_per_level in zip(
         box_cls, box_regression
     ):
-        N, AxC, H, W = box_cls_per_level.shape
-        Ax4 = box_regression_per_level.shape[1]
+        AxC, H, W = box_cls_per_level.nested_size()[0]
+        N = len(box_cls_per_level.nested_size())
+        Ax4 = box_regression_per_level.nested_size()[0][0]
         A = Ax4 // 4
         C = AxC // A
         box_cls_per_level = permute_and_flatten(
@@ -192,8 +198,11 @@ def concat_box_prediction_layers(box_cls, box_regression):
     # concatenate on the first dimension (representing the feature levels), to
     # take into account the way the labels were generated (with all feature maps
     # being concatenated as well)
-    box_cls = torch.cat(box_cls_flattened, dim=1).reshape(-1, C)
-    box_regression = torch.cat(box_regression_flattened, dim=1).reshape(-1, 4)
+    box_cls = torch.cat(list(map(lambda x: torch.stack(x.unbind()), box_cls_flattened)), dim=1).reshape(-1, C)
+    # box_cls = torch.cat(box_cls_flattened, dim=1).reshape(-1, C)
+    box_regression = torch.cat(list(map(lambda x: torch.stack(x.unbind()), box_regression_flattened)), dim=1).reshape(-1, 4)
+    # box_regression = torch.cat(box_regression_flattened, dim=1).reshape(-1, 4)
+    import pdb; pdb.set_trace()
     return box_cls, box_regression
 
 
@@ -400,7 +409,7 @@ class RegionProposalNetwork(torch.nn.Module):
         anchors = self.anchor_generator(images, features)
 
         num_images = len(anchors)
-        num_anchors_per_level = [o[0].numel() for o in objectness]
+        num_anchors_per_level = [o.unbind()[0].numel() for o in objectness]
         objectness, pred_bbox_deltas = \
             concat_box_prediction_layers(objectness, pred_bbox_deltas)
         # apply pred_bbox_deltas to anchors to obtain the decoded proposals

@@ -132,7 +132,7 @@ def interpolate(
 
 
 # This is not in nn
-class FrozenBatchNorm2d(torch.jit.ScriptModule):
+class FrozenBatchNorm2d(torch.nn.Module):
     """
     BatchNorm2d where the batch statistics and the affine parameters
     are fixed
@@ -145,7 +145,6 @@ class FrozenBatchNorm2d(torch.jit.ScriptModule):
         self.register_buffer("running_mean", torch.zeros(n))
         self.register_buffer("running_var", torch.ones(n))
 
-    @torch.jit.script_method
     def forward(self, x):
         # move reshapes to the beginning
         # to make it fuser-friendly
@@ -155,4 +154,8 @@ class FrozenBatchNorm2d(torch.jit.ScriptModule):
         rm = self.running_mean.reshape(1, -1, 1, 1)
         scale = w * rv.rsqrt()
         bias = b - rm * scale
+
+        # Manual outer broadcasting
+        scale = torch.nested_tensor(len(x) * scale.unbind())
+        bias = torch.nested_tensor(len(x) * bias.unbind())
         return x * scale + bias
