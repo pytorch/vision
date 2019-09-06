@@ -146,7 +146,7 @@ def get_extensions():
             extra_compile_args=extra_compile_args,
         ),
         extension(
-            "torchvision.custom_ops",
+            "torchvision._custom_ops",
             sources=custom_ops_sources,
             include_dirs=include_dirs,
             define_macros=define_macros,
@@ -155,27 +155,6 @@ def get_extensions():
     ]
 
     return ext_modules
-
-
-class build_ext(torch.utils.cpp_extension.BuildExtension):
-    def run(self):
-        torch.utils.cpp_extension.BuildExtension.run(self)
-
-        build_dir = os.path.join(self.build_lib, 'torchvision')
-        torchvision_dir = os.path.join('torchvision')
-
-        extension = os.path.basename(torch._C.__file__).rsplit('.', 1)[1]
-
-        # find lib with pattern custom_ops*.<extension>
-        custom_op_lib_path = os.path.join(build_dir, 'custom_ops*.' + extension)
-        custom_op_lib = glob.glob(custom_op_lib_path)
-        assert len(custom_op_lib) == 1, \
-            "Expecting to find one library matching custom_ops*." + \
-            extension + " but " + str(len(custom_op_lib)) + " were found."
-
-        # copy custom_ops*.<ext> to torchvision_dir as custom_ops.<ext>
-        shutil.copy(custom_op_lib[0],
-                    os.path.join(torchvision_dir, 'custom_ops.' + extension))
 
 
 class clean(distutils.command.clean.clean):
@@ -213,6 +192,6 @@ setup(
         "scipy": ["scipy"],
     },
     ext_modules=get_extensions(),
-    cmdclass={'build_ext': build_ext,
+    cmdclass={'build_ext': torch.utils.cpp_extension.BuildExtension,
               'clean': clean}
 )

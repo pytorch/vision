@@ -1,13 +1,13 @@
 import os
 import sys
+import imp
 import torch
 
 
 # load the custom_op_library and register the custom ops
 lib_dir = os.path.join(os.path.dirname(__file__), '..')
-extension = os.path.basename(torch._C.__file__).rsplit('.', 1)[1]
-custom_op_lib = os.path.join(lib_dir, 'custom_ops.' + extension)
-torch.ops.load_library(custom_op_lib)
+file, path, description = imp.find_module("_custom_ops", [lib_dir])
+torch.ops.load_library(path)
 
 
 def register_custom_op():
