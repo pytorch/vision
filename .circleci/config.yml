@@ -163,7 +163,7 @@ jobs:
       - run:
           command: |
             choco install miniconda3
-            refreshenv
+            set "PATH=%PATH%;C:\tools\miniconda3\Scripts"
             conda install -yq conda-build
             bash packaging/build_conda.sh
           shell: cmd.exe
