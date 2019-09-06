@@ -1,8 +1,8 @@
 #include <torch/script.h>
 
-#include "nms.h"
 #include "ROIAlign.h"
 #include "ROIPool.h"
+#include "nms.h"
 
 using namespace at;
 

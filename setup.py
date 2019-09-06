@@ -164,15 +164,17 @@ class build_ext(torch.utils.cpp_extension.BuildExtension):
         build_dir = os.path.join(self.build_lib, 'torchvision')
         torchvision_dir = os.path.join('torchvision')
 
-        suffix = os.path.basename(torch._C.__file__).split('.', 1)[1]
-        extension = suffix.rsplit('.', 1)[1]
+        extension = os.path.basename(torch._C.__file__).rsplit('.', 1)[1]
 
-        # rename custom_ops.<lib_suffix>.<ext> in build_dir to custom_ops.<ext>
-        os.rename(os.path.join(build_dir, 'custom_ops.' + suffix),
-                  os.path.join(build_dir, 'custom_ops.' + extension))
+        # find lib with pattern custom_ops*.<extension>
+        custom_op_lib_path = os.path.join(build_dir, 'custom_ops*.' + extension)
+        custom_op_lib = glob.glob(custom_op_lib_path)
+        assert len(custom_op_lib) == 1, \
+            "Expecting to find one library matching custom_ops*." + \
+            extension + " but " + str(len(custom_op_lib)) + " were found."
 
-        # copy custom_ops.<ext> to torchvision_dir
-        shutil.copy(os.path.join(build_dir, 'custom_ops.' + extension),
+        # copy custom_ops*.<ext> to torchvision_dir as custom_ops.<ext>
+        shutil.copy(custom_op_lib[0],
                     os.path.join(torchvision_dir, 'custom_ops.' + extension))
 
 
