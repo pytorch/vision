@@ -164,7 +164,7 @@ jobs:
           command: |
             choco install miniconda3
             $env:PATH += ";C:\tools\miniconda3\Scripts"
-            conda install -yq conda-build
+            conda install -yq conda-build python=3.7
             bash packaging/build_conda.sh
           shell: powershell.exe
 
