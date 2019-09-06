@@ -5,6 +5,7 @@ import torchvision.utils as utils
 import unittest
 from io import BytesIO
 import torchvision.transforms.functional as F
+from PIL import Image 
 
 class Tester(unittest.TestCase):
 
@@ -69,6 +70,7 @@ class Tester(unittest.TestCase):
             utils.save_image(t, fp, format='png')
             img_bytes = Image.open(fp)
             assert torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)), 'Pixel Image not stored in file object'
+
 
 if __name__ == '__main__':
     unittest.main()
