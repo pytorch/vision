@@ -14,7 +14,8 @@ FfmpegStream::FfmpegStream(
     : inputCtx_(inputCtx),
       index_(index),
       avMediaType_(avMediaType),
-      seekFrameMargin_(seekFrameMargin) {}
+      seekFrameMargin_(seekFrameMargin) {
+}
 
 FfmpegStream::~FfmpegStream() {
   if (frame_) {
@@ -84,8 +85,20 @@ unique_ptr<DecodedFrame> FfmpegStream::getFrameData(int getPtsOnly) {
   }
 }
 
+<<<<<<< Updated upstream
+<<<<<<< HEAD
 void FfmpegStream::flush(int getPtsOnly, DecoderOutput& decoderOutput) {
   VLOG(1) << "flush stream";
+=======
+void FfmpegStream::flush(int getPtsOnly, DecoderOutput& decoderOutput)
+{
+  VLOG(1) << "Media Type: " << getMediaType() << ", flush stream.";
+>>>>>>> 73af0db8f428e9137ee85db70a1532a96ca407d5
+=======
+void FfmpegStream::flush(int getPtsOnly, DecoderOutput& decoderOutput)
+{
+  VLOG(1) << "Media Type: " << getMediaType() << ", flush stream.";
+>>>>>>> Stashed changes
   // need to receive frames before entering draining mode
   receiveAvailFrames(getPtsOnly, decoderOutput);
 
@@ -102,18 +115,42 @@ bool FfmpegStream::isFramePtsInRange() {
   auto pts = frame_->pts;
   auto startPts = this->getStartPts();
   auto endPts = this->getEndPts();
+<<<<<<< Updated upstream
+<<<<<<< HEAD
   VLOG(2) << "isPtsInRange. pts: " << pts << ", startPts: " << startPts
           << ", endPts: " << endPts;
   return (pts == AV_NOPTS_VALUE) ||
       (pts >= startPts && (endPts > 0 ? pts <= endPts : true));
+=======
+  VLOG(2) << "isPtsInRange. pts: " << pts
+          << ", startPts: " << startPts
+          << ", endPts: " << endPts;
+  return (pts == AV_NOPTS_VALUE) || (pts >= startPts && (endPts >= 0 ? pts <= endPts : true));
+>>>>>>> 73af0db8f428e9137ee85db70a1532a96ca407d5
+=======
+  VLOG(2) << "isPtsInRange. pts: " << pts
+          << ", startPts: " << startPts
+          << ", endPts: " << endPts;
+  return (pts == AV_NOPTS_VALUE) || (pts >= startPts && (endPts >= 0 ? pts <= endPts : true));
+>>>>>>> Stashed changes
 }
 
 bool FfmpegStream::isFramePtsExceedRange() {
   if (frame_) {
     auto endPts = this->getEndPts();
+<<<<<<< Updated upstream
+<<<<<<< HEAD
     VLOG(2) << "isFramePtsExceedRange. last_pts_: " << last_pts_
             << ", endPts: " << endPts;
     return endPts > 0 ? last_pts_ >= endPts : false;
+=======
+    VLOG(2) << "isFramePtsExceedRange. last_pts_: " << last_pts_ << ", endPts: " << endPts;
+    return endPts >= 0 ? last_pts_ >= endPts : false;
+>>>>>>> 73af0db8f428e9137ee85db70a1532a96ca407d5
+=======
+    VLOG(2) << "isFramePtsExceedRange. last_pts_: " << last_pts_ << ", endPts: " << endPts;
+    return endPts >= 0 ? last_pts_ >= endPts : false;
+>>>>>>> Stashed changes
   } else {
     return true;
   }
@@ -140,6 +177,14 @@ int FfmpegStream::seekFrame(int64_t seekPts) {
   return 0;
 }
 
+<<<<<<< Updated upstream
+<<<<<<< HEAD
+=======
+
+>>>>>>> 73af0db8f428e9137ee85db70a1532a96ca407d5
+=======
+
+>>>>>>> Stashed changes
 // send/receive encoding and decoding API overview
 // https://ffmpeg.org/doxygen/3.4/group__lavc__encdec.html
 int FfmpegStream::sendPacket(const AVPacket* packet) {
@@ -152,8 +197,16 @@ int FfmpegStream::receiveFrame() {
     // succeed
     frame_->pts = av_frame_get_best_effort_timestamp(frame_);
     if (frame_->pts == AV_NOPTS_VALUE) {
+<<<<<<< Updated upstream
+<<<<<<< HEAD
       // Trick: if we can not figure out pts, we just set it to be (last_pts +
       // 1)
+=======
+      // Trick: if we can not figure out pts, we just set it to be (last_pts + 1)
+>>>>>>> 73af0db8f428e9137ee85db70a1532a96ca407d5
+=======
+      // Trick: if we can not figure out pts, we just set it to be (last_pts + 1)
+>>>>>>> Stashed changes
       frame_->pts = last_pts_ + 1;
     }
     last_pts_ = frame_->pts;
@@ -165,21 +218,47 @@ int FfmpegStream::receiveFrame() {
     // no more frame to read
     VLOG(2) << "avcodec_receive_frame returns AVERROR_EOF";
   } else {
+<<<<<<< Updated upstream
+<<<<<<< HEAD
     LOG(WARNING) << "avcodec_receive_frame failed. Error: "
                  << ffmpeg_util::getErrorDesc(ret);
+=======
+    LOG(WARNING) << "avcodec_receive_frame failed. Error: " << ffmpeg_util::getErrorDesc(ret);
+>>>>>>> 73af0db8f428e9137ee85db70a1532a96ca407d5
+=======
+    LOG(WARNING) << "avcodec_receive_frame failed. Error: " << ffmpeg_util::getErrorDesc(ret);
+>>>>>>> Stashed changes
   }
   return ret;
 }
 
+<<<<<<< Updated upstream
+<<<<<<< HEAD
 void FfmpegStream::receiveAvailFrames(
     int getPtsOnly,
     DecoderOutput& decoderOutput) {
+=======
+void FfmpegStream::receiveAvailFrames(int getPtsOnly, DecoderOutput& decoderOutput) {
+>>>>>>> 73af0db8f428e9137ee85db70a1532a96ca407d5
+=======
+void FfmpegStream::receiveAvailFrames(int getPtsOnly, DecoderOutput& decoderOutput) {
+>>>>>>> Stashed changes
   int result = 0;
   while ((result = receiveFrame()) >= 0) {
     unique_ptr<DecodedFrame> decodedFrame = getFrameData(getPtsOnly);
 
+<<<<<<< Updated upstream
+<<<<<<< HEAD
     if (decodedFrame &&
         ((!getPtsOnly && decodedFrame->frameSize_ > 0) || getPtsOnly)) {
+=======
+    if (decodedFrame && ((!getPtsOnly && decodedFrame->frameSize_ > 0) || getPtsOnly))
+    {
+>>>>>>> 73af0db8f428e9137ee85db70a1532a96ca407d5
+=======
+    if (decodedFrame && ((!getPtsOnly && decodedFrame->frameSize_ > 0) || getPtsOnly))
+    {
+>>>>>>> Stashed changes
       if (isFramePtsInRange()) {
         decoderOutput.addMediaFrame(getMediaType(), std::move(decodedFrame));
       }

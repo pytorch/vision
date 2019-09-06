@@ -347,11 +347,11 @@ class TestVideoReader(unittest.TestCase):
         num_iter = 10000
         # video related
         width, height, min_dimension = 0, 0, 0
-        video_start_pts, video_end_pts = 0, 0
+        video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
         samples, channels = 0, 0
-        audio_start_pts, audio_end_pts = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for i in range(num_iter):
@@ -390,11 +390,11 @@ class TestVideoReader(unittest.TestCase):
         """
         # video related
         width, height, min_dimension = 0, 0, 0
-        video_start_pts, video_end_pts = 0, 0
+        video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
         samples, channels = 0, 0
-        audio_start_pts, audio_end_pts = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
@@ -440,11 +440,11 @@ class TestVideoReader(unittest.TestCase):
         """
         # video related
         width, height, min_dimension = 0, 0, 128
-        video_start_pts, video_end_pts = 0, 0
+        video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
         samples, channels = 0, 0
-        audio_start_pts, audio_end_pts = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
@@ -482,11 +482,11 @@ class TestVideoReader(unittest.TestCase):
         """
         # video related
         width, height, min_dimension = 256, 0, 0
-        video_start_pts, video_end_pts = 0, 0
+        video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
         samples, channels = 0, 0
-        audio_start_pts, audio_end_pts = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
@@ -524,11 +524,11 @@ class TestVideoReader(unittest.TestCase):
         """
         # video related
         width, height, min_dimension = 0, 224, 0
-        video_start_pts, video_end_pts = 0, 0
+        video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
         samples, channels = 0, 0
-        audio_start_pts, audio_end_pts = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
@@ -566,11 +566,11 @@ class TestVideoReader(unittest.TestCase):
         """
         # video related
         width, height, min_dimension = 320, 240, 0
-        video_start_pts, video_end_pts = 0, 0
+        video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
         samples, channels = 0, 0
-        audio_start_pts, audio_end_pts = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
@@ -615,11 +615,11 @@ class TestVideoReader(unittest.TestCase):
         ]:
             # video related
             width, height, min_dimension = 0, 0, 0
-            video_start_pts, video_end_pts = 0, 0
+            video_start_pts, video_end_pts = 0, -1
             video_timebase_num, video_timebase_den = 0, 1
             # audio related
             channels = 0
-            audio_start_pts, audio_end_pts = 0, 0
+            audio_start_pts, audio_end_pts = 0, -1
             audio_timebase_num, audio_timebase_den = 0, 1
 
             for test_video, config in test_videos.items():
@@ -665,11 +665,11 @@ class TestVideoReader(unittest.TestCase):
         """
         # video related
         width, height, min_dimension = 0, 0, 0
-        video_start_pts, video_end_pts = 0, 0
+        video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
         samples, channels = 0, 0
-        audio_start_pts, audio_end_pts = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
@@ -736,11 +736,11 @@ class TestVideoReader(unittest.TestCase):
         """
         # video related
         width, height, min_dimension = 0, 0, 0
-        video_start_pts, video_end_pts = 0, 0
+        video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
         samples, channels = 0, 0
-        audio_start_pts, audio_end_pts = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
@@ -783,11 +783,11 @@ class TestVideoReader(unittest.TestCase):
         """
         # video related
         width, height, min_dimension = 0, 0, 0
-        video_start_pts, video_end_pts = 0, 0
+        video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
         samples, channels = 0, 0
-        audio_start_pts, audio_end_pts = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
@@ -831,11 +831,11 @@ class TestVideoReader(unittest.TestCase):
         """
         # video related
         width, height, min_dimension = 0, 0, 0
-        video_start_pts, video_end_pts = 0, 0
+        video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
         samples, channels = 0, 0
-        audio_start_pts, audio_end_pts = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
@@ -905,11 +905,11 @@ class TestVideoReader(unittest.TestCase):
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
             # video related
             width, height, min_dimension = 0, 0, 0
-            video_start_pts, video_end_pts = 0, 0
+            video_start_pts, video_end_pts = 0, -1
             video_timebase_num, video_timebase_den = 0, 1
             # audio related
             samples, channels = 0, 0
-            audio_start_pts, audio_end_pts = 0, 0
+            audio_start_pts, audio_end_pts = 0, -1
             audio_timebase_num, audio_timebase_den = 0, 1
             # pass 1: decode all frames using new decoder
             start_time = time.perf_counter()
