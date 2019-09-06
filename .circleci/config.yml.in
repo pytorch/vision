@@ -258,10 +258,6 @@ jobs:
           name: {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}
           python_version: "{{python_version}}"
           cu_version: "{{cu_version}}"
-          filters:
-            branches:
-              only:
-                - master
 {%-   if unicode %}
           unicode_abi: "1"
 {%-   endif %}
