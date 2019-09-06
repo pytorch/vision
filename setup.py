@@ -171,9 +171,10 @@ class build_ext(torch.utils.cpp_extension.BuildExtension):
         os.rename(os.path.join(build_dir, 'custom_ops.' + suffix),
                   os.path.join(build_dir, 'custom_ops.' + extension))
 
-        # rename custom_ops.<lib_suffix>.<ext> in torchvision_dir to custom_ops.<ext>
-        shutil.copy(os.path.join(torchvision_dir, 'custom_ops.' + suffix),
+        # copy custom_ops.<ext> to torchvision_dir
+        shutil.copy(os.path.join(build_dir, 'custom_ops.' + extension),
                     os.path.join(torchvision_dir, 'custom_ops.' + extension))
+
 
 class clean(distutils.command.clean.clean):
     def run(self):
