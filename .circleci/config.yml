@@ -166,7 +166,7 @@ jobs:
             set "PATH=%PATH%;C:\tools\miniconda3\Scripts"
             conda install -yq conda-build
             bash packaging/build_conda.sh
-          shell: cmd.exe
+          shell: powershell.exe
 
   binary_macos_wheel:
     <<: *binary_common
