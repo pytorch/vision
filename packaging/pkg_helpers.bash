@@ -183,7 +183,7 @@ setup_conda_pytorch_constraint() {
     export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
                               python -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
-                               cuver = (cuver[:-1] + '.' + cuver[-1]).replace('cu', 'cuda') if cuver != 'cpu' else cuver; \ 
+                               cuver = (cuver[:-1] + '.' + cuver[-1]).replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
                                print(re.sub(r'\\+.*$', '', \
                                 [x['version'] for x in json.load(sys.stdin)['pytorch'] \
                                   if (x['platform'] == 'darwin' or cuver in x['fn']) \
