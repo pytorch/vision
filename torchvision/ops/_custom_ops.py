@@ -1,11 +1,13 @@
 import os
+import sys
 import torch
-import glob
+
 
 # load the custom_op_library and register the custom ops
-custom_op_lib_path = os.path.join(os.path.dirname(__file__), '..', 'custom_ops.*.so')
-custom_op_lib = glob.glob(custom_op_lib_path)
-torch.ops.load_library(custom_op_lib[0])
+lib_dir = os.path.join('torchvision')
+extension = os.path.basename(torch._C.__file__).rsplit('.', 1)[1]
+custom_op_lib = os.path.join(lib_dir, 'custom_ops.' + extension)
+torch.ops.load_library(custom_op_lib)
 
 
 def register_custom_op():
@@ -16,7 +18,7 @@ def register_custom_op():
     def symbolic_multi_label_nms(g, boxes, scores, iou_threshold):
         boxes = unsqueeze(g, boxes, 0)
         scores = unsqueeze(g, unsqueeze(g, scores, 0), 0)
-        max_output_per_class = g.op('Constant', value_t=torch.tensor([2000], dtype=torch.long))
+        max_output_per_class = g.op('Constant', value_t=torch.tensor([sys.maxsize], dtype=torch.long))
         iou_threshold = g.op('Constant', value_t=torch.tensor([iou_threshold], dtype=torch.float))
         nms_out = g.op('NonMaxSuppression', boxes, scores, max_output_per_class, iou_threshold)
         return squeeze(g, select(g, nms_out, 1, g.op('Constant', value_t=torch.tensor([2], dtype=torch.long))), 1)
@@ -37,8 +39,8 @@ def register_custom_op():
 
     from torch.onnx import register_custom_op_symbolic
     register_custom_op_symbolic('torchvision::nms', symbolic_multi_label_nms, 10)
-    register_custom_op_symbolic('torchvision::roi_align_forward', roi_align, 10)
-    register_custom_op_symbolic('torchvision::roi_pool_forward', roi_pool, 10)
+    register_custom_op_symbolic('torchvision::roi_align', roi_align, 10)
+    register_custom_op_symbolic('torchvision::roi_pool', roi_pool, 10)
 
 
 register_custom_op()

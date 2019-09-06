@@ -1,18 +1,21 @@
-import numpy
 import io
 import torch
 from torchvision import ops
 
 # onnxruntime requires python 3.5 or above
-import sys
-if sys.version_info[0] < 3 or (sys.version_info[0] == 3 and sys.version_info[1] < 5):
-    sys.exit()
-import onnxruntime
+try:
+    import onnxruntime
+except ImportError:
+    onnxruntime = None
 
 import unittest
 
 
+@unittest.skipIf(onnxruntime is None, 'ONNX Runtime unavailable')
 class ONNXExporterTester(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        torch.manual_seed(123)
 
     def run_model(self, model, inputs):
         model.eval()
@@ -52,10 +55,11 @@ class ONNXExporterTester(unittest.TestCase):
         ort_outs = ort_session.run(None, ort_inputs)
 
         for i in range(0, len(outputs)):
-            numpy.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
+            torch.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
 
     def test_nms(self):
-        boxes = torch.randn(5, 4)
+        boxes = torch.rand(5, 4)
+        boxes[:, 2:] += torch.rand(5, 2)
         scores = torch.randn(5)
 
         class Module(torch.nn.Module):

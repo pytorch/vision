@@ -157,6 +157,25 @@ def get_extensions():
     return ext_modules
 
 
+class build_ext(torch.utils.cpp_extension.BuildExtension):
+    def run(self):
+        torch.utils.cpp_extension.BuildExtension.run(self)
+
+        build_dir = os.path.join(self.build_lib, 'torchvision')
+        torchvision_dir = os.path.join('torchvision')
+
+        suffix = os.path.basename(torch._C.__file__).split('.', 1)[1]
+        extension = suffix.rsplit('.', 1)[1]
+
+        # rename custom_ops.<lib_suffix>.<ext> in build_dir to custom_ops.<ext>
+        os.rename(os.path.join(build_dir, 'custom_ops.' + suffix),
+                  os.path.join(build_dir, 'custom_ops.' + extension))
+
+        # rename custom_ops.<lib_suffix>.<ext> in torchvision_dir to custom_ops.<ext>
+        os.rename(os.path.join(torchvision_dir, 'custom_ops.' + suffix),
+                  os.path.join(torchvision_dir, 'custom_ops.' + extension))
+
+
 class clean(distutils.command.clean.clean):
     def run(self):
         with open('.gitignore', 'r') as f:
@@ -192,5 +211,6 @@ setup(
         "scipy": ["scipy"],
     },
     ext_modules=get_extensions(),
-    cmdclass={'build_ext': torch.utils.cpp_extension.BuildExtension, 'clean': clean}
+    cmdclass={'build_ext': build_ext,
+              'clean': clean}
 )
