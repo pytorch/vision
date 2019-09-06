@@ -7,8 +7,8 @@ from io import BytesIO
 import torchvision.transforms.functional as F
 from PIL import Image
 
-class Tester(unittest.TestCase):
 
+class Tester(unittest.TestCase):
 
     def test_make_grid_not_inplace(self):
         t = torch.rand(5, 3, 10, 10)
