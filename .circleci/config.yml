@@ -160,7 +160,13 @@ jobs:
       shell: bash.exe
     steps:
       - checkout
-
+      - run:
+          command: |
+            choco install miniconda3
+            # For some reason, refreshenv doesn't work
+            $env:Path += ";C:\tools\miniconda3\Scripts"
+            conda install -yq conda-build
+            bash packaging/build_conda.sh
 
   binary_macos_wheel:
     <<: *binary_common
