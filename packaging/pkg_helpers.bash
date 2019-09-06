@@ -181,7 +181,7 @@ setup_pip_pytorch_version() {
 setup_conda_pytorch_constraint() {
   if [[ -z "$PYTORCH_VERSION" ]]; then
     export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
-    export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | python -c "import sys, json, re; print(re.sub(r'\\+.*$', '', json.load(sys.stdin)['pytorch'][-1]['version']))")"
+    export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | python -c "import os, sys, json, re; print(re.sub(r'\\+.*$', '', [x['version'] for x in json.load(sys.stdin)['pytorch'] if os.environ['CU_VERSION'] in x['fn'] and 'py' + os.environ['PYTHON_VERSION'] in x['fn']][-1]))")"
   else
     export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-nightly"
   fi
