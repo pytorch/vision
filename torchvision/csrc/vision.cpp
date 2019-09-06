@@ -7,7 +7,9 @@
 #endif
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-  // no need to define nms here since it is registered and used as a PyTorch custom op
+  // TODO: remove nms from here since it is now registered
+  //       and used as a PyTorch custom op
+  m.def("nms", &nms, "non-maximum suppression");
   m.def("roi_align_forward", &ROIAlign_forward, "ROIAlign_forward");
   m.def("roi_align_backward", &ROIAlign_backward, "ROIAlign_backward");
   m.def("roi_pool_forward", &ROIPool_forward, "ROIPool_forward");
