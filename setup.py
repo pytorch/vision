@@ -116,6 +116,9 @@ def get_extensions():
     if sys.platform == 'win32':
         define_macros += [('torchvision_EXPORTS', None)]
 
+        extra_compile_args.setdefault('cxx', [])
+        extra_compile_args['cxx'].append('/MP')
+
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs = [extensions_dir]
