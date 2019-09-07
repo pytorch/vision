@@ -1,8 +1,8 @@
 import math
+import warnings
 
 import torch
 import torch.nn as nn
-import warnings
 from .utils import load_state_dict_from_url
 
 __all__ = ['MNASNet', 'mnasnet0_5', 'mnasnet0_75', 'mnasnet1_0', 'mnasnet1_3']
