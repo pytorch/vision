@@ -434,17 +434,17 @@ class RandomCrop(object):
         self.padding_mode = padding_mode
 
     @staticmethod
-    def get_params(img, output_size):
+    def get_params(w, h, output_size):
         """Get parameters for ``crop`` for a random crop.
 
         Args:
-            img (PIL Image): Image to be cropped.
+            w: width of the image/video
+            h: height of the image/video
             output_size (tuple): Expected output size of the crop.
 
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
         """
-        w, h = img.size
         th, tw = output_size
         if w == tw and h == th:
             return 0, 0, h, w
@@ -471,7 +471,7 @@ class RandomCrop(object):
         if self.pad_if_needed and img.size[1] < self.size[0]:
             img = F.pad(img, (0, self.size[0] - img.size[1]), self.fill, self.padding_mode)
 
-        i, j, h, w = self.get_params(img, self.size)
+        i, j, h, w = self.get_params(img.size[0], img.size[1], self.size)
 
         return F.crop(img, i, j, h, w)
 
@@ -623,7 +623,7 @@ class RandomResizedCrop(object):
         self.ratio = ratio
 
     @staticmethod
-    def get_params(img, scale, ratio):
+    def get_params(height, width, scale, ratio):
         """Get parameters for ``crop`` for a random sized crop.
 
         Args:
@@ -635,7 +635,7 @@ class RandomResizedCrop(object):
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
                 sized crop.
         """
-        area = img.size[0] * img.size[1]
+        area = height * width
 
         for attempt in range(10):
             target_area = random.uniform(*scale) * area
@@ -645,24 +645,24 @@ class RandomResizedCrop(object):
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
 
-            if 0 < w <= img.size[0] and 0 < h <= img.size[1]:
-                i = random.randint(0, img.size[1] - h)
-                j = random.randint(0, img.size[0] - w)
+            if 0 < w <= width and 0 < h <= height:
+                i = random.randint(0, height - h)
+                j = random.randint(0, width - w)
                 return i, j, h, w
 
         # Fallback to central crop
-        in_ratio = img.size[0] / img.size[1]
+        in_ratio = float(width) / float(height)
         if (in_ratio < min(ratio)):
-            w = img.size[0]
+            w = width
             h = int(round(w / min(ratio)))
         elif (in_ratio > max(ratio)):
-            h = img.size[1]
+            h = height
             w = int(round(h * max(ratio)))
         else:  # whole image
-            w = img.size[0]
-            h = img.size[1]
-        i = (img.size[1] - h) // 2
-        j = (img.size[0] - w) // 2
+            w = width
+            h = height
+        i = (height - h) // 2
+        j = (width - w) // 2
         return i, j, h, w
 
     def __call__(self, img):
@@ -673,7 +673,7 @@ class RandomResizedCrop(object):
         Returns:
             PIL Image: Randomly cropped and resized image.
         """
-        i, j, h, w = self.get_params(img, self.scale, self.ratio)
+        i, j, h, w = self.get_params(img.size[1], img.size[0], self.scale, self.ratio)
         return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
 
     def __repr__(self):
