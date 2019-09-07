@@ -100,7 +100,7 @@ def get_extensions():
                           os.path.join(extensions_dir, "cpu", "nms_cpu.cpp"),
                           os.path.join(extensions_dir, "cpu", "ROIAlign_cpu.cpp"),
                           os.path.join(extensions_dir, "cpu", "ROIPool_cpu.cpp")]
-    custom_ops_sources_cuda = [os.path.join(extensions_dir, "cuda", "nms.cu"),
+    custom_ops_sources_cuda = [os.path.join(extensions_dir, "cuda", "nms_cuda.cu"),
                                os.path.join(extensions_dir, "cuda", "ROIAlign_cuda.cu"),
                                os.path.join(extensions_dir, "cuda", "ROIPool_cuda.cu")]
 
