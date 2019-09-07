@@ -160,8 +160,8 @@ class MNASNet(torch.nn.Module):
 
         if version == 1 and not self.alpha == 1.0:
             # In the initial version of the model (v1), stem was fixed-size.
-            # All other layer configurations were the same. After these
-            # changes, the model is identical to v1. Model with alpha 1.0 is
+            # All other layer configurations were the same. This will patch
+            # the model so that it's identical to v1. Model with alpha 1.0 is
             # unaffected.
             depths = _get_depths(self.alpha)
             v1_stem = [
