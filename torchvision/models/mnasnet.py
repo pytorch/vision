@@ -179,6 +179,8 @@ class MNASNet(torch.nn.Module):
             for idx, layer in enumerate(v1_stem):
                 self.layers[idx] = layer
 
+            # The model is now identical to v1, and must be saved as such.
+            MNASNet._version = 1
             warnings.warn(
                 "A new version of MNASNet model has been implemented. "
                 "Your checkpoint was saved using the previous version. "
