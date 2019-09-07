@@ -9,7 +9,7 @@ __all__ = ['MNASNet', 'mnasnet0_5', 'mnasnet0_75', 'mnasnet1_0', 'mnasnet1_3']
 
 _MODEL_URLS = {
     "mnasnet0_5":
-    "https://github.com/1e100/mnasnet_trainer/releases/download/0.2/mnasnet0.5_top1_67.823-b7834e59f1.pth",
+    "https://github.com/1e100/mnasnet_trainer/releases/download/0.3/mnasnet0.5_top1_67.823-3ffadce67e.pth",
     "mnasnet0_75": None,
     "mnasnet1_0":
     "https://download.pytorch.org/models/mnasnet1.0_top1_73.512-f206786ef8.pth",
@@ -154,16 +154,7 @@ class MNASNet(torch.nn.Module):
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
         version = local_metadata.get("version", None)
-
         assert version in [1, 2]
-        if version != MNASNet._version:
-            warnings.warn(
-                "A new version of MNASNet model has been implemented. "
-                "Your checkpoint was saved using the previous version. "
-                "This checkpoint will load and work as before, but "
-                "you may want to upgrade by training a newer model or "
-                "transfer learning from an updated ImageNet checkpoint.",
-                UserWarning)
 
         if version == 1 and not self.alpha == 1.0:
             # In the initial version of the model (v1), stem was fixed-size.
@@ -185,7 +176,14 @@ class MNASNet(torch.nn.Module):
             ]
             for idx, layer in enumerate(v1_stem):
                 self.layers[idx] = layer
-            del MNASNet._version
+
+            warnings.warn(
+                "A new version of MNASNet model has been implemented. "
+                "Your checkpoint was saved using the previous version. "
+                "This checkpoint will load and work as before, but "
+                "you may want to upgrade by training a newer model or "
+                "transfer learning from an updated ImageNet checkpoint.",
+                UserWarning)
 
         super(MNASNet, self)._load_from_state_dict(
             state_dict, prefix, local_metadata, strict, missing_keys,
