@@ -126,7 +126,8 @@ class NormalizeVideo(object):
 
 class ToTensorVideo(object):
     """
-    Convert tensor data type to be float and permute the dimenions of clip tensor
+    Convert tensor data type from uint8 to float, divide value by 255.0 and
+    permute the dimenions of clip tensor
     """
 
     def __init__(self):
@@ -134,7 +135,6 @@ class ToTensorVideo(object):
 
     def __call__(self, clip):
         """
-        Convert tensor data type to be float and permute the dimenions of clip tensor
         Args:
             clip (torch.tensor, dtype=torch.uint8): Size is (T, H, W, C)
         Return:
@@ -157,7 +157,6 @@ class RandomHorizontalFlipVideo(object):
 
     def __call__(self, clip):
         """
-        Convert tensor data type to be float and permute the dimenions of clip tensor
         Args:
             clip (torch.tensor): Size is (C, T, H, W)
         Return:
