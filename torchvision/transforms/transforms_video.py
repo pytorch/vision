@@ -82,7 +82,7 @@ class RandomResizedCropVideo(RandomResizedCrop):
 class CenterCropVideo(object):
     def __init__(self, crop_size):
         if isinstance(crop_size, numbers.Number):
-            self.crop_size = (int(size), int(size))
+            self.crop_size = (int(crop_size), int(crop_size))
         else:
             self.crop_size = crop_size
 
