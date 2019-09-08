@@ -19,7 +19,7 @@ class Tester(unittest.TestCase):
         width = random.randint(10, 32) * 2
         oheight = random.randint(5, (height - 2) / 2) * 2
         owidth = random.randint(5, (width - 2) / 2) * 2
-        clip = torch.ones((numFrames, height, width, 3), dtype=torch.uint8)
+        clip = torch.randint(0, 256, (numFrames, height, width, 3), dtype=torch.uint8)
         result = transforms.Compose([
             transforms.ToTensorVideo(),
             transforms.RandomCropVideo((oheight, owidth)),
@@ -35,7 +35,7 @@ class Tester(unittest.TestCase):
         width = random.randint(10, 32) * 2
         oheight = random.randint(5, (height - 2) / 2) * 2
         owidth = random.randint(5, (width - 2) / 2) * 2
-        clip = torch.ones((numFrames, height, width, 3), dtype=torch.uint8)
+        clip = torch.randint(0, 256, (numFrames, height, width, 3), dtype=torch.uint8)
         result = transforms.Compose([
             transforms.ToTensorVideo(),
             transforms.RandomResizedCropVideo((oheight, owidth)),
@@ -52,7 +52,7 @@ class Tester(unittest.TestCase):
         oheight = random.randint(5, (height - 2) / 2) * 2
         owidth = random.randint(5, (width - 2) / 2) * 2
 
-        clip = torch.ones([numFrames, height, width, 3], dtype=torch.uint8)
+        clip = torch.ones((numFrames, height, width, 3), dtype=torch.uint8) * 255
         oh1 = (height - oheight) // 2
         ow1 = (width - owidth) // 2
         clipNarrow = clip[:, oh1:oh1 + oheight, ow1:ow1 + owidth, :]
