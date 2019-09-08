@@ -50,7 +50,8 @@ class HMDB51(VisionDataset):
     }
 
     def __init__(self, root, annotation_path, frames_per_clip, step_between_clips=1,
-                 fold=1, train=True, transform=None):
+                 frame_rate=None, precomputed_metadata=None, fold=1, train=True,
+                 transform=None):
         super(HMDB51, self).__init__(root)
         if not 1 <= fold <= 3:
             raise ValueError("fold should be between 1 and 3, got {}".format(fold))
@@ -64,7 +65,13 @@ class HMDB51(VisionDataset):
         self.samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file=None)
         self.classes = classes
         video_list = [x[0] for x in self.samples]
-        video_clips = VideoClips(video_list, frames_per_clip, step_between_clips)
+        video_clips = VideoClips(
+            video_list,
+            frames_per_clip,
+            step_between_clips,
+            frame_rate,
+            precomputed_metadata,
+        )
         self.indices = self._select_fold(video_list, annotation_path, fold, train)
         self.video_clips = video_clips.subset(self.indices)
         self.transform = transform
