@@ -1,6 +1,8 @@
 import bisect
 from fractions import Fraction
 import math
+import os
+import pickle
 import torch
 from torchvision.io import (
     read_video_timestamps_from_file,
@@ -109,6 +111,23 @@ class VideoClips(object):
         assert len(self.video_paths) == len(metadata["info"])
         self.video_pts = metadata["video_pts"]
         self.info = metadata["info"]
+
+    def save_metadata(self, filepath):
+        metadata = {
+            "video_pts": self.video_pts,
+            "info": self.info,
+        }
+        filedir = os.path.dirname(filepath)
+        if not os.path.exists(filedir):
+            try:
+                os.mkdirs(filedir)
+            except:
+                print("Warning: fail to save metadata in folder: %s" % filedir)
+                return
+
+        with open(filepath, "wb") as fp:
+            pickle.dump(metadata, fp, protocol=pickle.HIGHEST_PROTOCOL)
+            print("Use pickle to save metadata to file: %s" % filepath)
 
     def subset(self, indices):
         video_paths = [self.video_paths[i] for i in indices]
