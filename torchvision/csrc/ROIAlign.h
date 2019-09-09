@@ -10,11 +10,11 @@
 at::Tensor ROIAlign_forward(
     const at::Tensor& input, // Input feature map.
     const at::Tensor& rois, // List of ROIs to pool over.
-    const float spatial_scale, // The scale of the image features. ROIs will be
+    const double spatial_scale, // The scale of the image features. ROIs will be
     // scaled to this.
-    const int pooled_height, // The height of the pooled feature map.
-    const int pooled_width, // The width of the pooled feature
-    const int sampling_ratio) // The number of points to sample in each bin
+    const int64_t pooled_height, // The height of the pooled feature map.
+    const int64_t pooled_width, // The width of the pooled feature
+    const int64_t sampling_ratio) // The number of points to sample in each bin
 // along each axis.
 {
   if (input.type().is_cuda()) {
