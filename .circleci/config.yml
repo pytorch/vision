@@ -415,10 +415,6 @@ workflows:
           name: binary_macos_conda_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
-      - binary_linux_conda:
-          name: torchvision_linux_py3.6_cpu
-          python_version: "3.6"
-          cu_version: "cpu"
       - binary_linux_conda_cuda:
           name: torchvision_linux_py3.7_cu100
           python_version: "3.7"
