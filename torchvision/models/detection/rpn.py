@@ -62,7 +62,7 @@ class AnchorGenerator(nn.Module):
         return base_anchors.round()
 
     def set_cell_anchors(self, device):
-        if self.cell_anchors is not None:
+        if self.cell_anchors is not None and device == self.cell_anchors[0].devcie:
             return self.cell_anchors
         cell_anchors = [
             self.generate_anchors(
