@@ -9,8 +9,6 @@ from torch.nn.modules.utils import _pair
 from torchvision.extension import _lazy_import
 from ._utils import convert_boxes_to_roi_format
 
-import torchvision.ops._custom_ops
-
 
 class _RoIAlignFunction(Function):
     @staticmethod
@@ -68,12 +66,6 @@ def roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1):
     rois = boxes
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
-    # TODO: Change this to support backwards, which we
-    #       do not currently support when JIT tracing.
-    if torch._C._get_tracing_state():
-        return torch.ops.torchvision.roi_align(input, rois, spatial_scale,
-                                               output_size[0], output_size[1],
-                                               sampling_ratio)
     return _RoIAlignFunction.apply(input, rois, output_size, spatial_scale, sampling_ratio)
 
 

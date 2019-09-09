@@ -8,7 +8,7 @@
 at::Tensor nms(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const double iou_threshold) {
+    const float iou_threshold) {
   if (dets.device().is_cuda()) {
 #ifdef WITH_CUDA
     if (dets.numel() == 0) {
