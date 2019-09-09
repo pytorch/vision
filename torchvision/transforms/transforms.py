@@ -28,7 +28,7 @@ __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", 
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
            "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
-           "RandomPerspective", "RandomErasing"]
+           "RandomPerspective", "RandomErasing", "MultiCompose", "SegmentationCompose"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -68,6 +68,72 @@ class Compose(object):
             format_string += '    {0}'.format(t)
         format_string += '\n)'
         return format_string
+
+
+class MultiCompose(Compose):
+    """Like Compose, but processes tuples of images with the same random params.
+
+    That is, every image in a tuple/list will be transformed exactly the same way
+    (random rotation, crop, and so on).
+
+    Args:
+        transforms (list of ``Transform`` objects): list of transforms to compose.
+
+    Example:
+        >>> mc = transforms.MultiCompose([
+        >>>     transforms.CenterCrop(10),
+        >>>     transforms.Pad(1),
+        >>> ])
+        >>> imgs = mc([img1, img2, img3])
+    """
+    def __call__(self, imgs):
+        for t in self.transforms:
+            try:
+                params = t.generate_params()
+            except AttributeError:
+                params = None
+            # Non-random transforms will never generate any params, so we can call them
+            # in the old style "__call__(self, img)" instead of having to refactor them
+            # to take a "param" kwarg as well. This is only needed for actually random
+            # transforms.
+            if params:
+                imgs = tuple(t(img, params) for img in imgs)
+            else:
+                imgs = tuple(t(img) for img in imgs)
+        return imgs
+
+
+class SegmentationCompose(MultiCompose):
+    """Like MultiCompose, but automatically performs ToTensor at the end.
+
+    Assumes that the inputs are of the form:
+        (image, label)
+    or even
+        (image, image, ..., image, label)
+    All user-defined transforms are performed like with MultiCompose (the same for all the
+    items), but adds an automatic ToTensor at the end, converting images to float Tensors
+    and label to a long Tensor.
+
+    Args:
+        transforms (list of ``Transform`` objects): list of transforms to compose.
+
+    Example:
+        >>> sc = transforms.SegmentationCompose([
+        >>>     transforms.CenterCrop(10),
+        >>>     transforms.Pad(1),
+        >>> ])
+        >>> image, label = sc((image, label))
+    """
+    def __call__(self, imgs):
+        # do what MultiCompose does
+        imgs = super(SegmentationCompose, self).__call__(imgs)
+        # convert images to tensors
+        tensors = [F.to_tensor(img) for img in imgs[:-1]]
+        # convert the label
+        tensors.append(
+            F.to_tensor(np.array(imgs[-1], np.int64))
+        )
+        return tuple(tensors)
 
 
 class ToTensor(object):
@@ -489,7 +555,10 @@ class RandomHorizontalFlip(object):
     def __init__(self, p=0.5):
         self.p = p
 
-    def __call__(self, img):
+    def generate_params(self):
+        return random.random() < self.p
+
+    def __call__(self, img, params=None):
         """
         Args:
             img (PIL Image): Image to be flipped.
@@ -497,7 +566,8 @@ class RandomHorizontalFlip(object):
         Returns:
             PIL Image: Randomly flipped image.
         """
-        if random.random() < self.p:
+        do_flip = params if params is not None else self.generate_params()
+        if do_flip:
             return F.hflip(img)
         return img
 
@@ -515,7 +585,10 @@ class RandomVerticalFlip(object):
     def __init__(self, p=0.5):
         self.p = p
 
-    def __call__(self, img):
+    def generate_params(self):
+        return random.random() < self.p
+
+    def __call__(self, img, params=None):
         """
         Args:
             img (PIL Image): Image to be flipped.
@@ -523,7 +596,8 @@ class RandomVerticalFlip(object):
         Returns:
             PIL Image: Randomly flipped image.
         """
-        if random.random() < self.p:
+        do_flip = params if params is not None else self.generate_params()
+        if do_flip:
             return F.vflip(img)
         return img
 
@@ -965,6 +1039,9 @@ class RandomRotation(object):
         self.expand = expand
         self.center = center
 
+    def generate_params(self):
+        return self.get_params(self.degrees)
+
     @staticmethod
     def get_params(degrees):
         """Get parameters for ``rotate`` for a random rotation.
@@ -976,7 +1053,7 @@ class RandomRotation(object):
 
         return angle
 
-    def __call__(self, img):
+    def __call__(self, img, params=None):
         """
         Args:
             img (PIL Image): Image to be rotated.
@@ -985,7 +1062,7 @@ class RandomRotation(object):
             PIL Image: Rotated image.
         """
 
-        angle = self.get_params(self.degrees)
+        angle = self.get_params(self.degrees) if params is None else params
 
         return F.rotate(img, angle, self.resample, self.expand, self.center)
 
