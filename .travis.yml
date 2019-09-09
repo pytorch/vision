@@ -64,6 +64,7 @@ install:
     export TV_INSTALL_PATH="$(python -c 'import os; import torchvision; print(os.path.dirname(os.path.abspath(torchvision.__file__)))')"
     echo "$TV_INSTALL_PATH"
     cd -
+
 script:
   - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH test
 
