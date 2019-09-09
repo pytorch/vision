@@ -2,6 +2,7 @@ import re
 import gc
 import torch
 import numpy as np
+import math
 
 try:
     import av
@@ -184,14 +185,22 @@ def read_video(filename, start_pts=0, end_pts=None):
 
     video_frames = []
     if container.streams.video:
+        video_stream = container.streams.video[0]
+        start_pts = math.floor(start_pts*(1/video_stream.time_base))
+        if end_pts != float("inf"):
+            end_pts = math.ceil(end_pts*(1/video_stream.time_base))
         video_frames = _read_from_stream(container, start_pts, end_pts,
-                                         container.streams.video[0], {'video': 0})
-        info["video_fps"] = float(container.streams.video[0].average_rate)
+                                         video_stream, {'video': 0})
+        info["video_fps"] = float(video_stream.average_rate)
     audio_frames = []
     if container.streams.audio:
+        audio_stream = container.streams.audio[0]
+        start_pts = math.floor(start_pts*(1/audio_stream.time_base))
+        if end_pts != float("inf"):
+            end_pts = math.ceil(end_pts*(1/audio_stream.time_base))
         audio_frames = _read_from_stream(container, start_pts, end_pts,
-                                         container.streams.audio[0], {'audio': 0})
-        info["audio_fps"] = container.streams.audio[0].rate
+                                         audio_stream , {'audio': 0})
+        info["audio_fps"] = audio_stream.rate
 
     container.close()
 
