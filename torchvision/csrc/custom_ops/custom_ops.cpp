@@ -25,10 +25,7 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
     ctx->saved_data["pooled_height"] = pooled_height;
     ctx->saved_data["pooled_width"] = pooled_width;
     ctx->saved_data["sampling_ratio"] = sampling_ratio;
-    ctx->saved_data["batch_size"] = input.size(0);
-    ctx->saved_data["channels"] = input.size(1);
-    ctx->saved_data["height"] = input.size(2);
-    ctx->saved_data["width"] = input.size(3);
+    ctx->saved_data["input_shape"] = input.sizes();
     ctx->save_for_backward({rois});
     auto result = ROIAlign_forward(
         input,
@@ -46,16 +43,17 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
     // Use data saved in forward
     auto saved = ctx->get_saved_variables();
     auto rois = saved[0];
+    auto input_shape = ctx->saved_data["input_shape"].toIntList();
     auto grad_in = ROIAlign_backward(
         grad_output[0],
         rois,
         ctx->saved_data["spatial_scale"].toDouble(),
         ctx->saved_data["pooled_height"].toInt(),
         ctx->saved_data["pooled_width"].toInt(),
-        ctx->saved_data["batch_size"].toInt(),
-        ctx->saved_data["channels"].toInt(),
-        ctx->saved_data["height"].toInt(),
-        ctx->saved_data["width"].toInt(),
+        input_shape[0],
+        input_shape[1],
+        input_shape[2],
+        input_shape[3],
         ctx->saved_data["sampling_ratio"].toInt());
     return {
         grad_in, Variable(), Variable(), Variable(), Variable(), Variable()};
@@ -90,10 +88,7 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
     ctx->saved_data["spatial_scale"] = spatial_scale;
     ctx->saved_data["pooled_height"] = pooled_height;
     ctx->saved_data["pooled_width"] = pooled_width;
-    ctx->saved_data["batch_size"] = input.size(0);
-    ctx->saved_data["channels"] = input.size(1);
-    ctx->saved_data["height"] = input.size(2);
-    ctx->saved_data["width"] = input.size(3);
+    ctx->saved_data["input_shape"] = input.sizes();
     auto result = ROIPool_forward(
         input, rois, spatial_scale, pooled_height, pooled_width);
     auto output = std::get<0>(result);
@@ -110,6 +105,7 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
     auto saved = ctx->get_saved_variables();
     auto rois = saved[0];
     auto argmax = saved[1];
+    auto input_shape = ctx->saved_data["input_shape"].toIntList();
     auto grad_in = ROIPool_backward(
         grad_output[0],
         rois,
@@ -117,10 +113,10 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
         ctx->saved_data["spatial_scale"].toDouble(),
         ctx->saved_data["pooled_height"].toInt(),
         ctx->saved_data["pooled_width"].toInt(),
-        ctx->saved_data["batch_size"].toInt(),
-        ctx->saved_data["channels"].toInt(),
-        ctx->saved_data["height"].toInt(),
-        ctx->saved_data["width"].toInt());
+        input_shape[0],
+        input_shape[1],
+        input_shape[2],
+        input_shape[3]);
     return {grad_in, Variable(), Variable(), Variable(), Variable()};
   }
 };
