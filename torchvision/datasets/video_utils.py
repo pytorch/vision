@@ -136,7 +136,7 @@ class VideoClips(object):
         if not os.path.exists(filedir):
             try:
                 os.mkdirs(filedir)
-            except:
+            except Exception:
                 print("Warning: fail to save metadata in folder: %s" % filedir)
                 return
 
