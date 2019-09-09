@@ -9,8 +9,6 @@ from torch.nn.modules.utils import _pair
 from torchvision.extension import _lazy_import
 from ._utils import convert_boxes_to_roi_format
 
-import torchvision.ops._custom_ops
-
 
 class _RoIPoolFunction(Function):
     @staticmethod
@@ -64,6 +62,7 @@ def roi_pool(input, boxes, output_size, spatial_scale=1.0):
     # TODO: Change this to support backwards, which we
     #       do not currently support when JIT tracing.
     if torch._C._get_tracing_state():
+        _C = _lazy_import()
         output, _ = torch.ops.torchvision.roi_pool(input, rois, spatial_scale,
                                                    output_size[0], output_size[1])
         return output

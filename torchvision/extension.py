@@ -10,6 +10,7 @@ def _lazy_import():
         return _C
     import torch
     from torchvision import _C as C
+    import torchvision.ops._custom_ops
     _C = C
     if hasattr(_C, "CUDA_VERSION") and torch.version.cuda is not None:
         tv_version = str(_C.CUDA_VERSION)
