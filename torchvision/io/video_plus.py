@@ -1,6 +1,5 @@
 from fractions import Fraction
 import logging
-import math
 import numpy as np
 import os
 import torch
@@ -10,6 +9,8 @@ log = logging.getLogger(__name__)
 lib_path = os.path.join("torchvision", "video_reader.so")
 torch.ops.load_library(lib_path)
 video_reader = torch.ops.video_reader
+
+default_timebase = Fraction(0, 1)
 
 
 def _validate_pts(pts_range):
@@ -40,7 +41,7 @@ def _align_audio_frames(aframes, aframe_pts, audio_pts_range):
     s_idx = 0
     e_idx = num_samples
     if start < audio_pts_range[0]:
-        s_idx = int((audio_pts_range[0] - start ) / step_per_aframe)
+        s_idx = int((audio_pts_range[0] - start) / step_per_aframe)
     if end > audio_pts_range[1]:
         e_idx = int((audio_pts_range[1] - end) / step_per_aframe)
     return aframes[s_idx:e_idx, :]
@@ -53,11 +54,11 @@ def read_video_from_file(
     video_height=0,
     video_min_dimension=0,
     video_pts_range=(0, -1),
-    video_timebase=Fraction(0, 1),
+    video_timebase=default_timebase,
     audio_samples=0,
     audio_channels=0,
     audio_pts_range=(0, -1),
-    audio_timebase=Fraction(0, 1),
+    audio_timebase=default_timebase,
 ):
     """
     Reads a video from a file, returning both the video frames as well as
@@ -173,11 +174,11 @@ def read_video_from_memory(
     video_height=0,
     video_min_dimension=0,
     video_pts_range=(0, -1),
-    video_timebase=Fraction(0, 1),
+    video_timebase=default_timebase,
     audio_samples=0,
     audio_channels=0,
     audio_pts_range=(0, -1),
-    audio_timebase=Fraction(0, 1),
+    audio_timebase=default_timebase,
 ):
     """
     Reads a video from memory, returning both the video frames as well as
@@ -284,7 +285,7 @@ def read_video_timestamps_from_memory(file_buffer):
         0,  # audio_timebase_num
         1,  # audio_timebase_den
     )
-    _vframes, vframe_pts, vtimebase, _vfps, _aframes, aframe_pts, atimebase, _asample_rate = result
+    _vframes, vframe_pts, vtimebase, vfps, _aframes, aframe_pts, atimebase, asample_rate = result
     info = _fill_info(vtimebase, vfps, atimebase, asample_rate)
 
     vframe_pts = vframe_pts.numpy().tolist()
