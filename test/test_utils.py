@@ -1,4 +1,5 @@
 import os
+import sys
 import tempfile
 import torch
 import torchvision.utils as utils
@@ -37,12 +38,14 @@ class Tester(unittest.TestCase):
         assert torch.equal(norm_max, rounded_grid_max), 'Normalized max is not equal to 1'
         assert torch.equal(norm_min, rounded_grid_min), 'Normalized min is not equal to 0'
 
+    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_save_image(self):
         with tempfile.NamedTemporaryFile(suffix='.png') as f:
             t = torch.rand(2, 3, 64, 64)
             utils.save_image(t, f.name)
             assert os.path.exists(f.name), 'The image is not present after save'
 
+    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_save_image_single_pixel(self):
         with tempfile.NamedTemporaryFile(suffix='.png') as f:
             t = torch.rand(1, 3, 1, 1)
