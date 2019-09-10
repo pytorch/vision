@@ -171,7 +171,6 @@ class SegmentationCompose(MultiCompose):
         super(SegmentationCompose, self).__init__(transforms)
         # prepare separate lists of image and label transforms
         self.label_transforms = []
-        self.auto_tensor = True
         for tf in self.transforms:
             if self.is_skip(tf):
                 self.label_transforms.append(NullTransform())
@@ -184,7 +183,6 @@ class SegmentationCompose(MultiCompose):
                 self.label_transforms.append(
                     lambda img: F.to_tensor(np.array(img, np.int64))
                 )
-                self.auto_tensor = False
             else:
                 self.label_transforms.append(tf)
 
@@ -204,16 +202,7 @@ class SegmentationCompose(MultiCompose):
             else:
                 imgs = tuple(it(img) for img in imgs)
             label = lt(label, params) if params is not None else lt(label)
-        # automatically convert images and labels to tensors
-        if self.auto_tensor:
-            tensors = [F.to_tensor(img) for img in imgs]
-            tensors.append(
-                F.to_tensor(np.array(label, np.int64))
-            )
-        else:
-            # unless the user has done that manually
-            tensors = imgs + (label,)
-        return tuple(tensors)
+        return imgs + (label,)
 
 
 class ToTensor(object):
