@@ -182,7 +182,6 @@ def _decode_frames_by_av_module(
         video_start_pts/video_end_pts: the starting/ending Presentation TimeStamp where
             frames are read
     """
-    start_time = time.perf_counter()
     container = av.open(full_path)
 
     video_frames = []
@@ -215,7 +214,6 @@ def _decode_frames_by_av_module(
     container.close()
     vframes = [frame.to_rgb().to_ndarray() for frame in video_frames]
     vframes = torch.as_tensor(np.stack(vframes))
-    elapsed_time = time.perf_counter() - start_time
 
     vframe_pts = torch.tensor([frame.pts for frame in video_frames], dtype=torch.int64)
 
@@ -354,7 +352,6 @@ class TestVideoReader(unittest.TestCase):
                 full_path = os.path.join(VIDEO_DIR, test_video)
 
                 # pass 1: decode all frames using new decoder
-                start_time = time.perf_counter()
                 tv_result = video_reader.read_video_from_file(
                     full_path,
                     seek_frame_margin,
@@ -392,7 +389,6 @@ class TestVideoReader(unittest.TestCase):
             full_path = os.path.join(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using new decoder
-            start_time = time.perf_counter()
             tv_result = video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
@@ -411,7 +407,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            elapsed_time = time.perf_counter() - start_time
             # pass 2: decode all frames using av
             pyav_result = _decode_frames_by_av_module(full_path)
             # check results from TorchVision decoder
@@ -436,7 +431,6 @@ class TestVideoReader(unittest.TestCase):
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
-            start_time = time.perf_counter()
             tv_result = video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
@@ -455,7 +449,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            elapsed_time = time.perf_counter() - start_time
             self.assertEqual(min_dimension, min(tv_result[0].size(1), tv_result[0].size(2)))
 
     def test_read_video_from_file_rescale_width(self):
@@ -475,7 +468,6 @@ class TestVideoReader(unittest.TestCase):
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
-            start_time = time.perf_counter()
             tv_result = video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
@@ -494,7 +486,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            elapsed_time = time.perf_counter() - start_time
             self.assertEqual(tv_result[0].size(2), width)
 
     def test_read_video_from_file_rescale_height(self):
@@ -514,7 +505,6 @@ class TestVideoReader(unittest.TestCase):
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
-            start_time = time.perf_counter()
             tv_result = video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
@@ -533,7 +523,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            elapsed_time = time.perf_counter() - start_time
             self.assertEqual(tv_result[0].size(1), height)
 
     def test_read_video_from_file_rescale_width_and_height(self):
@@ -553,7 +542,6 @@ class TestVideoReader(unittest.TestCase):
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
-            start_time = time.perf_counter()
             tv_result = video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
@@ -572,7 +560,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            elapsed_time = time.perf_counter() - start_time
             self.assertEqual(tv_result[0].size(1), height)
             self.assertEqual(tv_result[0].size(2), width)
 
@@ -648,7 +635,6 @@ class TestVideoReader(unittest.TestCase):
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using cpp decoder
-            start_time = time.perf_counter()
             tv_result_memory = video_reader.read_video_from_memory(
                 video_tensor,
                 seek_frame_margin,
@@ -667,10 +653,8 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            elapsed_time = time.perf_counter() - start_time
             self.check_separate_decoding_result(tv_result_memory, config)
             # pass 2: decode all frames from file
-            start_time = time.perf_counter()
             tv_result_file = video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
@@ -689,7 +673,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            elapsed_time = time.perf_counter() - start_time
 
             self.check_separate_decoding_result(tv_result_file, config)
             # finally, compare results decoded from memory and file
@@ -713,7 +696,6 @@ class TestVideoReader(unittest.TestCase):
             full_path = os.path.join(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using new decoder
-            start_time = time.perf_counter()
             tv_result = video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
@@ -732,7 +714,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            elapsed_time = time.perf_counter() - start_time
             # pass 2: decode all frames using av
             pyav_result = _decode_frames_by_av_module(full_path)
 
@@ -757,7 +738,6 @@ class TestVideoReader(unittest.TestCase):
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using cpp decoder
-            start_time = time.perf_counter()
             tv_result = video_reader.read_video_from_memory(
                 video_tensor,
                 seek_frame_margin,
@@ -776,7 +756,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            elapsed_time = time.perf_counter() - start_time
             # pass 2: decode all frames using av
             pyav_result = _decode_frames_by_av_module(full_path)
 
@@ -802,7 +781,6 @@ class TestVideoReader(unittest.TestCase):
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using cpp decoder
-            start_time = time.perf_counter()
             tv_result = video_reader.read_video_from_memory(
                 video_tensor,
                 seek_frame_margin,
@@ -821,11 +799,9 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            elapsed_time = time.perf_counter() - start_time
             self.assertAlmostEqual(config.video_fps, tv_result[3].item(), delta=0.01)
 
             # pass 2: decode all frames to get PTS only using cpp decoder
-            start_time = time.perf_counter()
             tv_result_pts_only = video_reader.read_video_from_memory(
                 video_tensor,
                 seek_frame_margin,
@@ -844,7 +820,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            elapsed_time = time.perf_counter() - start_time
 
             self.assertEqual(tv_result_pts_only[0].numel(), 0)
             self.assertEqual(tv_result_pts_only[4].numel(), 0)
@@ -867,7 +842,6 @@ class TestVideoReader(unittest.TestCase):
             audio_start_pts, audio_end_pts = 0, -1
             audio_timebase_num, audio_timebase_den = 0, 1
             # pass 1: decode all frames using new decoder
-            start_time = time.perf_counter()
             tv_result = video_reader.read_video_from_memory(
                 video_tensor,
                 seek_frame_margin,
@@ -889,7 +863,6 @@ class TestVideoReader(unittest.TestCase):
             vframes, vframe_pts, vtimebase, vfps, aframes, aframe_pts, atimebase, asample_rate = (
                 tv_result
             )
-            elapsed_time = time.perf_counter() - start_time
             self.assertAlmostEqual(config.video_fps, vfps.item(), delta=0.01)
 
             for num_frames in [4, 8, 16, 32, 64, 128]:
@@ -920,7 +893,6 @@ class TestVideoReader(unittest.TestCase):
                     )
 
                 # pass 2: decode frames in the randomly generated range
-                start_time = time.perf_counter()
                 tv_result = video_reader.read_video_from_memory(
                     video_tensor,
                     seek_frame_margin,
@@ -939,7 +911,6 @@ class TestVideoReader(unittest.TestCase):
                     audio_timebase_num,
                     audio_timebase_den,
                 )
-                elapsed_time = time.perf_counter() - start_time
 
                 # pass 3: decode frames in range using PyAv
                 video_timebase_av, audio_timebase_av = _get_timebase_by_av_module(full_path)
