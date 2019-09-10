@@ -564,15 +564,15 @@ class MobileNetTester(TorchVisionTester):
 
 
 class MNASNetTester(TorchVisionTester):
+    # num_classes=1000
+    # NOTE should we test dropout=0.2?
+    # NOTE no scriptability check specified
+    # NOTE something is up here - expected values all 0.0
     def _test_classification_mnas(self, model, expected_values):
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
         self._check_model_correctness(model, test_input, expected_values, 1000)
 
     def test_classification_mnasnet0_5(self):
-        # num_classes=1000
-        # NOTE should we test dropout=0.2?
-        # NOTE no scriptability check specified
-        # NOTE something is up here - expected values all 0.0
         model = self._get_test_model(models.mnasnet0_5)
         
         # self._build_random_check(model, STANDARD_INPUT_SHAPE, [124, 249, 272, 287, 306, 409, 494, 505, 569, 959])
@@ -586,22 +586,64 @@ class MNASNetTester(TorchVisionTester):
             494 : 0.0,
             505 : 0.0,
             569 : 0.0,
-            959 : 0.0,
+            959 : 0.0
         }
         self._test_classification_mnas(model, expected_values)
 
 
     def test_classification_mnasnet0_75(self):
-        # self._test_classification_model('mnasnet0_75', STANDARD_INPUT_SHAPE)
-        pass
+        model = self._get_test_model(models.mnasnet0_5)
+        
+        # self._build_random_check(model, STANDARD_INPUT_SHAPE, [56, 62, 304, 330, 380, 388, 434, 443, 550, 579])
+        expected_values = { # known good values for this model with rand seeded to standard
+            56 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
+            62 : 0.0,
+            304 : 0.0,
+            330 : 0.0,
+            380 : 0.0,
+            388 : 0.0,
+            434 : 0.0,
+            443 : 0.0,
+            550 : 0.0,
+            579 : 0.0
+        }
+        self._test_classification_mnas(model, expected_values)
 
     def test_classification_mnasnet1_0(self):
-        # self._test_classification_model('mnasnet1_0', STANDARD_INPUT_SHAPE)
-        pass
+        model = self._get_test_model(models.mnasnet1_0)
+        
+        # self._build_random_check(model, STANDARD_INPUT_SHAPE, [252, 287, 291, 297, 351, 384, 542, 653, 738, 829])
+        expected_values = { # known good values for this model with rand seeded to standard
+            252 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
+            287 : 0.0,
+            291 : 0.0,
+            297 : 0.0,
+            351 : 0.0,
+            384 : 0.0,
+            542 : 0.0,
+            653 : 0.0,
+            738 : 0.0,
+            829 : 0.0
+        }
+        self._test_classification_mnas(model, expected_values)
 
     def test_classification_mnasnet1_3(self):
-        # self._test_classification_model('mnasnet1_3', STANDARD_INPUT_SHAPE)
-        pass
+        model = self._get_test_model(models.mnasnet1_3)
+        
+        # self._build_random_check(model, STANDARD_INPUT_SHAPE, [96, 207, 397, 552, 654, 750, 751, 788, 822, 827])
+        expected_values = { # known good values for this model with rand seeded to standard
+            96 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
+            207 : 0.0,
+            397 : 0.0,
+            552 : 0.0,
+            654 : 0.0,
+            750 : 0.0,
+            751 : 0.0,
+            788 : 0.0,
+            822 : 0.0,
+            827 : 0.0,
+        }
+        self._test_classification_mnas(model, expected_values)
 
         
 #################################################################
