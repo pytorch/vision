@@ -140,20 +140,20 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
   }
 };
 
-std::tuple<at::Tensor, at::Tensor> roi_pool(
-    const at::Tensor& input,
-    const at::Tensor& rois,
+std::tuple<Tensor, Tensor> roi_pool(
+    const Tensor& input,
+    const Tensor& rois,
     const double spatial_scale,
     const int64_t pooled_height,
     const int64_t pooled_width) {
   auto result = ROIPoolFunction::apply(
       input, rois, spatial_scale, pooled_height, pooled_width);
-  return std::tuple<at::Tensor, at::Tensor>(result[0], result[1]);
+  return std::tuple<Tensor, Tensor>(result[0], result[1]);
 }
 
 static auto registry =
     torch::RegisterOperators()
         .op("torchvision::nms", &nms)
         .op("torchvision::roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio) -> Tensor",
-            &ROIAlign_forward)
-        .op("torchvision::roi_pool", &ROIPool_forward);
+            &roi_align)
+        .op("torchvision::roi_pool", &roi_pool);
