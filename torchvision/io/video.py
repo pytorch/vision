@@ -2,6 +2,8 @@ import re
 import gc
 import torch
 import numpy as np
+import warnings
+
 
 try:
     import av
@@ -75,7 +77,6 @@ def write_video(filename, video_array, fps, video_codec='libx264', options=None)
 
 
 def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
-    # TODO: docs
     global _CALLED_TIMES, _GC_COLLECTION_INTERVAL
     _CALLED_TIMES += 1
     if _CALLED_TIMES % _GC_COLLECTION_INTERVAL == _GC_COLLECTION_INTERVAL - 1:
@@ -139,7 +140,6 @@ def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
         # we will have all the necessary data. This is most useful for audio
         first_frame_pts = max(i for i in frames if i < start_offset)
         result.insert(0, frames[first_frame_pts])
-    # print(f'Seek off {seek_offset}, end off {end_offset}, result len {len(result)}')
     return result
 
 
@@ -233,7 +233,7 @@ def _can_read_timestamps_from_packets(container):
     return False
 
 
-def read_video_timestamps(filename):
+def read_video_timestamps(filename, output_format="global"):
     """
     List the video frames timestamps.
 
@@ -248,7 +248,7 @@ def read_video_timestamps(filename):
     -------
     pts : List[int]
         presentation timestamps for each one of the frames in the video.
-        Note that these are returned as the TRUE timestamps, i.e.
+        Note that these are returned as the TRUE timestamps in seconds, i.e.
         w.r.t. the global presentation time, not as a function of the stream.
     video_fps : int
         the frame rate for the video
@@ -268,4 +268,11 @@ def read_video_timestamps(filename):
                                              container.streams.video[0], {'video': 0})
         video_fps = float(container.streams.video[0].average_rate)
     container.close()
+
+    if output_format is None:
+        msg = "Currently, pts are returned as (int) w.r.t. video stream. This behaviour is being\
+               depreciated"
+        warinings.warn(msg, RuntimeWarning)
+        return [x.pts for x in video_frames], video_fps
+
     return [x.pts * x.time_base for x in video_frames], video_fps
