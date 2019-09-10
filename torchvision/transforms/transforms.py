@@ -1,5 +1,6 @@
 from __future__ import division
 import torch
+import copy
 import math
 import sys
 import random
@@ -96,7 +97,7 @@ class MultiCompose(Compose):
             # in the old style "__call__(self, img)" instead of having to refactor them
             # to take a "param" kwarg as well. This is only needed for actually random
             # transforms.
-            if params:
+            if params is not None:
                 imgs = tuple(t(img, params) for img in imgs)
             else:
                 imgs = tuple(t(img) for img in imgs)
@@ -104,15 +105,30 @@ class MultiCompose(Compose):
 
 
 class SegmentationCompose(MultiCompose):
-    """Like MultiCompose, but automatically performs ToTensor at the end.
+    """Composes multiple transforms together, specifically for segmentation data.
 
-    Assumes that the inputs are of the form:
+    Assumes that the inputs are tuples of:
         (image, label)
     or even
         (image, image, ..., image, label)
-    All user-defined transforms are performed like with MultiCompose (the same for all the
-    items), but adds an automatic ToTensor at the end, converting images to float Tensors
-    and label to a long Tensor.
+    User-defined transforms are executed in sequence over the tuple, similar to
+    how MultiCompose does it. The difference in segmentation is that the last
+    element of this tuple has to be processed differently: e.g. it should never
+    be altered by transforms such as ColorJitter or RandomGrayscale. Transforms
+    that warp the image should never interpolate the label image.
+    To accomplish that, SegmentationCompose assemblies two lists of transforms.
+    The first is the same as in Compose or Multicompose ("transforms"). Second
+    is where magic happens: transforms stored there will be called only on the
+    label images. Transforms that shouldn't be performed on the label images are
+    removed and replaced with "NullTransform". Transforms that should operate
+    with a different interpolation mode are cloned and altered.
+    When processing a sample, images and labels are treated differently. Images
+    only go through the default transforms, while labels are processed with the
+    modified transforms list.
+    This mechanism can be quite easily extended to account for more differences
+    between transforms. An example of this is ToTensor, which should also work
+    differently for images and labels. It is handled by replacing with a lambda
+    which converts to int64 (label type).
 
     Args:
         transforms (list of ``Transform`` objects): list of transforms to compose.
@@ -124,15 +140,81 @@ class SegmentationCompose(MultiCompose):
         >>> ])
         >>> image, label = sc((image, label))
     """
+    _skip_transforms = [
+        "Normalize",
+        "ColorJitter",
+        "Grayscale",
+        "RandomGrayscale",
+        "RandomErasing",
+    ]
+    _interpolate_transforms = [
+        "Resize",
+        "RandomPerspective",
+        "RandomResizedCrop",
+        "RandomRotation",
+        "RandomAffine",
+    ]
+
+    @classmethod
+    def is_skip(self, transform):
+        return transform.__class__.__name__ in self._skip_transforms
+
+    @classmethod
+    def is_itpl(self, transform):
+        return transform.__class__.__name__ in self._interpolate_transforms
+
+    @classmethod
+    def is_tensor(self, transform):
+        return isinstance(transform, ToTensor)
+
+    def __init__(self, transforms):
+        super(SegmentationCompose, self).__init__(transforms)
+        # prepare separate lists of image and label transforms
+        self.image_tfs = []
+        self.label_tfs = []
+        self.auto_tensor = True
+        for tf in self.transforms:
+            self.image_tfs.append(tf)
+            if self.is_skip(tf):
+                self.label_tfs.append(NullTransform())
+            elif self.is_itpl(tf):
+                ltf = copy.deepcopy(tf)
+                ltf.interpolation = Image.NEAREST
+                ltf.resample = Image.NEAREST # really, RandomRotation & RandomAffine?
+                self.label_tfs.append(ltf)
+            elif self.is_tensor(tf):
+                self.label_tfs.append(
+                    lambda img: F.to_tensor(np.array(img, np.int64))
+                )
+                self.auto_tensor = False
+            else:
+                self.label_tfs.append(tf)
+
     def __call__(self, imgs):
-        # do what MultiCompose does
-        imgs = super(SegmentationCompose, self).__call__(imgs)
-        # convert images to tensors
-        tensors = [F.to_tensor(img) for img in imgs[:-1]]
-        # convert the label
-        tensors.append(
-            F.to_tensor(np.array(imgs[-1], np.int64))
-        )
+        # process images and label separately
+        label = imgs[-1]
+        imgs = imgs[:-1]
+        # go sequentially over image and label transforms
+        for it, lt in zip(self.image_tfs, self.label_tfs):
+            try:
+                params = it.generate_params(imgs[0])
+            except AttributeError:
+                params = None
+            # execute image transform and label transform separately
+            if params is not None:
+                imgs = tuple(it(img, params) for img in imgs)
+            else:
+                imgs = tuple(it(img) for img in imgs)
+            label = lt(label, params) if params is not None else lt(label)
+        # automatically convert images and labels to tensors
+        if self.auto_tensor:
+            tensors = [F.to_tensor(img) for img in imgs]
+            tensors.append(
+                F.to_tensor(np.array(label, np.int64))
+            )
+        else:
+            # unless the user has done that manually
+            tensors = imgs + (label,)
         return tuple(tensors)
 
 
@@ -377,6 +459,15 @@ class Lambda(object):
 
     def __call__(self, img):
         return self.lambd(img)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
+
+class NullTransform(object):
+    """Output the same image."""
+    def __call__(self, img, param=None):
+        return img
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
