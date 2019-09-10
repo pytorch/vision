@@ -170,32 +170,30 @@ class SegmentationCompose(MultiCompose):
     def __init__(self, transforms):
         super(SegmentationCompose, self).__init__(transforms)
         # prepare separate lists of image and label transforms
-        self.image_tfs = []
-        self.label_tfs = []
+        self.label_transforms = []
         self.auto_tensor = True
         for tf in self.transforms:
-            self.image_tfs.append(tf)
             if self.is_skip(tf):
-                self.label_tfs.append(NullTransform())
+                self.label_transforms.append(NullTransform())
             elif self.is_itpl(tf):
                 ltf = copy.deepcopy(tf)
                 ltf.interpolation = Image.NEAREST
                 ltf.resample = Image.NEAREST # really, RandomRotation & RandomAffine?
-                self.label_tfs.append(ltf)
+                self.label_transforms.append(ltf)
             elif self.is_tensor(tf):
-                self.label_tfs.append(
+                self.label_transforms.append(
                     lambda img: F.to_tensor(np.array(img, np.int64))
                 )
                 self.auto_tensor = False
             else:
-                self.label_tfs.append(tf)
+                self.label_transforms.append(tf)
 
     def __call__(self, imgs):
         # process images and label separately
         label = imgs[-1]
         imgs = imgs[:-1]
         # go sequentially over image and label transforms
-        for it, lt in zip(self.image_tfs, self.label_tfs):
+        for it, lt in zip(self.transforms, self.label_transforms):
             try:
                 params = it.generate_params(imgs[0])
             except AttributeError:
