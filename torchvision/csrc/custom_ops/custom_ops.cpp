@@ -1,3 +1,4 @@
+#include <Python.h>
 #include <torch/script.h>
 
 #include "ROIAlign.h"
@@ -5,6 +6,24 @@
 #include "nms.h"
 
 using namespace at;
+
+// If we are in a Windows environment, we need to define
+// initialization functions for the _custom_ops extension
+#ifdef _WIN32
+#if PY_MAJOR_VERSION < 3
+PyMODINIT_FUNC init_custom_ops(void) {
+  // No need to do anything.
+  // _custom_ops.py will run on load
+  return NULL;
+}
+#else
+PyMODINIT_FUNC PyInit__custom_ops(void) {
+  // No need to do anything.
+  // _custom_ops.py will run on load
+  return NULL;
+}
+#endif
+#endif
 
 using torch::Tensor;
 using torch::autograd::AutogradContext;
@@ -133,8 +152,8 @@ std::tuple<at::Tensor, at::Tensor> roi_pool(
 }
 
 static auto registry =
-    torch::jit::RegisterOperators()
+    torch::RegisterOperators()
         .op("torchvision::nms", &nms)
         .op("torchvision::roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio) -> Tensor",
-            &roi_align)
-        .op("torchvision::roi_pool", &roi_pool);
+            &ROIAlign_forward)
+        .op("torchvision::roi_pool", &ROIPool_forward);

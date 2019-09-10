@@ -45,7 +45,7 @@ setup_cuda() {
       export VERSION_SUFFIX="$PYTORCH_VERSION_SUFFIX"
       # If the suffix is non-empty, we will use a wheel subdirectory
       if [[ -n "$PYTORCH_VERSION_SUFFIX" ]]; then
-        export WHEEL_DIR="$PYTORCH_VERSION_SUFFIX/"
+        export WHEEL_DIR="$CU_VERSION/"
       fi
     fi
   fi
@@ -181,7 +181,18 @@ setup_pip_pytorch_version() {
 setup_conda_pytorch_constraint() {
   if [[ -z "$PYTORCH_VERSION" ]]; then
     export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
-    export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | python -c "import sys, json, re; print(re.sub(r'\\+.*$', '', json.load(sys.stdin)['pytorch'][-1]['version']))")"
+    export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
+                              python -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
+                               cuver = (cuver[:-1] + '.' + cuver[-1]).replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
+                               print(re.sub(r'\\+.*$', '', \
+                                [x['version'] for x in json.load(sys.stdin)['pytorch'] \
+                                  if (x['platform'] == 'darwin' or cuver in x['fn']) \
+                                    and 'py' + os.environ['PYTHON_VERSION'] in x['fn']][-1]))")"
+    if [[ -z "$PYTORCH_VERSION" ]]; then
+      echo "PyTorch version auto detection failed"
+      echo "No package found for CU_VERSION=$CU_VERSION and PYTHON_VERSION=$PYTHON_VERSION"
+      exit 1
+    fi
   else
     export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-nightly"
   fi
