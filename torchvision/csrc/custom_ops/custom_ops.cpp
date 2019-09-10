@@ -148,7 +148,7 @@ std::tuple<at::Tensor, at::Tensor> roi_pool(
     const int64_t pooled_width) {
   auto result = ROIPoolFunction::apply(
       input, rois, spatial_scale, pooled_height, pooled_width);
-  return {result[0], result[1]};
+  return std::tuple<at::Tensor, at::Tensor>(result[0], result[1]);
 }
 
 static auto registry =
