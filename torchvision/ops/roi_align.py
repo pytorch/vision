@@ -10,35 +10,6 @@ from torchvision.extension import _lazy_import
 from ._utils import convert_boxes_to_roi_format
 
 
-class _RoIAlignFunction(Function):
-    @staticmethod
-    def forward(ctx, input, roi, output_size, spatial_scale, sampling_ratio):
-        ctx.save_for_backward(roi)
-        ctx.output_size = _pair(output_size)
-        ctx.spatial_scale = spatial_scale
-        ctx.sampling_ratio = sampling_ratio
-        ctx.input_shape = input.size()
-        _C = _lazy_import()
-        output = _C.roi_align_forward(
-            input, roi, spatial_scale,
-            output_size[0], output_size[1], sampling_ratio)
-        return output
-
-    @staticmethod
-    @once_differentiable
-    def backward(ctx, grad_output):
-        rois, = ctx.saved_tensors
-        output_size = ctx.output_size
-        spatial_scale = ctx.spatial_scale
-        sampling_ratio = ctx.sampling_ratio
-        bs, ch, h, w = ctx.input_shape
-        _C = _lazy_import()
-        grad_input = _C.roi_align_backward(
-            grad_output, rois, spatial_scale,
-            output_size[0], output_size[1], bs, ch, h, w, sampling_ratio)
-        return grad_input, None, None, None, None
-
-
 def roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1):
     """
     Performs Region of Interest (RoI) Align operator described in Mask R-CNN
@@ -66,14 +37,10 @@ def roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1):
     rois = boxes
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
-    # TODO: Change this to support backwards, which we
-    #       do not currently support when JIT tracing.
-    if torch._C._get_tracing_state():
-        _lazy_import()
-        return torch.ops.torchvision.roi_align(input, rois, spatial_scale,
-                                               output_size[0], output_size[1],
-                                               sampling_ratio)
-    return _RoIAlignFunction.apply(input, rois, output_size, spatial_scale, sampling_ratio)
+    _lazy_import()
+    return torch.ops.torchvision.roi_align(input, rois, spatial_scale,
+                                           output_size[0], output_size[1],
+                                           sampling_ratio)
 
 
 class RoIAlign(nn.Module):

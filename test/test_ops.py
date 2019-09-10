@@ -188,6 +188,12 @@ class RoIPoolTester(unittest.TestCase):
         assert gradcheck(func, (x,)), 'gradcheck failed for roi_pool CPU'
         assert gradcheck(func, (x.permute(0, 1, 3, 2),)), 'gradcheck failed for roi_pool CPU'
 
+        @torch.jit.script
+        def script_func(input, rois):
+            return torch.ops.torchvision.roi_pool(input, rois, 1.0, 5, 5)[0]
+
+        assert gradcheck(lambda x: script_func(x, rois), (x,)), 'gradcheck failed for scripted roi_pool'
+
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_pool_basic_cuda(self):
         device = torch.device('cuda')
@@ -273,6 +279,12 @@ class RoIPoolTester(unittest.TestCase):
 
         assert gradcheck(func, (x,)), 'gradcheck failed for roi_pool CUDA'
         assert gradcheck(func, (x.permute(0, 1, 3, 2),)), 'gradcheck failed for roi_pool CUDA'
+
+        @torch.jit.script
+        def script_func(input, rois):
+            return torch.ops.torchvision.roi_pool(input, rois, 1.0, 5, 5)[0]
+
+        assert gradcheck(lambda x: script_func(x, rois), (x,)), 'gradcheck failed for scripted roi_pool on CUDA'
 
 
 class RoIAlignTester(unittest.TestCase):
@@ -428,6 +440,12 @@ class RoIAlignTester(unittest.TestCase):
         assert gradcheck(func, (x,)), 'gradcheck failed for RoIAlign CPU'
         assert gradcheck(func, (x.transpose(2, 3),)), 'gradcheck failed for RoIAlign CPU'
 
+        @torch.jit.script
+        def script_func(input, rois):
+            return torch.ops.torchvision.roi_align(input, rois, 0.5, 5, 5, 1)[0]
+
+        assert gradcheck(lambda x: script_func(x, rois), (x,)), 'gradcheck failed for scripted roi_align'
+
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_roi_align_gradient_cuda(self):
         """
@@ -461,6 +479,12 @@ class RoIAlignTester(unittest.TestCase):
 
         assert gradcheck(func, (x,)), 'gradcheck failed for RoIAlign CUDA'
         assert gradcheck(func, (x.transpose(2, 3),)), 'gradcheck failed for RoIAlign CUDA'
+
+        @torch.jit.script
+        def script_func(input, rois):
+            return torch.ops.torchvision.roi_align(input, rois, 0.5, 5, 5, 1)[0]
+
+        assert gradcheck(lambda x: script_func(x, rois), (x,)), 'gradcheck failed for scripted roi_align on CUDA'
 
 
 class NMSTester(unittest.TestCase):
