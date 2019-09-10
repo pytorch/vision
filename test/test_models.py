@@ -36,8 +36,8 @@ torchub_models = {
     "squeezenet1_0": True, # √
     "inception_v3": False, # √
     "googlenet": False, # √
+    "mobilenet_v2": True, # √
     "deeplabv3_resnet101": False,
-    "mobilenet_v2": True,
     "fcn_resnet101": False,
     "densenet121": False,
     "shufflenet_v2_x1_0": True,
@@ -441,7 +441,7 @@ class VGGTester(TorchVisionTester): # run time ~140s
 
         
 class SqueezeNetTester(TorchVisionTester): # run time ~4s
-    # all resnet classes assumed to have default num_classes=1000
+    # num_classes=1000
     # TODO might be worth testing args width_per_group, replace_stride_with_dilation, norm_layer, groups, zero_init_residual
     def _test_classification_squeezenet(self, model, expected_values):
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
@@ -492,7 +492,6 @@ class InceptionTester(TorchVisionTester): # run time ~18s
         INCEPTION_INPUT_SHAPE = (1, 3, 299, 299)
         # num_classes=1000
         # NOTE should we test aux_logits=True, transform_input=False?
-        # num_classes=1000
         model = self._get_test_model(models.inception_v3)
         test_input = self._get_test_input(INCEPTION_INPUT_SHAPE)
         
@@ -520,10 +519,8 @@ class InceptionTester(TorchVisionTester): # run time ~18s
 
 class GoogleNetTester(TorchVisionTester):
     def test_classification_googlenet(self):
-        INCEPTION_INPUT_SHAPE = (1, 3, 299, 299)
         # num_classes=1000
         # NOTE should we test aux_logits=True, transform_input=False?
-        # num_classes=1000
         model = self._get_test_model(models.googlenet)
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
         
@@ -544,16 +541,39 @@ class GoogleNetTester(TorchVisionTester):
             843 : 0.02653
         }
         self._check_model_correctness(model, test_input, expected_values)
-    
+
+
+class MobileNetTester(TorchVisionTester):
+    def test_classification_mobilenet_v2(self):
+        # num_classes=1000
+        # NOTE should we test width_mult=1.0, inverted_residual_setting=None, round_nearest=8?
+        # NOTE something is up here - expected values all 0.0
+        model = self._get_test_model(models.mobilenet_v2)
+        test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
+        
+        self._check_scriptable(model, True)
+        self._check_classification_output_shape(model, test_input, 1000)
+        
+        # self._build_random_check(model, STANDARD_INPUT_SHAPE, [2, 115, 211, 222, 416, 562, 757, 900, 918, 984])
+        expected_values = { # known good values for this model with rand seeded to standard
+            2 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
+            115 : 0.0,
+            211 : 0.0,
+            222 : 0.0,
+            416 : 0.0,
+            562 : 0.0,
+            757 : 0.0,
+            900 : 0.0,
+            918 : 0.0,
+            984 : 0.0
+        }
+        self._check_model_correctness(model, test_input, expected_values)
+        
 #################################################################
 #################################################################
 #################################################################
 
 class YetToBeFixed:
-
-    def test_classification_mobilenet_v2(self):
-        self._test_classification_model('mobilenet_v2', STANDARD_INPUT_SHAPE)
-
         
     def test_classification_mnasnet0_5(self):
         self._test_classification_model('mnasnet0_5', STANDARD_INPUT_SHAPE)
