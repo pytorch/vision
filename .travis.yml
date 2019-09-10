@@ -18,7 +18,12 @@ matrix:
     - env: LINT_CHECK
       python: "2.7"
       install: pip install flake8
-      script: flake8
+      script: flake8 --exclude .circleci
+      after_success: []
+    - env: LINT_CHECK
+      python: "3.6"
+      install: pip install flake8
+      script: flake8 .circleci
       after_success: []
     - python: "2.7"
       env: IMAGE_BACKEND=Pillow-SIMD
