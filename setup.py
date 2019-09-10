@@ -124,6 +124,11 @@ def get_extensions():
     include_dirs = [extensions_dir]
     tests_include_dirs = [test_dir, models_dir]
 
+    # Packages install by conda will put header files in the include folder of
+    # conda virtual environment
+    conda_prefix = os.environ.get('CONDA_PREFIX')
+    conda_include_dir = os.path.join(conda_prefix, 'include')
+
     # TorchVision video reader
     video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
     video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
@@ -148,6 +153,7 @@ def get_extensions():
             video_reader_src,
             include_dirs=[
                 video_reader_src_dir,
+                conda_include_dir,
             ],
             libraries=[
                 'glog',

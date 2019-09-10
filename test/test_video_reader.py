@@ -1,7 +1,6 @@
 import collections
 from common_utils import get_tmp_dir
 from fractions import Fraction
-import logging
 import math
 import numpy as np
 import os
@@ -105,8 +104,6 @@ test_videos = {
 lib_path = os.path.join("torchvision", "video_reader.so")
 torch.ops.load_library(lib_path)
 video_reader = torch.ops.video_reader
-
-log = logging.getLogger(__name__)
 
 DecoderResult = collections.namedtuple(
     "DecoderResult", "vframes vframe_pts vtimebase aframes aframe_pts atimebase"
@@ -233,7 +230,6 @@ def _decode_frames_by_av_module(
         [audio_frame.pts for audio_frame in audio_frames], dtype=torch.int64
     )
 
-    log.error("Decode by PyAv. Elapsed time: %2.4f\n" % elapsed_time)
 
     return DecoderResult(
         vframes=vframes,
@@ -343,7 +339,6 @@ class TestVideoReader(unittest.TestCase):
         "By default, it is disabled"
     )
     def test_stress_test_read_video_from_file(self):
-        log.error("\n\t===========stress test: read_video_from_file")
         num_iter = 10000
         # video related
         width, height, min_dimension = 0, 0, 0
@@ -355,10 +350,7 @@ class TestVideoReader(unittest.TestCase):
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for i in range(num_iter):
-            if i % 100 == 0:
-                log.error("%d / %d" % (i, num_iter))
             for test_video, config in test_videos.items():
-                log.error("\nvideo: %s\n" % test_video)
                 full_path = os.path.join(VIDEO_DIR, test_video)
 
                 # pass 1: decode all frames using new decoder
@@ -384,7 +376,6 @@ class TestVideoReader(unittest.TestCase):
 
 
     def test_read_video_from_file(self):
-        log.error("\n\t===========test_read_video_from_file")
         """
         Test the case when decoder starts with a video file to decode frames.
         """
@@ -398,7 +389,6 @@ class TestVideoReader(unittest.TestCase):
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
-            log.error("\nvideo: %s\n" % test_video)
             full_path = os.path.join(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using new decoder
@@ -422,9 +412,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_den,
             )
             elapsed_time = time.perf_counter() - start_time
-            log.error(
-                "TorchVision decoder. Elapsed time: %2.4f\n" % elapsed_time
-            )
             # pass 2: decode all frames using av
             pyav_result = _decode_frames_by_av_module(full_path)
             # check results from TorchVision decoder
@@ -433,7 +420,6 @@ class TestVideoReader(unittest.TestCase):
             self.compare_decoding_result(tv_result, pyav_result, config)
 
     def test_read_video_from_file_rescale_min_dimension(self):
-        log.error("\n\t===========test_read_video_from_file_rescale_min_dimension")
         """
         Test the case when decoder starts with a video file to decode frames, and
         video min dimension between height and width is set.
@@ -448,7 +434,6 @@ class TestVideoReader(unittest.TestCase):
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
-            log.error("\nvideo: %s\n" % test_video)
             full_path = os.path.join(VIDEO_DIR, test_video)
 
             start_time = time.perf_counter()
@@ -471,11 +456,9 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_den,
             )
             elapsed_time = time.perf_counter() - start_time
-            log.error("TorchVision decoder. Elapsed time: %2.4f\n" % elapsed_time)
             self.assertEqual(min_dimension, min(tv_result[0].size(1), tv_result[0].size(2)))
 
     def test_read_video_from_file_rescale_width(self):
-        log.error("\n\t===========test_read_video_from_file_rescale_width")
         """
         Test the case when decoder starts with a video file to decode frames, and
         video width is set.
@@ -490,7 +473,6 @@ class TestVideoReader(unittest.TestCase):
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
-            log.error("\nvideo: %s\n" % test_video)
             full_path = os.path.join(VIDEO_DIR, test_video)
 
             start_time = time.perf_counter()
@@ -513,11 +495,9 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_den,
             )
             elapsed_time = time.perf_counter() - start_time
-            log.error("TorchVision decoder. Elapsed time: %2.4f\n" % elapsed_time)
             self.assertEqual(tv_result[0].size(2), width)
 
     def test_read_video_from_file_rescale_height(self):
-        log.error("\n\t===========test_read_video_from_file_rescale_height")
         """
         Test the case when decoder starts with a video file to decode frames, and
         video height is set.
@@ -532,7 +512,6 @@ class TestVideoReader(unittest.TestCase):
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
-            log.error("\nvideo: %s\n" % test_video)
             full_path = os.path.join(VIDEO_DIR, test_video)
 
             start_time = time.perf_counter()
@@ -555,11 +534,9 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_den,
             )
             elapsed_time = time.perf_counter() - start_time
-            log.error("TorchVision decoder. Elapsed time: %2.4f\n" % elapsed_time)
             self.assertEqual(tv_result[0].size(1), height)
 
     def test_read_video_from_file_rescale_width_and_height(self):
-        log.error("\n\t===========test_read_video_from_file_rescale_width_and_height")
         """
         Test the case when decoder starts with a video file to decode frames, and
         both video height and width are set.
@@ -574,7 +551,6 @@ class TestVideoReader(unittest.TestCase):
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
-            log.error("\nvideo: %s\n" % test_video)
             full_path = os.path.join(VIDEO_DIR, test_video)
 
             start_time = time.perf_counter()
@@ -597,13 +573,11 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_den,
             )
             elapsed_time = time.perf_counter() - start_time
-            log.error("TorchVision decoder. Elapsed time: %2.4f\n" % elapsed_time)
             self.assertEqual(tv_result[0].size(1), height)
             self.assertEqual(tv_result[0].size(2), width)
 
 
     def test_read_video_from_file_audio_resampling(self):
-        log.error("\n\t===========test_read_video_from_file_audio_resampling")
         """
         Test the case when decoder starts with a video file to decode frames, and
         audio waveform are resampled
@@ -623,7 +597,6 @@ class TestVideoReader(unittest.TestCase):
             audio_timebase_num, audio_timebase_den = 0, 1
 
             for test_video, config in test_videos.items():
-                log.error("\nvideo: %s\n" % test_video)
                 full_path = os.path.join(VIDEO_DIR, test_video)
 
                 tv_result = video_reader.read_video_from_file(
@@ -659,7 +632,6 @@ class TestVideoReader(unittest.TestCase):
                     )
 
     def test_compare_read_video_from_memory_and_file(self):
-        log.error("\n\t===========test_compare_read_video_from_memory_and_file")
         """
         Test the case when video is already in memory, and decoder reads data in memory
         """
@@ -673,7 +645,6 @@ class TestVideoReader(unittest.TestCase):
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
-            log.error("\nvideo: %s\n" % test_video)
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using cpp decoder
@@ -697,9 +668,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_den,
             )
             elapsed_time = time.perf_counter() - start_time
-            log.error(
-                "TorchVision decoder. Elapsed time: %2.4f\n" % elapsed_time
-            )
             self.check_separate_decoding_result(tv_result_memory, config)
             # pass 2: decode all frames from file
             start_time = time.perf_counter()
@@ -722,7 +690,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_den,
             )
             elapsed_time = time.perf_counter() - start_time
-            log.error("TorchVision decoder. Elapsed time: %2.4f\n" % elapsed_time)
 
             self.check_separate_decoding_result(tv_result_file, config)
             # finally, compare results decoded from memory and file
@@ -730,7 +697,6 @@ class TestVideoReader(unittest.TestCase):
 
 
     def test_read_video_from_file(self):
-        log.error("\n\t===========test_read_video_from_file")
         """
         Test the case when decoder starts with a video file to decode frames.
         """
@@ -744,7 +710,6 @@ class TestVideoReader(unittest.TestCase):
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
-            log.error("\nvideo: %s\n" % test_video)
             full_path = os.path.join(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using new decoder
@@ -768,7 +733,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_den,
             )
             elapsed_time = time.perf_counter() - start_time
-            log.error("TorchVision decoder. Elapsed time: %2.4f\n" % elapsed_time)
             # pass 2: decode all frames using av
             pyav_result = _decode_frames_by_av_module(full_path)
 
@@ -777,7 +741,6 @@ class TestVideoReader(unittest.TestCase):
             self.compare_decoding_result(tv_result, pyav_result, config)
 
     def test_read_video_from_memory(self):
-        log.error("\n\t===========test_read_video_from_memory")
         """
         Test the case when video is already in memory, and decoder reads data in memory
         """
@@ -791,7 +754,6 @@ class TestVideoReader(unittest.TestCase):
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
-            log.error("\nvideo: %s\n" % test_video)
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using cpp decoder
@@ -815,7 +777,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_den,
             )
             elapsed_time = time.perf_counter() - start_time
-            log.error("TorchVision decoder. Elapsed time: %2.4f\n" % elapsed_time)
             # pass 2: decode all frames using av
             pyav_result = _decode_frames_by_av_module(full_path)
 
@@ -823,7 +784,6 @@ class TestVideoReader(unittest.TestCase):
             self.compare_decoding_result(tv_result, pyav_result, config)
 
     def test_read_video_from_memory_get_pts_only(self):
-        log.error("\n\t===========test_read_video_from_memory_get_pts_only")
         """
         Test the case when video is already in memory, and decoder reads data in memory.
         Compare frame pts between decoding for pts only and full decoding
@@ -839,7 +799,6 @@ class TestVideoReader(unittest.TestCase):
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
-            log.error("\nvideo: %s\n" % test_video)
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using cpp decoder
@@ -863,7 +822,6 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_den,
             )
             elapsed_time = time.perf_counter() - start_time
-            log.error("getPtsOnly = 0. Elapsed time: %2.4f" % elapsed_time)
             self.assertAlmostEqual(config.video_fps, tv_result[3].item(), delta=0.01)
 
             # pass 2: decode all frames to get PTS only using cpp decoder
@@ -887,21 +845,18 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_den,
             )
             elapsed_time = time.perf_counter() - start_time
-            log.error("getPtsOnly = 1. Elapsed time: %2.4f\n" % elapsed_time)
 
             self.assertEqual(tv_result_pts_only[0].numel(), 0)
             self.assertEqual(tv_result_pts_only[4].numel(), 0)
             self.compare_decoding_result(tv_result, tv_result_pts_only)
 
     def test_read_video_in_range_from_memory(self):
-        log.error("\n\ttest_read_video_in_range_from_memory")
         """
         Test the case when video is already in memory, and decoder reads data in memory.
         In addition, decoder takes meaningful start- and end PTS as input, and decode
         frames within that interval
         """
         for test_video, config in test_videos.items():
-            log.error("\nvideo: %s\n" % test_video)
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
             # video related
             width, height, min_dimension = 0, 0, 0
@@ -935,16 +890,11 @@ class TestVideoReader(unittest.TestCase):
                 tv_result
             )
             elapsed_time = time.perf_counter() - start_time
-            log.error(
-                "Decode whole video by TorchVision decoder. Elapsed time: %2.4f" % elapsed_time
-            )
             self.assertAlmostEqual(config.video_fps, vfps.item(), delta=0.01)
 
             for num_frames in [4, 8, 16, 32, 64, 128]:
-                log.error("\nvideo: %s No. of frames: %d" % (test_video, num_frames))
                 start_pts_ind_max = vframe_pts.size(0) - num_frames
                 if start_pts_ind_max <= 0:
-                    log.error("Skip.")
                     continue
                 # randomly pick start pts
                 start_pts_ind = randint(0, start_pts_ind_max)
@@ -990,9 +940,6 @@ class TestVideoReader(unittest.TestCase):
                     audio_timebase_den,
                 )
                 elapsed_time = time.perf_counter() - start_time
-                log.error(
-                    "TorchVision decoder. Elapsed time: %2.4f" % elapsed_time
-                )
 
                 # pass 3: decode frames in range using PyAv
                 video_timebase_av, audio_timebase_av = _get_timebase_by_av_module(full_path)
