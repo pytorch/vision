@@ -69,7 +69,7 @@ def roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1):
     # TODO: Change this to support backwards, which we
     #       do not currently support when JIT tracing.
     if torch._C._get_tracing_state():
-        _C = _lazy_import()
+        _lazy_import()
         return torch.ops.torchvision.roi_align(input, rois, spatial_scale,
                                                output_size[0], output_size[1],
                                                sampling_ratio)

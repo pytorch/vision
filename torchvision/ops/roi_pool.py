@@ -62,7 +62,7 @@ def roi_pool(input, boxes, output_size, spatial_scale=1.0):
     # TODO: Change this to support backwards, which we
     #       do not currently support when JIT tracing.
     if torch._C._get_tracing_state():
-        _C = _lazy_import()
+        _lazy_import()
         output, _ = torch.ops.torchvision.roi_pool(input, rois, spatial_scale,
                                                    output_size[0], output_size[1])
         return output
