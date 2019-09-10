@@ -178,7 +178,7 @@ class SegmentationCompose(MultiCompose):
             elif self.is_itpl(tf):
                 ltf = copy.deepcopy(tf)
                 ltf.interpolation = Image.NEAREST
-                ltf.resample = Image.NEAREST # really, RandomRotation & RandomAffine?
+                ltf.resample = Image.NEAREST  # really, RandomRotation & RandomAffine?
                 self.label_transforms.append(ltf)
             elif self.is_tensor(tf):
                 self.label_transforms.append(
