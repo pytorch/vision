@@ -86,8 +86,9 @@ class TorchVisionTester(unittest.TestCase):
         out = model(test_input)
         self.assertEqual(out.shape, (1, num_classes))
     
-    def _check_model_correctness(self, model, x, expected_values):
+    def _check_model_correctness(self, model, x, expected_values, num_classes):
         y = self._infer_for_test_with(model, x) # because dropout &c
+        self._check_classification_output_shape(model, x, num_classes)
         for k in expected_values:
             self.assertTrue(abs(y[0][k].item() - expected_values[k]) < EPSILON,
                             'output tensor value at {} should be {}, got {}'.format(k, expected_values[k], y[0][k].item()))
@@ -113,7 +114,6 @@ class AlexnetTester(TorchVisionTester): # run time ~2s
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
         
         self._check_scriptable(model, True)
-        self._check_classification_output_shape(model, test_input, 1000)
         expected_values = { # known good values for this model with rand seeded to standard
             130 : 0.019345,
             257 : -0.002852,
@@ -126,7 +126,7 @@ class AlexnetTester(TorchVisionTester): # run time ~2s
             667 : 0.004638,
             945 : -0.014482
         }
-        self._check_model_correctness(model, test_input, expected_values)
+        self._check_model_correctness(model, test_input, expected_values, 1000)
 
 class ResnetTester(TorchVisionTester): # run time ~130s
     
@@ -134,8 +134,7 @@ class ResnetTester(TorchVisionTester): # run time ~130s
     # TODO might be worth testing args width_per_group, replace_stride_with_dilation, norm_layer, groups, zero_init_residual
     def _test_classification_resnet(self, model, expected_values):
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
-        self._check_classification_output_shape(model, test_input, 1000)
-        self._check_model_correctness(model, test_input, expected_values)
+        self._check_model_correctness(model, test_input, expected_values, 1000)
         
     def test_classification_resnet18(self):
         model = self._get_test_model(models.resnet18)
@@ -298,8 +297,7 @@ class VGGTester(TorchVisionTester): # run time ~140s
     # TODO test with init_weights?
     def _test_classification_vgg(self, model, expected_values):
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
-        self._check_classification_output_shape(model, test_input, 1000)
-        self._check_model_correctness(model, test_input, expected_values)
+        self._check_model_correctness(model, test_input, expected_values, 1000)
 
     def test_classification_vgg11(self):
         model = self._get_test_model(models.vgg11)
@@ -445,8 +443,7 @@ class SqueezeNetTester(TorchVisionTester): # run time ~4s
     # TODO might be worth testing args width_per_group, replace_stride_with_dilation, norm_layer, groups, zero_init_residual
     def _test_classification_squeezenet(self, model, expected_values):
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
-        self._check_classification_output_shape(model, test_input, 1000)
-        self._check_model_correctness(model, test_input, expected_values)
+        self._check_model_correctness(model, test_input, expected_values, 1000)
         
     def test_classification_squeezenet1_0(self):
         # num_classes=1000
@@ -496,7 +493,6 @@ class InceptionTester(TorchVisionTester): # run time ~18s
         test_input = self._get_test_input(INCEPTION_INPUT_SHAPE)
         
         self._check_scriptable(model, False)
-        self._check_classification_output_shape(model, test_input, 1000)
         
         # TODO for whatever reason, this was not running deterministically - will fix others and come back
         # NOTE values are also really huge, not the usual -1 < x < 1
@@ -515,7 +511,7 @@ class InceptionTester(TorchVisionTester): # run time ~18s
             842 : -1566286464.0,
             890 : -431068224.0
         }
-        self._check_model_correctness(model, test_input, expected_values)
+        self._check_model_correctness(model, test_input, expected_values, 1000)
 
 class GoogleNetTester(TorchVisionTester):
     def test_classification_googlenet(self):
@@ -525,9 +521,7 @@ class GoogleNetTester(TorchVisionTester):
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
         
         self._check_scriptable(model, False)
-        self._check_classification_output_shape(model, test_input, 1000)
         
-        # self._build_random_check(model, STANDARD_INPUT_SHAPE, [153, 264, 378, 518, 562, 654, 684, 747, 823, 843])
         expected_values = { # known good values for this model with rand seeded to standard
             153 : -0.016547,
             264 : -0.016431,
@@ -540,7 +534,7 @@ class GoogleNetTester(TorchVisionTester):
             823 : 0.031032,
             843 : 0.02653
         }
-        self._check_model_correctness(model, test_input, expected_values)
+        self._check_model_correctness(model, test_input, expected_values, 1000)
 
 
 class MobileNetTester(TorchVisionTester):
@@ -552,7 +546,6 @@ class MobileNetTester(TorchVisionTester):
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
         
         self._check_scriptable(model, True)
-        self._check_classification_output_shape(model, test_input, 1000)
         
         # self._build_random_check(model, STANDARD_INPUT_SHAPE, [2, 115, 211, 222, 416, 562, 757, 900, 918, 984])
         expected_values = { # known good values for this model with rand seeded to standard
@@ -567,7 +560,49 @@ class MobileNetTester(TorchVisionTester):
             918 : 0.0,
             984 : 0.0
         }
-        self._check_model_correctness(model, test_input, expected_values)
+        self._check_model_correctness(model, test_input, expected_values, 1000)
+
+
+class MNASNetTester(TorchVisionTester):
+    def _test_classification_mnas(self, model, expected_values):
+        test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
+        self._check_model_correctness(model, test_input, expected_values, 1000)
+
+    def test_classification_mnasnet0_5(self):
+        # num_classes=1000
+        # NOTE should we test dropout=0.2?
+        # NOTE no scriptability check specified
+        # NOTE something is up here - expected values all 0.0
+        model = self._get_test_model(models.mnasnet0_5)
+        
+        # self._build_random_check(model, STANDARD_INPUT_SHAPE, [124, 249, 272, 287, 306, 409, 494, 505, 569, 959])
+        expected_values = { # known good values for this model with rand seeded to standard
+            124 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
+            249 : 0.0,
+            272 : 0.0,
+            287 : 0.0,
+            306 : 0.0,
+            409 : 0.0,
+            494 : 0.0,
+            505 : 0.0,
+            569 : 0.0,
+            959 : 0.0,
+        }
+        self._test_classification_mnas(model, expected_values)
+
+
+    def test_classification_mnasnet0_75(self):
+        # self._test_classification_model('mnasnet0_75', STANDARD_INPUT_SHAPE)
+        pass
+
+    def test_classification_mnasnet1_0(self):
+        # self._test_classification_model('mnasnet1_0', STANDARD_INPUT_SHAPE)
+        pass
+
+    def test_classification_mnasnet1_3(self):
+        # self._test_classification_model('mnasnet1_3', STANDARD_INPUT_SHAPE)
+        pass
+
         
 #################################################################
 #################################################################
@@ -575,17 +610,6 @@ class MobileNetTester(TorchVisionTester):
 
 class YetToBeFixed:
         
-    def test_classification_mnasnet0_5(self):
-        self._test_classification_model('mnasnet0_5', STANDARD_INPUT_SHAPE)
-
-    def test_classification_mnasnet0_75(self):
-        self._test_classification_model('mnasnet0_75', STANDARD_INPUT_SHAPE)
-
-    def test_classification_mnasnet1_0(self):
-        self._test_classification_model('mnasnet1_0', STANDARD_INPUT_SHAPE)
-
-    def test_classification_mnasnet1_3(self):
-        self._test_classification_model('mnasnet1_3', STANDARD_INPUT_SHAPE)
 
         
     def test_classification_shufflenet_v2_x0_5(self):
