@@ -48,20 +48,20 @@ STANDARD_INPUT_SHAPE = (1, 3, 224, 224) # for ImageNet-trained models
 EPSILON = 1e-6
 
 class TorchVisionTester(unittest.TestCase):
-    
+
     TEST_INPUTS = {}
-    
+
     # set random seed for whatever callable follows (if any)
     # can be called with no args to just set to standard random seed
     def _rand_sync(self, callable=None, **kwargs):
         torch.random.manual_seed(STANDARD_SEED)
         if callable is not None:
             return callable(**kwargs)
-    
+
     # create a randomly-weighted model w/ synced RNG state
     def _get_test_model(self, callable, **kwargs):
         return self._rand_sync(callable, **kwargs).eval()
-    
+
     # create random tensor with given shape using synced RNG state
     # caching because these tests take pretty long already (instantiating models and all)
     def _get_test_input(self, shape):
@@ -70,10 +70,10 @@ class TorchVisionTester(unittest.TestCase):
         if shape not in self.TEST_INPUTS:
             self.TEST_INPUTS[shape] = self._rand_sync(lambda: torch.rand(shape))
         return self.TEST_INPUTS[shape]
-    
+
     def _infer_for_test_with(self, model, x):
         return self._rand_sync(lambda: model(x)) # rand state force because dropout &c
-    
+
     def _check_scriptable(self, model, should_be_scriptable):
         is_actually_scriptable = True
         try:
@@ -85,14 +85,14 @@ class TorchVisionTester(unittest.TestCase):
     def _check_classification_output_shape(self, model, test_input, num_classes):
         out = model(test_input)
         self.assertEqual(out.shape, (1, num_classes))
-    
+
     def _check_model_correctness(self, model, x, expected_values, num_classes):
         y = self._infer_for_test_with(model, x) # because dropout &c
         self._check_classification_output_shape(model, x, num_classes)
         for k in expected_values:
             self.assertTrue(abs(y[0][k].item() - expected_values[k]) < EPSILON,
                             'output tensor value at {} should be {}, got {}'.format(k, expected_values[k], y[0][k].item()))
-    
+
     # I'm using this to help build random sets of expected values
     def _build_random_check(self, model, input_shape, indices):
          # do inference with RNG in known state for determinacy
@@ -107,12 +107,12 @@ class TorchVisionTester(unittest.TestCase):
         print('}')
 
 class AlexnetTester(TorchVisionTester): # run time ~2s
-    
+
     def test_classification_alexnet(self):
         # num_classes=1000
         model = self._get_test_model(models.alexnet)
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
-        
+
         self._check_scriptable(model, True)
         expected_values = { # known good values for this model with rand seeded to standard
             130 : 0.019345,
@@ -129,13 +129,13 @@ class AlexnetTester(TorchVisionTester): # run time ~2s
         self._check_model_correctness(model, test_input, expected_values, 1000)
 
 class ResnetTester(TorchVisionTester): # run time ~130s
-    
+
     # all resnet classes assumed to have default num_classes=1000
     # TODO might be worth testing args width_per_group, replace_stride_with_dilation, norm_layer, groups, zero_init_residual
     def _test_classification_resnet(self, model, expected_values):
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
         self._check_model_correctness(model, test_input, expected_values, 1000)
-        
+
     def test_classification_resnet18(self):
         model = self._get_test_model(models.resnet18)
         self._check_scriptable(model, True)
@@ -152,8 +152,8 @@ class ResnetTester(TorchVisionTester): # run time ~130s
             885 : -1.386981
         }
         self._test_classification_resnet(model, expected_values)
-        
-        
+
+
     def test_classification_resnet34(self):
         # NOTE passes scriptability check, but none was previously specified
         model = self._get_test_model(models.resnet34)
@@ -170,7 +170,7 @@ class ResnetTester(TorchVisionTester): # run time ~130s
             960 : -12.154144
         }
         self._test_classification_resnet(model, expected_values)
-            
+
     def test_classification_resnet50(self):
         # NOTE fails scriptability check, but none was previously specified
         model = self._get_test_model(models.resnet50)
@@ -224,7 +224,7 @@ class ResnetTester(TorchVisionTester): # run time ~130s
         }
         self._test_classification_resnet(model, expected_values)
 
-    def test_classification_resnext50_32x4d(self):    
+    def test_classification_resnext50_32x4d(self):
         model = self._get_test_model(models.resnext50_32x4d)
         self._check_scriptable(model, False)
         expected_values = { # known good values for this model with rand seeded to standard
@@ -257,7 +257,7 @@ class ResnetTester(TorchVisionTester): # run time ~130s
             822 : -0.02232
         }
         self._test_classification_resnet(model, expected_values)
-    
+
     def test_classification_wide_resnet50_2(self):
         # NOTE no scriptability check specified
         model = self._get_test_model(models.wide_resnet50_2)
@@ -349,7 +349,7 @@ class VGGTester(TorchVisionTester): # run time ~140s
             997 : 0.019514
         }
         self._test_classification_vgg(model, expected_values)
-        
+
     def test_classification_vgg13_bn(self):
         # NOTE no scriptability check specified
         # NOTE this also passes using the expected values from vgg13 - is that expected?
@@ -368,7 +368,7 @@ class VGGTester(TorchVisionTester): # run time ~140s
             931 : -0.000928
         }
         self._test_classification_vgg(model, expected_values)
-        
+
     def test_classification_vgg16(self):
         # NOTE no scriptability check specified
         model = self._get_test_model(models.vgg16)
@@ -385,7 +385,7 @@ class VGGTester(TorchVisionTester): # run time ~140s
             982 : -0.071333
         }
         self._test_classification_vgg(model, expected_values)
-        
+
     def test_classification_vgg16_bn(self):
         # NOTE no scriptability check specified
         model = self._get_test_model(models.vgg16_bn)
@@ -437,14 +437,14 @@ class VGGTester(TorchVisionTester): # run time ~140s
         }
         self._test_classification_vgg(model, expected_values)
 
-        
+
 class SqueezeNetTester(TorchVisionTester): # run time ~4s
     # num_classes=1000
     # TODO might be worth testing args width_per_group, replace_stride_with_dilation, norm_layer, groups, zero_init_residual
     def _test_classification_squeezenet(self, model, expected_values):
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
         self._check_model_correctness(model, test_input, expected_values, 1000)
-        
+
     def test_classification_squeezenet1_0(self):
         # num_classes=1000
         # NOTE seeing straight-up zeros in the expected values surprised me
@@ -483,7 +483,7 @@ class SqueezeNetTester(TorchVisionTester): # run time ~4s
             967 : 0.0
         }
         self._test_classification_squeezenet(model, expected_values)
-        
+
 class InceptionTester(TorchVisionTester): # run time ~18s
     def test_classification_inception_v3(self):
         INCEPTION_INPUT_SHAPE = (1, 3, 299, 299)
@@ -491,9 +491,9 @@ class InceptionTester(TorchVisionTester): # run time ~18s
         # NOTE should we test aux_logits=True, transform_input=False?
         model = self._get_test_model(models.inception_v3)
         test_input = self._get_test_input(INCEPTION_INPUT_SHAPE)
-        
+
         self._check_scriptable(model, False)
-        
+
         # TODO for whatever reason, this was not running deterministically - will fix others and come back
         # NOTE values are also really huge, not the usual -1 < x < 1
         # NOTE The issue is not rand dropout. InceptionV3 *does* use F.dropout where everyone else uses nn.Dropout,
@@ -519,9 +519,9 @@ class GoogleNetTester(TorchVisionTester):
         # NOTE should we test aux_logits=True, transform_input=False?
         model = self._get_test_model(models.googlenet)
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
-        
+
         self._check_scriptable(model, False)
-        
+
         expected_values = { # known good values for this model with rand seeded to standard
             153 : -0.016547,
             264 : -0.016431,
@@ -544,9 +544,9 @@ class MobileNetTester(TorchVisionTester):
         # NOTE something is up here - expected values all 0.0
         model = self._get_test_model(models.mobilenet_v2)
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
-        
+
         self._check_scriptable(model, True)
-        
+
         # self._build_random_check(model, STANDARD_INPUT_SHAPE, [2, 115, 211, 222, 416, 562, 757, 900, 918, 984])
         expected_values = { # known good values for this model with rand seeded to standard
             2 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
@@ -574,7 +574,7 @@ class MNASNetTester(TorchVisionTester):
 
     def test_classification_mnasnet0_5(self):
         model = self._get_test_model(models.mnasnet0_5)
-        
+
         # self._build_random_check(model, STANDARD_INPUT_SHAPE, [124, 249, 272, 287, 306, 409, 494, 505, 569, 959])
         expected_values = { # known good values for this model with rand seeded to standard
             124 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
@@ -593,7 +593,7 @@ class MNASNetTester(TorchVisionTester):
 
     def test_classification_mnasnet0_75(self):
         model = self._get_test_model(models.mnasnet0_75)
-        
+
         # self._build_random_check(model, STANDARD_INPUT_SHAPE, [56, 62, 304, 330, 380, 388, 434, 443, 550, 579])
         expected_values = { # known good values for this model with rand seeded to standard
             56 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
@@ -611,7 +611,7 @@ class MNASNetTester(TorchVisionTester):
 
     def test_classification_mnasnet1_0(self):
         model = self._get_test_model(models.mnasnet1_0)
-        
+
         # self._build_random_check(model, STANDARD_INPUT_SHAPE, [252, 287, 291, 297, 351, 384, 542, 653, 738, 829])
         expected_values = { # known good values for this model with rand seeded to standard
             252 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
@@ -629,7 +629,7 @@ class MNASNetTester(TorchVisionTester):
 
     def test_classification_mnasnet1_3(self):
         model = self._get_test_model(models.mnasnet1_3)
-        
+
         # self._build_random_check(model, STANDARD_INPUT_SHAPE, [96, 207, 397, 552, 654, 750, 751, 788, 822, 827])
         expected_values = { # known good values for this model with rand seeded to standard
             96 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
@@ -732,22 +732,8 @@ class ShuffleNetTester(TorchVisionTester):
 #################################################################
 
 class YetToBeFixed:
-        
 
-        
-    def test_classification_shufflenet_v2_x0_5(self):
-        self._test_classification_model('shufflenet_v2_x0_5', STANDARD_INPUT_SHAPE)
 
-    def test_classification_shufflenet_v2_x1_0(self):
-        self._test_classification_model('shufflenet_v2_x1_0', STANDARD_INPUT_SHAPE)
-
-    def test_classification_shufflenet_v2_x1_5(self):
-        self._test_classification_model('shufflenet_v2_x1_5', STANDARD_INPUT_SHAPE)
-
-    def test_classification_shufflenet_v2_x2_0(self):
-        self._test_classification_model('shufflenet_v2_x2_0', STANDARD_INPUT_SHAPE)
-
-        
     def test_classification_densenet121(self):
         self._test_classification_model('densenet121', STANDARD_INPUT_SHAPE)
 
