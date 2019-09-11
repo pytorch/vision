@@ -7,6 +7,22 @@ from torchvision.ops import roi_align
 from torchvision.ops.boxes import box_area
 
 
+def merge_levels_onnx(levels, unmerged_results):
+    first_result = unmerged_results[0]
+    dtype, device = first_result.dtype, first_result.device
+    res = torch.zeros((levels.size(0), first_result.size(1),
+                       first_result.size(2), first_result.size(3)),
+                      dtype=dtype, device=device)
+    for l in range(len(unmerged_results)):
+        index = (levels == l).nonzero().view(-1, 1, 1, 1)
+        index = index.expand(index.size(0),
+                             unmerged_results[l].size(1),
+                             unmerged_results[l].size(2),
+                             unmerged_results[l].size(3)).to(torch.long)
+        res = res.scatter(0, index, unmerged_results[l])
+    return res
+
+
 class LevelMapper(object):
     """Determine which FPN level each RoI in a set of RoIs should map to based
     on the heuristic in the FPN paper.
@@ -35,7 +51,7 @@ class LevelMapper(object):
         s = torch.sqrt(torch.cat([box_area(boxlist) for boxlist in boxlists]))
 
         # Eqn.(1) in FPN paper
-        target_lvls = torch.floor(self.lvl0 + torch.log2(s / self.s0 + self.eps))
+        target_lvls = torch.floor(self.lvl0 + torch.log2(s / self.s0) + torch.tensor(self.eps, dtype=torch.float32))
         target_lvls = torch.clamp(target_lvls, min=self.k_min, max=self.k_max)
         return target_lvls.to(torch.int64) - self.k_min
 
@@ -84,7 +100,7 @@ class MultiScaleRoIAlign(nn.Module):
         device, dtype = concat_boxes.device, concat_boxes.dtype
         ids = torch.cat(
             [
-                torch.full((len(b), 1), i, dtype=dtype, device=device)
+                torch.full_like(b[:, :1], i, dtype=dtype, device=device)
                 for i, b in enumerate(boxes)
             ],
             dim=0,
@@ -153,14 +169,18 @@ class MultiScaleRoIAlign(nn.Module):
             device=device,
         )
 
+        results = []
         for level, (per_level_feature, scale) in enumerate(zip(x, self.scales)):
             idx_in_level = torch.nonzero(levels == level).squeeze(1)
             rois_per_level = rois[idx_in_level]
-
-            result[idx_in_level] = roi_align(
+            result_idx_in_level = roi_align(
                 per_level_feature, rois_per_level,
                 output_size=self.output_size,
-                spatial_scale=scale, sampling_ratio=self.sampling_ratio
-            )
+                spatial_scale=scale, sampling_ratio=self.sampling_ratio)
 
+            if torch._C._get_tracing_state():
+                results.append(result_idx_in_level.to(dtype))
+                result = merge_levels_onnx(levels, results)
+            else:
+                result[idx_in_level] = result_idx_in_level
         return result
