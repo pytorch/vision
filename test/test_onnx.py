@@ -1,6 +1,7 @@
 import io
 import torch
 from torchvision import ops
+from torchvision.models.detection.transform import GeneralizedRCNNTransform
 
 # onnxruntime requires python 3.5 or above
 try:
@@ -17,7 +18,7 @@ class ONNXExporterTester(unittest.TestCase):
     def setUpClass(cls):
         torch.manual_seed(123)
 
-    def run_model(self, model, inputs):
+    def run_model(self, model, inputs, other_inputs=None):
         model.eval()
 
         # run pytorch model
@@ -34,6 +35,17 @@ class ONNXExporterTester(unittest.TestCase):
 
         # validate the exported model with onnx runtime
         self.ort_validate(onnx_io, inputs, outputs)
+
+        # verify with the other inputs
+        if other_inputs:
+            for test_inputs in other_inputs:
+                with torch.no_grad():
+                    if isinstance(test_inputs, torch.Tensor):
+                        test_inputs = (test_inputs,)
+                    test_ouputs = model(*test_inputs)
+                    if isinstance(test_ouputs, torch.Tensor):
+                        test_ouputs = (test_ouputs,)
+                self.ort_validate(onnx_io, test_inputs, test_ouputs)
 
     def ort_validate(self, onnx_io, inputs, outputs):
 
@@ -83,6 +95,22 @@ class ONNXExporterTester(unittest.TestCase):
         model.eval()
         self.run_model(model, (x, rois))
 
+    @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
+    def test_transform_images(self):
+        class TransformModule(torch.nn.Module):
+            def __init__(self_module):
+                super(TransformModule, self_module).__init__()
+                min_size = 800
+                max_size = 1333
+                image_mean = [0.485, 0.456, 0.406]
+                image_std = [0.229, 0.224, 0.225]
+                self_module.transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
+            def forward(self_module, images):
+                return self_module.transform(images)[0].tensors
+
+        input = [torch.rand(3, 800, 1280), torch.rand(3, 800, 800)]
+        input_test = [torch.rand(3, 800, 1280), torch.rand(3, 800, 800)]
+        self.run_model(TransformModule(), (input,), [(input_test,)])
 
 if __name__ == '__main__':
     unittest.main()
