@@ -354,8 +354,8 @@ def crop(img, i, j, h, w):
 
     Args:
         img (PIL Image): Image to be cropped.
-        i (int): i in (i,j) i.e coordinates of the upper left corner.
-        j (int): j in (i,j) i.e coordinates of the upper left corner.
+        i (int): i in (j,i) i.e coordinates of the upper left corner.
+        j (int): j in (j,i) i.e coordinates of the upper left corner.
         h (int): Height of the cropped image.
         w (int): Width of the cropped image.
 
