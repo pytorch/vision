@@ -592,7 +592,7 @@ class MNASNetTester(TorchVisionTester):
 
 
     def test_classification_mnasnet0_75(self):
-        model = self._get_test_model(models.mnasnet0_5)
+        model = self._get_test_model(models.mnasnet0_75)
         
         # self._build_random_check(model, STANDARD_INPUT_SHAPE, [56, 62, 304, 330, 380, 388, 434, 443, 550, 579])
         expected_values = { # known good values for this model with rand seeded to standard
@@ -645,7 +645,88 @@ class MNASNetTester(TorchVisionTester):
         }
         self._test_classification_mnas(model, expected_values)
 
-        
+
+class ShuffleNetTester(TorchVisionTester):
+    def _test_classification_shufflenet(self, model, expected_values):
+        test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
+        self._check_model_correctness(model, test_input, expected_values, 1000)
+
+    def test_classification_shufflenet_v2_x0_5(self):
+        model = self._get_test_model(models.shufflenet_v2_x0_5)
+        # NOTE no scriptability check specified
+
+        # self._build_random_check(model, STANDARD_INPUT_SHAPE, [121, 279, 296, 589, 633, 667, 835, 921, 923, 990])
+        expected_values = { # known good values for this model with rand seeded to standard
+            121 : 0.006365,
+            279 : 0.02777,
+            296 : 0.01771,
+            589 : 0.007464,
+            633 : -0.004323,
+            667 : 0.020604,
+            835 : 0.028955,
+            921 : -0.004661,
+            923 : -0.019334,
+            990 : 0.027459
+        }
+        self._test_classification_shufflenet(model, expected_values)
+
+    def test_classification_shufflenet_v2_x1_0(self):
+        model = self._get_test_model(models.shufflenet_v2_x1_0)
+        self._check_scriptable(model, True)
+
+        # self._build_random_check(model, STANDARD_INPUT_SHAPE, [50, 187, 438, 501, 518, 579, 588, 640, 667, 968])
+        expected_values = { # known good values for this model with rand seeded to standard
+            50 : -0.002583,
+            187 : -0.005233,
+            438 : 0.020914,
+            501 : -0.005121,
+            518 : 0.016098,
+            579 : -0.008247,
+            588 : -0.015742,
+            640 : 0.025073,
+            667 : 0.010396,
+            968 : -0.009486
+        }
+        self._test_classification_shufflenet(model, expected_values)
+
+    def test_classification_shufflenet_v2_x1_5(self):
+        model = self._get_test_model(models.shufflenet_v2_x1_5)
+        # NOTE no scriptability check specified
+
+        # self._build_random_check(model, STANDARD_INPUT_SHAPE, [75, 209, 239, 244, 285, 379, 511, 657, 744, 767])
+        expected_values = { # known good values for this model with rand seeded to standard
+            75 : 0.014706,
+            209 : -0.013182,
+            239 : 0.005034,
+            244 : 0.020568,
+            285 : -0.014944,
+            379 : 0.008534,
+            511 : -0.02769,
+            657 : -0.03036,
+            744 : 0.000208,
+            767 : 0.019738
+        }
+        self._test_classification_shufflenet(model, expected_values)
+
+    def test_classification_shufflenet_v2_x2_0(self):
+        model = self._get_test_model(models.shufflenet_v2_x2_0)
+        # NOTE no scriptability check specified
+
+        # self._build_random_check(model, STANDARD_INPUT_SHAPE, [110, 364, 458, 497, 542, 663, 694, 812, 880, 971])
+        expected_values = { # known good values for this model with rand seeded to standard
+            110 : -0.013949,
+            364 : 0.009127,
+            458 : 0.009575,
+            497 : -0.005239,
+            542 : -0.004049,
+            663 : 0.005255,
+            694 : 0.002597,
+            812 : 0.013491,
+            880 : 0.020128,
+            971 : 0.005573
+        }
+        self._test_classification_shufflenet(model, expected_values)
+
 #################################################################
 #################################################################
 #################################################################
