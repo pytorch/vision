@@ -169,25 +169,29 @@ class SegmentationCompose(MultiCompose):
 
     def __init__(self, transforms):
         super(SegmentationCompose, self).__init__(transforms)
-        # prepare separate lists of image and label transforms
+        # prepare separate lists for label transforms
         self.label_transforms = []
         for tf in self.transforms:
             if self.is_skip(tf):
+                # some transforms can't be performed on labels - replace with NullTransform
                 self.label_transforms.append(NullTransform())
             elif self.is_itpl(tf):
+                # some use interpolation - duplicate them and replace mode with NEAREST
                 ltf = copy.deepcopy(tf)
                 ltf.interpolation = Image.NEAREST
                 ltf.resample = Image.NEAREST  # really, RandomRotation & RandomAffine?
                 self.label_transforms.append(ltf)
             elif self.is_tensor(tf):
+                # ToTensor transform should also work differently for labels
                 self.label_transforms.append(
                     lambda img: F.to_tensor(np.array(img, np.int64))
                 )
             else:
+                # all other transforms can be directly applied to labels
                 self.label_transforms.append(tf)
 
     def __call__(self, imgs):
-        # process images and label separately
+        # separate the input into images and label
         label = imgs[-1]
         imgs = imgs[:-1]
         # go sequentially over image and label transforms
@@ -196,12 +200,13 @@ class SegmentationCompose(MultiCompose):
                 params = it.generate_params(imgs[0])
             except AttributeError:
                 params = None
-            # execute image transform and label transform separately
+            # transform MultiCompose-style, but separately for images and label
             if params is not None:
                 imgs = tuple(it(img, params) for img in imgs)
+                label = lt(label, params)
             else:
                 imgs = tuple(it(img) for img in imgs)
-            label = lt(label, params) if params is not None else lt(label)
+                label = lt(label)
         return imgs + (label,)
 
 
