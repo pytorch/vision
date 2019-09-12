@@ -1,5 +1,7 @@
 import random
 import math
+from typing import List
+
 import torch
 from torch import nn
 
@@ -30,10 +32,11 @@ class GeneralizedRCNNTransform(nn.Module):
         self.image_std = image_std
 
     def forward(self, images, targets=None):
+        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])
         images = [img for img in images]
         for i in range(len(images)):
             image = images[i]
-            target = targets[i] if targets is not None else targets
+            target = targets[i] if targets is not None else None
             if image.dim() != 3:
                 raise ValueError("images is expected to be a list of 3d tensors "
                                  "of shape [C, H, W], got {}".format(image.shape))
@@ -54,18 +57,39 @@ class GeneralizedRCNNTransform(nn.Module):
         std = torch.as_tensor(self.image_std, dtype=dtype, device=device)
         return (image - mean[:, None, None]) / std[:, None, None]
 
+    def max_DELETEME(self, l):
+        # type: (List[int])
+        if len(l) == 0:
+            raise RuntimeError("Bad!")
+        the_max = l[0]
+        for item in l[1:]:
+            if item > the_max:
+                the_max = item
+        return the_max
+
+    def torch_choice(self, l):
+        # type: (List[int])
+        """
+        Implements `random.choice` via torch ops so it can be compiled with
+        TorchScript. Remove if https://github.com/pytorch/pytorch/issues/25803
+        is fixed.
+        """
+        index = int(torch.empty(1).uniform_(0., float(len(l))).item())
+        return l[index]
+
     def resize(self, image, target):
+        # type: (Tensor, Optional[Dict[str, Tensor]])
         h, w = image.shape[-2:]
         min_size = float(min(image.shape[-2:]))
-        max_size = float(max(image.shape[-2:]))
+        max_size = float(self.max_DELETEME(image.shape[-2:]))
         if self.training:
-            size = random.choice(self.min_size)
+            size = float(self.torch_choice(self.min_size))
         else:
             # FIXME assume for now that testing uses the largest scale
-            size = self.min_size[-1]
+            size = float(self.min_size[-1])
         scale_factor = size / min_size
         if max_size * scale_factor > self.max_size:
-            scale_factor = self.max_size / max_size
+            scale_factor = float(self.max_size) / max_size
         image = torch.nn.functional.interpolate(
             image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
 
@@ -132,8 +156,11 @@ def resize_keypoints(keypoints, original_size, new_size):
 
 
 def resize_boxes(boxes, original_size, new_size):
-    ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size))
-    ratio_height, ratio_width = ratios
+    # type: (Tensor, List[int], List[int])
+    ratios = torch.jit.annotate(List[float], [])
+    for s, s_orig in zip(new_size, original_size):
+        ratios.append(float(s) / float(s_orig))
+    ratio_height, ratio_width = tuple(ratios)
     xmin, ymin, xmax, ymax = boxes.unbind(1)
     xmin = xmin * ratio_width
     xmax = xmax * ratio_width

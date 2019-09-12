@@ -29,15 +29,16 @@ class GeneralizedRCNN(nn.Module):
         self.roi_heads = roi_heads
 
     def forward(self, images, targets=None):
+        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])
         """
         Arguments:
-            images (list[Tensor]): images to be processed
-            targets (list[Dict[Tensor]]): ground-truth boxes present in the image (optional)
+            images (List[Tensor]): images to be processed
+            targets (List[Dict[Tensor]]): ground-truth boxes present in the image (optional)
 
         Returns:
-            result (list[BoxList] or dict[Tensor]): the output from the model.
-                During training, it returns a dict[Tensor] which contains the losses.
-                During testing, it returns list[BoxList] contains additional fields
+            result (List[BoxList] or Dict[Tensor]): the output from the model.
+                During training, it returns a Dict[Tensor] which contains the losses.
+                During testing, it returns List[BoxList] contains additional fields
                 like `scores`, `labels` and `mask` (for Mask R-CNN models).
 
         """
