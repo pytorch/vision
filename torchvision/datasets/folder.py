@@ -247,7 +247,7 @@ class SegmentationDataset(VisionDataset):
     """
 
     def __init__(self, root, folders=('images', 'labels'), image_loader=pil_loader,
-                label_loader=default_label_loader, transforms=None, is_valid_file=None):
+                 label_loader=default_label_loader, transforms=None, is_valid_file=None):
         super(SegmentationDataset, self).__init__(root, transforms)
         # check if the required folders exist
         self.images_dir = os.path.join(root, folders[0])
