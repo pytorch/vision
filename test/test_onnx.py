@@ -67,13 +67,13 @@ class ONNXExporterTester(unittest.TestCase):
             def forward(self, boxes, scores):
                 return ops.nms(boxes, scores, 0.5)
 
-        self.run_model(Module(), (boxes, scores))
+        self.run_model(Module(), [(boxes, scores)])
 
     def test_roi_pool(self):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 2)
-        self.run_model(model, (x, single_roi))
+        self.run_model(model, [(x, single_roi)])
 
     def test_roi_align(self):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
@@ -82,7 +82,7 @@ class ONNXExporterTester(unittest.TestCase):
         pool_w = 5
         model = ops.RoIPool((pool_h, pool_w), 2)
         model.eval()
-        self.run_model(model, (x, rois))
+        self.run_model(model, [(x, rois)])
 
     @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
     def test_transform_images(self):
