@@ -13,14 +13,16 @@ class ImageList(object):
     """
 
     def __init__(self, tensors, image_sizes):
+        # type: (Tensor, List[List[int]])
         """
         Arguments:
-            tensors (tensor)
-            image_sizes (list[tuple[int, int]])
+            tensors (Tensor)
+            image_sizes (List[Tuple[int, int]])
         """
         self.tensors = tensors
         self.image_sizes = image_sizes
 
-    def to(self, *args, **kwargs):
-        cast_tensor = self.tensors.to(*args, **kwargs)
-        return ImageList(cast_tensor, self.image_sizes)
+    # TODO: Can't TorchScript this due to https://github.com/pytorch/pytorch/issues/25462
+    # def to(self, *args, **kwargs):
+    #     cast_tensor = self.tensors.to(*args, **kwargs)
+    #     return ImageList(cast_tensor, self.image_sizes)

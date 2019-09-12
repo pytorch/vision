@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from .utils import load_state_dict_from_url
 
+from typing import Optional
+
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
            'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
@@ -34,6 +36,12 @@ def conv1x1(in_planes, out_planes, stride=1):
 
 class BasicBlock(nn.Module):
     expansion = 1
+
+    __constants__ = ['downsample']
+    # TODO: Replace with this when https://github.com/pytorch/pytorch/pull/26068 lands
+    # __annotations__ = {
+    #     'downsample': Optional[torch.nn.Sequential]
+    # }
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
                  base_width=64, dilation=1, norm_layer=None):
@@ -74,6 +82,12 @@ class BasicBlock(nn.Module):
 
 class Bottleneck(nn.Module):
     expansion = 4
+
+    __constants__ = ['downsample']
+    # TODO: Replace with this when https://github.com/pytorch/pytorch/pull/26068 lands
+    # __annotations__ = {
+    #     'downsample': Optional[torch.nn.Sequential]
+    # }
 
     def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
                  base_width=64, dilation=1, norm_layer=None):

@@ -66,6 +66,7 @@ class FeaturePyramidNetwork(nn.Module):
         self.extra_blocks = extra_blocks
 
     def forward(self, x):
+        # type: (Dict[str, Tensor])
         """
         Computes the FPN for a set of feature maps.
 

@@ -28,25 +28,25 @@ class _NewEmptyTensorOp(torch.autograd.Function):
         return _NewEmptyTensorOp.apply(grad, shape), None
 
 
-class Conv2d(torch.nn.Conv2d):
-    """
-    Equivalent to nn.Conv2d, but with support for empty batch sizes.
-    This will eventually be supported natively by PyTorch, and this
-    class can go away.
-    """
-    def forward(self, x):
-        if x.numel() > 0:
-            return super(Conv2d, self).forward(x)
-        # get output shape
+# class Conv2d(torch.nn.Conv2d):
+#     """
+#     Equivalent to nn.Conv2d, but with support for empty batch sizes.
+#     This will eventually be supported natively by PyTorch, and this
+#     class can go away.
+#     """
+#     def forward(self, x):
+#         if x.numel() > 0:
+#             return super(Conv2d, self).forward(x)
+#         # get output shape
 
-        output_shape = [
-            (i + 2 * p - (di * (k - 1) + 1)) // d + 1
-            for i, p, di, k, d in zip(
-                x.shape[-2:], self.padding, self.dilation, self.kernel_size, self.stride
-            )
-        ]
-        output_shape = [x.shape[0], self.weight.shape[0]] + output_shape
-        return _NewEmptyTensorOp.apply(x, output_shape)
+#         output_shape = [
+#             (i + 2 * p - (di * (k - 1) + 1)) // d + 1
+#             for i, p, di, k, d in zip(
+#                 x.shape[-2:], self.padding, self.dilation, self.kernel_size, self.stride
+#             )
+#         ]
+#         output_shape = [x.shape[0], self.weight.shape[0]] + output_shape
+#         return _NewEmptyTensorOp.apply(x, output_shape)
 
 
 class ConvTranspose2d(torch.nn.ConvTranspose2d):
@@ -126,14 +126,14 @@ def interpolate(
     This will eventually be supported natively by PyTorch, and this
     class can go away.
     """
-    if input.numel() > 0:
-        return torch.nn.functional.interpolate(
-            input, size, scale_factor, mode, align_corners
-        )
+    # if input.numel() > 0:
+    return torch.nn.functional.interpolate(
+        input, size, scale_factor, mode, align_corners
+    )
 
-    output_shape = _output_size(input, 2, size, scale_factor)
-    output_shape = input.shape[:-2] + output_shape
-    return _NewEmptyTensorOp.apply(input, output_shape)
+    # output_shape = _output_size(input, 2, size, scale_factor)
+    # output_shape = input.shape[:-2] + output_shape
+    # return _NewEmptyTensorOp.apply(input, output_shape)
 
 
 # This is not in nn

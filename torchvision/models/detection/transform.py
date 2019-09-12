@@ -58,6 +58,10 @@ class GeneralizedRCNNTransform(nn.Module):
         return (image - mean[:, None, None]) / std[:, None, None]
 
     def max_DELETEME(self, l):
+        """
+        Use builtin max when https://github.com/pytorch/pytorch/issues/25992 is
+        fixed.
+        """
         # type: (List[int])
         if len(l) == 0:
             raise RuntimeError("Bad!")
@@ -112,17 +116,23 @@ class GeneralizedRCNNTransform(nn.Module):
         return image, target
 
     def batch_images(self, images, size_divisible=32):
+        # type: (List[Tensor], int)
         # concatenate
-        max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
+        # TODO: Fix this
+        # max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
+        max_size = torch.jit.annotate(List[int], [])
+        for img in images:
+            # for s in img:
+            max_size.append(self.max_DELETEME(img))
 
-        stride = size_divisible
+        stride = float(size_divisible)
         max_size = list(max_size)
         max_size[1] = int(math.ceil(float(max_size[1]) / stride) * stride)
         max_size[2] = int(math.ceil(float(max_size[2]) / stride) * stride)
-        max_size = tuple(max_size)
+        max_size = max_size
 
         batch_shape = (len(images),) + max_size
-        batched_imgs = images[0].new(*batch_shape).zero_()
+        batched_imgs = images[0].new_full(batch_shape, 0)
         for img, pad_img in zip(images, batched_imgs):
             pad_img[: img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)
 
@@ -147,7 +157,12 @@ class GeneralizedRCNNTransform(nn.Module):
 
 
 def resize_keypoints(keypoints, original_size, new_size):
-    ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size))
+    # type: (Tensor, List[int], List[int])
+    # TODO: Add in when `zip` is supported in generators in TorchScript
+    # ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size))
+    ratios = torch.jit.annotate(List[float], [])
+    for s, s_orig in zip(new_size, original_size):
+        ratios.append(float(s) / float(s_orig))
     ratio_h, ratio_w = ratios
     resized_data = keypoints.clone()
     resized_data[..., 0] *= ratio_w
@@ -160,7 +175,7 @@ def resize_boxes(boxes, original_size, new_size):
     ratios = torch.jit.annotate(List[float], [])
     for s, s_orig in zip(new_size, original_size):
         ratios.append(float(s) / float(s_orig))
-    ratio_height, ratio_width = tuple(ratios)
+    ratio_height, ratio_width = ratios
     xmin, ymin, xmax, ymax = boxes.unbind(1)
     xmin = xmin * ratio_width
     xmax = xmax * ratio_width
