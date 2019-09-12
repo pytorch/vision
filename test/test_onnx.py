@@ -1,6 +1,9 @@
 import io
 import torch
 from torchvision import ops
+from torchvision.models.detection.transform import GeneralizedRCNNTransform
+from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
+from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 
 # onnxruntime requires python 3.5 or above
 try:
@@ -82,6 +85,57 @@ class ONNXExporterTester(unittest.TestCase):
         model = ops.RoIPool((pool_h, pool_w), 2)
         model.eval()
         self.run_model(model, (x, rois))
+
+    def _init_test_generalized_rcnn_transform(self):
+        min_size = 800
+        max_size = 1333
+        image_mean = [0.485, 0.456, 0.406]
+        image_std = [0.229, 0.224, 0.225]
+        transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
+        return transform
+
+    def _init_test_rpn(self):
+        anchor_sizes = ((32,), (64,), (128,), (256,), (512,))
+        aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
+        rpn_anchor_generator = AnchorGenerator(anchor_sizes, aspect_ratios)
+        out_channels = 256
+        rpn_head = RPNHead(out_channels, rpn_anchor_generator.num_anchors_per_location()[0])
+        rpn_fg_iou_thresh = 0.7
+        rpn_bg_iou_thresh = 0.3
+        rpn_batch_size_per_image = 256
+        rpn_positive_fraction = 0.5
+        rpn_pre_nms_top_n = dict(training=2000, testing=1000)
+        rpn_post_nms_top_n = dict(training=2000, testing=1000)
+        rpn_nms_thresh = 0.7
+
+        rpn = RegionProposalNetwork(
+            rpn_anchor_generator, rpn_head,
+            rpn_fg_iou_thresh, rpn_bg_iou_thresh,
+            rpn_batch_size_per_image, rpn_positive_fraction,
+            rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh)
+        return rpn
+
+    def test_rpn(self):
+        class RPNModule(torch.nn.Module):
+            def __init__(self_module):
+                super(RPNModule, self_module).__init__()
+                self_module.transform = self._init_test_generalized_rcnn_transform()
+                self_module.backbone = resnet_fpn_backbone('resnet50', False, export_onnx=True)
+                self_module.rpn = self._init_test_rpn()
+
+            def forward(self_module, images):
+                images, targets = self_module.transform(images)
+                features = self_module.backbone(images.tensors)
+                return self_module.rpn(images, features, targets)
+
+        image_url = "http://farm3.staticflickr.com/2469/3915380994_2e611b1779_z.jpg"
+        image1 = self.get_image_from_url(url=image_url)
+        image_url2 = "https://pytorch.org/tutorials/_static/img/tv_tutorial/tv_image05.png"
+        image2 = self.get_image_from_url(url=image_url2)
+        images = [image1, image2]
+        test_images = [image2, image1]
+
+        self.run_model(RPNModule(), [(images,), (test_images,)])
 
 
 if __name__ == '__main__':
