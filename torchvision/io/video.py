@@ -2,6 +2,8 @@ import re
 import gc
 import torch
 import numpy as np
+import math
+import warnings
 
 try:
     import av
@@ -145,7 +147,7 @@ def _align_audio_frames(aframes, audio_frames, ref_start, ref_end):
     return aframes[:, s_idx:e_idx]
 
 
-def read_video(filename, start_pts=0, end_pts=None):
+def read_video(filename, start_pts=0, end_pts=None, pts_unit='sec'):
     """
     Reads a video from a file, returning both the video frames as well as
     the audio frames
@@ -158,6 +160,8 @@ def read_video(filename, start_pts=0, end_pts=None):
         the start presentation time of the video
     end_pts : int, optional
         the end presentation time
+    pts_unit : str, optional
+        unit in which start_pts and end_pts values will be interpreted, either 'pts' or 'sec'. Defaults to 'sec'.
 
     Returns
     -------
@@ -179,19 +183,37 @@ def read_video(filename, start_pts=0, end_pts=None):
         raise ValueError("end_pts should be larger than start_pts, got "
                          "start_pts={} and end_pts={}".format(start_pts, end_pts))
 
+    if pts_unit == 'pts':
+        warnings.warn("The pts_unit 'pts' gives wrong results and will be removed in a " + 
+                      "follow-up version. Please use pts_unit 'sec'.")
+
     container = av.open(filename, metadata_errors='ignore')
     info = {}
 
     video_frames = []
     if container.streams.video:
-        video_frames = _read_from_stream(container, start_pts, end_pts,
-                                         container.streams.video[0], {'video': 0})
-        info["video_fps"] = float(container.streams.video[0].average_rate)
+        video_start_pts = start_pts
+        video_end_pts = end_pts
+        video_stream = container.streams.video[0]
+        if pts_unit == 'sec':
+            video_start_pts = math.floor(start_pts*(1/video_stream.time_base))
+            if video_end_pts != float("inf"):
+                video_end_pts = math.ceil(end_pts*(1/video_stream.time_base))
+        video_frames = _read_from_stream(container, video_start_pts, video_end_pts,
+                                         video_stream, {'video': 0})
+        info["video_fps"] = float(video_stream.average_rate)
     audio_frames = []
     if container.streams.audio:
-        audio_frames = _read_from_stream(container, start_pts, end_pts,
-                                         container.streams.audio[0], {'audio': 0})
-        info["audio_fps"] = container.streams.audio[0].rate
+        audio_start_pts = start_pts
+        audio_end_pts = end_pts
+        audio_stream = container.streams.audio[0]
+        if pts_unit == 'sec':
+            audio_start_pts = math.floor(start_pts*(1/audio_stream.time_base))
+            if audio_end_pts != float("inf"):
+                audio_end_pts = math.ceil(end_pts*(1/audio_stream.time_base))
+        audio_frames = _read_from_stream(container, audio_start_pts, audio_end_pts,
+                                         audio_stream , {'audio': 0})
+        info["audio_fps"] = audio_stream.rate
 
     container.close()
 
@@ -217,7 +239,7 @@ def _can_read_timestamps_from_packets(container):
     return False
 
 
-def read_video_timestamps(filename):
+def read_video_timestamps(filename, pts_unit='pts'):
     """
     List the video frames timestamps.
 
@@ -227,27 +249,37 @@ def read_video_timestamps(filename):
     ----------
     filename : str
         path to the video file
+    pts_unit : str, optional
+        unit in which timestamp values will be returned either 'pts' or 'sec'. Defaults to 'sec'.
 
     Returns
     -------
-    pts : List[int]
+    pts : List[float]
         presentation timestamps for each one of the frames in the video.
     video_fps : int
         the frame rate for the video
 
     """
     _check_av_available()
+    if pts_unit == 'pts':
+        warnings.warn("The pts_unit 'pts' gives wrong results and will be removed in a " + 
+                      "follow-up version. Please use pts_unit 'sec'.")
+
     container = av.open(filename, metadata_errors='ignore')
 
     video_frames = []
     video_fps = None
     if container.streams.video:
+        video_stream = container.streams.video[0]
+        video_time_base = video_stream.time_base
         if _can_read_timestamps_from_packets(container):
             # fast path
             video_frames = [x for x in container.demux(video=0) if x.pts is not None]
         else:
             video_frames = _read_from_stream(container, 0, float("inf"),
-                                             container.streams.video[0], {'video': 0})
-        video_fps = float(container.streams.video[0].average_rate)
+                                             video_stream, {'video': 0})
+        video_fps = float(video_stream.average_rate)
     container.close()
+    if pts_unit == 'sec':
+        return [float(x.pts*video_time_base) for x in video_frames], video_fps
     return [x.pts for x in video_frames], video_fps
