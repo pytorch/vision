@@ -12,6 +12,7 @@ requirements:
   host:
     - python
     - setuptools
+    - ffmpeg
     {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
