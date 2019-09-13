@@ -120,8 +120,33 @@ else
     fi
 fi
 
-export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==1.2.0"
-export CONDA_PYTORCH_CONSTRAINT="- pytorch==1.2.0"
+if [[ -z "$PYTORCH_VERSION" ]]; then
+    export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
+    export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
+                                python -c "import os, sys, json, re; cuver = os.environ.get('CUDA_VERSION'); \
+                                cuver = ('cu' + cuver[:-1] + '.' + cuver[-1]) if cuver != 'cpu' else cuver; \
+                                print(re.sub(r'\\+.*$', '', \
+                                [x['version'] for x in json.load(sys.stdin)['pytorch'] \
+                                    if (x['platform'] == 'darwin' or cuver in x['fn']) \
+                                    and 'py' + os.environ['DESIRED_PYTHON'] in x['fn']][-1]))")"
+    if [[ -z "$PYTORCH_VERSION" ]]; then
+        echo "PyTorch version auto detection failed"
+        echo "No package found for desired_cuda=$desired_cuda and DESIRED_PYTHON=$DESIRED_PYTHON"
+        exit 1
+    fi
+else
+    export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-nightly"
+fi
+if [[ "$desired_cuda" != "10.0" ]]; then
+    export PYTORCH_VERSION_SUFFIX="+$cuver"
+fi
+if [[ "$desired_cuda" == 'cpu' ]]; then
+    export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==$PYTORCH_VERSION${PYTORCH_VERSION_SUFFIX}"
+    export CONDA_PYTORCH_CONSTRAINT="- pytorch==$PYTORCH_VERSION"
+else
+    export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==${PYTORCH_VERSION}${PYTORCH_VERSION_SUFFIX}"
+    export CONDA_PYTORCH_CONSTRAINT="- pytorch==${PYTORCH_VERSION}${PYTORCH_VERSION_SUFFIX}"
+fi
 
 # Loop through all Python versions to build a package for each
 for py_ver in "${DESIRED_PYTHON[@]}"; do
