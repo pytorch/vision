@@ -34,8 +34,12 @@ REM curl -k -L %VS_DOWNLOAD_LINK% --output vs_installer.exe
 REM if errorlevel 1 exit /b 1
 
 REM start /wait .\vs_installer.exe %VS_INSTALL_ARGS%
-start /wait "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" --nocache --norestart --quiet --wait --add Microsoft.VisualStudio.Component.VC.Tools.14.11
-set VSDEVCMD_ARGS=-vcvars_ver=14.11
-if not errorlevel 0 exit /b 1
-if errorlevel 1 if not errorlevel 3010 exit /b 1
-if errorlevel 3011 exit /b 1
+REM start /wait "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" --nocache --norestart --quiet --wait --add Microsoft.VisualStudio.Component.VC.Tools.14.11
+REM set VSDEVCMD_ARGS=-vcvars_ver=14.11
+REM if not errorlevel 0 exit /b 1
+REM if errorlevel 1 if not errorlevel 3010 exit /b 1
+REM if errorlevel 3011 exit /b 1
+
+if exist "C:\Program Files (x86)\Windows Kits\10\include\wdf" (
+   ren "C:\Program Files (x86)\Windows Kits\10\include\wdf" "00wdf"
+)
