@@ -137,15 +137,12 @@ if [[ -z "$PYTORCH_VERSION" ]]; then
 else
     export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-nightly"
 fi
-if [[ "$desired_cuda" != "10.0" ]]; then
-    export PYTORCH_VERSION_SUFFIX="+$cuver"
-fi
 if [[ "$desired_cuda" == 'cpu' ]]; then
-    export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==$PYTORCH_VERSION${PYTORCH_VERSION_SUFFIX}"
+    export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==$PYTORCH_VERSION"
     export CONDA_PYTORCH_CONSTRAINT="- pytorch==$PYTORCH_VERSION"
 else
-    export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==${PYTORCH_VERSION}${PYTORCH_VERSION_SUFFIX}"
-    export CONDA_PYTORCH_CONSTRAINT="- pytorch==${PYTORCH_VERSION}${PYTORCH_VERSION_SUFFIX}"
+    export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==${PYTORCH_VERSION}"
+    export CONDA_PYTORCH_CONSTRAINT="- pytorch==${PYTORCH_VERSION}"
 fi
 
 # Loop through all Python versions to build a package for each
