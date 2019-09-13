@@ -8,4 +8,7 @@ REM if errorlevel 1 exit /b 1
 
 REM set "PATH=%ProgramFiles%\7-Zip;%PATH%"
 
-choco install -y curl 7zip cmake
+choco feature disable -n=showDownloadProgress
+choco feature disable -n=allowGlobalConfirmation
+
+choco install curl 7zip
