@@ -136,11 +136,11 @@ for py_ver in "${DESIRED_PYTHON[@]}"; do
     mkdir "$output_folder"
 
     # We need to build the compiler activation scripts first on Windows
-    time VSDEVCMD_ARGS=${VSDEVCMD_ARGS[@]} \
-            conda build -c "$ANACONDA_USER" \
-                        --no-anaconda-upload \
-                        --output-folder "$output_folder" \
-                        ../vs2017
+    # time VSDEVCMD_ARGS=${VSDEVCMD_ARGS[@]} \
+    #         conda build -c "$ANACONDA_USER" \
+    #                     --no-anaconda-upload \
+    #                     --output-folder "$output_folder" \
+    #                     ../vs2017
 
     conda config --set anaconda_upload no
     echo "Calling conda-build at $(date)"
