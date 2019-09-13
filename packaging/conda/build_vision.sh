@@ -92,7 +92,7 @@ export PATH="$(pwd):$(pwd)/Library/usr/bin:$(pwd)/Library/bin:$(pwd)/Scripts:$(p
 popd
 retry conda install -yq conda-build
 
-ANACONDA_USER=pytorch_nightly
+ANACONDA_USER=pytorch-nightly
 conda config --set anaconda_upload no
 
 
