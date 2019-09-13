@@ -1,6 +1,6 @@
 #include "VideoReader.h"
 #include <ATen/ATen.h>
-#include <glog/logging.h>
+#include <c10/util/Logging.h>
 #include <exception>
 #include "FfmpegDecoder.h"
 #include "FfmpegHeaders.h"
@@ -152,7 +152,7 @@ torch::List<torch::Tensor> readVideo(
     int64_t audioTimeBaseDen) {
   if (!glog_initialized) {
     glog_initialized = true;
-    google::InitGoogleLogging("VideoReader");
+    // google::InitGoogleLogging("VideoReader");
   }
 
   unique_ptr<DecoderParameters> params = util::getDecoderParams(

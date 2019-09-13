@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glog/logging.h>
+#include <c10/util/Logging.h>
 #include <sys/types.h>
 #include <memory>
 #include <unordered_map>

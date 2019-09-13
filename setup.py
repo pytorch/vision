@@ -7,6 +7,7 @@ from setuptools import setup, find_packages
 from pkg_resources import get_distribution, DistributionNotFound
 import subprocess
 import distutils.command.clean
+import distutils.spawn
 import glob
 import shutil
 
@@ -126,8 +127,9 @@ def get_extensions():
 
     # Packages install by conda will put header files in the include folder of
     # conda virtual environment
-    conda_prefix = os.environ.get('CONDA_PREFIX')
-    conda_include_dir = os.path.join(conda_prefix, 'include')
+    ffmpeg_bin = os.path.dirname(distutils.spawn.find_executable('ffmpeg'))
+    ffmpeg_root = os.path.dirname(ffmpeg_bin)
+    ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
 
     # TorchVision video reader
     video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
@@ -153,10 +155,10 @@ def get_extensions():
             video_reader_src,
             include_dirs=[
                 video_reader_src_dir,
-                conda_include_dir,
+                ffmpeg_include_dir,
+                extensions_dir,
             ],
             libraries=[
-                'glog',
                 'avcodec',
                 'avformat',
                 'avutil',
