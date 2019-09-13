@@ -101,9 +101,7 @@ test_videos = {
     ),
 }
 
-lib_path = os.path.join("torchvision", "video_reader.so")
-torch.ops.load_library(lib_path)
-video_reader = torch.ops.video_reader
+from torchvision.io.video_plus import video_reader
 
 DecoderResult = collections.namedtuple(
     "DecoderResult", "vframes vframe_pts vtimebase aframes aframe_pts atimebase"
