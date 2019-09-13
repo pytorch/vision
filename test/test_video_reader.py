@@ -168,9 +168,9 @@ def _fraction_to_tensor(fraction):
 def _decode_frames_by_av_module(
     full_path,
     video_start_pts=0,
-    video_end_pts=math.inf,
+    video_end_pts=None,
     audio_start_pts=0,
-    audio_end_pts=math.inf,
+    audio_end_pts=None,
 ):
     """
     Use PyAv to decode video frames. This provides a reference for our decoder
@@ -180,6 +180,10 @@ def _decode_frames_by_av_module(
         video_start_pts/video_end_pts: the starting/ending Presentation TimeStamp where
             frames are read
     """
+    if video_end_pts is None:
+        video_end_pts = float('inf')
+    if audio_end_pts is None:
+        audio_end_pts = float('inf')
     container = av.open(full_path)
 
     video_frames = []

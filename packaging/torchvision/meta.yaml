@@ -12,7 +12,7 @@ requirements:
   host:
     - python
     - setuptools
-    - ffmpeg
+    - av
     {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
@@ -22,7 +22,7 @@ requirements:
     - pillow >=4.1.1
     - numpy >=1.11
     - six
-    - ffmpeg
+    - av
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
