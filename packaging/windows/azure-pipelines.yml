@@ -10,19 +10,19 @@ jobs:
   parameters:
     package: 'Wheels'
     spec: 'CPU'
-    msagent: false
-
-# - template: templates/build_task.yml
-#   parameters:
-#     package: 'Conda'
-#     spec: 'CPU'
-#     msagent: false
+    msagent: true
 
 - template: templates/build_task.yml
   parameters:
-    package: 'Wheels'
-    spec: 'CUDA'
-    msagent: false
+    package: 'Conda'
+    spec: 'CPU'
+    msagent: true
+
+# - template: templates/build_task.yml
+#   parameters:
+#     package: 'Wheels'
+#     spec: 'CUDA'
+#     msagent: false
 
 # - template: templates/build_task.yml
 #   parameters:
