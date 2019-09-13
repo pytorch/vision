@@ -166,6 +166,7 @@ if %TORCHVISION_BUILD_NUMBER% GTR 1 set TORCHVISION_BUILD_VERSION=%TORCHVISION_B
 :: logic is in setup.py or other scripts
 :: TODO: Not supported yet
 set OVERRIDE_PACKAGE_VERSION=%TORCHVISION_BUILD_VERSION%
+set BUILD_VERSION=%TORCHVISION_BUILD_VERSION%
 
 :: Build folder for conda builds to use
 if "%TORCH_CONDA_BUILD_FOLDER%" == "" set TORCH_CONDA_BUILD_FOLDER=torchvision
