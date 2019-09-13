@@ -37,10 +37,10 @@ torchub_models = {
     "inception_v3": False, # √
     "googlenet": False, # √
     "mobilenet_v2": True, # √
+    "shufflenet_v2_x1_0": True, # √
+    "densenet121": False, # √
     "deeplabv3_resnet101": False,
     "fcn_resnet101": False,
-    "densenet121": False,
-    "shufflenet_v2_x1_0": True,
 }
 
 STANDARD_SEED = 1729 # https://fburl.com/3i5wkg9p
@@ -727,26 +727,96 @@ class ShuffleNetTester(TorchVisionTester):
         }
         self._test_classification_shufflenet(model, expected_values)
 
+
+class DenseNetTester(TorchVisionTester):
+    # num_classes = 1000
+    # NOTE growth_rate=32, block_config=(6, 12, 24, 16), num_init_features=64, bn_size=4, drop_rate=0 ?
+    # TODO the memory efficient ctor flag is tested in a model yet to be moved to this object
+    def _test_classification_densenet(self, model, expected_values):
+        test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
+        self._check_model_correctness(model, test_input, expected_values, 1000)
+
+    def test_classification_densenet121(self):
+        model = self._get_test_model(models.densenet121)
+        self._check_scriptable(model, False)
+
+        # self._build_random_check(model, STANDARD_INPUT_SHAPE, [11, 82, 325, 346, 423, 567, 575, 745, 963, 978])
+        expected_values = { # known good values for this model with rand seeded to standard
+            11 : 0.460559,
+            82 : 0.279097,
+            325 : -0.65469,
+            346 : 0.451863,
+            423 : -0.102391,
+            567 : -0.4808,
+            575 : 0.35047,
+            745 : -0.129686,
+            963 : -0.114404,
+            978 : -0.035762
+        }
+        self._test_classification_densenet(model, expected_values)
+
+    def test_classification_densenet161(self):
+        model = self._get_test_model(models.densenet161)
+        # NOTE no scriptability check specified
+        
+        self._build_random_check(model, STANDARD_INPUT_SHAPE, [114, 137, 367, 389, 394, 434, 599, 669, 837, 950])
+        expected_values = { # known good values for this model with rand seeded to standard
+            110 : -0.013949,
+            364 : 0.009127,
+            458 : 0.009575,
+            497 : -0.005239,
+            542 : -0.004049,
+            663 : 0.005255,
+            694 : 0.002597,
+            812 : 0.013491,
+            880 : 0.020128,
+            971 : 0.005573
+        }
+        self._test_classification_densenet(model, expected_values)
+
+    def test_classification_densenet169(self):
+        model = self._get_test_model(models.densenet169)
+        # NOTE no scriptability check specified
+        
+        # self._build_random_check(model, STANDARD_INPUT_SHAPE, [37, 258, 319, 440, 479, 547, 829, 836, 946, 976])
+        expected_values = { # known good values for this model with rand seeded to standard
+            110 : -0.013949,
+            364 : 0.009127,
+            458 : 0.009575,
+            497 : -0.005239,
+            542 : -0.004049,
+            663 : 0.005255,
+            694 : 0.002597,
+            812 : 0.013491,
+            880 : 0.020128,
+            971 : 0.005573
+        }
+        self._test_classification_densenet(model, expected_values)
+
+    def test_classification_densenet201(self):
+        model = self._get_test_model(models.densenet201)
+        # NOTE no scriptability check specified
+        
+        # self._build_random_check(model, STANDARD_INPUT_SHAPE, [42, 93, 146, 170, 495, 512, 588, 783, 915, 952])
+        expected_values = { # known good values for this model with rand seeded to standard
+            110 : -0.013949,
+            364 : 0.009127,
+            458 : 0.009575,
+            497 : -0.005239,
+            542 : -0.004049,
+            663 : 0.005255,
+            694 : 0.002597,
+            812 : 0.013491,
+            880 : 0.020128,
+            971 : 0.005573
+        }
+        self._test_classification_densenet(model, expected_values)
+
 #################################################################
 #################################################################
 #################################################################
 
 class YetToBeFixed:
-
-
-    def test_classification_densenet121(self):
-        self._test_classification_model('densenet121', STANDARD_INPUT_SHAPE)
-
-    def test_classification_densenet169(self):
-        self._test_classification_model('densenet169', STANDARD_INPUT_SHAPE)
-
-    def test_classification_densenet201(self):
-        self._test_classification_model('densenet201', STANDARD_INPUT_SHAPE)
-
-    def test_classification_densenet161(self):
-        self._test_classification_model('densenet161', STANDARD_INPUT_SHAPE)
-
-
 
     def test_memory_efficient_densenet(self):
         input_shape = (1, 3, 300, 300)
