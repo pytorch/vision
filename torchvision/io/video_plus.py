@@ -6,8 +6,9 @@ import torch
 
 log = logging.getLogger(__name__)
 
-lib_path = os.path.join("torchvision", "video_reader.so")
-torch.ops.load_library(lib_path)
+lib_dir = os.path.join(os.path.dirname(__file__), '..')
+_, path, description = imp.find_module("video_reader", [lib_dir])
+torch.ops.load_library(path)
 video_reader = torch.ops.video_reader
 
 default_timebase = Fraction(0, 1)
