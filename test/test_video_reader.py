@@ -250,7 +250,7 @@ def _pts_convert(pts, timebase_from, timebase_to, round_func=math.floor):
         round_func: rounding function.
     """
     new_pts = Fraction(pts, 1) * timebase_from / timebase_to
-    return round_func(new_pts)
+    return int(round_func(new_pts))
 
 
 def _get_video_tensor(video_dir, video_file):
