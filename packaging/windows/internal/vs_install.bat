@@ -1,4 +1,4 @@
-@echo off
+@echo on
 
 REM set VS_DOWNLOAD_LINK=https://aka.ms/vs/15/release/vs_buildtools.exe
 REM IF "%VS_LATEST%" == "1" (
@@ -18,6 +18,8 @@ REM                                                 --add Microsoft.VisualStudio
 REM                                                 --add Microsoft.VisualStudio.ComponentGroup.NativeDesktop.Win81
 REM    set VSDEVCMD_ARGS=-vcvars_ver=14.11
 REM )
+
+setx /M DOTNET_SKIP_FIRST_TIME_EXPERIENCE 1
 
 set VS_DOWNLOAD_LINK=https://aka.ms/vs/15/release/ca16a813d/vs_buildtools.exe
 set VS_INSTALL_ARGS=--nocache --quiet --wait --add Microsoft.VisualStudio.Workload.VCTools ^

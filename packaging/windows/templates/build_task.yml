@@ -77,7 +77,7 @@ jobs:
 
   pool:
     ${{ if eq(parameters.msagent, 'true') }}:
-      vmImage: 'vs2015-win2012r2'
+      vmImage: 'win1803'
     ${{ if eq(parameters.msagent, 'false') }}:
       name: 'release'
 
