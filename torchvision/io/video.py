@@ -145,7 +145,7 @@ def _align_audio_frames(aframes, audio_frames, ref_start, ref_end):
     return aframes[:, s_idx:e_idx]
 
 
-def read_video(filename, start_pts=0, end_pts=None):
+def read_video(filename, start_pts=0, end_pts=None, stream='av'):
     """
     Reads a video from a file, returning both the video frames as well as
     the audio frames
@@ -158,6 +158,8 @@ def read_video(filename, start_pts=0, end_pts=None):
         the start presentation time of the video
     end_pts : int, optional
         the end presentation time
+    stream : str, optional
+        streams to be extracted from the video
 
     Returns
     -------
@@ -179,16 +181,21 @@ def read_video(filename, start_pts=0, end_pts=None):
         raise ValueError("end_pts should be larger than start_pts, got "
                          "start_pts={} and end_pts={}".format(start_pts, end_pts))
 
+    if stream not in ['a', 'v', 'av']:
+        raise ValueError("invalid stream specifier '{}' "
+                         "must be 'a', 'v' or 'av'".format(stream))
+
     container = av.open(filename, metadata_errors='ignore')
     info = {}
 
     video_frames = []
-    if container.streams.video:
+    if container.streams.video and 'v' in stream:
         video_frames = _read_from_stream(container, start_pts, end_pts,
                                          container.streams.video[0], {'video': 0})
         info["video_fps"] = float(container.streams.video[0].average_rate)
+
     audio_frames = []
-    if container.streams.audio:
+    if container.streams.audio and 'a' in stream:
         audio_frames = _read_from_stream(container, start_pts, end_pts,
                                          container.streams.audio[0], {'audio': 0})
         info["audio_fps"] = container.streams.audio[0].rate
@@ -197,13 +204,18 @@ def read_video(filename, start_pts=0, end_pts=None):
 
     vframes = [frame.to_rgb().to_ndarray() for frame in video_frames]
     aframes = [frame.to_ndarray() for frame in audio_frames]
-    vframes = torch.as_tensor(np.stack(vframes))
+
     if aframes:
         aframes = np.concatenate(aframes, 1)
         aframes = torch.as_tensor(aframes)
         aframes = _align_audio_frames(aframes, audio_frames, start_pts, end_pts)
     else:
         aframes = torch.empty((1, 0), dtype=torch.float32)
+
+    if vframes:
+        vframes = torch.as_tensor(np.stack(vframes))
+    else:
+        vframes = torch.empty((0, 1, 1, 3), dtype=torch.uint8)
 
     return vframes, aframes, info
 
