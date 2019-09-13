@@ -4,6 +4,22 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from typing import Tuple, List
+
+
+class FeaturePyramidBlock(nn.Module):
+    def __init__(self, inner, layer):
+        super(FeaturePyramidBlock, self).__init__()
+        self.inner = inner
+        self.layer = layer
+
+    def forward(self, feature, last_inner):
+        inner_lateral = self.inner(feature)
+        feat_shape = inner_lateral.shape[-2:]
+        inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
+        new_last_inner = inner_lateral + inner_top_down
+        return new_last_inner, self.layer(new_last_inner)
+
 
 class FeaturePyramidNetwork(nn.Module):
     """
@@ -45,15 +61,22 @@ class FeaturePyramidNetwork(nn.Module):
 
     def __init__(self, in_channels_list, out_channels, extra_blocks=None):
         super(FeaturePyramidNetwork, self).__init__()
-        self.inner_blocks = nn.ModuleList()
-        self.layer_blocks = nn.ModuleList()
+        inner_blocks = []
+        layer_blocks = []
         for in_channels in in_channels_list:
             if in_channels == 0:
                 continue
             inner_block_module = nn.Conv2d(in_channels, out_channels, 1)
             layer_block_module = nn.Conv2d(out_channels, out_channels, 3, padding=1)
-            self.inner_blocks.append(inner_block_module)
-            self.layer_blocks.append(layer_block_module)
+            inner_blocks.append(inner_block_module)
+            layer_blocks.append(layer_block_module)
+
+        self.layers = nn.ModuleList()
+        for inner, layer in zip(inner_blocks[:-1][::-1], layer_blocks[:-1][::-1]):
+            self.layers.append(FeaturePyramidBlock(inner, layer))
+
+        self.last_inner_block = inner_blocks[-1]
+        self.last_layer_block = layer_blocks[-1]
 
         # initialize parameters now to avoid modifying the initialization of top_blocks
         for m in self.children():
@@ -81,19 +104,16 @@ class FeaturePyramidNetwork(nn.Module):
         names = list(x.keys())
         x = list(x.values())
 
-        last_inner = self.inner_blocks[-1](x[-1])
+        last_inner = self.last_inner_block(x[-1])
         results = []
-        results.append(self.layer_blocks[-1](last_inner))
-        for feature, inner_block, layer_block in zip(
-            x[:-1][::-1], self.inner_blocks[:-1][::-1], self.layer_blocks[:-1][::-1]
-        ):
-            if not inner_block:
-                continue
-            inner_lateral = inner_block(feature)
-            feat_shape = inner_lateral.shape[-2:]
-            inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
-            last_inner = inner_lateral + inner_top_down
-            results.insert(0, layer_block(last_inner))
+        results.append(self.last_layer_block(last_inner))
+
+        i = 0
+        features = x[:-1][::-1]
+        for layer in self.layers:
+            last_inner, result = layer(features[i], last_inner)
+            results.insert(0, result)
+            i += 1
 
         if self.extra_blocks is not None:
             results, names = self.extra_blocks(results, x, names)
@@ -128,6 +148,7 @@ class LastLevelMaxPool(ExtraFPNBlock):
     Applies a max_pool2d on top of the last feature map
     """
     def forward(self, x, y, names):
+        # type: (List[Tensor], Tensor, List[str])
         names.append("pool")
         x.append(F.max_pool2d(x[-1], 1, 2, 0))
         return x, names

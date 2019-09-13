@@ -43,7 +43,7 @@ class GeneralizedRCNN(nn.Module):
 
         """
         if self.training and targets is None:
-            raise ValueError("In training mode, targets should be passed")
+            raise ValueError("In training mo222de, targets should be passed")
         original_image_sizes = [img.shape[-2:] for img in images]
         images, targets = self.transform(images, targets)
         features = self.backbone(images.tensors)
