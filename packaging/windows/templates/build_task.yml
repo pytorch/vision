@@ -12,7 +12,7 @@ parameters:
 
 jobs:
 - job: 'Windows_${{ parameters.spec }}_${{ parameters.package }}_Build'
-  timeoutInMinutes: 60
+  timeoutInMinutes: 120
   cancelTimeoutInMinutes: 5
   condition: > 
     or(and(eq('${{ parameters.package }}', 'Conda'), eq('${{ parameters.spec }}', 'CPU'),

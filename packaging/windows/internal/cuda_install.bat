@@ -25,7 +25,7 @@ IF NOT EXIST "%SRC_DIR%\temp_build\cuda_9.2.148_win10.exe" (
     curl -k -L https://developer.nvidia.com/compute/cuda/9.2/Prod2/local_installers2/cuda_9.2.148_win10 --output "%SRC_DIR%\temp_build\cuda_9.2.148_win10.exe"
     if errorlevel 1 exit /b 1
     set "CUDA_SETUP_FILE=%SRC_DIR%\temp_build\cuda_9.2.148_win10.exe"
-    set "ARGS=nvcc_9.2 cuobjdump_9.2 nvprune_9.2 cupti_9.2 gpu_library_advisor_9.2 memcheck_9.2 nvdisasm_9.2 nvprof_9.2 visual_profiler_9.2 visual_studio_integration_9.2 demo_suite_9.2 documentation_9.2 cublas_9.2 cublas_dev_9.2 cudart_9.2 cufft_9.2 cufft_dev_9.2 curand_9.2 curand_dev_9.2 cusolver_9.2 cusolver_dev_9.2 cusparse_9.2 cusparse_dev_9.2 nvgraph_9.2 nvgraph_dev_9.2 npp_9.2 npp_dev_9.2 nvrtc_9.2 nvrtc_dev_9.2 nvml_dev_9.2 occupancy_calculator_9.2 fortran_examples_9.2"
+    set "ARGS=nvcc_9.2 cuobjdump_9.2 nvprune_9.2 cupti_9.2 visual_studio_integration_9.2 cublas_9.2 cublas_dev_9.2 cudart_9.2 cufft_9.2 cufft_dev_9.2 curand_9.2 curand_dev_9.2 cusolver_9.2 cusolver_dev_9.2 cusparse_9.2 cusparse_dev_9.2 nvgraph_9.2 nvgraph_dev_9.2 npp_9.2 npp_dev_9.2 nvrtc_9.2 nvrtc_dev_9.2 nvml_dev_9.2"
 )
 
 IF NOT EXIST "%SRC_DIR%\temp_build\cudnn-9.2-windows10-x64-v7.2.1.38.zip" (
@@ -42,7 +42,7 @@ IF NOT EXIST "%SRC_DIR%\temp_build\cuda_10.0.130_411.31_win10.exe" (
     curl -k -L https://developer.nvidia.com/compute/cuda/10.0/Prod/local_installers/cuda_10.0.130_411.31_win10 --output "%SRC_DIR%\temp_build\cuda_10.0.130_411.31_win10.exe"
     if errorlevel 1 exit /b 1
     set "CUDA_SETUP_FILE=%SRC_DIR%\temp_build\cuda_10.0.130_411.31_win10.exe"
-    set "ARGS=nvcc_10.0 cuobjdump_10.0 nvprune_10.0 cupti_10.0 gpu_library_advisor_10.0 memcheck_10.0 nvdisasm_10.0 nvprof_10.0 visual_profiler_10.0 visual_studio_integration_10.0 demo_suite_10.0 documentation_10.0 cublas_10.0 cublas_dev_10.0 cudart_10.0 cufft_10.0 cufft_dev_10.0 curand_10.0 curand_dev_10.0 cusolver_10.0 cusolver_dev_10.0 cusparse_10.0 cusparse_dev_10.0 nvgraph_10.0 nvgraph_dev_10.0 npp_10.0 npp_dev_10.0 nvrtc_10.0 nvrtc_dev_10.0 nvml_dev_10.0 occupancy_calculator_10.0 fortran_examples_10.0"
+    set "ARGS=nvcc_10.0 cuobjdump_10.0 nvprune_10.0 cupti_10.0 visual_studio_integration_10.0 cublas_10.0 cublas_dev_10.0 cudart_10.0 cufft_10.0 cufft_dev_10.0 curand_10.0 curand_dev_10.0 cusolver_10.0 cusolver_dev_10.0 cusparse_10.0 cusparse_dev_10.0 nvgraph_10.0 nvgraph_dev_10.0 npp_10.0 npp_dev_10.0 nvrtc_10.0 nvrtc_dev_10.0 nvml_dev_10.0"
 )
 
 IF NOT EXIST "%SRC_DIR%\temp_build\cudnn-10.0-windows10-x64-v7.4.1.5.zip" (
