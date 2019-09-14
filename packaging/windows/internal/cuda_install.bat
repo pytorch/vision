@@ -56,8 +56,8 @@ goto cuda_common
 :cuda_common
 
 echo Installing CUDA toolkit...
-
-start /wait "%CUDA_SETUP_FILE%" -s %ARGS%
+7z x %CUDA_SETUP_FILE% -o"%SRC_DIR%\temp_build\cuda"
+start /wait "%SRC_DIR%\temp_build\cuda\setup.exe" -s %ARGS%
 
 if not exist "%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v%CUDA_VERSION_STR%" (
     echo CUDA %CUDA_VERSION_STR% installed failed.
@@ -71,6 +71,3 @@ xcopy /Y "%SRC_DIR%\temp_build\cudnn\cuda\include\*.*" "%ProgramFiles%\NVIDIA GP
 
 echo Cleaning temp files
 rd /s /q "%SRC_DIR%\temp_build" || ver > nul
-pushd "C:\NVIDIA"
-rd /s /q .  || ver > nul
-popd
