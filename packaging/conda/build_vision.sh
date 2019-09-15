@@ -124,6 +124,7 @@ if [[ -z "$PYTORCH_VERSION" ]]; then
     export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
                                 python -c "import os, sys, json, re; cuver = '$cuver'; \
+                                cuver = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
                                 print(re.sub(r'\\+.*$', '', \
                                 [x['version'] for x in json.load(sys.stdin)['pytorch'] \
                                     if (x['platform'] == 'darwin' or cuver in x['fn']) \
