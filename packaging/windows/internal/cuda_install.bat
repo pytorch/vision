@@ -14,21 +14,21 @@ set CUDA_VER_MAJOR=%CUDA_VERSION:~0,-1%
 set CUDA_VER_MINOR=%CUDA_VERSION:~-1,1%
 set CUDA_VERSION_STR=%CUDA_VER_MAJOR%.%CUDA_VER_MINOR%
 
-IF %CUDA_VER% EQU 92 goto cuda92
-IF %CUDA_VER% EQU 100 goto cuda100
+if %CUDA_VER% EQU 92 goto cuda92
+if %CUDA_VER% EQU 100 goto cuda100
 
 echo CUDA %CUDA_VERSION_STR% is not supported
 exit /b 1
 
 :cuda92
-IF NOT EXIST "%SRC_DIR%\temp_build\cuda_9.2.148_win10.exe" (
+if not exist "%SRC_DIR%\temp_build\cuda_9.2.148_win10.exe" (
     curl -k -L https://developer.nvidia.com/compute/cuda/9.2/Prod2/local_installers2/cuda_9.2.148_win10 --output "%SRC_DIR%\temp_build\cuda_9.2.148_win10.exe"
     if errorlevel 1 exit /b 1
     set "CUDA_SETUP_FILE=%SRC_DIR%\temp_build\cuda_9.2.148_win10.exe"
     set "ARGS=nvcc_9.2 cuobjdump_9.2 nvprune_9.2 cupti_9.2 cublas_9.2 cublas_dev_9.2 cudart_9.2 cufft_9.2 cufft_dev_9.2 curand_9.2 curand_dev_9.2 cusolver_9.2 cusolver_dev_9.2 cusparse_9.2 cusparse_dev_9.2 nvgraph_9.2 nvgraph_dev_9.2 npp_9.2 npp_dev_9.2 nvrtc_9.2 nvrtc_dev_9.2 nvml_dev_9.2"
 )
 
-IF NOT EXIST "%SRC_DIR%\temp_build\cudnn-9.2-windows10-x64-v7.2.1.38.zip" (
+if not exist "%SRC_DIR%\temp_build\cudnn-9.2-windows10-x64-v7.2.1.38.zip" (
     curl -k -L https://downloads.sourceforge.net/project/cuda-dnn/7/CUDA-9.2/cudnn-9.2-windows10-x64-v7.2.1.38.zip --output "%SRC_DIR%\temp_build\cudnn-9.2-windows10-x64-v7.2.1.38.zip"
     if errorlevel 1 exit /b 1
     set "CUDNN_SETUP_FILE=%SRC_DIR%\temp_build\cudnn-9.2-windows10-x64-v7.2.1.38.zip"
@@ -38,14 +38,14 @@ goto cuda_common
 
 :cuda100
 
-IF NOT EXIST "%SRC_DIR%\temp_build\cuda_10.0.130_411.31_win10.exe" (
+if not exist "%SRC_DIR%\temp_build\cuda_10.0.130_411.31_win10.exe" (
     curl -k -L https://developer.nvidia.com/compute/cuda/10.0/Prod/local_installers/cuda_10.0.130_411.31_win10 --output "%SRC_DIR%\temp_build\cuda_10.0.130_411.31_win10.exe"
     if errorlevel 1 exit /b 1
     set "CUDA_SETUP_FILE=%SRC_DIR%\temp_build\cuda_10.0.130_411.31_win10.exe"
     set "ARGS=nvcc_10.0 cuobjdump_10.0 nvprune_10.0 cupti_10.0 cublas_10.0 cublas_dev_10.0 cudart_10.0 cufft_10.0 cufft_dev_10.0 curand_10.0 curand_dev_10.0 cusolver_10.0 cusolver_dev_10.0 cusparse_10.0 cusparse_dev_10.0 nvgraph_10.0 nvgraph_dev_10.0 npp_10.0 npp_dev_10.0 nvrtc_10.0 nvrtc_dev_10.0 nvml_dev_10.0"
 )
 
-IF NOT EXIST "%SRC_DIR%\temp_build\cudnn-10.0-windows10-x64-v7.4.1.5.zip" (
+if not exist "%SRC_DIR%\temp_build\cudnn-10.0-windows10-x64-v7.4.1.5.zip" (
     curl -k -L https://www.dropbox.com/s/9v1z9rmbjw9mhx2/cudnn-10.0-windows10-x64-v7.4.1.5.zip?dl=1 --output "%SRC_DIR%\temp_build\cudnn-10.0-windows10-x64-v7.4.1.5.zip"
     if errorlevel 1 exit /b 1
     set "CUDNN_SETUP_FILE=%SRC_DIR%\temp_build\cudnn-10.0-windows10-x64-v7.4.1.5.zip"
@@ -54,6 +54,11 @@ IF NOT EXIST "%SRC_DIR%\temp_build\cudnn-10.0-windows10-x64-v7.4.1.5.zip" (
 goto cuda_common
 
 :cuda_common
+
+if not exist "%SRC_DIR%\temp_build\NvToolsExt.7z" (
+    curl -k -L https://www.dropbox.com/s/9mcolalfdj4n979/NvToolsExt.7z?dl=1 --output "%SRC_DIR%\temp_build\NvToolsExt.7z"
+    if errorlevel 1 exit /b 1
+)
 
 echo Installing CUDA toolkit...
 7z x %CUDA_SETUP_FILE% -o"%SRC_DIR%\temp_build\cuda"
@@ -64,8 +69,21 @@ popd
 echo Installing VS integration...
 xcopy /Y "%SRC_DIR%\temp_build\cuda\CUDAVisualStudioIntegration\extras\visual_studio_integration\MSBuildExtensions\*.*" "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\Common7\IDE\VC\VCTargets\BuildCustomizations"
 
-if not exist "%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v%CUDA_VERSION_STR%" (
+echo Installing NvToolsExt...
+7z x %SRC_DIR%\temp_build\NvToolsExt.7z -o"%SRC_DIR%\temp_build\NvToolsExt"
+mkdir "%ProgramFiles%\NVIDIA Corporation\NvToolsExt\bin\x64"
+mkdir "%ProgramFiles%\NVIDIA Corporation\NvToolsExt\include"
+mkdir "%ProgramFiles%\NVIDIA Corporation\NvToolsExt\lib\x64"
+xcopy /Y "%SRC_DIR%\temp_build\NvToolsExt\bin\x64\*.*" "%ProgramFiles%\NVIDIA Corporation\NvToolsExt\bin\x64"
+xcopy /Y "%SRC_DIR%\temp_build\NvToolsExt\include\*.*" "%ProgramFiles%\NVIDIA Corporation\NvToolsExt\include"
+xcopy /Y "%SRC_DIR%\temp_build\NvToolsExt\lib\x64\*.*" "%ProgramFiles%\NVIDIA Corporation\NvToolsExt\lib\x64"
+
+setx /M NVTOOLSEXT_PATH "%ProgramFiles%\NVIDIA Corporation\NvToolsExt\bin\x64"
+set "NVTOOLSEXT_PATH=%ProgramFiles%\NVIDIA Corporation\NvToolsExt\bin\x64"
+
+if not exist "%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v%CUDA_VERSION_STR%\bin\nvcc.exe" (
     echo CUDA %CUDA_VERSION_STR% installed failed.
+    exit /b 1
 )
 
 echo Installing cuDNN...
