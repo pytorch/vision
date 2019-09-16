@@ -75,6 +75,13 @@ Installation From source:
     make 
     make install
 
+Once installed, the library can be accessed in cmake (after properly configuring ``CMAKE_PREFIX_PATH``) via the :code:`Torch::Vision` target:
+
+.. code:: rest
+
+	find_package(TorchVision)
+	target_link_libraries(my-target Torch::Vision)
+
 Documentation
 =============
 You can find the API documentation on the pytorch website: http://pytorch.org/docs/master/torchvision/
