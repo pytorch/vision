@@ -52,11 +52,13 @@ def _align_audio_frames(aframes, aframe_pts, audio_pts_range):
 def read_video_from_file(
     filename,
     seek_frame_margin=0.25,
+    read_video_stream=True,
     video_width=0,
     video_height=0,
     video_min_dimension=0,
     video_pts_range=(0, -1),
     video_timebase=default_timebase,
+    read_audio_stream=True,
     audio_samples=0,
     audio_channels=0,
     audio_pts_range=(0, -1),
@@ -73,6 +75,8 @@ def read_video_from_file(
     seek_frame_margin: double, optional
         seeking frame in the stream is imprecise. Thus, when video_start_pts is specified,
         we seek the pts earlier by seek_frame_margin seconds
+    read_video_stream: int, optional
+        whether read video stream. If yes, set to 1. Otherwise, 0
     video_width/video_height/video_min_dimension: int
         together decide the size of decoded frames
         - when video_width = 0, video_height = 0, and video_min_dimension = 0, keep the orignal frame resolution
@@ -88,6 +92,8 @@ def read_video_from_file(
         the start and end presentation timestamp of video stream
     video_timebase: Fraction, optional
         a Fraction rational number which denotes timebase in video stream
+    read_audio_stream: int, optional
+        whether read audio stream. If yes, set to 1. Otherwise, 0
     audio_samples: int, optional
         audio sampling rate
     audio_channels: int optional
@@ -115,6 +121,7 @@ def read_video_from_file(
         filename,
         seek_frame_margin,
         0,  # getPtsOnly
+        read_video_stream,
         video_width,
         video_height,
         video_min_dimension,
@@ -122,6 +129,7 @@ def read_video_from_file(
         video_pts_range[1],
         video_timebase.numerator,
         video_timebase.denominator,
+        read_audio_stream,
         audio_samples,
         audio_channels,
         audio_pts_range[0],
@@ -147,6 +155,7 @@ def read_video_timestamps_from_file(filename):
         filename,
         0,  # seek_frame_margin
         1,  # getPtsOnly
+        1,  # read_video_stream
         0,  # video_width
         0,  # video_height
         0,  # video_min_dimension
@@ -154,6 +163,7 @@ def read_video_timestamps_from_file(filename):
         -1,  # video_end_pts
         0,  # video_timebase_num
         1,  # video_timebase_den
+        1,  # read_audio_stream
         0,  # audio_samples
         0,  # audio_channels
         0,  # audio_start_pts
@@ -172,11 +182,13 @@ def read_video_timestamps_from_file(filename):
 def read_video_from_memory(
     file_buffer,
     seek_frame_margin=0.25,
+    read_video_stream=1,
     video_width=0,
     video_height=0,
     video_min_dimension=0,
     video_pts_range=(0, -1),
     video_timebase=default_timebase,
+    read_audio_stream=1,
     audio_samples=0,
     audio_channels=0,
     audio_pts_range=(0, -1),
@@ -193,6 +205,8 @@ def read_video_from_memory(
     seek_frame_margin: double, optional
         seeking frame in the stream is imprecise. Thus, when video_start_pts is specified,
         we seek the pts earlier by seek_frame_margin seconds
+    read_video_stream: int, optional
+        whether read video stream. If yes, set to 1. Otherwise, 0
     video_width/video_height/video_min_dimension: int
         together decide the size of decoded frames
         - when video_width = 0, video_height = 0, and video_min_dimension = 0, keep the orignal frame resolution
@@ -208,6 +222,8 @@ def read_video_from_memory(
         the start and end presentation timestamp of video stream
     video_timebase: Fraction, optional
         a Fraction rational number which denotes timebase in video stream
+    read_audio_stream: int, optional
+        whether read audio stream. If yes, set to 1. Otherwise, 0
     audio_samples: int, optional
         audio sampling rate
     audio_channels: int optional
@@ -238,6 +254,7 @@ def read_video_from_memory(
         video_tensor,
         seek_frame_margin,
         0,  # getPtsOnly
+        read_video_stream,
         video_width,
         video_height,
         video_min_dimension,
@@ -245,6 +262,7 @@ def read_video_from_memory(
         video_pts_range[1],
         video_timebase.numerator,
         video_timebase.denominator,
+        read_audio_stream,
         audio_samples,
         audio_channels,
         audio_pts_range[0],
@@ -273,6 +291,7 @@ def read_video_timestamps_from_memory(file_buffer):
         video_tensor,
         0,  # seek_frame_margin
         1,  # getPtsOnly
+        1,  # read_video_stream
         0,  # video_width
         0,  # video_height
         0,  # video_min_dimension
@@ -280,6 +299,7 @@ def read_video_timestamps_from_memory(file_buffer):
         -1,  # video_end_pts
         0,  # video_timebase_num
         1,  # video_timebase_den
+        1,  # read_audio_stream
         0,  # audio_samples
         0,  # audio_channels
         0,  # audio_start_pts

@@ -358,6 +358,7 @@ class TestVideoReader(unittest.TestCase):
                     full_path,
                     seek_frame_margin,
                     0,  # getPtsOnly
+                    1,  # readVideoStream
                     width,
                     height,
                     min_dimension,
@@ -365,6 +366,7 @@ class TestVideoReader(unittest.TestCase):
                     video_end_pts,
                     video_timebase_num,
                     video_timebase_den,
+                    1,  # readAudioStream
                     samples,
                     channels,
                     audio_start_pts,
@@ -372,7 +374,6 @@ class TestVideoReader(unittest.TestCase):
                     audio_timebase_num,
                     audio_timebase_den,
                 )
-
 
     def test_read_video_from_file(self):
         """
@@ -395,6 +396,7 @@ class TestVideoReader(unittest.TestCase):
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
+                1,  # readVideoStream
                 width,
                 height,
                 min_dimension,
@@ -402,6 +404,7 @@ class TestVideoReader(unittest.TestCase):
                 video_end_pts,
                 video_timebase_num,
                 video_timebase_den,
+                1,  # readAudioStream
                 samples,
                 channels,
                 audio_start_pts,
@@ -415,6 +418,60 @@ class TestVideoReader(unittest.TestCase):
             self.check_separate_decoding_result(tv_result, config)
             # compare decoding results
             self.compare_decoding_result(tv_result, pyav_result, config)
+
+    def test_read_video_from_file_read_single_stream_only(self):
+        """
+        Test the case when decoder starts with a video file to decode frames, and
+        only reads video stream and ignores audio stream
+        """
+        # video related
+        width, height, min_dimension = 0, 0, 0
+        video_start_pts, video_end_pts = 0, -1
+        video_timebase_num, video_timebase_den = 0, 1
+        # audio related
+        samples, channels = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
+        audio_timebase_num, audio_timebase_den = 0, 1
+
+        for test_video, config in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
+            for readVideoStream, readAudioStream in [(1, 0), (0, 1)]:
+                # decode all frames using new decoder
+                tv_result = video_reader.read_video_from_file(
+                    full_path,
+                    seek_frame_margin,
+                    0,  # getPtsOnly
+                    readVideoStream,
+                    width,
+                    height,
+                    min_dimension,
+                    video_start_pts,
+                    video_end_pts,
+                    video_timebase_num,
+                    video_timebase_den,
+                    readAudioStream,
+                    samples,
+                    channels,
+                    audio_start_pts,
+                    audio_end_pts,
+                    audio_timebase_num,
+                    audio_timebase_den,
+                )
+
+                vframes, vframe_pts, vtimebase, vfps, aframes, aframe_pts, atimebase, asample_rate = (
+                    tv_result
+                )
+
+                self.assertEqual(vframes.numel() > 0, readVideoStream)
+                self.assertEqual(vframe_pts.numel() > 0, readVideoStream)
+                self.assertEqual(vtimebase.numel() > 0, readVideoStream)
+                self.assertEqual(vfps.numel() > 0, readVideoStream)
+
+                expect_audio_data = readAudioStream == 1 and config.audio_sample_rate is not None
+                self.assertEqual(aframes.numel() > 0, expect_audio_data)
+                self.assertEqual(aframe_pts.numel() > 0, expect_audio_data)
+                self.assertEqual(atimebase.numel() > 0, expect_audio_data)
+                self.assertEqual(asample_rate.numel() > 0, expect_audio_data)
 
     def test_read_video_from_file_rescale_min_dimension(self):
         """
@@ -437,6 +494,7 @@ class TestVideoReader(unittest.TestCase):
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
+                1,  # readVideoStream
                 width,
                 height,
                 min_dimension,
@@ -444,6 +502,7 @@ class TestVideoReader(unittest.TestCase):
                 video_end_pts,
                 video_timebase_num,
                 video_timebase_den,
+                1,  # readAudioStream
                 samples,
                 channels,
                 audio_start_pts,
@@ -474,6 +533,7 @@ class TestVideoReader(unittest.TestCase):
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
+                1,  # readVideoStream
                 width,
                 height,
                 min_dimension,
@@ -481,6 +541,7 @@ class TestVideoReader(unittest.TestCase):
                 video_end_pts,
                 video_timebase_num,
                 video_timebase_den,
+                1,  # readAudioStream
                 samples,
                 channels,
                 audio_start_pts,
@@ -511,6 +572,7 @@ class TestVideoReader(unittest.TestCase):
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
+                1,  # readVideoStream
                 width,
                 height,
                 min_dimension,
@@ -518,6 +580,7 @@ class TestVideoReader(unittest.TestCase):
                 video_end_pts,
                 video_timebase_num,
                 video_timebase_den,
+                1,  # readAudioStream
                 samples,
                 channels,
                 audio_start_pts,
@@ -548,6 +611,7 @@ class TestVideoReader(unittest.TestCase):
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
+                1,  # readVideoStream
                 width,
                 height,
                 min_dimension,
@@ -555,6 +619,7 @@ class TestVideoReader(unittest.TestCase):
                 video_end_pts,
                 video_timebase_num,
                 video_timebase_den,
+                1,  # readAudioStream
                 samples,
                 channels,
                 audio_start_pts,
@@ -592,6 +657,7 @@ class TestVideoReader(unittest.TestCase):
                     full_path,
                     seek_frame_margin,
                     0,  # getPtsOnly
+                    1,  # readVideoStream
                     width,
                     height,
                     min_dimension,
@@ -599,6 +665,7 @@ class TestVideoReader(unittest.TestCase):
                     video_end_pts,
                     video_timebase_num,
                     video_timebase_den,
+                    1,  # readAudioStream
                     samples,
                     channels,
                     audio_start_pts,
@@ -641,6 +708,7 @@ class TestVideoReader(unittest.TestCase):
                 video_tensor,
                 seek_frame_margin,
                 0,  # getPtsOnly
+                1,  # readVideoStream
                 width,
                 height,
                 min_dimension,
@@ -648,6 +716,7 @@ class TestVideoReader(unittest.TestCase):
                 video_end_pts,
                 video_timebase_num,
                 video_timebase_den,
+                1,  # readAudioStream
                 samples,
                 channels,
                 audio_start_pts,
@@ -661,6 +730,7 @@ class TestVideoReader(unittest.TestCase):
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
+                1,  # readVideoStream
                 width,
                 height,
                 min_dimension,
@@ -668,6 +738,7 @@ class TestVideoReader(unittest.TestCase):
                 video_end_pts,
                 video_timebase_num,
                 video_timebase_den,
+                1,  # readAudioStream
                 samples,
                 channels,
                 audio_start_pts,
@@ -702,6 +773,7 @@ class TestVideoReader(unittest.TestCase):
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
+                1,  # readVideoStream
                 width,
                 height,
                 min_dimension,
@@ -709,6 +781,7 @@ class TestVideoReader(unittest.TestCase):
                 video_end_pts,
                 video_timebase_num,
                 video_timebase_den,
+                1,  # readAudioStream
                 samples,
                 channels,
                 audio_start_pts,
@@ -744,6 +817,7 @@ class TestVideoReader(unittest.TestCase):
                 video_tensor,
                 seek_frame_margin,
                 0,  # getPtsOnly
+                1,  # readVideoStream
                 width,
                 height,
                 min_dimension,
@@ -751,6 +825,7 @@ class TestVideoReader(unittest.TestCase):
                 video_end_pts,
                 video_timebase_num,
                 video_timebase_den,
+                1,  # readAudioStream
                 samples,
                 channels,
                 audio_start_pts,
@@ -787,6 +862,7 @@ class TestVideoReader(unittest.TestCase):
                 video_tensor,
                 seek_frame_margin,
                 0,  # getPtsOnly
+                1,  # readVideoStream
                 width,
                 height,
                 min_dimension,
@@ -794,6 +870,7 @@ class TestVideoReader(unittest.TestCase):
                 video_end_pts,
                 video_timebase_num,
                 video_timebase_den,
+                1,  # readAudioStream
                 samples,
                 channels,
                 audio_start_pts,
@@ -808,6 +885,7 @@ class TestVideoReader(unittest.TestCase):
                 video_tensor,
                 seek_frame_margin,
                 1,  # getPtsOnly
+                1,  # readVideoStream
                 width,
                 height,
                 min_dimension,
@@ -815,6 +893,7 @@ class TestVideoReader(unittest.TestCase):
                 video_end_pts,
                 video_timebase_num,
                 video_timebase_den,
+                1,  # readAudioStream
                 samples,
                 channels,
                 audio_start_pts,
@@ -848,6 +927,7 @@ class TestVideoReader(unittest.TestCase):
                 video_tensor,
                 seek_frame_margin,
                 0,  # getPtsOnly
+                1,  # readVideoStream
                 width,
                 height,
                 min_dimension,
@@ -855,6 +935,7 @@ class TestVideoReader(unittest.TestCase):
                 video_end_pts,
                 video_timebase_num,
                 video_timebase_den,
+                1,  # readAudioStream
                 samples,
                 channels,
                 audio_start_pts,
@@ -899,6 +980,7 @@ class TestVideoReader(unittest.TestCase):
                     video_tensor,
                     seek_frame_margin,
                     0,  # getPtsOnly
+                    1,  # readVideoStream
                     width,
                     height,
                     min_dimension,
@@ -906,6 +988,7 @@ class TestVideoReader(unittest.TestCase):
                     video_end_pts,
                     video_timebase_num,
                     video_timebase_den,
+                    1,  # readAudioStream
                     samples,
                     channels,
                     audio_start_pts,

@@ -129,14 +129,13 @@ void getAudioMeta(
   numSamples = frameSizeTotal / (channels * bytesPerSample);
 }
 
-
 torch::List<torch::Tensor> readVideo(
     bool isReadFile,
     const torch::Tensor& input_video,
-    // torch::Tensor* input_video,
     std::string videoPath,
     double seekFrameMargin,
     int64_t getPtsOnly,
+    int64_t readVideoStream,
     int64_t width,
     int64_t height,
     int64_t minDimension,
@@ -144,6 +143,7 @@ torch::List<torch::Tensor> readVideo(
     int64_t videoEndPts,
     int64_t videoTimeBaseNum,
     int64_t videoTimeBaseDen,
+    int64_t readAudioStream,
     int64_t audioSamples,
     int64_t audioChannels,
     int64_t audioStartPts,
@@ -158,6 +158,7 @@ torch::List<torch::Tensor> readVideo(
   unique_ptr<DecoderParameters> params = util::getDecoderParams(
       seekFrameMargin,
       getPtsOnly,
+      readVideoStream,
       width,
       height,
       minDimension,
@@ -165,6 +166,7 @@ torch::List<torch::Tensor> readVideo(
       videoEndPts,
       videoTimeBaseNum,
       videoTimeBaseDen,
+      readAudioStream,
       audioSamples,
       audioChannels,
       audioStartPts,
@@ -185,73 +187,82 @@ torch::List<torch::Tensor> readVideo(
         decoderOutput);
   }
 
-  auto it = decoderOutput.media_data_.find(TYPE_VIDEO);
-  // ensure video stream is available
-  CHECK(!(it == decoderOutput.media_data_.end()));
-
   // video section
-  int numVideoFrames, outHeight, outWidth, numChannels;
-  getVideoMeta(decoderOutput, numVideoFrames, outHeight, outWidth, numChannels);
+  torch::Tensor videoFrame = torch::zeros({0}, torch::kByte);
+  torch::Tensor videoFramePts = torch::zeros({0}, torch::kLong);
+  torch::Tensor videoTimeBase = torch::zeros({0}, torch::kInt);
+  torch::Tensor videoFps = torch::zeros({0}, torch::kFloat);
+  if (readVideoStream == 1) {
+    auto it = decoderOutput.media_data_.find(TYPE_VIDEO);
+    if (it != decoderOutput.media_data_.end()) {
+      int numVideoFrames, outHeight, outWidth, numChannels;
+      getVideoMeta(
+          decoderOutput, numVideoFrames, outHeight, outWidth, numChannels);
 
-  torch::Tensor videoFrame;
-  if (getPtsOnly == 0) {
-    videoFrame = torch::zeros(
-        {numVideoFrames, outHeight, outWidth, numChannels}, torch::kByte);
-  } else {
-    videoFrame = torch::zeros({0}, torch::kByte);
+      if (getPtsOnly == 0) {
+        videoFrame = torch::zeros(
+            {numVideoFrames, outHeight, outWidth, numChannels}, torch::kByte);
+      }
+
+      videoFramePts = torch::zeros({numVideoFrames}, torch::kLong);
+
+      fillVideoTensor(
+          decoderOutput.media_data_[TYPE_VIDEO].frames_,
+          videoFrame,
+          videoFramePts);
+
+      videoTimeBase = torch::zeros({2}, torch::kInt);
+      int* videoTimeBaseData = videoTimeBase.data_ptr<int>();
+      videoTimeBaseData[0] = it->second.format_.video.timeBaseNum;
+      videoTimeBaseData[1] = it->second.format_.video.timeBaseDen;
+
+      videoFps = torch::zeros({1}, torch::kFloat);
+      float* videoFpsData = videoFps.data_ptr<float>();
+      videoFpsData[0] = it->second.format_.video.fps;
+    } else {
+      VLOG(1) << "Miss video stream";
+    }
   }
-
-  torch::Tensor videoFramePts = at::zeros({numVideoFrames}, torch::kLong);
-
-  fillVideoTensor(
-      decoderOutput.media_data_[TYPE_VIDEO].frames_, videoFrame, videoFramePts);
-
-  torch::Tensor videoTimeBase = torch::zeros({2}, torch::kInt);
-  int* videoTimeBaseData = videoTimeBase.data_ptr<int>();
-  videoTimeBaseData[0] = it->second.format_.video.timeBaseNum;
-  videoTimeBaseData[1] = it->second.format_.video.timeBaseDen;
-
-  torch::Tensor videoFps = torch::zeros({1}, torch::kFloat);
-  float* videoFpsData = videoFps.data_ptr<float>();
-  videoFpsData[0] = it->second.format_.video.fps;
 
   // audio section
   torch::Tensor audioFrame = torch::zeros({0}, torch::kFloat);
   torch::Tensor audioFramePts = torch::zeros({0}, torch::kLong);
   torch::Tensor audioTimeBase = torch::zeros({0}, torch::kInt);
   torch::Tensor audioSampleRate = torch::zeros({0}, torch::kInt);
+  if (readAudioStream == 1) {
+    auto it = decoderOutput.media_data_.find(TYPE_AUDIO);
+    if (it != decoderOutput.media_data_.end()) {
+      VLOG(1) << "Find audio stream";
+      int64_t numAudioSamples = 0, outAudioChannels = 0, numAudioFrames = 0;
+      getAudioMeta(
+          decoderOutput, numAudioSamples, outAudioChannels, numAudioFrames);
+      VLOG(2) << "numAudioSamples: " << numAudioSamples;
+      VLOG(2) << "outAudioChannels: " << outAudioChannels;
+      VLOG(2) << "numAudioFrames: " << numAudioFrames;
 
-  it = decoderOutput.media_data_.find(TYPE_AUDIO);
-  if (it != decoderOutput.media_data_.end()) {
-    VLOG(1) << "Find audio stream";
-    int64_t numAudioSamples = 0, outAudioChannels = 0, numAudioFrames = 0;
-    getAudioMeta(
-        decoderOutput, numAudioSamples, outAudioChannels, numAudioFrames);
-    VLOG(2) << "numAudioSamples: " << numAudioSamples;
-    VLOG(2) << "outAudioChannels: " << outAudioChannels;
-    VLOG(2) << "numAudioFrames: " << numAudioFrames;
+      if (getPtsOnly == 0) {
+        audioFrame =
+            torch::zeros({numAudioSamples, outAudioChannels}, torch::kFloat);
+      }
+      audioFramePts = torch::zeros({numAudioFrames}, torch::kLong);
+      fillAudioTensor(
+          decoderOutput.media_data_[TYPE_AUDIO].frames_,
+          audioFrame,
+          audioFramePts);
 
-    if (getPtsOnly == 0) {
-      audioFrame =
-          torch::zeros({numAudioSamples, outAudioChannels}, torch::kFloat);
+      audioTimeBase = torch::zeros({2}, torch::kInt);
+      int* audioTimeBaseData = audioTimeBase.data_ptr<int>();
+      audioTimeBaseData[0] = it->second.format_.audio.timeBaseNum;
+      audioTimeBaseData[1] = it->second.format_.audio.timeBaseDen;
+
+      audioSampleRate = torch::zeros({1}, torch::kInt);
+      int* audioSampleRateData = audioSampleRate.data_ptr<int>();
+      audioSampleRateData[0] = it->second.format_.audio.samples;
+    } else {
+      VLOG(1) << "Miss audio stream";
     }
-    audioFramePts = torch::zeros({numAudioFrames}, torch::kLong);
-    fillAudioTensor(
-        decoderOutput.media_data_[TYPE_AUDIO].frames_,
-        audioFrame,
-        audioFramePts);
-
-    audioTimeBase = torch::zeros({2}, torch::kInt);
-    int* audioTimeBaseData = audioTimeBase.data_ptr<int>();
-    audioTimeBaseData[0] = it->second.format_.audio.timeBaseNum;
-    audioTimeBaseData[1] = it->second.format_.audio.timeBaseDen;
-
-    audioSampleRate = torch::zeros({1}, torch::kInt);
-    int* audioSampleRateData = audioSampleRate.data_ptr<int>();
-    audioSampleRateData[0] = it->second.format_.audio.samples;
-  } else {
-    VLOG(1) << "Miss audio stream";
   }
+
   torch::List<torch::Tensor> result;
   result.push_back(std::move(videoFrame));
   result.push_back(std::move(videoFramePts));
@@ -269,6 +280,7 @@ torch::List<torch::Tensor> readVideoFromMemory(
     torch::Tensor input_video,
     double seekFrameMargin,
     int64_t getPtsOnly,
+    int64_t readVideoStream,
     int64_t width,
     int64_t height,
     int64_t minDimension,
@@ -276,6 +288,7 @@ torch::List<torch::Tensor> readVideoFromMemory(
     int64_t videoEndPts,
     int64_t videoTimeBaseNum,
     int64_t videoTimeBaseDen,
+    int64_t readAudioStream,
     int64_t audioSamples,
     int64_t audioChannels,
     int64_t audioStartPts,
@@ -288,6 +301,7 @@ torch::List<torch::Tensor> readVideoFromMemory(
       "", // videoPath
       seekFrameMargin,
       getPtsOnly,
+      readVideoStream,
       width,
       height,
       minDimension,
@@ -295,6 +309,7 @@ torch::List<torch::Tensor> readVideoFromMemory(
       videoEndPts,
       videoTimeBaseNum,
       videoTimeBaseDen,
+      readAudioStream,
       audioSamples,
       audioChannels,
       audioStartPts,
@@ -307,6 +322,7 @@ torch::List<torch::Tensor> readVideoFromFile(
     std::string videoPath,
     double seekFrameMargin,
     int64_t getPtsOnly,
+    int64_t readVideoStream,
     int64_t width,
     int64_t height,
     int64_t minDimension,
@@ -314,6 +330,7 @@ torch::List<torch::Tensor> readVideoFromFile(
     int64_t videoEndPts,
     int64_t videoTimeBaseNum,
     int64_t videoTimeBaseDen,
+    int64_t readAudioStream,
     int64_t audioSamples,
     int64_t audioChannels,
     int64_t audioStartPts,
@@ -327,6 +344,7 @@ torch::List<torch::Tensor> readVideoFromFile(
       videoPath,
       seekFrameMargin,
       getPtsOnly,
+      readVideoStream,
       width,
       height,
       minDimension,
@@ -334,6 +352,7 @@ torch::List<torch::Tensor> readVideoFromFile(
       videoEndPts,
       videoTimeBaseNum,
       videoTimeBaseDen,
+      readAudioStream,
       audioSamples,
       audioChannels,
       audioStartPts,

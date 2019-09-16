@@ -81,8 +81,6 @@ class FfmpegDecoder {
  private:
   FfmpegStream* findStreamByIndex(int streamIndex) const;
 
-  bool validateParams(const DecoderParameters& params);
-
   int init(
       const std::string& filename,
       bool isDecodeFile,

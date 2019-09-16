@@ -119,31 +119,11 @@ int64_t FfmpegAvioContext::seekMemory(
   return h->offset_;
 }
 
-bool FfmpegDecoder::validateParams(const DecoderParameters& params) {
-  // assume format of video and audio stream are always specified
-  auto it = params.formats.find(TYPE_VIDEO);
-  if (it == params.formats.end()) {
-    LOG(ERROR) << "video format must be provided";
-    return false;
-  }
-
-  it = params.formats.find(TYPE_AUDIO);
-  if (it == params.formats.end()) {
-    LOG(ERROR) << "audio format must be provided";
-    return false;
-  }
-
-  return true;
-}
-
 int FfmpegDecoder::init(
     const std::string& filename,
     bool isDecodeFile,
     FfmpegAvioContext& ioctx,
     DecoderOutput& decoderOutput) {
-  if (!validateParams(*(params_.get()))) {
-    return -1;
-  }
   cleanUp();
 
   int ret = 0;

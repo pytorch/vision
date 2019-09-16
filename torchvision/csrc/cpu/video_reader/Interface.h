@@ -36,7 +36,7 @@ struct VideoFormat {
   size_t height{0}; // height in pixels
   size_t minDimension{0}; // choose min dimension and rescale accordingly
   // Output image pixel format. data type AVPixelFormat
-  ssize_t format{defaultVideoPixelFormat}; // type AVPixelFormat
+  AVPixelFormat format{defaultVideoPixelFormat}; // type AVPixelFormat
   int64_t startPts{0}, endPts{0}; // Start and end presentation timestamp
   int32_t timeBaseNum{0};
   int32_t timeBaseDen{1}; // numerator and denominator of time base
@@ -49,7 +49,7 @@ struct AudioFormat {
 
   size_t samples{0}; // number samples per second (frequency)
   size_t channels{0}; // number of channels
-  ssize_t format{defaultAudioSampleFormat}; // type AVSampleFormat
+  AVSampleFormat format{defaultAudioSampleFormat}; // type AVSampleFormat
   int64_t startPts{0}, endPts{0}; // Start and end presentation timestamp
   int32_t timeBaseNum{0};
   int32_t timeBaseDen{1}; // numerator and denominator of time base
