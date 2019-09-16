@@ -57,12 +57,9 @@ class GeneralizedRCNNTransform(nn.Module):
 
     def resize(self, image, target):
         h, w = image.shape[-2:]
-        if torchvision._is_tracing():
-            min_size = float(torch.min(torch.tensor(image.shape[-2:])))
-            max_size = float(torch.max(torch.tensor(image.shape[-2:])))
-        else:
-            min_size = float(min(image.shape[-2:]))
-            max_size = float(max(image.shape[-2:]))
+        im_shape = torch.tensor(image.shape[-2:])
+        min_size = float(torch.min(im_shape))
+        max_size = float(torch.max(im_shape))
         if self.training:
             size = random.choice(self.min_size)
         else:
@@ -121,13 +118,14 @@ class GeneralizedRCNNTransform(nn.Module):
             padding = [(s1 - s2) for s1, s2 in zip(max_size, tuple(img.shape))]
             padded_img = self._onnx_dynamic_img_pad(img, padding)
             padded_imgs.append(padded_img)
+
         return torch.stack(padded_imgs)
 
     def batch_images(self, images, size_divisible=32):
         if torchvision._is_tracing():
             # batch_images() does not export well to ONNX
             # call _onnx_batch_images() instead
-            return self._onnx_batch_images(images)
+            return self._onnx_batch_images(images, size_divisible)
 
         max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
         stride = size_divisible
@@ -140,6 +138,7 @@ class GeneralizedRCNNTransform(nn.Module):
         batched_imgs = images[0].new(*batch_shape).zero_()
         for img, pad_img in zip(images, batched_imgs):
             pad_img[: img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)
+
         return batched_imgs
 
     def postprocess(self, result, image_shapes, original_image_sizes):
