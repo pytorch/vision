@@ -60,12 +60,12 @@ class _DenseLayer(nn.Module):
     @torch.jit._overload_method  # noqa: F811
     def forward(self, input):
         # type: (List[Tensor]) -> (Tensor)
-        ...
+        pass
 
     @torch.jit._overload_method  # noqa: F811
     def forward(self, input):
         # type: (Tensor) -> (Tensor)
-        ...
+        pass
 
     # torchscript does not yet support *args, so we overload method
     # allowing it to take either a List[Tensor] or single Tensor
