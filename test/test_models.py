@@ -32,7 +32,7 @@ torchub_models = {
     "resnext50_32x4d": False,
     "fcn_resnet101": False,
     "googlenet": False,
-    "densenet121": False,
+    "densenet121": True,
     "resnet18": True,
     "alexnet": True,
     "shufflenet_v2_x1_0": True,
