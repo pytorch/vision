@@ -4,7 +4,7 @@ import torch
 from torch import nn
 
 
-class IntermediateLayerGetter(nn.ModuleDict):
+class IntermediateLayerGetter(nn.Module):
     """
     Module wrapper that returns intermediate layers from a model
 
@@ -36,6 +36,7 @@ class IntermediateLayerGetter(nn.ModuleDict):
         >>>      ('feat2', torch.Size([1, 256, 14, 14]))]
     """
     def __init__(self, model, return_layers):
+        super(IntermediateLayerGetter, self).__init__()
         if not set(return_layers).issubset([name for name, _ in model.named_children()]):
             raise ValueError("return_layers are not present in model")
 
@@ -49,14 +50,31 @@ class IntermediateLayerGetter(nn.ModuleDict):
             if not return_layers:
                 break
 
-        super(IntermediateLayerGetter, self).__init__(layers)
+        names = []
+        modules = []
+        nc = [x for x in self.named_children()]
+        print(nc, len(nc))
+        for name, module in self.named_children():
+            print(module)
+            names.append(name)
+            modules.append(module)
+
+        self.names = names
+        self.modules = nn.ModuleList(modules)
+
         self.return_layers = orig_return_layers
 
     def forward(self, x):
-        out = OrderedDict()
-        for name, module in self.named_children():
-            x = module(x)
-            if name in self.return_layers:
-                out_name = self.return_layers[name]
-                out[out_name] = x
+        # TODO: Use OrderedDict
+        out = {}
+
+        i = 0
+        # TODO: re-enable
+        # for module in self.modules:
+        #     x = module(x)
+        #     name = self.names[i]
+        #     if name in self.return_layers:
+        #         out_name = self.return_layers[name]
+        #         out[out_name] = x
+        #     i += 1
         return out

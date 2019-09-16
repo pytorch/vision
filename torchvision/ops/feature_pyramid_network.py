@@ -118,8 +118,13 @@ class FeaturePyramidNetwork(nn.Module):
         if self.extra_blocks is not None:
             results, names = self.extra_blocks(results, x, names)
 
-        # make it back an OrderedDict
-        out = OrderedDict([(k, v) for k, v in zip(names, results)])
+        # TODO: Use OrderedDict
+        # out = OrderedDict([(k, v) for k, v in zip(names, results)])
+
+        out = {}
+
+        for k, v in zip(names, results):
+            out[k] = v
 
         return out
 
@@ -140,6 +145,7 @@ class ExtraFPNBlock(nn.Module):
         names (List[str]): the extended set of names for the results
     """
     def forward(self, results, x, names):
+        # type: (List[Tensor], List[Tensor], List[str])
         pass
 
 
@@ -148,7 +154,7 @@ class LastLevelMaxPool(ExtraFPNBlock):
     Applies a max_pool2d on top of the last feature map
     """
     def forward(self, x, y, names):
-        # type: (List[Tensor], Tensor, List[str])
+        # type: (List[Tensor], List[Tensor], List[str])
         names.append("pool")
         x.append(F.max_pool2d(x[-1], 1, 2, 0))
         return x, names

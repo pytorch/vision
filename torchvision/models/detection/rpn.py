@@ -6,6 +6,9 @@ from torch import nn
 from torchvision.ops import boxes as box_ops
 
 from . import _utils as det_utils
+from .image_list import ImageList
+
+from typing import List, Optional
 
 
 class AnchorGenerator(nn.Module):
@@ -27,6 +30,7 @@ class AnchorGenerator(nn.Module):
         sizes (Tuple[Tuple[int]]):
         aspect_ratios (Tuple[Tuple[float]]):
     """
+    cell_anchors : Optional[List[torch.Tensor]]
 
     def __init__(
         self,
@@ -64,14 +68,15 @@ class AnchorGenerator(nn.Module):
     def set_cell_anchors(self, device):
         if self.cell_anchors is not None:
             return self.cell_anchors
-        cell_anchors = [
-            self.generate_anchors(
+        cell_anchors = []
+
+        for sizes, aspect_ratios in zip(list(self.sizes), list(self.aspect_ratios)):
+            anchor = self.generate_anchors(
                 sizes,
                 aspect_ratios,
                 device
             )
-            for sizes, aspect_ratios in zip(self.sizes, self.aspect_ratios)
-        ]
+            cell_anchors.append(anchor)
         self.cell_anchors = cell_anchors
 
     def num_anchors_per_location(self):
@@ -111,9 +116,12 @@ class AnchorGenerator(nn.Module):
         return anchors
 
     def forward(self, image_list, feature_maps):
-        grid_sizes = tuple([feature_map.shape[-2:] for feature_map in feature_maps])
+        # type: (ImageList, List[Tensor])
+        grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
         image_size = image_list.tensors.shape[-2:]
-        strides = tuple((image_size[0] / g[0], image_size[1] / g[1]) for g in grid_sizes)
+        strides = torch.jit.annotate(List[Tuple[float, float]], [])
+        for g in grid_sizes:
+            strides.append((image_size[0] / g[0], image_size[1] / g[1]))
         self.set_cell_anchors(feature_maps[0].device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
         anchors = []
@@ -150,6 +158,7 @@ class RPNHead(nn.Module):
             torch.nn.init.constant_(l.bias, 0)
 
     def forward(self, x):
+        # type: (List[Tensor])
         logits = []
         bbox_reg = []
         for feature in x:
@@ -234,6 +243,7 @@ class RegionProposalNetwork(torch.nn.Module):
         super(RegionProposalNetwork, self).__init__()
         self.anchor_generator = anchor_generator
         self.head = head
+        print("HEAD is", head)
         self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
 
         # used during training
@@ -378,13 +388,14 @@ class RegionProposalNetwork(torch.nn.Module):
         return objectness_loss, box_loss
 
     def forward(self, images, features, targets=None):
+        # type: (ImageList, Dict[str, Tensor], Optional[List[Dict[str, Tensor]]])
         """
         Arguments:
             images (ImageList): images for which we want to compute the predictions
             features (List[Tensor]): features computed from the images that are
                 used for computing the predictions. Each tensor in the list
                 correspond to different feature levels
-            targets (List[Dict[Tensor]): ground-truth boxes present in the image (optional).
+            targets (Optional[List[Dict[str, Tensor]]]): ground-truth boxes present in the image.
                 If provided, each element in the dict should contain a field `boxes`,
                 with the locations of the ground-truth boxes.
 
