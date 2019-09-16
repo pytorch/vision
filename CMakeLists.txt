@@ -24,8 +24,14 @@ file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.c
 
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES})
 target_link_libraries(${PROJECT_NAME} PUBLIC "${TORCH_LIBRARIES}")
+set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME Vision)
 
-install(TARGETS ${PROJECT_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(TARGETS
+        ${PROJECT_NAME}
+        EXPORT TorchVisionConfig
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+        INCLUDES DESTINATION include
+        )
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME})
 install(FILES
   torchvision/csrc/cpu/vision_cpu.h
