@@ -57,9 +57,12 @@ class GeneralizedRCNNTransform(nn.Module):
 
     def resize(self, image, target):
         h, w = image.shape[-2:]
-        im_shape = torch.tensor(image.shape[-2:])
-        min_size = float(torch.min(im_shape))
-        max_size = float(torch.max(im_shape))
+        if torchvision._is_tracing():
+            min_size = float(torch.min(torch.tensor(image.shape[-2:])))
+            max_size = float(torch.max(torch.tensor(image.shape[-2:])))
+        else:
+            min_size = float(min(image.shape[-2:]))
+            max_size = float(max(image.shape[-2:]))
         if self.training:
             size = random.choice(self.min_size)
         else:
