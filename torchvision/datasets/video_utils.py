@@ -94,12 +94,6 @@ class VideoClips(object):
         self.video_pts = metadata["video_pts"]
         self.video_fps = metadata["video_fps"]
 
-    def get_metadata(self):
-        return {
-            "video_pts": self.video_pts,
-            "video_fps": self.video_fps,
-        }
-
     def subset(self, indices):
         video_paths = [self.video_paths[i] for i in indices]
         video_pts = [self.video_pts[i] for i in indices]
