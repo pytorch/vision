@@ -29,7 +29,7 @@ def get_available_video_models():
 torchub_models = {
     "deeplabv3_resnet101": False,
     "mobilenet_v2": True,
-    "resnext50_32x4d": False,
+    "resnext50_32x4d": True,
     "fcn_resnet101": False,
     "googlenet": False,
     "densenet121": True,
