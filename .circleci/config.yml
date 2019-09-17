@@ -18,10 +18,8 @@ commands:
           name: Checkout merge branch
           command: |
             set -ex
-            git fetch --force origin ${CIRCLE_BRANCH}/merge:remotes/origin/${CIRCLE_BRANCH}
-            git reset --hard "$CIRCLE_SHA1"
-            git checkout -q -B "$CIRCLE_BRANCH"
-            git reset --hard "$CIRCLE_SHA1"
+            git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
+            git checkout "merged/$CIRCLE_BRANCH"
 
 binary_common: &binary_common
   parameters:
