@@ -115,23 +115,6 @@ class VideoClips(object):
         self.video_pts = metadata["video_pts"]
         self.info = metadata["info"]
 
-    def save_metadata(self, filepath):
-        metadata = {
-            "video_pts": self.video_pts,
-            "info": self.info,
-        }
-        filedir = os.path.dirname(filepath)
-        if not os.path.exists(filedir):
-            try:
-                os.mkdirs(filedir)
-            except Exception:
-                print("Warning: fail to save metadata in folder: %s" % filedir)
-                return
-
-        with open(filepath, "wb") as fp:
-            pickle.dump(metadata, fp, protocol=pickle.HIGHEST_PROTOCOL)
-            print("Use pickle to save metadata to file: %s" % filepath)
-
     def subset(self, indices):
         video_paths = [self.video_paths[i] for i in indices]
         video_pts = [self.video_pts[i] for i in indices]
