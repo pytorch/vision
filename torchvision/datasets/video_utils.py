@@ -66,21 +66,15 @@ class VideoClips(object):
             so that it has `frame_rate`, and then the clips will be defined
             on the resampled video
         _precomputed_metadata (dict, optional): a dictionary of dataset metadata
-        _precomputed_metadata_filepath (str, optional): the path of metadata pickled file.
     """
     def __init__(self, video_paths, clip_length_in_frames=16, frames_between_clips=1,
-                 frame_rate=None, _precomputed_metadata=None, _precomputed_metadata_filepath=None):
+                 frame_rate=None, _precomputed_metadata=None):
         self.video_paths = video_paths
-        # at most one of _precomputed_metadata and _precomputed_metadata_filepath can be specified
-        assert _precomputed_metadata is None or _precomputed_metadata_filepath is None, \
-            "_precomputed_metadata and _precomputed_metadata_filepath can not be both specified"
 
-        if _precomputed_metadata is None and _precomputed_metadata_filepath is None:
+        if _precomputed_metadata is None:
             self._compute_frame_pts()
-        elif _precomputed_metadata is not None:
+        else:
             self._init_from_metadata(_precomputed_metadata)
-        elif _precomputed_metadata_filepath is not None:
-            self.load_metadata(_precomputed_metadata_filepath)
 
         self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate)
 
@@ -120,12 +114,6 @@ class VideoClips(object):
         assert len(self.video_paths) == len(metadata["info"])
         self.video_pts = metadata["video_pts"]
         self.info = metadata["info"]
-
-    def load_metadata(self, filepath):
-        assert os.path.exists(filepath), "File not found: %s" % filepath
-        with open(filepath, 'rb') as fp:
-            metadata = pickle.load(fp)
-            self._init_from_metadata(metadata)
 
     def save_metadata(self, filepath):
         metadata = {
