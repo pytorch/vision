@@ -53,7 +53,7 @@ class _DenseLayer(nn.Module):
     def call_checkpoint_bottleneck(self, input):
         # type: (List[Tensor]) -> Tensor
         def closure(*inputs):
-            return self.bn_function(inputs)
+            return self.bn_function(*inputs)
 
         return cp.checkpoint(closure, input)
 
