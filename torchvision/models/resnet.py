@@ -200,7 +200,8 @@ class ResNet(nn.Module):
         x = self.layer4(x)
 
         x = self.avgpool(x)
-        x = x.reshape(x.size(0), -1)
+        # This .contiguos() call have no performance impact as NC11 tensor can be channels last and channels first at same time
+        x = x.contiguous().reshape(x.size(0), -1)
         x = self.fc(x)
 
         return x

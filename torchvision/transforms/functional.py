@@ -94,11 +94,16 @@ def to_tensor(pic):
     img = img.view(pic.size[1], pic.size[0], nchannel)
     # put it from HWC to CHW format
     # yikes, this transpose takes 80% of the loading time/CPU
-    img = img.transpose(0, 1).transpose(0, 2).contiguous()
+    img = img.transpose(0, 1).transpose(0, 2)
+    img = img.contiguous()
     if isinstance(img, torch.ByteTensor):
-        return img.float().div(255)
+        # Keep image strides as HWC
+        res = torch.empty_strided(img.shape, img.stride(), dtype=torch.float, device=img.device)
+        res.copy_(img)
+        res.div_(255)
     else:
-        return img
+        res = img
+    return res
 
 
 def to_pil_image(pic, mode=None):
@@ -208,7 +213,8 @@ def normalize(tensor, mean, std, inplace=False):
         raise TypeError('tensor is not a torch image.')
 
     if not inplace:
-        tensor = tensor.clone()
+        # Need temporary transform to 1HWC to preserve strides during clone
+        tensor = tensor.unsqueeze(0).clone()[0]
 
     dtype = tensor.dtype
     mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
