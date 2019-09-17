@@ -91,11 +91,10 @@ class _DenseLayer(nn.Module):
 
 
 class _DenseBlock(nn.Module):
-    __constants__ = ['features']
+    __constants__ = ['layers']
 
     def __init__(self, num_layers, num_input_features, bn_size, growth_rate, drop_rate, memory_efficient=False):
         super(_DenseBlock, self).__init__()
-        features = []
         for i in range(num_layers):
             layer = _DenseLayer(
                 num_input_features + i * growth_rate,
@@ -104,12 +103,12 @@ class _DenseBlock(nn.Module):
                 drop_rate=drop_rate,
                 memory_efficient=memory_efficient,
             )
-            features.append(layer)
-        self.features = nn.ModuleList(features)
+            self.add_module('denselayer%d' % (i + 1), layer)
+        self.layers = nn.ModuleDict(self._modules)
 
     def forward(self, init_features):
         features = [init_features]
-        for layer in self.features:
+        for name, layer in self.layers.items():
             new_features = layer(features)
             features.append(new_features)
         return torch.cat(features, 1)
