@@ -1,10 +1,10 @@
 from .video_utils import VideoClips
 from .utils import list_dir
 from .folder import make_dataset
-from .vision import VisionDataset
+from .vision import VisionVideoDataset
 
 
-class Kinetics400(VisionDataset):
+class Kinetics400(VisionVideoDataset):
     """
     `Kinetics-400 <https://deepmind.com/research/open-source/open-source-datasets/kinetics/>`_
     dataset.
@@ -37,8 +37,7 @@ class Kinetics400(VisionDataset):
     """
 
     def __init__(self, root, frames_per_clip, step_between_clips=1, frame_rate=None,
-                 precomputed_metadata=None, precomputed_metadata_filepath=None,
-                 save_metadata_filepath=None, transform=None):
+                 precomputed_metadata=None, transform=None):
         super(Kinetics400, self).__init__(root)
         extensions = ('avi',)
 
@@ -53,10 +52,8 @@ class Kinetics400(VisionDataset):
             step_between_clips,
             frame_rate,
             precomputed_metadata,
-            precomputed_metadata_filepath,
         )
-        if save_metadata_filepath:
-            self.video_clips.save_metadata(save_metadata_filepath)
+        self.metadata = self.video_clips.get_metadata()
 
         self.transform = transform
 

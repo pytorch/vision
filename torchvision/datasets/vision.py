@@ -51,6 +51,22 @@ class VisionDataset(data.Dataset):
         return ""
 
 
+class VisionVideoDataset(VisionDataset):
+    def __init__(self, root, transforms=None, transform=None, target_transform=None):
+        super(VisionVideoDataset, self).__init__(
+            root,
+            transforms=transforms,
+            transform=transform,
+            target_transform=target_transform,
+        )
+
+    def get_metadata(self):
+        if hasattr(self, "metadata"):
+            return self.metadata
+        else:
+            return None
+
+
 class StandardTransform(object):
     def __init__(self, transform=None, target_transform=None):
         self.transform = transform
