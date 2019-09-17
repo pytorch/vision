@@ -1,8 +1,6 @@
 import bisect
 from fractions import Fraction
 import math
-import os
-import pickle
 import torch
 from torchvision.io import (
     read_video_timestamps_from_file,
@@ -110,13 +108,14 @@ class VideoClips(object):
                 self.info.extend(info)
 
     def _init_from_metadata(self, metadata):
-        assert len(self.video_paths) == len(metadata["video_pts"])
-        assert len(self.video_paths) == len(metadata["info"])
+        self.video_paths = metadata["video_paths"]
         self.video_pts = metadata["video_pts"]
         self.info = metadata["info"]
 
-    def get_metadata(self):
+    @property
+    def metadata(self):
         return {
+            "video_paths": self.video_paths,
             "video_pts": self.video_pts,
             "info": self.info,
         }
@@ -126,6 +125,7 @@ class VideoClips(object):
         video_pts = [self.video_pts[i] for i in indices]
         info = [self.info[i] for i in indices]
         metadata = {
+            "video_paths": video_paths,
             "video_pts": video_pts,
             "info": info,
         }
