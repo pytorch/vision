@@ -23,7 +23,7 @@ def _onnx_merge_levels(levels, unmerged_results):
         index = index.expand(index.size(0),
                              unmerged_results[l].size(1),
                              unmerged_results[l].size(2),
-                             unmerged_results[l].size(3)).to(torch.long)
+                             unmerged_results[l].size(3))
         res = res.scatter(0, index, unmerged_results[l])
     return res
 
