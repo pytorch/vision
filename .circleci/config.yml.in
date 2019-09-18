@@ -9,6 +9,18 @@ version: 2.1
 orbs:
   win: circleci/windows@1.0.0
 
+commands:
+  checkout_merge:
+    description: "checkout merge branch"
+    steps:
+      - checkout
+      - run:
+          name: Checkout merge branch
+          command: |
+            set -ex
+            git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
+            git checkout "merged/$CIRCLE_BRANCH"
+
 binary_common: &binary_common
   parameters:
     # Edit these defaults to do a release`
@@ -50,7 +62,7 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user --progress-bar off jinja2
+            pip install --user --progress-bar off jinja2 pyyaml
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
@@ -60,7 +72,7 @@ jobs:
       - image: << parameters.wheel_docker_image >>
     resource_class: 2xlarge+
     steps:
-      - checkout
+      - checkout_merge
       - run: packaging/build_wheel.sh
       - store_artifacts:
           path: dist
@@ -75,7 +87,7 @@ jobs:
       - image: "soumith/conda-cuda"
     resource_class: 2xlarge+
     steps:
-      - checkout
+      - checkout_merge
       - run: packaging/build_conda.sh
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
@@ -90,7 +102,7 @@ jobs:
       image: ubuntu-1604:201903-01
     resource_class: gpu.medium
     steps:
-    - checkout
+    - checkout_merge
     - run:
         name: Setup environment
         command: |
@@ -159,7 +171,7 @@ jobs:
       name: win/vs2019
       shell: bash.exe
     steps:
-      - checkout
+      - checkout_merge
       - run:
           command: |
             choco install miniconda3
@@ -173,7 +185,7 @@ jobs:
     macos:
       xcode: "9.0"
     steps:
-      - checkout
+      - checkout_merge
       - run:
           # Cannot easily deduplicate this as source'ing activate
           # will set environment variables which we need to propagate
@@ -195,7 +207,7 @@ jobs:
     macos:
       xcode: "9.0"
     steps:
-      - checkout
+      - checkout_merge
       - run:
           command: |
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
@@ -253,47 +265,6 @@ jobs:
               aws s3 cp "$pkg" "s3://pytorch/whl/nightly/<< parameters.subfolder >>" --acl public-read
             done
 
-{%- macro workflow(btype, os, python_version, cu_version, unicode, prefix='', upload=False) %}
-      - binary_{{os}}_{{btype}}:
-          name: {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}
-          python_version: "{{python_version}}"
-          cu_version: "{{cu_version}}"
-{%-   if unicode %}
-          unicode_abi: "1"
-{%-   endif %}
-{%-   if cu_version == "cu92" %}
-          wheel_docker_image: "soumith/manylinux-cuda92"
-{%-   endif %}
-
-{%-   if upload %}
-      - binary_{{btype}}_upload:
-          name: {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}_upload
-          context: org-member
-          requires:
-            - {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}
-{%-     if btype == 'wheel' %}
-{%-       if os == 'macos' %}
-          subfolder: ""
-{%-       else %}
-          subfolder: "{{cu_version}}/"
-{%-       endif %}
-{%-     endif %}
-{%-   endif %}
-{%- endmacro %}
-
-{%- macro workflows(prefix='', upload=False) %}
-{%- for btype in ["wheel", "conda"] -%}
-{%-   for os in ["linux", "macos"] -%}
-{%-     for python_version in ["2.7", "3.5", "3.6", "3.7"] -%}
-{%-       for cu_version in (["cpu", "cu92", "cu100"] if os == "linux" else ["cpu"]) -%}
-{%-         for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]) -%}
-          {{ workflow(btype, os, python_version, cu_version, unicode, prefix=prefix, upload=upload) }}
-{%-         endfor -%}
-{%-     endfor -%}
-{%-     endfor -%}
-{%-   endfor -%}
-{%- endfor %}
-{%- endmacro %}
 
 workflows:
   build:

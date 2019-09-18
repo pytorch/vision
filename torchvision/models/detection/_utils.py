@@ -163,7 +163,7 @@ class BoxCoder(object):
         if isinstance(rel_codes, (list, tuple)):
             rel_codes = torch.cat(rel_codes, dim=0)
         assert isinstance(rel_codes, torch.Tensor)
-        boxes_per_image = [len(b) for b in boxes]
+        boxes_per_image = [b.size(0) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
         pred_boxes = self.decode_single(
             rel_codes.reshape(sum(boxes_per_image), -1), concat_boxes

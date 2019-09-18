@@ -124,7 +124,9 @@ class AnchorGenerator(nn.Module):
     def forward(self, image_list, feature_maps):
         grid_sizes = tuple([feature_map.shape[-2:] for feature_map in feature_maps])
         image_size = image_list.tensors.shape[-2:]
-        strides = tuple((image_size[0] / g[0], image_size[1] / g[1]) for g in grid_sizes)
+        strides = tuple((float(image_size[0]) / float(g[0]),
+                         float(image_size[1]) / float(g[1]))
+                        for g in grid_sizes)
         self.set_cell_anchors(feature_maps[0].device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
         anchors = []

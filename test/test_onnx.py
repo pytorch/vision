@@ -20,23 +20,23 @@ class ONNXExporterTester(unittest.TestCase):
     def setUpClass(cls):
         torch.manual_seed(123)
 
-    def run_model(self, model, inputs):
+    def run_model(self, model, inputs_list):
         model.eval()
 
-        # run pytorch model
-        with torch.no_grad():
-            if isinstance(inputs, torch.Tensor):
-                inputs = (inputs,)
-            outputs = model(*inputs)
-            if isinstance(outputs, torch.Tensor):
-                outputs = (outputs,)
-
         onnx_io = io.BytesIO()
-        # export to onnx
-        torch.onnx.export(model, inputs, onnx_io, do_constant_folding=True, opset_version=10)
+        # export to onnx with the first input
+        torch.onnx.export(model, inputs_list[0], onnx_io, do_constant_folding=True, opset_version=10)
 
         # validate the exported model with onnx runtime
-        self.ort_validate(onnx_io, inputs, outputs)
+        for test_inputs in inputs_list:
+            with torch.no_grad():
+                if isinstance(test_inputs, torch.Tensor) or \
+                   isinstance(test_inputs, list):
+                    test_inputs = (test_inputs,)
+                test_ouputs = model(*test_inputs)
+                if isinstance(test_ouputs, torch.Tensor):
+                    test_ouputs = (test_ouputs,)
+            self.ort_validate(onnx_io, test_inputs, test_ouputs)
 
     def ort_validate(self, onnx_io, inputs, outputs):
 
@@ -69,13 +69,13 @@ class ONNXExporterTester(unittest.TestCase):
             def forward(self, boxes, scores):
                 return ops.nms(boxes, scores, 0.5)
 
-        self.run_model(Module(), (boxes, scores))
+        self.run_model(Module(), [(boxes, scores)])
 
     def test_roi_pool(self):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 2)
-        self.run_model(model, (x, single_roi))
+        self.run_model(model, [(x, single_roi)])
 
     def test_roi_align(self):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
@@ -84,7 +84,22 @@ class ONNXExporterTester(unittest.TestCase):
         pool_w = 5
         model = ops.RoIPool((pool_h, pool_w), 2)
         model.eval()
-        self.run_model(model, (x, rois))
+        self.run_model(model, [(x, rois)])
+
+    @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
+    def test_transform_images(self):
+
+        class TransformModule(torch.nn.Module):
+            def __init__(self_module):
+                super(TransformModule, self_module).__init__()
+                self_module.transform = self._init_test_generalized_rcnn_transform()
+
+            def forward(self_module, images):
+                return self_module.transform(images)[0].tensors
+
+        input = [torch.rand(3, 800, 1280), torch.rand(3, 800, 800)]
+        input_test = [torch.rand(3, 800, 1280), torch.rand(3, 800, 800)]
+        self.run_model(TransformModule(), [input, input_test])
 
     def _init_test_generalized_rcnn_transform(self):
         min_size = 800
@@ -115,12 +130,27 @@ class ONNXExporterTester(unittest.TestCase):
             rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh)
         return rpn
 
+    def get_image_from_url(self, url):
+        import requests
+        import numpy
+        from PIL import Image
+        from io import BytesIO
+        from torchvision import transforms
+
+        data = requests.get(url)
+        image = Image.open(BytesIO(data.content)).convert("RGB")
+        image = image.resize((800, 1280), Image.BILINEAR)
+
+        to_tensor = transforms.ToTensor()
+        return to_tensor(image)
+
+    @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
     def test_rpn(self):
         class RPNModule(torch.nn.Module):
             def __init__(self_module):
                 super(RPNModule, self_module).__init__()
                 self_module.transform = self._init_test_generalized_rcnn_transform()
-                self_module.backbone = resnet_fpn_backbone('resnet50', False, export_onnx=True)
+                self_module.backbone = resnet_fpn_backbone('resnet50', True)
                 self_module.rpn = self._init_test_rpn()
 
             def forward(self_module, images):
@@ -132,10 +162,13 @@ class ONNXExporterTester(unittest.TestCase):
         image1 = self.get_image_from_url(url=image_url)
         image_url2 = "https://pytorch.org/tutorials/_static/img/tv_tutorial/tv_image05.png"
         image2 = self.get_image_from_url(url=image_url2)
-        images = [image1, image2]
-        test_images = [image2, image1]
+        images = [image1]
+        test_images = [image2]
 
-        self.run_model(RPNModule(), [(images,), (test_images,)])
+        model = RPNModule()
+        model.eval()
+        model(images)
+        self.run_model(model, [(images,), (test_images,)])
 
 
 if __name__ == '__main__':
