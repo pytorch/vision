@@ -24,7 +24,7 @@ from .hmdb51 import HMDB51
 from .ucf101 import UCF101
 
 __all__ = ('LSUN', 'LSUNClass',
-           'ImageFolder', 'DatasetFolder', 'FakeData',
+           'ImageFolder', 'DatasetFolder','MultiImageFolder', 'FakeData',
            'CocoCaptions', 'CocoDetection',
            'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST', 'QMNIST',
            'MNIST', 'KMNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
