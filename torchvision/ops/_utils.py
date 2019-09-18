@@ -1,4 +1,6 @@
 import torch
+from torch import Tensor
+from torch.jit.annotations import List
 
 
 def _cat(tensors, dim=0):

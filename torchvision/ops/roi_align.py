@@ -1,7 +1,8 @@
 import torch
-from torch import nn
+from torch import nn, Tensor
 
 from torch.nn.modules.utils import _pair
+from torch.jit.annotations import List
 
 from ._utils import convert_boxes_to_roi_format
 
