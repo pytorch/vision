@@ -27,7 +27,6 @@ PyMODINIT_FUNC PyInit__custom_ops(void) {
 #endif
 #endif
 
-
 int64_t _cuda_version() {
 #ifdef WITH_CUDA
   return CUDA_VERSION;

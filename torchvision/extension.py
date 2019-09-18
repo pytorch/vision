@@ -1,5 +1,6 @@
 _HAS_OPS = False
 
+
 def _register_extensions():
     import os
     import imp
@@ -9,6 +10,7 @@ def _register_extensions():
     lib_dir = os.path.dirname(__file__)
     _, path, _ = imp.find_module("_C", [lib_dir])
     torch.ops.load_library(path)
+
 
 try:
     _register_extensions()
@@ -43,5 +45,6 @@ def _check_cuda_version():
                                "Please reinstall the torchvision that matches your PyTorch install."
                                .format(t_major, t_minor, tv_major, tv_minor))
     return _version
+
 
 _check_cuda_version()

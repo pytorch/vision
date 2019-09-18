@@ -65,7 +65,6 @@ at::Tensor ROIPool_backward(
       width);
 }
 
-
 using namespace at;
 using torch::Tensor;
 using torch::autograd::AutogradContext;
