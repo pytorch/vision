@@ -13,7 +13,7 @@ def _register_extensions():
 try:
     _register_extensions()
     _HAS_OPS = True
-except OSError:
+except (ImportError, OSError):
     pass
 
 
@@ -44,4 +44,4 @@ def _check_cuda_version():
                                .format(t_major, t_minor, tv_major, tv_minor))
     return _version
 
-#_check_cuda_version()
+_check_cuda_version()
