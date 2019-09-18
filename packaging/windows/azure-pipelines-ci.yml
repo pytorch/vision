@@ -1,0 +1,11 @@
+
+# Turn off auto builds for commits
+trigger: none
+pr: none
+
+jobs:
+- template: templates/build_task.yml
+  parameters:
+    package: 'Wheels'
+    spec: 'CPU'
+    msagent: true

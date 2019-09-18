@@ -1,0 +1,15 @@
+parameters:
+  cuVer: ''
+  cudaVer: ''
+
+steps:
+- task: AmazonWebServices.aws-vsts-tools.S3Upload.S3Upload@1
+  displayName: 'Upload ${{ parameters.cuVer }} wheel to S3'
+  inputs:
+    awsCredentials: 'Pytorch S3 bucket'
+    bucketName: 'pytorch'
+    sourceFolder: 'packaging/windows/output/${{ parameters.cudaVer }}'
+    globExpressions: '*.whl'
+    targetFolder: 'whl/nightly/${{ parameters.cuVer }}/'
+    filesAcl: 'public-read'
+    flattenFolders: 'true'

@@ -1,0 +1,11 @@
+parameters:
+  package: ''
+
+steps:
+- task: BatchScript@1
+  displayName: 'Setup nightly variables'
+  inputs:
+    filename: 'packaging/windows/internal/nightly_defaults.bat'
+    arguments: ${{ parameters.package }}
+
+    modifyEnvironment: true
