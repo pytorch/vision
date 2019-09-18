@@ -3,6 +3,7 @@ from itertools import product
 import torch
 from torchvision import models
 import unittest
+import traceback
 
 
 def get_available_classification_models():
@@ -51,8 +52,9 @@ class Tester(unittest.TestCase):
         try:
             torch.jit.script(model)
         except Exception as e:
+            tb = traceback.format_exc()
             scriptable = False
-            msg = str(e)
+            msg = str(e) + str(tb)
         self.assertEqual(torchub_models[name], scriptable, msg)
 
     def _test_classification_model(self, name, input_shape):
