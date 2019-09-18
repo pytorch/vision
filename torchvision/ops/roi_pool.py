@@ -7,6 +7,7 @@ from ._utils import convert_boxes_to_roi_format
 
 
 def roi_pool(input, boxes, output_size, spatial_scale=1.0):
+    # type: (Tensor, Tensor, int, float) -> Tensor
     """
     Performs Region of Interest (RoI) Pool operator described in Fast R-CNN
 
@@ -26,8 +27,7 @@ def roi_pool(input, boxes, output_size, spatial_scale=1.0):
         output (Tensor[K, C, output_size[0], output_size[1]])
     """
     rois = boxes
-    # TODO re-enable this
-    # output_size = _pair(output_size)
+    output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
     output, _ = torch.ops.torchvision.roi_pool(input, rois, spatial_scale,
