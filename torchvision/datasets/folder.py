@@ -221,7 +221,7 @@ def make_dataset_noclass(dir, extensions=None, is_valid_file=None):
         def is_valid_file(x):
             return has_file_allowed_extension(x, extensions)
     if not os.path.isdir(dir):
-        raise ValueError(dir+" is not a directory")
+        raise ValueError(dir + " is not a directory")
     for root, _, fnames in sorted(os.walk(dir)):
         for fname in sorted(fnames):
             path = os.path.join(root, fname)
@@ -265,13 +265,14 @@ class MultiImageFolder(data.Dataset):
         self.loader = loader
         self.extensions = IMG_EXTENSIONS if is_valid_file is None else None
 
-        sampleslist = [make_dataset_noclass(self.directories[i], self.extensions, is_valid_file) for i in range(len(self.directories))]
+        sampleslist = [make_dataset_noclass(self.directories[i], self.extensions,
+                                            is_valid_file) for i in range(len(self.directories))]
         for list1 in sampleslist:
             if len(list1) != len(sampleslist[0]):
                 raise ValueError("All directories must contain the same number of images.")
             if len(list1) == 0:
                 raise (RuntimeError("At least one of the directories does not contain any valid file.\n"
-                                    "Supported extensions are: " + ",".join(extensions)))
+                                    "Supported extensions are: " + ",".join(IMG_EXTENSIONS)))
         self.samples = list(zip(*sampleslist))
 
     def __getitem__(self, index):
@@ -280,7 +281,7 @@ class MultiImageFolder(data.Dataset):
             index (int): Index
 
         Returns:
-            tuple: (img1, img2, ...) where each image is taken from each of the 
+            tuple: (img1, img2, ...) where each image is taken from each of the
                 initialization directories in the same order.
         """
         paths = self.samples[index]
