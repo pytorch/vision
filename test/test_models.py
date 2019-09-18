@@ -30,7 +30,7 @@ torchub_models = {
     "deeplabv3_resnet101": False,
     "mobilenet_v2": True,
     "resnext50_32x4d": True,
-    "fcn_resnet101": False,
+    "fcn_resnet101": True,
     "googlenet": False,
     "densenet121": False,
     "resnet18": True,
