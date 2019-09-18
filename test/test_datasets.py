@@ -109,7 +109,7 @@ class Tester(unittest.TestCase):
 
             # test if the datasets outputs all images correctly
             for i in range(len(dataset)):
-                self.assertEqual([ true_samples[i][0], true_samples[i][1] ], dataset[i])
+                self.assertEqual([true_samples[i][0], true_samples[i][1]], dataset[i])
 
             # redo all tests with specified valid image files
             dataset = torchvision.datasets.MultiImageFolder(directories=directories, loader=lambda x: x,
@@ -123,7 +123,7 @@ class Tester(unittest.TestCase):
 
             # test if the datasets outputs all images correctly
             for i in range(len(dataset)):
-                self.assertEqual([ true_samples[i][0], true_samples[i][1] ], dataset[i])
+                self.assertEqual([true_samples[i][0], true_samples[i][1]], dataset[i])
 
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
     def test_mnist(self, mock_download_extract):
