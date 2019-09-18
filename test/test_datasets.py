@@ -109,7 +109,7 @@ class Tester(unittest.TestCase):
 
             # test if the datasets outputs all images correctly
             for i in range(len(dataset)):
-                self.assertEqual([*true_samples[i]], dataset[i])
+                self.assertEqual([ *true_samples[i] ], dataset[i])
 
             # redo all tests with specified valid image files
             dataset = torchvision.datasets.MultiImageFolder(directories=directories, loader=lambda x: x,
