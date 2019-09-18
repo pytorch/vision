@@ -47,11 +47,13 @@ class Tester(unittest.TestCase):
         if name not in torchub_models:
             return
         scriptable = True
+        msg = ""
         try:
             torch.jit.script(model)
-        except Exception:
+        except Exception as e:
             scriptable = False
-        self.assertEqual(torchub_models[name], scriptable)
+            msg = str(e)
+        self.assertEqual(torchub_models[name], scriptable, msg)
 
     def _test_classification_model(self, name, input_shape):
         # passing num_class equal to a number other than 1000 helps in making the test
