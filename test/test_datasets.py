@@ -87,13 +87,13 @@ class Tester(unittest.TestCase):
             os.makedirs(os.path.join(root, 'a'))
             a = []
             for filename in ('a1.png', 'a2.png', 'a3.png'):
-                result = Image.fromarray((np.random.rand(20, 20) * 255).astype(numpy.uint8))
+                result = Image.fromarray((np.random.rand(20, 20) * 255).astype(np.uint8))
                 result.save(os.path.join(root, 'a', filename))
                 a.append(os.path.join(root, 'a', filename))
             os.makedirs(os.path.join(root, 'b'))
             b = []
             for filename in ('b1.png', 'b2.png', 'b3.png'):
-                result = Image.fromarray((np.random.rand(20, 20) * 128).astype(numpy.uint8))
+                result = Image.fromarray((np.random.rand(20, 20) * 128).astype(np.uint8))
                 result.save(os.path.join(root, 'b', filename))
                 b.append(os.path.join(root, 'b', filename))
 
