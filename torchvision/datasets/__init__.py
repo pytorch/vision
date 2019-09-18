@@ -1,5 +1,5 @@
 from .lsun import LSUN, LSUNClass
-from .folder import ImageFolder, DatasetFolder
+from .folder import ImageFolder, DatasetFolder, MultiImageFolder
 from .coco import CocoCaptions, CocoDetection
 from .cifar import CIFAR10, CIFAR100
 from .stl10 import STL10
@@ -24,7 +24,7 @@ from .hmdb51 import HMDB51
 from .ucf101 import UCF101
 
 __all__ = ('LSUN', 'LSUNClass',
-           'ImageFolder', 'DatasetFolder','MultiImageFolder', 'FakeData',
+           'ImageFolder', 'DatasetFolder', 'MultiImageFolder', 'FakeData',
            'CocoCaptions', 'CocoDetection',
            'CIFAR10', 'CIFAR100', 'EMNIST', 'FashionMNIST', 'QMNIST',
            'MNIST', 'KMNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
