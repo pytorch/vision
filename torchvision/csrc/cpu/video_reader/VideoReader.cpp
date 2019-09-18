@@ -18,7 +18,7 @@ PyMODINIT_FUNC init_video_reader(void) {
   return NULL;
 }
 #else
-PyMODINIT_FUNC PyInit__video_reader(void) {
+PyMODINIT_FUNC PyInit_video_reader(void) {
   // No need to do anything.
   return NULL;
 }
