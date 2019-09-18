@@ -81,6 +81,50 @@ class Tester(unittest.TestCase):
             outputs = sorted([dataset[i] for i in range(len(dataset))])
             self.assertEqual(imgs, outputs)
 
+    def test_multiimagefolder(self):
+        with get_tmp_dir() as root:
+            # make fake dataset
+            os.makedirs(os.path.join(root, 'a'))
+            a = []
+            for filename in ('a1.png', 'a2.png', 'a3.png'):
+                result = Image.fromarray((np.random.rand(20, 20) * 255).astype(numpy.uint8))
+                result.save(os.path.join(root, 'a', filename))
+                a.append(os.path.join(root, 'a', filename))
+            os.makedirs(os.path.join(root, 'b'))
+            b = []
+            for filename in ('b1.png', 'b2.png', 'b3.png'):
+                result = Image.fromarray((np.random.rand(20, 20) * 128).astype(numpy.uint8))
+                result.save(os.path.join(root, 'b', filename))
+                b.append(os.path.join(root, 'b', filename))
+
+            true_samples = list(zip(a, b))
+
+            directories = [os.path.join(root, 'a'), os.path.join(root, 'b'), ]
+            dataset = torchvision.datasets.MultiImageFolder(directories=directories, loader=lambda x: x)
+
+            # test if all images were detected correctly and in the proper order
+            self.assertEqual(len(true_samples), len(dataset.samples))
+            for i, j in zip(true_samples, dataset.samples):
+                self.assertEqual(i, j)
+
+            # test if the datasets outputs all images correctly
+            for i in range(len(dataset)):
+                self.assertEqual(true_samples[i], dataset[i])
+
+            # redo all tests with specified valid image files
+            dataset = torchvision.datasets.MultiImageFolder(directories=directories, loader=lambda x: x,
+                                                            is_valid_file=lambda x: '3' in x)
+            true_samples = [['a3.png', 'b3.png']]
+
+            # test if all images were detected correctly and in the proper order
+            self.assertEqual(len(true_samples), len(dataset.samples))
+            for i, j in zip(true_samples, dataset.samples):
+                self.assertEqual(i, j)
+
+            # test if the datasets outputs all images correctly
+            for i in range(len(dataset)):
+                self.assertEqual(true_samples[i], dataset[i])
+
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
     def test_mnist(self, mock_download_extract):
         num_examples = 30
