@@ -3,11 +3,16 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+import torchvision
 from torchvision.ops import roi_align
 from torchvision.ops.boxes import box_area
 
 
-def merge_levels_onnx(levels, unmerged_results):
+# copying result_idx_in_level to a specific index in result[]
+# is not supported by ONNX tracing yet.
+# _onnx_merge_levels() is an implementation supported by ONNX
+# that merges the levels to the right indices
+def _onnx_merge_levels(levels, unmerged_results):
     first_result = unmerged_results[0]
     dtype, device = first_result.dtype, first_result.device
     res = torch.zeros((levels.size(0), first_result.size(1),
@@ -51,7 +56,7 @@ class LevelMapper(object):
         s = torch.sqrt(torch.cat([box_area(boxlist) for boxlist in boxlists]))
 
         # Eqn.(1) in FPN paper
-        target_lvls = torch.floor(self.lvl0 + torch.log2(s / self.s0) + torch.tensor(self.eps, dtype=torch.float32))
+        target_lvls = torch.floor(self.lvl0 + torch.log2(s / self.s0) + torch.tensor(self.eps, dtype=s.dtype))
         target_lvls = torch.clamp(target_lvls, min=self.k_min, max=self.k_max)
         return target_lvls.to(torch.int64) - self.k_min
 
@@ -173,14 +178,17 @@ class MultiScaleRoIAlign(nn.Module):
         for level, (per_level_feature, scale) in enumerate(zip(x, self.scales)):
             idx_in_level = torch.nonzero(levels == level).squeeze(1)
             rois_per_level = rois[idx_in_level]
+
             result_idx_in_level = roi_align(
                 per_level_feature, rois_per_level,
                 output_size=self.output_size,
                 spatial_scale=scale, sampling_ratio=self.sampling_ratio)
 
-            if torch._C._get_tracing_state():
+            if torchvision._is_tracing():
                 results.append(result_idx_in_level.to(dtype))
-                result = merge_levels_onnx(levels, results)
             else:
                 result[idx_in_level] = result_idx_in_level
+
+        if torchvision._is_tracing():
+            result = _onnx_merge_levels(levels, results)
         return result

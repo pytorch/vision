@@ -9,6 +9,18 @@ version: 2.1
 orbs:
   win: circleci/windows@1.0.0
 
+commands:
+  checkout_merge:
+    description: "checkout merge branch"
+    steps:
+      - checkout
+      - run:
+          name: Checkout merge branch
+          command: |
+            set -ex
+            git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
+            git checkout "merged/$CIRCLE_BRANCH"
+
 binary_common: &binary_common
   parameters:
     # Edit these defaults to do a release`
@@ -50,7 +62,7 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user --progress-bar off jinja2
+            pip install --user --progress-bar off jinja2 pyyaml
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
@@ -60,7 +72,7 @@ jobs:
       - image: << parameters.wheel_docker_image >>
     resource_class: 2xlarge+
     steps:
-      - checkout
+      - checkout_merge
       - run: packaging/build_wheel.sh
       - store_artifacts:
           path: dist
@@ -75,7 +87,7 @@ jobs:
       - image: "soumith/conda-cuda"
     resource_class: 2xlarge+
     steps:
-      - checkout
+      - checkout_merge
       - run: packaging/build_conda.sh
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
@@ -90,7 +102,7 @@ jobs:
       image: ubuntu-1604:201903-01
     resource_class: gpu.medium
     steps:
-    - checkout
+    - checkout_merge
     - run:
         name: Setup environment
         command: |
@@ -159,7 +171,7 @@ jobs:
       name: win/vs2019
       shell: bash.exe
     steps:
-      - checkout
+      - checkout_merge
       - run:
           command: |
             choco install miniconda3
@@ -173,7 +185,7 @@ jobs:
     macos:
       xcode: "9.0"
     steps:
-      - checkout
+      - checkout_merge
       - run:
           # Cannot easily deduplicate this as source'ing activate
           # will set environment variables which we need to propagate
@@ -195,7 +207,7 @@ jobs:
     macos:
       xcode: "9.0"
     steps:
-      - checkout
+      - checkout_merge
       - run:
           command: |
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
@@ -253,168 +265,168 @@ jobs:
               aws s3 cp "$pkg" "s3://pytorch/whl/nightly/<< parameters.subfolder >>" --acl public-read
             done
 
+
 workflows:
   build:
     jobs:
       - circleci_consistency
-      
       - binary_linux_wheel:
+          cu_version: cpu
           name: binary_linux_wheel_py2.7_cpu
-          python_version: "2.7"
-          cu_version: "cpu"
+          python_version: '2.7'
       - binary_linux_wheel:
+          cu_version: cpu
           name: binary_linux_wheel_py2.7u_cpu
-          python_version: "2.7"
-          cu_version: "cpu"
-          unicode_abi: "1"
+          python_version: '2.7'
+          unicode_abi: '1'
       - binary_linux_wheel:
+          cu_version: cu92
           name: binary_linux_wheel_py2.7_cu92
-          python_version: "2.7"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '2.7'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_linux_wheel:
+          cu_version: cu92
           name: binary_linux_wheel_py2.7u_cu92
-          python_version: "2.7"
-          cu_version: "cu92"
-          unicode_abi: "1"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '2.7'
+          unicode_abi: '1'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_linux_wheel:
+          cu_version: cu100
           name: binary_linux_wheel_py2.7_cu100
-          python_version: "2.7"
-          cu_version: "cu100"
+          python_version: '2.7'
       - binary_linux_wheel:
+          cu_version: cu100
           name: binary_linux_wheel_py2.7u_cu100
-          python_version: "2.7"
-          cu_version: "cu100"
-          unicode_abi: "1"
+          python_version: '2.7'
+          unicode_abi: '1'
       - binary_linux_wheel:
+          cu_version: cpu
           name: binary_linux_wheel_py3.5_cpu
-          python_version: "3.5"
-          cu_version: "cpu"
+          python_version: '3.5'
       - binary_linux_wheel:
+          cu_version: cu92
           name: binary_linux_wheel_py3.5_cu92
-          python_version: "3.5"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '3.5'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_linux_wheel:
+          cu_version: cu100
           name: binary_linux_wheel_py3.5_cu100
-          python_version: "3.5"
-          cu_version: "cu100"
+          python_version: '3.5'
       - binary_linux_wheel:
+          cu_version: cpu
           name: binary_linux_wheel_py3.6_cpu
-          python_version: "3.6"
-          cu_version: "cpu"
+          python_version: '3.6'
       - binary_linux_wheel:
+          cu_version: cu92
           name: binary_linux_wheel_py3.6_cu92
-          python_version: "3.6"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '3.6'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_linux_wheel:
+          cu_version: cu100
           name: binary_linux_wheel_py3.6_cu100
-          python_version: "3.6"
-          cu_version: "cu100"
+          python_version: '3.6'
       - binary_linux_wheel:
+          cu_version: cpu
           name: binary_linux_wheel_py3.7_cpu
-          python_version: "3.7"
-          cu_version: "cpu"
+          python_version: '3.7'
       - binary_linux_wheel:
+          cu_version: cu92
           name: binary_linux_wheel_py3.7_cu92
-          python_version: "3.7"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '3.7'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_linux_wheel:
+          cu_version: cu100
           name: binary_linux_wheel_py3.7_cu100
-          python_version: "3.7"
-          cu_version: "cu100"
+          python_version: '3.7'
       - binary_macos_wheel:
+          cu_version: cpu
           name: binary_macos_wheel_py2.7_cpu
-          python_version: "2.7"
-          cu_version: "cpu"
+          python_version: '2.7'
       - binary_macos_wheel:
+          cu_version: cpu
           name: binary_macos_wheel_py2.7u_cpu
-          python_version: "2.7"
-          cu_version: "cpu"
-          unicode_abi: "1"
+          python_version: '2.7'
+          unicode_abi: '1'
       - binary_macos_wheel:
+          cu_version: cpu
           name: binary_macos_wheel_py3.5_cpu
-          python_version: "3.5"
-          cu_version: "cpu"
+          python_version: '3.5'
       - binary_macos_wheel:
+          cu_version: cpu
           name: binary_macos_wheel_py3.6_cpu
-          python_version: "3.6"
-          cu_version: "cpu"
+          python_version: '3.6'
       - binary_macos_wheel:
+          cu_version: cpu
           name: binary_macos_wheel_py3.7_cpu
-          python_version: "3.7"
-          cu_version: "cpu"
+          python_version: '3.7'
       - binary_linux_conda:
+          cu_version: cpu
           name: binary_linux_conda_py2.7_cpu
-          python_version: "2.7"
-          cu_version: "cpu"
+          python_version: '2.7'
       - binary_linux_conda:
+          cu_version: cu92
           name: binary_linux_conda_py2.7_cu92
-          python_version: "2.7"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '2.7'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_linux_conda:
+          cu_version: cu100
           name: binary_linux_conda_py2.7_cu100
-          python_version: "2.7"
-          cu_version: "cu100"
+          python_version: '2.7'
       - binary_linux_conda:
+          cu_version: cpu
           name: binary_linux_conda_py3.5_cpu
-          python_version: "3.5"
-          cu_version: "cpu"
+          python_version: '3.5'
       - binary_linux_conda:
+          cu_version: cu92
           name: binary_linux_conda_py3.5_cu92
-          python_version: "3.5"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '3.5'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_linux_conda:
+          cu_version: cu100
           name: binary_linux_conda_py3.5_cu100
-          python_version: "3.5"
-          cu_version: "cu100"
+          python_version: '3.5'
       - binary_linux_conda:
+          cu_version: cpu
           name: binary_linux_conda_py3.6_cpu
-          python_version: "3.6"
-          cu_version: "cpu"
+          python_version: '3.6'
       - binary_linux_conda:
+          cu_version: cu92
           name: binary_linux_conda_py3.6_cu92
-          python_version: "3.6"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '3.6'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_linux_conda:
+          cu_version: cu100
           name: binary_linux_conda_py3.6_cu100
-          python_version: "3.6"
-          cu_version: "cu100"
+          python_version: '3.6'
       - binary_linux_conda:
+          cu_version: cpu
           name: binary_linux_conda_py3.7_cpu
-          python_version: "3.7"
-          cu_version: "cpu"
+          python_version: '3.7'
       - binary_linux_conda:
+          cu_version: cu92
           name: binary_linux_conda_py3.7_cu92
-          python_version: "3.7"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '3.7'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_linux_conda:
+          cu_version: cu100
           name: binary_linux_conda_py3.7_cu100
-          python_version: "3.7"
-          cu_version: "cu100"
+          python_version: '3.7'
       - binary_macos_conda:
+          cu_version: cpu
           name: binary_macos_conda_py2.7_cpu
-          python_version: "2.7"
-          cu_version: "cpu"
+          python_version: '2.7'
       - binary_macos_conda:
+          cu_version: cpu
           name: binary_macos_conda_py3.5_cpu
-          python_version: "3.5"
-          cu_version: "cpu"
+          python_version: '3.5'
       - binary_macos_conda:
+          cu_version: cpu
           name: binary_macos_conda_py3.6_cpu
-          python_version: "3.6"
-          cu_version: "cpu"
+          python_version: '3.6'
       - binary_macos_conda:
+          cu_version: cpu
           name: binary_macos_conda_py3.7_cpu
-          python_version: "3.7"
-          cu_version: "cpu"
+          python_version: '3.7'
       - binary_linux_conda_cuda:
           name: torchvision_linux_py3.7_cu100
           python_version: "3.7"
@@ -434,361 +446,360 @@ workflows:
                 - master
     jobs:
       - circleci_consistency
-      
       - binary_linux_wheel:
+          cu_version: cpu
           name: nightly_binary_linux_wheel_py2.7_cpu
-          python_version: "2.7"
-          cu_version: "cpu"
+          python_version: '2.7'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py2.7_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py2.7_cpu
-          subfolder: "cpu/"
+          - nightly_binary_linux_wheel_py2.7_cpu
+          subfolder: cpu/
       - binary_linux_wheel:
+          cu_version: cpu
           name: nightly_binary_linux_wheel_py2.7u_cpu
-          python_version: "2.7"
-          cu_version: "cpu"
-          unicode_abi: "1"
+          python_version: '2.7'
+          unicode_abi: '1'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py2.7u_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py2.7u_cpu
-          subfolder: "cpu/"
+          - nightly_binary_linux_wheel_py2.7u_cpu
+          subfolder: cpu/
       - binary_linux_wheel:
+          cu_version: cu92
           name: nightly_binary_linux_wheel_py2.7_cu92
-          python_version: "2.7"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '2.7'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py2.7_cu92_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py2.7_cu92
-          subfolder: "cu92/"
+          - nightly_binary_linux_wheel_py2.7_cu92
+          subfolder: cu92/
       - binary_linux_wheel:
+          cu_version: cu92
           name: nightly_binary_linux_wheel_py2.7u_cu92
-          python_version: "2.7"
-          cu_version: "cu92"
-          unicode_abi: "1"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '2.7'
+          unicode_abi: '1'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py2.7u_cu92_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py2.7u_cu92
-          subfolder: "cu92/"
+          - nightly_binary_linux_wheel_py2.7u_cu92
+          subfolder: cu92/
       - binary_linux_wheel:
+          cu_version: cu100
           name: nightly_binary_linux_wheel_py2.7_cu100
-          python_version: "2.7"
-          cu_version: "cu100"
+          python_version: '2.7'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py2.7_cu100_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py2.7_cu100
-          subfolder: "cu100/"
+          - nightly_binary_linux_wheel_py2.7_cu100
+          subfolder: cu100/
       - binary_linux_wheel:
+          cu_version: cu100
           name: nightly_binary_linux_wheel_py2.7u_cu100
-          python_version: "2.7"
-          cu_version: "cu100"
-          unicode_abi: "1"
+          python_version: '2.7'
+          unicode_abi: '1'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py2.7u_cu100_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py2.7u_cu100
-          subfolder: "cu100/"
+          - nightly_binary_linux_wheel_py2.7u_cu100
+          subfolder: cu100/
       - binary_linux_wheel:
+          cu_version: cpu
           name: nightly_binary_linux_wheel_py3.5_cpu
-          python_version: "3.5"
-          cu_version: "cpu"
+          python_version: '3.5'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py3.5_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py3.5_cpu
-          subfolder: "cpu/"
+          - nightly_binary_linux_wheel_py3.5_cpu
+          subfolder: cpu/
       - binary_linux_wheel:
+          cu_version: cu92
           name: nightly_binary_linux_wheel_py3.5_cu92
-          python_version: "3.5"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '3.5'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py3.5_cu92_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py3.5_cu92
-          subfolder: "cu92/"
+          - nightly_binary_linux_wheel_py3.5_cu92
+          subfolder: cu92/
       - binary_linux_wheel:
+          cu_version: cu100
           name: nightly_binary_linux_wheel_py3.5_cu100
-          python_version: "3.5"
-          cu_version: "cu100"
+          python_version: '3.5'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py3.5_cu100_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py3.5_cu100
-          subfolder: "cu100/"
+          - nightly_binary_linux_wheel_py3.5_cu100
+          subfolder: cu100/
       - binary_linux_wheel:
+          cu_version: cpu
           name: nightly_binary_linux_wheel_py3.6_cpu
-          python_version: "3.6"
-          cu_version: "cpu"
+          python_version: '3.6'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py3.6_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py3.6_cpu
-          subfolder: "cpu/"
+          - nightly_binary_linux_wheel_py3.6_cpu
+          subfolder: cpu/
       - binary_linux_wheel:
+          cu_version: cu92
           name: nightly_binary_linux_wheel_py3.6_cu92
-          python_version: "3.6"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '3.6'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py3.6_cu92_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py3.6_cu92
-          subfolder: "cu92/"
+          - nightly_binary_linux_wheel_py3.6_cu92
+          subfolder: cu92/
       - binary_linux_wheel:
+          cu_version: cu100
           name: nightly_binary_linux_wheel_py3.6_cu100
-          python_version: "3.6"
-          cu_version: "cu100"
+          python_version: '3.6'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py3.6_cu100_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py3.6_cu100
-          subfolder: "cu100/"
+          - nightly_binary_linux_wheel_py3.6_cu100
+          subfolder: cu100/
       - binary_linux_wheel:
+          cu_version: cpu
           name: nightly_binary_linux_wheel_py3.7_cpu
-          python_version: "3.7"
-          cu_version: "cpu"
+          python_version: '3.7'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py3.7_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py3.7_cpu
-          subfolder: "cpu/"
+          - nightly_binary_linux_wheel_py3.7_cpu
+          subfolder: cpu/
       - binary_linux_wheel:
+          cu_version: cu92
           name: nightly_binary_linux_wheel_py3.7_cu92
-          python_version: "3.7"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '3.7'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py3.7_cu92_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py3.7_cu92
-          subfolder: "cu92/"
+          - nightly_binary_linux_wheel_py3.7_cu92
+          subfolder: cu92/
       - binary_linux_wheel:
+          cu_version: cu100
           name: nightly_binary_linux_wheel_py3.7_cu100
-          python_version: "3.7"
-          cu_version: "cu100"
+          python_version: '3.7'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_linux_wheel_py3.7_cu100_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_wheel_py3.7_cu100
-          subfolder: "cu100/"
+          - nightly_binary_linux_wheel_py3.7_cu100
+          subfolder: cu100/
       - binary_macos_wheel:
+          cu_version: cpu
           name: nightly_binary_macos_wheel_py2.7_cpu
-          python_version: "2.7"
-          cu_version: "cpu"
+          python_version: '2.7'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_macos_wheel_py2.7_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_macos_wheel_py2.7_cpu
-          subfolder: ""
+          - nightly_binary_macos_wheel_py2.7_cpu
+          subfolder: ''
       - binary_macos_wheel:
+          cu_version: cpu
           name: nightly_binary_macos_wheel_py2.7u_cpu
-          python_version: "2.7"
-          cu_version: "cpu"
-          unicode_abi: "1"
+          python_version: '2.7'
+          unicode_abi: '1'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_macos_wheel_py2.7u_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_macos_wheel_py2.7u_cpu
-          subfolder: ""
+          - nightly_binary_macos_wheel_py2.7u_cpu
+          subfolder: ''
       - binary_macos_wheel:
+          cu_version: cpu
           name: nightly_binary_macos_wheel_py3.5_cpu
-          python_version: "3.5"
-          cu_version: "cpu"
+          python_version: '3.5'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_macos_wheel_py3.5_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_macos_wheel_py3.5_cpu
-          subfolder: ""
+          - nightly_binary_macos_wheel_py3.5_cpu
+          subfolder: ''
       - binary_macos_wheel:
+          cu_version: cpu
           name: nightly_binary_macos_wheel_py3.6_cpu
-          python_version: "3.6"
-          cu_version: "cpu"
+          python_version: '3.6'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_macos_wheel_py3.6_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_macos_wheel_py3.6_cpu
-          subfolder: ""
+          - nightly_binary_macos_wheel_py3.6_cpu
+          subfolder: ''
       - binary_macos_wheel:
+          cu_version: cpu
           name: nightly_binary_macos_wheel_py3.7_cpu
-          python_version: "3.7"
-          cu_version: "cpu"
+          python_version: '3.7'
       - binary_wheel_upload:
+          context: org-member
           name: nightly_binary_macos_wheel_py3.7_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_macos_wheel_py3.7_cpu
-          subfolder: ""
+          - nightly_binary_macos_wheel_py3.7_cpu
+          subfolder: ''
       - binary_linux_conda:
+          cu_version: cpu
           name: nightly_binary_linux_conda_py2.7_cpu
-          python_version: "2.7"
-          cu_version: "cpu"
+          python_version: '2.7'
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_linux_conda_py2.7_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_conda_py2.7_cpu
+          - nightly_binary_linux_conda_py2.7_cpu
       - binary_linux_conda:
+          cu_version: cu92
           name: nightly_binary_linux_conda_py2.7_cu92
-          python_version: "2.7"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '2.7'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_linux_conda_py2.7_cu92_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_conda_py2.7_cu92
+          - nightly_binary_linux_conda_py2.7_cu92
       - binary_linux_conda:
+          cu_version: cu100
           name: nightly_binary_linux_conda_py2.7_cu100
-          python_version: "2.7"
-          cu_version: "cu100"
+          python_version: '2.7'
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_linux_conda_py2.7_cu100_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_conda_py2.7_cu100
+          - nightly_binary_linux_conda_py2.7_cu100
       - binary_linux_conda:
+          cu_version: cpu
           name: nightly_binary_linux_conda_py3.5_cpu
-          python_version: "3.5"
-          cu_version: "cpu"
+          python_version: '3.5'
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_linux_conda_py3.5_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_conda_py3.5_cpu
+          - nightly_binary_linux_conda_py3.5_cpu
       - binary_linux_conda:
+          cu_version: cu92
           name: nightly_binary_linux_conda_py3.5_cu92
-          python_version: "3.5"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '3.5'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_linux_conda_py3.5_cu92_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_conda_py3.5_cu92
+          - nightly_binary_linux_conda_py3.5_cu92
       - binary_linux_conda:
+          cu_version: cu100
           name: nightly_binary_linux_conda_py3.5_cu100
-          python_version: "3.5"
-          cu_version: "cu100"
+          python_version: '3.5'
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_linux_conda_py3.5_cu100_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_conda_py3.5_cu100
+          - nightly_binary_linux_conda_py3.5_cu100
       - binary_linux_conda:
+          cu_version: cpu
           name: nightly_binary_linux_conda_py3.6_cpu
-          python_version: "3.6"
-          cu_version: "cpu"
+          python_version: '3.6'
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_linux_conda_py3.6_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_conda_py3.6_cpu
+          - nightly_binary_linux_conda_py3.6_cpu
       - binary_linux_conda:
+          cu_version: cu92
           name: nightly_binary_linux_conda_py3.6_cu92
-          python_version: "3.6"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '3.6'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_linux_conda_py3.6_cu92_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_conda_py3.6_cu92
+          - nightly_binary_linux_conda_py3.6_cu92
       - binary_linux_conda:
+          cu_version: cu100
           name: nightly_binary_linux_conda_py3.6_cu100
-          python_version: "3.6"
-          cu_version: "cu100"
+          python_version: '3.6'
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_linux_conda_py3.6_cu100_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_conda_py3.6_cu100
+          - nightly_binary_linux_conda_py3.6_cu100
       - binary_linux_conda:
+          cu_version: cpu
           name: nightly_binary_linux_conda_py3.7_cpu
-          python_version: "3.7"
-          cu_version: "cpu"
+          python_version: '3.7'
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_linux_conda_py3.7_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_conda_py3.7_cpu
+          - nightly_binary_linux_conda_py3.7_cpu
       - binary_linux_conda:
+          cu_version: cu92
           name: nightly_binary_linux_conda_py3.7_cu92
-          python_version: "3.7"
-          cu_version: "cu92"
-          wheel_docker_image: "soumith/manylinux-cuda92"
+          python_version: '3.7'
+          wheel_docker_image: soumith/manylinux-cuda92
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_linux_conda_py3.7_cu92_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_conda_py3.7_cu92
+          - nightly_binary_linux_conda_py3.7_cu92
       - binary_linux_conda:
+          cu_version: cu100
           name: nightly_binary_linux_conda_py3.7_cu100
-          python_version: "3.7"
-          cu_version: "cu100"
+          python_version: '3.7'
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_linux_conda_py3.7_cu100_upload
-          context: org-member
           requires:
-            - nightly_binary_linux_conda_py3.7_cu100
+          - nightly_binary_linux_conda_py3.7_cu100
       - binary_macos_conda:
+          cu_version: cpu
           name: nightly_binary_macos_conda_py2.7_cpu
-          python_version: "2.7"
-          cu_version: "cpu"
+          python_version: '2.7'
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_macos_conda_py2.7_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_macos_conda_py2.7_cpu
+          - nightly_binary_macos_conda_py2.7_cpu
       - binary_macos_conda:
+          cu_version: cpu
           name: nightly_binary_macos_conda_py3.5_cpu
-          python_version: "3.5"
-          cu_version: "cpu"
+          python_version: '3.5'
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_macos_conda_py3.5_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_macos_conda_py3.5_cpu
+          - nightly_binary_macos_conda_py3.5_cpu
       - binary_macos_conda:
+          cu_version: cpu
           name: nightly_binary_macos_conda_py3.6_cpu
-          python_version: "3.6"
-          cu_version: "cpu"
+          python_version: '3.6'
       - binary_conda_upload:
+          context: org-member
           name: nightly_binary_macos_conda_py3.6_cpu_upload
-          context: org-member
           requires:
-            - nightly_binary_macos_conda_py3.6_cpu
+          - nightly_binary_macos_conda_py3.6_cpu
       - binary_macos_conda:
+          cu_version: cpu
           name: nightly_binary_macos_conda_py3.7_cpu
-          python_version: "3.7"
-          cu_version: "cpu"
+          python_version: '3.7'
       - binary_conda_upload:
-          name: nightly_binary_macos_conda_py3.7_cpu_upload
           context: org-member
+          name: nightly_binary_macos_conda_py3.7_cpu_upload
           requires:
-            - nightly_binary_macos_conda_py3.7_cpu
+          - nightly_binary_macos_conda_py3.7_cpu
