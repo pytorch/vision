@@ -3,9 +3,10 @@ from collections import namedtuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Optional
 from .utils import load_state_dict_from_url
 
-__all__ = ['GoogLeNet', 'googlenet']
+__all__ = ['GoogLeNet', 'googlenet', "_GoogLeNetOutputs"]
 
 model_urls = {
     # GoogLeNet ported from TensorFlow
@@ -13,7 +14,8 @@ model_urls = {
 }
 
 _GoogLeNetOutputs = namedtuple('GoogLeNetOutputs', ['logits', 'aux_logits2', 'aux_logits1'])
-
+_GoogLeNetOutputs.__annotations__ = {'logits': torch.Tensor, 'aux_logits2': Optional[torch.Tensor],
+                                   'aux_logits1': Optional[torch.Tensor]}
 
 def googlenet(pretrained=False, progress=True, **kwargs):
     r"""GoogLeNet (Inception v1) model architecture from
@@ -51,6 +53,7 @@ def googlenet(pretrained=False, progress=True, **kwargs):
 
 
 class GoogLeNet(nn.Module):
+    __constants__ = ['aux_logits', 'transform_input']
 
     def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, init_weights=True):
         super(GoogLeNet, self).__init__()
@@ -101,6 +104,14 @@ class GoogLeNet(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
+    @torch.jit.unused
+    def eager_outputs(self, x, aux2, aux1):
+        # type: (Tensor, Optional[Tensor], Optional[Tensor]) -> _GoogLeNetOutputs
+        if self.training and self.aux_logits:
+            return _GoogLeNetOutputs(x, aux2, aux1)
+        else:
+            return x
+
     def forward(self, x):
         if self.transform_input:
             x_ch0 = torch.unsqueeze(x[:, 0], 1) * (0.229 / 0.5) + (0.485 - 0.5) / 0.5
@@ -128,8 +139,11 @@ class GoogLeNet(nn.Module):
         # N x 480 x 14 x 14
         x = self.inception4a(x)
         # N x 512 x 14 x 14
-        if self.training and self.aux_logits:
+        aux_defined = self.training and self.aux_logits
+        if aux_defined:
             aux1 = self.aux1(x)
+        else:
+            aux1 = None
 
         x = self.inception4b(x)
         # N x 512 x 14 x 14
@@ -137,8 +151,10 @@ class GoogLeNet(nn.Module):
         # N x 512 x 14 x 14
         x = self.inception4d(x)
         # N x 528 x 14 x 14
-        if self.training and self.aux_logits:
+        if aux_defined:
             aux2 = self.aux2(x)
+        else:
+            aux2 = None
 
         x = self.inception4e(x)
         # N x 832 x 14 x 14
@@ -156,12 +172,15 @@ class GoogLeNet(nn.Module):
         x = self.dropout(x)
         x = self.fc(x)
         # N x 1000 (num_classes)
-        if self.training and self.aux_logits:
+        if torch.jit.is_scripting():
+            if not aux_defined:
+                warnings.warn("Scripted GoogleNet always returns GoogleNetOutputs Tuple")
             return _GoogLeNetOutputs(x, aux2, aux1)
-        return x
-
+        else:
+            return self.eager_outputs(x, aux2, aux1)
 
 class Inception(nn.Module):
+    __constants__ = ['branch2', 'branch3', 'branch4']
 
     def __init__(self, in_channels, ch1x1, ch3x3red, ch3x3, ch5x5red, ch5x5, pool_proj):
         super(Inception, self).__init__()

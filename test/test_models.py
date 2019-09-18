@@ -32,7 +32,7 @@ torchub_models = {
     "mobilenet_v2": True,
     "resnext50_32x4d": True,
     "fcn_resnet101": True,
-    "googlenet": False,
+    "googlenet": True,
     "densenet121": True,
     "resnet18": True,
     "alexnet": True,
