@@ -146,6 +146,20 @@ class Tester(unittest.TestCase):
         out = model(x)
         self.assertEqual(out.shape[-1], 1000)
 
+    def test_fasterrcnn_double(self):
+        model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
+        model.double()
+        model.eval()
+        input_shape = (3, 300, 300)
+        x = torch.rand(input_shape, dtype=torch.float64)
+        model_input = [x]
+        out = model(model_input)
+        self.assertIs(model_input[0], x)
+        self.assertEqual(len(out), 1)
+        self.assertTrue("boxes" in out[0])
+        self.assertTrue("scores" in out[0])
+        self.assertTrue("labels" in out[0])
+
 
 for model_name in get_available_classification_models():
     # for-loop bodies don't define scopes, so we have to save the variables
