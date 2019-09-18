@@ -113,7 +113,7 @@ class Tester(unittest.TestCase):
 
             # redo all tests with specified valid image files
             dataset = torchvision.datasets.MultiImageFolder(directories=directories, loader=lambda x: x,
-                                                            is_valid_file=lambda x: '3' in x)
+                                                            is_valid_file=lambda x: '3.png' in x)
             true_samples = [true_samples[2]]
 
             # test if all images were detected correctly and in the proper order
@@ -123,7 +123,7 @@ class Tester(unittest.TestCase):
 
             # test if the datasets outputs all images correctly
             for i in range(len(dataset)):
-                self.assertEqual([*true_samples[i]], dataset[i])
+                self.assertEqual([ *true_samples[i] ], dataset[i])
 
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
     def test_mnist(self, mock_download_extract):
