@@ -18,7 +18,7 @@ class UnknownPixelFormatException : public exception {
   }
 };
 
-int getChannels(ssize_t format) {
+int getChannels(AVPixelFormat format) {
   int numChannels = 0;
   switch (format) {
     case AV_PIX_FMT_BGR24:

@@ -101,7 +101,7 @@ class FfmpegDecoder {
   // whether in all streams, the pts of most recent frame exceeds range
   bool isPtsExceedRange();
 
-  std::unordered_map<ssize_t, std::unique_ptr<FfmpegStream>> streams_;
+  std::unordered_map<int, std::unique_ptr<FfmpegStream>> streams_;
   AVFormatContext* formatCtx_{nullptr};
   std::unique_ptr<DecoderParameters> params_{nullptr};
 };
