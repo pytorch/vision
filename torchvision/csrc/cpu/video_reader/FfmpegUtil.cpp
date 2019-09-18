@@ -31,13 +31,13 @@ bool mapMediaType(MediaType type, AVMediaType* media) {
 }
 
 void setFormatDimensions(
-    size_t& destW,
-    size_t& destH,
-    size_t userW,
-    size_t userH,
-    size_t srcW,
-    size_t srcH,
-    size_t minDimension) {
+    int& destW,
+    int& destH,
+    int userW,
+    int userH,
+    int srcW,
+    int srcH,
+    int minDimension) {
   // rounding rules
   // int -> double -> round
   // round up if fraction is >= 0.5 or round down if fraction is < 0.5
@@ -70,8 +70,8 @@ void setFormatDimensions(
     destH = userH;
   }
   // prevent zeros
-  destW = std::max(destW, 1UL);
-  destH = std::max(destH, 1UL);
+  destW = std::max(destW, 1);
+  destH = std::max(destH, 1);
 }
 
 bool validateVideoFormat(const VideoFormat& f) {

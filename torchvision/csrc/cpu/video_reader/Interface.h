@@ -23,7 +23,7 @@ const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
 
 using AvDataPtr = std::unique_ptr<uint8_t, avDeleter>;
 
-enum MediaType : size_t {
+enum MediaType {
   TYPE_VIDEO = 1,
   TYPE_AUDIO = 2,
 };
@@ -32,14 +32,14 @@ struct VideoFormat {
   // fields are initialized for the auto detection
   // caller can specify some/all of field values if specific output is desirable
 
-  size_t width{0}; // width in pixels
-  size_t height{0}; // height in pixels
-  size_t minDimension{0}; // choose min dimension and rescale accordingly
+  int width{0}; // width in pixels
+  int height{0}; // height in pixels
+  int minDimension{0}; // choose min dimension and rescale accordingly
   // Output image pixel format. data type AVPixelFormat
   AVPixelFormat format{defaultVideoPixelFormat}; // type AVPixelFormat
   int64_t startPts{0}, endPts{0}; // Start and end presentation timestamp
-  int32_t timeBaseNum{0};
-  int32_t timeBaseDen{1}; // numerator and denominator of time base
+  int timeBaseNum{0};
+  int timeBaseDen{1}; // numerator and denominator of time base
   float fps{0.0};
 };
 
@@ -47,12 +47,12 @@ struct AudioFormat {
   // fields are initialized for the auto detection
   // caller can specify some/all of field values if specific output is desirable
 
-  size_t samples{0}; // number samples per second (frequency)
-  size_t channels{0}; // number of channels
+  int samples{0}; // number samples per second (frequency)
+  int channels{0}; // number of channels
   AVSampleFormat format{defaultAudioSampleFormat}; // type AVSampleFormat
   int64_t startPts{0}, endPts{0}; // Start and end presentation timestamp
-  int32_t timeBaseNum{0};
-  int32_t timeBaseDen{1}; // numerator and denominator of time base
+  int timeBaseNum{0};
+  int timeBaseDen{1}; // numerator and denominator of time base
 };
 
 union FormatUnion {
@@ -88,10 +88,10 @@ struct MediaFormat {
 class DecodedFrame {
  public:
   explicit DecodedFrame() : frame_(nullptr), frameSize_(0), pts_(0) {}
-  explicit DecodedFrame(AvDataPtr frame, int32_t frameSize, int64_t pts)
+  explicit DecodedFrame(AvDataPtr frame, int frameSize, int64_t pts)
       : frame_(std::move(frame)), frameSize_(frameSize), pts_(pts) {}
   AvDataPtr frame_{nullptr};
-  int32_t frameSize_{0};
+  int frameSize_{0};
   int64_t pts_{0};
 };
 

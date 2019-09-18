@@ -12,13 +12,13 @@ bool mapFfmpegType(AVMediaType media, enum MediaType* type);
 bool mapMediaType(MediaType type, enum AVMediaType* media);
 
 void setFormatDimensions(
-    size_t& destW,
-    size_t& destH,
-    size_t userW,
-    size_t userH,
-    size_t srcW,
-    size_t srcH,
-    size_t minDimension);
+    int& destW,
+    int& destH,
+    int userW,
+    int userH,
+    int srcW,
+    int srcH,
+    int minDimension);
 
 bool validateVideoFormat(const VideoFormat& f);
 

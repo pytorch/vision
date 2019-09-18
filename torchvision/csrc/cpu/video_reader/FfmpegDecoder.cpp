@@ -38,7 +38,7 @@ FfmpegAvioContext::FfmpegAvioContext()
       inputBuffer_(nullptr),
       inputBufferSize_(0) {}
 
-int FfmpegAvioContext::initAVIOContext(const uint8_t* buffer, size_t size) {
+int FfmpegAvioContext::initAVIOContext(const uint8_t* buffer, int64_t size) {
   inputBuffer_ = buffer;
   inputBufferSize_ = size;
   avioCtx_ = avio_alloc_context(
@@ -208,7 +208,7 @@ int FfmpegDecoder::decodeFile(
 int FfmpegDecoder::decodeMemory(
     unique_ptr<DecoderParameters> params,
     const uint8_t* buffer,
-    size_t size,
+    int64_t size,
     DecoderOutput& decoderOutput) {
   VLOG(1) << "decode video data in memory";
   FfmpegAvioContext ioctx;

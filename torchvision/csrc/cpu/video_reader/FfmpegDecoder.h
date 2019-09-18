@@ -25,7 +25,7 @@ class FfmpegAvioContext {
  public:
   FfmpegAvioContext();
 
-  int initAVIOContext(const uint8_t* buffer, size_t size);
+  int initAVIOContext(const uint8_t* buffer, int64_t size);
 
   ~FfmpegAvioContext();
 
@@ -73,7 +73,7 @@ class FfmpegDecoder {
   int decodeMemory(
       std::unique_ptr<DecoderParameters> params,
       const uint8_t* buffer,
-      size_t size,
+      int64_t size,
       DecoderOutput& decoderOutput);
 
   void cleanUp();
