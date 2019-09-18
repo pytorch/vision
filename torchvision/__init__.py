@@ -5,6 +5,8 @@ from torchvision import transforms
 from torchvision import utils
 from torchvision import io
 
+from .extension import _HAS_OPS
+
 try:
     from .version import __version__  # noqa: F401
 except ImportError:

@@ -1,16 +1,8 @@
-import os
 import sys
-import imp
 import torch
 
 
-# load the custom_op_library and register the custom ops
-lib_dir = os.path.join(os.path.dirname(__file__), '..')
-file, path, description = imp.find_module("_custom_ops", [lib_dir])
-torch.ops.load_library(path)
-
-
-def register_custom_op():
+def _register_custom_op():
     from torch.onnx.symbolic_helper import parse_args, scalar_type_to_onnx
     from torch.onnx.symbolic_opset9 import select, unsqueeze, squeeze, _cast_Long, reshape
 
@@ -41,6 +33,3 @@ def register_custom_op():
     register_custom_op_symbolic('torchvision::nms', symbolic_multi_label_nms, 10)
     register_custom_op_symbolic('torchvision::roi_align', roi_align, 10)
     register_custom_op_symbolic('torchvision::roi_pool', roi_pool, 10)
-
-
-register_custom_op()

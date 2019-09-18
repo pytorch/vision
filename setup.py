@@ -52,9 +52,9 @@ def write_version_file():
     with open(version_path, 'w') as f:
         f.write("__version__ = '{}'\n".format(version))
         f.write("git_version = {}\n".format(repr(sha)))
-        f.write("from torchvision import _C\n")
-        f.write("if hasattr(_C, 'CUDA_VERSION'):\n")
-        f.write("    cuda = _C.CUDA_VERSION\n")
+        f.write("from torchvision.extension import _check_cuda_version\n")
+        f.write("if _check_cuda_version() > 0:\n")
+        f.write("    cuda = _check_cuda_version()\n")
 
 
 write_version_file()
@@ -96,21 +96,12 @@ def get_extensions():
     source_models = [os.path.join(models_dir, s) for s in source_models]
     tests = test_file + source_models
 
-    custom_ops_sources = [os.path.join(extensions_dir, "custom_ops", "custom_ops.cpp"),
-                          os.path.join(extensions_dir, "cpu", "nms_cpu.cpp"),
-                          os.path.join(extensions_dir, "cpu", "ROIAlign_cpu.cpp"),
-                          os.path.join(extensions_dir, "cpu", "ROIPool_cpu.cpp")]
-    custom_ops_sources_cuda = [os.path.join(extensions_dir, "cuda", "nms_cuda.cu"),
-                               os.path.join(extensions_dir, "cuda", "ROIAlign_cuda.cu"),
-                               os.path.join(extensions_dir, "cuda", "ROIPool_cuda.cu")]
-
     define_macros = []
 
     extra_compile_args = {}
     if (torch.cuda.is_available() and CUDA_HOME is not None) or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
         sources += source_cuda
-        custom_ops_sources += custom_ops_sources_cuda
         define_macros += [('WITH_CUDA', None)]
         nvcc_flags = os.getenv('NVCC_FLAGS', '')
         if nvcc_flags == '':
@@ -145,13 +136,6 @@ def get_extensions():
             'torchvision._C_tests',
             tests,
             include_dirs=tests_include_dirs,
-            define_macros=define_macros,
-            extra_compile_args=extra_compile_args,
-        ),
-        extension(
-            "torchvision._custom_ops",
-            sources=custom_ops_sources,
-            include_dirs=include_dirs,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
         ),
