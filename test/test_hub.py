@@ -16,16 +16,14 @@ def sum_of_model_parameters(model):
 SUM_OF_PRETRAINED_RESNET18_PARAMS = -12703.99609375
 
 
+@unittest.skipIf('torchvision' in sys.modules,
+                 'TestHub must start without torchvision imported')
 class TestHub(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        # Only run this check ONCE before all tests start.
-        # - If torchvision is imported before all tests start, e.g. we might find _C.so
-        #   which doesn't exist in downloaded zip but in the installed wheel.
-        # - After the first test is run, torchvision is already in sys.modules due to
-        #   Python cache as we run all hub tests in the same python process.
-        if 'torchvision' in sys.modules:
-            raise RuntimeError('TestHub must start without torchvision imported')
+    # Only run this check ONCE before all tests start.
+    # - If torchvision is imported before all tests start, e.g. we might find _C.so
+    #   which doesn't exist in downloaded zip but in the installed wheel.
+    # - After the first test is run, torchvision is already in sys.modules due to
+    #   Python cache as we run all hub tests in the same python process.
 
     def test_load_from_github(self):
         hub_model = hub.load(
