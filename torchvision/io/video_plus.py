@@ -1,16 +1,20 @@
 from fractions import Fraction
-import logging
 import numpy as np
 import os
 import torch
 import imp
+import warnings
 
-log = logging.getLogger(__name__)
 
-lib_dir = os.path.join(os.path.dirname(__file__), '..')
-_, path, description = imp.find_module("video_reader", [lib_dir])
-torch.ops.load_library(path)
-video_reader = torch.ops.video_reader
+_HAS_VIDEO_PLUS = False
+
+try:
+    lib_dir = os.path.join(os.path.dirname(__file__), '..')
+    _, path, description = imp.find_module("video_reader", [lib_dir])
+    torch.ops.load_library(path)
+    _HAS_VIDEO_PLUS = True
+except (ImportError, OSError):
+    warnings.warn("video reader based on ffmpeg c++ ops not available")
 
 default_timebase = Fraction(0, 1)
 
@@ -49,7 +53,7 @@ def _align_audio_frames(aframes, aframe_pts, audio_pts_range):
     return aframes[s_idx:e_idx, :]
 
 
-def read_video_from_file(
+def _read_video_from_file(
     filename,
     seek_frame_margin=0.25,
     read_video_stream=True,
@@ -117,7 +121,7 @@ def read_video_from_file(
     _validate_pts(video_pts_range)
     _validate_pts(audio_pts_range)
 
-    result = video_reader.read_video_from_file(
+    result = torch.ops.video_reader.read_video_from_file(
         filename,
         seek_frame_margin,
         0,  # getPtsOnly
@@ -145,13 +149,13 @@ def read_video_from_file(
     return vframes, aframes, info
 
 
-def read_video_timestamps_from_file(filename):
+def _read_video_timestamps_from_file(filename):
     """
     Decode all video- and audio frames in the video. Only pts
     (presentation timestamp) is returned. The actual frame pixel data is not
     copied. Thus, it is much faster than read_video(...)
     """
-    result = video_reader.read_video_from_file(
+    result = torch.ops.video_reader.read_video_from_file(
         filename,
         0,  # seek_frame_margin
         1,  # getPtsOnly
@@ -179,7 +183,7 @@ def read_video_timestamps_from_file(filename):
     return vframe_pts, aframe_pts, info
 
 
-def read_video_from_memory(
+def _read_video_from_memory(
     file_buffer,
     seek_frame_margin=0.25,
     read_video_stream=1,
@@ -250,7 +254,7 @@ def read_video_from_memory(
 
     video_tensor = torch.from_numpy(np.frombuffer(file_buffer, dtype=np.uint8))
 
-    result = video_reader.read_video_from_memory(
+    result = torch.ops.video_reader.read_video_from_memory(
         video_tensor,
         seek_frame_margin,
         0,  # getPtsOnly
@@ -279,7 +283,7 @@ def read_video_from_memory(
     return vframes, aframes, info
 
 
-def read_video_timestamps_from_memory(file_buffer):
+def _read_video_timestamps_from_memory(file_buffer):
     """
     Decode all frames in the video. Only pts (presentation timestamp) is returned.
     The actual frame pixel data is not copied. Thus, read_video_timestamps(...)
@@ -287,7 +291,7 @@ def read_video_timestamps_from_memory(file_buffer):
     """
 
     video_tensor = torch.from_numpy(np.frombuffer(file_buffer, dtype=np.uint8))
-    result = video_reader.read_video_from_memory(
+    result = torch.ops.video_reader.read_video_from_memory(
         video_tensor,
         0,  # seek_frame_margin
         1,  # getPtsOnly

@@ -125,15 +125,16 @@ def get_extensions():
     include_dirs = [extensions_dir]
     tests_include_dirs = [test_dir, models_dir]
 
-    # Packages install by conda will put header files in the include folder of
-    # conda virtual environment
-    ffmpeg_bin = os.path.dirname(distutils.spawn.find_executable('ffmpeg'))
-    ffmpeg_root = os.path.dirname(ffmpeg_bin)
-    ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
+    ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
+    has_ffmpeg = ffmpeg_exe is not None
+    if has_ffmpeg:
+        ffmpeg_bin = os.path.dirname(ffmpeg_exe)
+        ffmpeg_root = os.path.dirname(ffmpeg_bin)
+        ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
 
-    # TorchVision video reader
-    video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
-    video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
+        # TorchVision video reader
+        video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
+        video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
 
     ext_modules = [
         extension(
@@ -150,25 +151,28 @@ def get_extensions():
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
         ),
-        CppExtension(
-            'torchvision.video_reader',
-            video_reader_src,
-            include_dirs=[
-                video_reader_src_dir,
-                ffmpeg_include_dir,
-                extensions_dir,
-            ],
-            libraries=[
-                'avcodec',
-                'avformat',
-                'avutil',
-                'swresample',
-                'swscale',
-            ],
-            extra_compile_args=["-std=c++14"],
-            extra_link_args=["-std=c++14"],
-        ),
     ]
+    if has_ffmpeg:
+        ext_modules.append(
+            CppExtension(
+                'torchvision.video_reader',
+                video_reader_src,
+                include_dirs=[
+                    video_reader_src_dir,
+                    ffmpeg_include_dir,
+                    extensions_dir,
+                ],
+                libraries=[
+                    'avcodec',
+                    'avformat',
+                    'avutil',
+                    'swresample',
+                    'swscale',
+                ],
+                extra_compile_args=["-std=c++14"],
+                extra_link_args=["-std=c++14"],
+            )
+        )
 
     return ext_modules
 

@@ -25,6 +25,9 @@ else:
     from urllib.error import URLError
 
 
+from torchvision.io.video_plus import _HAS_VIDEO_PLUS
+
+
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")
 
 CheckerConfig = [
@@ -101,7 +104,6 @@ test_videos = {
     ),
 }
 
-from torchvision.io.video_plus import video_reader
 
 DecoderResult = collections.namedtuple(
     "DecoderResult", "vframes vframe_pts vtimebase aframes aframe_pts atimebase"
@@ -266,6 +268,7 @@ def _get_video_tensor(video_dir, video_file):
 
 
 @unittest.skipIf(av is None, "PyAV unavailable")
+@unittest.skipIf(_HAS_VIDEO_PLUS is False, "Didn't compile with ffmpeg")
 class TestVideoReader(unittest.TestCase):
     def check_separate_decoding_result(self, tv_result, config):
         """check the decoding results from TorchVision decoder
@@ -354,7 +357,7 @@ class TestVideoReader(unittest.TestCase):
                 full_path = os.path.join(VIDEO_DIR, test_video)
 
                 # pass 1: decode all frames using new decoder
-                tv_result = video_reader.read_video_from_file(
+                tv_result = torch.ops.video_reader.read_video_from_file(
                     full_path,
                     seek_frame_margin,
                     0,  # getPtsOnly
@@ -392,7 +395,7 @@ class TestVideoReader(unittest.TestCase):
             full_path = os.path.join(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using new decoder
-            tv_result = video_reader.read_video_from_file(
+            tv_result = torch.ops.video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
@@ -437,7 +440,7 @@ class TestVideoReader(unittest.TestCase):
             full_path = os.path.join(VIDEO_DIR, test_video)
             for readVideoStream, readAudioStream in [(1, 0), (0, 1)]:
                 # decode all frames using new decoder
-                tv_result = video_reader.read_video_from_file(
+                tv_result = torch.ops.video_reader.read_video_from_file(
                     full_path,
                     seek_frame_margin,
                     0,  # getPtsOnly
@@ -490,7 +493,7 @@ class TestVideoReader(unittest.TestCase):
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
-            tv_result = video_reader.read_video_from_file(
+            tv_result = torch.ops.video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
@@ -529,7 +532,7 @@ class TestVideoReader(unittest.TestCase):
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
-            tv_result = video_reader.read_video_from_file(
+            tv_result = torch.ops.video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
@@ -568,7 +571,7 @@ class TestVideoReader(unittest.TestCase):
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
-            tv_result = video_reader.read_video_from_file(
+            tv_result = torch.ops.video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
@@ -607,7 +610,7 @@ class TestVideoReader(unittest.TestCase):
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
-            tv_result = video_reader.read_video_from_file(
+            tv_result = torch.ops.video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
@@ -653,7 +656,7 @@ class TestVideoReader(unittest.TestCase):
             for test_video, config in test_videos.items():
                 full_path = os.path.join(VIDEO_DIR, test_video)
 
-                tv_result = video_reader.read_video_from_file(
+                tv_result = torch.ops.video_reader.read_video_from_file(
                     full_path,
                     seek_frame_margin,
                     0,  # getPtsOnly
@@ -704,7 +707,7 @@ class TestVideoReader(unittest.TestCase):
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using cpp decoder
-            tv_result_memory = video_reader.read_video_from_memory(
+            tv_result_memory = torch.ops.video_reader.read_video_from_memory(
                 video_tensor,
                 seek_frame_margin,
                 0,  # getPtsOnly
@@ -726,7 +729,7 @@ class TestVideoReader(unittest.TestCase):
             )
             self.check_separate_decoding_result(tv_result_memory, config)
             # pass 2: decode all frames from file
-            tv_result_file = video_reader.read_video_from_file(
+            tv_result_file = torch.ops.video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
@@ -769,7 +772,7 @@ class TestVideoReader(unittest.TestCase):
             full_path = os.path.join(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using new decoder
-            tv_result = video_reader.read_video_from_file(
+            tv_result = torch.ops.video_reader.read_video_from_file(
                 full_path,
                 seek_frame_margin,
                 0,  # getPtsOnly
@@ -813,7 +816,7 @@ class TestVideoReader(unittest.TestCase):
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using cpp decoder
-            tv_result = video_reader.read_video_from_memory(
+            tv_result = torch.ops.video_reader.read_video_from_memory(
                 video_tensor,
                 seek_frame_margin,
                 0,  # getPtsOnly
@@ -858,7 +861,7 @@ class TestVideoReader(unittest.TestCase):
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using cpp decoder
-            tv_result = video_reader.read_video_from_memory(
+            tv_result = torch.ops.video_reader.read_video_from_memory(
                 video_tensor,
                 seek_frame_margin,
                 0,  # getPtsOnly
@@ -881,7 +884,7 @@ class TestVideoReader(unittest.TestCase):
             self.assertAlmostEqual(config.video_fps, tv_result[3].item(), delta=0.01)
 
             # pass 2: decode all frames to get PTS only using cpp decoder
-            tv_result_pts_only = video_reader.read_video_from_memory(
+            tv_result_pts_only = torch.ops.video_reader.read_video_from_memory(
                 video_tensor,
                 seek_frame_margin,
                 1,  # getPtsOnly
@@ -923,7 +926,7 @@ class TestVideoReader(unittest.TestCase):
             audio_start_pts, audio_end_pts = 0, -1
             audio_timebase_num, audio_timebase_den = 0, 1
             # pass 1: decode all frames using new decoder
-            tv_result = video_reader.read_video_from_memory(
+            tv_result = torch.ops.video_reader.read_video_from_memory(
                 video_tensor,
                 seek_frame_margin,
                 0,  # getPtsOnly
@@ -976,7 +979,7 @@ class TestVideoReader(unittest.TestCase):
                     )
 
                 # pass 2: decode frames in the randomly generated range
-                tv_result = video_reader.read_video_from_memory(
+                tv_result = torch.ops.video_reader.read_video_from_memory(
                     video_tensor,
                     seek_frame_margin,
                     0,  # getPtsOnly
