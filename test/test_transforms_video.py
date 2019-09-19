@@ -91,7 +91,6 @@ class Tester(unittest.TestCase):
         self.assertTrue(sum2.item() > 1, msg)
         self.assertTrue(sum2.item() > sum1.item(), msg)
 
-
     @unittest.skipIf(stats is None, 'scipy.stats is not available')
     def test_normalize_video(self):
         def samples_from_standard_normal(tensor):
@@ -113,7 +112,6 @@ class Tester(unittest.TestCase):
             assert samples_from_standard_normal(normalized)
         random.setstate(random_state)
 
-
         # Checking the optional in-place behaviour
         tensor = torch.rand((3, 128, 16, 16))
         tensor_inplace = transforms.NormalizeVideo((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)(tensor)
@@ -122,7 +120,6 @@ class Tester(unittest.TestCase):
         transforms.NormalizeVideo((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True).__repr__()
 
     def test_to_tensor_video(self):
-        test_channels = [1, 3, 4]
         numFrames, height, width = 64, 4, 4
         trans = transforms.ToTensorVideo()
 
@@ -168,6 +165,7 @@ class Tester(unittest.TestCase):
         assert p_value > 0.0001
 
         transforms.RandomHorizontalFlipVideo().__repr__()
+
 
 if __name__ == '__main__':
     unittest.main()

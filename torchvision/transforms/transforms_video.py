@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import math
 import numbers
 import random
 
@@ -74,9 +73,10 @@ class RandomResizedCropVideo(RandomResizedCrop):
         return F.resized_crop(clip, i, j, h, w, self.size, self.interpolation_mode)
 
     def __repr__(self):
-        return self.__class__.__name__ + '(size={0}, interpolation_mode={1}, scale={2}, ratio={3})'.format(
-            self.size, self.interpolation_mode, self.scale, self.ratio)
-
+        return self.__class__.__name__ + \
+            '(size={0}, interpolation_mode={1}, scale={2}, ratio={3})'.format(
+                self.size, self.interpolation_mode, self.scale, self.ratio
+            )
 
 
 class CenterCropVideo(object):
@@ -91,12 +91,14 @@ class CenterCropVideo(object):
         Args:
             clip (torch.tensor): Video clip to be cropped. Size is (C, T, H, W)
         Returns:
-            torch.tensor: central cropping of video clip. Size is (C, T, crop_size, crop_size)
+            torch.tensor: central cropping of video clip. Size is
+            (C, T, crop_size, crop_size)
         """
         return F.center_crop(clip, self.crop_size)
 
     def __repr__(self):
         return self.__class__.__name__ + '(crop_size={0})'.format(self.crop_size)
+
 
 class NormalizeVideo(object):
     """
@@ -144,6 +146,7 @@ class ToTensorVideo(object):
 
     def __repr__(self):
         return self.__class__.__name__
+
 
 class RandomHorizontalFlipVideo(object):
     """
