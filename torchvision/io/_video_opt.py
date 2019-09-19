@@ -6,13 +6,13 @@ import imp
 import warnings
 
 
-_HAS_VIDEO_PLUS = False
+_HAS_VIDEO_OPT = False
 
 try:
     lib_dir = os.path.join(os.path.dirname(__file__), '..')
     _, path, description = imp.find_module("video_reader", [lib_dir])
     torch.ops.load_library(path)
-    _HAS_VIDEO_PLUS = True
+    _HAS_VIDEO_OPT = True
 except (ImportError, OSError):
     warnings.warn("video reader based on ffmpeg c++ ops not available")
 

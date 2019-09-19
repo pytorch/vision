@@ -25,7 +25,7 @@ else:
     from urllib.error import URLError
 
 
-from torchvision.io.video_plus import _HAS_VIDEO_PLUS
+from torchvision.io._video_opt import _HAS_VIDEO_OPT
 
 
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")
@@ -268,7 +268,7 @@ def _get_video_tensor(video_dir, video_file):
 
 
 @unittest.skipIf(av is None, "PyAV unavailable")
-@unittest.skipIf(_HAS_VIDEO_PLUS is False, "Didn't compile with ffmpeg")
+@unittest.skipIf(_HAS_VIDEO_OPT is False, "Didn't compile with ffmpeg")
 class TestVideoReader(unittest.TestCase):
     def check_separate_decoding_result(self, tv_result, config):
         """check the decoding results from TorchVision decoder
