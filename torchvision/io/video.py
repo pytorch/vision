@@ -147,7 +147,7 @@ def _align_audio_frames(aframes, audio_frames, ref_start, ref_end):
     return aframes[:, s_idx:e_idx]
 
 
-def read_video(filename, start_pts=0, end_pts=None, pts_unit='sec'):
+def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
     """
     Reads a video from a file, returning both the video frames as well as
     the audio frames
@@ -161,7 +161,7 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='sec'):
     end_pts : int, optional
         the end presentation time
     pts_unit : str, optional
-        unit in which start_pts and end_pts values will be interpreted, either 'pts' or 'sec'. Defaults to 'sec'.
+        unit in which start_pts and end_pts values will be interpreted, either 'pts' or 'sec'. Defaults to 'pts'.
 
     Returns
     -------
@@ -184,7 +184,7 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='sec'):
                          "start_pts={} and end_pts={}".format(start_pts, end_pts))
 
     if pts_unit == 'pts':
-        warnings.warn("The pts_unit 'pts' gives wrong results and will be removed in a " + 
+        warnings.warn("The pts_unit 'pts' gives wrong results and will be removed in a " +
                       "follow-up version. Please use pts_unit 'sec'.")
 
     container = av.open(filename, metadata_errors='ignore')
@@ -196,9 +196,9 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='sec'):
         video_end_pts = end_pts
         video_stream = container.streams.video[0]
         if pts_unit == 'sec':
-            video_start_pts = math.floor(start_pts*(1/video_stream.time_base))
+            video_start_pts = math.floor(start_pts * (1 / video_stream.time_base))
             if video_end_pts != float("inf"):
-                video_end_pts = math.ceil(end_pts*(1/video_stream.time_base))
+                video_end_pts = math.ceil(end_pts * (1 / video_stream.time_base))
         video_frames = _read_from_stream(container, video_start_pts, video_end_pts,
                                          video_stream, {'video': 0})
         info["video_fps"] = float(video_stream.average_rate)
@@ -208,11 +208,11 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='sec'):
         audio_end_pts = end_pts
         audio_stream = container.streams.audio[0]
         if pts_unit == 'sec':
-            audio_start_pts = math.floor(start_pts*(1/audio_stream.time_base))
+            audio_start_pts = math.floor(start_pts * (1 / audio_stream.time_base))
             if audio_end_pts != float("inf"):
-                audio_end_pts = math.ceil(end_pts*(1/audio_stream.time_base))
+                audio_end_pts = math.ceil(end_pts * (1 / audio_stream.time_base))
         audio_frames = _read_from_stream(container, audio_start_pts, audio_end_pts,
-                                         audio_stream , {'audio': 0})
+                                         audio_stream, {'audio': 0})
         info["audio_fps"] = audio_stream.rate
 
     container.close()
@@ -250,7 +250,7 @@ def read_video_timestamps(filename, pts_unit='pts'):
     filename : str
         path to the video file
     pts_unit : str, optional
-        unit in which timestamp values will be returned either 'pts' or 'sec'. Defaults to 'sec'.
+        unit in which timestamp values will be returned either 'pts' or 'sec'. Defaults to 'pts'.
 
     Returns
     -------
@@ -262,7 +262,7 @@ def read_video_timestamps(filename, pts_unit='pts'):
     """
     _check_av_available()
     if pts_unit == 'pts':
-        warnings.warn("The pts_unit 'pts' gives wrong results and will be removed in a " + 
+        warnings.warn("The pts_unit 'pts' gives wrong results and will be removed in a " +
                       "follow-up version. Please use pts_unit 'sec'.")
 
     container = av.open(filename, metadata_errors='ignore')
@@ -281,5 +281,5 @@ def read_video_timestamps(filename, pts_unit='pts'):
         video_fps = float(video_stream.average_rate)
     container.close()
     if pts_unit == 'sec':
-        return [float(x.pts*video_time_base) for x in video_frames], video_fps
+        return [float(x.pts * video_time_base) for x in video_frames], video_fps
     return [x.pts for x in video_frames], video_fps
