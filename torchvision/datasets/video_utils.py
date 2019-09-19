@@ -1,11 +1,7 @@
 import bisect
-from fractions import Fraction
 import math
 import torch
-from torchvision.io import (
-    read_video_timestamps_from_file,
-    read_video_from_file,
-)
+from torchvision.io import read_video_timestamps, read_video
 
 from .utils import tqdm
 
@@ -27,18 +23,6 @@ def unfold(tensor, size, step, dilation=1):
     if new_size[0] < 1:
         new_size = (0, size)
     return torch.as_strided(tensor, new_size, new_stride)
-
-
-def pts_convert(pts, timebase_from, timebase_to, round_func=math.floor):
-    """convert pts between different time bases
-    Args:
-        pts: presentation timestamp, float
-        timebase_from: original timebase. Fraction
-        timebase_to: new timebase. Fraction
-        round_func: rounding function.
-    """
-    new_pts = Fraction(pts, 1) * timebase_from / timebase_to
-    return round_func(new_pts)
 
 
 class VideoClips(object):
@@ -63,24 +47,21 @@ class VideoClips(object):
         frame_rate (int, optional): if specified, it will resample the video
             so that it has `frame_rate`, and then the clips will be defined
             on the resampled video
-        _precomputed_metadata (dict, optional): a dictionary of dataset metadata
     """
     def __init__(self, video_paths, clip_length_in_frames=16, frames_between_clips=1,
                  frame_rate=None, _precomputed_metadata=None):
         self.video_paths = video_paths
-
         if _precomputed_metadata is None:
             self._compute_frame_pts()
         else:
             self._init_from_metadata(_precomputed_metadata)
-
         self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate)
 
     def _compute_frame_pts(self):
         self.video_pts = []
-        self.info = []
+        self.video_fps = []
 
-        # strategy: use a DataLoader to parallelize read_video_timestamps_from_file
+        # strategy: use a DataLoader to parallelize read_video_timestamps
         # so need to create a dummy dataset first
         class DS(object):
             def __init__(self, x):
@@ -90,7 +71,7 @@ class VideoClips(object):
                 return len(self.x)
 
             def __getitem__(self, idx):
-                return read_video_timestamps_from_file(self.x[idx])
+                return read_video_timestamps(self.x[idx])
 
         import torch.utils.data
         dl = torch.utils.data.DataLoader(
@@ -102,32 +83,24 @@ class VideoClips(object):
         with tqdm(total=len(dl)) as pbar:
             for batch in dl:
                 pbar.update(1)
-                video_pts, _audio_pts, info = list(zip(*batch))
-                video_pts = [torch.as_tensor(c) for c in video_pts]
-                self.video_pts.extend(video_pts)
-                self.info.extend(info)
+                clips, fps = list(zip(*batch))
+                clips = [torch.as_tensor(c) for c in clips]
+                self.video_pts.extend(clips)
+                self.video_fps.extend(fps)
 
     def _init_from_metadata(self, metadata):
-        self.video_paths = metadata["video_paths"]
+        assert len(self.video_paths) == len(metadata["video_pts"])
+        assert len(self.video_paths) == len(metadata["video_fps"])
         self.video_pts = metadata["video_pts"]
-        self.info = metadata["info"]
-
-    @property
-    def metadata(self):
-        return {
-            "video_paths": self.video_paths,
-            "video_pts": self.video_pts,
-            "info": self.info,
-        }
+        self.video_fps = metadata["video_fps"]
 
     def subset(self, indices):
         video_paths = [self.video_paths[i] for i in indices]
         video_pts = [self.video_pts[i] for i in indices]
-        info = [self.info[i] for i in indices]
+        video_fps = [self.video_fps[i] for i in indices]
         metadata = {
-            "video_paths": video_paths,
             "video_pts": video_pts,
-            "info": info,
+            "video_fps": video_fps
         }
         return type(self)(video_paths, self.num_frames, self.step, self.frame_rate,
                           _precomputed_metadata=metadata)
@@ -167,8 +140,8 @@ class VideoClips(object):
         self.frame_rate = frame_rate
         self.clips = []
         self.resampling_idxs = []
-        for video_pts, info in zip(self.video_pts, self.info):
-            clips, idxs = self.compute_clips_for_video(video_pts, num_frames, step, info["video_fps"], frame_rate)
+        for video_pts, fps in zip(self.video_pts, self.video_fps):
+            clips, idxs = self.compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate)
             self.clips.append(clips)
             self.resampling_idxs.append(idxs)
         clip_lengths = torch.as_tensor([len(v) for v in self.clips])
@@ -229,34 +202,9 @@ class VideoClips(object):
         video_idx, clip_idx = self.get_clip_location(idx)
         video_path = self.video_paths[video_idx]
         clip_pts = self.clips[video_idx][clip_idx]
-        info = self.info[video_idx]
-
-        video_start_pts = clip_pts[0].item()
-        video_end_pts = clip_pts[-1].item()
-
-        audio_start_pts, audio_end_pts = 0, -1
-        audio_timebase = Fraction(0, 1)
-        if "audio_timebase" in info:
-            audio_timebase = info["audio_timebase"]
-            audio_start_pts = pts_convert(
-                video_start_pts,
-                info["video_timebase"],
-                info["audio_timebase"],
-                math.floor,
-            )
-            audio_end_pts = pts_convert(
-                video_start_pts,
-                info["video_timebase"],
-                info["audio_timebase"],
-                math.ceil,
-            )
-        video, audio, info = read_video_from_file(
-            video_path,
-            video_pts_range=(video_start_pts, video_end_pts),
-            video_timebase=info["video_timebase"],
-            audio_pts_range=(audio_start_pts, audio_end_pts),
-            audio_timebase=audio_timebase,
-        )
+        start_pts = clip_pts[0].item()
+        end_pts = clip_pts[-1].item()
+        video, audio, info = read_video(video_path, start_pts, end_pts)
         if self.frame_rate is not None:
             resampling_idx = self.resampling_idxs[video_idx][clip_idx]
             if isinstance(resampling_idx, torch.Tensor):

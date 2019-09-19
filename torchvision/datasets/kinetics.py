@@ -36,29 +36,17 @@ class Kinetics400(VisionDataset):
         label (int): class of the video clip
     """
 
-    def __init__(self, root, frames_per_clip, step_between_clips=1, frame_rate=None,
-                 _precomputed_metadata=None, transform=None, extensions=('avi',)):
+    def __init__(self, root, frames_per_clip, step_between_clips=1, transform=None):
         super(Kinetics400, self).__init__(root)
+        extensions = ('avi',)
 
         classes = list(sorted(list_dir(root)))
         class_to_idx = {classes[i]: i for i in range(len(classes))}
         self.samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file=None)
         self.classes = classes
         video_list = [x[0] for x in self.samples]
-        self.video_clips = VideoClips(
-            video_list,
-            frames_per_clip,
-            step_between_clips,
-            frame_rate,
-            _precomputed_metadata,
-        )
-        self.video_clips_metadata = self.video_clips.metadata
-
+        self.video_clips = VideoClips(video_list, frames_per_clip, step_between_clips)
         self.transform = transform
-
-    @property
-    def metadata(self):
-        return self.video_clips_metadata
 
     def __len__(self):
         return self.video_clips.num_clips()
