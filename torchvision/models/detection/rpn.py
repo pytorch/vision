@@ -53,9 +53,9 @@ class AnchorGenerator(nn.Module):
         self._cache = {}
 
     @staticmethod
-    def generate_anchors(scales, aspect_ratios, device="cpu"):
-        scales = torch.as_tensor(scales, dtype=torch.float32, device=device)
-        aspect_ratios = torch.as_tensor(aspect_ratios, dtype=torch.float32, device=device)
+    def generate_anchors(scales, aspect_ratios, dtype=torch.float32, device="cpu"):
+        scales = torch.as_tensor(scales, dtype=dtype, device=device)
+        aspect_ratios = torch.as_tensor(aspect_ratios, dtype=dtype, device=device)
         h_ratios = torch.sqrt(aspect_ratios)
         w_ratios = 1 / h_ratios
 
@@ -65,7 +65,7 @@ class AnchorGenerator(nn.Module):
         base_anchors = torch.stack([-ws, -hs, ws, hs], dim=1) / 2
         return base_anchors.round()
 
-    def set_cell_anchors(self, device):
+    def set_cell_anchors(self, dtype, device):
         if self.cell_anchors is not None:
             return self.cell_anchors
         cell_anchors = []
@@ -74,6 +74,7 @@ class AnchorGenerator(nn.Module):
             anchor = self.generate_anchors(
                 sizes,
                 aspect_ratios,
+                dtype,
                 device
             )
             cell_anchors.append(anchor)
@@ -119,10 +120,13 @@ class AnchorGenerator(nn.Module):
         # type: (ImageList, List[Tensor])
         grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
         image_size = image_list.tensors.shape[-2:]
-        strides = torch.jit.annotate(List[Tuple[float, float]], [])
-        for g in grid_sizes:
-            strides.append((image_size[0] / g[0], image_size[1] / g[1]))
-        self.set_cell_anchors(feature_maps[0].device)
+        # strides = torch.jit.annotate(List[Tuple[float, float]], [])
+        # for g in grid_sizes:
+        #     strides.append((image_size[0] / g[0], image_size[1] / g[1]))
+        # self.set_cell_anchors(feature_maps[0].device)
+        strides = tuple((image_size[0] / g[0], image_size[1] / g[1]) for g in grid_sizes)
+        dtype, device = feature_maps[0].dtype, feature_maps[0].device
+        self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
         anchors = []
         for i, (image_height, image_width) in enumerate(image_list.image_sizes):
@@ -361,7 +365,7 @@ class RegionProposalNetwork(torch.nn.Module):
 
         Returns:
             objectness_loss (Tensor)
-            box_loss (Tensor
+            box_loss (Tensor)
         """
 
         sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
@@ -395,7 +399,11 @@ class RegionProposalNetwork(torch.nn.Module):
             features (List[Tensor]): features computed from the images that are
                 used for computing the predictions. Each tensor in the list
                 correspond to different feature levels
+<<<<<<< HEAD
             targets (Optional[List[Dict[str, Tensor]]]): ground-truth boxes present in the image.
+=======
+            targets (List[Dict[Tensor]]): ground-truth boxes present in the image (optional).
+>>>>>>> f677ea31db8f45dbfec2fe5e519da82853815776
                 If provided, each element in the dict should contain a field `boxes`,
                 with the locations of the ground-truth boxes.
 

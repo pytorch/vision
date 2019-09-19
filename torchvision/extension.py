@@ -1,18 +1,34 @@
-_C = None
+_HAS_OPS = False
 
 
-def _lazy_import():
+def _register_extensions():
+    import os
+    import imp
+    import torch
+
+    # load the custom_op_library and register the custom ops
+    lib_dir = os.path.dirname(__file__)
+    _, path, _ = imp.find_module("_C", [lib_dir])
+    torch.ops.load_library(path)
+
+
+try:
+    _register_extensions()
+    _HAS_OPS = True
+except (ImportError, OSError):
+    pass
+
+
+def _check_cuda_version():
     """
     Make sure that CUDA versions match between the pytorch install and torchvision install
     """
-    global _C
-    if _C is not None:
-        return _C
+    if not _HAS_OPS:
+        return -1
     import torch
-    from torchvision import _C as C
-    _C = C
-    if hasattr(_C, "CUDA_VERSION") and torch.version.cuda is not None:
-        tv_version = str(_C.CUDA_VERSION)
+    _version = torch.ops.torchvision._cuda_version()
+    if _version != -1 and torch.version.cuda is not None:
+        tv_version = str(_version)
         if int(tv_version) < 10000:
             tv_major = int(tv_version[0])
             tv_minor = int(tv_version[2])
@@ -28,4 +44,7 @@ def _lazy_import():
                                "PyTorch has CUDA Version={}.{} and torchvision has CUDA Version={}.{}. "
                                "Please reinstall the torchvision that matches your PyTorch install."
                                .format(t_major, t_minor, tv_major, tv_minor))
-    return _C
+    return _version
+
+
+_check_cuda_version()

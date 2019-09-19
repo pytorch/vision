@@ -3,10 +3,27 @@ language: python
 dist: xenial
 matrix:
   include:
+    - env: FORMAT_CHECK
+      language: cpp
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-xenial-7
+          packages:
+            - clang-7
+            - clang-format-7
+      before_install: skip
+      install: skip
+      script: ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
     - env: LINT_CHECK
       python: "2.7"
       install: pip install flake8
-      script: flake8
+      script: flake8 --exclude .circleci
+      after_success: []
+    - env: LINT_CHECK
+      python: "3.6"
+      install: pip install flake8
+      script: flake8 .circleci
       after_success: []
     - python: "2.7"
       env: IMAGE_BACKEND=Pillow-SIMD
@@ -26,7 +43,7 @@ before_install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch scipy -c pytorch
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch scipy -c pytorch-nightly
   - source activate test-environment
   - |
     if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
@@ -35,6 +52,10 @@ before_install:
   - pip install future
   - pip install pytest pytest-cov codecov
   - pip install mock
+  - |
+    if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then
+      pip install onnxruntime
+    fi
   - conda install av -c conda-forge
 
 
@@ -55,6 +76,7 @@ install:
 
 script:
   - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH test
+  - pytest test/test_hub.py
 
 after_success:
   # Necessary to run coverage combine to rewrite paths from

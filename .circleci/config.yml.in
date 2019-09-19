@@ -6,6 +6,21 @@ version: 2.1
 #     - Replace binary_linux_wheel_py3.7 with the name of the job you want to test.
 #       Job names are 'name:' key.
 
+orbs:
+  win: circleci/windows@1.0.0
+
+commands:
+  checkout_merge:
+    description: "checkout merge branch"
+    steps:
+      - checkout
+      - run:
+          name: Checkout merge branch
+          command: |
+            set -ex
+            git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
+            git checkout "merged/$CIRCLE_BRANCH"
+
 binary_common: &binary_common
   parameters:
     # Edit these defaults to do a release`
@@ -47,7 +62,7 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user --progress-bar off jinja2
+            pip install --user --progress-bar off jinja2 pyyaml
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
@@ -57,7 +72,7 @@ jobs:
       - image: << parameters.wheel_docker_image >>
     resource_class: 2xlarge+
     steps:
-      - checkout
+      - checkout_merge
       - run: packaging/build_wheel.sh
       - store_artifacts:
           path: dist
@@ -72,7 +87,7 @@ jobs:
       - image: "soumith/conda-cuda"
     resource_class: 2xlarge+
     steps:
-      - checkout
+      - checkout_merge
       - run: packaging/build_conda.sh
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
@@ -81,12 +96,96 @@ jobs:
           paths:
             - "*"
 
+  binary_linux_conda_cuda:
+    <<: *binary_common
+    machine:
+      image: ubuntu-1604:201903-01
+    resource_class: gpu.medium
+    steps:
+    - checkout_merge
+    - run:
+        name: Setup environment
+        command: |
+          set -e
+
+          curl -L https://packagecloud.io/circleci/trusty/gpgkey | sudo apt-key add -
+          curl -L https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+
+          sudo apt-get update
+
+          sudo apt-get install \
+              apt-transport-https \
+              ca-certificates \
+              curl \
+              gnupg-agent \
+              software-properties-common
+
+          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+          sudo add-apt-repository \
+             "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+             $(lsb_release -cs) \
+             stable"
+
+          sudo apt-get update
+          export DOCKER_VERSION="5:19.03.2~3-0~ubuntu-xenial"
+          sudo apt-get install docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io
+
+          # Add the package repositories
+          distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+          curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+          curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+
+          export NVIDIA_CONTAINER_VERSION="1.0.3-1"
+          sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit=${NVIDIA_CONTAINER_VERSION}
+          sudo systemctl restart docker
+
+          DRIVER_FN="NVIDIA-Linux-x86_64-410.104.run"
+          wget "https://s3.amazonaws.com/ossci-linux/nvidia_driver/$DRIVER_FN"
+          sudo /bin/bash "$DRIVER_FN" -s --no-drm || (sudo cat /var/log/nvidia-installer.log && false)
+          nvidia-smi
+
+    - run:
+        name: Pull docker image
+        command: |
+          set -e
+          export DOCKER_IMAGE=soumith/conda-cuda
+          echo Pulling docker image $DOCKER_IMAGE
+          docker pull $DOCKER_IMAGE >/dev/null
+
+    - run:
+        name: Build and run tests
+        command: |
+          set -e
+
+          cd ${HOME}/project/
+
+          export DOCKER_IMAGE=soumith/conda-cuda
+          export VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e UNICODE_ABI -e CU_VERSION"
+
+          docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${DOCKER_IMAGE} ./packaging/build_conda.sh
+
+  binary_win_conda:
+    <<: *binary_common
+    executor:
+      name: win/vs2019
+      shell: bash.exe
+    steps:
+      - checkout_merge
+      - run:
+          command: |
+            choco install miniconda3
+            $env:PATH = "C:\tools\miniconda3;C:\tools\miniconda3\Library\usr\bin;C:\tools\miniconda3\Scripts;C:\tools\miniconda3\bin" + $env:PATH
+            conda install -yq conda-build "conda-package-handling<1.5.0"
+            bash packaging/build_conda.sh
+          shell: powershell.exe
+
   binary_macos_wheel:
     <<: *binary_common
     macos:
       xcode: "9.0"
     steps:
-      - checkout
+      - checkout_merge
       - run:
           # Cannot easily deduplicate this as source'ing activate
           # will set environment variables which we need to propagate
@@ -108,7 +207,7 @@ jobs:
     macos:
       xcode: "9.0"
     steps:
-      - checkout
+      - checkout_merge
       - run:
           command: |
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
@@ -166,47 +265,6 @@ jobs:
               aws s3 cp "$pkg" "s3://pytorch/whl/nightly/<< parameters.subfolder >>" --acl public-read
             done
 
-{%- macro workflow(btype, os, python_version, cu_version, unicode, prefix='', upload=False) %}
-      - binary_{{os}}_{{btype}}:
-          name: {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}
-          python_version: "{{python_version}}"
-          cu_version: "{{cu_version}}"
-{%-   if unicode %}
-          unicode_abi: "1"
-{%-   endif %}
-{%-   if cu_version == "cu92" %}
-          wheel_docker_image: "soumith/manylinux-cuda92"
-{%-   endif %}
-
-{%-   if upload %}
-      - binary_{{btype}}_upload:
-          name: {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}_upload
-          context: org-member
-          requires:
-            - {{prefix}}binary_{{os}}_{{btype}}_py{{python_version}}{{ "u" if unicode }}_{{cu_version}}
-{%-     if btype == 'wheel' %}
-{%-       if os == 'macos' %}
-          subfolder: ""
-{%-       else %}
-          subfolder: "{{cu_version}}/"
-{%-       endif %}
-{%-     endif %}
-{%-   endif %}
-{%- endmacro %}
-
-{%- macro workflows(prefix='', upload=False) %}
-{%- for btype in ["wheel", "conda"] -%}
-{%-   for os in ["linux", "macos"] -%}
-{%-     for python_version in ["2.7", "3.5", "3.6", "3.7"] -%}
-{%-       for cu_version in (["cpu", "cu92", "cu100"] if os == "linux" else ["cpu"]) -%}
-{%-         for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]) -%}
-          {{ workflow(btype, os, python_version, cu_version, unicode, prefix=prefix, upload=upload) }}
-{%-         endfor -%}
-{%-     endfor -%}
-{%-     endfor -%}
-{%-   endfor -%}
-{%- endfor %}
-{%- endmacro %}
 
 workflows:
   build:
@@ -214,6 +272,14 @@ workflows:
     jobs:
       - circleci_consistency
       {{ workflows() }}
+      - binary_linux_conda_cuda:
+          name: torchvision_linux_py3.7_cu100
+          python_version: "3.7"
+          cu_version: "cu100"
+      - binary_win_conda:
+          name: torchvision_win_py3.6_cpu
+          python_version: "3.6"
+          cu_version: "cpu"
 
   nightly:
     triggers:

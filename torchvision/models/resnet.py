@@ -36,6 +36,7 @@ def conv1x1(in_planes, out_planes, stride=1):
 
 class BasicBlock(nn.Module):
     expansion = 1
+    __constants__ = ['downsample']
 
     __constants__ = ['downsample']
     # TODO: Replace with this when https://github.com/pytorch/pytorch/pull/26068 lands
@@ -82,6 +83,7 @@ class BasicBlock(nn.Module):
 
 class Bottleneck(nn.Module):
     expansion = 4
+    __constants__ = ['downsample']
 
     __constants__ = ['downsample']
     # TODO: Replace with this when https://github.com/pytorch/pytorch/pull/26068 lands

@@ -645,7 +645,7 @@ class RandomResizedCrop(object):
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
 
-            if w <= img.size[0] and h <= img.size[1]:
+            if 0 < w <= img.size[0] and 0 < h <= img.size[1]:
                 i = random.randint(0, img.size[1] - h)
                 j = random.randint(0, img.size[0] - w)
                 return i, j, h, w
@@ -946,12 +946,14 @@ class RandomRotation(object):
         center (2-tuple, optional): Optional center of rotation.
             Origin is the upper left corner.
             Default is the center of the image.
+        fill (3-tuple or int): RGB pixel fill value for area outside the rotated image.
+            If int, it is used for all channels respectively.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
 
-    def __init__(self, degrees, resample=False, expand=False, center=None):
+    def __init__(self, degrees, resample=False, expand=False, center=None, fill=0):
         if isinstance(degrees, numbers.Number):
             if degrees < 0:
                 raise ValueError("If degrees is a single number, it must be positive.")
@@ -964,6 +966,7 @@ class RandomRotation(object):
         self.resample = resample
         self.expand = expand
         self.center = center
+        self.fill = fill
 
     @staticmethod
     def get_params(degrees):
@@ -987,7 +990,7 @@ class RandomRotation(object):
 
         angle = self.get_params(self.degrees)
 
-        return F.rotate(img, angle, self.resample, self.expand, self.center)
+        return F.rotate(img, angle, self.resample, self.expand, self.center, self.fill)
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '(degrees={0}'.format(self.degrees)

@@ -1,0 +1,10 @@
+parameters:
+  user: ''
+  pass: ''
+
+steps:
+- script: 'call packaging/windows/internal/upload.bat'
+  displayName: 'Upload packages to Anaconda Cloud'
+  env:
+    PYTORCH_ANACONDA_USERNAME: ${{ parameters.user }}
+    PYTORCH_ANACONDA_PASSWORD: ${{ parameters.pass }}

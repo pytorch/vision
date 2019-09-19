@@ -4,6 +4,7 @@ from typing import List
 
 import torch
 from torch import nn
+import torchvision
 
 from torchvision.ops import misc as misc_nn_ops
 from .image_list import ImageList
@@ -57,20 +58,6 @@ class GeneralizedRCNNTransform(nn.Module):
         std = torch.as_tensor(self.image_std, dtype=dtype, device=device)
         return (image - mean[:, None, None]) / std[:, None, None]
 
-    def max_DELETEME(self, l):
-        """
-        Use builtin max when https://github.com/pytorch/pytorch/issues/25992 is
-        fixed.
-        """
-        # type: (List[int])
-        if len(l) == 0:
-            raise RuntimeError("Bad!")
-        the_max = l[0]
-        for item in l[1:]:
-            if item > the_max:
-                the_max = item
-        return the_max
-
     def torch_choice(self, l):
         # type: (List[int])
         """
@@ -84,8 +71,9 @@ class GeneralizedRCNNTransform(nn.Module):
     def resize(self, image, target):
         # type: (Tensor, Optional[Dict[str, Tensor]])
         h, w = image.shape[-2:]
-        min_size = float(min(image.shape[-2:]))
-        max_size = float(self.max_DELETEME(image.shape[-2:]))
+        im_shape = torch.tensor(image.shape[-2:])
+        min_size = float(torch.min(im_shape))
+        max_size = float(torch.max(im_shape))
         if self.training:
             size = float(self.torch_choice(self.min_size))
         else:
@@ -115,17 +103,56 @@ class GeneralizedRCNNTransform(nn.Module):
             target["keypoints"] = keypoints
         return image, target
 
+    # _onnx_dynamic_img_pad() creates a dynamic padding
+    # for an image supported in ONNx tracing.
+    # it is used to process the images in _onnx_batch_images().
+    def _onnx_dynamic_img_pad(self, img, padding):
+        concat_0 = torch.cat((img, torch.zeros(padding[0], img.shape[1], img.shape[2])), 0)
+        concat_1 = torch.cat((concat_0, torch.zeros(concat_0.shape[0], padding[1], concat_0.shape[2])), 1)
+        padded_img = torch.cat((concat_1, torch.zeros(concat_1.shape[0], concat_1.shape[1], padding[2])), 2)
+        return padded_img
+
+    # _onnx_batch_images() is an implementation of
+    # batch_images() that is supported by ONNX tracing.
+    def _onnx_batch_images(self, images, size_divisible=32):
+        max_size = []
+        for i in range(images[0].dim()):
+            max_size_i = torch.max(torch.stack([img.shape[i] for img in images]).to(torch.float32)).to(torch.int64)
+            max_size.append(max_size_i)
+        stride = size_divisible
+        max_size[1] = (torch.ceil((max_size[1].to(torch.float32)) / stride) * stride).to(torch.int64)
+        max_size[2] = (torch.ceil((max_size[2].to(torch.float32)) / stride) * stride).to(torch.int64)
+        max_size = tuple(max_size)
+
+        # work around for
+        # pad_img[: img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)
+        # which is not yet supported in onnx
+        padded_imgs = []
+        for img in images:
+            padding = [(s1 - s2) for s1, s2 in zip(max_size, tuple(img.shape))]
+            padded_img = self._onnx_dynamic_img_pad(img, padding)
+            padded_imgs.append(padded_img)
+
+        return torch.stack(padded_imgs)
+
     def batch_images(self, images, size_divisible=32):
         # type: (List[Tensor], int)
         # concatenate
         # TODO: Fix this
         # max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
-        max_size = torch.jit.annotate(List[int], [])
-        for img in images:
-            # for s in img:
-            max_size.append(self.max_DELETEME(img))
+        # max_size = torch.jit.annotate(List[int], [])
+        # for img in images:
+        #     # for s in img:
+        #     max_size.append(self.max_DELETEME(img))
 
-        stride = float(size_divisible)
+        # stride = float(size_divisible)
+        if torchvision._is_tracing():
+            # batch_images() does not export well to ONNX
+            # call _onnx_batch_images() instead
+            return self._onnx_batch_images(images, size_divisible)
+
+        max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
+        stride = size_divisible
         max_size = list(max_size)
         max_size[1] = int(math.ceil(float(max_size[1]) / stride) * stride)
         max_size[2] = int(math.ceil(float(max_size[2]) / stride) * stride)

@@ -1,0 +1,17 @@
+jobs:
+- job: 'VSTS_Auth_Task'
+  timeoutInMinutes: 5
+  cancelTimeoutInMinutes: 5
+  variables:
+  - group: 'peterjc-vsts-token'
+
+  pool:
+    vmImage: 'win1803'
+
+  steps:
+  - checkout: self
+    clean: true
+
+  - template: vsts_auth.yml
+    parameters:
+      auth: $(vsts_auth)

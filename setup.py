@@ -52,9 +52,9 @@ def write_version_file():
     with open(version_path, 'w') as f:
         f.write("__version__ = '{}'\n".format(version))
         f.write("git_version = {}\n".format(repr(sha)))
-        f.write("from torchvision import _C\n")
-        f.write("if hasattr(_C, 'CUDA_VERSION'):\n")
-        f.write("    cuda = _C.CUDA_VERSION\n")
+        f.write("from torchvision.extension import _check_cuda_version\n")
+        f.write("if _check_cuda_version() > 0:\n")
+        f.write("    cuda = _check_cuda_version()\n")
 
 
 write_version_file()
@@ -116,6 +116,9 @@ def get_extensions():
     if sys.platform == 'win32':
         define_macros += [('torchvision_EXPORTS', None)]
 
+        extra_compile_args.setdefault('cxx', [])
+        extra_compile_args['cxx'].append('/MP')
+
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs = [extensions_dir]
@@ -135,7 +138,7 @@ def get_extensions():
             include_dirs=tests_include_dirs,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
-        )
+        ),
     ]
 
     return ext_modules
@@ -176,5 +179,6 @@ setup(
         "scipy": ["scipy"],
     },
     ext_modules=get_extensions(),
-    cmdclass={'build_ext': torch.utils.cpp_extension.BuildExtension, 'clean': clean}
+    cmdclass={'build_ext': torch.utils.cpp_extension.BuildExtension,
+              'clean': clean}
 )
