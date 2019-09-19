@@ -25,7 +25,8 @@ unique_ptr<DecoderParameters> getDecoderParams(
   unique_ptr<DecoderParameters> params = make_unique<DecoderParameters>();
 
   if (readVideoStream == 1) {
-    params->formats.emplace(MediaType::TYPE_VIDEO, MediaFormat(MediaType::TYPE_VIDEO));
+    params->formats.emplace(
+        MediaType::TYPE_VIDEO, MediaFormat(MediaType::TYPE_VIDEO));
     MediaFormat& videoFormat = params->formats[MediaType::TYPE_VIDEO];
 
     videoFormat.format.video.width = videoWidth;
@@ -38,7 +39,8 @@ unique_ptr<DecoderParameters> getDecoderParams(
   }
 
   if (readAudioStream == 1) {
-    params->formats.emplace(MediaType::TYPE_AUDIO, MediaFormat(MediaType::TYPE_AUDIO));
+    params->formats.emplace(
+        MediaType::TYPE_AUDIO, MediaFormat(MediaType::TYPE_AUDIO));
     MediaFormat& audioFormat = params->formats[MediaType::TYPE_AUDIO];
 
     audioFormat.format.audio.samples = audioSamples;

@@ -23,18 +23,16 @@ const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
 
 using AvDataPtr = std::unique_ptr<uint8_t, avDeleter>;
 
-enum MediaType: uint32_t {
+enum MediaType : uint32_t {
   TYPE_VIDEO = 1,
   TYPE_AUDIO = 2,
 };
 
-struct EnumClassHash
-{
-    template <typename T>
-    uint32_t operator()(T t) const
-    {
-        return static_cast<uint32_t>(t);
-    }
+struct EnumClassHash {
+  template <typename T>
+  uint32_t operator()(T t) const {
+    return static_cast<uint32_t>(t);
+  }
 };
 
 struct VideoFormat {
