@@ -21,7 +21,7 @@ class CelebA(VisionDataset):
                 ``bbox`` (np.array shape=(4,) dtype=int): bounding box (x, y, width, height)
                 ``landmarks`` (np.array shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,
                     righteye_y, nose_x, nose_y, leftmouth_x, leftmouth_y, rightmouth_x, rightmouth_y)
-            Defaults to ``attr``.
+            If empty, no target will be returned. Defaults to ``attr``.
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.ToTensor``
         target_transform (callable, optional): A function/transform that takes in the
@@ -120,28 +120,32 @@ class CelebA(VisionDataset):
     def __getitem__(self, index):
         X = PIL.Image.open(os.path.join(self.root, self.base_folder, "img_align_celeba", self.filename[index]))
 
-        target = []
-        for t in self.target_type:
-            if t == "attr":
-                target.append(self.attr[index, :])
-            elif t == "identity":
-                target.append(self.identity[index, 0])
-            elif t == "bbox":
-                target.append(self.bbox[index, :])
-            elif t == "landmarks":
-                target.append(self.landmarks_align[index, :])
-            else:
-                # TODO: refactor with utils.verify_str_arg
-                raise ValueError("Target type \"{}\" is not recognized.".format(t))
-        target = tuple(target) if len(target) > 1 else target[0]
-
         if self.transform is not None:
             X = self.transform(X)
 
-        if self.target_transform is not None:
-            target = self.target_transform(target)
+        if not self.target_type:
+            return X
+        else:
+            target = []
+            for t in self.target_type:
+                if t == "attr":
+                    target.append(self.attr[index, :])
+                elif t == "identity":
+                    target.append(self.identity[index, 0])
+                elif t == "bbox":
+                    target.append(self.bbox[index, :])
+                elif t == "landmarks":
+                    target.append(self.landmarks_align[index, :])
+                else:
+                    # TODO: refactor with utils.verify_str_arg
+                    raise ValueError("Target type \"{}\" is not recognized.".format(t))
 
-        return X, target
+            target = tuple(target) if len(target) > 1 else target[0]
+
+            if self.target_transform is not None:
+                target = self.target_transform(target)
+
+            return X, target
 
     def __len__(self):
         return len(self.attr)
