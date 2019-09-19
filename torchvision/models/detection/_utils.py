@@ -119,6 +119,7 @@ def encode_boxes(reference_boxes, proposals, weights):
     return targets
 
 
+@torch.jit.script
 class BoxCoder(object):
     """
     This class encodes and decodes a set of bounding boxes into
@@ -126,6 +127,7 @@ class BoxCoder(object):
     """
 
     def __init__(self, weights, bbox_xform_clip=math.log(1000. / 16)):
+        # type: (Tuple[Tensor, Tensor, Tensor, Tensor], float)
         """
         Arguments:
             weights (4-element tuple)
@@ -135,7 +137,11 @@ class BoxCoder(object):
         self.bbox_xform_clip = bbox_xform_clip
 
     def encode(self, reference_boxes, proposals):
-        boxes_per_image = [len(b) for b in reference_boxes]
+        # type: (List[Tensor], List[Tensor])
+        boxes_per_image = torch.jit.annotate(List[int], [])
+        for b in reference_boxes:
+            boxes_per_image.append(len(b))
+        # boxes_per_image = [len(b) for b in reference_boxes]
         reference_boxes = torch.cat(reference_boxes, dim=0)
         proposals = torch.cat(proposals, dim=0)
         targets = self.encode_single(reference_boxes, proposals)
@@ -152,22 +158,29 @@ class BoxCoder(object):
         """
         dtype = reference_boxes.dtype
         device = reference_boxes.device
-        weights = torch.as_tensor(self.weights, dtype=dtype, device=device)
-        targets = encode_boxes(reference_boxes, proposals, weights)
+        # TODO: Re-enable
+        # weights = torch.as_tensor(self.weights, dtype=dtype, device=device)
+        # targets = encode_boxes(reference_boxes, proposals, weights)
 
-        return targets
+        # return targets
+        return proposals
 
     def decode(self, rel_codes, boxes):
+        # type: (List[Tensor], List[Tensor])
         assert isinstance(boxes, (list, tuple))
         if isinstance(rel_codes, (list, tuple)):
             rel_codes = torch.cat(rel_codes, dim=0)
         assert isinstance(rel_codes, torch.Tensor)
-        boxes_per_image = [len(b) for b in boxes]
+        boxes_per_image = torch.jit.annotate(List[int], [])
+        for b in boxes:
+            boxes_per_image.append(len(b))
+        # boxes_per_image = [len(b) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
+        box_sum = int(torch.sum(torch.tensor(boxes_per_image)).item())
         pred_boxes = self.decode_single(
-            rel_codes.reshape(sum(boxes_per_image), -1), concat_boxes
+            rel_codes.reshape(box_sum, -1), concat_boxes
         )
-        return pred_boxes.reshape(sum(boxes_per_image), -1, 4)
+        return pred_boxes.reshape(box_sum, -1, 4)
 
     def decode_single(self, rel_codes, boxes):
         """

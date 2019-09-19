@@ -114,7 +114,9 @@ class GeneralizedRCNNTransform(nn.Module):
 
     # _onnx_batch_images() is an implementation of
     # batch_images() that is supported by ONNX tracing.
+    @torch.jit.unused
     def _onnx_batch_images(self, images, size_divisible=32):
+        # type: (List[Tensor], int) -> Tensor
         max_size = []
         for i in range(images[0].dim()):
             max_size_i = torch.max(torch.stack([img.shape[i] for img in images]).to(torch.float32)).to(torch.int64)
@@ -137,26 +139,20 @@ class GeneralizedRCNNTransform(nn.Module):
 
     def batch_images(self, images, size_divisible=32):
         # type: (List[Tensor], int)
-        # concatenate
-        # TODO: Fix this
-        # max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
-        # max_size = torch.jit.annotate(List[int], [])
-        # for img in images:
-        #     # for s in img:
-        #     max_size.append(self.max_DELETEME(img))
+        if not torch.jit.is_scripting():
+            if torchvision._is_tracing():
+                # batch_images() does not export well to ONNX
+                # call _onnx_batch_images() instead
+                return self._onnx_batch_images(images, size_divisible)
 
-        # stride = float(size_divisible)
-        if torchvision._is_tracing():
-            # batch_images() does not export well to ONNX
-            # call _onnx_batch_images() instead
-            return self._onnx_batch_images(images, size_divisible)
+        shapes_by_axis = [img.shape for img in images]
+        max_size = torch.jit.annotate(List[int], [])
+        for s in zip(shapes_by_axis):
+            max_size.append(max(s[0]))
 
-        max_size = tuple(max(s) for s in zip(*[img.shape for img in images]))
-        stride = size_divisible
-        max_size = list(max_size)
+        stride = float(size_divisible)
         max_size[1] = int(math.ceil(float(max_size[1]) / stride) * stride)
         max_size[2] = int(math.ceil(float(max_size[2]) / stride) * stride)
-        max_size = max_size
 
         batch_shape = (len(images),) + max_size
         batched_imgs = images[0].new_full(batch_shape, 0)

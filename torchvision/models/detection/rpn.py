@@ -8,7 +8,7 @@ from torchvision.ops import boxes as box_ops
 from . import _utils as det_utils
 from .image_list import ImageList
 
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 class AnchorGenerator(nn.Module):
@@ -31,6 +31,7 @@ class AnchorGenerator(nn.Module):
         aspect_ratios (Tuple[Tuple[float]]):
     """
     cell_anchors : Optional[List[torch.Tensor]]
+    _cache : Dict[str, List[torch.Tensor]]
 
     def __init__(
         self,
@@ -66,27 +67,32 @@ class AnchorGenerator(nn.Module):
         return base_anchors.round()
 
     def set_cell_anchors(self, dtype, device):
+        # type: (int, Device) -> None
         if self.cell_anchors is not None:
-            return self.cell_anchors
+            return
         cell_anchors = []
 
-        for sizes, aspect_ratios in zip(list(self.sizes), list(self.aspect_ratios)):
-            anchor = self.generate_anchors(
-                sizes,
-                aspect_ratios,
-                dtype,
-                device
-            )
-            cell_anchors.append(anchor)
+        # TODO: enable
+        # for sizes, aspect_ratios in zip(list(self.sizes), list(self.aspect_ratios)):
+        #     anchor = self.generate_anchors(
+        #         sizes,
+        #         aspect_ratios,
+        #         dtype,
+        #         device
+        #     )
+        #     cell_anchors.append(anchor)
         self.cell_anchors = cell_anchors
 
     def num_anchors_per_location(self):
         return [len(s) * len(a) for s, a in zip(self.sizes, self.aspect_ratios)]
 
     def grid_anchors(self, grid_sizes, strides):
+        # type: (List[List[int]], List[List[int]])
         anchors = []
+        cell_anchors = self.cell_anchors
+        assert cell_anchors is not None
         for size, stride, base_anchors in zip(
-            grid_sizes, strides, self.cell_anchors
+            grid_sizes, strides, cell_anchors
         ):
             grid_height, grid_width = size
             stride_height, stride_width = stride
@@ -109,7 +115,8 @@ class AnchorGenerator(nn.Module):
         return anchors
 
     def cached_grid_anchors(self, grid_sizes, strides):
-        key = tuple(grid_sizes) + tuple(strides)
+        # type: (List[List[int]], List[List[int]])
+        key = str(grid_sizes + strides)
         if key in self._cache:
             return self._cache[key]
         anchors = self.grid_anchors(grid_sizes, strides)
@@ -118,17 +125,15 @@ class AnchorGenerator(nn.Module):
 
     def forward(self, image_list, feature_maps):
         # type: (ImageList, List[Tensor])
-        grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
+        grid_sizes = [list(feature_map.shape[-2:]) for feature_map in feature_maps]
         image_size = image_list.tensors.shape[-2:]
-        # strides = torch.jit.annotate(List[Tuple[float, float]], [])
-        # for g in grid_sizes:
-        #     strides.append((image_size[0] / g[0], image_size[1] / g[1]))
-        # self.set_cell_anchors(feature_maps[0].device)
-        strides = tuple((image_size[0] / g[0], image_size[1] / g[1]) for g in grid_sizes)
+        strides = torch.jit.annotate(List[List[int]], [])
+        for g in grid_sizes:
+            strides.append([int(image_size[0] / g[0]), int(image_size[1] / g[1])])
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
-        anchors = []
+        anchors = torch.jit.annotate(List[List[torch.Tensor]], [])
         for i, (image_height, image_width) in enumerate(image_list.image_sizes):
             anchors_in_image = []
             for anchors_per_feature_map in anchors_over_all_feature_maps:
@@ -173,6 +178,7 @@ class RPNHead(nn.Module):
 
 
 def permute_and_flatten(layer, N, A, C, H, W):
+    # type: (Tensor, int, int, int, int, int)
     layer = layer.view(N, -1, C, H, W)
     layer = layer.permute(0, 3, 4, 1, 2)
     layer = layer.reshape(N, -1, C)
@@ -180,12 +186,14 @@ def permute_and_flatten(layer, N, A, C, H, W):
 
 
 def concat_box_prediction_layers(box_cls, box_regression):
+    # type: (List[Tensor], List[Tensor])
     box_cls_flattened = []
     box_regression_flattened = []
     # for each feature level, permute the outputs to make them be in the
     # same format as the labels. Note that the labels are computed for
     # all feature levels concatenated, so we keep the same representation
     # for the objectness and the box_regression
+    last_C = torch.jit.annotate(Optional[int], None)
     for box_cls_per_level, box_regression_per_level in zip(
         box_cls, box_regression
     ):
@@ -193,6 +201,7 @@ def concat_box_prediction_layers(box_cls, box_regression):
         Ax4 = box_regression_per_level.shape[1]
         A = Ax4 // 4
         C = AxC // A
+        last_C = C
         box_cls_per_level = permute_and_flatten(
             box_cls_per_level, N, A, C, H, W
         )
@@ -202,10 +211,11 @@ def concat_box_prediction_layers(box_cls, box_regression):
             box_regression_per_level, N, A, 4, H, W
         )
         box_regression_flattened.append(box_regression_per_level)
+    assert last_C is not None
     # concatenate on the first dimension (representing the feature levels), to
     # take into account the way the labels were generated (with all feature maps
     # being concatenated as well)
-    box_cls = torch.cat(box_cls_flattened, dim=1).reshape(-1, C)
+    box_cls = torch.cat(box_cls_flattened, dim=1).reshape(-1, last_C)
     box_regression = torch.cat(box_regression_flattened, dim=1).reshape(-1, 4)
     return box_cls, box_regression
 
@@ -235,6 +245,9 @@ class RegionProposalNetwork(torch.nn.Module):
         nms_thresh (float): NMS threshold used for postprocessing the RPN proposals
 
     """
+    __annotations__ = {
+        'box_coder': det_utils.BoxCoder
+    }
 
     def __init__(self,
                  anchor_generator,
@@ -399,11 +412,7 @@ class RegionProposalNetwork(torch.nn.Module):
             features (List[Tensor]): features computed from the images that are
                 used for computing the predictions. Each tensor in the list
                 correspond to different feature levels
-<<<<<<< HEAD
             targets (Optional[List[Dict[str, Tensor]]]): ground-truth boxes present in the image.
-=======
-            targets (List[Dict[Tensor]]): ground-truth boxes present in the image (optional).
->>>>>>> f677ea31db8f45dbfec2fe5e519da82853815776
                 If provided, each element in the dict should contain a field `boxes`,
                 with the locations of the ground-truth boxes.
 

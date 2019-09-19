@@ -4,6 +4,7 @@ from torchvision import ops
 from torchvision import transforms
 from torchvision import utils
 from torchvision import io
+import torch
 
 from .extension import _HAS_OPS
 
@@ -39,5 +40,4 @@ def get_image_backend():
 
 
 def _is_tracing():
-    import torch
     return torch._C._get_tracing_state()
