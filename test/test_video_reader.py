@@ -232,7 +232,6 @@ def _decode_frames_by_av_module(
         [audio_frame.pts for audio_frame in audio_frames], dtype=torch.int64
     )
 
-
     return DecoderResult(
         vframes=vframes,
         vframe_pts=vframe_pts,
@@ -357,7 +356,7 @@ class TestVideoReader(unittest.TestCase):
                 full_path = os.path.join(VIDEO_DIR, test_video)
 
                 # pass 1: decode all frames using new decoder
-                tv_result = torch.ops.video_reader.read_video_from_file(
+                _ = torch.ops.video_reader.read_video_from_file(
                     full_path,
                     seek_frame_margin,
                     0,  # getPtsOnly
@@ -633,7 +632,6 @@ class TestVideoReader(unittest.TestCase):
             self.assertEqual(tv_result[0].size(1), height)
             self.assertEqual(tv_result[0].size(2), width)
 
-
     def test_read_video_from_file_audio_resampling(self):
         """
         Test the case when decoder starts with a video file to decode frames, and
@@ -753,51 +751,6 @@ class TestVideoReader(unittest.TestCase):
             self.check_separate_decoding_result(tv_result_file, config)
             # finally, compare results decoded from memory and file
             self.compare_decoding_result(tv_result_memory, tv_result_file)
-
-
-    def test_read_video_from_file(self):
-        """
-        Test the case when decoder starts with a video file to decode frames.
-        """
-        # video related
-        width, height, min_dimension = 0, 0, 0
-        video_start_pts, video_end_pts = 0, -1
-        video_timebase_num, video_timebase_den = 0, 1
-        # audio related
-        samples, channels = 0, 0
-        audio_start_pts, audio_end_pts = 0, -1
-        audio_timebase_num, audio_timebase_den = 0, 1
-
-        for test_video, config in test_videos.items():
-            full_path = os.path.join(VIDEO_DIR, test_video)
-
-            # pass 1: decode all frames using new decoder
-            tv_result = torch.ops.video_reader.read_video_from_file(
-                full_path,
-                seek_frame_margin,
-                0,  # getPtsOnly
-                1,  # readVideoStream
-                width,
-                height,
-                min_dimension,
-                video_start_pts,
-                video_end_pts,
-                video_timebase_num,
-                video_timebase_den,
-                1,  # readAudioStream
-                samples,
-                channels,
-                audio_start_pts,
-                audio_end_pts,
-                audio_timebase_num,
-                audio_timebase_den,
-            )
-            # pass 2: decode all frames using av
-            pyav_result = _decode_frames_by_av_module(full_path)
-
-            self.check_separate_decoding_result(tv_result, config)
-            # compare decoding results
-            self.compare_decoding_result(tv_result, pyav_result, config)
 
     def test_read_video_from_memory(self):
         """
@@ -1043,6 +996,7 @@ class TestVideoReader(unittest.TestCase):
                     # comparing the decoding results between Torchvision video reader
                     # and PyAv
                     self.compare_decoding_result(tv_result, pyav_result, config)
+
 
 if __name__ == '__main__':
     unittest.main()
