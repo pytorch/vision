@@ -20,7 +20,7 @@ class FfmpegAudioStream : public FfmpegStream {
 
   // FfmpegStream overrides
   MediaType getMediaType() const override {
-    return TYPE_AUDIO;
+    return MediaType::TYPE_AUDIO;
   }
 
   FormatUnion getMediaFormat() const override {

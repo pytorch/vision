@@ -23,9 +23,18 @@ const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
 
 using AvDataPtr = std::unique_ptr<uint8_t, avDeleter>;
 
-enum MediaType {
+enum MediaType: uint32_t {
   TYPE_VIDEO = 1,
   TYPE_AUDIO = 2,
+};
+
+struct EnumClassHash
+{
+    template <typename T>
+    uint32_t operator()(T t) const
+    {
+        return static_cast<uint32_t>(t);
+    }
 };
 
 struct VideoFormat {
@@ -65,17 +74,17 @@ struct MediaFormat {
   MediaFormat() {}
 
   MediaFormat(const MediaFormat& mediaFormat) : type(mediaFormat.type) {
-    if (type == TYPE_VIDEO) {
+    if (type == MediaType::TYPE_VIDEO) {
       format.video = mediaFormat.format.video;
-    } else if (type == TYPE_AUDIO) {
+    } else if (type == MediaType::TYPE_AUDIO) {
       format.audio = mediaFormat.format.audio;
     }
   }
 
   MediaFormat(MediaType mediaType) : type(mediaType) {
-    if (mediaType == TYPE_VIDEO) {
+    if (mediaType == MediaType::TYPE_VIDEO) {
       format.video = VideoFormat();
-    } else if (mediaType == TYPE_AUDIO) {
+    } else if (mediaType == MediaType::TYPE_AUDIO) {
       format.audio = AudioFormat();
     }
   }
@@ -114,5 +123,5 @@ class DecoderOutput {
 
   void clear();
 
-  std::unordered_map<MediaType, MediaData> media_data_;
+  std::unordered_map<MediaType, MediaData, EnumClassHash> media_data_;
 };

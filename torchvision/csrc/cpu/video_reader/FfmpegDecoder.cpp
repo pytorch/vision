@@ -18,10 +18,10 @@ unique_ptr<FfmpegStream> createFfmpegStream(
   enum AVMediaType avType;
   CHECK(ffmpeg_util::mapMediaType(type, &avType));
   switch (type) {
-    case TYPE_VIDEO:
+    case MediaType::TYPE_VIDEO:
       return make_unique<FfmpegVideoStream>(
           ctx, idx, avType, mediaFormat, seekFrameMargin);
-    case TYPE_AUDIO:
+    case MediaType::TYPE_AUDIO:
       return make_unique<FfmpegAudioStream>(
           ctx, idx, avType, mediaFormat, seekFrameMargin);
     default:

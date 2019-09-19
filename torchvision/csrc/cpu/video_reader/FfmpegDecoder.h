@@ -12,7 +12,7 @@
 
 class DecoderParameters {
  public:
-  std::unordered_map<MediaType, MediaFormat> formats;
+  std::unordered_map<MediaType, MediaFormat, EnumClassHash> formats;
   // av_seek_frame is imprecise so seek to a timestamp earlier by a margin
   // The unit of margin is second
   double seekFrameMargin{1.0};

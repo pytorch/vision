@@ -7,10 +7,10 @@ namespace ffmpeg_util {
 bool mapFfmpegType(AVMediaType media, MediaType* type) {
   switch (media) {
     case AVMEDIA_TYPE_VIDEO:
-      *type = TYPE_VIDEO;
+      *type = MediaType::TYPE_VIDEO;
       return true;
     case AVMEDIA_TYPE_AUDIO:
-      *type = TYPE_AUDIO;
+      *type = MediaType::TYPE_AUDIO;
       return true;
     default:
       return false;
@@ -19,10 +19,10 @@ bool mapFfmpegType(AVMediaType media, MediaType* type) {
 
 bool mapMediaType(MediaType type, AVMediaType* media) {
   switch (type) {
-    case TYPE_VIDEO:
+    case MediaType::TYPE_VIDEO:
       *media = AVMEDIA_TYPE_VIDEO;
       return true;
-    case TYPE_AUDIO:
+    case MediaType::TYPE_AUDIO:
       *media = AVMEDIA_TYPE_AUDIO;
       return true;
     default:
