@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <array>
+#include <string>
 #include "FfmpegHeaders.h"
 #include "Interface.h"
 

@@ -14,8 +14,7 @@ FfmpegStream::FfmpegStream(
     : inputCtx_(inputCtx),
       index_(index),
       avMediaType_(avMediaType),
-      seekFrameMargin_(seekFrameMargin) {
-}
+      seekFrameMargin_(seekFrameMargin) {}
 
 FfmpegStream::~FfmpegStream() {
   if (frame_) {
@@ -85,9 +84,7 @@ unique_ptr<DecodedFrame> FfmpegStream::getFrameData(int getPtsOnly) {
   }
 }
 
-
-void FfmpegStream::flush(int getPtsOnly, DecoderOutput& decoderOutput)
-{
+void FfmpegStream::flush(int getPtsOnly, DecoderOutput& decoderOutput) {
   VLOG(1) << "Media Type: " << getMediaType() << ", flush stream.";
   // need to receive frames before entering draining mode
   receiveAvailFrames(getPtsOnly, decoderOutput);
@@ -105,16 +102,17 @@ bool FfmpegStream::isFramePtsInRange() {
   auto pts = frame_->pts;
   auto startPts = this->getStartPts();
   auto endPts = this->getEndPts();
-  VLOG(2) << "isPtsInRange. pts: " << pts
-          << ", startPts: " << startPts
+  VLOG(2) << "isPtsInRange. pts: " << pts << ", startPts: " << startPts
           << ", endPts: " << endPts;
-  return (pts == AV_NOPTS_VALUE) || (pts >= startPts && (endPts >= 0 ? pts <= endPts : true));
+  return (pts == AV_NOPTS_VALUE) ||
+      (pts >= startPts && (endPts >= 0 ? pts <= endPts : true));
 }
 
 bool FfmpegStream::isFramePtsExceedRange() {
   if (frame_) {
     auto endPts = this->getEndPts();
-    VLOG(2) << "isFramePtsExceedRange. last_pts_: " << last_pts_ << ", endPts: " << endPts;
+    VLOG(2) << "isFramePtsExceedRange. last_pts_: " << last_pts_
+            << ", endPts: " << endPts;
     return endPts >= 0 ? last_pts_ >= endPts : false;
   } else {
     return true;
@@ -154,7 +152,8 @@ int FfmpegStream::receiveFrame() {
     // succeed
     frame_->pts = av_frame_get_best_effort_timestamp(frame_);
     if (frame_->pts == AV_NOPTS_VALUE) {
-      // Trick: if we can not figure out pts, we just set it to be (last_pts + 1)
+      // Trick: if we can not figure out pts, we just set it to be (last_pts +
+      // 1)
       frame_->pts = last_pts_ + 1;
     }
     last_pts_ = frame_->pts;
@@ -166,19 +165,21 @@ int FfmpegStream::receiveFrame() {
     // no more frame to read
     VLOG(2) << "avcodec_receive_frame returns AVERROR_EOF";
   } else {
-    LOG(WARNING) << "avcodec_receive_frame failed. Error: " << ffmpeg_util::getErrorDesc(ret);
+    LOG(WARNING) << "avcodec_receive_frame failed. Error: "
+                 << ffmpeg_util::getErrorDesc(ret);
   }
   return ret;
 }
 
-
-void FfmpegStream::receiveAvailFrames(int getPtsOnly, DecoderOutput& decoderOutput) {
+void FfmpegStream::receiveAvailFrames(
+    int getPtsOnly,
+    DecoderOutput& decoderOutput) {
   int result = 0;
   while ((result = receiveFrame()) >= 0) {
     unique_ptr<DecodedFrame> decodedFrame = getFrameData(getPtsOnly);
 
-    if (decodedFrame && ((!getPtsOnly && decodedFrame->frameSize_ > 0) || getPtsOnly))
-    {
+    if (decodedFrame &&
+        ((!getPtsOnly && decodedFrame->frameSize_ > 0) || getPtsOnly)) {
       if (isFramePtsInRange()) {
         decoderOutput.addMediaFrame(getMediaType(), std::move(decodedFrame));
       }

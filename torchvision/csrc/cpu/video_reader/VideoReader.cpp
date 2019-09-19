@@ -1,8 +1,8 @@
-#include <Python.h>
+#include "VideoReader.h"
 #include <ATen/ATen.h>
+#include <Python.h>
 #include <c10/util/Logging.h>
 #include <exception>
-#include "VideoReader.h"
 #include "FfmpegDecoder.h"
 #include "FfmpegHeaders.h"
 #include "util.h"

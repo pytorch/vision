@@ -24,7 +24,8 @@ torch::List<torch::Tensor> readVideoFromMemory(
     // If only pts is needed and video/audio frames are not needed, set it
     // to 1
     int64_t getPtsOnly,
-    // bool variable. Set it to 1 if video stream should be read. Otherwise, set it to 0
+    // bool variable. Set it to 1 if video stream should be read. Otherwise, set
+    // it to 0
     int64_t readVideoStream,
     /*
     Valid parameters values for rescaling video frames
@@ -55,7 +56,8 @@ torch::List<torch::Tensor> readVideoFromMemory(
     // them which will be checked during decoding
     int64_t videoTimeBaseNum,
     int64_t videoTimeBaseDen,
-    // bool variable. Set it to 1 if audio stream should be read. Otherwise, set it to 0
+    // bool variable. Set it to 1 if audio stream should be read. Otherwise, set
+    // it to 0
     int64_t readAudioStream,
     // audio stream sampling rate.
     // If not resampling audio waveform, supply 0

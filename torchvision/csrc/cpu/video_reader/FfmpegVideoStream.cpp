@@ -6,7 +6,8 @@ using namespace std;
 namespace {
 
 bool operator==(const VideoFormat& x, const AVFrame& y) {
-  return x.width == y.width && x.height == y.height && x.format == static_cast<AVPixelFormat>(y.format);
+  return x.width == y.width && x.height == y.height &&
+      x.format == static_cast<AVPixelFormat>(y.format);
 }
 
 VideoFormat toVideoFormat(const AVFrame& frame) {
