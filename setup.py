@@ -15,6 +15,7 @@ from torch.utils.cpp_extension import CppExtension, CUDAExtension, CUDA_HOME
 
 
 def read(*names, **kwargs):
+    # testing
     with io.open(
         os.path.join(os.path.dirname(__file__), *names),
         encoding=kwargs.get("encoding", "utf8")
