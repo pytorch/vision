@@ -47,6 +47,7 @@ test:
     - mock
     - av
     - ca-certificates
+    - typing
   commands:
     pytest .
 
