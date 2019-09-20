@@ -3,7 +3,7 @@ from collections import namedtuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional
+from torch.jit.annotations import Optional
 from .utils import load_state_dict_from_url
 
 __all__ = ['GoogLeNet', 'googlenet', "_GoogLeNetOutputs"]
