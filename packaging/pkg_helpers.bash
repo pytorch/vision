@@ -43,10 +43,7 @@ setup_cuda() {
     # CUDA builds (in which case, use default)
     if [[ -z "$NO_CUDA_PACKAGE" ]]; then
       export VERSION_SUFFIX="$PYTORCH_VERSION_SUFFIX"
-      # If the suffix is non-empty, we will use a wheel subdirectory
-      if [[ -n "$PYTORCH_VERSION_SUFFIX" ]]; then
-        export WHEEL_DIR="$CU_VERSION/"
-      fi
+      export WHEEL_DIR="$CU_VERSION/"
     fi
   fi
 
