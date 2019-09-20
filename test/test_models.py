@@ -28,10 +28,10 @@ def get_available_video_models():
 
 # model_name, expected to script without error
 torchub_models = {
-    "deeplabv3_resnet101": False,
+    "deeplabv3_resnet101": True,
     "mobilenet_v2": True,
     "resnext50_32x4d": True,
-    "fcn_resnet101": False,
+    "fcn_resnet101": True,
     "googlenet": False,
     "densenet121": True,
     "resnet18": True,
