@@ -2,6 +2,7 @@ from collections import OrderedDict
 
 import torch
 from torch import nn
+from torch.jit.annotations import Dict
 
 
 class IntermediateLayerGetter(nn.Module):
@@ -35,9 +36,10 @@ class IntermediateLayerGetter(nn.Module):
         >>>     [('feat1', torch.Size([1, 64, 56, 56])),
         >>>      ('feat2', torch.Size([1, 256, 14, 14]))]
     """
+    _version = 2
     __constants__ = ['layers']
     __annotations__ = {
-        "return_layers": typing.Dict[str, str],
+        "return_layers": Dict[str, str],
     }
 
     def __init__(self, model, return_layers):
@@ -66,3 +68,22 @@ class IntermediateLayerGetter(nn.Module):
                 out_name = self.return_layers[name]
                 out[out_name] = x
         return out
+
+    @torch.jit.ignore
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        version = local_metadata.get('version', None)
+        if (version is None or version < 2):
+            # now we have a new nesting level for torchscript support
+            for new_key in self.state_dict().keys():
+                # remove prefix "layers."
+                old_key = new_key[len("layers."):]
+                old_key = prefix + old_key
+                new_key = prefix + new_key
+                if old_key in state_dict:
+                    value = state_dict[old_key]
+                    del state_dict[old_key]
+                    state_dict[new_key] = value
+        super(IntermediateLayerGetter, self)._load_from_state_dict(
+            state_dict, prefix, local_metadata, strict,
+            missing_keys, unexpected_keys, error_msgs)
