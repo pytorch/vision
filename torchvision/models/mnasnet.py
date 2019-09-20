@@ -100,7 +100,6 @@ class MNASNet(torch.nn.Module):
         super(MNASNet, self).__init__()
         assert alpha > 0.0
         self.alpha = alpha
-        self.variant = "b1"
         self.num_classes = num_classes
         depths = _get_depths(alpha)
         layers = [
