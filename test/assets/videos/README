@@ -1,0 +1,59 @@
+Video meta-information Notation
+
+Video File Name
+  video: codec, fps
+  audio: codec, bits per sample, sample rate
+
+Test videos are listed below.
+--------------------------------
+
+- RATRACE_wave_f_nm_np1_fr_goo_37.avi
+  - source: hmdb51
+  - video: DivX MPEG-4
+    - fps: 30
+  - audio: N/A
+
+- SchoolRulesHowTheyHelpUs_wave_f_nm_np1_ba_med_0.avi
+  - source: hmdb51
+  - video: DivX MPEG-4
+    - fps: 30
+  - audio: N/A
+
+- TrumanShow_wave_f_nm_np1_fr_med_26.avi
+  - source: hmdb51
+  - video: DivX MPEG-4
+    - fps: 30
+  - audio: N/A
+
+- v_SoccerJuggling_g23_c01.avi
+  - source: ucf101
+  - video: Xvid MPEG-4
+    - fps: 29.97
+  - audio: N/A
+
+- v_SoccerJuggling_g24_c01.avi
+  - source: ucf101
+  - video: Xvid MPEG-4
+    - fps: 29.97
+  - audio: N/A
+
+- R6llTwEh07w.mp4
+  - source: kinetics-400
+  - video: H-264 - MPEG-4 AVC (part 10) (avc1)
+    - fps: 30
+  - audio: MPEG AAC audio (mp4a)
+    - sample rate: 44.1K Hz
+
+- SOX5yA1l24A.mp4
+  - source: kinetics-400
+  - video: H-264 - MPEG-4 AVC (part 10) (avc1)
+    - fps: 29.97
+  - audio: MPEG AAC audio (mp4a)
+    - sample rate: 48K Hz
+
+- WUzgd7C1pWA.mp4
+  - source: kinetics-400
+  - video: H-264 - MPEG-4 AVC (part 10) (avc1)
+    - fps: 29.97
+  - audio: MPEG AAC audio (mp4a)
+    - sample rate: 48K Hz
