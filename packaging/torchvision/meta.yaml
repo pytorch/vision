@@ -12,6 +12,7 @@ requirements:
   host:
     - python
     - setuptools
+    - av
     {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
@@ -20,6 +21,7 @@ requirements:
     - pillow >=4.1.1
     - numpy >=1.11
     - six
+    - av
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
