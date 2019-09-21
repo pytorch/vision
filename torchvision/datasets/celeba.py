@@ -124,7 +124,7 @@ class CelebA(VisionDataset):
             X = self.transform(X)
 
         if not self.target_type:
-            return X
+            return X, None
         else:
             target = []
             for t in self.target_type:
