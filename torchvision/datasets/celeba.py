@@ -21,7 +21,7 @@ class CelebA(VisionDataset):
                 ``bbox`` (np.array shape=(4,) dtype=int): bounding box (x, y, width, height)
                 ``landmarks`` (np.array shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,
                     righteye_y, nose_x, nose_y, leftmouth_x, leftmouth_y, rightmouth_x, rightmouth_y)
-            If empty, no target will be returned. Defaults to ``attr``.
+            Defaults to ``attr``. If empty, ``None`` will be returned as target.
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.ToTensor``
         target_transform (callable, optional): A function/transform that takes in the
