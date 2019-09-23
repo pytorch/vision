@@ -6,7 +6,7 @@ import unittest
 
 from torchvision import io
 from torchvision.datasets.video_utils import VideoClips, unfold
-from torchvision import set_video_backend, get_video_backend
+from torchvision import get_video_backend
 
 from common_utils import get_tmp_dir
 
