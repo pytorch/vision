@@ -197,6 +197,10 @@ def _save_response_content(response, destination, chunk_size=32768):
         pbar.close()
 
 
+def _is_tarxz(filename):
+    return filename.endswith(".tar.xz")
+
+
 def _is_tar(filename):
     return filename.endswith(".tar")
 
@@ -222,6 +226,9 @@ def extract_archive(from_path, to_path=None, remove_finished=False):
             tar.extractall(path=to_path)
     elif _is_targz(from_path):
         with tarfile.open(from_path, 'r:gz') as tar:
+            tar.extractall(path=to_path)
+    elif _is_tarxz(from_path):
+        with tarfile.open(from_path, 'r:xz') as tar:
             tar.extractall(path=to_path)
     elif _is_gzip(from_path):
         to_path = os.path.join(to_path, os.path.splitext(os.path.basename(from_path))[0])
