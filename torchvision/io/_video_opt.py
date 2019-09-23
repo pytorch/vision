@@ -10,6 +10,7 @@ _HAS_VIDEO_OPT = False
 
 try:
     lib_dir = os.path.join(os.path.dirname(__file__), '..')
+    lib_dir = "/data/users/zyan3/github/py3/vision/torchvision"
     _, path, description = imp.find_module("video_reader", [lib_dir])
     torch.ops.load_library(path)
     _HAS_VIDEO_OPT = True
