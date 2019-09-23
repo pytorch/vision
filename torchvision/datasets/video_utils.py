@@ -49,8 +49,9 @@ class VideoClips(object):
             on the resampled video
     """
     def __init__(self, video_paths, clip_length_in_frames=16, frames_between_clips=1,
-                 frame_rate=None, _precomputed_metadata=None):
+                 frame_rate=None, _precomputed_metadata=None, num_workers=1):
         self.video_paths = video_paths
+        self.num_workers = num_workers
         if _precomputed_metadata is None:
             self._compute_frame_pts()
         else:
@@ -77,7 +78,7 @@ class VideoClips(object):
         dl = torch.utils.data.DataLoader(
             DS(self.video_paths),
             batch_size=16,
-            num_workers=torch.get_num_threads(),
+            num_workers=self.num_workers,
             collate_fn=lambda x: x)
 
         with tqdm(total=len(dl)) as pbar:
