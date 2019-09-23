@@ -59,6 +59,9 @@ class CelebA(VisionDataset):
         else:
             self.target_type = [target_type]
 
+        if not self.target_type and self.target_transform is not None:
+            raise RuntimeError('target_transform is specified but target_type is empty')
+
         if download:
             self.download()
 
