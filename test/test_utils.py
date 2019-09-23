@@ -4,6 +4,9 @@ import tempfile
 import torch
 import torchvision.utils as utils
 import unittest
+from io import BytesIO
+import torchvision.transforms.functional as F
+from PIL import Image
 
 
 class Tester(unittest.TestCase):
@@ -51,6 +54,26 @@ class Tester(unittest.TestCase):
             t = torch.rand(1, 3, 1, 1)
             utils.save_image(t, f.name)
             assert os.path.exists(f.name), 'The pixel image is not present after save'
+
+    def test_save_image_file_object(self):
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            t = torch.rand(2, 3, 64, 64)
+            utils.save_image(t, f.name)
+            img_orig = Image.open(f.name)
+            fp = BytesIO()
+            utils.save_image(t, fp, format='png')
+            img_bytes = Image.open(fp)
+            assert torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)), 'Image not stored in file object'
+
+    def test_save_image_single_pixel_file_object(self):
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            t = torch.rand(1, 3, 1, 1)
+            utils.save_image(t, f.name)
+            img_orig = Image.open(f.name)
+            fp = BytesIO()
+            utils.save_image(t, fp, format='png')
+            img_bytes = Image.open(fp)
+            assert torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)), 'Pixel Image not stored in file object'
 
 
 if __name__ == '__main__':
