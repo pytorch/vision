@@ -40,6 +40,15 @@ _pil_interpolation_to_str = {
 }
 
 
+def _get_image_size(img):
+    if F._is_pil_image(img):
+        return img.size
+    elif isinstance(img, torch.Tensor) and img.dim() > 2:
+        return img.shape[-2:][::-1]
+    else:
+        raise TypeError("Unexpected type {}".format(type(img)))
+
+
 class Compose(object):
     """Composes several transforms together.
 
@@ -434,17 +443,17 @@ class RandomCrop(object):
         self.padding_mode = padding_mode
 
     @staticmethod
-    def get_params(w, h, output_size):
+    def get_params(img, output_size):
         """Get parameters for ``crop`` for a random crop.
 
         Args:
-            w: width of the image/video
-            h: height of the image/video
+            img (PIL Image): Image to be cropped.
             output_size (tuple): Expected output size of the crop.
 
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
         """
+        w, h = _get_image_size(img)
         th, tw = output_size
         if w == tw and h == th:
             return 0, 0, h, w
@@ -471,7 +480,7 @@ class RandomCrop(object):
         if self.pad_if_needed and img.size[1] < self.size[0]:
             img = F.pad(img, (0, self.size[0] - img.size[1]), self.fill, self.padding_mode)
 
-        i, j, h, w = self.get_params(img.size[0], img.size[1], self.size)
+        i, j, h, w = self.get_params(img, self.size)
 
         return F.crop(img, i, j, h, w)
 
@@ -623,7 +632,7 @@ class RandomResizedCrop(object):
         self.ratio = ratio
 
     @staticmethod
-    def get_params(height, width, scale, ratio):
+    def get_params(img, scale, ratio):
         """Get parameters for ``crop`` for a random sized crop.
 
         Args:
@@ -635,6 +644,7 @@ class RandomResizedCrop(object):
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
                 sized crop.
         """
+        width, height = _get_image_size(img)
         area = height * width
 
         for attempt in range(10):
@@ -673,7 +683,7 @@ class RandomResizedCrop(object):
         Returns:
             PIL Image: Randomly cropped and resized image.
         """
-        i, j, h, w = self.get_params(img.size[1], img.size[0], self.scale, self.ratio)
+        i, j, h, w = self.get_params(img, self.scale, self.ratio)
         return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
 
     def __repr__(self):

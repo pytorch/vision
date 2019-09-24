@@ -17,7 +17,7 @@ def crop(clip, i, j, h, w):
         clip (torch.tensor): Video clip to be cropped. Size is (C, T, H, W)
     """
     assert len(clip.size()) == 4, "clip should be a 4D tensor"
-    return clip[:, :, i:i + h, j:j + w]
+    return clip[..., i:i + h, j:j + w]
 
 
 def resize(clip, target_size, interpolation_mode):
@@ -48,7 +48,7 @@ def resized_crop(clip, i, j, h, w, size, interpolation_mode="bilinear"):
 
 def center_crop(clip, crop_size):
     assert _is_tensor_video_clip(clip), "clip should be a 4D torch.tensor"
-    h, w = clip.size(2), clip.size(3)
+    h, w = clip.size(-2), clip.size(-1)
     th, tw = crop_size
     assert h >= th and w >= tw, "height and width must be no smaller than crop_size"
 
