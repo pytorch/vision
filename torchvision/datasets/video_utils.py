@@ -48,7 +48,7 @@ class VideoClips(object):
             so that it has `frame_rate`, and then the clips will be defined
             on the resampled video
         num_workers (int): how many subprocesses to use for data loading.
-        0 means that the data will be loaded in the main process. (default: 0)
+            0 means that the data will be loaded in the main process. (default: 0)
     """
     def __init__(self, video_paths, clip_length_in_frames=16, frames_between_clips=1,
                  frame_rate=None, _precomputed_metadata=None, num_workers=0):
