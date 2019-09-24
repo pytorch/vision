@@ -50,9 +50,9 @@ class AnchorGenerator(nn.Module):
         self._cache = {}
 
     @staticmethod
-    def generate_anchors(scales, aspect_ratios, device="cpu"):
-        scales = torch.as_tensor(scales, dtype=torch.float32, device=device)
-        aspect_ratios = torch.as_tensor(aspect_ratios, dtype=torch.float32, device=device)
+    def generate_anchors(scales, aspect_ratios, dtype=torch.float32, device="cpu"):
+        scales = torch.as_tensor(scales, dtype=dtype, device=device)
+        aspect_ratios = torch.as_tensor(aspect_ratios, dtype=dtype, device=device)
         h_ratios = torch.sqrt(aspect_ratios)
         w_ratios = 1 / h_ratios
 
@@ -62,13 +62,14 @@ class AnchorGenerator(nn.Module):
         base_anchors = torch.stack([-ws, -hs, ws, hs], dim=1) / 2
         return base_anchors.round()
 
-    def set_cell_anchors(self, device):
+    def set_cell_anchors(self, dtype, device):
         if self.cell_anchors is not None:
             return self.cell_anchors
         cell_anchors = [
             self.generate_anchors(
                 sizes,
                 aspect_ratios,
+                dtype,
                 device
             )
             for sizes, aspect_ratios in zip(self.sizes, self.aspect_ratios)
@@ -127,7 +128,8 @@ class AnchorGenerator(nn.Module):
         strides = tuple((float(image_size[0]) / float(g[0]),
                          float(image_size[1]) / float(g[1]))
                         for g in grid_sizes)
-        self.set_cell_anchors(feature_maps[0].device)
+        dtype, device = feature_maps[0].dtype, feature_maps[0].device
+        self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
         anchors = []
         for i, (image_height, image_width) in enumerate(image_list.image_sizes):

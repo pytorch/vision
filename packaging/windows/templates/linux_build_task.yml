@@ -1,0 +1,38 @@
+parameters:
+  msagent: true
+  enabled: false
+
+jobs:
+- job: 'Linux_CPU_Conda_Build'
+  timeoutInMinutes: 0
+  cancelTimeoutInMinutes: 5
+  condition: ${{ eq(parameters.enabled, 'true') }}
+  variables:
+    CUDA_VERSION: cpu
+    TORCH_CONDA_BUILD_FOLDER: pytorch-nightly
+    PYTORCH_FINAL_PACKAGE_DIR: '$(Build.Repository.LocalPath)/output'
+
+  strategy:
+    maxParallel: 10
+    matrix:
+      PY3.5:
+        DESIRED_PYTHON: 3.5
+
+  pool:
+    vmImage: 'ubuntu-16.04'
+
+  steps:
+  - checkout: self
+    clean: true
+
+  - script: 'sudo apt-get install p7zip-full'
+    displayName: 'Install 7Zip'
+
+  - task: CondaEnvironment@1
+    displayName: 'Install conda-build'
+    inputs:
+      packageSpecs: 'conda-build'
+
+  - template: build_conda.yml
+    parameters:
+      msagent: ${{ parameters.msagent }}

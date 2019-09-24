@@ -28,53 +28,6 @@ if "%CXX%"=="sccache cl" (
     sccache --zero-stats
 )
 
-
-if "%BUILD_PYTHONLESS%" == "" goto pytorch else goto libtorch
-
-:libtorch
-set VARIANT=shared-with-deps
-
-mkdir libtorch
-mkdir libtorch\bin
-mkdir libtorch\cmake
-mkdir libtorch\include
-mkdir libtorch\lib
-mkdir libtorch\share
-mkdir libtorch\test
-
-mkdir build
-pushd build
-python ../tools/build_libtorch.py
-popd
-
-IF ERRORLEVEL 1 exit /b 1
-IF NOT ERRORLEVEL 0 exit /b 1
-
-move /Y torch\bin\*.* libtorch\bin\
-move /Y torch\cmake\*.* libtorch\cmake\
-robocopy /move /e torch\include\ libtorch\include\
-move /Y torch\lib\*.* libtorch\lib\
-robocopy /move /e torch\share\ libtorch\share\
-move /Y torch\test\*.* libtorch\test\
-
-move /Y libtorch\bin\*.dll libtorch\lib\
-
-git rev-parse HEAD > libtorch\build-hash
-
-IF "%DEBUG%" == "" (
-    set LIBTORCH_PREFIX=libtorch-win-%VARIANT%
-) ELSE (
-    set LIBTORCH_PREFIX=libtorch-win-%VARIANT%-debug
-)
-
-7z a -tzip %LIBTORCH_PREFIX%-%PYTORCH_BUILD_VERSION%.zip libtorch\*
-
-mkdir ..\output\%CUDA_PREFIX%
-copy /Y %LIBTORCH_PREFIX%-%PYTORCH_BUILD_VERSION%.zip ..\output\%CUDA_PREFIX%\
-copy /Y %LIBTORCH_PREFIX%-%PYTORCH_BUILD_VERSION%.zip ..\output\%CUDA_PREFIX%\%LIBTORCH_PREFIX%-latest.zip
-
-goto build_end
-
 :pytorch
 :: This stores in e.g. D:/_work/1/s/windows/output/cpu
 pip wheel -e . --no-deps --wheel-dir ../output/%CUDA_PREFIX%

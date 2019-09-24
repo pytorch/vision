@@ -12,14 +12,17 @@ requirements:
   host:
     - python
     - setuptools
+    - av
     {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
+    {{ environ.get('CONDA_CPUONLY_FEATURE') }}
 
   run:
     - python
     - pillow >=4.1.1
     - numpy >=1.11
     - six
+    - av
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
@@ -31,7 +34,7 @@ build:
     - FORCE_CUDA
     - NVCC_FLAGS
   features:
-    {{ CONDA_CPUONLY_FEATURE }}
+    {{ environ.get('CONDA_CPUONLY_FEATURE') }}
 
 test:
   imports:
@@ -46,6 +49,7 @@ test:
     - mock
     - av
     - ca-certificates
+    - typing
   commands:
     pytest .
 

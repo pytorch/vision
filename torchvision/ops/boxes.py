@@ -1,5 +1,4 @@
 import torch
-from torchvision.extension import _lazy_import
 
 
 def nms(boxes, scores, iou_threshold):
@@ -29,7 +28,6 @@ def nms(boxes, scores, iou_threshold):
         of the elements that have been kept
         by NMS, sorted in decreasing order of scores
     """
-    _lazy_import()
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
 
 

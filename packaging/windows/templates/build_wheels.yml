@@ -1,0 +1,9 @@
+parameters:
+  msagent: false
+
+steps:
+- script: 'call packaging/windows/build_vision.bat %CUDA_VERSION% %TORCHVISION_BUILD_VERSION% %TORCHVISION_BUILD_NUMBER%'
+  displayName: Build
+  env:
+    ${{ if eq(parameters.msagent, 'true') }}:
+      MAX_JOBS: 2

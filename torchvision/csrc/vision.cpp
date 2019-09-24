@@ -1,20 +1,44 @@
-#include "ROIAlign.h"
-#include "ROIPool.h"
-#include "nms.h"
+#include <Python.h>
+#include <torch/script.h>
 
 #ifdef WITH_CUDA
 #include <cuda.h>
 #endif
 
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-  // TODO: remove nms from here since it is now registered
-  //       and used as a PyTorch custom op
-  m.def("nms", &nms, "non-maximum suppression");
-  m.def("roi_align_forward", &ROIAlign_forward, "ROIAlign_forward");
-  m.def("roi_align_backward", &ROIAlign_backward, "ROIAlign_backward");
-  m.def("roi_pool_forward", &ROIPool_forward, "ROIPool_forward");
-  m.def("roi_pool_backward", &ROIPool_backward, "ROIPool_backward");
+#include "ROIAlign.h"
+#include "ROIPool.h"
+#include "nms.h"
+
+// If we are in a Windows environment, we need to define
+// initialization functions for the _custom_ops extension
+#ifdef _WIN32
+#if PY_MAJOR_VERSION < 3
+PyMODINIT_FUNC init_custom_ops(void) {
+  // No need to do anything.
+  // _custom_ops.py will run on load
+  return NULL;
+}
+#else
+PyMODINIT_FUNC PyInit__custom_ops(void) {
+  // No need to do anything.
+  // _custom_ops.py will run on load
+  return NULL;
+}
+#endif
+#endif
+
+int64_t _cuda_version() {
 #ifdef WITH_CUDA
-  m.attr("CUDA_VERSION") = CUDA_VERSION;
+  return CUDA_VERSION;
+#else
+  return -1;
 #endif
 }
+
+static auto registry =
+    torch::RegisterOperators()
+        .op("torchvision::nms", &nms)
+        .op("torchvision::roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio) -> Tensor",
+            &roi_align)
+        .op("torchvision::roi_pool", &roi_pool)
+        .op("torchvision::_cuda_version", &_cuda_version);
