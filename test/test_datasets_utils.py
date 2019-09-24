@@ -101,6 +101,23 @@ class Tester(unittest.TestCase):
                         self.assertEqual(data, 'this is the content')
 
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.version_info < (3,), "Extracting .tar.xz files is not supported under Python 2.x")
+    def test_extract_tar_xz(self):
+        for ext, mode in zip(['.tar.xz'], ['w:xz']):
+            with get_tmp_dir() as temp_dir:
+                with tempfile.NamedTemporaryFile() as bf:
+                    bf.write("this is the content".encode())
+                    bf.seek(0)
+                    with tempfile.NamedTemporaryFile(suffix=ext) as f:
+                        with tarfile.open(f.name, mode=mode) as zf:
+                            zf.add(bf.name, arcname='file.tst')
+                        utils.extract_archive(f.name, temp_dir)
+                        self.assertTrue(os.path.exists(os.path.join(temp_dir, 'file.tst')))
+                        with open(os.path.join(temp_dir, 'file.tst'), 'r') as nf:
+                            data = nf.read()
+                        self.assertEqual(data, 'this is the content')
+
+    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_extract_gzip(self):
         with get_tmp_dir() as temp_dir:
             with tempfile.NamedTemporaryFile(suffix='.gz') as f:
