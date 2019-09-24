@@ -53,7 +53,7 @@ class Tester(unittest.TestCase):
             tb = traceback.format_exc()
             scriptable = False
             msg = str(e) + str(tb)
-        self.assertEqual(scriptable, scriptable, msg)
+        self.assertTrue(scriptable, msg)
 
     def _test_classification_model(self, name, input_shape):
         # passing num_class equal to a number other than 1000 helps in making the test
