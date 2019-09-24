@@ -55,6 +55,7 @@ class Tester(unittest.TestCase):
             utils.save_image(t, f.name)
             assert os.path.exists(f.name), 'The pixel image is not present after save'
 
+    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_save_image_file_object(self):
         with tempfile.NamedTemporaryFile(suffix='.png') as f:
             t = torch.rand(2, 3, 64, 64)
@@ -65,6 +66,7 @@ class Tester(unittest.TestCase):
             img_bytes = Image.open(fp)
             assert torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)), 'Image not stored in file object'
 
+    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_save_image_single_pixel_file_object(self):
         with tempfile.NamedTemporaryFile(suffix='.png') as f:
             t = torch.rand(1, 3, 1, 1)
