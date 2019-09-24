@@ -23,7 +23,6 @@ def pts_convert(pts, timebase_from, timebase_to, round_func=math.floor):
     return round_func(new_pts)
 
 
-
 def unfold(tensor, size, step, dilation=1):
     """
     similar to tensor.unfold, but with the dilation

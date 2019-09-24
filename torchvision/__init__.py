@@ -16,6 +16,7 @@ _image_backend = 'PIL'
 
 _video_backend = "pyav"
 
+
 def set_image_backend(backend):
     """
     Specifies the package used to load images.
@@ -58,8 +59,10 @@ def set_video_backend(backend):
         )
     _video_backend = backend
 
+
 def get_video_backend():
     return _video_backend
+
 
 def _is_tracing():
     import torch
