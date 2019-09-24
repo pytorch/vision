@@ -4,9 +4,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.jit.annotations import Optional
+from torch import Tensor
 from .utils import load_state_dict_from_url
 
-__all__ = ['GoogLeNet', 'googlenet', "_GoogLeNetOutputs"]
+__all__ = ['GoogLeNet', 'googlenet']
 
 model_urls = {
     # GoogLeNet ported from TensorFlow
@@ -14,8 +15,9 @@ model_urls = {
 }
 
 _GoogLeNetOutputs = namedtuple('GoogLeNetOutputs', ['logits', 'aux_logits2', 'aux_logits1'])
-_GoogLeNetOutputs.__annotations__ = {'logits': torch.Tensor, 'aux_logits2': Optional[torch.Tensor],
-                                   'aux_logits1': Optional[torch.Tensor]}
+_GoogLeNetOutputs.__annotations__ = {'logits': Tensor, 'aux_logits2': Optional[Tensor],
+                                     'aux_logits1': Optional[Tensor]}
+
 
 def googlenet(pretrained=False, progress=True, **kwargs):
     r"""GoogLeNet (Inception v1) model architecture from
@@ -173,11 +175,12 @@ class GoogLeNet(nn.Module):
 
     @torch.jit.unused
     def eager_outputs(self, x, aux2, aux1):
-        # type: (Tensor, Optional[Tensor], Optional[Tensor]) -> GoogLeNetOutputs
+        # type: (Tensor, Optional[Tensor], Optional[Tensor]) -> GoogLeNetOutputs  # noqa: 177
         if self.training and self.aux_logits:
             return _GoogLeNetOutputs(x, aux2, aux1)
         else:
             return x
+
 
 class Inception(nn.Module):
     __constants__ = ['branch2', 'branch3', 'branch4']

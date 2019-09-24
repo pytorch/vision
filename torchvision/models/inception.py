@@ -1,4 +1,5 @@
 from collections import namedtuple
+import warnings
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -160,11 +161,10 @@ class Inception3(nn.Module):
 
     @torch.jit.unused
     def eager_outputs(self, x, aux):
-        # type: (Tensor, Optional[Tensor]) -> _InceptionOutputs
+        # type: (torch.Tensor, Optional[torch.Tensor]) -> _InceptionOutputs
         if self.training and self.aux_logits:
             return _InceptionOutputs(x, aux)
         return x
-
 
 
 class InceptionA(nn.Module):
