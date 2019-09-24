@@ -1253,7 +1253,7 @@ class RandomErasing(object):
         Returns:
             tuple: params (i, j, h, w, v) to be passed to ``erase`` for random erasing.
         """
-        img_c, img_h, img_w = img.shape
+        img_c, img_h, img_w = img.size
         area = img_h * img_w
 
         for attempt in range(10):
