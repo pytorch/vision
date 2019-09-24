@@ -4,6 +4,7 @@ import tempfile
 import torch
 import torchvision.datasets.utils as utils
 import torchvision.io as io
+from torchvision import get_video_backend
 import unittest
 import sys
 import warnings
@@ -21,6 +22,20 @@ try:
     io.video._check_av_available()
 except ImportError:
     av = None
+
+_video_backend = get_video_backend()
+
+
+def _read_video(filename, start_pts=0, end_pts=None):
+    if _video_backend == "pyav":
+        return io.read_video(filename, start_pts, end_pts)
+    else:
+        if end_pts is None:
+            end_pts = -1
+        return io._read_video_from_file(
+            filename,
+            video_pts_range=(start_pts, end_pts),
+        )
 
 
 def _create_video_frames(num_frames, height, width):
@@ -44,7 +59,12 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
         options = {'crf': '0'}
 
     if video_codec is None:
-        video_codec = 'libx264'
+        if _video_backend == "pyav":
+            video_codec = 'libx264'
+        else:
+            # when video_codec is not set, we assume it is libx264rgb which accepts
+            # RGB pixel formats as input instead of YUV
+            video_codec = 'libx264rgb'
     if options is None:
         options = {}
 
@@ -62,15 +82,16 @@ class Tester(unittest.TestCase):
 
     def test_write_read_video(self):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
-            lv, _, info = io.read_video(f_name)
-
+            lv, _, info = _read_video(f_name)
             self.assertTrue(data.equal(lv))
             self.assertEqual(info["video_fps"], 5)
 
     def test_read_timestamps(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
-            pts, _ = io.read_video_timestamps(f_name)
-
+            if _video_backend == "pyav":
+                pts, _ = io.read_video_timestamps(f_name)
+            else:
+                pts, _, _ = io._read_video_timestamps_from_file(f_name)
             # note: not all formats/codecs provide accurate information for computing the
             # timestamps. For the format that we use here, this information is available,
             # so we use it as a baseline
@@ -84,26 +105,35 @@ class Tester(unittest.TestCase):
 
     def test_read_partial_video(self):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
-            pts, _ = io.read_video_timestamps(f_name)
+            if _video_backend == "pyav":
+                pts, _ = io.read_video_timestamps(f_name)
+            else:
+                pts, _, _ = io._read_video_timestamps_from_file(f_name)
             for start in range(5):
                 for l in range(1, 4):
-                    lv, _, _ = io.read_video(f_name, pts[start], pts[start + l - 1])
+                    lv, _, _ = _read_video(f_name, pts[start], pts[start + l - 1])
                     s_data = data[start:(start + l)]
                     self.assertEqual(len(lv), l)
                     self.assertTrue(s_data.equal(lv))
 
-            lv, _, _ = io.read_video(f_name, pts[4] + 1, pts[7])
-            self.assertEqual(len(lv), 4)
-            self.assertTrue(data[4:8].equal(lv))
+            if _video_backend == "pyav":
+                # for "video_reader" backend, we don't decode the closest early frame
+                # when the given start pts is not matching any frame pts
+                lv, _, _ = _read_video(f_name, pts[4] + 1, pts[7])
+                self.assertEqual(len(lv), 4)
+                self.assertTrue(data[4:8].equal(lv))
 
     def test_read_partial_video_bframes(self):
         # do not use lossless encoding, to test the presence of B-frames
         options = {'bframes': '16', 'keyint': '10', 'min-keyint': '4'}
         with temp_video(100, 300, 300, 5, options=options) as (f_name, data):
-            pts, _ = io.read_video_timestamps(f_name)
+            if _video_backend == "pyav":
+                pts, _ = io.read_video_timestamps(f_name)
+            else:
+                pts, _, _ = io._read_video_timestamps_from_file(f_name)
             for start in range(0, 80, 20):
                 for l in range(1, 4):
-                    lv, _, _ = io.read_video(f_name, pts[start], pts[start + l - 1])
+                    lv, _, _ = _read_video(f_name, pts[start], pts[start + l - 1])
                     s_data = data[start:(start + l)]
                     self.assertEqual(len(lv), l)
                     self.assertTrue((s_data.float() - lv.float()).abs().max() < self.TOLERANCE)
@@ -119,7 +149,12 @@ class Tester(unittest.TestCase):
             url = "https://download.pytorch.org/vision_tests/io/" + name
             try:
                 utils.download_url(url, temp_dir)
-                pts, fps = io.read_video_timestamps(f_name)
+                if _video_backend == "pyav":
+                    pts, fps = io.read_video_timestamps(f_name)
+                else:
+                    pts, _, info = io._read_video_timestamps_from_file(f_name)
+                    fps = info["video_fps"]
+
                 self.assertEqual(pts, sorted(pts))
                 self.assertEqual(fps, 30)
             except URLError:
@@ -129,8 +164,10 @@ class Tester(unittest.TestCase):
 
     def test_read_timestamps_from_packet(self):
         with temp_video(10, 300, 300, 5, video_codec='mpeg4') as (f_name, data):
-            pts, _ = io.read_video_timestamps(f_name)
-
+            if _video_backend == "pyav":
+                pts, _ = io.read_video_timestamps(f_name)
+            else:
+                pts, _, _ = io._read_video_timestamps_from_file(f_name)
             # note: not all formats/codecs provide accurate information for computing the
             # timestamps. For the format that we use here, this information is available,
             # so we use it as a baseline
