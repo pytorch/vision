@@ -43,8 +43,9 @@ class GeneralizedRCNN(nn.Module):
 
         """
         if self.training and targets is None:
-            raise ValueError("In training mo222de, targets should be passed")
-        original_image_sizes = [img.shape[-2:] for img in images]
+            raise ValueError("In training mode, targets should be passed")
+        original_image_sizes = [(img.shape[-2], img.shape[-3])  for img in images]
+
         images, targets = self.transform(images, targets)
         features = self.backbone(images.tensors)
         if isinstance(features, torch.Tensor):
@@ -57,7 +58,8 @@ class GeneralizedRCNN(nn.Module):
         losses.update(detector_losses)
         losses.update(proposal_losses)
 
-        if self.training:
-            return losses
+        # TODO: multiple return types??
+        # if self.training:
+        #     return losses
 
         return detections

@@ -49,30 +49,30 @@ class _NewEmptyTensorOp(torch.autograd.Function):
 #         return _NewEmptyTensorOp.apply(x, output_shape)
 
 
-class ConvTranspose2d(torch.nn.ConvTranspose2d):
-    """
-    Equivalent to nn.ConvTranspose2d, but with support for empty batch sizes.
-    This will eventually be supported natively by PyTorch, and this
-    class can go away.
-    """
-    def forward(self, x):
-        if x.numel() > 0:
-            return super(ConvTranspose2d, self).forward(x)
-        # get output shape
+# class ConvTranspose2d(torch.nn.ConvTranspose2d):
+#     """
+#     Equivalent to nn.ConvTranspose2d, but with support for empty batch sizes.
+#     This will eventually be supported natively by PyTorch, and this
+#     class can go away.
+#     """
+#     def forward(self, x):
+#         if x.numel() > 0:
+#             return super(ConvTranspose2d, self).forward(x)
+#         # get output shape
 
-        output_shape = [
-            (i - 1) * d - 2 * p + (di * (k - 1) + 1) + op
-            for i, p, di, k, d, op in zip(
-                x.shape[-2:],
-                self.padding,
-                self.dilation,
-                self.kernel_size,
-                self.stride,
-                self.output_padding,
-            )
-        ]
-        output_shape = [x.shape[0], self.bias.shape[0]] + output_shape
-        return _NewEmptyTensorOp.apply(x, output_shape)
+#         output_shape = [
+#             (i - 1) * d - 2 * p + (di * (k - 1) + 1) + op
+#             for i, p, di, k, d, op in zip(
+#                 x.shape[-2:],
+#                 self.padding,
+#                 self.dilation,
+#                 self.kernel_size,
+#                 self.stride,
+#                 self.output_padding,
+#             )
+#         ]
+#         output_shape = [x.shape[0], self.bias.shape[0]] + output_shape
+#         return _NewEmptyTensorOp.apply(x, output_shape)
 
 
 class BatchNorm2d(torch.nn.BatchNorm2d):

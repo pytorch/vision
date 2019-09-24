@@ -245,7 +245,7 @@ class MaskRCNNHeads(nn.Sequential):
 class MaskRCNNPredictor(nn.Sequential):
     def __init__(self, in_channels, dim_reduced, num_classes):
         super(MaskRCNNPredictor, self).__init__(OrderedDict([
-            ("conv5_mask", misc_nn_ops.ConvTranspose2d(in_channels, dim_reduced, 2, 2, 0)),
+            ("conv5_mask", torch.nn.ConvTranspose2d(in_channels, dim_reduced, 2, 2, 0)),
             ("relu", nn.ReLU(inplace=True)),
             ("mask_fcn_logits", torch.nn.Conv2d(dim_reduced, num_classes, 1, 1, 0)),
         ]))

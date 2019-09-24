@@ -9,8 +9,11 @@ from torchvision.ops import roi_align
 
 from . import _utils as det_utils
 
+from typing import Optional
+
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
+    # type: (Tensor, Tensor, List[Tensor], List[Tensor])
     """
     Computes the loss for Faster R-CNN.
 
@@ -49,6 +52,7 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
 
 
 def maskrcnn_inference(x, labels):
+    # type: (Tensor, List[Tensor])
     """
     From the results of the CNN, post process the masks
     by taking the mask corresponding to the class with max
@@ -79,6 +83,7 @@ def maskrcnn_inference(x, labels):
 
 
 def project_masks_on_boxes(gt_masks, boxes, matched_idxs, M):
+    # type: (Tensor, Tensor, Tensor, int)
     """
     Given segmentation masks and the bounding boxes corresponding
     to the location of the masks in the image, this function
@@ -89,10 +94,11 @@ def project_masks_on_boxes(gt_masks, boxes, matched_idxs, M):
     matched_idxs = matched_idxs.to(boxes)
     rois = torch.cat([matched_idxs[:, None], boxes], dim=1)
     gt_masks = gt_masks[:, None].to(rois)
-    return roi_align(gt_masks, rois, (M, M), 1)[:, 0]
+    return roi_align(gt_masks, rois, (M, M), 1.)[:, 0]
 
 
 def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs):
+    # type: (Tensor, List[Tensor], List[Tensor], List[Tensor], List[Tensor])
     """
     Arguments:
         proposals (list[BoxList])
@@ -104,11 +110,13 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
     """
 
     discretization_size = mask_logits.shape[-1]
-    labels = [l[idxs] for l, idxs in zip(gt_labels, mask_matched_idxs)]
-    mask_targets = [
-        project_masks_on_boxes(m, p, i, discretization_size)
-        for m, p, i in zip(gt_masks, proposals, mask_matched_idxs)
-    ]
+    labels = []
+    for l, idxs in zip(gt_labels, mask_matched_idxs):
+        labels.append(l[idxs])
+
+    mask_targets = []
+    for m, p, i in zip(gt_masks, proposals, mask_matched_idxs):
+        mask_targets.append(project_masks_on_boxes(m, p, i, discretization_size))
 
     labels = torch.cat(labels, dim=0)
     mask_targets = torch.cat(mask_targets, dim=0)
@@ -125,6 +133,7 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
 
 
 def keypoints_to_heatmap(keypoints, rois, heatmap_size):
+    # type: (Tensor, Tensor, int)
     offset_x = rois[:, 0]
     offset_y = rois[:, 1]
     scale_x = heatmap_size / (rois[:, 2] - rois[:, 0])
@@ -146,8 +155,8 @@ def keypoints_to_heatmap(keypoints, rois, heatmap_size):
     y = (y - offset_y) * scale_y
     y = y.floor().long()
 
-    x[x_boundary_inds] = heatmap_size - 1
-    y[y_boundary_inds] = heatmap_size - 1
+    x[x_boundary_inds] = torch.tensor(heatmap_size - 1)
+    y[y_boundary_inds] = torch.tensor(heatmap_size - 1)
 
     valid_loc = (x >= 0) & (y >= 0) & (x < heatmap_size) & (y < heatmap_size)
     vis = keypoints[..., 2] > 0
@@ -196,8 +205,8 @@ def heatmaps_to_keypoints(maps, rois):
         y_int = (pos - x_int) // w
         # assert (roi_map_probs[k, y_int, x_int] ==
         #         roi_map_probs[k, :, :].max())
-        x = (x_int.float() + 0.5) * width_correction
-        y = (y_int.float() + 0.5) * height_correction
+        x = (float(x_int) + 0.5) * width_correction
+        y = (float(y_int) + 0.5) * height_correction
         xy_preds[i, 0, :] = x + offset_x[i]
         xy_preds[i, 1, :] = y + offset_y[i]
         xy_preds[i, 2, :] = 1
@@ -207,14 +216,18 @@ def heatmaps_to_keypoints(maps, rois):
 
 
 def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched_idxs):
+    # type: (Optional[Tensor], List[Tensor], List[Tensor], List[Tensor])
+    assert keypoint_logits is not None
     N, K, H, W = keypoint_logits.shape
     assert H == W
     discretization_size = H
     heatmaps = []
     valid = []
+    assert keypoint_matched_idxs is not None
     for proposals_per_image, gt_kp_in_image, midx in zip(proposals, gt_keypoints, keypoint_matched_idxs):
         kp = gt_kp_in_image[midx]
         heatmaps_per_image, valid_per_image = keypoints_to_heatmap(
+
             kp, proposals_per_image, discretization_size
         )
         heatmaps.append(heatmaps_per_image.view(-1))
@@ -236,6 +249,7 @@ def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched
 
 
 def keypointrcnn_inference(x, boxes):
+    # type: (Tensor, List[Tensor])
     kp_probs = []
     kp_scores = []
 
@@ -254,6 +268,7 @@ def keypointrcnn_inference(x, boxes):
 # but are kept here for the moment while we need them
 # temporarily for paste_mask_in_image
 def expand_boxes(boxes, scale):
+    # type: (Tensor, float)
     w_half = (boxes[:, 2] - boxes[:, 0]) * .5
     h_half = (boxes[:, 3] - boxes[:, 1]) * .5
     x_c = (boxes[:, 2] + boxes[:, 0]) * .5
@@ -271,13 +286,15 @@ def expand_boxes(boxes, scale):
 
 
 def expand_masks(mask, padding):
+    # type: (Tensor, int)
     M = mask.shape[-1]
-    scale = float(M + 2 * padding) / M
+    scale = float(M + 2 * padding) / float(M)
     padded_mask = torch.nn.functional.pad(mask, (padding,) * 4)
     return padded_mask, scale
 
 
 def paste_mask_in_image(mask, box, im_h, im_w):
+    # type: (Tensor, Tensor, int, int)
     TO_REMOVE = 1
     w = int(box[2] - box[0] + TO_REMOVE)
     h = int(box[3] - box[1] + TO_REMOVE)
@@ -291,7 +308,7 @@ def paste_mask_in_image(mask, box, im_h, im_w):
     mask = misc_nn_ops.interpolate(mask, size=(h, w), mode='bilinear', align_corners=False)
     mask = mask[0][0]
 
-    im_mask = torch.zeros((im_h, im_w), dtype=mask.dtype, device=mask.device)
+    im_mask = torch.zeros([im_h, im_w], dtype=mask.dtype, device=mask.device)
     x_0 = max(box[0], 0)
     x_1 = min(box[2] + 1, im_w)
     y_0 = max(box[1], 0)
@@ -304,26 +321,29 @@ def paste_mask_in_image(mask, box, im_h, im_w):
 
 
 def paste_masks_in_image(masks, boxes, img_shape, padding=1):
+    # type: (Tensor, Tensor, Tuple[int, int], int)
     masks, scale = expand_masks(masks, padding=padding)
-    boxes = expand_boxes(boxes, scale).to(dtype=torch.int64).tolist()
+    # is .tolist() necessary here? iteration over the tensor is over the 0 dimension by default
+    boxes = expand_boxes(boxes, scale).to(dtype=torch.int64)
     # im_h, im_w = img_shape.tolist()
     im_h, im_w = img_shape
-    res = [
-        paste_mask_in_image(m[0], b, im_h, im_w)
-        for m, b in zip(masks, boxes)
-    ]
+    res = []
+    for m, b in zip(masks, boxes):
+        res.append(paste_mask_in_image(m[0], b, im_h, im_w))
     if len(res) > 0:
-        res = torch.stack(res, dim=0)[:, None]
+        real_res = torch.stack(res, dim=0)[:, None]
     else:
-        res = masks.new_empty((0, 1, im_h, im_w))
-    return res
+        real_res = masks.new_empty((0, 1, im_h, im_w))
+    return real_res
 
 
 class RoIHeads(torch.nn.Module):
+    __constants__ = ['keypoint_roi_pool', 'keypoint_head', 'keypoint_predictor']
+
     __annotations__ = {
         'box_coder': det_utils.BoxCoder,
         'proposal_matcher': det_utils.Matcher,
-        'fg_bg_sampler': det_utils.BalancedPositiveNegativeSampler
+        'fg_bg_sampler': det_utils.BalancedPositiveNegativeSampler,
     }
 
     def __init__(self,
@@ -487,6 +507,7 @@ class RoIHeads(torch.nn.Module):
         return proposals, matched_idxs, labels, regression_targets
 
     def postprocess_detections(self, class_logits, box_regression, proposals, image_shapes):
+        # type: (Tensor, Tensor, List[Tensor], List[Tuple[int, int]])
         device = class_logits.device
         num_classes = class_logits.shape[-1]
 
@@ -539,11 +560,13 @@ class RoIHeads(torch.nn.Module):
 
         return all_boxes, all_scores, all_labels
 
+    # TODO: features is supposed to be a List[Tensor] but MultiScaleRoIAlign implies it is a Dict[str, Tensor]
     def forward(self, features, proposals, image_shapes, targets=None):
-        # type: (List[Tensor], List[Tensor], List[Tuple[int, int]], Optional[List[Dict[str, Tensor]]])
+        # type: (Dict[str, Tensor], List[Tensor], List[Tuple[int, int]], Optional[List[Dict[str, Tensor]]])
+        # type2: (List[Tensor], List[Tensor], List[Tuple[int, int]], Optional[List[Dict[str, Tensor]]])
         """
         Arguments:
-            features (List[Tensor])
+            features (List[Tensor]) ???
             proposals (List[Tensor[N, 4]])
             image_shapes (List[Tuple[H, W]])
             targets (List[Dict])
@@ -559,32 +582,44 @@ class RoIHeads(torch.nn.Module):
 
         if self.training:
             proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
+        else:
+            labels = None
+            regression_targets = None
+            matched_idxs = None
 
         box_features = self.box_roi_pool(features, proposals, image_shapes)
         box_features = self.box_head(box_features)
         class_logits, box_regression = self.box_predictor(box_features)
 
-        result, losses = [], {}
+        result = torch.jit.annotate(List[Dict[str, Tensor]], [])
+        losses = {}
         if self.training:
+            assert labels is not None
+            assert regression_targets is not None
             loss_classifier, loss_box_reg = fastrcnn_loss(
                 class_logits, box_regression, labels, regression_targets)
-            losses = dict(loss_classifier=loss_classifier, loss_box_reg=loss_box_reg)
+            losses = {
+                "loss_classifier": loss_classifier,
+                "loss_box_reg": loss_box_reg
+            }
         else:
             boxes, scores, labels = self.postprocess_detections(class_logits, box_regression, proposals, image_shapes)
+            assert labels is not None
             num_images = len(boxes)
             for i in range(num_images):
                 result.append(
-                    dict(
-                        boxes=boxes[i],
-                        labels=labels[i],
-                        scores=scores[i],
-                    )
+                    {
+                        "boxes": boxes[i],
+                        "labels": labels[i],
+                        "scores": scores[i],
+                    }
                 )
 
         if self.has_mask:
             mask_proposals = [p["boxes"] for p in result]
             if self.training:
                 # during training, only focus on positive boxes
+                assert matched_idxs is not None
                 num_images = len(proposals)
                 mask_proposals = []
                 pos_matched_idxs = []
@@ -592,6 +627,8 @@ class RoIHeads(torch.nn.Module):
                     pos = torch.nonzero(labels[img_id] > 0).squeeze(1)
                     mask_proposals.append(proposals[img_id][pos])
                     pos_matched_idxs.append(matched_idxs[img_id][pos])
+            else:
+                pos_matched_idxs = None
 
             mask_features = self.mask_roi_pool(features, mask_proposals, image_shapes)
             mask_features = self.mask_head(mask_features)
@@ -599,12 +636,16 @@ class RoIHeads(torch.nn.Module):
 
             loss_mask = {}
             if self.training:
+                assert targets is not None
+                assert pos_matched_idxs is not None
                 gt_masks = [t["masks"] for t in targets]
                 gt_labels = [t["labels"] for t in targets]
-                loss_mask = maskrcnn_loss(
+                rcnn_loss_mask = maskrcnn_loss(
                     mask_logits, mask_proposals,
                     gt_masks, gt_labels, pos_matched_idxs)
-                loss_mask = dict(loss_mask=loss_mask)
+                loss_mask = {
+                    "loss_mask": rcnn_loss_mask
+                }
             else:
                 labels = [r["labels"] for r in result]
                 masks_probs = maskrcnn_inference(mask_logits, labels)
@@ -620,23 +661,44 @@ class RoIHeads(torch.nn.Module):
                 num_images = len(proposals)
                 keypoint_proposals = []
                 pos_matched_idxs = []
+                assert matched_idxs is not None
                 for img_id in range(num_images):
                     pos = torch.nonzero(labels[img_id] > 0).squeeze(1)
                     keypoint_proposals.append(proposals[img_id][pos])
                     pos_matched_idxs.append(matched_idxs[img_id][pos])
+            else:
+                pos_matched_idxs = None
 
-            keypoint_features = self.keypoint_roi_pool(features, keypoint_proposals, image_shapes)
-            keypoint_features = self.keypoint_head(keypoint_features)
-            keypoint_logits = self.keypoint_predictor(keypoint_features)
+            if self.keypoint_roi_pool is not None:
+                keypoint_features = self.keypoint_roi_pool(features, keypoint_proposals, image_shapes)
+            else:
+                keypoint_features = None
+                raise RuntimeError("keypoint_roi_pool not defined")
+            if self.keypoint_head is not None:
+                keypoint_features = self.keypoint_head(keypoint_features)
+            else:
+                keypoint_features = None
+                raise RuntimeError("keypoint_head not defined")
+            if self.keypoint_predictor is not None:
+                keypoint_logits = self.keypoint_predictor(keypoint_features)
+            else:
+                keypoint_logits = torch.jit.annotate(Optional[torch.Tensor], None)
+                raise RuntimeError("keypoint_predictor not defined")
 
             loss_keypoint = {}
             if self.training:
+                assert targets is not None
+                assert pos_matched_idxs is not None
                 gt_keypoints = [t["keypoints"] for t in targets]
-                loss_keypoint = keypointrcnn_loss(
+                rcnn_loss_keypoint = keypointrcnn_loss(
                     keypoint_logits, keypoint_proposals,
                     gt_keypoints, pos_matched_idxs)
-                loss_keypoint = dict(loss_keypoint=loss_keypoint)
+                loss_keypoint = {
+                    "loss_keypoint": rcnn_loss_keypoint
+                }
             else:
+                assert keypoint_logits is not None
+                assert keypoint_proposals is not None
                 keypoints_probs, kp_scores = keypointrcnn_inference(keypoint_logits, keypoint_proposals)
                 for keypoint_prob, kps, r in zip(keypoints_probs, kp_scores, result):
                     r["keypoints"] = keypoint_prob

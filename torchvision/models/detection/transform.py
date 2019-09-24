@@ -162,6 +162,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return batched_imgs
 
     def postprocess(self, result, image_shapes, original_image_sizes):
+        # type: (List[Dict[str, Tensor]], List[Tuple[int, int]], List[Tuple[int, int]])
         if self.training:
             return result
         for i, (pred, im_s, o_im_s) in enumerate(zip(result, image_shapes, original_image_sizes)):

@@ -273,7 +273,7 @@ class FastRCNNPredictor(nn.Module):
         self.bbox_pred = nn.Linear(in_channels, num_classes * 4)
 
     def forward(self, x):
-        if x.ndimension() == 4:
+        if len(x.shape) == 4:
             assert list(x.shape[2:]) == [1, 1]
         x = x.flatten(start_dim=1)
         scores = self.cls_score(x)
