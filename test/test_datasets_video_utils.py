@@ -10,7 +10,6 @@ from torchvision import get_video_backend
 
 from common_utils import get_tmp_dir
 
-_backend = get_video_backend()
 
 @contextlib.contextmanager
 def get_list_of_videos(num_videos=5, sizes=None, fps=None):
@@ -63,6 +62,7 @@ class Tester(unittest.TestCase):
     @unittest.skipIf(not io.video._av_available(), "this test requires av")
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_video_clips(self):
+        _backend = get_video_backend()
         with get_list_of_videos(num_videos=3) as video_list:
             video_clips = VideoClips(video_list, 5, 5, _backend=_backend)
             self.assertEqual(video_clips.num_clips(), 1 + 2 + 3)
@@ -87,6 +87,7 @@ class Tester(unittest.TestCase):
 
     @unittest.skip("Moved to reference scripts for now")
     def test_video_sampler(self):
+        _backend = get_video_backend()
         with get_list_of_videos(num_videos=3, sizes=[25, 25, 25]) as video_list:
             video_clips = VideoClips(video_list, 5, 5, _backend=_backend)
             sampler = RandomClipSampler(video_clips, 3)  # noqa: F821
@@ -99,6 +100,7 @@ class Tester(unittest.TestCase):
 
     @unittest.skip("Moved to reference scripts for now")
     def test_video_sampler_unequal(self):
+        _backend = get_video_backend()
         with get_list_of_videos(num_videos=3, sizes=[10, 25, 25]) as video_list:
             video_clips = VideoClips(video_list, 5, 5, _backend=_backend)
             sampler = RandomClipSampler(video_clips, 3)  # noqa: F821
@@ -118,6 +120,7 @@ class Tester(unittest.TestCase):
     @unittest.skipIf(not io.video._av_available(), "this test requires av")
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_video_clips_custom_fps(self):
+        _backend = get_video_backend()
         with get_list_of_videos(num_videos=3, sizes=[12, 12, 12], fps=[3, 4, 6]) as video_list:
             num_frames = 4
             for fps in [1, 3, 4, 10]:

@@ -71,7 +71,7 @@ class VideoClips(object):
                  _backend="pyav"):
         self.video_paths = video_paths
         self.num_workers = num_workers
-        self.backend = _backend
+        self._backend = _backend
         if _precomputed_metadata is None:
             self._compute_frame_pts()
         else:
@@ -80,7 +80,7 @@ class VideoClips(object):
 
     def _compute_frame_pts(self):
         self.video_pts = []
-        if self.backend == "pyav":
+        if self._backend == "pyav":
             self.video_fps = []
         else:
             self.info = []
@@ -88,22 +88,22 @@ class VideoClips(object):
         # strategy: use a DataLoader to parallelize read_video_timestamps
         # so need to create a dummy dataset first
         class DS(object):
-            def __init__(self, x, backend):
+            def __init__(self, x, _backend):
                 self.x = x
-                self.backend = backend
+                self._backend = _backend
 
             def __len__(self):
                 return len(self.x)
 
             def __getitem__(self, idx):
-                if self.backend == "pyav":
+                if self._backend == "pyav":
                     return read_video_timestamps(self.x[idx])
                 else:
                     return _read_video_timestamps_from_file(self.x[idx])
 
         import torch.utils.data
         dl = torch.utils.data.DataLoader(
-            DS(self.video_paths, self.backend),
+            DS(self.video_paths, self._backend),
             batch_size=16,
             num_workers=self.num_workers,
             collate_fn=lambda x: x)
@@ -111,7 +111,7 @@ class VideoClips(object):
         with tqdm(total=len(dl)) as pbar:
             for batch in dl:
                 pbar.update(1)
-                if self.backend == "pyav":
+                if self._backend == "pyav":
                     clips, fps = list(zip(*batch))
                     clips = [torch.as_tensor(c) for c in clips]
                     self.video_pts.extend(clips)
@@ -127,7 +127,7 @@ class VideoClips(object):
         assert len(self.video_paths) == len(metadata["video_pts"])
         self.video_pts = metadata["video_pts"]
 
-        if self.backend == "pyav":
+        if self._backend == "pyav":
             assert len(self.video_paths) == len(metadata["video_fps"])
             self.video_fps = metadata["video_fps"]
         else:
@@ -140,7 +140,7 @@ class VideoClips(object):
             "video_paths": self.video_paths,
             "video_pts": self.video_pts,
         }
-        if self.backend == "pyav":
+        if self._backend == "pyav":
             _metadata.update({"video_fps": self.video_fps})
         else:
             _metadata.update({"info": self.info})
@@ -148,7 +148,7 @@ class VideoClips(object):
     def subset(self, indices):
         video_paths = [self.video_paths[i] for i in indices]
         video_pts = [self.video_pts[i] for i in indices]
-        if self.backend == "pyav":
+        if self._backend == "pyav":
             video_fps = [self.video_fps[i] for i in indices]
         else:
             info = [self.info[i] for i in indices]
@@ -156,7 +156,7 @@ class VideoClips(object):
             "video_paths": video_paths,
             "video_pts": video_pts,
         }
-        if self.backend == "pyav":
+        if self._backend == "pyav":
             metadata.update({"video_fps": video_fps})
         else:
             metadata.update({"info": info})
@@ -198,7 +198,7 @@ class VideoClips(object):
         self.frame_rate = frame_rate
         self.clips = []
         self.resampling_idxs = []
-        if self.backend == "pyav":
+        if self._backend == "pyav":
             for video_pts, fps in zip(self.video_pts, self.video_fps):
                 clips, idxs = self.compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate)
                 self.clips.append(clips)
@@ -267,7 +267,7 @@ class VideoClips(object):
         video_path = self.video_paths[video_idx]
         clip_pts = self.clips[video_idx][clip_idx]
 
-        if self.backend == "pyav":
+        if self._backend == "pyav":
             start_pts = clip_pts[0].item()
             end_pts = clip_pts[-1].item()
             video, audio, info = read_video(video_path, start_pts, end_pts)
