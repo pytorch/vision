@@ -320,6 +320,12 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
 
 
 class RoIHeads(torch.nn.Module):
+    __annotations__ = {
+        'box_coder': det_utils.BoxCoder,
+        'proposal_matcher': det_utils.Matcher,
+        'fg_bg_sampler': det_utils.BalancedPositiveNegativeSampler
+    }
+
     def __init__(self,
                  box_roi_pool,
                  box_head,
@@ -342,8 +348,8 @@ class RoIHeads(torch.nn.Module):
                  ):
         super(RoIHeads, self).__init__()
 
-        self.box_similarity = box_ops.box_iou
-        # assign ground-truth boxes for each proposal
+        # box_ops.box_iou = box_ops.box_iou
+        # assign ground-truth.run boxes for each proposal
         self.proposal_matcher = det_utils.Matcher(
             fg_iou_thresh,
             bg_iou_thresh,
@@ -358,6 +364,7 @@ class RoIHeads(torch.nn.Module):
         self.box_coder = det_utils.BoxCoder(bbox_reg_weights)
 
         self.box_roi_pool = box_roi_pool
+        print(box_roi_pool)
         self.box_head = box_head
         self.box_predictor = box_predictor
 
@@ -394,11 +401,12 @@ class RoIHeads(torch.nn.Module):
         return True
 
     def assign_targets_to_proposals(self, proposals, gt_boxes, gt_labels):
+        # type: (List[Tensor], List[Tensor], List[Tensor])
         matched_idxs = []
         labels = []
         for proposals_in_image, gt_boxes_in_image, gt_labels_in_image in zip(proposals, gt_boxes, gt_labels):
-            match_quality_matrix = self.box_similarity(gt_boxes_in_image, proposals_in_image)
-            matched_idxs_in_image = self.proposal_matcher(match_quality_matrix)
+            match_quality_matrix = box_ops.box_iou(gt_boxes_in_image, proposals_in_image)
+            matched_idxs_in_image = self.proposal_matcher.run(match_quality_matrix)
 
             clamped_matched_idxs_in_image = matched_idxs_in_image.clamp(min=0)
 
@@ -407,18 +415,19 @@ class RoIHeads(torch.nn.Module):
 
             # Label background (below the low threshold)
             bg_inds = matched_idxs_in_image == self.proposal_matcher.BELOW_LOW_THRESHOLD
-            labels_in_image[bg_inds] = 0
+            labels_in_image[bg_inds] = torch.tensor(0)
 
             # Label ignore proposals (between low and high thresholds)
             ignore_inds = matched_idxs_in_image == self.proposal_matcher.BETWEEN_THRESHOLDS
-            labels_in_image[ignore_inds] = -1  # -1 is ignored by sampler
+            labels_in_image[ignore_inds] = torch.tensor(-1)  # -1 is ignored by sampler
 
             matched_idxs.append(clamped_matched_idxs_in_image)
             labels.append(labels_in_image)
         return matched_idxs, labels
 
     def subsample(self, labels):
-        sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
+        # type: (List[Tensor])
+        sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler.run(labels)
         sampled_inds = []
         for img_idx, (pos_inds_img, neg_inds_img) in enumerate(
             zip(sampled_pos_inds, sampled_neg_inds)
@@ -428,21 +437,31 @@ class RoIHeads(torch.nn.Module):
         return sampled_inds
 
     def add_gt_proposals(self, proposals, gt_boxes):
-        proposals = [
-            torch.cat((proposal, gt_box))
-            for proposal, gt_box in zip(proposals, gt_boxes)
-        ]
+        # type: (List[Tensor], List[Tensor])
+        proposals = []
+        for proposal, gt_box in zip(proposals, gt_boxes):
+            proposals.append(torch.cat((proposal, gt_box)))
 
         return proposals
 
+    def DELTEME_all(self, the_list):
+        # type: (List[bool])
+        for i in the_list:
+            if not i:
+                return False
+        return True
+
     def check_targets(self, targets):
+        # type: (Optional[List[Dict[str, Tensor]]])
         assert targets is not None
-        assert all("boxes" in t for t in targets)
-        assert all("labels" in t for t in targets)
+        assert self.DELTEME_all(["boxes" in t for t in targets])
+        assert self.DELTEME_all(["labels" in t for t in targets])
         if self.has_mask:
-            assert all("masks" in t for t in targets)
+            assert self.DELTEME_all(["masks" in t for t in targets])
 
     def select_training_samples(self, proposals, targets):
+        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])
+        assert targets is not None
         self.check_targets(targets)
         dtype = proposals[0].dtype
         gt_boxes = [t["boxes"].to(dtype) for t in targets]
@@ -521,6 +540,7 @@ class RoIHeads(torch.nn.Module):
         return all_boxes, all_scores, all_labels
 
     def forward(self, features, proposals, image_shapes, targets=None):
+        # type: (List[Tensor], List[Tensor], List[Tuple[int, int]], Optional[List[Dict[str, Tensor]]])
         """
         Arguments:
             features (List[Tensor])
@@ -530,7 +550,9 @@ class RoIHeads(torch.nn.Module):
         """
         if targets is not None:
             for t in targets:
-                assert t["boxes"].dtype.is_floating_point, 'target boxes must of float type'
+                # TODO: https://github.com/pytorch/pytorch/issues/26731
+                floating_point_types = (torch.float, torch.double, torch.half)
+                assert t["boxes"].dtype in floating_point_types, 'target boxes must of float type'
                 assert t["labels"].dtype == torch.int64, 'target labels must of int64 type'
                 if self.has_keypoint:
                     assert t["keypoints"].dtype == torch.float32, 'target keypoints must of float type'

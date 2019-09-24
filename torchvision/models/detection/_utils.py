@@ -5,12 +5,14 @@ import math
 import torch
 
 
+@torch.jit.script
 class BalancedPositiveNegativeSampler(object):
     """
     This class samples batches, ensuring that they contain a fixed proportion of positives
     """
 
     def __init__(self, batch_size_per_image, positive_fraction):
+        # type: (int, float)
         """
         Arguments:
             batch_size_per_image (int): number of elements to be selected per image
@@ -19,7 +21,8 @@ class BalancedPositiveNegativeSampler(object):
         self.batch_size_per_image = batch_size_per_image
         self.positive_fraction = positive_fraction
 
-    def __call__(self, matched_idxs):
+    def run(self, matched_idxs):
+        # type: (List[Tensor])
         """
         Arguments:
             matched idxs: list of tensors containing -1, 0 or positive values.
@@ -56,14 +59,18 @@ class BalancedPositiveNegativeSampler(object):
             neg_idx_per_image = negative[perm2]
 
             # create binary mask from indices
-            pos_idx_per_image_mask = torch.zeros_like(
-                matched_idxs_per_image, dtype=torch.uint8
+            # TODO: https://github.com/pytorch/pytorch/issues/26727
+            # Also TODO: layout isn't matched here!
+            pos_idx_per_image_mask = torch.zeros(
+                matched_idxs_per_image, dtype=torch.uint8, device=matched_idxs_per_image.device
             )
-            neg_idx_per_image_mask = torch.zeros_like(
-                matched_idxs_per_image, dtype=torch.uint8
+            neg_idx_per_image_mask = torch.zeros(
+                matched_idxs_per_image, dtype=torch.uint8, device=matched_idxs_per_image.device
             )
-            pos_idx_per_image_mask[pos_idx_per_image] = 1
-            neg_idx_per_image_mask[neg_idx_per_image] = 1
+
+            # TODO: is this equivalent??
+            pos_idx_per_image_mask[pos_idx_per_image] = torch.tensor(1)
+            neg_idx_per_image_mask[neg_idx_per_image] = torch.tensor(1)
 
             pos_idx.append(pos_idx_per_image_mask)
             neg_idx.append(neg_idx_per_image_mask)
@@ -127,7 +134,7 @@ class BoxCoder(object):
     """
 
     def __init__(self, weights, bbox_xform_clip=math.log(1000. / 16)):
-        # type: (Tuple[Tensor, Tensor, Tensor, Tensor], float)
+        # type: (Tuple[float, float, float, float], float)
         """
         Arguments:
             weights (4-element tuple)
@@ -166,7 +173,8 @@ class BoxCoder(object):
         return proposals
 
     def decode(self, rel_codes, boxes):
-        # type: (List[Tensor], List[Tensor])
+        # type: (Tensor, List[Tensor])
+        # t2ype: (List[Tensor], List[Tensor])
         assert isinstance(boxes, (list, tuple))
         if isinstance(rel_codes, (list, tuple)):
             rel_codes = torch.cat(rel_codes, dim=0)
@@ -227,6 +235,7 @@ class BoxCoder(object):
         return pred_boxes
 
 
+@torch.jit.script
 class Matcher(object):
     """
     This class assigns to each predicted "element" (e.g., a box) a ground-truth
@@ -245,7 +254,13 @@ class Matcher(object):
     BELOW_LOW_THRESHOLD = -1
     BETWEEN_THRESHOLDS = -2
 
+    __annotations__ = {
+        'BELOW_LOW_THRESHOLD': int,
+        'BETWEEN_THRESHOLDS': int,
+    }
+
     def __init__(self, high_threshold, low_threshold, allow_low_quality_matches=False):
+        # type: (float, float, bool)
         """
         Args:
             high_threshold (float): quality values greater than or equal to
@@ -259,12 +274,16 @@ class Matcher(object):
                 for predictions that have only low-quality match candidates. See
                 set_low_quality_matches_ for more details.
         """
+        self.BELOW_LOW_THRESHOLD = -1
+        self.BETWEEN_THRESHOLDS = -2
         assert low_threshold <= high_threshold
         self.high_threshold = high_threshold
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
 
-    def __call__(self, match_quality_matrix):
+    # TODO: `__call__` is not supported
+    # https://github.com/pytorch/pytorch/issues/26725
+    def run(self, match_quality_matrix):
         """
         Args:
             match_quality_matrix (Tensor[float]): an MxN tensor, containing the
@@ -291,16 +310,20 @@ class Matcher(object):
         matched_vals, matches = match_quality_matrix.max(dim=0)
         if self.allow_low_quality_matches:
             all_matches = matches.clone()
+        else:
+            all_matches = None
 
         # Assign candidate matches with low quality to negative (unassigned) values
         below_low_threshold = matched_vals < self.low_threshold
+        # TODO: Is this supposed to be `and` instead of `&`?
         between_thresholds = (matched_vals >= self.low_threshold) & (
             matched_vals < self.high_threshold
         )
-        matches[below_low_threshold] = Matcher.BELOW_LOW_THRESHOLD
-        matches[between_thresholds] = Matcher.BETWEEN_THRESHOLDS
+        matches[below_low_threshold] = torch.tensor(self.BELOW_LOW_THRESHOLD)
+        matches[between_thresholds] = torch.tensor(self.BETWEEN_THRESHOLDS)
 
         if self.allow_low_quality_matches:
+            assert all_matches is not None
             self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
 
         return matches

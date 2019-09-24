@@ -47,7 +47,7 @@ class GeneralizedRCNNTransform(nn.Module):
             if targets is not None:
                 targets[i] = target
 
-        image_sizes = [img.shape[-2:] for img in images]
+        image_sizes = [(img.shape[-2], img.shape[-3]) for img in images]
         images = self.batch_images(images)
         image_list = ImageList(images, image_sizes)
         return image_list, targets

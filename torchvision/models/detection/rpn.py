@@ -246,7 +246,9 @@ class RegionProposalNetwork(torch.nn.Module):
 
     """
     __annotations__ = {
-        'box_coder': det_utils.BoxCoder
+        'box_coder': det_utils.BoxCoder,
+        'proposal_matcher': det_utils.Matcher,
+        'fg_bg_sampler': det_utils.BalancedPositiveNegativeSampler
     }
 
     def __init__(self,
@@ -262,9 +264,6 @@ class RegionProposalNetwork(torch.nn.Module):
         self.head = head
         print("HEAD is", head)
         self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
-
-        # used during training
-        self.box_similarity = box_ops.box_iou
 
         self.proposal_matcher = det_utils.Matcher(
             fg_iou_thresh,
@@ -294,12 +293,13 @@ class RegionProposalNetwork(torch.nn.Module):
         return self._post_nms_top_n['testing']
 
     def assign_targets_to_anchors(self, anchors, targets):
+        # type: (List[Tensor], List[Dict[str, Tensor]])
         labels = []
         matched_gt_boxes = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
             gt_boxes = targets_per_image["boxes"]
-            match_quality_matrix = self.box_similarity(gt_boxes, anchors_per_image)
-            matched_idxs = self.proposal_matcher(match_quality_matrix)
+            match_quality_matrix = box_ops.box_iou(gt_boxes, anchors_per_image)
+            matched_idxs = self.proposal_matcher.run(match_quality_matrix)
             # get the targets corresponding GT for each proposal
             # NB: need to clamp the indices because we can have a single
             # GT in the image, and matched_idxs can be -2, which goes
@@ -311,17 +311,18 @@ class RegionProposalNetwork(torch.nn.Module):
 
             # Background (negative examples)
             bg_indices = matched_idxs == self.proposal_matcher.BELOW_LOW_THRESHOLD
-            labels_per_image[bg_indices] = 0
+            labels_per_image[bg_indices] = torch.tensor(0)
 
             # discard indices that are between thresholds
             inds_to_discard = matched_idxs == self.proposal_matcher.BETWEEN_THRESHOLDS
-            labels_per_image[inds_to_discard] = -1
+            labels_per_image[inds_to_discard] = torch.tensor(-1)
 
             labels.append(labels_per_image)
             matched_gt_boxes.append(matched_gt_boxes_per_image)
         return labels, matched_gt_boxes
 
     def _get_top_n_idx(self, objectness, num_anchors_per_level):
+        # type: (Tensor, List[int])
         r = []
         offset = 0
         for ob in objectness.split(num_anchors_per_level, 1):
@@ -333,16 +334,21 @@ class RegionProposalNetwork(torch.nn.Module):
         return torch.cat(r, dim=1)
 
     def filter_proposals(self, proposals, objectness, image_shapes, num_anchors_per_level):
+        # type: (Tensor, Tensor, List[Tuple[int, int]], List[int])
         num_images = proposals.shape[0]
         device = proposals.device
         # do not backprop throught objectness
         objectness = objectness.detach()
         objectness = objectness.reshape(num_images, -1)
 
-        levels = [
-            torch.full((n,), idx, dtype=torch.int64, device=device)
-            for idx, n in enumerate(num_anchors_per_level)
-        ]
+        levels = []
+        for idx, n in enumerate(num_anchors_per_level):
+            levels.append(torch.full((n,), idx, dtype=torch.int64, device=device))
+
+        # levels = [
+        #     torch.full((n,), idx, dtype=torch.int64, device=device)
+        #     for idx, n in enumerate(num_anchors_per_level)
+        # ]
         levels = torch.cat(levels, 0)
         levels = levels.reshape(1, -1).expand_as(objectness)
 
@@ -369,6 +375,7 @@ class RegionProposalNetwork(torch.nn.Module):
         return final_boxes, final_scores
 
     def compute_loss(self, objectness, pred_bbox_deltas, labels, regression_targets):
+        # type: (Tensor, Tensor, List[Tensor], List[Tensor])
         """
         Arguments:
             objectness (Tensor)
@@ -381,7 +388,7 @@ class RegionProposalNetwork(torch.nn.Module):
             box_loss (Tensor)
         """
 
-        sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
+        sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler.run(labels)
         sampled_pos_inds = torch.nonzero(torch.cat(sampled_pos_inds, dim=0)).squeeze(1)
         sampled_neg_inds = torch.nonzero(torch.cat(sampled_neg_inds, dim=0)).squeeze(1)
 
@@ -440,6 +447,7 @@ class RegionProposalNetwork(torch.nn.Module):
 
         losses = {}
         if self.training:
+            assert targets is not None
             labels, matched_gt_boxes = self.assign_targets_to_anchors(anchors, targets)
             regression_targets = self.box_coder.encode(matched_gt_boxes, anchors)
             loss_objectness, loss_rpn_box_reg = self.compute_loss(

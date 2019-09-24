@@ -13,7 +13,7 @@ class ImageList(object):
     """
 
     def __init__(self, tensors, image_sizes):
-        # type: (Tensor, List[List[int]])
+        # type: (Tensor, List[Tuple[int, int]])
         """
         Arguments:
             tensors (Tensor)
