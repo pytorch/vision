@@ -2,6 +2,7 @@ from collections import namedtuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.jit.annotations import Optional
 from .utils import load_state_dict_from_url
 
 
@@ -14,6 +15,7 @@ model_urls = {
 }
 
 _InceptionOutputs = namedtuple('InceptionOutputs', ['logits', 'aux_logits'])
+_InceptionOutputs.__annotations__ = {'logits': torch.Tensor, 'aux_logits': Optional[torch.Tensor]}
 
 
 def inception_v3(pretrained=False, progress=True, **kwargs):
@@ -128,8 +130,11 @@ class Inception3(nn.Module):
         # N x 768 x 17 x 17
         x = self.Mixed_6e(x)
         # N x 768 x 17 x 17
-        if self.training and self.aux_logits:
+        aux_defined = self.training and self.aux_logits
+        if aux_defined:
             aux = self.AuxLogits(x)
+        else:
+            aux = None
         # N x 768 x 17 x 17
         x = self.Mixed_7a(x)
         # N x 1280 x 8 x 8
@@ -146,9 +151,20 @@ class Inception3(nn.Module):
         # N x 2048
         x = self.fc(x)
         # N x 1000 (num_classes)
+        if torch.jit.is_scripting():
+            if not aux_defined:
+                warnings.warn("Scripted InceptionNet always returns InceptionOutputs Tuple")
+            return _InceptionOutputs(x, aux)
+        else:
+            return self.eager_outputs(x, aux)
+
+    @torch.jit.unused
+    def eager_outputs(self, x, aux):
+        # type: (Tensor, Optional[Tensor]) -> _InceptionOutputs
         if self.training and self.aux_logits:
             return _InceptionOutputs(x, aux)
         return x
+
 
 
 class InceptionA(nn.Module):

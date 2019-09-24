@@ -104,14 +104,6 @@ class GoogLeNet(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-    @torch.jit.unused
-    def eager_outputs(self, x, aux2, aux1):
-        # type: (Tensor, Optional[Tensor], Optional[Tensor]) -> _GoogLeNetOutputs
-        if self.training and self.aux_logits:
-            return _GoogLeNetOutputs(x, aux2, aux1)
-        else:
-            return x
-
     def forward(self, x):
         if self.transform_input:
             x_ch0 = torch.unsqueeze(x[:, 0], 1) * (0.229 / 0.5) + (0.485 - 0.5) / 0.5
@@ -178,6 +170,14 @@ class GoogLeNet(nn.Module):
             return _GoogLeNetOutputs(x, aux2, aux1)
         else:
             return self.eager_outputs(x, aux2, aux1)
+
+    @torch.jit.unused
+    def eager_outputs(self, x, aux2, aux1):
+        # type: (Tensor, Optional[Tensor], Optional[Tensor]) -> GoogLeNetOutputs
+        if self.training and self.aux_logits:
+            return _GoogLeNetOutputs(x, aux2, aux1)
+        else:
+            return x
 
 class Inception(nn.Module):
     __constants__ = ['branch2', 'branch3', 'branch4']
