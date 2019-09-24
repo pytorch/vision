@@ -40,6 +40,15 @@ _pil_interpolation_to_str = {
 }
 
 
+def _get_image_size(img):
+    if F._is_pil_image(img):
+        return img.size
+    elif isinstance(img, torch.Tensor) and img.dim() > 2:
+        return img.shape[-2:][::-1]
+    else:
+        raise TypeError("Unexpected type {}".format(type(img)))
+
+
 class Compose(object):
     """Composes several transforms together.
 
@@ -444,7 +453,7 @@ class RandomCrop(object):
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
         """
-        w, h = img.size
+        w, h = _get_image_size(img)
         th, tw = output_size
         if w == tw and h == th:
             return 0, 0, h, w
@@ -635,7 +644,8 @@ class RandomResizedCrop(object):
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
                 sized crop.
         """
-        area = img.size[0] * img.size[1]
+        width, height = _get_image_size(img)
+        area = height * width
 
         for attempt in range(10):
             target_area = random.uniform(*scale) * area
@@ -645,24 +655,24 @@ class RandomResizedCrop(object):
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
 
-            if 0 < w <= img.size[0] and 0 < h <= img.size[1]:
-                i = random.randint(0, img.size[1] - h)
-                j = random.randint(0, img.size[0] - w)
+            if 0 < w <= width and 0 < h <= height:
+                i = random.randint(0, height - h)
+                j = random.randint(0, width - w)
                 return i, j, h, w
 
         # Fallback to central crop
-        in_ratio = img.size[0] / img.size[1]
+        in_ratio = float(width) / float(height)
         if (in_ratio < min(ratio)):
-            w = img.size[0]
+            w = width
             h = int(round(w / min(ratio)))
         elif (in_ratio > max(ratio)):
-            h = img.size[1]
+            h = height
             w = int(round(h * max(ratio)))
         else:  # whole image
-            w = img.size[0]
-            h = img.size[1]
-        i = (img.size[1] - h) // 2
-        j = (img.size[0] - w) // 2
+            w = width
+            h = height
+        i = (height - h) // 2
+        j = (width - w) // 2
         return i, j, h, w
 
     def __call__(self, img):
