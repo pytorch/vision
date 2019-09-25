@@ -45,6 +45,7 @@ class GeneralizedRCNNTransform(nn.Module):
             image, target = self.resize(image, target)
             images[i] = image
             if targets is not None:
+                assert target is not None
                 targets[i] = target
 
         image_sizes = [(img.shape[-2], img.shape[-3]) for img in images]
@@ -137,6 +138,14 @@ class GeneralizedRCNNTransform(nn.Module):
 
         return torch.stack(padded_imgs)
 
+    def max_by_axis(self, the_list):
+        # type: (List[List[int]]) -> List[int]
+        maxes = the_list[0]
+        for sublist in the_list[1:]:
+            for index, item in enumerate(sublist):
+                maxes[index] = max(maxes[index], item)
+        return maxes
+
     def batch_images(self, images, size_divisible=32):
         # type: (List[Tensor], int)
         if not torch.jit.is_scripting():
@@ -145,16 +154,13 @@ class GeneralizedRCNNTransform(nn.Module):
                 # call _onnx_batch_images() instead
                 return self._onnx_batch_images(images, size_divisible)
 
-        shapes_by_axis = [img.shape for img in images]
-        max_size = torch.jit.annotate(List[int], [])
-        for s in zip(shapes_by_axis):
-            max_size.append(max(s[0]))
+        max_size = self.max_by_axis([list(img.shape) for img in images])
 
         stride = float(size_divisible)
         max_size[1] = int(math.ceil(float(max_size[1]) / stride) * stride)
         max_size[2] = int(math.ceil(float(max_size[2]) / stride) * stride)
 
-        batch_shape = (len(images),) + max_size
+        batch_shape = [len(images)] + max_size
         batched_imgs = images[0].new_full(batch_shape, 0)
         for img, pad_img in zip(images, batched_imgs):
             pad_img[: img.shape[0], : img.shape[1], : img.shape[2]].copy_(img)

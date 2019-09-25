@@ -47,6 +47,7 @@ class GeneralizedRCNN(nn.Module):
         original_image_sizes = [(img.shape[-2], img.shape[-3])  for img in images]
 
         images, targets = self.transform(images, targets)
+        print(images, images.tensors)
         features = self.backbone(images.tensors)
         if isinstance(features, torch.Tensor):
             features = OrderedDict([(0, features)])

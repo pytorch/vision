@@ -70,8 +70,9 @@ class IntermediateLayerGetter(nn.Module):
 
         i = 0
         # TODO: re-enable
-        # for module in self.modules:
-        #     x = module(x)
+        for module in self.modules:
+            pass
+        #     # x = module(x)
         #     name = self.names[i]
         #     if name in self.return_layers:
         #         out_name = self.return_layers[name]

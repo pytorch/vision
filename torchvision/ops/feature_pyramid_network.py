@@ -101,6 +101,7 @@ class FeaturePyramidNetwork(nn.Module):
                 They are ordered from highest resolution first.
         """
         # unpack OrderedDict into two lists for easier handling
+        print(x)
         names = list(x.keys())
         x = list(x.values())
 
