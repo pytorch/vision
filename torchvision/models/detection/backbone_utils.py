@@ -39,11 +39,8 @@ class BackboneWithFPN(nn.Module):
         self.out_channels = out_channels
 
     def forward(self, x):
-        print('befpre', x)
         x = self.body(x)
-        print('body', x)
         x = self.fpn(x)
-        print('fpn', x)
         return x
 
 

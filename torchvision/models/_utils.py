@@ -59,7 +59,7 @@ class IntermediateLayerGetter(nn.Module):
                 break
 
         self.layers = nn.ModuleDict(layers)
-        self.return_layers = orig_return_layers
+        self.return_layers = {k: str(v) for k, v in orig_return_layers.items()}
 
     def forward(self, x):
         out = OrderedDict()

@@ -134,6 +134,7 @@ class AnchorGenerator(nn.Module):
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
         anchors = torch.jit.annotate(List[List[torch.Tensor]], [])
+        print(len(anchors))
         for i, (image_height, image_width) in enumerate(image_list.image_sizes):
             anchors_in_image = []
             for anchors_per_feature_map in anchors_over_all_feature_maps:
@@ -262,7 +263,6 @@ class RegionProposalNetwork(torch.nn.Module):
         super(RegionProposalNetwork, self).__init__()
         self.anchor_generator = anchor_generator
         self.head = head
-        print("HEAD is", head)
         self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
 
         self.proposal_matcher = det_utils.Matcher(
