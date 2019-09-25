@@ -668,20 +668,20 @@ def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     # where T is translation matrix: [1, 0, tx | 0, 1, ty | 0, 0, 1]
     #       C is translation matrix to keep center: [1, 0, cx | 0, 1, cy | 0, 0, 1]
     #       RSS is rotation with scale and shear matrix
-    #       RSS(a, scale, shear) = [ cos(a + shear_y)*scale    -sin(a + shear_x)*scale     0]
-    #                              [ sin(a + shear_y)*scale    cos(a + shear_x)*scale     0]
+    #       RSS(a, scale, shear) = [ cos(a+shear_y)/cos(shear_y)    cos(a+shear_y)tan(shear_x)/cos(shear_y) - sin(a)     0]
+    #                              [ sin(a+shear_y)/cos(shear_y)    sin(a+shear_y)tan(shear_x)/cos(shear_y) + cos(a)     0]
     #                              [     0                  0          1]
     # Thus, the inverse is M^-1 = C * RSS^-1 * C^-1 * T^-1
 
     
     # Inverted rotation matrix with scale and shear (using adjugate method)
-    a = math.cos(angle + shear[0]) / math.cos(shear[0])
-    b = math.cos(angle + shear[0]) * math.tan(shear[1]) / math.cos(shear[0]) - math.sin(angle)
-    c = math.sin(angle + shear[0]) / math.cos(shear[0])
-    d = math.sin(angle + shear[0]) * math.tan(shear[1]) / math.cos(shear[0]) + math.cos(angle)
+    a = math.cos(angle + shear[1]) / math.cos(shear[1])
+    b = math.cos(angle + shear[1]) * math.tan(shear[0]) / math.cos(shear[1]) - math.sin(angle)
+    c = math.sin(angle + shear[1]) / math.cos(shear[1])
+    d = math.sin(angle + shear[1]) * math.tan(shear[0]) / math.cos(shear[1]) + math.cos(angle)
 
     det = a * d - b * c
-    matrix = [a, c, 0, b, d, 0]
+    matrix = [d, -b, 0, -c, a, 0]
     matrix = [1 / (scale * det) * m for m in matrix]
 
     # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
