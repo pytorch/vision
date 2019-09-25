@@ -3,6 +3,7 @@ from itertools import product
 import torch
 from torchvision import models
 import unittest
+import traceback
 
 
 def get_available_classification_models():
@@ -27,12 +28,12 @@ def get_available_video_models():
 
 # model_name, expected to script without error
 torchub_models = {
-    "deeplabv3_resnet101": False,
+    "deeplabv3_resnet101": True,
     "mobilenet_v2": True,
     "resnext50_32x4d": True,
-    "fcn_resnet101": False,
+    "fcn_resnet101": True,
     "googlenet": False,
-    "densenet121": False,
+    "densenet121": True,
     "resnet18": True,
     "alexnet": True,
     "shufflenet_v2_x1_0": True,
@@ -47,11 +48,14 @@ class Tester(unittest.TestCase):
         if name not in torchub_models:
             return
         scriptable = True
+        msg = ""
         try:
             torch.jit.script(model)
-        except Exception:
+        except Exception as e:
+            tb = traceback.format_exc()
             scriptable = False
-        self.assertEqual(torchub_models[name], scriptable)
+            msg = str(e) + str(tb)
+        self.assertEqual(torchub_models[name], scriptable, msg)
 
     def _test_classification_model(self, name, input_shape):
         # passing num_class equal to a number other than 1000 helps in making the test

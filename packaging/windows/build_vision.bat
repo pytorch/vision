@@ -117,6 +117,16 @@ for %%v in (%DESIRED_PYTHON_PREFIX%) do (
     :: Activate Python Environment
     set PYTHON_PREFIX=%%v
     set "PATH=%CONDA_HOME%\envs\%%v;%CONDA_HOME%\envs\%%v\scripts;%CONDA_HOME%\envs\%%v\Library\bin;%ORIG_PATH%"
+    if defined INCLUDE (
+        set "INCLUDE=%INCLUDE%;%CONDA_HOME%\envs\%%v\Library\include"
+    ) else (
+        set "INCLUDE=%CONDA_HOME%\envs\%%v\Library\include"
+    )
+    if defined LIB (
+        set "LIB=%LIB%;%CONDA_HOME%\envs\%%v\Library\lib"
+    ) else (
+        set "LIB=%CONDA_HOME%\envs\%%v\Library\lib"
+    )
     @setlocal
     :: Set Flags
     if NOT "%CUDA_VERSION%"=="cpu" (
