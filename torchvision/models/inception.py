@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.jit.annotations import Optional
+from __future__ import division
 from .utils import load_state_dict_from_url
 
 
