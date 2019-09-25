@@ -1,17 +1,14 @@
 from fractions import Fraction
 import numpy as np
-import os
 import torch
-import imp
 import warnings
-
+from torchvision.lib_utils import find_video_reader_library_path
 
 _HAS_VIDEO_OPT = False
 
 try:
-    lib_dir = os.path.join(os.path.dirname(__file__), '..')
-    _, path, description = imp.find_module("video_reader", [lib_dir])
-    torch.ops.load_library(path)
+    video_reader_library_path = find_video_reader_library_path()
+    torch.ops.load_library(video_reader_library_path)
     _HAS_VIDEO_OPT = True
 except (ImportError, OSError):
     warnings.warn("video reader based on ffmpeg c++ ops not available")
