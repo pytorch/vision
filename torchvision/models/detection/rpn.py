@@ -320,7 +320,7 @@ class RegionProposalNetwork(torch.nn.Module):
                 #        ONNX Runtime version is updated with ReduceMin int64 support
                 pre_nms_top_n = torch.min(torch.cat(
                     (torch.tensor([self.pre_nms_top_n], dtype=num_anchors.dtype),
-                     num_anchors), 0).type(torch.IntTensor)).type(num_anchors.dtype)
+                     num_anchors), 0).to(torch.int32)).to(num_anchors.dtype)
             else:
                 num_anchors = ob.shape[1]
                 pre_nms_top_n = min(self.pre_nms_top_n, num_anchors)
