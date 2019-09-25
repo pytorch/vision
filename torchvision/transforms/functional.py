@@ -95,7 +95,8 @@ def to_tensor(pic):
     # put it from HWC to CHW format
     # yikes, this transpose takes 80% of the loading time/CPU
     img = img.transpose(0, 1).transpose(0, 2)
-    img = img.contiguous()
+    # Next call required only for channels first
+    # img = img.contiguous()
     if isinstance(img, torch.ByteTensor):
         # Keep image strides as HWC
         res = torch.empty_strided(img.shape, img.stride(), dtype=torch.float, device=img.device)
