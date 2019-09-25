@@ -1030,7 +1030,7 @@ class RandomAffine(object):
             will be apllied. Else if shear is a tuple or list of 2 values a shear parallel to the x axis in the
             range (shear[0], shear[1]) will be applied. Else if shear is a tuple or list of 4 values,
             a x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
-            Will not apply shear by default
+            Shear values must lie between [-89.99, 89.99]. Will not apply shear by default.
         resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
             An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
