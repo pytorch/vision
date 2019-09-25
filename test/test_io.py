@@ -145,6 +145,42 @@ class Tester(unittest.TestCase):
 
             self.assertEqual(pts, expected_pts)
 
+    def test_read_video_pts_unit_sec(self):
+        with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
+            lv, _, info = io.read_video(f_name, pts_unit='sec')
+
+            self.assertTrue(data.equal(lv))
+            self.assertEqual(info["video_fps"], 5)
+
+    def test_read_timestamps_pts_unit_sec(self):
+        with temp_video(10, 300, 300, 5) as (f_name, data):
+            pts, _ = io.read_video_timestamps(f_name, pts_unit='sec')
+
+            container = av.open(f_name)
+            stream = container.streams[0]
+            pts_step = int(round(float(1 / (stream.average_rate * stream.time_base))))
+            num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
+            expected_pts = [i * pts_step * stream.time_base for i in range(num_frames)]
+
+            self.assertEqual(pts, expected_pts)
+
+    def test_read_partial_video_pts_unit_sec(self):
+        with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
+            pts, _ = io.read_video_timestamps(f_name, pts_unit='sec')
+
+            for start in range(5):
+                for l in range(1, 4):
+                    lv, _, _ = io.read_video(f_name, pts[start], pts[start + l - 1], pts_unit='sec')
+                    s_data = data[start:(start + l)]
+                    self.assertEqual(len(lv), l)
+                    self.assertTrue(s_data.equal(lv))
+
+            container = av.open(f_name)
+            stream = container.streams[0]
+            lv, _, _ = io.read_video(f_name, int(pts[4] * (1.0 / stream.time_base) + 1) * stream.time_base, pts[7], pts_unit='sec')
+            self.assertEqual(len(lv), 4)
+            self.assertTrue(data[4:8].equal(lv))
+
     # TODO add tests for audio
 
 

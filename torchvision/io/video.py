@@ -156,9 +156,11 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
     ----------
     filename : str
         path to the video file
-    start_pts : int, optional
+    start_pts : int if pts_unit = 'pts', optional
+        float / Fraction if pts_unit = 'sec', optional
         the start presentation time of the video
-    end_pts : int, optional
+    end_pts : int if pts_unit = 'pts', optional
+        float / Fraction if pts_unit = 'sec', optional
         the end presentation time
     pts_unit : str, optional
         unit in which start_pts and end_pts values will be interpreted, either 'pts' or 'sec'. Defaults to 'pts'.
@@ -196,9 +198,9 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
         video_end_pts = end_pts
         video_stream = container.streams.video[0]
         if pts_unit == 'sec':
-            video_start_pts = math.floor(start_pts * (1 / video_stream.time_base))
+            video_start_pts = int(math.floor(start_pts * (1 / video_stream.time_base)))
             if video_end_pts != float("inf"):
-                video_end_pts = math.ceil(end_pts * (1 / video_stream.time_base))
+                video_end_pts = int(math.ceil(end_pts * (1 / video_stream.time_base)))
         video_frames = _read_from_stream(container, video_start_pts, video_end_pts,
                                          video_stream, {'video': 0})
         info["video_fps"] = float(video_stream.average_rate)
@@ -208,9 +210,9 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
         audio_end_pts = end_pts
         audio_stream = container.streams.audio[0]
         if pts_unit == 'sec':
-            audio_start_pts = math.floor(start_pts * (1 / audio_stream.time_base))
+            audio_start_pts = int(math.floor(start_pts * (1 / audio_stream.time_base)))
             if audio_end_pts != float("inf"):
-                audio_end_pts = math.ceil(end_pts * (1 / audio_stream.time_base))
+                audio_end_pts = int(math.ceil(end_pts * (1 / audio_stream.time_base)))
         audio_frames = _read_from_stream(container, audio_start_pts, audio_end_pts,
                                          audio_stream, {'audio': 0})
         info["audio_fps"] = audio_stream.rate
@@ -254,7 +256,8 @@ def read_video_timestamps(filename, pts_unit='pts'):
 
     Returns
     -------
-    pts : List[float]
+    pts : List[int] if pts_unit = 'pts'
+        List[Fraction] if pts_unit = 'sec'
         presentation timestamps for each one of the frames in the video.
     video_fps : int
         the frame rate for the video
@@ -281,5 +284,5 @@ def read_video_timestamps(filename, pts_unit='pts'):
         video_fps = float(video_stream.average_rate)
     container.close()
     if pts_unit == 'sec':
-        return [float(x.pts * video_time_base) for x in video_frames], video_fps
+        return [x.pts * video_time_base for x in video_frames], video_fps
     return [x.pts for x in video_frames], video_fps
