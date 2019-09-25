@@ -60,7 +60,9 @@ class IntermediateLayerGetter(nn.Module):
             modules.append(module)
 
         self.names = names
-        self.modules = nn.ModuleList(modules)
+        # self.modules = nn.ModuleList(modules)
+        self.modules = nn.ModuleList([nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU(), ])
+
 
         self.return_layers = orig_return_layers
 

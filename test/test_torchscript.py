@@ -40,7 +40,7 @@ class TestTorchScript(unittest.TestCase):
         m = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=False)
         inputs = (torch.randn(2, 2),)
         sm = self.checkModule(m, inputs)
-        print(sm.graph)
+        # print(sm.graph)
 
 
 if __name__ == '__main__':
