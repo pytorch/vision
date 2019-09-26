@@ -7,6 +7,11 @@ import math
 
 
 
+# debug
+import inspect
+
+
+
 def get_available_classification_models():
     # TODO add a registration mechanism to torchvision.models
     return [k for k, v in models.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
@@ -130,17 +135,18 @@ class AlexnetTester(TorchVisionTester): # run time ~2s
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
 
         self._check_scriptable(model, True)
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [17, 85, 260, 422, 546, 583, 648, 652, 666, 805])
         expected_values = { # known good values for this model with rand seeded to standard
-            130 : 0.019345,
-            257 : -0.002852,
-            313 : 0.019647,
-            361 : -0.006478,
-            466 : 0.011666,
-            525 : 0.009539,
-            537 : 0.01841,
-            606 : 0.003135,
-            667 : 0.004638,
-            945 : -0.014482
+            17 : -1.784961E-02,
+            85 : 4.111526E-03,
+            260 : -7.347998E-03,
+            422 : -5.389921E-03,
+            546 : 4.218812E-04,
+            583 : 6.394656E-04,
+            648 : 1.458143E-02,
+            652 : 3.941567E-03,
+            666 : -1.270696E-02,
+            805 : 1.309388E-02
         }
         self._check_model_correctness(model, test_input, expected_values, 1000)
 
@@ -318,51 +324,57 @@ class VGGTester(TorchVisionTester): # run time ~140s
     def test_classification_vgg11(self):
         model = self._get_test_model(models.vgg11)
         self._check_scriptable(model, True)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [19, 88, 140, 345, 590, 711, 730, 736, 786, 996])
         expected_values = { # known good values for this model with rand seeded to standard
-            12 : -0.023673,
-            150 : -0.030705,
-            262 : 0.05549,
-            262 : 0.05549,
-            422 : -0.006336,
-            501 : 0.008839,
-            731 : 0.002569,
-            750 : -0.020255,
-            939 : 0.078099,
-            942 : 0.012279
+            19 : 3.458232E-03,
+            88 : 1.335686E-02,
+            140 : -3.639125E-02,
+            345 : -7.817472E-03,
+            590 : -3.509789E-02,
+            711 : -6.121674E-03,
+            730 : 3.107173E-02,
+            736 : -1.727812E-02,
+            786 : 1.223841E-02,
+            996 : 2.816231E-02
         }
         self._test_classification_vgg(model, expected_values)
 
     def test_classification_vgg11_bn(self):
         # NOTE no scriptability check specified
         model = self._get_test_model(models.vgg11_bn)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [9, 16, 66, 212, 218, 254, 270, 790, 942, 959])
         expected_values = { # known good values for this model with rand seeded to standard
-            88 : 0.013356,
-            136 : -0.025611,
-            323 : 0.08224,
-            335 : -0.022072,
-            343 : 0.024697,
-            350 : 0.047756,
-            384 : -0.004922,
-            640 : 0.008104,
-            687 : 7.1e-05,
-            823 : 0.032322
+            9 : -2.787093E-03,
+            16 : 3.576707E-02,
+            66 : -2.639397E-02,
+            212 : -5.736205E-03,
+            218 : -7.492830E-03,
+            254 : -7.046573E-04,
+            270 : -1.804215E-02,
+            790 : -1.000134E-02,
+            942 : 1.227958E-02,
+            959 : -2.625632E-02
         }
         self._test_classification_vgg(model, expected_values)
 
     def test_classification_vgg13(self):
         # NOTE no scriptability check specified
         model = self._get_test_model(models.vgg13)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [129, 205, 272, 336, 401, 432, 812, 860, 880, 964])
         expected_values = { # known good values for this model with rand seeded to standard
-            29 : 0.019654,
-            145 : -0.00043,
-            254 : -6.7e-05,
-            352 : 0.0138,
-            400 : 0.024247,
-            508 : 0.026169,
-            845 : 0.016207,
-            897 : -0.013479,
-            928 : 0.002154,
-            997 : 0.019514
+            129 : -5.939748E-03,
+            205 : 5.725319E-03,
+            272 : -1.597922E-02,
+            336 : -4.327245E-02,
+            401 : -7.134268E-02,
+            432 : 8.038238E-03,
+            812 : 2.041768E-02,
+            860 : -2.816942E-02,
+            880 : -8.570410E-03,
+            964 : 5.890184E-02
         }
         self._test_classification_vgg(model, expected_values)
 
@@ -371,86 +383,95 @@ class VGGTester(TorchVisionTester): # run time ~140s
         # NOTE this also passes using the expected values from vgg13 - is that expected?
         #      not the case with vgg11[_bn] (though some values were very close, just not within EPSILON)
         model = self._get_test_model(models.vgg13_bn)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [243, 347, 407, 591, 665, 668, 827, 866, 916, 969])
         expected_values = { # known good values for this model with rand seeded to standard
-            317 : 0.040705,
-            454 : 0.015814,
-            522 : -0.007018,
-            556 : 0.01947,
-            609 : -0.039502,
-            699 : -0.016666,
-            807 : 0.033923,
-            819 : 0.039569,
-            834 : -0.06542,
-            931 : -0.000928
+            243 : -1.422615E-02,
+            347 : -3.358474E-02,
+            407 : -1.568302E-02,
+            591 : -2.871177E-02,
+            665 : -2.439759E-02,
+            668 : -6.531857E-02,
+            827 : -7.009151E-03,
+            866 : 5.519774E-02,
+            916 : 1.613093E-02,
+            969 : -5.870605E-02
         }
         self._test_classification_vgg(model, expected_values)
 
     def test_classification_vgg16(self):
         # NOTE no scriptability check specified
         model = self._get_test_model(models.vgg16)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [249, 441, 514, 615, 620, 650, 794, 909, 929, 965])
         expected_values = { # known good values for this model with rand seeded to standard
-            1 : 0.010134,
-            42 : -0.022099,
-            221 : 0.092082,
-            512 : 0.058425,
-            552 : -0.024713,
-            664 : 0.018183,
-            689 : -0.000681,
-            700 : 0.003135,
-            909 : -0.006297,
-            982 : -0.071333
+            249 : -1.924329E-03,
+            441 : -3.037640E-02,
+            514 : 4.416623E-02,
+            615 : 4.362534E-02,
+            620 : -7.850133E-03,
+            650 : 5.465816E-04,
+            794 : -3.219938E-02,
+            909 : -6.297868E-03,
+            929 : -3.697080E-02,
+            965 : -7.405278E-03
         }
         self._test_classification_vgg(model, expected_values)
 
     def test_classification_vgg16_bn(self):
         # NOTE no scriptability check specified
         model = self._get_test_model(models.vgg16_bn)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [159, 199, 234, 253, 333, 584, 620, 634, 743, 859])
         expected_values = { # known good values for this model with rand seeded to standard
-            88 : -0.061056,
-            136 : -0.059298,
-            323 : 0.015986,
-            335 : 0.020001,
-            343 : -0.030813,
-            350 : -0.024766,
-            384 : -0.028537,
-            640 : 0.043581,
-            687 : 0.01704,
-            823 : -0.00098
+            159 : 1.883547E-02,
+            199 : 1.646904E-02,
+            234 : -1.799851E-02,
+            253 : 1.224894E-03,
+            333 : -4.926957E-04,
+            584 : -2.378101E-02,
+            620 : -7.849582E-03,
+            634 : -3.253389E-02,
+            743 : 4.304915E-02,
+            859 : -2.494348E-02
         }
         self._test_classification_vgg(model, expected_values)
 
     def test_classification_vgg19(self):
         # NOTE no scriptability check specified
         model = self._get_test_model(models.vgg19)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [54, 56, 93, 333, 439, 552, 562, 628, 785, 837])
         expected_values = { # known good values for this model with rand seeded to standard
-            327 : -0.0021,
-            367 : 0.006371,
-            670 : 0.047663,
-            763 : 0.009797,
-            848 : -0.00922,
-            864 : -0.03593,
-            877 : -0.032121,
-            902 : 0.030292,
-            933 : -0.038277,
-            970 : -0.033321
+            54 : 1.092859E-02,
+            56 : -1.234227E-02,
+            93 : 2.286904E-02,
+            333 : 8.079894E-04,
+            439 : -2.807981E-02,
+            552 : 4.727743E-02,
+            562 : 2.900094E-02,
+            628 : -1.278550E-02,
+            785 : 2.089911E-02,
+            837 : -1.127857E-02
         }
         self._test_classification_vgg(model, expected_values)
 
     def test_classification_vgg19_bn(self):
         # NOTE no scriptability check specified
         model = self._get_test_model(models.vgg19_bn)
-        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [5, 202, 264, 307, 313, 317, 467, 543, 631, 721])
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [118, 297, 390, 396, 475, 494, 515, 578, 725, 940])
         expected_values = { # known good values for this model with rand seeded to standard
-            5 : 2.132084E-03,
-            202 : -1.154007E-02,
-            264 : 6.224869E-03,
-            307 : 2.161325E-02,
-            313 : -4.450932E-02,
-            317 : -4.523434E-02,
-            467 : 1.715319E-02,
-            543 : 2.472959E-02,
-            631 : 4.078178E-02,
-            721 : 6.985172E-02
+            118 : 1.980081E-02,
+            297 : 1.414855E-02,
+            390 : 2.228560E-02,
+            396 : 8.866569E-03,
+            475 : 5.065463E-05,
+            494 : -6.476291E-02,
+            515 : -3.320419E-02,
+            578 : -9.235823E-02,
+            725 : 2.133613E-02,
+            940 : -3.484163E-02
         }
         self._test_classification_vgg(model, expected_values)
 
