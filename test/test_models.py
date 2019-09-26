@@ -536,18 +536,18 @@ class GoogleNetTester(TorchVisionTester):
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
 
         self._check_scriptable(model, False)
-
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [153, 264, 378, 518, 562, 654, 684, 747, 823, 843])
         expected_values = { # known good values for this model with rand seeded to standard
-            153 : -0.016547,
-            264 : -0.016431,
-            378 : 0.023583,
-            518 : 0.020691,
-            562 : 0.017025,
-            654 : 0.013468,
-            684 : -0.028167,
-            747 : -0.005827,
-            823 : 0.031032,
-            843 : 0.02653
+            153 : -1.654747E-02,
+            264 : -1.643153E-02,
+            378 : 2.358393E-02,
+            518 : 2.069115E-02,
+            562 : 1.702593E-02,
+            654 : 1.346865E-02,
+            684 : -2.816701E-02,
+            747 : -5.827621E-03,
+            823 : 3.103274E-02,
+            843 : 2.653003E-02
         }
         self._check_model_correctness(model, test_input, expected_values, 1000)
 
@@ -562,18 +562,18 @@ class MobileNetTester(TorchVisionTester):
 
         self._check_scriptable(model, True)
 
-        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [2, 115, 211, 222, 416, 562, 757, 900, 918, 984])
+        self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [2, 115, 211, 222, 416, 562, 757, 900, 918, 984])
         expected_values = { # known good values for this model with rand seeded to standard
-            2 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
-            115 : 0.0,
-            211 : 0.0,
-            222 : 0.0,
-            416 : 0.0,
-            562 : 0.0,
-            757 : 0.0,
-            900 : 0.0,
-            918 : 0.0,
-            984 : 0.0
+            2 : 5.376910E-11,
+            115 : 5.723687E-10,
+            211 : 5.142162E-10,
+            222 : 7.450356E-10,
+            416 : 1.624237E-10,
+            562 : -6.263705E-10,
+            757 : 1.555139E-10,
+            900 : 7.528030E-10,
+            918 : 1.139322E-09,
+            984 : -1.157643E-09
         }
         self._check_model_correctness(model, test_input, expected_values, 1000)
 
