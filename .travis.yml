@@ -76,7 +76,7 @@ install:
     cd -
 
 script:
-  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH test
+  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH -k 'not TestVideoReader' test
   - pytest test/test_hub.py
 
 after_success:
