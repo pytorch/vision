@@ -13,6 +13,8 @@ import random
 
 
 
+# TODO It is good to ensure that we have test coverage for new models, but
+#      I think the way to do this is to use a test coverage tool.
 def get_available_classification_models():
     # TODO add a registration mechanism to torchvision.models
     return [k for k, v in models.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
@@ -51,7 +53,7 @@ torchub_models = {
 
 STANDARD_SEED = 1729 # https://fburl.com/3i5wkg9p
 STANDARD_INPUT_SHAPE = (1, 3, 224, 224) # for ImageNet-trained models
-EPSILON = 1e-4
+EPSILON = 1e-6
 
 class TorchVisionTester(unittest.TestCase):
 
