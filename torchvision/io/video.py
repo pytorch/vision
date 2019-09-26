@@ -76,11 +76,19 @@ def write_video(filename, video_array, fps, video_codec='libx264', options=None)
     container.close()
 
 
-def _read_from_stream(container, start_offset, end_offset, stream, stream_name):
+def _read_from_stream(container, start_offset, end_offset, pts_unit, stream, stream_name):
     global _CALLED_TIMES, _GC_COLLECTION_INTERVAL
     _CALLED_TIMES += 1
     if _CALLED_TIMES % _GC_COLLECTION_INTERVAL == _GC_COLLECTION_INTERVAL - 1:
         gc.collect()
+
+    if pts_unit == 'sec':
+        start_offset = int(math.floor(start_offset * (1 / stream.time_base)))
+        if end_offset != float("inf"):
+            end_offset = int(math.ceil(end_offset * (1 / stream.time_base)))
+    else:
+        warnings.warn("The pts_unit 'pts' gives wrong results and will be removed in a " +
+                      "follow-up version. Please use pts_unit 'sec'.")
 
     frames = {}
     should_buffer = False
@@ -185,37 +193,19 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
         raise ValueError("end_pts should be larger than start_pts, got "
                          "start_pts={} and end_pts={}".format(start_pts, end_pts))
 
-    if pts_unit == 'pts':
-        warnings.warn("The pts_unit 'pts' gives wrong results and will be removed in a " +
-                      "follow-up version. Please use pts_unit 'sec'.")
-
     container = av.open(filename, metadata_errors='ignore')
     info = {}
 
     video_frames = []
     if container.streams.video:
-        video_start_pts = start_pts
-        video_end_pts = end_pts
-        video_stream = container.streams.video[0]
-        if pts_unit == 'sec':
-            video_start_pts = int(math.floor(start_pts * (1 / video_stream.time_base)))
-            if video_end_pts != float("inf"):
-                video_end_pts = int(math.ceil(end_pts * (1 / video_stream.time_base)))
-        video_frames = _read_from_stream(container, video_start_pts, video_end_pts,
-                                         video_stream, {'video': 0})
-        info["video_fps"] = float(video_stream.average_rate)
+        video_frames = _read_from_stream(container, start_pts, end_pts, pts_unit,
+                                         container.streams.video[0], {'video': 0})
+        info["video_fps"] = float(container.streams.video[0].average_rate)
     audio_frames = []
     if container.streams.audio:
-        audio_start_pts = start_pts
-        audio_end_pts = end_pts
-        audio_stream = container.streams.audio[0]
-        if pts_unit == 'sec':
-            audio_start_pts = int(math.floor(start_pts * (1 / audio_stream.time_base)))
-            if audio_end_pts != float("inf"):
-                audio_end_pts = int(math.ceil(end_pts * (1 / audio_stream.time_base)))
-        audio_frames = _read_from_stream(container, audio_start_pts, audio_end_pts,
-                                         audio_stream, {'audio': 0})
-        info["audio_fps"] = audio_stream.rate
+        audio_frames = _read_from_stream(container, start_pts, end_pts, pts_unit,
+                                         container.streams.audio[0], {'audio': 0})
+        info["audio_fps"] = container.streams.audio[0].rate
 
     container.close()
 
@@ -264,9 +254,6 @@ def read_video_timestamps(filename, pts_unit='pts'):
 
     """
     _check_av_available()
-    if pts_unit == 'pts':
-        warnings.warn("The pts_unit 'pts' gives wrong results and will be removed in a " +
-                      "follow-up version. Please use pts_unit 'sec'.")
 
     container = av.open(filename, metadata_errors='ignore')
 
@@ -279,7 +266,7 @@ def read_video_timestamps(filename, pts_unit='pts'):
             # fast path
             video_frames = [x for x in container.demux(video=0) if x.pts is not None]
         else:
-            video_frames = _read_from_stream(container, 0, float("inf"),
+            video_frames = _read_from_stream(container, 0, float("inf"), pts_unit,
                                              video_stream, {'video': 0})
         video_fps = float(video_stream.average_rate)
     container.close()

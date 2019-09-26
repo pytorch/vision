@@ -177,7 +177,9 @@ class Tester(unittest.TestCase):
 
             container = av.open(f_name)
             stream = container.streams[0]
-            lv, _, _ = io.read_video(f_name, int(pts[4] * (1.0 / stream.time_base) + 1) * stream.time_base, pts[7], pts_unit='sec')
+            lv, _, _ = io.read_video(f_name,
+                                     int(pts[4] * (1.0 / stream.time_base) + 1) * stream.time_base, pts[7],
+                                     pts_unit='sec')
             self.assertEqual(len(lv), 4)
             self.assertTrue(data[4:8].equal(lv))
 
