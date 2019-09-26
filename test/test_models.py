@@ -672,35 +672,35 @@ class ShuffleNetTester(TorchVisionTester):
 
         # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [121, 279, 296, 589, 633, 667, 835, 921, 923, 990])
         expected_values = { # known good values for this model with rand seeded to standard
-            121 : 0.006365,
-            279 : 0.02777,
-            296 : 0.01771,
-            589 : 0.007464,
-            633 : -0.004323,
-            667 : 0.020604,
-            835 : 0.028955,
-            921 : -0.004661,
-            923 : -0.019334,
-            990 : 0.027459
+            121 : 6.365352E-03,
+            279 : 2.777028E-02,
+            296 : 1.771086E-02,
+            589 : 7.464714E-03,
+            633 : -4.323924E-03,
+            667 : 2.060407E-02,
+            835 : 2.895552E-02,
+            921 : -4.661043E-03,
+            923 : -1.933447E-02,
+            990 : 2.745904E-02
         }
         self._test_classification_shufflenet(model, expected_values)
 
     def test_classification_shufflenet_v2_x1_0(self):
         model = self._get_test_model(models.shufflenet_v2_x1_0)
-        self._check_scriptable(model, True)
+        self._check_scriptable(model, True) # Failing!
 
         # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [50, 187, 438, 501, 518, 579, 588, 640, 667, 968])
         expected_values = { # known good values for this model with rand seeded to standard
-            50 : -0.002583,
-            187 : -0.005233,
-            438 : 0.020914,
-            501 : -0.005121,
-            518 : 0.016098,
-            579 : -0.008247,
-            588 : -0.015742,
-            640 : 0.025073,
-            667 : 0.010396,
-            968 : -0.009486
+            50 : -2.583135E-03,
+            187 : -5.233090E-03,
+            438 : 2.091412E-02,
+            501 : -5.121271E-03,
+            518 : 1.609881E-02,
+            579 : -8.247387E-03,
+            588 : -1.574289E-02,
+            640 : 2.507384E-02,
+            667 : 1.039669E-02,
+            968 : -9.486280E-03
         }
         self._test_classification_shufflenet(model, expected_values)
 
@@ -710,16 +710,16 @@ class ShuffleNetTester(TorchVisionTester):
 
         # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [75, 209, 239, 244, 285, 379, 511, 657, 744, 767])
         expected_values = { # known good values for this model with rand seeded to standard
-            75 : 0.014706,
-            209 : -0.013182,
-            239 : 0.005034,
-            244 : 0.020568,
-            285 : -0.014944,
-            379 : 0.008534,
-            511 : -0.02769,
-            657 : -0.03036,
-            744 : 0.000208,
-            767 : 0.019738
+            75 : 1.470629E-02,
+            209 : -1.318278E-02,
+            239 : 5.034821E-03,
+            244 : 2.056844E-02,
+            285 : -1.494422E-02,
+            379 : 8.534319E-03,
+            511 : -2.769079E-02,
+            657 : -3.036056E-02,
+            744 : 2.080933E-04,
+            767 : 1.973816E-02
         }
         self._test_classification_shufflenet(model, expected_values)
 
@@ -729,16 +729,16 @@ class ShuffleNetTester(TorchVisionTester):
 
         # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [110, 364, 458, 497, 542, 663, 694, 812, 880, 971])
         expected_values = { # known good values for this model with rand seeded to standard
-            110 : -0.013949,
-            364 : 0.009127,
-            458 : 0.009575,
-            497 : -0.005239,
-            542 : -0.004049,
-            663 : 0.005255,
-            694 : 0.002597,
-            812 : 0.013491,
-            880 : 0.020128,
-            971 : 0.005573
+            110 : -1.394911E-02,
+            364 : 9.127663E-03,
+            458 : 9.575198E-03,
+            497 : -5.239639E-03,
+            542 : -4.049195E-03,
+            663 : 5.255685E-03,
+            694 : 2.597559E-03,
+            812 : 1.349113E-02,
+            880 : 2.012882E-02,
+            971 : 5.573011E-03
         }
         self._test_classification_shufflenet(model, expected_values)
 
