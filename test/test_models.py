@@ -4,6 +4,7 @@ import torch
 from torchvision import models
 import unittest
 import math
+import numpy as np
 
 
 
@@ -554,6 +555,10 @@ class SqueezeNetTester(TorchVisionTester): # run time ~4s
         self._test_classification_squeezenet(model, expected_values)
 
 class InceptionTester(TorchVisionTester): # run time ~18s
+    def _rand_sync(self, callable=None, **kwargs):
+        np.random.seed(STANDARD_SEED) # scipy.stats dependency
+        return super(InceptionTester, self)._rand_sync(callable, **kwargs)
+
     def test_classification_inception_v3(self):
         INCEPTION_INPUT_SHAPE = (1, 3, 299, 299)
         # num_classes=1000
@@ -564,29 +569,18 @@ class InceptionTester(TorchVisionTester): # run time ~18s
 
         self._check_scriptable(model, False)
 
-        # TODO for whatever reason, this was not running deterministically - will fix others and come back
-        # NOTE values are also really huge, not the usual -1 < x < 1
-        # NOTE The issue is not rand dropout. InceptionV3 *does* use F.dropout where everyone else uses nn.Dropout,
-        #      But changing to nn or even removing the dropout layer doesn't make the run deterministic.
-        # NOTE When I create the model in the Python REPL, and run the *same* tensor through it more than once,
-        #      it looks like it's deterministic. Maybe it's the scipy PRNG? No idea.
-        # NOTE I checked the test input, it's being generated deterministically every time.
-        # NOTE This is interesting: The model is deterministic within a running process - i.e., if I execute the
-        #      test multiple times within the same run, it works. It gives a consistent answer within a run,
-        #      but it's a different answer for every run. I suspect the scipy PRNG is involved.
-        #   
         # self._build_correctness_check(model, INCEPTION_INPUT_SHAPE, [253, 261, 318, 401, 480, 562, 675, 771, 842, 890])
         expected_values = { # known good values for this model with rand seeded to standard
-            253 : 2.167112E+08,
-            261 : 3.270227E+07,
-            318 : -2.352469E+08,
-            401 : 1.535243E+08,
-            480 : 2.587064E+08,
-            562 : 2.433380E+08,
-            675 : 8.990869E+07,
-            771 : 2.878284E+08,
-            842 : -1.568332E+08,
-            890 : -2.132923E+08
+            253 : 2.412890E+09,
+            261 : 2.085432E+09,
+            318 : -3.774981E+08,
+            401 : 8.016343E+08,
+            480 : 2.166676E+09,
+            562 : 1.268920E+09,
+            675 : 1.014274E+09,
+            771 : -1.437167E+09,
+            842 : 7.277239E+08,
+            890 : 1.464046E+09,
         }
         self._check_model_correctness(model, test_input, expected_values, 1000)
 
