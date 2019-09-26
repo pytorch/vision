@@ -362,10 +362,14 @@ def crop(img, i, j, h, w):
     Returns:
         PIL Image: Cropped image.
     """
-    if not _is_pil_image(img):
+    if _is_pil_image(img):
+        return img.crop((j, i, j + w, i + h))
+    elif _is_tensor_image(img):
+        return clip[..., j:j + h, i:i + w]
+    else:
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    return img.crop((j, i, j + w, i + h))
+    
 
 
 def center_crop(img, output_size):
