@@ -9,6 +9,7 @@ import math
 
 # debug
 import inspect
+import random
 
 
 
@@ -115,8 +116,14 @@ class TorchVisionTester(unittest.TestCase):
                             'output tensor value at {} should be {}, got {}'.format(k, expected_values[k], y[0][k].item()))
 
     # I'm using this to help build sets of expected values; input indices are generated randomly elsewhere
-    def _build_correctness_check(self, model, input_shape, indices):
-         # do inference with RNG in known state for determinacy
+    def _build_correctness_check(self, model, input_shape, indices = None):
+        if indices is None:
+            indices = []
+            for i in range(10):
+                indices.append(random.randint(0,1000))
+            indices.sort()
+
+        # do inference with RNG in known state for determinacy
         y = self._infer_for_test_with(model, self._get_test_input(input_shape))
         print(y.shape) # output shape
         vals = []
@@ -135,7 +142,7 @@ class AlexnetTester(TorchVisionTester): # run time ~2s
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
 
         self._check_scriptable(model, True)
-        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [17, 85, 260, 422, 546, 583, 648, 652, 666, 805])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE)
         expected_values = { # known good values for this model with rand seeded to standard
             17 : -1.784961E-02,
             85 : 4.111526E-03,
@@ -161,17 +168,19 @@ class ResnetTester(TorchVisionTester): # run time ~130s
     def test_classification_resnet18(self):
         model = self._get_test_model(models.resnet18)
         self._check_scriptable(model, True)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE)
         expected_values = { # known good values for this model with rand seeded to standard
-            65 : -0.115954,
-            172 : 0.139294,
-            195 : 1.248264,
-            241 : -1.769466,
-            319 : -0.237925,
-            333 : -0.038517,
-            538 : -0.346574,
-            546 : 0.364637,
-            763 : 0.43461,
-            885 : -1.386981
+            84 : 7.921292E-01,
+            95 : -8.626075E-01,
+            198 : -3.315417E-01,
+            209 : -4.074208E-01,
+            267 : -1.350757E+00,
+            288 : 5.114775E-01,
+            468 : -9.876035E-01,
+            678 : 1.986771E-01,
+            686 : -2.126825E-01,
+            745 : 1.322185E-01
         }
         self._test_classification_resnet(model, expected_values)
 
@@ -179,34 +188,38 @@ class ResnetTester(TorchVisionTester): # run time ~130s
     def test_classification_resnet34(self):
         # NOTE passes scriptability check, but none was previously specified
         model = self._get_test_model(models.resnet34)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE)
         expected_values = { # known good values for this model with rand seeded to standard
-            69 : -0.073099,
-            328 : 10.624151,
-            387 : -31.548423,
-            391 : -14.790843,
-            560 : 3.853342,
-            601 : 2.775564,
-            631 : 44.730876,
-            795 : 7.870284,
-            875 : 12.352467,
-            960 : -12.154144
+            78 : 1.051084E+01,
+            128 : -3.450469E+00,
+            426 : 4.292104E+00,
+            456 : 2.427412E+01,
+            480 : -4.657684E+00,
+            557 : 9.758177E+00,
+            646 : -1.581276E+01,
+            749 : 2.536623E+00,
+            893 : 2.102486E+01,
+            901 : 8.516801E-01
         }
         self._test_classification_resnet(model, expected_values)
 
     def test_classification_resnet50(self):
         # NOTE fails scriptability check, but none was previously specified
         model = self._get_test_model(models.resnet50)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE)
         expected_values = { # known good values for this model with rand seeded to standard
-            44 : 12.24592,
-            91 : 9.113415,
-            238 : -7.919643,
-            260 : 1.651342,
-            263 : 3.42577,
-            391 : -1.186231,
-            416 : 0.128767,
-            648 : -8.874666,
-            700 : 13.21073,
-            883 : -10.211411
+            90 : -1.128571E+01,
+            288 : 8.061395E+00,
+            367 : 8.420571E+00,
+            462 : -2.997678E+00,
+            474 : 5.429098E+00,
+            575 : -1.098446E+01,
+            635 : -7.044466E+00,
+            706 : 1.058293E+01,
+            863 : -5.997756E+00,
+            913 : -4.179638E+00
         }
         self._test_classification_resnet(model, expected_values)
 
@@ -214,17 +227,19 @@ class ResnetTester(TorchVisionTester): # run time ~130s
         # NOTE fails scriptability check, but none was previously specified
         # NOTE weird, high output values compared to some others in resnet family
         model = self._get_test_model(models.resnet101)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE)
         expected_values = { # known good values for this model with rand seeded to standard
-            291 : -12148.84375,
-            303 : -4350.053222,
-            360 : 911.205444,
-            429 : -4101.465332,
-            509 : -10198.37207,
-            558 : 2845.450683,
-            743 : -604.379882,
-            747 : 3814.401611,
-            824 : 2433.574707,
-            856 : 10094.262695
+            223 : 4.355917E+03,
+            250 : -4.877168E+03,
+            262 : 1.647226E+03,
+            436 : -1.239408E+04,
+            531 : 4.820865E+03,
+            559 : 1.529453E+03,
+            702 : -1.411818E+04,
+            769 : -2.623067E+03,
+            990 : -2.992360E+03,
+            997 : -6.060187E+03
         }
         self._test_classification_resnet(model, expected_values)
 
@@ -232,85 +247,95 @@ class ResnetTester(TorchVisionTester): # run time ~130s
         # NOTE fails scriptability check, but none was previously specified
         # NOTE weird, high output values compared to some others in resnet family
         model = self._get_test_model(models.resnet152)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE)
         expected_values = { # known good values for this model with rand seeded to standard
-            37 : -6643550.0,
-            125 : -26183394.0,
-            240 : -17213840.0,
-            555 : 1835685.0,
-            573 : 21868084.0,
-            644 : 16231895.0,
-            761 : 19799108.0,
-            794 : 13369855.0,
-            805 : -7568018.0,
-            853 : 7857503.5
+            202 : 3.760286E+06,
+            366 : 3.434094E+07,
+            461 : 2.416596E+07,
+            463 : -8.811064E+06,
+            508 : 3.172601E+06,
+            624 : 4.106310E+05,
+            770 : 1.020243E+07,
+            826 : 1.066852E+07,
+            854 : -2.702246E+07,
+            868 : 1.479076E+07
         }
         self._test_classification_resnet(model, expected_values)
 
     def test_classification_resnext50_32x4d(self):
         model = self._get_test_model(models.resnext50_32x4d)
-        self._check_scriptable(model, False)
+        # self._check_scriptable(model, False)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE)
         expected_values = { # known good values for this model with rand seeded to standard
-            10 : 0.035699,
-            409 : 0.013995,
-            515 : -0.039913,
-            548 : -0.049931,
-            566 : 0.000606,
-            589 : 0.037367,
-            684 : -0.048179,
-            767 : -0.004519,
-            870 : -0.063937,
-            877 : -0.036286
+            8 : 1.195142E-02,
+            232 : -3.794406E-02,
+            366 : 2.968006E-02,
+            375 : 4.636388E-02,
+            393 : -8.227661E-03,
+            836 : 6.085198E-02,
+            854 : 2.434794E-02,
+            943 : -5.337046E-03,
+            955 : 1.393929E-03,
+            974 : -6.908817E-03
         }
         self._test_classification_resnet(model, expected_values)
 
     def test_classification_resnext101_32x8d(self):
         # NOTE no scriptability check specified
         model = self._get_test_model(models.resnext101_32x8d)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE)
         expected_values = { # known good values for this model with rand seeded to standard
-            264 : 0.002714,
-            274 : -0.061351,
-            366 : -0.096291,
-            378 : -0.05945,
-            471 : -0.001634,
-            534 : -0.021004,
-            544 : 0.028956,
-            584 : 0.058926,
-            742 : 0.055629,
-            822 : -0.02232
+            6 : -5.437661E-02,
+            108 : 1.919848E-02,
+            325 : -4.192499E-03,
+            327 : -9.156425E-02,
+            361 : -5.895464E-02,
+            510 : -4.544296E-02,
+            568 : -2.835527E-02,
+            679 : -4.588182E-02,
+            692 : 2.861079E-02,
+            820 : 5.712935E-02
         }
         self._test_classification_resnet(model, expected_values)
 
     def test_classification_wide_resnet50_2(self):
         # NOTE no scriptability check specified
         model = self._get_test_model(models.wide_resnet50_2)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE)
         expected_values = { # known good values for this model with rand seeded to standard
-            18 : 3.126974,
-            39 : -3.925597,
-            132 : -4.264346,
-            174 : -7.149744,
-            307 : 19.028724,
-            514 : 0.139877,
-            530 : -1.253244,
-            683 : -21.184637,
-            702 : -3.710342,
-            748 : 0.577609
+            0 : 2.909388E+00,
+            28 : 1.198006E+01,
+            247 : -9.703583E+00,
+            272 : 1.206837E+00,
+            371 : 1.662452E-02,
+            407 : -3.991163E+00,
+            416 : -5.484074E+00,
+            600 : 4.748647E+00,
+            758 : 1.355240E+01,
+            804 : 9.518572E+00
         }
         self._test_classification_resnet(model, expected_values)
 
     def test_classification_wide_resnet101_2(self):
         # NOTE no scriptability check specified
         model = self._get_test_model(models.wide_resnet101_2)
+        # print(inspect.stack()[0][3])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE)
         expected_values = { # known good values for this model with rand seeded to standard
-            63 : 2206.879882,
-            147 : 2459.263916,
-            238 : -27444.535156,
-            408 : 2603.14624,
-            478 : 1474.905883,
-            756 : 94.388496,
-            773 : 8560.335937,
-            927 : -13348.708984,
-            981 : 4570.083496,
-            994 : -924.104736
+            116 : 9.204982E+03,
+            144 : 4.886913E+03,
+            213 : 8.238505E+03,
+            391 : 1.011332E+04,
+            412 : -2.144386E+03,
+            449 : -1.285868E+03,
+            546 : 4.408850E+03,
+            560 : 1.586058E+04,
+            754 : 7.677771E+03,
+            955 : 4.844999E+03
         }
         self._test_classification_resnet(model, expected_values)
 
@@ -325,7 +350,7 @@ class VGGTester(TorchVisionTester): # run time ~140s
         model = self._get_test_model(models.vgg11)
         self._check_scriptable(model, True)
         # print(inspect.stack()[0][3])
-        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [19, 88, 140, 345, 590, 711, 730, 736, 786, 996])
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE)
         expected_values = { # known good values for this model with rand seeded to standard
             19 : 3.458232E-03,
             88 : 1.335686E-02,
