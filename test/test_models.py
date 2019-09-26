@@ -90,8 +90,10 @@ class TorchVisionTester(unittest.TestCase):
         self.assertEqual(out.shape, (1, num_classes))
 
     def _relative_error_within(self, expected, actual, tolerance):
+        if expected == 0.:
+            return actual == 0.
         abserr = abs(expected - actual)
-        if not ((abserr / expected) < tolerance) and False:
+        if not ((abserr / expected) < tolerance) and False: # debug
             print('expected {}'.format(expected))
             print('actual {}'.format(actual))
             print('tolerance {}'.format(tolerance))
@@ -103,11 +105,6 @@ class TorchVisionTester(unittest.TestCase):
     def _check_model_correctness(self, model, x, expected_values, num_classes):
         y = self._infer_for_test_with(model, x) # because dropout &c
         self._check_classification_output_shape(model, x, num_classes)
-        print('FOR REAL')
-        print('{')
-        for k in expected_values:
-            print('            {} : {},'.format(k, '%E' % y[0][k].item()))
-        print('}')
         for k in expected_values:
             self.assertTrue(self._relative_error_within(expected_values[k], y[0][k].item(), EPSILON),
                             'output tensor value at {} should be {}, got {}'.format(k, expected_values[k], y[0][k].item()))
@@ -470,17 +467,19 @@ class SqueezeNetTester(TorchVisionTester): # run time ~4s
         # NOTE seeing straight-up zeros in the expected values surprised me
         model = self._get_test_model(models.squeezenet1_0)
         self._check_scriptable(model, True)
+
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [89, 333, 337, 373, 520, 528, 571, 638, 707, 821])
         expected_values = { # known good values for this model with rand seeded to standard
-            277 : 0.0,
-            692 : 0.007344,
-            721 : 0.0,
-            851 : 0.000918,
-            871 : 0.11461,
-            880 : 0.00015,
-            934 : 0.000121,
-            937 : 0.010954,
-            966 : 0.008219,
-            991 : 0.0
+            89 : 0.000000E+00,
+            333 : 0.000000E+00,
+            337 : 0.000000E+00,
+            373 : 7.850152E-02,
+            520 : 7.918072E-02,
+            528 : 0.000000E+00,
+            571 : 3.812587E-03,
+            638 : 1.504575E-01,
+            707 : 0.000000E+00,
+            821 : 2.733751E-01
         }
         self._test_classification_squeezenet(model, expected_values)
 
@@ -490,17 +489,18 @@ class SqueezeNetTester(TorchVisionTester): # run time ~4s
         # NOTE no scriptability check specified, but this passes
         model = self._get_test_model(models.squeezenet1_1)
 
+        # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [87, 102, 428, 494, 635, 723, 883, 900, 932, 970])
         expected_values = { # known good values for this model with rand seeded to standard
-            42 : 0.005651,
-            127 : 0.002385,
-            140 : 0.402233,
-            321 : 0.0,
-            520 : 0.0,
-            663 : 0.05538,
-            687 : 0.000343,
-            822 : 0.180019,
-            957 : 0.0,
-            967 : 0.0
+            87 : 5.559896E-03,
+            102 : 2.049656E-01,
+            428 : 2.592387E-02,
+            494 : 7.646167E-02,
+            635 : 5.003151E-01,
+            723 : 1.846589E-01,
+            883 : 1.804985E-03,
+            900 : 3.174357E-01,
+            932 : 4.590575E-02,
+            970 : 1.557179E-01
         }
         self._test_classification_squeezenet(model, expected_values)
 
