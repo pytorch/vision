@@ -592,16 +592,16 @@ class MNASNetTester(TorchVisionTester):
 
         # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [124, 249, 272, 287, 306, 409, 494, 505, 569, 959])
         expected_values = { # known good values for this model with rand seeded to standard
-            124 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
-            249 : 0.0,
-            272 : 0.0,
-            287 : 0.0,
-            306 : 0.0,
-            409 : 0.0,
-            494 : 0.0,
-            505 : 0.0,
-            569 : 0.0,
-            959 : 0.0
+            124 : 2.703910E-07,
+            249 : -1.089239E-07,
+            272 : 2.899310E-07,
+            287 : 1.193933E-07,
+            306 : -2.121729E-07,
+            409 : -3.381995E-08,
+            494 : -6.292279E-08,
+            505 : 2.337501E-07,
+            569 : 2.391237E-07,
+            959 : -4.019812E-08
         }
         self._test_classification_mnas(model, expected_values)
 
@@ -611,16 +611,16 @@ class MNASNetTester(TorchVisionTester):
 
         # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [56, 62, 304, 330, 380, 388, 434, 443, 550, 579])
         expected_values = { # known good values for this model with rand seeded to standard
-            56 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
-            62 : 0.0,
-            304 : 0.0,
-            330 : 0.0,
-            380 : 0.0,
-            388 : 0.0,
-            434 : 0.0,
-            443 : 0.0,
-            550 : 0.0,
-            579 : 0.0
+            56 : 1.806811E-09,
+            62 : -3.786029E-08,
+            304 : 8.238560E-08,
+            330 : -7.117174E-08,
+            380 : -2.559868E-07,
+            388 : 2.254940E-08,
+            434 : 6.211397E-08,
+            443 : -2.445332E-07,
+            550 : -9.940627E-08,
+            579 : 1.639630E-07
         }
         self._test_classification_mnas(model, expected_values)
 
@@ -629,16 +629,16 @@ class MNASNetTester(TorchVisionTester):
 
         # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [252, 287, 291, 297, 351, 384, 542, 653, 738, 829])
         expected_values = { # known good values for this model with rand seeded to standard
-            252 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
-            287 : 0.0,
-            291 : 0.0,
-            297 : 0.0,
-            351 : 0.0,
-            384 : 0.0,
-            542 : 0.0,
-            653 : 0.0,
-            738 : 0.0,
-            829 : 0.0
+            252 : -2.228216E-08,
+            287 : 9.844145E-08,
+            291 : 6.898448E-08,
+            297 : 1.076740E-07,
+            351 : -2.434381E-08,
+            384 : -1.197281E-07,
+            542 : 2.228182E-08,
+            653 : -5.830330E-09,
+            738 : 9.718425E-09,
+            829 : 6.893035E-08
         }
         self._test_classification_mnas(model, expected_values)
 
@@ -647,16 +647,16 @@ class MNASNetTester(TorchVisionTester):
 
         # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [96, 207, 397, 552, 654, 750, 751, 788, 822, 827])
         expected_values = { # known good values for this model with rand seeded to standard
-            96 : 1.0, # actual is 0.0, but i want to induce failure here until i understand the 0.0
-            207 : 0.0,
-            397 : 0.0,
-            552 : 0.0,
-            654 : 0.0,
-            750 : 0.0,
-            751 : 0.0,
-            788 : 0.0,
-            822 : 0.0,
-            827 : 0.0,
+            96 : -4.894060E-09,
+            207 : 1.960604E-08,
+            397 : 1.658925E-08,
+            552 : -2.500858E-08,
+            654 : 3.843252E-08,
+            750 : -4.504147E-08,
+            751 : 2.236427E-08,
+            788 : -1.602543E-08,
+            822 : 1.778895E-08,
+            827 : 7.287996E-08
         }
         self._test_classification_mnas(model, expected_values)
 
