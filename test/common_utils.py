@@ -92,4 +92,4 @@ class TestCase(unittest.TestCase):
             if not torch.testing.assert_allclose(output, expected):
                 return accept_output("updated output")
         else:
-            torch.testing.assert_allclose(s, expected)
+            torch.testing.assert_allclose(output, expected)
