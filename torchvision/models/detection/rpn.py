@@ -53,8 +53,10 @@ class AnchorGenerator(nn.Module):
         self.cell_anchors = None
         self._cache = {}
 
-    @staticmethod
-    def generate_anchors(scales, aspect_ratios, dtype=torch.float32, device="cpu"):
+    # TODO: https://github.com/pytorch/pytorch/issues/26792
+    # @staticmethod
+    def generate_anchors(self, scales, aspect_ratios, dtype=torch.float32, device="cpu"):
+        # type: (List[int], List[float], int, Device)
         scales = torch.as_tensor(scales, dtype=dtype, device=device)
         aspect_ratios = torch.as_tensor(aspect_ratios, dtype=dtype, device=device)
         h_ratios = torch.sqrt(aspect_ratios)

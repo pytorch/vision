@@ -6,6 +6,7 @@ import contextlib
 
 @contextlib.contextmanager
 def freeze_rng_state():
+    torch.manual_seed(0)
     rng_state = torch.get_rng_state()
     if torch.cuda.is_available():
         cuda_rng_state = torch.cuda.get_rng_state()
@@ -42,6 +43,19 @@ class TestTorchScript(unittest.TestCase):
         sm = self.checkModule(m, inputs)
         # print(sm.graph)
 
+
+    def test_maskrcnn_eager(self):
+        with freeze_rng_state():
+            model = torchvision.models.detection.maskrcnn_resnet50_fpn(num_classes=5, pretrained=False)
+            model.eval()
+            input_shape = (3, 300, 300)
+            x = torch.rand(input_shape, dtype=torch.float)
+            model_input = [
+                torch.rand((3, 300, 300)),
+            ]
+            out = model(model_input)
+            print(out)
+            # torch.save(out, "script_maskrcnn_out.pt")
 
 if __name__ == '__main__':
     unittest.main()
