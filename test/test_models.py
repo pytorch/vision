@@ -53,7 +53,8 @@ torchub_models = {
 
 STANDARD_SEED = 1729 # https://fburl.com/3i5wkg9p
 STANDARD_INPUT_SHAPE = (1, 3, 224, 224) # for ImageNet-trained models
-EPSILON = 1e-6
+EPSILON = 1e-3
+
 
 class TorchVisionTester(unittest.TestCase):
 
