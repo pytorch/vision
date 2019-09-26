@@ -4,6 +4,8 @@ import math
 
 import torch
 
+from typing import List
+
 
 @torch.jit.script
 class BalancedPositiveNegativeSampler(object):

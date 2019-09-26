@@ -73,14 +73,14 @@ class AnchorGenerator(nn.Module):
         cell_anchors = []
 
         # TODO: enable
-        # for sizes, aspect_ratios in zip(list(self.sizes), list(self.aspect_ratios)):
-        #     anchor = self.generate_anchors(
-        #         sizes,
-        #         aspect_ratios,
-        #         dtype,
-        #         device
-        #     )
-        #     cell_anchors.append(anchor)
+        for sizes, aspect_ratios in zip(list(self.sizes), list(self.aspect_ratios)):
+            anchor = self.generate_anchors(
+                sizes,
+                aspect_ratios,
+                dtype,
+                device
+            )
+            cell_anchors.append(anchor)
         self.cell_anchors = cell_anchors
 
     def num_anchors_per_location(self):
@@ -134,7 +134,6 @@ class AnchorGenerator(nn.Module):
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
         anchors = torch.jit.annotate(List[List[torch.Tensor]], [])
-        print(len(anchors))
         for i, (image_height, image_width) in enumerate(image_list.image_sizes):
             anchors_in_image = []
             for anchors_per_feature_map in anchors_over_all_feature_maps:

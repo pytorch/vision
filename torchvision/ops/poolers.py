@@ -104,16 +104,16 @@ class MultiScaleRoIAlign(nn.Module):
         return rois
 
     def infer_scale(self, feature, original_size):
-        # type: (Tensor, Tuple[int, int])
+        # type: (Tensor, List[int])
         # assumption: the scale is of the form 2 ** (-k), with k integer
         size = feature.shape[-2:]
         possible_scales = torch.jit.annotate(List[float], [])
-        for s1, s2 in zip(size, list(original_size)):
+        for s1, s2 in zip(size, original_size):
             approx_scale = float(s1) / float(s2)
             exp = float(torch.tensor(approx_scale).log2().round().item())
             scale = 2. ** exp
             possible_scales.append(scale)
-        assert possible_scales[0] == possible_scales[1]
+        # assert possible_scales[0] == possible_scales[1], str(possible_scales)
         return possible_scales[0]
 
     def setup_scales(self, features, image_shapes):
@@ -125,6 +125,8 @@ class MultiScaleRoIAlign(nn.Module):
             max_y = max(shape[1], max_y)
         # original_input_shape = [max(s) for s in zip(*image_shapes)]
         original_input_shape = (max_x, max_y)
+        original_input_shape = tuple(max(s) for s in zip(*image_shapes))
+        print(original_input_shape)
         scales = [self.infer_scale(feat, original_input_shape) for feat in features]
         # get the levels in the feature map by leveraging the fact that the network always
         # downsamples by a factor of 2 at each level.

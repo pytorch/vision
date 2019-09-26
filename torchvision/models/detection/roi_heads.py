@@ -9,7 +9,7 @@ from torchvision.ops import roi_align
 
 from . import _utils as det_utils
 
-from typing import Optional
+from typing import Optional, List, Dict
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
@@ -591,7 +591,7 @@ class RoIHeads(torch.nn.Module):
         box_features = self.box_head(box_features)
         class_logits, box_regression = self.box_predictor(box_features)
 
-        result = torch.jit.annotate(List[Dict[str, Tensor]], [])
+        result = torch.jit.annotate(List[Dict[str, torch.Tensor]], [])
         losses = {}
         if self.training:
             assert labels is not None
