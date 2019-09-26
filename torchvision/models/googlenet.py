@@ -1,3 +1,5 @@
+from __future__ import division
+
 import warnings
 from collections import namedtuple
 import torch
