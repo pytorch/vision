@@ -15,9 +15,18 @@ def crop(clip, i, j, h, w):
     """
     Args:
         clip (torch.tensor): Video clip to be cropped. Size is (C, T, H, W)
+        i (int): i in (i,j) i.e coordinates of the upper left corner.
+        j (int): j in (i,j) i.e coordinates of the upper left corner.
+        h (int): Height of the cropped region.
+        w (int): Width of the cropped region.
+        size (tuple(int, int)): height and width of resized clip
+    Returns:
+        clip (torch.tensor): Resized and cropped clip. Size is (C, T, H, W)
     """
     assert len(clip.size()) == 4, "clip should be a 4D tensor"
-    return clip[..., i:i + h, j:j + w]
+    assert (j + h) <= clip.shape[-2], "cropped region is out of boundary in y-axis"
+    assert (i + w) <= clip.shape[-1], "cropped region is out of boundary in x-axis"
+    return clip[..., j:j + h, i:i + w]
 
 
 def resize(clip, target_size, interpolation_mode):
