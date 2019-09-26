@@ -1,10 +1,19 @@
+from common_utils import TestCase
 from collections import OrderedDict
 from itertools import product
 import torch
+import numpy as np
 from torchvision import models
 import unittest
 import traceback
+import random
 
+def set_rng_seed(seed):
+    torch.manual_seed(seed)
+    random.seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.set_rng_state(seed)
+    np.random.seed(seed)
 
 def get_available_classification_models():
     # TODO add a registration mechanism to torchvision.models
@@ -43,7 +52,7 @@ torchub_models = {
 }
 
 
-class Tester(unittest.TestCase):
+class Tester(TestCase):
     def check_script(self, model, name):
         if name not in torchub_models:
             return
@@ -58,6 +67,7 @@ class Tester(unittest.TestCase):
         self.assertEqual(torchub_models[name], scriptable, msg)
 
     def _test_classification_model(self, name, input_shape):
+        set_rng_seed(0)
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
         model = models.__dict__[name](num_classes=50)
@@ -65,9 +75,11 @@ class Tester(unittest.TestCase):
         model.eval()
         x = torch.rand(input_shape)
         out = model(x)
+        self.assertExpected(out, subname="_classification")
         self.assertEqual(out.shape[-1], 50)
 
     def _test_segmentation_model(self, name):
+        set_rng_seed(0)
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
         model = models.segmentation.__dict__[name](num_classes=50, pretrained_backbone=False)
@@ -76,9 +88,11 @@ class Tester(unittest.TestCase):
         input_shape = (1, 3, 300, 300)
         x = torch.rand(input_shape)
         out = model(x)
+        self.assertExpected(out, subname=name)
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
 
     def _test_detection_model(self, name):
+        set_rng_seed(0)
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
         self.check_script(model, name)
         model.eval()
@@ -86,6 +100,7 @@ class Tester(unittest.TestCase):
         x = torch.rand(input_shape)
         model_input = [x]
         out = model(model_input)
+        self.assertExpected(out, subname=name)
         self.assertIs(model_input[0], x)
         self.assertEqual(len(out), 1)
         self.assertTrue("boxes" in out[0])
@@ -93,6 +108,7 @@ class Tester(unittest.TestCase):
         self.assertTrue("labels" in out[0])
 
     def _test_video_model(self, name):
+        set_rng_seed(0)
         # the default input shape is
         # bs * num_channels * clip_len * h *w
         input_shape = (1, 3, 4, 112, 112)
@@ -101,6 +117,7 @@ class Tester(unittest.TestCase):
         self.check_script(model, name)
         x = torch.rand(input_shape)
         out = model(x)
+        self.assertExpected(out, subname=name)
         self.assertEqual(out.shape[-1], 50)
 
     def _make_sliced_model(self, model, stop_layer):
@@ -113,6 +130,7 @@ class Tester(unittest.TestCase):
         return new_model
 
     def test_memory_efficient_densenet(self):
+        set_rng_seed(0)
         input_shape = (1, 3, 300, 300)
         x = torch.rand(input_shape)
 
@@ -122,6 +140,8 @@ class Tester(unittest.TestCase):
             model1.eval()
             out1 = model1(x)
             out1.sum().backward()
+
+            self.assertExpected(out1, subname=name + "_memory_efficient")
 
             model2 = models.__dict__[name](num_classes=50, memory_efficient=False)
             model2.load_state_dict(params)
@@ -133,24 +153,31 @@ class Tester(unittest.TestCase):
             self.assertTrue(max_diff < 1e-5)
 
     def test_resnet_dilation(self):
+        set_rng_seed(0)
         # TODO improve tests to also check that each layer has the right dimensionality
+        index = 0
         for i in product([False, True], [False, True], [False, True]):
             model = models.__dict__["resnet50"](replace_stride_with_dilation=i)
             model = self._make_sliced_model(model, stop_layer="layer4")
             model.eval()
             x = torch.rand(1, 3, 224, 224)
             out = model(x)
+            self.assertExpected(out, subname="resnet50_dilation_" + str(index))
             f = 2 ** sum(i)
             self.assertEqual(out.shape, (1, 2048, 7 * f, 7 * f))
+            index += 1
 
     def test_mobilenetv2_residual_setting(self):
+        set_rng_seed(0)
         model = models.__dict__["mobilenet_v2"](inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
         model.eval()
         x = torch.rand(1, 3, 224, 224)
         out = model(x)
+        self.assertExpected(out)
         self.assertEqual(out.shape[-1], 1000)
 
     def test_fasterrcnn_double(self):
+        set_rng_seed(0)
         model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
         model.double()
         model.eval()
@@ -158,6 +185,7 @@ class Tester(unittest.TestCase):
         x = torch.rand(input_shape, dtype=torch.float64)
         model_input = [x]
         out = model(model_input)
+        # self.assertExpected(out) TODO run and generate
         self.assertIs(model_input[0], x)
         self.assertEqual(len(out), 1)
         self.assertTrue("boxes" in out[0])
