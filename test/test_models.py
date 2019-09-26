@@ -41,6 +41,7 @@ torchub_models = [
     "inception_v3",
 ]
 
+
 class Tester(unittest.TestCase):
     def check_script(self, model, name):
         if name not in torchub_models:
