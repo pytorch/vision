@@ -37,7 +37,10 @@ class Kinetics400(VisionDataset):
     """
 
     def __init__(self, root, frames_per_clip, step_between_clips=1, frame_rate=None,
-                 extensions=('avi',), transform=None, _precomputed_metadata=None):
+                 extensions=('avi',), transform=None, _precomputed_metadata=None,
+                 num_workers=1):
+        from torchvision import get_video_backend
+
         super(Kinetics400, self).__init__(root)
         extensions = ('avi',)
 
@@ -52,8 +55,14 @@ class Kinetics400(VisionDataset):
             step_between_clips,
             frame_rate,
             _precomputed_metadata,
+            _backend=get_video_backend(),
+            num_workers=num_workers,
         )
         self.transform = transform
+
+    @property
+    def metadata(self):
+        return self.video_clips.metadata
 
     def __len__(self):
         return self.video_clips.num_clips()

@@ -145,6 +145,7 @@ class VideoClips(object):
             _metadata.update({"video_fps": self.video_fps})
         else:
             _metadata.update({"info": self.info})
+        return _metadata
 
     def subset(self, indices):
         video_paths = [self.video_paths[i] for i in indices]
@@ -162,7 +163,7 @@ class VideoClips(object):
         else:
             metadata.update({"info": info})
         return type(self)(video_paths, self.num_frames, self.step, self.frame_rate,
-                          _precomputed_metadata=metadata)
+                          _precomputed_metadata=metadata, _backend=self._backend)
 
     @staticmethod
     def compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate):
@@ -206,9 +207,14 @@ class VideoClips(object):
                 self.resampling_idxs.append(idxs)
         else:
             for video_pts, info in zip(self.video_pts, self.info):
-                clips, idxs = self.compute_clips_for_video(video_pts, num_frames, step, info["video_fps"], frame_rate)
-                self.clips.append(clips)
-                self.resampling_idxs.append(idxs)
+                if "video_fps" in info:
+                    clips, idxs = self.compute_clips_for_video(video_pts, num_frames, step, info["video_fps"], frame_rate)
+                    self.clips.append(clips)
+                    self.resampling_idxs.append(idxs)
+                else:
+                    # properly handle the cases where video decoding fails
+                    self.clips.append(torch.zeros(0, num_frames, dtype=torch.int64))
+                    self.resampling_idxs.append(torch.zeros(0, dtype=torch.int64))
         clip_lengths = torch.as_tensor([len(v) for v in self.clips])
         self.cumulative_sizes = clip_lengths.cumsum(0).tolist()
 
