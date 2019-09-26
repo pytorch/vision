@@ -24,8 +24,6 @@ def crop(clip, i, j, h, w):
         clip (torch.tensor): Resized and cropped clip. Size is (C, T, H, W)
     """
     assert len(clip.size()) == 4, "clip should be a 4D tensor"
-    assert (j + h) <= clip.shape[-2], "cropped region is out of boundary in y-axis"
-    assert (i + w) <= clip.shape[-1], "cropped region is out of boundary in x-axis"
     return clip[..., j:j + h, i:i + w]
 
 
