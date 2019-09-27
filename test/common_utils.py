@@ -98,7 +98,7 @@ class TestCase(unittest.TestCase):
         self.assertIs(type(a) == type(b))
 
         if isinstance(a, torch.Tensor):
-            torch.testing.assert_allclose(a, b):
+            torch.testing.assert_allclose(a, b)
 
         if isinstance(a, dict):
             self.assertEqual(len(a), len(b))
