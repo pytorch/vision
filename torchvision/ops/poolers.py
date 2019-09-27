@@ -19,7 +19,7 @@ def _onnx_merge_levels(levels, unmerged_results):
                        first_result.size(2), first_result.size(3)),
                       dtype=dtype, device=device)
     for l in range(len(unmerged_results)):
-        index = (levels == l).nonzero().view(-1, 1, 1, 1)
+        index = (levels.to(torch.int64) == l).nonzero().view(-1, 1, 1, 1)
         index = index.expand(index.size(0),
                              unmerged_results[l].size(1),
                              unmerged_results[l].size(2),
@@ -176,7 +176,7 @@ class MultiScaleRoIAlign(nn.Module):
 
         results = []
         for level, (per_level_feature, scale) in enumerate(zip(x, self.scales)):
-            idx_in_level = torch.nonzero(levels == level).squeeze(1)
+            idx_in_level = torch.nonzero(levels.to(torch.int64) == level).squeeze(1)
             rois_per_level = rois[idx_in_level]
 
             result_idx_in_level = roi_align(
