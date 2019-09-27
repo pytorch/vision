@@ -92,4 +92,25 @@ class TestCase(unittest.TestCase):
             if not torch.testing.assert_allclose(output, expected):
                 return accept_output("updated output")
         else:
-            torch.testing.assert_allclose(output, expected)
+            self.assertNestedTensorObjectsEqual(output, expected)
+
+    def assertNestedTensorObjectsEqual(self, a, b):
+        self.assertIs(type(a) == type(b))
+
+        if isinstance(a, torch.Tensor):
+            torch.testing.assert_allclose(a, b):
+
+        if isinstance(a, dict):
+            self.assertEqual(len(a), len(b))
+            for key, value in a.items():
+                self.assertTrue(key in b, "key: " + str(key))
+
+                self.assertNestedTensorObjectsEqual(value, b[key])
+        elif isinstance(a, list):
+            self.assertEqual(len(a), len(b))
+
+            for val1, val2 in zip(a, b):
+                self.assertNestedTensorObjectsEqual(val1, val2)
+
+        else:
+            self.assertEqual(a, b)
