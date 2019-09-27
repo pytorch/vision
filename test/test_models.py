@@ -67,7 +67,6 @@ class Tester(TestCase):
         self.assertEqual(torchub_models[name], scriptable, msg)
 
     def _test_classification_model(self, name, input_shape):
-        set_rng_seed(0)
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
         model = models.__dict__[name](num_classes=50)
@@ -78,7 +77,6 @@ class Tester(TestCase):
         self.assertEqual(out.shape[-1], 50)
 
     def _test_segmentation_model(self, name):
-        set_rng_seed(0)
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
         model = models.segmentation.__dict__[name](num_classes=50, pretrained_backbone=False)
@@ -106,7 +104,6 @@ class Tester(TestCase):
         self.assertTrue("labels" in out[0])
 
     def _test_video_model(self, name):
-        set_rng_seed(0)
         # the default input shape is
         # bs * num_channels * clip_len * h *w
         input_shape = (1, 3, 4, 112, 112)
@@ -127,7 +124,6 @@ class Tester(TestCase):
         return new_model
 
     def test_memory_efficient_densenet(self):
-        set_rng_seed(0)
         input_shape = (1, 3, 300, 300)
         x = torch.rand(input_shape)
 
@@ -148,7 +144,6 @@ class Tester(TestCase):
             self.assertTrue(max_diff < 1e-5)
 
     def test_resnet_dilation(self):
-        set_rng_seed(0)
         # TODO improve tests to also check that each layer has the right dimensionality
         index = 0
         for i in product([False, True], [False, True], [False, True]):
@@ -162,7 +157,6 @@ class Tester(TestCase):
             index += 1
 
     def test_mobilenetv2_residual_setting(self):
-        set_rng_seed(0)
         model = models.__dict__["mobilenet_v2"](inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
         model.eval()
         x = torch.rand(1, 3, 224, 224)
@@ -170,7 +164,6 @@ class Tester(TestCase):
         self.assertEqual(out.shape[-1], 1000)
 
     def test_fasterrcnn_double(self):
-        set_rng_seed(0)
         model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
         model.double()
         model.eval()
