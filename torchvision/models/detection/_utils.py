@@ -206,8 +206,10 @@ class BoxCoder(object):
         pred_boxes2 = pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h
         pred_boxes3 = pred_ctr_x + torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w
         pred_boxes4 = pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h
-        pred_boxes = torch.cat((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), 1)
-
+        pred_boxes = torch.cat((pred_boxes1.unsqueeze(2),
+                                pred_boxes2.unsqueeze(2),
+                                pred_boxes3.unsqueeze(2),
+                                pred_boxes4.unsqueeze(2)), 2)
         return pred_boxes
 
 
