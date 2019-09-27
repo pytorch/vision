@@ -106,7 +106,7 @@ class TestCase(unittest.TestCase):
                 self.assertTrue(key in b, "key: " + str(key))
 
                 self.assertNestedTensorObjectsEqual(value, b[key])
-        elif isinstance(a, list):
+        elif isinstance(a, (list, tuple)):
             self.assertEqual(len(a), len(b))
 
             for val1, val2 in zip(a, b):
