@@ -444,7 +444,8 @@ class RoIHeads(torch.nn.Module):
 
     def select_training_samples(self, proposals, targets):
         self.check_targets(targets)
-        gt_boxes = [t["boxes"] for t in targets]
+        dtype = proposals[0].dtype
+        gt_boxes = [t["boxes"].to(dtype) for t in targets]
         gt_labels = [t["labels"] for t in targets]
 
         # append ground-truth bboxes to propos

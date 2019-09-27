@@ -1,16 +1,14 @@
 import torch
-from torch import nn
-
-from torch.autograd import Function
-from torch.autograd.function import once_differentiable
+from torch import nn, Tensor
 
 from torch.nn.modules.utils import _pair
+from torch.jit.annotations import List
 
-from torchvision.extension import _lazy_import
 from ._utils import convert_boxes_to_roi_format
 
 
 def roi_pool(input, boxes, output_size, spatial_scale=1.0):
+    # type: (Tensor, Tensor, int, float) -> Tensor
     """
     Performs Region of Interest (RoI) Pool operator described in Fast R-CNN
 
@@ -30,9 +28,9 @@ def roi_pool(input, boxes, output_size, spatial_scale=1.0):
         output (Tensor[K, C, output_size[0], output_size[1]])
     """
     rois = boxes
+    output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
-    _lazy_import()
     output, _ = torch.ops.torchvision.roi_pool(input, rois, spatial_scale,
                                                output_size[0], output_size[1])
     return output

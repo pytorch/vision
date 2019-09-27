@@ -1,0 +1,25 @@
+parameters:
+   msagent: false
+
+steps:
+- ${{ if eq(parameters.msagent, 'true') }}:
+  - task: BatchScript@1
+    displayName: 'Install 7Zip & cURL'
+    inputs:
+      filename: 'packaging/windows/internal/dep_install.bat'
+
+      modifyEnvironment: true
+
+  - task: BatchScript@1
+    displayName: 'Install Visual Studio 2017'
+    inputs:
+      filename: 'packaging/windows/internal/vs_install.bat'
+
+      modifyEnvironment: true
+
+  - task: BatchScript@1
+    displayName: 'Install CUDA'
+    inputs:
+      filename: 'packaging/windows/internal/cuda_install.bat'
+
+      modifyEnvironment: true
