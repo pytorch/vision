@@ -89,7 +89,7 @@ class TestCase(unittest.TestCase):
                      "python {} {} --accept").format(munged_id, subname_output, output, __main__.__file__, munged_id))
 
         if ACCEPT:
-            if not torch.testing.assert_allclose(output, expected):
+            if not self.assertNestedTensorObjectsEqual(output, expected):
                 return accept_output("updated output")
         else:
             self.assertNestedTensorObjectsEqual(output, expected)
