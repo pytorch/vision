@@ -75,7 +75,6 @@ class Tester(TestCase):
         model.eval()
         x = torch.rand(input_shape)
         out = model(x)
-        self.assertExpected(out, subname="_classification")
         self.assertEqual(out.shape[-1], 50)
 
     def _test_segmentation_model(self, name):
@@ -88,7 +87,6 @@ class Tester(TestCase):
         input_shape = (1, 3, 300, 300)
         x = torch.rand(input_shape)
         out = model(x)
-        self.assertExpected(out, subname=name)
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
 
     def _test_detection_model(self, name):
@@ -100,9 +98,9 @@ class Tester(TestCase):
         x = torch.rand(input_shape)
         model_input = [x]
         out = model(model_input)
-        self.assertExpected(out, subname=name)
         self.assertIs(model_input[0], x)
         self.assertEqual(len(out), 1)
+        self.assertExpected(out, name)
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
@@ -117,7 +115,6 @@ class Tester(TestCase):
         self.check_script(model, name)
         x = torch.rand(input_shape)
         out = model(x)
-        self.assertExpected(out, subname=name)
         self.assertEqual(out.shape[-1], 50)
 
     def _make_sliced_model(self, model, stop_layer):
@@ -141,8 +138,6 @@ class Tester(TestCase):
             out1 = model1(x)
             out1.sum().backward()
 
-            self.assertExpected(out1, subname=name + "_memory_efficient")
-
             model2 = models.__dict__[name](num_classes=50, memory_efficient=False)
             model2.load_state_dict(params)
             model2.eval()
@@ -162,7 +157,6 @@ class Tester(TestCase):
             model.eval()
             x = torch.rand(1, 3, 224, 224)
             out = model(x)
-            self.assertExpected(out, subname="resnet50_dilation_" + str(index))
             f = 2 ** sum(i)
             self.assertEqual(out.shape, (1, 2048, 7 * f, 7 * f))
             index += 1
@@ -173,7 +167,6 @@ class Tester(TestCase):
         model.eval()
         x = torch.rand(1, 3, 224, 224)
         out = model(x)
-        self.assertExpected(out)
         self.assertEqual(out.shape[-1], 1000)
 
     def test_fasterrcnn_double(self):
@@ -185,7 +178,6 @@ class Tester(TestCase):
         x = torch.rand(input_shape, dtype=torch.float64)
         model_input = [x]
         out = model(model_input)
-        # self.assertExpected(out) TODO run and generate
         self.assertIs(model_input[0], x)
         self.assertEqual(len(out), 1)
         self.assertTrue("boxes" in out[0])
