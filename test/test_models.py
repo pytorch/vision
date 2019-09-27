@@ -802,13 +802,16 @@ class ShuffleNetTester(TorchVisionTester):
 class DenseNetTester(TorchVisionTester):
     # num_classes = 1000
     # NOTE growth_rate=32, block_config=(6, 12, 24, 16), num_init_features=64, bn_size=4, drop_rate=0 ?
-    # TODO the memory efficient ctor flag is tested in a model yet to be moved to this object
+    # NOTE The memory efficient ctor flag was previously tested with an input
+    #      tensor of shape (1,3, 300, 300) and two models - mem-eff and not -
+    #      whose outputs it compared. the test seems to run correctly with the
+    #      "standard" 1000-class models and (1, 3, 224, 224) input tensor.
     def _test_classification_densenet(self, model, expected_values):
         test_input = self._get_test_input(STANDARD_INPUT_SHAPE)
         self._check_model_correctness(model, test_input, expected_values, 1000)
 
-    def test_classification_densenet121(self):
-        model = self._get_test_model(models.densenet121)
+    def _test_densenet121(self, is_memory_efficient):
+        model = self._get_test_model(models.densenet121, memory_efficient=is_memory_efficient)
         self._check_scriptable(model, False)
 
         # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [11, 82, 325, 346, 423, 567, 575, 745, 963, 978])
@@ -826,8 +829,14 @@ class DenseNetTester(TorchVisionTester):
         }
         self._test_classification_densenet(model, expected_values)
 
-    def test_classification_densenet161(self):
-        model = self._get_test_model(models.densenet161)
+    def test_classification_densenet121(self):
+        self._test_densenet121(False)
+
+    def test_classification_densenet121_memory_efficient(self):
+        self._test_densenet121(True)
+
+    def _test_densenet161(self, is_memory_efficient):
+        model = self._get_test_model(models.densenet161, memory_efficient=is_memory_efficient)
         # NOTE no scriptability check specified
         
         # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [114, 137, 367, 389, 394, 434, 599, 669, 837, 950])
@@ -845,8 +854,14 @@ class DenseNetTester(TorchVisionTester):
         }
         self._test_classification_densenet(model, expected_values)
 
-    def test_classification_densenet169(self):
-        model = self._get_test_model(models.densenet169)
+    def test_classification_densenet161(self):
+        self._test_densenet161(False)
+
+    def test_classification_densenet161_memory_efficient(self):
+        self._test_densenet161(True)
+
+    def _test_densenet_169(self, is_memory_efficient):
+        model = self._get_test_model(models.densenet169, memory_efficient=is_memory_efficient)
         # NOTE no scriptability check specified
         
         # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [37, 258, 319, 440, 479, 547, 829, 836, 946, 976])
@@ -864,8 +879,14 @@ class DenseNetTester(TorchVisionTester):
         }
         self._test_classification_densenet(model, expected_values)
 
-    def test_classification_densenet201(self):
-        model = self._get_test_model(models.densenet201)
+    def test_classification_densenet169(self):
+        self._test_densenet_169(False)
+
+    def test_classification_densenet169_memory_efficient(self):
+        self._test_densenet_169(True)
+
+    def _test_densenet201(self, is_memory_efficient):
+        model = self._get_test_model(models.densenet201, memory_efficient=is_memory_efficient)
         # NOTE no scriptability check specified
         
         # self._build_correctness_check(model, STANDARD_INPUT_SHAPE, [42, 93, 146, 170, 495, 512, 588, 783, 915, 952])
@@ -883,31 +904,17 @@ class DenseNetTester(TorchVisionTester):
         }
         self._test_classification_densenet(model, expected_values)
 
+    def test_classification_densenet201(self):
+        self._test_densenet201(False)
+
+    def test_classification_densenet201_memory_efficient(self):
+        self._test_densenet201(True)
+
 #################################################################
 #################################################################
 #################################################################
 
 class YetToBeFixed:
-
-    def test_memory_efficient_densenet(self):
-        input_shape = (1, 3, 300, 300)
-        x = torch.rand(input_shape)
-
-        for name in ['densenet121', 'densenet169', 'densenet201', 'densenet161']:
-            model1 = models.__dict__[name](num_classes=50, memory_efficient=True)
-            params = model1.state_dict()
-            model1.eval()
-            out1 = model1(x)
-            out1.sum().backward()
-
-            model2 = models.__dict__[name](num_classes=50, memory_efficient=False)
-            model2.load_state_dict(params)
-            model2.eval()
-            out2 = model2(x)
-
-            max_diff = (out1 - out2).abs().max()
-
-            self.assertTrue(max_diff < 1e-5)
 
     def test_resnet_dilation(self):
         # TODO improve tests to also check that each layer has the right dimensionality
