@@ -111,8 +111,8 @@ void MNASNetImpl::_initialize_weights() {
       torch::nn::init::kaiming_normal_(
           M->weight,
           0,
-          torch::kFanOut,
-          torch::kReLU);
+          torch::nn::init::FanMode::FanOut,
+          torch::nn::init::Nonlinearity::ReLU);
     else if (auto M = dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
       torch::nn::init::ones_(M->weight);
       torch::nn::init::zeros_(M->bias);
