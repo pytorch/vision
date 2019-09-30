@@ -168,7 +168,6 @@ class Tester(TestCase):
 
     def test_resnet_dilation(self):
         # TODO improve tests to also check that each layer has the right dimensionality
-        index = 0
         for i in product([False, True], [False, True], [False, True]):
             model = models.__dict__["resnet50"](replace_stride_with_dilation=i)
             model = self._make_sliced_model(model, stop_layer="layer4")
@@ -177,7 +176,6 @@ class Tester(TestCase):
             out = model(x)
             f = 2 ** sum(i)
             self.assertEqual(out.shape, (1, 2048, 7 * f, 7 * f))
-            index += 1
 
     def test_mobilenetv2_residual_setting(self):
         model = models.__dict__["mobilenet_v2"](inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
