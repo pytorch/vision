@@ -143,12 +143,12 @@ class TestCase(unittest.TestCase):
             for key, value in a.items():
                 self.assertTrue(key in b, "key: " + str(key))
 
-                self.assertNestedTensorObjectsEqual(value, b[key])
+                self.assertNestedTensorObjectsEqual(value, b[key], rtol=rtol, atol=atol)
         elif isinstance(a, (list, tuple)):
             self.assertEqual(len(a), len(b))
 
             for val1, val2 in zip(a, b):
-                self.assertNestedTensorObjectsEqual(val1, val2)
+                self.assertNestedTensorObjectsEqual(val1, val2, rtol=rtol, atol=atol)
 
         else:
             self.assertEqual(a, b)
