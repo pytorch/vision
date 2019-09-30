@@ -11,7 +11,7 @@ except ImportError:
     stats = None
 
 
-class Tester(unittest.TestCase):
+class TestVideoTransforms(unittest.TestCase):
 
     def test_random_crop_video(self):
         numFrames = random.randint(4, 128)

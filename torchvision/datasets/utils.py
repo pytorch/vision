@@ -229,7 +229,7 @@ def extract_archive(from_path, to_path=None, remove_finished=False):
         with tarfile.open(from_path, 'r:gz') as tar:
             tar.extractall(path=to_path)
     elif _is_tarxz(from_path) and PY3:
-        # .tar.xz archive only supported in Python 3.x  
+        # .tar.xz archive only supported in Python 3.x
         with tarfile.open(from_path, 'r:xz') as tar:
             tar.extractall(path=to_path)
     elif _is_gzip(from_path):

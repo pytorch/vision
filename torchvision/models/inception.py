@@ -1,11 +1,15 @@
+from __future__ import division
+
 from collections import namedtuple
+import warnings
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.jit.annotations import Optional
 from .utils import load_state_dict_from_url
 
 
-__all__ = ['Inception3', 'inception_v3']
+__all__ = ['Inception3', 'inception_v3', 'InceptionOutputs', '_InceptionOutputs']
 
 
 model_urls = {
@@ -13,7 +17,12 @@ model_urls = {
     'inception_v3_google': 'https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth',
 }
 
-_InceptionOutputs = namedtuple('InceptionOutputs', ['logits', 'aux_logits'])
+InceptionOutputs = namedtuple('InceptionOutputs', ['logits', 'aux_logits'])
+InceptionOutputs.__annotations__ = {'logits': torch.Tensor, 'aux_logits': Optional[torch.Tensor]}
+
+# Script annotations failed with _GoogleNetOutputs = namedtuple ...
+# _InceptionOutputs set here for backwards compat
+_InceptionOutputs = InceptionOutputs
 
 
 def inception_v3(pretrained=False, progress=True, **kwargs):
@@ -128,8 +137,11 @@ class Inception3(nn.Module):
         # N x 768 x 17 x 17
         x = self.Mixed_6e(x)
         # N x 768 x 17 x 17
-        if self.training and self.aux_logits:
+        aux_defined = self.training and self.aux_logits
+        if aux_defined:
             aux = self.AuxLogits(x)
+        else:
+            aux = None
         # N x 768 x 17 x 17
         x = self.Mixed_7a(x)
         # N x 1280 x 8 x 8
@@ -146,8 +158,18 @@ class Inception3(nn.Module):
         # N x 2048
         x = self.fc(x)
         # N x 1000 (num_classes)
+        if torch.jit.is_scripting():
+            if not aux_defined:
+                warnings.warn("Scripted InceptionNet always returns InceptionOutputs Tuple")
+            return InceptionOutputs(x, aux)
+        else:
+            return self.eager_outputs(x, aux)
+
+    @torch.jit.unused
+    def eager_outputs(self, x, aux):
+        # type: (torch.Tensor, Optional[torch.Tensor]) -> InceptionOutputs
         if self.training and self.aux_logits:
-            return _InceptionOutputs(x, aux)
+            return InceptionOutputs(x, aux)
         return x
 
 
