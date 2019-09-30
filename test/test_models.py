@@ -118,7 +118,9 @@ class Tester(TestCase):
         # maskrcnn_resnet_50_fpn numerically unstable across platforms, so for now
         # compare results with mean and std
         if name == "maskrcnn_resnet50_fpn":
-            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=compute_mean_std), name)
+            test_value =  map_nested_tensor_object(out, tensor_map_fn=compute_mean_std)
+            # mean values are small, use large rtol
+            self.assertExpected(test_value, name, rtol = .01)
         else:
             self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor), name)
 
