@@ -34,9 +34,38 @@ for i, arg in enumerate(sys.argv):
         break
 
 
+class MapNestedTensorObjectImpl(object):
+    def __init__(self, tensor_map_fn):
+        self.tensor_map_fn = tensor_map_fn
+
+    def __call__(self, object):
+        if isinstance(object, torch.Tensor):
+            return self.tensor_map_fn(object)
+
+        elif isinstance(object, dict):
+            mapped_dict = {}
+            for key, value in object.items():
+                mapped_dict[self(key)] = self(value)
+            return mapped_dict
+
+        elif isinstance(object, (list, tuple)):
+            mapped_iter = []
+            for iter in object:
+                mapped_iter.append(self(iter))
+            return mapped_iter if not isinstance(object, tuple) else tuple(mapped_iter)
+
+        else:
+            return object
+
+
+def map_nested_tensor_object(object, tensor_map_fn):
+    impl = MapNestedTensorObjectImpl(tensor_map_fn)
+    return impl(object)
+
+
 # adapted from TestCase in torch/test/common_utils
 class TestCase(unittest.TestCase):
-    def assertExpected(self, output, subname=None):
+    def assertExpected(self, output, subname=None, rtol=None, atol=None):
         r"""
         Test that a python value matches the recorded contents of a file
         derived from the name of this test and subname.  The value must be
@@ -74,6 +103,10 @@ class TestCase(unittest.TestCase):
         def accept_output(update_type):
             print("Accepting {} for {}{}:\n\n{}".format(update_type, munged_id, subname_output, output))
             torch.save(output, expected_file)
+            MAX_PICKLE_SIZE = 100 * 1000  # 100 KB
+            binary_size = os.path.getsize(expected_file)
+            self.assertTrue(binary_size <= MAX_PICKLE_SIZE)
+
 
         try:
             expected = torch.load(expected_file)
@@ -89,16 +122,21 @@ class TestCase(unittest.TestCase):
                      "python {} {} --accept").format(munged_id, subname_output, output, __main__.__file__, munged_id))
 
         if ACCEPT:
-            if not self.assertNestedTensorObjectsEqual(output, expected):
+            equal = False
+            try:
+                equal = self.assertNestedTensorObjectsEqual(output, expected, rtol=rtol, atol=atol)
+            except Exception:
+                equal = False
+            if not equal:
                 return accept_output("updated output")
         else:
-            self.assertNestedTensorObjectsEqual(output, expected)
+            self.assertNestedTensorObjectsEqual(output, expected, rtol=rtol, atol=atol)
 
-    def assertNestedTensorObjectsEqual(self, a, b):
+    def assertNestedTensorObjectsEqual(self, a, b, rtol=None, atol=None):
         self.assertEqual(type(a), type(b))
 
         if isinstance(a, torch.Tensor):
-            torch.testing.assert_allclose(a, b)
+            torch.testing.assert_allclose(a, b, rtol=rtol, atol=atol)
 
         elif isinstance(a, dict):
             self.assertEqual(len(a), len(b))

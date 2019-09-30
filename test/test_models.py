@@ -1,4 +1,4 @@
-from common_utils import TestCase
+from common_utils import TestCase, map_nested_tensor_object
 from collections import OrderedDict
 from itertools import product
 import torch
@@ -97,7 +97,31 @@ class Tester(TestCase):
         out = model(model_input)
         self.assertIs(model_input[0], x)
         self.assertEqual(len(out), 1)
-        self.assertExpected(out, name)
+
+        def subsample_tensor(tensor):
+            num_elems = tensor.numel()
+            num_samples = 20
+            if num_elems <= num_samples:
+                return tensor
+
+            flat_tensor = tensor.flatten()
+            ith_index = num_elems // num_samples
+            return flat_tensor[ith_index - 1::ith_index]
+
+        def compute_mean_std(tensor):
+            # can't compute mean of integral tensor
+            tensor = tensor.to(torch.double)
+            mean = torch.mean(tensor)
+            std = torch.std(tensor)
+            return {"mean": mean, "std": std}
+
+        # maskrcnn_resnet_50_fpn numerically unstable across platforms, so for now
+        # compare results with mean and std
+        if name == "maskrcnn_resnet50_fpn":
+            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=compute_mean_std), name)
+        else:
+            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor), name)
+
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
