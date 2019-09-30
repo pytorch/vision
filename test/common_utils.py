@@ -100,7 +100,7 @@ class TestCase(unittest.TestCase):
         if isinstance(a, torch.Tensor):
             torch.testing.assert_allclose(a, b)
 
-        if isinstance(a, dict):
+        elif isinstance(a, dict):
             self.assertEqual(len(a), len(b))
             for key, value in a.items():
                 self.assertTrue(key in b, "key: " + str(key))
