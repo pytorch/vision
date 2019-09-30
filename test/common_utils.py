@@ -95,7 +95,7 @@ class TestCase(unittest.TestCase):
             self.assertNestedTensorObjectsEqual(output, expected)
 
     def assertNestedTensorObjectsEqual(self, a, b):
-        self.assertIs(type(a) == type(b))
+        self.assertEqual(type(a), type(b))
 
         if isinstance(a, torch.Tensor):
             torch.testing.assert_allclose(a, b)
