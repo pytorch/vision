@@ -19,7 +19,7 @@ def _onnx_merge_levels(levels, unmerged_results):
                        first_result.size(2), first_result.size(3)),
                       dtype=dtype, device=device)
     for l in range(len(unmerged_results)):
-        index = (levels.to(torch.int64) == l).nonzero().view(-1, 1, 1, 1)
+        index = (levels == l).nonzero().view(-1, 1, 1, 1)
         index = index.expand(index.size(0),
                              unmerged_results[l].size(1),
                              unmerged_results[l].size(2),
@@ -58,7 +58,7 @@ class LevelMapper(object):
         # Eqn.(1) in FPN paper
         target_lvls = torch.floor(self.lvl0 + torch.log2(s / self.s0) + torch.tensor(self.eps, dtype=s.dtype))
         target_lvls = torch.clamp(target_lvls, min=self.k_min, max=self.k_max)
-        return target_lvls.to(torch.int64) - self.k_min
+        return (target_lvls.to(torch.int64) - self.k_min).to(torch.int64)
 
 
 class MultiScaleRoIAlign(nn.Module):
@@ -176,7 +176,7 @@ class MultiScaleRoIAlign(nn.Module):
 
         results = []
         for level, (per_level_feature, scale) in enumerate(zip(x, self.scales)):
-            idx_in_level = torch.nonzero(levels.to(torch.int64) == level).squeeze(1)
+            idx_in_level = torch.nonzero(levels == level).squeeze(1)
             rois_per_level = rois[idx_in_level]
 
             result_idx_in_level = roi_align(
