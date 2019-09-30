@@ -37,7 +37,7 @@ class Kinetics400(VisionDataset):
     """
 
     def __init__(self, root, frames_per_clip, step_between_clips=1, frame_rate=None,
-                 extensions=('avi',), transform=None, _precomputed_metadata=None):
+                 extensions=('avi',), transform=None, _precomputed_metadata=None, _backend="pyav"):
         super(Kinetics400, self).__init__(root)
         extensions = ('avi',)
 
@@ -52,6 +52,7 @@ class Kinetics400(VisionDataset):
             step_between_clips,
             frame_rate,
             _precomputed_metadata,
+            _backend=_backend
         )
         self.transform = transform
 

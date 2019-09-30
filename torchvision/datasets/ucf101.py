@@ -44,7 +44,7 @@ class UCF101(VisionDataset):
 
     def __init__(self, root, annotation_path, frames_per_clip, step_between_clips=1,
                  frame_rate=None, fold=1, train=True, transform=None,
-                 _precomputed_metadata=None):
+                 _precomputed_metadata=None, _backend="pyav"):
         super(UCF101, self).__init__(root)
         if not 1 <= fold <= 3:
             raise ValueError("fold should be between 1 and 3, got {}".format(fold))
@@ -64,6 +64,7 @@ class UCF101(VisionDataset):
             step_between_clips,
             frame_rate,
             _precomputed_metadata,
+            _backend=_backend
         )
         self.indices = self._select_fold(video_list, annotation_path, fold, train)
         self.video_clips = video_clips.subset(self.indices)
