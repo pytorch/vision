@@ -103,6 +103,21 @@ class ONNXExporterTester(unittest.TestCase):
         input_test = [torch.rand(3, 800, 1280), torch.rand(3, 800, 800)]
         self.run_model(TransformModule(), [input, input_test])
 
+    @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
+    def test_faster_rcnn(self):
+        image_url = "http://farm3.staticflickr.com/2469/3915380994_2e611b1779_z.jpg"
+        image1 = self.get_image_from_url(url=image_url)
+        image_url2 = "https://pytorch.org/tutorials/_static/img/tv_tutorial/tv_image05.png"
+        image2 = self.get_image_from_url(url=image_url2)
+        images = [image1]
+        test_images = [image2]
+
+        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=False)
+        model.eval()
+        model(images)
+        self.run_model(model, [(images,), (test_images,)])
+
+
 
 if __name__ == '__main__':
     unittest.main()
