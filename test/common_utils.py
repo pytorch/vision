@@ -63,13 +63,14 @@ def map_nested_tensor_object(object, tensor_map_fn):
     return impl(object)
 
 
-# adapted from TestCase in torch/test/common_utils
+# adapted from TestCase in torch/test/common_utils to accept non-string
+# inputs and set maximum binary size
 class TestCase(unittest.TestCase):
     def assertExpected(self, output, subname=None, rtol=None, atol=None):
         r"""
         Test that a python value matches the recorded contents of a file
         derived from the name of this test and subname.  The value must be
-        pickable with `torch.load`. This file
+        pickable with `torch.save`. This file
         is placed in the 'expect' directory in the same directory
         as the test script. You can automatically update the recorded test
         output using --accept.
@@ -83,9 +84,7 @@ class TestCase(unittest.TestCase):
             return text
         # NB: we take __file__ from the module that defined the test
         # class, so we place the expect directory where the test script
-        # lives, NOT where test/common_utils.py lives.  This doesn't matter in
-        # PyTorch where all test scripts are in the same directory as
-        # test/common_utils.py, but it matters in onnx-pytorch
+        # lives, NOT where test/common_utils.py lives.
         module_id = self.__class__.__module__
         munged_id = remove_prefix(self.id(), module_id + ".")
         test_file = os.path.realpath(sys.modules[module_id].__file__)
@@ -103,7 +102,7 @@ class TestCase(unittest.TestCase):
         def accept_output(update_type):
             print("Accepting {} for {}{}:\n\n{}".format(update_type, munged_id, subname_output, output))
             torch.save(output, expected_file)
-            MAX_PICKLE_SIZE = 100 * 1000  # 100 KB
+            MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
             binary_size = os.path.getsize(expected_file)
             self.assertTrue(binary_size <= MAX_PICKLE_SIZE)
 

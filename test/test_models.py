@@ -11,8 +11,6 @@ import random
 def set_rng_seed(seed):
     torch.manual_seed(seed)
     random.seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.set_rng_state(seed)
     np.random.seed(seed)
 
 def get_available_classification_models():
@@ -51,7 +49,7 @@ torchub_models = [
 ]
 
 
-class Tester(TestCase):
+class ModelTester(TestCase):
     def check_script(self, model, name):
         if name not in torchub_models:
             return
@@ -120,9 +118,9 @@ class Tester(TestCase):
         if name == "maskrcnn_resnet50_fpn":
             test_value =  map_nested_tensor_object(out, tensor_map_fn=compute_mean_std)
             # mean values are small, use large rtol
-            self.assertExpected(test_value, name, rtol = .01, atol = .01)
+            self.assertExpected(test_value, rtol = .01, atol = .01)
         else:
-            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor), name)
+            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor))
 
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
@@ -210,7 +208,7 @@ for model_name in get_available_classification_models():
             input_shape = (1, 3, 299, 299)
         self._test_classification_model(model_name, input_shape)
 
-    setattr(Tester, "test_" + model_name, do_test)
+    setattr(ModelTester, "test_" + model_name, do_test)
 
 
 for model_name in get_available_segmentation_models():
@@ -219,7 +217,7 @@ for model_name in get_available_segmentation_models():
     def do_test(self, model_name=model_name):
         self._test_segmentation_model(model_name)
 
-    setattr(Tester, "test_" + model_name, do_test)
+    setattr(ModelTester, "test_" + model_name, do_test)
 
 
 for model_name in get_available_detection_models():
@@ -228,7 +226,7 @@ for model_name in get_available_detection_models():
     def do_test(self, model_name=model_name):
         self._test_detection_model(model_name)
 
-    setattr(Tester, "test_" + model_name, do_test)
+    setattr(ModelTester, "test_" + model_name, do_test)
 
 
 for model_name in get_available_video_models():
@@ -236,7 +234,7 @@ for model_name in get_available_video_models():
     def do_test(self, model_name=model_name):
         self._test_video_model(model_name)
 
-    setattr(Tester, "test_" + model_name, do_test)
+    setattr(ModelTester, "test_" + model_name, do_test)
 
 if __name__ == '__main__':
     unittest.main()
