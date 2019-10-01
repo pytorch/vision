@@ -26,21 +26,20 @@ def get_available_video_models():
     return [k for k, v in models.video.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
-# model_name, expected to script without error
-torchub_models = {
-    "deeplabv3_resnet101": True,
-    "mobilenet_v2": True,
-    "resnext50_32x4d": True,
-    "fcn_resnet101": True,
-    "googlenet": False,
-    "densenet121": True,
-    "resnet18": True,
-    "alexnet": True,
-    "shufflenet_v2_x1_0": True,
-    "squeezenet1_0": True,
-    "vgg11": True,
-    "inception_v3": False,
-}
+torchub_models = [
+    "deeplabv3_resnet101",
+    "mobilenet_v2",
+    "resnext50_32x4d",
+    "fcn_resnet101",
+    "googlenet",
+    "densenet121",
+    "resnet18",
+    "alexnet",
+    "shufflenet_v2_x1_0",
+    "squeezenet1_0",
+    "vgg11",
+    "inception_v3",
+]
 
 
 class Tester(unittest.TestCase):
@@ -55,7 +54,7 @@ class Tester(unittest.TestCase):
             tb = traceback.format_exc()
             scriptable = False
             msg = str(e) + str(tb)
-        self.assertEqual(torchub_models[name], scriptable, msg)
+        self.assertTrue(scriptable, msg)
 
     def _test_classification_model(self, name, input_shape):
         # passing num_class equal to a number other than 1000 helps in making the test
