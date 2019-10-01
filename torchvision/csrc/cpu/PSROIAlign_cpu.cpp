@@ -1,5 +1,9 @@
+//#include <ATen/TensorUtils.h>
+//#include "cpu/vision_cpu.h"
+
+#include <ATen/ATen.h>
 #include <ATen/TensorUtils.h>
-#include "cpu/vision_cpu.h"
+#include <TH/TH.h>
 
 #include <iostream>
 
