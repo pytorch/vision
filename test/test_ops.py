@@ -580,6 +580,7 @@ class PSRoIAlignTester(unittest.TestCase):
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_ps_roi_align_basic_cuda(self):
+        print("Testing test_ps_roi_align_basic_cuda")
         device = torch.device('cuda')
         pool_size = 3
         x = torch.rand(1, 2 * (pool_size ** 2), 7, 7, dtype=self.dtype, device=device)
@@ -601,8 +602,31 @@ class PSRoIAlignTester(unittest.TestCase):
                                       dtype=self.dtype)
         assert torch.allclose(gt_y.cuda(), y), 'PSRoIAlign layer incorrect'
 
+    # def test_ps_roi_align_basic_cpu(self):
+    #     device = torch.device('cpu')
+    #     pool_size = 3
+    #     x = torch.rand(1, 2 * (pool_size ** 2), 7, 7, dtype=self.dtype, device=device)
+    #     rois = torch.tensor([[0, 0, 0, 5, 5]],  # format is (xyxy)
+    #                         dtype=self.dtype, device=device)
+    #
+    #     pool_h, pool_w = (pool_size, pool_size)
+    #     ps_roi_align = ops.PSRoIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2)
+    #     y = ps_roi_align(x, rois)
+    #
+    #     gt_y = self.slow_ps_roi_align(x, rois, pool_h, pool_w, device,
+    #                                   spatial_scale=1, sampling_ratio=2,
+    #                                   dtype=self.dtype)
+    #     assert torch.allclose(gt_y, y), 'PSRoIAlign layer incorrect on CPU'
+    #
+    #     y = ps_roi_align(x.permute(0, 1, 3, 2), rois)
+    #     gt_y = self.slow_ps_roi_align(x.permute(0, 1, 3, 2), rois, pool_h, pool_w, device,
+    #                                   spatial_scale=1, sampling_ratio=-1,
+    #                                   dtype=self.dtype)
+    #     assert torch.allclose(gt_y, y), 'PSRoIAlign layer incorrect on CPU'
+
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_ps_roi_align_cuda(self):
+        print("Testing test_ps_roi_align_cuda")
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
         pool_size = 5
         x = torch.rand(2, 2 * (pool_size ** 2), 10, 10, dtype=self.dtype, device=device)
@@ -627,8 +651,34 @@ class PSRoIAlignTester(unittest.TestCase):
                                       dtype=self.dtype)
         assert torch.allclose(gt_y.cuda(), y), 'PSRoIAlign layer incorrect'
 
+    # def test_ps_roi_align_cpu(self):
+    #     device = torch.device('cpu')
+    #     pool_size = 5
+    #     x = torch.rand(2, 2 * (pool_size ** 2), 10, 10, dtype=self.dtype, device=device)
+    #     rois = torch.tensor([[0, 0, 0, 9, 9],  # format is (xyxy)
+    #                          [0, 0, 5, 4, 9],
+    #                          [0, 5, 5, 9, 9],
+    #                          [1, 0, 0, 9, 9]],
+    #                         dtype=self.dtype, device=device)
+    #
+    #     pool_h, pool_w = (pool_size, pool_size)
+    #     ps_roi_align = ops.PSRoIAlign((pool_h, pool_w), spatial_scale=1, sampling_ratio=2)
+    #     y = ps_roi_align(x, rois)
+    #
+    #     gt_y = self.slow_ps_roi_align(x, rois, pool_h, pool_w, device,
+    #                                   spatial_scale=1, sampling_ratio=2,
+    #                                   dtype=self.dtype)
+    #     assert torch.allclose(gt_y, y), 'PSRoIAlign layer incorrect on CPU'
+    #
+    #     y = ps_roi_align(x.permute(0, 1, 3, 2), rois)
+    #     gt_y = self.slow_ps_roi_align(x.permute(0, 1, 3, 2), rois, pool_h, pool_w,
+    #                                   device, spatial_scale=1, sampling_ratio=2,
+    #                                   dtype=self.dtype)
+    #     assert torch.allclose(gt_y, y), 'PSRoIAlign layer incorrect on CPU'
+
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_ps_roi_align_gradient_cuda(self):
+        print("Testing test_ps_roi_align_gradient_cuda")
         device = torch.device('cuda')
         pool_size = 3
         layer = ops.PSRoIAlign((pool_size, pool_size), spatial_scale=1,
@@ -691,8 +741,72 @@ class PSRoIAlignTester(unittest.TestCase):
                                device=device, dtype=self.dtype)
         assert torch.allclose(x.grad, gt_grad), 'gradient incorrect for PSRoIAlign'
 
+    # def test_ps_roi_align_gradient_cpu(self):
+    #     device = torch.device('cpu')
+    #     pool_size = 3
+    #     layer = ops.PSRoIAlign((pool_size, pool_size), spatial_scale=1,
+    #                            sampling_ratio=-1).to(dtype=self.dtype, device=device)
+    #     x = torch.ones(1, pool_size ** 2, 5, 5, dtype=self.dtype, device=device, requires_grad=True)
+    #     rois = torch.tensor([
+    #         [0, 0, 0, 4, 4],
+    #         [0, 0, 3, 5, 5],
+    #         [0, 1, 0, 2, 4]],
+    #         dtype=self.dtype, device=device)
+    #
+    #     y = layer(x, rois)
+    #     s = y.sum()
+    #     s.backward()
+    #     gt_grad = torch.tensor([[[[8.125e-01, 6.875e-01, 0.0, 0.0, 0.0, ],
+    #                               [2.7083333333e-01, 2.2916666667e-01, 0.0, 0.0, 0.0, ],
+    #                               [1.0416666667e-01, 6.25e-02, 0.0, 0.0, 0.0, ],
+    #                               [5.2083333333e-01, 3.125e-01, 0.0, 0.0, 0.0, ],
+    #                               [0.0, 0.0, 0.0, 0.0, 0.0, ]],
+    #                              [[8.3266726847e-17, 1.125e00, 3.750e-01, 0.0, 0.0, ],
+    #                               [2.7755575616e-17, 3.750e-01, 1.250e-01, 0.0, 0.0, ],
+    #                               [0.0, 3.4722222222e-02, 9.7222222222e-02, 3.4722222222e-02, 0.0, ],
+    #                               [0.0, 1.7361111111e-01, 4.8611111111e-01, 1.7361111111e-01, 0.0, ],
+    #                               [0.0, 0.0, 0.0, 0.0, 0.0, ]],
+    #                              [[0.0, 5.000e-01, 4.375e-01, 5.000e-01, 6.25e-02, ],
+    #                               [0.0, 1.6666666667e-01, 1.4583333333e-01, 1.6666666667e-01, 2.0833333333e-02, ],
+    #                               [0.0, 0.0, 0.0, 6.25e-02, 1.0416666667e-01, ],
+    #                               [0.0, 0.0, 0.0, 3.125e-01, 5.2083333333e-01, ],
+    #                               [0.0, 0.0, 0.0, 0.0, 0.0, ]],
+    #                              [[0.0, 0.0, 0.0, 0.0, 0.0, ],
+    #                               [5.4166666667e-01, 4.5833333333e-01, 0.0, 0.0, 0.0, ],
+    #                               [5.4166666667e-01, 4.5833333333e-01, 0.0, 0.0, 0.0, ],
+    #                               [3.125e-01, 1.875e-01, 0.0, 0.0, 0.0, ],
+    #                               [3.125e-01, 1.875e-01, 0.0, 0.0, 0.0, ]],
+    #                              [[0.0, 0.0, 0.0, 0.0, 0.0, ],
+    #                               [5.5511151231e-17, 7.500e-01, 2.500e-01, 0.0, 0.0, ],
+    #                               [5.5511151231e-17, 7.500e-01, 2.500e-01, 0.0, 0.0, ],
+    #                               [0.0, 1.0416666667e-01, 2.9166666667e-01, 1.0416666667e-01, 0.0, ],
+    #                               [0.0, 1.0416666667e-01, 2.9166666667e-01, 1.0416666667e-01, 0.0, ]],
+    #                              [[0.0, 0.0, 0.0, 0.0, 0.0, ],
+    #                               [0.0, 3.3333333333e-01, 2.9166666667e-01, 3.3333333333e-01, 4.1666666667e-02, ],
+    #                               [0.0, 3.3333333333e-01, 2.9166666667e-01, 3.3333333333e-01, 4.1666666667e-02, ],
+    #                               [0.0, 0.0, 0.0, 1.875e-01, 3.125e-01, ],
+    #                               [0.0, 0.0, 0.0, 1.875e-01, 3.125e-01, ]],
+    #                              [[0.0, 0.0, 0.0, 0.0, 0.0, ],
+    #                               [0.0, 0.0, 0.0, 0.0, 0.0, ],
+    #                               [2.7083333333e-01, 2.2916666667e-01, 0.0, 0.0, 0.0, ],
+    #                               [7.2222222222e-01, 6.1111111111e-01, 0.0, 0.0, 0.0, ],
+    #                               [7.1527777778e-01, 4.5138888889e-01, 0.0, 0.0, 0.0, ]],
+    #                              [[0.0, 0.0, 0.0, 0.0, 0.0, ],
+    #                               [0.0, 0.0, 0.0, 0.0, 0.0, ],
+    #                               [2.7755575616e-17, 3.750e-01, 1.250e-01, 0.0, 0.0, ],
+    #                               [7.4014868308e-17, 1.000e00, 3.3333333333e-01, 0.0, 0.0, ],
+    #                               [9.2518585385e-18, 3.3333333333e-01, 6.25e-01, 2.0833333333e-01, 0.0, ]],
+    #                              [[0.0, 0.0, 0.0, 0.0, 0.0, ],
+    #                               [0.0, 0.0, 0.0, 0.0, 0.0, ],
+    #                               [0.0, 1.6666666667e-01, 1.4583333333e-01, 1.6666666667e-01, 2.0833333333e-02, ],
+    #                               [0.0, 4.4444444444e-01, 3.8888888889e-01, 4.4444444444e-01, 5.5555555556e-02, ],
+    #                               [0.0, 5.5555555556e-02, 4.8611111111e-02, 4.3055555556e-01, 6.3194444444e-01, ]]]],
+    #                            device=device, dtype=self.dtype)
+    #     assert torch.allclose(x.grad, gt_grad), 'gradient incorrect for PSRoIAlign on CPU'
+
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_ps_roi_align_gradcheck_cuda(self):
+        print("Testing test_ps_roi_align_gradcheck_cuda")
         device = torch.device('cuda')
         pool_size = 5
         x = torch.rand(1, pool_size ** 2, 10, 10, dtype=self.dtype, device=device, requires_grad=True)
@@ -709,6 +823,24 @@ class PSRoIAlignTester(unittest.TestCase):
 
         assert gradcheck(func, (x,)), 'gradcheck failed for PSRoIAlign CUDA'
         assert gradcheck(func, (x.permute(0, 1, 3, 2),)), 'gradcheck failed for PSRoIAlign CUDA'
+
+    # def test_ps_roi_align_gradcheck_cpu(self):
+    #     device = torch.device('cpu')
+    #     pool_size = 5
+    #     x = torch.rand(1, pool_size ** 2, 10, 10, dtype=self.dtype, device=device, requires_grad=True)
+    #     rois = torch.tensor([
+    #         [0, 0, 0, 9, 9],
+    #         [0, 0, 5, 5, 9],
+    #         [0, 5, 5, 9, 9]], dtype=self.dtype, device=device)
+    #
+    #     m = ops.PSRoIAlign((pool_size, pool_size), spatial_scale=1,
+    #                        sampling_ratio=2).to(dtype=self.dtype, device=device)
+    #
+    #     def func(input):
+    #         return m(input, rois)
+    #
+    #     assert gradcheck(func, (x,)), 'gradcheck failed for PSRoIAlign on CPU'
+    #     assert gradcheck(func, (x.permute(0, 1, 3, 2),)), 'gradcheck failed for PSRoIAlign on CPU'
 
 
 class PSRoIPoolTester(unittest.TestCase):
@@ -836,10 +968,6 @@ class PSRoIPoolTester(unittest.TestCase):
         y = ps_roi_pool(x, rois)
 
         gt_y = self.slow_ps_roi_pooling(x, rois, pool_h, pool_w, device, dtype=self.dtype)
-        print("shape gt_y:", gt_y.shape)
-        print("shape y:", y.shape)
-        print("gt_y:", gt_y)
-        print("y:", y)
         assert torch.allclose(gt_y, y), 'PSRoIPool layer incorrect on CPU'
 
         y = ps_roi_pool(x.permute(0, 1, 3, 2), rois)
