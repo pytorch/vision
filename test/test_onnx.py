@@ -150,7 +150,7 @@ class ONNXExporterTester(unittest.TestCase):
             def __init__(self_module):
                 super(RPNModule, self_module).__init__()
                 self_module.transform = self._init_test_generalized_rcnn_transform()
-                self_module.backbone = resnet_fpn_backbone('resnet50', True)
+                self_module.backbone = resnet_fpn_backbone('resnet50', False)
                 self_module.rpn = self._init_test_rpn()
 
             def forward(self_module, images):

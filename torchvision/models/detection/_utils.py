@@ -209,7 +209,7 @@ class BoxCoder(object):
         pred_boxes = torch.cat((pred_boxes1.unsqueeze(2),
                                 pred_boxes2.unsqueeze(2),
                                 pred_boxes3.unsqueeze(2),
-                                pred_boxes4.unsqueeze(2)), 2)
+                                pred_boxes4.unsqueeze(2)), 2).flatten(1)
         return pred_boxes
 
 
