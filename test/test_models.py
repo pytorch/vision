@@ -26,17 +26,29 @@ def get_available_video_models():
     return [k for k, v in models.video.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
-# rcnn not yet supported
-unsupported_script_models = [
-    'fasterrcnn_resnet50_fpn',
-    'maskrcnn_resnet50_fpn',
-    'keypointrcnn_resnet50_fpn'
+# models that are in torch hub, as well as r3d_18. we tried testing all models
+# but the test was too slow. not included are detection models, because
+# they are not yet supported in JIT.
+script_test_models = [
+    "deeplabv3_resnet101",
+    "mobilenet_v2",
+    "resnext50_32x4d",
+    "fcn_resnet101",
+    "googlenet",
+    "densenet121",
+    "resnet18",
+    "alexnet",
+    "shufflenet_v2_x1_0",
+    "squeezenet1_0",
+    "vgg11",
+    "inception_v3",
+    'r3d_18',
 ]
 
 
 class Tester(unittest.TestCase):
     def check_script(self, model, name):
-        if name in unsupported_script_models:
+        if name not in script_test_models:
             return
         scriptable = True
         msg = ""
