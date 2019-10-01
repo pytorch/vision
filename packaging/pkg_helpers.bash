@@ -150,6 +150,12 @@ pip_install() {
   retry pip install --progress-bar off "$@"
 }
 
+setup_onnx(){
+  eq=$((`echo "$PYTHON_VERSION >= 3.5"| bc`))
+  if [[ $eq == 1 ]];then
+    pip install onnxruntime
+  fi
+}
 # Install torch with pip, respecting PYTORCH_VERSION, and record the installed
 # version into PYTORCH_VERSION, if applicable
 setup_pip_pytorch_version() {
