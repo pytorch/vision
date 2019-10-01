@@ -1,6 +1,8 @@
 #include <ATen/TensorUtils.h>
 #include "cpu/vision_cpu.h"
 
+#include <iostream>
+
 template <typename T>
 T bilinear_interpolate(
     const T* input,
@@ -71,6 +73,7 @@ void PSROIAlignForward(
     T* output,
     int* channel_mapping) {
   int num_rois = nthreads / channels_out / pooled_width / pooled_height;
+  std::cout << "Executing CPU version of PSROIAlignForward" << std::endl;
   for (int n = 0; n < num_rois; n++) {
     //int index_n = n * channels_out * pooled_width * pooled_height;
 
@@ -219,6 +222,7 @@ void PSROIAlignBackward(
     const int channels_out,
     T* grad_input,
     const T* rois) {
+    std::cout << "Executing CPU version of PSROIAlignBackward" << std::endl;
   for (int index = 0; index < nthreads; index++) {
     int pw = index % pooled_width;
     int ph = (index / pooled_width) % pooled_height;
