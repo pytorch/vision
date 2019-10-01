@@ -780,6 +780,24 @@ class PSRoIPoolTester(unittest.TestCase):
         gt_y = self.slow_ps_roi_pooling(x.permute(0, 1, 3, 2), rois, pool_h, pool_w, device, dtype=self.dtype)
         assert torch.allclose(gt_y.cuda(), y), 'PSRoIPool layer incorrect'
 
+    def test_ps_roi_pool_basic_cpu(self):
+        device = torch.device('cpu')
+        pool_size = 3
+        x = torch.rand(1, pool_size ** 2, 10, 10, dtype=self.dtype, device=device)
+        rois = torch.tensor([[0, 0, 0, 4, 4]],  # format is (xyxy)
+                            dtype=self.dtype, device=device)
+
+        pool_h, pool_w = (pool_size, pool_size)
+        ps_roi_pool = ops.PSRoIPool((pool_h, pool_w), 1)
+        y = ps_roi_pool(x, rois)
+
+        gt_y = self.slow_ps_roi_pooling(x, rois, pool_h, pool_w, device, dtype=self.dtype)
+        assert torch.allclose(gt_y, y), 'PSRoIPool layer incorrect on CPU'
+
+        y = ps_roi_pool(x.permute(0, 1, 3, 2), rois)
+        gt_y = self.slow_ps_roi_pooling(x.permute(0, 1, 3, 2), rois, pool_h, pool_w, device, dtype=self.dtype)
+        assert torch.allclose(gt_y, y), 'PSRoIPool layer incorrect on CPU'
+
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_ps_roi_pool_cuda(self):
         device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -802,6 +820,31 @@ class PSRoIPoolTester(unittest.TestCase):
         y = ps_roi_pool(x.permute(0, 1, 3, 2), rois)
         gt_y = self.slow_ps_roi_pooling(x.permute(0, 1, 3, 2), rois, pool_h, pool_w, device, dtype=self.dtype)
         assert torch.allclose(gt_y.cuda(), y), 'PSRoIPool layer incorrect'
+
+    def test_ps_roi_pool_cpu(self):
+        device = torch.device('cpu')
+        pool_size = 5
+        x = torch.rand(2, 2 * (pool_size ** 2), 10, 10, dtype=self.dtype, device=device)
+        rois = torch.tensor([[0, 0, 0, 9, 9],  # format is (xyxy)
+                             [0, 0, 5, 4, 9],
+                             [0, 5, 5, 9, 9],
+                             [1, 0, 0, 9, 9]],
+                            dtype=self.dtype, device=device)
+
+        pool_h, pool_w = (pool_size, pool_size)
+        ps_roi_pool = ops.PSRoIPool((pool_h, pool_w), 1)
+        y = ps_roi_pool(x, rois)
+
+        gt_y = self.slow_ps_roi_pooling(x, rois, pool_h, pool_w, device, dtype=self.dtype)
+        print("shape gt_y:", gt_y.shape)
+        print("shape y:", y.shape)
+        print("gt_y:", gt_y)
+        print("y:", y)
+        assert torch.allclose(gt_y, y), 'PSRoIPool layer incorrect on CPU'
+
+        y = ps_roi_pool(x.permute(0, 1, 3, 2), rois)
+        gt_y = self.slow_ps_roi_pooling(x.permute(0, 1, 3, 2), rois, pool_h, pool_w, device, dtype=self.dtype)
+        assert torch.allclose(gt_y, y), 'PSRoIPool layer incorrect on CPU'
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_ps_roi_pool_gradient_cuda(self):
@@ -874,6 +917,76 @@ class PSRoIPoolTester(unittest.TestCase):
                                device=device, dtype=self.dtype)
         assert torch.allclose(x.grad, gt_grad), 'gradient incorrect for PSRoIPool'
 
+    def test_ps_roi_pool_gradient_cpu(self):
+        device = torch.device('cpu')
+        pool_size = 3
+        layer = ops.PSRoIPool((pool_size, pool_size), 1).to(dtype=self.dtype, device=device)
+        x = torch.ones(1, pool_size ** 2, 5, 5, dtype=self.dtype, device=device, requires_grad=True)
+        rois = torch.tensor([
+            [0, 0, 0, 4, 4],
+            [0, 0, 3, 5, 5],
+            [0, 1, 0, 2, 4]],
+            dtype=self.dtype, device=device)
+
+        y = layer(x, rois)
+        s = y.sum()
+        s.backward()
+        gt_grad = torch.tensor([[[[0.2500, 0.7500, 0.0000, 0.0000, 0.0000],
+                                  [0.2500, 0.7500, 0.0000, 0.0000, 0.0000],
+                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                                  [0.5000, 0.5000, 0.0000, 0.0000, 0.0000],
+                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
+
+                                 [[0.0000, 0.7500, 0.2500, 0.0000, 0.0000],
+                                  [0.0000, 0.7500, 0.2500, 0.0000, 0.0000],
+                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                                  [0.0000, 1. / 3, 1. / 3, 1. / 3, 0.0000],
+                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
+
+                                 [[0.0000, 0.5000, 0.2500, 0.2500, 0.0000],
+                                  [0.0000, 0.5000, 0.2500, 0.2500, 0.0000],
+                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                                  [0.0000, 0.0000, 0.0000, 0.5000, 0.5000],
+                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000]],
+
+                                 [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                                  [0.2500, 0.7500, 0.0000, 0.0000, 0.0000],
+                                  [0.2500, 0.7500, 0.0000, 0.0000, 0.0000],
+                                  [0.2500, 0.2500, 0.0000, 0.0000, 0.0000],
+                                  [0.2500, 0.2500, 0.0000, 0.0000, 0.0000]],
+
+                                 [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                                  [0.0000, 0.7500, 0.2500, 0.0000, 0.0000],
+                                  [0.0000, 0.7500, 0.2500, 0.0000, 0.0000],
+                                  [0.0000, 1. / 6, 1. / 6, 1. / 6, 0.0000],
+                                  [0.0000, 1. / 6, 1. / 6, 1. / 6, 0.0000]],
+
+                                 [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                                  [0.0000, 0.5000, 0.2500, 0.2500, 0.0000],
+                                  [0.0000, 0.5000, 0.2500, 0.2500, 0.0000],
+                                  [0.0000, 0.0000, 0.0000, 0.2500, 0.2500],
+                                  [0.0000, 0.0000, 0.0000, 0.2500, 0.2500]],
+
+                                 [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                                  [0.2500, 0.7500, 0.0000, 0.0000, 0.0000],
+                                  [0.2500, 0.7500, 0.0000, 0.0000, 0.0000],
+                                  [0.5000, 0.5000, 0.0000, 0.0000, 0.0000]],
+
+                                 [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                                  [0.0000, 0.7500, 0.2500, 0.0000, 0.0000],
+                                  [0.0000, 0.7500, 0.2500, 0.0000, 0.0000],
+                                  [0.0000, 1. / 3, 1. / 3, 1. / 3, 0.0000]],
+
+                                 [[0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                                  [0.0000, 0.0000, 0.0000, 0.0000, 0.0000],
+                                  [0.0000, 0.5000, 0.2500, 0.2500, 0.0000],
+                                  [0.0000, 0.5000, 0.2500, 0.2500, 0.0000],
+                                  [0.0000, 0.0000, 0.0000, 0.5000, 0.5000]]]],
+                               device=device, dtype=self.dtype)
+        assert torch.allclose(x.grad, gt_grad), 'gradient incorrect for PSRoIPool on CPU'
+
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_ps_roi_pool_gradcheck_cuda(self):
         device = torch.device('cuda')
@@ -891,6 +1004,23 @@ class PSRoIPoolTester(unittest.TestCase):
 
         assert gradcheck(func, (x,)), 'gradcheck failed for PSRoIPool CUDA'
         assert gradcheck(func, (x.permute(0, 1, 3, 2),)), 'gradcheck failed for PSRoIPool CUDA'
+
+    def test_ps_roi_pool_gradcheck_cpu(self):
+        device = torch.device('cpu')
+        pool_size = 5
+        x = torch.rand(1, pool_size ** 2, 10, 10, dtype=self.dtype, device=device, requires_grad=True)
+        rois = torch.tensor([
+            [0, 0, 0, 9, 9],
+            [0, 0, 5, 5, 9],
+            [0, 5, 5, 9, 9]], dtype=self.dtype, device=device)
+
+        m = ops.PSRoIPool((pool_size, pool_size), 1).to(dtype=self.dtype, device=device)
+
+        def func(input):
+            return m(input, rois)
+
+        assert gradcheck(func, (x,)), 'gradcheck failed for PSRoIPool on CPU'
+        assert gradcheck(func, (x.permute(0, 1, 3, 2),)), 'gradcheck failed for PSRoIPool on CPU'
 
 
 class NMSTester(unittest.TestCase):

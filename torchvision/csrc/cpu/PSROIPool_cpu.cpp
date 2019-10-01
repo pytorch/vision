@@ -19,9 +19,10 @@ void PSROIPoolForward(
     const int pooled_width,
     const T* rois,
     const int channels_out,
+    const int num_rois,
     T* output,
     int* channel_mapping) {
-  for (int n = 0; n < channels_out; ++n) {
+  for (int n = 0; n < num_rois; ++n) {
     const T* offset_rois = rois + n * 5;
     int roi_batch_ind = offset_rois[0];
     int roi_start_w = round(offset_rois[1] * spatial_scale);
@@ -35,38 +36,40 @@ void PSROIPoolForward(
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
-    for (int ph = 0; ph < pooled_height; ++ph) {
-      for (int pw = 0; pw < pooled_width; ++pw) {
-        int hstart = static_cast<int>(floor(static_cast<T>(ph) * bin_size_h));
-        int wstart = static_cast<int>(floor(static_cast<T>(pw) * bin_size_w));
-        int hend = static_cast<int>(ceil(static_cast<T>(ph + 1) * bin_size_h));
-        int wend = static_cast<int>(ceil(static_cast<T>(pw + 1) * bin_size_w));
+    int c_in = 0;
+    for (int c_out = 0; c_out < channels_out; ++c_out) {
 
-        // Add roi offsets and clip to input boundaries
-        hstart = std::min(std::max(hstart + roi_start_h, 0), height - 1);
-        hend = std::min(std::max(hend + roi_start_h, 0), height - 1);
-        wstart = std::min(std::max(wstart + roi_start_w, 0), width - 1);
-        wend = std::min(std::max(wend + roi_start_w, 0), width - 1);
-        bool is_empty = (hend <= hstart) || (wend <= wstart);
+      for (int ph = 0; ph < pooled_height; ++ph) {
+        for (int pw = 0; pw < pooled_width; ++pw) {
+          int hstart = static_cast<int>(floor(static_cast<T>(ph) * bin_size_h));
+          int wstart = static_cast<int>(floor(static_cast<T>(pw) * bin_size_w));
+          int hend = static_cast<int>(ceil(static_cast<T>(ph + 1) * bin_size_h));
+          int wend = static_cast<int>(ceil(static_cast<T>(pw + 1) * bin_size_w));
 
-        for (int c_out = 0; c_out < channels_out; ++c_out) {
-            int c_in = (c_out * pooled_height + ph) * pooled_width + pw;
+          // Add roi offsets and clip to input boundaries
+          hstart = std::min(std::max(hstart + roi_start_h, 0), height - 1);
+          hend = std::min(std::max(hend + roi_start_h, 0), height - 1);
+          wstart = std::min(std::max(wstart + roi_start_w, 0), width - 1);
+          wend = std::min(std::max(wend + roi_start_w, 0), width - 1);
+          bool is_empty = (hend <= hstart) || (wend <= wstart);
 
-            const T* offset_input =
-                input + (roi_batch_ind * channels + c_in) * height * width;
-            T out_sum = 0;
-            for (int h = hstart; h < hend; ++h) {
-              for (int w = wstart; w < wend; ++w) {
-                int input_index = h * width + w;
-                out_sum += offset_input[input_index];
-              }
+          const T* offset_input =
+              input + (roi_batch_ind * channels + c_in) * height * width;
+
+          T out_sum = 0;
+          for (int h = hstart; h < hend; ++h) {
+            for (int w = wstart; w < wend; ++w) {
+              int input_index = h * width + w;
+              out_sum += offset_input[input_index];
             }
+          }
 
-            int index =
-                ((n * channels_out + c_out) * pooled_height + ph) * pooled_width + pw;  // maybe c_in instead of c_out
-            T bin_area = (hend - hstart) * (wend - wstart);
-            output[index] = is_empty ? static_cast<T>(0) : out_sum / bin_area;
-            channel_mapping[index] = c_in;
+          int index =
+              ((n * channels_out + c_out) * pooled_height + ph) * pooled_width + pw;
+          T bin_area = (hend - hstart) * (wend - wstart);
+          output[index] = is_empty ? static_cast<T>(0) : out_sum / bin_area;
+          channel_mapping[index] = c_in;
+          c_in++;
         }
       }
     }
@@ -185,6 +188,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cpu(
               pooled_width,
               rois.contiguous().data<scalar_t>(),
               channels_out,
+              num_rois,
               output.data<scalar_t>(),
               channel_mapping.data<int>());
         });
