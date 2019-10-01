@@ -6,6 +6,8 @@
 #include "cuda/vision_cuda.h"
 #endif
 
+#include <iostream>
+
 std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward(
     const at::Tensor& input,
     const at::Tensor& rois,
@@ -14,7 +16,9 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward(
     const int pooled_width,
     const int sampling_ratio) {
   if (input.type().is_cuda()) {
+  std::cout << "Tensor is CUDA in PSROIAlign_forward" << std::endl;
 #ifdef WITH_CUDA
+    std::cout << "Using CUDA version of PSROIAlign_forward" << std::endl;
     return PSROIAlign_forward_cuda(
         input,
         rois,
@@ -26,6 +30,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward(
     AT_ERROR("Not compiled with GPU support");
 #endif
   }
+  std::cout << "Using CPU version of PSROIAlign_forward" << std::endl;
   return PSROIAlign_forward_cpu(
       input,
       rois,
@@ -48,7 +53,9 @@ at::Tensor PSROIAlign_backward(
     const int height,
     const int width) {
   if (grad.type().is_cuda()) {
+  std::cout << "Tensor is CUDA in PSROIAlign_backward" << std::endl;
 #ifdef WITH_CUDA
+    std::cout << "Using CUDA version of PSROIAlign_backward" << std::endl;
     return PSROIAlign_backward_cuda(
         grad,
         rois,
@@ -65,6 +72,7 @@ at::Tensor PSROIAlign_backward(
     AT_ERROR("Not compiled with GPU support");
 #endif
   }
+  std::cout << "Using CPU version of PSROIAlign_backward" << std::endl;
   return PSROIAlign_backward_cpu(
       grad,
       rois,

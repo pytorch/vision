@@ -75,7 +75,6 @@ void PSROIAlignForward(
   int num_rois = nthreads / channels_out / pooled_width / pooled_height;
   std::cout << "Executing CPU version of PSROIAlignForward" << std::endl;
   for (int n = 0; n < num_rois; n++) {
-    //int index_n = n * channels_out * pooled_width * pooled_height;
 
     // [start, end) interval for spatial sampling
     const T* offset_rois = rois + n * 5;
@@ -92,14 +91,16 @@ void PSROIAlignForward(
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
+    std::cout << "After roi_width, roi_height, ..." << std::endl;
+
     int c_in = 0;
     for (int c_out = 0; c_out < channels_out; ++c_out) {
 
       for (int ph = 0; ph < pooled_height; ++ph) {
         for (int pw = 0; pw < pooled_width; ++pw) {
 
-        int index =
-            ((n * channels_out + c_out) * pooled_height + ph) * pooled_width + pw;
+          int index =
+              ((n * channels_out + c_out) * pooled_height + ph) * pooled_width + pw;
 
           // Do not using floor/ceil; this implementation detail is critical
           T hstart = static_cast<T>(ph) * bin_size_h + roi_start_h;
@@ -125,7 +126,9 @@ void PSROIAlignForward(
               const T x = wstart +
                   static_cast<T>(ix + .5f) * bin_size_w /
                       static_cast<T>(roi_bin_grid_w);
+              std::cout << "Before bilinear interpolate" << std::endl;
               T val = bilinear_interpolate(offset_input, height, width, y, x, index);
+              std::cout << "After bilinear interpolate" << std::endl;
               out_sum += val;
             }
           }
@@ -320,10 +323,10 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
   at::CheckedFrom c = "PSROIAlign_forward_cpu";
   at::checkAllSameType(c, {input_t, rois_t});
 
-  auto num_rois = rois.size(0);
-  auto channels = input.size(1);
-  auto height = input.size(2);
-  auto width = input.size(3);
+  int num_rois = rois.size(0);
+  int channels = input.size(1);
+  int height = input.size(2);
+  int width = input.size(3);
 
   AT_ASSERTM(
       channels % (pooled_height * pooled_width) == 0,
