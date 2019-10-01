@@ -314,7 +314,6 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
   at::CheckedFrom c = "PSROIAlign_forward_cpu";
-  at::checkAllSameGPU(c, {input_t, rois_t});
   at::checkAllSameType(c, {input_t, rois_t});
 
   auto num_rois = rois.size(0);
@@ -380,7 +379,6 @@ at::Tensor PSROIAlign_backward_cpu(
       channel_mapping_t{channel_mapping, "channel_mapping", 3};
 
   at::CheckedFrom c = "PSROIAlign_backward_cpu";
-  at::checkAllSameGPU(c, {grad_t, rois_t, channel_mapping_t});
   at::checkAllSameType(c, {grad_t, rois_t});
 
   auto num_rois = rois.size(0);
