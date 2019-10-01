@@ -21,6 +21,7 @@ def get_tmp_dir(src=None, **kwargs):
     finally:
         shutil.rmtree(tmp_dir)
 
+
 ACCEPT = os.getenv('EXPECTTEST_ACCEPT')
 
 parser = argparse.ArgumentParser(add_help=False)
@@ -105,7 +106,6 @@ class TestCase(unittest.TestCase):
             MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
             binary_size = os.path.getsize(expected_file)
             self.assertTrue(binary_size <= MAX_PICKLE_SIZE)
-
 
         try:
             expected = torch.load(expected_file)

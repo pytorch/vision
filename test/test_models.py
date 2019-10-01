@@ -8,10 +8,12 @@ import unittest
 import traceback
 import random
 
+
 def set_rng_seed(seed):
     torch.manual_seed(seed)
     random.seed(seed)
     np.random.seed(seed)
+
 
 def get_available_classification_models():
     # TODO add a registration mechanism to torchvision.models
