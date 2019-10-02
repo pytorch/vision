@@ -111,7 +111,7 @@ void pre_calc_for_bilinear_interpolate(
 }
 
 template <typename T>
-void ROIAlignForwardCPU(
+void ROIAlignForward(
     const int nthreads,
     const T* input,
     const T& spatial_scale,
@@ -275,7 +275,7 @@ inline void add(T* address, const T& val) {
 }
 
 template <typename T>
-void ROIAlignBackwardCPU(
+void ROIAlignBackward(
     const int nthreads,
     const T* grad_output,
     const T& spatial_scale,
@@ -404,7 +404,7 @@ at::Tensor ROIAlign_forward_cpu(
     return output;
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.type(), "ROIAlign_forward", [&] {
-    ROIAlignForwardCPU<scalar_t>(
+    ROIAlignForward<scalar_t>(
         output_size,
         input.contiguous().data_ptr<scalar_t>(),
         spatial_scale,
@@ -454,7 +454,7 @@ at::Tensor ROIAlign_backward_cpu(
   int w_stride = grad.stride(3);
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIAlign_forward", [&] {
-    ROIAlignBackwardCPU<scalar_t>(
+    ROIAlignBackward<scalar_t>(
         grad.numel(),
         grad.data_ptr<scalar_t>(),
         spatial_scale,
