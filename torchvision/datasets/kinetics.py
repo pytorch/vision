@@ -1,6 +1,6 @@
-from .video_utils import VideoClips
 from .utils import list_dir
 from .folder import make_dataset
+from .video_utils import VideoClips
 from .vision import VisionDataset
 
 
@@ -38,9 +38,8 @@ class Kinetics400(VisionDataset):
 
     def __init__(self, root, frames_per_clip, step_between_clips=1, frame_rate=None,
                  extensions=('avi',), transform=None, _precomputed_metadata=None,
-                 num_workers=1):
-        from torchvision import get_video_backend
-
+                 num_workers=1, _video_width=0, _video_height=0,
+                 _video_min_dimension=0, _audio_samples=0):
         super(Kinetics400, self).__init__(root)
         extensions = ('avi',)
 
@@ -55,8 +54,11 @@ class Kinetics400(VisionDataset):
             step_between_clips,
             frame_rate,
             _precomputed_metadata,
-            _backend=get_video_backend(),
             num_workers=num_workers,
+            _video_width=_video_width,
+            _video_height=_video_height,
+            _video_min_dimension=_video_min_dimension,
+            _audio_samples=_audio_samples,
         )
         self.transform = transform
 

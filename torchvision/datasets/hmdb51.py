@@ -1,9 +1,9 @@
 import glob
 import os
 
-from .video_utils import VideoClips
 from .utils import list_dir
 from .folder import make_dataset
+from .video_utils import VideoClips
 from .vision import VisionDataset
 
 
@@ -51,9 +51,8 @@ class HMDB51(VisionDataset):
 
     def __init__(self, root, annotation_path, frames_per_clip, step_between_clips=1,
                  frame_rate=None, fold=1, train=True, transform=None,
-                 _precomputed_metadata=None, num_workers=1):
-        from torchvision import get_video_backend
-
+                 _precomputed_metadata=None, num_workers=1, _video_width=0,
+                 _video_height=0, _video_min_dimension=0, _audio_samples=0):
         super(HMDB51, self).__init__(root)
         if not 1 <= fold <= 3:
             raise ValueError("fold should be between 1 and 3, got {}".format(fold))
@@ -73,8 +72,11 @@ class HMDB51(VisionDataset):
             step_between_clips,
             frame_rate,
             _precomputed_metadata,
-            _backend=get_video_backend(),
             num_workers=num_workers,
+            _video_width=_video_width,
+            _video_height=_video_height,
+            _video_min_dimension=_video_min_dimension,
+            _audio_samples=_audio_samples,
         )
         self.video_clips_metadata = video_clips.metadata
         self.indices = self._select_fold(video_list, annotation_path, fold, train)

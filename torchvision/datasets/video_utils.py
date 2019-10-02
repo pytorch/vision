@@ -68,10 +68,18 @@ class VideoClips(object):
             0 means that the data will be loaded in the main process. (default: 0)
     """
     def __init__(self, video_paths, clip_length_in_frames=16, frames_between_clips=1,
-                 frame_rate=None, _precomputed_metadata=None, num_workers=0, _backend="pyav"):
+                 frame_rate=None, _precomputed_metadata=None, num_workers=0,
+                 _video_width=0, _video_height=0, _video_min_dimension=0,
+                 _audio_samples=0):
+        from torchvision import get_video_backend
+
         self.video_paths = video_paths
         self.num_workers = num_workers
-        self._backend = _backend
+        self._backend = get_video_backend()
+        self._video_width = _video_width
+        self._video_height = _video_height
+        self._video_min_dimension = _video_min_dimension
+        self._audio_samples = _audio_samples
 
         if _precomputed_metadata is None:
             self._compute_frame_pts()
@@ -163,7 +171,11 @@ class VideoClips(object):
         else:
             metadata.update({"info": info})
         return type(self)(video_paths, self.num_frames, self.step, self.frame_rate,
-                          _precomputed_metadata=metadata, _backend=self._backend)
+                          _precomputed_metadata=metadata, num_workers=self.num_workers,
+                          _video_width=self._video_width,
+                          _video_height=self._video_height,
+                          _video_min_dimension=self._video_min_dimension,
+                          _audio_samples=self._audio_samples)
 
     @staticmethod
     def compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate):
@@ -302,8 +314,12 @@ class VideoClips(object):
                 )
             video, audio, info = _read_video_from_file(
                 video_path,
+                video_width=self._video_width,
+                video_height=self._video_height,
+                video_min_dimension=self._video_min_dimension,
                 video_pts_range=(video_start_pts, video_end_pts),
                 video_timebase=info["video_timebase"],
+                audio_samples=self._audio_samples,
                 audio_pts_range=(audio_start_pts, audio_end_pts),
                 audio_timebase=audio_timebase,
             )
