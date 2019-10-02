@@ -62,7 +62,7 @@ __device__ T bilinear_interpolate(
 }
 
 template <typename T>
-__global__ void PSROIAlignForward(
+__global__ void PSROIAlignForwardCUDA(
     const int nthreads,
     const T* input,
     const T spatial_scale,
@@ -197,7 +197,7 @@ __device__ void bilinear_interpolate_gradient(
 }
 
 template <typename T>
-__global__ void PSROIAlignBackward(
+__global__ void PSROIAlignBackwardCUDA(
     const int nthreads,
     const T* grad_output,
     const int* channel_mapping,
@@ -341,7 +341,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cuda(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "PSROIAlign_forward", [&] {
-        PSROIAlignForward<scalar_t><<<grid, block, 0, stream>>>(
+        PSROIAlignForwardCUDA<scalar_t><<<grid, block, 0, stream>>>(
             output_size,
             input.contiguous().data<scalar_t>(),
             spatial_scale,
@@ -408,7 +408,7 @@ at::Tensor PSROIAlign_backward_cuda(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       grad.scalar_type(), "PSROIAlign_backward", [&] {
-        PSROIAlignBackward<scalar_t><<<grid, block, 0, stream>>>(
+        PSROIAlignBackwardCUDA<scalar_t><<<grid, block, 0, stream>>>(
             grad.numel(),
             grad.contiguous().data<scalar_t>(),
             channel_mapping.data<int>(),
