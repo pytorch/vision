@@ -6,6 +6,7 @@ Implements the Generalized R-CNN framework
 from collections import OrderedDict
 import torch
 from torch import nn
+import warnings
 
 
 class GeneralizedRCNN(nn.Module):
@@ -27,6 +28,15 @@ class GeneralizedRCNN(nn.Module):
         self.backbone = backbone
         self.rpn = rpn
         self.roi_heads = roi_heads
+
+    @torch.jit.unused
+    def eager_outputs(self, losses, detections):
+        # type: (Dict[str, Tensor], list[BoxList]) -> Tuple[Dict[str, Tensor], list[BoxList]]
+        if self.training:
+            return losses
+
+        return detections
+
 
     def forward(self, images, targets=None):
         # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])
@@ -57,7 +67,8 @@ class GeneralizedRCNN(nn.Module):
         losses.update(detector_losses)
         losses.update(proposal_losses)
 
-        if self.training:
-            return losses
-
-        return detections
+        if torch.jit.is_scripting():
+            warnings.warn("RCNN always returns a (Losses, Detections tuple in scripting)")
+            return (losses, detections)
+        else:
+            return self.eager_outputs(losses, detections)

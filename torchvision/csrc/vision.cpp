@@ -8,6 +8,7 @@
 #include "ROIAlign.h"
 #include "ROIPool.h"
 #include "nms.h"
+#include "empty_tensor_op.h"
 
 // If we are in a Windows environment, we need to define
 // initialization functions for the _custom_ops extension
@@ -41,4 +42,5 @@ static auto registry =
         .op("torchvision::roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio) -> Tensor",
             &roi_align)
         .op("torchvision::roi_pool", &roi_pool)
+        .op("torchvision::_new_empty_tensor_op", &new_empty_tensor)
         .op("torchvision::_cuda_version", &_cuda_version);
