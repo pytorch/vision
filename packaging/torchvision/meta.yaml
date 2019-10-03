@@ -23,6 +23,7 @@ requirements:
     - numpy >=1.11
     - six
     - av
+    - six # TODO remove me, only until https://github.com/pytorch/pytorch/pull/27282 gets merged
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
@@ -50,6 +51,7 @@ test:
     - av
     - ca-certificates
     - typing
+    - six # TODO remove me, only until https://github.com/pytorch/pytorch/pull/27282 gets merged
   commands:
     pytest .
 
