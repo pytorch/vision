@@ -6,6 +6,14 @@ from torch import nn
 from torchvision.ops import roi_align
 from torchvision.ops.boxes import box_area
 
+from typing import Optional, List
+
+
+# TODO: (eellison) T54974082 https://github.com/pytorch/pytorch/issues/26744/pytorch/issues/26744
+def initLevelMapper(k_min, k_max, canonical_scale=224, canonical_level=4, eps=1e-6):
+    # type: (int, int, int, int, float)
+    return LevelMapper(k_min, k_max, canonical_scale, canonical_level, eps)
+
 
 class LevelMapper(object):
     """Determine which FPN level each RoI in a set of RoIs should map to based
@@ -20,6 +28,7 @@ class LevelMapper(object):
     """
 
     def __init__(self, k_min, k_max, canonical_scale=224, canonical_level=4, eps=1e-6):
+        # type: (int, int, int, int, float)
         self.k_min = k_min
         self.k_max = k_max
         self.s0 = canonical_scale
@@ -27,6 +36,7 @@ class LevelMapper(object):
         self.eps = eps
 
     def __call__(self, boxlists):
+        # type: (List[Tensor])
         """
         Arguments:
             boxlists (list[BoxList])
@@ -69,6 +79,11 @@ class MultiScaleRoIAlign(nn.Module):
 
     """
 
+    __annotations__ = {
+        'scales': Optional[List[float]],
+        'map_levels': Optional[LevelMapper]
+    }
+
     def __init__(self, featmap_names, output_size, sampling_ratio):
         super(MultiScaleRoIAlign, self).__init__()
         if isinstance(output_size, int):
@@ -80,6 +95,7 @@ class MultiScaleRoIAlign(nn.Module):
         self.map_levels = None
 
     def convert_to_roi_format(self, boxes):
+        # type: (List[Tensor])
         concat_boxes = torch.cat(boxes, dim=0)
         device, dtype = concat_boxes.device, concat_boxes.dtype
         ids = torch.cat(
@@ -93,17 +109,27 @@ class MultiScaleRoIAlign(nn.Module):
         return rois
 
     def infer_scale(self, feature, original_size):
+        # type: (Tensor, List[int])
         # assumption: the scale is of the form 2 ** (-k), with k integer
         size = feature.shape[-2:]
-        possible_scales = []
+        possible_scales = torch.jit.annotate(List[float], [])
         for s1, s2 in zip(size, original_size):
             approx_scale = float(s1) / s2
-            scale = 2 ** torch.tensor(approx_scale).log2().round().item()
+            scale = 2 ** float(torch.tensor(approx_scale).log2().round())
             possible_scales.append(scale)
         assert possible_scales[0] == possible_scales[1]
         return possible_scales[0]
 
     def setup_scales(self, features, image_shapes):
+        # type: (List[Tensor], List[Tuple[int, int]])
+        assert len(image_shapes) != 0
+        max_x = 0
+        max_y = 0
+        for shape in image_shapes:
+            max_x = max(shape[0], max_x)
+            max_y = max(shape[1], max_y)
+        original_input_shape = (max_x, max_y)
+
         original_input_shape = tuple(max(s) for s in zip(*image_shapes))
         scales = [self.infer_scale(feat, original_input_shape) for feat in features]
         # get the levels in the feature map by leveraging the fact that the network always
@@ -111,9 +137,10 @@ class MultiScaleRoIAlign(nn.Module):
         lvl_min = -torch.log2(torch.tensor(scales[0], dtype=torch.float32)).item()
         lvl_max = -torch.log2(torch.tensor(scales[-1], dtype=torch.float32)).item()
         self.scales = scales
-        self.map_levels = LevelMapper(lvl_min, lvl_max)
+        self.map_levels = initLevelMapper(int(lvl_min), int(lvl_max))
 
     def forward(self, x, boxes, image_shapes):
+        # type: (Dict[str, Tensor], List[Tensor], List[Tuple[int, int]])
         """
         Arguments:
             x (OrderedDict[Tensor]): feature maps for each level. They are assumed to have
@@ -127,33 +154,39 @@ class MultiScaleRoIAlign(nn.Module):
         Returns:
             result (Tensor)
         """
-        x = [v for k, v in x.items() if k in self.featmap_names]
-        num_levels = len(x)
+        x_filtered = [v for k, v in x.items() if k in self.featmap_names]
+        num_levels = len(x_filtered)
         rois = self.convert_to_roi_format(boxes)
         if self.scales is None:
-            self.setup_scales(x, image_shapes)
+            self.setup_scales(x_filtered, image_shapes)
+
+        scales = self.scales
+        assert scales is not None
 
         if num_levels == 1:
             return roi_align(
-                x[0], rois,
+                x_filtered[0], rois,
                 output_size=self.output_size,
-                spatial_scale=self.scales[0],
+                spatial_scale=scales[0],
                 sampling_ratio=self.sampling_ratio
             )
 
-        levels = self.map_levels(boxes)
+        mapper = self.map_levels
+        assert mapper is not None
+
+        levels = mapper(boxes)
 
         num_rois = len(rois)
-        num_channels = x[0].shape[1]
+        num_channels = x_filtered[0].shape[1]
 
-        dtype, device = x[0].dtype, x[0].device
+        dtype, device = x_filtered[0].dtype, x_filtered[0].device
         result = torch.zeros(
             (num_rois, num_channels,) + self.output_size,
             dtype=dtype,
             device=device,
         )
 
-        for level, (per_level_feature, scale) in enumerate(zip(x, self.scales)):
+        for level, (per_level_feature, scale) in enumerate(zip(x_filtered, scales)):
             idx_in_level = torch.nonzero(levels == level).squeeze(1)
             rois_per_level = rois[idx_in_level]
 

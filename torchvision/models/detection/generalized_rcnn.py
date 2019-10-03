@@ -29,6 +29,7 @@ class GeneralizedRCNN(nn.Module):
         self.roi_heads = roi_heads
 
     def forward(self, images, targets=None):
+        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])
         """
         Arguments:
             images (list[Tensor]): images to be processed

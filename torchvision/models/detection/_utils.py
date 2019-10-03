@@ -3,6 +3,17 @@ from __future__ import division
 import math
 
 import torch
+from typing import List
+
+
+# TODO: https://github.com/pytorch/pytorch/issues/26727
+def zeros_like(tensor, dtype):
+    # type: (Tensor, ScalarType) -> Tensor
+    if tensor.dtype() == dtype:
+        return tensor.detach().clone()
+        pos_idx_per_image_mask = matched_idxs_per_image.detach().clone()
+    else:
+        return tensor.to(dtype)
 
 
 class BalancedPositiveNegativeSampler(object):
@@ -11,6 +22,7 @@ class BalancedPositiveNegativeSampler(object):
     """
 
     def __init__(self, batch_size_per_image, positive_fraction):
+        # type: (List[Tensor])
         """
         Arguments:
             batch_size_per_image (int): number of elements to be selected per image
@@ -19,7 +31,8 @@ class BalancedPositiveNegativeSampler(object):
         self.batch_size_per_image = batch_size_per_image
         self.positive_fraction = positive_fraction
 
-    def __call__(self, matched_idxs):
+    def run(self, matched_idxs):
+        # type: (List[Tensor])
         """
         Arguments:
             matched idxs: list of tensors containing -1, 0 or positive values.
@@ -56,12 +69,13 @@ class BalancedPositiveNegativeSampler(object):
             neg_idx_per_image = negative[perm2]
 
             # create binary mask from indices
-            pos_idx_per_image_mask = torch.zeros_like(
+            pos_idx_per_image_mask = zeros_like(
                 matched_idxs_per_image, dtype=torch.uint8
             )
-            neg_idx_per_image_mask = torch.zeros_like(
+            neg_idx_per_image_mask = zeros_like(
                 matched_idxs_per_image, dtype=torch.uint8
             )
+
             pos_idx_per_image_mask[pos_idx_per_image] = 1
             neg_idx_per_image_mask[neg_idx_per_image] = 1
 
@@ -126,6 +140,7 @@ class BoxCoder(object):
     """
 
     def __init__(self, weights, bbox_xform_clip=math.log(1000. / 16)):
+        # type: (Tuple[float, float, float, float], float)
         """
         Arguments:
             weights (4-element tuple)
@@ -158,9 +173,13 @@ class BoxCoder(object):
         return targets
 
     def decode(self, rel_codes, boxes):
+        # type: (Tensor, List[Tensor])
         assert isinstance(boxes, (list, tuple))
-        if isinstance(rel_codes, (list, tuple)):
-            rel_codes = torch.cat(rel_codes, dim=0)
+        # if isinstance(rel_codes, (list, tuple)):
+        #     # figure out - always make it a tensor
+        #     import pdb; pdb.set_trace()
+        #     assert False
+        #     rel_codes = torch.cat(rel_codes, dim=0)
         assert isinstance(rel_codes, torch.Tensor)
         boxes_per_image = [len(b) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
@@ -232,7 +251,13 @@ class Matcher(object):
     BELOW_LOW_THRESHOLD = -1
     BETWEEN_THRESHOLDS = -2
 
+    __annotations__ = {
+        'BELOW_LOW_THRESHOLD': int,
+        'BETWEEN_THRESHOLDS': int,
+    }
+
     def __init__(self, high_threshold, low_threshold, allow_low_quality_matches=False):
+        # type: (float, float, bool)
         """
         Args:
             high_threshold (float): quality values greater than or equal to
@@ -246,6 +271,8 @@ class Matcher(object):
                 for predictions that have only low-quality match candidates. See
                 set_low_quality_matches_ for more details.
         """
+        self.BELOW_LOW_THRESHOLD = -1
+        self.BETWEEN_THRESHOLDS = -2
         assert low_threshold <= high_threshold
         self.high_threshold = high_threshold
         self.low_threshold = low_threshold
@@ -278,16 +305,19 @@ class Matcher(object):
         matched_vals, matches = match_quality_matrix.max(dim=0)
         if self.allow_low_quality_matches:
             all_matches = matches.clone()
+        else:
+            all_matches = None
 
         # Assign candidate matches with low quality to negative (unassigned) values
         below_low_threshold = matched_vals < self.low_threshold
         between_thresholds = (matched_vals >= self.low_threshold) & (
             matched_vals < self.high_threshold
         )
-        matches[below_low_threshold] = Matcher.BELOW_LOW_THRESHOLD
-        matches[between_thresholds] = Matcher.BETWEEN_THRESHOLDS
+        matches[below_low_threshold] = self.BELOW_LOW_THRESHOLD
+        matches[between_thresholds] = self.BETWEEN_THRESHOLDS
 
         if self.allow_low_quality_matches:
+            assert all_matches is not None
             self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
 
         return matches

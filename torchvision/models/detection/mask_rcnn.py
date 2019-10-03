@@ -228,7 +228,7 @@ class MaskRCNNHeads(nn.Sequential):
         d = OrderedDict()
         next_feature = in_channels
         for layer_idx, layer_features in enumerate(layers, 1):
-            d["mask_fcn{}".format(layer_idx)] = misc_nn_ops.Conv2d(
+            d["mask_fcn{}".format(layer_idx)] = torch.nn.Conv2d(
                 next_feature, layer_features, kernel_size=3,
                 stride=1, padding=dilation, dilation=dilation)
             d["relu{}".format(layer_idx)] = nn.ReLU(inplace=True)
@@ -245,9 +245,9 @@ class MaskRCNNHeads(nn.Sequential):
 class MaskRCNNPredictor(nn.Sequential):
     def __init__(self, in_channels, dim_reduced, num_classes):
         super(MaskRCNNPredictor, self).__init__(OrderedDict([
-            ("conv5_mask", misc_nn_ops.ConvTranspose2d(in_channels, dim_reduced, 2, 2, 0)),
+            ("conv5_mask", torch.nn.ConvTranspose2d(in_channels, dim_reduced, 2, 2, 0)),
             ("relu", nn.ReLU(inplace=True)),
-            ("mask_fcn_logits", misc_nn_ops.Conv2d(dim_reduced, num_classes, 1, 1, 0)),
+            ("mask_fcn_logits", torch.nn.Conv2d(dim_reduced, num_classes, 1, 1, 0)),
         ]))
 
         for name, param in self.named_parameters():

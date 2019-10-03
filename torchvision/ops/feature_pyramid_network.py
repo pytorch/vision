@@ -4,6 +4,22 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from typing import Tuple, List
+
+
+class FeaturePyramidBlock(nn.Module):
+    def __init__(self, inner, layer):
+        super(FeaturePyramidBlock, self).__init__()
+        self.inner = inner
+        self.layer = layer
+
+    def forward(self, feature, last_inner):
+        inner_lateral = self.inner(feature)
+        feat_shape = inner_lateral.shape[-2:]
+        inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
+        last_inner = inner_lateral + inner_top_down
+        return self.layer(last_inner), last_inner
+
 
 class FeaturePyramidNetwork(nn.Module):
     """
@@ -42,6 +58,7 @@ class FeaturePyramidNetwork(nn.Module):
         >>>    ('feat3', torch.Size([1, 5, 8, 8]))]
 
     """
+    __constants__ = ['layers']
 
     def __init__(self, in_channels_list, out_channels, extra_blocks=None):
         super(FeaturePyramidNetwork, self).__init__()
@@ -55,6 +72,7 @@ class FeaturePyramidNetwork(nn.Module):
             self.inner_blocks.append(inner_block_module)
             self.layer_blocks.append(layer_block_module)
 
+
         # initialize parameters now to avoid modifying the initialization of top_blocks
         for m in self.children():
             if isinstance(m, nn.Conv2d):
@@ -64,6 +82,12 @@ class FeaturePyramidNetwork(nn.Module):
         if extra_blocks is not None:
             assert isinstance(extra_blocks, ExtraFPNBlock)
         self.extra_blocks = extra_blocks
+        self.last_inner_block = self.inner_blocks[-1]
+        self.last_layer_block = self.layer_blocks[-1]
+
+        self.layers = nn.ModuleList()
+        for inner_block, layer_block in zip(self.inner_blocks[:-1][::-1], self.layer_blocks[:-1][::-1]):
+            self.layers.append(FeaturePyramidBlock(inner_block, layer_block))
 
     def forward(self, x):
         """
@@ -80,19 +104,16 @@ class FeaturePyramidNetwork(nn.Module):
         names = list(x.keys())
         x = list(x.values())
 
-        last_inner = self.inner_blocks[-1](x[-1])
+        last_inner = self.last_inner_block(x[-1])
         results = []
-        results.append(self.layer_blocks[-1](last_inner))
-        for feature, inner_block, layer_block in zip(
-            x[:-1][::-1], self.inner_blocks[:-1][::-1], self.layer_blocks[:-1][::-1]
-        ):
-            if not inner_block:
+        results.append(self.last_layer_block(last_inner))
+
+        out_dim_tensor = [x_out for x_out in x[:-1][::-1]]
+        for feature, layer in zip(out_dim_tensor, self.layers):
+            if not layer:
                 continue
-            inner_lateral = inner_block(feature)
-            feat_shape = inner_lateral.shape[-2:]
-            inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
-            last_inner = inner_lateral + inner_top_down
-            results.insert(0, layer_block(last_inner))
+            result, last_inner = layer(feature, last_inner)
+            results.insert(0, result)
 
         if self.extra_blocks is not None:
             results, names = self.extra_blocks(results, x, names)
