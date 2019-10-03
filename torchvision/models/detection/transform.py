@@ -175,7 +175,7 @@ def resize_boxes(boxes, original_size, new_size):
     if torchvision._is_tracing():
         xmin, ymin, xmax, ymax = [torch.squeeze(out, 1) for out in boxes.split(1, dim=1)]
     else:
-        xmin, ymin, xmax, ymax = [torch.squeeze(out, 0) for out in boxes.unbind(1)]
+        xmin, ymin, xmax, ymax = boxes.unbind(1)
 
     xmin = xmin * ratio_width
     xmax = xmax * ratio_width

@@ -477,7 +477,8 @@ class RoIHeads(torch.nn.Module):
         pred_scores = F.softmax(class_logits, -1)
 
         # split boxes and scores per image
-        if len(boxes_per_image) == 1):
+        if len(boxes_per_image) == 1:
+            # TODO : remove this when ONNX support dynamic split sizes
             pred_boxes = (pred_boxes,)
             pred_scores = (pred_scores,)
         else:
@@ -505,7 +506,7 @@ class RoIHeads(torch.nn.Module):
             labels = labels.reshape(-1)
 
             # remove low scoring boxes
-            inds = torch.nonzero(torch.gt(scores, self.score_thresh)).squeeze(1)
+            inds = torch.nonzero(scores > self.score_thresh).squeeze(1)
             boxes, scores, labels = boxes[inds], scores[inds], labels[inds]
 
             # remove empty boxes
