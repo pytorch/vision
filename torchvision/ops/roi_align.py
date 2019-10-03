@@ -8,7 +8,7 @@ from ._utils import convert_boxes_to_roi_format
 
 
 def roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1):
-    # type: (Tensor, Tensor, BroadcastingList2[int], float, int) -> Tensor
+    # type: (Tensor, Tensor, int, float, int) -> Tensor
     """
     Performs Region of Interest (RoI) Align operator described in Mask R-CNN
 

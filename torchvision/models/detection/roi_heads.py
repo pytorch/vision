@@ -661,25 +661,9 @@ class RoIHeads(torch.nn.Module):
                 pos_matched_idxs = None
 
 
-            # keypoint_features = self.keypoint_roi_pool(features, keypoint_proposals, image_shapes)
-            # keypoint_features = self.keypoint_head(keypoint_features)
-            # keypoint_logits = self.keypoint_predictor(keypoint_features)
-
-            if self.keypoint_roi_pool is not None:
-                keypoint_features = self.keypoint_roi_pool(features, keypoint_proposals, image_shapes)
-            else:
-                keypoint_features = None
-                raise RuntimeError("keypoint_roi_pool not defined")
-            if self.keypoint_head is not None:
-                keypoint_features = self.keypoint_head(keypoint_features)
-            else:
-                keypoint_features = None
-                raise RuntimeError("keypoint_head not defined")
-            if self.keypoint_predictor is not None:
-                keypoint_logits = self.keypoint_predictor(keypoint_features)
-            else:
-                keypoint_logits = torch.jit.annotate(Optional[torch.Tensor], None)
-                raise RuntimeError("keypoint_predictor not defined")
+            keypoint_features = self.keypoint_roi_pool(features, keypoint_proposals, image_shapes)
+            keypoint_features = self.keypoint_head(keypoint_features)
+            keypoint_logits = self.keypoint_predictor(keypoint_features)
 
             loss_keypoint = {}
             if self.training:

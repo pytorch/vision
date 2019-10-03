@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from typing import Tuple, List
+from torch.jit.annotations import Tuple, List
 
 
 class FeaturePyramidBlock(nn.Module):
@@ -89,6 +89,9 @@ class FeaturePyramidNetwork(nn.Module):
         for inner_block, layer_block in zip(self.inner_blocks[:-1][::-1], self.layer_blocks[:-1][::-1]):
             self.layers.append(FeaturePyramidBlock(inner_block, layer_block))
 
+        del self.inner_blocks
+        del self.layer_blocks
+
     def forward(self, x):
         """
         Computes the FPN for a set of feature maps.
@@ -109,11 +112,12 @@ class FeaturePyramidNetwork(nn.Module):
         results.append(self.last_layer_block(last_inner))
 
         out_dim_tensor = [x_out for x_out in x[:-1][::-1]]
-        for feature, layer in zip(out_dim_tensor, self.layers):
-            if not layer:
-                continue
-            result, last_inner = layer(feature, last_inner)
-            results.insert(0, result)
+        i = 0
+        for layer in self.layers:
+            if i < len(out_dim_tensor):
+                result, last_inner = layer(out_dim_tensor[i], last_inner)
+                results.insert(0, result)
+            i += 1
 
         if self.extra_blocks is not None:
             results, names = self.extra_blocks(results, x, names)

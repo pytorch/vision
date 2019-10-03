@@ -11,7 +11,6 @@ def zeros_like(tensor, dtype):
     # type: (Tensor, ScalarType) -> Tensor
     if tensor.dtype() == dtype:
         return tensor.detach().clone()
-        pos_idx_per_image_mask = matched_idxs_per_image.detach().clone()
     else:
         return tensor.to(dtype)
 
@@ -31,7 +30,7 @@ class BalancedPositiveNegativeSampler(object):
         self.batch_size_per_image = batch_size_per_image
         self.positive_fraction = positive_fraction
 
-    def run(self, matched_idxs):
+    def __call__(self, matched_idxs):
         # type: (List[Tensor])
         """
         Arguments:
@@ -175,12 +174,10 @@ class BoxCoder(object):
     def decode(self, rel_codes, boxes):
         # type: (Tensor, List[Tensor])
         assert isinstance(boxes, (list, tuple))
-        # if isinstance(rel_codes, (list, tuple)):
-        #     # figure out - always make it a tensor
-        #     import pdb; pdb.set_trace()
-        #     assert False
-        #     rel_codes = torch.cat(rel_codes, dim=0)
         assert isinstance(rel_codes, torch.Tensor)
+        # if isinstance(rel_codes, (list, tuple)):
+        #     TODO: figure out if this code path is ever taken
+        #     rel_codes = torch.cat(rel_codes, dim=0)
         boxes_per_image = [len(b) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
         pred_boxes = self.decode_single(
