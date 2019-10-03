@@ -7,6 +7,8 @@
 
 #include "ROIAlign.h"
 #include "ROIPool.h"
+#include "PSROIAlign.h"
+#include "PSROIPool.h"
 #include "nms.h"
 
 // If we are in a Windows environment, we need to define
@@ -41,4 +43,6 @@ static auto registry =
         .op("torchvision::roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio) -> Tensor",
             &roi_align)
         .op("torchvision::roi_pool", &roi_pool)
+        .op("torchvision::ps_roi_align", &ps_roi_align)
+        .op("torchvision::ps_roi_pool", &ps_roi_pool)
         .op("torchvision::_cuda_version", &_cuda_version);
