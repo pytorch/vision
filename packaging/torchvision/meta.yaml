@@ -13,6 +13,7 @@ requirements:
     - python
     - setuptools
     - av
+    - six # TODO remove me, only until https://github.com/pytorch/pytorch/pull/27282 gets merged
     {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
