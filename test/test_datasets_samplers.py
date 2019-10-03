@@ -33,6 +33,7 @@ def get_list_of_videos(num_videos=5, sizes=None, fps=None):
         yield names
 
 
+@unittest.skipIf(not io.video._av_available(), "this test requires av")
 class Tester(unittest.TestCase):
     def test_random_clip_sampler(self):
         with get_list_of_videos(num_videos=3, sizes=[25, 25, 25]) as video_list:
