@@ -1,3 +1,5 @@
+import warnings
+
 from torchvision import models
 from torchvision import datasets
 from torchvision import ops

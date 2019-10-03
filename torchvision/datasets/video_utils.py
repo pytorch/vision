@@ -220,7 +220,8 @@ class VideoClips(object):
         else:
             for video_pts, info in zip(self.video_pts, self.info):
                 if "video_fps" in info:
-                    clips, idxs = self.compute_clips_for_video(video_pts, num_frames, step, info["video_fps"], frame_rate)
+                    clips, idxs = self.compute_clips_for_video(
+                        video_pts, num_frames, step, info["video_fps"], frame_rate)
                     self.clips.append(clips)
                     self.resampling_idxs.append(idxs)
                 else:
