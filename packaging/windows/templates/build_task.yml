@@ -56,15 +56,15 @@ jobs:
           DESIRED_PYTHON: 3.7
           CUDA_VERSION: cpu
       ${{ if ne(parameters.spec, 'CPU') }}:
-        # PY3.5_92:
-        #   DESIRED_PYTHON: 3.5
-        #   CUDA_VERSION: 92
-        # PY3.6_92:
-        #   DESIRED_PYTHON: 3.6
-        #   CUDA_VERSION: 92
-        # PY3.7_92:
-        #   DESIRED_PYTHON: 3.7
-        #   CUDA_VERSION: 92
+        PY3.5_92:
+          DESIRED_PYTHON: 3.5
+          CUDA_VERSION: 92
+        PY3.6_92:
+          DESIRED_PYTHON: 3.6
+          CUDA_VERSION: 92
+        PY3.7_92:
+          DESIRED_PYTHON: 3.7
+          CUDA_VERSION: 92
         PY3.5_100:
           DESIRED_PYTHON: 3.5
           CUDA_VERSION: 100

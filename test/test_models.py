@@ -1,9 +1,18 @@
+from common_utils import TestCase, map_nested_tensor_object
 from collections import OrderedDict
 from itertools import product
 import torch
+import numpy as np
 from torchvision import models
 import unittest
 import traceback
+import random
+
+
+def set_rng_seed(seed):
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
 
 
 def get_available_classification_models():
@@ -26,26 +35,29 @@ def get_available_video_models():
     return [k for k, v in models.video.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
-# model_name, expected to script without error
-torchub_models = {
-    "deeplabv3_resnet101": True,
-    "mobilenet_v2": True,
-    "resnext50_32x4d": True,
-    "fcn_resnet101": True,
-    "googlenet": False,
-    "densenet121": True,
-    "resnet18": True,
-    "alexnet": True,
-    "shufflenet_v2_x1_0": True,
-    "squeezenet1_0": True,
-    "vgg11": True,
-    "inception_v3": False,
-}
+# models that are in torch hub, as well as r3d_18. we tried testing all models
+# but the test was too slow. not included are detection models, because
+# they are not yet supported in JIT.
+script_test_models = [
+    "deeplabv3_resnet101",
+    "mobilenet_v2",
+    "resnext50_32x4d",
+    "fcn_resnet101",
+    "googlenet",
+    "densenet121",
+    "resnet18",
+    "alexnet",
+    "shufflenet_v2_x1_0",
+    "squeezenet1_0",
+    "vgg11",
+    "inception_v3",
+    'r3d_18',
+]
 
 
-class Tester(unittest.TestCase):
+class ModelTester(TestCase):
     def check_script(self, model, name):
-        if name not in torchub_models:
+        if name not in script_test_models:
             return
         scriptable = True
         msg = ""
@@ -55,7 +67,7 @@ class Tester(unittest.TestCase):
             tb = traceback.format_exc()
             scriptable = False
             msg = str(e) + str(tb)
-        self.assertEqual(torchub_models[name], scriptable, msg)
+        self.assertTrue(scriptable, msg)
 
     def _test_classification_model(self, name, input_shape):
         # passing num_class equal to a number other than 1000 helps in making the test
@@ -79,6 +91,7 @@ class Tester(unittest.TestCase):
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
 
     def _test_detection_model(self, name):
+        set_rng_seed(0)
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
         self.check_script(model, name)
         model.eval()
@@ -88,6 +101,33 @@ class Tester(unittest.TestCase):
         out = model(model_input)
         self.assertIs(model_input[0], x)
         self.assertEqual(len(out), 1)
+
+        def subsample_tensor(tensor):
+            num_elems = tensor.numel()
+            num_samples = 20
+            if num_elems <= num_samples:
+                return tensor
+
+            flat_tensor = tensor.flatten()
+            ith_index = num_elems // num_samples
+            return flat_tensor[ith_index - 1::ith_index]
+
+        def compute_mean_std(tensor):
+            # can't compute mean of integral tensor
+            tensor = tensor.to(torch.double)
+            mean = torch.mean(tensor)
+            std = torch.std(tensor)
+            return {"mean": mean, "std": std}
+
+        # maskrcnn_resnet_50_fpn numerically unstable across platforms, so for now
+        # compare results with mean and std
+        if name == "maskrcnn_resnet50_fpn":
+            test_value = map_nested_tensor_object(out, tensor_map_fn=compute_mean_std)
+            # mean values are small, use large rtol
+            self.assertExpected(test_value, rtol=.01, atol=.01)
+        else:
+            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor))
+
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
@@ -174,7 +214,7 @@ for model_name in get_available_classification_models():
             input_shape = (1, 3, 299, 299)
         self._test_classification_model(model_name, input_shape)
 
-    setattr(Tester, "test_" + model_name, do_test)
+    setattr(ModelTester, "test_" + model_name, do_test)
 
 
 for model_name in get_available_segmentation_models():
@@ -183,7 +223,7 @@ for model_name in get_available_segmentation_models():
     def do_test(self, model_name=model_name):
         self._test_segmentation_model(model_name)
 
-    setattr(Tester, "test_" + model_name, do_test)
+    setattr(ModelTester, "test_" + model_name, do_test)
 
 
 for model_name in get_available_detection_models():
@@ -192,7 +232,7 @@ for model_name in get_available_detection_models():
     def do_test(self, model_name=model_name):
         self._test_detection_model(model_name)
 
-    setattr(Tester, "test_" + model_name, do_test)
+    setattr(ModelTester, "test_" + model_name, do_test)
 
 
 for model_name in get_available_video_models():
@@ -200,7 +240,7 @@ for model_name in get_available_video_models():
     def do_test(self, model_name=model_name):
         self._test_video_model(model_name)
 
-    setattr(Tester, "test_" + model_name, do_test)
+    setattr(ModelTester, "test_" + model_name, do_test)
 
 if __name__ == '__main__':
     unittest.main()
