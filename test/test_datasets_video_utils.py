@@ -83,36 +83,6 @@ class Tester(unittest.TestCase):
                 self.assertEqual(video_idx, v_idx)
                 self.assertEqual(clip_idx, c_idx)
 
-    @unittest.skip("Moved to reference scripts for now")
-    def test_video_sampler(self):
-        with get_list_of_videos(num_videos=3, sizes=[25, 25, 25]) as video_list:
-            video_clips = VideoClips(video_list, 5, 5)
-            sampler = RandomClipSampler(video_clips, 3)  # noqa: F821
-            self.assertEqual(len(sampler), 3 * 3)
-            indices = torch.tensor(list(iter(sampler)))
-            videos = indices // 5
-            v_idxs, count = torch.unique(videos, return_counts=True)
-            self.assertTrue(v_idxs.equal(torch.tensor([0, 1, 2])))
-            self.assertTrue(count.equal(torch.tensor([3, 3, 3])))
-
-    @unittest.skip("Moved to reference scripts for now")
-    def test_video_sampler_unequal(self):
-        with get_list_of_videos(num_videos=3, sizes=[10, 25, 25]) as video_list:
-            video_clips = VideoClips(video_list, 5, 5)
-            sampler = RandomClipSampler(video_clips, 3)  # noqa: F821
-            self.assertEqual(len(sampler), 2 + 3 + 3)
-            indices = list(iter(sampler))
-            self.assertIn(0, indices)
-            self.assertIn(1, indices)
-            # remove elements of the first video, to simplify testing
-            indices.remove(0)
-            indices.remove(1)
-            indices = torch.tensor(indices) - 2
-            videos = indices // 5
-            v_idxs, count = torch.unique(videos, return_counts=True)
-            self.assertTrue(v_idxs.equal(torch.tensor([0, 1])))
-            self.assertTrue(count.equal(torch.tensor([3, 3])))
-
     @unittest.skipIf(not io.video._av_available(), "this test requires av")
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_video_clips_custom_fps(self):
