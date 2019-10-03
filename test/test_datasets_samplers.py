@@ -81,7 +81,7 @@ class Tester(unittest.TestCase):
             sampler = UniformClipSampler(video_clips, 3)
             self.assertEqual(len(sampler), 3 * 3)
             indices = torch.tensor(list(iter(sampler)))
-            self.assertTrue(indices.equal(torch.tensor([0, 1, 1, 2, 4, 6, 7, 9, 11])))
+            self.assertTrue(indices.equal(torch.tensor([0, 0, 1, 2, 4, 6, 7, 9, 11])))
 
 
 if __name__ == '__main__':

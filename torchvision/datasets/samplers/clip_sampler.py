@@ -87,7 +87,7 @@ class UniformClipSampler(torch.utils.data.Sampler):
 
             sampled = (
                 torch.linspace(s, s + length - 1, steps=self.num_clips_per_video)
-                .round()
+                .floor()
                 .to(torch.int64)
             )
             s += length
