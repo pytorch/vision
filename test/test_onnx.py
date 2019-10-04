@@ -22,7 +22,7 @@ class ONNXExporterTester(unittest.TestCase):
     def setUpClass(cls):
         torch.manual_seed(123)
 
-    def run_model(self, model, inputs_list):
+    def run_model(self, model, inputs_list, tolerate_small_mismatch=False):
         model.eval()
 
         onnx_io = io.BytesIO()
@@ -38,9 +38,9 @@ class ONNXExporterTester(unittest.TestCase):
                 test_ouputs = model(*test_inputs)
                 if isinstance(test_ouputs, torch.Tensor):
                     test_ouputs = (test_ouputs,)
-            self.ort_validate(onnx_io, test_inputs, test_ouputs)
+            self.ort_validate(onnx_io, test_inputs, test_ouputs, tolerate_small_mismatch)
 
-    def ort_validate(self, onnx_io, inputs, outputs):
+    def ort_validate(self, onnx_io, inputs, outputs, tolerate_small_mismatch=False):
 
         inputs, _ = torch.jit._flatten(inputs)
         outputs, _ = torch.jit._flatten(outputs)
@@ -63,7 +63,10 @@ class ONNXExporterTester(unittest.TestCase):
             try:
                 torch.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
             except AssertionError as error:
-                assert ("(0.00%)" in str(error)), str(error)
+                if tolerate_small_mismatch:
+                    assert ("(0.00%)" in str(error)), str(error)
+                else:
+                    assert False, str(error)
 
     def test_nms(self):
         boxes = torch.rand(5, 4)
@@ -164,7 +167,7 @@ class ONNXExporterTester(unittest.TestCase):
         model = RPNModule(images)
         model.eval()
         model(features)
-        self.run_model(model, [(features,), (test_features,)])
+        self.run_model(model, [(features,), (test_features,)], tolerate_small_mismatch=True)
 
 
 if __name__ == '__main__':

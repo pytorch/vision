@@ -17,7 +17,7 @@ def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
     #        ONNX Runtime version is updated with ReduceMin int64 support
     pre_nms_top_n = torch.min(torch.cat(
         (torch.tensor([orig_pre_nms_top_n], dtype=num_anchors.dtype),
-        num_anchors), 0).to(torch.int32)).to(num_anchors.dtype)
+         num_anchors), 0).to(torch.int32)).to(num_anchors.dtype)
 
     return num_anchors, pre_nms_top_n
 
