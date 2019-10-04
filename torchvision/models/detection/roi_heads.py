@@ -10,7 +10,7 @@ from torchvision.ops import roi_align
 
 from . import _utils as det_utils
 
-from typing import Optional, List, Dict
+from torch.jit.annotations import Optional, List, Dict
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):

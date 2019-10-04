@@ -6,7 +6,7 @@ from torch import nn
 from torchvision.ops import roi_align
 from torchvision.ops.boxes import box_area
 
-from typing import Optional, List
+from torch.jit.annotations import Optional, List
 
 
 # TODO: (eellison) T54974082 https://github.com/pytorch/pytorch/issues/26744/pytorch/issues/26744
@@ -130,7 +130,6 @@ class MultiScaleRoIAlign(nn.Module):
             max_y = max(shape[1], max_y)
         original_input_shape = (max_x, max_y)
 
-        original_input_shape = tuple(max(s) for s in zip(*image_shapes))
         scales = [self.infer_scale(feat, original_input_shape) for feat in features]
         # get the levels in the feature map by leveraging the fact that the network always
         # downsamples by a factor of 2 at each level.

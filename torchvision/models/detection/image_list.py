@@ -3,6 +3,9 @@ from __future__ import division
 
 import torch
 
+def Imagelist_to(image_list, *args, **kwargs):
+    cast_tensor = image_list.tensors.to(*args, **kwargs)
+    return ImageList(cast_tensor, self.image_sizes)
 
 class ImageList(object):
     """
@@ -21,6 +24,7 @@ class ImageList(object):
         """
         self.tensors = tensors
         self.image_sizes = image_sizes
+
     # def to(self, *args, **kwargs):
     #     cast_tensor = self.tensors.to(*args, **kwargs)
     #     return ImageList(cast_tensor, self.image_sizes)

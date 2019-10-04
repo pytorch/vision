@@ -8,7 +8,7 @@ from torchvision.ops import boxes as box_ops
 from . import _utils as det_utils
 from .image_list import ImageList
 
-from typing import List, Optional, Dict
+from torch.jit.annotations import List, Optional, Dict
 
 
 class AnchorGenerator(nn.Module):

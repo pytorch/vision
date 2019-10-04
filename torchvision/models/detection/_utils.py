@@ -3,7 +3,7 @@ from __future__ import division
 import math
 
 import torch
-from typing import List
+from torch.jit.annotations import List
 
 
 # TODO: https://github.com/pytorch/pytorch/issues/26727
@@ -175,9 +175,7 @@ class BoxCoder(object):
         # type: (Tensor, List[Tensor])
         assert isinstance(boxes, (list, tuple))
         assert isinstance(rel_codes, torch.Tensor)
-        # if isinstance(rel_codes, (list, tuple)):
-        #     TODO: figure out if this code path is ever taken
-        #     rel_codes = torch.cat(rel_codes, dim=0)
+
         boxes_per_image = [len(b) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
         pred_boxes = self.decode_single(
