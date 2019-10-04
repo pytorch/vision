@@ -1,0 +1,15 @@
+parameters:
+  msagent: false
+
+steps:
+- bash: 'find . -name "*.sh" -exec dos2unix {} +'
+  displayName: Replace file endings
+
+- script: 'if not exist %PYTORCH_FINAL_PACKAGE_DIR% mkdir %PYTORCH_FINAL_PACKAGE_DIR%'
+  displayName: 'Create final package directory'
+
+- bash: './packaging/conda/build_vision.sh $CUDA_VERSION $TORCHVISION_BUILD_VERSION $TORCHVISION_BUILD_NUMBER'
+  displayName: Build
+  env:
+    ${{ if eq(parameters.msagent, 'true') }}:
+      MAX_JOBS: 2

@@ -40,6 +40,15 @@ _pil_interpolation_to_str = {
 }
 
 
+def _get_image_size(img):
+    if F._is_pil_image(img):
+        return img.size
+    elif isinstance(img, torch.Tensor) and img.dim() > 2:
+        return img.shape[-2:][::-1]
+    else:
+        raise TypeError("Unexpected type {}".format(type(img)))
+
+
 class Compose(object):
     """Composes several transforms together.
 
@@ -444,7 +453,7 @@ class RandomCrop(object):
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
         """
-        w, h = img.size
+        w, h = _get_image_size(img)
         th, tw = output_size
         if w == tw and h == th:
             return 0, 0, h, w
@@ -635,7 +644,8 @@ class RandomResizedCrop(object):
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
                 sized crop.
         """
-        area = img.size[0] * img.size[1]
+        width, height = _get_image_size(img)
+        area = height * width
 
         for attempt in range(10):
             target_area = random.uniform(*scale) * area
@@ -645,24 +655,24 @@ class RandomResizedCrop(object):
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
 
-            if 0 < w <= img.size[0] and 0 < h <= img.size[1]:
-                i = random.randint(0, img.size[1] - h)
-                j = random.randint(0, img.size[0] - w)
+            if 0 < w <= width and 0 < h <= height:
+                i = random.randint(0, height - h)
+                j = random.randint(0, width - w)
                 return i, j, h, w
 
         # Fallback to central crop
-        in_ratio = img.size[0] / img.size[1]
+        in_ratio = float(width) / float(height)
         if (in_ratio < min(ratio)):
-            w = img.size[0]
+            w = width
             h = int(round(w / min(ratio)))
         elif (in_ratio > max(ratio)):
-            h = img.size[1]
+            h = height
             w = int(round(h * max(ratio)))
         else:  # whole image
-            w = img.size[0]
-            h = img.size[1]
-        i = (img.size[1] - h) // 2
-        j = (img.size[0] - w) // 2
+            w = width
+            h = height
+        i = (height - h) // 2
+        j = (width - w) // 2
         return i, j, h, w
 
     def __call__(self, img):
@@ -946,12 +956,14 @@ class RandomRotation(object):
         center (2-tuple, optional): Optional center of rotation.
             Origin is the upper left corner.
             Default is the center of the image.
+        fill (3-tuple or int): RGB pixel fill value for area outside the rotated image.
+            If int, it is used for all channels respectively.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
 
-    def __init__(self, degrees, resample=False, expand=False, center=None):
+    def __init__(self, degrees, resample=False, expand=False, center=None, fill=0):
         if isinstance(degrees, numbers.Number):
             if degrees < 0:
                 raise ValueError("If degrees is a single number, it must be positive.")
@@ -964,6 +976,7 @@ class RandomRotation(object):
         self.resample = resample
         self.expand = expand
         self.center = center
+        self.fill = fill
 
     @staticmethod
     def get_params(degrees):
@@ -987,7 +1000,7 @@ class RandomRotation(object):
 
         angle = self.get_params(self.degrees)
 
-        return F.rotate(img, angle, self.resample, self.expand, self.center)
+        return F.rotate(img, angle, self.resample, self.expand, self.center, self.fill)
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '(degrees={0}'.format(self.degrees)

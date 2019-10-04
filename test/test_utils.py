@@ -1,8 +1,12 @@
 import os
+import sys
 import tempfile
 import torch
 import torchvision.utils as utils
 import unittest
+from io import BytesIO
+import torchvision.transforms.functional as F
+from PIL import Image
 
 
 class Tester(unittest.TestCase):
@@ -37,17 +41,41 @@ class Tester(unittest.TestCase):
         assert torch.equal(norm_max, rounded_grid_max), 'Normalized max is not equal to 1'
         assert torch.equal(norm_min, rounded_grid_min), 'Normalized min is not equal to 0'
 
+    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_save_image(self):
         with tempfile.NamedTemporaryFile(suffix='.png') as f:
             t = torch.rand(2, 3, 64, 64)
             utils.save_image(t, f.name)
             assert os.path.exists(f.name), 'The image is not present after save'
 
+    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_save_image_single_pixel(self):
         with tempfile.NamedTemporaryFile(suffix='.png') as f:
             t = torch.rand(1, 3, 1, 1)
             utils.save_image(t, f.name)
             assert os.path.exists(f.name), 'The pixel image is not present after save'
+
+    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    def test_save_image_file_object(self):
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            t = torch.rand(2, 3, 64, 64)
+            utils.save_image(t, f.name)
+            img_orig = Image.open(f.name)
+            fp = BytesIO()
+            utils.save_image(t, fp, format='png')
+            img_bytes = Image.open(fp)
+            assert torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)), 'Image not stored in file object'
+
+    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    def test_save_image_single_pixel_file_object(self):
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            t = torch.rand(1, 3, 1, 1)
+            utils.save_image(t, f.name)
+            img_orig = Image.open(f.name)
+            fp = BytesIO()
+            utils.save_image(t, fp, format='png')
+            img_bytes = Image.open(fp)
+            assert torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)), 'Pixel Image not stored in file object'
 
 
 if __name__ == '__main__':

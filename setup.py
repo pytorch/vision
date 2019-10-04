@@ -7,11 +7,12 @@ from setuptools import setup, find_packages
 from pkg_resources import get_distribution, DistributionNotFound
 import subprocess
 import distutils.command.clean
+import distutils.spawn
 import glob
 import shutil
 
 import torch
-from torch.utils.cpp_extension import CppExtension, CUDAExtension, CUDA_HOME
+from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
 
 
 def read(*names, **kwargs):
@@ -52,9 +53,9 @@ def write_version_file():
     with open(version_path, 'w') as f:
         f.write("__version__ = '{}'\n".format(version))
         f.write("git_version = {}\n".format(repr(sha)))
-        f.write("from torchvision import _C\n")
-        f.write("if hasattr(_C, 'CUDA_VERSION'):\n")
-        f.write("    cuda = _C.CUDA_VERSION\n")
+        f.write("from torchvision.extension import _check_cuda_version\n")
+        f.write("if _check_cuda_version() > 0:\n")
+        f.write("    cuda = _check_cuda_version()\n")
 
 
 write_version_file()
@@ -116,10 +117,24 @@ def get_extensions():
     if sys.platform == 'win32':
         define_macros += [('torchvision_EXPORTS', None)]
 
+        extra_compile_args.setdefault('cxx', [])
+        extra_compile_args['cxx'].append('/MP')
+
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs = [extensions_dir]
     tests_include_dirs = [test_dir, models_dir]
+
+    ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
+    has_ffmpeg = ffmpeg_exe is not None
+    if has_ffmpeg:
+        ffmpeg_bin = os.path.dirname(ffmpeg_exe)
+        ffmpeg_root = os.path.dirname(ffmpeg_bin)
+        ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
+
+        # TorchVision video reader
+        video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
+        video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
 
     ext_modules = [
         extension(
@@ -135,8 +150,29 @@ def get_extensions():
             include_dirs=tests_include_dirs,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
-        )
+        ),
     ]
+    if has_ffmpeg:
+        ext_modules.append(
+            CppExtension(
+                'torchvision.video_reader',
+                video_reader_src,
+                include_dirs=[
+                    video_reader_src_dir,
+                    ffmpeg_include_dir,
+                    extensions_dir,
+                ],
+                libraries=[
+                    'avcodec',
+                    'avformat',
+                    'avutil',
+                    'swresample',
+                    'swscale',
+                ],
+                extra_compile_args=["-std=c++14"],
+                extra_link_args=["-std=c++14"],
+            )
+        )
 
     return ext_modules
 
@@ -176,5 +212,8 @@ setup(
         "scipy": ["scipy"],
     },
     ext_modules=get_extensions(),
-    cmdclass={'build_ext': torch.utils.cpp_extension.BuildExtension, 'clean': clean}
+    cmdclass={
+        'build_ext': BuildExtension.with_options(no_python_abi_suffix=True),
+        'clean': clean,
+    }
 )

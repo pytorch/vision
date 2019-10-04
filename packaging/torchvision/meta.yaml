@@ -12,14 +12,19 @@ requirements:
   host:
     - python
     - setuptools
+    - av
+    - six # TODO remove me, only until https://github.com/pytorch/pytorch/pull/27282 gets merged
     {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
+    {{ environ.get('CONDA_CPUONLY_FEATURE') }}
 
   run:
     - python
     - pillow >=4.1.1
     - numpy >=1.11
     - six
+    - av
+    - six # TODO remove me, only until https://github.com/pytorch/pytorch/pull/27282 gets merged
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
@@ -31,7 +36,7 @@ build:
     - FORCE_CUDA
     - NVCC_FLAGS
   features:
-    {{ CONDA_CPUONLY_FEATURE }}
+    {{ environ.get('CONDA_CPUONLY_FEATURE') }}
 
 test:
   imports:
@@ -46,6 +51,8 @@ test:
     - mock
     - av
     - ca-certificates
+    - typing
+    - six # TODO remove me, only until https://github.com/pytorch/pytorch/pull/27282 gets merged
   commands:
     pytest .
 

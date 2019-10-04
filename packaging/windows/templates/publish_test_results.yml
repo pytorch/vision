@@ -1,0 +1,6 @@
+steps:
+- task: PublishTestResults@2 # No test results to publish
+  inputs:
+    testResultsFiles: 'windows/pytorch/test/**/*.xml'
+    testRunTitle: 'Publish test results'
+  enabled: false

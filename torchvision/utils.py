@@ -74,7 +74,8 @@ def make_grid(tensor, nrow=8, padding=2,
     xmaps = min(nrow, nmaps)
     ymaps = int(math.ceil(float(nmaps) / xmaps))
     height, width = int(tensor.size(2) + padding), int(tensor.size(3) + padding)
-    grid = tensor.new_full((3, height * ymaps + padding, width * xmaps + padding), pad_value)
+    num_channels = tensor.size(1)
+    grid = tensor.new_full((num_channels, height * ymaps + padding, width * xmaps + padding), pad_value)
     k = 0
     for y in irange(ymaps):
         for x in irange(xmaps):
@@ -87,13 +88,16 @@ def make_grid(tensor, nrow=8, padding=2,
     return grid
 
 
-def save_image(tensor, filename, nrow=8, padding=2,
-               normalize=False, range=None, scale_each=False, pad_value=0):
+def save_image(tensor, fp, nrow=8, padding=2,
+               normalize=False, range=None, scale_each=False, pad_value=0, format=None):
     """Save a given Tensor into an image file.
 
     Args:
         tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,
             saves the tensor as a grid of images by calling ``make_grid``.
+        fp - A filename(string) or file object
+        format(Optional):  If omitted, the format to use is determined from the filename extension.
+            If a file object was used instead of a filename, this parameter should always be used.
         **kwargs: Other arguments are documented in ``make_grid``.
     """
     from PIL import Image
@@ -102,4 +106,4 @@ def save_image(tensor, filename, nrow=8, padding=2,
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
     im = Image.fromarray(ndarr)
-    im.save(filename)
+    im.save(fp, format=format)

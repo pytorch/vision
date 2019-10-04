@@ -17,8 +17,13 @@ matrix:
       script: ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
     - env: LINT_CHECK
       python: "2.7"
-      install: pip install flake8
-      script: flake8
+      install: pip install flake8 typing
+      script: flake8 --exclude .circleci
+      after_success: []
+    - env: LINT_CHECK
+      python: "3.6"
+      install: pip install flake8 typing
+      script: flake8 .circleci
       after_success: []
     - python: "2.7"
       env: IMAGE_BACKEND=Pillow-SIMD
@@ -48,6 +53,11 @@ before_install:
   - pip install pandas tqdm
   - pip install pytest pytest-cov codecov
   - pip install mock
+  - pip install typing
+  - |
+    if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then
+      pip install onnxruntime
+    fi
   - conda install av -c conda-forge
 
 
@@ -67,7 +77,8 @@ install:
     cd -
 
 script:
-  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH test
+  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH -k 'not TestVideoReader and not TestVideoTransforms' test
+  - pytest test/test_hub.py
 
 after_success:
   # Necessary to run coverage combine to rewrite paths from

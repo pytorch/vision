@@ -1,0 +1,35 @@
+
+# Turn off auto builds for commits
+trigger: none
+pr: none
+
+jobs:
+- template: templates/auth_task.yml
+
+- template: templates/build_task.yml
+  parameters:
+    package: 'Wheels'
+    spec: 'CPU'
+    msagent: true
+
+- template: templates/build_task.yml
+  parameters:
+    package: 'Conda'
+    spec: 'CPU'
+    msagent: true
+
+- template: templates/build_task.yml
+  parameters:
+    package: 'Wheels'
+    spec: 'CUDA'
+    msagent: true
+
+- template: templates/build_task.yml
+  parameters:
+    package: 'Conda'
+    spec: 'CUDA'
+    msagent: true
+
+- template: templates/linux_build_task.yml
+  parameters:
+    msagent: $(ms.hosted.agent.cpu)
