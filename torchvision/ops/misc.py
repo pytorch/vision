@@ -12,7 +12,6 @@ is implemented
 
 import math
 import torch
-from torch.nn.modules.utils import _ntuple
 from torchvision.ops import _new_empty_tensor
 
 
@@ -77,9 +76,36 @@ class BatchNorm2d(torch.nn.BatchNorm2d):
         return _new_empty_tensor(x, output_shape);
 
 
+def _check_size_scale_factor(dim, size, scale_factor):
+    # type: (int, Optional[List[int]], Optional[float]) -> None
+    if size is None and scale_factor is None:
+        raise ValueError("either size or scale_factor should be defined")
+    if size is not None and scale_factor is not None:
+        raise ValueError("only one of size or scale_factor should be defined")
+    if not (scale_factor is not None and len(scale_factor) != dim):
+        raise ValueError(
+            "scale_factor shape must match input shape. "
+            "Input is {}D, scale_factor size is {}".format(dim, len(scale_factor))
+        )
+
+
+def _output_size(dim, input, size, scale_factor):
+    # type: (int, Tensor, Optional[List[int]], Optional[float]) -> List[int]
+    assert dim == 2
+    _check_size_scale_factor(dim , size, scale_factor)
+    if size is not None:
+        return size
+    # if dim is not 2 or scale_factor is iterable use _ntuple instead of concat
+    assert isinstance(scale_factor, (int, float)) and scale_factor is not None
+    scale_factors = [scale_factor, scale_factor]
+    # math.floor might return float in py2.7
+    return [
+        int(math.floor(input.size(i + 2) * scale_factors[i])) for i in range(dim)
+    ]
+
 def interpolate(
-    input, size=None, scale_factor=None, mode="nearest", align_corners=None
-):
+    input, size=None, scale_factor=None, mode="nearest", align_corners=None):
+    # type: (Tensor, Optional[List[int]], Optional[float], str, Optional[bool]) -> Tensor
     """
     Equivalent to nn.functional.interpolate, but with support for empty batch sizes.
     This will eventually be supported natively by PyTorch, and this
@@ -90,34 +116,9 @@ def interpolate(
             input, size, scale_factor, mode, align_corners
         )
 
-    def _check_size_scale_factor(dim):
-        if size is None and scale_factor is None:
-            raise ValueError("either size or scale_factor should be defined")
-        if size is not None and scale_factor is not None:
-            raise ValueError("only one of size or scale_factor should be defined")
-        if (
-            scale_factor is not None and
-            isinstance(scale_factor, tuple) and
-            len(scale_factor) != dim
-        ):
-            raise ValueError(
-                "scale_factor shape must match input shape. "
-                "Input is {}D, scale_factor size is {}".format(dim, len(scale_factor))
-            )
-
-    def _output_size(dim):
-        _check_size_scale_factor(dim)
-        if size is not None:
-            return size
-        scale_factors = _ntuple(dim)(scale_factor)
-        # math.floor might return float in py2.7
-        return [
-            int(math.floor(input.size(i + 2) * scale_factors[i])) for i in range(dim)
-        ]
-
-    output_shape = tuple(_output_size(2))
+    output_shape = _output_size(2, input, size, scale_factor)
     output_shape = input.shape[:-2] + output_shape
-    return _new_empty_tensor(x, output_shape);
+    return _new_empty_tensor(input, output_shape);
 
 
 # This is not in nn

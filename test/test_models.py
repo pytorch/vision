@@ -53,7 +53,8 @@ script_test_models = [
     "inception_v3",
     "r3d_18",
     "fasterrcnn_resnet50_fpn",
-    'maskrcnn_resnet50_fpn',
+    "maskrcnn_resnet50_fpn",
+    "keypointrcnn_resnet50_fpn",
 ]
 
 
@@ -64,7 +65,7 @@ class ModelTester(TestCase):
         scriptable = True
         msg = ""
         try:
-            torch.jit.script(model)
+            print(torch.jit.script(model).graph)
         except Exception as e:
             tb = traceback.format_exc()
             scriptable = False
@@ -132,7 +133,7 @@ class ModelTester(TestCase):
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
-        # self.check_script(model, name)
+        self.check_script(model, name)
 
     def _test_video_model(self, name):
         # the default input shape is
