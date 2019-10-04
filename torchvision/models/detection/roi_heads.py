@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch import nn
 
 from torchvision.ops import boxes as box_ops
-import torch.nn.functional as misc_nn_ops
+from torchvision.ops import misc as misc_nn_ops
 
 from torchvision.ops import roi_align
 

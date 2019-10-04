@@ -2,6 +2,13 @@ import torch
 
 
 def _new_empty_tensor(x, shape):
+    # type: (Tensor, List[int]) -> Tensor
     """
+    Arguments:
+        input (Tensor): input tensor
+        shape List[int]: the new empty tensor shape
+
+    Returns:
+        output (Tensor)
     """
     return torch.ops.torchvision._new_empty_tensor_op(x, shape)

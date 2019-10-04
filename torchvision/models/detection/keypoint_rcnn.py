@@ -1,9 +1,7 @@
 import torch
 from torch import nn
 
-# TODO replace
-# from torchvision.ops import misc as misc_nn_ops
-from torch import nn as misc_nn_ops
+from torchvision.ops import misc as misc_nn_ops
 
 from torchvision.ops import MultiScaleRoIAlign
 

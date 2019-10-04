@@ -4,8 +4,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-import torch.nn as misc_nn_ops
-# from torchvision.ops import misc as misc_nn_ops
+from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops import MultiScaleRoIAlign
 
 from ..utils import load_state_dict_from_url
