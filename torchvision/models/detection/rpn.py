@@ -9,6 +9,19 @@ from torchvision.ops import boxes as box_ops
 from . import _utils as det_utils
 
 
+@torch.jit.unused
+def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
+    from torch.onnx import operators
+    num_anchors = operators.shape_as_tensor(ob)[1].unsqueeze(0)
+    # TODO : remove cast to IntTensor/num_anchors.dtype when
+    #        ONNX Runtime version is updated with ReduceMin int64 support
+    pre_nms_top_n = torch.min(torch.cat(
+        (torch.tensor([orig_pre_nms_top_n], dtype=num_anchors.dtype),
+        num_anchors), 0).to(torch.int32)).to(num_anchors.dtype)
+
+    return num_anchors, pre_nms_top_n
+
+
 class AnchorGenerator(nn.Module):
     """
     Module that generates anchors for a set of feature maps and
@@ -314,13 +327,7 @@ class RegionProposalNetwork(torch.nn.Module):
         offset = 0
         for ob in objectness.split(num_anchors_per_level, 1):
             if torchvision._is_tracing():
-                from torch.onnx import operators
-                num_anchors = operators.shape_as_tensor(ob)[1].unsqueeze(0)
-                # TODO : remove cast to IntTensor/num_anchors.dtype when
-                #        ONNX Runtime version is updated with ReduceMin int64 support
-                pre_nms_top_n = torch.min(torch.cat(
-                    (torch.tensor([self.pre_nms_top_n], dtype=num_anchors.dtype),
-                     num_anchors), 0).to(torch.int32)).to(num_anchors.dtype)
+                num_anchors, pre_nms_top_n = _onnx_get_num_anchors_and_pre_nms_top_n(ob, self.pre_nms_top_n)
             else:
                 num_anchors = ob.shape[1]
                 pre_nms_top_n = min(self.pre_nms_top_n, num_anchors)
