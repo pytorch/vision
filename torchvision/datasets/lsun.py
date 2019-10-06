@@ -6,7 +6,7 @@ import six
 import string
 import sys
 
-if sys.version_info[:2] < (3, 3):
+if sys.version_info < (3, 3):
     from collections import Iterable
 else:
     from collections.abc import Iterable
