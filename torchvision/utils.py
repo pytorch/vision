@@ -1,5 +1,7 @@
-import torch
 import math
+import numpy as np
+import torch
+
 irange = range
 
 
@@ -107,3 +109,25 @@ def save_image(tensor, fp, nrow=8, padding=2,
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
+
+
+def _sample_image():
+    from PIL import Image
+    # TODO properly load the image
+    return Image.open("/tmp/grace_hopper_517x606.jpg")
+
+
+def _plot_images(*imgs):
+    import matplotlib.pyplot as plt
+    import matplotlib
+
+    n = len(imgs)
+    fig, axes = plt.subplots(1, n, figsize=(n * 2, 2))
+    if isinstance(axes, matplotlib.axes.Axes):
+        axes = np.array(axes)
+
+    for img, ax in zip(imgs, axes.flat):
+        ax.imshow(img)
+        ax.axis("off")
+
+    return fig
