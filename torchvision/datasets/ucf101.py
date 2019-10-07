@@ -9,7 +9,7 @@ from .vision import VisionDataset
 
 class UCF101(VisionDataset):
     """
-    UCF101 <https://www.crcv.ucf.edu/data/UCF101.php>`_ dataset.
+    `UCF101 <https://www.crcv.ucf.edu/data/UCF101.php>`_ dataset.
 
     UCF101 is an action recognition video dataset.
     This dataset consider every video as a collection of video clips of fixed size, specified
