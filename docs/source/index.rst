@@ -13,6 +13,7 @@ architectures, and common image transformations for computer vision.
    models
    ops
    transforms
+   transforms_functional
    utils
 
 .. automodule:: torchvision
