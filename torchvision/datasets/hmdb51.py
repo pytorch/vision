@@ -9,7 +9,7 @@ from .vision import VisionDataset
 
 class HMDB51(VisionDataset):
     """
-    HMDB51 <http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/>`_
+    `HMDB51 <http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/>`_
     dataset.
 
     HMDB51 is an action recognition video dataset.
