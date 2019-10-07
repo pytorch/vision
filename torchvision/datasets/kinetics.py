@@ -41,7 +41,6 @@ class Kinetics400(VisionDataset):
                  num_workers=1, _video_width=0, _video_height=0,
                  _video_min_dimension=0, _audio_samples=0):
         super(Kinetics400, self).__init__(root)
-        extensions = ('avi',)
 
         classes = list(sorted(list_dir(root)))
         class_to_idx = {classes[i]: i for i in range(len(classes))}
