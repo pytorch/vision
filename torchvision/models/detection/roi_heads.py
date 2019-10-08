@@ -77,7 +77,7 @@ def maskrcnn_inference(x, labels):
     num_masks = x.shape[0]
     boxes_per_image = [len(l) for l in labels]
     labels = torch.cat(labels)
-    index = torch.arange(num_masks, device=labels.device)
+    index = torch.arange(num_masks, device=labels.device, dtype=torch.int64)
     mask_prob = mask_prob[index, labels][:, None]
 
     mask_prob = mask_prob.split(boxes_per_image, dim=0)
@@ -128,7 +128,7 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
         return mask_logits.sum() * 0
 
     mask_loss = F.binary_cross_entropy_with_logits(
-        mask_logits[torch.arange(labels.shape[0], device=labels.device), labels], mask_targets
+        mask_logits[torch.arange(labels.shape[0], device=labels.device, dtype=torch.int64), labels], mask_targets
     )
     return mask_loss
 
@@ -223,7 +223,7 @@ def heatmaps_to_keypoints(maps, rois):
         xy_preds[i, 0, :] = x + offset_x[i]
         xy_preds[i, 1, :] = y + offset_y[i]
         xy_preds[i, 2, :] = 1
-        end_scores[i, :] = roi_map[torch.arange(num_keypoints), y_int, x_int]
+        end_scores[i, :] = roi_map[torch.arange(num_keypoints, dtype=torch.int64), y_int, x_int]
 
     return xy_preds.permute(0, 2, 1), end_scores
 
@@ -538,7 +538,7 @@ class RoIHeads(torch.nn.Module):
             boxes = box_ops.clip_boxes_to_image(boxes, image_shape)
 
             # create labels for each prediction
-            labels = torch.arange(num_classes, device=device)
+            labels = torch.arange(num_classes, device=device, dtype=torch.int64)
             labels = labels.view(1, -1).expand_as(scores)
 
             # remove predictions with the background label

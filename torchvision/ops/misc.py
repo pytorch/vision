@@ -91,7 +91,7 @@ def _output_size(dim, input, size, scale_factor):
     if size is not None:
         return size
     # if dim is not 2 or scale_factor is iterable use _ntuple instead of concat
-    assert isinstance(scale_factor, (int, float)) and scale_factor is not None
+    assert scale_factor is not None and isinstance(scale_factor, (int, float))
     scale_factors = [scale_factor, scale_factor]
     # math.floor might return float in py2.7
     return [
