@@ -270,7 +270,7 @@ jobs:
 
 workflows:
   build:
-{%- if True %}
+{%- if False %}
     jobs:
       - circleci_consistency
       {{ workflows() }}
