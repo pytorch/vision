@@ -42,23 +42,32 @@ def get_available_video_models():
 # before they are compared to the eager model outputs. This is useful if the
 # model outputs are different between TorchScript / Eager mode
 script_test_models = {
-    "deeplabv3_resnet101": {},
-    "mobilenet_v2": {},
-    "resnext50_32x4d": {},
-    "fcn_resnet101": {},
-    "googlenet": {
-        "unwrapper": lambda x: x.logits
+    'deeplabv3_resnet101': {},
+    'mobilenet_v2': {},
+    'resnext50_32x4d': {},
+    'fcn_resnet101': {},
+    'googlenet': {
+        'unwrapper': lambda x: x.logits
     },
-    "densenet121": {},
-    "resnet18": {},
-    "alexnet": {},
-    "shufflenet_v2_x1_0": {},
-    "squeezenet1_0": {},
-    "vgg11": {},
-    "inception_v3": {
-        "unwrapper": lambda x: x.logits
+    'densenet121': {},
+    'resnet18': {},
+    'alexnet': {},
+    'shufflenet_v2_x1_0': {},
+    'squeezenet1_0': {},
+    'vgg11': {},
+    'inception_v3': {
+        'unwrapper': lambda x: x.logits
     },
     'r3d_18': {},
+    'fasterrcnn_resnet50_fpn': {
+        'unwrapper': lambda x: x[1]
+    },
+    'maskrcnn_resnet50_fpn': {
+        'unwrapper': lambda x: x[1]
+    },
+    'keypointrcnn_resnet50_fpn': {
+        'unwrapper': lambda x: x[1]
+    },
 }
 
 
