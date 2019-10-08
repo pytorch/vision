@@ -14,8 +14,10 @@ from torch.jit.annotations import List, Optional, Dict, Tuple
 
 
 class AnchorGenerator(nn.Module):
-    cell_anchors: Optional[List[torch.Tensor]]
-    _cache: Dict[str, List[torch.Tensor]]
+    __annotations__ = {
+        "cell_anchors": Optional[List[torch.Tensor]],
+        "_cache": Dict[str, List[torch.Tensor]]
+    }
 
     """
     Module that generates anchors for a set of feature maps and
