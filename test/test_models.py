@@ -55,7 +55,9 @@ script_test_models = {
     "shufflenet_v2_x1_0": {},
     "squeezenet1_0": {},
     "vgg11": {},
-    "inception_v3": {},
+    "inception_v3": {
+        "unwrapper": lambda x: x.logits
+    },
     'r3d_18': {},
 }
 
@@ -63,7 +65,6 @@ script_test_models = {
 # These models don't work with checkModule, this list should be deleted as soon
 # as possible
 SCRIPT_MODELS_TO_FIX = [
-    'test_inception_v3',
     'test_fcn_resnet101',
     'test_deeplabv3_resnet101',
 ]

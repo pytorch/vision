@@ -28,6 +28,8 @@ def get_tmp_dir(src=None, **kwargs):
 
 
 ACCEPT = os.getenv('EXPECTTEST_ACCEPT')
+TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
+
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument('--accept', action='store_true')
@@ -287,7 +289,7 @@ class TestCase(unittest.TestCase):
         Check that a nn.Module's results in TorchScript match eager and that it
         can be exported
         """
-        if not torch.jit._enabled or skip:
+        if not TEST_WITH_SLOW or skip:
             # TorchScript is not enabled, skip these tests
             return
 
