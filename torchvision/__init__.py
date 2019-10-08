@@ -1,3 +1,5 @@
+import warnings
+
 from torchvision import models
 from torchvision import datasets
 from torchvision import ops
@@ -58,7 +60,10 @@ def set_video_backend(backend):
         raise ValueError(
             "Invalid video backend '%s'. Options are 'pyav' and 'video_reader'" % backend
         )
-    _video_backend = backend
+    if backend == "video_reader" and not io._HAS_VIDEO_OPT:
+        warnings.warn("video_reader video backend is not available")
+    else:
+        _video_backend = backend
 
 
 def get_video_backend():

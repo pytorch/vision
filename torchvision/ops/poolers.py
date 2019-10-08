@@ -7,6 +7,28 @@ from torchvision.ops import roi_align
 from torchvision.ops.boxes import box_area
 
 from torch.jit.annotations import Optional, List
+import torchvision
+
+# copying result_idx_in_level to a specific index in result[]
+# is not supported by ONNX tracing yet.
+# _onnx_merge_levels() is an implementation supported by ONNX
+# that merges the levels to the right indices
+@torch.jit.unused
+def _onnx_merge_levels(levels, unmerged_results):
+    # type: (Tensor, List[Tensor]) -> Tensor
+    first_result = unmerged_results[0]
+    dtype, device = first_result.dtype, first_result.device
+    res = torch.zeros((levels.size(0), first_result.size(1),
+                       first_result.size(2), first_result.size(3)),
+                      dtype=dtype, device=device)
+    for l in range(len(unmerged_results)):
+        index = (levels == l).nonzero().view(-1, 1, 1, 1)
+        index = index.expand(index.size(0),
+                             unmerged_results[l].size(1),
+                             unmerged_results[l].size(2),
+                             unmerged_results[l].size(3))
+        res = res.scatter(0, index, unmerged_results[l])
+    return res
 
 
 # TODO: (eellison) T54974082 https://github.com/pytorch/pytorch/issues/26744/pytorch/issues/26744
@@ -189,14 +211,22 @@ class MultiScaleRoIAlign(nn.Module):
             device=device,
         )
 
+        tracing_results = []
         for level, (per_level_feature, scale) in enumerate(zip(x_filtered, scales)):
             idx_in_level = torch.nonzero(levels == level).squeeze(1)
             rois_per_level = rois[idx_in_level]
 
-            result[idx_in_level] = roi_align(
+            result_idx_in_level = roi_align(
                 per_level_feature, rois_per_level,
                 output_size=self.output_size,
-                spatial_scale=scale, sampling_ratio=self.sampling_ratio
-            )
+                spatial_scale=scale, sampling_ratio=self.sampling_ratio)
+
+            if torchvision._is_tracing():
+                tracing_results.append(result_idx_in_level.to(dtype))
+            else:
+                result[idx_in_level] = result_idx_in_level
+
+        if torchvision._is_tracing():
+            result = _onnx_merge_levels(levels, tracing_results)
 
         return result

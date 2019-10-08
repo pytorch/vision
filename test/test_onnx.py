@@ -3,6 +3,8 @@ import torch
 from torchvision import ops
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 
+from collections import OrderedDict
+
 # onnxruntime requires python 3.5 or above
 try:
     import onnxruntime
@@ -69,19 +71,18 @@ class ONNXExporterTester(unittest.TestCase):
 
         self.run_model(Module(), [(boxes, scores)])
 
-    def test_roi_pool(self):
+    def test_roi_align(self):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 2)
         self.run_model(model, [(x, single_roi)])
 
-    def test_roi_align(self):
+    def test_roi_pool(self):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         rois = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
         pool_h = 5
         pool_w = 5
         model = ops.RoIPool((pool_h, pool_w), 2)
-        model.eval()
         self.run_model(model, [(x, rois)])
 
     @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
@@ -102,6 +103,31 @@ class ONNXExporterTester(unittest.TestCase):
         input = [torch.rand(3, 800, 1280), torch.rand(3, 800, 800)]
         input_test = [torch.rand(3, 800, 1280), torch.rand(3, 800, 800)]
         self.run_model(TransformModule(), [input, input_test])
+
+    def test_multi_scale_roi_align(self):
+
+        class TransformModule(torch.nn.Module):
+            def __init__(self):
+                super(TransformModule, self).__init__()
+                self.model = ops.MultiScaleRoIAlign(['feat1', 'feat2'], 3, 2)
+                self.image_sizes = [(512, 512)]
+
+            def forward(self, input, boxes):
+                return self.model(input, boxes, self.image_sizes)
+
+        i = OrderedDict()
+        i['feat1'] = torch.rand(1, 5, 64, 64)
+        i['feat2'] = torch.rand(1, 5, 16, 16)
+        boxes = torch.rand(6, 4) * 256
+        boxes[:, 2:] += boxes[:, :2]
+
+        i1 = OrderedDict()
+        i1['feat1'] = torch.rand(1, 5, 64, 64)
+        i1['feat2'] = torch.rand(1, 5, 16, 16)
+        boxes1 = torch.rand(6, 4) * 256
+        boxes1[:, 2:] += boxes1[:, :2]
+
+        self.run_model(TransformModule(), [(i, [boxes],), (i1, [boxes1],)])
 
 
 if __name__ == '__main__':
