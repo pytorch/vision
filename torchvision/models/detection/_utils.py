@@ -3,7 +3,8 @@ from __future__ import division
 import math
 
 import torch
-from torch.jit.annotations import List
+from torch.jit.annotations import List, Tuple
+from torch import Tensor
 
 
 # TODO: https://github.com/pytorch/pytorch/issues/26727

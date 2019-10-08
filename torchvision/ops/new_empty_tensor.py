@@ -1,4 +1,6 @@
 import torch
+from torch.jit.annotations import List
+from torch import Tensor
 
 
 def _new_empty_tensor(x, shape):

@@ -1,4 +1,6 @@
 import torch
+from torch.jit.annotations import Tuple
+from torch import Tensor
 
 
 def nms(boxes, scores, iou_threshold):

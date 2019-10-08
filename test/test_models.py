@@ -140,7 +140,9 @@ class ModelTester(TestCase):
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
-        self.check_script(model, name)
+        # don't check script because we are compiling it here:
+        # TODO: refactor tests
+        # self.check_script(model, name)
 
     def _test_video_model(self, name):
         # the default input shape is

@@ -1,5 +1,7 @@
 from __future__ import division
 from collections import OrderedDict
+from torch.jit.annotations import Optional, List
+from torch import Tensor
 
 """
 helper class that supports empty tensors on some nn functions.
@@ -41,7 +43,7 @@ class ConvTranspose2d(torch.nn.ConvTranspose2d):
             )
         ]
         output_shape = [x.shape[0], self.bias.shape[0]] + output_shape
-        return _new_empty_tensor(x, output_shape);
+        return _new_empty_tensor(x, output_shape)
 
     def super_forward(self, input, output_size=None):
         # type: (Tensor, Optional[List[int]]) -> Tensor
@@ -66,7 +68,7 @@ class BatchNorm2d(torch.nn.BatchNorm2d):
             return super(BatchNorm2d, self).forward(x)
         # get output shape
         output_shape = x.shape
-        return _new_empty_tensor(x, output_shape);
+        return _new_empty_tensor(x, output_shape)
 
 
 def _check_size_scale_factor(dim, size, scale_factor):
@@ -85,7 +87,7 @@ def _check_size_scale_factor(dim, size, scale_factor):
 def _output_size(dim, input, size, scale_factor):
     # type: (int, Tensor, Optional[List[int]], Optional[float]) -> List[int]
     assert dim == 2
-    _check_size_scale_factor(dim , size, scale_factor)
+    _check_size_scale_factor(dim, size, scale_factor)
     if size is not None:
         return size
     # if dim is not 2 or scale_factor is iterable use _ntuple instead of concat
@@ -96,8 +98,8 @@ def _output_size(dim, input, size, scale_factor):
         int(math.floor(input.size(i + 2) * scale_factors[i])) for i in range(dim)
     ]
 
-def interpolate(
-    input, size=None, scale_factor=None, mode="nearest", align_corners=None):
+
+def interpolate(input, size=None, scale_factor=None, mode="nearest", align_corners=None):
     # type: (Tensor, Optional[List[int]], Optional[float], str, Optional[bool]) -> Tensor
     """
     Equivalent to nn.functional.interpolate, but with support for empty batch sizes.
@@ -111,7 +113,7 @@ def interpolate(
 
     output_shape = _output_size(2, input, size, scale_factor)
     output_shape = input.shape[:-2] + output_shape
-    return _new_empty_tensor(input, output_shape);
+    return _new_empty_tensor(input, output_shape)
 
 
 # This is not in nn

@@ -7,7 +7,8 @@ from collections import OrderedDict
 import torch
 from torch import nn
 import warnings
-from torch.jit.annotations import Tuple, List
+from torch.jit.annotations import Tuple, List, Dict, Optional
+from torch import Tensor
 
 
 class GeneralizedRCNN(nn.Module):
@@ -30,7 +31,6 @@ class GeneralizedRCNN(nn.Module):
         self.rpn = rpn
         self.roi_heads = roi_heads
 
-
     @torch.jit.unused
     def eager_outputs(self, losses, detections):
         # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
@@ -38,7 +38,6 @@ class GeneralizedRCNN(nn.Module):
             return losses
 
         return detections
-
 
     def forward(self, images, targets=None):
         # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])

@@ -1,20 +1,19 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
 from torch.nn import functional as F
-from torch import nn
+from torch import nn, Tensor
 
 from torchvision.ops import boxes as box_ops
 
 from . import _utils as det_utils
 from .image_list import ImageList
 
-from torch.jit.annotations import List, Optional, Dict
+from torch.jit.annotations import List, Optional, Dict, Tuple
 
 
 class AnchorGenerator(nn.Module):
-    cell_anchors : Optional[List[torch.Tensor]]
-    _cache : Dict[str, List[torch.Tensor]]
-
+    cell_anchors: Optional[List[torch.Tensor]]
+    _cache: Dict[str, List[torch.Tensor]]
 
     """
     Module that generates anchors for a set of feature maps and
@@ -57,7 +56,7 @@ class AnchorGenerator(nn.Module):
 
     # TODO: https://github.com/pytorch/pytorch/issues/26792
     def generate_anchors(self, scales, aspect_ratios, dtype=torch.float32, device="cpu"):
-        # type: (List[int], List[float], int, Device)
+        # type: (List[int], List[float], int, Device)  # noqa: F821
         scales = torch.as_tensor(scales, dtype=dtype, device=device)
         aspect_ratios = torch.as_tensor(aspect_ratios, dtype=dtype, device=device)
         h_ratios = torch.sqrt(aspect_ratios)
@@ -70,7 +69,7 @@ class AnchorGenerator(nn.Module):
         return base_anchors.round()
 
     def set_cell_anchors(self, dtype, device):
-        # type: (int, Device) -> None
+        # type: (int, Device) -> None    # noqa: F821
         if self.cell_anchors is not None:
             return
 

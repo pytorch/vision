@@ -1,9 +1,9 @@
 import random
 import math
 import torch
-from torch import nn
+from torch import nn, Tensor
 import torchvision
-from torch.jit.annotations import List, Tuple
+from torch.jit.annotations import List, Tuple, Dict, Optional
 
 from torchvision.ops import misc as misc_nn_ops
 from .image_list import ImageList

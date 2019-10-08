@@ -1,12 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
 import torch.nn.functional as F
-from torch import nn
+from torch import nn, Tensor
 
 from torchvision.ops import roi_align
 from torchvision.ops.boxes import box_area
 
-from torch.jit.annotations import Optional, List
+from torch.jit.annotations import Optional, List, Dict, Tuple
 import torchvision
 
 # copying result_idx_in_level to a specific index in result[]

@@ -2,9 +2,9 @@ from collections import OrderedDict
 
 import torch
 import torch.nn.functional as F
-from torch import nn
+from torch import nn, Tensor
 
-from torch.jit.annotations import Tuple, List
+from torch.jit.annotations import Tuple, List, Dict
 
 
 class FeaturePyramidBlock(nn.Module):
@@ -71,7 +71,6 @@ class FeaturePyramidNetwork(nn.Module):
             layer_block_module = nn.Conv2d(out_channels, out_channels, 3, padding=1)
             self.inner_blocks.append(inner_block_module)
             self.layer_blocks.append(layer_block_module)
-
 
         # initialize parameters now to avoid modifying the initialization of top_blocks
         for m in self.children():

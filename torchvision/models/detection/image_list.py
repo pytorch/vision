@@ -2,10 +2,14 @@
 from __future__ import division
 
 import torch
+from torch.jit.annotations import List, Tuple
+from torch import Tensor
+
 
 def Imagelist_to(image_list, *args, **kwargs):
     cast_tensor = image_list.tensors.to(*args, **kwargs)
-    return ImageList(cast_tensor, self.image_sizes)
+    return ImageList(cast_tensor, image_list.image_sizes)
+
 
 class ImageList(object):
     """

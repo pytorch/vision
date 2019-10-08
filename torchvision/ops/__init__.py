@@ -1,5 +1,5 @@
 from .boxes import nms, box_iou
-from .new_empty_tensor import  _new_empty_tensor
+from .new_empty_tensor import _new_empty_tensor
 from .roi_align import roi_align, RoIAlign
 from .roi_pool import roi_pool, RoIPool
 from .poolers import MultiScaleRoIAlign

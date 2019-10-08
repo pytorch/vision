@@ -1,7 +1,7 @@
 import torch
 
 import torch.nn.functional as F
-from torch import nn
+from torch import nn, Tensor
 
 from torchvision.ops import boxes as box_ops
 from torchvision.ops import misc as misc_nn_ops
@@ -10,7 +10,7 @@ from torchvision.ops import roi_align
 
 from . import _utils as det_utils
 
-from torch.jit.annotations import Optional, List, Dict
+from torch.jit.annotations import Optional, List, Dict, Tuple
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
@@ -668,7 +668,7 @@ class RoIHeads(torch.nn.Module):
         # keep none checks in if conditional so torchscript will conditionally
         # compile each branch
         if self.keypoint_roi_pool is not None and self.keypoint_head is not None \
-                        and self.keypoint_predictor is not None:
+                and self.keypoint_predictor is not None:
             keypoint_proposals = [p["boxes"] for p in result]
             if self.training:
                 # during training, only focus on positive boxes
