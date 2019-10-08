@@ -3,6 +3,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from ._utils import _SimpleSegmentationModel
+from typing import List
 
 
 __all__ = ["DeepLabV3"]
@@ -47,9 +48,12 @@ class ASPPConv(nn.Sequential):
         super(ASPPConv, self).__init__(*modules)
 
 
-class ASPPPooling(nn.Sequential):
+class ASPPPooling(nn.Module):
+    __constants__ = ['mods']
+
     def __init__(self, in_channels, out_channels):
-        super(ASPPPooling, self).__init__(
+        super(ASPPPooling, self).__init__()
+        self.mods = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(in_channels, out_channels, 1, bias=False),
             nn.BatchNorm2d(out_channels),
@@ -57,11 +61,13 @@ class ASPPPooling(nn.Sequential):
 
     def forward(self, x):
         size = x.shape[-2:]
-        x = super(ASPPPooling, self).forward(x)
+        x = self.mods(x)
         return F.interpolate(x, size=size, mode='bilinear', align_corners=False)
 
 
 class ASPP(nn.Module):
+    __constants__ = ['project', 'convs']
+
     def __init__(self, in_channels, atrous_rates):
         super(ASPP, self).__init__()
         out_channels = 256
