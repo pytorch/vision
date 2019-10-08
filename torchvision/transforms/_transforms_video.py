@@ -8,7 +8,7 @@ from torchvision.transforms import (
     RandomResizedCrop,
 )
 
-from . import functional_video as F
+from . import _functional_video as F
 
 
 __all__ = [
