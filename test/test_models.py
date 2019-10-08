@@ -140,8 +140,8 @@ class ModelTester(TestCase):
         # compare results with mean and std
         if name == "maskrcnn_resnet50_fpn":
             test_value = map_nested_tensor_object(out, tensor_map_fn=compute_mean_std)
-            # mean values are small, use large rtol
-            self.assertExpected(test_value, rtol=.01, atol=.01)
+            # mean values are small, use large prec
+            self.assertExpected(test_value, prec=.01)
         else:
             self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor))
 

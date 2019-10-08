@@ -84,7 +84,7 @@ def is_iterable(obj):
 class TestCase(unittest.TestCase):
     precision = 1e-5
 
-    def assertExpected(self, output, subname=None, rtol=None, atol=None):
+    def assertExpected(self, output, subname=None, prec=None):
         r"""
         Test that a python value matches the recorded contents of a file
         derived from the name of this test and subname.  The value must be
@@ -140,13 +140,13 @@ class TestCase(unittest.TestCase):
         if ACCEPT:
             equal = False
             try:
-                equal = self.assertEqual(output, expected, rtol=rtol, atol=atol)
+                equal = self.assertEqual(output, expected, prec=prec)
             except Exception:
                 equal = False
             if not equal:
                 return accept_output("updated output")
         else:
-            self.assertEqual(output, expected, rtol=rtol, atol=atol)
+            self.assertEqual(output, expected, prec=prec)
 
     def assertEqual(self, x, y, prec=None, message='', allow_inf=False):
         """
