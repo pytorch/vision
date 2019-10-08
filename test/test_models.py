@@ -62,10 +62,10 @@ script_test_models = {
 }
 
 
-# These models don't work with checkModule, this list should be deleted as soon
-# as possible
 SCRIPT_MODELS_TO_FIX = [
-    'test_fcn_resnet101',
+    # This model fails in the TorchScript interpreter, see
+    # https://github.com/pytorch/pytorch/issues/27549. Delete this list when
+    # that issue is closed.
     'test_deeplabv3_resnet101',
 ]
 
