@@ -112,7 +112,13 @@ class FeaturePyramidNetwork(nn.Module):
         results = []
         results.append(self.last_layer_block(last_inner))
 
-        out_dim_tensor = [x_out for x_out in x[:-1][::-1]]
+        x_except_last = x[0:len(x) - 1]
+        x_except_last.reverse()
+
+        out_dim_tensor = []
+        for x_out in x_except_last:
+            out_dim_tensor.append(x_out)
+
         i = 0
         for layer in self.layers:
             if i < len(out_dim_tensor):

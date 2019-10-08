@@ -353,7 +353,10 @@ class RegionProposalNetwork(torch.nn.Module):
 
         # select top_n boxes independently per level before applying nms
         top_n_idx = self._get_top_n_idx(objectness, num_anchors_per_level)
-        batch_idx = torch.arange(num_images, device=device)[:, None]
+
+        image_range = torch.arange(num_images, device=device, dtype=torch.int64)
+        batch_idx = image_range[:, None]
+
         objectness = objectness[batch_idx, top_n_idx]
         levels = levels[batch_idx, top_n_idx]
         proposals = proposals[batch_idx, top_n_idx]
