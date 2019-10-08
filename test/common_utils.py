@@ -140,13 +140,13 @@ class TestCase(unittest.TestCase):
         if ACCEPT:
             equal = False
             try:
-                equal = self.assertNestedTensorObjectsEqual(output, expected, rtol=rtol, atol=atol)
+                equal = self.assertEqual(output, expected, rtol=rtol, atol=atol)
             except Exception:
                 equal = False
             if not equal:
                 return accept_output("updated output")
         else:
-            self.assertNestedTensorObjectsEqual(output, expected, rtol=rtol, atol=atol)
+            self.assertEqual(output, expected, rtol=rtol, atol=atol)
 
     def assertEqual(self, x, y, prec=None, message='', allow_inf=False):
         """
@@ -262,27 +262,6 @@ class TestCase(unittest.TestCase):
             super(TestCase, self).assertLessEqual(abs(x - y), prec, message)
         else:
             super(TestCase, self).assertEqual(x, y, message)
-
-    def assertNestedTensorObjectsEqual(self, a, b, rtol=None, atol=None):
-        self.assertEqual(type(a), type(b))
-
-        if isinstance(a, torch.Tensor):
-            torch.testing.assert_allclose(a, b, rtol=rtol, atol=atol)
-
-        elif isinstance(a, dict):
-            self.assertEqual(len(a), len(b))
-            for key, value in a.items():
-                self.assertTrue(key in b, "key: " + str(key))
-
-                self.assertNestedTensorObjectsEqual(value, b[key], rtol=rtol, atol=atol)
-        elif isinstance(a, (list, tuple)):
-            self.assertEqual(len(a), len(b))
-
-            for val1, val2 in zip(a, b):
-                self.assertNestedTensorObjectsEqual(val1, val2, rtol=rtol, atol=atol)
-
-        else:
-            self.assertEqual(a, b)
 
     def checkModule(self, nn_module, args, unwrapper=None, skip=False):
         """
