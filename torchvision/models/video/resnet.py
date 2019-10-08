@@ -1,3 +1,5 @@
+import warnings
+
 import torch
 import torch.nn as nn
 
@@ -17,7 +19,6 @@ class Conv3DSimple(nn.Conv3d):
     def __init__(self,
                  in_planes,
                  out_planes,
-                 midplanes=None,
                  stride=1,
                  padding=1):
 
@@ -39,9 +40,11 @@ class Conv2Plus1D(nn.Sequential):
     def __init__(self,
                  in_planes,
                  out_planes,
-                 midplanes,
                  stride=1,
                  padding=1):
+
+        midplanes = (in_planes * out_planes * 3 * 3 * 3) // (
+                in_planes * 3 * 3 + 3 * out_planes)
         super(Conv2Plus1D, self).__init__(
             nn.Conv3d(in_planes, midplanes, kernel_size=(1, 3, 3),
                       stride=(1, stride, stride), padding=(0, padding, padding),
@@ -62,7 +65,6 @@ class Conv3DNoTemporal(nn.Conv3d):
     def __init__(self,
                  in_planes,
                  out_planes,
-                 midplanes=None,
                  stride=1,
                  padding=1):
 
@@ -84,16 +86,15 @@ class BasicBlock(nn.Module):
     expansion = 1
 
     def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None):
-        midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Sequential(
-            conv_builder(inplanes, planes, midplanes, stride),
+            conv_builder(inplanes, planes, stride),
             nn.BatchNorm3d(planes),
             nn.ReLU(inplace=True)
         )
         self.conv2 = nn.Sequential(
-            conv_builder(planes, planes, midplanes),
+            conv_builder(planes, planes),
             nn.BatchNorm3d(planes)
         )
         self.relu = nn.ReLU(inplace=True)
@@ -120,7 +121,6 @@ class Bottleneck(nn.Module):
     def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None):
 
         super(Bottleneck, self).__init__()
-        midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 
         # 1x1x1
         self.conv1 = nn.Sequential(
@@ -130,7 +130,7 @@ class Bottleneck(nn.Module):
         )
         # Second kernel
         self.conv2 = nn.Sequential(
-            conv_builder(planes, planes, midplanes, stride),
+            conv_builder(planes, planes, stride),
             nn.BatchNorm3d(planes),
             nn.ReLU(inplace=True)
         )
@@ -189,6 +189,10 @@ class R2Plus1dStem(nn.Sequential):
 
 
 class VideoResNet(nn.Module):
+
+    # Version 2 adds updated BN params, and
+    # solves midplane computation
+    _version = 2
 
     def __init__(self, block, conv_makers, layers,
                  stem, num_classes=400,
@@ -268,6 +272,9 @@ class VideoResNet(nn.Module):
             elif isinstance(m, nn.BatchNorm3d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
+                # following are v2 updates for maximum reproducibility
+                m.eps = 1e-3
+                m.momentum = 0.9
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
@@ -333,6 +340,12 @@ def r2plus1d_18(pretrained=False, progress=True, **kwargs):
     Returns:
         nn.Module: R(2+1)D-18 network
     """
+    warnings.warn(
+        "This is an updated vesrion of the R(2+1D) model that was "
+        "updated following discussion in #1265. The performance "
+        "deviations are minimal, but this might cause some BW compatibility "
+        "issues, depending on the models.",
+        UserWarning)
     return _video_resnet('r2plus1d_18',
                          pretrained, progress,
                          block=BasicBlock,
