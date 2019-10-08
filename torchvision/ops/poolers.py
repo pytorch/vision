@@ -15,6 +15,7 @@ def initLevelMapper(k_min, k_max, canonical_scale=224, canonical_level=4, eps=1e
     return LevelMapper(k_min, k_max, canonical_scale, canonical_level, eps)
 
 
+@torch.jit.script
 class LevelMapper(object):
     """Determine which FPN level each RoI in a set of RoIs should map to based
     on the heuristic in the FPN paper.
@@ -153,7 +154,10 @@ class MultiScaleRoIAlign(nn.Module):
         Returns:
             result (Tensor)
         """
-        x_filtered = [v for k, v in x.items() if k in self.featmap_names]
+        x_filtered = []
+        for k, v in x.items():
+            if k in self.featmap_names:
+                x_filtered.append(v)
         num_levels = len(x_filtered)
         rois = self.convert_to_roi_format(boxes)
         if self.scales is None:

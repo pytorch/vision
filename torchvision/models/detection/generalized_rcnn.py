@@ -7,6 +7,7 @@ from collections import OrderedDict
 import torch
 from torch import nn
 import warnings
+from torch.jit.annotations import Tuple, List
 
 
 class GeneralizedRCNN(nn.Module):
@@ -29,9 +30,10 @@ class GeneralizedRCNN(nn.Module):
         self.rpn = rpn
         self.roi_heads = roi_heads
 
+
     @torch.jit.unused
     def eager_outputs(self, losses, detections):
-        # type: (Dict[str, Tensor], list[BoxList]) -> Tuple[Dict[str, Tensor], list[BoxList]]
+        # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
         if self.training:
             return losses
 
@@ -54,7 +56,12 @@ class GeneralizedRCNN(nn.Module):
         """
         if self.training and targets is None:
             raise ValueError("In training mode, targets should be passed")
-        original_image_sizes = [img.shape[-2:] for img in images]
+        original_image_sizes = torch.jit.annotate(List[Tuple[int, int]], [])
+        for img in images:
+            val = img.shape[-2:]
+            assert len(val) == 2
+            original_image_sizes.append((val[0], val[1]))
+
         images, targets = self.transform(images, targets)
         features = self.backbone(images.tensors)
         if isinstance(features, torch.Tensor):

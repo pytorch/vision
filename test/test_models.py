@@ -65,7 +65,7 @@ class ModelTester(TestCase):
         scriptable = True
         msg = ""
         try:
-            print(torch.jit.script(model).graph)
+            torch.jit.script(model)
         except Exception as e:
             tb = traceback.format_exc()
             scriptable = False

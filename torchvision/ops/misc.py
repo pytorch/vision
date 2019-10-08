@@ -1,4 +1,5 @@
 from __future__ import division
+from collections import OrderedDict
 
 """
 helper class that supports empty tensors on some nn functions.
@@ -13,27 +14,8 @@ is implemented
 import math
 import torch
 from torchvision.ops import _new_empty_tensor
-
-
-class Conv2d(torch.nn.Conv2d):
-    """
-    Equivalent to nn.Conv2d, but with support for empty batch sizes.
-    This will eventually be supported natively by PyTorch, and this
-    class can go away.
-    """
-    def forward(self, x):
-        if x.numel() > 0:
-            return super(Conv2d, self).forward(x)
-        # get output shape
-
-        output_shape = [
-            (i + 2 * p - (di * (k - 1) + 1)) // d + 1
-            for i, p, di, k, d in zip(
-                x.shape[-2:], self.padding, self.dilation, self.kernel_size, self.stride
-            )
-        ]
-        output_shape = [x.shape[0], self.weight.shape[0]] + output_shape
-        return _new_empty_tensor(x, output_shape);
+from torch.nn import Module, Conv2d
+import torch.nn.functional as F
 
 
 class ConvTranspose2d(torch.nn.ConvTranspose2d):
@@ -44,22 +26,33 @@ class ConvTranspose2d(torch.nn.ConvTranspose2d):
     """
     def forward(self, x):
         if x.numel() > 0:
-            return super(ConvTranspose2d, self).forward(x)
+            return self.super_forward(x)
         # get output shape
 
         output_shape = [
             (i - 1) * d - 2 * p + (di * (k - 1) + 1) + op
             for i, p, di, k, d, op in zip(
                 x.shape[-2:],
-                self.padding,
-                self.dilation,
-                self.kernel_size,
-                self.stride,
-                self.output_padding,
+                list(self.padding),
+                list(self.dilation),
+                list(self.kernel_size),
+                list(self.stride),
+                list(self.output_padding),
             )
         ]
         output_shape = [x.shape[0], self.bias.shape[0]] + output_shape
         return _new_empty_tensor(x, output_shape);
+
+    def super_forward(self, input, output_size=None):
+        # type: (Tensor, Optional[List[int]]) -> Tensor
+        if self.padding_mode != 'zeros':
+            raise ValueError('Only `zeros` padding mode is supported for ConvTranspose2d')
+
+        output_padding = self._output_padding(input, output_size, self.stride, self.padding, self.kernel_size)
+
+        return F.conv_transpose2d(
+            input, self.weight, self.bias, self.stride, self.padding,
+            output_padding, self.groups, self.dilation)
 
 
 class BatchNorm2d(torch.nn.BatchNorm2d):

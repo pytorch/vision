@@ -8,20 +8,21 @@ from torch.jit.annotations import List
 
 # TODO: https://github.com/pytorch/pytorch/issues/26727
 def zeros_like(tensor, dtype):
-    # type: (Tensor, ScalarType) -> Tensor
-    if tensor.dtype() == dtype:
+    # type: (Tensor, int) -> Tensor
+    if tensor.dtype == dtype:
         return tensor.detach().clone()
     else:
         return tensor.to(dtype)
 
 
+@torch.jit.script
 class BalancedPositiveNegativeSampler(object):
     """
     This class samples batches, ensuring that they contain a fixed proportion of positives
     """
 
     def __init__(self, batch_size_per_image, positive_fraction):
-        # type: (List[Tensor])
+        # type: (int, float)
         """
         Arguments:
             batch_size_per_image (int): number of elements to be selected per image
@@ -75,8 +76,8 @@ class BalancedPositiveNegativeSampler(object):
                 matched_idxs_per_image, dtype=torch.uint8
             )
 
-            pos_idx_per_image_mask[pos_idx_per_image] = 1
-            neg_idx_per_image_mask[neg_idx_per_image] = 1
+            pos_idx_per_image_mask[pos_idx_per_image] = torch.tensor(1)
+            neg_idx_per_image_mask[neg_idx_per_image] = torch.tensor(1)
 
             pos_idx.append(pos_idx_per_image_mask)
             neg_idx.append(neg_idx_per_image_mask)
@@ -132,6 +133,7 @@ def encode_boxes(reference_boxes, proposals, weights):
     return targets
 
 
+@torch.jit.script
 class BoxCoder(object):
     """
     This class encodes and decodes a set of bounding boxes into
@@ -149,7 +151,10 @@ class BoxCoder(object):
         self.bbox_xform_clip = bbox_xform_clip
 
     def encode(self, reference_boxes, proposals):
-        boxes_per_image = [len(b) for b in reference_boxes]
+        # type: (List[Tensor], List[Tensor])
+        boxes_per_image = torch.jit.annotate(List[int], [])
+        for b in reference_boxes:
+            boxes_per_image.append(len(b))
         reference_boxes = torch.cat(reference_boxes, dim=0)
         proposals = torch.cat(proposals, dim=0)
         targets = self.encode_single(reference_boxes, proposals)
@@ -175,13 +180,18 @@ class BoxCoder(object):
         # type: (Tensor, List[Tensor])
         assert isinstance(boxes, (list, tuple))
         assert isinstance(rel_codes, torch.Tensor)
+        boxes_per_image = torch.jit.annotate(List[int], [])
+        for b in boxes:
+            boxes_per_image.append(len(b))
 
-        boxes_per_image = [len(b) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
+        box_sum = 0
+        for val in boxes_per_image:
+            box_sum += val
         pred_boxes = self.decode_single(
-            rel_codes.reshape(sum(boxes_per_image), -1), concat_boxes
+            rel_codes.reshape(box_sum, -1), concat_boxes
         )
-        return pred_boxes.reshape(sum(boxes_per_image), -1, 4)
+        return pred_boxes.reshape(box_sum, -1, 4)
 
     def decode_single(self, rel_codes, boxes):
         """
@@ -228,6 +238,7 @@ class BoxCoder(object):
         return pred_boxes
 
 
+@torch.jit.script
 class Matcher(object):
     """
     This class assigns to each predicted "element" (e.g., a box) a ground-truth
@@ -308,8 +319,8 @@ class Matcher(object):
         between_thresholds = (matched_vals >= self.low_threshold) & (
             matched_vals < self.high_threshold
         )
-        matches[below_low_threshold] = self.BELOW_LOW_THRESHOLD
-        matches[between_thresholds] = self.BETWEEN_THRESHOLDS
+        matches[below_low_threshold] = torch.tensor(self.BELOW_LOW_THRESHOLD)
+        matches[between_thresholds] = torch.tensor(self.BETWEEN_THRESHOLDS)
 
         if self.allow_low_quality_matches:
             assert all_matches is not None

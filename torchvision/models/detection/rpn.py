@@ -70,10 +70,10 @@ class AnchorGenerator(nn.Module):
         return base_anchors.round()
 
     def set_cell_anchors(self, dtype, device):
-        # type: (int, Device)
-        cell_anchors = self.cell_anchors
-        if cell_anchors is not None:
-            return cell_anchors
+        # type: (int, Device) -> None
+        if self.cell_anchors is not None:
+            return
+
         cell_anchors = [
             self.generate_anchors(
                 sizes,
@@ -81,7 +81,7 @@ class AnchorGenerator(nn.Module):
                 dtype,
                 device
             )
-            for sizes, aspect_ratios in zip(self.sizes, self.aspect_ratios)
+            for sizes, aspect_ratios in zip(list(self.sizes), list(self.aspect_ratios))
         ]
         self.cell_anchors = cell_anchors
 
@@ -95,7 +95,7 @@ class AnchorGenerator(nn.Module):
         assert cell_anchors is not None
 
         for size, stride, base_anchors in zip(
-            grid_sizes, strides, self.cell_anchors
+            grid_sizes, strides, cell_anchors
         ):
             grid_height, grid_width = size
             stride_height, stride_width = stride
@@ -130,7 +130,7 @@ class AnchorGenerator(nn.Module):
         # type: (ImageList, List[Tensor])
         grid_sizes = list([feature_map.shape[-2:] for feature_map in feature_maps])
         image_size = image_list.tensors.shape[-2:]
-        strides = [(image_size[0] / g[0], image_size[1] / g[1]) for g in grid_sizes]
+        strides = [[int(image_size[0] / g[0]), int(image_size[1] / g[1])] for g in grid_sizes]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
@@ -301,7 +301,7 @@ class RegionProposalNetwork(torch.nn.Module):
         matched_gt_boxes = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
             gt_boxes = targets_per_image["boxes"]
-            match_quality_matrix = self.box_similarity(gt_boxes, anchors_per_image)
+            match_quality_matrix = box_ops.box_iou(gt_boxes, anchors_per_image)
             matched_idxs = self.proposal_matcher(match_quality_matrix)
             # get the targets corresponding GT for each proposal
             # NB: need to clamp the indices because we can have a single
@@ -314,11 +314,11 @@ class RegionProposalNetwork(torch.nn.Module):
 
             # Background (negative examples)
             bg_indices = matched_idxs == self.proposal_matcher.BELOW_LOW_THRESHOLD
-            labels_per_image[bg_indices] = 0
+            labels_per_image[bg_indices] = torch.tensor(0)
 
             # discard indices that are between thresholds
             inds_to_discard = matched_idxs == self.proposal_matcher.BETWEEN_THRESHOLDS
-            labels_per_image[inds_to_discard] = -1
+            labels_per_image[inds_to_discard] = torch.tensor(-1)
 
             labels.append(labels_per_image)
             matched_gt_boxes.append(matched_gt_boxes_per_image)
