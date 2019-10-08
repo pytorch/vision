@@ -83,16 +83,11 @@ class ModelTester(TestCase):
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
         model = models.segmentation.__dict__[name](num_classes=50, pretrained_backbone=False)
+        self.check_script(model, name)
         model.eval()
-        script_model = torch.jit.script(model)
-        # scripting model here instead of check_script: TODO: refactor
-        # self.check_script(model, name)
-        script_model.eval()
         input_shape = (1, 3, 300, 300)
         x = torch.rand(input_shape)
         out = model(x)
-        script_out = script_model(x)
-        self.assertNestedTensorObjectsEqual(out["out"], script_out["out"])
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
 
     def _test_detection_model(self, name):
