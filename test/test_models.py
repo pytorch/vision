@@ -130,6 +130,12 @@ class ModelTester(TestCase):
         else:
             self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor))
 
+
+        scripted_out = torch.jit.script(model)(model_input)[1]
+        self.assertNestedTensorObjectsEqual(scripted_out[0]["boxes"], out[0]["boxes"])
+        self.assertNestedTensorObjectsEqual(scripted_out[0]["scores"], out[0]["scores"])
+        # labels currently float in script: need to investigate (though same result)
+        self.assertNestedTensorObjectsEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
