@@ -10,6 +10,7 @@ class _SimpleSegmentationModel(nn.Module):
 
     def __init__(self, backbone, classifier, aux_classifier=None):
         super(_SimpleSegmentationModel, self).__init__()
+        print('ssm', type(backbone), type(classifier), type(aux_classifier))
         self.backbone = backbone
         self.classifier = classifier
         self.aux_classifier = aux_classifier

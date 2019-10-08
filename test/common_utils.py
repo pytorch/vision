@@ -5,9 +5,14 @@ import contextlib
 import unittest
 import argparse
 import sys
+import io
 import torch
 import errno
 import __main__
+
+from numbers import Number
+from torch._six import string_classes, inf
+from collections import OrderedDict
 
 
 @contextlib.contextmanager
@@ -64,9 +69,19 @@ def map_nested_tensor_object(object, tensor_map_fn):
     return impl(object)
 
 
+def is_iterable(obj):
+    try:
+        iter(obj)
+        return True
+    except TypeError:
+        return False
+
+
 # adapted from TestCase in torch/test/common_utils to accept non-string
 # inputs and set maximum binary size
 class TestCase(unittest.TestCase):
+    precision = 1e-5
+
     def assertExpected(self, output, subname=None, rtol=None, atol=None):
         r"""
         Test that a python value matches the recorded contents of a file
@@ -131,6 +146,121 @@ class TestCase(unittest.TestCase):
         else:
             self.assertNestedTensorObjectsEqual(output, expected, rtol=rtol, atol=atol)
 
+    def assertEqual(self, x, y, prec=None, message='', allow_inf=False):
+        """
+        This is copied from pytorch/test/common_utils.py's TestCase.assertEqual
+        """
+        if isinstance(prec, str) and message == '':
+            message = prec
+            prec = None
+        if prec is None:
+            prec = self.precision
+
+        if isinstance(x, torch.Tensor) and isinstance(y, Number):
+            self.assertEqual(x.item(), y, prec=prec, message=message,
+                             allow_inf=allow_inf)
+        elif isinstance(y, torch.Tensor) and isinstance(x, Number):
+            self.assertEqual(x, y.item(), prec=prec, message=message,
+                             allow_inf=allow_inf)
+        elif isinstance(x, torch.Tensor) and isinstance(y, torch.Tensor):
+            def assertTensorsEqual(a, b):
+                super(TestCase, self).assertEqual(a.size(), b.size(), message)
+                if a.numel() > 0:
+                    if (a.device.type == 'cpu' and (a.dtype == torch.float16 or a.dtype == torch.bfloat16)):
+                        # CPU half and bfloat16 tensors don't have the methods we need below
+                        a = a.to(torch.float32)
+                    b = b.to(a)
+
+                    if (a.dtype == torch.bool) != (b.dtype == torch.bool):
+                        raise TypeError("Was expecting both tensors to be bool type.")
+                    else:
+                        if a.dtype == torch.bool and b.dtype == torch.bool:
+                            # we want to respect precision but as bool doesn't support substraction,
+                            # boolean tensor has to be converted to int
+                            a = a.to(torch.int)
+                            b = b.to(torch.int)
+
+                        diff = a - b
+                        if a.is_floating_point():
+                            # check that NaNs are in the same locations
+                            nan_mask = torch.isnan(a)
+                            self.assertTrue(torch.equal(nan_mask, torch.isnan(b)), message)
+                            diff[nan_mask] = 0
+                            # inf check if allow_inf=True
+                            if allow_inf:
+                                inf_mask = torch.isinf(a)
+                                inf_sign = inf_mask.sign()
+                                self.assertTrue(torch.equal(inf_sign, torch.isinf(b).sign()), message)
+                                diff[inf_mask] = 0
+                        # TODO: implement abs on CharTensor (int8)
+                        if diff.is_signed() and diff.dtype != torch.int8:
+                            diff = diff.abs()
+                        max_err = diff.max()
+                        self.assertLessEqual(max_err, prec, message)
+            super(TestCase, self).assertEqual(x.is_sparse, y.is_sparse, message)
+            super(TestCase, self).assertEqual(x.is_quantized, y.is_quantized, message)
+            if x.is_sparse:
+                x = self.safeCoalesce(x)
+                y = self.safeCoalesce(y)
+                assertTensorsEqual(x._indices(), y._indices())
+                assertTensorsEqual(x._values(), y._values())
+            elif x.is_quantized and y.is_quantized:
+                self.assertEqual(x.qscheme(), y.qscheme(), prec=prec,
+                                 message=message, allow_inf=allow_inf)
+                if x.qscheme() == torch.per_tensor_affine:
+                    self.assertEqual(x.q_scale(), y.q_scale(), prec=prec,
+                                     message=message, allow_inf=allow_inf)
+                    self.assertEqual(x.q_zero_point(), y.q_zero_point(),
+                                     prec=prec, message=message,
+                                     allow_inf=allow_inf)
+                elif x.qscheme() == torch.per_channel_affine:
+                    self.assertEqual(x.q_per_channel_scales(), y.q_per_channel_scales(), prec=prec,
+                                     message=message, allow_inf=allow_inf)
+                    self.assertEqual(x.q_per_channel_zero_points(), y.q_per_channel_zero_points(),
+                                     prec=prec, message=message,
+                                     allow_inf=allow_inf)
+                    self.assertEqual(x.q_per_channel_axis(), y.q_per_channel_axis(),
+                                     prec=prec, message=message)
+                self.assertEqual(x.dtype, y.dtype)
+                self.assertEqual(x.int_repr().to(torch.int32),
+                                 y.int_repr().to(torch.int32), prec=prec,
+                                 message=message, allow_inf=allow_inf)
+            else:
+                assertTensorsEqual(x, y)
+        elif isinstance(x, string_classes) and isinstance(y, string_classes):
+            super(TestCase, self).assertEqual(x, y, message)
+        elif type(x) == set and type(y) == set:
+            super(TestCase, self).assertEqual(x, y, message)
+        elif isinstance(x, dict) and isinstance(y, dict):
+            if isinstance(x, OrderedDict) and isinstance(y, OrderedDict):
+                self.assertEqual(x.items(), y.items(), prec=prec,
+                                 message=message, allow_inf=allow_inf)
+            else:
+                self.assertEqual(set(x.keys()), set(y.keys()), prec=prec,
+                                 message=message, allow_inf=allow_inf)
+                key_list = list(x.keys())
+                self.assertEqual([x[k] for k in key_list],
+                                 [y[k] for k in key_list],
+                                 prec=prec, message=message,
+                                 allow_inf=allow_inf)
+        elif is_iterable(x) and is_iterable(y):
+            super(TestCase, self).assertEqual(len(x), len(y), message)
+            for x_, y_ in zip(x, y):
+                self.assertEqual(x_, y_, prec=prec, message=message,
+                                 allow_inf=allow_inf)
+        elif isinstance(x, bool) and isinstance(y, bool):
+            super(TestCase, self).assertEqual(x, y, message)
+        elif isinstance(x, Number) and isinstance(y, Number):
+            if abs(x) == inf or abs(y) == inf:
+                if allow_inf:
+                    super(TestCase, self).assertEqual(x, y, message)
+                else:
+                    self.fail("Expected finite numeric values - x={}, y={}".format(x, y))
+                return
+            super(TestCase, self).assertLessEqual(abs(x - y), prec, message)
+        else:
+            super(TestCase, self).assertEqual(x, y, message)
+
     def assertNestedTensorObjectsEqual(self, a, b, rtol=None, atol=None):
         self.assertEqual(type(a), type(b))
 
@@ -151,3 +281,59 @@ class TestCase(unittest.TestCase):
 
         else:
             self.assertEqual(a, b)
+
+    def checkModule(self, nn_module, args, unwrapper=None, skip=False):
+        """
+        Check that a nn.Module's results in TorchScript match eager and that it
+        can be exported
+        """
+        if not torch.jit._enabled or skip:
+            # TorchScript is not enabled, skip these tests
+            return
+
+        sm = torch.jit.script(nn_module)
+
+        with freeze_rng_state():
+            eager_out = nn_module(*args)
+
+        with freeze_rng_state():
+            script_out = sm(*args)
+            if unwrapper:
+                script_out = unwrapper(script_out)
+
+        self.assertEqual(eager_out, script_out)
+        self.assertExportImportModule(sm, args)
+
+        return sm
+
+    def getExportImportCopy(self, m):
+        """
+        Save and load a TorchScript model
+        """
+        buffer = io.BytesIO()
+        torch.jit.save(m, buffer)
+        buffer.seek(0)
+        imported = torch.jit.load(buffer)
+        return imported
+
+    def assertExportImportModule(self, m, args):
+        """
+        Check that the results of a model are the same after saving and loading
+        """
+        m_import = self.getExportImportCopy(m)
+        with freeze_rng_state():
+            results = m(*args)
+        with freeze_rng_state():
+            results_from_imported = m_import(*args)
+        self.assertEqual(results, results_from_imported)
+
+
+@contextlib.contextmanager
+def freeze_rng_state():
+    rng_state = torch.get_rng_state()
+    if torch.cuda.is_available():
+        cuda_rng_state = torch.cuda.get_rng_state()
+    yield
+    if torch.cuda.is_available():
+        torch.cuda.set_rng_state(cuda_rng_state)
+    torch.set_rng_state(rng_state)
