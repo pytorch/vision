@@ -308,7 +308,7 @@ class VideoClips(object):
                     math.floor,
                 )
                 audio_end_pts = pts_convert(
-                    video_start_pts,
+                    video_end_pts,
                     info["video_timebase"],
                     info["audio_timebase"],
                     math.ceil,
