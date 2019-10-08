@@ -7,8 +7,8 @@
 
 #include "ROIAlign.h"
 #include "ROIPool.h"
-#include "nms.h"
 #include "empty_tensor_op.h"
+#include "nms.h"
 
 // If we are in a Windows environment, we need to define
 // initialization functions for the _custom_ops extension

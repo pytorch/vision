@@ -33,9 +33,6 @@ class NewEmptyTensorOp : public torch::autograd::Function<NewEmptyTensorOp> {
   }
 };
 
-
-Tensor new_empty_tensor(
-    const Tensor& input,
-    c10::List<int64_t> shape) {
+Tensor new_empty_tensor(const Tensor& input, c10::List<int64_t> shape) {
   return NewEmptyTensorOp::apply(input, shape)[0];
 }
