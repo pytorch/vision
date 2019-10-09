@@ -387,26 +387,25 @@ torch::List<torch::Tensor> readVideoFromFile(
 torch::List<torch::Tensor> probeVideo(
     bool isReadFile,
     const torch::Tensor& input_video,
-    std::string videoPath)
-{
+    std::string videoPath) {
   unique_ptr<DecoderParameters> params = util::getDecoderParams(
-      0,  // seekFrameMargin
-      0,  // getPtsOnly
-      1,  // readVideoStream
-      0,  // width
-      0,  // height
-      0,  // minDimension
-      0,  // videoStartPts
-      0,  // videoEndPts
-      0,  // videoTimeBaseNum
-      1,  // videoTimeBaseDen
-      1,  // readAudioStream
-      0,  // audioSamples
-      0,  // audioChannels
-      0,  // audioStartPts
-      0,  // audioEndPts
-      0,  // audioTimeBaseNum
-      1   //audioTimeBaseDen
+      0, // seekFrameMargin
+      0, // getPtsOnly
+      1, // readVideoStream
+      0, // width
+      0, // height
+      0, // minDimension
+      0, // videoStartPts
+      0, // videoEndPts
+      0, // videoTimeBaseNum
+      1, // videoTimeBaseDen
+      1, // readAudioStream
+      0, // audioSamples
+      0, // audioChannels
+      0, // audioStartPts
+      0, // audioEndPts
+      0, // audioTimeBaseNum
+      1 // audioTimeBaseDen
   );
 
   FfmpegDecoder decoder;
