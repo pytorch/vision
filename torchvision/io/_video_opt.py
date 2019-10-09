@@ -26,14 +26,20 @@ def _validate_pts(pts_range):
             start pts: %d and end pts: %d""" % (pts_range[0], pts_range[1])
 
 
-def _fill_info(vtimebase, vfps, atimebase, asample_rate):
+def _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration):
     info = {}
     if vtimebase.numel() > 0:
         info["video_timebase"] = Fraction(vtimebase[0].item(), vtimebase[1].item())
+        if vduration.numel() > 0:
+            video_duration = vduration.item() * info["video_timebase"]
+            info["video_duration"] = video_duration
     if vfps.numel() > 0:
         info["video_fps"] = vfps.item()
     if atimebase.numel() > 0:
         info["audio_timebase"] = Fraction(atimebase[0].item(), atimebase[1].item())
+        if aduration.numel() > 0:
+            audio_duration = aduration.item() * info["audio_timebase"]
+            info["audio_duration"] == audio_duration
     if asample_rate.numel() > 0:
         info["audio_sample_rate"] = asample_rate.item()
 
@@ -141,8 +147,9 @@ def _read_video_from_file(
         audio_timebase.numerator,
         audio_timebase.denominator,
     )
-    vframes, _vframe_pts, vtimebase, vfps, aframes, aframe_pts, atimebase, asample_rate = result
-    info = _fill_info(vtimebase, vfps, atimebase, asample_rate)
+    vframes, _vframe_pts, vtimebase, vfps, vduration, aframes, aframe_pts, atimebase, \
+        asample_rate, aduration = result
+    info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
     if aframes.numel() > 0:
         # when audio stream is found
         aframes = _align_audio_frames(aframes, aframe_pts, audio_pts_range)
@@ -175,12 +182,26 @@ def _read_video_timestamps_from_file(filename):
         0,  # audio_timebase_num
         1,  # audio_timebase_den
     )
-    _vframes, vframe_pts, vtimebase, vfps, _aframes, aframe_pts, atimebase, asample_rate = result
-    info = _fill_info(vtimebase, vfps, atimebase, asample_rate)
+    _vframes, vframe_pts, vtimebase, vfps, vduration, _aframes, aframe_pts, atimebase, \
+        asample_rate, aduration = result
+    info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
 
     vframe_pts = vframe_pts.numpy().tolist()
     aframe_pts = aframe_pts.numpy().tolist()
     return vframe_pts, aframe_pts, info
+
+
+def _probe_video_from_file(filename):
+    """
+    Probe a video file.
+    Return:
+        info [dict]: contain video meta information, including video_timebase,
+            video_duration, video_fps, audio_timebase, audio_duration, audio_sample_rate
+    """
+    result = torch.ops.video_reader.probe_video_from_file(filename)
+    vtimebase, vfps, vduration, atimebase, asample_rate, aduration = result
+    info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
+    return info
 
 
 def _read_video_from_memory(
@@ -275,8 +296,9 @@ def _read_video_from_memory(
         audio_timebase.denominator,
     )
 
-    vframes, _vframe_pts, vtimebase, vfps, aframes, aframe_pts, atimebase, asample_rate = result
-    info = _fill_info(vtimebase, vfps, atimebase, asample_rate)
+    vframes, _vframe_pts, vtimebase, vfps, vduration, aframes, aframe_pts, \
+        atimebase, asample_rate, aduration = result
+    info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
     if aframes.numel() > 0:
         # when audio stream is found
         aframes = _align_audio_frames(aframes, aframe_pts, audio_pts_range)
@@ -311,9 +333,24 @@ def _read_video_timestamps_from_memory(file_buffer):
         0,  # audio_timebase_num
         1,  # audio_timebase_den
     )
-    _vframes, vframe_pts, vtimebase, vfps, _aframes, aframe_pts, atimebase, asample_rate = result
-    info = _fill_info(vtimebase, vfps, atimebase, asample_rate)
+    _vframes, vframe_pts, vtimebase, vfps, vduration, _aframes, aframe_pts, \
+        atimebase, asample_rate, aduration = result
+    info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
 
     vframe_pts = vframe_pts.numpy().tolist()
     aframe_pts = aframe_pts.numpy().tolist()
     return vframe_pts, aframe_pts, info
+
+
+def _probe_video_from_memory(file_buffer):
+    """
+    Probe a video in memory.
+    Return:
+        info [dict]: contain video meta information, including video_timebase,
+            video_duration, video_fps, audio_timebase, audio_duration, audio_sample_rate
+    """
+    video_tensor = torch.from_numpy(np.frombuffer(file_buffer, dtype=np.uint8))
+    result = torch.ops.video_reader.probe_video_from_memory(video_tensor)
+    vtimebase, vfps, vduration, atimebase, asample_rate, aduration = result
+    info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
+    return info

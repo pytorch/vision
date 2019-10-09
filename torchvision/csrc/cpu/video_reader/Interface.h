@@ -48,6 +48,7 @@ struct VideoFormat {
   int timeBaseNum{0};
   int timeBaseDen{1}; // numerator and denominator of time base
   float fps{0.0};
+  int64_t duration{0};  // duration of the stream, in stream time base
 };
 
 struct AudioFormat {
@@ -60,6 +61,7 @@ struct AudioFormat {
   int64_t startPts{0}, endPts{0}; // Start and end presentation timestamp
   int timeBaseNum{0};
   int timeBaseDen{1}; // numerator and denominator of time base
+  int64_t duration{0};  // duration of the stream, in stream time base
 };
 
 union FormatUnion {
