@@ -146,8 +146,8 @@ ResNetImpl<Block>::ResNetImpl(
       torch::nn::init::kaiming_normal_(
           M->weight,
           /*a=*/0,
-          torch::nn::init::FanMode::FanOut,
-          torch::nn::init::Nonlinearity::ReLU);
+          torch::kFanOut,
+          torch::kReLU);
     else if (auto M = dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
       torch::nn::init::constant_(M->weight, 1);
       torch::nn::init::constant_(M->bias, 0);
