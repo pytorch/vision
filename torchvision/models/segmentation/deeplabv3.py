@@ -50,6 +50,7 @@ class ASPPConv(nn.Sequential):
 
 class ASPPPooling(nn.Module):
     __constants__ = ['mods']
+    _version = 2
 
     def __init__(self, in_channels, out_channels):
         super(ASPPPooling, self).__init__()
@@ -63,6 +64,26 @@ class ASPPPooling(nn.Module):
         size = x.shape[-2:]
         x = self.mods(x)
         return F.interpolate(x, size=size, mode='bilinear', align_corners=False)
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
+                              missing_keys, unexpected_keys, error_msgs):
+        version = local_metadata.get('version', 1)
+        if version < 2:
+            for key in list(state_dict.keys()):
+                # In version 1, `self.mods` did not exist and submodules were
+                # named as in nn.Sequential, so add `mods.` to the name if
+                # necessary
+                if key.startswith(prefix):
+                    postfix = key[len(prefix):]
+                    if not postfix.startswith('mods.'):
+                        new_key = prefix + 'mods.' + postfix
+                        value = state_dict[key]
+                        del state_dict[key]
+                        state_dict[new_key] = value
+
+        super(ASPPPooling, self)._load_from_state_dict(
+            state_dict, prefix, local_metadata, strict,
+            missing_keys, unexpected_keys, error_msgs)
 
 
 class ASPP(nn.Module):
