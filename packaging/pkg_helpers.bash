@@ -36,7 +36,7 @@ setup_cuda() {
   # Wheel builds need suffixes (but not if they're on OS X, which never has suffix)
   if [[ "$BUILD_TYPE" == "wheel" ]] && [[ "$(uname)" != Darwin ]]; then
     # The default CUDA has no suffix
-    if [[ "$CU_VERSION" != "cu100" ]]; then
+    if [[ "$CU_VERSION" != "cu101" ]]; then
       export PYTORCH_VERSION_SUFFIX="+$CU_VERSION"
     fi
     # Match the suffix scheme of pytorch, unless this package does not have
@@ -208,6 +208,9 @@ setup_conda_cudatoolkit_constraint() {
     export CONDA_CUDATOOLKIT_CONSTRAINT=""
   else
     case "$CU_VERSION" in
+      cu101)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.1,<10.2 # [not osx]"
+        ;;
       cu100)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.0,<10.1 # [not osx]"
         ;;
