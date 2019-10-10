@@ -65,15 +65,15 @@ jobs:
         PY3.7_92:
           DESIRED_PYTHON: 3.7
           CUDA_VERSION: 92
-        PY3.5_100:
+        PY3.5_101:
           DESIRED_PYTHON: 3.5
-          CUDA_VERSION: 100
-        PY3.6_100:
+          CUDA_VERSION: 101
+        PY3.6_101:
           DESIRED_PYTHON: 3.6
-          CUDA_VERSION: 100
-        PY3.7_100:
+          CUDA_VERSION: 101
+        PY3.7_101:
           DESIRED_PYTHON: 3.7
-          CUDA_VERSION: 100
+          CUDA_VERSION: 101
 
   pool:
     ${{ if eq(parameters.msagent, 'true') }}:
@@ -112,29 +112,29 @@ jobs:
         msagent: ${{ parameters.msagent }}
 
   # If you want to upload binaries to S3 & Anaconda Cloud, please uncomment this section.
-  - ${{ if and(eq(parameters.package, 'Wheels'), eq(parameters.spec, 'CPU')) }}:
-    - template: upload_to_s3.yml
-      parameters:
-        cuVer: '$(CUDA_VERSION)'
-        cudaVer: '$(CUDA_VERSION)'
+  # - ${{ if and(eq(parameters.package, 'Wheels'), eq(parameters.spec, 'CPU')) }}:
+  #   - template: upload_to_s3.yml
+  #     parameters:
+  #       cuVer: '$(CUDA_VERSION)'
+  #       cudaVer: '$(CUDA_VERSION)'
 
-  - ${{ if and(eq(parameters.package, 'Wheels'), ne(parameters.spec, 'CPU')) }}:
-    - template: upload_to_s3.yml
-      parameters:
-        cuVer: 'cu$(CUDA_VERSION)'
-        cudaVer: 'cuda$(CUDA_VERSION)'
+  # - ${{ if and(eq(parameters.package, 'Wheels'), ne(parameters.spec, 'CPU')) }}:
+  #   - template: upload_to_s3.yml
+  #     parameters:
+  #       cuVer: 'cu$(CUDA_VERSION)'
+  #       cudaVer: 'cuda$(CUDA_VERSION)'
 
-  - ${{ if eq(parameters.package, 'Conda') }}:
-    - template: upload_to_conda.yml
-      parameters:
-        user: $(peterjc_conda_username)
-        pass: $(peterjc_conda_password)
+  # - ${{ if eq(parameters.package, 'Conda') }}:
+  #   - template: upload_to_conda.yml
+  #     parameters:
+  #       user: $(peterjc_conda_username)
+  #       pass: $(peterjc_conda_password)
 
   # If you want to upload binaries to Azure Git, please uncomment this section.
-  # - ${{ if or(eq(parameters.package, 'Wheels'), eq(parameters.package, 'Conda')) }}:
-  #   - template: publish_test_results.yml
-  #     parameters:
-  #       msagent: ${{ parameters.msagent }}
-  #   - template: publish_packages.yml
-  #     parameters:
-  #       package: ${{ parameters.package }}
+  - ${{ if or(eq(parameters.package, 'Wheels'), eq(parameters.package, 'Conda')) }}:
+    - template: publish_test_results.yml
+      parameters:
+        msagent: ${{ parameters.msagent }}
+    - template: publish_packages.yml
+      parameters:
+        package: ${{ parameters.package }}
