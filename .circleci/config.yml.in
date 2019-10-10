@@ -176,6 +176,8 @@ jobs:
 {%-   endif %}
 {%-   if cu_version == "cu92" %}
           wheel_docker_image: "soumith/manylinux-cuda92"
+{%-   elif cu_version == "cu100" %}
+          wheel_docker_image: "soumith/manylinux-cuda100"
 {%-   endif %}
 
 {%-   if upload %}
