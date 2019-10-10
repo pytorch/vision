@@ -92,7 +92,7 @@ export PATH="$(pwd):$(pwd)/Library/usr/bin:$(pwd)/Library/bin:$(pwd)/Scripts:$(p
 popd
 retry conda install -yq conda-build
 
-ANACONDA_USER=pytorch-nightly
+ANACONDA_USER=pytorch
 conda config --set anaconda_upload no
 
 
@@ -120,23 +120,27 @@ else
     fi
 fi
 
-if [[ -z "$PYTORCH_VERSION" ]]; then
-    export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
-    export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
-                                python -c "import os, sys, json, re; cuver = '$cuver'; \
-                                cuver = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
-                                print(re.sub(r'\\+.*$', '', \
-                                [x['version'] for x in json.load(sys.stdin)['pytorch'] \
-                                    if (x['platform'] == 'darwin' or cuver in x['fn']) \
-                                    and 'py' + os.environ['DESIRED_PYTHON'] in x['fn']][-1]))")"
-    if [[ -z "$PYTORCH_VERSION" ]]; then
-        echo "PyTorch version auto detection failed"
-        echo "No package found for desired_cuda=$desired_cuda and DESIRED_PYTHON=$DESIRED_PYTHON"
-        exit 1
-    fi
-else
-    export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-nightly"
-fi
+# if [[ -z "$PYTORCH_VERSION" ]]; then
+#     export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
+#     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
+#                                 python -c "import os, sys, json, re; cuver = '$cuver'; \
+#                                 cuver = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
+#                                 print(re.sub(r'\\+.*$', '', \
+#                                 [x['version'] for x in json.load(sys.stdin)['pytorch'] \
+#                                     if (x['platform'] == 'darwin' or cuver in x['fn']) \
+#                                     and 'py' + os.environ['DESIRED_PYTHON'] in x['fn']][-1]))")"
+#     if [[ -z "$PYTORCH_VERSION" ]]; then
+#         echo "PyTorch version auto detection failed"
+#         echo "No package found for desired_cuda=$desired_cuda and DESIRED_PYTHON=$DESIRED_PYTHON"
+#         exit 1
+#     fi
+# else
+#     export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-nightly"
+# fi
+
+export CONDA_CHANNEL_FLAGS="-c pytorch"
+export PYTORCH_VERSION="1.3.0"
+
 if [[ "$desired_cuda" == 'cpu' ]]; then
     export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==$PYTORCH_VERSION"
     export CONDA_PYTORCH_CONSTRAINT="- pytorch==$PYTORCH_VERSION"
