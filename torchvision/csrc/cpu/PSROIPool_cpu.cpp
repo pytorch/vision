@@ -38,7 +38,6 @@ void PSROIPoolForward(
 
     int c_in = 0;
     for (int c_out = 0; c_out < channels_out; ++c_out) {
-
       for (int ph = 0; ph < pooled_height; ++ph) {
         for (int pw = 0; pw < pooled_width; ++pw) {
           int hstart = static_cast<int>(floor(static_cast<T>(ph) * bin_size_h));
@@ -109,7 +108,6 @@ void PSROIPoolBackward(
 
     for (int ph = 0; ph < pooled_height; ++ph) {
       for (int pw = 0; pw < pooled_width; ++pw) {
-
         int hstart = static_cast<int>(floor(static_cast<T>(ph) * bin_size_h));
         int wstart = static_cast<int>(floor(static_cast<T>(pw) * bin_size_w));
         int hend = static_cast<int>(ceil(static_cast<T>(ph + 1) * bin_size_h));
@@ -123,7 +121,6 @@ void PSROIPoolBackward(
         bool is_empty = (hend <= hstart) || (wend <= wstart);
 
         for (int c_out = 0; c_out < channels_out; ++c_out) {
-
           int index =
               ((n * channels_out + c_out) * pooled_height + ph) * pooled_width +
               pw;
@@ -182,22 +179,22 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cpu(
   }
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-    input.scalar_type(), "PSROIPool_forward", [&] {
-      PSROIPoolForward<scalar_t>(
-          input.contiguous().data<scalar_t>(),
-          spatial_scale,
-          channels,
-          height,
-          width,
-          pooled_height,
-          pooled_width,
-          rois.contiguous().data<scalar_t>(),
-          channels_out,
-          num_rois,
-          output.data<scalar_t>(),
-          channel_mapping.data<int>());
-    });
-    return std::make_tuple(output, channel_mapping);
+      input.scalar_type(), "PSROIPool_forward", [&] {
+        PSROIPoolForward<scalar_t>(
+            input.contiguous().data<scalar_t>(),
+            spatial_scale,
+            channels,
+            height,
+            width,
+            pooled_height,
+            pooled_width,
+            rois.contiguous().data<scalar_t>(),
+            channels_out,
+            num_rois,
+            output.data<scalar_t>(),
+            channel_mapping.data<int>());
+      });
+  return std::make_tuple(output, channel_mapping);
  }
 
 at::Tensor PSROIPool_backward_cpu(

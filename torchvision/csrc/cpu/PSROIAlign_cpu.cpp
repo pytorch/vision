@@ -91,10 +91,8 @@ void PSROIAlignForwardCPU(
 
     int c_in = 0;
     for (int c_out = 0; c_out < channels_out; ++c_out) {
-
       for (int ph = 0; ph < pooled_height; ++ph) {
         for (int pw = 0; pw < pooled_width; ++pw) {
-
           int index =
               ((n * channels_out + c_out) * pooled_height + ph) * pooled_width +
               pw;
@@ -108,8 +106,8 @@ void PSROIAlignForwardCPU(
               ? sampling_ratio
               : ceil(roi_height / pooled_height);
           int roi_bin_grid_w = (sampling_ratio > 0)
-            ? sampling_ratio
-            : ceil(roi_width / pooled_width);
+              ? sampling_ratio
+              : ceil(roi_width / pooled_width);
           const T count = roi_bin_grid_h * roi_bin_grid_w;
 
           const T* offset_input =

@@ -38,7 +38,9 @@ def ps_roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1
     if not isinstance(rois, torch.Tensor):
         rois = convert_boxes_to_roi_format(rois)
     output, _ = torch.ops.torchvision.ps_roi_align(input, rois, spatial_scale,
-        output_size[0], output_size[1], sampling_ratio)
+                                                   output_size[0],
+                                                   output_size[1],
+                                                   sampling_ratio)
     return output
 
 
@@ -54,7 +56,7 @@ class PSRoIAlign(nn.Module):
 
     def forward(self, input, rois):
         return ps_roi_align(input, rois, self.output_size, self.spatial_scale,
-            self.sampling_ratio)
+                            self.sampling_ratio)
 
     def __repr__(self):
         tmpstr = self.__class__.__name__ + '('
