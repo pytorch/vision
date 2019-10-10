@@ -43,8 +43,10 @@ void PSROIPoolForward(
         for (int pw = 0; pw < pooled_width; ++pw) {
           int hstart = static_cast<int>(floor(static_cast<T>(ph) * bin_size_h));
           int wstart = static_cast<int>(floor(static_cast<T>(pw) * bin_size_w));
-          int hend = static_cast<int>(ceil(static_cast<T>(ph + 1) * bin_size_h));
-          int wend = static_cast<int>(ceil(static_cast<T>(pw + 1) * bin_size_w));
+          int hend =
+              static_cast<int>(ceil(static_cast<T>(ph + 1) * bin_size_h));
+          int wend =
+              static_cast<int>(ceil(static_cast<T>(pw + 1) * bin_size_w));
 
           // Add roi offsets and clip to input boundaries
           hstart = std::min(std::max(hstart + roi_start_h, 0), height - 1);
@@ -65,7 +67,8 @@ void PSROIPoolForward(
           }
 
           int index =
-              ((n * channels_out + c_out) * pooled_height + ph) * pooled_width + pw;
+              ((n * channels_out + c_out) * pooled_height + ph) * pooled_width +
+              pw;
           T bin_area = (hend - hstart) * (wend - wstart);
           output[index] = is_empty ? static_cast<T>(0) : out_sum / bin_area;
           channel_mapping[index] = c_in;
@@ -122,13 +125,15 @@ void PSROIPoolBackward(
         for (int c_out = 0; c_out < channels_out; ++c_out) {
 
           int index =
-              ((n * channels_out + c_out) * pooled_height + ph) * pooled_width + pw;
+              ((n * channels_out + c_out) * pooled_height + ph) * pooled_width +
+              pw;
           int c_in = channel_mapping[index];
 
           T* grad_input_offset =
               grad_input + (roi_batch_ind * channels + c_in) * height * width;
           T bin_area = (hend - hstart) * (wend - wstart);
-          T diff_val = is_empty ? static_cast<T>(0) : grad_output[index] / bin_area;
+          T diff_val =
+              is_empty ? static_cast<T>(0) : grad_output[index] / bin_area;
           for (int h = hstart; h < hend; ++h) {
             for (int w = wstart; w < wend; ++w) {
               int grad_input_index = h * width + w;
@@ -177,35 +182,35 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cpu(
   }
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-        input.scalar_type(), "PSROIPool_forward", [&] {
-          PSROIPoolForward<scalar_t>(
-              input.contiguous().data<scalar_t>(),
-              spatial_scale,
-              channels,
-              height,
-              width,
-              pooled_height,
-              pooled_width,
-              rois.contiguous().data<scalar_t>(),
-              channels_out,
-              num_rois,
-              output.data<scalar_t>(),
-              channel_mapping.data<int>());
-        });
+    input.scalar_type(), "PSROIPool_forward", [&] {
+      PSROIPoolForward<scalar_t>(
+          input.contiguous().data<scalar_t>(),
+          spatial_scale,
+          channels,
+          height,
+          width,
+          pooled_height,
+          pooled_width,
+          rois.contiguous().data<scalar_t>(),
+          channels_out,
+          num_rois,
+          output.data<scalar_t>(),
+          channel_mapping.data<int>());
+    });
     return std::make_tuple(output, channel_mapping);
  }
 
- at::Tensor PSROIPool_backward_cpu(
-     const at::Tensor& grad,
-     const at::Tensor& rois,
-     const at::Tensor& channel_mapping,
-     const float spatial_scale,
-     const int pooled_height,
-     const int pooled_width,
-     const int batch_size,
-     const int channels,
-     const int height,
-     const int width) {
+at::Tensor PSROIPool_backward_cpu(
+    const at::Tensor& grad,
+    const at::Tensor& rois,
+    const at::Tensor& channel_mapping,
+    const float spatial_scale,
+    const int pooled_height,
+    const int pooled_width,
+    const int batch_size,
+    const int channels,
+    const int height,
+    const int width) {
   // Check if input tensors are CPU tensors
   AT_ASSERTM(grad.device().is_cpu(), "grad must be a CPU tensor");
   AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");

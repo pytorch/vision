@@ -96,7 +96,8 @@ void PSROIAlignForwardCPU(
         for (int pw = 0; pw < pooled_width; ++pw) {
 
           int index =
-              ((n * channels_out + c_out) * pooled_height + ph) * pooled_width + pw;
+              ((n * channels_out + c_out) * pooled_height + ph) * pooled_width +
+              pw;
 
           // Do not using floor/ceil; this implementation detail is critical
           T hstart = static_cast<T>(ph) * bin_size_h + roi_start_h;
@@ -106,8 +107,9 @@ void PSROIAlignForwardCPU(
           int roi_bin_grid_h = (sampling_ratio > 0)
               ? sampling_ratio
               : ceil(roi_height / pooled_height);
-          int roi_bin_grid_w =
-              (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
+          int roi_bin_grid_w = (sampling_ratio > 0)
+            ? sampling_ratio
+            : ceil(roi_width / pooled_width);
           const T count = roi_bin_grid_h * roi_bin_grid_w;
 
           const T* offset_input =
@@ -122,7 +124,8 @@ void PSROIAlignForwardCPU(
               const T x = wstart +
                   static_cast<T>(ix + .5f) * bin_size_w /
                       static_cast<T>(roi_bin_grid_w);
-              T val = bilinear_interpolate(offset_input, height, width, y, x, index);
+              T val = bilinear_interpolate(
+                  offset_input, height, width, y, x, index);
               out_sum += val;
             }
           }

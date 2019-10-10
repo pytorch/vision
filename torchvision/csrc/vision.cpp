@@ -5,10 +5,10 @@
 #include <cuda.h>
 #endif
 
-#include "ROIAlign.h"
-#include "ROIPool.h"
 #include "PSROIAlign.h"
 #include "PSROIPool.h"
+#include "ROIAlign.h"
+#include "ROIPool.h"
 #include "nms.h"
 
 // If we are in a Windows environment, we need to define

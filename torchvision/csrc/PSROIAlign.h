@@ -29,12 +29,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward(
 #endif
   }
   return PSROIAlign_forward_cpu(
-      input,
-      rois,
-      spatial_scale,
-      pooled_height,
-      pooled_width,
-      sampling_ratio);
+      input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio);
 }
 
 at::Tensor PSROIAlign_backward(
@@ -87,7 +82,8 @@ using torch::autograd::AutogradContext;
 using torch::autograd::Variable;
 using torch::autograd::variable_list;
 
-class PSROIAlignFunction : public torch::autograd::Function<PSROIAlignFunction> {
+class PSROIAlignFunction
+    : public torch::autograd::Function<PSROIAlignFunction> {
  public:
   static variable_list forward(
       AutogradContext* ctx,
@@ -149,11 +145,6 @@ std::tuple<Tensor, Tensor> ps_roi_align(
     const int64_t pooled_width,
     const int64_t sampling_ratio) {
   auto result = PSROIAlignFunction::apply(
-      input,
-      rois,
-      spatial_scale,
-      pooled_height,
-      pooled_width,
-      sampling_ratio);
+      input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio);
   return std::tuple<Tensor, Tensor>(result[0], result[1]);
 }
