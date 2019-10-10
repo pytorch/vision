@@ -201,6 +201,15 @@ workflows:
           cu_version: "cu100"
           unicode_abi: "1"
       - binary_linux_wheel:
+          name: binary_linux_wheel_py2.7_cu101
+          python_version: "2.7"
+          cu_version: "cu101"
+      - binary_linux_wheel:
+          name: binary_linux_wheel_py2.7u_cu101
+          python_version: "2.7"
+          cu_version: "cu101"
+          unicode_abi: "1"
+      - binary_linux_wheel:
           name: binary_linux_wheel_py3.5_cpu
           python_version: "3.5"
           cu_version: "cpu"
@@ -213,6 +222,10 @@ workflows:
           name: binary_linux_wheel_py3.5_cu100
           python_version: "3.5"
           cu_version: "cu100"
+      - binary_linux_wheel:
+          name: binary_linux_wheel_py3.5_cu101
+          python_version: "3.5"
+          cu_version: "cu101"
       - binary_linux_wheel:
           name: binary_linux_wheel_py3.6_cpu
           python_version: "3.6"
@@ -227,6 +240,10 @@ workflows:
           python_version: "3.6"
           cu_version: "cu100"
       - binary_linux_wheel:
+          name: binary_linux_wheel_py3.6_cu101
+          python_version: "3.6"
+          cu_version: "cu101"
+      - binary_linux_wheel:
           name: binary_linux_wheel_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
@@ -239,6 +256,10 @@ workflows:
           name: binary_linux_wheel_py3.7_cu100
           python_version: "3.7"
           cu_version: "cu100"
+      - binary_linux_wheel:
+          name: binary_linux_wheel_py3.7_cu101
+          python_version: "3.7"
+          cu_version: "cu101"
       - binary_macos_wheel:
           name: binary_macos_wheel_py2.7_cpu
           python_version: "2.7"
@@ -274,6 +295,10 @@ workflows:
           python_version: "2.7"
           cu_version: "cu100"
       - binary_linux_conda:
+          name: binary_linux_conda_py2.7_cu101
+          python_version: "2.7"
+          cu_version: "cu101"
+      - binary_linux_conda:
           name: binary_linux_conda_py3.5_cpu
           python_version: "3.5"
           cu_version: "cpu"
@@ -286,6 +311,10 @@ workflows:
           name: binary_linux_conda_py3.5_cu100
           python_version: "3.5"
           cu_version: "cu100"
+      - binary_linux_conda:
+          name: binary_linux_conda_py3.5_cu101
+          python_version: "3.5"
+          cu_version: "cu101"
       - binary_linux_conda:
           name: binary_linux_conda_py3.6_cpu
           python_version: "3.6"
@@ -300,6 +329,10 @@ workflows:
           python_version: "3.6"
           cu_version: "cu100"
       - binary_linux_conda:
+          name: binary_linux_conda_py3.6_cu101
+          python_version: "3.6"
+          cu_version: "cu101"
+      - binary_linux_conda:
           name: binary_linux_conda_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
@@ -312,6 +345,10 @@ workflows:
           name: binary_linux_conda_py3.7_cu100
           python_version: "3.7"
           cu_version: "cu100"
+      - binary_linux_conda:
+          name: binary_linux_conda_py3.7_cu101
+          python_version: "3.7"
+          cu_version: "cu101"
       - binary_macos_conda:
           name: binary_macos_conda_py2.7_cpu
           python_version: "2.7"
@@ -395,6 +432,27 @@ workflows:
             - nightly_binary_linux_wheel_py2.7u_cu100
           subfolder: "cu100/"
       - binary_linux_wheel:
+          name: nightly_binary_linux_wheel_py2.7_cu101
+          python_version: "2.7"
+          cu_version: "cu101"
+      - binary_wheel_upload:
+          name: nightly_binary_linux_wheel_py2.7_cu101_upload
+          context: org-member
+          requires:
+            - nightly_binary_linux_wheel_py2.7_cu101
+          subfolder: "cu101/"
+      - binary_linux_wheel:
+          name: nightly_binary_linux_wheel_py2.7u_cu101
+          python_version: "2.7"
+          cu_version: "cu101"
+          unicode_abi: "1"
+      - binary_wheel_upload:
+          name: nightly_binary_linux_wheel_py2.7u_cu101_upload
+          context: org-member
+          requires:
+            - nightly_binary_linux_wheel_py2.7u_cu101
+          subfolder: "cu101/"
+      - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py3.5_cpu
           python_version: "3.5"
           cu_version: "cpu"
@@ -425,6 +483,16 @@ workflows:
           requires:
             - nightly_binary_linux_wheel_py3.5_cu100
           subfolder: "cu100/"
+      - binary_linux_wheel:
+          name: nightly_binary_linux_wheel_py3.5_cu101
+          python_version: "3.5"
+          cu_version: "cu101"
+      - binary_wheel_upload:
+          name: nightly_binary_linux_wheel_py3.5_cu101_upload
+          context: org-member
+          requires:
+            - nightly_binary_linux_wheel_py3.5_cu101
+          subfolder: "cu101/"
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py3.6_cpu
           python_version: "3.6"
@@ -457,6 +525,16 @@ workflows:
             - nightly_binary_linux_wheel_py3.6_cu100
           subfolder: "cu100/"
       - binary_linux_wheel:
+          name: nightly_binary_linux_wheel_py3.6_cu101
+          python_version: "3.6"
+          cu_version: "cu101"
+      - binary_wheel_upload:
+          name: nightly_binary_linux_wheel_py3.6_cu101_upload
+          context: org-member
+          requires:
+            - nightly_binary_linux_wheel_py3.6_cu101
+          subfolder: "cu101/"
+      - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
@@ -487,6 +565,16 @@ workflows:
           requires:
             - nightly_binary_linux_wheel_py3.7_cu100
           subfolder: "cu100/"
+      - binary_linux_wheel:
+          name: nightly_binary_linux_wheel_py3.7_cu101
+          python_version: "3.7"
+          cu_version: "cu101"
+      - binary_wheel_upload:
+          name: nightly_binary_linux_wheel_py3.7_cu101_upload
+          context: org-member
+          requires:
+            - nightly_binary_linux_wheel_py3.7_cu101
+          subfolder: "cu101/"
       - binary_macos_wheel:
           name: nightly_binary_macos_wheel_py2.7_cpu
           python_version: "2.7"
@@ -567,6 +655,15 @@ workflows:
           requires:
             - nightly_binary_linux_conda_py2.7_cu100
       - binary_linux_conda:
+          name: nightly_binary_linux_conda_py2.7_cu101
+          python_version: "2.7"
+          cu_version: "cu101"
+      - binary_conda_upload:
+          name: nightly_binary_linux_conda_py2.7_cu101_upload
+          context: org-member
+          requires:
+            - nightly_binary_linux_conda_py2.7_cu101
+      - binary_linux_conda:
           name: nightly_binary_linux_conda_py3.5_cpu
           python_version: "3.5"
           cu_version: "cpu"
@@ -594,6 +691,15 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_conda_py3.5_cu100
+      - binary_linux_conda:
+          name: nightly_binary_linux_conda_py3.5_cu101
+          python_version: "3.5"
+          cu_version: "cu101"
+      - binary_conda_upload:
+          name: nightly_binary_linux_conda_py3.5_cu101_upload
+          context: org-member
+          requires:
+            - nightly_binary_linux_conda_py3.5_cu101
       - binary_linux_conda:
           name: nightly_binary_linux_conda_py3.6_cpu
           python_version: "3.6"
@@ -623,6 +729,15 @@ workflows:
           requires:
             - nightly_binary_linux_conda_py3.6_cu100
       - binary_linux_conda:
+          name: nightly_binary_linux_conda_py3.6_cu101
+          python_version: "3.6"
+          cu_version: "cu101"
+      - binary_conda_upload:
+          name: nightly_binary_linux_conda_py3.6_cu101_upload
+          context: org-member
+          requires:
+            - nightly_binary_linux_conda_py3.6_cu101
+      - binary_linux_conda:
           name: nightly_binary_linux_conda_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
@@ -650,6 +765,15 @@ workflows:
           context: org-member
           requires:
             - nightly_binary_linux_conda_py3.7_cu100
+      - binary_linux_conda:
+          name: nightly_binary_linux_conda_py3.7_cu101
+          python_version: "3.7"
+          cu_version: "cu101"
+      - binary_conda_upload:
+          name: nightly_binary_linux_conda_py3.7_cu101_upload
+          context: org-member
+          requires:
+            - nightly_binary_linux_conda_py3.7_cu101
       - binary_macos_conda:
           name: nightly_binary_macos_conda_py2.7_cpu
           python_version: "2.7"
