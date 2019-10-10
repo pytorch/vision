@@ -73,7 +73,6 @@ void PSROIAlignForwardCPU(
     int* channel_mapping) {
   int num_rois = nthreads / channels_out / pooled_width / pooled_height;
   for (int n = 0; n < num_rois; n++) {
-
     // [start, end) interval for spatial sampling
     const T* offset_rois = rois + n * 5;
     int roi_batch_ind = offset_rois[0];

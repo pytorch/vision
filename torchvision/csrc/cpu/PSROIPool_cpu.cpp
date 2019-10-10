@@ -195,7 +195,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cpu(
             channel_mapping.data<int>());
       });
   return std::make_tuple(output, channel_mapping);
- }
+}
 
 at::Tensor PSROIPool_backward_cpu(
     const at::Tensor& grad,
