@@ -10,9 +10,9 @@ if NOT "%CUDA_VERSION%" == "cpu" (
 )
 
 if "%PACKAGEFULLNAME%" == "Conda" (
-    set PACKAGE=conda
+    set PACKAGE=vision_conda
 ) else (
-    set PACKAGE=wheels
+    set PACKAGE=vision_wheels
 )
 
 set PUBLISH_BRANCH=%PACKAGE%_%DESIRED_PYTHON%%PACKAGE_SUFFIX%
