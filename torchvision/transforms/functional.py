@@ -3,6 +3,8 @@ import torch
 import sys
 import math
 from PIL import Image, ImageOps, ImageEnhance, PILLOW_VERSION
+from scipy.ndimage.interpolation import map_coordinates
+from scipy.ndimage.filters import gaussian_filter
 try:
     import accimage
 except ImportError:
@@ -855,3 +857,45 @@ def erase(img, i, j, h, w, v, inplace=False):
 
     img[:, i:i + h, j:j + w] = v
     return img
+
+def elastic_transform(img, alpha, sigma, random_state):
+    """Elastic deformation of image as described in [Simard2003]_.
+    .. [Simard2003] Simard, Steinkraus and Platt, "Best Practices for
+       Convolutional Neural Networks applied to Visual Document Analysis", in
+       Proc. of the International Conference on Document Analysis and
+       Recognition, 2003.
+
+    Args:
+        img (PIL Image): Image on which elastic transformation is to be applied
+        alpha (float): Scaling factor as described in [Simard2003]
+        sigma (float): Elasticity coefficient as described in [Simard2003]
+        random_state (int): Random state to initialize the Gaussian kernel
+
+    Returns:
+        PIL Image: Image with elastic distortions.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    img = np.asarray(img)
+
+    if _is_numpy(img) and not _is_numpy_image(img):
+        raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(img.ndim))
+
+    if len(img.shape) < 3:
+        img = img.reshape(img.shape[0], img.shape[1], -1)
+
+    shape = img.shape
+
+    dx = gaussian_filter((random_state.rand(*shape) * 2 - 1), sigma, mode="constant", cval=0) * alpha
+    dy = gaussian_filter((random_state.rand(*shape) * 2 - 1), sigma, mode="constant", cval=0) * alpha
+    dz = np.zeros_like(dx)
+
+    x, y, z = np.meshgrid(np.arange(shape[0]), np.arange(shape[1]), np.arange(shape[2]))
+
+    indices = np.reshape(y + dy, (-1, 1)), np.reshape(x + dx, (-1, 1)), np.reshape(z, (-1, 1))
+
+    distorted_image = map_coordinates(img, indices, order=1, mode='reflect')
+    distorted_image = distorted_image.reshape(img.shape)
+
+    return Image.fromarray(distorted_image)

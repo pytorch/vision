@@ -325,6 +325,43 @@ class Lambda(object):
         return self.__class__.__name__ + '()'
 
 
+class ElasticTransform(object):
+    """Elastic deformation of image as described in [Simard2003]_.
+    .. [Simard2003] Simard, Steinkraus and Platt, "Best Practices for
+       Convolutional Neural Networks applied to Visual Document Analysis", in
+       Proc. of the International Conference on Document Analysis and
+       Recognition, 2003.
+
+    Args:
+        alpha (float): Scaling factor as described in [Simard2003] Default value is 100
+        sigma (float): Elasticity coefficient as described in [Simard2003] Default value is 10
+        random_state (int, optional): Random state to initialize the Gaussian kernel
+
+    """
+
+    def __init__(self, alpha=100, sigma=10, random_state=None):
+        if random_state is None:
+            self.random_state = np.random.RandomState(None)
+        else:
+            self.random_state = random_state
+
+        self.alpha = alpha
+        self.sigma = sigma
+
+    def __call__(self, img):
+        """
+        Args:
+            img (PIL Image): Image to be elastic transformed.
+
+        Returns:
+            PIL Image: Transformed image.
+        """
+        return F.elastic_transform(img, self.alpha, self.sigma, self.random_state)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(alpha={0}, sigma={1})'.format(self.alpha, self.sigma)
+
+
 class RandomTransforms(object):
     """Base class for a list of transformations with randomness
 
