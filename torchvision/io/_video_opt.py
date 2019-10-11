@@ -39,7 +39,7 @@ def _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration):
         info["audio_timebase"] = Fraction(atimebase[0].item(), atimebase[1].item())
         if aduration.numel() > 0:
             audio_duration = aduration.item() * info["audio_timebase"]
-            info["audio_duration"] == audio_duration
+            info["audio_duration"] = audio_duration
     if asample_rate.numel() > 0:
         info["audio_sample_rate"] = asample_rate.item()
 
