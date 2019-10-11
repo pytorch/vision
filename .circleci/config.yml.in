@@ -178,9 +178,9 @@ jobs:
       - run:
           command: |
             choco install miniconda3
-            $env:PATH = "C:\tools\miniconda3;C:\tools\miniconda3\Library\usr\bin;C:\tools\miniconda3\Scripts;C:\tools\miniconda3\bin" + $env:PATH
+            (& "C:\tools\miniconda3\Scripts\conda.exe" "shell.powershell" "hook") | Out-String | Invoke-Expression
             conda activate base
-            conda install -yq conda-build "conda-package-handling<1.5.0"
+            conda install -yq conda-build "conda-package-handling!=1.5.0"
             bash packaging/build_conda.sh
           shell: powershell.exe
 
