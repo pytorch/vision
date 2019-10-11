@@ -214,5 +214,5 @@ workflows:
   build:
     jobs:
       - circleci_consistency
-      # {{ workflows() }}
-      {{ workflows(prefix="nightly_", upload=True) }}
+      {{ workflows() }}
+      # {{ workflows(prefix="nightly_", upload=True) }}
