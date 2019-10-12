@@ -48,6 +48,7 @@ void FfmpegVideoStream::updateStreamDecodeParams() {
     mediaFormat_.format.video.timeBaseDen =
         inputCtx_->streams[index_]->time_base.den;
   }
+  mediaFormat_.format.video.duration = inputCtx_->streams[index_]->duration;
 }
 
 int FfmpegVideoStream::initFormat() {

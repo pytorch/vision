@@ -75,6 +75,19 @@ class FfmpegDecoder {
       const uint8_t* buffer,
       int64_t size,
       DecoderOutput& decoderOutput);
+  // return 0 on success
+  // return negative number on failure
+  int probeFile(
+      std::unique_ptr<DecoderParameters> params,
+      const std::string& filename,
+      DecoderOutput& decoderOutput);
+  // return 0 on success
+  // return negative number on failure
+  int probeMemory(
+      std::unique_ptr<DecoderParameters> params,
+      const uint8_t* buffer,
+      int64_t size,
+      DecoderOutput& decoderOutput);
 
   void cleanUp();
 
@@ -89,6 +102,13 @@ class FfmpegDecoder {
   // return 0 on success
   // return negative number on failure
   int decodeLoop(
+      std::unique_ptr<DecoderParameters> params,
+      const std::string& filename,
+      bool isDecodeFile,
+      FfmpegAvioContext& ioctx,
+      DecoderOutput& decoderOutput);
+
+  int probeVideo(
       std::unique_ptr<DecoderParameters> params,
       const std::string& filename,
       bool isDecodeFile,
