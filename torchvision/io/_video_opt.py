@@ -205,7 +205,7 @@ def _probe_video_from_file(filename):
 
 
 def _read_video_from_memory(
-    file_buffer,
+    video_data,
     seek_frame_margin=0.25,
     read_video_stream=1,
     video_width=0,
@@ -225,8 +225,8 @@ def _read_video_from_memory(
 
     Args
     ----------
-    file_buffer : buffer
-        buffer of compressed video content
+    video_data : data type could be 1) torch.Tensor, dtype=torch.int8 or 2) python bytes
+        compressed video content stored in either 1) torch.Tensor 2) python bytes
     seek_frame_margin: double, optional
         seeking frame in the stream is imprecise. Thus, when video_start_pts is specified,
         we seek the pts earlier by seek_frame_margin seconds
@@ -273,10 +273,11 @@ def _read_video_from_memory(
     _validate_pts(video_pts_range)
     _validate_pts(audio_pts_range)
 
-    video_tensor = torch.from_numpy(np.frombuffer(file_buffer, dtype=np.uint8))
+    if not isinstance(video_data, torch.Tensor):
+        video_data = torch.from_numpy(np.frombuffer(video_data, dtype=np.uint8))
 
     result = torch.ops.video_reader.read_video_from_memory(
-        video_tensor,
+        video_data,
         seek_frame_margin,
         0,  # getPtsOnly
         read_video_stream,
@@ -305,16 +306,16 @@ def _read_video_from_memory(
     return vframes, aframes, info
 
 
-def _read_video_timestamps_from_memory(file_buffer):
+def _read_video_timestamps_from_memory(video_data):
     """
     Decode all frames in the video. Only pts (presentation timestamp) is returned.
     The actual frame pixel data is not copied. Thus, read_video_timestamps(...)
     is much faster than read_video(...)
     """
-
-    video_tensor = torch.from_numpy(np.frombuffer(file_buffer, dtype=np.uint8))
+    if not isinstance(video_data, torch.Tensor):
+        video_data = torch.from_numpy(np.frombuffer(video_data, dtype=np.uint8))
     result = torch.ops.video_reader.read_video_from_memory(
-        video_tensor,
+        video_data,
         0,  # seek_frame_margin
         1,  # getPtsOnly
         1,  # read_video_stream
@@ -342,15 +343,16 @@ def _read_video_timestamps_from_memory(file_buffer):
     return vframe_pts, aframe_pts, info
 
 
-def _probe_video_from_memory(file_buffer):
+def _probe_video_from_memory(video_data):
     """
     Probe a video in memory.
     Return:
         info [dict]: contain video meta information, including video_timebase,
             video_duration, video_fps, audio_timebase, audio_duration, audio_sample_rate
     """
-    video_tensor = torch.from_numpy(np.frombuffer(file_buffer, dtype=np.uint8))
-    result = torch.ops.video_reader.probe_video_from_memory(video_tensor)
+    if not isinstance(video_data, torch.Tensor):
+        video_data = torch.from_numpy(np.frombuffer(video_data, dtype=np.uint8))
+    result = torch.ops.video_reader.probe_video_from_memory(video_data)
     vtimebase, vfps, vduration, atimebase, asample_rate, aduration = result
     info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
     return info
