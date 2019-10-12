@@ -361,7 +361,7 @@ class RandomApply(RandomTransforms):
         self.p = p
 
     def __call__(self, img):
-        if self.p < random.random():
+        if random.random() < self.p:
             return img
         for t in self.transforms:
             img = t(img)
