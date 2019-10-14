@@ -74,10 +74,10 @@ def download_url(url, root, filename=None, md5=None):
 
     makedir_exist_ok(root)
 
-    # downloads file
+    # check if file is already present locally
     if check_integrity(fpath, md5):
         print('Using downloaded and verified file: ' + fpath)
-    else:
+    else:   # download the file
         try:
             print('Downloading ' + url + ' to ' + fpath)
             urllib.request.urlretrieve(
@@ -95,7 +95,10 @@ def download_url(url, root, filename=None, md5=None):
                 )
             else:
                 raise e
-
+        # check integrity of downloaded file
+        if not check_integrity(fpath, md5):
+            print("Error downloading file: Dataset not found in " + fpath + " or corrupted.")
+            raise RuntimeError("Dataset not found or corrupted.")
 
 def list_dir(root, prefix=False):
     """List all directories at a given root
