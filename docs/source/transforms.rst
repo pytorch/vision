@@ -281,23 +281,29 @@ Transforms on torch.\*Tensor
 ----------------------------
 
 .. autoclass:: LinearTransformation
+    :members: __call__
+    :special-members:
 
 .. autoclass:: Normalize
-	:members: __call__
-	:special-members:
+    :members: __call__
+    :special-members:
 
 .. autoclass:: RandomErasing
+    :members: __call__
+    :special-members:
+
 
 Conversion Transforms
 ---------------------
 
 .. autoclass:: ToPILImage
-	:members: __call__
-	:special-members:
+    :members: __call__
+    :special-members:
 
 .. autoclass:: ToTensor
-	:members: __call__
-	:special-members:
+    :members: __call__
+    :special-members:
+
 
 Generic Transforms
 ------------------

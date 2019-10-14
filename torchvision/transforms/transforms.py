@@ -145,18 +145,18 @@ class ToPILImage(object):
 
 class Normalize(object):
     """Normalize a tensor image with mean and standard deviation.
+
     Given mean: ``(M1,...,Mn)`` and std: ``(S1,..,Sn)`` for ``n`` channels, this transform
     will normalize each channel of the input ``torch.*Tensor`` i.e.
     ``input[channel] = (input[channel] - mean[channel]) / std[channel]``
 
     .. note::
-        This transform acts out of place, i.e., it does not mutates the input tensor.
+        This transform acts out of place, i.e., it does not mutate the input tensor.
 
     Args:
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
         inplace(bool,optional): Bool to make this operation in-place.
-
     """
 
     def __init__(self, mean, std, inplace=False):
@@ -165,13 +165,7 @@ class Normalize(object):
         self.inplace = inplace
 
     def __call__(self, tensor):
-        """
-        Args:
-            tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
-
-        Returns:
-            Tensor: Normalized Tensor image.
-        """
+        """Apply the transform to the given tensor and return the transformed tensor."""
         return F.normalize(tensor, self.mean, self.std, self.inplace)
 
     def __repr__(self):
@@ -349,7 +343,7 @@ class RandomTransforms(object):
 
 
 class RandomApply(RandomTransforms):
-    """Apply randomly a list of transformations with a given probability
+    """Apply randomly a list of transformations with a given probability.
 
     Args:
         transforms (list or tuple): list of transformations
@@ -378,7 +372,7 @@ class RandomApply(RandomTransforms):
 
 
 class RandomOrder(RandomTransforms):
-    """Apply a list of transformations in a random order
+    """Apply a list of transformations in a random order.
     """
     def __call__(self, img):
         order = list(range(len(self.transforms)))
@@ -389,7 +383,7 @@ class RandomOrder(RandomTransforms):
 
 
 class RandomChoice(RandomTransforms):
-    """Apply single transformation randomly picked from a list
+    """Apply single transformation randomly picked from a list.
     """
     def __call__(self, img):
         t = random.choice(self.transforms)
@@ -706,7 +700,7 @@ class RandomSizedCrop(RandomResizedCrop):
 
 
 class FiveCrop(object):
-    """Crop the given PIL Image into four corners and the central crop
+    """Crop the given PIL Image into four corners and the central crop.
 
     .. Note::
          This transform returns a tuple of images and there may be a mismatch in the number of
@@ -746,7 +740,7 @@ class FiveCrop(object):
 
 class TenCrop(object):
     """Crop the given PIL Image into four corners and the central crop plus the flipped version of
-    these (horizontal flipping is used by default)
+    these (horizontal flipping is used by default).
 
     .. Note::
          This transform returns a tuple of images and there may be a mismatch in the number of
@@ -819,13 +813,7 @@ class LinearTransformation(object):
         self.mean_vector = mean_vector
 
     def __call__(self, tensor):
-        """
-        Args:
-            tensor (Tensor): Tensor image of size (C, H, W) to be whitened.
-
-        Returns:
-            Tensor: Transformed image.
-        """
+        """Apply the transform to the given tensor and return the transformed tensor."""
         if tensor.size(0) * tensor.size(1) * tensor.size(2) != self.transformation_matrix.size(0):
             raise ValueError("tensor and transformation matrix have incompatible shape." +
                              "[{} x {} x {}] != ".format(*tensor.size()) +
@@ -843,7 +831,7 @@ class LinearTransformation(object):
 
 
 class ColorJitter(object):
-    """Randomly change the brightness, contrast and saturation of an image.
+    """Randomly change the brightness, contrast, saturation, and hue of an image.
 
     Args:
         brightness (float or tuple of float (min, max)): How much to jitter brightness.
@@ -940,7 +928,7 @@ class ColorJitter(object):
 
 
 class RandomRotation(object):
-    """Rotate the image by angle.
+    """Rotate the image by degrees.
 
     Args:
         degrees (sequence or float or int): Range of degrees to select from.
@@ -1013,7 +1001,7 @@ class RandomRotation(object):
 
 
 class RandomAffine(object):
-    """Random affine transformation of the image keeping center invariant
+    """Random affine transformation of the image keeping center invariant.
 
     Args:
         degrees (sequence or float or int): Range of degrees to select from.
@@ -1212,9 +1200,11 @@ class RandomGrayscale(object):
 
 
 class RandomErasing(object):
-    """ Randomly selects a rectangle region in an image and erases its pixels.
-        'Random Erasing Data Augmentation' by Zhong et al.
-        See https://arxiv.org/pdf/1708.04896.pdf
+    """Randomly selects a rectangle region in an image and erases its pixels.
+
+    'Random Erasing Data Augmentation' by Zhong et al.
+    See https://arxiv.org/pdf/1708.04896.pdf
+
     Args:
          p: probability that the random erasing operation will be performed.
          scale: range of proportion of erased area against input image.
@@ -1225,15 +1215,13 @@ class RandomErasing(object):
             If a str of 'random', erasing each pixel with random values.
          inplace: boolean to make this transform inplace. Default set to False.
 
-    Returns:
-        Erased Image.
-    # Examples:
+    Example:
         >>> transform = transforms.Compose([
-        >>> transforms.RandomHorizontalFlip(),
-        >>> transforms.ToTensor(),
-        >>> transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        >>> transforms.RandomErasing(),
-        >>> ])
+        ...     transforms.RandomHorizontalFlip(),
+        ...     transforms.ToTensor(),
+        ...     transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ...     transforms.RandomErasing(),
+        ... ])
     """
 
     def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0, inplace=False):
@@ -1288,13 +1276,7 @@ class RandomErasing(object):
         return 0, 0, img_h, img_w, img
 
     def __call__(self, img):
-        """
-        Args:
-            img (Tensor): Tensor image of size (C, H, W) to be erased.
-
-        Returns:
-            img (Tensor): Erased Tensor image.
-        """
+        """Apply the transform to the given tensor and return the transformed tensor."""
         if random.uniform(0, 1) < self.p:
             x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value)
             return F.erase(img, x, y, h, w, v, self.inplace)
