@@ -1,6 +1,7 @@
 import io
 import torch
 from torchvision import ops
+from torchvision import models
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 
 from collections import OrderedDict
@@ -128,6 +129,24 @@ class ONNXExporterTester(unittest.TestCase):
         boxes1[:, 2:] += boxes1[:, :2]
 
         self.run_model(TransformModule(), [(i, [boxes],), (i1, [boxes1],)])
+
+    def get_test_images(self):
+        image_url = "http://farm3.staticflickr.com/2469/3915380994_2e611b1779_z.jpg"
+        image = self.get_image_from_url(url=image_url)
+        image_url2 = "https://pytorch.org/tutorials/_static/img/tv_tutorial/tv_image05.png"
+        image2 = self.get_image_from_url(url=image_url2)
+        images = [image]
+        test_images = [image2]
+        return images, test_images
+
+    @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
+    def test_mask_rcnn(self):
+        images, test_images = self.get_test_images(self)
+
+        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True)
+        model.eval()
+        model(images)
+        self.run_model(model, [(images,), (test_images,)])
 
 
 if __name__ == '__main__':
