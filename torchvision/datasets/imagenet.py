@@ -47,7 +47,7 @@ class ImageNet(ImageFolder):
     """
 
     def __init__(self, root, split='train', download=None, **kwargs):
-        if download is None:
+        if download is not None:
             msg = ("The use of the download flag is deprecated, since the public "
                    "download links were removed by the dataset authors. To use this "
                    "dataset, you need to download the archives externally. Afterwards "
