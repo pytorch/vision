@@ -47,14 +47,15 @@ class ImageNet(ImageFolder):
     """
 
     def __init__(self, root, split='train', download=None, **kwargs):
-        if download is not None:
+        if download is None:
+            download = False
+        else:
             msg = ("The use of the download flag is deprecated, since the public "
                    "download links were removed by the dataset authors. To use this "
                    "dataset, you need to download the archives externally. Afterwards "
                    "you can use the parse_{devkit|train|val}_archive() functions to "
                    "prepare them for usage.")
-            warnings.warn(msg, DeprecationWarning)
-            download = False
+            warnings.warn(msg)
 
         root = self.root = os.path.expanduser(root)
         self.split = verify_str_arg(split, "split", ("train", "val"))
@@ -145,16 +146,19 @@ def parse_devkit_archive(archive, meta_file=None):
         return [int(val_idx) for val_idx in val_idcs]
 
     if meta_file is None:
-        meta_file = os.path.join(os.path.basename(archive), META_FILE_NAME)
+        meta_file = os.path.join(os.path.dirname(archive), META_FILE_NAME)
 
-    with _tmpdir() as devkit_root:
-        extract_archive(archive, devkit_root)
+    tmpdir = tempfile.mkdtemp()
+    extract_archive(archive, tmpdir)
 
-        idx_to_wnid, wnid_to_classes = parse_meta(devkit_root)
-        val_idcs = parse_val_groundtruth(devkit_root)
-        val_wnids = [idx_to_wnid[idx] for idx in val_idcs]
+    devkit_root = os.path.join(tmpdir, "ILSVRC2012_devkit_t12")
+    idx_to_wnid, wnid_to_classes = parse_meta(devkit_root)
+    val_idcs = parse_val_groundtruth(devkit_root)
+    val_wnids = [idx_to_wnid[idx] for idx in val_idcs]
 
     torch.save((wnid_to_classes, val_wnids), meta_file)
+
+    shutil.rmtree(tmpdir)
 
 
 def load_meta_file(root, filename=META_FILE_NAME):
@@ -179,7 +183,7 @@ def parse_train_archive(archive, folder=None):
 
     """
     if folder is None:
-        folder = os.path.join(os.path.basename(archive), "train")
+        folder = os.path.join(os.path.dirname(archive), "train")
 
     extract_archive(archive, folder)
 
@@ -196,7 +200,7 @@ def parse_val_archive(archive, wnids=None, folder=None):
         wnids:
         folder:
     """
-    root = os.path.basename(archive)
+    root = os.path.dirname(archive)
     if wnids is None:
         wnids = load_meta_file(root)[1]
     if folder is None:
@@ -220,12 +224,3 @@ def _splitexts(root):
         root, ext = os.path.splitext(root)
         exts.append(ext)
     return root, ''.join(reversed(exts))
-
-
-@contextmanager
-def _tmpdir():
-    tmpdir = tempfile.mkdtemp()
-    try:
-        yield tmpdir
-    except:
-        shutil.rmtree(tmpdir)
