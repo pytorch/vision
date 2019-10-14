@@ -1,5 +1,4 @@
 import warnings
-from contextlib import contextmanager
 import os
 import shutil
 import tempfile
