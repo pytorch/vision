@@ -1,23 +1,23 @@
 from __future__ import print_function
+from contextlib import contextmanager
 import os
 import shutil
 import tempfile
 import torch
 from .folder import ImageFolder
-from .utils import check_integrity, download_and_extract_archive, extract_archive, \
-    verify_str_arg
+from .utils import check_integrity, extract_archive, verify_str_arg
 
 ARCHIVE_DICT = {
     'train': {
-        'url': 'http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_train.tar',
+        'file': 'ILSVRC2012_img_train.tar',
         'md5': '1d675b47d978889d74fa0da5fadfb00e',
     },
     'val': {
-        'url': 'http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_img_val.tar',
+        'file': 'ILSVRC2012_img_val.tar',
         'md5': '29b22e2961454d5413ddabcf34fc5622',
     },
     'devkit': {
-        'url': 'http://www.image-net.org/challenges/LSVRC/2012/nnoupb/ILSVRC2012_devkit_t12.tar.gz',
+        'file': 'ILSVRC2012_devkit_t12.tar.gz',
         'md5': 'fa75699e90414af021442c21a62c3abf',
     }
 }
@@ -53,7 +53,7 @@ class ImageNet(ImageFolder):
 
         if download:
             self.download()
-        wnid_to_classes = self._load_meta_file()[0]
+        wnid_to_classes = load_meta_file(self.root)[0]
 
         super(ImageNet, self).__init__(self.split_folder, **kwargs)
         self.root = root
@@ -66,49 +66,38 @@ class ImageNet(ImageFolder):
                              for cls in clss}
 
     def download(self):
+        def check_archive(archive_dict):
+            archive = os.path.join(self.root, archive_dict["file"])
+            md5 = archive_dict["md5"]
+            if not check_integrity(archive, md5):
+                self._raise_download_error()
+
+            return archive
+
         if not check_integrity(self.meta_file):
-            tmp_dir = tempfile.mkdtemp()
-
-            archive_dict = ARCHIVE_DICT['devkit']
-            download_and_extract_archive(archive_dict['url'], self.root,
-                                         extract_root=tmp_dir,
-                                         md5=archive_dict['md5'])
-            devkit_folder = _splitexts(os.path.basename(archive_dict['url']))[0]
-            meta = parse_devkit(os.path.join(tmp_dir, devkit_folder))
-            self._save_meta_file(*meta)
-
-            shutil.rmtree(tmp_dir)
+            archive = check_archive(ARCHIVE_DICT['devkit'])
+            parse_devkit(archive)
 
         if not os.path.isdir(self.split_folder):
-            archive_dict = ARCHIVE_DICT[self.split]
-            download_and_extract_archive(archive_dict['url'], self.root,
-                                         extract_root=self.split_folder,
-                                         md5=archive_dict['md5'])
+            archive = check_archive(ARCHIVE_DICT[self.split])
 
             if self.split == 'train':
-                prepare_train_folder(self.split_folder)
+                parse_train_archive(archive)
             elif self.split == 'val':
-                val_wnids = self._load_meta_file()[1]
-                prepare_val_folder(self.split_folder, val_wnids)
+                parse_val_archive(archive)
         else:
             msg = ("You set download=True, but a folder '{}' already exist in "
                    "the root directory. If you want to re-download or re-extract the "
                    "archive, delete the folder.")
             print(msg.format(self.split))
 
+    def _raise_download_error(self):
+        # FIXME
+        raise RuntimeError
+
     @property
     def meta_file(self):
-        return os.path.join(self.root, 'meta.bin')
-
-    def _load_meta_file(self):
-        if check_integrity(self.meta_file):
-            return torch.load(self.meta_file)
-        else:
-            raise RuntimeError("Meta file not found or corrupted.",
-                               "You can use download=True to create it.")
-
-    def _save_meta_file(self, wnid_to_class, val_wnids):
-        torch.save((wnid_to_class, val_wnids), self.meta_file)
+        return os.path.join(self.root, "meta.bin")
 
     @property
     def split_folder(self):
@@ -118,48 +107,13 @@ class ImageNet(ImageFolder):
         return "Split: {split}".format(**self.__dict__)
 
 
-def parse_devkit(root):
-    idx_to_wnid, wnid_to_classes = parse_meta(root)
-    val_idcs = parse_val_groundtruth(root)
-    val_wnids = [idx_to_wnid[idx] for idx in val_idcs]
-    return wnid_to_classes, val_wnids
-
-
-def parse_meta(devkit_root, path='data', filename='meta.mat'):
-    import scipy.io as sio
-
-    metafile = os.path.join(devkit_root, path, filename)
-    meta = sio.loadmat(metafile, squeeze_me=True)['synsets']
-    nums_children = list(zip(*meta))[4]
-    meta = [meta[idx] for idx, num_children in enumerate(nums_children)
-            if num_children == 0]
-    idcs, wnids, classes = list(zip(*meta))[:3]
-    classes = [tuple(clss.split(', ')) for clss in classes]
-    idx_to_wnid = {idx: wnid for idx, wnid in zip(idcs, wnids)}
-    wnid_to_classes = {wnid: clss for wnid, clss in zip(wnids, classes)}
-    return idx_to_wnid, wnid_to_classes
-
-
-def parse_val_groundtruth(devkit_root, path='data',
-                          filename='ILSVRC2012_validation_ground_truth.txt'):
-    with open(os.path.join(devkit_root, path, filename), 'r') as txtfh:
-        val_idcs = txtfh.readlines()
-    return [int(val_idx) for val_idx in val_idcs]
-
-
-def prepare_train_folder(folder):
-    for archive in [os.path.join(folder, archive) for archive in os.listdir(folder)]:
-        extract_archive(archive, os.path.splitext(archive)[0], remove_finished=True)
-
-
-def prepare_val_folder(folder, wnids):
-    img_files = sorted([os.path.join(folder, file) for file in os.listdir(folder)])
-
-    for wnid in set(wnids):
-        os.mkdir(os.path.join(folder, wnid))
-
-    for wnid, img_file in zip(wnids, img_files):
-        shutil.move(img_file, os.path.join(folder, wnid, os.path.basename(img_file)))
+@contextmanager
+def tmpdir():
+    tmpdir = tempfile.mkdtemp()
+    try:
+        yield tmpdir
+    except:
+        shutil.rmtree(tmpdir)
 
 
 def _splitexts(root):
@@ -169,3 +123,99 @@ def _splitexts(root):
         root, ext = os.path.splitext(root)
         exts.append(ext)
     return root, ''.join(reversed(exts))
+
+
+def parse_devkit(archive, meta_file=None):
+    """
+
+    Args:
+        archive:
+        meta_file:
+    """
+    # FIXME
+    def parse_meta(devkit_root, path='data', filename='meta.mat'):
+        import scipy.io as sio
+
+        metafile = os.path.join(devkit_root, path, filename)
+        meta = sio.loadmat(metafile, squeeze_me=True)['synsets']
+        nums_children = list(zip(*meta))[4]
+        meta = [meta[idx] for idx, num_children in enumerate(nums_children)
+                if num_children == 0]
+        idcs, wnids, classes = list(zip(*meta))[:3]
+        classes = [tuple(clss.split(', ')) for clss in classes]
+        idx_to_wnid = {idx: wnid for idx, wnid in zip(idcs, wnids)}
+        wnid_to_classes = {wnid: clss for wnid, clss in zip(wnids, classes)}
+        return idx_to_wnid, wnid_to_classes
+
+    def parse_val_groundtruth(devkit_root, path='data',
+                              filename='ILSVRC2012_validation_ground_truth.txt'):
+        with open(os.path.join(devkit_root, path, filename), 'r') as txtfh:
+            val_idcs = txtfh.readlines()
+        return [int(val_idx) for val_idx in val_idcs]
+
+    if meta_file is None:
+        meta_file = os.path.join(os.path.basename(archive), "meta.bin")
+
+    with tmpdir() as devkit_root:
+        extract_archive(archive, devkit_root)
+
+        idx_to_wnid, wnid_to_classes = parse_meta(devkit_root)
+        val_idcs = parse_val_groundtruth(devkit_root)
+        val_wnids = [idx_to_wnid[idx] for idx in val_idcs]
+
+    torch.save((wnid_to_classes, val_wnids), meta_file)
+
+
+def load_meta_file(root, filename="meta.bin"):
+    file = os.path.join(root, filename)
+    if check_integrity(file):
+        return torch.load(file)
+    else:
+        # FIXME
+        raise RuntimeError("Meta file not found.")
+
+
+def parse_train_archive(archive, folder=None):
+    # FIXME
+    """
+
+    Args:
+        archive:
+        folder:
+
+    Returns:
+
+    """
+    if folder is None:
+        folder = os.path.join(os.path.basename(archive), "train")
+
+    extract_archive(archive, folder)
+
+    for archive in [os.path.join(folder, archive) for archive in os.listdir(folder)]:
+        extract_archive(archive, os.path.splitext(archive)[0], remove_finished=True)
+
+
+def parse_val_archive(archive, wnids=None, folder=None):
+    # FIXME
+    """
+
+    Args:
+        archive:
+        wnids:
+        folder:
+    """
+    root = os.path.basename(archive)
+    if wnids is None:
+        wnids = load_meta_file(root)[1]
+    if folder is None:
+        folder = os.path.join(root, "val")
+
+    extract_archive(archive, folder)
+
+    img_files = sorted([os.path.join(folder, file) for file in os.listdir(folder)])
+
+    for wnid in set(wnids):
+        os.mkdir(os.path.join(folder, wnid))
+
+    for wnid, img_file in zip(wnids, img_files):
+        shutil.move(img_file, os.path.join(folder, wnid, os.path.basename(img_file)))
