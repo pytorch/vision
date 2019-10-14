@@ -612,7 +612,38 @@ def adjust_saturation(img, saturation_factor):
     return img
 
 
-def adjust_hue(img, hue_factor):
+def _rgb2hsv(testing):
+    max_vals, _ = torch.max(testing, dim=0)
+    min_vals, _ = torch.min(testing, dim=0)
+    v = max_vals
+    s = (max_vals - min_vals) / max_vals
+    df = max_vals - min_vals
+    r, g, b = testing[0], testing[1], testing[2]
+    
+    
+    h = max_vals != min_vals
+    hr =  (max_vals == r) * ((g - b) / df) 
+    hg =  (max_vals == g) * ((b - r) / df + 2.0)
+    hb =  (max_vals == b) * ((r - g) / df + 4.0)    
+    h = h * (hr + hg + hb)
+    h = (h / 6.0) % 1.0
+    h[h != h] = 0
+    return torch.stack((h, s, v))
+ 
+def _hsv2rgb(testing):
+    h, s, v = testing[0], testing[1], testing[2]
+    i = (h * 6.0).type(torch.IntTensor)
+    f = (h * 6.0) - i
+    p = v * (1.0 - s)
+    q = v * (1.0 - f * s)
+    t = v * (1.0 - (1 - f) * s)
+    i = i % 6
+    r = (i == 0) * v + (i == 1) * q +  (i == 2) * p + (i == 3) * p + (i == 4) * t + (i == 5) * v 
+    g = (i == 0) * t + (i == 1) * v +  (i == 2) * v + (i == 3) * q + (i == 4) * p + (i == 5) * p
+    b = (i == 0) * p + (i == 1) * p +  (i == 2) * t + (i == 3) * v + (i == 4) * v + (i == 5) * q
+    return torch.stack((r, g, b))
+    
+def adjust_hue2(img, hue_factor):
     """Adjust hue of an image.
 
     The image hue is adjusted by converting the image to HSV and
@@ -627,7 +658,8 @@ def adjust_hue(img, hue_factor):
     .. _Hue: https://en.wikipedia.org/wiki/Hue
 
     Args:
-        img (PIL Image): PIL Image to be adjusted.
+        img (PIL Image or torch.Tensor): Image to be adjusted.
+                                         Input can be PIL or torch.Tensor.
         hue_factor (float):  How much to shift the hue channel. Should be in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
@@ -635,28 +667,49 @@ def adjust_hue(img, hue_factor):
             with complementary colors while 0 gives the original image.
 
     Returns:
-        PIL Image: Hue adjusted image.
+        PIL Image or torch.Tensor: Hue adjusted image.
+        If input is PIL Image, return PIL Image
+        If input is torch.Tensor, return torch.Tensor
     """
     if not(-0.5 <= hue_factor <= 0.5):
         raise ValueError('hue_factor is not in [-0.5, 0.5].'.format(hue_factor))
+    
+    if not _is_pil_image(img) and type(img) is not torch.Tensor:
+        raise TypeError('img should be PIL Image or torch.Tensor. Got {}'.format(type(img)))
+        
+    if _is_pil_image(img):
+        print("pil working")
 
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+        input_mode = img.mode
+        if input_mode in {'L', '1', 'I', 'F'}:
+            return img
 
-    input_mode = img.mode
-    if input_mode in {'L', '1', 'I', 'F'}:
+        h, s, v = img.convert('HSV').split()
+        tmp_h = transform(h)
+        np_h = np.array(h, dtype=np.uint8)
+        # uint8 addition take cares of rotation across boundaries
+        with np.errstate(over='ignore'):
+            np_h += np.uint8(hue_factor * 255)
+        h = Image.fromarray(np_h, 'L')
+        tmp = transform(h)
+        img = Image.merge('HSV', (h, s, v)).convert(input_mode)
+        
         return img
+    else:
+        assert type(img) is torch.Tensor
+        assert len(img.shape) == 3 # input img must be 3D torch.Tensor
+        assert img.shape[0] == 3 # input img must have 3 channels 
+        # the default ToTensor in torchvision scale the RGB from [0,255] to [0, 1]
+        img = _rgb2hsv(img)
+        h, s, v = img[0], img[1], img[2]
+        new_h = h * 255
+        new_h = (new_h).type(torch.IntTensor)
+        new_h += int(hue_factor * 255)
 
-    h, s, v = img.convert('HSV').split()
-
-    np_h = np.array(h, dtype=np.uint8)
-    # uint8 addition take cares of rotation across boundaries
-    with np.errstate(over='ignore'):
-        np_h += np.uint8(hue_factor * 255)
-    h = Image.fromarray(np_h, 'L')
-
-    img = Image.merge('HSV', (h, s, v)).convert(input_mode)
-    return img
+        new_h = new_h.type(torch.FloatTensor)
+        new_h = new_h / 255.0
+        new_img = _hsv2rgb(torch.stack((new_h, s, v)))
+        return new_img
 
 
 def adjust_gamma(img, gamma, gain=1):
