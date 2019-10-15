@@ -13,7 +13,7 @@ import inspect
 EPSILON = 1e-5  # small value for approximate comparisons/assertions
 STANDARD_NUM_CLASSES = 50
 STANDARD_INPUT_SHAPE = (1, 3, 224, 224)
-STANDARD_SEED = 1729  # https://fburl.com/3i5wkg9p
+STANDARD_SEED = 1729
 
 
 def set_rng_seed(seed=STANDARD_SEED):
