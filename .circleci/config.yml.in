@@ -20,7 +20,8 @@ commands:
             set -ex
             BRANCH=$(git rev-parse --abbrev-ref HEAD)
             if [[ "$BRANCH" != "master" ]]; then
-              git merge origin/master
+              git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
+              git checkout "merged/$CIRCLE_BRANCH"
             fi
 
 binary_common: &binary_common
