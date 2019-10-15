@@ -256,12 +256,6 @@ class MaskRCNNPredictor(nn.Sequential):
             # elif "bias" in name:
             #     nn.init.constant_(param, 0)
 
-    def forward(self, input):
-        input = self.conv5_mask(input)
-        input = self.relu(input)
-        input = self.mask_fcn_logits(input)
-        return input
-
 
 model_urls = {
     'maskrcnn_resnet50_fpn_coco':

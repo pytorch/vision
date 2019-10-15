@@ -17,7 +17,6 @@ class NewEmptyTensorOp : public torch::autograd::Function<NewEmptyTensorOp> {
       AutogradContext* ctx,
       Variable input,
       c10::List<int64_t> new_shape) {
-    // auto input = variable_list[0];
     ctx->saved_data["shape"] = input.sizes();
     std::vector<int64_t> shape(new_shape.begin(), new_shape.end());
     return {input.new_empty(shape, TensorOptions())};

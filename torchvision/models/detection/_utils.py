@@ -153,9 +153,7 @@ class BoxCoder(object):
 
     def encode(self, reference_boxes, proposals):
         # type: (List[Tensor], List[Tensor])
-        boxes_per_image = torch.jit.annotate(List[int], [])
-        for b in reference_boxes:
-            boxes_per_image.append(len(b))
+        boxes_per_image = [len(b) for b in reference_boxes]
         reference_boxes = torch.cat(reference_boxes, dim=0)
         proposals = torch.cat(proposals, dim=0)
         targets = self.encode_single(reference_boxes, proposals)
@@ -181,10 +179,7 @@ class BoxCoder(object):
         # type: (Tensor, List[Tensor])
         assert isinstance(boxes, (list, tuple))
         assert isinstance(rel_codes, torch.Tensor)
-        boxes_per_image = torch.jit.annotate(List[int], [])
-        for b in boxes:
-            boxes_per_image.append(len(b))
-
+        boxes_per_image = [len(b) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
         box_sum = 0
         for val in boxes_per_image:
