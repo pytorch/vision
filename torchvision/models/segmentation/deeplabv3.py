@@ -3,7 +3,6 @@ from torch import nn
 from torch.nn import functional as F
 
 from ._utils import _SimpleSegmentationModel
-from typing import List
 
 
 __all__ = ["DeepLabV3"]
