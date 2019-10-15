@@ -44,7 +44,6 @@ class ImageNet(ImageFolder):
         imgs (list): List of (image path, class_index) tuples
         targets (list): The class_index value for each image in the dataset
     """
-
     def __init__(self, root, split='train', download=None, **kwargs):
         if download is None:
             download = False
@@ -116,13 +115,13 @@ class ImageNet(ImageFolder):
 
 
 def parse_devkit_archive(archive, meta_file=None):
-    """
+    """Parse the devkit archive of the ImageNet2012 classification dataset and save
+    the meta information in a binary file.
 
     Args:
-        archive:
-        meta_file:
+        archive (str): Path to the devkit archive
+        meta_file (str, optional): Optional name for the meta information file
     """
-    # FIXME
     import scipy.io as sio
 
     def parse_meta(devkit_root):
@@ -171,15 +170,12 @@ def load_meta_file(root, filename=META_FILE_NAME):
 
 
 def parse_train_archive(archive, folder=None):
-    # FIXME
-    """
+    """Parse the train images archive of the ImageNet2012 classification dataset and
+    prepare it for usage with the ImageNet dataset.
 
     Args:
-        archive:
-        folder:
-
-    Returns:
-
+        archive (str): Path to the train images archive
+        folder (str, optional): Optional name for train images folder
     """
     if folder is None:
         folder = os.path.join(os.path.dirname(archive), "train")
@@ -191,13 +187,15 @@ def parse_train_archive(archive, folder=None):
 
 
 def parse_val_archive(archive, wnids=None, folder=None):
-    # FIXME
-    """
+    """Parse the validation images archive of the ImageNet2012 classification dataset
+    and prepare it for usage with the ImageNet dataset.
 
     Args:
-        archive:
-        wnids:
-        folder:
+        archive (str): Path to the validation images archive
+        wnids (list, optional): List of WordNet IDs of the validation images. If None
+            is given, the IDs are tried to be loaded from the meta information binary
+            file in the same directory as the archive.
+        folder (str, optional): Optional name for validation images folder
     """
     root = os.path.dirname(archive)
     if wnids is None:
