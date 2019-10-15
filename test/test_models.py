@@ -10,16 +10,16 @@ import random
 import inspect
 
 
-EPSILON = 1e-5 # small value for approximate comparisons/assertions
+EPSILON = 1e-5  # small value for approximate comparisons/assertions
 STANDARD_NUM_CLASSES = 50
 STANDARD_INPUT_SHAPE = (1, 3, 224, 224)
-STANDARD_SEED = 1729 # https://fburl.com/3i5wkg9p
+STANDARD_SEED = 1729  # https://fburl.com/3i5wkg9p
+
 
 def set_rng_seed(seed=STANDARD_SEED):
     torch.manual_seed(seed)
     random.seed(seed)
     np.random.seed(seed)
-
 
 
 def subsample_tensor(tensor, num_samples=20):
@@ -62,6 +62,7 @@ class ModelTester(TestCase):
     # create random tensor with given shape using synced RNG state
     # caching because these tests take pretty long already (instantiating models and all)
     TEST_INPUTS = {}
+
     def _get_test_input(self, shape=STANDARD_INPUT_SHAPE):
         # NOTE not thread-safe, but should give same results even if multi-threaded testing gave a race condition
         # giving consistent results is kind of the point of this helper method
@@ -91,7 +92,7 @@ class ModelTester(TestCase):
         self.assertTrue(scriptable, msg)
 
     def _check_scriptable(self, model, expected):
-        if expected is None: # we don't check scriptability for all models
+        if expected is None:  # we don't check scriptability for all models
             return
 
         actual = True
@@ -103,7 +104,6 @@ class ModelTester(TestCase):
             actual = False
             msg = str(e) + str(tb)
         self.assertEqual(actual, expected, msg)
-
 
 
 class ClassificationCoverageTester(TestCase):
@@ -136,7 +136,6 @@ class ClassificationCoverageTester(TestCase):
             self.assertTrue(test_name in test_names)
 
 
-
 class ClassificationModelTester(ModelTester):
     def _infer_for_test_with(self, model, test_input):
         return model(test_input)
@@ -158,17 +157,15 @@ class ClassificationModelTester(ModelTester):
 
     def _test_classification_model(self, model_callable, num_classes=STANDARD_NUM_CLASSES, **kwargs):
         model = self._get_test_model(model_callable, num_classes=num_classes, **kwargs)
-        self._check_scriptable(model, True) # currently, all expected to be scriptable
+        self._check_scriptable(model, True)  # currently, all expected to be scriptable
         test_input = self._get_test_input(shape=self._get_input_shape())
         test_output = self._check_model_correctness(model, test_input)
         return model, test_input, test_output
 
 
-
 class AlexnetTester(ClassificationModelTester):
     def test_alexnet(self):
         self._test_classification_model(models.alexnet)
-
 
 
 # TODO add test for aux_logits arg to factory method
@@ -181,14 +178,12 @@ class InceptionV3Tester(ClassificationModelTester):
         self._test_classification_model(models.inception_v3)
 
 
-
 class SqueezenetTester(ClassificationModelTester):
     def test_squeezenet1_0(self):
         self._test_classification_model(models.squeezenet1_0)
 
     def test_squeezenet1_1(self):
         self._test_classification_model(models.squeezenet1_1)
-
 
 
 # TODO add test for width_mult arg to factory method
@@ -200,13 +195,11 @@ class MobilenetTester(ClassificationModelTester):
         self._test_classification_model(models.mobilenet_v2, inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
 
 
-
 # TODO add test for aux_logits arg to factory method
 # TODO add test for transform_input arg to factory method
 class GooglenetTester(ClassificationModelTester):
     def test_googlenet(self):
         self._test_classification_model(models.googlenet)
-
 
 
 class VGGNetTester(ClassificationModelTester):
@@ -235,7 +228,6 @@ class VGGNetTester(ClassificationModelTester):
         self._test_classification_model(models.vgg19_bn)
 
 
-
 # TODO add test for dropout arg to factory method
 class MNASNetTester(ClassificationModelTester):
     def test_mnasnet0_5(self):
@@ -251,7 +243,6 @@ class MNASNetTester(ClassificationModelTester):
         self._test_classification_model(models.mnasnet1_3)
 
 
-
 # TODO add test for bn_size arg to factory method
 # TODO add test for drop_rate arg to factory method
 class DensenetTester(ClassificationModelTester):
@@ -259,9 +250,9 @@ class DensenetTester(ClassificationModelTester):
         model, test_input, test_output = self._test_classification_model(model_callable)
 
         # above, we perform the standard correctness test against the test fixture, and capture key test params
-        # below, we check that the memory efficient/time inefficient DenseNet implementation behaves like the "standard" one
+        # below, we check that memory efficient/time inefficient DenseNet implementation behaves like the "standard" one
         me_model = self._get_test_model(model_callable, num_classes=STANDARD_NUM_CLASSES, memory_efficient=True)
-        me_model.load_state_dict(model.state_dict()) # xfer weights over
+        me_model.load_state_dict(model.state_dict())  # xfer weights over
         me_output = self._infer_for_test_with(me_model, test_input)
         test_output.squeeze(0)
         me_output.squeeze(0)
@@ -280,7 +271,6 @@ class DensenetTester(ClassificationModelTester):
         self._test_densenet_plus_mem_eff(models.densenet201)
 
 
-
 class ShufflenetTester(ClassificationModelTester):
     def test_shufflenet_v2_x0_5(self):
         self._test_classification_model(models.shufflenet_v2_x0_5)
@@ -295,7 +285,6 @@ class ShufflenetTester(ClassificationModelTester):
         self._test_classification_model(models.shufflenet_v2_x2_0)
 
 
-
 # TODO add test for zero_init_residual arg to factory method
 # TODO add test for norm_layer arg to factory method
 class ResnetTester(ClassificationModelTester):
@@ -307,25 +296,25 @@ class ResnetTester(ClassificationModelTester):
 
     def test_resnet34(self):
         self._test_classification_model(models.resnet34)
-        
+
     def test_resnet50(self):
         self._test_classification_model(models.resnet50)
-        
+
     def test_resnet101(self):
         self._test_classification_model(models.resnet101)
-        
+
     def test_resnet152(self):
         self._test_classification_model(models.resnet152)
-        
+
     def test_resnext50_32x4d(self):
         self._test_classification_model(models.resnext50_32x4d)
-        
+
     def test_resnext101_32x8d(self):
         self._test_classification_model(models.resnext101_32x8d)
-        
+
     def test_wide_resnet50_2(self):
         self._test_classification_model(models.wide_resnet50_2)
-        
+
     def test_wide_resnet101_2(self):
         self._test_classification_model(models.wide_resnet101_2)
 
@@ -348,7 +337,6 @@ class ResnetTester(ClassificationModelTester):
             out = model(x)
             f = 2 ** sum(i)
             self.assertEqual(out.shape, (1, 2048, 7 * f, 7 * f))
-        
 
 
 class SegmentationModelTester(ModelTester):
@@ -362,7 +350,6 @@ class SegmentationModelTester(ModelTester):
         x = torch.rand(input_shape)
         out = model(x)
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
-
 
 
 class DetectionModelTester(ModelTester):
@@ -413,7 +400,6 @@ class DetectionModelTester(ModelTester):
         self.assertTrue("labels" in out[0])
 
 
-
 class VideoModelTester(ModelTester):
     def _test_video_model(self, name):
         # the default input shape is
@@ -425,7 +411,6 @@ class VideoModelTester(ModelTester):
         x = torch.rand(input_shape)
         out = model(x)
         self.assertEqual(out.shape[-1], 50)
-
 
 
 for model_name in get_available_segmentation_models():
