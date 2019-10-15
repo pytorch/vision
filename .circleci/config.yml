@@ -164,8 +164,7 @@ jobs:
           cd ${HOME}/project/
 
           export DOCKER_IMAGE=soumith/conda-cuda
-          export PYTORCH_TEST_WITH_SLOW=1
-          export VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e UNICODE_ABI -e CU_VERSION -e PYTORCH_TEST_WITH_SLOW"
+          export VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e UNICODE_ABI -e CU_VERSION"
 
           docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${DOCKER_IMAGE} ./packaging/build_conda.sh
 
