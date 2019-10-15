@@ -124,13 +124,17 @@ def _read_from_stream(container, start_offset, end_offset, pts_unit, stream, str
         # print("Corrupted file?", container.name)
         return []
     buffer_count = 0
-    for idx, frame in enumerate(container.decode(**stream_name)):
-        frames[frame.pts] = frame
-        if frame.pts >= end_offset:
-            if should_buffer and buffer_count < max_buffer_size:
-                buffer_count += 1
-                continue
-            break
+    try:
+        for idx, frame in enumerate(container.decode(**stream_name)):
+            frames[frame.pts] = frame
+            if frame.pts >= end_offset:
+                if should_buffer and buffer_count < max_buffer_size:
+                    buffer_count += 1
+                    continue
+                break
+    except av.AVError:
+        # TODO add a warning
+        pass
     # ensure that the results are sorted wrt the pts
     result = [frames[i] for i in sorted(frames) if start_offset <= frames[i].pts <= end_offset]
     if start_offset > 0 and start_offset not in frames:
