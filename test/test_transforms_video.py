@@ -1,6 +1,7 @@
 from __future__ import division
 import torch
-import torchvision.transforms as transforms
+import torchvision.transforms._transforms_video as transforms
+from torchvision.transforms import Compose
 import unittest
 import random
 import numpy as np
@@ -20,7 +21,7 @@ class TestVideoTransforms(unittest.TestCase):
         oheight = random.randint(5, (height - 2) / 2) * 2
         owidth = random.randint(5, (width - 2) / 2) * 2
         clip = torch.randint(0, 256, (numFrames, height, width, 3), dtype=torch.uint8)
-        result = transforms.Compose([
+        result = Compose([
             transforms.ToTensorVideo(),
             transforms.RandomCropVideo((oheight, owidth)),
         ])(clip)
@@ -36,7 +37,7 @@ class TestVideoTransforms(unittest.TestCase):
         oheight = random.randint(5, (height - 2) / 2) * 2
         owidth = random.randint(5, (width - 2) / 2) * 2
         clip = torch.randint(0, 256, (numFrames, height, width, 3), dtype=torch.uint8)
-        result = transforms.Compose([
+        result = Compose([
             transforms.ToTensorVideo(),
             transforms.RandomResizedCropVideo((oheight, owidth)),
         ])(clip)
@@ -57,7 +58,7 @@ class TestVideoTransforms(unittest.TestCase):
         ow1 = (width - owidth) // 2
         clipNarrow = clip[:, oh1:oh1 + oheight, ow1:ow1 + owidth, :]
         clipNarrow.fill_(0)
-        result = transforms.Compose([
+        result = Compose([
             transforms.ToTensorVideo(),
             transforms.CenterCropVideo((oheight, owidth)),
         ])(clip)
@@ -68,7 +69,7 @@ class TestVideoTransforms(unittest.TestCase):
 
         oheight += 1
         owidth += 1
-        result = transforms.Compose([
+        result = Compose([
             transforms.ToTensorVideo(),
             transforms.CenterCropVideo((oheight, owidth)),
         ])(clip)
@@ -80,7 +81,7 @@ class TestVideoTransforms(unittest.TestCase):
 
         oheight += 1
         owidth += 1
-        result = transforms.Compose([
+        result = Compose([
             transforms.ToTensorVideo(),
             transforms.CenterCropVideo((oheight, owidth)),
         ])(clip)

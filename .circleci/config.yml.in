@@ -20,8 +20,7 @@ commands:
             set -ex
             BRANCH=$(git rev-parse --abbrev-ref HEAD)
             if [[ "$BRANCH" != "master" ]]; then
-              git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
-              git checkout "merged/$CIRCLE_BRANCH"
+              git merge origin/master
             fi
 
 binary_common: &binary_common
@@ -132,7 +131,7 @@ jobs:
 
           sudo apt-get update
           export DOCKER_VERSION="5:19.03.2~3-0~ubuntu-xenial"
-          sudo apt-get install docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io
+          sudo apt-get install docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io=1.2.6-3
 
           # Add the package repositories
           distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
