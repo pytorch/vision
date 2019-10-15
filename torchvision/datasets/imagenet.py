@@ -182,7 +182,7 @@ def parse_train_archive(archive, folder=None):
 
     extract_archive(archive, folder)
 
-    for archive in [os.path.join(folder, archive) for archive in os.listdir(folder)]:
+    for archive in [os.path.join(folder, file) for file in os.listdir(folder)]:
         extract_archive(archive, os.path.splitext(archive)[0], remove_finished=True)
 
 
