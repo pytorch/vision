@@ -236,6 +236,23 @@ class Tester(unittest.TestCase):
             self.assertEqual(len(lv), 4)
             self.assertTrue(data[4:8].equal(lv))
 
+    def test_read_video_corrupted_file(self):
+        with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
+            f.write(b'This is not an mpg4 file')
+            video, audio, info = io.read_video(f.name)
+            self.assertIsInstance(video, torch.Tensor)
+            self.assertIsInstance(audio, torch.Tensor)
+            self.assertEqual(video.numel(), 0)
+            self.assertEqual(audio.numel(), 0)
+            self.assertEqual(info, {})
+
+    def test_read_video_timestamps_corrupted_file(self):
+        with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
+            f.write(b'This is not an mpg4 file')
+            video_pts, video_fps = io.read_video_timestamps(f.name)
+            self.assertEqual(video_pts, [])
+            self.assertIs(video_fps, None)
+
     # TODO add tests for audio
 
 

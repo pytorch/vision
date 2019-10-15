@@ -193,25 +193,36 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
         raise ValueError("end_pts should be larger than start_pts, got "
                          "start_pts={} and end_pts={}".format(start_pts, end_pts))
 
-    container = av.open(filename, metadata_errors='ignore')
     info = {}
-
     video_frames = []
-    if container.streams.video:
-        video_frames = _read_from_stream(container, start_pts, end_pts, pts_unit,
-                                         container.streams.video[0], {'video': 0})
-        info["video_fps"] = float(container.streams.video[0].average_rate)
     audio_frames = []
-    if container.streams.audio:
-        audio_frames = _read_from_stream(container, start_pts, end_pts, pts_unit,
-                                         container.streams.audio[0], {'audio': 0})
-        info["audio_fps"] = container.streams.audio[0].rate
 
-    container.close()
+    try:
+        container = av.open(filename, metadata_errors='ignore')
+    except av.AVError:
+        # TODO raise a warning?
+        pass
+    else:
+        if container.streams.video:
+            video_frames = _read_from_stream(container, start_pts, end_pts, pts_unit,
+                                             container.streams.video[0], {'video': 0})
+            info["video_fps"] = float(container.streams.video[0].average_rate)
+
+        if container.streams.audio:
+            audio_frames = _read_from_stream(container, start_pts, end_pts, pts_unit,
+                                             container.streams.audio[0], {'audio': 0})
+            info["audio_fps"] = container.streams.audio[0].rate
+
+        container.close()
 
     vframes = [frame.to_rgb().to_ndarray() for frame in video_frames]
     aframes = [frame.to_ndarray() for frame in audio_frames]
-    vframes = torch.as_tensor(np.stack(vframes))
+
+    if vframes:
+        vframes = torch.as_tensor(np.stack(vframes))
+    else:
+        vframes = torch.empty((0, 1, 1, 3), dtype=torch.uint8)
+
     if aframes:
         aframes = np.concatenate(aframes, 1)
         aframes = torch.as_tensor(aframes)
@@ -255,21 +266,30 @@ def read_video_timestamps(filename, pts_unit='pts'):
     """
     _check_av_available()
 
-    container = av.open(filename, metadata_errors='ignore')
-
     video_frames = []
     video_fps = None
-    if container.streams.video:
-        video_stream = container.streams.video[0]
-        video_time_base = video_stream.time_base
-        if _can_read_timestamps_from_packets(container):
-            # fast path
-            video_frames = [x for x in container.demux(video=0) if x.pts is not None]
-        else:
-            video_frames = _read_from_stream(container, 0, float("inf"), pts_unit,
-                                             video_stream, {'video': 0})
-        video_fps = float(video_stream.average_rate)
-    container.close()
+
+    try:
+        container = av.open(filename, metadata_errors='ignore')
+    except av.AVError:
+        # TODO add a warning
+        pass
+    else:
+        if container.streams.video:
+            video_stream = container.streams.video[0]
+            video_time_base = video_stream.time_base
+            if _can_read_timestamps_from_packets(container):
+                # fast path
+                video_frames = [x for x in container.demux(video=0) if x.pts is not None]
+            else:
+                video_frames = _read_from_stream(container, 0, float("inf"), pts_unit,
+                                                 video_stream, {'video': 0})
+            video_fps = float(video_stream.average_rate)
+        container.close()
+
+    pts = [x.pts for x in video_frames]
+
     if pts_unit == 'sec':
-        return [x.pts * video_time_base for x in video_frames], video_fps
-    return [x.pts for x in video_frames], video_fps
+        pts = [x * video_time_base for x in pts]
+
+    return pts, video_fps
