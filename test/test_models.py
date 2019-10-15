@@ -58,12 +58,6 @@ script_test_models = [
 
 
 class ModelTester(TestCase):
-    # set random seed for whatever callable follows (if any)
-    # can be called with no args to just set to standard random seed
-    def _rand_sync(self, callable=None, **kwargs):
-        set_rng_seed(STANDARD_SEED)
-        if callable is not None:
-            return callable(**kwargs)
 
     # create random tensor with given shape using synced RNG state
     # caching because these tests take pretty long already (instantiating models and all)
@@ -72,12 +66,14 @@ class ModelTester(TestCase):
         # NOTE not thread-safe, but should give same results even if multi-threaded testing gave a race condition
         # giving consistent results is kind of the point of this helper method
         if shape not in self.TEST_INPUTS:
-            self.TEST_INPUTS[shape] = self._rand_sync(lambda: torch.rand(shape))
+            set_rng_seed(STANDARD_SEED)
+            self.TEST_INPUTS[shape] = torch.rand(shape)
         return self.TEST_INPUTS[shape]
 
     # create a randomly-weighted model w/ synced RNG state
     def _get_test_model(self, callable, **kwargs):
-        model = self._rand_sync(callable, **kwargs)
+        set_rng_seed(STANDARD_SEED)
+        model = callable(**kwargs)
         model.eval()
         return model
 
@@ -144,7 +140,6 @@ class ClassificationCoverageTester(TestCase):
 class ClassificationModelTester(ModelTester):
     def _infer_for_test_with(self, model, test_input):
         return model(test_input)
-        # return self._rand_sync(lambda: model(test_input)) # rand state force because dropout &c
 
     def _check_classification_output_shape(self, test_output, num_classes):
         self.assertEqual(test_output.shape, (1, num_classes))
