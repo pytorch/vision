@@ -210,7 +210,10 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
         if container.streams.video:
             video_frames = _read_from_stream(container, start_pts, end_pts, pts_unit,
                                              container.streams.video[0], {'video': 0})
-            info["video_fps"] = float(container.streams.video[0].average_rate)
+            video_fps = container.streams.video[0].average_rate
+            # guard against potentially corrupted files
+            if video_fps is not None:
+                info["video_fps"] = float(video_fps)
 
         if container.streams.audio:
             audio_frames = _read_from_stream(container, start_pts, end_pts, pts_unit,
