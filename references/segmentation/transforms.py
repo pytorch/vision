@@ -5,7 +5,7 @@ import random
 import torch
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
-
+import torchvision.transforms.functional_tensor as F_t
 
 def pad_if_smaller(img, size, fill=0):
     min_size = min(img.size)
@@ -88,5 +88,5 @@ class Normalize(object):
         self.std = std
 
     def __call__(self, image, target):
-        image = F.normalize(image, mean=self.mean, std=self.std)
+        image = F_t.normalize(image, mean=self.mean, std=self.std)
         return image, target

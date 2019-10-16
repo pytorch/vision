@@ -75,7 +75,7 @@ def normalize(tensor, mean, std, inplace=False):
     Returns:
         Tensor: Normalized Tensor image.
     """
-    if not _is_tensor_image(tensor):
+    if not F._is_tensor_image(tensor):
         raise TypeError('tensor is not a torch image.')
 
     if not inplace:

@@ -3,6 +3,7 @@ import os
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
+import torchvision.transforms.functional_tensor as F_t
 from torch._utils_internal import get_file_path_2
 import unittest
 import math
@@ -838,7 +839,7 @@ class Tester(unittest.TestCase):
                 mean = torch.tensor([1, 2, 3], dtype=dtype2)
                 std = torch.tensor([1, 2, 1], dtype=dtype2)
                 # checks that it doesn't crash
-                transforms.functional.normalize(img, mean, std)
+                transforms.functional_tensor.normalize(img, mean, std)
 
     def test_adjust_brightness(self):
         x_shape = [2, 2, 3]
@@ -1363,7 +1364,7 @@ class Tester(unittest.TestCase):
         # Test Set 1: Erasing with int value
         img_re = transforms.RandomErasing(value=0.2)
         i, j, h, w, v = img_re.get_params(img, scale=img_re.scale, ratio=img_re.ratio, value=img_re.value)
-        img_output = F.erase(img, i, j, h, w, v)
+        img_output = F_t.erase(img, i, j, h, w, v)
         assert img_output.size(0) == 3
 
         # Test Set 2: Check if the unerased region is preserved
