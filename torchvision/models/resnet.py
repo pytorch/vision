@@ -212,7 +212,7 @@ class ResNet(nn.Module):
         return x
 
     def forward(self,x):
-        self._forward(x)
+        return self._forward(x)
 
 
 def _resnet(arch, block, layers, pretrained, progress, **kwargs):

@@ -152,7 +152,7 @@ class MobileNetV2(nn.Module):
         return x
 
     def forward(self, x):
-        self._forward(x)
+        return self._forward(x)
 
 
 def mobilenet_v2(pretrained=False, progress=True, **kwargs):
