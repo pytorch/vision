@@ -36,8 +36,6 @@ class ConvBNReLU(nn.Sequential):
         super(ConvBNReLU, self).__init__(
             nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, groups=groups, bias=False),
             nn.BatchNorm2d(out_planes),
-            # Note ReLU6 is not supported for fusion with quantized modules
-            # inplace=True is not supported for quantized modules
             nn.ReLU6(inplace=True)
         )
 
@@ -82,12 +80,13 @@ class MobileNetV2(nn.Module):
         MobileNet V2 main class
 
         Args:
-            InvertedResidual: Module specifying inverted residual building block for mobilenet
             num_classes (int): Number of classes
             width_mult (float): Width multiplier - adjusts number of channels in each layer by this amount
             inverted_residual_setting: Network structure
             round_nearest (int): Round the number of channels in each layer to be a multiple of this number
             Set to 1 to turn off rounding
+            InvertedResidual: Module specifying inverted residual building block for mobilenet
+
         """
         super(MobileNetV2, self).__init__()
         block = InvertedResidual
