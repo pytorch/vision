@@ -14,14 +14,15 @@ commands:
     description: "checkout merge branch"
     steps:
       - checkout
-      - run:
-          name: Checkout merge branch
-          command: |
-            set -ex
-            BRANCH=$(git rev-parse --abbrev-ref HEAD)
-            if [[ "$BRANCH" != "master" ]]; then
-              git merge origin/master
-            fi
+#     - run:
+#         name: Checkout merge branch
+#         command: |
+#           set -ex
+#           BRANCH=$(git rev-parse --abbrev-ref HEAD)
+#           if [[ "$BRANCH" != "master" ]]; then
+#             git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
+#             git checkout "merged/$CIRCLE_BRANCH"
+#           fi
 
 binary_common: &binary_common
   parameters:
@@ -31,9 +32,9 @@ binary_common: &binary_common
       type: string
       default: ""
     pytorch_version:
-      description: "PyTorch version to build against; by default, use a nightly"
+      description: "PyTorch version to build against; by default, use 1.3. Use empty string for nightly"
       type: string
-      default: ""
+      default: "1.3"
     # Don't edit these
     python_version:
       description: "Python version to build against (e.g., 3.7)"
@@ -284,14 +285,7 @@ workflows:
           cu_version: "cpu"
 
   nightly:
-    triggers:
-      - schedule:
-          cron: "0 9 * * *"
-          filters:
-            branches:
-              only:
-                - master
 {%- endif %}
     jobs:
       - circleci_consistency
-      {{ workflows(prefix="nightly_", upload=True) }}
+      {{ workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
