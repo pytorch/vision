@@ -36,7 +36,7 @@ def hflip(img_tensor):
 def crop(img, top, left, height, width):
     """Crop the given Image Tensor.
     Args:
-        img (Tensor): Image to be cropped. (0,0) denotes the top left corner of the image.
+        img (Tensor): Image to be cropped in the form [C, H, W]. (0,0) denotes the top left corner of the image.
         top (int): Vertical component of the top left corner of the crop box.
         left (int): Horizontal component of the top left corner of the crop box.
         height (int): Height of the crop box.
