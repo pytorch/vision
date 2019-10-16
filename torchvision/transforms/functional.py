@@ -188,36 +188,6 @@ def to_pil_image(pic, mode=None):
     return Image.fromarray(npimg, mode=mode)
 
 
-def normalize(tensor, mean, std, inplace=False):
-    """Normalize a tensor image with mean and standard deviation.
-
-    .. note::
-        This transform acts out of place by default, i.e., it does not mutates the input tensor.
-
-    See :class:`~torchvision.transforms.Normalize` for more details.
-
-    Args:
-        tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
-        mean (sequence): Sequence of means for each channel.
-        std (sequence): Sequence of standard deviations for each channel.
-        inplace(bool,optional): Bool to make this operation inplace.
-
-    Returns:
-        Tensor: Normalized Tensor image.
-    """
-    if not _is_tensor_image(tensor):
-        raise TypeError('tensor is not a torch image.')
-
-    if not inplace:
-        tensor = tensor.clone()
-
-    dtype = tensor.dtype
-    mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
-    std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
-    tensor.sub_(mean[:, None, None]).div_(std[:, None, None])
-    return tensor
-
-
 def resize(img, size, interpolation=Image.BILINEAR):
     r"""Resize the input PIL Image to the given size.
 
@@ -829,29 +799,4 @@ def to_grayscale(img, num_output_channels=1):
     else:
         raise ValueError('num_output_channels should be either 1 or 3')
 
-    return img
-
-
-def erase(img, i, j, h, w, v, inplace=False):
-    """ Erase the input Tensor Image with given value.
-
-    Args:
-        img (Tensor Image): Tensor image of size (C, H, W) to be erased
-        i (int): i in (i,j) i.e coordinates of the upper left corner.
-        j (int): j in (i,j) i.e coordinates of the upper left corner.
-        h (int): Height of the erased region.
-        w (int): Width of the erased region.
-        v: Erasing value.
-        inplace(bool, optional): For in-place operations. By default is set False.
-
-    Returns:
-        Tensor Image: Erased image.
-    """
-    if not isinstance(img, torch.Tensor):
-        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
-
-    if not inplace:
-        img = img.clone()
-
-    img[:, i:i + h, j:j + w] = v
     return img

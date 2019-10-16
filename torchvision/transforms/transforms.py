@@ -15,6 +15,7 @@ import collections
 import warnings
 
 from . import functional as F
+from . import functional_tensor as F_t
 
 if sys.version_info < (3, 3):
     Sequence = collections.Sequence
@@ -172,7 +173,7 @@ class Normalize(object):
         Returns:
             Tensor: Normalized Tensor image.
         """
-        return F.normalize(tensor, self.mean, self.std, self.inplace)
+        return F_t.normalize(tensor, self.mean, self.std, self.inplace)
 
     def __repr__(self):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
@@ -1297,5 +1298,5 @@ class RandomErasing(object):
         """
         if random.uniform(0, 1) < self.p:
             x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value)
-            return F.erase(img, x, y, h, w, v, self.inplace)
+            return F_t.erase(img, x, y, h, w, v, self.inplace)
         return img
