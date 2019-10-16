@@ -36,6 +36,8 @@ class ConvBNReLU(nn.Sequential):
         super(ConvBNReLU, self).__init__(
             nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, groups=groups, bias=False),
             nn.BatchNorm2d(out_planes),
+            # Note ReLU6 is not supported for fusion with quantized modules
+            # inplace=True is not supported for quantized modules
             nn.ReLU6(inplace=True)
         )
 
@@ -70,11 +72,17 @@ class InvertedResidual(nn.Module):
 
 
 class MobileNetV2(nn.Module):
-    def __init__(self, num_classes=1000, width_mult=1.0, inverted_residual_setting=None, round_nearest=8):
+    def __init__(self,
+                 num_classes=1000,
+                 width_mult=1.0,
+                 inverted_residual_setting=None,
+                 round_nearest=8,
+                 InvertedResidual=InvertedResidual):
         """
         MobileNet V2 main class
 
         Args:
+            InvertedResidual: Module specifying inverted residual building block for mobilenet
             num_classes (int): Number of classes
             width_mult (float): Width multiplier - adjusts number of channels in each layer by this amount
             inverted_residual_setting: Network structure
@@ -138,11 +146,14 @@ class MobileNetV2(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.zeros_(m.bias)
 
-    def forward(self, x):
+    def _forward(self, x):
         x = self.features(x)
         x = x.mean([2, 3])
         x = self.classifier(x)
         return x
+
+    def forward(self, x):
+        self._forward(x)
 
 
 def mobilenet_v2(pretrained=False, progress=True, **kwargs):
