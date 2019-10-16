@@ -49,7 +49,7 @@ binary_common: &binary_common
     wheel_docker_image:
       description: "Wheel only: what docker image to use"
       type: string
-      default: "soumith/manylinux-cuda100"
+      default: "soumith/manylinux-cuda101"
   environment:
     PYTHON_VERSION: << parameters.python_version >>
     BUILD_VERSION: << parameters.build_version >>
