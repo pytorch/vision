@@ -39,7 +39,7 @@ before_install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
-  - conda update -n base -c defaults -q conda --force
+  - conda update -q anaconda=2019.07
   # Useful for debugging any issues with conda
   - conda info -a
 
