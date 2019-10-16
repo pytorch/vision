@@ -89,6 +89,7 @@ class QuantizableResNet(ResNet):
         # is not scriptable
         x = self._forward(x)
         x = self.dequant(x)
+        return x
 
     def fuse_model(self):
         r"""Fuse conv/bn/relu modules in resnet models
