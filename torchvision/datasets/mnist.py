@@ -175,10 +175,14 @@ class FashionMNIST(MNIST):
             target and transforms it.
     """
     resources = [
-        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz", "8d4fb7e6c68d591d4c3dfef9ec88bf0d"),
-        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz", "25c81989df183df01b3e8a0aad5dffbe"),
-        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz", "bef4ecab320f06d8554ea6380940ec79"),
-        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz", "bb300cfdad3c16e7a12a480ee83cd310")
+        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz",
+         "8d4fb7e6c68d591d4c3dfef9ec88bf0d"),
+        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz",
+         "25c81989df183df01b3e8a0aad5dffbe"),
+        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz",
+         "bef4ecab320f06d8554ea6380940ec79"),
+        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz",
+         "bb300cfdad3c16e7a12a480ee83cd310")
     ]
     classes = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal',
                'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
@@ -328,12 +332,18 @@ class QMNIST(MNIST):
         'nist': 'nist'
     }
     resources = {
-        'train': [('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-images-idx3-ubyte.gz', 'ed72d4157d28c017586c42bc6afe6370'),
-                  ('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-labels-idx2-int.gz', '0058f8dd561b90ffdd0f734c6a30e5e4')],
-        'test': [('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-images-idx3-ubyte.gz', '1394631089c404de565df7b7aeaf9412'),
-                 ('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-labels-idx2-int.gz', '5b5b05890a5e13444e108efe57b788aa')],
-        'nist': [('https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-images-idx3-ubyte.xz', '7f124b3b8ab81486c9d8c2749c17f834'),
-                 ('https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-labels-idx2-int.xz', '5ed0e788978e45d4a8bd4b7caec3d79d')]
+        'train': [('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-images-idx3-ubyte.gz',
+                   'ed72d4157d28c017586c42bc6afe6370'),
+                  ('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-labels-idx2-int.gz',
+                   '0058f8dd561b90ffdd0f734c6a30e5e4')],
+        'test': [('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-images-idx3-ubyte.gz',
+                  '1394631089c404de565df7b7aeaf9412'),
+                 ('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-labels-idx2-int.gz',
+                  '5b5b05890a5e13444e108efe57b788aa')],
+        'nist': [('https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-images-idx3-ubyte.xz',
+                  '7f124b3b8ab81486c9d8c2749c17f834'),
+                 ('https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-labels-idx2-int.xz',
+                  '5ed0e788978e45d4a8bd4b7caec3d79d')]
     }
     classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
                '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
