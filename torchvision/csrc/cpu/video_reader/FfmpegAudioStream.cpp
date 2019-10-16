@@ -49,6 +49,7 @@ void FfmpegAudioStream::updateStreamDecodeParams() {
     mediaFormat_.format.audio.timeBaseDen =
         inputCtx_->streams[index_]->time_base.den;
   }
+  mediaFormat_.format.audio.duration = inputCtx_->streams[index_]->duration;
 }
 
 int FfmpegAudioStream::initFormat() {
