@@ -20,7 +20,8 @@ commands:
             set -ex
             BRANCH=$(git rev-parse --abbrev-ref HEAD)
             if [[ "$BRANCH" != "master" ]]; then
-              git merge origin/master
+              git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
+              git checkout "merged/$CIRCLE_BRANCH"
             fi
 
 binary_common: &binary_common
@@ -31,9 +32,9 @@ binary_common: &binary_common
       type: string
       default: ""
     pytorch_version:
-      description: "PyTorch version to build against; by default, use a nightly"
+      description: "PyTorch version to build against; by default, use 1.3. Use empty string for nightly"
       type: string
-      default: ""
+      default: "1.3"
     # Don't edit these
     python_version:
       description: "Python version to build against (e.g., 3.7)"
