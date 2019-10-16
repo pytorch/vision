@@ -10,7 +10,6 @@ import random
 import inspect
 
 
-EPSILON = 1e-5  # small value for approximate comparisons/assertions
 STANDARD_NUM_CLASSES = 50
 STANDARD_INPUT_SHAPE = (1, 3, 224, 224)
 STANDARD_SEED = 1729
@@ -148,7 +147,7 @@ class ClassificationModelTester(ModelTester):
     def _check_model_correctness(self, model, test_input, num_classes=STANDARD_NUM_CLASSES):
         test_output = self._infer_for_test_with(model, test_input)
         self._check_classification_output_shape(test_output, num_classes)
-        self.assertExpected(test_output)
+        self.assertExpected(test_output, rtol=1e-5, atol=1e-5)
         return test_output
 
     # NOTE override this in a child class
@@ -256,7 +255,8 @@ class DensenetTester(ClassificationModelTester):
         me_output = self._infer_for_test_with(me_model, test_input)
         test_output.squeeze(0)
         me_output.squeeze(0)
-        self.assertTrue((test_output - me_output).abs().max() < EPSILON)
+        # NOTE testing against same memory fixtures as the non-mem-efficient version
+        self.assertExpected(test_output, rtol=1e-5, atol=1e-5)
 
     def test_densenet121(self):
         self._test_densenet_plus_mem_eff(models.densenet121)
