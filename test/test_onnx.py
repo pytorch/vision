@@ -62,7 +62,6 @@ class ONNXExporterTester(unittest.TestCase):
         # compute onnxruntime output prediction
         ort_inputs = dict((ort_session.get_inputs()[i].name, inpt) for i, inpt in enumerate(inputs))
         ort_outs = ort_session.run(None, ort_inputs)
-
         for i in range(0, len(outputs)):
             try:
                 torch.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
@@ -234,6 +233,7 @@ class ONNXExporterTester(unittest.TestCase):
 
         self.run_model(TransformModule(), [(i, [boxes],), (i1, [boxes1],)])
 
+    @unittest.skipIf(torch.__version__ < "1.4.", "Disable test if torch version is less than 1.4")
     def test_roi_heads(self):
         class RoiHeadsModule(torch.nn.Module):
             def __init__(self_module, images):
@@ -285,10 +285,11 @@ class ONNXExporterTester(unittest.TestCase):
         return images, test_images
 
     @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
+    @unittest.skipIf(torch.__version__ < "1.4.", "Disable test if torch version is less than 1.4")
     def test_faster_rcnn(self):
-        images, test_images = self.get_test_images(self)
+        images, test_images = self.get_test_images()
 
-        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=False)
+        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True)
         model.eval()
         model(images)
         self.run_model(model, [(images,), (test_images,)])
