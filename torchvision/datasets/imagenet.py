@@ -73,28 +73,28 @@ class ImageNet(ImageFolder):
                              for cls in clss}
 
     def extract_archives(self):
-        def check_archive(archive_dict):
-            file = archive_dict["file"]
-            md5 = archive_dict["md5"]
-            archive = os.path.join(self.root, file)
-            if not check_integrity(archive, md5):
-                msg = ("The file {} is not present in the root directory. You need to "
-                       "download it externally and place it in {}.")
-                raise RuntimeError(msg.format(file, self.root))
-
-            return archive
-
         if not check_integrity(self.meta_file):
-            archive = check_archive(ARCHIVE_DICT['devkit'])
+            archive_dict = ARCHIVE_DICT['devkit']
+            archive = os.path.join(self.root, archive_dict["file"])
+            self._verify_archive(archive, archive_dict["md5"])
+
             parse_devkit_archive(archive)
 
         if not os.path.isdir(self.split_folder):
-            archive = check_archive(ARCHIVE_DICT[self.split])
+            archive_dict = ARCHIVE_DICT[self.split]
+            archive = os.path.join(self.root, archive_dict["file"])
+            self._verify_archive(archive, archive_dict["md5"])
 
             if self.split == 'train':
                 parse_train_archive(archive)
             elif self.split == 'val':
                 parse_val_archive(archive)
+
+    def _verify_archive(self, archive, md5):
+        if not check_integrity(archive, md5):
+            msg = ("The file {} is not present in the root directory or corrupted. "
+                   "You need to download it externally and place it in {}.")
+            raise RuntimeError(msg.format(os.path.basename(archive), self.root))
 
     @property
     def meta_file(self):
