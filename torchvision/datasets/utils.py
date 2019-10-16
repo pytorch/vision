@@ -97,8 +97,7 @@ def download_url(url, root, filename=None, md5=None):
                 raise e
         # check integrity of downloaded file
         if not check_integrity(fpath, md5):
-            print("Error downloading file: Dataset not found in " + fpath + " or corrupted.")
-            raise RuntimeError("Dataset not found or corrupted.")
+            raise RuntimeError("File not found or corrupted.")
 
 def list_dir(root, prefix=False):
     """List all directories at a given root
