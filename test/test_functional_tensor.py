@@ -1,4 +1,5 @@
 import torch
+import torchvision.transforms as transforms
 import torchvision.transforms.functional_tensor as F_t
 import torchvision.transforms.functional as F
 import unittest
@@ -28,9 +29,9 @@ class Tester(unittest.TestCase):
         height = random.randint(1, 16-top)
         width = random.randint(1, 16-left)
         img_cropped = F_t.crop(img_tensor, top, left, height, width)
-        img_PIL = torchvision.transforms.ToPILImage()(img_tensor)
+        img_PIL = transforms.ToPILImage()(img_tensor)
         img_PIL_cropped = F.crop(img_PIL, top, left, height, width)
-        img_cropped_GT = torchvision.transforms.ToTensor()(img_PIL_cropped)
+        img_cropped_GT = transforms.ToTensor()(img_PIL_cropped)
 
         max_diff = (img_cropped_GT - img_cropped).abs().max()
 
