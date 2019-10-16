@@ -6,7 +6,6 @@ import unittest
 
 from torchvision import io
 from torchvision.datasets.video_utils import VideoClips, unfold
-from torchvision import get_video_backend
 
 from common_utils import get_tmp_dir
 
@@ -62,69 +61,35 @@ class Tester(unittest.TestCase):
     @unittest.skipIf(not io.video._av_available(), "this test requires av")
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_video_clips(self):
-        _backend = get_video_backend()
         with get_list_of_videos(num_videos=3) as video_list:
-            video_clips = VideoClips(video_list, 5, 5, _backend=_backend)
+            video_clips = VideoClips(video_list, 5, 5)
             self.assertEqual(video_clips.num_clips(), 1 + 2 + 3)
             for i, (v_idx, c_idx) in enumerate([(0, 0), (1, 0), (1, 1), (2, 0), (2, 1), (2, 2)]):
                 video_idx, clip_idx = video_clips.get_clip_location(i)
                 self.assertEqual(video_idx, v_idx)
                 self.assertEqual(clip_idx, c_idx)
 
-            video_clips = VideoClips(video_list, 6, 6, _backend=_backend)
+            video_clips = VideoClips(video_list, 6, 6)
             self.assertEqual(video_clips.num_clips(), 0 + 1 + 2)
             for i, (v_idx, c_idx) in enumerate([(1, 0), (2, 0), (2, 1)]):
                 video_idx, clip_idx = video_clips.get_clip_location(i)
                 self.assertEqual(video_idx, v_idx)
                 self.assertEqual(clip_idx, c_idx)
 
-            video_clips = VideoClips(video_list, 6, 1, _backend=_backend)
+            video_clips = VideoClips(video_list, 6, 1)
             self.assertEqual(video_clips.num_clips(), 0 + (10 - 6 + 1) + (15 - 6 + 1))
             for i, v_idx, c_idx in [(0, 1, 0), (4, 1, 4), (5, 2, 0), (6, 2, 1)]:
                 video_idx, clip_idx = video_clips.get_clip_location(i)
                 self.assertEqual(video_idx, v_idx)
                 self.assertEqual(clip_idx, c_idx)
 
-    @unittest.skip("Moved to reference scripts for now")
-    def test_video_sampler(self):
-        _backend = get_video_backend()
-        with get_list_of_videos(num_videos=3, sizes=[25, 25, 25]) as video_list:
-            video_clips = VideoClips(video_list, 5, 5, _backend=_backend)
-            sampler = RandomClipSampler(video_clips, 3)  # noqa: F821
-            self.assertEqual(len(sampler), 3 * 3)
-            indices = torch.tensor(list(iter(sampler)))
-            videos = indices // 5
-            v_idxs, count = torch.unique(videos, return_counts=True)
-            self.assertTrue(v_idxs.equal(torch.tensor([0, 1, 2])))
-            self.assertTrue(count.equal(torch.tensor([3, 3, 3])))
-
-    @unittest.skip("Moved to reference scripts for now")
-    def test_video_sampler_unequal(self):
-        _backend = get_video_backend()
-        with get_list_of_videos(num_videos=3, sizes=[10, 25, 25]) as video_list:
-            video_clips = VideoClips(video_list, 5, 5, _backend=_backend)
-            sampler = RandomClipSampler(video_clips, 3)  # noqa: F821
-            self.assertEqual(len(sampler), 2 + 3 + 3)
-            indices = list(iter(sampler))
-            self.assertIn(0, indices)
-            self.assertIn(1, indices)
-            # remove elements of the first video, to simplify testing
-            indices.remove(0)
-            indices.remove(1)
-            indices = torch.tensor(indices) - 2
-            videos = indices // 5
-            v_idxs, count = torch.unique(videos, return_counts=True)
-            self.assertTrue(v_idxs.equal(torch.tensor([0, 1])))
-            self.assertTrue(count.equal(torch.tensor([3, 3])))
-
     @unittest.skipIf(not io.video._av_available(), "this test requires av")
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_video_clips_custom_fps(self):
-        _backend = get_video_backend()
         with get_list_of_videos(num_videos=3, sizes=[12, 12, 12], fps=[3, 4, 6]) as video_list:
             num_frames = 4
             for fps in [1, 3, 4, 10]:
-                video_clips = VideoClips(video_list, num_frames, num_frames, fps, _backend=_backend)
+                video_clips = VideoClips(video_list, num_frames, num_frames, fps)
                 for i in range(video_clips.num_clips()):
                     video, audio, info, video_idx = video_clips.get_clip(i)
                     self.assertEqual(video.shape[0], num_frames)

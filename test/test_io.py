@@ -87,6 +87,22 @@ class Tester(unittest.TestCase):
             self.assertTrue(data.equal(lv))
             self.assertEqual(info["video_fps"], 5)
 
+    @unittest.skipIf(not io._HAS_VIDEO_OPT, "video_reader backend is not chosen")
+    def test_probe_video_from_file(self):
+        with temp_video(10, 300, 300, 5) as (f_name, data):
+            video_info = io._probe_video_from_file(f_name)
+            self.assertAlmostEqual(video_info["video_duration"], 2, delta=0.1)
+            self.assertAlmostEqual(video_info["video_fps"], 5, delta=0.1)
+
+    @unittest.skipIf(not io._HAS_VIDEO_OPT, "video_reader backend is not chosen")
+    def test_probe_video_from_memory(self):
+        with temp_video(10, 300, 300, 5) as (f_name, data):
+            with open(f_name, "rb") as fp:
+                filebuffer = fp.read()
+            video_info = io._probe_video_from_memory(filebuffer)
+            self.assertAlmostEqual(video_info["video_duration"], 2, delta=0.1)
+            self.assertAlmostEqual(video_info["video_fps"], 5, delta=0.1)
+
     def test_read_timestamps(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
             if _video_backend == "pyav":
@@ -181,6 +197,79 @@ class Tester(unittest.TestCase):
             expected_pts = [i * pts_step for i in range(num_frames)]
 
             self.assertEqual(pts, expected_pts)
+
+    def test_read_video_pts_unit_sec(self):
+        with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
+            lv, _, info = io.read_video(f_name, pts_unit='sec')
+
+            self.assertTrue(data.equal(lv))
+            self.assertEqual(info["video_fps"], 5)
+
+    def test_read_timestamps_pts_unit_sec(self):
+        with temp_video(10, 300, 300, 5) as (f_name, data):
+            pts, _ = io.read_video_timestamps(f_name, pts_unit='sec')
+
+            container = av.open(f_name)
+            stream = container.streams[0]
+            pts_step = int(round(float(1 / (stream.average_rate * stream.time_base))))
+            num_frames = int(round(float(stream.average_rate * stream.time_base * stream.duration)))
+            expected_pts = [i * pts_step * stream.time_base for i in range(num_frames)]
+
+            self.assertEqual(pts, expected_pts)
+
+    def test_read_partial_video_pts_unit_sec(self):
+        with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
+            pts, _ = io.read_video_timestamps(f_name, pts_unit='sec')
+
+            for start in range(5):
+                for l in range(1, 4):
+                    lv, _, _ = io.read_video(f_name, pts[start], pts[start + l - 1], pts_unit='sec')
+                    s_data = data[start:(start + l)]
+                    self.assertEqual(len(lv), l)
+                    self.assertTrue(s_data.equal(lv))
+
+            container = av.open(f_name)
+            stream = container.streams[0]
+            lv, _, _ = io.read_video(f_name,
+                                     int(pts[4] * (1.0 / stream.time_base) + 1) * stream.time_base, pts[7],
+                                     pts_unit='sec')
+            self.assertEqual(len(lv), 4)
+            self.assertTrue(data[4:8].equal(lv))
+
+    def test_read_video_corrupted_file(self):
+        with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
+            f.write(b'This is not an mpg4 file')
+            video, audio, info = io.read_video(f.name)
+            self.assertIsInstance(video, torch.Tensor)
+            self.assertIsInstance(audio, torch.Tensor)
+            self.assertEqual(video.numel(), 0)
+            self.assertEqual(audio.numel(), 0)
+            self.assertEqual(info, {})
+
+    def test_read_video_timestamps_corrupted_file(self):
+        with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
+            f.write(b'This is not an mpg4 file')
+            video_pts, video_fps = io.read_video_timestamps(f.name)
+            self.assertEqual(video_pts, [])
+            self.assertIs(video_fps, None)
+
+    def test_read_video_partially_corrupted_file(self):
+        with temp_video(5, 4, 4, 5, lossless=True) as (f_name, data):
+            with open(f_name, 'r+b') as f:
+                size = os.path.getsize(f_name)
+                bytes_to_overwrite = size // 10
+                # seek to the middle of the file
+                f.seek(5 * bytes_to_overwrite)
+                # corrupt 10% of the file from the middle
+                f.write(b'\xff' * bytes_to_overwrite)
+            # this exercises the container.decode assertion check
+            video, audio, info = io.read_video(f.name, pts_unit='sec')
+            # check that size is not equal to 5, but 3
+            self.assertEqual(len(video), 3)
+            # but the valid decoded content is still correct
+            self.assertTrue(video[:3].equal(data[:3]))
+            # and the last few frames are wrong
+            self.assertFalse(video.equal(data))
 
     # TODO add tests for audio
 

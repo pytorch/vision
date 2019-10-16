@@ -68,10 +68,18 @@ class VideoClips(object):
             0 means that the data will be loaded in the main process. (default: 0)
     """
     def __init__(self, video_paths, clip_length_in_frames=16, frames_between_clips=1,
-                 frame_rate=None, _precomputed_metadata=None, num_workers=0, _backend="pyav"):
+                 frame_rate=None, _precomputed_metadata=None, num_workers=0,
+                 _video_width=0, _video_height=0, _video_min_dimension=0,
+                 _audio_samples=0):
+        from torchvision import get_video_backend
+
         self.video_paths = video_paths
         self.num_workers = num_workers
-        self._backend = _backend
+        self._backend = get_video_backend()
+        self._video_width = _video_width
+        self._video_height = _video_height
+        self._video_min_dimension = _video_min_dimension
+        self._audio_samples = _audio_samples
 
         if _precomputed_metadata is None:
             self._compute_frame_pts()
@@ -145,6 +153,7 @@ class VideoClips(object):
             _metadata.update({"video_fps": self.video_fps})
         else:
             _metadata.update({"info": self.info})
+        return _metadata
 
     def subset(self, indices):
         video_paths = [self.video_paths[i] for i in indices]
@@ -162,7 +171,11 @@ class VideoClips(object):
         else:
             metadata.update({"info": info})
         return type(self)(video_paths, self.num_frames, self.step, self.frame_rate,
-                          _precomputed_metadata=metadata)
+                          _precomputed_metadata=metadata, num_workers=self.num_workers,
+                          _video_width=self._video_width,
+                          _video_height=self._video_height,
+                          _video_min_dimension=self._video_min_dimension,
+                          _audio_samples=self._audio_samples)
 
     @staticmethod
     def compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate):
@@ -206,9 +219,15 @@ class VideoClips(object):
                 self.resampling_idxs.append(idxs)
         else:
             for video_pts, info in zip(self.video_pts, self.info):
-                clips, idxs = self.compute_clips_for_video(video_pts, num_frames, step, info["video_fps"], frame_rate)
-                self.clips.append(clips)
-                self.resampling_idxs.append(idxs)
+                if "video_fps" in info:
+                    clips, idxs = self.compute_clips_for_video(
+                        video_pts, num_frames, step, info["video_fps"], frame_rate)
+                    self.clips.append(clips)
+                    self.resampling_idxs.append(idxs)
+                else:
+                    # properly handle the cases where video decoding fails
+                    self.clips.append(torch.zeros(0, num_frames, dtype=torch.int64))
+                    self.resampling_idxs.append(torch.zeros(0, dtype=torch.int64))
         clip_lengths = torch.as_tensor([len(v) for v in self.clips])
         self.cumulative_sizes = clip_lengths.cumsum(0).tolist()
 
@@ -289,15 +308,19 @@ class VideoClips(object):
                     math.floor,
                 )
                 audio_end_pts = pts_convert(
-                    video_start_pts,
+                    video_end_pts,
                     info["video_timebase"],
                     info["audio_timebase"],
                     math.ceil,
                 )
             video, audio, info = _read_video_from_file(
                 video_path,
+                video_width=self._video_width,
+                video_height=self._video_height,
+                video_min_dimension=self._video_min_dimension,
                 video_pts_range=(video_start_pts, video_end_pts),
                 video_timebase=info["video_timebase"],
+                audio_samples=self._audio_samples,
                 audio_pts_range=(audio_start_pts, audio_end_pts),
                 audio_timebase=audio_timebase,
             )

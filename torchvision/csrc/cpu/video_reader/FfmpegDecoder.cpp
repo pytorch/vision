@@ -220,6 +220,30 @@ int FfmpegDecoder::decodeMemory(
   return ret;
 }
 
+int FfmpegDecoder::probeFile(
+    unique_ptr<DecoderParameters> params,
+    const string& fileName,
+    DecoderOutput& decoderOutput) {
+  VLOG(1) << "probe file: " << fileName;
+  FfmpegAvioContext ioctx;
+  return probeVideo(std::move(params), fileName, true, ioctx, decoderOutput);
+}
+
+int FfmpegDecoder::probeMemory(
+    unique_ptr<DecoderParameters> params,
+    const uint8_t* buffer,
+    int64_t size,
+    DecoderOutput& decoderOutput) {
+  VLOG(1) << "probe video data in memory";
+  FfmpegAvioContext ioctx;
+  int ret = ioctx.initAVIOContext(buffer, size);
+  if (ret == 0) {
+    ret =
+        probeVideo(std::move(params), string(""), false, ioctx, decoderOutput);
+  }
+  return ret;
+}
+
 void FfmpegDecoder::cleanUp() {
   if (formatCtx_) {
     for (auto& stream : streams_) {
@@ -318,6 +342,16 @@ int FfmpegDecoder::decodeLoop(
   /* flush cached frames */
   flushStreams(decoderOutput);
   return ret;
+}
+
+int FfmpegDecoder::probeVideo(
+    unique_ptr<DecoderParameters> params,
+    const std::string& filename,
+    bool isDecodeFile,
+    FfmpegAvioContext& ioctx,
+    DecoderOutput& decoderOutput) {
+  params_ = std::move(params);
+  return init(filename, isDecodeFile, ioctx, decoderOutput);
 }
 
 bool FfmpegDecoder::initStreams() {
