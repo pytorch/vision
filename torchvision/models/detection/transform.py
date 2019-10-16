@@ -171,11 +171,7 @@ def resize_keypoints(keypoints, original_size, new_size):
 def resize_boxes(boxes, original_size, new_size):
     ratios = tuple(float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size))
     ratio_height, ratio_width = ratios
-    # unbind and lists not yet supported in ONNX
-    if torchvision._is_tracing():
-        xmin, ymin, xmax, ymax = [torch.squeeze(out, 1) for out in boxes.split(1, dim=1)]
-    else:
-        xmin, ymin, xmax, ymax = boxes.unbind(1)
+    xmin, ymin, xmax, ymax = boxes.unbind(1)
 
     xmin = xmin * ratio_width
     xmax = xmax * ratio_width
