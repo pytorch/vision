@@ -19,6 +19,11 @@ class QuantizableInvertedResidual(InvertedResidual):
         else:
             return self.conv(x)
 
+    def fuse_model(self):
+        for idx in range(len(self.conv)):
+            if type(self.conv[idx]) == nn.Conv2d:
+                fuse_modules(self.conv, [str(idx), str(idx + 1)], inplace=True)
+
 
 class QuantizableMobileNetV2(MobileNetV2):
     def __init__(self, *args, **kwargs):
@@ -26,13 +31,7 @@ class QuantizableMobileNetV2(MobileNetV2):
         MobileNet V2 main class
 
         Args:
-            num_classes (int): Number of classes
-            width_mult (float): Width multiplier -
-            adjusts number of channels in each layer by this amount
-            inverted_residual_setting: Network structure
-            round_nearest (int): Round the number of channels
-            in each layer to be a multiple of this number
-            Set to 1 to turn off rounding
+           Inherits args from floating point MobileNetV2
         """
         super(QuantizableMobileNetV2, self).__init__(*args, **kwargs)
         self.quant = QuantStub()
@@ -49,10 +48,7 @@ class QuantizableMobileNetV2(MobileNetV2):
             if type(m) == ConvBNReLU:
                 fuse_modules(m, ['0', '1', '2'], inplace=True)
             if type(m) == QuantizableInvertedResidual:
-                for idx in range(len(m.conv)):
-                    if type(m.conv[idx]) == nn.Conv2d:
-                        fuse_modules(m.conv, [str(idx), str(idx + 1)], inplace=True)
-
+                m.fuse_model()
 
 def mobilenet_v2(pretrained=False, progress=True, **kwargs):
     """
@@ -61,7 +57,7 @@ def mobilenet_v2(pretrained=False, progress=True, **kwargs):
      <https://arxiv.org/abs/1801.04381>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        pretrained (bool): If True, returns a floating point model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     model = QuantizableMobileNetV2(InvertedResidual=QuantizableInvertedResidual, **kwargs)
