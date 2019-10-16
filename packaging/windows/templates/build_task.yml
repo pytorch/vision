@@ -56,24 +56,24 @@ jobs:
           DESIRED_PYTHON: 3.7
           CUDA_VERSION: cpu
       ${{ if ne(parameters.spec, 'CPU') }}:
-        # PY3.5_92:
-        #   DESIRED_PYTHON: 3.5
-        #   CUDA_VERSION: 92
-        # PY3.6_92:
-        #   DESIRED_PYTHON: 3.6
-        #   CUDA_VERSION: 92
-        # PY3.7_92:
-        #   DESIRED_PYTHON: 3.7
-        #   CUDA_VERSION: 92
-        PY3.5_100:
+        PY3.5_92:
           DESIRED_PYTHON: 3.5
-          CUDA_VERSION: 100
-        PY3.6_100:
+          CUDA_VERSION: 92
+        PY3.6_92:
           DESIRED_PYTHON: 3.6
-          CUDA_VERSION: 100
-        PY3.7_100:
+          CUDA_VERSION: 92
+        PY3.7_92:
           DESIRED_PYTHON: 3.7
-          CUDA_VERSION: 100
+          CUDA_VERSION: 92
+        PY3.5_101:
+          DESIRED_PYTHON: 3.5
+          CUDA_VERSION: 101
+        PY3.6_101:
+          DESIRED_PYTHON: 3.6
+          CUDA_VERSION: 101
+        PY3.7_101:
+          DESIRED_PYTHON: 3.7
+          CUDA_VERSION: 101
 
   pool:
     ${{ if eq(parameters.msagent, 'true') }}:

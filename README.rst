@@ -1,5 +1,5 @@
 torchvision
-============
+===========
 
 .. image:: https://travis-ci.org/pytorch/vision.svg?branch=master
     :target: https://travis-ci.org/pytorch/vision
@@ -60,7 +60,7 @@ Torchvision currently supports the following image backends:
 .. _accimage: https://github.com/pytorch/accimage
 
 C++ API
-=============
+=======
 TorchVision also offers a C++ API that contains C++ equivalent of python models. 
 
 Installation From source:

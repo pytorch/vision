@@ -3,6 +3,7 @@ from __future__ import division
 import math
 
 import torch
+import torchvision
 
 
 class BalancedPositiveNegativeSampler(object):
@@ -162,7 +163,7 @@ class BoxCoder(object):
         if isinstance(rel_codes, (list, tuple)):
             rel_codes = torch.cat(rel_codes, dim=0)
         assert isinstance(rel_codes, torch.Tensor)
-        boxes_per_image = [len(b) for b in boxes]
+        boxes_per_image = [b.size(0) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
         pred_boxes = self.decode_single(
             rel_codes.reshape(sum(boxes_per_image), -1), concat_boxes
@@ -201,16 +202,11 @@ class BoxCoder(object):
         pred_w = torch.exp(dw) * widths[:, None]
         pred_h = torch.exp(dh) * heights[:, None]
 
-        pred_boxes = torch.zeros_like(rel_codes)
-        # x1
-        pred_boxes[:, 0::4] = pred_ctr_x - 0.5 * pred_w
-        # y1
-        pred_boxes[:, 1::4] = pred_ctr_y - 0.5 * pred_h
-        # x2
-        pred_boxes[:, 2::4] = pred_ctr_x + 0.5 * pred_w
-        # y2
-        pred_boxes[:, 3::4] = pred_ctr_y + 0.5 * pred_h
-
+        pred_boxes1 = pred_ctr_x - torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w
+        pred_boxes2 = pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h
+        pred_boxes3 = pred_ctr_x + torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w
+        pred_boxes4 = pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h
+        pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=2).flatten(1)
         return pred_boxes
 
 
