@@ -288,4 +288,4 @@ workflows:
 {%- endif %}
     jobs:
       - circleci_consistency
-      {{ workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
+      {{ workflows(prefix="nightly_", filter_branch=None, upload=True) }}
