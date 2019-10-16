@@ -1,4 +1,5 @@
 import torchvision.transforms.functional_tensor as F_t
+import torchvision.transforms.functional as F
 import unittest
 import torch
 
@@ -18,6 +19,21 @@ class Tester(unittest.TestCase):
         hflipped_img_again = F_t.hflip(hflipped_img)
         self.assertEqual(hflipped_img.shape, img_tensor.shape)
         self.assertTrue(torch.equal(img_tensor, hflipped_img_again))
+
+    def test_crop(self):
+        img_tensor = torch.FloatTensor(3, 16, 16).uniform_(0, 1)
+        top = random.randint(0, 15)
+        left = random.randint(0, 15)
+        height = random.randint(1, 16-top)
+        width = random.randint(1, 16-left)
+        img_cropped = F_t.crop(img_tensor, top, left, height, width)
+        img_PIL = torchvision.transforms.ToPILImage()(img_tensor)
+        img_PIL_cropped = F.crop(img_PIL, top, left, height, width)
+        img_cropped_GT = torchvision.transforms.ToTensor()(img_PIL_cropped)
+
+        max_diff = (img_cropped_GT - img_cropped).abs().max()
+
+        assert max_diff < 5e-3, "Functional crop not working"
 
 
 if __name__ == '__main__':
