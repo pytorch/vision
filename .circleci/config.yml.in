@@ -7,7 +7,7 @@ version: 2.1
 #       Job names are 'name:' key.
 
 orbs:
-  win: circleci/windows@1.0.0
+  win: circleci/windows@2.0.0
 
 commands:
   checkout_merge:
@@ -171,7 +171,7 @@ jobs:
   binary_win_conda:
     <<: *binary_common
     executor:
-      name: win/vs2019
+      name: win/default
       shell: bash.exe
     steps:
       - checkout_merge
