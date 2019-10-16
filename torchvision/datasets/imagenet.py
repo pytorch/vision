@@ -207,11 +207,3 @@ def parse_val_archive(archive, wnids=None, folder=None):
     for wnid, img_file in zip(wnids, img_files):
         shutil.move(img_file, os.path.join(folder, wnid, os.path.basename(img_file)))
 
-
-def _splitexts(root):
-    exts = []
-    ext = '.'
-    while ext:
-        root, ext = os.path.splitext(root)
-        exts.append(ext)
-    return root, ''.join(reversed(exts))
