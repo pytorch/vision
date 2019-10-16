@@ -1,7 +1,8 @@
+import torch
 import torchvision.transforms.functional_tensor as F_t
 import torchvision.transforms.functional as F
 import unittest
-import torch
+import random
 
 
 class Tester(unittest.TestCase):
