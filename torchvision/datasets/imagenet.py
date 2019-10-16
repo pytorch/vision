@@ -44,22 +44,22 @@ class ImageNet(ImageFolder):
         imgs (list): List of (image path, class_index) tuples
         targets (list): The class_index value for each image in the dataset
     """
+
     def __init__(self, root, split='train', download=None, **kwargs):
-        if download is None:
-            download = False
-        else:
-            msg = ("The use of the download flag is deprecated, since the public "
-                   "download links were removed by the dataset authors. To use this "
-                   "dataset, you need to download the archives externally. Afterwards "
-                   "you can use the parse_{devkit|train|val}_archive() functions to "
-                   "prepare them for usage.")
-            warnings.warn(msg)
+        if download is True:
+            msg = ("The dataset is no longer publicly accessible. You need to "
+                   "download the archives externally and place them in the root "
+                   "directory.")
+            raise RuntimeError(msg)
+        elif download is False:
+            msg = ("The use of the download flag is deprecated, since the dataset "
+                   "is no longer publicly accessible.")
+            warnings.warn(msg, RuntimeWarning)
 
         root = self.root = os.path.expanduser(root)
         self.split = verify_str_arg(split, "split", ("train", "val"))
 
-        if download:
-            self.download()
+        self.extract_archives()
         wnid_to_classes = load_meta_file(self.root)[0]
 
         super(ImageNet, self).__init__(self.split_folder, **kwargs)
@@ -72,12 +72,15 @@ class ImageNet(ImageFolder):
                              for idx, clss in enumerate(self.classes)
                              for cls in clss}
 
-    def download(self):
+    def extract_archives(self):
         def check_archive(archive_dict):
-            archive = os.path.join(self.root, archive_dict["file"])
+            file = archive_dict["file"]
             md5 = archive_dict["md5"]
+            archive = os.path.join(self.root, file)
             if not check_integrity(archive, md5):
-                self._raise_download_error(archive)
+                msg = ("The file {} is not present in the root directory. You need to "
+                       "download it externally and place it in {}.")
+                raise RuntimeError(msg.format(file, self.root))
 
             return archive
 
@@ -92,15 +95,6 @@ class ImageNet(ImageFolder):
                 parse_train_archive(archive)
             elif self.split == 'val':
                 parse_val_archive(archive)
-        else:
-            msg = ("A folder '{}' already exist in the root directory. If you want to "
-                   "re-extract the archive, delete the folder.")
-            warnings.warn(msg.format(self.split), RuntimeWarning)
-
-    def _raise_download_error(self, file):
-        msg = ("The file {} is not present in the root directory and cannot be "
-               "downloaded anymore.")
-        raise RuntimeError(msg.format(file))
 
     @property
     def meta_file(self):
