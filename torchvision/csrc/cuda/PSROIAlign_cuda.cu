@@ -336,7 +336,10 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cuda(
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
-  dim3 grid(std::min(at::cuda::ATenCeilDiv(output_size, 512L), 4096L));
+  dim3 grid(std::min(
+      at::cuda::ATenCeilDiv(
+          static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
+      static_cast<int64_t>(4096)));
   dim3 block(512);
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
@@ -395,7 +398,10 @@ at::Tensor PSROIAlign_backward_cuda(
 
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
-  dim3 grid(std::min(at::cuda::ATenCeilDiv(grad.numel(), 512L), 4096L));
+  dim3 grid(std::min(
+      at::cuda::ATenCeilDiv(
+          static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
+      static_cast<int64_t>(4096)));
   dim3 block(512);
 
   // handle possibly empty gradients
