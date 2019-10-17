@@ -147,7 +147,7 @@ if "%CUDA_VERSION%" == "cpu" (
 if "%TORCHVISION_BUILD_VERSION%" == "" set TORCHVISION_BUILD_VERSION=0.5.0.dev%NIGHTLIES_DATE_COMPACT%
 
 if "%~1" == "Wheels" (
-    if not "%CUDA_VERSION%" == "100" (
+    if not "%CUDA_VERSION%" == "101" (
         set TORCHVISION_BUILD_VERSION=%TORCHVISION_BUILD_VERSION%+%_DESIRED_CUDA%
     )
 )

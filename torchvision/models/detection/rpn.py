@@ -5,12 +5,26 @@ import torch
 from torch.nn import functional as F
 from torch import nn, Tensor
 
+import torchvision
 from torchvision.ops import boxes as box_ops
 
 from . import _utils as det_utils
 from .image_list import ImageList
 
 from torch.jit.annotations import List, Optional, Dict, Tuple
+
+
+@torch.jit.unused
+def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
+    from torch.onnx import operators
+    num_anchors = operators.shape_as_tensor(ob)[1].unsqueeze(0)
+    # TODO : remove cast to IntTensor/num_anchors.dtype when
+    #        ONNX Runtime version is updated with ReduceMin int64 support
+    pre_nms_top_n = torch.min(torch.cat(
+        (torch.tensor([orig_pre_nms_top_n], dtype=num_anchors.dtype),
+         num_anchors), 0).to(torch.int32)).to(num_anchors.dtype)
+
+    return num_anchors, pre_nms_top_n
 
 
 class AnchorGenerator(nn.Module):
@@ -102,6 +116,10 @@ class AnchorGenerator(nn.Module):
         ):
             grid_height, grid_width = size
             stride_height, stride_width = stride
+            if torchvision._is_tracing():
+                # required in ONNX export for mult operation with float32
+                stride_width = torch.tensor(stride_width, dtype=torch.float32)
+                stride_height = torch.tensor(stride_height, dtype=torch.float32)
             device = base_anchors.device
             shifts_x = torch.arange(
                 0, grid_width, dtype=torch.float32, device=device
@@ -109,7 +127,13 @@ class AnchorGenerator(nn.Module):
             shifts_y = torch.arange(
                 0, grid_height, dtype=torch.float32, device=device
             ) * stride_height
-            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
+            # TODO: remove tracing pass when exporting torch.meshgrid()
+            #       is suported in ONNX
+            if torchvision._is_tracing():
+                shift_y = shifts_y.view(-1, 1).expand(grid_height, grid_width)
+                shift_x = shifts_x.view(1, -1).expand(grid_height, grid_width)
+            else:
+                shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
             shift_x = shift_x.reshape(-1)
             shift_y = shift_y.reshape(-1)
             shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
@@ -332,8 +356,11 @@ class RegionProposalNetwork(torch.nn.Module):
         r = []
         offset = 0
         for ob in objectness.split(num_anchors_per_level, 1):
-            num_anchors = ob.shape[1]
-            pre_nms_top_n = min(self.pre_nms_top_n, num_anchors)
+            if torchvision._is_tracing():
+                num_anchors, pre_nms_top_n = _onnx_get_num_anchors_and_pre_nms_top_n(ob, self.pre_nms_top_n)
+            else:
+                num_anchors = ob.shape[1]
+                pre_nms_top_n = min(self.pre_nms_top_n, num_anchors)
             _, top_n_idx = ob.topk(pre_nms_top_n, dim=1)
             r.append(top_n_idx + offset)
             offset += num_anchors
