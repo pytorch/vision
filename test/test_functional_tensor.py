@@ -35,7 +35,7 @@ class Tester(unittest.TestCase):
 
         max_diff = (img_cropped_GT - img_cropped).abs().max()
 
-        assert max_diff < 5e-3, "Functional crop not working"
+        self.assertLess(max_diff, 5e-3, "functional_tensor crop not working")
 
 
 if __name__ == '__main__':

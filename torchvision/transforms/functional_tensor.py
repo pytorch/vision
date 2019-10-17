@@ -12,7 +12,7 @@ def vflip(img_tensor):
         Tensor:  Vertically flipped image Tensor.
     """
     if not F._is_tensor_image(img_tensor):
-        raise TypeError('Input image is not a tensor.')
+        raise TypeError('tensor is not a torch image.')
 
     return img_tensor.flip(-2)
 
@@ -28,7 +28,7 @@ def hflip(img_tensor):
     """
 
     if not F._is_tensor_image(img_tensor):
-        raise TypeError('Input image is not a tensor.')
+        raise TypeError('tensor is not a torch image.')
 
     return img_tensor.flip(-1)
 
@@ -45,6 +45,6 @@ def crop(img, top, left, height, width):
         Tensor: Cropped image.
     """
     if not F._is_tensor_image(img):
-        raise TypeError('Input image is not a tensor.')
+        raise TypeError('tensor is not a torch image.')
 
     return img[..., top:top + height, left:left + width]
