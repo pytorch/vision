@@ -115,7 +115,7 @@ class ClassificationCoverageTester(TestCase):
     # Recursively gather test methods from all classification testers
     def get_test_methods_for_class(self, klass):
         all_methods = inspect.getmembers(klass, predicate=inspect.isfunction)
-        test_methods = set([method[0] for method in all_methods if method[0].startswith('test_')])
+        test_methods = {method[0] for method in all_methods if method[0].startswith('test_')}
         for child in klass.__subclasses__():
             test_methods = test_methods.union(self.get_test_methods_for_class(child))
         return test_methods
