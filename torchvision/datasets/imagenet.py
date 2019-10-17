@@ -4,7 +4,7 @@ import shutil
 import tempfile
 import torch
 from .folder import ImageFolder
-from .utils import check_integrity, extract_archive, verify_str_arg
+from .utils import check_integrity, extract_archive, verify_str_arg, check_md5
 
 ARCHIVE_DICT = {
     'train': {
@@ -108,13 +108,24 @@ class ImageNet(ImageFolder):
         return "Split: {split}".format(**self.__dict__)
 
 
-def parse_devkit_archive(archive, meta_file=None):
+def _verify_archive(archive, md5, force):
+    if not check_integrity(archive):
+        raise RuntimeError("The file {} doesn't exist.".format(archive))
+    if not check_md5(archive, md5) and not force:
+        msg = ("The MD5 checksum of the file {} and the original archive do not match. "
+               "Use force=True to force an extraction")
+        raise RuntimeError(msg.format(archive))
+
+
+def parse_devkit_archive(archive, meta_file=None, force=False):
     """Parse the devkit archive of the ImageNet2012 classification dataset and save
     the meta information in a binary file.
 
     Args:
         archive (str): Path to the devkit archive
         meta_file (str, optional): Optional name for the meta information file
+        force (bool, optional). Force extraction if MD5 checksum does not match.
+            Defaults to False
     """
     import scipy.io as sio
 
@@ -140,6 +151,8 @@ def parse_devkit_archive(archive, meta_file=None):
     if meta_file is None:
         meta_file = os.path.join(os.path.dirname(archive), META_FILE_NAME)
 
+    _verify_archive(archive, ARCHIVE_DICT["devkit"]["md5"], force)
+
     tmpdir = tempfile.mkdtemp()
     extract_archive(archive, tmpdir)
 
@@ -163,24 +176,27 @@ def load_meta_file(root, filename=META_FILE_NAME):
         raise RuntimeError(msg.format(file))
 
 
-def parse_train_archive(archive, folder=None):
+def parse_train_archive(archive, folder=None, force=False):
     """Parse the train images archive of the ImageNet2012 classification dataset and
     prepare it for usage with the ImageNet dataset.
 
     Args:
         archive (str): Path to the train images archive
         folder (str, optional): Optional name for train images folder
+        force (bool, optional). Force extraction if MD5 checksum does not match.
+            Defaults to False
     """
     if folder is None:
         folder = os.path.join(os.path.dirname(archive), "train")
 
+    _verify_archive(archive, ARCHIVE_DICT["train"]["md5"], force)
     extract_archive(archive, folder)
 
     for archive in [os.path.join(folder, file) for file in os.listdir(folder)]:
         extract_archive(archive, os.path.splitext(archive)[0], remove_finished=True)
 
 
-def parse_val_archive(archive, wnids=None, folder=None):
+def parse_val_archive(archive, wnids=None, folder=None, force=False):
     """Parse the validation images archive of the ImageNet2012 classification dataset
     and prepare it for usage with the ImageNet dataset.
 
@@ -190,6 +206,8 @@ def parse_val_archive(archive, wnids=None, folder=None):
             is given, the IDs are tried to be loaded from the meta information binary
             file in the same directory as the archive.
         folder (str, optional): Optional name for validation images folder
+        force (bool, optional). Force extraction if MD5 checksum does not match.
+            Defaults to False
     """
     root = os.path.dirname(archive)
     if wnids is None:
@@ -197,6 +215,7 @@ def parse_val_archive(archive, wnids=None, folder=None):
     if folder is None:
         folder = os.path.join(root, "val")
 
+    _verify_archive(archive, ARCHIVE_DICT["val"]["md5"], force)
     extract_archive(archive, folder)
 
     img_files = sorted([os.path.join(folder, file) for file in os.listdir(folder)])
