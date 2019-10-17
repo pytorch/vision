@@ -150,8 +150,9 @@ class Tester(unittest.TestCase):
             randresizecrop = transforms.RandomResizedCrop(size, scale_range, aspect_ratio_range)
             i, j, h, w = randresizecrop.get_params(img, scale_range, aspect_ratio_range)
             aspect_ratio_obtained = w / h
-            self.assertTrue(min(aspect_ratio_range) - epsilon <= aspect_ratio_obtained <= max(aspect_ratio_range) + epsilon or
-                    aspect_ratio_obtained == 1.0)
+            self.assertTrue((min(aspect_ratio_range) - epsilon <= aspect_ratio_obtained and
+                             aspect_ratio_obtained <= max(aspect_ratio_range) + epsilon) or
+                            aspect_ratio_obtained == 1.0)
             self.assertIsInstance(i, int)
             self.assertIsInstance(j, int)
             self.assertIsInstance(h, int)
@@ -1128,8 +1129,8 @@ class Tester(unittest.TestCase):
             n_diff_pixels = np.sum(np_result != true_result) / 3
             # Accept 3 wrong pixels
             self.assertLess(n_diff_pixels, 3,
-                "a={}, t={}, s={}, sh={}\n".format(a, t, s, sh) +\
-                "n diff pixels={}\n".format(np.sum(np.array(result)[:, :, 0] != true_result[:, :, 0])))
+                            "a={}, t={}, s={}, sh={}\n".format(a, t, s, sh) +
+                            "n diff pixels={}\n".format(np.sum(np.array(result)[:, :, 0] != true_result[:, :, 0])))
 
         # Test rotation
         a = 45
