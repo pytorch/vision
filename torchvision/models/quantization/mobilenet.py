@@ -50,19 +50,19 @@ class QuantizableMobileNetV2(MobileNetV2):
             if type(m) == QuantizableInvertedResidual:
                 m.fuse_model()
 
-def mobilenet_v2(pretrained=False, progress=True, **kwargs):
+def mobilenet_v2(pretrained_float_model=False, progress=True, **kwargs):
     """
     Constructs a MobileNetV2 architecture from
     `"MobileNetV2: Inverted Residuals and Linear Bottlenecks"
      <https://arxiv.org/abs/1801.04381>`_.
 
     Args:
-        pretrained (bool): If True, returns a floating point model pre-trained on ImageNet
+        pretrained_float_model (bool): If True, returns a floating point model pre-trained on ImageNet, ready for quantization
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    model = QuantizableMobileNetV2(InvertedResidual=QuantizableInvertedResidual, **kwargs)
+    model = QuantizableMobileNetV2(block=QuantizableInvertedResidual, **kwargs)
     _replace_relu(model)
-    if pretrained:
+    if pretrained_float_model:
         state_dict = load_state_dict_from_url(model_urls['mobilenet_v2'],
                                               progress=progress)
         model.load_state_dict(state_dict)

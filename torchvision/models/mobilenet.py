@@ -75,7 +75,7 @@ class MobileNetV2(nn.Module):
                  width_mult=1.0,
                  inverted_residual_setting=None,
                  round_nearest=8,
-                 InvertedResidual=InvertedResidual):
+                 block=InvertedResidual):
         """
         MobileNet V2 main class
 
@@ -85,11 +85,10 @@ class MobileNetV2(nn.Module):
             inverted_residual_setting: Network structure
             round_nearest (int): Round the number of channels in each layer to be a multiple of this number
             Set to 1 to turn off rounding
-            InvertedResidual: Module specifying inverted residual building block for mobilenet
+            Block: Module specifying inverted residual building block for mobilenet
 
         """
         super(MobileNetV2, self).__init__()
-        block = InvertedResidual
         input_channel = 32
         last_channel = 1280
 

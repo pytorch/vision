@@ -11,7 +11,6 @@ class Tester(unittest.TestCase):
         for eval in [True, False]:
             for arch in model_arch_list:
                 model = torchvision.models.quantization.__dict__[arch](pretrained=False)
-                print("Creating model", arch)
                 if eval:
                     model.eval()
                     model.qconfig = torch.quantization.default_qconfig
@@ -34,7 +33,6 @@ class Tester(unittest.TestCase):
                           ]
         for arch in model_arch_list:
             model = torchvision.models.quantization.__dict__[arch](pretrained=False)
-            print("Creating model", arch)
             model.eval()
             model.qconfig = torch.quantization.default_qconfig
 
