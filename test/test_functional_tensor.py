@@ -23,19 +23,18 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(img_tensor, hflipped_img_again))
 
     def test_crop(self):
-        img_tensor = torch.FloatTensor(3, 16, 16).uniform_(0, 1)
+        img_tensor = torch.randint(0, 255, (3, 16, 16), dtype=torch.uint8)
         top = random.randint(0, 15)
         left = random.randint(0, 15)
-        height = random.randint(1, 16 - top)
-        width = random.randint(1, 16 - left)
+        height = random.randint(1, 16-top)
+        width = random.randint(1, 16-left)
         img_cropped = F_t.crop(img_tensor, top, left, height, width)
         img_PIL = transforms.ToPILImage()(img_tensor)
         img_PIL_cropped = F.crop(img_PIL, top, left, height, width)
         img_cropped_GT = transforms.ToTensor()(img_PIL_cropped)
 
-        max_diff = (img_cropped_GT - img_cropped).abs().max()
-
-        self.assertLess(max_diff, 5e-3, "functional_tensor crop not working")
+        self.assertEqual(torch.equal(img_cropped, (img_cropped_GT*255).to(torch.uint8)),
+                         "functional_tensor crop not working")
 
 
 if __name__ == '__main__':
