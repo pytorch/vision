@@ -25,8 +25,8 @@ class TestVideoTransforms(unittest.TestCase):
             transforms.ToTensorVideo(),
             transforms.RandomCropVideo((oheight, owidth)),
         ])(clip)
-        assert result.size(2) == oheight
-        assert result.size(3) == owidth
+        self.assertEqual(result.size(2), oheight)
+        self.assertEqual(result.size(3), owidth)
 
         transforms.RandomCropVideo((oheight, owidth)).__repr__()
 
@@ -41,8 +41,8 @@ class TestVideoTransforms(unittest.TestCase):
             transforms.ToTensorVideo(),
             transforms.RandomResizedCropVideo((oheight, owidth)),
         ])(clip)
-        assert result.size(2) == oheight
-        assert result.size(3) == owidth
+        self.assertEqual(result.size(2), oheight)
+        self.assertEqual(result.size(3), owidth)
 
         transforms.RandomResizedCropVideo((oheight, owidth)).__repr__()
 
@@ -110,13 +110,13 @@ class TestVideoTransforms(unittest.TestCase):
             mean = [clip[c].mean().item() for c in range(channels)]
             std = [clip[c].std().item() for c in range(channels)]
             normalized = transforms.NormalizeVideo(mean, std)(clip)
-            assert samples_from_standard_normal(normalized)
+            self.assertTrue(samples_from_standard_normal(normalized))
         random.setstate(random_state)
 
         # Checking the optional in-place behaviour
         tensor = torch.rand((3, 128, 16, 16))
         tensor_inplace = transforms.NormalizeVideo((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)(tensor)
-        assert torch.equal(tensor, tensor_inplace)
+        self.assertTrue(torch.equal(tensor, tensor_inplace))
 
         transforms.NormalizeVideo((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True).__repr__()
 
@@ -152,7 +152,7 @@ class TestVideoTransforms(unittest.TestCase):
 
         p_value = stats.binom_test(num_horizontal, num_samples, p=0.5)
         random.setstate(random_state)
-        assert p_value > 0.0001
+        self.assertGreater(p_value, 0.0001)
 
         num_samples = 250
         num_horizontal = 0
@@ -163,7 +163,7 @@ class TestVideoTransforms(unittest.TestCase):
 
         p_value = stats.binom_test(num_horizontal, num_samples, p=0.7)
         random.setstate(random_state)
-        assert p_value > 0.0001
+        self.assertGreater(p_value, 0.0001)
 
         transforms.RandomHorizontalFlipVideo().__repr__()
 
