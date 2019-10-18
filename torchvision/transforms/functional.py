@@ -2,8 +2,7 @@ from __future__ import division
 import torch
 import sys
 import math
-from PIL import Image, ImageOps, ImageEnhance
-import PIL
+from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
 try:
     import accimage
 except ImportError:
@@ -801,7 +800,7 @@ def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
     output_size = img.size
     center = (img.size[0] * 0.5 + 0.5, img.size[1] * 0.5 + 0.5)
     matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
-    kwargs = {"fillcolor": fillcolor} if PIL.__version__[0] >= '5' else {}
+    kwargs = {"fillcolor": fillcolor} if PILLOW_VERSION[0] >= '5' else {}
     return img.transform(output_size, Image.AFFINE, matrix, resample, **kwargs)
 
 
