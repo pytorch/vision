@@ -56,7 +56,7 @@ class ModelTester(TestCase):
         # more enforcing in nature
 
         for eval in [True, False]:
-            model = torchvision.models.quantization.__dict__[name](pretrained=False)
+            model = torchvision.models.quantization.__dict__[name](pretrained_float_model=False)
             if eval:
                 model.eval()
                 model.qconfig = torch.quantization.get_default_qconfig('fbgemm')
