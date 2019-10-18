@@ -296,7 +296,6 @@ workflows:
 {%- if True %}
     jobs:
       - circleci_consistency
-      {#
       {{ workflows() }}
       - binary_linux_conda_cuda:
           name: torchvision_linux_py3.7_cu100
@@ -306,7 +305,6 @@ workflows:
           name: torchvision_win_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
-      #}
       - binary_win_conda_cuda:
           name: torchvision_win_py3.6_cu101
           python_version: "3.6"
@@ -316,4 +314,4 @@ workflows:
 {%- endif %}
     jobs:
       - circleci_consistency
-      {#{{ workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}#}
+      {{ workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
