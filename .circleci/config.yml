@@ -297,7 +297,7 @@ workflows:
       - circleci_consistency
 
       - binary_win_conda_cuda:
-          name: torchvision_win_py3.6_cpu
+          name: torchvision_win_py3.6_cu100
           python_version: "3.6"
           cu_version: "cu100"
 
