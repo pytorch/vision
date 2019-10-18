@@ -24,7 +24,7 @@ def workflows(prefix='', filter_branch=None, upload=False, indentation=6):
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos"]:
             for python_version in ["2.7", "3.5", "3.6", "3.7"]:
-                for cu_version in (["cpu", "cu92", "cu100"] if os_type == "linux" else ["cpu"]):
+                for cu_version in (["cpu", "cu92", "cu100", "cu101"] if os_type == "linux" else ["cpu"]):
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version,
@@ -63,6 +63,8 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
 
     if cu_version == "cu92":
         d["wheel_docker_image"] = "soumith/manylinux-cuda92"
+    elif cu_version == "cu100":
+        d["wheel_docker_image"] = "soumith/manylinux-cuda100"
 
     if filter_branch is not None:
         d["filters"] = {"branches": {"only": filter_branch}}

@@ -8,7 +8,7 @@ if [ "$#" -ne 1 ]; then
 fi
 export CUVER="$1" # cu92 cu100 cpu
 
-if [[ "$CUVER" == "cu100" ]]; then
+if [[ "$CUVER" == "cu101" ]]; then
   cu_suffix=""
 else
   cu_suffix="+$CUVER"
