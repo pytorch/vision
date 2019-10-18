@@ -53,8 +53,8 @@ def _create_video_frames(num_frames, height, width):
 @contextlib.contextmanager
 def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None, options=None):
     if lossless:
-        assert video_codec is None, "video_codec can't be specified together with lossless"
-        assert options is None, "options can't be specified together with lossless"
+        self.assertIsInstance(video_codec, type(None), "video_codec can't be specified together with lossless")
+        self.assertIsInstance(options, type(None), "options can't be specified together with lossless")
         video_codec = 'libx264rgb'
         options = {'crf': '0'}
 
