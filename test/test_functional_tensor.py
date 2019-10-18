@@ -33,7 +33,7 @@ class Tester(unittest.TestCase):
         img_PIL_cropped = F.crop(img_PIL, top, left, height, width)
         img_cropped_GT = transforms.ToTensor()(img_PIL_cropped)
 
-        self.assertEqual(torch.equal(img_cropped, (img_cropped_GT*255).to(torch.uint8)),
+        self.assertTrue(torch.equal(img_cropped, (img_cropped_GT*255).to(torch.uint8)),
                          "functional_tensor crop not working")
 
 
