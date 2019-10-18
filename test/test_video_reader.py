@@ -268,7 +268,7 @@ def _get_video_tensor(video_dir, video_file):
     """open a video file, and represent the video data by a PT tensor"""
     full_path = os.path.join(video_dir, video_file)
 
-    assert os.path.exists(full_path), "File not found: %s" % full_path
+    self.assertTrue(os.path.exists(full_path), "File not found: %s" % full_path)
 
     with open(full_path, "rb") as fp:
         video_tensor = torch.from_numpy(np.frombuffer(fp.read(), dtype=np.uint8))
