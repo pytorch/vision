@@ -264,21 +264,21 @@ def _pts_convert(pts, timebase_from, timebase_to, round_func=math.floor):
     return int(round_func(new_pts))
 
 
-def _get_video_tensor(video_dir, video_file):
-    """open a video file, and represent the video data by a PT tensor"""
-    full_path = os.path.join(video_dir, video_file)
-
-    self.assertTrue(os.path.exists(full_path), "File not found: %s" % full_path)
-
-    with open(full_path, "rb") as fp:
-        video_tensor = torch.from_numpy(np.frombuffer(fp.read(), dtype=np.uint8))
-
-    return full_path, video_tensor
-
-
 @unittest.skipIf(av is None, "PyAV unavailable")
 @unittest.skipIf(_HAS_VIDEO_OPT is False, "Didn't compile with ffmpeg")
 class TestVideoReader(unittest.TestCase):
+
+    def _get_video_tensor(self, video_dir, video_file):
+        """open a video file, and represent the video data by a PT tensor"""
+        full_path = os.path.join(video_dir, video_file)
+
+        self.assertTrue(os.path.exists(full_path), "File not found: %s" % full_path)
+
+        with open(full_path, "rb") as fp:
+            video_tensor = torch.from_numpy(np.frombuffer(fp.read(), dtype=np.uint8))
+
+        return full_path, video_tensor
+
     def check_separate_decoding_result(self, tv_result, config):
         """check the decoding results from TorchVision decoder
         """
@@ -732,7 +732,7 @@ class TestVideoReader(unittest.TestCase):
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
-            full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
+            full_path, video_tensor = self._get_video_tensor(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using cpp decoder
             tv_result_memory = torch.ops.video_reader.read_video_from_memory(
@@ -796,7 +796,7 @@ class TestVideoReader(unittest.TestCase):
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
-            full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
+            full_path, video_tensor = self._get_video_tensor(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using cpp decoder
             tv_result = torch.ops.video_reader.read_video_from_memory(
@@ -841,7 +841,7 @@ class TestVideoReader(unittest.TestCase):
         audio_timebase_num, audio_timebase_den = 0, 1
 
         for test_video, config in test_videos.items():
-            full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
+            full_path, video_tensor = self._get_video_tensor(VIDEO_DIR, test_video)
 
             # pass 1: decode all frames using cpp decoder
             tv_result = torch.ops.video_reader.read_video_from_memory(
@@ -899,7 +899,7 @@ class TestVideoReader(unittest.TestCase):
         frames within that interval
         """
         for test_video, config in test_videos.items():
-            full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
+            full_path, video_tensor = self._get_video_tensor(VIDEO_DIR, test_video)
             # video related
             width, height, min_dimension = 0, 0, 0
             video_start_pts, video_end_pts = 0, -1
@@ -1040,7 +1040,7 @@ class TestVideoReader(unittest.TestCase):
         Test the case when decoder probes a video in memory
         """
         for test_video, config in test_videos.items():
-            full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
+            full_path, video_tensor = self._get_video_tensor(VIDEO_DIR, test_video)
             probe_result = torch.ops.video_reader.probe_video_from_memory(video_tensor)
             self.check_probe_result(probe_result, config)
 
