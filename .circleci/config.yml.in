@@ -9,6 +9,13 @@ version: 2.1
 orbs:
   win: circleci/windows@2.0.0
 
+executors:
+  windows-gpu-prototype:
+    machine:
+      resource_class: windows.gpu.small.prototype
+      image: windows-server-2019-nvidia:201908-28
+      shell: bash.exe
+
 commands:
   checkout_merge:
     description: "checkout merge branch"
@@ -184,6 +191,20 @@ jobs:
             bash packaging/build_conda.sh
           shell: powershell.exe
 
+  binary_win_conda_cuda:
+    <<: *binary_common
+    executor: windows-gpu-prototype
+    steps:
+      - checkout_merge
+      - run:
+          command: |
+            choco install miniconda3
+            (& "C:\tools\miniconda3\Scripts\conda.exe" "shell.powershell" "hook") | Out-String | Invoke-Expression
+            conda activate base
+            conda install -yq conda-build "conda-package-handling!=1.5.0"
+            bash packaging/build_conda.sh
+          shell: powershell.exe
+
   binary_macos_wheel:
     <<: *binary_common
     macos:
@@ -284,6 +305,10 @@ workflows:
           name: torchvision_win_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+      - binary_win_conda_cuda:
+          name: torchvision_win_py3.6_cu101
+          python_version: "3.6"
+          cu_version: "cu101"
 
   nightly:
 {%- endif %}

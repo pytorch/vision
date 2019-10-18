@@ -3,14 +3,14 @@
 set TORCHVISION_BUILD_VERSION=%PKG_VERSION%
 set TORCHVISION_BUILD_NUMBER=%PKG_BUILDNUM%
 
-if not "%CUDA_VERSION%" == "None" (
-    set build_with_cuda=1
-    set desired_cuda=%CUDA_VERSION:~0,-1%.%CUDA_VERSION:~-1,1%
-) else (
-    set build_with_cuda=
-)
+set build_with_cuda=
 
-if "%build_with_cuda%" == "" goto cuda_flags_end
+if "%CUDA_VERSION%" == "None" goto cuda_flags_end
+if "%CUDA_VERSION%" == "cpu" goto cuda_flags_end
+if "%CUDA_VERSION%" == "" goto cuda_flags_end
+
+set build_with_cuda=1
+set desired_cuda=%CUDA_VERSION:~0,-1%.%CUDA_VERSION:~-1,1%
 
 set CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v%desired_cuda%
 set CUDA_BIN_PATH=%CUDA_PATH%\bin
