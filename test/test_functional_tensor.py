@@ -26,15 +26,15 @@ class Tester(unittest.TestCase):
         img_tensor = torch.randint(0, 255, (3, 16, 16), dtype=torch.uint8)
         top = random.randint(0, 15)
         left = random.randint(0, 15)
-        height = random.randint(1, 16-top)
-        width = random.randint(1, 16-left)
+        height = random.randint(1, 16 - top)
+        width = random.randint(1, 16 - left)
         img_cropped = F_t.crop(img_tensor, top, left, height, width)
         img_PIL = transforms.ToPILImage()(img_tensor)
         img_PIL_cropped = F.crop(img_PIL, top, left, height, width)
         img_cropped_GT = transforms.ToTensor()(img_PIL_cropped)
 
-        self.assertTrue(torch.equal(img_cropped, (img_cropped_GT*255).to(torch.uint8)),
-                         "functional_tensor crop not working")
+        self.assertTrue(torch.equal(img_cropped, (img_cropped_GT * 255).to(torch.uint8)),
+                        "functional_tensor crop not working")
 
 
 if __name__ == '__main__':
