@@ -194,6 +194,7 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
+    # Allow for accessing forward method in a inherited class
     def _forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
@@ -211,8 +212,7 @@ class ResNet(nn.Module):
 
         return x
 
-    def forward(self,x):
-        return self._forward(x)
+    forward = _forward
 
 
 def _resnet(arch, block, layers, pretrained, progress, **kwargs):

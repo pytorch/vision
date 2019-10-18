@@ -144,15 +144,14 @@ class MobileNetV2(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.zeros_(m.bias)
 
+    # Allow for accessing forward method in a inherited class
     def _forward(self, x):
         x = self.features(x)
         x = x.mean([2, 3])
         x = self.classifier(x)
         return x
 
-    def forward(self, x):
-        return self._forward(x)
-
+    forward = _forward
 
 def mobilenet_v2(pretrained=False, progress=True, **kwargs):
     """
