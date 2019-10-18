@@ -44,7 +44,7 @@ def main(args):
     data_loader, data_loader_test, train_sampler = load_data(traindir, valdir, args.batch_size, args.eval_batch_size, args.workers, args.cache_dataset, args.distributed)
 
     print("Creating model", args.model)
-    model = torchvision.models.quantization.__dict__[args.model](pretrained=False)
+    model = torchvision.models.quantization.__dict__[args.model](pretrained_float_model=False)
     if args.float_model:
         print("Loading model state dict from", args.float_model)
         model.load_state_dict(torch.load(args.float_model))
