@@ -35,7 +35,8 @@ scriptable_quantizable_models = ['mobilenet_v2',
                       'resnext101_32x8d',
 ]
 
-
+@unittest.skipUnless('fbgemm' in torch.backends.quantized.supported_engines,
+                     "This Pytorch Build has not been built with fbgemm")
 
 class ModelTester(TestCase):
     def check_script(self, model, name):

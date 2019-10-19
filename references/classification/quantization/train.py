@@ -30,10 +30,7 @@ def main(args):
         utils.mkdir(args.output_dir)
 
     utils.init_distributed_mode(args)
-    print(args)
-
     device = torch.device(args.device)
-
     torch.backends.cudnn.benchmark = True
 
     # Data loading code
@@ -44,10 +41,7 @@ def main(args):
     data_loader, data_loader_test, train_sampler = load_data(traindir, valdir, args.batch_size, args.eval_batch_size, args.workers, args.cache_dataset, args.distributed)
 
     print("Creating model", args.model)
-    model = torchvision.models.quantization.__dict__[args.model](pretrained_float_model=False)
-    if args.float_model:
-        print("Loading model state dict from", args.float_model)
-        model.load_state_dict(torch.load(args.float_model))
+    model = torchvision.models.quantization.__dict__[args.model](pretrained_float_model=True)
     if args.test_only is False:
         model.fuse_model()
         model.qconfig = torch.quantization.get_default_qat_qconfig(args.backend)
