@@ -51,10 +51,12 @@ def _create_video_frames(num_frames, height, width):
 
 
 @contextlib.contextmanager
-def temp_video(tester, num_frames, height, width, fps, lossless=False, video_codec=None, options=None):
+def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None, options=None):
     if lossless:
-        tester.assertIsInstance(video_codec, type(None), "video_codec can't be specified together with lossless")
-        tester.assertIsInstance(options, type(None), "options can't be specified together with lossless")
+        if video_codec is not None:
+            raise AssertionError("video_codec can't be specified together with lossless")
+        if options is not None:
+            raise AssertionError("options can't be specified together with lossless")
         video_codec = 'libx264rgb'
         options = {'crf': '0'}
 
@@ -82,21 +84,21 @@ class Tester(unittest.TestCase):
     TOLERANCE = 6
 
     def test_write_read_video(self):
-        with temp_video(self, 10, 300, 300, 5, lossless=True) as (f_name, data):
+        with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
             lv, _, info = _read_video(f_name)
             self.assertTrue(data.equal(lv))
             self.assertEqual(info["video_fps"], 5)
 
     @unittest.skipIf(not io._HAS_VIDEO_OPT, "video_reader backend is not chosen")
     def test_probe_video_from_file(self):
-        with temp_video(self, 10, 300, 300, 5) as (f_name, data):
+        with temp_video(10, 300, 300, 5) as (f_name, data):
             video_info = io._probe_video_from_file(f_name)
             self.assertAlmostEqual(video_info["video_duration"], 2, delta=0.1)
             self.assertAlmostEqual(video_info["video_fps"], 5, delta=0.1)
 
     @unittest.skipIf(not io._HAS_VIDEO_OPT, "video_reader backend is not chosen")
     def test_probe_video_from_memory(self):
-        with temp_video(self, 10, 300, 300, 5) as (f_name, data):
+        with temp_video(10, 300, 300, 5) as (f_name, data):
             with open(f_name, "rb") as fp:
                 filebuffer = fp.read()
             video_info = io._probe_video_from_memory(filebuffer)
@@ -104,7 +106,7 @@ class Tester(unittest.TestCase):
             self.assertAlmostEqual(video_info["video_fps"], 5, delta=0.1)
 
     def test_read_timestamps(self):
-        with temp_video(self, 10, 300, 300, 5) as (f_name, data):
+        with temp_video(10, 300, 300, 5) as (f_name, data):
             if _video_backend == "pyav":
                 pts, _ = io.read_video_timestamps(f_name)
             else:
@@ -121,7 +123,7 @@ class Tester(unittest.TestCase):
             self.assertEqual(pts, expected_pts)
 
     def test_read_partial_video(self):
-        with temp_video(self, 10, 300, 300, 5, lossless=True) as (f_name, data):
+        with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
             if _video_backend == "pyav":
                 pts, _ = io.read_video_timestamps(f_name)
             else:
@@ -143,7 +145,7 @@ class Tester(unittest.TestCase):
     def test_read_partial_video_bframes(self):
         # do not use lossless encoding, to test the presence of B-frames
         options = {'bframes': '16', 'keyint': '10', 'min-keyint': '4'}
-        with temp_video(self, 100, 300, 300, 5, options=options) as (f_name, data):
+        with temp_video(100, 300, 300, 5, options=options) as (f_name, data):
             if _video_backend == "pyav":
                 pts, _ = io.read_video_timestamps(f_name)
             else:
@@ -180,7 +182,7 @@ class Tester(unittest.TestCase):
                 raise unittest.SkipTest(msg)
 
     def test_read_timestamps_from_packet(self):
-        with temp_video(self, 10, 300, 300, 5, video_codec='mpeg4') as (f_name, data):
+        with temp_video(10, 300, 300, 5, video_codec='mpeg4') as (f_name, data):
             if _video_backend == "pyav":
                 pts, _ = io.read_video_timestamps(f_name)
             else:
@@ -199,14 +201,14 @@ class Tester(unittest.TestCase):
             self.assertEqual(pts, expected_pts)
 
     def test_read_video_pts_unit_sec(self):
-        with temp_video(self, 10, 300, 300, 5, lossless=True) as (f_name, data):
+        with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
             lv, _, info = io.read_video(f_name, pts_unit='sec')
 
             self.assertTrue(data.equal(lv))
             self.assertEqual(info["video_fps"], 5)
 
     def test_read_timestamps_pts_unit_sec(self):
-        with temp_video(self, 10, 300, 300, 5) as (f_name, data):
+        with temp_video(10, 300, 300, 5) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name, pts_unit='sec')
 
             container = av.open(f_name)
@@ -218,7 +220,7 @@ class Tester(unittest.TestCase):
             self.assertEqual(pts, expected_pts)
 
     def test_read_partial_video_pts_unit_sec(self):
-        with temp_video(self, 10, 300, 300, 5, lossless=True) as (f_name, data):
+        with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name, pts_unit='sec')
 
             for start in range(5):
@@ -254,7 +256,7 @@ class Tester(unittest.TestCase):
             self.assertIs(video_fps, None)
 
     def test_read_video_partially_corrupted_file(self):
-        with temp_video(self, 5, 4, 4, 5, lossless=True) as (f_name, data):
+        with temp_video(5, 4, 4, 5, lossless=True) as (f_name, data):
             with open(f_name, 'r+b') as f:
                 size = os.path.getsize(f_name)
                 bytes_to_overwrite = size // 10
