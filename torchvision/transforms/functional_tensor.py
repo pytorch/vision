@@ -49,68 +49,19 @@ def crop(img, top, left, height, width):
 
     return img[..., top:top + height, left:left + width]
 
+def to_grayscale(img, num_output_channels = 3):
+    """Convert the given RGB Image Tensor to Grayscale.
 
-def adjust_brightness(img, brightness_factor):
-    """Adjust brightness of an RGB image.
-
-    Args:
-        img (Tensor): Image to be adjusted.
-        brightness_factor (float):  How much to adjust the brightness. Can be
-            any non negative number. 0 gives a black image, 1 gives the
-            original image while 2 increases the brightness by a factor of 2.
-
+    Args
+        img (Tensor): Image to be converted to Grayscale in the form [C, H, W].
+        num_output_channels (int): denotes the number of channels to return after conversion
     Returns:
-        Tensor: Brightness adjusted image.
+    Tensor: Grayscale image.
     """
     if not F._is_tensor_image(img):
         raise TypeError('tensor is not a torch image.')
 
-    return _blend(img, 0, brightness_factor)
+    if img.size()[0] != 3:
+        raise TypeError('Input Image does not contain 3 Channels')
 
-
-def adjust_contrast(img, contrast_factor):
-    """Adjust contrast of an RGB image.
-
-    Args:
-        img (Tensor): Image to be adjusted.
-        contrast_factor (float): How much to adjust the contrast. Can be any
-            non negative number. 0 gives a solid gray image, 1 gives the
-            original image while 2 increases the contrast by a factor of 2.
-
-    Returns:
-        Tensor: Contrast adjusted image.
-    """
-    if not F._is_tensor_image(img):
-        raise TypeError('tensor is not a torch image.')
-
-    mean = torch.mean(_rgb_to_grayscale(img).to(torch.float))
-
-    return _blend(img, mean, contrast_factor)
-
-
-def adjust_saturation(img, saturation_factor):
-    """Adjust color saturation of an RGB image.
-
-    Args:
-        img (Tensor): Image to be adjusted.
-        saturation_factor (float):  How much to adjust the saturation. 0 will
-            give a black and white image, 1 will give the original image while
-            2 will enhance the saturation by a factor of 2.
-
-    Returns:
-        Tensor: Saturation adjusted image.
-    """
-    if not F._is_tensor_image(img):
-        raise TypeError('tensor is not a torch image.')
-
-    return _blend(img, _rgb_to_grayscale(img), saturation_factor)
-
-
-def _blend(img1, img2, ratio):
-    bound = 1 if img1.dtype.is_floating_point else 255
-    return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
-
-
-def _rgb_to_grayscale(img):
-    # ITU-R 601-2 luma transform, as used in PIL.
     return (0.2989 * img[0] + 0.5870 * img[1] + 0.1140 * img[2]).to(img.dtype)
