@@ -165,7 +165,9 @@ class Normalize(object):
         self.inplace = inplace
 
     def __call__(self, tensor):
-        """Apply the transform to the given tensor and return the transformed tensor."""
+        """Apply the transform to the given tensor (C x H x W) and return the
+        transformed tensor (C x H x W).
+        """
         return F.normalize(tensor, self.mean, self.std, self.inplace)
 
     def __repr__(self):
@@ -784,6 +786,7 @@ class TenCrop(object):
 class LinearTransformation(object):
     """Transform a tensor image with a square transformation matrix and a mean_vector computed
     offline.
+
     Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
     subtract mean_vector from it which is then followed by computing the dot
     product with the transformation matrix and then reshaping the tensor to its
@@ -813,7 +816,9 @@ class LinearTransformation(object):
         self.mean_vector = mean_vector
 
     def __call__(self, tensor):
-        """Apply the transform to the given tensor and return the transformed tensor."""
+        """Apply the transform to the given tensor (C x H x W) and return the
+        transformed tensor (C x H x W).
+        """
         if tensor.size(0) * tensor.size(1) * tensor.size(2) != self.transformation_matrix.size(0):
             raise ValueError("tensor and transformation matrix have incompatible shape." +
                              "[{} x {} x {}] != ".format(*tensor.size()) +
@@ -1276,7 +1281,9 @@ class RandomErasing(object):
         return 0, 0, img_h, img_w, img
 
     def __call__(self, img):
-        """Apply the transform to the given tensor and return the transformed tensor."""
+        """Apply the transform to the given tensor (C x H x W) and return the
+        transformed tensor (C x H x W).
+        """
         if random.uniform(0, 1) < self.p:
             x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value)
             return F.erase(img, x, y, h, w, v, self.inplace)
