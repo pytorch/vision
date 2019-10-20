@@ -171,9 +171,9 @@ def parse_args():
                         default='cuda',
                         help='device')
 
-    parser.add_argument('-b', '--batch-size', default=2, type=int,
+    parser.add_argument('-b', '--batch-size', default=32, type=int,
                         help='batch size for calibration/training')
-    parser.add_argument('--eval-batch-size', default=2, type=int,
+    parser.add_argument('--eval-batch-size', default=128, type=int,
                         help='batch size for evaluation')
     parser.add_argument('--epochs', default=90, type=int, metavar='N',
                         help='number of total epochs to run')
@@ -184,14 +184,14 @@ def parse_args():
                         type=int, metavar='N',
                         help='number of total epochs to update batch norm stats')
     parser.add_argument('--num_calibration_batches',
-                        default=10, type=int, metavar='N',
+                        default=32, type=int, metavar='N',
                         help='number of batches of training set for \
                               observer calibration ')
 
     parser.add_argument('-j', '--workers', default=16, type=int, metavar='N',
                         help='number of data loading workers (default: 16)')
     parser.add_argument('--lr',
-                        default=0.1, type=float,
+                        default=0.0001, type=float,
                         help='initial learning rate')
     parser.add_argument('--momentum',
                         default=0.9, type=float, metavar='M',
@@ -228,8 +228,6 @@ def parse_args():
         help="Only test the model",
         action="store_true",
     )
-    parser.add_argument('--float_model', metavar='float_path',
-                        help='path to floating point model for QAT')
 
     # Mixed precision training parameters
     parser.add_argument('--apex', action='store_true',
