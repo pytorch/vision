@@ -36,7 +36,7 @@ class QuantizableBasicBlock(BasicBlock):
 
     def fuse_model(self):
         torch.quantization.fuse_modules(self, [['conv1', 'bn1', 'relu'],
-                                            ['conv2', 'bn2']], inplace=True)
+                                               ['conv2', 'bn2']], inplace=True)
         if self.downsample:
             torch.quantization.fuse_modules(self.downsample, ['0', '1'], inplace=True)
 
@@ -68,8 +68,8 @@ class QuantizableBottleneck(Bottleneck):
 
     def fuse_model(self):
         fuse_modules(self, [['conv1', 'bn1', 'relu1'],
-                        ['conv2', 'bn2', 'relu2'],
-                        ['conv3', 'bn3']], inplace=True)
+                            ['conv2', 'bn2', 'relu2'],
+                            ['conv3', 'bn3']], inplace=True)
         if self.downsample:
             torch.quantization.fuse_modules(self.downsample, ['0', '1'], inplace=True)
 

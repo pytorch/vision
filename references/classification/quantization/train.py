@@ -38,7 +38,13 @@ def main(args):
     traindir = os.path.join(args.data_path, 'train')
     valdir = os.path.join(args.data_path, 'val')
 
-    data_loader, data_loader_test, train_sampler = load_data(traindir, valdir, args.batch_size, args.eval_batch_size, args.workers, args.cache_dataset, args.distributed)
+    data_loader, data_loader_test, train_sampler = load_data(traindir,
+                                                             valdir,
+                                                             args.batch_size,
+                                                             args.eval_batch_size,
+                                                             args.workers,
+                                                             args.cache_dataset,
+                                                             args.distributed)
 
     print("Creating model", args.model)
     model = torchvision.models.quantization.__dict__[args.model](pretrained_float_model=True)
