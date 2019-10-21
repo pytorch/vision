@@ -1,27 +1,19 @@
 import warnings
+from contextlib import contextmanager
 import os
 import shutil
 import tempfile
 import torch
 from .folder import ImageFolder
-from .utils import check_integrity, extract_archive, verify_str_arg, check_md5
+from .utils import check_integrity, extract_archive, verify_str_arg
 
-ARCHIVE_DICT = {
-    'train': {
-        'file': 'ILSVRC2012_img_train.tar',
-        'md5': '1d675b47d978889d74fa0da5fadfb00e',
-    },
-    'val': {
-        'file': 'ILSVRC2012_img_val.tar',
-        'md5': '29b22e2961454d5413ddabcf34fc5622',
-    },
-    'devkit': {
-        'file': 'ILSVRC2012_devkit_t12.tar.gz',
-        'md5': 'fa75699e90414af021442c21a62c3abf',
-    }
+ARCHIVE_META = {
+    'train': ('ILSVRC2012_img_train.tar', '1d675b47d978889d74fa0da5fadfb00e'),
+    'val': ('ILSVRC2012_img_val.tar', '29b22e2961454d5413ddabcf34fc5622'),
+    'devkit': ('ILSVRC2012_devkit_t12.tar.gz', 'fa75699e90414af021442c21a62c3abf')
 }
 
-META_FILE_NAME = "meta.bin"
+META_FILE = "meta.bin"
 
 
 class ImageNet(ImageFolder):
@@ -59,7 +51,7 @@ class ImageNet(ImageFolder):
         root = self.root = os.path.expanduser(root)
         self.split = verify_str_arg(split, "split", ("train", "val"))
 
-        self.extract_archives()
+        self.parse_archives()
         wnid_to_classes = load_meta_file(self.root)[0]
 
         super(ImageNet, self).__init__(self.split_folder, **kwargs)
@@ -72,33 +64,15 @@ class ImageNet(ImageFolder):
                              for idx, clss in enumerate(self.classes)
                              for cls in clss}
 
-    def extract_archives(self):
-        if not check_integrity(self.meta_file):
-            archive_dict = ARCHIVE_DICT['devkit']
-            archive = os.path.join(self.root, archive_dict["file"])
-            self._verify_archive(archive, archive_dict["md5"])
-
-            parse_devkit_archive(archive)
+    def parse_archives(self):
+        if not check_integrity(os.path.join(self.root, META_FILE)):
+            parse_devkit_archive(self.root)
 
         if not os.path.isdir(self.split_folder):
-            archive_dict = ARCHIVE_DICT[self.split]
-            archive = os.path.join(self.root, archive_dict["file"])
-            self._verify_archive(archive, archive_dict["md5"])
-
             if self.split == 'train':
-                parse_train_archive(archive)
+                parse_train_archive(self.root)
             elif self.split == 'val':
-                parse_val_archive(archive)
-
-    def _verify_archive(self, archive, md5):
-        if not check_integrity(archive, md5):
-            msg = ("The file {} is not present in the root directory or corrupted. "
-                   "You need to download it externally and place it in {}.")
-            raise RuntimeError(msg.format(os.path.basename(archive), self.root))
-
-    @property
-    def meta_file(self):
-        return os.path.join(self.root, META_FILE_NAME)
+                parse_val_archive(self.root)
 
     @property
     def split_folder(self):
@@ -108,28 +82,38 @@ class ImageNet(ImageFolder):
         return "Split: {split}".format(**self.__dict__)
 
 
-def _verify_archive(archive, md5, force):
-    if not check_integrity(archive):
-        raise RuntimeError("The file {} doesn't exist.".format(archive))
-    if not check_md5(archive, md5) and not force:
-        msg = ("The MD5 checksum of the file {} and the original archive do not match. "
-               "Use force=True to force an extraction")
-        raise RuntimeError(msg.format(archive))
+def load_meta_file(root, file=None):
+    if file is None:
+        file = META_FILE
+    file = os.path.join(root, file)
+
+    if check_integrity(file):
+        return torch.load(file)
+    else:
+        msg = ("The meta file {} is not present in the root directory or is corrupted. "
+               "This file is automatically created by the ImageNet dataset.")
+        raise RuntimeError(msg.format(file, root))
 
 
-def parse_devkit_archive(archive, meta_file=None, force=False):
+def _verify_archive(root, file, md5):
+    if not check_integrity(os.path.join(root, file), md5):
+        msg = ("The archive {} is not present in the root directory or is corrupted. "
+               "You need to download it externally and place it in {}.")
+        raise RuntimeError(msg.format(file, root))
+
+
+def parse_devkit_archive(root, file=None):
     """Parse the devkit archive of the ImageNet2012 classification dataset and save
     the meta information in a binary file.
 
     Args:
-        archive (str): Path to the devkit archive
-        meta_file (str, optional): Optional name for the meta information file
-        force (bool, optional). Force extraction if MD5 checksum does not match.
-            Defaults to False
+        root (str): Root directory containing the devkit archive
+        file (str, optional): Name of devkit archive. Defaults to
+            'ILSVRC2012_devkit_t12.tar.gz'
     """
     import scipy.io as sio
 
-    def parse_meta(devkit_root):
+    def parse_meta_mat(devkit_root):
         metafile = os.path.join(devkit_root, "data", "meta.mat")
         meta = sio.loadmat(metafile, squeeze_me=True)['synsets']
         nums_children = list(zip(*meta))[4]
@@ -141,87 +125,93 @@ def parse_devkit_archive(archive, meta_file=None, force=False):
         wnid_to_classes = {wnid: clss for wnid, clss in zip(wnids, classes)}
         return idx_to_wnid, wnid_to_classes
 
-    def parse_val_groundtruth(devkit_root):
+    def parse_val_groundtruth_txt(devkit_root):
         file = os.path.join(devkit_root, "data",
                             "ILSVRC2012_validation_ground_truth.txt")
         with open(file, 'r') as txtfh:
             val_idcs = txtfh.readlines()
         return [int(val_idx) for val_idx in val_idcs]
 
-    if meta_file is None:
-        meta_file = os.path.join(os.path.dirname(archive), META_FILE_NAME)
+    @contextmanager
+    def get_tmp_dir():
+        tmp_dir = tempfile.mkdtemp()
+        try:
+            yield tmp_dir
+        finally:
+            shutil.rmtree(tmp_dir)
 
-    _verify_archive(archive, ARCHIVE_DICT["devkit"]["md5"], force)
+    archive_meta = ARCHIVE_META["devkit"]
+    if file is None:
+        file = archive_meta[0]
+    md5 = archive_meta[1]
 
-    tmpdir = tempfile.mkdtemp()
-    extract_archive(archive, tmpdir)
+    _verify_archive(root, file, md5)
 
-    devkit_root = os.path.join(tmpdir, "ILSVRC2012_devkit_t12")
-    idx_to_wnid, wnid_to_classes = parse_meta(devkit_root)
-    val_idcs = parse_val_groundtruth(devkit_root)
-    val_wnids = [idx_to_wnid[idx] for idx in val_idcs]
+    with get_tmp_dir() as tmp_dir:
+        extract_archive(os.path.join(root, file), tmp_dir)
 
-    torch.save((wnid_to_classes, val_wnids), meta_file)
+        devkit_root = os.path.join(tmp_dir, "ILSVRC2012_devkit_t12")
+        idx_to_wnid, wnid_to_classes = parse_meta_mat(devkit_root)
+        val_idcs = parse_val_groundtruth_txt(devkit_root)
+        val_wnids = [idx_to_wnid[idx] for idx in val_idcs]
 
-    shutil.rmtree(tmpdir)
-
-
-def load_meta_file(root, filename=META_FILE_NAME):
-    file = os.path.join(root, filename)
-    if check_integrity(file):
-        return torch.load(file)
-    else:
-        msg = ("Meta file not found at {}. You can create it with the "
-               "parse_devkit_archive() function")
-        raise RuntimeError(msg.format(file))
+        torch.save((wnid_to_classes, val_wnids), os.path.join(root, META_FILE))
 
 
-def parse_train_archive(archive, folder=None, force=False):
+def parse_train_archive(root, file=None, folder="train"):
     """Parse the train images archive of the ImageNet2012 classification dataset and
     prepare it for usage with the ImageNet dataset.
 
     Args:
-        archive (str): Path to the train images archive
-        folder (str, optional): Optional name for train images folder
-        force (bool, optional). Force extraction if MD5 checksum does not match.
-            Defaults to False
+        root (str): Root directory containing the train images archive
+        file (str, optional): Name of train images archive. Defaults to
+            'ILSVRC2012_img_train.tar'
+        folder (str, optional): Optional name for train images folder. Defaults to
+            'train'
     """
-    if folder is None:
-        folder = os.path.join(os.path.dirname(archive), "train")
+    archive_meta = ARCHIVE_META["train"]
+    if file is None:
+        file = archive_meta[0]
+    md5 = archive_meta[1]
 
-    _verify_archive(archive, ARCHIVE_DICT["train"]["md5"], force)
-    extract_archive(archive, folder)
+    _verify_archive(root, file, md5)
 
-    for archive in [os.path.join(folder, file) for file in os.listdir(folder)]:
+    train_root = os.path.join(root, folder)
+    extract_archive(os.path.join(root, file), train_root)
+
+    for archive in [os.path.join(train_root, file) for file in os.listdir(train_root)]:
         extract_archive(archive, os.path.splitext(archive)[0], remove_finished=True)
 
 
-def parse_val_archive(archive, wnids=None, folder=None, force=False):
+def parse_val_archive(root, file=None, wnids=None, folder="val"):
     """Parse the validation images archive of the ImageNet2012 classification dataset
     and prepare it for usage with the ImageNet dataset.
 
     Args:
-        archive (str): Path to the validation images archive
+        root (str): Root directory containing the validation images archive
+        file (str, optional): Name of validation images archive. Defaults to
+            'ILSVRC2012_img_val.tar'
         wnids (list, optional): List of WordNet IDs of the validation images. If None
-            is given, the IDs are tried to be loaded from the meta information binary
-            file in the same directory as the archive.
-        folder (str, optional): Optional name for validation images folder
-        force (bool, optional). Force extraction if MD5 checksum does not match.
-            Defaults to False
+            is given, the IDs are loaded from the meta file in the root directory
+        folder (str, optional): Optional name for validation images folder. Defaults to
+            'val'
     """
-    root = os.path.dirname(archive)
+    archive_meta = ARCHIVE_META["val"]
+    if file is None:
+        file = archive_meta[0]
+    md5 = archive_meta[1]
     if wnids is None:
         wnids = load_meta_file(root)[1]
-    if folder is None:
-        folder = os.path.join(root, "val")
 
-    _verify_archive(archive, ARCHIVE_DICT["val"]["md5"], force)
-    extract_archive(archive, folder)
+    _verify_archive(root, file, md5)
 
-    img_files = sorted([os.path.join(folder, file) for file in os.listdir(folder)])
+    val_root = os.path.join(root, folder)
+    extract_archive(os.path.join(root, file), val_root)
+
+    img_files = sorted([os.path.join(val_root, file) for file in os.listdir(val_root)])
 
     for wnid in set(wnids):
-        os.mkdir(os.path.join(folder, wnid))
+        os.mkdir(os.path.join(val_root, wnid))
 
     for wnid, img_file in zip(wnids, img_files):
-        shutil.move(img_file, os.path.join(folder, wnid, os.path.basename(img_file)))
+        shutil.move(img_file, os.path.join(val_root, wnid, os.path.basename(img_file)))

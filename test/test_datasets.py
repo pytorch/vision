@@ -109,9 +109,8 @@ class Tester(unittest.TestCase):
             self.assertEqual(dataset.class_to_idx[dataset.classes[0]], target)
 
     @mock.patch('torchvision.datasets.imagenet._verify_archive')
-    @mock.patch('torchvision.datasets.imagenet.ImageNet._verify_archive')
     @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
-    def test_imagenet(self, mock_verify_external, mock_verify_internal):
+    def test_imagenet(self, mock_verify):
         with imagenet_root() as root:
             dataset = torchvision.datasets.ImageNet(root, split='train')
             self.generic_classification_dataset_test(dataset)
