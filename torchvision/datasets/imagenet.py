@@ -179,7 +179,8 @@ def parse_train_archive(root, file=None, folder="train"):
     train_root = os.path.join(root, folder)
     extract_archive(os.path.join(root, file), train_root)
 
-    for archive in [os.path.join(train_root, file) for file in os.listdir(train_root)]:
+    archives = [os.path.join(train_root, archive) for archive in os.listdir(train_root)]
+    for archive in archives:
         extract_archive(archive, os.path.splitext(archive)[0], remove_finished=True)
 
 
@@ -208,10 +209,10 @@ def parse_val_archive(root, file=None, wnids=None, folder="val"):
     val_root = os.path.join(root, folder)
     extract_archive(os.path.join(root, file), val_root)
 
-    img_files = sorted([os.path.join(val_root, file) for file in os.listdir(val_root)])
+    images = sorted([os.path.join(val_root, image) for image in os.listdir(val_root)])
 
     for wnid in set(wnids):
         os.mkdir(os.path.join(val_root, wnid))
 
-    for wnid, img_file in zip(wnids, img_files):
+    for wnid, img_file in zip(wnids, images):
         shutil.move(img_file, os.path.join(val_root, wnid, os.path.basename(img_file)))
