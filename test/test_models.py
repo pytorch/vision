@@ -78,7 +78,7 @@ class ModelTester(TestCase):
         model.eval()
         x = torch.rand(input_shape)
         out = model(x)
-        self.assertExpected(out, rtol=1e-4, atol=0.)
+        self.assertExpected(out, rtol=1e-3, atol=0.)
         self.assertEqual(out.shape[-1], 50)
 
     def _test_segmentation_model(self, name):
