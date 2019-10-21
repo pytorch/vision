@@ -1,4 +1,4 @@
-set YEAR=2017
+set YEAR=2019
 set VER=16
 
 mkdir "%PREFIX%\etc\conda\activate.d"
