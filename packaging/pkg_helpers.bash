@@ -249,3 +249,13 @@ setup_conda_cudatoolkit_constraint() {
     esac
   fi
 }
+
+# Build the proper compiler package before building the final package
+setup_visual_studio_constraint() {
+  if [[ "$OSTYPE" == "msys" ]]; then
+      export VSTOOLCHAIN_PACKAGE=vs2019
+      export VSDEVCMD_ARGS=''
+      conda build $CONDA_CHANNEL_FLAGS --no-anaconda-upload packaging/$VSTOOLCHAIN_PACKAGE
+      cp packaging/$VSTOOLCHAIN_PACKAGE/conda_build_config.yaml packaging/torchvision/conda_build_config.yaml
+  fi
+}
