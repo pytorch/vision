@@ -199,10 +199,11 @@ setup_conda_pytorch_constraint() {
     export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
                               python -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
-                               cuver = (cuver[:-1] + '.' + cuver[-1]).replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
+                               cuver_1 = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
+                               cuver_2 = (cuver[:-1] + '.' + cuver[-1]).replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
                                print(re.sub(r'\\+.*$', '', \
                                 [x['version'] for x in json.load(sys.stdin)['pytorch'] \
-                                  if (x['platform'] == 'darwin' or cuver in x['fn']) \
+                                  if (x['platform'] == 'darwin' or cuver_1 in x['fn'] or cuver_2 in x['fn']) \
                                     and 'py' + os.environ['PYTHON_VERSION'] in x['fn']][-1]))")"
     if [[ -z "$PYTORCH_VERSION" ]]; then
       echo "PyTorch version auto detection failed"
@@ -246,5 +247,15 @@ setup_conda_cudatoolkit_constraint() {
         exit 1
         ;;
     esac
+  fi
+}
+
+# Build the proper compiler package before building the final package
+setup_visual_studio_constraint() {
+  if [[ "$OSTYPE" == "msys" ]]; then
+      export VSTOOLCHAIN_PACKAGE=vs2019
+      export VSDEVCMD_ARGS=''
+      conda build $CONDA_CHANNEL_FLAGS --no-anaconda-upload packaging/$VSTOOLCHAIN_PACKAGE
+      cp packaging/$VSTOOLCHAIN_PACKAGE/conda_build_config.yaml packaging/torchvision/conda_build_config.yaml
   fi
 }
