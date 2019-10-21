@@ -137,12 +137,14 @@ def _read_from_stream(container, start_offset, end_offset, pts_unit, stream, str
         pass
     # ensure that the results are sorted wrt the pts
     result = [frames[i] for i in sorted(frames) if start_offset <= frames[i].pts <= end_offset]
-    if start_offset > 0 and start_offset not in frames:
+    if len(frames) > 0 and start_offset > 0 and start_offset not in frames:
         # if there is no frame that exactly matches the pts of start_offset
         # add the last frame smaller than start_offset, to guarantee that
         # we will have all the necessary data. This is most useful for audio
-        first_frame_pts = max(i for i in frames if i < start_offset)
-        result.insert(0, frames[first_frame_pts])
+        preceding_frames = [i for i in frames if i < start_offset]
+        if len(preceding_frames) > 0:
+            first_frame_pts = max(preceding_frames)
+            result.insert(0, frames[first_frame_pts])
     return result
 
 
