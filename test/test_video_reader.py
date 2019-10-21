@@ -265,16 +265,16 @@ def _pts_convert(pts, timebase_from, timebase_to, round_func=math.floor):
 
 
 def _get_video_tensor(video_dir, video_file):
-        """open a video file, and represent the video data by a PT tensor"""
-        full_path = os.path.join(video_dir, video_file)
+    """open a video file, and represent the video data by a PT tensor"""
+    full_path = os.path.join(video_dir, video_file)
 
-        if not os.path.exists(full_path):
-            raise FileNotFoundError("File not found: %s" % full_path)
+    if not os.path.exists(full_path):
+        raise FileNotFoundError("File not found: %s" % full_path)
 
-        with open(full_path, "rb") as fp:
-            video_tensor = torch.from_numpy(np.frombuffer(fp.read(), dtype=np.uint8))
+    with open(full_path, "rb") as fp:
+        video_tensor = torch.from_numpy(np.frombuffer(fp.read(), dtype=np.uint8))
 
-        return full_path, video_tensor
+    return full_path, video_tensor
 
 
 @unittest.skipIf(av is None, "PyAV unavailable")
