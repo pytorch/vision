@@ -1,9 +1,9 @@
 blas_impl:
   - mkl                        # [x86_64]
 c_compiler:
-  - vs2019                     # [win]
+  - vs2017                     # [win]
 cxx_compiler:
-  - vs2019                     # [win]
+  - vs2017                     # [win]
 python:
   - 3.5
   - 3.6
