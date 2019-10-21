@@ -54,9 +54,9 @@ def _create_video_frames(num_frames, height, width):
 def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None, options=None):
     if lossless:
         if video_codec is not None:
-            raise AssertionError("video_codec can't be specified together with lossless")
+            raise ValueError("video_codec can't be specified together with lossless")
         if options is not None:
-            raise AssertionError("options can't be specified together with lossless")
+            raise ValueError("options can't be specified together with lossless")
         video_codec = 'libx264rgb'
         options = {'crf': '0'}
 
