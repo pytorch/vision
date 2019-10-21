@@ -69,14 +69,27 @@ class ModelTester(TestCase):
             msg = str(e) + str(tb)
         self.assertTrue(scriptable, msg)
 
+    def subsample_tensor(self, tensor):
+        num_elems = tensor.numel()
+        num_samples = 20
+        if num_elems <= num_samples:
+            return tensor
+
+        flat_tensor = tensor.flatten()
+        ith_index = num_elems // num_samples
+        return flat_tensor[ith_index - 1::ith_index]
+
+
     def _test_classification_model(self, name, input_shape):
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
+        set_rng_seed(0)
         model = models.__dict__[name](num_classes=50)
         self.check_script(model, name)
         model.eval()
         x = torch.rand(input_shape)
         out = model(x)
+        self.assertExpected(out, rtol=1e-5, atol=0.)
         self.assertEqual(out.shape[-1], 50)
 
     def _test_segmentation_model(self, name):
@@ -102,16 +115,6 @@ class ModelTester(TestCase):
         self.assertIs(model_input[0], x)
         self.assertEqual(len(out), 1)
 
-        def subsample_tensor(tensor):
-            num_elems = tensor.numel()
-            num_samples = 20
-            if num_elems <= num_samples:
-                return tensor
-
-            flat_tensor = tensor.flatten()
-            ith_index = num_elems // num_samples
-            return flat_tensor[ith_index - 1::ith_index]
-
         def compute_mean_std(tensor):
             # can't compute mean of integral tensor
             tensor = tensor.to(torch.double)
@@ -126,7 +129,7 @@ class ModelTester(TestCase):
             # mean values are small, use large rtol
             self.assertExpected(test_value, rtol=.01, atol=.01)
         else:
-            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor))
+            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=self.subsample_tensor))
 
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
