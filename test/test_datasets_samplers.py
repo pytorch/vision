@@ -5,7 +5,11 @@ import torch
 import unittest
 
 from torchvision import io
-from torchvision.datasets.samplers import RandomClipSampler, UniformClipSampler
+from torchvision.datasets.samplers import (
+    DistributedSampler,
+    RandomClipSampler,
+    UniformClipSampler,
+)
 from torchvision.datasets.video_utils import VideoClips, unfold
 from torchvision import get_video_backend
 
@@ -83,6 +87,30 @@ class Tester(unittest.TestCase):
             indices = torch.tensor(list(iter(sampler)))
             self.assertTrue(indices.equal(torch.tensor([0, 0, 1, 2, 4, 6, 7, 9, 11])))
 
+    def test_distributed_sampler_and_uniform_clip_sampler(self):
+        with get_list_of_videos(num_videos=3, sizes=[25, 25, 25]) as video_list:
+            video_clips = VideoClips(video_list, 5, 5)
+            clip_sampler = UniformClipSampler(video_clips, 3)
+
+            distributed_sampler_rank0 = DistributedSampler(
+                clip_sampler,
+                num_replicas=2,
+                rank=0,
+                group_size=3,
+            )
+            indices = torch.tensor(list(iter(distributed_sampler_rank0)))
+            self.assertEqual(len(distributed_sampler_rank0), 6)
+            self.assertTrue(indices.equal(torch.tensor([0, 2, 4, 10, 12, 14])))
+
+            distributed_sampler_rank1 = DistributedSampler(
+                clip_sampler,
+                num_replicas=2,
+                rank=1,
+                group_size=3,
+            )
+            indices = torch.tensor(list(iter(distributed_sampler_rank1)))
+            self.assertEqual(len(distributed_sampler_rank1), 6)
+            self.assertTrue(indices.equal(torch.tensor([5, 7, 9, 0, 2, 4])))
 
 if __name__ == '__main__':
     unittest.main()
