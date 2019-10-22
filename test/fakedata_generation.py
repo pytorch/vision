@@ -175,13 +175,16 @@ def imagenet_root():
 def cityscapes_root():
 
     def _make_image(file):
-        PIL.Image.fromarray(np.zeros((1024, 2048, 3), dtype=np.uint8)).save(file)
+        with open(file, 'wb') as f:
+            PIL.Image.fromarray(np.zeros((1024, 2048, 3), dtype=np.uint8)).save(f, format='png')
 
     def _make_regular_target(file):
-        PIL.Image.fromarray(np.zeros((1024, 2048), dtype=np.uint8)).save(file)
+        with open(file, 'wb') as f:
+            PIL.Image.fromarray(np.zeros((1024, 2048), dtype=np.uint8)).save(f, format='png')
 
     def _make_color_target(file):
-        PIL.Image.fromarray(np.zeros((1024, 2048, 4), dtype=np.uint8)).save(file)
+        with open(file, 'wb') as f:
+            PIL.Image.fromarray(np.zeros((1024, 2048, 4), dtype=np.uint8)).save(f, format='png')
 
     def _make_polygon_target(file):
         polygon_example = {
