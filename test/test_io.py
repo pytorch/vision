@@ -63,7 +63,7 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
 
 
 @unittest.skipIf(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
-    "video_reader backend not available")
+                 "video_reader backend not available")
 @unittest.skipIf(av is None, "PyAV unavailable")
 @unittest.skipIf(sys.platform == 'win32', 'temporarily disabled on Windows')
 class Tester(unittest.TestCase):
