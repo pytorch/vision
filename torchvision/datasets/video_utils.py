@@ -224,6 +224,23 @@ class VideoClips(object):
         """
         return self.cumulative_sizes[-1]
 
+    def get_video_path(self, idx):
+        """
+        Converts a flattened representation of the indices into a video path
+        """
+        video_idx = bisect.bisect_right(self.cumulative_sizes, idx)
+        return self.video_paths[video_idx]
+
+    def get_video_name(self, idx):
+        """
+        Converts a flattened representation of the indices into a video name
+        """
+        from os import path, sep
+        video_path = self.get_video_path(idx)
+        file_no_ext, ext = path.splitext(video_path)
+        video_name = file_no_ext.split(sep)[-1]
+        return video_name
+
     def get_clip_location(self, idx):
         """
         Converts a flattened representation of the indices into a video_idx, clip_idx
