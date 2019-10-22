@@ -112,6 +112,32 @@ class Tester(unittest.TestCase):
             self.assertEqual(len(distributed_sampler_rank1), 6)
             self.assertTrue(indices.equal(torch.tensor([5, 7, 9, 0, 2, 4])))
 
+    def test_distributed_sampler_with_num_samples_and_uniform_clip_sampler(self):
+        with get_list_of_videos(num_videos=3, sizes=[25, 25, 25]) as video_list:
+            video_clips = VideoClips(video_list, 5, 5)
+            clip_sampler = UniformClipSampler(video_clips, 3)
+
+            distributed_sampler_rank0 = DistributedSampler(
+                clip_sampler,
+                num_replicas=2,
+                rank=0,
+                group_size=3,
+                num_samples=6,
+            )
+            indices = torch.tensor(list(iter(distributed_sampler_rank0)))
+            self.assertEqual(len(distributed_sampler_rank0), 3)
+            self.assertTrue(indices.equal(torch.tensor([0, 2, 4])))
+
+            distributed_sampler_rank1 = DistributedSampler(
+                clip_sampler,
+                num_replicas=2,
+                rank=1,
+                group_size=3,
+                num_samples=6,
+            )
+            indices = torch.tensor(list(iter(distributed_sampler_rank1)))
+            self.assertEqual(len(distributed_sampler_rank1), 3)
+            self.assertTrue(indices.equal(torch.tensor([5, 7, 9])))
 
 if __name__ == '__main__':
     unittest.main()
