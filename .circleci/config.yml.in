@@ -7,19 +7,29 @@ version: 2.1
 #       Job names are 'name:' key.
 
 orbs:
-  win: circleci/windows@1.0.0
+  win: circleci/windows@2.0.0
+
+executors:
+  windows-gpu-prototype:
+    machine:
+      resource_class: windows.gpu.small.prototype
+      image: windows-server-2019-nvidia:201908-28
+      shell: bash.exe
 
 commands:
   checkout_merge:
     description: "checkout merge branch"
     steps:
       - checkout
-      - run:
-          name: Checkout merge branch
-          command: |
-            set -ex
-            git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
-            git checkout "merged/$CIRCLE_BRANCH"
+#     - run:
+#         name: Checkout merge branch
+#         command: |
+#           set -ex
+#           BRANCH=$(git rev-parse --abbrev-ref HEAD)
+#           if [[ "$BRANCH" != "master" ]]; then
+#             git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
+#             git checkout "merged/$CIRCLE_BRANCH"
+#           fi
 
 binary_common: &binary_common
   parameters:
@@ -46,7 +56,7 @@ binary_common: &binary_common
     wheel_docker_image:
       description: "Wheel only: what docker image to use"
       type: string
-      default: "soumith/manylinux-cuda100"
+      default: "soumith/manylinux-cuda101"
   environment:
     PYTHON_VERSION: << parameters.python_version >>
     BUILD_VERSION: << parameters.build_version >>
@@ -129,7 +139,7 @@ jobs:
 
           sudo apt-get update
           export DOCKER_VERSION="5:19.03.2~3-0~ubuntu-xenial"
-          sudo apt-get install docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io
+          sudo apt-get install docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io=1.2.6-3
 
           # Add the package repositories
           distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
@@ -168,15 +178,30 @@ jobs:
   binary_win_conda:
     <<: *binary_common
     executor:
-      name: win/vs2019
+      name: win/default
       shell: bash.exe
     steps:
       - checkout_merge
       - run:
           command: |
             choco install miniconda3
-            $env:PATH = "C:\tools\miniconda3;C:\tools\miniconda3\Library\usr\bin;C:\tools\miniconda3\Scripts;C:\tools\miniconda3\bin" + $env:PATH
-            conda install -yq conda-build "conda-package-handling<1.5.0"
+            (& "C:\tools\miniconda3\Scripts\conda.exe" "shell.powershell" "hook") | Out-String | Invoke-Expression
+            conda activate base
+            conda install -yq conda-build "conda-package-handling!=1.5.0"
+            bash packaging/build_conda.sh
+          shell: powershell.exe
+
+  binary_win_conda_cuda:
+    <<: *binary_common
+    executor: windows-gpu-prototype
+    steps:
+      - checkout_merge
+      - run:
+          command: |
+            choco install miniconda3
+            (& "C:\tools\miniconda3\Scripts\conda.exe" "shell.powershell" "hook") | Out-String | Invoke-Expression
+            conda activate base
+            conda install -yq conda-build "conda-package-handling!=1.5.0"
             bash packaging/build_conda.sh
           shell: powershell.exe
 
@@ -280,16 +305,13 @@ workflows:
           name: torchvision_win_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+      - binary_win_conda_cuda:
+          name: torchvision_win_py3.6_cu101
+          python_version: "3.6"
+          cu_version: "cu101"
 
   nightly:
-    triggers:
-      - schedule:
-          cron: "0 9 * * *"
-          filters:
-            branches:
-              only:
-                - master
 {%- endif %}
     jobs:
       - circleci_consistency
-      {{ workflows(prefix="nightly_", upload=True) }}
+      {{ workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}

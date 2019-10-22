@@ -39,7 +39,6 @@ before_install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
 
@@ -76,7 +75,7 @@ install:
     cd -
 
 script:
-  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH test
+  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH -k 'not TestVideoReader and not TestVideoTransforms' test
   - pytest test/test_hub.py
 
 after_success:

@@ -11,9 +11,10 @@ from torch import nn
 import torchvision
 import torchvision.datasets.video_utils
 from torchvision import transforms
+from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
 
 import utils
-from sampler import DistributedSampler, UniformClipSampler, RandomClipSampler
+
 from scheduler import WarmupMultiStepLR
 import transforms as T
 
