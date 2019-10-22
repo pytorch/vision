@@ -1,11 +1,25 @@
 import re
+import imp
 import gc
+import os
 import torch
 import numpy as np
 import math
 import warnings
 
 from . import _video_opt
+
+
+_HAS_VIDEO_OPT = False
+
+try:
+    lib_dir = os.path.join(os.path.dirname(__file__), '..')
+    _, path, description = imp.find_module("video_reader", [lib_dir])
+    torch.ops.load_library(path)
+    _HAS_VIDEO_OPT = True
+except (ImportError, OSError):
+    pass
+
 
 try:
     import av

@@ -1,21 +1,9 @@
 from fractions import Fraction
 import math
 import numpy as np
-import os
 import torch
-import imp
 import warnings
 
-
-_HAS_VIDEO_OPT = False
-
-try:
-    lib_dir = os.path.join(os.path.dirname(__file__), '..')
-    _, path, description = imp.find_module("video_reader", [lib_dir])
-    torch.ops.load_library(path)
-    _HAS_VIDEO_OPT = True
-except (ImportError, OSError):
-    pass
 
 default_timebase = Fraction(0, 1)
 
