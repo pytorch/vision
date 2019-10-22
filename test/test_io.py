@@ -53,8 +53,10 @@ def _create_video_frames(num_frames, height, width):
 @contextlib.contextmanager
 def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None, options=None):
     if lossless:
-        assert video_codec is None, "video_codec can't be specified together with lossless"
-        assert options is None, "options can't be specified together with lossless"
+        if video_codec is not None:
+            raise ValueError("video_codec can't be specified together with lossless")
+        if options is not None:
+            raise ValueError("options can't be specified together with lossless")
         video_codec = 'libx264rgb'
         options = {'crf': '0'}
 
@@ -235,6 +237,41 @@ class Tester(unittest.TestCase):
                                      pts_unit='sec')
             self.assertEqual(len(lv), 4)
             self.assertTrue(data[4:8].equal(lv))
+
+    def test_read_video_corrupted_file(self):
+        with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
+            f.write(b'This is not an mpg4 file')
+            video, audio, info = io.read_video(f.name)
+            self.assertIsInstance(video, torch.Tensor)
+            self.assertIsInstance(audio, torch.Tensor)
+            self.assertEqual(video.numel(), 0)
+            self.assertEqual(audio.numel(), 0)
+            self.assertEqual(info, {})
+
+    def test_read_video_timestamps_corrupted_file(self):
+        with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
+            f.write(b'This is not an mpg4 file')
+            video_pts, video_fps = io.read_video_timestamps(f.name)
+            self.assertEqual(video_pts, [])
+            self.assertIs(video_fps, None)
+
+    def test_read_video_partially_corrupted_file(self):
+        with temp_video(5, 4, 4, 5, lossless=True) as (f_name, data):
+            with open(f_name, 'r+b') as f:
+                size = os.path.getsize(f_name)
+                bytes_to_overwrite = size // 10
+                # seek to the middle of the file
+                f.seek(5 * bytes_to_overwrite)
+                # corrupt 10% of the file from the middle
+                f.write(b'\xff' * bytes_to_overwrite)
+            # this exercises the container.decode assertion check
+            video, audio, info = io.read_video(f.name, pts_unit='sec')
+            # check that size is not equal to 5, but 3
+            self.assertEqual(len(video), 3)
+            # but the valid decoded content is still correct
+            self.assertTrue(video[:3].equal(data[:3]))
+            # and the last few frames are wrong
+            self.assertFalse(video.equal(data))
 
     # TODO add tests for audio
 

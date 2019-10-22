@@ -2,7 +2,7 @@ from __future__ import division
 import torch
 import sys
 import math
-from PIL import Image, ImageOps, ImageEnhance, PILLOW_VERSION
+from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
 try:
     import accimage
 except ImportError:

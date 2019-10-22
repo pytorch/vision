@@ -74,7 +74,7 @@ def maskrcnn_inference(x, labels):
     index = torch.arange(num_masks, device=labels.device)
     mask_prob = mask_prob[index, labels][:, None]
 
-    if torchvision._is_tracing():
+    if len(boxes_per_image) == 1:
         # TODO : remove when dynamic split supported in ONNX
         mask_prob = (mask_prob,)
     else:
@@ -563,8 +563,13 @@ class RoIHeads(torch.nn.Module):
         pred_scores = F.softmax(class_logits, -1)
 
         # split boxes and scores per image
-        pred_boxes = pred_boxes.split(boxes_per_image, 0)
-        pred_scores = pred_scores.split(boxes_per_image, 0)
+        if len(boxes_per_image) == 1:
+            # TODO : remove this when ONNX support dynamic split sizes
+            pred_boxes = (pred_boxes,)
+            pred_scores = (pred_scores,)
+        else:
+            pred_boxes = pred_boxes.split(boxes_per_image, 0)
+            pred_scores = pred_scores.split(boxes_per_image, 0)
 
         all_boxes = []
         all_scores = []
@@ -583,8 +588,8 @@ class RoIHeads(torch.nn.Module):
 
             # batch everything, by making every class prediction be a separate instance
             boxes = boxes.reshape(-1, 4)
-            scores = scores.flatten()
-            labels = labels.flatten()
+            scores = scores.reshape(-1)
+            labels = labels.reshape(-1)
 
             # remove low scoring boxes
             inds = torch.nonzero(scores > self.score_thresh).squeeze(1)
