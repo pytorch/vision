@@ -209,7 +209,7 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
 
     from torchvision import get_video_backend
     if get_video_backend() != "pyav":
-        return _video_opt.read_video(filename, start_pts, end_pts, pts_unit)
+        return _video_opt._read_video(filename, start_pts, end_pts, pts_unit)
 
     _check_av_available()
 
@@ -296,7 +296,7 @@ def read_video_timestamps(filename, pts_unit='pts'):
     """
     from torchvision import get_video_backend
     if get_video_backend() != "pyav":
-        return _video_opt.read_video_timestamps(filename, pts_unit)
+        return _video_opt._read_video_timestamps(filename, pts_unit)
 
     _check_av_available()
 

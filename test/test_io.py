@@ -63,7 +63,7 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
 
 
 @unittest.skipIf(av is None, "PyAV unavailable")
-@unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+@unittest.skipIf(sys.platform == 'win32', 'temporarily disabled on Windows')
 class Tester(unittest.TestCase):
     # compression adds artifacts, thus we add a tolerance of
     # 6 in 0-255 range
