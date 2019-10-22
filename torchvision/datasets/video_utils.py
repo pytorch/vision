@@ -255,6 +255,23 @@ class VideoClips(object):
             clip_idx = idx - self.cumulative_sizes[video_idx - 1]
         return video_idx, clip_idx
 
+    def get_video_path(self, idx):
+        """
+        Converts a flattened representation of the indices into a video path
+        """
+        video_idx = bisect.bisect_right(self.cumulative_sizes, idx)
+        return self.video_paths[video_idx]
+
+    def get_video_name(self, idx):
+        """
+        Converts a flattened representation of the indices into a video name
+        """
+        from os import path, sep
+        video_path = self.get_video_path(idx)
+        file_no_ext, ext = path.splitext(video_path)
+        video_name = file_no_ext.split(sep)[-1]
+        return video_name
+
     @staticmethod
     def _resample_video_idx(num_frames, original_fps, new_fps):
         step = float(original_fps) / new_fps
