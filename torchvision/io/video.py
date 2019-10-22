@@ -5,6 +5,8 @@ import numpy as np
 import math
 import warnings
 
+from . import _video_opt
+
 try:
     import av
     av.logging.set_level(av.logging.ERROR)
@@ -190,6 +192,11 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
         metadata for the video and audio. Can contain the fields video_fps (float)
         and audio_fps (int)
     """
+
+    from torchvision import get_video_backend
+    if get_video_backend() != "pyav":
+        return _video_opt.read_video(filename, start_pts, end_pts, pts_unit)
+
     _check_av_available()
 
     if end_pts is None:
@@ -273,6 +280,10 @@ def read_video_timestamps(filename, pts_unit='pts'):
         the frame rate for the video
 
     """
+    from torchvision import get_video_backend
+    if get_video_backend() != "pyav":
+        return _video_opt.read_video_timestamps(filename, pts_unit)
+
     _check_av_available()
 
     video_frames = []

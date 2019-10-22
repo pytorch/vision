@@ -1,4 +1,5 @@
 from fractions import Fraction
+import math
 import numpy as np
 import os
 import torch
@@ -14,7 +15,7 @@ try:
     torch.ops.load_library(path)
     _HAS_VIDEO_OPT = True
 except (ImportError, OSError):
-    warnings.warn("video reader based on ffmpeg c++ ops not available")
+    pass
 
 default_timebase = Fraction(0, 1)
 
@@ -356,3 +357,66 @@ def _probe_video_from_memory(video_data):
     vtimebase, vfps, vduration, atimebase, asample_rate, aduration = result
     info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
     return info
+
+
+def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
+    if end_pts is None:
+        end_pts = float("inf")
+
+    if pts_unit == 'pts':
+        warnings.warn("The pts_unit 'pts' gives wrong results and will be removed in a " +
+                      "follow-up version. Please use pts_unit 'sec'.")
+
+    info = _probe_video_from_file(filename)
+
+    has_video = 'video_timebase' in info
+    has_audio = 'audio_timebase' in info
+
+    def get_pts(time_base):
+        start_offset = start_pts
+        end_offset = end_pts
+        if pts_unit == 'sec':
+            start_offset = int(math.floor(start_pts * (1 / time_base)))
+            if end_offset != float("inf"):
+                end_offset = int(math.ceil(end_pts * (1 / time_base)))
+        if end_offset == float("inf"):
+            end_offset = -1
+        return start_offset, end_offset
+
+    video_pts_range = (0, -1)
+    video_timebase = default_timebase
+    if has_video:
+        video_timebase = info['video_timebase']
+        video_pts_range = get_pts(video_timebase)
+
+    audio_pts_range = (0, -1)
+    audio_timebase = default_timebase
+    if has_audio:
+        audio_timebase = info['audio_timebase']
+        audio_pts_range = get_pts(audio_timebase)
+
+    return _read_video_from_file(
+        filename,
+        read_video_stream=True,
+        video_pts_range=video_pts_range,
+        video_timebase=video_timebase,
+        read_audio_stream=True,
+        audio_pts_range=audio_pts_range,
+        audio_timebase=audio_timebase,
+    )
+
+
+def read_video_timestamps(filename, pts_unit='pts'):
+    if pts_unit == 'pts':
+        warnings.warn("The pts_unit 'pts' gives wrong results and will be removed in a " +
+                      "follow-up version. Please use pts_unit 'sec'.")
+
+    pts, _, info = _read_video_timestamps_from_file(filename)
+
+    if pts_unit == 'sec':
+        video_time_base = info['video_timebase']
+        pts = [x * video_time_base for x in pts]
+
+    video_fps = info.get('video_fps', None)
+
+    return pts, video_fps
