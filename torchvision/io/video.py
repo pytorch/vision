@@ -1,9 +1,25 @@
 import re
+import imp
 import gc
+import os
 import torch
 import numpy as np
 import math
 import warnings
+
+from . import _video_opt
+
+
+_HAS_VIDEO_OPT = False
+
+try:
+    lib_dir = os.path.join(os.path.dirname(__file__), '..')
+    _, path, description = imp.find_module("video_reader", [lib_dir])
+    torch.ops.load_library(path)
+    _HAS_VIDEO_OPT = True
+except (ImportError, OSError):
+    pass
+
 
 try:
     import av
@@ -190,6 +206,11 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
         metadata for the video and audio. Can contain the fields video_fps (float)
         and audio_fps (int)
     """
+
+    from torchvision import get_video_backend
+    if get_video_backend() != "pyav":
+        return _video_opt._read_video(filename, start_pts, end_pts, pts_unit)
+
     _check_av_available()
 
     if end_pts is None:
@@ -273,6 +294,10 @@ def read_video_timestamps(filename, pts_unit='pts'):
         the frame rate for the video
 
     """
+    from torchvision import get_video_backend
+    if get_video_backend() != "pyav":
+        return _video_opt._read_video_timestamps(filename, pts_unit)
+
     _check_av_available()
 
     video_frames = []
