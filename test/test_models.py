@@ -59,22 +59,13 @@ script_test_models = {
         'unwrapper': lambda x: x.logits
     },
     'r3d_18': {},
-    'fasterrcnn_resnet50_fpn': {
-        'unwrapper': lambda x: x[1]
-    },
-    'maskrcnn_resnet50_fpn': {
-        'unwrapper': lambda x: x[1]
-    },
-    'keypointrcnn_resnet50_fpn': {
-        'unwrapper': lambda x: x[1]
-    },
 }
 
 
 SCRIPT_MODELS_TO_FIX = [
     # This model fails in the TorchScript interpreter, see
-    # https://github.com/pytorch/pytorch/issues/27549. Delete this list when
-    # that issue is closed.
+    # https://github.com/pytorch/vision/pull/1436. Delete this list when
+    # that PR is closed.
     'test_deeplabv3_resnet101',
 ]
 
@@ -93,10 +84,11 @@ class ModelTester(TestCase):
         model = models.__dict__[name](num_classes=50)
         model.eval()
         x = torch.rand(input_shape)
-        self.checkModule(model, name, (x,))
         out = model(x)
-        self.assertExpected(out, rtol=1e-2, atol=0.)
+        self.assertExpected(out)
+        # self.assertExpected(out, prec=1e-2)
         self.assertEqual(out.shape[-1], 50)
+        self.checkModule(model, name, (x,))
 
     def _test_segmentation_model(self, name):
         # passing num_class equal to a number other than 1000 helps in making the test
@@ -105,9 +97,9 @@ class ModelTester(TestCase):
         model.eval()
         input_shape = (1, 3, 300, 300)
         x = torch.rand(input_shape)
-        self.checkModule(model, name, (x,))
         out = model(x)
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
+        self.checkModule(model, name, (x,))
 
     def _test_detection_model(self, name):
         set_rng_seed(0)
@@ -115,11 +107,11 @@ class ModelTester(TestCase):
         model.eval()
         input_shape = (3, 300, 300)
         x = torch.rand(input_shape)
-        self.checkModule(model, name, (x,))
         model_input = [x]
         out = model(model_input)
         self.assertIs(model_input[0], x)
         self.assertEqual(len(out), 1)
+        self.checkModule(model, name, (x,))
 
         def subsample_tensor(tensor):
             num_elems = tensor.numel()

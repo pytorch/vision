@@ -29,6 +29,7 @@ def get_tmp_dir(src=None, **kwargs):
 
 ACCEPT = os.getenv('EXPECTTEST_ACCEPT')
 TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
+TEST_WITH_SLOW = True # TODO: Delete this line once there is a PYTORCH_TEST_WITH_SLOW aware CI job
 
 
 parser = argparse.ArgumentParser(add_help=False)
@@ -310,7 +311,12 @@ class TestCase(unittest.TestCase):
 
 
 @contextlib.contextmanager
-def freeze_rng_state():
+def freeze_rng_state(seed=None):
+    if seed:
+        torch.manual_seed(seed)
+        random.seed(seed)
+        np.random.seed(seed)
+
     rng_state = torch.get_rng_state()
     if torch.cuda.is_available():
         cuda_rng_state = torch.cuda.get_rng_state()
