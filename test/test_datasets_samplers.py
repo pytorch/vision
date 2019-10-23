@@ -139,5 +139,6 @@ class Tester(unittest.TestCase):
             self.assertEqual(len(distributed_sampler_rank1), 3)
             self.assertTrue(indices.equal(torch.tensor([5, 7, 9])))
 
+
 if __name__ == '__main__':
     unittest.main()
