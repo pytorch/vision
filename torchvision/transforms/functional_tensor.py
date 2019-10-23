@@ -31,3 +31,20 @@ def hflip(img_tensor):
         raise TypeError('tensor is not a torch image.')
 
     return img_tensor.flip(-1)
+
+
+def crop(img, top, left, height, width):
+    """Crop the given Image Tensor.
+    Args:
+        img (Tensor): Image to be cropped in the form [C, H, W]. (0,0) denotes the top left corner of the image.
+        top (int): Vertical component of the top left corner of the crop box.
+        left (int): Horizontal component of the top left corner of the crop box.
+        height (int): Height of the crop box.
+        width (int): Width of the crop box.
+    Returns:
+        Tensor: Cropped image.
+    """
+    if not F._is_tensor_image(img):
+        raise TypeError('tensor is not a torch image.')
+
+    return img[..., top:top + height, left:left + width]

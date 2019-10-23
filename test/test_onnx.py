@@ -67,9 +67,9 @@ class ONNXExporterTester(unittest.TestCase):
                 torch.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
             except AssertionError as error:
                 if tolerate_small_mismatch:
-                    assert ("(0.00%)" in str(error)), str(error)
+                    self.assertIn("(0.00%)", str(error), str(error))
                 else:
-                    assert False, str(error)
+                    raise
 
     def test_nms(self):
         boxes = torch.rand(5, 4)

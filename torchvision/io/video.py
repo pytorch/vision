@@ -1,9 +1,25 @@
 import re
+import imp
 import gc
+import os
 import torch
 import numpy as np
 import math
 import warnings
+
+from . import _video_opt
+
+
+_HAS_VIDEO_OPT = False
+
+try:
+    lib_dir = os.path.join(os.path.dirname(__file__), '..')
+    _, path, description = imp.find_module("video_reader", [lib_dir])
+    torch.ops.load_library(path)
+    _HAS_VIDEO_OPT = True
+except (ImportError, OSError):
+    pass
+
 
 try:
     import av
@@ -137,12 +153,14 @@ def _read_from_stream(container, start_offset, end_offset, pts_unit, stream, str
         pass
     # ensure that the results are sorted wrt the pts
     result = [frames[i] for i in sorted(frames) if start_offset <= frames[i].pts <= end_offset]
-    if start_offset > 0 and start_offset not in frames:
+    if len(frames) > 0 and start_offset > 0 and start_offset not in frames:
         # if there is no frame that exactly matches the pts of start_offset
         # add the last frame smaller than start_offset, to guarantee that
         # we will have all the necessary data. This is most useful for audio
-        first_frame_pts = max(i for i in frames if i < start_offset)
-        result.insert(0, frames[first_frame_pts])
+        preceding_frames = [i for i in frames if i < start_offset]
+        if len(preceding_frames) > 0:
+            first_frame_pts = max(preceding_frames)
+            result.insert(0, frames[first_frame_pts])
     return result
 
 
@@ -188,6 +206,11 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
         metadata for the video and audio. Can contain the fields video_fps (float)
         and audio_fps (int)
     """
+
+    from torchvision import get_video_backend
+    if get_video_backend() != "pyav":
+        return _video_opt._read_video(filename, start_pts, end_pts, pts_unit)
+
     _check_av_available()
 
     if end_pts is None:
@@ -271,6 +294,10 @@ def read_video_timestamps(filename, pts_unit='pts'):
         the frame rate for the video
 
     """
+    from torchvision import get_video_backend
+    if get_video_backend() != "pyav":
+        return _video_opt._read_video_timestamps(filename, pts_unit)
+
     _check_av_available()
 
     video_frames = []
