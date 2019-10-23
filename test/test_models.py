@@ -66,7 +66,7 @@ SCRIPT_MODELS_TO_FIX = [
     # This model fails in the TorchScript interpreter, see
     # https://github.com/pytorch/vision/pull/1436. Delete this list when
     # that PR is closed.
-    'test_deeplabv3_resnet101',
+    'deeplabv3_resnet101',
 ]
 
 
@@ -78,15 +78,14 @@ class ModelTester(TestCase):
         return super(ModelTester, self).checkModule(model, args, unwrapper=unwrapper, skip=name in SCRIPT_MODELS_TO_FIX)
 
     def _test_classification_model(self, name, input_shape):
+        set_rng_seed(0)
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
-        set_rng_seed(0)
         model = models.__dict__[name](num_classes=50)
         model.eval()
         x = torch.rand(input_shape)
         out = model(x)
-        self.assertExpected(out)
-        # self.assertExpected(out, prec=1e-2)
+        self.assertExpected(out, prec=0.1)
         self.assertEqual(out.shape[-1], 50)
         self.checkModule(model, name, (x,))
 
@@ -137,7 +136,7 @@ class ModelTester(TestCase):
             # mean values are small, use large prec
             self.assertExpected(test_value, prec=.01)
         else:
-            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor))
+            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor), prec=0.01)
 
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])

@@ -311,12 +311,7 @@ class TestCase(unittest.TestCase):
 
 
 @contextlib.contextmanager
-def freeze_rng_state(seed=None):
-    if seed:
-        torch.manual_seed(seed)
-        random.seed(seed)
-        np.random.seed(seed)
-
+def freeze_rng_state():
     rng_state = torch.get_rng_state()
     if torch.cuda.is_available():
         cuda_rng_state = torch.cuda.get_rng_state()
