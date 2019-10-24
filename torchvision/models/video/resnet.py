@@ -41,17 +41,19 @@ class Conv2Plus1D(nn.Sequential):
                  in_planes,
                  out_planes,
                  stride=1,
-                 padding=1):
+                 padding=1,
+                 midplanes=None):
 
-        self.midplanes = (in_planes * out_planes * 3 * 3 * 3) // (
+        if midplanes is None:
+            midplanes = (in_planes * out_planes * 3 * 3 * 3) // (
                 in_planes * 3 * 3 + 3 * out_planes)
         super(Conv2Plus1D, self).__init__(
-            nn.Conv3d(in_planes, self.midplanes, kernel_size=(1, 3, 3),
+            nn.Conv3d(in_planes, midplanes, kernel_size=(1, 3, 3),
                       stride=(1, stride, stride), padding=(0, padding, padding),
                       bias=False),
             nn.BatchNorm3d(midplanes),
             nn.ReLU(inplace=True),
-            nn.Conv3d(self.midplanes, out_planes, kernel_size=(3, 1, 1),
+            nn.Conv3d(midplanes, out_planes, kernel_size=(3, 1, 1),
                       stride=(stride, 1, 1), padding=(padding, 0, 0),
                       bias=False))
 
@@ -283,15 +285,15 @@ class VideoResNet(nn.Module):
                               missing_keys, unexpected_keys, error_msgs):
         version = local_metadata.get("version", None)
         assert version in [1, 2]
-
         # the new changes only apply to the R2+1D models
         if version == 1 and isinstance(self.layer2[0].conv2[0], Conv2Plus1D):
             # V1 of the models had midplanes hard coded into the blocks 
             # and default BN parameters as in Pytorch.
             # All other layer configurations were the same.
-            self.layer2[0].conv2[0] = Conv2Plus1D(128, 128, 230)
-            self.layer3[0].conv2[0] = Conv2Plus1D(256, 256, 460)
-            self.layer4[0].conv2[0] = Conv2Plus1D(512, 512, 921)
+            self.layer2[0].conv2[0] = Conv2Plus1D(128, 128, midplanes=230)
+            self.layer3[0].conv2[0] = Conv2Plus1D(256, 256, midplanes=460)
+            self.layer4[0].conv2[0] = Conv2Plus1D(512, 512, midplanes=921)
+
             for m in self.modules():
                 if isinstance(m, nn.BatchNorm3d):
                     m.eps = 1e-5
@@ -303,8 +305,7 @@ class VideoResNet(nn.Module):
                 "This is an updated vesrion of the R(2+1D) model that was "
                 "updated following discussion in #1265. The performance "
                 "deviations are minimal, but this might cause some BW compatibility "
-                "issues, depending on the models.",
-                UserWarning)
+                "issues, depending on the models.", UserWarning)
 
         super(VideoResNet, self)._load_from_state_dict(
             state_dict, prefix, local_metadata, strict, missing_keys,
