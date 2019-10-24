@@ -65,7 +65,6 @@ def evaluate(model, criterion, data_loader, device):
             metric_logger.update(loss=loss.item())
             metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
             metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
-
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
 
@@ -158,17 +157,19 @@ def main(args):
     device = torch.device(args.device)
 
     torch.backends.cudnn.benchmark = True
+
     train_dir = os.path.join(args.data_path, 'train')
     val_dir = os.path.join(args.data_path, 'val')
     dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir,
                                                                    args.cache_dataset, args.distributed)
     data_loader = torch.utils.data.DataLoader(
         dataset, batch_size=args.batch_size,
-        sampler=train_sampler, num_workers=args.num_workers, pin_memory=True)
+        sampler=train_sampler, num_workers=args.workers, pin_memory=True)
 
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test, batch_size=args.batch_size,
-        sampler=test_sampler, num_workers=args.num_workers, pin_memory=True)
+        sampler=test_sampler, num_workers=args.workers, pin_memory=True)
+
     print("Creating model")
     model = torchvision.models.__dict__[args.model](pretrained=args.pretrained)
     model.to(device)
