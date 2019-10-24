@@ -21,13 +21,6 @@ def get_available_quantizable_models():
     return [k for k, v in models.quantization.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
-quantizable_models = ['mobilenet_v2',
-                      'resnet18',
-                      'resnet34',
-                      'resnet50',
-                      'resnext101_32x8d']
-
-
 # list of models that are not scriptable
 scriptable_quantizable_models_blacklist = []
 
@@ -35,6 +28,11 @@ scriptable_quantizable_models_blacklist = []
 @unittest.skipUnless('fbgemm' in torch.backends.quantized.supported_engines,
                      "This Pytorch Build has not been built with fbgemm")
 class ModelTester(TestCase):
+    def check_quantized_model(self, model, input_shape):
+        x = torch.rand(input_shape)
+        model(x)
+        return
+
     def check_script(self, model, name):
         if name in scriptable_quantizable_models_blacklist:
             return
@@ -51,8 +49,12 @@ class ModelTester(TestCase):
     def _test_classification_model(self, name, input_shape):
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
+        # First check if quantize=True provides models that can run with input data
+        model = torchvision.models.quantization.__dict__[name](pretrained=False, quantize=True)
+        self.check_quantized_model(model, input_shape)
+
         for eval in [True, False]:
-            model = torchvision.models.quantization.__dict__[name](pretrained_float_model=False)
+            model = torchvision.models.quantization.__dict__[name](pretrained=False, quantize=False)
             if eval:
                 model.eval()
                 model.qconfig = torch.quantization.get_default_qconfig('fbgemm')

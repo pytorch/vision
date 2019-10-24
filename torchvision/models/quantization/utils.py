@@ -14,3 +14,14 @@ def _replace_relu(module):
 
     for key, value in reassign.items():
         module._modules[key] = value
+
+
+def quantize_model(model, backend):
+    _dummy_input_data = torch.rand(1, 3, 299, 299)
+    model.eval()
+    model.qconfig = torch.quantization.get_default_qconfig(backend)
+    model.fuse_model()
+    torch.quantization.prepare(model, inplace=True)
+    model(_dummy_input_data)
+    torch.quantization.convert(model, inplace=True)
+    return

@@ -10,7 +10,7 @@ from torch import nn
 import torchvision
 from torchvision import transforms
 
-from . import utils
+import utils
 
 try:
     from apex import amp
@@ -47,12 +47,12 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, pri
         metric_logger.meters['img/s'].update(batch_size / (time.time() - start_time))
 
 
-def evaluate(model, criterion, data_loader, device, neval_batches=None):
+def evaluate(model, criterion, data_loader, device):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
     with torch.no_grad():
-        for cnt, (image, target) in enumerate(metric_logger.log_every(data_loader, 100, header)):
+        for image, target in metric_logger.log_every(data_loader, 100, header):
             image = image.to(device, non_blocking=True)
             target = target.to(device, non_blocking=True)
             output = model(image)
@@ -65,10 +65,6 @@ def evaluate(model, criterion, data_loader, device, neval_batches=None):
             metric_logger.update(loss=loss.item())
             metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
             metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
-            if neval_batches is not None and cnt >= neval_batches:
-                print(' * Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f}'
-                      .format(top1=metric_logger.acc1, top5=metric_logger.acc5))
-                return metric_logger.acc1.global_avg
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
@@ -86,7 +82,7 @@ def _get_cache_path(filepath):
     return cache_path
 
 
-def load_data(traindir, valdir, train_batch_size, eval_batch_size, num_workers, cache_dataset, distributed):
+def load_data(traindir, valdir, cache_dataset, distributed):
     # Data loading code
     print("Loading data")
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -142,15 +138,7 @@ def load_data(traindir, valdir, train_batch_size, eval_batch_size, num_workers, 
         train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
 
-    data_loader = torch.utils.data.DataLoader(
-        dataset, batch_size=train_batch_size,
-        sampler=train_sampler, num_workers=num_workers, pin_memory=True)
-
-    data_loader_test = torch.utils.data.DataLoader(
-        dataset_test, batch_size=eval_batch_size,
-        sampler=test_sampler, num_workers=num_workers, pin_memory=True)
-
-    return data_loader, data_loader_test, train_sampler
+    return dataset, dataset_test, train_sampler, test_sampler
 
 
 def main(args):
@@ -172,13 +160,15 @@ def main(args):
     torch.backends.cudnn.benchmark = True
     train_dir = os.path.join(args.data_path, 'train')
     val_dir = os.path.join(args.data_path, 'val')
-    data_loader, data_loader_test, train_sampler = load_data(train_dir,
-                                                             val_dir,
-                                                             args.batch_size,
-                                                             args.batch_size,
-                                                             args.workers,
-                                                             args.cache_dataset,
-                                                             args.distributed)
+    dataset, dataset_test, train_sampler, test_sampler = load_data(train_dir, val_dir,
+                                                                   args.cache_dataset, args.distributed)
+    data_loader = torch.utils.data.DataLoader(
+        dataset, batch_size=args.batch_size,
+        sampler=train_sampler, num_workers=args.num_workers, pin_memory=True)
+
+    data_loader_test = torch.utils.data.DataLoader(
+        dataset_test, batch_size=args.batch_size,
+        sampler=test_sampler, num_workers=args.num_workers, pin_memory=True)
     print("Creating model")
     model = torchvision.models.__dict__[args.model](pretrained=args.pretrained)
     model.to(device)

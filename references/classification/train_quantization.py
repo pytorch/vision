@@ -42,15 +42,6 @@ def main(args):
         dataset_test, batch_size=args.eval_batch_size,
         sampler=test_sampler, num_workers=args.workers, pin_memory=True)
 
-    if args.post_training_quantize:
-        data_loader_calibration = datautils.DataLoader(datautils.Subset(dataset,
-                                                       indices=list(
-                                                           range(args.workers * args.batch_size
-                                                                 * args.num_calibration_batches))),
-                                                       batch_size=args.batch_size,
-                                                       sampler=torch.utils.data.SequentialSampler(dataset),
-                                                       num_workers=args.workers,
-                                                       pin_memory=True)
     print("Creating model", args.model)
     if not args.test_only:
         model = torchvision.models.quantization.__dict__[args.model](pretrained=True, quantize=False)
@@ -88,14 +79,21 @@ def main(args):
         args.start_epoch = checkpoint['epoch'] + 1
 
     if args.post_training_quantize:
+        data_loader_calibration = datautils.DataLoader(datautils.Subset(dataset,
+                                                       indices=list(
+                                                           range(args.workers * args.batch_size
+                                                                 * args.num_calibration_batches))),
+                                                       batch_size=args.batch_size,
+                                                       sampler=torch.utils.data.SequentialSampler(dataset),
+                                                       num_workers=args.workers,
+                                                       pin_memory=True)
         model.to(device)
         model.eval()
         model.fuse_model()
         model.qconfig = torch.quantization.get_default_qconfig(args.backend)
         torch.quantization.prepare(model, inplace=True)
         # Calibrate first
-        evaluate(model, criterion, data_loader_calibration, device=device,
-                 neval_batches=args.num_calibration_batches)
+        evaluate(model, criterion, data_loader_calibration, device=device)
         torch.quantization.convert(model, inplace=True)
         if args.output_dir:
             if utils.is_main_process():
