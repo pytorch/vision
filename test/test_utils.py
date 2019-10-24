@@ -64,7 +64,8 @@ class Tester(unittest.TestCase):
             fp = BytesIO()
             utils.save_image(t, fp, format='png')
             img_bytes = Image.open(fp)
-            self.assertTrue(torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)), 'Image not stored in file object')
+            self.assertTrue(torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)),
+                            'Image not stored in file object')
 
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_save_image_single_pixel_file_object(self):
@@ -75,7 +76,8 @@ class Tester(unittest.TestCase):
             fp = BytesIO()
             utils.save_image(t, fp, format='png')
             img_bytes = Image.open(fp)
-            self.assertTrue(torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)), 'Pixel Image not stored in file object')
+            self.assertTrue(torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)),
+                            'Pixel Image not stored in file object')
 
 
 if __name__ == '__main__':
