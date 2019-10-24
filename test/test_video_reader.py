@@ -25,7 +25,7 @@ else:
     from urllib.error import URLError
 
 
-from torchvision.io._video_opt import _HAS_VIDEO_OPT
+from torchvision.io import _HAS_VIDEO_OPT
 
 
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")
