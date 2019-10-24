@@ -361,14 +361,13 @@ def _onnx_paste_mask_in_image(mask, box, im_h, im_w):
     zeros_y1 = torch.zeros(im_h - y_1, unpaded_im_mask.size(1))
     concat_0 = torch.cat((zeros_y0,
                           unpaded_im_mask.to(dtype=torch.float32),
-                          zeros_y1), 0)
-
+                          zeros_y1), 0)[0:im_h,:]
     # pad x
     zeros_x0 = torch.zeros(concat_0.size(0), x_0)
     zeros_x1 = torch.zeros(concat_0.size(0), im_w - x_1)
     im_mask = torch.cat((zeros_x0,
                          concat_0,
-                         zeros_x1), 1)
+                         zeros_x1), 1)[:,:im_w]
     return im_mask
 
 

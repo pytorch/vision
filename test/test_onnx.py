@@ -325,38 +325,19 @@ class ONNXExporterTester(unittest.TestCase):
     # This test also compares both paste_masks_in_image and _onnx_paste_masks_in_image
     # (since jit_trace witll call _onnx_paste_masks_in_image).
     def test_paste_mask_in_image(self):
-        class PasteMasksModule(torch.nn.Module):
-            def __init__(self_module, images):
-                super(PasteMasksModule, self_module).__init__()
-                self_module.transform = self._init_test_generalized_rcnn_transform()
-                self_module.rpn = self._init_test_rpn()
-                self_module.roi_heads = self._init_test_roi_heads_mask_rcnn()
-                self_module.original_image_sizes = [img.shape[-2:] for img in images]
-                self_module.images = ImageList(images, [i.shape[-2:] for i in images])
-
-            def forward(self_module, features):
-                proposals, _ = self_module.rpn(self_module.images, features)
-                detections, _ = self_module.roi_heads(features, proposals, self_module.images.image_sizes)
-                return detections
-
-        images = torch.rand(2, 3, 600, 600)
-        features = self.get_features(images)
-
-        model = PasteMasksModule(images)
-        model.eval()
-        detections = model(features)
-
+        masks = torch.rand(10, 1, 26, 26)
+        boxes = torch.rand(10, 4)
+        boxes[:, 2:] += torch.rand(10, 2)
+        boxes *= 50
+        o_im_s = (100, 100)
         from torchvision.models.detection.roi_heads import paste_masks_in_image
         from torchvision.models.detection.transform import resize_boxes
-        for i, (pred, im_s, o_im_s) in enumerate(zip(detections, model.images.image_sizes, model.original_image_sizes)):
-            boxes = pred["boxes"]
-            boxes = resize_boxes(boxes, im_s, o_im_s)
-            detections[i]["boxes"] = boxes
-            masks = pred["masks"]
-            out = paste_masks_in_image(masks, boxes, o_im_s)
-            jit_trace = torch.jit.trace(paste_masks_in_image, (masks, boxes, torch.tensor(o_im_s)))
-            out_onnx = jit_trace(masks, boxes, torch.tensor(o_im_s))
-            assert torch.all(out.eq(out_onnx))
+        out = paste_masks_in_image(masks, boxes, o_im_s)
+        jit_trace = torch.jit.trace(paste_masks_in_image,
+                             (masks, boxes,
+                             [torch.tensor(o_im_s[0]),torch.tensor(o_im_s[1])]))
+        out_onnx = jit_trace(masks, boxes, [torch.tensor(100),torch.tensor(100)])
+        assert torch.all(out.eq(out_onnx))
 
     @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
     def test_mask_rcnn(self):
