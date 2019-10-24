@@ -12,7 +12,6 @@ import torchvision
 import torch.quantization
 import utils
 from train import train_one_epoch, evaluate, load_data
-import torch.utils.data as datautils
 
 
 def main(args):
@@ -22,6 +21,10 @@ def main(args):
 
     utils.init_distributed_mode(args)
     print(args)
+
+    if args.post_training_quantize and args.distributed:
+        raise RuntimeError("Post training quantization example should not be performed "
+                           "on distributed mode")
 
     device = torch.device(args.device)
 
@@ -43,18 +46,14 @@ def main(args):
         sampler=test_sampler, num_workers=args.workers, pin_memory=True)
 
     print("Creating model", args.model)
-    if not args.test_only:
-        model = torchvision.models.quantization.__dict__[args.model](pretrained=True, quantize=False)
-    else:
-        model = torchvision.models.quantization.__dict__[args.model](pretrained=True, quantize=True)
+    # when training quantized models, we always start from a pre-trained fp32 reference model
+    model = torchvision.models.quantization.__dict__[args.model](pretrained=True, quantize=args.test_only)
+    model.to(device)
 
     if not (args.test_only or args.post_training_quantize):
         model.fuse_model()
         model.qconfig = torch.quantization.get_default_qat_qconfig(args.backend)
         torch.quantization.prepare_qat(model, inplace=True)
-        model.to(device)
-        if args.distributed and args.sync_bn:
-            model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
 
     criterion = nn.CrossEntropyLoss()
 
@@ -79,37 +78,35 @@ def main(args):
         args.start_epoch = checkpoint['epoch'] + 1
 
     if args.post_training_quantize:
-        data_loader_calibration = datautils.DataLoader(datautils.Subset(dataset,
-                                                       indices=list(
-                                                           range(args.workers * args.batch_size
-                                                                 * args.num_calibration_batches))),
-                                                       batch_size=args.batch_size,
-                                                       sampler=torch.utils.data.SequentialSampler(dataset),
-                                                       num_workers=args.workers,
-                                                       pin_memory=True)
-        model.to(device)
+        # perform calibration on a subset of the training dataset
+        # for that, create a subset of the training dataset
+        ds = torch.utils.data.Subset(
+            dataset,
+            indices=list(range(args.batch_size * args.num_calibration_batches)))
+        data_loader_calibration = torch.utils.data.DataLoader(
+            ds, batch_size=args.batch_size, shuffle=False, num_workers=args.workers,
+            pin_memory=True)
         model.eval()
         model.fuse_model()
         model.qconfig = torch.quantization.get_default_qconfig(args.backend)
         torch.quantization.prepare(model, inplace=True)
         # Calibrate first
-        evaluate(model, criterion, data_loader_calibration, device=device)
+        print("Calibrating")
+        evaluate(model, criterion, data_loader_calibration, device=device, print_freq=1)
         torch.quantization.convert(model, inplace=True)
         if args.output_dir:
+            print('Saving quantized model')
             if utils.is_main_process():
                 torch.save(model.state_dict(), os.path.join(args.output_dir,
                            'quantized_post_train_model.pth'))
-        print('Saving quantized model')
+        print("Evaluating post-training quantized model")
         evaluate(model, criterion, data_loader_test, device=device)
         return
 
     if args.test_only:
-        model.to(device)
-        model.eval()
         evaluate(model, criterion, data_loader_test, device=device)
         return
 
-    model.train()
     model.apply(torch.quantization.enable_observer)
     model.apply(torch.quantization.enable_fake_quant)
     start_time = time.time()
@@ -118,7 +115,7 @@ def main(args):
             train_sampler.set_epoch(epoch)
         print('Starting training for epoch', epoch)
         train_one_epoch(model, criterion, optimizer, data_loader, device, epoch,
-                        args.print_freq, apex=False)
+                        args.print_freq)
         lr_scheduler.step()
         with torch.no_grad():
             if epoch >= args.num_observer_update_epochs:
@@ -129,7 +126,6 @@ def main(args):
                 model.apply(torch.nn.intrinsic.qat.freeze_bn_stats)
             print('Evaluate QAT model')
 
-            model.eval()
             evaluate(model, criterion, data_loader_test, device=device)
             quantized_eval_model = copy.deepcopy(model)
             quantized_eval_model.eval()
@@ -186,13 +182,13 @@ def parse_args():
                         help='batch size for evaluation')
     parser.add_argument('--epochs', default=90, type=int, metavar='N',
                         help='number of total epochs to run')
-    parser.add_argument('--num_observer_update_epochs',
+    parser.add_argument('--num-observer-update-epochs',
                         default=4, type=int, metavar='N',
                         help='number of total epochs to update observers')
-    parser.add_argument('--num_batch_norm_update_epochs', default=3,
+    parser.add_argument('--num-batch-norm-update-epochs', default=3,
                         type=int, metavar='N',
                         help='number of total epochs to update batch norm stats')
-    parser.add_argument('--num_calibration_batches',
+    parser.add_argument('--num-calibration-batches',
                         default=32, type=int, metavar='N',
                         help='number of batches of training set for \
                               observer calibration ')
@@ -226,19 +222,13 @@ def parse_args():
         action="store_true",
     )
     parser.add_argument(
-        "--sync-bn",
-        dest="sync_bn",
-        help="Use sync batch norm",
-        action="store_true",
-    )
-    parser.add_argument(
         "--test-only",
         dest="test_only",
         help="Only test the model",
         action="store_true",
     )
     parser.add_argument(
-        "--post_training_quantize",
+        "--post-training-quantize",
         dest="post_training_quantize",
         help="Post training quantize the model",
         action="store_true",
