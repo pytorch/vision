@@ -75,7 +75,7 @@ class MobileNetV2(nn.Module):
                  width_mult=1.0,
                  inverted_residual_setting=None,
                  round_nearest=8,
-                 block=InvertedResidual):
+                 block=None):
         """
         MobileNet V2 main class
 
@@ -89,6 +89,9 @@ class MobileNetV2(nn.Module):
 
         """
         super(MobileNetV2, self).__init__()
+
+        if block is None:
+            block = InvertedResidual
         input_channel = 32
         last_channel = 1280
 
