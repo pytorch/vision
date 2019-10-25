@@ -44,20 +44,28 @@ class Tester(unittest.TestCase):
         for _ in range(20):
             channels = 3
             dims = torch.randint(1, 50, (2,))
-            img = torch.rand(channels, *dims, dtype=torch.float)
+            shape = (channels, *dims)
+
+            if torch.randint(0, 2, (1,)) == 0:
+                img = torch.rand(*shape, dtype=torch.float)
+            else:
+                img = torch.randint(0, 256, shape, dtype=torch.uint8)
+
             factor = 3 * torch.rand(1)
             for f, ft in fns:
 
                 ft_img = ft(img, factor)
+                if img.dtype == torch.uint8:
+                    ft_img = ft_img.to(torch.float) / 255
 
                 img_pil = transforms.ToPILImage()(img)
                 f_img_pil = f(img_pil, factor)
                 f_img = transforms.ToTensor()(f_img_pil)
 
                 # F uses uint8 and F_t uses float, so there is a small
-                # difference in values caused by truncations.
-                l1_diff = (ft_img - f_img).norm(p=1)
-                self.assertLess(l1_diff, 0.01 * img.nelement())
+                # difference in values caused by (at most 5) truncations.
+                max_diff = (ft_img - f_img).abs().max()
+                self.assertLess(max_diff, 5 / 255 + 1e-5)
 
 
 if __name__ == '__main__':

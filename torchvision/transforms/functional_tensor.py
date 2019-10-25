@@ -65,9 +65,7 @@ def adjust_brightness(img, brightness_factor):
     if not F._is_tensor_image(img):
         raise TypeError('tensor is not a torch image.')
 
-    black_img = torch.zeros(img.shape, device=img.device)
-
-    return _blend(img, black_img, brightness_factor)
+    return _blend(img, 0, brightness_factor)
 
 
 def adjust_contrast(img, contrast_factor):
@@ -85,10 +83,9 @@ def adjust_contrast(img, contrast_factor):
     if not F._is_tensor_image(img):
         raise TypeError('tensor is not a torch image.')
 
-    mean = torch.mean(_rgb_to_grayscale(img))
-    mean_img = mean * torch.ones(img.shape, device=img.device)
+    mean = torch.mean(_rgb_to_grayscale(img).to(torch.float))
 
-    return _blend(img, mean_img, contrast_factor)
+    return _blend(img, mean, contrast_factor)
 
 
 def adjust_saturation(img, saturation_factor):
@@ -106,16 +103,18 @@ def adjust_saturation(img, saturation_factor):
     if not F._is_tensor_image(img):
         raise TypeError('tensor is not a torch image.')
 
-    num_channels = img.shape[0]
-    gray_img = _rgb_to_grayscale(img).repeat(num_channels, 1, 1)
-
-    return _blend(img, gray_img, saturation_factor)
+    return _blend(img, _rgb_to_grayscale(img), saturation_factor)
 
 
 def _blend(img1, img2, ratio):
-    return (ratio * img1 + (1 - ratio) * img2).clamp(0, 1)
+    bound = 255 if _is_int(img1.dtype) else 1
+    return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
 
 def _rgb_to_grayscale(img):
     # ITU-R 601-2 luma transform, as used in PIL.
-    return 0.2989 * img[0] + 0.5870 * img[1] + 0.1140 * img[2]
+    return (0.2989 * img[0] + 0.5870 * img[1] + 0.1140 * img[2]).to(img.dtype)
+
+
+def _is_int(dtype):
+    return dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64)
