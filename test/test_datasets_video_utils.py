@@ -3,7 +3,7 @@ import sys
 import os
 import torch
 import unittest
-
+from os import path, sep
 from torchvision import io
 from torchvision.datasets.video_utils import VideoClips, unfold
 
@@ -69,6 +69,11 @@ class Tester(unittest.TestCase):
                 self.assertEqual(video_idx, v_idx)
                 self.assertEqual(clip_idx, c_idx)
 
+                video_path = video_clips.video_paths[video_idx]
+                video_name = path.splitext(video_path)[0].split(sep)[-1]
+                self.assertEqual(video_path, video_clips.get_video_path(i))
+                self.assertEqual(video_name, video_clips.get_video_name(i))
+
             video_clips = VideoClips(video_list, 6, 6)
             self.assertEqual(video_clips.num_clips(), 0 + 1 + 2)
             for i, (v_idx, c_idx) in enumerate([(1, 0), (2, 0), (2, 1)]):
@@ -76,7 +81,11 @@ class Tester(unittest.TestCase):
                 self.assertEqual(video_idx, v_idx)
                 self.assertEqual(clip_idx, c_idx)
 
-            from os import path, sep
+                video_path = video_clips.video_paths[video_idx]
+                video_name = path.splitext(video_path)[0].split(sep)[-1]
+                self.assertEqual(video_path, video_clips.get_video_path(i))
+                self.assertEqual(video_name, video_clips.get_video_name(i))
+
             video_clips = VideoClips(video_list, 6, 1)
             self.assertEqual(video_clips.num_clips(), 0 + (10 - 6 + 1) + (15 - 6 + 1))
             for i, v_idx, c_idx in [(0, 1, 0), (4, 1, 4), (5, 2, 0), (6, 2, 1)]:
