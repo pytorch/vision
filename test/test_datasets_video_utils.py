@@ -76,6 +76,7 @@ class Tester(unittest.TestCase):
                 self.assertEqual(video_idx, v_idx)
                 self.assertEqual(clip_idx, c_idx)
 
+            from os import path, sep
             video_clips = VideoClips(video_list, 6, 1)
             self.assertEqual(video_clips.num_clips(), 0 + (10 - 6 + 1) + (15 - 6 + 1))
             for i, v_idx, c_idx in [(0, 1, 0), (4, 1, 4), (5, 2, 0), (6, 2, 1)]:
@@ -83,16 +84,10 @@ class Tester(unittest.TestCase):
                 self.assertEqual(video_idx, v_idx)
                 self.assertEqual(clip_idx, c_idx)
 
-            from os import path, sep
-            true_names = {path.splitext(video_path)[0].split(sep)[-1] for video_path in video_list}
-            video_names = set()
-            video_paths = set()
-            for idx in range(video_clips.num_clips()):
-                video_names.add(video_clips.get_video_name(idx))
-                video_paths.add(video_clips.get_video_path(idx))
-
-            self.assertEqual(video_paths, video_list)
-            self.assertEqual(video_names, true_names)
+                video_path = video_clips.video_paths[video_idx]
+                video_name = path.splitext(video_path)[0].split(sep)[-1]
+                self.assertEqual(video_path, video_clips.get_video_path(i))
+                self.assertEqual(video_name, video_clips.get_video_name(i))
 
     @unittest.skipIf(not io.video._av_available(), "this test requires av")
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
