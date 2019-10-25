@@ -36,6 +36,29 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(img_cropped, (img_cropped_GT * 255).to(torch.uint8)),
                         "functional_tensor crop not working")
 
+    def test_adjustments(self):
+        fns = ((F.adjust_brightness, F_t.adjust_brightness),
+               (F.adjust_contrast, F_t.adjust_contrast),
+               (F.adjust_saturation, F_t.adjust_saturation))
+
+        for _ in range(20):
+            channels = 3
+            dims = torch.randint(1, 50, (2,))
+            img = torch.rand(channels, *dims, dtype=torch.float)
+            factor = 3 * torch.rand(1)
+            for f, ft in fns:
+
+                ft_img = ft(img, factor)
+
+                img_pil = transforms.ToPILImage()(img)
+                f_img_pil = f(img_pil, factor)
+                f_img = transforms.ToTensor()(f_img_pil)
+
+                # F uses uint8 and F_t uses float, so there is a small
+                # difference in values caused by truncations.
+                l1_diff = (ft_img - f_img).norm(p=1)
+                self.assertLess(l1_diff, 0.01 * img.nelement())
+
 
 if __name__ == '__main__':
     unittest.main()
