@@ -199,7 +199,8 @@ class TestCase(unittest.TestCase):
                         if diff.is_signed() and diff.dtype != torch.int8:
                             diff = diff.abs()
                         max_err = diff.max()
-                        self.assertLessEqual(max_err, prec, message)
+                        tolerance = prec + prec * abs(a.max())
+                        self.assertLessEqual(max_err, tolerance, message)
             super(TestCase, self).assertEqual(x.is_sparse, y.is_sparse, message)
             super(TestCase, self).assertEqual(x.is_quantized, y.is_quantized, message)
             if x.is_sparse:
