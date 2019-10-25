@@ -55,7 +55,7 @@ class Tester(unittest.TestCase):
             for f, ft in fns:
 
                 ft_img = ft(img, factor)
-                if img.dtype == torch.uint8:
+                if not img.dtype.is_floating_point:
                     ft_img = ft_img.to(torch.float) / 255
 
                 img_pil = transforms.ToPILImage()(img)

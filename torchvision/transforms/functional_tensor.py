@@ -107,14 +107,10 @@ def adjust_saturation(img, saturation_factor):
 
 
 def _blend(img1, img2, ratio):
-    bound = 255 if _is_int(img1.dtype) else 1
+    bound = 1 if img1.dtype.is_floating_point else 255
     return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
 
 def _rgb_to_grayscale(img):
     # ITU-R 601-2 luma transform, as used in PIL.
     return (0.2989 * img[0] + 0.5870 * img[1] + 0.1140 * img[2]).to(img.dtype)
-
-
-def _is_int(dtype):
-    return dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64)
