@@ -25,8 +25,9 @@ def get_available_quantizable_models():
 scriptable_quantizable_models_blacklist = []
 
 
-@unittest.skipUnless('fbgemm' in torch.backends.quantized.supported_engines,
-                     "This Pytorch Build has not been built with fbgemm")
+@unittest.skipUnless('fbgemm' in torch.backends.quantized.supported_engines and
+                     'qnnpack' in torch.backends.quantized.supported_engines,
+                     "This Pytorch Build has not been built with fbgemm and qnnpack")
 class ModelTester(TestCase):
     def check_quantized_model(self, model, input_shape):
         x = torch.rand(input_shape)
@@ -50,14 +51,15 @@ class ModelTester(TestCase):
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
         # First check if quantize=True provides models that can run with input data
-        model = torchvision.models.quantization.__dict__[name](pretrained=False, quantize=True)
+
+        model = torchvision.models.quantization.__dict__[name](pretrained=True, quantize=True)
         self.check_quantized_model(model, input_shape)
 
         for eval in [True, False]:
             model = torchvision.models.quantization.__dict__[name](pretrained=False, quantize=False)
             if eval:
                 model.eval()
-                model.qconfig = torch.quantization.get_default_qconfig('fbgemm')
+                model.qconfig = torch.quantization.default_qconfig
             else:
                 model.train()
                 model.qconfig = torch.quantization.default_qat_qconfig
@@ -68,10 +70,8 @@ class ModelTester(TestCase):
             else:
                 torch.quantization.prepare_qat(model, inplace=True)
                 model.eval()
+
             torch.quantization.convert(model, inplace=True)
-            # Ensure that quantized model runs successfully
-            x = torch.rand(input_shape)
-            model(x)
 
         self.check_script(model, name)
 
