@@ -26,8 +26,12 @@ def main(args):
         raise RuntimeError("Post training quantization example should not be performed "
                            "on distributed mode")
 
-    device = torch.device(args.device)
+    # Set backend engine to ensure that quantized model runs on the correct kernels
+    if args.backend not in torch.backends.quantized.supported_engines:
+        raise RuntimeError("Quantized backend not supported: " + str(args.backend))
+    torch.backends.quantized.engine = args.backend
 
+    device = torch.device(args.device)
     torch.backends.cudnn.benchmark = True
 
     # Data loading code
@@ -55,16 +59,15 @@ def main(args):
         model.qconfig = torch.quantization.get_default_qat_qconfig(args.backend)
         torch.quantization.prepare_qat(model, inplace=True)
 
+        optimizer = torch.optim.SGD(
+            model.parameters(), lr=args.lr, momentum=args.momentum,
+            weight_decay=args.weight_decay)
+
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
+                                                       step_size=args.lr_step_size,
+                                                       gamma=args.lr_gamma)
+
     criterion = nn.CrossEntropyLoss()
-
-    optimizer = torch.optim.SGD(
-        model.parameters(), lr=args.lr, momentum=args.momentum,
-        weight_decay=args.weight_decay)
-
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
-                                                   step_size=args.lr_step_size,
-                                                   gamma=args.lr_gamma)
-
     model_without_ddp = model
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
