@@ -325,7 +325,7 @@ class ONNXExporterTester(unittest.TestCase):
                                     (masks, boxes,
                                      [torch.tensor(o_im_s[0]),
                                       torch.tensor(o_im_s[1])]))
-        out_trace = jit_trace(masks, boxes, [torch.tensor(100), torch.tensor(100)])
+        out_trace = jit_trace(masks, boxes, [torch.tensor(200), torch.tensor(200)])
         assert torch.all(out.eq(out_trace))
 
     @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
