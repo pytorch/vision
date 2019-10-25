@@ -10,8 +10,14 @@ __all__ = ['QuantizableResNet', 'resnet18', 'resnet50',
            'resnext101_32x8d']
 
 
-# TODO specify locations of quantized pretrained models
-quant_model_urls = {}
+quant_model_urls = {
+    'resnet18_fbgemm':
+        'https://download.pytorch.org/models/quantized/resnet18_fbgemm_16fa66dd.pth',
+    'resnet50_fbgemm':
+        'https://download.pytorch.org/models/quantized/resnet50_fbgemm_bf931d71.pth',
+    'resnext101_32x8d_fbgemm':
+        'https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm_09835ccf.pth',
+}
 
 
 class QuantizableBasicBlock(BasicBlock):

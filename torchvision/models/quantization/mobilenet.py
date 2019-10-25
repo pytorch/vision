@@ -7,9 +7,9 @@ from .utils import _replace_relu, quantize_model
 
 __all__ = ['QuantizableMobileNetV2', 'mobilenet_v2']
 
-# TODO: Define model_url for quantized mobilenet models
 quant_model_urls = {
-    'mobilenet_v2_qnnpack': 'https://download.pytorch.org/models/location'
+    'mobilenet_v2_qnnpack':
+        'https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth'
 }
 
 
