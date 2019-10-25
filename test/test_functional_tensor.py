@@ -44,7 +44,7 @@ class Tester(unittest.TestCase):
         for _ in range(20):
             channels = 3
             dims = torch.randint(1, 50, (2,))
-            shape = (channels, *dims)
+            shape = (channels, dims[0], dims[1])
 
             if torch.randint(0, 2, (1,)) == 0:
                 img = torch.rand(*shape, dtype=torch.float)
