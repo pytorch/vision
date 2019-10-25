@@ -372,9 +372,7 @@ def _onnx_paste_mask_in_image(mask, box, im_h, im_w):
 
 
 @torch.jit.script
-def _onnx_paste_masks_in_image_loop(masks, boxes, img_shape):
-    im_h = img_shape[0]
-    im_w = img_shape[1]
+def _onnx_paste_masks_in_image_loop(masks, boxes, im_h, im_w):
     res_append = torch.zeros(0, im_h, im_w)
     for i in range(masks.size(0)):
         mask_res = _onnx_paste_mask_in_image(masks[i][0], boxes[i], im_h, im_w)
@@ -390,7 +388,9 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
     im_h, im_w = img_shape
 
     if torchvision._is_tracing():
-        return _onnx_paste_masks_in_image_loop(masks, boxes, torch.tensor(img_shape))[:, None]
+        return _onnx_paste_masks_in_image_loop(masks, boxes,
+                                               torch.scalar_tensor(im_h, dtype=torch.int64),
+                                               torch.scalar_tensor(im_w, dtype=torch.int64))[:, None]
 
     boxes = boxes.tolist()
     res = [
