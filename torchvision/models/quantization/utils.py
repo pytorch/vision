@@ -18,6 +18,9 @@ def _replace_relu(module):
 
 def quantize_model(model, backend):
     _dummy_input_data = torch.rand(1, 3, 299, 299)
+   if backend not in torch.backends.quantized.supported_engines:
+        raise RuntimeError("Quantized backend not supported ")
+    torch.backends.quantized.engine = backend
     model.eval()
     # Make sure that weight qconfig matches that of the serialized models
     if backend == 'fbgemm':
@@ -31,8 +34,5 @@ def quantize_model(model, backend):
     torch.quantization.prepare(model, inplace=True)
     model(_dummy_input_data)
     torch.quantization.convert(model, inplace=True)
-    if backend not in torch.backends.quantized.supported_engines:
-        raise RuntimeError("Quantized backend not supported ")
-    torch.backends.quantized.engine = backend
 
     return
