@@ -54,4 +54,6 @@ For Mobilenet-v2, the model was trained with quantization aware training, the se
 10. lr_step_size:30
 11. lr_gamma: 0.1
 
+Training converges at about 10 epochs.
+
 For post training quant, device is set to CPU. For training, the device is set to CUDA
