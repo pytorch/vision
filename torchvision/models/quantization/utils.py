@@ -18,7 +18,7 @@ def _replace_relu(module):
 
 def quantize_model(model, backend):
     _dummy_input_data = torch.rand(1, 3, 299, 299)
-   if backend not in torch.backends.quantized.supported_engines:
+    if backend not in torch.backends.quantized.supported_engines:
         raise RuntimeError("Quantized backend not supported ")
     torch.backends.quantized.engine = backend
     model.eval()
