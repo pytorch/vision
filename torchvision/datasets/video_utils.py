@@ -255,6 +255,20 @@ class VideoClips(object):
             clip_idx = idx - self.cumulative_sizes[video_idx - 1]
         return video_idx, clip_idx
 
+    def get_idx_range_of_video(self, idx):
+        """
+        Provided an idx of a clip, the function returns the indices range belong to the same video
+        """
+
+        video_idx = bisect.bisect_right(self.cumulative_sizes, idx)
+        if video_idx == 0:
+            idx_start = 0
+        else:
+            idx_start = self.cumulative_sizes[video_idx - 1]
+
+        idx_end = self.cumulative_sizes[video_idx] - 1
+        return idx_start, idx_end
+
     def get_video_path(self, idx):
         """
         Converts a flattened representation of the indices into a video path
