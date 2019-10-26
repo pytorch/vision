@@ -98,7 +98,7 @@ class Tester(unittest.TestCase):
                 self.assertEqual(video_path, video_clips.get_video_path(i))
                 self.assertEqual(video_name, video_clips.get_video_name(i))
 
-            video_clips = VideoClips(video_list[0:], 6, 1)
+            video_clips = VideoClips(video_list[1:], 6, 1)
             for i in range(video_list.num_clips()):
                 self.assertEqual(video_clips.get_idx_range_of_video(0), (0, 4))
                 self.assertEqual(video_clips.get_idx_range_of_video(4), (0, 4))
