@@ -101,8 +101,6 @@ class Tester(unittest.TestCase):
             video_clips = VideoClips([video_list[0]], 6, 1)
             self.assertEqual(video_clips.get_idx_range_of_video(0), (0, video_clips.num_clips() - 1))
             self.assertEqual(video_clips.get_idx_range_of_video(5), (0, video_clips.num_clips() - 1))
-            self.assertEqual(video_clips.get_idx_range_of_video(0),
-                             video_clips.get_idx_range_of_video(video_clips.num_clips() - 1))
 
     @unittest.skipIf(not io.video._av_available(), "this test requires av")
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
