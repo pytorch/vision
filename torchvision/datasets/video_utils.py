@@ -266,7 +266,11 @@ class VideoClips(object):
         else:
             idx_start = self.cumulative_sizes[video_idx - 1]
 
-        idx_end = self.cumulative_sizes[video_idx] - 1
+        if len(self.cumulative_sizes) == 0:
+            idx_end = 0
+        else:
+            idx_end = self.cumulative_sizes[video_idx] - 1
+
         return idx_start, idx_end
 
     def get_video_path(self, idx):
