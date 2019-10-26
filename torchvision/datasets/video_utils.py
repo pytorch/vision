@@ -290,6 +290,15 @@ class VideoClips(object):
         video_name = file_no_ext.split(sep)[-1]
         return video_name
 
+    def get_frames_range(self, idx):
+        """
+        Converts a flattened representation of the indices into the indices of the frames in the original video
+        """
+        video_idx, clip_idx = self.get_clip_location(idx)
+        start_frame = clip_idx * self.step
+        end_frame = start_frame + self.num_frames - 1
+        return start_frame, end_frame
+
     @staticmethod
     def _resample_video_idx(num_frames, original_fps, new_fps):
         step = float(original_fps) / new_fps
