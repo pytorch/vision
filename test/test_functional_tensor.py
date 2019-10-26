@@ -1,3 +1,4 @@
+from __future__ import division
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional_tensor as F_t
@@ -35,6 +36,37 @@ class Tester(unittest.TestCase):
 
         self.assertTrue(torch.equal(img_cropped, (img_cropped_GT * 255).to(torch.uint8)),
                         "functional_tensor crop not working")
+
+    def test_adjustments(self):
+        fns = ((F.adjust_brightness, F_t.adjust_brightness),
+               (F.adjust_contrast, F_t.adjust_contrast),
+               (F.adjust_saturation, F_t.adjust_saturation))
+
+        for _ in range(20):
+            channels = 3
+            dims = torch.randint(1, 50, (2,))
+            shape = (channels, dims[0], dims[1])
+
+            if torch.randint(0, 2, (1,)) == 0:
+                img = torch.rand(*shape, dtype=torch.float)
+            else:
+                img = torch.randint(0, 256, shape, dtype=torch.uint8)
+
+            factor = 3 * torch.rand(1)
+            for f, ft in fns:
+
+                ft_img = ft(img, factor)
+                if not img.dtype.is_floating_point:
+                    ft_img = ft_img.to(torch.float) / 255
+
+                img_pil = transforms.ToPILImage()(img)
+                f_img_pil = f(img_pil, factor)
+                f_img = transforms.ToTensor()(f_img_pil)
+
+                # F uses uint8 and F_t uses float, so there is a small
+                # difference in values caused by (at most 5) truncations.
+                max_diff = (ft_img - f_img).abs().max()
+                self.assertLess(max_diff, 5 / 255 + 1e-5)
 
 
 if __name__ == '__main__':
