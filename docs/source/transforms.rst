@@ -27,7 +27,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import CenterCrop
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
 
+    np.random.seed(0); torch.manual_seed(0);
     _plot_images(
         _sample_image(),
         CenterCrop(256)(_sample_image()),
@@ -44,6 +47,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import ColorJitter
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     transform = ColorJitter(brightness=0.5)
     _plot_images(*[transform(_sample_image()) for _ in range(5)])
@@ -67,6 +74,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import FiveCrop
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     transform = FiveCrop(256)
     _plot_images(*transform(_sample_image()))
@@ -81,6 +92,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import Grayscale
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     transform = Grayscale(3)
     _plot_images(transform(_sample_image()))
@@ -95,6 +110,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import Pad
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     transform = Pad(100)
     _plot_images(
@@ -116,6 +135,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import RandomAffine
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     transform = RandomAffine(degrees=30)
     _plot_images(*[transform(_sample_image()) for _ in range(5)])
@@ -144,6 +167,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import RandomCrop
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     transform = RandomCrop(150)
     _plot_images(*[transform(_sample_image()) for _ in range(5)])
@@ -158,6 +185,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import RandomGrayscale
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     _plot_images(
         RandomGrayscale(p=1.0)(_sample_image()),
@@ -174,6 +205,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import RandomHorizontalFlip
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     _plot_images(
         RandomHorizontalFlip(p=1.0)(_sample_image()),
@@ -192,6 +227,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import RandomPerspective
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     transform = RandomPerspective(p=1.0)
     _plot_images(*[transform(_sample_image()) for _ in range(5)])
@@ -206,6 +245,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import RandomResizedCrop
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     transform = RandomResizedCrop(250)
     _plot_images(*[transform(_sample_image()) for _ in range(5)])
@@ -220,6 +263,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import RandomRotation
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     transform = RandomRotation(30)
     _plot_images(*[transform(_sample_image()) for _ in range(5)])
@@ -237,6 +284,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import RandomVerticalFlip
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     transform = RandomVerticalFlip()
     _plot_images(
@@ -254,6 +305,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import Resize
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     _plot_images(
         Resize(200)(_sample_image()),
@@ -273,6 +328,10 @@ Transforms on PIL Image
 
     from torchvision.transforms import TenCrop
     from torchvision.utils import _plot_images, _sample_image
+    import torch
+    import numpy as np
+
+    np.random.seed(0); torch.manual_seed(0);
 
     _plot_images(*TenCrop(200)(_sample_image()))
 
