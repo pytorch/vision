@@ -112,12 +112,22 @@ def save_image(tensor, fp, nrow=8, padding=2,
 
 
 def _sample_image():
+    """Private helper function to load a sample PIL image.
+
+    This function might change and/or break. Don't depend on it.
+    """
+    import os.path
     from PIL import Image
-    # TODO properly load the image
-    return Image.open("/tmp/grace_hopper_517x606.jpg")
+
+    data_dir = os.path.abspath(os.path.dirname(__file__))
+    return Image.open(os.path.join(data_dir, "assets", "grace_hopper_517x606.jpg"))
 
 
 def _plot_images(*imgs):
+    """Private helper function to display images in the docs.
+
+    This function might change and/or break. Don't depend on it.
+    """
     import matplotlib.pyplot as plt
     import matplotlib
 
