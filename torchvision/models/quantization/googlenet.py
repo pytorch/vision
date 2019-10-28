@@ -1,6 +1,7 @@
 import warnings
 import torch
 import torch.nn as nn
+from torch.nn import functional as F
 from torch.jit.annotations import Optional
 
 from torchvision.models.utils import load_state_dict_from_url
