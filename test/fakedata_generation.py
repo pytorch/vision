@@ -6,7 +6,7 @@ import json
 import numpy as np
 import PIL
 import torch
-from common_utils import get_tmp_dir
+from common_utils import get_tmp_dir, TemporaryDirectory
 
 PYTHON2 = sys.version_info[0] == 2
 if PYTHON2:
@@ -201,7 +201,7 @@ def cityscapes_root():
         with open(file, 'w') as outfile:
             json.dump(polygon_example, outfile)
 
-    with get_tmp_dir() as tmp_dir:
+    with TemporaryDirectory() as tmp_dir:
 
         for mode in ['Coarse', 'Fine']:
             gt_dir = os.path.join(tmp_dir, 'gt%s' % mode)
