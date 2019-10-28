@@ -64,10 +64,10 @@ class GoogLeNet(nn.Module):
     __constants__ = ['aux_logits', 'transform_input']
 
     def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, init_weights=True,
-                 basic_conv2d=None, inception=None, inception_aux=None):
+                 conv_block=None, inception=None, inception_aux=None):
         super(GoogLeNet, self).__init__()
-        if basic_conv2d is None:
-            basic_conv2d = BasicConv2d
+        if conv_block is None:
+            conv_block = BasicConv2d
         if inception is None:
             inception = Inception
         if inception_aux is None:
@@ -75,10 +75,10 @@ class GoogLeNet(nn.Module):
         self.aux_logits = aux_logits
         self.transform_input = transform_input
 
-        self.conv1 = basic_conv2d(3, 64, kernel_size=7, stride=2, padding=3)
+        self.conv1 = conv_block(3, 64, kernel_size=7, stride=2, padding=3)
         self.maxpool1 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
-        self.conv2 = basic_conv2d(64, 64, kernel_size=1)
-        self.conv3 = basic_conv2d(64, 192, kernel_size=3, padding=1)
+        self.conv2 = conv_block(64, 64, kernel_size=1)
+        self.conv3 = conv_block(64, 192, kernel_size=3, padding=1)
         self.maxpool2 = nn.MaxPool2d(3, stride=2, ceil_mode=True)
 
         self.inception3a = inception(192, 64, 96, 128, 16, 32, 32)
@@ -210,25 +210,25 @@ class Inception(nn.Module):
     __constants__ = ['branch2', 'branch3', 'branch4']
 
     def __init__(self, in_channels, ch1x1, ch3x3red, ch3x3, ch5x5red, ch5x5, pool_proj,
-                 basic_conv2d=None):
+                 conv_block=None):
         super(Inception, self).__init__()
-        if basic_conv2d is None:
-            basic_conv2d = BasicConv2d
-        self.branch1 = basic_conv2d(in_channels, ch1x1, kernel_size=1)
+        if conv_block is None:
+            conv_block = BasicConv2d
+        self.branch1 = conv_block(in_channels, ch1x1, kernel_size=1)
 
         self.branch2 = nn.Sequential(
-            basic_conv2d(in_channels, ch3x3red, kernel_size=1),
-            basic_conv2d(ch3x3red, ch3x3, kernel_size=3, padding=1)
+            conv_block(in_channels, ch3x3red, kernel_size=1),
+            conv_block(ch3x3red, ch3x3, kernel_size=3, padding=1)
         )
 
         self.branch3 = nn.Sequential(
-            basic_conv2d(in_channels, ch5x5red, kernel_size=1),
-            basic_conv2d(ch5x5red, ch5x5, kernel_size=3, padding=1)
+            conv_block(in_channels, ch5x5red, kernel_size=1),
+            conv_block(ch5x5red, ch5x5, kernel_size=3, padding=1)
         )
 
         self.branch4 = nn.Sequential(
             nn.MaxPool2d(kernel_size=3, stride=1, padding=1, ceil_mode=True),
-            basic_conv2d(in_channels, pool_proj, kernel_size=1)
+            conv_block(in_channels, pool_proj, kernel_size=1)
         )
 
     def _forward(self, x):
@@ -247,11 +247,11 @@ class Inception(nn.Module):
 
 class InceptionAux(nn.Module):
 
-    def __init__(self, in_channels, num_classes, basic_conv2d=None):
+    def __init__(self, in_channels, num_classes, conv_block=None):
         super(InceptionAux, self).__init__()
-        if basic_conv2d is None:
-            basic_conv2d = BasicConv2d
-        self.conv = basic_conv2d(in_channels, 128, kernel_size=1)
+        if conv_block is None:
+            conv_block = BasicConv2d
+        self.conv = conv_block(in_channels, 128, kernel_size=1)
 
         self.fc1 = nn.Linear(2048, 1024)
         self.fc2 = nn.Linear(1024, num_classes)

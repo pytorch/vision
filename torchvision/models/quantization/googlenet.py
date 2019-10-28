@@ -1,13 +1,12 @@
 import warnings
-from collections import namedtuple
 import torch
 import torch.nn as nn
-from torchvision.models.utils import load_state_dict_from_url
-from torchvision.models import googlenet as googlenet_module
-from torchvision.models.googlenet import GoogLeNetOutputs
-import sys
-from torch import Tensor
 from torch.jit.annotations import Optional
+
+from torchvision.models.utils import load_state_dict_from_url
+from torchvision.models.googlenet import (
+    GoogLeNetOutputs, BasicConv2d, Inception, GoogLeNet, model_urls)
+
 from .utils import _replace_relu, quantize_model
 
 
@@ -61,7 +60,7 @@ def googlenet(pretrained=False, progress=True, quantize=False, **kwargs):
         if quantize:
             model_url = quant_model_urls['googlenet']
         else:
-            model_url = googlenet_module.model_urls['googlenet']
+            model_url = model_urls['googlenet']
 
         state_dict = load_state_dict_from_url(model_url,
                                               progress=progress)
@@ -74,7 +73,7 @@ def googlenet(pretrained=False, progress=True, quantize=False, **kwargs):
     return model
 
 
-class QuantizableBasicConv2d(googlenet_module.BasicConv2d):
+class QuantizableBasicConv2d(BasicConv2d):
 
     def __init__(self, *args, **kwargs):
         super(QuantizableBasicConv2d, self).__init__(*args, **kwargs)
@@ -87,10 +86,10 @@ class QuantizableBasicConv2d(googlenet_module.BasicConv2d):
         return x
 
 
-class QuantizableInception(googlenet_module.Inception):
+class QuantizableInception(Inception):
 
     def __init__(self, *args, **kwargs):
-        super(QuantizableInception, self).__init__(basic_conv2d=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInception, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.cat = nn.quantized.FloatFunctional()
 
     def forward(self, x):
@@ -98,11 +97,11 @@ class QuantizableInception(googlenet_module.Inception):
         return self.cat.cat(outputs, 1)
 
 
-class QuantizableGoogLeNet(googlenet_module.GoogLeNet):
+class QuantizableGoogLeNet(GoogLeNet):
 
     def __init__(self, *args, **kwargs):
         super(QuantizableGoogLeNet, self).__init__(
-            basic_conv2d=QuantizableBasicConv2d,
+            conv_block=QuantizableBasicConv2d,
             inception=QuantizableInception,
             *args,
             **kwargs

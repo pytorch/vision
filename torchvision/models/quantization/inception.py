@@ -95,7 +95,7 @@ class QuantizableBasicConv2d(inception_module.BasicConv2d):
 
 class QuantizableInceptionA(inception_module.InceptionA):
     def __init__(self, *args, **kwargs):
-        super(QuantizableInceptionA, self).__init__(basic_conv2d=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInceptionA, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop = nn.quantized.FloatFunctional()
 
     def forward(self, x):
@@ -105,7 +105,7 @@ class QuantizableInceptionA(inception_module.InceptionA):
 
 class QuantizableInceptionB(inception_module.InceptionB):
     def __init__(self, *args, **kwargs):
-        super(QuantizableInceptionB, self).__init__(basic_conv2d=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInceptionB, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop = nn.quantized.FloatFunctional()
 
     def forward(self, x):
@@ -115,7 +115,7 @@ class QuantizableInceptionB(inception_module.InceptionB):
 
 class QuantizableInceptionC(inception_module.InceptionC):
     def __init__(self, *args, **kwargs):
-        super(QuantizableInceptionC, self).__init__(basic_conv2d=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInceptionC, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop = nn.quantized.FloatFunctional()
 
     def forward(self, x):
@@ -125,7 +125,7 @@ class QuantizableInceptionC(inception_module.InceptionC):
 
 class QuantizableInceptionD(inception_module.InceptionD):
     def __init__(self, *args, **kwargs):
-        super(QuantizableInceptionD, self).__init__(basic_conv2d=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInceptionD, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop = nn.quantized.FloatFunctional()
 
     def forward(self, x):
@@ -135,7 +135,7 @@ class QuantizableInceptionD(inception_module.InceptionD):
 
 class QuantizableInceptionE(inception_module.InceptionE):
     def __init__(self, *args, **kwargs):
-        super(QuantizableInceptionE, self).__init__(basic_conv2d=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInceptionE, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.myop = nn.quantized.FloatFunctional()
 
     def _forward(self, x):
@@ -166,7 +166,7 @@ class QuantizableInceptionE(inception_module.InceptionE):
 
 class QuantizableInceptionAux(inception_module.InceptionAux):
     def __init__(self, *args, **kwargs):
-        super(QuantizableInceptionAux, self).__init__(basic_conv2d=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInceptionAux, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
 
 
 class QuantizableInception3(inception_module.Inception3):
