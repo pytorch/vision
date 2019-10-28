@@ -48,16 +48,14 @@ class ModelTester(TestCase):
         self.assertTrue(scriptable, msg)
 
     def _test_classification_model(self, name, input_shape):
-        # passing num_class equal to a number other than 1000 helps in making the test
-        # more enforcing in nature
         # First check if quantize=True provides models that can run with input data
 
-        model = torchvision.models.quantization.__dict__[name](pretrained=True, quantize=True)
+        model = torchvision.models.quantization.__dict__[name](pretrained=False, quantize=True)
         self.check_quantized_model(model, input_shape)
 
-        for eval in [True, False]:
+        for eval_mode in [True, False]:
             model = torchvision.models.quantization.__dict__[name](pretrained=False, quantize=False)
-            if eval:
+            if eval_mode:
                 model.eval()
                 model.qconfig = torch.quantization.default_qconfig
             else:
@@ -65,7 +63,7 @@ class ModelTester(TestCase):
                 model.qconfig = torch.quantization.default_qat_qconfig
 
             model.fuse_model()
-            if eval:
+            if eval_mode:
                 torch.quantization.prepare(model, inplace=True)
             else:
                 torch.quantization.prepare_qat(model, inplace=True)
