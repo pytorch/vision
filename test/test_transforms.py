@@ -1098,16 +1098,28 @@ class Tester(unittest.TestCase):
         def _test_transformation(a, t, s, sh):
             a_rad = math.radians(a)
             s_rad = [math.radians(sh_) for sh_ in sh]
+            cx, cy = cnt
+            tx, ty = t
+            sx, sy = s_rad
+            rot = a_rad
+
             # 1) Check transformation matrix:
-            c_matrix = np.array([[1.0, 0.0, cnt[0]], [0.0, 1.0, cnt[1]], [0.0, 0.0, 1.0]])
-            c_inv_matrix = np.linalg.inv(c_matrix)
-            t_matrix = np.array([[1.0, 0.0, t[0]],
-                                 [0.0, 1.0, t[1]],
-                                 [0.0, 0.0, 1.0]])
-            r_matrix = np.array([[s * math.cos(a_rad + s_rad[1]), -s * math.sin(a_rad + s_rad[0]), 0.0],
-                                 [s * math.sin(a_rad + s_rad[1]), s * math.cos(a_rad + s_rad[0]), 0.0],
-                                 [0.0, 0.0, 1.0]])
-            true_matrix = np.dot(t_matrix, np.dot(c_matrix, np.dot(r_matrix, c_inv_matrix)))
+            C = np.array([[1, 0, cx],
+                          [0, 1, cy],
+                          [0, 0, 1]])
+            T = np.array([[1, 0, tx],
+                          [0, 1, ty],
+                          [0, 0, 1]])
+            Cinv = np.linalg.inv(C)
+
+            RSS = np.array(
+                [[s * math.cos(rot + sy), -s * math.sin(rot + sx), 0],
+                 [s * math.sin(rot + sy),  s * math.cos(rot + sx), 0],
+                 [0, 0, 1]]
+                )
+
+            true_matrix = T @ C @ RSS @ Cinv
+
             result_matrix = _to_3x3_inv(F._get_inverse_affine_matrix(center=cnt, angle=a,
                                                                      translate=t, scale=s, shear=sh))
             self.assertLess(np.sum(np.abs(true_matrix - result_matrix)), 1e-10)

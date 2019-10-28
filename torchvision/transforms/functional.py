@@ -741,35 +741,36 @@ def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     #                              [     0                  0          1]
     # Thus, the inverse is M^-1 = C * RSS^-1 * C^-1 * T^-1
 
-    angle = math.radians(angle)
-    if isinstance(shear, (tuple, list)) and len(shear) == 2:
-        shear = [math.radians(s) for s in shear]
-    elif isinstance(shear, numbers.Number):
-        shear = math.radians(shear)
+    if isinstance(shear, numbers.Number):
         shear = [shear, 0]
-    else:
+
+    if not isinstance(shear, (tuple, list)) and len(shear) == 2:
         raise ValueError(
             "Shear should be a single value or a tuple/list containing " +
             "two values. Got {}".format(shear))
-    scale = 1.0 / scale
+
+    rot = math.radians(angle)
+    sx, sy = [math.radians(s) for s in shear]
+
+    cx, cy = center
+    tx, ty = translate
 
     # Inverted rotation matrix with scale and shear
-    d = math.cos(angle + shear[0]) * math.cos(angle + shear[1]) + \
-        math.sin(angle + shear[0]) * math.sin(angle + shear[1])
-    matrix = [
-        math.cos(angle + shear[0]), math.sin(angle + shear[0]), 0,
-        -math.sin(angle + shear[1]), math.cos(angle + shear[1]), 0
+    det = math.cos(rot + sx) * math.cos(rot + sy) + math.sin(rot + sx) * math.sin(rot + sy)
+    M = [
+        math.cos(rot + sx), math.sin(rot + sx), 0,
+        -math.sin(rot + sy), math.cos(rot + sy), 0
     ]
-    matrix = [scale / d * m for m in matrix]
+    M = [x / (scale * det) for x in M]
 
     # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
-    matrix[2] += matrix[0] * (-center[0] - translate[0]) + matrix[1] * (-center[1] - translate[1])
-    matrix[5] += matrix[3] * (-center[0] - translate[0]) + matrix[4] * (-center[1] - translate[1])
+    M[2] += M[0] * (-cx - tx) + M[1] * (-cy - ty)
+    M[5] += M[3] * (-cx - tx) + M[4] * (-cy - ty)
 
     # Apply center translation: C * RSS^-1 * C^-1 * T^-1
-    matrix[2] += center[0]
-    matrix[5] += center[1]
-    return matrix
+    M[2] += cx
+    M[5] += cy
+    return M
 
 
 def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
