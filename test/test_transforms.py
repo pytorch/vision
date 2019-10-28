@@ -1112,11 +1112,20 @@ class Tester(unittest.TestCase):
                           [0, 0, 1]])
             Cinv = np.linalg.inv(C)
 
-            RSS = np.array(
-                [[s * math.cos(rot + sy), -s * math.sin(rot + sx), 0],
-                 [s * math.sin(rot + sy),  s * math.cos(rot + sx), 0],
-                 [0, 0, 1]]
-                )
+            RS = np.array(
+                [[s * math.cos(rot), -s * math.sin(rot), 0],
+                 [s * math.sin(rot), s * math.cos(rot), 0],
+                 [0, 0, 1]])
+
+            SHx = np.array([[1, -math.tan(sx), 0],
+                            [0, 1, 0],
+                            [0, 0, 1]])
+
+            SHy = np.array([[1, 0, 0],
+                            [-math.tan(sy), 1, 0],
+                            [0, 0, 1]])
+
+            RSS = RS @ SHy @ SHx
 
             true_matrix = T @ C @ RSS @ Cinv
 

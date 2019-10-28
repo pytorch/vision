@@ -8,6 +8,7 @@ try:
 except ImportError:
     accimage = None
 import numpy as np
+from numpy import sin, cos, tan
 import numbers
 import collections
 import warnings
@@ -736,9 +737,16 @@ def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     # where T is translation matrix: [1, 0, tx | 0, 1, ty | 0, 0, 1]
     #       C is translation matrix to keep center: [1, 0, cx | 0, 1, cy | 0, 0, 1]
     #       RSS is rotation with scale and shear matrix
-    #       RSS(a, scale, shear) = [ cos(a + shear_y)*scale    -sin(a + shear_x)*scale     0]
-    #                              [ sin(a + shear_y)*scale    cos(a + shear_x)*scale     0]
-    #                              [     0                  0          1]
+    #       RSS(a, s, (sx, sy)) =
+    #       = R(a) * S(s) * SHy(sy) * SHx(sx)
+    #       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(x)/cos(y) - sin(a)), 0 ]
+    #         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(x)/cos(y) + cos(a)), 0 ]
+    #         [ 0                    , 0                                      , 1 ]
+    #
+    # where R is a rotation matrix, S is a scaling matrix, and SHx and SHy are the shears:
+    # SHx(s) = [1, -tan(s)] and SHy(s) = [1      , 0]
+    #          [0, 1      ]              [-tan(s), 1]
+    #
     # Thus, the inverse is M^-1 = C * RSS^-1 * C^-1 * T^-1
 
     if isinstance(shear, numbers.Number):
@@ -755,13 +763,17 @@ def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     cx, cy = center
     tx, ty = translate
 
+    # RSS without scaling
+    a = cos(rot - sy) / cos(sy)
+    b = -cos(rot - sy) * tan(sx) / cos(sy) - sin(rot)
+    c = sin(rot - sy) / cos(sy)
+    d = -sin(rot - sy) * tan(sx) / cos(sy) + cos(rot)
+
     # Inverted rotation matrix with scale and shear
-    det = math.cos(rot + sx) * math.cos(rot + sy) + math.sin(rot + sx) * math.sin(rot + sy)
-    M = [
-        math.cos(rot + sx), math.sin(rot + sx), 0,
-        -math.sin(rot + sy), math.cos(rot + sy), 0
-    ]
-    M = [x / (scale * det) for x in M]
+    # det([[a, b], [c, d]]) == 1
+    M = [d, -b, 0,
+         -c, a, 0]
+    M = [x / scale for x in M]
 
     # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
     M[2] += M[0] * (-cx - tx) + M[1] * (-cy - ty)
