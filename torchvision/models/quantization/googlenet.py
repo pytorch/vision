@@ -5,7 +5,7 @@ from torch.jit.annotations import Optional
 
 from torchvision.models.utils import load_state_dict_from_url
 from torchvision.models.googlenet import (
-    GoogLeNetOutputs, BasicConv2d, Inception, GoogLeNet, model_urls)
+    GoogLeNetOutputs, BasicConv2d, Inception, InceptionAux, GoogLeNet, model_urls)
 
 from .utils import _replace_relu, quantize_model
 
@@ -85,11 +85,15 @@ class QuantizableBasicConv2d(BasicConv2d):
         x = self.relu(x)
         return x
 
+    def fuse_model(self):
+        torch.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
+
 
 class QuantizableInception(Inception):
 
     def __init__(self, *args, **kwargs):
-        super(QuantizableInception, self).__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)
+        super(QuantizableInception, self).__init__(
+            conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.cat = nn.quantized.FloatFunctional()
 
     def forward(self, x):
@@ -97,12 +101,37 @@ class QuantizableInception(Inception):
         return self.cat.cat(outputs, 1)
 
 
+class QuantizableInceptionAux(InceptionAux):
+
+    def __init__(self, *args, **kwargs):
+        super(QuantizableInceptionAux, self).__init__(
+            conv_block=QuantizableBasicConv2d, *args, **kwargs)
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(0.7)
+
+    def forward(self, x):
+        # aux1: N x 512 x 14 x 14, aux2: N x 528 x 14 x 14
+        x = F.adaptive_avg_pool2d(x, (4, 4))
+        # aux1: N x 512 x 4 x 4, aux2: N x 528 x 4 x 4
+        x = self.conv(x)
+        # N x 128 x 4 x 4
+        x = torch.flatten(x, 1)
+        # N x 2048
+        x = self.relu(self.fc1(x))
+        # N x 1024
+        x = self.dropout(x)
+        # N x 1024
+        x = self.fc2(x)
+        # N x 1000 (num_classes)
+
+        return x
+
+
 class QuantizableGoogLeNet(GoogLeNet):
 
     def __init__(self, *args, **kwargs):
         super(QuantizableGoogLeNet, self).__init__(
-            conv_block=QuantizableBasicConv2d,
-            inception=QuantizableInception,
+            blocks=[QuantizableBasicConv2d, QuantizableInception, QuantizableInceptionAux],
             *args,
             **kwargs
         )
@@ -132,4 +161,4 @@ class QuantizableGoogLeNet(GoogLeNet):
 
         for m in self.modules():
             if type(m) == QuantizableBasicConv2d:
-                torch.quantization.fuse_modules(m, ["conv", "bn", "relu"], inplace=True)
+                m.fuse_model()
