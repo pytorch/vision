@@ -3,28 +3,20 @@ from collections import namedtuple
 import torch
 import torch.nn as nn
 from torchvision.models.utils import load_state_dict_from_url
-import torchvision.models.googlenet
+from torchvision.models import googlenet as googlenet_module
+from torchvision.models.googlenet import GoogLeNetOutputs
 import sys
 from torch import Tensor
 from torch.jit.annotations import Optional
 from .utils import _replace_relu, quantize_model
 
-googlenet_module = sys.modules['torchvision.models.googlenet']
 
-__all__ = ['QuantizableGoogLeNet', 'googlenet', "QuantizableGoogLeNetOutputs", "_QuantizableGoogLeNetOutputs"]
+__all__ = ['QuantizableGoogLeNet', 'googlenet']
 
 quant_model_urls = {
     # GoogLeNet ported from TensorFlow
-    'googlenet': 'https://download.pytorch.org/models/googlenet-1378be20.pth',
+    'googlenet': '',
 }
-
-QuantizableGoogLeNetOutputs = namedtuple('QuantizableGoogLeNetOutputs', ['logits', 'aux_logits2', 'aux_logits1'])
-QuantizableGoogLeNetOutputs.__annotations__ = {'logits': Tensor, 'aux_logits2': Optional[Tensor],
-                                    'aux_logits1': Optional[Tensor]}
-
-# Script annotations failed with _QuantizableGoogleNetOutputs = namedtuple ...
-# _QuantizableGoogLeNetOutputs set here for backwards compat
-_QuantizableGoogLeNetOutputs = QuantizableGoogLeNetOutputs
 
 
 def googlenet(pretrained=False, progress=True, quantize=False, **kwargs):
@@ -126,8 +118,8 @@ class QuantizableGoogLeNet(googlenet_module.GoogLeNet):
         aux_defined = self.training and self.aux_logits
         if torch.jit.is_scripting():
             if not aux_defined:
-                warnings.warn("Scripted QuantizableGoogleNet always returns QuantizableGoogleNetOutputs Tuple")
-            return QuantizableGoogLeNetOutputs(x, aux2, aux1)
+                warnings.warn("Scripted QuantizableGoogleNet always returns GoogleNetOutputs Tuple")
+            return GoogLeNetOutputs(x, aux2, aux1)
         else:
             return self.eager_outputs(x, aux2, aux1)
 

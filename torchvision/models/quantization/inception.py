@@ -1,4 +1,3 @@
-import sys
 import warnings
 from collections import namedtuple
 
@@ -6,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import inception as inception_module
-from torch import Tensor
+from torchvision.models.inception import InceptionOutputs
 from torch.jit.annotations import Optional
 from torchvision.models.utils import load_state_dict_from_url
 from .utils import _replace_relu, quantize_model
@@ -15,21 +14,11 @@ from .utils import _replace_relu, quantize_model
 __all__ = [
     "QuantizableInception3",
     "inception_v3",
-    "QuantizableInceptionOutputs",
 ]
 
 
 quant_model_urls = {
-    # Inception v3 ported from TensorFlow
-    "inception_v3_google": "https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth"
-}
-
-QuantizableInceptionOutputs = namedtuple(
-    "QuantizableInceptionOutputs", ["logits", "aux_logits"]
-)
-QuantizableInceptionOutputs.__annotations__ = {
-    "logits": torch.Tensor,
-    "aux_logits": Optional[torch.Tensor],
+    "inception_v3_google": ""
 }
 
 
@@ -176,13 +165,8 @@ class QuantizableInceptionE(inception_module.InceptionE):
 
 
 class QuantizableInceptionAux(inception_module.InceptionAux):
-
     def __init__(self, *args, **kwargs):
         super(QuantizableInceptionAux, self).__init__(basic_conv2d=QuantizableBasicConv2d, *args, **kwargs)
-
-    def forward(self, x):
-        x = self._forward(x)
-        return x
 
 
 class QuantizableInception3(inception_module.Inception3):
@@ -191,13 +175,15 @@ class QuantizableInception3(inception_module.Inception3):
             num_classes=num_classes,
             aux_logits=aux_logits,
             transform_input=transform_input,
-            inception_blocks=[QuantizableBasicConv2d,
-                                QuantizableInceptionA,
-                                QuantizableInceptionB,
-                                QuantizableInceptionC,
-                                QuantizableInceptionD,
-                                QuantizableInceptionE,
-                                QuantizableInceptionAux]
+            inception_blocks=[
+                QuantizableBasicConv2d,
+                QuantizableInceptionA,
+                QuantizableInceptionB,
+                QuantizableInceptionC,
+                QuantizableInceptionD,
+                QuantizableInceptionE,
+                QuantizableInceptionAux
+            ]
         )
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()
@@ -211,12 +197,12 @@ class QuantizableInception3(inception_module.Inception3):
         if torch.jit.is_scripting():
             if not aux_defined:
                 warnings.warn("Scripted QuantizableInception3 always returns QuantizableInception3 Tuple")
-            return QuantizableInceptionOutputs(x, aux)
+            return InceptionOutputs(x, aux)
         else:
             return self.eager_outputs(x, aux)
 
     def fuse_model(self):
-        r"""Fuse conv/bn/relu modules in googlenet model
+        r"""Fuse conv/bn/relu modules in inception model
 
         Fuse conv+bn+relu/ conv+relu/conv+bn modules to prepare for quantization.
         Model is modified in place.  Note that this operation does not change numerics
@@ -225,4 +211,4 @@ class QuantizableInception3(inception_module.Inception3):
 
         for m in self.modules():
             if type(m) == QuantizableBasicConv2d:
-                torch.quantization.fuse_modules(m, ["conv", "bn", "relu"], inplace=True)
+                m.fuse_model()

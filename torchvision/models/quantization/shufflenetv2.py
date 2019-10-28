@@ -72,6 +72,7 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
                     inplace=True,
                 )
 
+
 def _shufflenetv2(arch, pretrained, progress, quantize, *args, **kwargs):
     model = QuantizableShuffleNetV2(*args, **kwargs)
     _replace_relu(model)

@@ -10,7 +10,7 @@ from torch import Tensor
 from .utils import load_state_dict_from_url
 
 
-__all__ = ['Inception3', 'inception_v3', 'InceptionOutputs']
+__all__ = ['Inception3', 'inception_v3', 'InceptionOutputs', '_InceptionOutputs']
 
 
 model_urls = {
@@ -20,6 +20,10 @@ model_urls = {
 
 InceptionOutputs = namedtuple('InceptionOutputs', ['logits', 'aux_logits'])
 InceptionOutputs.__annotations__ = {'logits': torch.Tensor, 'aux_logits': Optional[torch.Tensor]}
+
+# Script annotations failed with _GoogleNetOutputs = namedtuple ...
+# _InceptionOutputs set here for backwards compat
+_InceptionOutputs = InceptionOutputs
 
 
 def inception_v3(pretrained=False, progress=True, **kwargs):
@@ -61,11 +65,13 @@ def inception_v3(pretrained=False, progress=True, **kwargs):
 class Inception3(nn.Module):
 
     def __init__(self, num_classes=1000, aux_logits=True, transform_input=False,
-            inception_blocks=None):
+                 inception_blocks=None):
         super(Inception3, self).__init__()
         if inception_blocks is None:
-            inception_blocks = [BasicConv2d, InceptionA, InceptionB, InceptionC,
-                InceptionD, InceptionE, InceptionAux]
+            inception_blocks = [
+                BasicConv2d, InceptionA, InceptionB, InceptionC,
+                InceptionD, InceptionE, InceptionAux
+            ]
         assert len(inception_blocks) == 7
         basic_conv2d = inception_blocks[0]
         inception_a = inception_blocks[1]
@@ -397,7 +403,7 @@ class InceptionAux(nn.Module):
         self.fc = nn.Linear(768, num_classes)
         self.fc.stddev = 0.001
 
-    def _forward(self, x):
+    def forward(self, x):
         # N x 768 x 17 x 17
         x = F.avg_pool2d(x, kernel_size=5, stride=3)
         # N x 768 x 5 x 5
@@ -412,10 +418,6 @@ class InceptionAux(nn.Module):
         # N x 768
         x = self.fc(x)
         # N x 1000
-        return x
-
-    def forward(self, x):
-        x = self._forward(x)
         return x
 
 

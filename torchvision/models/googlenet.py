@@ -64,7 +64,7 @@ class GoogLeNet(nn.Module):
     __constants__ = ['aux_logits', 'transform_input']
 
     def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, init_weights=True,
-            basic_conv2d=None, inception=None, inception_aux=None):
+                 basic_conv2d=None, inception=None, inception_aux=None):
         super(GoogLeNet, self).__init__()
         if basic_conv2d is None:
             basic_conv2d = BasicConv2d
@@ -210,7 +210,7 @@ class Inception(nn.Module):
     __constants__ = ['branch2', 'branch3', 'branch4']
 
     def __init__(self, in_channels, ch1x1, ch3x3red, ch3x3, ch5x5red, ch5x5, pool_proj,
-            basic_conv2d=None):
+                 basic_conv2d=None):
         super(Inception, self).__init__()
         if basic_conv2d is None:
             basic_conv2d = BasicConv2d
