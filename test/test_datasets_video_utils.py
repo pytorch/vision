@@ -59,7 +59,7 @@ class Tester(unittest.TestCase):
         self.assertTrue(r.equal(expected))
 
     @unittest.skipIf(not io.video._av_available(), "this test requires av")
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform == 'win32', 'temporarily disabled on Windows')
     def test_video_clips(self):
         with get_list_of_videos(num_videos=3) as video_list:
             video_clips = VideoClips(video_list, 5, 5)
@@ -84,7 +84,7 @@ class Tester(unittest.TestCase):
                 self.assertEqual(clip_idx, c_idx)
 
     @unittest.skipIf(not io.video._av_available(), "this test requires av")
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
+    @unittest.skipIf(sys.platform == 'win32', 'temporarily disabled on Windows')
     def test_video_clips_custom_fps(self):
         with get_list_of_videos(num_videos=3, sizes=[12, 12, 12], fps=[3, 4, 6]) as video_list:
             num_frames = 4
@@ -94,6 +94,7 @@ class Tester(unittest.TestCase):
                     video, audio, info, video_idx = video_clips.get_clip(i)
                     self.assertEqual(video.shape[0], num_frames)
                     self.assertEqual(info["video_fps"], fps)
+                    self.assertEqual(info, {"video_fps": fps})
                     # TODO add tests checking that the content is right
 
     def test_compute_clips_for_video(self):
