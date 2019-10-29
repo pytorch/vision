@@ -181,6 +181,7 @@ class Tester(unittest.TestCase):
 
             self.assertTrue(data.equal(lv))
             self.assertEqual(info["video_fps"], 5)
+            self.assertEqual(info, {"video_fps": 5})
 
     def test_read_timestamps_pts_unit_sec(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
