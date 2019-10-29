@@ -770,7 +770,7 @@ def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     d = -sin(rot - sy) * tan(sx) / cos(sy) + cos(rot)
 
     # Inverted rotation matrix with scale and shear
-    # det([[a, b], [c, d]]) == 1
+    # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
     M = [d, -b, 0,
          -c, a, 0]
     M = [x / scale for x in M]

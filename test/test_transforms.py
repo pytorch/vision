@@ -1125,9 +1125,9 @@ class Tester(unittest.TestCase):
                             [-math.tan(sy), 1, 0],
                             [0, 0, 1]])
 
-            RSS = RS @ SHy @ SHx
+            RSS = np.matmul(RS, np.matmul(SHy, SHx))
 
-            true_matrix = T @ C @ RSS @ Cinv
+            true_matrix = np.matmul(T, np.matmul(C, np.matmul(RSS, Cinv)))
 
             result_matrix = _to_3x3_inv(F._get_inverse_affine_matrix(center=cnt, angle=a,
                                                                      translate=t, scale=s, shear=sh))
