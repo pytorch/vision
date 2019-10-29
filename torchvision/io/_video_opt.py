@@ -398,7 +398,7 @@ def _read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
     if has_audio:
         _info['audio_fps'] = info['audio_sample_rate']
 
-    return vframes, aframes, info
+    return vframes, aframes, _info
 
 
 def _read_video_timestamps(filename, pts_unit='pts'):
