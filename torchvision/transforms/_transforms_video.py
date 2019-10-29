@@ -2,13 +2,15 @@
 
 import numbers
 import random
+from PIL import Image
 
 from torchvision.transforms import (
     RandomCrop,
     RandomResizedCrop,
 )
 
-from . import _functional_video as F
+from . import _functional_video as Fv
+from . import functional_tensor as F
 
 
 __all__ = [
@@ -49,7 +51,7 @@ class RandomResizedCropVideo(RandomResizedCrop):
         size,
         scale=(0.08, 1.0),
         ratio=(3.0 / 4.0, 4.0 / 3.0),
-        interpolation_mode="bilinear",
+        interpolation_mode=Image.BILINEAR,
     ):
         if isinstance(size, tuple):
             assert len(size) == 2, "size should be tuple (height, width)"
@@ -119,7 +121,7 @@ class NormalizeVideo(object):
         Args:
             clip (torch.tensor): video clip to be normalized. Size is (C, T, H, W)
         """
-        return F.normalize(clip, self.mean, self.std, self.inplace)
+        return Fv.normalize(clip, self.mean, self.std, self.inplace)
 
     def __repr__(self):
         return self.__class__.__name__ + '(mean={0}, std={1}, inplace={2})'.format(
@@ -142,7 +144,7 @@ class ToTensorVideo(object):
         Return:
             clip (torch.tensor, dtype=torch.float): Size is (C, T, H, W)
         """
-        return F.to_tensor(clip)
+        return Fv.to_tensor(clip)
 
     def __repr__(self):
         return self.__class__.__name__

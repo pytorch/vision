@@ -220,10 +220,10 @@ def normalize(tensor, mean, std, inplace=False):
 
 
 def resize(img, size, interpolation=Image.BILINEAR):
-    r"""Resize the input PIL Image to the given size.
+    r"""Resize the input Image to the given size.
 
     Args:
-        img (PIL Image): Image to be resized.
+        img (Tensor or PIL Image): Image to be resized.
         size (sequence or int): Desired output size. If size is a sequence like
             (h, w), the output size will be matched to this. If size is an int,
             the smaller edge of the image will be matched to this number maintaing
@@ -235,25 +235,10 @@ def resize(img, size, interpolation=Image.BILINEAR):
     Returns:
         PIL Image: Resized image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-    if not (isinstance(size, int) or (isinstance(size, Iterable) and len(size) == 2)):
-        raise TypeError('Got inappropriate size arg: {}'.format(size))
-
-    if isinstance(size, int):
-        w, h = img.size
-        if (w <= h and w == size) or (h <= w and h == size):
-            return img
-        if w < h:
-            ow = size
-            oh = int(size * h / w)
-            return img.resize((ow, oh), interpolation)
-        else:
-            oh = size
-            ow = int(size * w / h)
-            return img.resize((ow, oh), interpolation)
+    if _is_pil_image(img):
+        return F_p.resize(img, size, interpolation)
     else:
-        return img.resize(size[::-1], interpolation)
+        return F_t.resize(img, size, interpolation)
 
 
 def scale(*args, **kwargs):
