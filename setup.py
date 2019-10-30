@@ -206,7 +206,7 @@ setup(
     # Package info
     packages=find_packages(exclude=('test',)),
 
-    zip_safe=True,
+    zip_safe=False,
     install_requires=requirements,
     extras_require={
         "scipy": ["scipy"],
