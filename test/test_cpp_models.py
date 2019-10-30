@@ -1,11 +1,16 @@
 import torch
 import os
 import unittest
-from torchvision import models, transforms, _C_tests
+from torchvision import models, transforms
 import sys
 
 from PIL import Image
 import torchvision.transforms.functional as F
+
+try:
+    from torchvision import _C_tests
+except ImportError:
+    _C_tests = None
 
 
 def process_model(model, tensor, func, name):
