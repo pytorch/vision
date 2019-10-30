@@ -29,6 +29,16 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
      --lr-step-size 1 --lr-gamma 0.98
 ```
 
+## Mixed precision training
+Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [NVIDIA Apex extension](https://github.com/NVIDIA/apex).
+
+Mixed precision training makes use of both FP32 and FP16 precisions where appropriate. FP16 operations can leverage the Tensor cores on NVIDIA GPUs (Volta, Turing or newer architectures) for improved throughput, generally without loss in model accuracy. Mixed precision training also often allows larger batch sizes. GPU automatic mixed precision training for Pytorch Vision can be enabled via the flag value `--apex=True`.
+
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
+    --model resnext50_32x4d --epochs 100 --apex
+```
+
 ## Quantized
 
 ### Parameters used for generating quantized models:
