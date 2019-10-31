@@ -66,7 +66,6 @@ def rgb_to_grayscale(img, num_output_channels=3):
     return (0.2989 * img[0] + 0.5870 * img[1] + 0.1140 * img[2]).to(img.dtype)
 
 
-
 def adjust_brightness(img, brightness_factor):
     """Adjust brightness of an RGB image.
     Args:
