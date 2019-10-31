@@ -383,7 +383,7 @@ def _read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
         audio_timebase = info['audio_timebase']
         audio_pts_range = get_pts(audio_timebase)
 
-    return _read_video_from_file(
+    vframes, aframes, info = _read_video_from_file(
         filename,
         read_video_stream=True,
         video_pts_range=video_pts_range,
@@ -392,6 +392,13 @@ def _read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
         audio_pts_range=audio_pts_range,
         audio_timebase=audio_timebase,
     )
+    _info = {}
+    if has_video:
+        _info['video_fps'] = info['video_fps']
+    if has_audio:
+        _info['audio_fps'] = info['audio_sample_rate']
+
+    return vframes, aframes, _info
 
 
 def _read_video_timestamps(filename, pts_unit='pts'):

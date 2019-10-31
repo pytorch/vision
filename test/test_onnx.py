@@ -8,6 +8,7 @@ from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionPro
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 from torchvision.models.detection.roi_heads import RoIHeads
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
+from torchvision.models.detection.mask_rcnn import MaskRCNNHeads, MaskRCNNPredictor
 
 from collections import OrderedDict
 
@@ -259,7 +260,7 @@ class ONNXExporterTester(unittest.TestCase):
         model = RoiHeadsModule(images)
         model.eval()
         model(features)
-        self.run_model(model, [(features,), (test_features,)], tolerate_small_mismatch=True)
+        self.run_model(model, [(features,), (test_features,)])
 
     def get_image_from_url(self, url):
         import requests
@@ -290,6 +291,45 @@ class ONNXExporterTester(unittest.TestCase):
         images, test_images = self.get_test_images()
 
         model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True)
+        model.eval()
+        model(images)
+        self.run_model(model, [(images,), (test_images,)])
+
+    # Verify that paste_mask_in_image beahves the same in tracing.
+    # This test also compares both paste_masks_in_image and _onnx_paste_masks_in_image
+    # (since jit_trace witll call _onnx_paste_masks_in_image).
+    def test_paste_mask_in_image(self):
+        masks = torch.rand(10, 1, 26, 26)
+        boxes = torch.rand(10, 4)
+        boxes[:, 2:] += torch.rand(10, 2)
+        boxes *= 50
+        o_im_s = (100, 100)
+        from torchvision.models.detection.roi_heads import paste_masks_in_image
+        out = paste_masks_in_image(masks, boxes, o_im_s)
+        jit_trace = torch.jit.trace(paste_masks_in_image,
+                                    (masks, boxes,
+                                     [torch.tensor(o_im_s[0]),
+                                      torch.tensor(o_im_s[1])]))
+        out_trace = jit_trace(masks, boxes, [torch.tensor(o_im_s[0]), torch.tensor(o_im_s[1])])
+
+        assert torch.all(out.eq(out_trace))
+
+        masks2 = torch.rand(20, 1, 26, 26)
+        boxes2 = torch.rand(20, 4)
+        boxes2[:, 2:] += torch.rand(20, 2)
+        boxes2 *= 100
+        o_im_s2 = (200, 200)
+        from torchvision.models.detection.roi_heads import paste_masks_in_image
+        out2 = paste_masks_in_image(masks2, boxes2, o_im_s2)
+        out_trace2 = jit_trace(masks2, boxes2, [torch.tensor(o_im_s2[0]), torch.tensor(o_im_s2[1])])
+
+        assert torch.all(out2.eq(out_trace2))
+
+    @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
+    def test_mask_rcnn(self):
+        images, test_images = self.get_test_images()
+
+        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True)
         model.eval()
         model(images)
         self.run_model(model, [(images,), (test_images,)])
