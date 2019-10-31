@@ -100,13 +100,13 @@ def _blend(img1, img2, ratio):
     bound = 1 if img1.dtype.is_floating_point else 255
     return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
+
 def rgb_to_grayscale(img, num_output_channels=3):
     """Convert the given RGB Image Tensor to Grayscale.
 
     Args
         img (Tensor): Image to be converted to Grayscale in the form [C, H, W].
-        num_output_channels (int): denotes the number of channels to return after 
-        conversion
+        num_output_channels (int): denotes the number of channels to return after conversion
     Returns:
         Tensor: Grayscale image.
 
