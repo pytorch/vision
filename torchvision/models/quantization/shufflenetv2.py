@@ -13,10 +13,11 @@ __all__ = [
 ]
 
 quant_model_urls = {
-    'shufflenetv2_x0.5': 'https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth',
-    'shufflenetv2_x1.0': 'https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth',
-    'shufflenetv2_x1.5': None,
-    'shufflenetv2_x2.0': None,
+    'shufflenetv2_x0.5_fbgemm': None,
+    'shufflenetv2_x1.0_fbgemm':
+        'https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-751f210b.pth',
+    'shufflenetv2_x1.5_fbgemm': None,
+    'shufflenetv2_x2.0_fbgemm': None,
 }
 
 
@@ -86,7 +87,7 @@ def _shufflenetv2(arch, pretrained, progress, quantize, *args, **kwargs):
 
     if pretrained:
         if quantize:
-            model_url = quant_model_urls[arch]
+            model_url = quant_model_urls[arch + '_' + backend]
         else:
             model_url = shufflenetv2.model_urls[arch]
 

@@ -14,8 +14,8 @@ from .utils import _replace_relu, quantize_model
 __all__ = ['QuantizableGoogLeNet', 'googlenet']
 
 quant_model_urls = {
-    # GoogLeNet ported from TensorFlow
-    'googlenet': '',
+    # fp32 GoogLeNet ported from TensorFlow, with weights quantized in PyTorch
+    'googlenet_fbgemm': 'https://download.pytorch.org/models/quantized/googlenet_fbgemm-c00238cf.pth',
 }
 
 
@@ -59,7 +59,7 @@ def googlenet(pretrained=False, progress=True, quantize=False, **kwargs):
 
     if pretrained:
         if quantize:
-            model_url = quant_model_urls['googlenet']
+            model_url = quant_model_urls['googlenet' + '_' + backend]
         else:
             model_url = model_urls['googlenet']
 

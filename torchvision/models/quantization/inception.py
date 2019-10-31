@@ -18,7 +18,9 @@ __all__ = [
 
 
 quant_model_urls = {
-    "inception_v3_google": ""
+    # fp32 weights ported from TensorFlow, quantized in PyTorch
+    "inception_v3_google_fbgemm":
+        "https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-4f6e4894.pth"
 }
 
 
@@ -63,7 +65,7 @@ def inception_v3(pretrained=False, progress=True, quantize=False, **kwargs):
 
     if pretrained:
         if quantize:
-            model_url = quant_model_urls['inception_v3_google']
+            model_url = quant_model_urls['inception_v3_google' + '_' + backend]
         else:
             model_url = inception_module.model_urls['inception_v3_google']
 
