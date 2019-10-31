@@ -178,8 +178,6 @@ class VideoClips(object):
         Arguments:
             num_frames (int): number of frames for the clip
             step (int): distance between two clips
-            dilation (int): distance between two consecutive frames
-                in a clip
         """
         self.num_frames = num_frames
         self.step = step
