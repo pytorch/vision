@@ -46,6 +46,27 @@ def crop(img, top, left, height, width):
     return img[..., top:top + height, left:left + width]
 
 
+def rgb_to_grayscale(img, num_output_channels=3):
+    """Convert the given RGB Image Tensor to Grayscale.
+
+    Args
+        img (Tensor): Image to be converted to Grayscale in the form [C, H, W].
+        num_output_channels (int): denotes the number of channels to return after conversion
+    Returns:
+        Tensor: Grayscale image.
+
+    For RGB to Grayscale conversion, ITU-R 601-2 luma transform is performed which
+    is L = R * 0.2989 + G * 0.5870 + B * 0.1140
+    """
+    if img.size()[0] != 3:
+        raise TypeError('Input Image does not contain 3 Channels')
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    img = img.to(device)
+    return (0.2989 * img[0] + 0.5870 * img[1] + 0.1140 * img[2]).to(img.dtype)
+
+
+
 def adjust_brightness(img, brightness_factor):
     """Adjust brightness of an RGB image.
     Args:
@@ -75,7 +96,7 @@ def adjust_contrast(img, contrast_factor):
     if not F._is_tensor_image(img):
         raise TypeError('tensor is not a torch image.')
 
-    mean = torch.mean(_rgb_to_grayscale(img).to(torch.float))
+    mean = torch.mean(rgb_to_grayscale(img).to(torch.float))
 
     return _blend(img, mean, contrast_factor)
 
@@ -93,29 +114,9 @@ def adjust_saturation(img, saturation_factor):
     if not F._is_tensor_image(img):
         raise TypeError('tensor is not a torch image.')
 
-    return _blend(img, _rgb_to_grayscale(img), saturation_factor)
+    return _blend(img, rgb_to_grayscale(img), saturation_factor)
 
 
 def _blend(img1, img2, ratio):
     bound = 1 if img1.dtype.is_floating_point else 255
     return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
-
-
-def rgb_to_grayscale(img, num_output_channels=3):
-    """Convert the given RGB Image Tensor to Grayscale.
-
-    Args
-        img (Tensor): Image to be converted to Grayscale in the form [C, H, W].
-        num_output_channels (int): denotes the number of channels to return after conversion
-    Returns:
-        Tensor: Grayscale image.
-
-    For RGB to Grayscale conversion, ITU-R 601-2 luma transform is performed which
-    is L = R * 0.2989 + G * 0.5870 + B * 0.1140
-    """
-    if img.size()[0] != 3:
-        raise TypeError('Input Image does not contain 3 Channels')
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    img = img.to(device)
-    return (0.2989 * img[0] + 0.5870 * img[1] + 0.1140 * img[2]).to(img.dtype)
