@@ -12,7 +12,7 @@ binary_common: &binary_common
     build_version:
       description: "version number of release binary; by default, build a nightly"
       type: string
-      default: "0.4.1"
+      default: "0.4.2"
     pytorch_version:
       description: "PyTorch version to build against; by default, use a nightly"
       type: string
@@ -170,7 +170,7 @@ workflows:
   build:
     jobs:
       - circleci_consistency
-      # 
+      
       - binary_linux_wheel:
           name: binary_linux_wheel_py2.7_cpu
           python_version: "2.7"
@@ -374,7 +374,7 @@ workflows:
           name: binary_macos_conda_py3.7_cpu
           python_version: "3.7"
           cu_version: "cpu"
-      
+      # 
       - binary_linux_wheel:
           name: nightly_binary_linux_wheel_py2.7_cpu
           python_version: "2.7"
