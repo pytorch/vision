@@ -116,8 +116,8 @@ def main(args):
 
     # Data loading code
     print("Loading data")
-    traindir = os.path.join(args.data_path, 'train_avi-480p')
-    valdir = os.path.join(args.data_path, 'val_avi-480p')
+    traindir = os.path.join(args.data_path, args.train_dir)
+    valdir = os.path.join(args.data_path, args.valid_dir)
     normalize = T.Normalize(mean=[0.43216, 0.394666, 0.37645],
                             std=[0.22803, 0.22145, 0.216989])
 
@@ -203,6 +203,8 @@ def main(args):
 
     print("Creating model")
     model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
+    if args.output_classes is not None:
+        model.fc.out_features = args.output_classes
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -274,7 +276,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description='PyTorch Classification Training')
 
     parser.add_argument('--data-path', default='/datasets01_101/kinetics/070618/', help='dataset')
+    parser.add_argument('--train-dir', default='train_avi-480p', help='name of train dir')
+    parser.add_argument('--val-dir', default='val_avi-480p', help='name of val dir')
     parser.add_argument('--model', default='r2plus1d_18', help='model')
+    parser.add_argument('--output-classes', default=None, help='no. of output classes (if finetuning)')
     parser.add_argument('--device', default='cuda', help='device')
     parser.add_argument('--clip-len', default=16, type=int, metavar='N',
                         help='number of frames per clip')
