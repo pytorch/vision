@@ -139,7 +139,7 @@ fi
 # fi
 
 export CONDA_CHANNEL_FLAGS="-c pytorch"
-export PYTORCH_VERSION="1.3.0"
+export PYTORCH_VERSION="1.3.1"
 
 if [[ "$desired_cuda" == 'cpu' ]]; then
     export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==$PYTORCH_VERSION"
