@@ -46,13 +46,11 @@ def crop(img, top, left, height, width):
     return img[..., top:top + height, left:left + width]
 
 
-def rgb_to_grayscale(img, num_output_channels=3):
+def rgb_to_grayscale(img):
     """Convert the given RGB Image Tensor to Grayscale.
 
     Args
         img (Tensor): Image to be converted to Grayscale in the form [C, H, W].
-        num_output_channels (int): denotes the number of channels to return after conversion
-    Returns:
         Tensor: Grayscale image.
 
     For RGB to Grayscale conversion, ITU-R 601-2 luma transform is performed which
