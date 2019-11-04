@@ -98,7 +98,7 @@ class RoIPoolTester(RoIOpTester, unittest.TestCase):
     def get_script_fn(self, rois, pool_size):
         @torch.jit.script
         def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
+            # type: (torch.Tensor, torch.Tensor, int) -> torch.Tensor
             return ops.roi_pool(input, rois, pool_size, 1.0)[0]
         return lambda x: script_fn(x, rois, pool_size)
 
@@ -137,7 +137,7 @@ class PSRoIPoolTester(RoIOpTester, unittest.TestCase):
     def get_script_fn(self, rois, pool_size):
         @torch.jit.script
         def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
+            # type: (torch.Tensor, torch.Tensor, int) -> torch.Tensor
             return ops.ps_roi_pool(input, rois, pool_size, 1.0)[0]
         return lambda x: script_fn(x, rois, pool_size)
 
@@ -208,7 +208,7 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
     def get_script_fn(self, rois, pool_size):
         @torch.jit.script
         def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
+            # type: (torch.Tensor, torch.Tensor, int) -> torch.Tensor
             return ops.roi_align(input, rois, pool_size, 1.0)[0]
         return lambda x: script_fn(x, rois, pool_size)
 
@@ -262,7 +262,7 @@ class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
     def get_script_fn(self, rois, pool_size):
         @torch.jit.script
         def script_fn(input, rois, pool_size):
-            # type: (Tensor, Tensor, int) -> Tensor
+            # type: (torch.Tensor, torch.Tensor, int) -> torch.Tensor
             return ops.ps_roi_align(input, rois, pool_size, 1.0)[0]
         return lambda x: script_fn(x, rois, pool_size)
 
