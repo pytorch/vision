@@ -73,7 +73,8 @@ class Tester(unittest.TestCase):
         img_tensor = torch.randint(0, 255, (3, 16, 16), dtype=torch.uint8)
         grayscale_tensor = F_t.rgb_to_grayscale(img_tensor).to(int)
         grayscale_pil_img = torch.tensor(np.array(F.to_grayscale(F.to_pil_image(img_tensor)))).to(int)
-        self.assertTrue(torch.allclose(grayscale_tensor, grayscale_pil_img, 1e-1))
+        max_diff = (grayscale_tensor - grayscale_pil_img).abs().max()
+        self.assertLess(max_diff, 1.0001)
 
 
 if __name__ == '__main__':
