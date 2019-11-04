@@ -22,7 +22,6 @@ def hflip(img_tensor):
     Returns:
         Tensor:  Horizontally flipped image Tensor.
     """
-
     if not F._is_tensor_image(img_tensor):
         raise TypeError('tensor is not a torch image.')
 
@@ -56,11 +55,9 @@ def rgb_to_grayscale(img):
     For RGB to Grayscale conversion, ITU-R 601-2 luma transform is performed which
     is L = R * 0.2989 + G * 0.5870 + B * 0.1140
     """
-    if img.size()[0] != 3:
+    if img.shape[0] != 3:
         raise TypeError('Input Image does not contain 3 Channels')
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    img = img.to(device)
     return (0.2989 * img[0] + 0.5870 * img[1] + 0.1140 * img[2]).to(img.dtype)
 
 

@@ -71,10 +71,9 @@ class Tester(unittest.TestCase):
 
     def test_rgb_to_grayscale(self):
         img_tensor = torch.randint(0, 255, (3, 16, 16), dtype=torch.uint8)
-        grayscale_tensor = F_t.rgb_to_grayscale(img_tensor)
-        pil_img = np.rollaxis(np.array(transforms.ToPILImage()(img_tensor).convert("RGB")), 2, 0)
-        grayscale_pil_img = (0.2989 * pil_img[0] + 0.5870 * pil_img[1] + 0.1140 * pil_img[2])
-        self.assertTrue(torch.equal(grayscale_tensor.to(int), torch.tensor(grayscale_pil_img).to(int)))
+        grayscale_tensor = F_t.rgb_to_grayscale(img_tensor).to(int)
+        grayscale_pil_img = torch.tensor(np.array(F.to_grayscale(F.to_pil_image(img_tensor)))).to(int)
+        self.assertTrue(torch.allclose(grayscale_tensor, grayscale_pil_img, 1e-1))
 
 
 if __name__ == '__main__':
