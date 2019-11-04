@@ -53,15 +53,15 @@ def crop(img, top, left, height, width):
 
 def rgb_to_grayscale(img):
     """Convert the given RGB Image Tensor to Grayscale.
+    For RGB to Grayscale conversion, ITU-R 601-2 luma transform is performed which
+    is L = R * 0.2989 + G * 0.5870 + B * 0.1140
 
     Args:
         img (Tensor): Image to be converted to Grayscale in the form [C, H, W].
 
-    Returns:    
+    Returns:
         Tensor: Grayscale image.
 
-    For RGB to Grayscale conversion, ITU-R 601-2 luma transform is performed which
-    is L = R * 0.2989 + G * 0.5870 + B * 0.1140
     """
     if img.shape[0] != 3:
         raise TypeError('Input Image does not contain 3 Channels')
