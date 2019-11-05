@@ -61,7 +61,7 @@ at::Tensor nms_cpu_kernel(
       auto h = std::max(static_cast<scalar_t>(0), yy2 - yy1);
       auto inter = w * h;
       auto ovr = inter / (iarea + areas[j] - inter);
-      if (ovr >= iou_threshold)
+      if (ovr > iou_threshold)
         suppressed[j] = 1;
     }
   }
