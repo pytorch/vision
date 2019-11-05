@@ -1,6 +1,7 @@
 import sys
 import torch
 
+_onnx_opset_version = 11
 
 def _register_custom_op():
     from torch.onnx.symbolic_helper import parse_args, scalar_type_to_onnx
@@ -30,6 +31,6 @@ def _register_custom_op():
         return roi_pool, None
 
     from torch.onnx import register_custom_op_symbolic
-    register_custom_op_symbolic('torchvision::nms', symbolic_multi_label_nms, 10)
-    register_custom_op_symbolic('torchvision::roi_align', roi_align, 10)
-    register_custom_op_symbolic('torchvision::roi_pool', roi_pool, 10)
+    register_custom_op_symbolic('torchvision::nms', symbolic_multi_label_nms, _onnx_opset_version)
+    register_custom_op_symbolic('torchvision::roi_align', roi_align, _onnx_opset_version)
+    register_custom_op_symbolic('torchvision::roi_pool', roi_pool, _onnx_opset_version)
