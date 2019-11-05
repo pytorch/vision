@@ -109,13 +109,13 @@ class ONNXExporterTester(unittest.TestCase):
             def forward(self_module, images):
                 return self_module.transform(images)[0].tensors
 
-        input = [torch.rand(3, 800, 1280), torch.rand(3, 800, 800)]
-        input_test = [torch.rand(3, 800, 1280), torch.rand(3, 800, 800)]
+        input = [torch.rand(3, 100, 200), torch.rand(3, 200, 200)]
+        input_test = [torch.rand(3, 100, 200), torch.rand(3, 200, 200)]
         self.run_model(TransformModule(), [input, input_test])
 
     def _init_test_generalized_rcnn_transform(self):
-        min_size = 800
-        max_size = 1333
+        min_size = 100
+        max_size = 200
         image_mean = [0.485, 0.456, 0.406]
         image_std = [0.229, 0.224, 0.225]
         transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
@@ -288,7 +288,9 @@ class ONNXExporterTester(unittest.TestCase):
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
 
-        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True)
+        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True,
+                                                                     min_size=200,
+                                                                     max_size=300)
         model.eval()
         model(images)
         self.run_model(model, [(images,), (test_images,)])

@@ -107,7 +107,7 @@ class GeneralizedRCNNTransform(nn.Module):
         padded_imgs = []
         for img in images:
             padding = [(s1 - s2) for s1, s2 in zip(max_size, tuple(img.shape))]
-            padded_img = torch.nn.functional.pad(img, (0, padding[2], 0, padding[1], 0, padding[1]))
+            padded_img = torch.nn.functional.pad(img, (0, padding[2], 0, padding[1], 0, padding[0]))
             padded_imgs.append(padded_img)
 
         return torch.stack(padded_imgs)
