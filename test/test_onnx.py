@@ -271,7 +271,7 @@ class ONNXExporterTester(unittest.TestCase):
 
         data = requests.get(url)
         image = Image.open(BytesIO(data.content)).convert("RGB")
-        image = image.resize((800, 1280), Image.BILINEAR)
+        image = image.resize((300, 200), Image.BILINEAR)
 
         to_tensor = transforms.ToTensor()
         return to_tensor(image)
