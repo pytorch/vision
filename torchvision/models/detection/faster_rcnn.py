@@ -285,6 +285,7 @@ class FastRCNNPredictor(nn.Module):
 model_urls = {
     'fasterrcnn_resnet50_fpn_coco':
         'https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth',
+    'fasterrcnn_resnet101_fpn_coco': None,
 }
 
 
