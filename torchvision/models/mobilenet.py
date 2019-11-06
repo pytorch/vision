@@ -147,14 +147,16 @@ class MobileNetV2(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.zeros_(m.bias)
 
-    def _forward(self, x):
+    def _forward_impl(self, x):
+        # This exists since TorchScript doesn't support inheritance, so the superclass method
+        # (this one) needs to have a name other than `forward` that can be accessed in a subclass
         x = self.features(x)
         x = x.mean([2, 3])
         x = self.classifier(x)
         return x
 
-    # Allow for accessing forward method in a inherited class
-    forward = _forward
+    def forward(self, x):
+        return self._forward_impl(x)
 
 
 def mobilenet_v2(pretrained=False, progress=True, **kwargs):
