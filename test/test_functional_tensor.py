@@ -3,6 +3,7 @@ import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional_tensor as F_t
 import torchvision.transforms.functional as F
+import numpy as np
 import unittest
 import random
 
@@ -67,6 +68,13 @@ class Tester(unittest.TestCase):
                 # difference in values caused by (at most 5) truncations.
                 max_diff = (ft_img - f_img).abs().max()
                 self.assertLess(max_diff, 5 / 255 + 1e-5)
+
+    def test_rgb_to_grayscale(self):
+        img_tensor = torch.randint(0, 255, (3, 16, 16), dtype=torch.uint8)
+        grayscale_tensor = F_t.rgb_to_grayscale(img_tensor).to(int)
+        grayscale_pil_img = torch.tensor(np.array(F.to_grayscale(F.to_pil_image(img_tensor)))).to(int)
+        max_diff = (grayscale_tensor - grayscale_pil_img).abs().max()
+        self.assertLess(max_diff, 1.0001)
 
 
 if __name__ == '__main__':

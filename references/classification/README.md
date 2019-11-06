@@ -67,3 +67,24 @@ For Mobilenet-v2, the model was trained with quantization aware training, the se
 Training converges at about 10 epochs.
 
 For post training quant, device is set to CPU. For training, the device is set to CUDA
+
+### Command to evaluate quantized models using the pre-trained weights:
+For all quantized models except inception_v3:
+```
+python references/classification/train_quantization.py  --data-path='imagenet_full_size/' \
+    --device='cpu' --test-only --backend='fbgemm' --model='<model_name>'
+```
+
+For inception_v3, since it expects tensors with a size of N x 3 x 299 x 299, before running above command,
+need to change the input size of dataset_test in train.py to:
+```
+dataset_test = torchvision.datasets.ImageFolder(
+    valdir,
+    transforms.Compose([
+        transforms.Resize(342),
+        transforms.CenterCrop(299),
+        transforms.ToTensor(),
+        normalize,
+    ]))
+```
+
