@@ -30,7 +30,7 @@ def get_dist(pkgname):
         return None
 
 
-version = '0.4.2a0'
+version = '0.4.2'
 sha = 'Unknown'
 package_name = 'torchvision'
 
@@ -43,8 +43,8 @@ except Exception:
 
 if os.getenv('BUILD_VERSION'):
     version = os.getenv('BUILD_VERSION')
-elif sha != 'Unknown':
-    version += '+' + sha[:7]
+# elif sha != 'Unknown':
+#     version += '+' + sha[:7]
 print("Building wheel {}-{}".format(package_name, version))
 
 
