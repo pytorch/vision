@@ -19,6 +19,7 @@ except ImportError:
     onnxruntime = None
 
 import unittest
+from torchvision.ops._register_onnx_ops import _onnx_opset_version
 
 
 @unittest.skipIf(onnxruntime is None, 'ONNX Runtime unavailable')
@@ -32,7 +33,8 @@ class ONNXExporterTester(unittest.TestCase):
 
         onnx_io = io.BytesIO()
         # export to onnx with the first input
-        torch.onnx.export(model, inputs_list[0], onnx_io, do_constant_folding=True, opset_version=10)
+        torch.onnx.export(model, inputs_list[0], onnx_io,
+                          do_constant_folding=True, opset_version=_onnx_opset_version)
 
         # validate the exported model with onnx runtime
         for test_inputs in inputs_list:
@@ -97,7 +99,6 @@ class ONNXExporterTester(unittest.TestCase):
         model = ops.RoIPool((pool_h, pool_w), 2)
         self.run_model(model, [(x, rois)])
 
-    @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
     def test_transform_images(self):
 
         class TransformModule(torch.nn.Module):
@@ -108,13 +109,13 @@ class ONNXExporterTester(unittest.TestCase):
             def forward(self_module, images):
                 return self_module.transform(images)[0].tensors
 
-        input = [torch.rand(3, 800, 1280), torch.rand(3, 800, 800)]
-        input_test = [torch.rand(3, 800, 1280), torch.rand(3, 800, 800)]
+        input = [torch.rand(3, 100, 200), torch.rand(3, 200, 200)]
+        input_test = [torch.rand(3, 100, 200), torch.rand(3, 200, 200)]
         self.run_model(TransformModule(), [input, input_test])
 
     def _init_test_generalized_rcnn_transform(self):
-        min_size = 800
-        max_size = 1333
+        min_size = 100
+        max_size = 200
         image_mean = [0.485, 0.456, 0.406]
         image_std = [0.229, 0.224, 0.225]
         transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
@@ -234,7 +235,6 @@ class ONNXExporterTester(unittest.TestCase):
 
         self.run_model(TransformModule(), [(i, [boxes],), (i1, [boxes1],)])
 
-    @unittest.skipIf(torch.__version__ < "1.4.", "Disable test if torch version is less than 1.4")
     def test_roi_heads(self):
         class RoiHeadsModule(torch.nn.Module):
             def __init__(self_module, images):
@@ -271,7 +271,7 @@ class ONNXExporterTester(unittest.TestCase):
 
         data = requests.get(url)
         image = Image.open(BytesIO(data.content)).convert("RGB")
-        image = image.resize((800, 1280), Image.BILINEAR)
+        image = image.resize((300, 200), Image.BILINEAR)
 
         to_tensor = transforms.ToTensor()
         return to_tensor(image)
@@ -285,12 +285,12 @@ class ONNXExporterTester(unittest.TestCase):
         test_images = [image2]
         return images, test_images
 
-    @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
-    @unittest.skipIf(torch.__version__ < "1.4.", "Disable test if torch version is less than 1.4")
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
 
-        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True)
+        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True,
+                                                                     min_size=200,
+                                                                     max_size=300)
         model.eval()
         model(images)
         self.run_model(model, [(images,), (test_images,)])
