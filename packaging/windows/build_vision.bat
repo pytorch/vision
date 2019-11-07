@@ -88,7 +88,12 @@ FOR %%v IN (%DESIRED_PYTHON%) DO (
     set PYTHON_VERSION_STR=!PYTHON_VERSION_STR:.=!
     set "PATH=%CONDA_HOME%\envs\py!PYTHON_VERSION_STR!;%CONDA_HOME%\envs\py!PYTHON_VERSION_STR!\scripts;%CONDA_HOME%\envs\py!PYTHON_VERSION_STR!\Library\bin;%ORIG_PATH%"
 
-    set TORCH_WHEEL=torch --pre -f https://download.pytorch.org/whl/%CUVER%/torch_stable.html
+    REM set TORCH_WHEEL=torch --pre -f https://download.pytorch.org/whl/%CUVER%/torch_stable.html
+    if "%CUDA_VERSION%" == "101" (
+        set TORCH_WHEEL=https://download.pytorch.org/whl/%CUVER%/torch-1.3.1-cp!PYTHON_VERSION_STR!-cp!PYTHON_VERSION_STR!m-win_amd64.whl
+    ) else (
+        set TORCH_WHEEL=https://download.pytorch.org/whl/%CUVER%/torch-1.3.1%%2B%CUVER%-cp!PYTHON_VERSION_STR!-cp!PYTHON_VERSION_STR!m-win_amd64.whl
+    )
     echo Installing !TORCH_WHEEL!...
     pip install !TORCH_WHEEL!
 )

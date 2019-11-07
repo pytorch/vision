@@ -6,29 +6,29 @@ pr: none
 jobs:
 - template: templates/auth_task.yml
 
-# - template: templates/build_task.yml
-#   parameters:
-#     package: 'Wheels'
-#     spec: 'CPU'
-#     msagent: false
-
 - template: templates/build_task.yml
   parameters:
-    package: 'Conda'
+    package: 'Wheels'
     spec: 'CPU'
     msagent: false
 
 # - template: templates/build_task.yml
 #   parameters:
-#     package: 'Wheels'
-#     spec: 'CUDA'
+#     package: 'Conda'
+#     spec: 'CPU'
 #     msagent: false
 
 - template: templates/build_task.yml
   parameters:
-    package: 'Conda'
+    package: 'Wheels'
     spec: 'CUDA'
     msagent: false
+
+# - template: templates/build_task.yml
+#   parameters:
+#     package: 'Conda'
+#     spec: 'CUDA'
+#     msagent: false
 
 - template: templates/linux_build_task.yml
   parameters:
