@@ -12,11 +12,11 @@ jobs:
     spec: 'CPU'
     msagent: false
 
-# - template: templates/build_task.yml
-#   parameters:
-#     package: 'Conda'
-#     spec: 'CPU'
-#     msagent: false
+- template: templates/build_task.yml
+  parameters:
+    package: 'Conda'
+    spec: 'CPU'
+    msagent: false
 
 - template: templates/build_task.yml
   parameters:
@@ -24,11 +24,11 @@ jobs:
     spec: 'CUDA'
     msagent: false
 
-# - template: templates/build_task.yml
-#   parameters:
-#     package: 'Conda'
-#     spec: 'CUDA'
-#     msagent: false
+- template: templates/build_task.yml
+  parameters:
+    package: 'Conda'
+    spec: 'CUDA'
+    msagent: false
 
 - template: templates/linux_build_task.yml
   parameters:
