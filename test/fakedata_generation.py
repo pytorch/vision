@@ -6,7 +6,7 @@ import json
 import numpy as np
 import PIL
 import torch
-from common_utils import get_tmp_dir
+from common_utils import get_tmp_dir, TemporaryDirectory
 
 PYTHON2 = sys.version_info[0] == 2
 if PYTHON2:
@@ -175,13 +175,16 @@ def imagenet_root():
 def cityscapes_root():
 
     def _make_image(file):
-        PIL.Image.fromarray(np.zeros((1024, 2048, 3), dtype=np.uint8)).save(file)
+        with open(file, 'wb') as f:
+            PIL.Image.fromarray(np.zeros((1024, 2048, 3), dtype=np.uint8)).save(f, format='png')
 
     def _make_regular_target(file):
-        PIL.Image.fromarray(np.zeros((1024, 2048), dtype=np.uint8)).save(file)
+        with open(file, 'wb') as f:
+            PIL.Image.fromarray(np.zeros((1024, 2048), dtype=np.uint8)).save(f, format='png')
 
     def _make_color_target(file):
-        PIL.Image.fromarray(np.zeros((1024, 2048, 4), dtype=np.uint8)).save(file)
+        with open(file, 'wb') as f:
+            PIL.Image.fromarray(np.zeros((1024, 2048, 4), dtype=np.uint8)).save(f, format='png')
 
     def _make_polygon_target(file):
         polygon_example = {
@@ -198,7 +201,7 @@ def cityscapes_root():
         with open(file, 'w') as outfile:
             json.dump(polygon_example, outfile)
 
-    with get_tmp_dir() as tmp_dir:
+    with TemporaryDirectory() as tmp_dir:
 
         for mode in ['Coarse', 'Fine']:
             gt_dir = os.path.join(tmp_dir, 'gt%s' % mode)
