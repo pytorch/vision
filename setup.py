@@ -34,7 +34,7 @@ version = '0.5.0a0'
 sha = 'Unknown'
 package_name = 'torchvision'
 
-cwd = os.path.dirname(os.path.abspath(__file__))
+cwd = os.path.dirname(os.path.relpath(__file__))
 
 try:
     sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=cwd).decode('ascii').strip()
@@ -78,7 +78,7 @@ requirements.append(pillow_req + pillow_ver)
 
 
 def get_extensions():
-    this_dir = os.path.dirname(os.path.abspath(__file__))
+    this_dir = os.path.dirname(os.path.relpath(__file__))
     extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
 
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
@@ -93,8 +93,6 @@ def get_extensions():
     test_file = glob.glob(os.path.join(test_dir, '*.cpp'))
     source_models = glob.glob(os.path.join(models_dir, '*.cpp'))
 
-    test_file = [os.path.join(test_dir, s) for s in test_file]
-    source_models = [os.path.join(models_dir, s) for s in source_models]
     tests = test_file + source_models
 
     define_macros = []
@@ -119,8 +117,6 @@ def get_extensions():
 
         extra_compile_args.setdefault('cxx', [])
         extra_compile_args['cxx'].append('/MP')
-
-    sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs = [extensions_dir]
     tests_include_dirs = [test_dir, models_dir]
@@ -206,7 +202,8 @@ setup(
     # Package info
     packages=find_packages(exclude=('test',)),
 
-    zip_safe=True,
+    zip_safe=False,
+    include_package_data=True,
     install_requires=requirements,
     extras_require={
         "scipy": ["scipy"],

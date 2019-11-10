@@ -1,5 +1,6 @@
 include README.rst
 include LICENSE
+include torchvision/assets/grace_hopper_517x606.jpg
 
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
