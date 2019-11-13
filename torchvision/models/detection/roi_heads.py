@@ -409,7 +409,6 @@ class RoIHeads(torch.nn.Module):
         self.keypoint_head = keypoint_head
         self.keypoint_predictor = keypoint_predictor
 
-    @property
     def has_mask(self):
         if self.mask_roi_pool is None:
             return False
@@ -419,7 +418,6 @@ class RoIHeads(torch.nn.Module):
             return False
         return True
 
-    @property
     def has_keypoint(self):
         if self.keypoint_roi_pool is None:
             return False
@@ -487,7 +485,7 @@ class RoIHeads(torch.nn.Module):
         assert targets is not None
         assert self.DELTEME_all(["boxes" in t for t in targets])
         assert self.DELTEME_all(["labels" in t for t in targets])
-        if self.has_mask:
+        if self.has_mask():
             assert self.DELTEME_all(["masks" in t for t in targets])
 
     def select_training_samples(self, proposals, targets):
@@ -586,7 +584,7 @@ class RoIHeads(torch.nn.Module):
                 floating_point_types = (torch.float, torch.double, torch.half)
                 assert t["boxes"].dtype in floating_point_types, 'target boxes must of float type'
                 assert t["labels"].dtype == torch.int64, 'target labels must of int64 type'
-                if self.has_keypoint:
+                if self.has_keypoint():
                     assert t["keypoints"].dtype == torch.float32, 'target keypoints must of float type'
 
         if self.training:
@@ -622,7 +620,7 @@ class RoIHeads(torch.nn.Module):
                     }
                 )
 
-        if self.has_mask:
+        if self.has_mask():
             mask_proposals = [p["boxes"] for p in result]
             if self.training:
                 assert matched_idxs is not None

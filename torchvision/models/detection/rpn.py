@@ -16,6 +16,7 @@ from torch.jit.annotations import List, Optional, Dict, Tuple
 
 @torch.jit.unused
 def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
+    # type: (Tensor, int) -> Tuple[int, int]
     from torch.onnx import operators
     num_anchors = operators.shape_as_tensor(ob)[1].unsqueeze(0)
     # TODO : remove cast to IntTensor/num_anchors.dtype when
@@ -276,7 +277,9 @@ class RegionProposalNetwork(torch.nn.Module):
     __annotations__ = {
         'box_coder': det_utils.BoxCoder,
         'proposal_matcher': det_utils.Matcher,
-        'fg_bg_sampler': det_utils.BalancedPositiveNegativeSampler
+        'fg_bg_sampler': det_utils.BalancedPositiveNegativeSampler,
+        'pre_nms_top_n': Dict[str, int],
+        'post_nms_top_n': Dict[str, int],
     }
 
     def __init__(self,
@@ -310,13 +313,11 @@ class RegionProposalNetwork(torch.nn.Module):
         self.nms_thresh = nms_thresh
         self.min_size = 1e-3
 
-    @property
     def pre_nms_top_n(self):
         if self.training:
             return self._pre_nms_top_n['training']
         return self._pre_nms_top_n['testing']
 
-    @property
     def post_nms_top_n(self):
         if self.training:
             return self._post_nms_top_n['training']
@@ -357,10 +358,10 @@ class RegionProposalNetwork(torch.nn.Module):
         offset = 0
         for ob in objectness.split(num_anchors_per_level, 1):
             if torchvision._is_tracing():
-                num_anchors, pre_nms_top_n = _onnx_get_num_anchors_and_pre_nms_top_n(ob, self.pre_nms_top_n)
+                num_anchors, pre_nms_top_n = _onnx_get_num_anchors_and_pre_nms_top_n(ob, self.pre_nms_top_n())
             else:
                 num_anchors = ob.shape[1]
-                pre_nms_top_n = min(self.pre_nms_top_n, num_anchors)
+                pre_nms_top_n = min(self.pre_nms_top_n(), num_anchors)
             _, top_n_idx = ob.topk(pre_nms_top_n, dim=1)
             r.append(top_n_idx + offset)
             offset += num_anchors
@@ -400,7 +401,7 @@ class RegionProposalNetwork(torch.nn.Module):
             # non-maximum suppression, independently done per level
             keep = box_ops.batched_nms(boxes, scores, lvl, self.nms_thresh)
             # keep only topk scoring predictions
-            keep = keep[:self.post_nms_top_n]
+            keep = keep[:self.post_nms_top_n()]
             boxes, scores = boxes[keep], scores[keep]
             final_boxes.append(boxes)
             final_scores.append(scores)
