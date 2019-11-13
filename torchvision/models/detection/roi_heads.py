@@ -78,7 +78,7 @@ def maskrcnn_inference(x, labels):
     num_masks = x.shape[0]
     boxes_per_image = [len(l) for l in labels]
     labels = torch.cat(labels)
-    index = torch.arange(num_masks, device=labels.device, dtype=torch.int64)
+    index = torch.arange(num_masks, device=labels.device)
     mask_prob = mask_prob[index, labels][:, None]
 
     if len(boxes_per_image) == 1:
@@ -134,7 +134,7 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
         return mask_logits.sum() * 0
 
     mask_loss = F.binary_cross_entropy_with_logits(
-        mask_logits[torch.arange(labels.shape[0], device=labels.device, dtype=torch.int64), labels], mask_targets
+        mask_logits[torch.arange(labels.shape[0], device=labels.device), labels], mask_targets
     )
     return mask_loss
 
@@ -229,7 +229,7 @@ def heatmaps_to_keypoints(maps, rois):
         xy_preds[i, 0, :] = x + offset_x[i]
         xy_preds[i, 1, :] = y + offset_y[i]
         xy_preds[i, 2, :] = 1
-        end_scores[i, :] = roi_map[torch.arange(num_keypoints, dtype=torch.int64), y_int, x_int]
+        end_scores[i, :] = roi_map[torch.arange(num_keypoints), y_int, x_int]
 
     return xy_preds.permute(0, 2, 1), end_scores
 
@@ -321,11 +321,17 @@ def expand_boxes(boxes, scale):
     return boxes_exp
 
 
+@torch.jit.unused
+def expand_masks_tracing_scale(M, padding):
+    # type: (int, int) -> float
+    return torch.tensor(M + 2 * padding).to(torch.float32) / torch.tensor(M).to(torch.float32)
+
+
 def expand_masks(mask, padding):
     # type: (Tensor, int)
     M = mask.shape[-1]
-    if torchvision._is_tracing():
-        scale = torch.tensor(M + 2 * padding).to(torch.float32) / torch.tensor(M).to(torch.float32)
+    if torch._C._get_tracing_state():  # could not import is_tracing(), not sure why
+        scale = expand_masks_tracing_scale(M, padding)
     else:
         scale = float(M + 2 * padding) / M
     padded_mask = torch.nn.functional.pad(mask, (padding,) * 4)
@@ -414,15 +420,12 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
     # type: (Tensor, Tensor, Tuple[int, int], int)
     masks, scale = expand_masks(masks, padding=padding)
     boxes = expand_boxes(boxes, scale).to(dtype=torch.int64)
-    # im_h, im_w = img_shape.tolist()
     im_h, im_w = img_shape
 
     if torchvision._is_tracing():
         return _onnx_paste_masks_in_image_loop(masks, boxes,
                                                torch.scalar_tensor(im_h, dtype=torch.int64),
                                                torch.scalar_tensor(im_w, dtype=torch.int64))[:, None]
-
-    boxes = boxes.tolist()
     res = [
         paste_mask_in_image(m[0], b, im_h, im_w)
         for m, b in zip(masks, boxes)
@@ -629,7 +632,7 @@ class RoIHeads(torch.nn.Module):
             boxes = box_ops.clip_boxes_to_image(boxes, image_shape)
 
             # create labels for each prediction
-            labels = torch.arange(num_classes, device=device, dtype=torch.int64)
+            labels = torch.arange(num_classes, device=device)
             labels = labels.view(1, -1).expand_as(scores)
 
             # remove predictions with the background label

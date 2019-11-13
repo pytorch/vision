@@ -7,20 +7,6 @@ from torch import nn, Tensor
 from torch.jit.annotations import Tuple, List, Dict
 
 
-class FeaturePyramidBlock(nn.Module):
-    def __init__(self, inner, layer):
-        super(FeaturePyramidBlock, self).__init__()
-        self.inner = inner
-        self.layer = layer
-
-    def forward(self, feature, last_inner):
-        inner_lateral = self.inner(feature)
-        feat_shape = inner_lateral.shape[-2:]
-        inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
-        last_inner = inner_lateral + inner_top_down
-        return self.layer(last_inner), last_inner
-
-
 class FeaturePyramidNetwork(nn.Module):
     """
     Module that adds a FPN from on top of a set of feature maps. This is based on
@@ -84,12 +70,8 @@ class FeaturePyramidNetwork(nn.Module):
         self.last_inner_block = self.inner_blocks[-1]
         self.last_layer_block = self.layer_blocks[-1]
 
-        self.layers = nn.ModuleList()
-        for inner_block, layer_block in zip(self.inner_blocks[:-1][::-1], self.layer_blocks[:-1][::-1]):
-            self.layers.append(FeaturePyramidBlock(inner_block, layer_block))
-
-        del self.inner_blocks
-        del self.layer_blocks
+        self.inner_blocks = self.inner_blocks[:-1][::-1]
+        self.layer_blocks = self.layer_blocks[:-1][::-1]
 
     def forward(self, x):
         # type: (Dict[str, Tensor])
@@ -119,10 +101,14 @@ class FeaturePyramidNetwork(nn.Module):
             out_dim_tensor.append(x_out)
 
         i = 0
-        for layer in self.layers:
+        for inner_block, layer_block in zip(self.inner_blocks, self.layer_blocks):
             if i < len(out_dim_tensor):
-                result, last_inner = layer(out_dim_tensor[i], last_inner)
-                results.insert(0, result)
+                feature = out_dim_tensor[i]
+                inner_lateral = inner_block(feature)
+                feat_shape = inner_lateral.shape[-2:]
+                inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
+                last_inner = inner_lateral + inner_top_down
+                results.insert(0, layer_block(last_inner))
             i += 1
 
         if self.extra_blocks is not None:

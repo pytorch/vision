@@ -99,7 +99,7 @@ class AnchorGenerator(nn.Module):
                 dtype,
                 device
             )
-            for sizes, aspect_ratios in zip(list(self.sizes), list(self.aspect_ratios))
+            for sizes, aspect_ratios in zip(self.sizes, self.aspect_ratios)
         ]
         self.cell_anchors = cell_anchors
 
@@ -128,7 +128,13 @@ class AnchorGenerator(nn.Module):
             shifts_y = torch.arange(
                 0, grid_height, dtype=torch.float32, device=device
             ) * stride_height
-            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
+            # TODO: remove tracing pass when exporting torch.meshgrid()
+            #       is suported in ONNX
+            if torchvision._is_tracing():
+                shift_y = shifts_y.view(-1, 1).expand(grid_height, grid_width)
+                shift_x = shifts_x.view(1, -1).expand(grid_height, grid_width)
+            else:
+                shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
             shift_x = shift_x.reshape(-1)
             shift_y = shift_y.reshape(-1)
             shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
@@ -379,7 +385,7 @@ class RegionProposalNetwork(torch.nn.Module):
         # select top_n boxes independently per level before applying nms
         top_n_idx = self._get_top_n_idx(objectness, num_anchors_per_level)
 
-        image_range = torch.arange(num_images, device=device, dtype=torch.int64)
+        image_range = torch.arange(num_images, device=device)
         batch_idx = image_range[:, None]
 
         objectness = objectness[batch_idx, top_n_idx]

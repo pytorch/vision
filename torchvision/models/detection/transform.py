@@ -38,10 +38,7 @@ class GeneralizedRCNNTransform(nn.Module):
         images = [img for img in images]
         for i in range(len(images)):
             image = images[i]
-            if targets is not None:
-                target_index = targets[i]
-            else:
-                target_index = None
+            target_index = targets[i] if targets is not None else None
 
             if image.dim() != 3:
                 raise ValueError("images is expected to be a list of 3d tensors "
