@@ -128,13 +128,7 @@ class AnchorGenerator(nn.Module):
             shifts_y = torch.arange(
                 0, grid_height, dtype=torch.float32, device=device
             ) * stride_height
-            # TODO: remove tracing pass when exporting torch.meshgrid()
-            #       is suported in ONNX
-            if torchvision._is_tracing():
-                shift_y = shifts_y.view(-1, 1).expand(grid_height, grid_width)
-                shift_x = shifts_x.view(1, -1).expand(grid_height, grid_width)
-            else:
-                shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
+            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
             shift_x = shift_x.reshape(-1)
             shift_y = shift_y.reshape(-1)
             shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)

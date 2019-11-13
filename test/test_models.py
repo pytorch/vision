@@ -75,11 +75,13 @@ class ModelTester(TestCase):
     def _test_classification_model(self, name, input_shape):
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
+        set_rng_seed(0)
         model = models.__dict__[name](num_classes=50)
         self.check_script(model, name)
         model.eval()
         x = torch.rand(input_shape)
         out = model(x)
+        self.assertExpected(out, rtol=1e-2, atol=0.)
         self.assertEqual(out.shape[-1], 50)
 
     def _test_segmentation_model(self, name):

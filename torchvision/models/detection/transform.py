@@ -113,15 +113,6 @@ class GeneralizedRCNNTransform(nn.Module):
             target["keypoints"] = keypoints
         return image, target
 
-    # _onnx_dynamic_img_pad() creates a dynamic padding
-    # for an image supported in ONNx tracing.
-    # it is used to process the images in _onnx_batch_images().
-    def _onnx_dynamic_img_pad(self, img, padding):
-        concat_0 = torch.cat((img, torch.zeros(padding[0], img.shape[1], img.shape[2])), 0)
-        concat_1 = torch.cat((concat_0, torch.zeros(concat_0.shape[0], padding[1], concat_0.shape[2])), 1)
-        padded_img = torch.cat((concat_1, torch.zeros(concat_1.shape[0], concat_1.shape[1], padding[2])), 2)
-        return padded_img
-
     # _onnx_batch_images() is an implementation of
     # batch_images() that is supported by ONNX tracing.
     @torch.jit.unused
@@ -142,7 +133,7 @@ class GeneralizedRCNNTransform(nn.Module):
         padded_imgs = []
         for img in images:
             padding = [(s1 - s2) for s1, s2 in zip(max_size, tuple(img.shape))]
-            padded_img = self._onnx_dynamic_img_pad(img, padding)
+            padded_img = torch.nn.functional.pad(img, (0, padding[2], 0, padding[1], 0, padding[0]))
             padded_imgs.append(padded_img)
 
         return torch.stack(padded_imgs)
@@ -209,6 +200,7 @@ def resize_boxes(boxes, original_size, new_size):
     ratios = [float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size)]
     ratio_height, ratio_width = ratios
     xmin, ymin, xmax, ymax = boxes.unbind(1)
+
     xmin = xmin * ratio_width
     xmax = xmax * ratio_width
     ymin = ymin * ratio_height

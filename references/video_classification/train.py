@@ -144,13 +144,13 @@ def main(args):
             traindir,
             frames_per_clip=args.clip_len,
             step_between_clips=1,
-            transform=transform_train
+            transform=transform_train,
+            frame_rate=15
         )
         if args.cache_dataset:
             print("Saving dataset_train to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset, traindir), cache_path)
-    dataset.video_clips.compute_clips(args.clip_len, 1, frame_rate=15)
 
     print("Took", time.time() - st)
 
@@ -176,13 +176,13 @@ def main(args):
             valdir,
             frames_per_clip=args.clip_len,
             step_between_clips=1,
-            transform=transform_test
+            transform=transform_test,
+            frame_rate=15
         )
         if args.cache_dataset:
             print("Saving dataset_test to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset_test, valdir), cache_path)
-    dataset_test.video_clips.compute_clips(args.clip_len, 1, frame_rate=15)
 
     print("Creating data loaders")
     train_sampler = RandomClipSampler(dataset.video_clips, args.clips_per_video)

@@ -157,12 +157,16 @@ for py_ver in "${DESIRED_PYTHON[@]}"; do
     rm -rf "$output_folder"
     mkdir "$output_folder"
 
+    export VSTOOLCHAIN_PACKAGE=vs2017
+
     # We need to build the compiler activation scripts first on Windows
     time VSDEVCMD_ARGS=${VSDEVCMD_ARGS[@]} \
         conda build -c "$ANACONDA_USER" \
                     --no-anaconda-upload \
                     --output-folder "$output_folder" \
-                    ../vs2017
+                    ../$VSTOOLCHAIN_PACKAGE
+
+    cp ../$VSTOOLCHAIN_PACKAGE/conda_build_config.yaml ../torchvision/conda_build_config.yaml
 
     conda config --set anaconda_upload no
     echo "Calling conda-build at $(date)"

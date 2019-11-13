@@ -50,21 +50,33 @@ setup_cuda() {
   # Now work out the CUDA settings
   case "$CU_VERSION" in
     cu101)
-      export CUDA_HOME=/usr/local/cuda-10.1/
+      if [[ "$OSTYPE" == "msys" ]]; then
+        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v10.1"
+      else
+        export CUDA_HOME=/usr/local/cuda-10.1/
+      fi
       export FORCE_CUDA=1
       # Hard-coding gencode flags is temporary situation until
       # https://github.com/pytorch/pytorch/pull/23408 lands
       export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_50,code=compute_50"
       ;;
     cu100)
-      export CUDA_HOME=/usr/local/cuda-10.0/
+      if [[ "$OSTYPE" == "msys" ]]; then
+        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v10.0"
+      else
+        export CUDA_HOME=/usr/local/cuda-10.0/
+      fi
       export FORCE_CUDA=1
       # Hard-coding gencode flags is temporary situation until
       # https://github.com/pytorch/pytorch/pull/23408 lands
       export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_50,code=compute_50"
       ;;
     cu92)
-      export CUDA_HOME=/usr/local/cuda-9.2/
+      if [[ "$OSTYPE" == "msys" ]]; then
+        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v9.2"
+      else
+        export CUDA_HOME=/usr/local/cuda-9.2/
+      fi
       export FORCE_CUDA=1
       export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_50,code=compute_50"
       ;;
@@ -187,10 +199,11 @@ setup_conda_pytorch_constraint() {
     export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
                               python -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
-                               cuver = (cuver[:-1] + '.' + cuver[-1]).replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
+                               cuver_1 = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
+                               cuver_2 = (cuver[:-1] + '.' + cuver[-1]).replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
                                print(re.sub(r'\\+.*$', '', \
                                 [x['version'] for x in json.load(sys.stdin)['pytorch'] \
-                                  if (x['platform'] == 'darwin' or cuver in x['fn']) \
+                                  if (x['platform'] == 'darwin' or cuver_1 in x['fn'] or cuver_2 in x['fn']) \
                                     and 'py' + os.environ['PYTHON_VERSION'] in x['fn']][-1]))")"
     if [[ -z "$PYTORCH_VERSION" ]]; then
       echo "PyTorch version auto detection failed"
@@ -234,5 +247,15 @@ setup_conda_cudatoolkit_constraint() {
         exit 1
         ;;
     esac
+  fi
+}
+
+# Build the proper compiler package before building the final package
+setup_visual_studio_constraint() {
+  if [[ "$OSTYPE" == "msys" ]]; then
+      export VSTOOLCHAIN_PACKAGE=vs2019
+      export VSDEVCMD_ARGS=''
+      conda build $CONDA_CHANNEL_FLAGS --no-anaconda-upload packaging/$VSTOOLCHAIN_PACKAGE
+      cp packaging/$VSTOOLCHAIN_PACKAGE/conda_build_config.yaml packaging/torchvision/conda_build_config.yaml
   fi
 }
