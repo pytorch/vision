@@ -6,11 +6,6 @@ from torch.jit.annotations import List, Tuple
 from torch import Tensor
 
 
-def Imagelist_to(image_list, *args, **kwargs):
-    cast_tensor = image_list.tensors.to(*args, **kwargs)
-    return ImageList(cast_tensor, image_list.image_sizes)
-
-
 class ImageList(object):
     """
     Structure that holds a list of images (of possibly
@@ -29,7 +24,7 @@ class ImageList(object):
         self.tensors = tensors
         self.image_sizes = image_sizes
 
-    # def to(self, *args, **kwargs):
-    #     cast_tensor = self.tensors.to(*args, **kwargs)
-    #     return ImageList(cast_tensor, self.image_sizes)
-    # # TODO: Can't TorchScript this due to https://github.com/pytorch/pytorch/issues/25462
+    def to(self, device):
+        # type: (Device)
+        cast_tensor = self.tensors.to(device)
+        return ImageList(cast_tensor, self.image_sizes)
