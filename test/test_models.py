@@ -38,7 +38,6 @@ def get_available_video_models():
 # models that are in torch hub, as well as r3d_18. we tried testing all models
 # but the test was too slow. not included are detection models, because
 # they are not yet supported in JIT.
-
 script_test_models = [
     "deeplabv3_resnet101",
     "mobilenet_v2",
