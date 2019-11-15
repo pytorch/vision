@@ -298,6 +298,7 @@ class ONNXExporterTester(unittest.TestCase):
     # Verify that paste_mask_in_image beahves the same in tracing.
     # This test also compares both paste_masks_in_image and _onnx_paste_masks_in_image
     # (since jit_trace witll call _onnx_paste_masks_in_image).
+    @unittest.skip("Disable test until jit regression fixed: https://github.com/pytorch/pytorch/issues/29909")
     def test_paste_mask_in_image(self):
         masks = torch.rand(10, 1, 26, 26)
         boxes = torch.rand(10, 4)
