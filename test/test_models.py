@@ -39,9 +39,6 @@ def get_available_video_models():
 # but the test was too slow. not included are detection models, because
 # they are not yet supported in JIT.
 
-# Temp disabled modules: disabled until https://github.com/pytorch/pytorch/pull/28988 lands
-# so that we do not have to introduce BC changes.
-
 script_test_models = [
     "deeplabv3_resnet101",
     "mobilenet_v2",
