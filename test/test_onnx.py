@@ -329,7 +329,7 @@ class ONNXExporterTester(unittest.TestCase):
 
         assert torch.all(out2.eq(out_trace2))
 
-    #@unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
+    @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
 
