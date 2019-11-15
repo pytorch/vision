@@ -16,9 +16,9 @@ def get_dataset(name, image_set, transform):
     def sbd(*args, **kwargs):
         return torchvision.datasets.SBDataset(*args, mode='segmentation', **kwargs)
     paths = {
-        "voc": ('/datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation, 21),
-        "voc_aug": ('/datasets01/SBDD/072318/', sbd, 21),
-        "coco": ('/datasets01/COCO/022719/', get_coco, 21)
+        "voc": ('./datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation, 21),
+        "voc_aug": ('./datasets01/SBDD/072318/', sbd, 21),
+        "coco": ('./datasets01/COCO/022719/', get_coco, 21)
     }
     p, ds_fn, num_classes = paths[name]
 
