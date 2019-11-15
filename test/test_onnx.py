@@ -298,8 +298,11 @@ class ONNXExporterTester(unittest.TestCase):
     # Verify that paste_mask_in_image beahves the same in tracing.
     # This test also compares both paste_masks_in_image and _onnx_paste_masks_in_image
     # (since jit_trace witll call _onnx_paste_masks_in_image).
-    @unittest.skip("Disable test until jit regression fixed: https://github.com/pytorch/pytorch/issues/29909")
     def test_paste_mask_in_image(self):
+        # disable profiling
+        torch._C._jit_set_profiling_executor(False)
+        torch._C._jit_set_profiling_mode(False)
+
         masks = torch.rand(10, 1, 26, 26)
         boxes = torch.rand(10, 4)
         boxes[:, 2:] += torch.rand(10, 2)
@@ -326,7 +329,7 @@ class ONNXExporterTester(unittest.TestCase):
 
         assert torch.all(out2.eq(out_trace2))
 
-    @unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
+    #@unittest.skip("Disable test until Resize opset 11 is implemented in ONNX Runtime")
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
 
