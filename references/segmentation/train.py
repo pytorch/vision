@@ -16,9 +16,9 @@ def get_dataset(name, image_set, transform):
     def sbd(*args, **kwargs):
         return torchvision.datasets.SBDataset(*args, mode='segmentation', **kwargs)
     paths = {
-        "voc": ('./datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation, 21),
-        "voc_aug": ('./datasets01/SBDD/072318/', sbd, 21),
-        "coco": ('./datasets01/COCO/022719/', get_coco, 21)
+        "voc": (args.dataset_path, torchvision.datasets.VOCSegmentation, 21),
+        "voc_aug": (args.dataset_path, sbd, 21),
+        "coco": (args.dataset_path, get_coco, 21)
     }
     p, ds_fn, num_classes = paths[name]
 
@@ -183,6 +183,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description='PyTorch Segmentation Training')
 
     parser.add_argument('--dataset', default='voc', help='dataset')
+    parser.add_argument('--dataset-path', required=True, type=str, help='Path to dataset')
     parser.add_argument('--model', default='fcn_resnet101', help='model')
     parser.add_argument('--aux-loss', action='store_true', help='auxiliar loss')
     parser.add_argument('--device', default='cuda', help='device')
