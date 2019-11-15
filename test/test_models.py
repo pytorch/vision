@@ -43,12 +43,12 @@ def get_available_video_models():
 # so that we do not have to introduce BC changes.
 
 script_test_models = [
-    # "deeplabv3_resnet101", temp disabled
+    "deeplabv3_resnet101",
     "mobilenet_v2",
     "resnext50_32x4d",
-    # "fcn_resnet101", temp disabled
+    "fcn_resnet101",
     "googlenet",
-    # "densenet121", temp disabled
+    "densenet121",
     "resnet18",
     "alexnet",
     "shufflenet_v2_x1_0",
