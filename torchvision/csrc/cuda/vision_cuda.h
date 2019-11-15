@@ -85,3 +85,26 @@ at::Tensor nms_cuda(
     const at::Tensor& dets,
     const at::Tensor& scores,
     const float iou_threshold);
+
+at::Tensor DCN_forward_cuda(
+    const at::Tensor& input,
+    const at::Tensor& offset,
+    const at::Tensor& weights,
+    std::pair<int, int> stride,
+    std::pair<int, int> pad,
+    std::pair<int, int> dilation,
+    int groups,
+    int deformable_groups,
+    int n_parallel_imgs);
+
+std::tuple<at::Tensor, at::Tensor, at::Tensor> DCN_backward_cuda(
+    const at::Tensor& grad_out,
+    const at::Tensor& input,
+    const at::Tensor& offset,
+    const at::Tensor& weights,
+    std::pair<int, int> stride,
+    std::pair<int, int> pad,
+    std::pair<int, int> dilation,
+    int groups,
+    int deformable_groups,
+    int n_parallel_imgs);
