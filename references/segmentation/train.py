@@ -12,13 +12,13 @@ import transforms as T
 import utils
 
 
-def get_dataset(name, image_set, transform):
+def get_dataset(name, image_set, transform, dataset_path):
     def sbd(*args, **kwargs):
         return torchvision.datasets.SBDataset(*args, mode='segmentation', **kwargs)
     paths = {
-        "voc": (args.dataset_path, torchvision.datasets.VOCSegmentation, 21),
-        "voc_aug": (args.dataset_path, sbd, 21),
-        "coco": (args.dataset_path, get_coco, 21)
+        "voc": (dataset_path, torchvision.datasets.VOCSegmentation, 21),
+        "voc_aug": (dataset_path, sbd, 21),
+        "coco": (dataset_path, get_coco, 21)
     }
     p, ds_fn, num_classes = paths[name]
 
@@ -101,8 +101,8 @@ def main(args):
 
     device = torch.device(args.device)
 
-    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(train=True))
-    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(train=False))
+    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(train=True), args.dataset_path)
+    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(train=False), args.dataset_path)
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
