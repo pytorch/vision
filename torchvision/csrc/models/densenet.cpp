@@ -99,10 +99,8 @@ DenseNetImpl::DenseNetImpl(
   features = torch::nn::Sequential();
   features->push_back(
       "conv0",
-      torch::nn::Conv2d(Options(3, num_init_features, 7)
-                            .stride(2)
-                            .padding(3)
-                            .bias(false)));
+      torch::nn::Conv2d(
+          Options(3, num_init_features, 7).stride(2).padding(3).bias(false)));
 
   features->push_back("norm0", torch::nn::BatchNorm(num_init_features));
   features->push_back("relu0", torch::nn::Functional(modelsimpl::relu_));
