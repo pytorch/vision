@@ -21,7 +21,7 @@ struct _DenseLayerImpl : torch::nn::SequentialImpl {
         "conv1",
         torch::nn::Conv2d(Options(num_input_features, bn_size * growth_rate, 1)
                               .stride(1)
-                              .with_bias(false)));
+                              .bias(false)));
     push_back("norm2", torch::nn::BatchNorm(bn_size * growth_rate));
     push_back("relu2", torch::nn::Functional(modelsimpl::relu_));
     push_back(
@@ -29,7 +29,7 @@ struct _DenseLayerImpl : torch::nn::SequentialImpl {
         torch::nn::Conv2d(Options(bn_size * growth_rate, growth_rate, 3)
                               .stride(1)
                               .padding(1)
-                              .with_bias(false)));
+                              .bias(false)));
   }
 
   torch::Tensor forward(torch::Tensor x) {
@@ -75,7 +75,7 @@ struct _TransitionImpl : torch::nn::SequentialImpl {
         "conv",
         torch::nn::Conv2d(Options(num_input_features, num_output_features, 1)
                               .stride(1)
-                              .with_bias(false)));
+                              .bias(false)));
     push_back("pool", torch::nn::Functional([](torch::Tensor input) {
                 return torch::avg_pool2d(input, 2, 2, 0, false, true);
               }));
@@ -99,10 +99,8 @@ DenseNetImpl::DenseNetImpl(
   features = torch::nn::Sequential();
   features->push_back(
       "conv0",
-      torch::nn::Conv2d(Options(3, num_init_features, 7)
-                            .stride(2)
-                            .padding(3)
-                            .with_bias(false)));
+      torch::nn::Conv2d(
+          Options(3, num_init_features, 7).stride(2).padding(3).bias(false)));
 
   features->push_back("norm0", torch::nn::BatchNorm(num_init_features));
   features->push_back("relu0", torch::nn::Functional(modelsimpl::relu_));

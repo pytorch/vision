@@ -62,9 +62,9 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
         d["unicode_abi"] = '1'
 
     if cu_version == "cu92":
-        d["wheel_docker_image"] = "soumith/manylinux-cuda92"
+        d["wheel_docker_image"] = "pytorch/manylinux-cuda92"
     elif cu_version == "cu100":
-        d["wheel_docker_image"] = "soumith/manylinux-cuda100"
+        d["wheel_docker_image"] = "pytorch/manylinux-cuda100"
 
     if filter_branch is not None:
         d["filters"] = {"branches": {"only": filter_branch}}
