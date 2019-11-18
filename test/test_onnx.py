@@ -334,6 +334,43 @@ class ONNXExporterTester(unittest.TestCase):
         model(images)
         self.run_model(model, [(images,), (test_images,)])
 
+    # Verify that heatmaps_to_keypoints behaves the same in tracing.
+    # This test also compares both heatmaps_to_keypoints and _onnx_heatmaps_to_keypoints
+    # (since jit_trace witll call _heatmaps_to_keypoints).
+    # @unittest.skip("Disable test until Resize bug fixed in ORT")
+    def test_heatmaps_to_keypoints(self):
+        # disable profiling
+        torch._C._jit_set_profiling_executor(False)
+        torch._C._jit_set_profiling_mode(False)
+
+        maps = torch.rand(10, 1, 26, 26)
+        rois = torch.rand(10, 4)
+        from torchvision.models.detection.roi_heads import heatmaps_to_keypoints
+        out = heatmaps_to_keypoints(maps, rois)
+        jit_trace = torch.jit.trace(heatmaps_to_keypoints, (maps, rois))
+        out_trace = jit_trace(maps, rois)
+
+        assert torch.all(out[0].eq(out_trace[0]))
+        assert torch.all(out[1].eq(out_trace[1]))
+
+        maps2 = torch.rand(20, 2, 21, 21)
+        rois2 = torch.rand(20, 4)
+        from torchvision.models.detection.roi_heads import heatmaps_to_keypoints
+        out2 = heatmaps_to_keypoints(maps2, rois2)
+        out_trace2 = jit_trace(maps2, rois2)
+
+        assert torch.all(out2[0].eq(out_trace2[0]))
+        assert torch.all(out2[1].eq(out_trace2[1]))
+
+    @unittest.skip("Disable test until Argmax is updated in ONNX")
+    def test_keypoint_rcnn(self):
+        images, test_images = self.get_test_images()
+
+        model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
+        model.eval()
+        model(test_images)
+        self.run_model(model, [(images,), (test_images,)])
+
 
 if __name__ == '__main__':
     unittest.main()
