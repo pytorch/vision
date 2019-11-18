@@ -91,7 +91,7 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
       else
         torch::nn::init::kaiming_uniform_(M->weight);
 
-      if (M->options.bias())
+      if (M->options.with_bias())
         torch::nn::init::constant_(M->bias, 0);
     }
 }
