@@ -9,10 +9,10 @@ using Options = torch::nn::Conv2dOptions;
 
 namespace _googlenetimpl {
 BasicConv2dImpl::BasicConv2dImpl(torch::nn::Conv2dOptions options) {
-  options.with_bias(false);
+  options.bias(false);
   conv = torch::nn::Conv2d(options);
   bn = torch::nn::BatchNorm(
-      torch::nn::BatchNormOptions(options.output_channels()).eps(0.001));
+      torch::nn::BatchNormOptions(options.out_channels()).eps(0.001));
 
   register_module("conv", conv);
   register_module("bn", bn);
