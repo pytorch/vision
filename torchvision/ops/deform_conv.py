@@ -5,7 +5,7 @@ from torch import nn, Tensor
 from torch.nn import init
 from torch.nn.parameter import Parameter
 from torch.nn.modules.utils import _pair
-from torch.jit.annotations import Tuple
+from torch.jit.annotations import Optional, Tuple
 
 
 def deform_conv2d(input, weight, offset, bias=None, stride=(1, 1), padding=(0, 0), dilation=(1, 1)):
