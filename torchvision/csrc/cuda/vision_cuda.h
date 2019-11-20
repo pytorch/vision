@@ -97,7 +97,8 @@ at::Tensor DeformConv2d_forward_cuda(
     int groups,
     int deformable_groups);
 
-std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor> DeformConv2d_backward_cuda(
+std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
+DeformConv2d_backward_cuda(
     const at::Tensor& grad_out,
     const at::Tensor& input,
     const at::Tensor& weight,
