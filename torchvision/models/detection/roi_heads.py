@@ -318,12 +318,6 @@ def keypointrcnn_inference(x, boxes):
         kp_prob, scores = heatmaps_to_keypoints(xx, bb)
         kp_probs.append(kp_prob)
         kp_scores.append(scores)
-        print(kp_prob.shape, scores.shape)
-
-    for xx, bb in zip(x2, boxes):
-        kp_prob, scores = heatmaps_to_keypoints(xx, bb)
-        kp_probs.append(kp_prob)
-        kp_scores.append(scores)
 
     return kp_probs, kp_scores
 
