@@ -85,25 +85,25 @@ at::Tensor nms_cpu(
     const at::Tensor& scores,
     const float iou_threshold);
 
-at::Tensor DCN_forward_cpu(
+at::Tensor DeformConv2d_forward_cpu(
     const at::Tensor& input,
+    const at::Tensor& weight,
     const at::Tensor& offset,
-    const at::Tensor& weights,
+    const at::Tensor& bias,
     std::pair<int, int> stride,
     std::pair<int, int> pad,
     std::pair<int, int> dilation,
     int groups,
-    int deformable_groups,
-    int n_parallel_imgs);
+    int deformable_groups);
 
-std::tuple<at::Tensor, at::Tensor, at::Tensor> DCN_backward_cpu(
+std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor> DeformConv2d_backward_cpu(
     const at::Tensor& grad_out,
     const at::Tensor& input,
+    const at::Tensor& weight,
     const at::Tensor& offset,
-    const at::Tensor& weights,
+    const at::Tensor& bias,
     std::pair<int, int> stride,
     std::pair<int, int> pad,
     std::pair<int, int> dilation,
     int groups,
-    int deformable_groups,
-    int n_parallel_imgs);
+    int deformable_groups);

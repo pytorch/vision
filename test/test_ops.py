@@ -383,23 +383,23 @@ class NewEmptyTensorTester(unittest.TestCase):
 
 
 class DeformConvTester(OpTester, unittest.TestCase):
-    def expected_fn(self, x, offsets, weights, *args, stride=1, pad=0, dilation=1):
+    def expected_fn(self, x, weight, offset, bias, stride=1, padding=0, dilation=1):
         stride_h, stride_w = _pair(stride)
-        pad_h, pad_w = _pair(pad)
+        pad_h, pad_w = _pair(padding)
         dil_h, dil_w = _pair(dilation)
-        weights_h, weights_w = weights.shape[-2:]
+        weight_h, weight_w = weight.shape[-2:]
 
         n_batches, n_in_channels, in_h, in_w = x.shape
-        n_out_channels = weights.shape[0]
+        n_out_channels = weight.shape[0]
 
-        out_h = (in_h + 2 * pad_h - (dil_h * (weights_h - 1) + 1)) // stride_h + 1
-        out_w = (in_w + 2 * pad_w - (dil_w * (weights_w - 1) + 1)) // stride_w + 1
+        out_h = (in_h + 2 * pad_h - (dil_h * (weight_h - 1) + 1)) // stride_h + 1
+        out_w = (in_w + 2 * pad_w - (dil_w * (weight_w - 1) + 1)) // stride_w + 1
 
-        n_offset_grps = offsets.shape[1] // (2 * weights_h * weights_w)
+        n_offset_grps = offset.shape[1] // (2 * weight_h * weight_w)
         in_c_per_offset_grp = n_in_channels // n_offset_grps
 
-        n_weight_grps = n_in_channels // weights.shape[1]
-        in_c_per_weight_grp = weights.shape[1]
+        n_weight_grps = n_in_channels // weight.shape[1]
+        in_c_per_weight_grp = weight.shape[1]
         out_c_per_weight_grp = n_out_channels // n_weight_grps
 
         out = torch.zeros(n_batches, n_out_channels, out_h, out_w, device=x.device, dtype=x.dtype)
@@ -407,20 +407,21 @@ class DeformConvTester(OpTester, unittest.TestCase):
             for c_out in range(n_out_channels):
                 for i in range(out_h):
                     for j in range(out_w):
-                        for di in range(weights_h):
-                            for dj in range(weights_w):
+                        for di in range(weight_h):
+                            for dj in range(weight_w):
                                 for c in range(in_c_per_weight_grp):
                                     weight_grp = c_out // out_c_per_weight_grp
                                     c_in = weight_grp * in_c_per_weight_grp + c
 
                                     offset_grp = c_in // in_c_per_offset_grp
-                                    offset_idx = 2 * (offset_grp * (weights_h * weights_w) + di * weights_w + dj)
+                                    offset_idx = 2 * (offset_grp * (weight_h * weight_w) + di * weight_w + dj)
 
-                                    pi = stride_h * i - pad_h + dil_h * di + offsets[b, offset_idx, i, j]
-                                    pj = stride_w * j - pad_w + dil_w * dj + offsets[b, offset_idx + 1, i, j]
+                                    pi = stride_h * i - pad_h + dil_h * di + offset[b, offset_idx, i, j]
+                                    pj = stride_w * j - pad_w + dil_w * dj + offset[b, offset_idx + 1, i, j]
 
-                                    out[b, c_out, i, j] += (weights[c_out, c, di, dj] *
+                                    out[b, c_out, i, j] += (weight[c_out, c, di, dj] *
                                                             bilinear_interpolate(x[b, c_in, :, :], pi, pj))
+        out += bias.view(1, n_out_channels, 1, 1)
         return out
 
     def get_fn_args(self, device, contiguous):
@@ -451,36 +452,50 @@ class DeformConvTester(OpTester, unittest.TestCase):
         weight = torch.randn(n_out_channels, n_in_channels // n_weight_grps, weight_h, weight_w,
                              device=device, dtype=self.dtype, requires_grad=True)
 
+        bias = torch.randn(n_out_channels, device=device, dtype=self.dtype, requires_grad=True)
+
         if not contiguous:
             x = x.permute(0, 1, 3, 2).contiguous().permute(0, 1, 3, 2)
             offset = offset.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
             weight = weight.permute(3, 2, 0, 1).contiguous().permute(2, 3, 1, 0)
 
-        return x, offset, weight, stride, pad, dilation
+        return x, weight, offset, bias, stride, pad, dilation
 
     def _test_forward(self, device, contiguous):
-        x, offset, weight, stride, pad, dilation = self.get_fn_args(device, contiguous)
+        x, _, _, _, stride, padding, dilation = self.get_fn_args(device, contiguous)
+        in_channels = 6
+        out_channels = 2
+        kernel_size = (3, 2)
+        groups = 2
+        offset_groups = 3
 
-        res = ops.DeformConv(stride=stride, pad=pad, dilation=dilation)(x, offset, weight)
-        expected = self.expected_fn(x, offset, weight, stride=stride, pad=pad, dilation=dilation)
+        layer = ops.DeformConv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding,
+                                 dilation=dilation, groups=groups, offset_groups=offset_groups)
+        layer.offset_conv.weight.data = torch.randn_like(layer.offset_conv.weight.data)
+        res = layer(x)
 
-        self.assertTrue(torch.allclose(res, expected), '\nres:\n{}\nexpected:\n{}'.format(x, res, expected))
+        weight = layer.weight.data.to(device=x.device, dtype=x.dtype)
+        offset = layer.offset_conv.to(device=x.device, dtype=x.dtype)(x)
+        bias = layer.bias.data.to(device=x.device, dtype=x.dtype)
+        expected = self.expected_fn(x, weight, offset, bias, stride=stride, padding=padding, dilation=dilation)
+
+        self.assertTrue(torch.allclose(res, expected), '\nres:\n{}\nexpected:\n{}'.format(res, expected))
 
     def _test_backward(self, device, contiguous):
-        x, offset, weight, stride, pad, dilation = self.get_fn_args(device, contiguous)
+        x, weight, offset, bias, stride, padding, dilation = self.get_fn_args(device, contiguous)
 
-        def func(x_, offset_, weight_):
-            return ops.deform_conv(x_, offset_, weight_, stride=stride, pad=pad, dilation=dilation)
+        def func(x_, weight_, offset_, bias_):
+            return ops.deform_conv2d(x_, weight_, offset_, bias_, stride=stride, padding=padding, dilation=dilation)
 
-        gradcheck(func, (x, offset, weight), nondet_tol=1e-5)
+        gradcheck(func, (x, weight, offset, bias), nondet_tol=1e-5)
 
         @torch.jit.script
-        def script_func(x_, offset_, weight_, stride_, pad_, dilation_):
-            # type: (Tensor, Tensor, Tensor, Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> Tensor
-            return ops.deform_conv(x_, offset_, weight_, stride=stride_, pad=pad_, dilation=dilation_)
+        def script_func(x_, weight_, offset_, bias_, stride_, pad_, dilation_):
+            # type: (Tensor, Tensor, Tensor, Tensor, Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> Tensor
+            return ops.deform_conv2d(x_, weight_, offset_, bias_, stride=stride_, padding=pad_, dilation=dilation_)
 
-        gradcheck(lambda z, off, wei: script_func(z, off, wei, stride, pad, dilation),
-                  (x, offset, weight), nondet_tol=1e-5)
+        gradcheck(lambda z, wei, off, bi: script_func(z, wei, off, bi, stride, padding, dilation),
+                  (x, weight, offset, bias), nondet_tol=1e-5)
 
 
 if __name__ == '__main__':

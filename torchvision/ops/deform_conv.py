@@ -1,70 +1,128 @@
-from typing import Tuple
+import math
 
 import torch
 from torch import nn, Tensor
+from torch.nn import init
+from torch.nn.parameter import Parameter
 from torch.nn.modules.utils import _pair
-from torch.jit.annotations import List
+from torch.jit.annotations import Tuple
 
 
-def deform_conv(input, offset, weight, stride=(1, 1), pad=(0, 0), dilation=(1, 1), n_parallel_imgs=64):
-    # type: (Tensor, Tensor, Tensor, Tuple[int, int], Tuple[int, int], Tuple[int, int], int) -> Tensor
+def deform_conv2d(input, weight, offset, bias=None, stride=(1, 1), padding=(0, 0), dilation=(1, 1)):
+    # type: (Tensor, Tensor, Tensor, Optional[Tensor], Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> Tensor
     """
     Performs Deformable Convolution, described in Deformable Convolutional Networks
 
     Arguments:
-        input (Tensor[batch_sz, in_channels, in_h, in_w]): input tensor
-        offset (Tensor[batch_sz, 2 * n_offset_grps * weight_h * weight_w, out_h, out_w])
-        weight (Tensor[out_channels, in_channels // n_weight_grps, weight_h, weight_w]):
-            convolution weights, with n_weight_grps different connection groups
-        stride (int or Tuple[int, int]): distance between convolution centers
-        pad (int or Tuple[int, int]): height/width of padding of zeroes around each image
-        dilation (int or Tuple[int, int]): point distance in convolution grid
-        n_parallel_imgs (int): Number of images to be processed at once; does not change
-            behavior, only used for performance purposes
+        input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
+        weight (Tensor[out_channels, in_channels // groups, kernel_height, kernel_width]):
+            convolution weights, split into groups of size (in_channels // groups)
+        offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
+            out_height, out_width]): offsets to be applied for each position in the
+            convolution kernel.
+        bias (Tensor[out_channels]): optional bias of shape (out_channels,). Default: None
+        stride (int or Tuple[int, int]): distance between convolution centers. Default: 1
+        padding (int or Tuple[int, int]): height/width of padding of zeroes around
+            each image. Default: 0
+        dilation (int or Tuple[int, int]): the spacing between kernel elements. Default: 1
 
     Returns:
         output (Tensor[batch_sz, out_channels, out_h, out_w]): result of convolution
     """
 
-    stride_h, stride_w = stride
-    pad_h, pad_w = pad
-    dil_h, dil_w = dilation
+    out_channels = weight.shape[0]
+    if bias is None:
+        bias = torch.zeros(out_channels, device=input.device, dtype=input.dtype)
+
+    stride_h, stride_w = _pair(stride)
+    pad_h, pad_w = _pair(padding)
+    dil_h, dil_w = _pair(dilation)
     weights_h, weights_w = weight.shape[-2:]
     _, n_in_channels, in_h, in_w = input.shape
 
     n_offset_grps = offset.shape[1] // (2 * weights_h * weights_w)
     n_weight_grps = n_in_channels // weight.shape[1]
 
-    return torch.ops.torchvision.deform_conv(
+    return torch.ops.torchvision.deform_conv2d(
         input,
-        offset,
         weight,
-        *stride,
-        *pad,
-        *dilation,
+        offset,
+        bias,
+        stride_h, stride_w,
+        pad_h, pad_w,
+        dil_h, dil_w,
         n_weight_grps,
-        n_offset_grps,
-        n_parallel_imgs)
+        n_offset_grps)
 
 
-class DeformConv(nn.Module):
+class DeformConv2d(nn.Module):
     """
-    See deform_conv
+    See deform_conv2d
     """
-    def __init__(self, stride=1, pad=0, dilation=1, n_parallel_imgs=64):
-        super(DeformConv, self).__init__()
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0,
+                 dilation=1, groups=1, offset_groups=1, bias=True):
+        super(DeformConv2d, self).__init__()
+
+        if in_channels % groups != 0:
+            raise ValueError('in_channels must be divisible by groups')
+        if in_channels % offset_groups != 0:
+            raise ValueError('in_channels must be divisible by offset_groups')
+        if out_channels % groups != 0:
+            raise ValueError('out_channels must be divisible by groups')
+
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = _pair(kernel_size)
         self.stride = _pair(stride)
-        self.pad = _pair(pad)
+        self.padding = _pair(padding)
         self.dilation = _pair(dilation)
-        self.n_parallel_imgs = n_parallel_imgs
+        self.groups = groups
+        self.offset_groups = offset_groups
 
-    def forward(self, input, offset, weight):
-        return deform_conv(input, offset, weight, stride=self.stride, pad=self.pad,
-                           dilation=self.dilation, n_parallel_imgs=self.n_parallel_imgs)
+        self.weight = Parameter(torch.empty(out_channels, in_channels // groups, kernel_size[0], kernel_size[1]))
+
+        self.offset_conv = nn.Conv2d(
+            self.in_channels,
+            offset_groups * 2 * self.kernel_size[0] * self.kernel_size[1],
+            kernel_size=self.kernel_size,
+            stride=self.stride,
+            padding=self.padding,
+            dilation=self.dilation)
+
+        if bias:
+            self.bias = Parameter(torch.empty(out_channels))
+        else:
+            self.register_parameter('bias', None)
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        init.kaiming_uniform_(self.weight, a=math.sqrt(5))
+        init.zeros_(self.offset_conv.weight)
+        init.zeros_(self.offset_conv.bias)
+        if self.bias is not None:
+            fan_in, _ = init._calculate_fan_in_and_fan_out(self.weight)
+            bound = 1 / math.sqrt(fan_in)
+            init.uniform_(self.bias, -bound, bound)
+
+    def forward(self, input):
+        offset = self.offset_conv.to(device=input.device, dtype=input.dtype)(input)
+        weight = self.weight.to(device=input.device, dtype=input.dtype)
+        bias = self.bias.to(device=input.device, dtype=input.dtype) if self.bias is not None else self.bias
+
+        return deform_conv2d(input, weight, offset, bias, stride=self.stride,
+                             padding=self.padding, dilation=self.dilation)
 
     def __repr__(self):
-        tmpstr = self.__class__.__name__ + '('
-        tmpstr += 'output_size=' + str(self.output_size)
-        tmpstr += ', spatial_scale=' + str(self.spatial_scale)
-        tmpstr += ')'
-        return tmpstr
+        s = self.__class__.__name__ + '('
+        s += '{in_channels}'
+        s += ', {out_channels}'
+        s += ', kernel_size={kernel_size}'
+        s += ', stride={stride}'
+        s += ', padding={padding}' if self.padding != (0, 0) else ''
+        s += ', dilation={dilation}' if self.dilation != (1, 1) else ''
+        s += ', groups={groups}' if self.groups != 1 else ''
+        s += ', offset_groups={offset_groups}' if self.offset_groups != 1 else ''
+        s += ', bias=False' if self.bias is None else ''
+        s += ')'
+        return s.format(**self.__dict__)
