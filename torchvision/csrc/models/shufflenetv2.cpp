@@ -25,13 +25,13 @@ torch::Tensor channel_shuffle(torch::Tensor x, int64_t groups) {
 
 torch::nn::Conv2d conv11(int64_t input, int64_t output) {
   Options opts(input, output, 1);
-  opts = opts.stride(1).padding(0).with_bias(false);
+  opts = opts.stride(1).padding(0).bias(false);
   return torch::nn::Conv2d(opts);
 }
 
 torch::nn::Conv2d conv33(int64_t input, int64_t output, int64_t stride) {
   Options opts(input, output, 3);
-  opts = opts.stride(stride).padding(1).with_bias(false).groups(input);
+  opts = opts.stride(stride).padding(1).bias(false).groups(input);
   return torch::nn::Conv2d(opts);
 }
 
@@ -107,7 +107,7 @@ ShuffleNetV2Impl::ShuffleNetV2Impl(
       torch::nn::Conv2d(Options(input_channels, output_channels, 3)
                             .stride(2)
                             .padding(1)
-                            .with_bias(false)),
+                            .bias(false)),
       torch::nn::BatchNorm(output_channels),
       torch::nn::Functional(modelsimpl::relu_));
 
@@ -134,7 +134,7 @@ ShuffleNetV2Impl::ShuffleNetV2Impl(
       torch::nn::Conv2d(Options(input_channels, output_channels, 1)
                             .stride(1)
                             .padding(0)
-                            .with_bias(false)),
+                            .bias(false)),
       torch::nn::BatchNorm(output_channels),
       torch::nn::Functional(modelsimpl::relu_));
 
