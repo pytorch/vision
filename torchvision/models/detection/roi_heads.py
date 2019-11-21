@@ -1,3 +1,4 @@
+from __future__ import division
 import torch
 import torchvision
 
@@ -164,6 +165,58 @@ def keypoints_to_heatmap(keypoints, rois, heatmap_size):
     return heatmaps, valid
 
 
+def _onnx_heatmaps_to_keypoints(maps, maps_i, roi_map_width, roi_map_height,
+                                widths_i, heights_i, offset_x_i, offset_y_i):
+    num_keypoints = torch.scalar_tensor(maps.size(1), dtype=torch.int64)
+
+    width_correction = widths_i / roi_map_width
+    height_correction = heights_i / roi_map_height
+
+    roi_map = torch.nn.functional.interpolate(
+        maps_i[None], size=(int(roi_map_height), int(roi_map_width)), mode='bicubic', align_corners=False)[0]
+
+    w = torch.scalar_tensor(roi_map.size(2), dtype=torch.int64)
+    pos = roi_map.reshape(num_keypoints, -1).argmax(dim=1)
+
+    x_int = (pos % w)
+    y_int = ((pos - x_int) / w)
+
+    x = (torch.tensor(0.5, dtype=torch.float32) + x_int.to(dtype=torch.float32)) * \
+        width_correction.to(dtype=torch.float32)
+    y = (torch.tensor(0.5, dtype=torch.float32) + y_int.to(dtype=torch.float32)) * \
+        height_correction.to(dtype=torch.float32)
+
+    xy_preds_i_0 = x + offset_x_i.to(dtype=torch.float32)
+    xy_preds_i_1 = y + offset_y_i.to(dtype=torch.float32)
+    xy_preds_i_2 = torch.ones((xy_preds_i_1.shape), dtype=torch.float32)
+    xy_preds_i = torch.stack([xy_preds_i_0.to(dtype=torch.float32),
+                              xy_preds_i_1.to(dtype=torch.float32),
+                              xy_preds_i_2.to(dtype=torch.float32)], 0)
+
+    # TODO: simplify when indexing without rank will be supported by ONNX
+    end_scores_i = roi_map.index_select(1, y_int.to(dtype=torch.int64)) \
+        .index_select(2, x_int.to(dtype=torch.int64))[:num_keypoints, 0, 0]
+    return xy_preds_i, end_scores_i
+
+
+@torch.jit.script
+def _onnx_heatmaps_to_keypoints_loop(maps, rois, widths_ceil, heights_ceil,
+                                     widths, heights, offset_x, offset_y, num_keypoints):
+    xy_preds = torch.zeros((0, 3, int(num_keypoints)), dtype=torch.float32, device=maps.device)
+    end_scores = torch.zeros((0, int(num_keypoints)), dtype=torch.float32, device=maps.device)
+
+    for i in range(int(rois.size(0))):
+        xy_preds_i, end_scores_i = _onnx_heatmaps_to_keypoints(maps, maps[i],
+                                                               widths_ceil[i], heights_ceil[i],
+                                                               widths[i], heights[i],
+                                                               offset_x[i], offset_y[i])
+        xy_preds = torch.cat((xy_preds.to(dtype=torch.float32),
+                              xy_preds_i.unsqueeze(0).to(dtype=torch.float32)), 0)
+        end_scores = torch.cat((end_scores.to(dtype=torch.float32),
+                                end_scores_i.to(dtype=torch.float32).unsqueeze(0)), 0)
+    return xy_preds, end_scores
+
+
 def heatmaps_to_keypoints(maps, rois):
     """Extract predicted keypoint locations from heatmaps. Output has shape
     (#rois, 4, #keypoints) with the 4 rows corresponding to (x, y, logit, prob)
@@ -185,6 +238,14 @@ def heatmaps_to_keypoints(maps, rois):
     heights_ceil = heights.ceil()
 
     num_keypoints = maps.shape[1]
+
+    if torchvision._is_tracing():
+        xy_preds, end_scores = _onnx_heatmaps_to_keypoints_loop(maps, rois,
+                                                                widths_ceil, heights_ceil, widths, heights,
+                                                                offset_x, offset_y,
+                                                                torch.scalar_tensor(num_keypoints, dtype=torch.int64))
+        return xy_preds.permute(0, 2, 1), end_scores
+
     xy_preds = torch.zeros((len(rois), 3, num_keypoints), dtype=torch.float32, device=maps.device)
     end_scores = torch.zeros((len(rois), num_keypoints), dtype=torch.float32, device=maps.device)
     for i in range(len(rois)):
@@ -244,7 +305,13 @@ def keypointrcnn_inference(x, boxes):
     kp_probs = []
     kp_scores = []
 
-    boxes_per_image = [len(box) for box in boxes]
+    boxes_per_image = [box.size(0) for box in boxes]
+
+    if len(boxes_per_image) == 1:
+        # TODO : remove when dynamic split supported in ONNX
+        kp_prob, scores = heatmaps_to_keypoints(x, boxes[0])
+        return [kp_prob], [scores]
+
     x2 = x.split(boxes_per_image, dim=0)
 
     for xx, bb in zip(x2, boxes):
