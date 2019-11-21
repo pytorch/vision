@@ -438,8 +438,6 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
 
 
 class RoIHeads(torch.nn.Module):
-    __constants__ = ['keypoint_roi_pool', 'keypoint_head', 'keypoint_predictor', 'mask_roi_pool']
-
     __annotations__ = {
         'box_coder': det_utils.BoxCoder,
         'proposal_matcher': det_utils.Matcher,

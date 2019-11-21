@@ -44,8 +44,6 @@ class FeaturePyramidNetwork(nn.Module):
         >>>    ('feat3', torch.Size([1, 5, 8, 8]))]
 
     """
-    __constants__ = ['layers']
-
     def __init__(self, in_channels_list, out_channels, extra_blocks=None):
         super(FeaturePyramidNetwork, self).__init__()
         self.inner_blocks = nn.ModuleList()
@@ -93,12 +91,10 @@ class FeaturePyramidNetwork(nn.Module):
         results = []
         results.append(self.last_layer_block(last_inner))
 
+        # TODO: rewrite as x[:-1][::-1] when supported in TS
         x_except_last = x[0:len(x) - 1]
         x_except_last.reverse()
-
-        out_dim_tensor = []
-        for x_out in x_except_last:
-            out_dim_tensor.append(x_out)
+        out_dim_tensor = [x_out for x_out in x_except_last]
 
         i = 0
         for inner_block, layer_block in zip(self.inner_blocks, self.layer_blocks):
