@@ -125,7 +125,7 @@ class MultiScaleRoIAlign(nn.Module):
         device, dtype = concat_boxes.device, concat_boxes.dtype
         ids = torch.cat(
             [
-                torch.full((len(b), 1), i, dtype=dtype, device=device)
+                torch.full_like(b[:, :1], i, dtype=dtype, layout=torch.strided, device=device)
                 for i, b in enumerate(boxes)
             ],
             dim=0,
