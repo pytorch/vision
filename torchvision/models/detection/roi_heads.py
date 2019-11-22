@@ -625,7 +625,7 @@ class RoIHeads(torch.nn.Module):
                 if self.has_keypoint:
                     assert t["keypoints"].dtype == torch.float32, 'target keypoints must of float type'
 
-        if self.training:
+        if targets:
             proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
 
         box_features = self.box_roi_pool(features, proposals, image_shapes)
@@ -633,7 +633,7 @@ class RoIHeads(torch.nn.Module):
         class_logits, box_regression = self.box_predictor(box_features)
 
         result, losses = [], {}
-        if self.training:
+        if targets:
             loss_classifier, loss_box_reg = fastrcnn_loss(
                 class_logits, box_regression, labels, regression_targets)
             losses = dict(loss_classifier=loss_classifier, loss_box_reg=loss_box_reg)
@@ -651,7 +651,7 @@ class RoIHeads(torch.nn.Module):
 
         if self.has_mask:
             mask_proposals = [p["boxes"] for p in result]
-            if self.training:
+            if targets:
                 # during training, only focus on positive boxes
                 num_images = len(proposals)
                 mask_proposals = []
@@ -666,7 +666,7 @@ class RoIHeads(torch.nn.Module):
             mask_logits = self.mask_predictor(mask_features)
 
             loss_mask = {}
-            if self.training:
+            if targets:
                 gt_masks = [t["masks"] for t in targets]
                 gt_labels = [t["labels"] for t in targets]
                 loss_mask = maskrcnn_loss(
@@ -683,7 +683,7 @@ class RoIHeads(torch.nn.Module):
 
         if self.has_keypoint:
             keypoint_proposals = [p["boxes"] for p in result]
-            if self.training:
+            if targets:
                 # during training, only focus on positive boxes
                 num_images = len(proposals)
                 keypoint_proposals = []
@@ -698,7 +698,7 @@ class RoIHeads(torch.nn.Module):
             keypoint_logits = self.keypoint_predictor(keypoint_features)
 
             loss_keypoint = {}
-            if self.training:
+            if targets:
                 gt_keypoints = [t["keypoints"] for t in targets]
                 loss_keypoint = keypointrcnn_loss(
                     keypoint_logits, keypoint_proposals,
