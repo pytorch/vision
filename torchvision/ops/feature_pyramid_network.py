@@ -50,7 +50,7 @@ class FeaturePyramidNetwork(nn.Module):
         self.layer_blocks = nn.ModuleList()
         for in_channels in in_channels_list:
             if in_channels == 0:
-                continue
+                raise ValueError("in_channels=0 is currently not supported")
             inner_block_module = nn.Conv2d(in_channels, out_channels, 1)
             layer_block_module = nn.Conv2d(out_channels, out_channels, 3, padding=1)
             self.inner_blocks.append(inner_block_module)
@@ -65,11 +65,44 @@ class FeaturePyramidNetwork(nn.Module):
         if extra_blocks is not None:
             assert isinstance(extra_blocks, ExtraFPNBlock)
         self.extra_blocks = extra_blocks
-        self.last_inner_block = self.inner_blocks[-1]
-        self.last_layer_block = self.layer_blocks[-1]
 
-        self.inner_blocks = self.inner_blocks[:-1][::-1]
-        self.layer_blocks = self.layer_blocks[:-1][::-1]
+    def get_result_from_inner_blocks(self, x, idx):
+        # type: (Tensor, int)
+        """
+        This is equivalent to self.inner_blocks[idx](x),
+        but torchscript doesn't support this yet
+        """
+        num_blocks = 0
+        for m in self.inner_blocks:
+            num_blocks += 1
+        if idx < 0:
+            idx += num_blocks
+        i = 0
+        out = x
+        for module in self.inner_blocks:
+            if i == idx:
+                out = module(x)
+            i += 1
+        return out
+
+    def get_result_from_layer_blocks(self, x, idx):
+        # type: (Tensor, int)
+        """
+        This is equivalent to self.layer_blocks[idx](x),
+        but torchscript doesn't support this yet
+        """
+        num_blocks = 0
+        for m in self.layer_blocks:
+            num_blocks += 1
+        if idx < 0:
+            idx += num_blocks
+        i = 0
+        out = x
+        for module in self.layer_blocks:
+            if i == idx:
+                out = module(x)
+            i += 1
+        return out
 
     def forward(self, x):
         # type: (Dict[str, Tensor])
@@ -87,25 +120,16 @@ class FeaturePyramidNetwork(nn.Module):
         names = list(x.keys())
         x = list(x.values())
 
-        last_inner = self.last_inner_block(x[-1])
+        last_inner = self.get_result_from_inner_blocks(x[-1], -1)
         results = []
-        results.append(self.last_layer_block(last_inner))
+        results.append(self.get_result_from_layer_blocks(last_inner, -1))
 
-        # TODO: rewrite as x[:-1][::-1] when supported in TS
-        x_except_last = x[0:len(x) - 1]
-        x_except_last.reverse()
-        out_dim_tensor = [x_out for x_out in x_except_last]
-
-        i = 0
-        for inner_block, layer_block in zip(self.inner_blocks, self.layer_blocks):
-            if i < len(out_dim_tensor):
-                feature = out_dim_tensor[i]
-                inner_lateral = inner_block(feature)
-                feat_shape = inner_lateral.shape[-2:]
-                inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
-                last_inner = inner_lateral + inner_top_down
-                results.insert(0, layer_block(last_inner))
-            i += 1
+        for idx in range(len(x) - 2, -1, -1):
+            inner_lateral = self.get_result_from_inner_blocks(x[idx], idx)
+            feat_shape = inner_lateral.shape[-2:]
+            inner_top_down = F.interpolate(last_inner, size=feat_shape, mode="nearest")
+            last_inner = inner_lateral + inner_top_down
+            results.insert(0, self.get_result_from_layer_blocks(last_inner, idx))
 
         if self.extra_blocks is not None:
             results, names = self.extra_blocks(results, x, names)

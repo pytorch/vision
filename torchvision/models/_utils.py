@@ -37,7 +37,6 @@ class IntermediateLayerGetter(nn.ModuleDict):
         >>>      ('feat2', torch.Size([1, 256, 14, 14]))]
     """
     _version = 2
-    __constants__ = ['layers']
     __annotations__ = {
         "return_layers": Dict[str, str],
     }
