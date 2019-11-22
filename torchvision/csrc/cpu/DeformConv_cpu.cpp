@@ -71,6 +71,7 @@
 #include <TH/TH.h>
 
 #include <iostream>
+#include <tuple>
 
 using namespace at;
 
@@ -812,7 +813,7 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv2d_backward_input_cpu(
   offset = offset.view(
       {batch_sz, n_offset_grps * 2 * weight_h * weight_w, out_h, out_w});
 
-  return {grad_input, grad_offset};
+  return std::make_tuple(grad_input, grad_offset);
 }
 
 static at::Tensor deform_conv2d_backward_parameters_cpu(
@@ -981,5 +982,5 @@ DeformConv2d_backward_cpu(
 
   auto grad_bias = at::ones_like(bias) * grad_out.sum({0, 2, 3});
 
-  return {grad_input, grad_weight, grad_offset, grad_bias};
+  return std::make_tuple(grad_input, grad_weight, grad_offset, grad_bias);
 }

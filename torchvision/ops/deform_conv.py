@@ -81,14 +81,6 @@ class DeformConv2d(nn.Module):
 
         self.weight = Parameter(torch.empty(out_channels, in_channels // groups, kernel_size[0], kernel_size[1]))
 
-        self.offset_conv = nn.Conv2d(
-            self.in_channels,
-            offset_groups * 2 * self.kernel_size[0] * self.kernel_size[1],
-            kernel_size=self.kernel_size,
-            stride=self.stride,
-            padding=self.padding,
-            dilation=self.dilation)
-
         if bias:
             self.bias = Parameter(torch.empty(out_channels))
         else:
@@ -98,19 +90,22 @@ class DeformConv2d(nn.Module):
 
     def reset_parameters(self):
         init.kaiming_uniform_(self.weight, a=math.sqrt(5))
-        init.zeros_(self.offset_conv.weight)
-        init.zeros_(self.offset_conv.bias)
         if self.bias is not None:
             fan_in, _ = init._calculate_fan_in_and_fan_out(self.weight)
             bound = 1 / math.sqrt(fan_in)
             init.uniform_(self.bias, -bound, bound)
 
-    def forward(self, input):
-        offset = self.offset_conv.to(device=input.device, dtype=input.dtype)(input)
-        weight = self.weight.to(device=input.device, dtype=input.dtype)
-        bias = self.bias.to(device=input.device, dtype=input.dtype) if self.bias is not None else self.bias
-
-        return deform_conv2d(input, weight, offset, bias, stride=self.stride,
+    def forward(self, input, offset):
+        """
+        Arguments:
+            input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
+            weight (Tensor[out_channels, in_channels // groups, kernel_height, kernel_width]):
+                convolution weights, split into groups of size (in_channels // groups)
+            offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
+                out_height, out_width]): offsets to be applied for each position in the
+                convolution kernel.
+        """
+        return deform_conv2d(input, self.weight, offset, self.bias, stride=self.stride,
                              padding=self.padding, dilation=self.dilation)
 
     def __repr__(self):

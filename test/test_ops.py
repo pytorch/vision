@@ -462,7 +462,7 @@ class DeformConvTester(OpTester, unittest.TestCase):
         return x, weight, offset, bias, stride, pad, dilation
 
     def _test_forward(self, device, contiguous):
-        x, _, _, _, stride, padding, dilation = self.get_fn_args(device, contiguous)
+        x, _, offset, _, stride, padding, dilation = self.get_fn_args(device, contiguous)
         in_channels = 6
         out_channels = 2
         kernel_size = (3, 2)
@@ -470,13 +470,12 @@ class DeformConvTester(OpTester, unittest.TestCase):
         offset_groups = 3
 
         layer = ops.DeformConv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding,
-                                 dilation=dilation, groups=groups, offset_groups=offset_groups)
-        layer.offset_conv.weight.data = torch.randn_like(layer.offset_conv.weight.data)
-        res = layer(x)
+                                 dilation=dilation, groups=groups, offset_groups=offset_groups).to(device=x.device,
+                                                                                                   dtype=x.dtype)
+        res = layer(x, offset)
 
-        weight = layer.weight.data.to(device=x.device, dtype=x.dtype)
-        offset = layer.offset_conv.to(device=x.device, dtype=x.dtype)(x)
-        bias = layer.bias.data.to(device=x.device, dtype=x.dtype)
+        weight = layer.weight.data
+        bias = layer.bias.data
         expected = self.expected_fn(x, weight, offset, bias, stride=stride, padding=padding, dilation=dilation)
 
         self.assertTrue(torch.allclose(res, expected), '\nres:\n{}\nexpected:\n{}'.format(res, expected))

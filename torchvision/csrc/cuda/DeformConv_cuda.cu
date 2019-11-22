@@ -842,7 +842,7 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv_backward_input_cuda(
   offset = offset.view(
       {batch_sz, n_offset_grps * 2 * weight_h * weight_w, out_h, out_w});
 
-  return {grad_input, grad_offset};
+  return std::make_tuple(grad_input, grad_offset);
 }
 
 static at::Tensor deform_conv_backward_parameters_cuda(
@@ -1014,5 +1014,5 @@ DeformConv2d_backward_cuda(
   auto value = grad_out.sum({0, 2, 3});
   auto grad_bias = at::ones_like(bias) * value;
 
-  return {grad_input, grad_weight, grad_offset, grad_bias};
+  return std::make_tuple(grad_input, grad_weight, grad_offset, grad_bias);
 }
