@@ -262,7 +262,7 @@ model_urls = {
     'keypointrcnn_resnet50_fpn_coco_legacy':
         'https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-9f466800.pth',
     'keypointrcnn_resnet50_fpn_coco':
-        'https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-28dcbd4f.pth',
+        'https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-a6cb4ff4.pth',
 }
 
 
