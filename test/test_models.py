@@ -51,7 +51,10 @@ script_test_models = [
     "squeezenet1_0",
     "vgg11",
     "inception_v3",
-    'r3d_18',
+    "r3d_18",
+    "fasterrcnn_resnet50_fpn",
+    "maskrcnn_resnet50_fpn",
+    "keypointrcnn_resnet50_fpn",
 ]
 
 
@@ -95,7 +98,6 @@ class ModelTester(TestCase):
     def _test_detection_model(self, name):
         set_rng_seed(0)
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
-        self.check_script(model, name)
         model.eval()
         input_shape = (3, 300, 300)
         x = torch.rand(input_shape)
@@ -130,9 +132,19 @@ class ModelTester(TestCase):
         else:
             self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor))
 
+        scripted_model = torch.jit.script(model)
+        scripted_model.eval()
+        scripted_out = scripted_model(model_input)[1]
+        self.assertNestedTensorObjectsEqual(scripted_out[0]["boxes"], out[0]["boxes"])
+        self.assertNestedTensorObjectsEqual(scripted_out[0]["scores"], out[0]["scores"])
+        # labels currently float in script: need to investigate (though same result)
+        self.assertNestedTensorObjectsEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
+        # don't check script because we are compiling it here:
+        # TODO: refactor tests
+        # self.check_script(model, name)
 
     def _test_video_model(self, name):
         # the default input shape is

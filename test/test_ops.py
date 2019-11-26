@@ -367,5 +367,14 @@ class NMSTester(unittest.TestCase):
             self.assertTrue(torch.allclose(r_cpu, r_cuda.cpu()), err_msg.format(iou))
 
 
+class NewEmptyTensorTester(unittest.TestCase):
+    def test_new_empty_tensor(self):
+        input = torch.tensor([2., 2.], requires_grad=True)
+        new_shape = [3, 3]
+        out = torch.ops.torchvision._new_empty_tensor_op(input, new_shape)
+        assert out.size() == torch.Size([3, 3])
+        assert out.dtype == input.dtype
+
+
 if __name__ == '__main__':
     unittest.main()
