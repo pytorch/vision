@@ -203,7 +203,6 @@ def main(args):
 
     print("Creating model")
     model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
-    model.fc.out_features = args.output_classes
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -278,7 +277,6 @@ def parse_args():
     parser.add_argument('--train-dir', default='train_avi-480p', help='name of train dir')
     parser.add_argument('--val-dir', default='val_avi-480p', help='name of val dir')
     parser.add_argument('--model', default='r2plus1d_18', help='model')
-    parser.add_argument('--output-classes', default=400, help='no. of output classes (if finetuning)')
     parser.add_argument('--device', default='cuda', help='device')
     parser.add_argument('--clip-len', default=16, type=int, metavar='N',
                         help='number of frames per clip')
