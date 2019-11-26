@@ -71,20 +71,12 @@ script_test_models = {
 }
 
 
-SCRIPT_MODELS_TO_FIX = [
-    # This model fails in the TorchScript interpreter, see
-    # https://github.com/pytorch/vision/pull/1436. Delete this list when
-    # that PR is closed.
-    'deeplabv3_resnet101',
-]
-
-
 class ModelTester(TestCase):
     def checkModule(self, model, name, args):
         if name not in script_test_models:
             return
         unwrapper = script_test_models[name].get('unwrapper', None)
-        return super(ModelTester, self).checkModule(model, args, unwrapper=unwrapper, skip=name in SCRIPT_MODELS_TO_FIX)
+        return super(ModelTester, self).checkModule(model, args, unwrapper=unwrapper, skip=False)
 
     def _test_classification_model(self, name, input_shape):
         set_rng_seed(0)
