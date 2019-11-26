@@ -125,6 +125,23 @@ def adjust_saturation(img, saturation_factor):
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
 
 
+def center_crop(img, output_size):
+    """Crop the Image Tensor and resize it to desired size.
+
+    Args:
+        img (Tensor): Image to be cropped. (0,0) denotes the top left corner of the image.
+        output_size (sequence or int): (height, width) of the crop box. If int,
+                it is used for both directions
+    Returns:
+            Tensor: Cropped image.
+    """
+    image_width, image_height = img.size
+    crop_height, crop_width = output_size
+    crop_top = int(round((image_height - crop_height) / 2.))
+    crop_left = int(round((image_width - crop_width) / 2.))
+    return crop(img, crop_top, crop_left, crop_height, crop_width)
+
+
 def _blend(img1, img2, ratio):
     bound = 1 if img1.dtype.is_floating_point else 255
     return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
