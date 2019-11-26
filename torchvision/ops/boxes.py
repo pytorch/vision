@@ -24,7 +24,7 @@ def nms(boxes, scores, iou_threshold):
         scores for each one of the boxes
     iou_threshold : float
         discards all overlapping
-        boxes with IoU < iou_threshold
+        boxes with IoU > iou_threshold
 
     Returns
     -------
@@ -55,7 +55,7 @@ def batched_nms(boxes, scores, idxs, iou_threshold):
         indices of the categories for each one of the boxes.
     iou_threshold : float
         discards all overlapping boxes
-        with IoU < iou_threshold
+        with IoU > iou_threshold
 
     Returns
     -------
