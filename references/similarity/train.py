@@ -48,10 +48,9 @@ def find_best_threshold(dists, targets, device):
             best_thresh = thresh
             best_correct = correct
 
-    accuracy = 100.0 * best_correct / dists.size(0)
+    accuracy = best_correct / dists.size(0)
 
     return best_thresh, accuracy
-
 
 @torch.no_grad()
 def evaluate(model, loader, device):
@@ -77,9 +76,12 @@ def evaluate(model, loader, device):
     dists = dists[mask == 1]
     targets = targets[mask == 1]
 
-    threshold, accuracy = find_best_threshold(dists, targets, device)
+    distance_threshold, distance_accuracy = find_best_threshold(dists, targets, device)
 
-    print('accuracy: {:.3f}%, threshold: {:.2f}'.format(accuracy, threshold))
+    distance_recall = torch.sum(dists[targets == True] < distance_threshold).item()
+    distance_recall /= dists.size(0)
+
+    print('distance accuracy: {:.2%} distance recall: {:.2%}'.format(distance_accuracy, distance_recall))   
 
 
 def save(model, epoch, save_dir, file_name):
