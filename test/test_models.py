@@ -119,7 +119,6 @@ class ModelTester(TestCase):
         out = model(model_input)
         self.assertIs(model_input[0], x)
         self.assertEqual(len(out), 1)
-        self.checkModule(model, name, (x,))
 
         def subsample_tensor(tensor):
             num_elems = tensor.numel()
@@ -150,16 +149,17 @@ class ModelTester(TestCase):
         scripted_model = torch.jit.script(model)
         scripted_model.eval()
         scripted_out = scripted_model(model_input)[1]
-        self.assertNestedTensorObjectsEqual(scripted_out[0]["boxes"], out[0]["boxes"])
-        self.assertNestedTensorObjectsEqual(scripted_out[0]["scores"], out[0]["scores"])
+        self.assertEqual(scripted_out[0]["boxes"], out[0]["boxes"])
+        self.assertEqual(scripted_out[0]["scores"], out[0]["scores"])
         # labels currently float in script: need to investigate (though same result)
-        self.assertNestedTensorObjectsEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
+        self.assertEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
         # don't check script because we are compiling it here:
         # TODO: refactor tests
         # self.check_script(model, name)
+        self.checkModule(model, name, ([x],))
 
     def _test_video_model(self, name):
         # the default input shape is
