@@ -56,7 +56,7 @@ binary_common: &binary_common
     wheel_docker_image:
       description: "Wheel only: what docker image to use"
       type: string
-      default: "soumith/manylinux-cuda101"
+      default: "pytorch/manylinux-cuda101"
   environment:
     PYTHON_VERSION: << parameters.python_version >>
     BUILD_VERSION: << parameters.build_version >>
@@ -94,7 +94,7 @@ jobs:
   binary_linux_conda:
     <<: *binary_common
     docker:
-      - image: "soumith/conda-cuda"
+      - image: "pytorch/conda-cuda"
     resource_class: 2xlarge+
     steps:
       - checkout_merge
@@ -159,7 +159,7 @@ jobs:
         name: Pull docker image
         command: |
           set -e
-          export DOCKER_IMAGE=soumith/conda-cuda
+          export DOCKER_IMAGE=pytorch/conda-cuda
           echo Pulling docker image $DOCKER_IMAGE
           docker pull $DOCKER_IMAGE >/dev/null
 
@@ -170,7 +170,7 @@ jobs:
 
           cd ${HOME}/project/
 
-          export DOCKER_IMAGE=soumith/conda-cuda
+          export DOCKER_IMAGE=pytorch/conda-cuda
           export VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e UNICODE_ABI -e CU_VERSION"
 
           docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${DOCKER_IMAGE} ./packaging/build_conda.sh
@@ -308,24 +308,24 @@ workflows:
           cu_version: cu92
           name: binary_linux_wheel_py2.7_cu92
           python_version: '2.7'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_linux_wheel:
           cu_version: cu92
           name: binary_linux_wheel_py2.7u_cu92
           python_version: '2.7'
           unicode_abi: '1'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_linux_wheel:
           cu_version: cu100
           name: binary_linux_wheel_py2.7_cu100
           python_version: '2.7'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_linux_wheel:
           cu_version: cu100
           name: binary_linux_wheel_py2.7u_cu100
           python_version: '2.7'
           unicode_abi: '1'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_linux_wheel:
           cu_version: cu101
           name: binary_linux_wheel_py2.7_cu101
@@ -343,12 +343,12 @@ workflows:
           cu_version: cu92
           name: binary_linux_wheel_py3.5_cu92
           python_version: '3.5'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_linux_wheel:
           cu_version: cu100
           name: binary_linux_wheel_py3.5_cu100
           python_version: '3.5'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_linux_wheel:
           cu_version: cu101
           name: binary_linux_wheel_py3.5_cu101
@@ -361,12 +361,12 @@ workflows:
           cu_version: cu92
           name: binary_linux_wheel_py3.6_cu92
           python_version: '3.6'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_linux_wheel:
           cu_version: cu100
           name: binary_linux_wheel_py3.6_cu100
           python_version: '3.6'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_linux_wheel:
           cu_version: cu101
           name: binary_linux_wheel_py3.6_cu101
@@ -379,12 +379,12 @@ workflows:
           cu_version: cu92
           name: binary_linux_wheel_py3.7_cu92
           python_version: '3.7'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_linux_wheel:
           cu_version: cu100
           name: binary_linux_wheel_py3.7_cu100
           python_version: '3.7'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_linux_wheel:
           cu_version: cu101
           name: binary_linux_wheel_py3.7_cu101
@@ -418,12 +418,12 @@ workflows:
           cu_version: cu92
           name: binary_linux_conda_py2.7_cu92
           python_version: '2.7'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_linux_conda:
           cu_version: cu100
           name: binary_linux_conda_py2.7_cu100
           python_version: '2.7'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_linux_conda:
           cu_version: cu101
           name: binary_linux_conda_py2.7_cu101
@@ -436,12 +436,12 @@ workflows:
           cu_version: cu92
           name: binary_linux_conda_py3.5_cu92
           python_version: '3.5'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_linux_conda:
           cu_version: cu100
           name: binary_linux_conda_py3.5_cu100
           python_version: '3.5'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_linux_conda:
           cu_version: cu101
           name: binary_linux_conda_py3.5_cu101
@@ -454,12 +454,12 @@ workflows:
           cu_version: cu92
           name: binary_linux_conda_py3.6_cu92
           python_version: '3.6'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_linux_conda:
           cu_version: cu100
           name: binary_linux_conda_py3.6_cu100
           python_version: '3.6'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_linux_conda:
           cu_version: cu101
           name: binary_linux_conda_py3.6_cu101
@@ -472,12 +472,12 @@ workflows:
           cu_version: cu92
           name: binary_linux_conda_py3.7_cu92
           python_version: '3.7'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_linux_conda:
           cu_version: cu100
           name: binary_linux_conda_py3.7_cu100
           python_version: '3.7'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_linux_conda:
           cu_version: cu101
           name: binary_linux_conda_py3.7_cu101
@@ -554,7 +554,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_wheel_py2.7_cu92
           python_version: '2.7'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -572,7 +572,7 @@ workflows:
           name: nightly_binary_linux_wheel_py2.7u_cu92
           python_version: '2.7'
           unicode_abi: '1'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -589,7 +589,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_wheel_py2.7_cu100
           python_version: '2.7'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -607,7 +607,7 @@ workflows:
           name: nightly_binary_linux_wheel_py2.7u_cu100
           python_version: '2.7'
           unicode_abi: '1'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -673,7 +673,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_wheel_py3.5_cu92
           python_version: '3.5'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -690,7 +690,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_wheel_py3.5_cu100
           python_version: '3.5'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -739,7 +739,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_wheel_py3.6_cu92
           python_version: '3.6'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -756,7 +756,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_wheel_py3.6_cu100
           python_version: '3.6'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -805,7 +805,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_wheel_py3.7_cu92
           python_version: '3.7'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -822,7 +822,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_wheel_py3.7_cu100
           python_version: '3.7'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_wheel_upload:
           context: org-member
           filters:
@@ -951,7 +951,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_conda_py2.7_cu92
           python_version: '2.7'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_conda_upload:
           context: org-member
           filters:
@@ -967,7 +967,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_conda_py2.7_cu100
           python_version: '2.7'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_conda_upload:
           context: org-member
           filters:
@@ -1013,7 +1013,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_conda_py3.5_cu92
           python_version: '3.5'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_conda_upload:
           context: org-member
           filters:
@@ -1029,7 +1029,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_conda_py3.5_cu100
           python_version: '3.5'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_conda_upload:
           context: org-member
           filters:
@@ -1075,7 +1075,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_conda_py3.6_cu92
           python_version: '3.6'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_conda_upload:
           context: org-member
           filters:
@@ -1091,7 +1091,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_conda_py3.6_cu100
           python_version: '3.6'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_conda_upload:
           context: org-member
           filters:
@@ -1137,7 +1137,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_conda_py3.7_cu92
           python_version: '3.7'
-          wheel_docker_image: soumith/manylinux-cuda92
+          wheel_docker_image: pytorch/manylinux-cuda92
       - binary_conda_upload:
           context: org-member
           filters:
@@ -1153,7 +1153,7 @@ workflows:
               only: nightly
           name: nightly_binary_linux_conda_py3.7_cu100
           python_version: '3.7'
-          wheel_docker_image: soumith/manylinux-cuda100
+          wheel_docker_image: pytorch/manylinux-cuda100
       - binary_conda_upload:
           context: org-member
           filters:

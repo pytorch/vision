@@ -44,7 +44,7 @@ def make_dataset(dir, class_to_idx, extensions=None, is_valid_file=None):
         d = os.path.join(dir, target)
         if not os.path.isdir(d):
             continue
-        for root, _, fnames in sorted(os.walk(d)):
+        for root, _, fnames in sorted(os.walk(d, followlinks=True)):
             for fname in sorted(fnames):
                 path = os.path.join(root, fname)
                 if is_valid_file(path):

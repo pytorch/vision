@@ -124,8 +124,8 @@ ResNetImpl<Block>::ResNetImpl(
     : groups(groups),
       base_width(width_per_group),
       inplanes(64),
-      conv1(torch::nn::Conv2dOptions(3, 64, 7).stride(2).padding(3).with_bias(
-          false)),
+      conv1(
+          torch::nn::Conv2dOptions(3, 64, 7).stride(2).padding(3).bias(false)),
       bn1(64),
       layer1(_make_layer(64, layers[0])),
       layer2(_make_layer(128, layers[1], 2)),

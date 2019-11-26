@@ -59,6 +59,15 @@ script_test_models = {
         'unwrapper': lambda x: x.logits
     },
     'r3d_18': {},
+    "fasterrcnn_resnet50_fpn": {
+        'unwrapper': lambda x: x[1]
+    },
+    "maskrcnn_resnet50_fpn": {
+        'unwrapper': lambda x: x[1]
+    },
+    "keypointrcnn_resnet50_fpn": {
+        'unwrapper': lambda x: x[1]
+    },
 }
 
 
@@ -138,9 +147,19 @@ class ModelTester(TestCase):
         else:
             self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor), prec=0.01)
 
+        scripted_model = torch.jit.script(model)
+        scripted_model.eval()
+        scripted_out = scripted_model(model_input)[1]
+        self.assertNestedTensorObjectsEqual(scripted_out[0]["boxes"], out[0]["boxes"])
+        self.assertNestedTensorObjectsEqual(scripted_out[0]["scores"], out[0]["scores"])
+        # labels currently float in script: need to investigate (though same result)
+        self.assertNestedTensorObjectsEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
+        # don't check script because we are compiling it here:
+        # TODO: refactor tests
+        # self.check_script(model, name)
 
     def _test_video_model(self, name):
         # the default input shape is

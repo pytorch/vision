@@ -2,6 +2,7 @@ import torch
 from torch import nn
 
 from torchvision.ops import misc as misc_nn_ops
+
 from torchvision.ops import MultiScaleRoIAlign
 
 from ..utils import load_state_dict_from_url
@@ -179,7 +180,7 @@ class KeypointRCNN(FasterRCNN):
 
         if keypoint_roi_pool is None:
             keypoint_roi_pool = MultiScaleRoIAlign(
-                featmap_names=[0, 1, 2, 3],
+                featmap_names=['0', '1', '2', '3'],
                 output_size=14,
                 sampling_ratio=2)
 
@@ -252,7 +253,7 @@ class KeypointRCNNPredictor(nn.Module):
     def forward(self, x):
         x = self.kps_score_lowres(x)
         x = misc_nn_ops.interpolate(
-            x, scale_factor=self.up_scale, mode="bilinear", align_corners=False
+            x, scale_factor=float(self.up_scale), mode="bilinear", align_corners=False
         )
         return x
 

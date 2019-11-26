@@ -71,7 +71,7 @@ class VideoClips(object):
     def __init__(self, video_paths, clip_length_in_frames=16, frames_between_clips=1,
                  frame_rate=None, _precomputed_metadata=None, num_workers=0,
                  _video_width=0, _video_height=0, _video_min_dimension=0,
-                 _audio_samples=0):
+                 _audio_samples=0, _audio_channels=0):
 
         self.video_paths = video_paths
         self.num_workers = num_workers
@@ -81,6 +81,7 @@ class VideoClips(object):
         self._video_height = _video_height
         self._video_min_dimension = _video_min_dimension
         self._audio_samples = _audio_samples
+        self._audio_channels = _audio_channels
 
         if _precomputed_metadata is None:
             self._compute_frame_pts()
@@ -149,7 +150,8 @@ class VideoClips(object):
                           _video_width=self._video_width,
                           _video_height=self._video_height,
                           _video_min_dimension=self._video_min_dimension,
-                          _audio_samples=self._audio_samples)
+                          _audio_samples=self._audio_samples,
+                          _audio_channels=self._audio_channels)
 
     @staticmethod
     def compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate):
@@ -298,6 +300,7 @@ class VideoClips(object):
                 video_pts_range=(video_start_pts, video_end_pts),
                 video_timebase=info["video_timebase"],
                 audio_samples=self._audio_samples,
+                audio_channels=self._audio_channels,
                 audio_pts_range=(audio_start_pts, audio_end_pts),
                 audio_timebase=audio_timebase,
             )

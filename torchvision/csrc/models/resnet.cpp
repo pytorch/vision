@@ -11,13 +11,13 @@ torch::nn::Conv2d conv3x3(
     int64_t stride,
     int64_t groups) {
   torch::nn::Conv2dOptions O(in, out, 3);
-  O.padding(1).stride(stride).groups(groups).with_bias(false);
+  O.padding(1).stride(stride).groups(groups).bias(false);
   return torch::nn::Conv2d(O);
 }
 
 torch::nn::Conv2d conv1x1(int64_t in, int64_t out, int64_t stride) {
   torch::nn::Conv2dOptions O(in, out, 1);
-  O.stride(stride).with_bias(false);
+  O.stride(stride).bias(false);
   return torch::nn::Conv2d(O);
 }
 
