@@ -32,9 +32,12 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     """
 
     labels = torch.cat(labels, dim=0)
+    if weights is not None:
+        weights = weights[0]
+
     regression_targets = torch.cat(regression_targets, dim=0)
 
-    classification_loss = F.cross_entropy(class_logits, labels)
+    classification_loss = F.cross_entropy(class_logits, labels, weight=weights)
 
     # get indices that correspond to the regression targets for
     # the corresponding ground truth labels, to be used with
@@ -648,6 +651,7 @@ class RoIHeads(torch.nn.Module):
         dtype = proposals[0].dtype
         gt_boxes = [t["boxes"].to(dtype) for t in targets]
         gt_labels = [t["labels"] for t in targets]
+        gt_weight = [t["weights"] for t in targets]
 
         # append ground-truth bboxes to propos
         proposals = self.add_gt_proposals(proposals, gt_boxes)
@@ -666,7 +670,7 @@ class RoIHeads(torch.nn.Module):
             matched_gt_boxes.append(gt_boxes[img_id][matched_idxs[img_id]])
 
         regression_targets = self.box_coder.encode(matched_gt_boxes, proposals)
-        return proposals, matched_idxs, labels, regression_targets
+        return proposals, matched_idxs, labels, gt_weight, regression_targets
 
     def postprocess_detections(self, class_logits, box_regression, proposals, image_shapes):
         # type: (Tensor, Tensor, List[Tensor], List[Tuple[int, int]])
@@ -745,9 +749,12 @@ class RoIHeads(torch.nn.Module):
                 assert t["labels"].dtype == torch.int64, 'target labels must of int64 type'
                 if self.has_keypoint():
                     assert t["keypoints"].dtype == torch.float32, 'target keypoints must of float type'
+                if "weights" in t:
+                    assert t["weights"].dtype.is_floating_point, 'target weights must of float type'
+
 
         if self.training:
-            proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
+            proposals, matched_idxs, labels, weights, regression_targets = self.select_training_samples(proposals, targets)
         else:
             labels = None
             regression_targets = None
@@ -762,7 +769,7 @@ class RoIHeads(torch.nn.Module):
         if self.training:
             assert labels is not None and regression_targets is not None
             loss_classifier, loss_box_reg = fastrcnn_loss(
-                class_logits, box_regression, labels, regression_targets)
+                class_logits, box_regression, labels, regression_targets, weights)
             losses = {
                 "loss_classifier": loss_classifier,
                 "loss_box_reg": loss_box_reg
