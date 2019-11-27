@@ -141,6 +141,34 @@ def center_crop(img, output_size):
     crop_left = int(round((image_width - crop_width) / 2.))
     return crop(img, crop_top, crop_left, crop_height, crop_width)
 
+def five_crop(img, size):
+    """Crop the given Image Tensor into four corners and the central crop.
+    .. Note::
+        This transform returns a tuple of Tensors and there may be a
+        mismatch in the number of inputs and targets your ``Dataset`` returns.
+    Args:
+       size (sequence or int): Desired output size of the crop. If size is an
+           int instead of sequence like (h, w), a square crop (size, size) is
+           made.
+    Returns:
+       tuple: tuple (tl, tr, bl, br, center)
+                Corresponding top left, top right, bottom left, bottom right and center crop.
+    """
+    assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
+    _, image_width, image_height = img.size()
+    crop_height, crop_width = size
+    if crop_width > image_width or crop_height > image_height:
+        msg = "Requested crop size {} is bigger than input size {}"
+        raise ValueError(msg.format(size, (image_height, image_width)))
+
+    tl = crop(img, 0, 0, crop_width, crop_height)
+    tr = crop(img, image_width - crop_width, 0, image_width, crop_height)
+    bl = crop(img, 0, image_height - crop_height, crop_width, image_height)
+    br = crop(img, image_width - crop_width, image_height - crop_height,
+                   image_width, image_height)
+    center = center_crop(img, (crop_height, crop_width))
+    return (tl, tr, bl, br, center)
+
 
 def _blend(img1, img2, ratio):
     bound = 1 if img1.dtype.is_floating_point else 255
