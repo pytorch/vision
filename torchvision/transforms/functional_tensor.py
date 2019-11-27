@@ -135,7 +135,7 @@ def center_crop(img, output_size):
     Returns:
             Tensor: Cropped image.
     """
-    image_width, image_height = img.size
+    _, image_width, image_height = img.size()
     crop_height, crop_width = output_size
     crop_top = int(round((image_height - crop_height) / 2.))
     crop_left = int(round((image_width - crop_width) / 2.))

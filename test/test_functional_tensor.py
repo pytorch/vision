@@ -76,6 +76,13 @@ class Tester(unittest.TestCase):
         max_diff = (grayscale_tensor - grayscale_pil_img).abs().max()
         self.assertLess(max_diff, 1.0001)
 
+    def test_center_crop(self):
+        img_tensor = torch.randint(0, 255, (1, 32, 32), dtype=torch.uint8)
+        cropped_tensor = F_t.center_crop(img_tensor, [10, 10])
+        cropped_pil_image = F.center_crop(transforms.ToPILImage()(img_tensor), [10, 10])
+        cropped_pil_tensor = (transforms.ToTensor()(cropped_pil_image) * 255).to(torch.uint8)
+        self.assertTrue(torch.equal(cropped_tensor, cropped_pil_tensor))
+
 
 if __name__ == '__main__':
     unittest.main()
