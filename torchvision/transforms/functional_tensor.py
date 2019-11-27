@@ -136,10 +136,14 @@ def center_crop(img, output_size):
     Returns:
             Tensor: Cropped image.
     """
+    if not F._is_tensor_image(img):
+        raise TypeError('tensor is not a torch image.')
+
     _, image_width, image_height = img.size()
     crop_height, crop_width = output_size
     crop_top = int(round((image_height - crop_height) / 2.))
     crop_left = int(round((image_width - crop_width) / 2.))
+
     return crop(img, crop_top, crop_left, crop_height, crop_width)
 
 
@@ -148,6 +152,7 @@ def five_crop(img, size):
     .. Note::
         This transform returns a tuple of Tensors and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
+
     Args:
        size (sequence or int): Desired output size of the crop. If size is an
            int instead of sequence like (h, w), a square crop (size, size) is
@@ -157,7 +162,11 @@ def five_crop(img, size):
        tuple: tuple (tl, tr, bl, br, center)
                 Corresponding top left, top right, bottom left, bottom right and center crop.
     """
+    if not F._is_tensor_image(img):
+        raise TypeError('tensor is not a torch image.')
+
     assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
+
     _, image_width, image_height = img.size()
     crop_height, crop_width = size
     if crop_width > image_width or crop_height > image_height:
@@ -169,6 +178,7 @@ def five_crop(img, size):
     bl = crop(img, 0, image_height - crop_height, crop_width, image_height)
     br = crop(img, image_width - crop_width, image_height - crop_height, image_width, image_height)
     center = center_crop(img, (crop_height, crop_width))
+
     return (tl, tr, bl, br, center)
 
 
@@ -178,6 +188,7 @@ def ten_crop(img, size, vertical_flip=False):
     .. Note::
         This transform returns a tuple of images and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
+
     Args:
        size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
@@ -187,8 +198,11 @@ def ten_crop(img, size, vertical_flip=False):
     Returns:
        tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip)
                 Corresponding top left, top right, bottom left, bottom right and center crop
-                and same for the flipped image.
+                and same for the flipped image's tensor.
     """
+    if not F._is_tensor_image(img):
+        raise TypeError('tensor is not a torch image.')
+
     assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
     first_five = five_crop(img, size)
 
@@ -198,6 +212,7 @@ def ten_crop(img, size, vertical_flip=False):
         img = hflip(img)
 
     second_five = five_crop(img, size)
+
     return first_five + second_five
 
 
