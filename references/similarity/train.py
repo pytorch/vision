@@ -164,7 +164,7 @@ def parse_args():
                         help='Number of unique labels/classes per batch')
     parser.add_argument('-k', '--samples-per-label', default=8, type=int,
                         help='Number of samples per label in a batch')
-    parser.add_argument('--eval-batch-size', default=512, type=int)
+    parser.add_argument('--eval-batch-size', default=128, type=int)
     parser.add_argument('--epochs', default=10, type=int, metavar='N',
                         help='Number of training epochs to run')
     parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
