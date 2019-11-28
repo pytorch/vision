@@ -8,18 +8,18 @@ from torch.nn.modules.utils import _pair
 from torch.jit.annotations import Optional, Tuple
 
 
-def deform_conv2d(input, weight, offset, bias=None, stride=(1, 1), padding=(0, 0), dilation=(1, 1)):
+def deform_conv2d(input, offset, weight, bias=None, stride=(1, 1), padding=(0, 0), dilation=(1, 1)):
     # type: (Tensor, Tensor, Tensor, Optional[Tensor], Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> Tensor
     """
     Performs Deformable Convolution, described in Deformable Convolutional Networks
 
     Arguments:
         input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
-        weight (Tensor[out_channels, in_channels // groups, kernel_height, kernel_width]):
-            convolution weights, split into groups of size (in_channels // groups)
         offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
             out_height, out_width]): offsets to be applied for each position in the
             convolution kernel.
+        weight (Tensor[out_channels, in_channels // groups, kernel_height, kernel_width]):
+            convolution weights, split into groups of size (in_channels // groups)
         bias (Tensor[out_channels]): optional bias of shape (out_channels,). Default: None
         stride (int or Tuple[int, int]): distance between convolution centers. Default: 1
         padding (int or Tuple[int, int]): height/width of padding of zeroes around
@@ -105,7 +105,7 @@ class DeformConv2d(nn.Module):
                 out_height, out_width]): offsets to be applied for each position in the
                 convolution kernel.
         """
-        return deform_conv2d(input, self.weight, offset, self.bias, stride=self.stride,
+        return deform_conv2d(input, offset, self.weight, self.bias, stride=self.stride,
                              padding=self.padding, dilation=self.dilation)
 
     def __repr__(self):
