@@ -39,18 +39,35 @@ def train_epoch(model, optimizer, criterion, data_loader, device, epoch, print_f
 
 
 def find_best_threshold(dists, targets, device):
-    best_thresh = 0.01
-    best_correct = 0
+    best_results = None
+
     for thresh in torch.arange(0.0, 1.51, 0.01):
-        predictions = dists <= thresh.to(device)
-        correct = torch.sum(predictions == targets.to(device)).item()
-        if correct > best_correct:
-            best_thresh = thresh
-            best_correct = correct
+        thresh = thresh.to(device)
+        targets = targets.to(device)
 
-    accuracy = best_correct / dists.size(0)
+        predictions = dists <= thresh
 
-    return best_thresh, accuracy
+        accuracy = torch.mean((predictions == targets).float()).item()
+
+        if torch.sum(predictions) == 0:
+            precision = 0.0
+            recall = 0.0
+            f1 = 0.0
+        else:
+            precision = torch.mean(targets[predictions].float()).item()
+            recall = torch.mean(predictions[targets].float()).item()
+            f1 = 2 * precision * recall / (precision + recall)
+
+        if best_results is None or best_results['f1'] < f1:
+            best_results = {
+                'threshold': thresh,
+                'accuracy': accuracy,
+                'precision': precision,
+                'recall': recall,
+                'f1': f1,
+            }
+
+    return best_results
 
 @torch.no_grad()
 def evaluate(model, loader, device):
@@ -76,12 +93,11 @@ def evaluate(model, loader, device):
     dists = dists[mask == 1]
     targets = targets[mask == 1]
 
-    distance_threshold, distance_accuracy = find_best_threshold(dists, targets, device)
+    results = find_best_threshold(dists, targets, device)
 
-    distance_recall = torch.sum(dists[targets == True] < distance_threshold).item()
-    distance_recall /= dists.size(0)
-
-    print('distance accuracy: {:.2%} distance recall: {:.2%}'.format(distance_accuracy, distance_recall))   
+    print('threshold: {threshold:.2f} accuracy: {accuracy:.2%} '
+          'precision: {precision:.2%} recall: {recall:.2%} '
+          'f1: {f1:.2f}'.format(**results))
 
 
 def save(model, epoch, save_dir, file_name):
