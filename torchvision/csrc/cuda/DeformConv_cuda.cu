@@ -74,7 +74,9 @@
 
 #include "cuda_helpers.h"
 
+#include <cmath>
 #include <iostream>
+#include <tuple>
 
 using namespace at;
 
@@ -470,9 +472,9 @@ __global__ void deformable_col2im_gpu_kernel(
         int yp = int(y) + dy;
         int xp = int(x) + dx;
         if (0 <= yp && yp < height && 0 <= xp && xp < width &&
-            abs(y - yp) < 1 && abs(x - xp) < 1) {
+            std::abs(y - yp) < 1 && std::abs(x - xp) < 1) {
           int grad_pos = ((b * channels + c) * height + yp) * width + xp;
-          scalar_t weight = (1 - abs(y - yp)) * (1 - abs(x - xp));
+          scalar_t weight = (1 - std::abs(y - yp)) * (1 - std::abs(x - xp));
           atomicAdd(grad_im + grad_pos, weight * col[index]);
         }
       }
