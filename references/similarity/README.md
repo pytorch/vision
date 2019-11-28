@@ -21,6 +21,15 @@ python train.py 			# Runs training script with default args
 
 Running the training script as is should yield 97% accuracy on the FMNIST test set within 10 epochs.
 
+Once you have trained your model, you can visualize the output with the visualization script.
+
+To run the visualisation script:
+
+```bash
+python visualize.py -h # Lists all optional arguments
+python visualize.py --model-path epoch_10__ckpt.pth # Run the default visualisation
+```
+
 ### Loss ###
 `TripletMarginLoss` is a loss function which takes in a triplet of samples. A valid triplet has an:
 
