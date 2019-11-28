@@ -428,16 +428,15 @@ static void deformable_col2im_kernel(
     const int out_w,
     scalar_t* grad_im) {
   for (int index = 0; index != n; ++index) {
+    const int out_x = index % out_w;
+    const int out_y = (index / out_w) % out_h;
+    const int b = (index / (out_w * out_h)) % batch_sz;
     const int j = (index / (out_w * out_h * batch_sz)) % kernel_w;
     const int i = (index / (out_w * out_h * batch_sz * kernel_w)) % kernel_h;
     const int c = index / (out_w * out_h * batch_sz * kernel_w * kernel_h);
 
     int c_per_offset_grp = channels / n_offset_grps;
     const int offset_grp = c / c_per_offset_grp;
-
-    int out_x = index % out_w;
-    int out_y = (index / out_w) % out_h;
-    int b = (index / (out_w * out_h)) % batch_sz;
 
     auto offset_ptr = offset +
         (b * n_offset_grps + offset_grp) * 2 * kernel_h * kernel_w * out_h *
