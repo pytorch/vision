@@ -70,6 +70,7 @@
 #include <ATen/TensorUtils.h>
 #include <TH/TH.h>
 
+#include <cmath>
 #include <iostream>
 #include <tuple>
 
@@ -455,9 +456,9 @@ static void deformable_col2im_kernel(
         int yp = int(y) + dy;
         int xp = int(x) + dx;
         if (0 <= yp && yp < height && 0 <= xp && xp < width &&
-            abs(y - yp) < 1 && abs(x - xp) < 1) {
+            std::abs(y - yp) < 1 && std::abs(x - xp) < 1) {
           int grad_pos = ((b * channels + c) * height + yp) * width + xp;
-          scalar_t weight = (1 - abs(y - yp)) * (1 - abs(x - xp));
+          scalar_t weight = (1 - std::abs(y - yp)) * (1 - std::abs(x - xp));
           grad_im[grad_pos] += weight * col[index];
         }
       }
