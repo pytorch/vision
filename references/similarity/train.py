@@ -32,8 +32,8 @@ def train_epoch(model, optimizer, criterion, data_loader, device, epoch, print_f
         if i % print_freq == print_freq - 1:
             i += 1
             avg_loss = running_loss / print_freq
-            avg_trip = 100.0 * running_frac_pos_triplets / print_freq
-            print('[{:d}, {:d}] | loss: {:.4f} | % avg hard triplets: {:.2f}%'.format(epoch, i, avg_loss, avg_trip))
+            avg_trip = running_frac_pos_triplets / print_freq
+            print('[{:d}, {:d}] | loss: {:.4f} | % avg hard triplets: {:.2%}%'.format(epoch, i, avg_loss, avg_trip))
             running_loss = 0
             running_frac_pos_triplets = 0
 
