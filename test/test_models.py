@@ -1,4 +1,4 @@
-from common_utils import TestCase, map_nested_tensor_object
+from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state
 from collections import OrderedDict
 from itertools import product
 import torch
@@ -38,62 +38,68 @@ def get_available_video_models():
 # models that are in torch hub, as well as r3d_18. we tried testing all models
 # but the test was too slow. not included are detection models, because
 # they are not yet supported in JIT.
-script_test_models = [
-    "deeplabv3_resnet101",
-    "mobilenet_v2",
-    "resnext50_32x4d",
-    "fcn_resnet101",
-    "googlenet",
-    "densenet121",
-    "resnet18",
-    "alexnet",
-    "shufflenet_v2_x1_0",
-    "squeezenet1_0",
-    "vgg11",
-    "inception_v3",
-    "r3d_18",
-    "fasterrcnn_resnet50_fpn",
-    "maskrcnn_resnet50_fpn",
-    "keypointrcnn_resnet50_fpn",
-]
+# If 'unwrapper' is provided it will be called with the script model outputs
+# before they are compared to the eager model outputs. This is useful if the
+# model outputs are different between TorchScript / Eager mode
+script_test_models = {
+    'deeplabv3_resnet101': {},
+    'mobilenet_v2': {},
+    'resnext50_32x4d': {},
+    'fcn_resnet101': {},
+    'googlenet': {
+        'unwrapper': lambda x: x.logits
+    },
+    'densenet121': {},
+    'resnet18': {},
+    'alexnet': {},
+    'shufflenet_v2_x1_0': {},
+    'squeezenet1_0': {},
+    'vgg11': {},
+    'inception_v3': {
+        'unwrapper': lambda x: x.logits
+    },
+    'r3d_18': {},
+    "fasterrcnn_resnet50_fpn": {
+        'unwrapper': lambda x: x[1]
+    },
+    "maskrcnn_resnet50_fpn": {
+        'unwrapper': lambda x: x[1]
+    },
+    "keypointrcnn_resnet50_fpn": {
+        'unwrapper': lambda x: x[1]
+    },
+}
 
 
 class ModelTester(TestCase):
-    def check_script(self, model, name):
+    def checkModule(self, model, name, args):
         if name not in script_test_models:
             return
-        scriptable = True
-        msg = ""
-        try:
-            torch.jit.script(model)
-        except Exception as e:
-            tb = traceback.format_exc()
-            scriptable = False
-            msg = str(e) + str(tb)
-        self.assertTrue(scriptable, msg)
+        unwrapper = script_test_models[name].get('unwrapper', None)
+        return super(ModelTester, self).checkModule(model, args, unwrapper=unwrapper, skip=False)
 
     def _test_classification_model(self, name, input_shape):
+        set_rng_seed(0)
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
-        set_rng_seed(0)
         model = models.__dict__[name](num_classes=50)
-        self.check_script(model, name)
         model.eval()
         x = torch.rand(input_shape)
         out = model(x)
-        self.assertExpected(out, rtol=1e-2, atol=0.)
+        self.assertExpected(out, prec=0.1)
         self.assertEqual(out.shape[-1], 50)
+        self.checkModule(model, name, (x,))
 
     def _test_segmentation_model(self, name):
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
         model = models.segmentation.__dict__[name](num_classes=50, pretrained_backbone=False)
-        self.check_script(model, name)
         model.eval()
         input_shape = (1, 3, 300, 300)
         x = torch.rand(input_shape)
         out = model(x)
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
+        self.checkModule(model, name, (x,))
 
     def _test_detection_model(self, name):
         set_rng_seed(0)
@@ -127,24 +133,25 @@ class ModelTester(TestCase):
         # compare results with mean and std
         if name == "maskrcnn_resnet50_fpn":
             test_value = map_nested_tensor_object(out, tensor_map_fn=compute_mean_std)
-            # mean values are small, use large rtol
-            self.assertExpected(test_value, rtol=.01, atol=.01)
+            # mean values are small, use large prec
+            self.assertExpected(test_value, prec=.01)
         else:
-            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor))
+            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor), prec=0.01)
 
         scripted_model = torch.jit.script(model)
         scripted_model.eval()
         scripted_out = scripted_model(model_input)[1]
-        self.assertNestedTensorObjectsEqual(scripted_out[0]["boxes"], out[0]["boxes"])
-        self.assertNestedTensorObjectsEqual(scripted_out[0]["scores"], out[0]["scores"])
+        self.assertEqual(scripted_out[0]["boxes"], out[0]["boxes"])
+        self.assertEqual(scripted_out[0]["scores"], out[0]["scores"])
         # labels currently float in script: need to investigate (though same result)
-        self.assertNestedTensorObjectsEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
+        self.assertEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
         self.assertTrue("boxes" in out[0])
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
         # don't check script because we are compiling it here:
         # TODO: refactor tests
         # self.check_script(model, name)
+        self.checkModule(model, name, ([x],))
 
     def _test_video_model(self, name):
         # the default input shape is
@@ -152,9 +159,10 @@ class ModelTester(TestCase):
         input_shape = (1, 3, 4, 112, 112)
         # test both basicblock and Bottleneck
         model = models.video.__dict__[name](num_classes=50)
-        self.check_script(model, name)
+        model.eval()
         x = torch.rand(input_shape)
         out = model(x)
+        self.checkModule(model, name, (x,))
         self.assertEqual(out.shape[-1], 50)
 
     def _make_sliced_model(self, model, stop_layer):

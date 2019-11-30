@@ -46,7 +46,7 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
 
     def forward(self, x):
         x = self.quant(x)
-        x = self._forward(x)
+        x = self._forward_impl(x)
         x = self.dequant(x)
         return x
 

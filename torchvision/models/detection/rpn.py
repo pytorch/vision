@@ -216,7 +216,6 @@ def concat_box_prediction_layers(box_cls, box_regression):
     # same format as the labels. Note that the labels are computed for
     # all feature levels concatenated, so we keep the same representation
     # for the objectness and the box_regression
-    last_C = torch.jit.annotate(Optional[int], None)
     for box_cls_per_level, box_regression_per_level in zip(
         box_cls, box_regression
     ):
@@ -229,16 +228,14 @@ def concat_box_prediction_layers(box_cls, box_regression):
         )
         box_cls_flattened.append(box_cls_per_level)
 
-        last_C = C
         box_regression_per_level = permute_and_flatten(
             box_regression_per_level, N, A, 4, H, W
         )
         box_regression_flattened.append(box_regression_per_level)
-    assert last_C is not None
     # concatenate on the first dimension (representing the feature levels), to
     # take into account the way the labels were generated (with all feature maps
     # being concatenated as well)
-    box_cls = torch.cat(box_cls_flattened, dim=1).reshape(-1, last_C)
+    box_cls = torch.cat(box_cls_flattened, dim=1).flatten(0, -2)
     box_regression = torch.cat(box_regression_flattened, dim=1).reshape(-1, 4)
     return box_cls, box_regression
 
