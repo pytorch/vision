@@ -95,7 +95,7 @@ class QuantizableResNet(ResNet):
         # Ensure scriptability
         # super(QuantizableResNet,self).forward(x)
         # is not scriptable
-        x = self._forward(x)
+        x = self._forward_impl(x)
         x = self.dequant(x)
         return x
 
