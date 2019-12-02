@@ -62,7 +62,7 @@ class LSUNClass(VisionDataset):
 
 class LSUN(VisionDataset):
     """
-    `LSUN <http://lsun.cs.princeton.edu>`_ dataset.
+    `LSUN <https://www.yf.io/p/lsun>`_ dataset.
 
     Args:
         root (string): Root directory for the database files.
