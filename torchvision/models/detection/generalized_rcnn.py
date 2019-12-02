@@ -6,6 +6,9 @@ Implements the Generalized R-CNN framework
 from collections import OrderedDict
 import torch
 from torch import nn
+import warnings
+from torch.jit.annotations import Tuple, List, Dict, Optional
+from torch import Tensor
 
 
 class GeneralizedRCNN(nn.Module):
@@ -29,6 +32,7 @@ class GeneralizedRCNN(nn.Module):
         self.roi_heads = roi_heads
 
     def forward(self, images, targets=None):
+        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])
         """
         Arguments:
             images (list[Tensor]): images to be processed
@@ -36,15 +40,16 @@ class GeneralizedRCNN(nn.Module):
 
         Returns:
             result (list[BoxList] or dict[Tensor]): the output from the model.
-                if targets are provided it returns a dict[Tensor] which contains the losses.
-                else it returns list[BoxList] contains additional fields
-                like `scores`, `labels` and `mask` (for Mask R-CNN models).
-
         """
         if self.training and targets is None:
             raise ValueError("In training mode, targets should be passed")
 
-        original_image_sizes = [img.shape[-2:] for img in images]
+        original_image_sizes = torch.jit.annotate(List[Tuple[int, int]], [])
+        for img in images:
+            val = img.shape[-2:]
+            assert len(val) == 2
+            original_image_sizes.append((val[0], val[1]))
+
         images, targets = self.transform(images, targets)
         features = self.backbone(images.tensors)
 

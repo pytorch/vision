@@ -44,7 +44,7 @@ class QuantizableMobileNetV2(MobileNetV2):
 
     def forward(self, x):
         x = self.quant(x)
-        x = self._forward(x)
+        x = self._forward_impl(x)
         x = self.dequant(x)
         return x
 

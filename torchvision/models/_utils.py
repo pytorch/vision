@@ -37,7 +37,6 @@ class IntermediateLayerGetter(nn.ModuleDict):
         >>>      ('feat2', torch.Size([1, 256, 14, 14]))]
     """
     _version = 2
-    __constants__ = ['layers']
     __annotations__ = {
         "return_layers": Dict[str, str],
     }
@@ -46,7 +45,7 @@ class IntermediateLayerGetter(nn.ModuleDict):
         if not set(return_layers).issubset([name for name, _ in model.named_children()]):
             raise ValueError("return_layers are not present in model")
         orig_return_layers = return_layers
-        return_layers = {k: v for k, v in return_layers.items()}
+        return_layers = {str(k): str(v) for k, v in return_layers.items()}
         layers = OrderedDict()
         for name, module in model.named_children():
             layers[name] = module
