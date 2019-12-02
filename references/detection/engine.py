@@ -27,7 +27,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-        loss_dict = model(images, targets)
+        loss_dict, _ = model(images, targets)
 
         losses = sum(loss for loss in loss_dict.values())
 
@@ -85,7 +85,7 @@ def evaluate(model, data_loader, device):
 
         torch.cuda.synchronize()
         model_time = time.time()
-        outputs = model(image)
+        _, outputs = model(image)
 
         outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
         model_time = time.time() - model_time
