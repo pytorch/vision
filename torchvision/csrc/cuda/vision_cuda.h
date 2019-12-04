@@ -85,3 +85,27 @@ at::Tensor nms_cuda(
     const at::Tensor& dets,
     const at::Tensor& scores,
     const float iou_threshold);
+
+at::Tensor DeformConv2d_forward_cuda(
+    const at::Tensor& input,
+    const at::Tensor& weight,
+    const at::Tensor& offset,
+    const at::Tensor& bias,
+    std::pair<int, int> stride,
+    std::pair<int, int> pad,
+    std::pair<int, int> dilation,
+    int groups,
+    int deformable_groups);
+
+std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
+DeformConv2d_backward_cuda(
+    const at::Tensor& grad_out,
+    const at::Tensor& input,
+    const at::Tensor& weight,
+    const at::Tensor& offset,
+    const at::Tensor& bias,
+    std::pair<int, int> stride,
+    std::pair<int, int> pad,
+    std::pair<int, int> dilation,
+    int groups,
+    int deformable_groups);
