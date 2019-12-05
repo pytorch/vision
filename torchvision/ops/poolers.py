@@ -139,7 +139,7 @@ class MultiScaleRoIAlign(nn.Module):
         size = feature.shape[-2:]
         possible_scales = torch.jit.annotate(List[float], [])
         for s1, s2 in zip(size, original_size):
-            approx_scale = float(s1) / s2
+            approx_scale = float(s1) / float(s2)
             scale = 2 ** float(torch.tensor(approx_scale).log2().round())
             possible_scales.append(scale)
         assert possible_scales[0] == possible_scales[1]
