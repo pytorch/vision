@@ -79,7 +79,8 @@ class DeformConv2d(nn.Module):
         self.groups = groups
         self.offset_groups = offset_groups
 
-        self.weight = Parameter(torch.empty(out_channels, in_channels // groups, kernel_size[0], kernel_size[1]))
+        self.weight = Parameter(torch.empty(out_channels, in_channels // groups,
+                                            self.kernel_size[0], self.kernel_size[1]))
 
         if bias:
             self.bias = Parameter(torch.empty(out_channels))
