@@ -8,8 +8,8 @@ from torch.nn.modules.utils import _pair
 from torch.jit.annotations import Optional, Tuple
 
 
-def deform_conv2d(input, offset, weight, bias=None, stride=(1, 1), padding=(0, 0), dilation=(1, 1)):
-    # type: (Tensor, Tensor, Tensor, Optional[Tensor], Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> Tensor
+def deform_conv2d(input, offset, weight, bias=None, stride=(1, 1), padding=(0, 0), dilation=(1, 1), offset_groups=1):
+    # type: (Tensor, Tensor, Tensor, Optional[Tensor], Tuple[int, int], Tuple[int, int], Tuple[int, int], int) -> Tensor
     """
     Performs Deformable Convolution, described in Deformable Convolutional Networks
 
@@ -25,6 +25,7 @@ def deform_conv2d(input, offset, weight, bias=None, stride=(1, 1), padding=(0, 0
         padding (int or Tuple[int, int]): height/width of padding of zeroes around
             each image. Default: 0
         dilation (int or Tuple[int, int]): the spacing between kernel elements. Default: 1
+        offset_groups (int): number of offset groups. Default: 1
 
     Returns:
         output (Tensor[batch_sz, out_channels, out_h, out_w]): result of convolution
@@ -40,7 +41,6 @@ def deform_conv2d(input, offset, weight, bias=None, stride=(1, 1), padding=(0, 0
     weights_h, weights_w = weight.shape[-2:]
     _, n_in_channels, in_h, in_w = input.shape
 
-    n_offset_grps = offset.shape[1] // (2 * weights_h * weights_w)
     n_weight_grps = n_in_channels // weight.shape[1]
 
     return torch.ops.torchvision.deform_conv2d(
@@ -52,7 +52,7 @@ def deform_conv2d(input, offset, weight, bias=None, stride=(1, 1), padding=(0, 0
         pad_h, pad_w,
         dil_h, dil_w,
         n_weight_grps,
-        n_offset_grps)
+        offset_groups)
 
 
 class DeformConv2d(nn.Module):
@@ -106,7 +106,8 @@ class DeformConv2d(nn.Module):
                 convolution kernel.
         """
         return deform_conv2d(input, offset, self.weight, self.bias, stride=self.stride,
-                             padding=self.padding, dilation=self.dilation)
+                             padding=self.padding, dilation=self.dilation,
+                             offset_groups=self.offset_groups)
 
     def __repr__(self):
         s = self.__class__.__name__ + '('
