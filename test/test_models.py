@@ -110,7 +110,7 @@ class ModelTester(TestCase):
         model_input = [x]
         out = model(model_input)
         self.assertIs(model_input[0], x)
-        self.assertEqual(len(out), 1)
+        self.assertEqual(len(out), 2)
 
         def subsample_tensor(tensor):
             num_elems = tensor.numel()
@@ -132,22 +132,22 @@ class ModelTester(TestCase):
         # maskrcnn_resnet_50_fpn numerically unstable across platforms, so for now
         # compare results with mean and std
         if name == "maskrcnn_resnet50_fpn":
-            test_value = map_nested_tensor_object(out, tensor_map_fn=compute_mean_std)
+            test_value = map_nested_tensor_object(out[1], tensor_map_fn=compute_mean_std)
             # mean values are small, use large prec
             self.assertExpected(test_value, prec=.01)
         else:
-            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor), prec=0.01)
+            self.assertExpected(map_nested_tensor_object(out[1], tensor_map_fn=subsample_tensor), prec=0.01)
 
         scripted_model = torch.jit.script(model)
         scripted_model.eval()
         scripted_out = scripted_model(model_input)[1]
-        self.assertEqual(scripted_out[0]["boxes"], out[0]["boxes"])
-        self.assertEqual(scripted_out[0]["scores"], out[0]["scores"])
+        self.assertEqual(scripted_out[1][0]["boxes"], out[1][0]["boxes"])
+        self.assertEqual(scripted_out[1][0]["scores"], out[1][0]["scores"])
         # labels currently float in script: need to investigate (though same result)
-        self.assertEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
-        self.assertTrue("boxes" in out[0])
-        self.assertTrue("scores" in out[0])
-        self.assertTrue("labels" in out[0])
+        self.assertEqual(scripted_out[1][0]["labels"].to(dtype=torch.long), out[1][0]["labels"])
+        self.assertTrue("boxes" in out[1][0])
+        self.assertTrue("scores" in out[1][0])
+        self.assertTrue("labels" in out[1][0])
         # don't check script because we are compiling it here:
         # TODO: refactor tests
         # self.check_script(model, name)
@@ -221,10 +221,10 @@ class ModelTester(TestCase):
         model_input = [x]
         out = model(model_input)
         self.assertIs(model_input[0], x)
-        self.assertEqual(len(out), 1)
-        self.assertTrue("boxes" in out[0])
-        self.assertTrue("scores" in out[0])
-        self.assertTrue("labels" in out[0])
+        self.assertEqual(len(out), 2)
+        self.assertTrue("boxes" in out[1][0])
+        self.assertTrue("scores" in out[1][0])
+        self.assertTrue("labels" in out[1][0])
 
 
 for model_name in get_available_classification_models():
