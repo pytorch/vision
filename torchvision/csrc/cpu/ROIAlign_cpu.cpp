@@ -1,5 +1,5 @@
 #include <ATen/TensorUtils.h>
-#include "cpu/vision_cpu.h"
+#include "vision_cpu.h"
 
 // implementation taken from Caffe2
 template <typename T>
