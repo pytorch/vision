@@ -22,8 +22,8 @@ endif()
 file(GLOB MODELS_HEADERS torchvision/csrc/models/*.h)
 file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.cpp)
 
-file(GLOB IMAGE_HEADERS torchvision/csrc/image/*.h)
-file(GLOB IMAGE_SOURCES torchvision/csrc/image/*.h torchvision/csrc/image/*.cpp)
+file(GLOB IMAGE_HEADERS torchvision/csrc/image.h)
+file(GLOB IMAGE_SOURCES torchvision/csrc/cpu/image/*.h torchvision/csrc/cpu/image/*.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${IMAGE_SOURCES})
 target_link_libraries(${PROJECT_NAME} PUBLIC "${PNG_LIBRARY}")

@@ -83,9 +83,10 @@ def get_extensions():
 
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
     source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
+    source_image_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', 'image', '*.cpp'))
     source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
 
-    sources = main_file + source_cpu
+    sources = main_file + source_cpu + source_image_cpu
     extension = CppExtension
 
     compile_cpp_tests = os.getenv('WITH_CPP_MODELS_TEST', '0') == '1'
@@ -142,6 +143,7 @@ def get_extensions():
         extension(
             'torchvision._C',
             sources,
+            libraries=['png'],
             include_dirs=include_dirs,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,

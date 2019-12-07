@@ -11,6 +11,7 @@
 #include "ROIAlign.h"
 #include "ROIPool.h"
 #include "empty_tensor_op.h"
+#include "image.h"
 #include "nms.h"
 
 // If we are in a Windows environment, we need to define
@@ -49,4 +50,5 @@ static auto registry =
         .op("torchvision::ps_roi_align", &ps_roi_align)
         .op("torchvision::ps_roi_pool", &ps_roi_pool)
         .op("torchvision::deform_conv2d", &deform_conv2d)
+        .op("torchvision::decode_png", &decodePNG)
         .op("torchvision::_cuda_version", &_cuda_version);
