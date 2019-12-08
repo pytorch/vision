@@ -213,6 +213,10 @@ def _is_targz(filename):
     return filename.endswith(".tar.gz")
 
 
+def _is_tgz(filename):
+    return filename.endswith(".tgz")
+
+
 def _is_gzip(filename):
     return filename.endswith(".gz") and not filename.endswith(".tar.gz")
 
@@ -225,10 +229,10 @@ def extract_archive(from_path, to_path=None, remove_finished=False):
     if to_path is None:
         to_path = os.path.dirname(from_path)
 
-    if _is_tar(from_path):
+    if _is_tar(from_path) or _is_tgz(from_path):
         with tarfile.open(from_path, 'r') as tar:
             tar.extractall(path=to_path)
-    elif _is_targz(from_path):
+    elif _is_targz(from_path) or _is_tgz(from_path):
         with tarfile.open(from_path, 'r:gz') as tar:
             tar.extractall(path=to_path)
     elif _is_tarxz(from_path) and PY3:
