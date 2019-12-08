@@ -229,7 +229,7 @@ def extract_archive(from_path, to_path=None, remove_finished=False):
     if to_path is None:
         to_path = os.path.dirname(from_path)
 
-    if _is_tar(from_path) or _is_tgz(from_path):
+    if _is_tar(from_path):
         with tarfile.open(from_path, 'r') as tar:
             tar.extractall(path=to_path)
     elif _is_targz(from_path) or _is_tgz(from_path):
