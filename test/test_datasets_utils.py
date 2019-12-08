@@ -27,7 +27,7 @@ class Tester(unittest.TestCase):
     def test_check_md5(self):
         fpath = TEST_FILE
         correct_md5 = '9c0bb82894bb3af7f7675ef2b3b6dcdc'
-        false_md5 = ''`
+        false_md5 = ''
         self.assertTrue(utils.check_md5(fpath, correct_md5))
         self.assertFalse(utils.check_md5(fpath, false_md5))
 
