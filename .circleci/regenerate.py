@@ -28,7 +28,7 @@ def workflows(prefix='', filter_branch=None, upload=False, indentation=6):
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version,
-                            unicode, prefix, upload, filter_branch=filter_branch)
+                            unicode, prefix, upload, filter_branch=None)
 
     return indent(indentation, w)
 
@@ -43,10 +43,10 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=''
         base_workflow_name, python_version, cu_version,
         unicode, os_type, btype, filter_branch=filter_branch))
 
-    if upload:
-        w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, filter_branch=filter_branch))
-        if os_type == 'linux':
-            w.append(generate_smoke_test_workflow(base_workflow_name, os_type, btype, cu_version, python_version, filter_branch=filter_branch))
+    # if upload:
+    #     w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, filter_branch=filter_branch))
+    if os_type == 'linux' and prefix == 'nightly_':
+        w.append(generate_smoke_test_workflow(base_workflow_name, os_type, btype, cu_version, python_version, filter_branch=filter_branch))
 
     return w
 
@@ -96,7 +96,7 @@ def generate_smoke_test_workflow(base_workflow_name, os_type, btype, cu_version,
         "context": "org-member",
         "python_version": python_version,
         "cu_version": cu_version,
-        "requires": [f"{base_workflow_name}_upload"],
+        "requires": [f"{base_workflow_name}"],
     }
 
     if filter_branch is not None:
