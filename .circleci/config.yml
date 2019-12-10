@@ -299,7 +299,7 @@ jobs:
               aws s3 cp "$pkg" "s3://pytorch/whl/nightly/<< parameters.subfolder >>" --acl public-read
             done
 
-  binary_linux_wheel_smoke_test:
+  binary_linux_conda_smoke_test:
     <<: *smoke_test_common
     steps:
       - attach_workspace:
@@ -318,7 +318,7 @@ jobs:
             python -c "import torch, torchvision; print(torchvision.ops.nms(torch.rand(3, 4), torch.rand(3), 0.3));"
 
 
-  binary_linux_conda_smoke_test:
+  binary_linux_wheel_smoke_test:
     <<: *smoke_test_common
     steps:
       - attach_workspace:

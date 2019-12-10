@@ -47,6 +47,7 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=''
         w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, filter_branch=filter_branch))
         if os_type == 'linux':
             w.append(generate_smoke_test_workflow(base_workflow_name, os_type, btype, cu_version, python_version, filter_branch=filter_branch))
+
     return w
 
 
