@@ -45,7 +45,8 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=''
 
     if upload:
         w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, filter_branch=filter_branch))
-
+        if os_type == 'linux':
+            w.append(generate_smoke_test_workflow(base_workflow_name, os_type, btype, cu_version, python_version, filter_branch=filter_branch))
     return w
 
 
@@ -86,6 +87,21 @@ def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, 
         d["filters"] = {"branches": {"only": filter_branch}}
 
     return {f"binary_{btype}_upload": d}
+
+
+def generate_smoke_test_workflow(base_workflow_name, os_type, btype, cu_version,python_version, *, filter_branch=None):
+    d = {
+        "name": f"{base_workflow_name}_smoketest",
+        "context": "org-member",
+        "python_version": python_version,
+        "cu_version": cu_version,
+        "requires": [f"{base_workflow_name}_upload"],
+    }
+
+    if filter_branch is not None:
+        d["filters"] = {"branches": {"only": filter_branch}}
+    return {f"binary_{os_type}_{btype}_smoke_test": d}
+
 
 
 def indent(indentation, data_list):
