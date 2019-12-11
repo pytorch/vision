@@ -1,13 +1,13 @@
-# this Dockerfile is for torchaudio smoke test, it will be created periodically via CI system
+# this Dockerfile is for torchvision smoke test, it will be created periodically via CI system
 # if you need to do it locally, follow below steps once you have Docker installed
 # assuming you're within the directory where this Dockerfile located
-#  $ docker build . -t torchaudio/smoketest
+#  $ docker build . -t torchvision/smoketest
 
 # if you want to push to aws ecr, make sure you have the rights to write to ECR, then run
 # $ eval $(aws ecr get-login --region us-east-1 --no-include-email)
 # $ export MYTAG=localbuild  ## you can choose whatever tag you like
-# $ docker tag torchaudio/smoketest 308535385114.dkr.ecr.us-east-1.amazonaws.com/torchaudio/smoke_test:${MYTAG}
-# $ docker push  308535385114.dkr.ecr.us-east-1.amazonaws.com/torchaudio/smoke_test:${MYTAG}
+# $ docker tag torchvision/smoketest 308535385114.dkr.ecr.us-east-1.amazonaws.com/torchvision/smoke_test:${MYTAG}
+# $ docker push  308535385114.dkr.ecr.us-east-1.amazonaws.com/torchvision/smoke_test:${MYTAG}
 
 FROM ubuntu:latest
 
