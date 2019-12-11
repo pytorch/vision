@@ -78,8 +78,8 @@ class BalancedPositiveNegativeSampler(object):
                 matched_idxs_per_image, dtype=torch.uint8
             )
 
-            pos_idx_per_image_mask[pos_idx_per_image] = torch.tensor(1)
-            neg_idx_per_image_mask[neg_idx_per_image] = torch.tensor(1)
+            pos_idx_per_image_mask[pos_idx_per_image] = torch.tensor(1, dtype=torch.uint8)
+            neg_idx_per_image_mask[neg_idx_per_image] = torch.tensor(1, dtype=torch.uint8)
 
             pos_idx.append(pos_idx_per_image_mask)
             neg_idx.append(neg_idx_per_image_mask)
