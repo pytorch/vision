@@ -314,6 +314,7 @@ jobs:
       - run:
           name: smoke test
           command: |
+            set -x
             source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
             python -c "import torch, torchvision; print(torchvision.ops.nms(torch.rand(3, 4), torch.rand(3), 0.3));"
 
@@ -332,6 +333,8 @@ jobs:
       - run:
           name: smoke test
           command: |
+            set -x
+            source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
             python -c "import torch, torchvision; print(torchvision.ops.nms(torch.rand(3, 4), torch.rand(3), 0.3));"
 
   docker_image_build:
