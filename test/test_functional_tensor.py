@@ -138,5 +138,6 @@ class Tester(unittest.TestCase):
                                     (transforms.ToTensor()(cropped_pil_image[9]) * 255).to(torch.uint8)))
         self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
 
+
 if __name__ == '__main__':
     unittest.main()
