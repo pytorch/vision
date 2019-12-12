@@ -296,16 +296,16 @@ at::Tensor DeformConv2d_forward_cpu(
 
   TORCH_CHECK(weight.size(1) * n_weight_grps == input.size(1));
   TORCH_CHECK(weight.size(0) % n_weight_grps == 0);
+  TORCH_CHECK(
+      (offset.size(1) == n_offset_grps * 2 * weight_h * weight_w),
+      "offset.shape[1] is not valid: got: ",
+      offset.size(1),
+      " expected: ",
+      n_offset_grps * 2 * weight_h * weight_w);
   TORCH_CHECK(input.size(1) % n_offset_grps == 0);
 
   TORCH_CHECK(
       (offset.size(0) == input.size(0)), "invalid batch size of offset");
-  TORCH_CHECK(
-      (offset.size(1) == n_offset_grps * 2 * weight_h * weight_w),
-      "got: ",
-      offset.size(1),
-      " expected: ",
-      n_offset_grps * 2 * weight_h * weight_w);
   TORCH_CHECK(
       (offset.size(2) == out_h && offset.size(3) == out_w),
       "offset output dims: (",
