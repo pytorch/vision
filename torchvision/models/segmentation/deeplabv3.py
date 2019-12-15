@@ -52,7 +52,6 @@ class ASPPPooling(nn.Sequential):
         super(ASPPPooling, self).__init__(
             nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(in_channels, out_channels, 1, bias=False),
-            nn.BatchNorm2d(out_channels),
             nn.ReLU())
 
     def forward(self, x):
