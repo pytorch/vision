@@ -2,6 +2,7 @@ import torch
 import torchvision.transforms.functional as F
 import torch.nn.functional as Fn
 
+
 def vflip(img_tensor):
     """Vertically flip the given the Image Tensor.
 
