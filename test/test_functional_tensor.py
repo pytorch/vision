@@ -138,6 +138,36 @@ class Tester(unittest.TestCase):
                                     (transforms.ToTensor()(cropped_pil_image[9]) * 255).to(torch.uint8)))
         self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
 
+    def test_resize(self):
+        height = random.randint(24, 32) * 2
+        width = random.randint(24, 32) * 2
+        img = torch.ones(3, height, width)
+        img_clone = img.clone()
+        modes = ["bilinear", "nearest", "bicubic"]
+
+        for mode in modes:
+            # (Int) for resizing
+            output_size = random.randint(5, 12) * 2
+            result = F_t.resize(img, output_size, interpolation=mode)
+            if height < width:
+                self.assertEqual(output_size, result.shape[1])
+            else:
+                self.assertEqual(output_size, result.shape[2])
+
+            # (Int, Int) for resizing
+            output_size = (random.randint(5, 12) * 2, random.randint(5, 12) * 2)
+            result = F_t.resize(img, output_size, interpolation=mode)
+            self.assertEqual((output_size[0], output_size[1]), (result.shape[1], result.shape[2]))
+
+        # checking input tensor is not mutated
+        self.assertTrue(torch.equal(img, img_clone))
+
+        # checking overshooting for bicubic
+        output_size = (random.randint(5, 12) * 2, random.randint(5, 12) * 2)
+        result = F_t.resize(img, output_size, interpolation="bicubic")
+        clamped_tensor = result.clamp(min=0, max=255)
+        self.assertTrue(torch.equal(result, clamped_tensor))
+
 
 if __name__ == '__main__':
     unittest.main()

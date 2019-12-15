@@ -1,6 +1,6 @@
 import torch
 import torchvision.transforms.functional as F
-
+import torch.nn.functional as Fn
 
 def vflip(img_tensor):
     """Vertically flip the given the Image Tensor.
@@ -219,3 +219,40 @@ def ten_crop(img, size, vertical_flip=False):
 def _blend(img1, img2, ratio):
     bound = 1 if img1.dtype.is_floating_point else 255
     return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
+
+
+def resize(img, size, interpolation="bilinear"):
+    r"""Resize the input Tensor Image to the given size.
+
+    Args:
+        img (Tensor): Image to be resized.
+        size (sequence or int): Desired output size. If size is a sequence like
+            (h, w), the output size will be matched to this. If size is an int,
+            the smaller edge of the image will be matched to this number maintaing
+            the aspect ratio. i.e, if height > width, then image will be rescaled to
+            :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`
+        interpolation (string, optional): Desired interpolation ["bilinear", "nearest", "bicubic"]. Default is
+            ``bilinear``
+
+    Returns:
+         Tensor: Resized image Tensor.
+    """
+    if not F._is_tensor_image(img):
+        raise TypeError('tensor is not a torch image.')
+
+    if isinstance(size, int):
+        w, h = img.shape[2], img.shape[1]
+        if (w <= h and w == size) or (h <= w and h == size):
+            return img
+        if w < h:
+            ow = size
+            oh = int(size * h / w)
+            out_img = Fn.interpolate(img.unsqueeze(0), size=(oh, ow), mode=interpolation)
+        else:
+            oh = size
+            ow = int(size * w / h)
+            out_img = Fn.interpolate(img.unsqueeze(0), size=(oh, ow), mode=interpolation)
+    else:
+        out_img = Fn.interpolate(img.unsqueeze(0), size=size, mode=interpolation)
+
+    return(out_img.clamp(min=0, max=255).squeeze(0))
