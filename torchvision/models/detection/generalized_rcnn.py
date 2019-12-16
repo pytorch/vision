@@ -30,6 +30,8 @@ class GeneralizedRCNN(nn.Module):
         self.backbone = backbone
         self.rpn = rpn
         self.roi_heads = roi_heads
+        # used only on torchscript mode
+        self._has_warned = False
 
     @torch.jit.unused
     def eager_outputs(self, losses, detections):
@@ -74,7 +76,9 @@ class GeneralizedRCNN(nn.Module):
         losses.update(proposal_losses)
 
         if torch.jit.is_scripting():
-            warnings.warn("RCNN always returns a (Losses, Detections tuple in scripting)")
+            if not self._has_warned:
+                warnings.warn("RCNN always returns a (Losses, Detections tuple in scripting)")
+                self._has_warned = True
             return (losses, detections)
         else:
             return self.eager_outputs(losses, detections)
