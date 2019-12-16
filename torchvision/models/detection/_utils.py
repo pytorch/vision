@@ -11,10 +11,8 @@ import torchvision
 # TODO: https://github.com/pytorch/pytorch/issues/26727
 def zeros_like(tensor, dtype):
     # type: (Tensor, int) -> Tensor
-    if tensor.dtype == dtype:
-        return tensor.detach().clone()
-    else:
-        return tensor.to(dtype)
+    return torch.zeros_like(tensor, dtype=dtype, layout=tensor.layout,
+                            device=tensor.device, pin_memory=tensor.is_pinned())
 
 
 @torch.jit.script
