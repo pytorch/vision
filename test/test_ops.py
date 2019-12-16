@@ -467,11 +467,9 @@ class DeformConvTester(OpTester, unittest.TestCase):
         out_channels = 2
         kernel_size = (3, 2)
         groups = 2
-        offset_groups = 3
 
         layer = ops.DeformConv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding,
-                                 dilation=dilation, groups=groups, offset_groups=offset_groups).to(device=x.device,
-                                                                                                   dtype=x.dtype)
+                                 dilation=dilation, groups=groups).to(device=x.device, dtype=x.dtype)
         res = layer(x, offset)
 
         weight = layer.weight.data
@@ -479,6 +477,11 @@ class DeformConvTester(OpTester, unittest.TestCase):
         expected = self.expected_fn(x, weight, offset, bias, stride=stride, padding=padding, dilation=dilation)
 
         self.assertTrue(torch.allclose(res, expected), '\nres:\n{}\nexpected:\n{}'.format(res, expected))
+
+        # test for wrong sizes
+        with self.assertRaises(RuntimeError):
+            wrong_offset = torch.rand_like(offset[:, :2])
+            res = layer(x, wrong_offset)
 
     def _test_backward(self, device, contiguous):
         x, weight, offset, bias, stride, padding, dilation = self.get_fn_args(device, contiguous)
