@@ -89,6 +89,9 @@ class VideoClips(object):
             self._init_from_metadata(_precomputed_metadata)
         self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate)
 
+    def _collate_fn(self, x):
+        return x
+
     def _compute_frame_pts(self):
         self.video_pts = []
         self.video_fps = []
@@ -110,7 +113,7 @@ class VideoClips(object):
             DS(self.video_paths),
             batch_size=16,
             num_workers=self.num_workers,
-            collate_fn=lambda x: x)
+            collate_fn=self._collate_fn)
 
         with tqdm(total=len(dl)) as pbar:
             for batch in dl:
