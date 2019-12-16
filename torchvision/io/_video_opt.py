@@ -347,7 +347,7 @@ def _probe_video_from_memory(video_data):
     return info
 
 
-def _read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
+def _read_video(filename, start_pts=0, end_pts=None, pts_unit='sec'):
     if end_pts is None:
         end_pts = float("inf")
 
@@ -401,7 +401,7 @@ def _read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
     return vframes, aframes, _info
 
 
-def _read_video_timestamps(filename, pts_unit='pts'):
+def _read_video_timestamps(filename, pts_unit='sec'):
     if pts_unit == 'pts':
         warnings.warn("The pts_unit 'pts' gives wrong results and will be removed in a " +
                       "follow-up version. Please use pts_unit 'sec'.")
