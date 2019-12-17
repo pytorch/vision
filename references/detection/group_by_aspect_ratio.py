@@ -1,6 +1,8 @@
 import bisect
 from collections import defaultdict
 import copy
+from itertools import repeat, chain
+import math
 import numpy as np
 
 import torch
@@ -10,6 +12,12 @@ from torch.utils.model_zoo import tqdm
 import torchvision
 
 from PIL import Image
+
+
+def _repeat_to_at_least(iterable, n):
+    repeat_times = math.ceil(n / len(iterable))
+    repeated = chain.from_iterable(repeat(iterable, repeat_times))
+    return list(repeated)
 
 
 class GroupedBatchSampler(BatchSampler):
@@ -63,8 +71,8 @@ class GroupedBatchSampler(BatchSampler):
             for group_id, _ in sorted(buffer_per_group.items(),
                                       key=lambda x: len(x[1]), reverse=True):
                 remaining = self.batch_size - len(buffer_per_group[group_id])
-                buffer_per_group[group_id].extend(
-                    samples_per_group[group_id][:remaining])
+                samples_from_group_id = _repeat_to_at_least(samples_per_group[group_id], remaining)
+                buffer_per_group[group_id].extend(samples_from_group_id[:remaining])
                 assert len(buffer_per_group[group_id]) == self.batch_size
                 yield buffer_per_group[group_id]
                 num_remaining -= 1
