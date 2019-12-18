@@ -8,6 +8,7 @@ import numpy as np
 import unittest
 import random
 from torch.jit.annotations import Optional, List, BroadcastingList2
+from typing import Tuple
 
 
 class Tester(unittest.TestCase):
