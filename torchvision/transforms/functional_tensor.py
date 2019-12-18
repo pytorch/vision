@@ -3,6 +3,7 @@ import torch
 import torchvision.transforms.functional as F
 from torch import Tensor
 from torch.jit.annotations import Optional, List, BroadcastingList2
+from typing import Tuple
 
 
 def vflip(img):
