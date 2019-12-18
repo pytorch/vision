@@ -1,11 +1,13 @@
 from __future__ import division
 import torch
+from torch import Tensor
 import torchvision.transforms as transforms
 import torchvision.transforms.functional_tensor as F_t
 import torchvision.transforms.functional as F
 import numpy as np
 import unittest
 import random
+from torch.jit.annotations import Optional, List, BroadcastingList2
 
 
 class Tester(unittest.TestCase):
@@ -23,7 +25,7 @@ class Tester(unittest.TestCase):
         self.assertEqual(vflipped_img.shape, img_tensor.shape)
         self.assertTrue(torch.equal(img_tensor, vflipped_img_again))
         self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        #scriptable function test
+        # scriptable function test
         vflipped_img_script = script_vflip(img_tensor)
         self.assertTrue(torch.equal(vflipped_img, vflipped_img_script))
 
@@ -40,7 +42,7 @@ class Tester(unittest.TestCase):
         self.assertEqual(hflipped_img.shape, img_tensor.shape)
         self.assertTrue(torch.equal(img_tensor, hflipped_img_again))
         self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        #scriptable function test
+        # scriptable function test
         hflipped_img_script = script_hflip(img_tensor)
         self.assertTrue(torch.equal(hflipped_img, hflipped_img_script))
 
@@ -63,7 +65,7 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
         self.assertTrue(torch.equal(img_cropped, (img_cropped_GT * 255).to(torch.uint8)),
                         "functional_tensor crop not working")
-        #scriptable function test
+        # scriptable function test
         cropped_img_script = script_crop(img_tensor, top, left, height, width)
         self.assertTrue(torch.equal(img_cropped, cropped_img_script))
 
@@ -133,7 +135,7 @@ class Tester(unittest.TestCase):
         max_diff = (grayscale_tensor - grayscale_pil_img).abs().max()
         self.assertLess(max_diff, 1.0001)
         self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        #scriptable function test
+        # scriptable function test
         grayscale_script = script_rgb_to_grayscale(img_tensor).to(int)
         self.assertTrue(torch.equal(grayscale_script, grayscale_tensor))
 
@@ -150,7 +152,7 @@ class Tester(unittest.TestCase):
         cropped_pil_tensor = (transforms.ToTensor()(cropped_pil_image) * 255).to(torch.uint8)
         self.assertTrue(torch.equal(cropped_tensor, cropped_pil_tensor))
         self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        #scriptable function test
+        # scriptable function test
         cropped_script = script_center_crop(img_tensor, [10, 10])
         self.assertTrue(torch.equal(cropped_script, cropped_tensor))
 
@@ -175,10 +177,10 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(cropped_tensor[4],
                                     (transforms.ToTensor()(cropped_pil_image[4]) * 255).to(torch.uint8)))
         self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        #scriptable function test
-        cropped_script = script_five_crop(img_tensor, [10,10])
+        # scriptable function test
+        cropped_script = script_five_crop(img_tensor, [10, 10])
         for cropped_script_img, cropped_tensor_img in zip(cropped_script, cropped_tensor):
-                self.assertTrue(torch.equal(cropped_script_img, cropped_tensor_img))
+            self.assertTrue(torch.equal(cropped_script_img, cropped_tensor_img))
 
     def test_ten_crop(self):
 
@@ -211,10 +213,11 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(cropped_tensor[9],
                                     (transforms.ToTensor()(cropped_pil_image[9]) * 255).to(torch.uint8)))
         self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        #scriptable function test
-        cropped_script = script_ten_crop(img_tensor, [10,10])
+        # scriptable function test
+        cropped_script = script_ten_crop(img_tensor, [10, 10])
         for cropped_script_img, cropped_tensor_img in zip(cropped_script, cropped_tensor):
-                self.assertTrue(torch.equal(cropped_script_img, cropped_tensor_img))
+            self.assertTrue(torch.equal(cropped_script_img, cropped_tensor_img))
+
 
 if __name__ == '__main__':
     unittest.main()

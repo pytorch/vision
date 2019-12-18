@@ -1,5 +1,8 @@
+from __future__ import division
 import torch
 import torchvision.transforms.functional as F
+from torch import Tensor
+from torch.jit.annotations import Optional, List, BroadcastingList2
 
 
 def vflip(img):
