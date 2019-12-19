@@ -2,9 +2,11 @@ from __future__ import division
 import torch
 import torchvision.transforms.functional as F
 from torch import Tensor
-from torch.jit.annotations import Optional, List, BroadcastingList2
-from typing import Tuple
+from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
 
+
+def _is_tensor_a_torch_image(input):
+    return len(input.shape) == 3
 
 def vflip(img):
     # type: (Tensor) -> Tensor
@@ -16,7 +18,7 @@ def vflip(img):
     Returns:
         Tensor:  Vertically flipped image Tensor.
     """
-    if not len(img.shape) == 3:
+    if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
     return img.flip(-2)
@@ -32,7 +34,7 @@ def hflip(img):
     Returns:
         Tensor:  Horizontally flipped image Tensor.
     """
-    if not len(img.shape) == 3:
+    if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
     return img.flip(-1)
@@ -52,7 +54,7 @@ def crop(img, top, left, height, width):
     Returns:
         Tensor: Cropped image.
     """
-    if not len(img.shape) == 3:
+    if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
     return img[..., top:top + height, left:left + width]
@@ -90,10 +92,10 @@ def adjust_brightness(img, brightness_factor):
     Returns:
         Tensor: Brightness adjusted image.
     """
-    if not len(img.shape) == 3:
+    if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
-    return _blend(img, torch.zeros(img.shape), brightness_factor)
+    return _blend(img, torch.zeros_like(img), brightness_factor)
 
 
 def adjust_contrast(img, contrast_factor):
@@ -109,7 +111,7 @@ def adjust_contrast(img, contrast_factor):
     Returns:
         Tensor: Contrast adjusted image.
     """
-    if not len(img.shape) == 3:
+    if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
     mean = torch.mean(rgb_to_grayscale(img).to(torch.float))
@@ -130,7 +132,7 @@ def adjust_saturation(img, saturation_factor):
     Returns:
         Tensor: Saturation adjusted image.
     """
-    if not len(img.shape) == 3:
+    if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
@@ -148,7 +150,7 @@ def center_crop(img, output_size):
     Returns:
             Tensor: Cropped image.
     """
-    if not len(img.shape) == 3:
+    if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
     _, image_width, image_height = img.size()
@@ -160,7 +162,7 @@ def center_crop(img, output_size):
 
 
 def five_crop(img, size):
-    # type: (Tensor, BroadcastingList2[int]) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]
+    # type: (Tensor, BroadcastingList2[int]) -> List[Tensor]
     """Crop the given Image Tensor into four corners and the central crop.
     .. Note::
         This transform returns a tuple of Tensors and there may be a
@@ -175,7 +177,7 @@ def five_crop(img, size):
        tuple: tuple (tl, tr, bl, br, center)
                 Corresponding top left, top right, bottom left, bottom right and center crop.
     """
-    if not len(img.shape) == 3:
+    if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
     assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
@@ -192,7 +194,7 @@ def five_crop(img, size):
     br = crop(img, image_width - crop_width, image_height - crop_height, image_width, image_height)
     center = center_crop(img, (crop_height, crop_width))
 
-    return (tl, tr, bl, br, center)
+    return [tl, tr, bl, br, center]
 
 
 def ten_crop(img, size, vertical_flip=False):
@@ -214,7 +216,7 @@ def ten_crop(img, size, vertical_flip=False):
                 Corresponding top left, top right, bottom left, bottom right and center crop
                 and same for the flipped image's tensor.
     """
-    if not len(img.shape) == 3:
+    if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
     assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
@@ -232,5 +234,5 @@ def ten_crop(img, size, vertical_flip=False):
 
 def _blend(img1, img2, ratio):
     # type: (Tensor, Tensor, float) -> Tensor
-    bound = 1 if img1.dtype == torch.float else 255
+    bound = 1 if img1.dtype in [torch.half, torch.float32, torch.float64] else 255
     return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)

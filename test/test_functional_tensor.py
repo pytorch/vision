@@ -7,18 +7,13 @@ import torchvision.transforms.functional as F
 import numpy as np
 import unittest
 import random
-from torch.jit.annotations import Optional, List, BroadcastingList2
-from typing import Tuple
+from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
 
 
 class Tester(unittest.TestCase):
 
     def test_vflip(self):
-
-        @torch.jit.script
-        def script_vflip(input):
-            # type: (Tensor) -> Tensor
-            return F_t.vflip(input)
+        script_vflip = torch.jit.script(F_t.vflip)
         img_tensor = torch.randn(3, 16, 16)
         img_tensor_clone = img_tensor.clone()
         vflipped_img = F_t.vflip(img_tensor)
@@ -31,11 +26,7 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(vflipped_img, vflipped_img_script))
 
     def test_hflip(self):
-
-        @torch.jit.script
-        def script_hflip(input):
-            # type: (Tensor) -> Tensor
-            return F_t.hflip(input)
+        script_hflip = torch.jit.script(F_t.hflip)
         img_tensor = torch.randn(3, 16, 16)
         img_tensor_clone = img_tensor.clone()
         hflipped_img = F_t.hflip(img_tensor)
@@ -48,11 +39,7 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(hflipped_img, hflipped_img_script))
 
     def test_crop(self):
-
-        @torch.jit.script
-        def script_crop(input, top, left, height, width):
-            # type: (Tensor, int, int, int, int) -> Tensor
-            return F_t.crop(input, top, left, height, width)
+        script_crop = torch.jit.script(F_t.crop)
         img_tensor = torch.randint(0, 255, (3, 16, 16), dtype=torch.uint8)
         img_tensor_clone = img_tensor.clone()
         top = random.randint(0, 15)
@@ -71,21 +58,9 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(img_cropped, cropped_img_script))
 
     def test_adjustments(self):
-
-        @torch.jit.script
-        def script_adjust_brightness(input, brightness_factor):
-            # type: (Tensor, float) -> Tensor
-            return F_t.adjust_brightness(input, brightness_factor)
-
-        @torch.jit.script
-        def script_adjust_contrast(input, contrast_factor):
-            # type: (Tensor, float) -> Tensor
-            return F_t.adjust_contrast(input, contrast_factor)
-
-        @torch.jit.script
-        def script_adjust_saturation(input, saturation_factor):
-            # type: (Tensor, float) -> Tensor
-            return F_t.adjust_saturation(input, saturation_factor)
+        script_adjust_brightness = torch.jit.script(F_t.adjust_brightness)
+        script_adjust_contrast = torch.jit.script(F_t.adjust_contrast)
+        script_adjust_saturation = torch.jit.script(F_t.adjust_saturation)
 
         fns = ((F.adjust_brightness, F_t.adjust_brightness, script_adjust_brightness),
                (F.adjust_contrast, F_t.adjust_contrast, script_adjust_contrast),
@@ -124,11 +99,7 @@ class Tester(unittest.TestCase):
                 self.assertTrue(torch.equal(img, img_clone))
 
     def test_rgb_to_grayscale(self):
-
-        @torch.jit.script
-        def script_rgb_to_grayscale(input):
-            # type: (Tensor) -> Tensor
-            return F_t.rgb_to_grayscale(input)
+        script_rgb_to_grayscale = torch.jit.script(F_t.rgb_to_grayscale)
         img_tensor = torch.randint(0, 255, (3, 16, 16), dtype=torch.uint8)
         img_tensor_clone = img_tensor.clone()
         grayscale_tensor = F_t.rgb_to_grayscale(img_tensor).to(int)
@@ -141,11 +112,7 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(grayscale_script, grayscale_tensor))
 
     def test_center_crop(self):
-
-        @torch.jit.script
-        def script_center_crop(input, output_size):
-            # type: (Tensor, BroadcastingList2[int]) -> Tensor
-            return F_t.center_crop(input, output_size)
+        script_center_crop = torch.jit.script(F_t.center_crop)
         img_tensor = torch.randint(0, 255, (1, 32, 32), dtype=torch.uint8)
         img_tensor_clone = img_tensor.clone()
         cropped_tensor = F_t.center_crop(img_tensor, [10, 10])
@@ -158,11 +125,7 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(cropped_script, cropped_tensor))
 
     def test_five_crop(self):
-
-        @torch.jit.script
-        def script_five_crop(input, output_size):
-            # type: (Tensor, BroadcastingList2[int]) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]
-            return F_t.five_crop(input, output_size)
+        script_five_crop = torch.jit.script(F_t.five_crop)
         img_tensor = torch.randint(0, 255, (1, 32, 32), dtype=torch.uint8)
         img_tensor_clone = img_tensor.clone()
         cropped_tensor = F_t.five_crop(img_tensor, [10, 10])
@@ -184,11 +147,7 @@ class Tester(unittest.TestCase):
             self.assertTrue(torch.equal(cropped_script_img, cropped_tensor_img))
 
     def test_ten_crop(self):
-
-        @torch.jit.script
-        def script_ten_crop(input, output_size):
-            # type: (Tensor, BroadcastingList2[int]) -> List[Tensor]
-            return F_t.ten_crop(input, output_size)
+        script_ten_crop = torch.jit.script(F_t.ten_crop)
         img_tensor = torch.randint(0, 255, (1, 32, 32), dtype=torch.uint8)
         img_tensor_clone = img_tensor.clone()
         cropped_tensor = F_t.ten_crop(img_tensor, [10, 10])
