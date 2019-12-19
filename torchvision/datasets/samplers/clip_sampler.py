@@ -117,8 +117,9 @@ class UniformClipSampler(Sampler):
         idxs = []
         s = 0
         # select num_clips_per_video for each video, uniformly spaced
-        for c in self.video_clips.clips:
-            length = len(c)
+        for i in range(len(self.video_clips.cumulative_sizes)):
+            start = self.video_clips.cumulative_sizes[i - 1] if i > 0 else 0
+            length = self.video_clips.cumulative_sizes[i] - start
             if length == 0:
                 # corner case where video decoding fails
                 continue
@@ -135,7 +136,12 @@ class UniformClipSampler(Sampler):
 
     def __len__(self):
         return sum(
-            self.num_clips_per_video for c in self.video_clips.clips if len(c) > 0
+            self.num_clips_per_video
+            for i in range(len(self.video_clips.cumulative_sizes)) if (
+                self.video_clips.cumulative_sizes[i] - (
+                    self.video_clips.cumulative_sizes[i - 1] if i > 0 else 0
+                )
+            ) > 0
         )
 
 
@@ -158,8 +164,9 @@ class RandomClipSampler(Sampler):
         idxs = []
         s = 0
         # select at most max_clips_per_video for each video, randomly
-        for c in self.video_clips.clips:
-            length = len(c)
+        for i in range(len(self.video_clips.cumulative_sizes)):
+            start = self.video_clips.cumulative_sizes[i - 1] if i > 0 else 0
+            length = self.video_clips.cumulative_sizes[i] - start
             size = min(length, self.max_clips_per_video)
             sampled = torch.randperm(length)[:size] + s
             s += length
@@ -171,4 +178,12 @@ class RandomClipSampler(Sampler):
         return iter(idxs)
 
     def __len__(self):
-        return sum(min(len(c), self.max_clips_per_video) for c in self.video_clips.clips)
+        return sum(
+            min(
+                self.max_clips_per_video,
+                self.video_clips.cumulative_sizes[i] - (
+                    self.video_clips.cumulative_sizes[i - 1] if i > 0 else 0
+                )
+            )
+            for i in range(len(self.video_clips.cumulative_sizes))
+        )

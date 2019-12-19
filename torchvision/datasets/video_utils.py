@@ -108,7 +108,7 @@ class VideoClips(object):
         return x
 
     def _compute_frame_pts(self):
-        self.video_pts = []
+        video_pts = []
         self.video_fps = []
 
         # strategy: use a DataLoader to parallelize read_video_timestamps
@@ -125,12 +125,18 @@ class VideoClips(object):
                 pbar.update(1)
                 clips, fps = list(zip(*batch))
                 clips = [torch.as_tensor(c) for c in clips]
-                self.video_pts.extend(clips)
+                video_pts.extend(clips)
                 self.video_fps.extend(fps)
+
+        self.video_pts_size = torch.as_tensor([len(v) for v in video_pts])
+        self.video_pts_size_cum = self.video_pts_size.cumsum(0).tolist()
+        self.video_pts = torch.cat(video_pts, 0)
 
     def _init_from_metadata(self, metadata):
         self.video_paths = metadata["video_paths"]
-        assert len(self.video_paths) == len(metadata["video_pts"])
+        assert len(self.video_paths) == len(metadata["video_pts_size"])
+        self.video_pts_size = metadata["video_pts_size"]
+        self.video_pts_size_cum = self.video_pts_size.cumsum(0).tolist()
         self.video_pts = metadata["video_pts"]
         assert len(self.video_paths) == len(metadata["video_fps"])
         self.video_fps = metadata["video_fps"]
@@ -139,6 +145,7 @@ class VideoClips(object):
     def metadata(self):
         _metadata = {
             "video_paths": self.video_paths,
+            "video_pts_size": self.video_pts_size,
             "video_pts": self.video_pts,
             "video_fps": self.video_fps
         }
@@ -146,10 +153,21 @@ class VideoClips(object):
 
     def subset(self, indices):
         video_paths = [self.video_paths[i] for i in indices]
-        video_pts = [self.video_pts[i] for i in indices]
+        video_pts_size = torch.as_tensor(
+            [self.video_pts_size[i].item() for i in indices]
+        )
+        full_video_pts = [
+            self.video_pts[
+                self.video_pts_size_cum[i - 1]: self.video_pts_size_cum[i]
+            ]
+            if i > 0 else self.video_pts[: self.video_pts_size_cum[i]]
+            for i in range(len(self.video_fps))
+        ]
+        video_pts = torch.cat([full_video_pts[i] for i in indices], 0)
         video_fps = [self.video_fps[i] for i in indices]
         metadata = {
             "video_paths": video_paths,
+            "video_pts_size": video_pts_size,
             "video_pts": video_pts,
             "video_fps": video_fps
         }
@@ -173,10 +191,7 @@ class VideoClips(object):
         idxs = VideoClips._resample_video_idx(int(math.floor(total_frames)), fps, frame_rate)
         video_pts = video_pts[idxs]
         clips = unfold(video_pts, num_frames, step)
-        if isinstance(idxs, slice):
-            idxs = [idxs] * len(clips)
-        else:
-            idxs = unfold(idxs, num_frames, step)
+        idxs = unfold(idxs, num_frames, step)
         return clips, idxs
 
     def compute_clips(self, num_frames, step, frame_rate=None):
@@ -192,14 +207,26 @@ class VideoClips(object):
         self.num_frames = num_frames
         self.step = step
         self.frame_rate = frame_rate
-        self.clips = []
-        self.resampling_idxs = []
-        for video_pts, fps in zip(self.video_pts, self.video_fps):
-            clips, idxs = self.compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate)
-            self.clips.append(clips)
-            self.resampling_idxs.append(idxs)
-        clip_lengths = torch.as_tensor([len(v) for v in self.clips])
+
+        all_clips = []
+        resampling_idxs = []
+        for i in range(len(self.video_fps)):
+            start = self.video_pts_size_cum[i - 1] if i > 0 else 0
+            end = self.video_pts_size_cum[i]
+            clips, idxs = self.compute_clips_for_video(
+                self.video_pts[start:end],
+                num_frames,
+                step,
+                self.video_fps[i],
+                frame_rate,
+            )
+            all_clips.append(clips)
+            resampling_idxs.append(idxs)
+
+        clip_lengths = torch.as_tensor([len(v) for v in all_clips])
         self.cumulative_sizes = clip_lengths.cumsum(0).tolist()
+        self.clips = torch.cat(all_clips, 0)
+        self.resampling_idxs = torch.cat(resampling_idxs, 0)
 
     def __len__(self):
         return self.num_clips()
@@ -228,11 +255,6 @@ class VideoClips(object):
     @staticmethod
     def _resample_video_idx(num_frames, original_fps, new_fps):
         step = float(original_fps) / new_fps
-        if step.is_integer():
-            # optimization: if step is integer, don't need to perform
-            # advanced indexing
-            step = int(step)
-            return slice(None, None, step)
         idxs = torch.arange(num_frames, dtype=torch.float32) * step
         idxs = idxs.floor().to(torch.int64)
         return idxs
@@ -255,7 +277,7 @@ class VideoClips(object):
                              "({} number of clips)".format(idx, self.num_clips()))
         video_idx, clip_idx = self.get_clip_location(idx)
         video_path = self.video_paths[video_idx]
-        clip_pts = self.clips[video_idx][clip_idx]
+        clip_pts = self.clips[idx]
 
         from torchvision import get_video_backend
         backend = get_video_backend()
@@ -318,7 +340,7 @@ class VideoClips(object):
                 info["audio_fps"] = audio_fps
 
         if self.frame_rate is not None:
-            resampling_idx = self.resampling_idxs[video_idx][clip_idx]
+            resampling_idx = self.resampling_idxs[idx]
             if isinstance(resampling_idx, torch.Tensor):
                 resampling_idx = resampling_idx - resampling_idx[0]
             video = video[resampling_idx]
