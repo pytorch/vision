@@ -58,14 +58,14 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
 
     data = _create_video_frames(num_frames, height, width)
     with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
+        f.close()
         io.write_video(f.name, data, fps=fps, video_codec=video_codec, options=options)
         yield f.name, data
-
+    os.unlink(f.name)
 
 @unittest.skipIf(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
                  "video_reader backend not available")
 @unittest.skipIf(av is None, "PyAV unavailable")
-@unittest.skipIf(sys.platform == 'win32', 'temporarily disabled on Windows')
 class Tester(unittest.TestCase):
     # compression adds artifacts, thus we add a tolerance of
     # 6 in 0-255 range
@@ -106,6 +106,7 @@ class Tester(unittest.TestCase):
             expected_pts = [i * pts_step for i in range(num_frames)]
 
             self.assertEqual(pts, expected_pts)
+            container.close()
 
     def test_read_partial_video(self):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
@@ -176,6 +177,7 @@ class Tester(unittest.TestCase):
             expected_pts = [i * pts_step for i in range(num_frames)]
 
             self.assertEqual(pts, expected_pts)
+            container.close()
 
     def test_read_video_pts_unit_sec(self):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
@@ -196,6 +198,7 @@ class Tester(unittest.TestCase):
             expected_pts = [i * pts_step * stream.time_base for i in range(num_frames)]
 
             self.assertEqual(pts, expected_pts)
+            container.close()
 
     def test_read_partial_video_pts_unit_sec(self):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
@@ -218,6 +221,7 @@ class Tester(unittest.TestCase):
                 # when the given start pts is not matching any frame pts
                 self.assertEqual(len(lv), 4)
                 self.assertTrue(data[4:8].equal(lv))
+            container.close()
 
     def test_read_video_corrupted_file(self):
         with tempfile.NamedTemporaryFile(suffix='.mp4') as f:
