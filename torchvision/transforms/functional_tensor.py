@@ -8,6 +8,7 @@ from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
 def _is_tensor_a_torch_image(input):
     return len(input.shape) == 3
 
+
 def vflip(img):
     # type: (Tensor) -> Tensor
     """Vertically flip the given the Image Tensor.
