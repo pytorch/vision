@@ -165,7 +165,7 @@ def five_crop(img, size):
     # type: (Tensor, BroadcastingList2[int]) -> List[Tensor]
     """Crop the given Image Tensor into four corners and the central crop.
     .. Note::
-        This transform returns a tuple of Tensors and there may be a
+        This transform returns a List of Tensors and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
 
     Args:
@@ -174,7 +174,7 @@ def five_crop(img, size):
            made.
 
     Returns:
-       tuple: tuple (tl, tr, bl, br, center)
+       List: List (tl, tr, bl, br, center)
                 Corresponding top left, top right, bottom left, bottom right and center crop.
     """
     if not _is_tensor_a_torch_image(img):
@@ -202,7 +202,7 @@ def ten_crop(img, size, vertical_flip=False):
     """Crop the given Image Tensor into four corners and the central crop plus the
         flipped version of these (horizontal flipping is used by default).
     .. Note::
-        This transform returns a tuple of images and there may be a
+        This transform returns a List of images and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
 
     Args:
@@ -212,7 +212,7 @@ def ten_crop(img, size, vertical_flip=False):
        vertical_flip (bool): Use vertical flipping instead of horizontal
 
     Returns:
-       tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip)
+       List: List (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip)
                 Corresponding top left, top right, bottom left, bottom right and center crop
                 and same for the flipped image's tensor.
     """
