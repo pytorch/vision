@@ -35,7 +35,7 @@ def _onnx_merge_levels(levels, unmerged_results):
 
 # TODO: (eellison) T54974082 https://github.com/pytorch/pytorch/issues/26744/pytorch/issues/26744
 def initLevelMapper(k_min, k_max, canonical_scale=224, canonical_level=4, eps=1e-6):
-    # type: (int, int, int, int, float)
+    # type: (int, int, int, int, float) -> LevelMapper
     return LevelMapper(k_min, k_max, canonical_scale, canonical_level, eps)
 
 
@@ -53,7 +53,7 @@ class LevelMapper(object):
     """
 
     def __init__(self, k_min, k_max, canonical_scale=224, canonical_level=4, eps=1e-6):
-        # type: (int, int, int, int, float)
+        # type: (int, int, int, int, float) -> None
         self.k_min = k_min
         self.k_max = k_max
         self.s0 = canonical_scale
@@ -61,7 +61,7 @@ class LevelMapper(object):
         self.eps = eps
 
     def __call__(self, boxlists):
-        # type: (List[Tensor])
+        # type: (List[Tensor]) -> Tensor
         """
         Arguments:
             boxlists (list[BoxList])
@@ -120,7 +120,7 @@ class MultiScaleRoIAlign(nn.Module):
         self.map_levels = None
 
     def convert_to_roi_format(self, boxes):
-        # type: (List[Tensor])
+        # type: (List[Tensor]) -> Tensor
         concat_boxes = torch.cat(boxes, dim=0)
         device, dtype = concat_boxes.device, concat_boxes.dtype
         ids = torch.cat(
@@ -134,7 +134,7 @@ class MultiScaleRoIAlign(nn.Module):
         return rois
 
     def infer_scale(self, feature, original_size):
-        # type: (Tensor, List[int])
+        # type: (Tensor, List[int]) -> float
         # assumption: the scale is of the form 2 ** (-k), with k integer
         size = feature.shape[-2:]
         possible_scales = torch.jit.annotate(List[float], [])
@@ -146,7 +146,7 @@ class MultiScaleRoIAlign(nn.Module):
         return possible_scales[0]
 
     def setup_scales(self, features, image_shapes):
-        # type: (List[Tensor], List[Tuple[int, int]])
+        # type: (List[Tensor], List[Tuple[int, int]]) -> None
         assert len(image_shapes) != 0
         max_x = 0
         max_y = 0
@@ -164,7 +164,7 @@ class MultiScaleRoIAlign(nn.Module):
         self.map_levels = initLevelMapper(int(lvl_min), int(lvl_max))
 
     def forward(self, x, boxes, image_shapes):
-        # type: (Dict[str, Tensor], List[Tensor], List[Tuple[int, int]])
+        # type: (Dict[str, Tensor], List[Tensor], List[Tuple[int, int]]) -> Tensor
         """
         Arguments:
             x (OrderedDict[Tensor]): feature maps for each level. They are assumed to have

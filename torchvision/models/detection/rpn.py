@@ -77,7 +77,7 @@ class AnchorGenerator(nn.Module):
     # For every (aspect_ratios, scales) combination, output a zero-centered anchor with those values.
     # (scales, aspect_ratios) are usually an element of zip(self.scales, self.aspect_ratios)
     def generate_anchors(self, scales, aspect_ratios, dtype=torch.float32, device="cpu"):
-        # type: (List[int], List[float], int, Device)  # noqa: F821
+        # type: (List[int], List[float], int, Device) -> Tensor  # noqa: F821
         scales = torch.as_tensor(scales, dtype=dtype, device=device)
         aspect_ratios = torch.as_tensor(aspect_ratios, dtype=dtype, device=device)
         h_ratios = torch.sqrt(aspect_ratios)
@@ -90,7 +90,7 @@ class AnchorGenerator(nn.Module):
         return base_anchors.round()
 
     def set_cell_anchors(self, dtype, device):
-        # type: (int, Device) -> None    # noqa: F821
+        # type: (int, Device) -> None  # noqa: F821
         if self.cell_anchors is not None:
             cell_anchors = self.cell_anchors
             assert cell_anchors is not None
@@ -116,7 +116,7 @@ class AnchorGenerator(nn.Module):
     # For every combination of (a, (g, s), i) in (self.cell_anchors, zip(grid_sizes, strides), 0:2),
     # output g[i] anchors that are s[i] distance apart in direction i, with the same dimensions as a.
     def grid_anchors(self, grid_sizes, strides):
-        # type: (List[List[int]], List[List[int]])
+        # type: (List[List[int]], List[List[int]]) -> List[Tensor]
         anchors = []
         cell_anchors = self.cell_anchors
         assert cell_anchors is not None
@@ -153,7 +153,7 @@ class AnchorGenerator(nn.Module):
         return anchors
 
     def cached_grid_anchors(self, grid_sizes, strides):
-        # type: (List[List[int]], List[List[int]])
+        # type: (List[List[int]], List[List[int]]) -> List[Tensor]
         key = str(grid_sizes + strides)
         if key in self._cache:
             return self._cache[key]
@@ -162,7 +162,7 @@ class AnchorGenerator(nn.Module):
         return anchors
 
     def forward(self, image_list, feature_maps):
-        # type: (ImageList, List[Tensor])
+        # type: (ImageList, List[Tensor]) -> List[List[Tensor]]
         grid_sizes = list([feature_map.shape[-2:] for feature_map in feature_maps])
         image_size = image_list.tensors.shape[-2:]
         strides = [[int(image_size[0] / g[0]), int(image_size[1] / g[1])] for g in grid_sizes]
@@ -206,7 +206,7 @@ class RPNHead(nn.Module):
             torch.nn.init.constant_(l.bias, 0)
 
     def forward(self, x):
-        # type: (List[Tensor])
+        # type: (List[Tensor]) -> (List[Tensor], List[Tensor])
         logits = []
         bbox_reg = []
         for feature in x:
@@ -217,7 +217,7 @@ class RPNHead(nn.Module):
 
 
 def permute_and_flatten(layer, N, A, C, H, W):
-    # type: (Tensor, int, int, int, int, int)
+    # type: (Tensor, int, int, int, int, int) -> Tensor
     layer = layer.view(N, -1, C, H, W)
     layer = layer.permute(0, 3, 4, 1, 2)
     layer = layer.reshape(N, -1, C)
@@ -225,7 +225,7 @@ def permute_and_flatten(layer, N, A, C, H, W):
 
 
 def concat_box_prediction_layers(box_cls, box_regression):
-    # type: (List[Tensor], List[Tensor])
+    # type: (List[Tensor], List[Tensor]) -> (Tensor, Tensor)
     box_cls_flattened = []
     box_regression_flattened = []
     # for each feature level, permute the outputs to make them be in the
@@ -331,7 +331,7 @@ class RegionProposalNetwork(torch.nn.Module):
         return self._post_nms_top_n['testing']
 
     def assign_targets_to_anchors(self, anchors, targets):
-        # type: (List[Tensor], List[Dict[str, Tensor]])
+        # type: (List[Tensor], List[Dict[str, Tensor]]) -> (List[Tensor], List[Tensor])
         labels = []
         matched_gt_boxes = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
@@ -367,7 +367,7 @@ class RegionProposalNetwork(torch.nn.Module):
         return labels, matched_gt_boxes
 
     def _get_top_n_idx(self, objectness, num_anchors_per_level):
-        # type: (Tensor, List[int])
+        # type: (Tensor, List[int]) -> Tensor
         r = []
         offset = 0
         for ob in objectness.split(num_anchors_per_level, 1):
@@ -382,7 +382,7 @@ class RegionProposalNetwork(torch.nn.Module):
         return torch.cat(r, dim=1)
 
     def filter_proposals(self, proposals, objectness, image_shapes, num_anchors_per_level):
-        # type: (Tensor, Tensor, List[Tuple[int, int]], List[int])
+        # type: (Tensor, Tensor, List[Tuple[int, int]], List[int]) -> (List[Tensor], List[Tensor])
         num_images = proposals.shape[0]
         device = proposals.device
         # do not backprop throught objectness
@@ -422,7 +422,7 @@ class RegionProposalNetwork(torch.nn.Module):
         return final_boxes, final_scores
 
     def compute_loss(self, objectness, pred_bbox_deltas, labels, regression_targets):
-        # type: (Tensor, Tensor, List[Tensor], List[Tensor])
+        # type: (Tensor, Tensor, List[Tensor], List[Tensor]) -> (Tensor, Tensor)
         """
         Arguments:
             objectness (Tensor)
@@ -458,8 +458,12 @@ class RegionProposalNetwork(torch.nn.Module):
 
         return objectness_loss, box_loss
 
-    def forward(self, images, features, targets=None):
-        # type: (ImageList, Dict[str, Tensor], Optional[List[Dict[str, Tensor]]])
+    def forward(self,
+                images,       # type: ImageList
+                features,     # type: Dict[str, Tensor]
+                targets=None  # type: Optional[List[Dict[str, Tensor]]]
+                ):
+        # type: (...) -> (List[Tensor], Dict[str, Tensor])
         """
         Arguments:
             images (ImageList): images for which we want to compute the predictions
