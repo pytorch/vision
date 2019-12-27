@@ -30,4 +30,6 @@ RUN conda create -y --name python3.5 python=3.5
 RUN conda create -y --name python3.6 python=3.6
 RUN conda create -y --name python3.7 python=3.7
 RUN echo "source /usr/local/etc/profile.d/conda.sh" >> ~/.bashrc
+SHELL [ "/bin/bash", "-c" ]
+RUN source /usr/local/etc/profile.d/conda.sh && conda activate python2.7 && conda install -y future
 CMD [ "/bin/bash"]
