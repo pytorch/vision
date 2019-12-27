@@ -11,6 +11,7 @@ if(WITH_CUDA)
 endif()
 
 find_package(PNG REQUIRED)
+add_library(LibJPEGTurbo SHARED IMPORTED)
 find_package(Torch REQUIRED)
 find_package(pybind11 REQUIRED)
 
@@ -27,6 +28,7 @@ file(GLOB IMAGE_SOURCES torchvision/csrc/cpu/image/*.h torchvision/csrc/cpu/imag
 
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${IMAGE_SOURCES})
 target_link_libraries(${PROJECT_NAME} PUBLIC "${PNG_LIBRARY}")
+target_link_libraries(${PROJECT_NAME} PUBLIC "${LibJPEGTurbo}")
 target_link_libraries(${PROJECT_NAME} PUBLIC "${TORCH_LIBRARIES}")
 
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES})

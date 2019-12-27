@@ -52,7 +52,7 @@ torch::Tensor decodePNG(const torch::Tensor& data) {
       nullptr,
       nullptr,
       nullptr);
-
+  
   if (retval != 1) {
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
     TORCH_CHECK(retval == 1, "Could read image metadata from content.")

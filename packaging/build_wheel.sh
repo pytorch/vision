@@ -7,7 +7,7 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 export BUILD_TYPE=wheel
 setup_env 0.6.0
 setup_wheel_python
-yum install -y libpng libpng-devel
+yum install -y libpng libpng-devel turbojpeg turbojpeg-devel
 pip_install numpy pyyaml future ninja
 setup_pip_pytorch_version
 python setup.py clean

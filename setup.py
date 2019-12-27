@@ -143,7 +143,7 @@ def get_extensions():
         extension(
             'torchvision._C',
             sources,
-            libraries=['png'],
+            libraries=['png', 'turbojpeg'],
             include_dirs=include_dirs,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
