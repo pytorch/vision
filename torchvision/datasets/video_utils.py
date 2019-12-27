@@ -43,6 +43,21 @@ def unfold(tensor, size, step, dilation=1):
     return torch.as_strided(tensor, new_size, new_stride)
 
 
+class _DummyDataset(object):
+    """
+    Dummy dataset used for DataLoader in VideoClips.
+    Defined at top level so it can be pickled when forking.
+    """
+    def __init__(self, x):
+        self.x = x
+
+    def __len__(self):
+        return len(self.x)
+
+    def __getitem__(self, idx):
+        return read_video_timestamps(self.x[idx])
+
+
 class VideoClips(object):
     """
     Given a list of video files, computes all consecutive subvideos of size
@@ -89,28 +104,21 @@ class VideoClips(object):
             self._init_from_metadata(_precomputed_metadata)
         self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate)
 
+    def _collate_fn(self, x):
+        return x
+
     def _compute_frame_pts(self):
         self.video_pts = []
         self.video_fps = []
 
         # strategy: use a DataLoader to parallelize read_video_timestamps
         # so need to create a dummy dataset first
-        class DS(object):
-            def __init__(self, x):
-                self.x = x
-
-            def __len__(self):
-                return len(self.x)
-
-            def __getitem__(self, idx):
-                return read_video_timestamps(self.x[idx])
-
         import torch.utils.data
         dl = torch.utils.data.DataLoader(
-            DS(self.video_paths),
+            _DummyDataset(self.video_paths),
             batch_size=16,
             num_workers=self.num_workers,
-            collate_fn=lambda x: x)
+            collate_fn=self._collate_fn)
 
         with tqdm(total=len(dl)) as pbar:
             for batch in dl:
