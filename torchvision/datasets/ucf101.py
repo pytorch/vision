@@ -91,7 +91,8 @@ class UCF101(VisionDataset):
             data = [x[0] for x in data]
             selected_files.extend(data)
         selected_files = set(selected_files)
-        indices = [i for i in range(len(video_list)) if video_list[i][len(self.root) + 1:] in selected_files]
+        #Remove root directory from selected_files, if the resulting video is in selected_files, add its index
+        indices = [i for i in range(len(video_list)) if video_list[i][len(self.root) + 0:] in selected_files]
         return indices
 
     def __len__(self):
