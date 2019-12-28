@@ -1,5 +1,6 @@
 import glob
 import os
+from pathlib import Path
 
 from .utils import list_dir
 from .folder import make_dataset
@@ -91,8 +92,11 @@ class UCF101(VisionDataset):
             data = [x[0] for x in data]
             selected_files.extend(data)
         selected_files = set(selected_files)
-        #Remove root directory from selected_files, if the resulting video is in selected_files, add its index
-        indices = [i for i in range(len(video_list)) if video_list[i][len(self.root) + 0:] in selected_files]
+        indices = []
+        for i in range(len(video_list)):
+            path = Path(video_list[i])
+            if str(path.relative_to(path.parent.parent)) in selected_files:
+                indices.append(i)
         return indices
 
     def __len__(self):
