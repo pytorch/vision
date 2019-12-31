@@ -302,7 +302,7 @@ class VideoResNet(nn.Module):
             # The model is now identical to v1, and must be saved as such.
             self._version = 1
             warnings.warn(
-                "This is an updated vesrion of the R(2+1D) model that was "
+                "This is an updated version of the R(2+1D) model that was "
                 "updated following discussion in #1265. The performance "
                 "deviations are minimal, but this might cause some BW compatibility "
                 "issues, depending on the models.", UserWarning)
