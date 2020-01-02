@@ -15,7 +15,7 @@ __all__ = [
 quant_model_urls = {
     'shufflenetv2_x0.5_fbgemm': None,
     'shufflenetv2_x1.0_fbgemm':
-        'https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-751f210b.pth',
+        'https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-db332c57.pth',
     'shufflenetv2_x1.5_fbgemm': None,
     'shufflenetv2_x2.0_fbgemm': None,
 }
