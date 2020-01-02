@@ -499,6 +499,63 @@ class DeformConvTester(OpTester, unittest.TestCase):
         gradcheck(lambda z, off, wei, bi: script_func(z, off, wei, bi, stride, padding, dilation),
                   (x, offset, weight, bias), nondet_tol=1e-5)
 
+class PeaksMask2D(unittest.TestCase):
+    def test_constant_value(self):
+        heatmap = torch.ones((1, 19, 72, 144))
+
+        peak_mask = ops.peaksmask2D(heatmap, threshold=0.5)
+
+        expt_peak_mask = torch.zeros_like(heatmap, dtype=torch.bool)
+        assert (peak_mask == expt_peak_mask).all()
+
+    def test_constant_high_threshold(self):
+        heatmap = torch.ones((1, 19, 72, 144))
+
+        peak_mask = ops.peaksmask2D(heatmap, threshold=1.1)
+
+        expt_peak_mask = torch.zeros_like(heatmap, dtype=torch.bool)
+        assert (peak_mask == expt_peak_mask).all()
+
+    def test_single_peak(self):
+        heatmap = torch.ones((1, 19, 72, 144))
+        heatmap[0, 5, 10, 12] = 1.2
+
+        peak_mask = ops.peaksmask2D(heatmap, threshold=0.5)
+
+        expt_peak_mask = torch.zeros_like(heatmap, dtype=torch.bool)
+        expt_peak_mask[0, 5, 10, 12] = True
+        assert (peak_mask == expt_peak_mask).all()
+
+    def test_single_peak_high_threshold(self):
+        heatmap = torch.ones((1, 19, 72, 144))
+        heatmap[0, 5, 10, 12] = 1.2
+
+        peak_mask = ops.peaksmask2D(heatmap, threshold=1.3)
+
+        expt_peak_mask = torch.zeros_like(heatmap, dtype=torch.bool)
+        assert (peak_mask == expt_peak_mask).all()
+
+    def test_flat_peak(self):
+        heatmap = torch.ones((1, 19, 72, 144))
+        heatmap[0, 5, 10, 12] = 1.2
+        heatmap[0, 5, 11, 12] = 1.2
+
+        peak_mask = ops.peaksmask2D(heatmap, threshold=0.5)
+
+        expt_peak_mask = torch.zeros_like(heatmap, dtype=torch.bool)
+        expt_peak_mask[0, 5, 10, 12] = True
+        assert (peak_mask == expt_peak_mask).all()
+
+    def test_flat_peak_high_threshold(self):
+        heatmap = torch.ones((1, 19, 72, 144))
+        heatmap[0, 5, 10, 12] = 1.2
+        heatmap[0, 5, 11, 12] = 1.2
+
+        peak_mask = ops.peaksmask2D(heatmap, threshold=1.3)
+
+        expt_peak_mask = torch.zeros_like(heatmap, dtype=torch.bool)
+        assert (peak_mask == expt_peak_mask).all()
+
 
 if __name__ == '__main__':
     unittest.main()
