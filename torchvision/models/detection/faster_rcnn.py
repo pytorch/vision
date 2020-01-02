@@ -319,7 +319,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
 
         >>> model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
         >>> # For training
-        >>> images, boxes, labels = torch.rand(4,3,600,1200), torch.rand(4,11,4), torch.rand(4,11)
+        >>> images, boxes, labels = torch.rand(4, 3, 600, 1200), torch.rand(4, 11, 4), torch.rand(4, 11)
         >>> images = list(image for image in images)
         >>> targets = []
         >>> for i in range(len(images)):
