@@ -2,8 +2,10 @@ import glob
 import os
 from pathlib import Path
 
-from .utils import list_dir
+import torch
+
 from .folder import make_dataset
+from .utils import list_dir
 from .video_utils import VideoClips
 from .vision import VisionDataset
 
@@ -98,7 +100,6 @@ class UCF101(VisionDataset):
             if str(path.relative_to(path.parent.parent)) in selected_files:
                 indices.append(i)
         return indices
-
     def __len__(self):
         return self.video_clips.num_clips()
 
@@ -107,6 +108,10 @@ class UCF101(VisionDataset):
         label = self.samples[self.indices[video_idx]][1]
 
         if self.transform is not None:
-            video = self.transform(video)
+            transformed_video = []
+            for counter, image in enumerate(video):
+                image = self.transform(image)
+                transformed_video.append(image)
+            video = torch.stack(transformed_video)
 
         return video, audio, label

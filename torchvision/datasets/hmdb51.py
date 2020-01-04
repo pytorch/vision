@@ -1,8 +1,11 @@
 import glob
 import os
+from pathlib import Path
 
-from .utils import list_dir
+import torch
+
 from .folder import make_dataset
+from .utils import list_dir
 from .video_utils import VideoClips
 from .vision import VisionDataset
 
@@ -99,7 +102,11 @@ class HMDB51(VisionDataset):
                 data = [x[0] for x in data if int(x[1]) == target_tag]
                 selected_files.extend(data)
         selected_files = set(selected_files)
-        indices = [i for i in range(len(video_list)) if os.path.basename(video_list[i]) in selected_files]
+        indices = []
+        for i in range(len(video_list)):
+            path = Path(video_list[i])
+            if str(path.relative_to(path.parent.parent)) in selected_files:
+                indices.append(i)
         return indices
 
     def __len__(self):
@@ -110,6 +117,10 @@ class HMDB51(VisionDataset):
         label = self.samples[self.indices[video_idx]][1]
 
         if self.transform is not None:
-            video = self.transform(video)
+            transformed_video = []
+            for counter, image in enumerate(video):
+                image = self.transform(image)
+                transformed_video.append(image)
+            video = torch.stack(transformed_video)
 
         return video, audio, label
