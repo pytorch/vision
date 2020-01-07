@@ -957,7 +957,7 @@ class RandomRotation(object):
             Origin is the upper left corner.
             Default is the center of the image.
         fill (3-tuple or int): RGB pixel fill value for area outside the rotated image.
-            If int, it is used for all channels respectively.
+                    If int, it is used for all channels respectively.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -999,7 +999,7 @@ class RandomRotation(object):
         """
 
         angle = self.get_params(self.degrees)
-
+        
         return F.rotate(img, angle, self.resample, self.expand, self.center, self.fill)
 
     def __repr__(self):
