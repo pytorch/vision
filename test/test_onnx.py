@@ -74,6 +74,19 @@ class ONNXExporterTester(unittest.TestCase):
                 else:
                     raise
 
+    def test_new_empty_tensor(self):
+        class TraceModel(torch.nn.Module):
+            def __init__(self):
+                super(TraceModel, self).__init__()
+                self.conv2 = ops.misc.ConvTranspose2d(16, 33, (3, 5), stride=(2, 1))
+
+            def forward(self, input2):
+                return self.conv2(input2)
+
+
+        input = torch.empty(0)
+        self.run_model(TraceModel(), [(input, )])
+
     def test_nms(self):
         boxes = torch.rand(5, 4)
         boxes[:, 2:] += torch.rand(5, 2)
