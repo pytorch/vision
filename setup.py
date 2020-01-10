@@ -12,7 +12,8 @@ import glob
 import shutil
 
 import torch
-from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
+from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME, ROCM_HOME
+from torch.utils.hipify import hipify_python
 
 
 def read(*names, **kwargs):
@@ -83,7 +84,24 @@ def get_extensions():
 
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
     source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
-    source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
+
+    is_rocm_pytorch = os.path.exists(ROCM_HOME)
+
+    if is_rocm_pytorch:
+        hipify_python.hipify(
+            project_directory=this_dir,
+            output_directory=this_dir,
+            includes="torchvision/csrc/cuda/*",
+            show_detailed=True,
+            is_pytorch_extension=True,
+            )
+        source_cuda = glob.glob(os.path.join(extensions_dir, 'hip', '*.hip'))
+        ## Copy over additional files
+        shutil.copy("torchvision/csrc/cuda/cuda_helpers.h", "torchvision/csrc/hip/cuda_helpers.h")
+        shutil.copy("torchvision/csrc/cuda/vision_cuda.h", "torchvision/csrc/hip/vision_cuda.h")
+
+    else:
+        source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
 
     sources = main_file + source_cpu
     extension = CppExtension
@@ -106,12 +124,15 @@ def get_extensions():
     if (torch.cuda.is_available() and CUDA_HOME is not None) or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
         sources += source_cuda
-        define_macros += [('WITH_CUDA', None)]
-        nvcc_flags = os.getenv('NVCC_FLAGS', '')
-        if nvcc_flags == '':
-            nvcc_flags = []
+        if not is_rocm_pytorch:
+            define_macros += [('WITH_CUDA', None)]
+            nvcc_flags = os.getenv('NVCC_FLAGS', '')
+            if nvcc_flags == '':
+                nvcc_flags = []
+            else:
+                nvcc_flags = nvcc_flags.split(' ')
         else:
-            nvcc_flags = nvcc_flags.split(' ')
+            nvcc_flags = []
         extra_compile_args = {
             'cxx': ['-O0'],
             'nvcc': nvcc_flags,
