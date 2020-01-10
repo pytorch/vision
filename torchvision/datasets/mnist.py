@@ -248,7 +248,7 @@ class EMNIST(MNIST):
     'byclass': list(string.digits + string.ascii_letters),
     'bymerge': sorted(list(_all_classes - _merge_similar_classes)),
     'balanced': sorted(list(_all_classes - _merge_similar_classes)),
-    'letters': list(string.ascii_letters),
+    'letters': list(string.ascii_lowercase),
     'digits': list(string.digits),
     'mnist': list(string.digits),
     }
