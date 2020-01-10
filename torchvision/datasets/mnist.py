@@ -241,16 +241,15 @@ class EMNIST(MNIST):
     md5 = "58c8d27c78d21e728a6bc7b3cc06412e"
     splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
     # Merged Classes assumes Same structure for both uppercase and lowercase version
-    _merged_classes=set(['C', 'I', 'J', 'K', 'L', 'M', 'O', 'P', 'S', 'U', 'V', 'W', 'X', 'Y', 'Z']) 
-    _all_classes=set(list(string.digits + string.ascii_letters))
-    
+    _merged_classes = set(['C', 'I', 'J', 'K', 'L', 'M', 'O', 'P', 'S', 'U', 'V', 'W', 'X', 'Y', 'Z'])
+    _all_classes = set(list(string.digits + string.ascii_letters))
     classes_split_dict = {
-    'byclass': list(_all_classes),
-    'bymerge': sorted(list(_all_classes - _merged_classes)),
-    'balanced': sorted(list(_all_classes - _merged_classes)),
-    'letters': list(string.ascii_lowercase),
-    'digits': list(string.digits),
-    'mnist': list(string.digits),
+        'byclass': list(_all_classes),
+        'bymerge': sorted(list(_all_classes - _merged_classes)),
+        'balanced': sorted(list(_all_classes - _merged_classes)),
+        'letters': list(string.ascii_lowercase),
+        'digits': list(string.digits),
+        'mnist': list(string.digits),
     }
 
     def __init__(self, root, split, **kwargs):
@@ -258,8 +257,7 @@ class EMNIST(MNIST):
         self.training_file = self._training_file(split)
         self.test_file = self._test_file(split)
         super(EMNIST, self).__init__(root, **kwargs)
-        self.classes=self.classes_split_dict[self.split]
-
+        self.classes = self.classes_split_dict[self.split]
 
     @staticmethod
     def _training_file(split):
