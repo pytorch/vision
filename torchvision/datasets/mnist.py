@@ -252,14 +252,14 @@ class EMNIST(MNIST):
     'digits': list(string.digits),
     'mnist': list(string.digits),
     }
-    
-    classes=classes_split_dict[self.split]
-    
+
     def __init__(self, root, split, **kwargs):
         self.split = verify_str_arg(split, "split", self.splits)
         self.training_file = self._training_file(split)
         self.test_file = self._test_file(split)
         super(EMNIST, self).__init__(root, **kwargs)
+        self.classes=self.classes_split_dict[self.split]
+
 
     @staticmethod
     def _training_file(split):
