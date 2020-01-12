@@ -137,7 +137,7 @@ def get_extensions():
         include_dir = os.path.join(ffmpeg_root, 'include')
         ffmpeg_include_dir = include_dir
         include_subdir = os.path.join(include_dir, 'ffmpeg')
-        if os.path.exists(include_subdir and os.path.isdir(include_subdir)):
+        if os.path.exists(include_subdir) and os.path.isdir(include_subdir):
             ffmpeg_include_dir = include_subdir
         # TorchVision video reader
         video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
