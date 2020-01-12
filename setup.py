@@ -117,11 +117,13 @@ def get_extensions():
             'nvcc': nvcc_flags,
         }
 
+    libraries = []
     if sys.platform == 'win32':
         define_macros += [('torchvision_EXPORTS', None)]
 
         extra_compile_args.setdefault('cxx', [])
         extra_compile_args['cxx'].append('/MP')
+        libraries.append('_C')
 
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
@@ -145,6 +147,7 @@ def get_extensions():
         extension(
             'torchvision._C',
             sources,
+            libraries=libraries,
             include_dirs=include_dirs,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
