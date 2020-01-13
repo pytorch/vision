@@ -76,6 +76,7 @@ pillow_ver = ' >= 4.1.1'
 pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
+
 def _get_ffmpeg_include():
     """find ffmpeg-dev(-el) include dir"""
     ffmpeg_include_dir = None
@@ -93,6 +94,7 @@ def _get_ffmpeg_include():
                     break
         has_ffmpeg = ffmpeg_include_dir is not None
     return has_ffmpeg, ffmpeg_include_dir
+
 
 def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
