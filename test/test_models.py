@@ -226,8 +226,8 @@ class ModelTester(TestCase):
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
 
-    @unittest.skipIf(torch.cuda.is_available())
-    def test_fasterrcnn_double(self):
+    @unittest.skipIf(not torch.cuda.is_available(), 'needs GPU')
+    def test_fasterrcnn_switch_devices(self):
         model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
         model.cuda()
         model.eval()
