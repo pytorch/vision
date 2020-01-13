@@ -83,8 +83,9 @@ class ONNXExporterTester(unittest.TestCase):
             def forward(self, input2):
                 return self.conv2(input2)
 
-        input = torch.empty(0)
-        self.run_model(Module(), [(input, )])
+        input = torch.rand(0, 16, 10, 10)
+        test_input = torch.rand(0, 16, 20, 20)
+        self.run_model(Module(), [(input, ), (test_input,)])
 
     def test_nms(self):
         boxes = torch.rand(5, 4)
