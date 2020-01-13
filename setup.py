@@ -86,12 +86,12 @@ def check_ffmpeg():
         ffmpeg_bin = os.path.dirname(ffmpeg_exe)
         ffmpeg_root = os.path.dirname(ffmpeg_bin)
         include_dir = os.path.join(ffmpeg_root, 'include')
-        # search for: <libavutil/pixfmt.h>
-        header_file = 'pixfmt.h'
+        # search for libavutil dir
+        libavutil_dir = 'libavutil'
         for root, dirs, files in os.walk(include_dir):
-            for file in files:
-                if file == header_file:
-                    ffmpeg_include_dir = os.path.realpath(os.path.join(root, '..'))
+            for dir in dirs:
+                if dir == libavutil_dir:
+                    ffmpeg_include_dir = root
                     break
         has_ffmpeg = ffmpeg_include_dir is not None
     return has_ffmpeg, ffmpeg_include_dir
