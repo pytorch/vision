@@ -77,7 +77,7 @@ pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
 
-def check_ffmpeg():
+def _check_ffmpeg():
     """find ffmpeg include dir"""
     ffmpeg_include_dir = None
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
@@ -149,7 +149,7 @@ def get_extensions():
 
     include_dirs = [extensions_dir]
 
-    has_ffmpeg, ffmpeg_include_dir = check_ffmpeg()
+    has_ffmpeg, ffmpeg_include_dir = _check_ffmpeg()
     if has_ffmpeg:
         # TorchVision video reader
         video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
