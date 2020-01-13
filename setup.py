@@ -76,6 +76,23 @@ pillow_ver = ' >= 4.1.1'
 pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
+def _get_ffmpeg_include():
+    """find ffmpeg-dev(-el) include dir"""
+    ffmpeg_include_dir = None
+    ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
+    has_ffmpeg = ffmpeg_exe is not None
+    if has_ffmpeg:
+        ffmpeg_bin = os.path.dirname(ffmpeg_exe)
+        ffmpeg_root = os.path.dirname(ffmpeg_bin)
+        include_dir = os.path.join(ffmpeg_root, 'include')
+        header_file = 'pixfmt.h'
+        for root, dirs, files in os.walk(include_dir):
+            for file in files:
+                if file == header_file:
+                    ffmpeg_include_dir = os.path.realpath(os.path.join(root, '..'))
+                    break
+        has_ffmpeg = ffmpeg_include_dir is not None
+    return has_ffmpeg, ffmpeg_include_dir
 
 def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -129,16 +146,8 @@ def get_extensions():
 
     include_dirs = [extensions_dir]
 
-    ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
-    has_ffmpeg = ffmpeg_exe is not None
+    has_ffmpeg, ffmpeg_include_dir = _get_ffmpeg_include()
     if has_ffmpeg:
-        ffmpeg_bin = os.path.dirname(ffmpeg_exe)
-        ffmpeg_root = os.path.dirname(ffmpeg_bin)
-        include_dir = os.path.join(ffmpeg_root, 'include')
-        ffmpeg_include_dir = include_dir
-        include_subdir = os.path.join(include_dir, 'ffmpeg')
-        if os.path.exists(include_subdir) and os.path.isdir(include_subdir):
-            ffmpeg_include_dir = include_subdir
         # TorchVision video reader
         video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
         video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
