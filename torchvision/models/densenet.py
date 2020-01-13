@@ -92,7 +92,6 @@ class _DenseLayer(nn.Module):
 
 class _DenseBlock(nn.ModuleDict):
     _version = 2
-    __constants__ = ['layers']
 
     def __init__(self, num_layers, num_input_features, bn_size, growth_rate, drop_rate, memory_efficient=False):
         super(_DenseBlock, self).__init__()
