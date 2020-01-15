@@ -29,7 +29,7 @@ def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
 
 @torch.jit.unused
 def _onnx_get_grid_image_sizes(feature_maps, image_list_tensors):
-    # type: (List[Tensor], Tensor) -> Tuple(List[Tensor], Tensor)
+    # type: (List[Tensor], Tensor) -> Tuple[List[Tensor], Tensor]
     from torch.onnx import operators
     grid_sizes = list([operators.shape_as_tensor(feature_map)[-2:] for feature_map in feature_maps])
     image_size = operators.shape_as_tensor(image_list_tensors)[-2:]
