@@ -120,7 +120,7 @@ else
     fi
 fi
 
-export PYTORCH_VERION=1.4.0
+export PYTORCH_VERSION=1.4.0
 export CONDA_CHANNEL_FLAGS="-c pytorch"
 
 # if [[ -z "$PYTORCH_VERSION" ]]; then
