@@ -38,11 +38,11 @@ def read_png(path):
         output (Tensor[image_width, image_height, 3])
     """
     if not os.path.isfile(path):
-        raise ValueError("Excepted a valid file path.")
+        raise ValueError("Expected a valid file path.")
 
     size = os.path.getsize(path)
     if size == 0:
-        raise ValueError("Excepted a non empty file.")
+        raise ValueError("Expected a non empty file.")
     data = torch.from_file(path, dtype=torch.uint8, size=size)
     return decode_png(data)
 
@@ -81,10 +81,10 @@ def read_jpeg(path):
         output (Tensor[image_width, image_height, 3])
     """
     if not os.path.isfile(path):
-        raise ValueError("Excepted a valid file path.")
+        raise ValueError("Expected a valid file path.")
 
     size = os.path.getsize(path)
     if size == 0:
-        raise ValueError("Excepted a non empty file.")
+        raise ValueError("Expected a non empty file.")
     data = torch.from_file(path, dtype=torch.uint8, size=size)
     return decode_jpeg(data)
