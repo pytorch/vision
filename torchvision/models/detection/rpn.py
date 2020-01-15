@@ -27,6 +27,56 @@ def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
 
     return num_anchors, pre_nms_top_n
 
+@torch.jit.unused
+def _onnx_get_grid_image_sizes(feature_maps, image_list_tensors):
+    # type: (List[Tensor], Tensor) -> Tuple(List[Tensor], Tensor)
+    from torch.onnx import operators
+    grid_sizes = list([operators.shape_as_tensor(feature_map)[-2:] for feature_map in feature_maps])
+    image_size = operators.shape_as_tensor(image_list_tensors)[-2:]
+    return grid_sizes, image_size
+
+@torch.jit.unused
+def _onnx_clip_boxes_to_image(boxes, size):
+    # type: (Tensor, Tuple[int, int])
+    """
+    Clip boxes so that they lie inside an image of size `size`.
+    Clip's min max are traced as constants. Use torch.min/max to WAR this issue
+
+    Arguments:
+        boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) format
+        size (Tuple[height, width]): size of the image
+
+    Returns:
+        clipped_boxes (Tensor[N, 4])
+    """
+
+    dim = boxes.dim()
+    boxes_x = boxes[..., 0::2]
+    boxes_y = boxes[..., 1::2]
+    height, width = size
+    height = height.to(torch.float32)
+    width  = width.to(torch.float32)
+    
+    boxes_x = torch.max(boxes_x, torch.tensor(0.))
+    boxes_x = torch.min(boxes_x, width)
+    boxes_y = torch.max(boxes_y, torch.tensor(0.))
+    boxes_y = torch.min(boxes_y, height)
+
+    clipped_boxes = torch.stack((boxes_x, boxes_y), dim=dim)
+    return clipped_boxes.reshape(boxes.shape)
+
+@torch.jit.unused
+def _onnx_get_num_anchors_per_level(objectness):
+    # type: (List(Tensor)) -> (List[Tensor])
+    """
+    Number of anchors per level needs to be tensor for onnx exporting.
+    """
+    from torch.onnx.operators import shape_as_tensor
+    num_anchors_per_level_shape_tensors = [shape_as_tensor(o[0]) for o in objectness]
+    # tensor.prod() => ReduceProd. ReduceProd(int64) can not be run by onnxruntime 1.1.0.
+    # so we manually product the elements
+    num_anchors_per_level = [s[0] * s[1] * s[2] for s in num_anchors_per_level_shape_tensors]
+    return num_anchors_per_level
 
 class AnchorGenerator(nn.Module):
     __annotations__ = {
@@ -155,9 +205,13 @@ class AnchorGenerator(nn.Module):
 
     def forward(self, image_list, feature_maps):
         # type: (ImageList, List[Tensor])
-        grid_sizes = list([feature_map.shape[-2:] for feature_map in feature_maps])
-        image_size = image_list.tensors.shape[-2:]
-        strides = [[int(image_size[0] / g[0]), int(image_size[1] / g[1])] for g in grid_sizes]
+        if torchvision._is_tracing():
+            grid_sizes, image_size = _onnx_get_grid_image_sizes(feature_maps, image_list.tensors)
+            strides =  [ image_size / g for g in grid_sizes ]
+        else:
+            grid_sizes = list([feature_map.shape[-2:] for feature_map in feature_maps])
+            image_size = image_list.tensors.shape[-2:]
+            strides = [[int(image_size[0] / g[0]), int(image_size[1] / g[1])] for g in grid_sizes]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
@@ -354,7 +408,18 @@ class RegionProposalNetwork(torch.nn.Module):
         # type: (Tensor, List[int])
         r = []
         offset = 0
-        for ob in objectness.split(num_anchors_per_level, 1):
+        if torchvision._is_tracing():
+            # Split's split_size is traced as constant in onnx exporting
+            # Use Gather to WAR
+            start_list = [torch.tensor(0)]
+            end_list   = [num_anchors_per_level[0].clone()]
+            for cnt in num_anchors_per_level[1:]:
+                start_list.append(end_list[-1].clone())
+                end_list.append(end_list[-1] + cnt)
+            objectness_per_level = [objectness[:,s:e] for s, e in zip(start_list, end_list)]
+        else:
+            objectness_per_level = objectness.split(num_anchors_per_level, 1)
+        for ob in objectness_per_level:
             if torchvision._is_tracing():
                 num_anchors, pre_nms_top_n = _onnx_get_num_anchors_and_pre_nms_top_n(ob, self.pre_nms_top_n())
             else:
@@ -393,7 +458,10 @@ class RegionProposalNetwork(torch.nn.Module):
         final_boxes = []
         final_scores = []
         for boxes, scores, lvl, img_shape in zip(proposals, objectness, levels, image_shapes):
-            boxes = box_ops.clip_boxes_to_image(boxes, img_shape)
+            if torchvision._is_tracing():
+                boxes = _onnx_clip_boxes_to_image(boxes, img_shape)
+            else:
+                boxes = box_ops.clip_boxes_to_image(boxes, img_shape)
             keep = box_ops.remove_small_boxes(boxes, self.min_size)
             boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
             # non-maximum suppression, independently done per level
@@ -466,7 +534,10 @@ class RegionProposalNetwork(torch.nn.Module):
         anchors = self.anchor_generator(images, features)
 
         num_images = len(anchors)
-        num_anchors_per_level = [o[0].numel() for o in objectness]
+        if torchvision._is_tracing():
+            num_anchors_per_level = _onnx_get_num_anchors_per_level(objectness)
+        else:
+            num_anchors_per_level = [o[0].numel() for o in objectness]
         objectness, pred_bbox_deltas = \
             concat_box_prediction_layers(objectness, pred_bbox_deltas)
         # apply pred_bbox_deltas to anchors to obtain the decoded proposals
