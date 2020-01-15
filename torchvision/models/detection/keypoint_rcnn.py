@@ -298,12 +298,17 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
         - scores (``Tensor[N]``): the scores or each prediction
         - keypoints (``FloatTensor[N, K, 3]``): the locations of the predicted keypoints, in ``[x, y, v]`` format.
 
+    Keypoint R-CNN is exportable to ONNX for a batch size of 1 with inputs images of fixed size.
+
     Example::
 
         >>> model = torchvision.models.detection.keypointrcnn_resnet50_fpn(pretrained=True)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
+        >>>
+        >>> # optionally, if you want to export the model to ONNX:
+        >>> torch.onnx.export(model, x, "keypoint_rcnn.onnx", opset_version = 11)
 
     Arguments:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
