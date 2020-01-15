@@ -27,6 +27,7 @@ def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
 
     return num_anchors, pre_nms_top_n
 
+
 @torch.jit.unused
 def _onnx_get_grid_image_sizes(feature_maps, image_list_tensors):
     # type: (List[Tensor], Tensor) -> Tuple[List[Tensor], Tensor]
@@ -34,6 +35,7 @@ def _onnx_get_grid_image_sizes(feature_maps, image_list_tensors):
     grid_sizes = list([operators.shape_as_tensor(feature_map)[-2:] for feature_map in feature_maps])
     image_size = operators.shape_as_tensor(image_list_tensors)[-2:]
     return grid_sizes, image_size
+
 
 @torch.jit.unused
 def _onnx_clip_boxes_to_image(boxes, size):
@@ -55,8 +57,8 @@ def _onnx_clip_boxes_to_image(boxes, size):
     boxes_y = boxes[..., 1::2]
     height, width = size
     height = height.to(torch.float32)
-    width  = width.to(torch.float32)
-    
+    width = width.to(torch.float32)
+
     boxes_x = torch.max(boxes_x, torch.tensor(0.))
     boxes_x = torch.min(boxes_x, width)
     boxes_y = torch.max(boxes_y, torch.tensor(0.))
@@ -64,6 +66,7 @@ def _onnx_clip_boxes_to_image(boxes, size):
 
     clipped_boxes = torch.stack((boxes_x, boxes_y), dim=dim)
     return clipped_boxes.reshape(boxes.shape)
+
 
 @torch.jit.unused
 def _onnx_get_num_anchors_per_level(objectness):
@@ -77,6 +80,7 @@ def _onnx_get_num_anchors_per_level(objectness):
     # so we manually product the elements
     num_anchors_per_level = [s[0] * s[1] * s[2] for s in num_anchors_per_level_shape_tensors]
     return num_anchors_per_level
+
 
 class AnchorGenerator(nn.Module):
     __annotations__ = {
@@ -207,7 +211,7 @@ class AnchorGenerator(nn.Module):
         # type: (ImageList, List[Tensor])
         if torchvision._is_tracing():
             grid_sizes, image_size = _onnx_get_grid_image_sizes(feature_maps, image_list.tensors)
-            strides =  [ image_size / g for g in grid_sizes ]
+            strides = [image_size / g for g in grid_sizes]
         else:
             grid_sizes = list([feature_map.shape[-2:] for feature_map in feature_maps])
             image_size = image_list.tensors.shape[-2:]
@@ -412,11 +416,11 @@ class RegionProposalNetwork(torch.nn.Module):
             # Split's split_size is traced as constant in onnx exporting
             # Use Gather to WAR
             start_list = [torch.tensor(0)]
-            end_list   = [num_anchors_per_level[0].clone()]
+            end_list = [num_anchors_per_level[0].clone()]
             for cnt in num_anchors_per_level[1:]:
                 start_list.append(end_list[-1].clone())
                 end_list.append(end_list[-1] + cnt)
-            objectness_per_level = [objectness[:,s:e] for s, e in zip(start_list, end_list)]
+            objectness_per_level = [objectness[:, s:e] for s, e in zip(start_list, end_list)]
         else:
             objectness_per_level = objectness.split(num_anchors_per_level, 1)
         for ob in objectness_per_level:
