@@ -184,7 +184,7 @@ setup_pip_pytorch_version() {
       export PYTORCH_VERSION="$(pip show torch | grep ^Version: | sed 's/Version:  *//')"
     fi
   else
-    pip_install "torch==$PYTORCH_VERSION$CUDA_SUFFIX" \
+    pip_install "torch==$PYTORCH_VERSION$PYTORCH_VERSION_SUFFIX" \
       -f https://download.pytorch.org/whl/torch_stable.html \
       -f https://download.pytorch.org/whl/nightly/torch_nightly.html
   fi
