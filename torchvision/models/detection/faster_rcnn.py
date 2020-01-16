@@ -315,7 +315,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
         - labels (``Int64Tensor[N]``): the predicted labels for each image
         - scores (``Tensor[N]``): the scores or each prediction
 
-    Faster R-CNN is exportable to ONNX for a batch size of 1 with inputs images of fixed size.
+    Faster R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.
 
     Example::
 

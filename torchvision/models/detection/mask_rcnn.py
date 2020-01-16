@@ -294,7 +294,7 @@ def maskrcnn_resnet50_fpn(pretrained=False, progress=True,
           obtain the final segmentation masks, the soft masks can be thresholded, generally
           with a value of 0.5 (``mask >= 0.5``)
 
-    Mask R-CNN is exportable to ONNX for a batch size of 1 with inputs images of fixed size.
+    Mask R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.
 
     Example::
 

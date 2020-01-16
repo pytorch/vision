@@ -298,7 +298,7 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
         - scores (``Tensor[N]``): the scores or each prediction
         - keypoints (``FloatTensor[N, K, 3]``): the locations of the predicted keypoints, in ``[x, y, v]`` format.
 
-    Keypoint R-CNN is exportable to ONNX for a batch size of 1 with inputs images of fixed size.
+    Keypoint R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.
 
     Example::
 
