@@ -719,15 +719,32 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=0):
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
+    NUM_BANDS = {
+        "1": 1,
+        "L": 1,
+        "RGB": 3,
+        "RGBA": 4,
+    }
+
+    def verify_fill(fill, num_bands):
+        is_scalar = isinstance(fill, (int, float))
+        if (num_bands == 1 and is_scalar) or (num_bands > 1 and num_bands == len(fill)):
+            return fill
+        if num_bands > 1 and is_scalar:
+            return tuple([fill] * num_bands)
+        # TODO: add message
+        raise ValueError
 
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    if isinstance(fill, int):
-        fill = tuple([fill] * 3)
+    fill = verify_fill(fill, NUM_BANDS[img.mode])
 
     return img.rotate(angle, resample, expand, center, fillcolor=fill)
 
+
+# his should be a single integer or floating point value
+# for single-band modes, and a tuple for multi-band modes (one value per band).
 
 def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     # Helper method to compute inverse matrix for affine transformation
