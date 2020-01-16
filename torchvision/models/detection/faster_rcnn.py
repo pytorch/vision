@@ -315,6 +315,8 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
         - labels (``Int64Tensor[N]``): the predicted labels for each image
         - scores (``Tensor[N]``): the scores or each prediction
 
+    Faster R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.
+
     Example::
 
         >>> model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
@@ -333,6 +335,9 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
+        >>>
+        >>> # optionally, if you want to export the model to ONNX:
+        >>> torch.onnx.export(model, x, "faster_rcnn.onnx", opset_version = 11)
 
     Arguments:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
