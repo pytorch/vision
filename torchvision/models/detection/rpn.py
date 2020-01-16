@@ -30,7 +30,7 @@ def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
 
 @torch.jit.unused
 def _onnx_get_grid_image_sizes(feature_maps, image_list_tensors):
-    # type: (List[Tensor], Tensor) -> Tuple[List[Tensor], Tensor]
+    # type: (List[Tensor], Tensor) -> Tuple[List[List[int]], List[int]]
     from torch.onnx import operators
     grid_sizes = list([operators.shape_as_tensor(feature_map)[-2:] for feature_map in feature_maps])
     image_size = operators.shape_as_tensor(image_list_tensors)[-2:]
@@ -70,9 +70,9 @@ def _onnx_clip_boxes_to_image(boxes, size):
 
 @torch.jit.unused
 def _onnx_get_num_anchors_per_level(objectness):
-    # type: (List(Tensor)) -> (List[Tensor])
+    # type: (List(Tensor)) -> Tuple[List[int]]
     """
-    Number of anchors per level needs to be tensor for onnx exporting.
+    num_anchors_per_level needs to be a list of Tensor for onnx exporting.
     """
     from torch.onnx.operators import shape_as_tensor
     num_anchors_per_level_shape_tensors = [shape_as_tensor(o[0]) for o in objectness]
