@@ -29,12 +29,13 @@ def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
 
 
 @torch.jit.unused
-def _onnx_get_grid_image_sizes(feature_maps, image_list_tensors):
-    # type: (List[Tensor], Tensor) -> Tuple[List[List[int]], List[int]]
+def _onnx_get_grid_image_sizes_strides(feature_maps, image_list_tensors):
+    # type: (List[Tensor], Tensor) -> Tuple[List[List[int]], List[int], List[List[int]]]
     from torch.onnx import operators
     grid_sizes = list([operators.shape_as_tensor(feature_map)[-2:] for feature_map in feature_maps])
     image_size = operators.shape_as_tensor(image_list_tensors)[-2:]
-    return grid_sizes, image_size
+    strides = [image_size / g for g in grid_sizes]
+    return grid_sizes, image_size, strides
 
 
 @torch.jit.unused
@@ -210,8 +211,7 @@ class AnchorGenerator(nn.Module):
     def forward(self, image_list, feature_maps):
         # type: (ImageList, List[Tensor])
         if torchvision._is_tracing():
-            grid_sizes, image_size = _onnx_get_grid_image_sizes(feature_maps, image_list.tensors)
-            strides = [image_size / g for g in grid_sizes]
+            grid_sizes, image_size, strides = _onnx_get_grid_image_sizes_strides(feature_maps, image_list.tensors)
         else:
             grid_sizes = list([feature_map.shape[-2:] for feature_map in feature_maps])
             image_size = image_list.tensors.shape[-2:]
