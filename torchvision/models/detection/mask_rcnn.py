@@ -131,14 +131,14 @@ class MaskRCNN(FasterRCNN):
         >>> # be [0]. More generally, the backbone should return an
         >>> # OrderedDict[Tensor], and in featmap_names you can choose which
         >>> # feature maps to use.
-        >>> roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[0],
+        >>> roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=['0'],
         >>>                                                 output_size=7,
         >>>                                                 sampling_ratio=2)
         >>>
-        >>> mask_roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[0],
+        >>> mask_roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=['0'],
         >>>                                                      output_size=14,
         >>>                                                      sampling_ratio=2)
-        >>> # put the pieces together inside a FasterRCNN model
+        >>> # put the pieces together inside a MaskRCNN model
         >>> model = MaskRCNN(backbone,
         >>>                  num_classes=2,
         >>>                  rpn_anchor_generator=anchor_generator,
