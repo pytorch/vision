@@ -113,6 +113,18 @@ if "%USE_SCCACHE%" == "1" (
     )
 )
 
+if "%CUDA_VERSION%" == "cpu" (
+    set _DESIRED_CUDA=cpu
+) else (
+    set _DESIRED_CUDA=cu%CUDA_VERSION%
+)
+
+if not "%CUDA_VERSION%" == "101" (
+    set PYTHON_VERSION=1.4.0+%_DESIRED_CUDA%
+) else (
+    set PYTHON_VERSION=1.4.0
+)
+
 for %%v in (%DESIRED_PYTHON_PREFIX%) do (
     :: Activate Python Environment
     set PYTHON_PREFIX=%%v
