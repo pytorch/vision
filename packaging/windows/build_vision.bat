@@ -120,9 +120,9 @@ if "%CUDA_VERSION%" == "cpu" (
 )
 
 if not "%CUDA_VERSION%" == "101" (
-    set PYTHON_VERSION=1.4.0+%_DESIRED_CUDA%
+    set PYTORCH_VERSION=1.4.0+%_DESIRED_CUDA%
 ) else (
-    set PYTHON_VERSION=1.4.0
+    set PYTORCH_VERSION=1.4.0
 )
 
 for %%v in (%DESIRED_PYTHON_PREFIX%) do (
