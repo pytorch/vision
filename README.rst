@@ -20,7 +20,7 @@ The torchvision package consists of popular datasets, model architectures, and c
 Installation
 ============
 
-TorchVision requires PyTorch 1.4.
+TorchVision requires PyTorch 1.4 or newer.
 
 Anaconda:
 
