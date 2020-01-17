@@ -74,6 +74,7 @@ class ONNXExporterTester(unittest.TestCase):
                 else:
                     raise
 
+    @unittest.skip("Disable test until Split w/ zero sizes is implemented in ORT")
     def test_new_empty_tensor(self):
         class Module(torch.nn.Module):
             def __init__(self):
