@@ -28,6 +28,19 @@ def _is_pil_image(img):
         return isinstance(img, Image.Image)
 
 
+def _pil_num_bands(img):
+    # for a list of all available modes see
+    # https://pillow.readthedocs.io/en/latest/handbook/concepts.html#modes
+    if img.mode in ("1", "L", "P", "I", "F", "I;16", "I;16L", "I;16B", "I;16N"):
+        return 1
+    elif img.mode in ("LA", "PA", "La"):
+        return 2
+    elif img.mode in ("RGB", "YCbCr", "LAB", "HSV", "BGR;15", "BGR;16", "BGR;24", "BGR;32"):
+        return 3
+    else:  # img.mode in ("RGBA", "CMYK", "RGBX", "RGBa")
+        return 4
+
+
 def _is_tensor_image(img):
     return torch.is_tensor(img) and img.ndimension() == 3
 
@@ -85,14 +98,8 @@ def to_tensor(pic):
         img = 255 * torch.from_numpy(np.array(pic, np.uint8, copy=False))
     else:
         img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
-    # PIL image mode: L, LA, P, I, F, RGB, YCbCr, RGBA, CMYK
-    if pic.mode == 'YCbCr':
-        nchannel = 3
-    elif pic.mode == 'I;16':
-        nchannel = 1
-    else:
-        nchannel = len(pic.mode)
-    img = img.view(pic.size[1], pic.size[0], nchannel)
+
+    img = img.view(pic.size[1], pic.size[0], _pil_num_bands(pic))
     # put it from HWC to CHW format
     # yikes, this transpose takes 80% of the loading time/CPU
     img = img.transpose(0, 1).transpose(0, 2).contiguous()
@@ -719,32 +726,22 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=0):
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
-    NUM_BANDS = {
-        "1": 1,
-        "L": 1,
-        "RGB": 3,
-        "RGBA": 4,
-    }
-
     def verify_fill(fill, num_bands):
-        is_scalar = isinstance(fill, (int, float))
-        if (num_bands == 1 and is_scalar) or (num_bands > 1 and num_bands == len(fill)):
-            return fill
-        if num_bands > 1 and is_scalar:
+        if isinstance(fill, (int, float)):
             return tuple([fill] * num_bands)
-        # TODO: add message
-        raise ValueError
+        else:
+            if len(fill) == num_bands:
+                return fill
+            # TODO: add message
+            raise ValueError
 
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    fill = verify_fill(fill, NUM_BANDS[img.mode])
+    fill = verify_fill(fill, _pil_num_bands(img))
 
     return img.rotate(angle, resample, expand, center, fillcolor=fill)
 
-
-# his should be a single integer or floating point value
-# for single-band modes, and a tuple for multi-band modes (one value per band).
 
 def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     # Helper method to compute inverse matrix for affine transformation
