@@ -720,8 +720,9 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=0):
         center (2-tuple, optional): Optional center of rotation.
             Origin is the upper left corner.
             Default is the center of the image.
-        fill (3-tuple or int): RGB pixel fill value for area outside the rotated image.
-            If int, it is used for all channels respectively.
+        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+            image. If int or float, the value is used for all bands respectively.
+            Defaults to 0.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -732,8 +733,10 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=0):
         else:
             if len(fill) == num_bands:
                 return fill
-            # TODO: add message
-            raise ValueError
+
+            msg = ("The number of elements in 'fill' does not match the number of "
+                   "bands of the image ({} != {})")
+            raise ValueError(msg.format(len(fill), num_bands))
 
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
