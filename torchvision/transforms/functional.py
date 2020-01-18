@@ -703,7 +703,7 @@ def adjust_gamma(img, gamma, gain=1):
     return img
 
 
-def rotate(img, angle, resample=False, expand=False, center=None, fill=0):
+def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
     """Rotate the image by angle.
 
 
@@ -722,12 +722,20 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=0):
             Default is the center of the image.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
-            Defaults to 0.
+            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
     def verify_fill(fill, num_bands):
+        if PILLOW_VERSION < "5.2.0":
+            msg = ("The option to fill background area of the rotated image, "
+                   "requires pillow>=5.2.0")
+            raise RuntimeError(msg)
+
+        if fill is None:
+            fill = 0
+
         if isinstance(fill, (int, float)):
             return tuple([fill] * num_bands)
         else:
