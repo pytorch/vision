@@ -28,19 +28,6 @@ def _is_pil_image(img):
         return isinstance(img, Image.Image)
 
 
-def _pil_num_bands(img):
-    # for a list of all available modes see
-    # https://pillow.readthedocs.io/en/latest/handbook/concepts.html#modes
-    if img.mode in ("1", "L", "P", "I", "F", "I;16", "I;16L", "I;16B", "I;16N"):
-        return 1
-    elif img.mode in ("LA", "PA", "La"):
-        return 2
-    elif img.mode in ("RGB", "YCbCr", "LAB", "HSV", "BGR;15", "BGR;16", "BGR;24", "BGR;32"):
-        return 3
-    else:  # img.mode in ("RGBA", "CMYK", "RGBX", "RGBa")
-        return 4
-
-
 def _is_tensor_image(img):
     return torch.is_tensor(img) and img.ndimension() == 3
 
@@ -99,7 +86,7 @@ def to_tensor(pic):
     else:
         img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
 
-    img = img.view(pic.size[1], pic.size[0], _pil_num_bands(pic))
+    img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
     # put it from HWC to CHW format
     # yikes, this transpose takes 80% of the loading time/CPU
     img = img.transpose(0, 1).transpose(0, 2).contiguous()
@@ -749,7 +736,7 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    fill = verify_fill(fill, _pil_num_bands(img))
+    fill = verify_fill(fill, len(img.getbands()))
 
     return img.rotate(angle, resample, expand, center, fillcolor=fill)
 
