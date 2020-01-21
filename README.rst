@@ -70,6 +70,7 @@ Installation From source:
 
     mkdir build
     cd build
+    # Add -DWITH_CUDA=on support for the CUDA if needed
     cmake ..
     make 
     make install
