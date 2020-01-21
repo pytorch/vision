@@ -177,7 +177,7 @@ def _align_audio_frames(aframes, audio_frames, ref_start, ref_end):
     return aframes[:, s_idx:e_idx]
 
 
-def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
+def read_video(filename, start_pts=0, end_pts=None, pts_unit='sec'):
     """
     Reads a video from a file, returning both the video frames as well as
     the audio frames
@@ -272,7 +272,7 @@ def _can_read_timestamps_from_packets(container):
     return False
 
 
-def read_video_timestamps(filename, pts_unit='pts'):
+def read_video_timestamps(filename, pts_unit='sec'):
     """
     List the video frames timestamps.
 

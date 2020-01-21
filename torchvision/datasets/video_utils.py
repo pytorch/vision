@@ -124,7 +124,7 @@ class VideoClips(object):
             for batch in dl:
                 pbar.update(1)
                 clips, fps = list(zip(*batch))
-                clips = [torch.as_tensor(c) for c in clips]
+                clips = [torch.as_tensor(c, dtype=torch.float64) for c in clips]
                 self.video_pts.extend(clips)
                 self.video_fps.extend(fps)
 
