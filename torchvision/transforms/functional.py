@@ -738,7 +738,7 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
                    "bands of the image ({} != {})")
             raise ValueError(msg.format(len(fill), num_bands))
 
-        return {"fillcolor", fill}
+        return {"fillcolor": fill}
 
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
