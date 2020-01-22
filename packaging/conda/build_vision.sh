@@ -157,6 +157,12 @@ for py_ver in "${DESIRED_PYTHON[@]}"; do
     rm -rf "$output_folder"
     mkdir "$output_folder"
 
+    if [[ "$py_ver" == 3.5 ]]; then
+	export CONDA_TYPING_CONSTRAINT="- typing"
+    else
+	export CONDA_TYPING_CONSTRAINT=""
+    fi
+
     export VSTOOLCHAIN_PACKAGE=vs2017
 
     # We need to build the compiler activation scripts first on Windows

@@ -115,6 +115,15 @@ setup_macos() {
   fi
 }
 
+# set variable to determine whether the typing library needs to be built in
+setup_typing() {
+  if [[ "$PYTHON_VERSION" == 3.5 ]]; then
+    export CONDA_TYPING_CONSTRAINT="- typing"
+  else
+    export CONDA_TYPING_CONSTRAINT=""
+  fi
+}
+
 # Top-level entry point for things every package will need to do
 #
 # Usage: setup_env 0.2.0
@@ -122,6 +131,7 @@ setup_env() {
   setup_cuda
   setup_build_version "$1"
   setup_macos
+  setup_typing
 }
 
 # Function to retry functions that sometimes timeout or have flaky failures
