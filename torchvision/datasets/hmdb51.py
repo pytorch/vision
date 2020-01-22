@@ -78,14 +78,17 @@ class HMDB51(VisionDataset):
             _video_min_dimension=_video_min_dimension,
             _audio_samples=_audio_samples,
         )
-        self.video_clips_metadata = video_clips.metadata
+        # we bookkeep the full version of video clips because we want to be able
+        # to return the meta data of full version rather than the subset version of
+        # video clips
+        self.full_video_clips = video_clips
         self.indices = self._select_fold(video_list, annotation_path, fold, train)
         self.video_clips = video_clips.subset(self.indices)
         self.transform = transform
 
     @property
     def metadata(self):
-        return self.video_clips_metadata
+        return self.full_video_clips.metadata
 
     def _select_fold(self, video_list, annotation_path, fold, train):
         target_tag = 1 if train else 2

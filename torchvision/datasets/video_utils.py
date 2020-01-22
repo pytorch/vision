@@ -140,7 +140,10 @@ class VideoClips(object):
             for batch in dl:
                 pbar.update(1)
                 clips, fps = list(zip(*batch))
-                clips = [torch.as_tensor(c) for c in clips]
+                # we need to specify dtype=torch.long because for empty list,
+                # torch.as_tensor will use torch.float as default dtype. This
+                # happens when decoding fails and no pts is returned in the list.
+                clips = [torch.as_tensor(c, dtype=torch.long) for c in clips]
                 self.video_pts.extend(clips)
                 self.video_fps.extend(fps)
 
@@ -357,3 +360,45 @@ class VideoClips(object):
             video.shape, self.num_frames
         )
         return video, audio, info, video_idx
+
+    def __getstate__(self):
+        video_pts_sizes = [len(v) for v in self.video_pts]
+        # To be back-comptiable, we convert data to dtype torch.long as nedded
+        # because for empty list, in legacy implementation, torch.as_tensor will
+        # use torch.float as default dtype. This happens when decoding fails and
+        # no pts is returned in the list.
+        video_pts = [x.to(torch.long) for x in self.video_pts]
+        video_pts = torch.cat(video_pts)
+        # avoid bug in https://github.com/pytorch/pytorch/issues/32351
+        # TODO: Revert it once the bug is fixed.
+        video_pts = video_pts.numpy()
+
+        # make a copy of the fields of self
+        d = self.__dict__.copy()
+        d["video_pts_sizes"] = video_pts_sizes
+        d["video_pts"] = video_pts
+        # delete the following attributes to reduce the size of dictionary. They
+        # will be re-computed in "__setstate__()"
+        del d["clips"]
+        del d["resampling_idxs"]
+        del d["cumulative_sizes"]
+
+        # for backwards-compatibility
+        d["_version"] = 2
+        return d
+
+    def __setstate__(self, d):
+        # for backwards-compatibility
+        if "_version" not in d:
+            self.__dict__ = d
+            return
+
+        video_pts = torch.as_tensor(d["video_pts"])
+        video_pts = torch.split(video_pts, d["video_pts_sizes"], dim=0)
+        # don't need this info anymore
+        del d["video_pts_sizes"]
+
+        d["video_pts"] = video_pts
+        self.__dict__ = d
+        # recompute attributes "clips", "resampling_idxs" and other derivative ones
+        self.compute_clips(self.num_frames, self.step, self.frame_rate)
