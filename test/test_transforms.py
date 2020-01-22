@@ -1,5 +1,6 @@
 from __future__ import division
 import os
+import mock
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
@@ -1073,6 +1074,26 @@ class Tester(unittest.TestCase):
         result_b = F.rotate(img, -270)
 
         self.assertTrue(np.all(np.array(result_a) == np.array(result_b)))
+
+    def test_rotate_fill(self):
+        img = F.to_pil_image(np.ones((100, 100, 3), dtype=np.uint8) * 255, "RGB")
+
+        modes = ("L", "RGB")
+        nums_bands = [len(mode) for mode in modes]
+        fill = 127
+
+        for mode, num_bands in zip(modes, nums_bands):
+            img_conv = img.convert(mode)
+            img_rot = F.rotate(img_conv, 45.0, fill=fill)
+            pixel = img_rot.getpixel((0, 0))
+
+            if not isinstance(pixel, tuple):
+                pixel = (pixel,)
+            self.assertTupleEqual(pixel, tuple([fill] * num_bands))
+
+            for wrong_num_bands in set(nums_bands) - {num_bands}:
+                with self.assertRaises(ValueError):
+                    F.rotate(img_conv, 45.0, fill=tuple([fill] * wrong_num_bands))
 
     def test_affine(self):
         input_img = np.zeros((40, 40, 3), dtype=np.uint8)
