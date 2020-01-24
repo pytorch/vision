@@ -9,6 +9,7 @@ from ..utils import load_state_dict_from_url
 from .rpn import AnchorGenerator
 from .transform import GeneralizedRCNNTransform
 from .backbone_utils import resnet_fpn_backbone
+from ...ops.feature_pyramid_network import LastLevelP6P7
 
 
 __all__ = [
@@ -380,7 +381,7 @@ def retinanet_resnet50_fpn(pretrained=False, progress=True,
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
-    backbone = resnet_fpn_backbone('resnet50', pretrained_backbone)
+    backbone = resnet_fpn_backbone('resnet50', pretrained_backbone, extra_blocks=LastLevelP6P7(256, 256))
     model = RetinaNet(backbone, num_classes, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls['retinanet_resnet50_fpn_coco'],
