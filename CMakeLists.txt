@@ -23,7 +23,7 @@ file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.c
 
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} pybind11::pybind11)
-set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME Vision)
+set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME TorchVision)
 
 target_include_directories(${PROJECT_NAME} INTERFACE
   $<BUILD_INTERFACE:${HEADERS}>
@@ -56,10 +56,10 @@ install(EXPORT TorchVisionTargets
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 install(FILES
   torchvision/csrc/cpu/vision_cpu.h
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/include/${PROJECT_NAME}/cpu)
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/cpu)
 if(WITH_CUDA)
   install(FILES
     torchvision/csrc/cuda/vision_cuda.h 
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/include/${PROJECT_NAME}/cuda)
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/cuda)
 endif()
-install(FILES ${MODELS_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/include/${PROJECT_NAME}/models)
+install(FILES ${MODELS_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/models)
