@@ -46,33 +46,42 @@ jobs:
     maxParallel: 10
     matrix:
       ${{ if eq(parameters.spec, 'CPU') }}:
-        PY3.5:
-          DESIRED_PYTHON: 3.5
-          CUDA_VERSION: cpu
-        PY3.6:
-          DESIRED_PYTHON: 3.6
-          CUDA_VERSION: cpu
-        PY3.7:
-          DESIRED_PYTHON: 3.7
+        # PY3.5:
+        #   DESIRED_PYTHON: 3.5
+        #   CUDA_VERSION: cpu
+        # PY3.6:
+        #   DESIRED_PYTHON: 3.6
+        #   CUDA_VERSION: cpu
+        # PY3.7:
+        #   DESIRED_PYTHON: 3.7
+        #   CUDA_VERSION: cpu
+        PY3.8:
+          DESIRED_PYTHON: 3.8
           CUDA_VERSION: cpu
       ${{ if ne(parameters.spec, 'CPU') }}:
-        PY3.5_92:
-          DESIRED_PYTHON: 3.5
+        # PY3.5_92:
+        #   DESIRED_PYTHON: 3.5
+        #   CUDA_VERSION: 92
+        # PY3.6_92:
+        #   DESIRED_PYTHON: 3.6
+        #   CUDA_VERSION: 92
+        # PY3.7_92:
+        #   DESIRED_PYTHON: 3.7
+        #   CUDA_VERSION: 92
+        PY3.8_92:
+          DESIRED_PYTHON: 3.8
           CUDA_VERSION: 92
-        PY3.6_92:
-          DESIRED_PYTHON: 3.6
-          CUDA_VERSION: 92
-        PY3.7_92:
-          DESIRED_PYTHON: 3.7
-          CUDA_VERSION: 92
-        PY3.5_101:
-          DESIRED_PYTHON: 3.5
-          CUDA_VERSION: 101
-        PY3.6_101:
-          DESIRED_PYTHON: 3.6
-          CUDA_VERSION: 101
-        PY3.7_101:
-          DESIRED_PYTHON: 3.7
+        # PY3.5_101:
+        #   DESIRED_PYTHON: 3.5
+        #   CUDA_VERSION: 101
+        # PY3.6_101:
+        #   DESIRED_PYTHON: 3.6
+        #   CUDA_VERSION: 101
+        # PY3.7_101:
+        #   DESIRED_PYTHON: 3.7
+        #   CUDA_VERSION: 101
+        PY3.8_101:
+          DESIRED_PYTHON: 3.8
           CUDA_VERSION: 101
 
   pool:
