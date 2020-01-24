@@ -25,13 +25,17 @@ class BackboneWithFPN(nn.Module):
     Attributes:
         out_channels (int): the number of channels in the FPN
     """
-    def __init__(self, backbone, return_layers, in_channels_list, out_channels):
+    def __init__(self, backbone, return_layers, in_channels_list, out_channels, extra_blocks=None):
         super(BackboneWithFPN, self).__init__()
+
+        if extra_blocks is None:
+            extra_blocks = LastLevelMaxPool()
+
         self.body = IntermediateLayerGetter(backbone, return_layers=return_layers)
         self.fpn = FeaturePyramidNetwork(
             in_channels_list=in_channels_list,
             out_channels=out_channels,
-            extra_blocks=LastLevelMaxPool(),
+            extra_blocks=extra_blocks,
         )
         self.out_channels = out_channels
 
@@ -41,7 +45,16 @@ class BackboneWithFPN(nn.Module):
         return x
 
 
-def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.FrozenBatchNorm2d, trainable_layers=3):
+def resnet_fpn_backbone(
+    backbone_name,
+    pretrained,
+    norm_layer=misc_nn_ops.FrozenBatchNorm2d,
+    trainable_layers=3,
+    extra_blocks=None
+):
+    backbone = resnet.__dict__[backbone_name](
+        pretrained=pretrained,
+        norm_layer=norm_layer)
     """
     Constructs a specified ResNet backbone with FPN on top. Freezes the specified number of layers in the backbone.
 
@@ -82,6 +95,9 @@ def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.Frozen
         if all([not name.startswith(layer) for layer in layers_to_train]):
             parameter.requires_grad_(False)
 
+    if extra_blocks is None:
+        extra_blocks = LastLevelMaxPool()
+
     return_layers = {'layer1': '0', 'layer2': '1', 'layer3': '2', 'layer4': '3'}
 
     in_channels_stage2 = backbone.inplanes // 8
@@ -92,4 +108,4 @@ def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.Frozen
         in_channels_stage2 * 8,
     ]
     out_channels = 256
-    return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels)
+    return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks)
