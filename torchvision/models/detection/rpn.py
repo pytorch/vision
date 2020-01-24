@@ -147,9 +147,6 @@ class RegionProposalNetwork(torch.nn.Module):
         self.head = head
         self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
 
-        # used during training
-        self.box_similarity = box_ops.box_iou
-
         self.proposal_matcher = det_utils.Matcher(
             fg_iou_thresh,
             bg_iou_thresh,
@@ -189,7 +186,7 @@ class RegionProposalNetwork(torch.nn.Module):
                 labels_per_image = torch.zeros((anchors_per_image.shape[0],), dtype=torch.float32, device=device)
             else:
                 match_quality_matrix = box_ops.box_iou(gt_boxes, anchors_per_image)
-                matched_idxs = self.proposal_matcher(match_quality_matrix)
+                matched_idxs = self.proposal_matcher(gt_boxes, anchors_per_image)
                 # get the targets corresponding GT for each proposal
                 # NB: need to clamp the indices because we can have a single
                 # GT in the image, and matched_idxs can be -2, which goes

@@ -5,6 +5,8 @@ from torch.jit.annotations import List, Tuple
 from torch import Tensor
 import torchvision
 
+from torchvision.ops import boxes as box_ops
+
 
 class BalancedPositiveNegativeSampler(object):
     """
@@ -240,7 +242,11 @@ class Matcher(object):
         'BETWEEN_THRESHOLDS': int,
     }
 
-    def __init__(self, high_threshold, low_threshold, allow_low_quality_matches=False):
+    def __init__(self,
+                 high_threshold,
+                 low_threshold,
+                 allow_low_quality_matches=False,
+                 box_similarity=None):
         # type: (float, float, bool) -> None
         """
         Args:
@@ -262,7 +268,11 @@ class Matcher(object):
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
 
-    def __call__(self, match_quality_matrix):
+        if box_similarity is None:
+           box_similarity = box_ops.box_iou
+        self.box_similarity = box_similarity
+
+    def __call__(self, gt_boxes, anchors_per_image):
         """
         Args:
             match_quality_matrix (Tensor[float]): an MxN tensor, containing the
@@ -273,6 +283,8 @@ class Matcher(object):
             [0, M - 1] or a negative value indicating that prediction i could not
             be matched.
         """
+        match_quality_matrix = self.box_similarity(gt_boxes, anchors_per_image)
+
         if match_quality_matrix.numel() == 0:
             # empty targets or proposals not supported during training
             if match_quality_matrix.shape[0] == 0:
