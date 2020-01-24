@@ -6,7 +6,8 @@ import torch.nn.functional as F
 
 from ..utils import load_state_dict_from_url
 
-from .rpn import AnchorGenerator
+from . import _utils as det_utils
+from .anchor_utils import AnchorGenerator
 from .transform import GeneralizedRCNNTransform
 from .backbone_utils import resnet_fpn_backbone
 from ...ops.feature_pyramid_network import LastLevelP6P7
@@ -191,7 +192,7 @@ class RetinaNet(nn.Module):
         >>> import torch
         >>> import torchvision
         >>> from torchvision.models.detection import RetinaNet
-        >>> from torchvision.models.detection.rpn import AnchorGenerator
+        >>> from torchvision.models.detection.anchor_utils import AnchorGenerator
         >>> # load a pre-trained model for classification and return
         >>> # only the features
         >>> backbone = torchvision.models.mobilenet_v2(pretrained=True).features
@@ -205,8 +206,8 @@ class RetinaNet(nn.Module):
         >>> # ratios. We have a Tuple[Tuple[int]] because each feature
         >>> # map could potentially have different sizes and
         >>> # aspect ratios
-        >>> anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),),
-        >>>                                    aspect_ratios=((0.5, 1.0, 2.0),))
+        >>> anchor_generator = AnchorGenerator(sizes=[[x, x * 2 ** (1.0 / 3), x * 2 ** (2.0 / 3)] for x in [32, 64, 128, 256, 512]],
+        >>>                                    aspect_ratios=[[0.5, 1.0, 2.0]] * 5)
         >>>
         >>> # put the pieces together inside a RetinaNet model
         >>> model = RetinaNet(backbone,
@@ -236,14 +237,16 @@ class RetinaNet(nn.Module):
         assert isinstance(anchor_generator, (AnchorGenerator, type(None)))
 
         if anchor_generator is None:
-            anchor_sizes = ((32,), (64,), (128,), (256,), (512,))
+            # TODO: Set correct default values
+            anchor_sizes = [[x, x * 2 ** (1.0 / 3), x * 2 ** (2.0 / 3)] for x in [32, 64, 128, 256, 512]]
             aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
-            self.anchor_generator = AnchorGenerator(
+            anchor_generator = AnchorGenerator(
                 anchor_sizes, aspect_ratios
             )
+        self.anchor_generator = anchor_generator
 
         if head is None:
-            head = RetinaNetHead(backbone.out_channels, num_classes, anchor_generator.num_anchors_per_location())
+            head = RetinaNetHead(backbone.out_channels, num_classes, anchor_generator.num_anchors_per_location()[0])
         self.head = head
 
         if image_mean is None:
