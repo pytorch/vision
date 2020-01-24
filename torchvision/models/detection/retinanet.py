@@ -29,19 +29,19 @@ class RetinaNetHead(nn.Module):
     """
 
     def __init__(self, in_channels, num_anchors, num_classes):
-        super(RPNHead, self).__init__()
+        super(RetinaNetHead, self).__init__()
         self.classification_head = RetinaNetClassificationHead(in_channels, num_anchors, num_classes)
         self.regression_head = RetinaNetRegressionHead(in_channels, num_anchors)
 
-    def compute_loss(self, outputs, labels, matched_gt_boxes):
+    def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
         return {
-            'classification': self.classification_head.compute_loss(outputs, targets, anchor_state),
-            'regression': self.regression_head.compute_loss(outputs, targets, anchor_state),
+            'classification': self.classification_head.compute_loss(targets, head_outputs, anchors, matched_idxs),
+            'bbox_reg': self.regression_head.compute_loss(targets, head_outputs, anchors, matched_idxs),
         }
 
     def forward(self, x):
-        logits = [self.classification_head(feature, targets) for feature in x]
-        bbox_reg = [self.regression_head(feature, targets) for feature in x]
+        logits = [self.classification_head(feature) for feature in x]
+        bbox_reg = [self.regression_head(feature) for feature in x]
         return dict(logits=logits, bbox_reg=bbox_reg)
 
 
@@ -68,7 +68,7 @@ class RetinaNetClassificationHead(nn.Module):
             torch.nn.init.normal_(l.weight, std=0.01)
             torch.nn.init.constant_(l.bias, 0)
 
-    def compute_loss(self, outputs, labels, matched_gt_boxes):
+    def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
         # TODO Implement focal loss, is there an existing function for this?
         return 0
 
@@ -114,9 +114,35 @@ class RetinaNetRegressionHead(nn.Module):
             torch.nn.init.normal_(l.weight, std=0.01)
             torch.nn.init.constant_(l.bias, 0)
 
-    def compute_loss(self, outputs, labels, matched_gt_boxes):
-        # TODO Use SmoothL1 loss for regression, or just L1 like in rpn.py ?
-        return 0
+        self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
+
+    def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
+        loss = []
+
+        predicted_regression = head_outputs['bbox_reg'][0]
+        for targets_per_image, predicted_regression_per_image, anchors_per_image, matched_idxs_per_image in zip(targets, predicted_regression, anchors, matched_idxs):
+            # get the targets corresponding GT for each proposal
+            # NB: need to clamp the indices because we can have a single
+            # GT in the image, and matched_idxs can be -2, which goes
+            # out of bounds
+            matched_gt_boxes_per_image = targets_per_image['boxes'][matched_idxs_per_image.clamp(min=0)]
+
+            # determine only the foreground indices, ignore the rest
+            foreground_idxs_per_image = matched_idxs_per_image >= 0
+
+            # select only the foreground boxes
+            matched_gt_boxes_per_image = matched_gt_boxes_per_image[foreground_idxs_per_image, :]
+            print(predicted_regression_per_image.shape)
+            predicted_regression_per_image = predicted_regression_per_image['bbox_reg'][foreground_idxs_per_image, :]
+            anchors_per_image = anchors_per_image[foreground_idxs_per_image, :]
+
+            # compute the regression targets
+            target_regression = self.box_coder.encode(matched_gt_boxes_per_image, anchors_per_image)
+
+            # compute the loss
+            loss.append(torch.nn.SmoothL1Loss()(predicted_regression_per_image, target_regression))
+
+        return sum(loss) / len(loss)
 
     def forward(self, x):
         all_bbox_regression = []
@@ -224,15 +250,18 @@ class RetinaNet(nn.Module):
                  image_mean=None, image_std=None,
                  # Anchor parameters
                  anchor_generator=None, head=None,
+                 proposal_matcher=None,
                  pre_nms_top_n=1000, post_nms_top_n=1000,
                  nms_thresh=0.5,
                  fg_iou_thresh=0.5, bg_iou_thresh=0.4):
+        super(RetinaNet, self).__init__()
 
         if not hasattr(backbone, "out_channels"):
             raise ValueError(
                 "backbone should contain an attribute out_channels "
                 "specifying the number of output channels (assumed to be the "
                 "same for all the levels)")
+        self.backbone = backbone
 
         assert isinstance(anchor_generator, (AnchorGenerator, type(None)))
 
@@ -249,6 +278,14 @@ class RetinaNet(nn.Module):
             head = RetinaNetHead(backbone.out_channels, num_classes, anchor_generator.num_anchors_per_location()[0])
         self.head = head
 
+        if proposal_matcher is None:
+            proposal_matcher = det_utils.Matcher(
+                fg_iou_thresh,
+                bg_iou_thresh,
+                allow_low_quality_matches=True,
+            )
+        self.proposal_matcher = proposal_matcher
+
         if image_mean is None:
             image_mean = [0.485, 0.456, 0.406]
         if image_std is None:
@@ -262,6 +299,13 @@ class RetinaNet(nn.Module):
             return losses
 
         return detections
+
+    def compute_loss(self, targets, head_outputs, anchors):
+        matched_idxs = []
+        for anchors_per_image, targets_per_image in zip(anchors, targets):
+            matched_idxs.append(self.proposal_matcher(targets_per_image["boxes"], anchors_per_image))
+
+        return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
 
     def forward(self, images, targets=None):
         # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])
@@ -295,8 +339,16 @@ class RetinaNet(nn.Module):
         if isinstance(features, torch.Tensor):
             features = OrderedDict([('0', features)])
 
+        # TODO: Do we want a list or a dict?
+        features = list(features.values())
+
+        # TODO: Is there a better way to check for [P3, P4, P5, P6, P7]?
+        if len(features) == 6:
+            # skip P2 because it generates too many anchors
+            features = features[1:]
+
         # compute the retinanet heads outputs using the features
-        head_outputs = self.head(images, features, targets)
+        head_outputs = self.head(features)
 
         # create the set of anchors
         anchors = self.anchor_generator(images, features)
@@ -307,11 +359,7 @@ class RetinaNet(nn.Module):
             assert targets is not None
 
             # compute the losses
-            # TODO: Move necessary functions out of rpn.RegionProposalNetwork to a class or function
-            # so that we can use it here and in rpn.RegionProposalNetwork
-            labels, matched_gt_boxes = self.assign_targets_to_anchors(anchors, targets)
-            regression_targets = self.box_coder.encode(matched_gt_boxes, anchors)
-            losses = self.head.compute_loss(head_outputs, labels, matched_gt_boxes)
+            losses = self.compute_loss(targets, head_outputs, anchors)
         else:
             # compute the detections
             # TODO: Implement postprocess_detections
