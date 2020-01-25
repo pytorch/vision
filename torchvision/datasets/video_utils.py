@@ -24,7 +24,7 @@ def pts_convert(pts, timebase_from, timebase_to, round_func=math.floor):
     return round_func(new_pts)
 
 
-def unfold(tensor, size, step, dilation=1):
+def unfold(tensor, size, step, frame_stride=1, dilation=1):
     """
     similar to tensor.unfold, but with the dilation
     and specialized for 1d tensors
@@ -36,8 +36,8 @@ def unfold(tensor, size, step, dilation=1):
     assert tensor.dim() == 1
     o_stride = tensor.stride(0)
     numel = tensor.numel()
-    new_stride = (step * o_stride, dilation * o_stride)
-    new_size = ((numel - (dilation * (size - 1) + 1)) // step + 1, size)
+    new_stride = (step * o_stride, dilation * o_stride * frame_stride)
+    new_size = ((numel - (dilation * (size - 1) + 1)) // step + 1, size // frame_stride)
     if new_size[0] < 1:
         new_size = (0, size)
     return torch.as_strided(tensor, new_size, new_stride)
@@ -84,7 +84,7 @@ class VideoClips(object):
             0 means that the data will be loaded in the main process. (default: 0)
     """
     def __init__(self, video_paths, clip_length_in_frames=16, frames_between_clips=1,
-                 frame_rate=None, _precomputed_metadata=None, num_workers=0,
+                 frame_stride=1, frame_rate=None, _precomputed_metadata=None, num_workers=0,
                  _video_width=0, _video_height=0, _video_min_dimension=0,
                  _audio_samples=0, _audio_channels=0):
 
@@ -102,7 +102,7 @@ class VideoClips(object):
             self._compute_frame_pts()
         else:
             self._init_from_metadata(_precomputed_metadata)
-        self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate)
+        self.compute_clips(clip_length_in_frames, frames_between_clips, frame_stride, frame_rate)
 
     def _collate_fn(self, x):
         return x
@@ -162,7 +162,7 @@ class VideoClips(object):
                           _audio_channels=self._audio_channels)
 
     @staticmethod
-    def compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate):
+    def compute_clips_for_video(video_pts, num_frames, step, frame_stride, fps, frame_rate):
         if fps is None:
             # if for some reason the video doesn't have fps (because doesn't have a video stream)
             # set the fps to 1. The value doesn't matter, because video_pts is empty anyway
@@ -172,14 +172,14 @@ class VideoClips(object):
         total_frames = len(video_pts) * (float(frame_rate) / fps)
         idxs = VideoClips._resample_video_idx(int(math.floor(total_frames)), fps, frame_rate)
         video_pts = video_pts[idxs]
-        clips = unfold(video_pts, num_frames, step)
+        clips = unfold(video_pts, num_frames, step, frame_stride)
         if isinstance(idxs, slice):
             idxs = [idxs] * len(clips)
         else:
             idxs = unfold(idxs, num_frames, step)
         return clips, idxs
 
-    def compute_clips(self, num_frames, step, frame_rate=None):
+    def compute_clips(self, num_frames, step, frame_stride, frame_rate=None):
         """
         Compute all consecutive sequences of clips from video_pts.
         Always returns clips of size `num_frames`, meaning that the
@@ -191,11 +191,12 @@ class VideoClips(object):
         """
         self.num_frames = num_frames
         self.step = step
+        self.frame_stride = frame_stride
         self.frame_rate = frame_rate
         self.clips = []
         self.resampling_idxs = []
         for video_pts, fps in zip(self.video_pts, self.video_fps):
-            clips, idxs = self.compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate)
+            clips, idxs = self.compute_clips_for_video(video_pts, num_frames, step, frame_stride, fps, frame_rate)
             self.clips.append(clips)
             self.resampling_idxs.append(idxs)
         clip_lengths = torch.as_tensor([len(v) for v in self.clips])
@@ -255,6 +256,7 @@ class VideoClips(object):
                              "({} number of clips)".format(idx, self.num_clips()))
         video_idx, clip_idx = self.get_clip_location(idx)
         video_path = self.video_paths[video_idx]
+        video_pts = self.video_pts[video_idx]
         clip_pts = self.clips[video_idx][clip_idx]
 
         from torchvision import get_video_backend
@@ -272,8 +274,8 @@ class VideoClips(object):
                 raise ValueError("pyav backend doesn't support _audio_samples != 0")
 
         if backend == "pyav":
-            start_pts = clip_pts[0].item()
-            end_pts = clip_pts[-1].item()
+            start_pts = video_pts[0].item()
+            end_pts = video_pts[-1].item()
             video, audio, info = read_video(video_path, start_pts, end_pts)
         else:
             info = _probe_video_from_file(video_path)
@@ -323,5 +325,9 @@ class VideoClips(object):
                 resampling_idx = resampling_idx - resampling_idx[0]
             video = video[resampling_idx]
             info["video_fps"] = self.frame_rate
-        assert len(video) == self.num_frames, "{} x {}".format(video.shape, self.num_frames)
+
+        import numpy as np
+        union_idx = lambda x,y: np.in1d(x.numpy(), y.numpy()).nonzero()
+        video = video[union_idx(video_pts, clip_pts)]
+        assert len(video) == self.num_frames // self.frame_stride, "{} x {}".format(video.shape, self.num_frames)
         return video, audio, info, video_idx

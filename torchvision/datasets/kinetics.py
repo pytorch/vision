@@ -36,7 +36,7 @@ class Kinetics400(VisionDataset):
         label (int): class of the video clip
     """
 
-    def __init__(self, root, frames_per_clip, step_between_clips=1, frame_rate=None,
+    def __init__(self, root, frames_per_clip, step_between_clips=1, frame_stride=1, frame_rate=None,
                  extensions=('avi',), transform=None, _precomputed_metadata=None,
                  num_workers=1, _video_width=0, _video_height=0,
                  _video_min_dimension=0, _audio_samples=0, _audio_channels=0):
@@ -51,6 +51,7 @@ class Kinetics400(VisionDataset):
             video_list,
             frames_per_clip,
             step_between_clips,
+            frame_stride,
             frame_rate,
             _precomputed_metadata,
             num_workers=num_workers,
