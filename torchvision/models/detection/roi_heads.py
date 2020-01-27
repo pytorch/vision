@@ -226,17 +226,6 @@ def _onnx_heatmaps_to_keypoints_loop(maps, rois, widths_ceil, heights_ceil,
     return xy_preds, end_scores
 
 
-# workaround for issue pytorch 27512
-def tensor_floordiv(tensor, int_div):
-    # type: (Tensor, int)
-    result = tensor / int_div
-    # TODO: https://github.com/pytorch/pytorch/issues/26731
-    floating_point_types = (torch.float, torch.double, torch.half)
-    if result.dtype in floating_point_types:
-        result = result.trunc()
-    return result
-
-
 def heatmaps_to_keypoints(maps, rois):
     """Extract predicted keypoint locations from heatmaps. Output has shape
     (#rois, 4, #keypoints) with the 4 rows corresponding to (x, y, logit, prob)
@@ -280,7 +269,7 @@ def heatmaps_to_keypoints(maps, rois):
         pos = roi_map.reshape(num_keypoints, -1).argmax(dim=1)
 
         x_int = pos % w
-        y_int = tensor_floordiv((pos - x_int), w)
+        y_int = (pos - x_int) // w
         # assert (roi_map_probs[k, y_int, x_int] ==
         #         roi_map_probs[k, :, :].max())
         x = (x_int.float() + 0.5) * width_correction
