@@ -218,8 +218,8 @@ class VOCDetection(VisionDataset):
             for dc in map(self.parse_voc_xml, children):
                 for ind, v in dc.items():
                     def_dic[ind].append(v)
-            if (node.tag == 'annotation'):
-                if (isinstance(def_dic['object'], object)):
+            if node.tag == 'annotation':
+                if isinstance(def_dic['object'], object):
                     def_dic['object'] = [def_dic['object']]
             voc_dict = {
                 node.tag:
