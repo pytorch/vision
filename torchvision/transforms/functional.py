@@ -85,14 +85,8 @@ def to_tensor(pic):
         img = 255 * torch.from_numpy(np.array(pic, np.uint8, copy=False))
     else:
         img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
-    # PIL image mode: L, LA, P, I, F, RGB, YCbCr, RGBA, CMYK
-    if pic.mode == 'YCbCr':
-        nchannel = 3
-    elif pic.mode == 'I;16':
-        nchannel = 1
-    else:
-        nchannel = len(pic.mode)
-    img = img.view(pic.size[1], pic.size[0], nchannel)
+
+    img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
     # put it from HWC to CHW format
     # yikes, this transpose takes 80% of the loading time/CPU
     img = img.transpose(0, 1).transpose(0, 2).contiguous()
@@ -696,7 +690,7 @@ def adjust_gamma(img, gamma, gain=1):
     return img
 
 
-def rotate(img, angle, resample=False, expand=False, center=None, fill=0):
+def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
     """Rotate the image by angle.
 
 
@@ -713,20 +707,39 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=0):
         center (2-tuple, optional): Optional center of rotation.
             Origin is the upper left corner.
             Default is the center of the image.
-        fill (3-tuple or int): RGB pixel fill value for area outside the rotated image.
-            If int, it is used for all channels respectively.
+        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+            image. If int or float, the value is used for all bands respectively.
+            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
+    def parse_fill(fill, num_bands):
+        if PILLOW_VERSION < "5.2.0":
+            if fill is None:
+                return {}
+            else:
+                msg = ("The option to fill background area of the rotated image, "
+                       "requires pillow>=5.2.0")
+                raise RuntimeError(msg)
+
+        if fill is None:
+            fill = 0
+        if isinstance(fill, (int, float)):
+            fill = tuple([fill] * num_bands)
+        if len(fill) != num_bands:
+            msg = ("The number of elements in 'fill' does not match the number of "
+                   "bands of the image ({} != {})")
+            raise ValueError(msg.format(len(fill), num_bands))
+
+        return {"fillcolor": fill}
 
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    if isinstance(fill, int):
-        fill = tuple([fill] * 3)
+    opts = parse_fill(fill, len(img.getbands()))
 
-    return img.rotate(angle, resample, expand, center, fillcolor=fill)
+    return img.rotate(angle, resample, expand, center, **opts)
 
 
 def _get_inverse_affine_matrix(center, angle, translate, scale, shear):

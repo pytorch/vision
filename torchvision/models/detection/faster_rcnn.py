@@ -123,10 +123,10 @@ class FasterRCNN(GeneralizedRCNN):
         >>> # use to perform the region of interest cropping, as well as
         >>> # the size of the crop after rescaling.
         >>> # if your backbone returns a Tensor, featmap_names is expected to
-        >>> # be [0]. More generally, the backbone should return an
+        >>> # be ['0']. More generally, the backbone should return an
         >>> # OrderedDict[Tensor], and in featmap_names you can choose which
         >>> # feature maps to use.
-        >>> roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[0],
+        >>> roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=['0'],
         >>>                                                 output_size=7,
         >>>                                                 sampling_ratio=2)
         >>>
@@ -315,12 +315,29 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
         - labels (``Int64Tensor[N]``): the predicted labels for each image
         - scores (``Tensor[N]``): the scores or each prediction
 
+    Faster R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.
+
     Example::
 
         >>> model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+        >>> # For training
+        >>> images, boxes = torch.rand(4, 3, 600, 1200), torch.rand(4, 11, 4)
+        >>> labels = torch.randint(1, 91, (4, 11))
+        >>> images = list(image for image in images)
+        >>> targets = []
+        >>> for i in range(len(images)):
+        >>>     d = {}
+        >>>     d['boxes'] = boxes[i]
+        >>>     d['labels'] = labels[i]
+        >>>     targets.append(d)
+        >>> output = model(images, targets)
+        >>> # For inference
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
+        >>>
+        >>> # optionally, if you want to export the model to ONNX:
+        >>> torch.onnx.export(model, x, "faster_rcnn.onnx", opset_version = 11)
 
     Arguments:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017

@@ -16,10 +16,11 @@ torchvision
 
 The torchvision package consists of popular datasets, model architectures, and common image transformations for computer vision.
 
+
 Installation
 ============
 
-TorchVision requires PyTorch 1.2 or newer.
+TorchVision requires PyTorch 1.4 or newer.
 
 Anaconda:
 
@@ -69,6 +70,7 @@ Installation From source:
 
     mkdir build
     cd build
+    # Add -DWITH_CUDA=on support for the CUDA if needed
     cmake ..
     make 
     make install
