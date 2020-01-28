@@ -46,8 +46,7 @@ test:
     - scipy
     - mock
     - av
-    - ca-certificates
-    - typing
+    - typing # [py2k]
   commands:
     pytest .
 
