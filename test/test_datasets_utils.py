@@ -86,7 +86,7 @@ class Tester(unittest.TestCase):
 
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_extract_tar(self):
-        for ext, mode in zip(['.tar', '.tar.gz'], ['w', 'w:gz']):
+        for ext, mode in zip(['.tar', '.tar.gz', '.tgz'], ['w', 'w:gz', 'w:gz']):
             with get_tmp_dir() as temp_dir:
                 with tempfile.NamedTemporaryFile() as bf:
                     bf.write("this is the content".encode())
