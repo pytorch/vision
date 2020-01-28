@@ -81,8 +81,8 @@ class Tester(unittest.TestCase):
     def test_probe_video_from_file(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
             video_info = io._probe_video_from_file(f_name)
-            self.assertAlmostEqual(video_info["video_duration"], 2, delta=0.1)
-            self.assertAlmostEqual(video_info["video_fps"], 5, delta=0.1)
+            self.assertAlmostEqual(video_info.video_duration, 2, delta=0.1)
+            self.assertAlmostEqual(video_info.video_fps, 5, delta=0.1)
 
     @unittest.skipIf(not io._HAS_VIDEO_OPT, "video_reader backend is not chosen")
     def test_probe_video_from_memory(self):
@@ -90,8 +90,8 @@ class Tester(unittest.TestCase):
             with open(f_name, "rb") as fp:
                 filebuffer = fp.read()
             video_info = io._probe_video_from_memory(filebuffer)
-            self.assertAlmostEqual(video_info["video_duration"], 2, delta=0.1)
-            self.assertAlmostEqual(video_info["video_fps"], 5, delta=0.1)
+            self.assertAlmostEqual(video_info.video_duration, 2, delta=0.1)
+            self.assertAlmostEqual(video_info.video_fps, 5, delta=0.1)
 
     def test_read_timestamps(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
