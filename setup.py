@@ -77,6 +77,26 @@ pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
 
+def _check_ffmpeg():
+    """find ffmpeg include dir"""
+    ffmpeg_include_dir = None
+    ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
+    has_ffmpeg = ffmpeg_exe is not None
+    if has_ffmpeg:
+        ffmpeg_bin = os.path.dirname(ffmpeg_exe)
+        ffmpeg_root = os.path.dirname(ffmpeg_bin)
+        include_dir = os.path.join(ffmpeg_root, 'include')
+        # search for libavutil dir
+        libavutil_dir = 'libavutil'
+        for root, dirs, files in os.walk(include_dir):
+            for dir in dirs:
+                if dir == libavutil_dir:
+                    ffmpeg_include_dir = root
+                    break
+        has_ffmpeg = ffmpeg_include_dir is not None
+    return has_ffmpeg, ffmpeg_include_dir
+
+
 def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
@@ -127,6 +147,13 @@ def get_extensions():
 
     include_dirs = [extensions_dir]
 
+    has_ffmpeg, ffmpeg_include_dir = _check_ffmpeg()
+    if has_ffmpeg:
+        # TorchVision video reader
+        video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
+        video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
+
+
     ext_modules = [
         extension(
             'torchvision._C',
@@ -146,9 +173,6 @@ def get_extensions():
                 extra_compile_args=extra_compile_args,
             )
         )
-
-    ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
-    has_ffmpeg = ffmpeg_exe is not None
 
     if has_ffmpeg:
         ffmpeg_bin = os.path.dirname(ffmpeg_exe)
