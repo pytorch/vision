@@ -147,7 +147,7 @@ class Normalize(object):
     """Normalize a tensor image with mean and standard deviation.
     Given mean: ``(M1,...,Mn)`` and std: ``(S1,..,Sn)`` for ``n`` channels, this transform
     will normalize each channel of the input ``torch.*Tensor`` i.e.
-    ``input[channel] = (input[channel] - mean[channel]) / std[channel]``
+    ``output[channel] = (input[channel] - mean[channel]) / std[channel]``
 
     .. note::
         This transform acts out of place, i.e., it does not mutates the input tensor.
@@ -956,14 +956,15 @@ class RandomRotation(object):
         center (2-tuple, optional): Optional center of rotation.
             Origin is the upper left corner.
             Default is the center of the image.
-        fill (3-tuple or int): RGB pixel fill value for area outside the rotated image.
-            If int, it is used for all channels respectively.
+        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+            image. If int or float, the value is used for all bands respectively.
+            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
 
-    def __init__(self, degrees, resample=False, expand=False, center=None, fill=0):
+    def __init__(self, degrees, resample=False, expand=False, center=None, fill=None):
         if isinstance(degrees, numbers.Number):
             if degrees < 0:
                 raise ValueError("If degrees is a single number, it must be positive.")
