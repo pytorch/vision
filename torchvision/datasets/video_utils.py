@@ -348,9 +348,12 @@ class VideoClips(object):
         d["video_pts"] = video_pts
         # delete the following attributes to reduce the size of dictionary. They
         # will be re-computed in "__setstate__()"
-        del d["clips"]
-        del d["resampling_idxs"]
-        del d["cumulative_sizes"]
+        if "clips" in d:
+            del d["clips"]
+        if "resampling_idxs" in d:
+            del d["resampling_idxs"]
+        if "cumulative_sizes" in d:
+            del d["cumulative_sizes"]
 
         # for backwards-compatibility
         d["_version"] = 2
