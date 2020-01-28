@@ -12,18 +12,18 @@
 #include "nms.h"
 
 // If we are in a Windows environment, we need to define
-// initialization functions for the _custom_ops extension
+// initialization functions for the _C extension
 #ifdef _WIN32
 #if PY_MAJOR_VERSION < 3
-PyMODINIT_FUNC init_custom_ops(void) {
+PyMODINIT_FUNC init_C(void) {
   // No need to do anything.
-  // _custom_ops.py will run on load
+  // extension.py will run on load
   return NULL;
 }
 #else
-PyMODINIT_FUNC PyInit__custom_ops(void) {
+PyMODINIT_FUNC PyInit__C(void) {
   // No need to do anything.
-  // _custom_ops.py will run on load
+  // extension.py will run on load
   return NULL;
 }
 #endif
