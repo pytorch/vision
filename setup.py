@@ -147,13 +147,6 @@ def get_extensions():
 
     include_dirs = [extensions_dir]
 
-    has_ffmpeg, ffmpeg_include_dir = _check_ffmpeg()
-    if has_ffmpeg:
-        # TorchVision video reader
-        video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
-        video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
-
-
     ext_modules = [
         extension(
             'torchvision._C',
@@ -174,15 +167,11 @@ def get_extensions():
             )
         )
 
+    has_ffmpeg, ffmpeg_include_dir = _check_ffmpeg()
     if has_ffmpeg:
-        ffmpeg_bin = os.path.dirname(ffmpeg_exe)
-        ffmpeg_root = os.path.dirname(ffmpeg_bin)
-        ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
-
         # TorchVision video reader
         video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
         video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
-
         ext_modules.append(
             CppExtension(
                 'torchvision.video_reader',
