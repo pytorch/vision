@@ -335,11 +335,12 @@ class VideoClips(object):
         # because for empty list, in legacy implementation, torch.as_tensor will
         # use torch.float as default dtype. This happens when decoding fails and
         # no pts is returned in the list.
-        video_pts = [x.to(torch.long) for x in self.video_pts]
-        video_pts = torch.cat(video_pts)
-        # avoid bug in https://github.com/pytorch/pytorch/issues/32351
-        # TODO: Revert it once the bug is fixed.
-        video_pts = video_pts.numpy()
+        video_pts = [x.to(torch.int64) for x in self.video_pts]
+        if video_pts:
+            video_pts = torch.cat(video_pts)
+            # avoid bug in https://github.com/pytorch/pytorch/issues/32351
+            # TODO: Revert it once the bug is fixed.
+            video_pts = video_pts.numpy()
 
         # make a copy of the fields of self
         d = self.__dict__.copy()
@@ -361,7 +362,7 @@ class VideoClips(object):
             self.__dict__ = d
             return
 
-        video_pts = torch.as_tensor(d["video_pts"])
+        video_pts = torch.as_tensor(d["video_pts"], dtype=torch.int64)
         video_pts = torch.split(video_pts, d["video_pts_sizes"], dim=0)
         # don't need this info anymore
         del d["video_pts_sizes"]
