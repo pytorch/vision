@@ -113,7 +113,7 @@ def get_extensions():
         else:
             nvcc_flags = nvcc_flags.split(' ')
         extra_compile_args = {
-            'cxx': ['-O0'],
+            'cxx': [],
             'nvcc': nvcc_flags,
         }
 
