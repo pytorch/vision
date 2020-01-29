@@ -5,6 +5,9 @@
 #ifdef WITH_CUDA
 #include "cuda/vision_cuda.h"
 #endif
+#ifdef WITH_HIP
+#include "hip/vision_cuda.h"
+#endif
 
 // Interface for Python
 at::Tensor ROIAlign_forward(
@@ -18,7 +21,7 @@ at::Tensor ROIAlign_forward(
 // along each axis.
 {
   if (input.type().is_cuda()) {
-#ifdef WITH_CUDA
+#if defined(WITH_CUDA) || defined(WITH_HIP)
     return ROIAlign_forward_cuda(
         input,
         rois,
@@ -46,7 +49,7 @@ at::Tensor ROIAlign_backward(
     const int width,
     const int sampling_ratio) {
   if (grad.type().is_cuda()) {
-#ifdef WITH_CUDA
+#if defined(WITH_CUDA) || defined(WITH_HIP)
     return ROIAlign_backward_cuda(
         grad,
         rois,
