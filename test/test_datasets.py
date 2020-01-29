@@ -9,7 +9,8 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from common_utils import get_tmp_dir
 from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
-    cityscapes_root, svhn_root
+    cityscapes_root, svhn_root, voc_root
+import xml.etree.ElementTree as ET
 
 
 try:
@@ -209,6 +210,32 @@ class Tester(unittest.TestCase):
 
             dataset = torchvision.datasets.SVHN(root, split="extra")
             self.generic_classification_dataset_test(dataset, num_images=2)
+
+    @mock.patch('torchvision.datasets.voc.download_extract')
+    def test_voc_parse_xml(self, mock_download_extract):
+        with voc_root() as root:
+            dataset = torchvision.datasets.VOCDetection(root)
+
+            single_object_xml = """<annotation>
+              <object>
+                <name>cat</name>
+              </object>
+            </annotation>"""
+            multiple_object_xml = """<annotation>
+              <object>
+                <name>cat</name>
+              </object>
+              <object>
+                <name>dog</name>
+              </object>
+            </annotation>"""
+            single_object_parsed = dataset.parse_voc_xml(ET.fromstring(single_object_xml
+                ))
+            multiple_object_parsed = dataset.parse_voc_xml(ET.fromstring(multiple_object_xml))
+
+            self.assertEqual(single_object_parsed, {'annotation': {'object':[{'name': 'cat'}]}})
+            self.assertEqual(multiple_object_parsed, {'annotation':
+                {'object':[{'name': 'cat'}, {'name': 'dog'}]}})
 
 
 if __name__ == '__main__':
