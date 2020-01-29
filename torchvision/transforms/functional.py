@@ -725,9 +725,9 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
 
         if fill is None:
             fill = 0
-        if isinstance(fill, (int, float)):
+        if isinstance(fill, (int, float)) and num_bands > 1:
             fill = tuple([fill] * num_bands)
-        if len(fill) != num_bands:
+        if not isinstance(fill, (int, float)) and len(fill) != num_bands:
             msg = ("The number of elements in 'fill' does not match the number of "
                    "bands of the image ({} != {})")
             raise ValueError(msg.format(len(fill), num_bands))
