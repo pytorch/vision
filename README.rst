@@ -75,6 +75,16 @@ Installation From source:
     make 
     make install
 
+Once installed, the library can be accessed in cmake (after properly configuring ``CMAKE_PREFIX_PATH``) via the :code:`TorchVision::Vision` target:
+
+.. code:: rest
+
+	find_package(TorchVision REQUIRED)
+	target_link_libraries(my-target TorchVision::Vision)
+
+The ``TorchVision`` package will also automatically look for the ``Torch`` and ``pybind11`` packages and add them as dependencies to ``my-target``,
+so make sure that they are also available to cmake via the ``CMAKE_PREFIX_PATH``.
+
 Documentation
 =============
 You can find the API documentation on the pytorch website: http://pytorch.org/docs/master/torchvision/

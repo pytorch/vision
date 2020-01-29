@@ -12,6 +12,7 @@ from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
     cityscapes_root, svhn_root, voc_root
 import xml.etree.ElementTree as ET
 
+
 try:
     import scipy
     HAS_SCIPY = True
@@ -229,6 +230,7 @@ class Tester(unittest.TestCase):
                 <name>dog</name>
               </object>
             </annotation>"""
+
             single_object_parsed = dataset.parse_voc_xml(ET.fromstring(single_object_xml))
             multiple_object_parsed = dataset.parse_voc_xml(ET.fromstring(multiple_object_xml))
 

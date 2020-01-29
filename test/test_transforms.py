@@ -1078,7 +1078,7 @@ class Tester(unittest.TestCase):
     def test_rotate_fill(self):
         img = F.to_pil_image(np.ones((100, 100, 3), dtype=np.uint8) * 255, "RGB")
 
-        modes = ("L", "RGB")
+        modes = ("L", "RGB", "F")
         nums_bands = [len(mode) for mode in modes]
         fill = 127
 

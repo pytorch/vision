@@ -28,13 +28,13 @@ class ONNXExporterTester(unittest.TestCase):
     def setUpClass(cls):
         torch.manual_seed(123)
 
-    def run_model(self, model, inputs_list, tolerate_small_mismatch=False):
+    def run_model(self, model, inputs_list, tolerate_small_mismatch=False, do_constant_folding=True):
         model.eval()
 
         onnx_io = io.BytesIO()
         # export to onnx with the first input
         torch.onnx.export(model, inputs_list[0], onnx_io,
-                          do_constant_folding=True, opset_version=_onnx_opset_version)
+                          do_constant_folding=do_constant_folding, opset_version=_onnx_opset_version)
 
         # validate the exported model with onnx runtime
         for test_inputs in inputs_list:
@@ -73,6 +73,20 @@ class ONNXExporterTester(unittest.TestCase):
                     self.assertIn("(0.00%)", str(error), str(error))
                 else:
                     raise
+
+    @unittest.skip("Disable test until Split w/ zero sizes is implemented in ORT")
+    def test_new_empty_tensor(self):
+        class Module(torch.nn.Module):
+            def __init__(self):
+                super(Module, self).__init__()
+                self.conv2 = ops.misc.ConvTranspose2d(16, 33, (3, 5))
+
+            def forward(self, input2):
+                return self.conv2(input2)
+
+        input = torch.rand(0, 16, 10, 10)
+        test_input = torch.rand(0, 16, 20, 20)
+        self.run_model(Module(), [(input, ), (test_input,)], do_constant_folding=False)
 
     def test_nms(self):
         boxes = torch.rand(5, 4)
