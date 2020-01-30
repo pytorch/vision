@@ -408,9 +408,7 @@ class ONNXExporterTester(unittest.TestCase):
         class KeyPointRCNN(torch.nn.Module):
             def __init__(self):
                 super(KeyPointRCNN, self).__init__()
-                self.model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(pretrained=True,
-                                                                                      min_size=200,
-                                                                                      max_size=300)
+                self.model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(pretrained=True)
 
             def forward(self, images):
                 output = self.model(images)
