@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 from .utils import load_state_dict_from_url
 
@@ -151,7 +152,7 @@ class MobileNetV2(nn.Module):
         # This exists since TorchScript doesn't support inheritance, so the superclass method
         # (this one) needs to have a name other than `forward` that can be accessed in a subclass
         x = self.features(x)
-        x = nn.functional.adaptive_avg_pool2d(x, 1).reshape(x.shape[0], -1)
+        x = torch.squeeze(nn.functional.adaptive_avg_pool2d(x, 1))
         x = self.classifier(x)
         return x
 
