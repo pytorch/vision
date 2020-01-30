@@ -585,22 +585,30 @@ class RoIHeads(torch.nn.Module):
         matched_idxs = []
         labels = []
         for proposals_in_image, gt_boxes_in_image, gt_labels_in_image in zip(proposals, gt_boxes, gt_labels):
-            #  set to self.box_similarity when https://github.com/pytorch/pytorch/issues/27495 lands
-            match_quality_matrix = box_ops.box_iou(gt_boxes_in_image, proposals_in_image)
-            matched_idxs_in_image = self.proposal_matcher(match_quality_matrix)
 
-            clamped_matched_idxs_in_image = matched_idxs_in_image.clamp(min=0)
+            if gt_boxes_in_image.numel() == 0:
+                # Background image
+                clamped_matched_idxs_in_image = torch.zeros(
+                    (proposals_in_image.shape[0],), dtype=torch.int64
+                )
+                labels_in_image = torch.zeros((proposals_in_image.shape[0],), dtype=torch.int64)
+            else:
+                #  set to self.box_similarity when https://github.com/pytorch/pytorch/issues/27495 lands
+                match_quality_matrix = box_ops.box_iou(gt_boxes_in_image, proposals_in_image)
+                matched_idxs_in_image = self.proposal_matcher(match_quality_matrix)
 
-            labels_in_image = gt_labels_in_image[clamped_matched_idxs_in_image]
-            labels_in_image = labels_in_image.to(dtype=torch.int64)
+                clamped_matched_idxs_in_image = matched_idxs_in_image.clamp(min=0)
 
-            # Label background (below the low threshold)
-            bg_inds = matched_idxs_in_image == self.proposal_matcher.BELOW_LOW_THRESHOLD
-            labels_in_image[bg_inds] = torch.tensor(0)
+                labels_in_image = gt_labels_in_image[clamped_matched_idxs_in_image]
+                labels_in_image = labels_in_image.to(dtype=torch.int64)
 
-            # Label ignore proposals (between low and high thresholds)
-            ignore_inds = matched_idxs_in_image == self.proposal_matcher.BETWEEN_THRESHOLDS
-            labels_in_image[ignore_inds] = torch.tensor(-1)  # -1 is ignored by sampler
+                # Label background (below the low threshold)
+                bg_inds = matched_idxs_in_image == self.proposal_matcher.BELOW_LOW_THRESHOLD
+                labels_in_image[bg_inds] = torch.tensor(0)
+
+                # Label ignore proposals (between low and high thresholds)
+                ignore_inds = matched_idxs_in_image == self.proposal_matcher.BETWEEN_THRESHOLDS
+                labels_in_image[ignore_inds] = torch.tensor(-1)  # -1 is ignored by sampler
 
             matched_idxs.append(clamped_matched_idxs_in_image)
             labels.append(labels_in_image)
@@ -646,6 +654,7 @@ class RoIHeads(torch.nn.Module):
         self.check_targets(targets)
         assert targets is not None
         dtype = proposals[0].dtype
+
         gt_boxes = [t["boxes"].to(dtype) for t in targets]
         gt_labels = [t["labels"] for t in targets]
 
@@ -663,7 +672,11 @@ class RoIHeads(torch.nn.Module):
             proposals[img_id] = proposals[img_id][img_sampled_inds]
             labels[img_id] = labels[img_id][img_sampled_inds]
             matched_idxs[img_id] = matched_idxs[img_id][img_sampled_inds]
-            matched_gt_boxes.append(gt_boxes[img_id][matched_idxs[img_id]])
+
+            gt_boxes_in_image = gt_boxes[img_id]
+            if gt_boxes_in_image.numel() == 0:
+                gt_boxes_in_image = torch.zeros((1, 4), dtype=dtype)
+            matched_gt_boxes.append(gt_boxes_in_image[matched_idxs[img_id]])
 
         regression_targets = self.box_coder.encode(matched_gt_boxes, proposals)
         return proposals, matched_idxs, labels, regression_targets
@@ -741,7 +754,8 @@ class RoIHeads(torch.nn.Module):
             for t in targets:
                 # TODO: https://github.com/pytorch/pytorch/issues/26731
                 floating_point_types = (torch.float, torch.double, torch.half)
-                assert t["boxes"].dtype in floating_point_types, 'target boxes must of float type'
+                if t["boxes"] is not None:
+                    assert t["boxes"].dtype in floating_point_types, 'target boxes must of float type'
                 assert t["labels"].dtype == torch.int64, 'target labels must of int64 type'
                 if self.has_keypoint():
                     assert t["keypoints"].dtype == torch.float32, 'target keypoints must of float type'

@@ -327,24 +327,31 @@ class RegionProposalNetwork(torch.nn.Module):
         matched_gt_boxes = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
             gt_boxes = targets_per_image["boxes"]
-            match_quality_matrix = box_ops.box_iou(gt_boxes, anchors_per_image)
-            matched_idxs = self.proposal_matcher(match_quality_matrix)
-            # get the targets corresponding GT for each proposal
-            # NB: need to clamp the indices because we can have a single
-            # GT in the image, and matched_idxs can be -2, which goes
-            # out of bounds
-            matched_gt_boxes_per_image = gt_boxes[matched_idxs.clamp(min=0)]
 
-            labels_per_image = matched_idxs >= 0
-            labels_per_image = labels_per_image.to(dtype=torch.float32)
+            if gt_boxes.numel() == 0:
+                # Background image (negative example)
+                device = anchors_per_image.device
+                matched_gt_boxes_per_image = torch.zeros_like(anchors_per_image, dtype=torch.float32, device=device)
+                labels_per_image = torch.zeros((anchors_per_image.shape[0],), dtype=torch.float32, device=device)
+            else:
+                match_quality_matrix = box_ops.box_iou(gt_boxes, anchors_per_image)
+                matched_idxs = self.proposal_matcher(match_quality_matrix)
+                # get the targets corresponding GT for each proposal
+                # NB: need to clamp the indices because we can have a single
+                # GT in the image, and matched_idxs can be -2, which goes
+                # out of bounds
+                matched_gt_boxes_per_image = gt_boxes[matched_idxs.clamp(min=0)]
 
-            # Background (negative examples)
-            bg_indices = matched_idxs == self.proposal_matcher.BELOW_LOW_THRESHOLD
-            labels_per_image[bg_indices] = torch.tensor(0.0)
+                labels_per_image = matched_idxs >= 0
+                labels_per_image = labels_per_image.to(dtype=torch.float32)
 
-            # discard indices that are between thresholds
-            inds_to_discard = matched_idxs == self.proposal_matcher.BETWEEN_THRESHOLDS
-            labels_per_image[inds_to_discard] = torch.tensor(-1.0)
+                # Background (negative examples)
+                bg_indices = matched_idxs == self.proposal_matcher.BELOW_LOW_THRESHOLD
+                labels_per_image[bg_indices] = torch.tensor(0.0)
+
+                # discard indices that are between thresholds
+                inds_to_discard = matched_idxs == self.proposal_matcher.BETWEEN_THRESHOLDS
+                labels_per_image[inds_to_discard] = torch.tensor(-1.0)
 
             labels.append(labels_per_image)
             matched_gt_boxes.append(matched_gt_boxes_per_image)
