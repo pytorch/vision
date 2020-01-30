@@ -17,8 +17,7 @@ from torch.jit.annotations import List, Optional, Dict, Tuple
 @torch.jit.unused
 def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
     # type: (Tensor, int) -> Tuple[int, int]
-    from torch.onnx import operators
-    num_anchors = operators.shape_as_tensor(ob)[1].unsqueeze(0)
+    num_anchors = ob.shape[1].unsqueeze(0)
     # TODO : remove cast to IntTensor/num_anchors.dtype when
     #        ONNX Runtime version is updated with ReduceMin int64 support
     pre_nms_top_n = torch.min(torch.cat(
@@ -157,7 +156,8 @@ class AnchorGenerator(nn.Module):
         # type: (ImageList, List[Tensor])
         grid_sizes = list([feature_map.shape[-2:] for feature_map in feature_maps])
         image_size = image_list.tensors.shape[-2:]
-        strides = [[int(image_size[0] / g[0]), int(image_size[1] / g[1])] for g in grid_sizes]
+        strides = [[torch.tensor(image_size[0] / g[0], dtype=torch.int64),
+                    torch.tensor(image_size[1] / g[1], dtype=torch.int64)] for g in grid_sizes]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
@@ -354,7 +354,17 @@ class RegionProposalNetwork(torch.nn.Module):
         # type: (Tensor, List[int])
         r = []
         offset = 0
-        for ob in objectness.split(num_anchors_per_level, 1):
+        if torchvision._is_tracing():
+            # Split's split_size is traced as constant in onnx exporting, use Gather
+            start_list = [torch.tensor(0)]
+            end_list = [num_anchors_per_level[0].clone()]
+            for cnt in num_anchors_per_level[1:]:
+                start_list.append(end_list[-1].clone())
+                end_list.append(end_list[-1] + cnt)
+            objectness_per_level = [objectness[:, s:e] for s, e in zip(start_list, end_list)]
+        else:
+            objectness_per_level = objectness.split(num_anchors_per_level, 1)
+        for ob in objectness_per_level:
             if torchvision._is_tracing():
                 num_anchors, pre_nms_top_n = _onnx_get_num_anchors_and_pre_nms_top_n(ob, self.pre_nms_top_n())
             else:
@@ -372,14 +382,12 @@ class RegionProposalNetwork(torch.nn.Module):
         # do not backprop throught objectness
         objectness = objectness.detach()
         objectness = objectness.reshape(num_images, -1)
-
         levels = [
             torch.full((n,), idx, dtype=torch.int64, device=device)
             for idx, n in enumerate(num_anchors_per_level)
         ]
         levels = torch.cat(levels, 0)
         levels = levels.reshape(1, -1).expand_as(objectness)
-
         # select top_n boxes independently per level before applying nms
         top_n_idx = self._get_top_n_idx(objectness, num_anchors_per_level)
 
@@ -466,7 +474,10 @@ class RegionProposalNetwork(torch.nn.Module):
         anchors = self.anchor_generator(images, features)
 
         num_images = len(anchors)
-        num_anchors_per_level = [o[0].numel() for o in objectness]
+        # num_anchors_per_level = [torch.prod(shape_as_tensor(o[0])) for o in objectness]
+        num_anchors_per_level_shape_tensors = [o[0].shape for o in objectness]
+        num_anchors_per_level = [s[0] * s[1] * s[2] for s in num_anchors_per_level_shape_tensors]
+
         objectness, pred_bbox_deltas = \
             concat_box_prediction_layers(objectness, pred_bbox_deltas)
         # apply pred_bbox_deltas to anchors to obtain the decoded proposals

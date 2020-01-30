@@ -28,14 +28,17 @@ class ONNXExporterTester(unittest.TestCase):
     def setUpClass(cls):
         torch.manual_seed(123)
 
-    def run_model(self, model, inputs_list, tolerate_small_mismatch=False, do_constant_folding=True):
+    def run_model(self, model, inputs_list, tolerate_small_mismatch=False, do_constant_folding=True, dynamic_axes=None,
+                  output_names=None, input_names=None):
         model.eval()
 
         onnx_io = io.BytesIO()
+        # onnx_io = '/home/neraoof/test/results/transform.onnx'
         # export to onnx with the first input
-        torch.onnx.export(model, inputs_list[0], onnx_io,
-                          do_constant_folding=do_constant_folding, opset_version=_onnx_opset_version)
 
+        torch.onnx.export(model, inputs_list[0], onnx_io,
+                          do_constant_folding=do_constant_folding, opset_version=_onnx_opset_version,
+                          dynamic_axes=dynamic_axes, input_names=input_names, output_names=output_names)
         # validate the exported model with onnx runtime
         for test_inputs in inputs_list:
             with torch.no_grad():
@@ -65,6 +68,7 @@ class ONNXExporterTester(unittest.TestCase):
         # compute onnxruntime output prediction
         ort_inputs = dict((ort_session.get_inputs()[i].name, inpt) for i, inpt in enumerate(inputs))
         ort_outs = ort_session.run(None, ort_inputs)
+
         for i in range(0, len(outputs)):
             try:
                 torch.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
@@ -123,9 +127,11 @@ class ONNXExporterTester(unittest.TestCase):
             def forward(self_module, images):
                 return self_module.transform(images)[0].tensors
 
-        input = [torch.rand(3, 100, 200), torch.rand(3, 200, 200)]
-        input_test = [torch.rand(3, 100, 200), torch.rand(3, 200, 200)]
-        self.run_model(TransformModule(), [input, input_test])
+        input = torch.rand(3, 100, 200), torch.rand(3, 200, 200)
+        input_test = torch.rand(3, 130, 230), torch.rand(3, 230, 230)
+        self.run_model(TransformModule(), [(input,), (input_test,)],
+                       input_names=["input1", "input2"],
+                       dynamic_axes={"input1": [0, 1, 2, 3], "input2": [0, 1, 2, 3]})
 
     def _init_test_generalized_rcnn_transform(self):
         min_size = 100
@@ -207,22 +213,29 @@ class ONNXExporterTester(unittest.TestCase):
 
     def test_rpn(self):
         class RPNModule(torch.nn.Module):
-            def __init__(self_module, images):
+            def __init__(self_module):
                 super(RPNModule, self_module).__init__()
                 self_module.rpn = self._init_test_rpn()
-                self_module.images = ImageList(images, [i.shape[-2:] for i in images])
 
-            def forward(self_module, features):
-                return self_module.rpn(self_module.images, features)
+            def forward(self_module, images, features):
+                images = ImageList(images, [i.shape[-2:] for i in images])
+                return self_module.rpn(images, features)
+
 
         images = torch.rand(2, 3, 600, 600)
         features = self.get_features(images)
-        test_features = self.get_features(images)
+        images2 = torch.rand(2, 3, 1000, 1000)
+        test_features = self.get_features(images2)
 
-        model = RPNModule(images)
+        model = RPNModule()
         model.eval()
-        model(features)
-        self.run_model(model, [(features,), (test_features,)], tolerate_small_mismatch=True)
+        model(images, features)
+
+        self.run_model(model, [(images, features), (images2, test_features)], tolerate_small_mismatch=True,
+                       input_names=["input1", "input2", "input3", "input4", "input5", "input6"],
+                       dynamic_axes={"input1": [0, 1, 2, 3], "input2": [0, 1, 2, 3],
+                                     "input3": [0, 1, 2, 3], "input4": [0, 1, 2, 3],
+                                     "input5": [0, 1, 2, 3], "input6": [0, 1, 2, 3]})
 
     def test_multi_scale_roi_align(self):
 
@@ -251,32 +264,38 @@ class ONNXExporterTester(unittest.TestCase):
 
     def test_roi_heads(self):
         class RoiHeadsModule(torch.nn.Module):
-            def __init__(self_module, images):
+            def __init__(self_module):
                 super(RoiHeadsModule, self_module).__init__()
                 self_module.transform = self._init_test_generalized_rcnn_transform()
                 self_module.rpn = self._init_test_rpn()
                 self_module.roi_heads = self._init_test_roi_heads_faster_rcnn()
-                self_module.original_image_sizes = [img.shape[-2:] for img in images]
-                self_module.images = ImageList(images, [i.shape[-2:] for i in images])
 
-            def forward(self_module, features):
-                proposals, _ = self_module.rpn(self_module.images, features)
-                detections, _ = self_module.roi_heads(features, proposals, self_module.images.image_sizes)
+            def forward(self_module, images, features):
+                original_image_sizes = [img.shape[-2:] for img in images]
+                images = ImageList(images, [i.shape[-2:] for i in images])
+                proposals, _ = self_module.rpn(images, features)
+                detections, _ = self_module.roi_heads(features, proposals, images.image_sizes)
                 detections = self_module.transform.postprocess(detections,
-                                                               self_module.images.image_sizes,
-                                                               self_module.original_image_sizes)
+                                                               images.image_sizes,
+                                                               original_image_sizes)
                 return detections
 
         images = torch.rand(2, 3, 600, 600)
         features = self.get_features(images)
-        test_features = self.get_features(images)
+        images2 = torch.rand(2, 3, 1000, 1000)
+        test_features = self.get_features(images2)
 
-        model = RoiHeadsModule(images)
+        model = RoiHeadsModule()
         model.eval()
-        model(features)
-        self.run_model(model, [(features,), (test_features,)])
+        model(images, features)
 
-    def get_image_from_url(self, url):
+        self.run_model(model, [(images, features), (images2, test_features)], tolerate_small_mismatch=True,
+                       input_names=["input1", "input2", "input3", "input4", "input5", "input6"],
+                       dynamic_axes={"input1": [0, 1, 2, 3], "input2": [0, 1, 2, 3], "input3": [0, 1, 2, 3],
+                                     "input4": [0, 1, 2, 3], "input5": [0, 1, 2, 3], "input6": [0, 1, 2, 3]})
+
+
+    def get_image_from_url(self, url, size=None):
         import requests
         import numpy
         from PIL import Image
@@ -285,16 +304,22 @@ class ONNXExporterTester(unittest.TestCase):
 
         data = requests.get(url)
         image = Image.open(BytesIO(data.content)).convert("RGB")
-        image = image.resize((300, 200), Image.BILINEAR)
+
+        if size is None:
+            size = (300, 200)
+        image = image.resize(size, Image.BILINEAR)
 
         to_tensor = transforms.ToTensor()
         return to_tensor(image)
 
+
     def get_test_images(self):
         image_url = "http://farm3.staticflickr.com/2469/3915380994_2e611b1779_z.jpg"
-        image = self.get_image_from_url(url=image_url)
+        image = self.get_image_from_url(url=image_url, size=(800, 1201))
+
         image_url2 = "https://pytorch.org/tutorials/_static/img/tv_tutorial/tv_image05.png"
-        image2 = self.get_image_from_url(url=image_url2)
+        image2 = self.get_image_from_url(url=image_url2, size=(873, 800))
+
         images = [image]
         test_images = [image2]
         return images, test_images
@@ -302,12 +327,13 @@ class ONNXExporterTester(unittest.TestCase):
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
 
-        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True,
-                                                                     min_size=200,
-                                                                     max_size=300)
+        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True)
         model.eval()
         model(images)
-        self.run_model(model, [(images,), (test_images,)])
+        self.run_model(model, [(images,), (test_images,)], input_names=["images_tensors"],
+                       output_names=["outputs"],
+                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
+                       tolerate_small_mismatch=True)
 
     # Verify that paste_mask_in_image beahves the same in tracing.
     # This test also compares both paste_masks_in_image and _onnx_paste_masks_in_image
@@ -346,10 +372,14 @@ class ONNXExporterTester(unittest.TestCase):
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
 
-        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
+        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True)
         model.eval()
         model(images)
-        self.run_model(model, [(images,), (test_images,)])
+        self.run_model(model, [(images,), (test_images,)],
+                       input_names=["images_tensors"],
+                       output_names=["outputs"],
+                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
+                       tolerate_small_mismatch=True)
 
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
     # This test also compares both heatmaps_to_keypoints and _onnx_heatmaps_to_keypoints
@@ -398,7 +428,11 @@ class ONNXExporterTester(unittest.TestCase):
         model = KeyPointRCNN()
         model.eval()
         model(test_images)
-        self.run_model(model, [(images,), (test_images,)])
+        self.run_model(model, [(images,), (test_images,)],
+                       input_names=["images_tensors"],
+                       output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
+                       dynamic_axes={"images_tensors": [0, 1, 2, 3]},
+                       tolerate_small_mismatch=True)
 
 
 if __name__ == '__main__':
