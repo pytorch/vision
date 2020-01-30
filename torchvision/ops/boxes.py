@@ -5,6 +5,7 @@ from torch.jit.annotations import Tuple
 from torch import Tensor
 import torchvision
 
+
 def nms(boxes, scores, iou_threshold):
     # type: (Tensor, Tensor, float)
     """

@@ -128,10 +128,8 @@ class ONNXExporterTester(unittest.TestCase):
                 return self_module.transform(images)[0].tensors
 
         input = torch.rand(3, 100, 200), torch.rand(3, 200, 200)
-        input_test = torch.rand(3, 130, 230), torch.rand(3, 230, 230)
-        self.run_model(TransformModule(), [(input,), (input_test,)],
-                       input_names=["input1", "input2"],
-                       dynamic_axes={"input1": [0, 1, 2, 3], "input2": [0, 1, 2, 3]})
+        input_test = torch.rand(3, 100, 200), torch.rand(3, 200, 200)
+        self.run_model(TransformModule(), [(input,), (input_test,)])
 
     def _init_test_generalized_rcnn_transform(self):
         min_size = 100
@@ -221,7 +219,6 @@ class ONNXExporterTester(unittest.TestCase):
                 images = ImageList(images, [i.shape[-2:] for i in images])
                 return self_module.rpn(images, features)
 
-
         images = torch.rand(2, 3, 600, 600)
         features = self.get_features(images)
         images2 = torch.rand(2, 3, 1000, 1000)
@@ -294,7 +291,6 @@ class ONNXExporterTester(unittest.TestCase):
                        dynamic_axes={"input1": [0, 1, 2, 3], "input2": [0, 1, 2, 3], "input3": [0, 1, 2, 3],
                                      "input4": [0, 1, 2, 3], "input5": [0, 1, 2, 3], "input6": [0, 1, 2, 3]})
 
-
     def get_image_from_url(self, url, size=None):
         import requests
         import numpy
@@ -311,7 +307,6 @@ class ONNXExporterTester(unittest.TestCase):
 
         to_tensor = transforms.ToTensor()
         return to_tensor(image)
-
 
     def get_test_images(self):
         image_url = "http://farm3.staticflickr.com/2469/3915380994_2e611b1779_z.jpg"
