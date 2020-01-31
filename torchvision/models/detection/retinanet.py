@@ -1,8 +1,10 @@
+import math
 from collections import OrderedDict
 
 import torch
 from torch import nn
 import torch.nn.functional as F
+from torch.jit.annotations import Dict, List, Tuple
 
 from ..utils import load_state_dict_from_url
 
@@ -11,6 +13,7 @@ from .anchor_utils import AnchorGenerator
 from .transform import GeneralizedRCNNTransform
 from .backbone_utils import resnet_fpn_backbone
 from ...ops.feature_pyramid_network import LastLevelP6P7
+from ...ops import sigmoid_focal_loss
 
 
 __all__ = [
@@ -36,13 +39,13 @@ class RetinaNetHead(nn.Module):
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
         return {
             'classification': self.classification_head.compute_loss(targets, head_outputs, anchors, matched_idxs),
-            'bbox_reg': self.regression_head.compute_loss(targets, head_outputs, anchors, matched_idxs),
+            'bbox_regression': self.regression_head.compute_loss(targets, head_outputs, anchors, matched_idxs),
         }
 
     def forward(self, x):
-        logits = [self.classification_head(feature) for feature in x]
+        cls_logits = [self.classification_head(feature) for feature in x]
         bbox_reg = [self.regression_head(feature) for feature in x]
-        return dict(logits=logits, bbox_reg=bbox_reg)
+        return dict(cls_logits=cls_logits, bbox_reg=bbox_reg)
 
 
 class RetinaNetClassificationHead(nn.Module):
@@ -68,9 +71,48 @@ class RetinaNetClassificationHead(nn.Module):
             torch.nn.init.normal_(l.weight, std=0.01)
             torch.nn.init.constant_(l.bias, 0)
 
+        self.cls_logits = nn.Conv2d(in_channels, num_anchors * num_classes, kernel_size=3, stride=1, padding=1)
+        torch.nn.init.normal_(self.cls_logits.weight, std=0.01)
+        torch.nn.init.constant_(self.cls_logits.bias, -math.log((1 - prior_probability) / prior_probability))
+
+        self.num_classes = num_classes
+        self.num_anchors = num_anchors
+
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
-        # TODO Implement focal loss, is there an existing function for this?
-        return 0
+        loss = []
+
+        def permute_classification(tensor):
+            """ Permute classification output from (N, A * K, H, W) to (N, HWA, K). """
+            N, _, H, W = tensor.shape
+            tensor = tensor.view(N, -1, self.num_classes, H, W)
+            tensor = tensor.permute(0, 3, 4, 1, 2)
+            tensor = tensor.reshape(N, -1, self.num_classes)  # Size=(N, HWA, 4)
+            return tensor
+
+        predicted_classification = head_outputs['cls_logits']
+        predicted_classification = [permute_classification(cls) for cls in predicted_classification]
+        predicted_classification = torch.cat(predicted_classification, dim=1)
+
+        for targets_per_image, predicted_classification_per_image, anchors_per_image, matched_idxs_per_image in zip(targets, predicted_classification, anchors, matched_idxs):
+            # determine only the foreground
+            foreground_idxs_per_image = matched_idxs_per_image >= 0
+            num_foreground = foreground_idxs_per_image.sum()
+
+            # create the target classification
+            gt_classes_target = torch.zeros_like(predicted_classification_per_image)
+            gt_classes_target[foreground_idxs_per_image, targets_per_image['labels'][matched_idxs_per_image[foreground_idxs_per_image]]] = 1
+
+            # find indices for which anchors should be ignored
+            valid_idxs_per_image = matched_idxs_per_image != det_utils.Matcher.BETWEEN_THRESHOLDS
+
+            # compute the classification loss
+            loss.append(sigmoid_focal_loss_jit(
+                predicted_classification_per_image[valid_idxs_per_image],
+                gt_classes_target[valid_idxs_per_image],
+                reduction='sum',
+            ) / max(1, num_foreground))
+
+        return sum(loss) / len(loss)
 
     def forward(self, x):
         all_cls_logits = []
@@ -112,14 +154,25 @@ class RetinaNetRegressionHead(nn.Module):
 
         for l in self.children():
             torch.nn.init.normal_(l.weight, std=0.01)
-            torch.nn.init.constant_(l.bias, 0)
+            torch.nn.init.zeros_(l.bias)
 
         self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
 
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
         loss = []
 
-        predicted_regression = head_outputs['bbox_reg'][0]
+        def permute_bbox_reg(tensor):
+            """ Permute bbox regression output from (N, 4 * A, H, W) to (N, HWA, 4). """
+            N, _, H, W = tensor.shape
+            tensor = tensor.view(N, -1, 4, H, W)
+            tensor = tensor.permute(0, 3, 4, 1, 2)
+            tensor = tensor.reshape(N, -1, 4)  # Size=(N, HWA, 4)
+            return tensor
+
+        predicted_regression = head_outputs['bbox_reg']
+        predicted_regression = [permute_bbox_reg(reg) for reg in predicted_regression]
+        predicted_regression = torch.cat(predicted_regression, dim=1)
+
         for targets_per_image, predicted_regression_per_image, anchors_per_image, matched_idxs_per_image in zip(targets, predicted_regression, anchors, matched_idxs):
             # get the targets corresponding GT for each proposal
             # NB: need to clamp the indices because we can have a single
@@ -129,20 +182,20 @@ class RetinaNetRegressionHead(nn.Module):
 
             # determine only the foreground indices, ignore the rest
             foreground_idxs_per_image = matched_idxs_per_image >= 0
+            num_foreground = foreground_idxs_per_image.sum()
 
             # select only the foreground boxes
             matched_gt_boxes_per_image = matched_gt_boxes_per_image[foreground_idxs_per_image, :]
-            print(predicted_regression_per_image.shape)
-            predicted_regression_per_image = predicted_regression_per_image['bbox_reg'][foreground_idxs_per_image, :]
+            predicted_regression_per_image = predicted_regression_per_image[foreground_idxs_per_image, :]
             anchors_per_image = anchors_per_image[foreground_idxs_per_image, :]
 
             # compute the regression targets
-            target_regression = self.box_coder.encode(matched_gt_boxes_per_image, anchors_per_image)
+            target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
 
             # compute the loss
-            loss.append(torch.nn.SmoothL1Loss()(predicted_regression_per_image, target_regression))
+            loss.append(F.smooth_l1_loss((bbox_regression_per_image, target_regression) / max(1, num_foreground), reduction='sum')
 
-        return sum(loss) / len(loss)
+        return sum(loss) / max(1, len(loss))
 
     def forward(self, x):
         all_bbox_regression = []
@@ -275,7 +328,7 @@ class RetinaNet(nn.Module):
         self.anchor_generator = anchor_generator
 
         if head is None:
-            head = RetinaNetHead(backbone.out_channels, num_classes, anchor_generator.num_anchors_per_location()[0])
+            head = RetinaNetHead(backbone.out_channels, anchor_generator.num_anchors_per_location()[0], num_classes)
         self.head = head
 
         if proposal_matcher is None:

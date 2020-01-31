@@ -1,6 +1,9 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
+import torchvision
 from torch import nn
+
+from torch.jit.annotations import List, Optional, Dict
 
 
 class AnchorGenerator(nn.Module):
