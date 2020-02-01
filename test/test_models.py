@@ -248,6 +248,22 @@ class ModelTester(TestCase):
         self.assertTrue("scores" in out_cpu[0])
         self.assertTrue("labels" in out_cpu[0])
 
+    def test_generalizedrcnn_transform_repr(self):
+
+        min_size, max_size = 224, 299
+        image_mean = [0.485, 0.456, 0.406]
+        image_std = [0.229, 0.224, 0.225]
+
+        t = models.detection.transform.GeneralizedRCNNTransform(min_size=min_size,
+                                                                max_size=max_size,
+                                                                image_mean=image_mean,
+                                                                image_std=image_std)
+
+        # Check integrity of object __repr__ attribute
+        self.assertEqual(t.__repr__(), f"GeneralizedRCNNTransform(\n    Normalize(mean={image_mean.__repr__()}, "
+                                        "std={image_std.__repr__()})\n    Resize(min_size=({min_size},), "
+                                        "max_size={max_size}, mode='bilinear')\n)")
+
 
 for model_name in get_available_classification_models():
     # for-loop bodies don't define scopes, so we have to save the variables
