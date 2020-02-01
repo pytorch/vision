@@ -14,7 +14,7 @@ find_package(Torch REQUIRED)
 find_package(pybind11 REQUIRED)
 
 file(GLOB HEADERS torchvision/csrc/*.h)
-file(GLOB OPERATOR_SOURCES torchvision/csrc/cpu/*.h torchvision/csrc/cpu/*.cpp)
+file(GLOB OPERATOR_SOURCES torchvision/csrc/cpu/*.h torchvision/csrc/cpu/*.cpp torchvision/csrc/*.cpp)
 if(WITH_CUDA)
   file(GLOB OPERATOR_SOURCES ${OPERATOR_SOURCES} torchvision/csrc/cuda/*.h torchvision/csrc/cuda/*.cu)
 endif()
@@ -34,6 +34,14 @@ include(CMakePackageConfigHelpers)
 
 set(TORCHVISION_CMAKECONFIG_INSTALL_DIR "share/cmake/TorchVision" CACHE STRING "install path for TorchVisionConfig.cmake")
 
+if(NOT TORCHVISION_INSTALL_LIBRARY_DIR)
+  set(TORCHVISION_INSTALL_LIBRARY_DIR lib)
+endif()
+
+if(NOT TORCHVISION_INSTALL_ARCHIVE_DIR)
+  set(TORCHVISION_INSTALL_ARCHIVE_DIR lib)
+endif()
+
 configure_package_config_file(cmake/TorchVisionConfig.cmake.in
   "${CMAKE_CURRENT_BINARY_DIR}/TorchVisionConfig.cmake"
   INSTALL_DESTINATION ${TORCHVISION_CMAKECONFIG_INSTALL_DIR})
@@ -47,7 +55,10 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/TorchVisionConfig.cmake
   DESTINATION ${TORCHVISION_CMAKECONFIG_INSTALL_DIR})
 
 install(TARGETS ${PROJECT_NAME}
-  EXPORT TorchVisionTargets)
+  EXPORT TorchVisionTargets
+  LIBRARY DESTINATION ${TORCHVISION_INSTALL_LIBRARY_DIR}
+  ARCHIVE DESTINATION ${TORCHVISION_INSTALL_ARCHIVE_DIR}
+  )
 
 install(EXPORT TorchVisionTargets
   NAMESPACE TorchVision::
