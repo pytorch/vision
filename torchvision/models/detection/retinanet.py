@@ -43,9 +43,10 @@ class RetinaNetHead(nn.Module):
         }
 
     def forward(self, x):
-        cls_logits = [self.classification_head(feature) for feature in x]
-        bbox_reg = [self.regression_head(feature) for feature in x]
-        return dict(cls_logits=cls_logits, bbox_reg=bbox_reg)
+        return {
+            'cls_logits': self.classification_head(x),
+            'bbox_regression': self.regression_head(x)
+        }
 
 
 class RetinaNetClassificationHead(nn.Module):
@@ -81,33 +82,23 @@ class RetinaNetClassificationHead(nn.Module):
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
         loss = []
 
-        def permute_classification(tensor):
-            """ Permute classification output from (N, A * K, H, W) to (N, HWA, K). """
-            N, _, H, W = tensor.shape
-            tensor = tensor.view(N, -1, self.num_classes, H, W)
-            tensor = tensor.permute(0, 3, 4, 1, 2)
-            tensor = tensor.reshape(N, -1, self.num_classes)  # Size=(N, HWA, 4)
-            return tensor
+        cls_logits = head_outputs['cls_logits']
 
-        predicted_classification = head_outputs['cls_logits']
-        predicted_classification = [permute_classification(cls) for cls in predicted_classification]
-        predicted_classification = torch.cat(predicted_classification, dim=1)
-
-        for targets_per_image, predicted_classification_per_image, anchors_per_image, matched_idxs_per_image in zip(targets, predicted_classification, anchors, matched_idxs):
+        for targets_per_image, cls_logits_per_image, anchors_per_image, matched_idxs_per_image in zip(targets, cls_logits, anchors, matched_idxs):
             # determine only the foreground
             foreground_idxs_per_image = matched_idxs_per_image >= 0
             num_foreground = foreground_idxs_per_image.sum()
 
             # create the target classification
-            gt_classes_target = torch.zeros_like(predicted_classification_per_image)
+            gt_classes_target = torch.zeros_like(cls_logits_per_image)
             gt_classes_target[foreground_idxs_per_image, targets_per_image['labels'][matched_idxs_per_image[foreground_idxs_per_image]]] = 1
 
             # find indices for which anchors should be ignored
             valid_idxs_per_image = matched_idxs_per_image != det_utils.Matcher.BETWEEN_THRESHOLDS
 
             # compute the classification loss
-            loss.append(sigmoid_focal_loss_jit(
-                predicted_classification_per_image[valid_idxs_per_image],
+            loss.append(sigmoid_focal_loss(
+                cls_logits_per_image[valid_idxs_per_image],
                 gt_classes_target[valid_idxs_per_image],
                 reduction='sum',
             ) / max(1, num_foreground))
@@ -161,19 +152,9 @@ class RetinaNetRegressionHead(nn.Module):
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
         loss = []
 
-        def permute_bbox_reg(tensor):
-            """ Permute bbox regression output from (N, 4 * A, H, W) to (N, HWA, 4). """
-            N, _, H, W = tensor.shape
-            tensor = tensor.view(N, -1, 4, H, W)
-            tensor = tensor.permute(0, 3, 4, 1, 2)
-            tensor = tensor.reshape(N, -1, 4)  # Size=(N, HWA, 4)
-            return tensor
+        bbox_regression = head_outputs['bbox_regression']
 
-        predicted_regression = head_outputs['bbox_reg']
-        predicted_regression = [permute_bbox_reg(reg) for reg in predicted_regression]
-        predicted_regression = torch.cat(predicted_regression, dim=1)
-
-        for targets_per_image, predicted_regression_per_image, anchors_per_image, matched_idxs_per_image in zip(targets, predicted_regression, anchors, matched_idxs):
+        for targets_per_image, bbox_regression_per_image, anchors_per_image, matched_idxs_per_image in zip(targets, bbox_regression, anchors, matched_idxs):
             # get the targets corresponding GT for each proposal
             # NB: need to clamp the indices because we can have a single
             # GT in the image, and matched_idxs can be -2, which goes
@@ -186,7 +167,7 @@ class RetinaNetRegressionHead(nn.Module):
 
             # select only the foreground boxes
             matched_gt_boxes_per_image = matched_gt_boxes_per_image[foreground_idxs_per_image, :]
-            predicted_regression_per_image = predicted_regression_per_image[foreground_idxs_per_image, :]
+            bbox_regression_per_image = bbox_regression_per_image[foreground_idxs_per_image, :]
             anchors_per_image = anchors_per_image[foreground_idxs_per_image, :]
 
             # compute the regression targets
