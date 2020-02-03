@@ -260,9 +260,10 @@ class ModelTester(TestCase):
                                                                 image_std=image_std)
 
         # Check integrity of object __repr__ attribute
-        self.assertEqual(t.__repr__(), f"GeneralizedRCNNTransform(\n    Normalize(mean={image_mean.__repr__()}, "
-                                       f"std={image_std.__repr__()})\n    Resize(min_size=({min_size},), "
-                                       f"max_size={max_size}, mode='bilinear')\n)")
+        self.assertEqual(t.__repr__(),
+                         "GeneralizedRCNNTransform(\n    Normalize(mean={0}, ".format(image_mean.__repr__())
+                         "std={0})\n    Resize(min_size=({1},), ".format(image_std.__repr__(), min_size)
+                         "max_size={0}, mode='bilinear')\n)".format(max_size))
 
 
 for model_name in get_available_classification_models():
