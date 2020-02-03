@@ -1,23 +1,26 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #include "sync_decoder.h"
 #include <c10/util/Logging.h>
 
 namespace ffmpeg {
 
 SyncDecoder::VectorByteStorage::VectorByteStorage(size_t n) {
-  buffer_.resize(n);
+  ensure(n);
+}
+
+SyncDecoder::VectorByteStorage::~VectorByteStorage() {
+  av_free(buffer_);
 }
 
 void SyncDecoder::VectorByteStorage::ensure(size_t n) {
   if (tail() < n) {
-    buffer_.resize(offset_ + length_ + n);
+    capacity_ = offset_ + length_ + n;
+    buffer_ = static_cast<uint8_t*>(av_realloc(buffer_, capacity_));
   }
 }
 
 uint8_t* SyncDecoder::VectorByteStorage::writableTail() {
-  CHECK_LE(offset_ + length_, buffer_.size());
-  return buffer_.data() + offset_ + length_;
+  CHECK_LE(offset_ + length_, capacity_);
+  return buffer_ + offset_ + length_;
 }
 
 void SyncDecoder::VectorByteStorage::append(size_t n) {
@@ -32,7 +35,7 @@ void SyncDecoder::VectorByteStorage::trim(size_t n) {
 }
 
 const uint8_t* SyncDecoder::VectorByteStorage::data() const {
-  return buffer_.data() + offset_;
+  return buffer_ + offset_;
 }
 
 size_t SyncDecoder::VectorByteStorage::length() const {
@@ -40,13 +43,11 @@ size_t SyncDecoder::VectorByteStorage::length() const {
 }
 
 size_t SyncDecoder::VectorByteStorage::tail() const {
-  auto size = buffer_.size();
-  CHECK_LE(offset_ + length_, buffer_.size());
-  return size - offset_ - length_;
+  CHECK_LE(offset_ + length_, capacity_);
+  return capacity_ - offset_ - length_;
 }
 
 void SyncDecoder::VectorByteStorage::clear() {
-  buffer_.clear();
   offset_ = 0;
   length_ = 0;
 }
@@ -66,16 +67,22 @@ int SyncDecoder::decode(DecoderOutputMessage* out, uint64_t timeoutMs) {
   }
 
   if (queue_.empty()) {
-    int result = getBytes(timeoutMs);
+    int result = getFrame(timeoutMs);
+    // assign EOF
     eof_ = result == ENODATA;
-
+    // check unrecoverable error, any error but ENODATA
     if (result && result != ENODATA) {
       return result;
     }
 
     // still empty
     if (queue_.empty()) {
-      return ETIMEDOUT;
+      if (eof_) {
+        return ENODATA;
+      } else {
+        LOG(INFO) << "Queue is empty";
+        return ETIMEDOUT;
+      }
     }
   }
 

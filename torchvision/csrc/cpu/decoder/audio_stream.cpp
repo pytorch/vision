@@ -1,5 +1,3 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #include "audio_stream.h"
 #include <c10/util/Logging.h>
 #include <limits>
@@ -8,9 +6,21 @@
 namespace ffmpeg {
 
 namespace {
+bool operator==(const AudioFormat& x, const AVFrame& y) {
+  return x.samples == y.sample_rate && x.channels == y.channels &&
+      x.format == y.format;
+}
+
 bool operator==(const AudioFormat& x, const AVCodecContext& y) {
   return x.samples == y.sample_rate && x.channels == y.channels &&
       x.format == y.sample_fmt;
+}
+
+AudioFormat& toAudioFormat(AudioFormat& x, const AVFrame& y) {
+  x.samples = y.sample_rate;
+  x.channels = y.channels;
+  x.format = y.format;
+  return x;
 }
 
 AudioFormat& toAudioFormat(AudioFormat& x, const AVCodecContext& y) {
@@ -29,7 +39,8 @@ AudioStream::AudioStream(
     : Stream(
           inputCtx,
           MediaFormat::makeMediaFormat(format, index),
-          convertPtsToWallTime) {}
+          convertPtsToWallTime,
+          0) {}
 
 AudioStream::~AudioStream() {
   if (sampler_) {
@@ -65,12 +76,15 @@ int AudioStream::initFormat() {
 
 int AudioStream::estimateBytes(bool flush) {
   ensureSampler();
-  if (!(sampler_->getInputFormat().audio == *codecCtx_)) {
+  // check if input format gets changed
+  if (flush ? !(sampler_->getInputFormat().audio == *codecCtx_)
+            : !(sampler_->getInputFormat().audio == *frame_)) {
     // - reinit sampler
     SamplerParameters params;
     params.type = format_.type;
     params.out = format_.format;
-    toAudioFormat(params.in.audio, *codecCtx_);
+    flush ? toAudioFormat(params.in.audio, *codecCtx_)
+          : toAudioFormat(params.in.audio, *frame_);
     if (flush || !sampler_->init(params)) {
       return -1;
     }
@@ -84,39 +98,12 @@ int AudioStream::estimateBytes(bool flush) {
             << ", channels: " << format_.format.audio.channels
             << ", format: " << format_.format.audio.format;
   }
-  return sampler_->getSamplesBytes(frame_);
+  return sampler_->getSamplesBytes(flush ? nullptr : frame_);
 }
 
 int AudioStream::copyFrameBytes(ByteStorage* out, bool flush) {
   ensureSampler();
   return sampler_->sample(flush ? nullptr : frame_, out);
-}
-
-void AudioStream::setHeader(DecoderHeader* header) {
-  header->seqno = numGenerator_++;
-
-  if (codecCtx_->time_base.num != 0) {
-    header->pts = av_rescale_q(
-        av_frame_get_best_effort_timestamp(frame_),
-        codecCtx_->time_base,
-        AV_TIME_BASE_Q);
-  } else {
-    // If the codec time_base is missing then we would've skipped the
-    // rescalePackage step to rescale to codec time_base, so here we can
-    // rescale straight from the stream time_base into AV_TIME_BASE_Q.
-    header->pts = av_rescale_q(
-        av_frame_get_best_effort_timestamp(frame_),
-        inputCtx_->streams[format_.stream]->time_base,
-        AV_TIME_BASE_Q);
-  }
-
-  if (convertPtsToWallTime_) {
-    keeper_.adjust(header->pts);
-  }
-
-  header->keyFrame = 1;
-  header->fps = std::numeric_limits<double>::quiet_NaN();
-  header->format = format_;
 }
 
 } // namespace ffmpeg

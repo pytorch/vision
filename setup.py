@@ -180,41 +180,21 @@ def get_extensions():
         ffmpeg_root = os.path.dirname(ffmpeg_bin)
         ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
 
-        # TorchVision video reader
+        # TorchVision base decoder + video reader
         video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
         video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
+        base_decoder_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'decoder')
+        base_decoder_src = glob.glob(os.path.join(base_decoder_src_dir, "[!sync_decoder_test]*.cpp"))
+
+        combined_src = video_reader_src + base_decoder_src
 
         ext_modules.append(
             CppExtension(
                 'torchvision.video_reader',
-                video_reader_src,
-                include_dirs=[
-                    video_reader_src_dir,
-                    ffmpeg_include_dir,
-                    extensions_dir,
-                ],
-                libraries=[
-                    'avcodec',
-                    'avformat',
-                    'avutil',
-                    'swresample',
-                    'swscale',
-                ],
-                extra_compile_args=["-std=c++14"],
-                extra_link_args=["-std=c++14"],
-            )
-        )
-
-        # TorchVision base decoder
-        base_decoder_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'decoder')
-        base_decoder_src = glob.glob(os.path.join(base_decoder_src_dir, "[!sync_decoder_test]*.cpp"))
-
-        ext_modules.append(
-            CppExtension(
-                'torchvision.base_decoder',
-                base_decoder_src,
+                combined_src,
                 include_dirs=[
                     base_decoder_src_dir,
+                    video_reader_src_dir,
                     ffmpeg_include_dir,
                     extensions_dir,
                 ],

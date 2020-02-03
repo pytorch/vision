@@ -1,10 +1,7 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #pragma once
 
 #include "stream.h"
 #include "subtitle_sampler.h"
-#include "time_keeper.h"
 
 namespace ffmpeg {
 
@@ -25,18 +22,17 @@ class SubtitleStream : public Stream {
   ~SubtitleStream() override;
 
  protected:
-  void setHeader(DecoderHeader* header) override;
+  void setFramePts(DecoderHeader* header, bool flush) override;
 
  private:
   int initFormat() override;
-  int analyzePacket(const AVPacket* packet, int* gotFramePtr) override;
+  int analyzePacket(const AVPacket* packet, bool* gotFrame) override;
   int estimateBytes(bool flush) override;
   int copyFrameBytes(ByteStorage* out, bool flush) override;
   void releaseSubtitle();
 
  private:
   SubtitleSampler sampler_;
-  TimeKeeper keeper_;
   AVSubtitleKeeper sub_;
 };
 

@@ -1,5 +1,3 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #include "util.h"
 #include <c10/util/Logging.h>
 

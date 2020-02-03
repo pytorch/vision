@@ -1,5 +1,3 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #pragma once
 
 #include <list>
@@ -13,9 +11,11 @@ namespace ffmpeg {
  * or fetched internally by FFMPEG library
  */
 class SyncDecoder : public Decoder {
+  // Allocation of memory must be done with a proper alignment.
   class VectorByteStorage : public ByteStorage {
    public:
     VectorByteStorage(size_t n);
+    ~VectorByteStorage() override;
     void ensure(size_t n) override;
     uint8_t* writableTail() override;
     void append(size_t n) override;
@@ -28,7 +28,8 @@ class SyncDecoder : public Decoder {
    private:
     size_t offset_{0};
     size_t length_{0};
-    std::vector<uint8_t> buffer_;
+    size_t capacity_{0};
+    uint8_t* buffer_{nullptr};
   };
 
  public:

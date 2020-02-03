@@ -1,5 +1,3 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #include "video_sampler.h"
 #include <c10/util/Logging.h>
 #include "util.h"

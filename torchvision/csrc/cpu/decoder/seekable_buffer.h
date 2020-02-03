@@ -1,5 +1,3 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #pragma once
 
 #include "defs.h"
@@ -20,27 +18,28 @@ enum class ImageType {
 
 class SeekableBuffer {
  public:
-  // try to fill out buffer, returns true if EOF detected (seek will supported)
-  bool init(
+  // @type is optional, not nullptr only is image detection required
+  // \returns 1 is buffer seekable, 0 - if not seekable, < 0 on error
+  int init(
       DecoderInCallback&& in,
-      ssize_t minSize,
-      ssize_t maxSize,
-      uint64_t timeoutMs);
+      uint64_t timeoutMs,
+      size_t maxSeekableBytes,
+      ImageType* type);
   int read(uint8_t* buf, int size, uint64_t timeoutMs);
   int64_t seek(int64_t offset, int whence, uint64_t timeoutMs);
   void shutdown();
-  ImageType getImageType() const {
-    return imageType_;
-  }
+
+ private:
+  bool readBytes(DecoderInCallback& in, size_t maxBytes, uint64_t timeoutMs);
+  void setImageType(ImageType* type);
 
  private:
   DecoderInCallback inCallback_;
   std::vector<uint8_t> buffer_; // resized at init time
-  ssize_t len_{0}; // current buffer size
-  ssize_t pos_{0}; // current position (SEEK_CUR iff pos_ < end_)
-  ssize_t end_{0}; // bytes in buffer [0, buffer_.size()]
-  ssize_t eof_{0}; // indicates the EOF
-  ImageType imageType_{ImageType::UNKNOWN};
+  long pos_{0}; // current position (SEEK_CUR iff pos_ < end_)
+  long end_{0}; // current buffer size
+  bool eof_{0}; // indicates the EOF
+  bool isSeekable_{false}; // is callback seekable
 };
 
 } // namespace ffmpeg
