@@ -263,8 +263,8 @@ class ModelTester(TestCase):
         expected_string = 'GeneralizedRCNNTransform('
         _indent = '\n    '
         expected_string += '{0}Normalize(mean={1}, std={2})'.format(_indent, image_mean, image_std)
-        expected_string += "{0}Resize(min_size={1}, max_size={2}, mode='bilinear')".format(_indent, min_size, max_size)
-        expected_string += '\n)'
+        expected_string += '{0}Resize(min_size=({1},), max_size={2}, '.format(_indent, min_size, max_size)
+        expected_string += "mode='bilinear')\n)"
         self.assertEqual(t.__repr__(), expected_string)
 
 
