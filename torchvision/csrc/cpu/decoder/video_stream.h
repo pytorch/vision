@@ -1,9 +1,6 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #pragma once
 
 #include "stream.h"
-#include "time_keeper.h"
 #include "video_sampler.h"
 
 namespace ffmpeg {
@@ -19,21 +16,19 @@ class VideoStream : public Stream {
       int index,
       bool convertPtsToWallTime,
       const VideoFormat& format,
-      int64_t loggingUuid = 0);
+      int64_t loggingUuid);
   ~VideoStream() override;
 
  private:
   int initFormat() override;
   int estimateBytes(bool flush) override;
   int copyFrameBytes(ByteStorage* out, bool flush) override;
-  void setHeader(DecoderHeader* header) override;
+  void setHeader(DecoderHeader* header, bool flush) override;
 
   void ensureSampler();
 
  private:
   std::unique_ptr<VideoSampler> sampler_;
-  TimeKeeper keeper_;
-  int64_t loggingUuid_{0};
 };
 
 } // namespace ffmpeg

@@ -1,5 +1,3 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #include "decoder.h"
 #include <c10/util/Logging.h>
 #include <future>
@@ -15,9 +13,8 @@ namespace ffmpeg {
 
 namespace {
 
-constexpr ssize_t kMinSeekBufferSize = 1024;
-constexpr ssize_t kMaxSeekBufferSize = 4 * 1024;
-constexpr size_t kIoBufferSize = 4 * 1024;
+constexpr size_t kIoBufferSize = 96 * 1024;
+constexpr size_t kIoPaddingSize = AV_INPUT_BUFFER_PADDING_SIZE;
 constexpr size_t kLogBufferSize = 1024;
 
 int ffmpeg_lock(void** mutex, enum AVLockOp op) {
@@ -205,16 +202,12 @@ void Decoder::initOnce() {
     av_lockmgr_register(&ffmpeg_lock);
     av_log_set_callback(Decoder::logFunction);
     av_log_set_level(AV_LOG_ERROR);
-    LOG(INFO) << "Registered ffmpeg libs";
+    VLOG(1) << "Registered ffmpeg libs";
   });
 }
 
 Decoder::Decoder() {
   initOnce();
-}
-
-Decoder::~Decoder() {
-  cleanUp();
 }
 
 bool Decoder::init(const DecoderParameters& params, DecoderInCallback&& in) {
@@ -229,42 +222,28 @@ bool Decoder::init(const DecoderParameters& params, DecoderInCallback&& in) {
   // set callback and params
   params_ = params;
 
-  auto tmpCtx = avformat_alloc_context();
-
-  if (!tmpCtx) {
+  if (!(inputCtx_ = avformat_alloc_context())) {
     LOG(ERROR) << "Cannot allocate format context";
     return false;
   }
 
   AVInputFormat* fmt = nullptr;
+  int result = 0;
   if (in) {
-    const size_t avioCtxBufferSize = kIoBufferSize;
-    uint8_t* avioCtxBuffer = (uint8_t*)av_malloc(avioCtxBufferSize);
-    if (!avioCtxBuffer) {
-      LOG(ERROR) << "av_malloc cannot allocate " << avioCtxBufferSize
-                 << " bytes";
-      avformat_close_input(&tmpCtx);
-      cleanUp();
-      return false;
-    }
-
-    bool canSeek = in(nullptr, 0, 0) == 0;
-
-    if (!seekableBuffer_.init(
-            std::forward<DecoderInCallback>(in),
-            kMinSeekBufferSize,
-            kMaxSeekBufferSize,
-            params_.timeoutMs)) {
-      LOG(ERROR) << "seekable buffer initialization failed";
-      av_free(avioCtxBuffer);
-      avformat_close_input(&tmpCtx);
+    ImageType type = ImageType::UNKNOWN;
+    if ((result = seekableBuffer_.init(
+             std::forward<DecoderInCallback>(in),
+             params_.timeoutMs,
+             params_.maxSeekableBytes,
+             params_.isImage ? &type : nullptr)) < 0) {
+      LOG(ERROR) << "can't initiate seekable buffer";
       cleanUp();
       return false;
     }
 
     if (params_.isImage) {
       const char* fmtName = "image2";
-      switch (seekableBuffer_.getImageType()) {
+      switch (type) {
         case ImageType::JPEG:
           fmtName = "jpeg_pipe";
           break;
@@ -281,6 +260,16 @@ bool Decoder::init(const DecoderParameters& params, DecoderInCallback&& in) {
       fmt = av_find_input_format(fmtName);
     }
 
+    const size_t avioCtxBufferSize = kIoBufferSize;
+    uint8_t* avioCtxBuffer =
+        (uint8_t*)av_malloc(avioCtxBufferSize + kIoPaddingSize);
+    if (!avioCtxBuffer) {
+      LOG(ERROR) << "av_malloc cannot allocate " << avioCtxBufferSize
+                 << " bytes";
+      cleanUp();
+      return false;
+    }
+
     if (!(avioCtx_ = avio_alloc_context(
               avioCtxBuffer,
               avioCtxBufferSize,
@@ -288,36 +277,23 @@ bool Decoder::init(const DecoderParameters& params, DecoderInCallback&& in) {
               reinterpret_cast<void*>(this),
               &Decoder::readFunction,
               nullptr,
-              canSeek ? &Decoder::seekFunction : nullptr))) {
+              result == 1 ? &Decoder::seekFunction : nullptr))) {
       LOG(ERROR) << "avio_alloc_context failed";
       av_free(avioCtxBuffer);
-      avformat_close_input(&tmpCtx);
       cleanUp();
       return false;
     }
 
-    tmpCtx->pb = avioCtx_;
+    inputCtx_->pb = avioCtx_;
+    inputCtx_->flags |= AVFMT_FLAG_CUSTOM_IO;
   }
 
-  interrupted_ = false;
-  // ffmpeg avformat_open_input call can hang if media source doesn't respond
-  // set a guard for handle such situations
-  std::promise<bool> p;
-  std::future<bool> f = p.get_future();
-  std::thread guard([&f, this]() {
-    auto timeout = std::chrono::milliseconds(params_.timeoutMs);
-    if (std::future_status::timeout == f.wait_for(timeout)) {
-      LOG(ERROR) << "Cannot open stream within " << params_.timeoutMs << " ms";
-      interrupted_ = true;
-    }
-  });
-
-  tmpCtx->opaque = reinterpret_cast<void*>(this);
-  tmpCtx->interrupt_callback.callback = Decoder::shutdownFunction;
-  tmpCtx->interrupt_callback.opaque = reinterpret_cast<void*>(this);
+  inputCtx_->opaque = reinterpret_cast<void*>(this);
+  inputCtx_->interrupt_callback.callback = Decoder::shutdownFunction;
+  inputCtx_->interrupt_callback.opaque = reinterpret_cast<void*>(this);
 
   // add network timeout
-  tmpCtx->flags |= AVFMT_FLAG_NONBLOCK;
+  inputCtx_->flags |= AVFMT_FLAG_NONBLOCK;
 
   AVDictionary* options = nullptr;
   av_dict_set_int(&options, "analyzeduration", params_.timeoutMs * 1000, 0);
@@ -326,19 +302,38 @@ bool Decoder::init(const DecoderParameters& params, DecoderInCallback&& in) {
     av_dict_set_int(&options, "listen", 1, 0);
   }
 
-  int result = 0;
+  interrupted_ = false;
+
+  // ffmpeg avformat_open_input call can hang if media source doesn't respond
+  // set a guard for handle such situations, if requested
+  std::promise<bool> p;
+  std::future<bool> f = p.get_future();
+  std::unique_ptr<std::thread> guard;
+  if (params_.preventStaleness) {
+    guard = std::make_unique<std::thread>([&f, this]() {
+      auto timeout = std::chrono::milliseconds(params_.timeoutMs);
+      if (std::future_status::timeout == f.wait_for(timeout)) {
+        LOG(ERROR) << "Cannot open stream within " << params_.timeoutMs
+                   << " ms";
+        interrupted_ = true;
+      }
+    });
+  }
+
   if (fmt) {
-    result = avformat_open_input(&tmpCtx, nullptr, fmt, &options);
+    result = avformat_open_input(&inputCtx_, nullptr, fmt, &options);
   } else {
     result =
-        avformat_open_input(&tmpCtx, params_.uri.c_str(), nullptr, &options);
+        avformat_open_input(&inputCtx_, params_.uri.c_str(), nullptr, &options);
   }
+
   av_dict_free(&options);
 
-  p.set_value(true);
-  guard.join();
-
-  inputCtx_ = tmpCtx;
+  if (guard) {
+    p.set_value(true);
+    guard->join();
+    guard.reset();
+  }
 
   if (result < 0 || interrupted_) {
     LOG(ERROR) << "avformat_open_input failed, error: "
@@ -356,7 +351,7 @@ bool Decoder::init(const DecoderParameters& params, DecoderInCallback&& in) {
     return false;
   }
 
-  if (!activateStreams()) {
+  if (!openStreams()) {
     LOG(ERROR) << "Cannot activate streams";
     cleanUp();
     return false;
@@ -364,20 +359,19 @@ bool Decoder::init(const DecoderParameters& params, DecoderInCallback&& in) {
 
   onInit();
 
-  if (params.startOffsetMs != 0) {
-    av_seek_frame(
-        inputCtx_,
-        -1,
-        params.startOffsetMs * AV_TIME_BASE / 1000,
-        AVSEEK_FLAG_FRAME | AVSEEK_FLAG_ANY);
+  if (params.startOffset != 0) {
+    auto offset = params.startOffset <= params.seekAccuracy
+        ? 0
+        : params.startOffset - params.seekAccuracy;
+
+    av_seek_frame(inputCtx_, -1, offset, AVSEEK_FLAG_BACKWARD);
   }
 
-  LOG(INFO) << "Decoder initialized, log level: " << params_.logLevel;
-  outOfRange_ = false;
+  VLOG(1) << "Decoder initialized, log level: " << params_.logLevel;
   return true;
 }
 
-bool Decoder::activateStreams() {
+bool Decoder::openStreams() {
   for (int i = 0; i < inputCtx_->nb_streams; i++) {
     // - find the corespondent format at params_.formats set
     MediaFormat format;
@@ -418,6 +412,7 @@ bool Decoder::activateStreams() {
         return false;
       }
       streams_.emplace(i, std::move(stream));
+      inRange_.set(i, true);
     }
   }
 
@@ -458,8 +453,8 @@ void Decoder::cleanUp() {
   seekableBuffer_.shutdown();
 }
 
-int Decoder::getBytes(size_t workingTimeInMs) {
-  if (outOfRange_) {
+int Decoder::getFrame(size_t workingTimeInMs) {
+  if (inRange_.none()) {
     return ENODATA;
   }
   // decode frames until cache is full and leave thread
@@ -478,14 +473,16 @@ int Decoder::getBytes(size_t workingTimeInMs) {
     return std::chrono::steady_clock::now() <= end;
   };
 
-  int result = ETIMEDOUT;
+  int result = 0;
   size_t decodingErrors = 0;
-  while (!interrupted_ && watcher()) {
+  bool decodedFrame = false;
+  while (!interrupted_ && inRange_.any() && !decodedFrame && watcher()) {
     result = av_read_frame(inputCtx_, &avPacket);
     if (result == AVERROR(EAGAIN)) {
       VLOG(4) << "Decoder is busy...";
+      std::this_thread::yield();
       result = 0; // reset error, EAGAIN is not an error at all
-      break;
+      continue;
     } else if (result == AVERROR_EOF) {
       flushStreams();
       VLOG(1) << "End of stream";
@@ -499,24 +496,24 @@ int Decoder::getBytes(size_t workingTimeInMs) {
 
     // get stream
     auto stream = findByIndex(avPacket.stream_index);
-    if (stream == nullptr) {
+    if (stream == nullptr || !inRange_.test(stream->getIndex())) {
       av_packet_unref(&avPacket);
       continue;
     }
-
-    stream->rescalePackage(&avPacket);
-
-    AVPacket copyPacket = avPacket;
 
     size_t numConsecutiveNoBytes = 0;
     // it can be only partial decoding of the package bytes
     do {
       // decode package
-      if ((result = processPacket(stream, &copyPacket)) < 0) {
+      bool gotFrame = false;
+      bool hasMsg = false;
+      // packet either got consumed completely or not at all
+      if ((result = processPacket(stream, &avPacket, &gotFrame, &hasMsg)) < 0) {
+        LOG(ERROR) << "processPacket failed with code: " << result;
         break;
       }
 
-      if (result == 0 && params_.maxProcessNoBytes != 0 &&
+      if (!gotFrame && params_.maxProcessNoBytes != 0 &&
           ++numConsecutiveNoBytes > params_.maxProcessNoBytes) {
         LOG(ERROR) << "Exceeding max amount of consecutive no bytes";
         break;
@@ -525,14 +522,14 @@ int Decoder::getBytes(size_t workingTimeInMs) {
         numConsecutiveNoBytes = 0;
       }
 
-      copyPacket.size -= result;
-      copyPacket.data += result;
-    } while (copyPacket.size > 0);
+      decodedFrame |= hasMsg;
+    } while (result == 0);
 
     // post loop check
     if (result < 0) {
       if (params_.maxPackageErrors != 0 && // check errors
           ++decodingErrors >= params_.maxPackageErrors) { // reached the limit
+        LOG(ERROR) << "Exceeding max amount of consecutive package errors";
         break;
       }
     } else {
@@ -546,7 +543,27 @@ int Decoder::getBytes(size_t workingTimeInMs) {
 
   av_packet_unref(&avPacket);
 
-  return result;
+  VLOG(2) << "Interrupted loop"
+          << ", interrupted_ " << interrupted_ << ", inRange_.any() "
+          << inRange_.any() << ", decodedFrame " << decodedFrame << ", result "
+          << result;
+
+  // loop can be terminated, either by:
+  // 1. explcitly iterrupted
+  // 2. terminated by workable timeout
+  // 3. unrecoverable error or ENODATA (end of stream)
+  // 4. decoded frames pts are out of the specified range
+  // 5. success decoded frame
+  if (interrupted_) {
+    return EINTR;
+  }
+  if (result != 0) {
+    return result;
+  }
+  if (inRange_.none()) {
+    return ENODATA;
+  }
+  return 0;
 }
 
 Stream* Decoder::findByIndex(int streamIndex) const {
@@ -563,17 +580,23 @@ Stream* Decoder::findByType(const MediaFormat& format) const {
   return nullptr;
 }
 
-int Decoder::processPacket(Stream* stream, AVPacket* packet) {
+int Decoder::processPacket(Stream* stream,
+                           AVPacket* packet,
+                           bool* gotFrame,
+                           bool* hasMsg) {
   // decode package
-  int gotFrame = 0;
   int result;
   DecoderOutputMessage msg;
   msg.payload = createByteStorage(0);
-  if ((result = stream->decodeFrame(packet, &gotFrame)) >= 0 && gotFrame &&
-      stream->getFrameBytes(&msg, params_.headerOnly) > 0) {
+  *hasMsg = false;
+  if ((result = stream->decodePacket(
+           packet, &msg, params_.headerOnly, gotFrame)) >= 0 && *gotFrame) {
     // check end offset
-    if (params_.endOffsetMs <= 0 ||
-        !(outOfRange_ = msg.header.pts > params_.endOffsetMs * 1000)) {
+    bool endInRange =
+        params_.endOffset <= 0 || msg.header.pts <= params_.endOffset;
+    inRange_.set(stream->getIndex(), endInRange);
+    if (endInRange && msg.header.pts >= params_.startOffset) {
+      *hasMsg = true;
       push(std::move(msg));
     }
   }
@@ -587,9 +610,13 @@ void Decoder::flushStreams() {
     while (msg.payload = createByteStorage(0),
            stream.second->flush(&msg, params_.headerOnly) > 0) {
       // check end offset
-      if (params_.endOffsetMs <= 0 ||
-          !(outOfRange_ = msg.header.pts > params_.endOffsetMs * 1000)) {
+      bool endInRange =
+          params_.endOffset <= 0 || msg.header.pts <= params_.endOffset;
+      inRange_.set(stream.second->getIndex(), endInRange);
+      if (endInRange && msg.header.pts >= params_.startOffset) {
         push(std::move(msg));
+      } else {
+        msg.payload.reset();
       }
     }
   }

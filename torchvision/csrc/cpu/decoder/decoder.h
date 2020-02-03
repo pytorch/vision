@@ -1,7 +1,7 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #pragma once
 
+#include <bitset>
+#include <unordered_map>
 #include "seekable_buffer.h"
 #include "stream.h"
 
@@ -15,7 +15,6 @@ namespace ffmpeg {
 class Decoder : public MediaDecoder {
  public:
   Decoder();
-  ~Decoder() override;
 
   // MediaDecoder overrides
   bool init(const DecoderParameters& params, DecoderInCallback&& in) override;
@@ -25,9 +24,10 @@ class Decoder : public MediaDecoder {
 
  protected:
   // function does actual work, derived class calls it in working thread
-  // periodically. On success method returns 0, ENOADATA on EOF and error on
+  // periodically. On success method returns 0, ENOADATA on EOF, ETIMEDOUT if
+  // no frames got decoded in the specified timeout time, and error on
   // unrecoverable error.
-  int getBytes(size_t workingTimeInMs = 100);
+  int getFrame(size_t workingTimeInMs = 100);
 
   // Derived class must override method and consume the provided message
   virtual void push(DecoderOutputMessage&& buffer) = 0;
@@ -56,13 +56,15 @@ class Decoder : public MediaDecoder {
   virtual int64_t seekCallback(int64_t offset, int whence);
   virtual int shutdownCallback();
 
-  bool activateStreams();
+  bool openStreams();
   Stream* findByIndex(int streamIndex) const;
   Stream* findByType(const MediaFormat& format) const;
-  int processPacket(Stream* stream, AVPacket* packet);
+  int processPacket(Stream* stream,
+                    AVPacket* packet,
+                    bool* gotFrame,
+                    bool* hasMsg);
   void flushStreams();
   void cleanUp();
-
  private:
   DecoderParameters params_;
   SeekableBuffer seekableBuffer_;
@@ -72,6 +74,6 @@ class Decoder : public MediaDecoder {
   AVFormatContext* inputCtx_{nullptr};
   AVIOContext* avioCtx_{nullptr};
   std::unordered_map<ssize_t, std::unique_ptr<Stream>> streams_;
-  bool outOfRange_{false};
+  std::bitset<64> inRange_;
 };
 } // namespace ffmpeg

@@ -1,5 +1,3 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #include "video_stream.h"
 #include <c10/util/Logging.h>
 #include "util.h"
@@ -11,10 +9,21 @@ bool operator==(const VideoFormat& x, const AVFrame& y) {
   return x.width == y.width && x.height == y.height && x.format == y.format;
 }
 
+bool operator==(const VideoFormat& x, const AVCodecContext& y) {
+  return x.width == y.width && x.height == y.height && x.format == y.pix_fmt;
+}
+
 VideoFormat& toVideoFormat(VideoFormat& x, const AVFrame& y) {
   x.width = y.width;
   x.height = y.height;
   x.format = y.format;
+  return x;
+}
+
+VideoFormat& toVideoFormat(VideoFormat& x, const AVCodecContext& y) {
+  x.width = y.width;
+  x.height = y.height;
+  x.format = y.pix_fmt;
   return x;
 }
 } // namespace
@@ -28,8 +37,8 @@ VideoStream::VideoStream(
     : Stream(
           inputCtx,
           MediaFormat::makeMediaFormat(format, index),
-          convertPtsToWallTime),
-      loggingUuid_(loggingUuid) {}
+          convertPtsToWallTime,
+          loggingUuid) {}
 
 VideoStream::~VideoStream() {
   if (sampler_) {
@@ -79,12 +88,14 @@ int VideoStream::initFormat() {
 int VideoStream::estimateBytes(bool flush) {
   ensureSampler();
   // check if input format gets changed
-  if (!flush && !(sampler_->getInputFormat().video == *frame_)) {
+  if (flush ? !(sampler_->getInputFormat().video == *codecCtx_)
+            : !(sampler_->getInputFormat().video == *frame_)) {
     // - reinit sampler
     SamplerParameters params;
     params.type = format_.type;
     params.out = format_.format;
-    toVideoFormat(params.in.video, *frame_);
+    flush ? toVideoFormat(params.in.video, *codecCtx_)
+          : toVideoFormat(params.in.video, *frame_);
     if (!sampler_->init(params)) {
       return -1;
     }
@@ -108,36 +119,13 @@ int VideoStream::copyFrameBytes(ByteStorage* out, bool flush) {
   return sampler_->sample(flush ? nullptr : frame_, out);
 }
 
-void VideoStream::setHeader(DecoderHeader* header) {
-  header->seqno = numGenerator_++;
-
-  if (codecCtx_->time_base.num != 0) {
-    header->pts = av_rescale_q(
-        av_frame_get_best_effort_timestamp(frame_),
-        codecCtx_->time_base,
-        AV_TIME_BASE_Q);
-  } else {
-    // If the codec time_base is missing then we would've skipped the
-    // rescalePackage step to rescale to codec time_base, so here we can
-    // rescale straight from the stream time_base into AV_TIME_BASE_Q.
-    header->pts = av_rescale_q(
-        av_frame_get_best_effort_timestamp(frame_),
-        inputCtx_->streams[format_.stream]->time_base,
-        AV_TIME_BASE_Q);
+void VideoStream::setHeader(DecoderHeader* header, bool flush) {
+  Stream::setHeader(header, flush);
+  if (!flush) { // no frames for video flush
+    header->keyFrame = frame_->key_frame;
+    header->fps = av_q2d(av_guess_frame_rate(
+        inputCtx_, inputCtx_->streams[format_.stream], nullptr));
   }
-
-  if (convertPtsToWallTime_) {
-    keeper_.adjust(header->pts);
-  }
-
-  header->keyFrame = frame_->key_frame;
-  auto fpsRational = inputCtx_->streams[format_.stream]->avg_frame_rate;
-  if (fpsRational.den) {
-    header->fps = av_q2d(fpsRational);
-  } else {
-    header->fps = std::numeric_limits<double>::quiet_NaN();
-  }
-  header->format = format_;
 }
 
 } // namespace ffmpeg
