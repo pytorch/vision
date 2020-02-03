@@ -305,12 +305,12 @@ class Matcher(object):
             all_matches = None
 
         # Assign candidate matches with low quality to negative (unassigned) values
-        below_low_threshold = matched_vals < self.low_threshold  # 0.3 IoU ratio is lower than 0.3 for all gt boxes
+        below_low_threshold = matched_vals < self.low_threshold
         between_thresholds = (matched_vals >= self.low_threshold) & (
             matched_vals < self.high_threshold
-        )  #  anchors that are neither positive or negative do NOT contribute to the training objective  --> los que estan entre 0.7 y 0.3.
-        matches[below_low_threshold] = torch.tensor(self.BELOW_LOW_THRESHOLD)  # -1 NEGATIVE LABEL
-        matches[between_thresholds] = torch.tensor(self.BETWEEN_THRESHOLDS)  # -2 NO CONTRIBUYEN
+        )
+        matches[below_low_threshold] = torch.tensor(self.BELOW_LOW_THRESHOLD)
+        matches[between_thresholds] = torch.tensor(self.BETWEEN_THRESHOLDS)
 
         if self.allow_low_quality_matches:
             assert all_matches is not None
