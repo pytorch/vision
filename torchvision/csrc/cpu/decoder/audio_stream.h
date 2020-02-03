@@ -1,10 +1,7 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #pragma once
 
 #include "audio_sampler.h"
 #include "stream.h"
-#include "time_keeper.h"
 
 namespace ffmpeg {
 
@@ -25,13 +22,11 @@ class AudioStream : public Stream {
   int initFormat() override;
   int estimateBytes(bool flush) override;
   int copyFrameBytes(ByteStorage* out, bool flush) override;
-  void setHeader(DecoderHeader* header) override;
 
   void ensureSampler();
 
  private:
   std::unique_ptr<AudioSampler> sampler_;
-  TimeKeeper keeper_;
 };
 
 } // namespace ffmpeg

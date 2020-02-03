@@ -1,15 +1,10 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #include "audio_sampler.h"
 #include <c10/util/Logging.h>
 #include "util.h"
 
+#define AVRESAMPLE_MAX_CHANNELS 32
+
 // www.ffmpeg.org/doxygen/1.1/doc_2examples_2resampling_audio_8c-example.html#a24
-
-#ifndef SWR_CH_MAX
-#define SWR_CH_MAX 32
-#endif
-
 namespace ffmpeg {
 
 namespace {
@@ -94,9 +89,12 @@ int AudioSampler::numOutputSamples(int inSamples) const {
 }
 
 int AudioSampler::getSamplesBytes(AVFrame* frame) const {
-  return av_get_bytes_per_sample((AVSampleFormat)params_.out.audio.format) *
-      numOutputSamples(frame ? frame->nb_samples : 0) *
-      params_.out.audio.channels;
+  return av_samples_get_buffer_size(
+      nullptr,
+      params_.out.audio.channels,
+      numOutputSamples(frame ? frame->nb_samples : 0),
+      (AVSampleFormat)params_.out.audio.format,
+      1);
 }
 
 int AudioSampler::sample(
@@ -104,7 +102,7 @@ int AudioSampler::sample(
     int inNumSamples,
     ByteStorage* out,
     int outNumSamples) {
-  uint8_t* outPlanes[SWR_CH_MAX] = {nullptr};
+  uint8_t* outPlanes[AVRESAMPLE_MAX_CHANNELS] = {nullptr};
   int result;
   if ((result = preparePlanes(
            params_.out.audio, out->writableTail(), outNumSamples, outPlanes)) <
@@ -140,9 +138,12 @@ int AudioSampler::sample(AVFrame* frame, ByteStorage* out) {
     return 0;
   }
 
-  const auto samplesBytes =
-      av_get_bytes_per_sample((AVSampleFormat)params_.out.audio.format) *
-      outNumSamples * params_.out.audio.channels;
+  const auto samplesBytes = av_samples_get_buffer_size(
+      nullptr,
+      params_.out.audio.channels,
+      outNumSamples,
+      (AVSampleFormat)params_.out.audio.format,
+      1);
 
   // bytes must be allocated
   CHECK_LE(samplesBytes, out->tail());
@@ -167,14 +168,17 @@ int AudioSampler::sample(const ByteStorage* in, ByteStorage* out) {
     return 0;
   }
 
-  const auto samplesBytes =
-      av_get_bytes_per_sample((AVSampleFormat)params_.out.audio.format) *
-      outNumSamples * params_.out.audio.channels;
+  const auto samplesBytes = av_samples_get_buffer_size(
+      nullptr,
+      params_.out.audio.channels,
+      outNumSamples,
+      (AVSampleFormat)params_.out.audio.format,
+      1);
 
   out->clear();
   out->ensure(samplesBytes);
 
-  uint8_t* inPlanes[SWR_CH_MAX] = {nullptr};
+  uint8_t* inPlanes[AVRESAMPLE_MAX_CHANNELS] = {nullptr};
   int result;
   if (in &&
       (result = preparePlanes(

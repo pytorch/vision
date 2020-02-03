@@ -1,9 +1,8 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #pragma once
 
 #include <atomic>
 #include "defs.h"
+#include "time_keeper.h"
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -22,23 +21,24 @@ class Stream {
   Stream(
       AVFormatContext* inputCtx,
       MediaFormat format,
-      bool convertPtsToWallTime);
+      bool convertPtsToWallTime,
+      int64_t loggingUuid);
   virtual ~Stream();
 
   // returns 0 - on success or negative error
   int openCodec();
-  // returns number processed bytes from packet, or negative error
-  int decodeFrame(const AVPacket* packet, int* gotFramePtr);
+  // returns 1 - if packet got consumed, 0 - if it's not, and < 0 on error
+  int decodePacket(
+      const AVPacket* packet,
+      DecoderOutputMessage* out,
+      bool headerOnly,
+      bool* hasMsg);
   // returns stream index
   int getIndex() const {
     return format_.stream;
   }
-  // returns number decoded/sampled bytes
-  int getFrameBytes(DecoderOutputMessage* out, bool headerOnly);
-  // returns number decoded/sampled bytes
+  // returns 1 - if message got a payload, 0 - if it's not, and < 0 on error
   int flush(DecoderOutputMessage* out, bool headerOnly);
-  // rescale package
-  void rescalePackage(AVPacket* packet);
   // return media format
   MediaFormat getMediaFormat() const {
     return format_;
@@ -46,29 +46,37 @@ class Stream {
 
  protected:
   virtual int initFormat() = 0;
+  // returns 1 - if packet got consumed, 0 - if it's not, and < 0 on error
+  virtual int analyzePacket(const AVPacket* packet, bool* gotFrame);
   // returns number processed bytes from packet, or negative error
-  virtual int analyzePacket(const AVPacket* packet, int* gotFramePtr);
-  // returns number decoded/sampled bytes, or negative error
   virtual int copyFrameBytes(ByteStorage* out, bool flush) = 0;
-  // initialize codec, returns output buffer size, or negative error
+  // estimates bytes in frame, returns output buffer size, or negative error
   virtual int estimateBytes(bool flush) = 0;
   // sets output format
-  virtual void setHeader(DecoderHeader* header) = 0;
+  virtual void setHeader(DecoderHeader* header, bool flush);
+  // set frame pts
+  virtual void setFramePts(DecoderHeader* header, bool flush);
   // finds codec
   virtual AVCodec* findCodec(AVCodecContext* ctx);
 
  private:
-  int fillBuffer(DecoderOutputMessage* out, bool flush, bool headerOnly);
+  // returns 1 - if message got a payload, 0 - if it's not, and < 0 on error
+  int getMessage(DecoderOutputMessage* out, bool flush, bool headerOnly);
 
  protected:
   AVFormatContext* const inputCtx_;
   MediaFormat format_;
   const bool convertPtsToWallTime_;
+  int64_t loggingUuid_;
 
   AVCodecContext* codecCtx_{nullptr};
   AVFrame* frame_{nullptr};
 
   std::atomic<size_t> numGenerator_{0};
+  TimeKeeper keeper_;
+  // estimated next frame pts for flushing the last frame
+  int64_t nextPts_{0};
+  double fps_{30.};
 };
 
 } // namespace ffmpeg

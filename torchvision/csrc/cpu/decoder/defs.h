@@ -27,7 +27,7 @@ struct AudioFormat {
 
   size_t samples{0}; // number samples per second (frequency)
   size_t channels{0}; // number of channels
-  ssize_t format{-1}; // AVSampleFormat, auto AV_SAMPLE_FMT_NONE
+  long format{-1}; // AVSampleFormat, auto AV_SAMPLE_FMT_NONE
   size_t padding[2];
   // -- alignment 40 bytes
 };
@@ -42,7 +42,7 @@ struct VideoFormat {
 
   size_t width{0}; // width in pixels
   size_t height{0}; // height in pixels
-  ssize_t format{-1}; // AVPixelFormat, auto AV_PIX_FMT_NONE
+  long format{-1}; // AVPixelFormat, auto AV_PIX_FMT_NONE
   size_t minDimension{0}; // choose min dimension and rescale accordingly
   size_t cropImage{0}; // request image crop
   // -- alignment 40 bytes
@@ -50,7 +50,7 @@ struct VideoFormat {
 
 // subtitle/cc
 struct SubtitleFormat {
-  ssize_t type{0}; // AVSubtitleType, auto SUBTITLE_NONE
+  long type{0}; // AVSubtitleType, auto SUBTITLE_NONE
   size_t padding[4];
   // -- alignment 40 bytes
 };
@@ -94,28 +94,27 @@ struct MediaFormat {
     }
   }
 
-  explicit MediaFormat(ssize_t s = -1)
-      : type(TYPE_AUDIO), stream(s), format() {}
-  explicit MediaFormat(int x, ssize_t s = -1)
+  explicit MediaFormat(long s = -1) : type(TYPE_AUDIO), stream(s), format() {}
+  explicit MediaFormat(int x, long s = -1)
       : type(TYPE_VIDEO), stream(s), format(x) {}
-  explicit MediaFormat(char x, ssize_t s = -1)
+  explicit MediaFormat(char x, long s = -1)
       : type(TYPE_SUBTITLE), stream(s), format(x) {}
-  explicit MediaFormat(double x, ssize_t s = -1)
+  explicit MediaFormat(double x, long s = -1)
       : type(TYPE_CC), stream(s), format(x) {}
 
-  static MediaFormat makeMediaFormat(AudioFormat format, ssize_t stream) {
+  static MediaFormat makeMediaFormat(AudioFormat format, long stream) {
     MediaFormat result(stream);
     result.format.audio = format;
     return result;
   }
 
-  static MediaFormat makeMediaFormat(VideoFormat format, ssize_t stream) {
+  static MediaFormat makeMediaFormat(VideoFormat format, long stream) {
     MediaFormat result(0, stream);
     result.format.video = format;
     return result;
   }
 
-  static MediaFormat makeMediaFormat(SubtitleFormat format, ssize_t stream) {
+  static MediaFormat makeMediaFormat(SubtitleFormat format, long stream) {
     MediaFormat result('0', stream);
     result.format.subtitle = format;
     return result;
@@ -126,17 +125,17 @@ struct MediaFormat {
   // stream index:
   // set -1 for one stream auto detection, -2 for all streams auto detection,
   // >= 0, specified stream, if caller knows the stream index (unlikely)
-  ssize_t stream;
+  long stream;
   // union keeps one of the possible formats, defined by MediaType
   FormatUnion format;
 
   // output parameters, ignored while initialization
   // time base numerator
-  ssize_t num{0};
+  long num{0};
   // time base denominator
-  ssize_t den{1};
-  // duration of the stream, in stream time base, if available
-  ssize_t duration{-1};
+  long den{1};
+  // duration of the stream, in miscroseconds, if available
+  long duration{-1};
 };
 
 struct DecoderParameters {
@@ -146,29 +145,33 @@ struct DecoderParameters {
   // timeout on getting bytes for decoding
   size_t timeoutMs{1000};
   // logging level, default AV_LOG_PANIC
-  ssize_t logLevel{0};
+  long logLevel{0};
   // when decoder would give up, 0 means never
   size_t maxPackageErrors{0};
   // max allowed consecutive times no bytes are processed. 0 means for infinite.
   size_t maxProcessNoBytes{0};
-  // start offset
-  ssize_t startOffsetMs{0};
-  // end offset
-  ssize_t endOffsetMs{-1};
+  // start offset (us)
+  long startOffset{0};
+  // end offset (us)
+  long endOffset{-1};
   // logging id
   int64_t loggingUuid{0};
+  // internal max seekable buffer size
+  size_t maxSeekableBytes{0};
   // adjust header pts to the epoch time
   bool convertPtsToWallTime{false};
   // indicate if input stream is an encoded image
   bool isImage{false};
-  // what media types should be processed, default none
-  std::set<MediaFormat> formats;
   // listen and wait for new rtmp stream
   bool listen{false};
   // don't copy frame body, only header
   bool headerOnly{false};
-  // seek tolerated accuracy
-  double seekAccuracySec{1.0};
+  // interrupt init method on timeout
+  bool preventStaleness{true};
+  // seek tolerated accuracy (us)
+  double seekAccuracy{1000000.0};
+  // what media types should be processed, default none
+  std::set<MediaFormat> formats;
 };
 
 struct DecoderHeader {
@@ -176,7 +179,7 @@ struct DecoderHeader {
   size_t seqno{0};
   // decoded timestamp in microseconds from either beginning of the stream or
   // from epoch time, see DecoderParameters::convertPtsToWallTime
-  ssize_t pts{0};
+  long pts{0};
   // decoded key frame
   size_t keyFrame{0};
   // frames per second, valid only for video streams
@@ -219,27 +222,21 @@ struct DecoderOutputMessage {
  * Normally input/output parameter @out set to valid, not null buffer pointer,
  * which indicates "read" call, however there are "seek" modes as well.
 
- * @out != nullptr, @size != 0, @timeoutMs != 0 => read from the current offset
- * @size bytes => return number bytes read, 0 if no more bytes available, < 0
- * on error.
+ * @out != nullptr => read from the current offset, @whence got ignored,
+ * @size bytes to read => return number bytes got read, 0 if no more bytes
+ * available, < 0 on error.
 
- * @out == nullptr, @size == 0, @timeoutMs == 0 => does provider support "seek"
- * capability in a first place? return 0 on success, < 0 if "seek" mode is not
- * supported.
+ * @out == nullptr, @timeoutMs == 0 => does provider support "seek"
+ * capability in a first place? @size & @whence got ignored, return 0 on
+ * success, < 0 if "seek" mode is not supported.
 
- * @out == nullptr, @size > 0 => seek the absolute offset == @size, return
- * 0 on success and < 0 on error.
-
- * @out == nullptr, @size < 0 => seek the end of the media, return 0 on success
- * and < 0 on failure. Provider might support seek doesn't know the media size.
-
- * Additionally if @out is set to null AND @size is set to zero AND
- * @timeoutMs is set to zero, caller requests the seek capability of the
- * provider, i.e. returns 0 on success and error if provider is not supporting
- * seek.
+ * @out == nullptr, @timeoutMs != 0 => normal seek call
+ * offset == @size, i.e. @whence = [SEEK_SET, SEEK_CUR, SEEK_END, AVSEEK_SIZE)
+ * return < 0 on error, position if @whence = [SEEK_SET, SEEK_CUR, SEEK_END],
+ * length of buffer if @whence = [AVSEEK_SIZE].
  */
 using DecoderInCallback =
-    std::function<int(uint8_t* out, int size, uint64_t timeoutMs)>;
+    std::function<int(uint8_t* out, int size, int whence, uint64_t timeoutMs)>;
 
 using DecoderOutCallback = std::function<void(DecoderOutputMessage&&)>;
 

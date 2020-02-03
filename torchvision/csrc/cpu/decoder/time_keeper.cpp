@@ -1,5 +1,3 @@
-// Copyright 2004-present Facebook. All Rights Reserved.
-
 #include "time_keeper.h"
 
 extern "C" {
@@ -9,13 +7,13 @@ extern "C" {
 namespace ffmpeg {
 
 namespace {
-const ssize_t kMaxTimeBaseDiference = 10;
+const long kMaxTimeBaseDiference = 10;
 }
 
-ssize_t TimeKeeper::adjust(ssize_t& decoderTimestamp) {
-  const ssize_t now = std::chrono::duration_cast<std::chrono::microseconds>(
-                          std::chrono::system_clock::now().time_since_epoch())
-                          .count();
+long TimeKeeper::adjust(long& decoderTimestamp) {
+  const long now = std::chrono::duration_cast<std::chrono::microseconds>(
+                       std::chrono::system_clock::now().time_since_epoch())
+                       .count();
 
   if (startTime_ == 0) {
     startTime_ = now;
