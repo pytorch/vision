@@ -33,7 +33,6 @@ class ONNXExporterTester(unittest.TestCase):
         model.eval()
 
         onnx_io = io.BytesIO()
-        # onnx_io = '/home/neraoof/test/results/transform.onnx'
         # export to onnx with the first input
 
         torch.onnx.export(model, inputs_list[0], onnx_io,
