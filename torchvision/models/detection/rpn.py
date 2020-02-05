@@ -121,10 +121,6 @@ class AnchorGenerator(nn.Module):
         ):
             grid_height, grid_width = size
             stride_height, stride_width = stride
-            if torchvision._is_tracing():
-                # required in ONNX export for mult operation with float32
-                stride_width = torch.tensor(stride_width, dtype=torch.float32)
-                stride_height = torch.tensor(stride_height, dtype=torch.float32)
             device = base_anchors.device
             shifts_x = torch.arange(
                 0, grid_width, dtype=torch.float32, device=device
