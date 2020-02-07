@@ -239,9 +239,9 @@ class RetinaNet(nn.Module):
             maps.
         head (nn.Module): Module run on top of the feature pyramid.
             Defaults to a module containing a classification and regression module.
-        pre_nms_top_n (int): number of proposals to keep before applying NMS during testing.
-        post_nms_top_n (int): number of proposals to keep after applying NMS during testing.
+        score_thresh (float): Score threshold used for postprocessing the detections.
         nms_thresh (float): NMS threshold used for postprocessing the detections.
+        detections_per_img (int): Number of best detections to keep after NMS.
         fg_iou_thresh (float): minimum IoU between the anchor and the GT box so that they can be
             considered as positive during training.
         bg_iou_thresh (float): maximum IoU between the anchor and the GT box so that they can be
@@ -285,8 +285,9 @@ class RetinaNet(nn.Module):
                  # Anchor parameters
                  anchor_generator=None, head=None,
                  proposal_matcher=None,
-                 pre_nms_top_n=1000, post_nms_top_n=1000,
+                 score_thresh=0.5,
                  nms_thresh=0.5,
+                 detections_per_img=300,
                  fg_iou_thresh=0.5, bg_iou_thresh=0.4):
         super(RetinaNet, self).__init__()
 
@@ -300,7 +301,6 @@ class RetinaNet(nn.Module):
         assert isinstance(anchor_generator, (AnchorGenerator, type(None)))
 
         if anchor_generator is None:
-            # TODO: Set correct default values
             anchor_sizes = [[x, x * 2 ** (1.0 / 3), x * 2 ** (2.0 / 3)] for x in [32, 64, 128, 256, 512]]
             aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
             anchor_generator = AnchorGenerator(
@@ -320,11 +320,17 @@ class RetinaNet(nn.Module):
             )
         self.proposal_matcher = proposal_matcher
 
+        self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
+
         if image_mean is None:
             image_mean = [0.485, 0.456, 0.406]
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
         self.transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
+
+        self.score_thresh = score_thresh
+        self.nms_thresh = nms_thresh
+        self.detections_per_img = detections_per_img
 
     @torch.jit.unused
     def eager_outputs(self, losses, detections):
@@ -340,6 +346,57 @@ class RetinaNet(nn.Module):
             matched_idxs.append(self.proposal_matcher(targets_per_image["boxes"], anchors_per_image))
 
         return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
+
+    def postprocess_detections(self, class_logits, box_regression, anchors, image_shapes):
+        # type: (Tensor, Tensor, List[Tensor], List[Tuple[int, int]])
+        # TODO: Merge this with roi_heads.RoIHeads.postprocess_detections ?
+        device = class_logits.device
+        num_classes = class_logits.shape[-1]
+
+        scores = torch.sigmoid(class_logits)
+
+        # create labels for each score
+        # the +1 is to make the labels identical to other object detection algorithms that treat background as label 0
+        labels = torch.arange(num_classes, device=device) + 1
+        labels = labels.view(1, -1).expand_as(scores)
+
+        detections = []
+
+        for box_regression_per_image, scores_per_image, labels_per_image, anchors_per_image, image_shape in zip(box_regression, scores, labels, anchors, image_shapes):
+            boxes_per_image = self.box_coder.decode_single(box_regression_per_image, anchors_per_image)
+            boxes_per_image = box_ops.clip_boxes_to_image(boxes_per_image, image_shape)
+
+            image_boxes = []
+            image_scores = []
+            image_labels = []
+
+            for class_index in range(num_classes):
+                # remove low scoring boxes
+                inds = torch.nonzero(scores_per_image[:, class_index] > self.score_thresh).squeeze(1)
+                boxes_per_class, scores_per_class, labels_per_class = boxes_per_image[inds], scores_per_image[inds, class_index], labels_per_image[inds, class_index]
+
+                # remove empty boxes
+                keep = box_ops.remove_small_boxes(boxes_per_class, min_size=1e-2)
+                boxes_per_class, scores_per_class, labels_per_class = boxes_per_class[keep], scores_per_class[keep], labels_per_class[keep]
+
+                # non-maximum suppression, independently done per class
+                keep = box_ops.nms(boxes_per_class, scores_per_class, self.nms_thresh)
+
+                # keep only topk scoring predictions
+                keep = keep[:self.detections_per_img]
+                boxes_per_class, scores_per_class, labels_per_class = boxes_per_class[keep], scores_per_class[keep], labels_per_class[keep]
+
+                image_boxes.append(boxes_per_class)
+                image_scores.append(scores_per_class)
+                image_labels.append(labels_per_class)
+
+            detections.append({
+                'boxes': torch.cat(image_boxes, dim=0),
+                'scores': torch.cat(image_scores, dim=0),
+                'labels': torch.cat(image_labels, dim=0),
+            })
+
+        return detections
 
     def forward(self, images, targets=None):
         # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])
@@ -396,19 +453,8 @@ class RetinaNet(nn.Module):
             losses = self.compute_loss(targets, head_outputs, anchors)
         else:
             # compute the detections
-            # TODO: Implement postprocess_detections
-            boxes, scores, labels = self.postprocess_detections(class_logits, box_regression, anchors)
-            num_images = len(images)
-            for i in range(num_images):
-                detections.append(
-                    {
-                        "boxes": boxes[i],
-                        "labels": labels[i],
-                        "scores": scores[i],
-                    }
-                )
-
-                detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
+            detections = self.postprocess_detections(head_outputs['cls_logits'], head_outputs['bbox_regression'], anchors, images.image_sizes)
+            detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
 
         if torch.jit.is_scripting():
             if not self._has_warned:
