@@ -22,7 +22,6 @@ class AudioSampler : public MediaSampler {
   int sample(const ByteStorage* in, ByteStorage* out) override;
   void shutdown() override;
 
-  int getSamplesBytes(AVFrame* frame) const;
   int sample(AVFrame* frame, ByteStorage* out);
 
  private:

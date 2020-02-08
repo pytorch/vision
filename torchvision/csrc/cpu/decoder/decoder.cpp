@@ -210,7 +210,14 @@ Decoder::Decoder() {
   initOnce();
 }
 
-bool Decoder::init(const DecoderParameters& params, DecoderInCallback&& in) {
+Decoder::~Decoder() {
+  cleanUp();
+}
+
+bool Decoder::init(
+    const DecoderParameters& params,
+    DecoderInCallback&& in,
+    std::vector<DecoderMetadata>* metadata) {
   cleanUp();
 
   if ((params.uri.empty() || in) && (!params.uri.empty() || !in)) {
@@ -351,7 +358,7 @@ bool Decoder::init(const DecoderParameters& params, DecoderInCallback&& in) {
     return false;
   }
 
-  if (!openStreams()) {
+  if (!openStreams(metadata)) {
     LOG(ERROR) << "Cannot activate streams";
     cleanUp();
     return false;
@@ -371,7 +378,7 @@ bool Decoder::init(const DecoderParameters& params, DecoderInCallback&& in) {
   return true;
 }
 
-bool Decoder::openStreams() {
+bool Decoder::openStreams(std::vector<DecoderMetadata>* metadata) {
   for (int i = 0; i < inputCtx_->nb_streams; i++) {
     // - find the corespondent format at params_.formats set
     MediaFormat format;
@@ -407,7 +414,7 @@ bool Decoder::openStreams() {
           it->format,
           params_.loggingUuid);
       CHECK(stream);
-      if (stream->openCodec() < 0) {
+      if (stream->openCodec(metadata) < 0) {
         LOG(ERROR) << "Cannot open codec " << i;
         return false;
       }
@@ -436,8 +443,7 @@ void Decoder::cleanUp() {
     for (auto& stream : streams_) {
       // Drain stream buffers.
       DecoderOutputMessage msg;
-      while (msg.payload = createByteStorage(0),
-             stream.second->flush(&msg, params_.headerOnly) > 0) {
+      while (msg.payload = nullptr, stream.second->flush(&msg, true) > 0) {
       }
       stream.second.reset();
     }
@@ -580,17 +586,19 @@ Stream* Decoder::findByType(const MediaFormat& format) const {
   return nullptr;
 }
 
-int Decoder::processPacket(Stream* stream,
-                           AVPacket* packet,
-                           bool* gotFrame,
-                           bool* hasMsg) {
+int Decoder::processPacket(
+    Stream* stream,
+    AVPacket* packet,
+    bool* gotFrame,
+    bool* hasMsg) {
   // decode package
   int result;
   DecoderOutputMessage msg;
-  msg.payload = createByteStorage(0);
+  msg.payload = params_.headerOnly ? nullptr : createByteStorage(0);
   *hasMsg = false;
   if ((result = stream->decodePacket(
-           packet, &msg, params_.headerOnly, gotFrame)) >= 0 && *gotFrame) {
+           packet, &msg, params_.headerOnly, gotFrame)) >= 0 &&
+      *gotFrame) {
     // check end offset
     bool endInRange =
         params_.endOffset <= 0 || msg.header.pts <= params_.endOffset;
@@ -607,7 +615,7 @@ void Decoder::flushStreams() {
   VLOG(1) << "Flushing streams...";
   for (auto& stream : streams_) {
     DecoderOutputMessage msg;
-    while (msg.payload = createByteStorage(0),
+    while (msg.payload = (params_.headerOnly ? nullptr : createByteStorage(0)),
            stream.second->flush(&msg, params_.headerOnly) > 0) {
       // check end offset
       bool endInRange =

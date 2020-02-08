@@ -81,20 +81,7 @@ bool AudioSampler::init(const SamplerParameters& params) {
 }
 
 int AudioSampler::numOutputSamples(int inSamples) const {
-  return av_rescale_rnd(
-      swr_get_delay(swrContext_, params_.in.audio.samples) + inSamples,
-      params_.out.audio.samples,
-      params_.in.audio.samples,
-      AV_ROUND_UP);
-}
-
-int AudioSampler::getSamplesBytes(AVFrame* frame) const {
-  return av_samples_get_buffer_size(
-      nullptr,
-      params_.out.audio.channels,
-      numOutputSamples(frame ? frame->nb_samples : 0),
-      (AVSampleFormat)params_.out.audio.format,
-      1);
+  return swr_get_out_samples(swrContext_, inSamples);
 }
 
 int AudioSampler::sample(
@@ -102,32 +89,95 @@ int AudioSampler::sample(
     int inNumSamples,
     ByteStorage* out,
     int outNumSamples) {
-  uint8_t* outPlanes[AVRESAMPLE_MAX_CHANNELS] = {nullptr};
   int result;
-  if ((result = preparePlanes(
-           params_.out.audio, out->writableTail(), outNumSamples, outPlanes)) <
-      0) {
-    return result;
+  int outBufferBytes = av_samples_get_buffer_size(
+      nullptr,
+      params_.out.audio.channels,
+      outNumSamples,
+      (AVSampleFormat)params_.out.audio.format,
+      1);
+
+  if (out) {
+    out->ensure(outBufferBytes);
+
+    uint8_t* outPlanes[AVRESAMPLE_MAX_CHANNELS] = {nullptr};
+
+    if ((result = preparePlanes(
+             params_.out.audio,
+             out->writableTail(),
+             outNumSamples,
+             outPlanes)) < 0) {
+      return result;
+    }
+
+    if ((result = swr_convert(
+             swrContext_,
+             &outPlanes[0],
+             outNumSamples,
+             inPlanes,
+             inNumSamples)) < 0) {
+      LOG(ERROR) << "swr_convert faield, err: "
+                 << Util::generateErrorDesc(result);
+      return result;
+    }
+
+    CHECK_LE(result, outNumSamples);
+
+    if (result) {
+      if ((result = av_samples_get_buffer_size(
+               nullptr,
+               params_.out.audio.channels,
+               result,
+               (AVSampleFormat)params_.out.audio.format,
+               1)) >= 0) {
+        out->append(result);
+      } else {
+        LOG(ERROR) << "av_samples_get_buffer_size faield, err: "
+                   << Util::generateErrorDesc(result);
+      }
+    }
+  } else {
+    // allocate a temporary buffer
+    auto* tmpBuffer = static_cast<uint8_t*>(av_malloc(outBufferBytes));
+    if (!tmpBuffer) {
+      LOG(ERROR) << "av_alloc faield, for size: " << outBufferBytes;
+      return -1;
+    }
+
+    uint8_t* outPlanes[AVRESAMPLE_MAX_CHANNELS] = {nullptr};
+
+    if ((result = preparePlanes(
+             params_.out.audio, tmpBuffer, outNumSamples, outPlanes)) < 0) {
+      av_free(tmpBuffer);
+      return result;
+    }
+
+    if ((result = swr_convert(
+             swrContext_,
+             &outPlanes[0],
+             outNumSamples,
+             inPlanes,
+             inNumSamples)) < 0) {
+      LOG(ERROR) << "swr_convert faield, err: "
+                 << Util::generateErrorDesc(result);
+      av_free(tmpBuffer);
+      return result;
+    }
+
+    av_free(tmpBuffer);
+
+    CHECK_LE(result, outNumSamples);
+
+    if (result) {
+      result = av_samples_get_buffer_size(
+          nullptr,
+          params_.out.audio.channels,
+          result,
+          (AVSampleFormat)params_.out.audio.format,
+          1);
+    }
   }
 
-  if ((result = swr_convert(
-           swrContext_, &outPlanes[0], outNumSamples, inPlanes, inNumSamples)) <
-      0) {
-    LOG(ERROR) << "swr_convert faield, err: "
-               << Util::generateErrorDesc(result);
-    return result;
-  }
-
-  CHECK_LE(result, outNumSamples);
-
-  if ((result = av_samples_get_buffer_size(
-           nullptr,
-           params_.out.audio.channels,
-           result,
-           (AVSampleFormat)params_.out.audio.format,
-           1)) > 0) {
-    out->append(result);
-  }
   return result;
 }
 
@@ -137,16 +187,6 @@ int AudioSampler::sample(AVFrame* frame, ByteStorage* out) {
   if (!outNumSamples) {
     return 0;
   }
-
-  const auto samplesBytes = av_samples_get_buffer_size(
-      nullptr,
-      params_.out.audio.channels,
-      outNumSamples,
-      (AVSampleFormat)params_.out.audio.format,
-      1);
-
-  // bytes must be allocated
-  CHECK_LE(samplesBytes, out->tail());
 
   return sample(
       frame ? (const uint8_t**)&frame->data[0] : nullptr,
@@ -167,16 +207,6 @@ int AudioSampler::sample(const ByteStorage* in, ByteStorage* out) {
   if (!outNumSamples) {
     return 0;
   }
-
-  const auto samplesBytes = av_samples_get_buffer_size(
-      nullptr,
-      params_.out.audio.channels,
-      outNumSamples,
-      (AVSampleFormat)params_.out.audio.format,
-      1);
-
-  out->clear();
-  out->ensure(samplesBytes);
 
   uint8_t* inPlanes[AVRESAMPLE_MAX_CHANNELS] = {nullptr};
   int result;

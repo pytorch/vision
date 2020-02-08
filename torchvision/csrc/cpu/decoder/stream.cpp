@@ -23,18 +23,18 @@ Stream::~Stream() {
   }
 }
 
-AVCodec* Stream::findCodec(AVCodecContext* ctx) {
-  return avcodec_find_decoder(ctx->codec_id);
+AVCodec* Stream::findCodec(AVCodecParameters* params) {
+  return avcodec_find_decoder(params->codec_id);
 }
 
-int Stream::openCodec() {
+int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
   AVStream* steam = inputCtx_->streams[format_.stream];
-  auto codec_id = steam->codecpar->codec_id;
-  AVCodec* codec = avcodec_find_decoder(codec_id);
+
+  AVCodec* codec = findCodec(steam->codecpar);
   if (!codec) {
     LOG(ERROR) << "LoggingUuid #" << loggingUuid_
                << ", avcodec_find_decoder failed for codec_id: "
-               << int(codec_id);
+               << int(steam->codecpar->codec_id);
     return AVERROR(EINVAL);
   }
 
@@ -63,14 +63,9 @@ int Stream::openCodec() {
 
   frame_ = av_frame_alloc();
 
-  // always convert to us
-  format_.num = inputCtx_->streams[format_.stream]->time_base.num;
-  format_.den = inputCtx_->streams[format_.stream]->time_base.den;
-
   switch (format_.type) {
     case TYPE_VIDEO:
-      fps_ = av_q2d(av_guess_frame_rate(
-          inputCtx_, inputCtx_->streams[format_.stream], nullptr));
+      fps_ = av_q2d(av_guess_frame_rate(inputCtx_, steam, nullptr));
       break;
     case TYPE_AUDIO:
       fps_ = codecCtx_->sample_rate;
@@ -79,13 +74,19 @@ int Stream::openCodec() {
       fps_ = 30.0;
   }
 
-  format_.duration = av_rescale_q(
-      inputCtx_->streams[format_.stream]->duration,
-      inputCtx_->streams[format_.stream]->time_base,
-      AV_TIME_BASE_Q);
-
   if ((ret = initFormat())) {
     LOG(ERROR) << "initFormat failed, type: " << format_.type;
+  }
+
+  if (metadata) {
+    DecoderMetadata header;
+    header.format = format_;
+    header.fps = fps_;
+    header.num = steam->time_base.num;
+    header.den = steam->time_base.den;
+    header.duration =
+        av_rescale_q(steam->duration, steam->time_base, AV_TIME_BASE_Q);
+    metadata->push_back(header);
   }
 
   return ret;
@@ -107,7 +108,7 @@ int Stream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
                << Util::generateErrorDesc(result);
     return result; // error
   } else {
-    consumed = 1; // all bytes get consumed
+    consumed = packet ? packet->size : 0; // all bytes get consumed
   }
 
   result = avcodec_receive_frame(codecCtx_, frame_);
@@ -169,42 +170,46 @@ int Stream::getMessage(DecoderOutputMessage* out, bool flush, bool headerOnly) {
   if (flush) {
     // only flush of audio frames makes sense
     if (format_.type == TYPE_AUDIO) {
-      int bytes = 0;
-      if ((bytes = estimateBytes(true)) < 0) {
-        return bytes;
-      }
       int processed = 0;
+      size_t total = 0;
       // grab all audio bytes by chunks
       do {
-        out->payload->ensure(out->payload->length() + bytes);
-        if ((processed = copyFrameBytes(out->payload.get(), true)) < 0) {
+        if ((processed = copyFrameBytes(out->payload.get(), flush)) < 0) {
           return processed;
         }
+        total += processed;
       } while (processed);
 
-      if (out->payload->length()) {
-        // set header first
+      if (total) {
+        // set header if message bytes are available
         setHeader(&out->header, flush);
         return 1;
       }
     }
     return 0;
   } else {
-    // set header first
-    setHeader(&out->header, flush);
+    if (format_.type == TYPE_AUDIO) {
+      int processed = 0;
+      if ((processed = copyFrameBytes(out->payload.get(), flush)) < 0) {
+        return processed;
+      }
+      if (processed) {
+        // set header if message bytes are available
+        setHeader(&out->header, flush);
+        return 1;
+      }
+      return 0;
+    } else {
+      // set header
+      setHeader(&out->header, flush);
 
-    if (headerOnly) {
-      // Only header is requisted
-      return 1;
-    }
+      if (headerOnly) {
+        // Only header is requisted
+        return 1;
+      }
 
-    // decoded frame is available
-    int bytes;
-    if ((bytes = estimateBytes(false)) < 0) {
-      return bytes;
+      return copyFrameBytes(out->payload.get(), flush);
     }
-    out->payload->ensure(bytes);
-    return copyFrameBytes(out->payload.get(), false);
   }
 }
 

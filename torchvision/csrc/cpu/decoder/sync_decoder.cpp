@@ -3,57 +3,57 @@
 
 namespace ffmpeg {
 
-SyncDecoder::VectorByteStorage::VectorByteStorage(size_t n) {
+SyncDecoder::AVByteStorage::AVByteStorage(size_t n) {
   ensure(n);
 }
 
-SyncDecoder::VectorByteStorage::~VectorByteStorage() {
+SyncDecoder::AVByteStorage::~AVByteStorage() {
   av_free(buffer_);
 }
 
-void SyncDecoder::VectorByteStorage::ensure(size_t n) {
+void SyncDecoder::AVByteStorage::ensure(size_t n) {
   if (tail() < n) {
     capacity_ = offset_ + length_ + n;
     buffer_ = static_cast<uint8_t*>(av_realloc(buffer_, capacity_));
   }
 }
 
-uint8_t* SyncDecoder::VectorByteStorage::writableTail() {
+uint8_t* SyncDecoder::AVByteStorage::writableTail() {
   CHECK_LE(offset_ + length_, capacity_);
   return buffer_ + offset_ + length_;
 }
 
-void SyncDecoder::VectorByteStorage::append(size_t n) {
+void SyncDecoder::AVByteStorage::append(size_t n) {
   CHECK_LE(n, tail());
   length_ += n;
 }
 
-void SyncDecoder::VectorByteStorage::trim(size_t n) {
+void SyncDecoder::AVByteStorage::trim(size_t n) {
   CHECK_LE(n, length_);
   offset_ += n;
   length_ -= n;
 }
 
-const uint8_t* SyncDecoder::VectorByteStorage::data() const {
+const uint8_t* SyncDecoder::AVByteStorage::data() const {
   return buffer_ + offset_;
 }
 
-size_t SyncDecoder::VectorByteStorage::length() const {
+size_t SyncDecoder::AVByteStorage::length() const {
   return length_;
 }
 
-size_t SyncDecoder::VectorByteStorage::tail() const {
+size_t SyncDecoder::AVByteStorage::tail() const {
   CHECK_LE(offset_ + length_, capacity_);
   return capacity_ - offset_ - length_;
 }
 
-void SyncDecoder::VectorByteStorage::clear() {
+void SyncDecoder::AVByteStorage::clear() {
   offset_ = 0;
   length_ = 0;
 }
 
 std::unique_ptr<ByteStorage> SyncDecoder::createByteStorage(size_t n) {
-  return std::make_unique<VectorByteStorage>(n);
+  return std::make_unique<AVByteStorage>(n);
 }
 
 void SyncDecoder::onInit() {

@@ -27,7 +27,6 @@ class SubtitleStream : public Stream {
  private:
   int initFormat() override;
   int analyzePacket(const AVPacket* packet, bool* gotFrame) override;
-  int estimateBytes(bool flush) override;
   int copyFrameBytes(ByteStorage* out, bool flush) override;
   void releaseSubtitle();
 
