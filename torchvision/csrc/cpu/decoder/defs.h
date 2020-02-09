@@ -128,14 +128,6 @@ struct MediaFormat {
   long stream;
   // union keeps one of the possible formats, defined by MediaType
   FormatUnion format;
-
-  // output parameters, ignored while initialization
-  // time base numerator
-  long num{0};
-  // time base denominator
-  long den{1};
-  // duration of the stream, in miscroseconds, if available
-  long duration{-1};
 };
 
 struct DecoderParameters {
@@ -172,6 +164,12 @@ struct DecoderParameters {
   double seekAccuracy{1000000.0};
   // what media types should be processed, default none
   std::set<MediaFormat> formats;
+
+  // can be used for asynchronous decoders
+  size_t cacheSize{8192}; // mow many bytes to cache before stop reading bytes
+  size_t cacheTimeoutMs{1000}; // timeout on bytes writing
+  bool enforceCacheSize{false}; // drop output frames if cache is full
+  bool mergeAudioMessages{false}; // combine collocated audio messages together
 };
 
 struct DecoderHeader {
@@ -240,6 +238,18 @@ using DecoderInCallback =
 
 using DecoderOutCallback = std::function<void(DecoderOutputMessage&&)>;
 
+struct DecoderMetadata {
+  // time base numerator
+  long num{0};
+  // time base denominator
+  long den{1};
+  // duration of the stream, in miscroseconds, if available
+  long duration{-1};
+  // frames per second, valid only for video streams
+  double fps{0};
+  // format specifies what kind frame is in a payload
+  MediaFormat format;
+};
 /**
  * Abstract class for decoding media bytes
  * It has two diffrent modes. Internal media bytes retrieval for given uri and
@@ -255,10 +265,13 @@ class MediaDecoder {
    * Media bytes get fetched internally from provided URI
    * or invokes provided input callback to get media bytes.
    * Input callback must be empty for the internal media provider
+   * Caller can provide non-null pointer for the input container
+   * if headers to obtain the streams metadata (optional)
    */
   virtual bool init(
       const DecoderParameters& params,
-      DecoderInCallback&& in) = 0;
+      DecoderInCallback&& in,
+      std::vector<DecoderMetadata>* metadata) = 0;
 
   /**
    * Polls available decoded one frame from decoder

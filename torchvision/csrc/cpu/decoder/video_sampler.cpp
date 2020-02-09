@@ -156,27 +156,19 @@ bool VideoSampler::init(const SamplerParameters& params) {
   return scaleContext_ != nullptr;
 }
 
-int VideoSampler::getImageBytes() const {
-  return av_image_get_buffer_size(
+int VideoSampler::sample(
+    const uint8_t* const srcSlice[],
+    int srcStride[],
+    ByteStorage* out) {
+  int result;
+  // scaled and cropped image
+  int outImageSize = av_image_get_buffer_size(
       (AVPixelFormat)params_.out.video.format,
       params_.out.video.width,
       params_.out.video.height,
       1);
-}
 
-int VideoSampler::sample(
-    const uint8_t* const srcSlice[],
-    int srcStride[],
-    ByteStorage* out,
-    bool allocateBuffer) {
-  int result;
-  // scaled and cropped image
-  const auto outImageSize = getImageBytes();
-  if (allocateBuffer) {
-    out->clear();
-    out->ensure(outImageSize);
-  }
-  CHECK_LE(outImageSize, out->tail());
+  out->ensure(outImageSize);
 
   uint8_t* scalePlanes[4] = {nullptr};
   int scaleLines[4] = {0};
@@ -237,7 +229,7 @@ int VideoSampler::sample(AVFrame* frame, ByteStorage* out) {
     return 0; // no flush for videos
   }
 
-  return sample(frame->data, frame->linesize, out, false);
+  return sample(frame->data, frame->linesize, out);
 }
 
 int VideoSampler::sample(const ByteStorage* in, ByteStorage* out) {
@@ -254,7 +246,7 @@ int VideoSampler::sample(const ByteStorage* in, ByteStorage* out) {
     return result;
   }
 
-  return sample(inPlanes, inLineSize, out, true);
+  return sample(inPlanes, inLineSize, out);
 }
 
 void VideoSampler::cleanUp() {

@@ -49,12 +49,6 @@ AudioStream::~AudioStream() {
   }
 }
 
-void AudioStream::ensureSampler() {
-  if (!sampler_) {
-    sampler_ = std::make_unique<AudioSampler>(codecCtx_);
-  }
-}
-
 int AudioStream::initFormat() {
   // set output format
   if (format_.format.audio.samples == 0) {
@@ -74,8 +68,10 @@ int AudioStream::initFormat() {
       : -1;
 }
 
-int AudioStream::estimateBytes(bool flush) {
-  ensureSampler();
+int AudioStream::copyFrameBytes(ByteStorage* out, bool flush) {
+  if (!sampler_) {
+    sampler_ = std::make_unique<AudioSampler>(codecCtx_);
+  }
   // check if input format gets changed
   if (flush ? !(sampler_->getInputFormat().audio == *codecCtx_)
             : !(sampler_->getInputFormat().audio == *frame_)) {
@@ -85,7 +81,7 @@ int AudioStream::estimateBytes(bool flush) {
     params.out = format_.format;
     flush ? toAudioFormat(params.in.audio, *codecCtx_)
           : toAudioFormat(params.in.audio, *frame_);
-    if (flush || !sampler_->init(params)) {
+    if (!sampler_->init(params)) {
       return -1;
     }
 
@@ -98,11 +94,6 @@ int AudioStream::estimateBytes(bool flush) {
             << ", channels: " << format_.format.audio.channels
             << ", format: " << format_.format.audio.format;
   }
-  return sampler_->getSamplesBytes(flush ? nullptr : frame_);
-}
-
-int AudioStream::copyFrameBytes(ByteStorage* out, bool flush) {
-  ensureSampler();
   return sampler_->sample(flush ? nullptr : frame_, out);
 }
 

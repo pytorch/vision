@@ -16,7 +16,7 @@ class CCStream : public SubtitleStream {
       const SubtitleFormat& format);
 
  private:
-  AVCodec* findCodec(AVCodecContext* ctx) override;
+  AVCodec* findCodec(AVCodecParameters* params) override;
 };
 
 } // namespace ffmpeg

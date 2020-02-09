@@ -23,7 +23,6 @@ class SubtitleSampler : public MediaSampler {
 
   // returns number processed/scaling bytes
   int sample(AVSubtitle* sub, ByteStorage* out);
-  int getSamplesBytes(AVSubtitle* sub) const;
 
   // helper serialization/deserialization methods
   static void serialize(const AVSubtitle& sub, ByteStorage* out);

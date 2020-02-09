@@ -5,17 +5,6 @@
 
 namespace ffmpeg {
 
-namespace {
-
-bool operator==(const SubtitleFormat&, const AVCodecContext&) {
-  return true;
-}
-
-SubtitleFormat& toSubtitleFormat(SubtitleFormat& x, const AVCodecContext&) {
-  return x;
-}
-} // namespace
-
 SubtitleStream::SubtitleStream(
     AVFormatContext* inputCtx,
     int index,
@@ -45,7 +34,7 @@ int SubtitleStream::initFormat() {
   if (!codecCtx_->subtitle_header) {
     LOG(ERROR) << "No subtitle header found";
   } else {
-    LOG(INFO) << "Subtitle header found!";
+    VLOG(1) << "Subtitle header found!";
   }
   return 0;
 }
@@ -57,35 +46,29 @@ int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
   AVPacket avPacket;
   av_init_packet(&avPacket);
   avPacket.data = nullptr;
+  avPacket.size = 0;
   auto pkt = packet ? *packet : avPacket;
   int gotFramePtr = 0;
   int result = avcodec_decode_subtitle2(codecCtx_, &sub_, &gotFramePtr, &pkt);
 
   if (result < 0) {
-    VLOG(1) << "avcodec_decode_subtitle2 failed, err: "
-            << Util::generateErrorDesc(result);
+    LOG(ERROR) << "avcodec_decode_subtitle2 failed, err: "
+               << Util::generateErrorDesc(result);
+    return result;
   } else if (result == 0) {
-    result = packet ? packet->size : 0; // discard the rest of the package
+    result = pkt.size; // discard the rest of the package
   }
 
   sub_.release = gotFramePtr;
   *gotFrame = gotFramePtr > 0;
-  return result;
-}
 
-int SubtitleStream::estimateBytes(bool) {
-  if (!(sampler_.getInputFormat().subtitle == *codecCtx_)) {
-    // - reinit sampler
-    SamplerParameters params;
-    params.type = MediaType::TYPE_SUBTITLE;
-    toSubtitleFormat(params.in.subtitle, *codecCtx_);
-    if (!sampler_.init(params)) {
-      return -1;
-    }
-
-    VLOG(1) << "Set input subtitle sampler format";
+  // set proper pts in us
+  if (gotFramePtr) {
+    sub_.pts = av_rescale_q(
+        pkt.pts, inputCtx_->streams[format_.stream]->time_base, AV_TIME_BASE_Q);
   }
-  return sampler_.getSamplesBytes(&sub_);
+
+  return result;
 }
 
 int SubtitleStream::copyFrameBytes(ByteStorage* out, bool flush) {

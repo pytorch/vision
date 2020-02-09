@@ -1,4 +1,5 @@
 #include "subtitle_sampler.h"
+#include <c10/util/Logging.h>
 #include "util.h"
 
 namespace ffmpeg {
@@ -18,22 +19,23 @@ bool SubtitleSampler::init(const SamplerParameters& params) {
   return true;
 }
 
-int SubtitleSampler::getSamplesBytes(AVSubtitle* sub) const {
-  return Util::size(*sub);
-}
-
 int SubtitleSampler::sample(AVSubtitle* sub, ByteStorage* out) {
-  if (!sub) {
+  if (!sub || !out) {
     return 0; // flush
   }
+
+  out->ensure(Util::size(*sub));
 
   return Util::serialize(*sub, out);
 }
 
 int SubtitleSampler::sample(const ByteStorage* in, ByteStorage* out) {
-  if (in) {
+  if (in && out) {
     // Get a writable copy
-    *out = *in;
+    if (size_t len = in->length()) {
+      out->ensure(len);
+      memcpy(out->writableTail(), in->data(), len);
+    }
     return out->length();
   }
   return 0;
