@@ -21,6 +21,10 @@ commands:
     description: "checkout merge branch"
     steps:
       - checkout
+      - run:
+        name: init submodules
+        command: |
+          git submodule update --init --recursive
 #     - run:
 #         name: Checkout merge branch
 #         command: |

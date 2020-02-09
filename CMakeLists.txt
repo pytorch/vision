@@ -10,8 +10,8 @@ if(WITH_CUDA)
   add_definitions(-D__CUDA_NO_HALF_OPERATORS__)
 endif()
 
-find_package(PNG REQUIRED)
-add_library(LibJPEGTurbo SHARED IMPORTED)
+include(${CMAKE_CURRENT_SOURCE_DIR}/third_party/libpng/CMakeLists.txt)
+include(${CMAKE_CURRENT_SOURCE_DIR}/third_party/libjpeg-turbo/CMakeLists.txt)
 find_package(Torch REQUIRED)
 find_package(pybind11 REQUIRED)
 
@@ -27,6 +27,7 @@ file(GLOB IMAGE_HEADERS torchvision/csrc/image.h)
 file(GLOB IMAGE_SOURCES torchvision/csrc/cpu/image/*.h torchvision/csrc/cpu/image/*.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${IMAGE_SOURCES})
+
 target_link_libraries(${PROJECT_NAME} PUBLIC "${PNG_LIBRARY}")
 target_link_libraries(${PROJECT_NAME} PUBLIC "${LibJPEGTurbo}")
 target_link_libraries(${PROJECT_NAME} PUBLIC "${TORCH_LIBRARIES}")
