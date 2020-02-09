@@ -4,3 +4,6 @@
 [submodule "third_party/libjpeg-turbo"]
 	path = third_party/libjpeg-turbo
 	url = https://github.com/libjpeg-turbo/libjpeg-turbo
+[submodule "third_party/zlib"]
+	path = third_party/zlib
+	url = https://github.com/madler/zlib
