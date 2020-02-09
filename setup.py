@@ -14,7 +14,6 @@ import shutil
 import torch
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
 
-
 def read(*names, **kwargs):
     with io.open(
         os.path.join(os.path.dirname(__file__), *names),
@@ -75,6 +74,11 @@ requirements = [
 pillow_ver = ' >= 4.1.1'
 pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
+
+third_party_libraries = ['png', 'turbojpeg']
+third_party_dir = os.path.join(cwd, "third_party")
+third_party_lib_directories = ['libpng', 'libjpeg-turbo']
+third_party_search_directories = [os.path.join(third_party_dir, directory) for directory in third_party_lib_directories]
 
 
 def get_extensions():
@@ -143,9 +147,10 @@ def get_extensions():
         extension(
             'torchvision._C',
             sources,
-            libraries=['png', 'turbojpeg'],
-            include_dirs=include_dirs,
-            define_macros=define_macros,
+            #libraries= ['turbojpeg', 'png'],
+            include_dirs=include_dirs + third_party_search_directories,
+            #library_dirs=third_party_search_directories,
+            #define_macros=define_macros,
             extra_compile_args=extra_compile_args,
         )
     ]
@@ -200,27 +205,27 @@ class clean(distutils.command.clean.clean):
 
 
 setup(
-    # Metadata
-    name=package_name,
-    version=version,
-    author='PyTorch Core Team',
-    author_email='soumith@pytorch.org',
-    url='https://github.com/pytorch/vision',
-    description='image and video datasets and models for torch deep learning',
-    long_description=readme,
-    license='BSD',
-
-    # Package info
-    packages=find_packages(exclude=('test',)),
-
-    zip_safe=False,
-    install_requires=requirements,
-    extras_require={
-        "scipy": ["scipy"],
-    },
-    ext_modules=get_extensions(),
-    cmdclass={
-        'build_ext': BuildExtension.with_options(no_python_abi_suffix=True),
-        'clean': clean,
-    }
-)
+        # Metadata
+        name=package_name,
+        version=version,
+        author='PyTorch Core Team',
+        author_email='soumith@pytorch.org',
+        url='https://github.com/pytorch/vision',
+        description='image and video datasets and models for torch deep learning',
+        long_description=readme,
+        license='BSD',
+    
+            # Package info
+        packages=find_packages(exclude=('test',)),
+    
+        zip_safe=False,
+        install_requires=requirements,
+        extras_require={
+            "scipy": ["scipy"],
+        },
+        ext_modules=get_extensions(),
+        cmdclass={
+            'build_ext': BuildExtension.with_options(no_python_abi_suffix=True),
+            'clean': clean,
+        }
+    )
