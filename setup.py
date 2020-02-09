@@ -80,16 +80,21 @@ third_party_dir = os.path.join(cwd, "third_party")
 third_party_lib_directories = ['libpng', 'libjpeg-turbo']
 third_party_search_directories = [os.path.join(third_party_dir, directory) for directory in third_party_lib_directories]
 
+def _build_cmake_dependency(directory, args=""):
+    os.chdir(directory)
+    if sys.platform == 'win32':
+        os.system("cmake3.exe --clean .")
+        os.system("cmake3.exe {} --build .".format(args) )
+    else: 
+        os.system("cmake --clean .")
+        os.system("cmake {} --build .".format(args) )
+    os.chdir(cwd)
+
+
 def build_dependencies():
-    for directory in third_party_search_directories:
-        os.chdir(directory)
-        if sys.platform == 'win32':
-            os.system("cmake3.exe --clean .")
-            os.system("cmake3.exe --build .")
-        else: 
-            os.system("cmake --clean .")
-            os.system("cmake --build .")
-        os.chdir(cwd)
+    zlib_dep = os.path.join(third_party_dir, "zlib")
+    _build_cmake_dependency("./third_party/libpng", "-DPNG_BUILD_ZLIB={}".format(zlib_dep))
+    _build_cmake_dependency("./third_party/libjpeg-turbo")
 
 
 def get_extensions():
