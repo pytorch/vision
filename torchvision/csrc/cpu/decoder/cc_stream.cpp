@@ -11,14 +11,14 @@ CCStream::CCStream(
   format_.type = TYPE_CC;
 }
 
-AVCodec* CCStream::findCodec(AVCodecContext* ctx) {
-  if (ctx->codec_id == AV_CODEC_ID_BIN_DATA &&
-      ctx->codec_type == AVMEDIA_TYPE_DATA) {
+AVCodec* CCStream::findCodec(AVCodecParameters* params) {
+  if (params->codec_id == AV_CODEC_ID_BIN_DATA &&
+      params->codec_type == AVMEDIA_TYPE_DATA) {
     // obtain subtitles codec
-    ctx->codec_id = AV_CODEC_ID_MOV_TEXT;
-    ctx->codec_type = AVMEDIA_TYPE_SUBTITLE;
+    params->codec_id = AV_CODEC_ID_MOV_TEXT;
+    params->codec_type = AVMEDIA_TYPE_SUBTITLE;
   }
-  return Stream::findCodec(ctx);
+  return Stream::findCodec(params);
 }
 
 } // namespace ffmpeg

@@ -26,7 +26,7 @@ class Stream {
   virtual ~Stream();
 
   // returns 0 - on success or negative error
-  int openCodec();
+  int openCodec(std::vector<DecoderMetadata>* metadata);
   // returns 1 - if packet got consumed, 0 - if it's not, and < 0 on error
   int decodePacket(
       const AVPacket* packet,
@@ -46,18 +46,16 @@ class Stream {
 
  protected:
   virtual int initFormat() = 0;
-  // returns 1 - if packet got consumed, 0 - if it's not, and < 0 on error
+  // returns number processed bytes from packet, or negative error
   virtual int analyzePacket(const AVPacket* packet, bool* gotFrame);
   // returns number processed bytes from packet, or negative error
   virtual int copyFrameBytes(ByteStorage* out, bool flush) = 0;
-  // estimates bytes in frame, returns output buffer size, or negative error
-  virtual int estimateBytes(bool flush) = 0;
   // sets output format
   virtual void setHeader(DecoderHeader* header, bool flush);
   // set frame pts
   virtual void setFramePts(DecoderHeader* header, bool flush);
   // finds codec
-  virtual AVCodec* findCodec(AVCodecContext* ctx);
+  virtual AVCodec* findCodec(AVCodecParameters* params);
 
  private:
   // returns 1 - if message got a payload, 0 - if it's not, and < 0 on error

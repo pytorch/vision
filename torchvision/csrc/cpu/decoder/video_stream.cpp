@@ -47,12 +47,6 @@ VideoStream::~VideoStream() {
   }
 }
 
-void VideoStream::ensureSampler() {
-  if (!sampler_) {
-    sampler_ = std::make_unique<VideoSampler>(SWS_AREA, loggingUuid_);
-  }
-}
-
 int VideoStream::initFormat() {
   // set output format
   if (!Util::validateVideoFormat(format_.format.video)) {
@@ -85,8 +79,11 @@ int VideoStream::initFormat() {
       : -1;
 }
 
-int VideoStream::estimateBytes(bool flush) {
-  ensureSampler();
+int VideoStream::copyFrameBytes(ByteStorage* out, bool flush) {
+  if (!sampler_) {
+    sampler_ = std::make_unique<VideoSampler>(SWS_AREA, loggingUuid_);
+  }
+
   // check if input format gets changed
   if (flush ? !(sampler_->getInputFormat().video == *codecCtx_)
             : !(sampler_->getInputFormat().video == *frame_)) {
@@ -111,11 +108,7 @@ int VideoStream::estimateBytes(bool flush) {
             << ", minDimension: " << format_.format.video.minDimension
             << ", crop: " << format_.format.video.cropImage;
   }
-  return sampler_->getImageBytes();
-}
 
-int VideoStream::copyFrameBytes(ByteStorage* out, bool flush) {
-  ensureSampler();
   return sampler_->sample(flush ? nullptr : frame_, out);
 }
 

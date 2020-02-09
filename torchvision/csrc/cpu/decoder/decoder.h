@@ -15,9 +15,13 @@ namespace ffmpeg {
 class Decoder : public MediaDecoder {
  public:
   Decoder();
+  ~Decoder() override;
 
   // MediaDecoder overrides
-  bool init(const DecoderParameters& params, DecoderInCallback&& in) override;
+  bool init(
+      const DecoderParameters& params,
+      DecoderInCallback&& in,
+      std::vector<DecoderMetadata>* metadata) override;
   int decode_all(const DecoderOutCallback& callback) override;
   void shutdown() override;
   void interrupt() override;
@@ -56,15 +60,17 @@ class Decoder : public MediaDecoder {
   virtual int64_t seekCallback(int64_t offset, int whence);
   virtual int shutdownCallback();
 
-  bool openStreams();
+  bool openStreams(std::vector<DecoderMetadata>* metadata);
   Stream* findByIndex(int streamIndex) const;
   Stream* findByType(const MediaFormat& format) const;
-  int processPacket(Stream* stream,
-                    AVPacket* packet,
-                    bool* gotFrame,
-                    bool* hasMsg);
+  int processPacket(
+      Stream* stream,
+      AVPacket* packet,
+      bool* gotFrame,
+      bool* hasMsg);
   void flushStreams();
   void cleanUp();
+
  private:
   DecoderParameters params_;
   SeekableBuffer seekableBuffer_;

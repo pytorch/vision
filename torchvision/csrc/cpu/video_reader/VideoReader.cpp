@@ -253,7 +253,16 @@ torch::List<torch::Tensor> readVideo(
   const auto now = std::chrono::system_clock::now();
 
   bool succeeded;
-  if ((succeeded = decoder.init(params, std::move(callback)))) {
+  DecoderMetadata audioMetadata, videoMetadata;
+  std::vector<DecoderMetadata> metadata;
+  if ((succeeded = decoder.init(params, std::move(callback), &metadata))) {
+    for (const auto& header : metadata) {
+      if (header.format.type == TYPE_VIDEO) {
+        videoMetadata = header;
+      } else if (header.format.type == TYPE_AUDIO) {
+        audioMetadata = header;
+      }
+    }
     int res;
     DecoderOutputMessage msg;
     while (0 == (res = decoder.decode(&msg, decoderTimeoutMs))) {
@@ -265,16 +274,15 @@ torch::List<torch::Tensor> readVideo(
       }
       msg.payload.reset();
     }
-
-    const auto then = std::chrono::system_clock::now();
-    VLOG(1) << "Video decoding from " << logType << " [" << logMessage
-            << "] has finished, "
-            << std::chrono::duration_cast<std::chrono::microseconds>(then - now)
-                   .count()
-            << " us";
   } else {
     LOG(ERROR) << "Decoder initialization has failed";
   }
+  const auto then = std::chrono::system_clock::now();
+  VLOG(1) << "Video decoding from " << logType << " [" << logMessage
+          << "] has finished, "
+          << std::chrono::duration_cast<std::chrono::microseconds>(then - now)
+                 .count()
+          << " us";
 
   decoder.shutdown();
 
@@ -287,9 +295,8 @@ torch::List<torch::Tensor> readVideo(
 
   if (succeeded && readVideoStream == 1) {
     if (!videoMessages.empty()) {
-      const auto& header = videoMessages[0].header;
-      const auto& media = header.format;
-      const auto& format = media.format.video;
+      const auto& header = videoMetadata;
+      const auto& format = header.format.format.video;
       int numVideoFrames = videoMessages.size();
       int outHeight = format.height;
       int outWidth = format.width;
@@ -305,19 +312,19 @@ torch::List<torch::Tensor> readVideo(
 
       videoFramePts = torch::zeros({numVideoFrames}, torch::kLong);
 
-      VLOG(2) << "video duration: " << media.duration << ", fps: " << header.fps
-              << ", num: " << media.num << ", den: " << media.den
-              << ", num frames: " << numVideoFrames;
+      VLOG(2) << "video duration: " << header.duration
+              << ", fps: " << header.fps << ", num: " << header.num
+              << ", den: " << header.den << ", num frames: " << numVideoFrames;
 
       auto numberWrittenBytes = fillVideoTensor(
-          videoMessages, videoFrame, videoFramePts, media.num, media.den);
+          videoMessages, videoFrame, videoFramePts, header.num, header.den);
 
       CHECK_EQ(numberWrittenBytes, expectedWrittenBytes);
 
       videoTimeBase = torch::zeros({2}, torch::kInt);
       int* videoTimeBaseData = videoTimeBase.data_ptr<int>();
-      videoTimeBaseData[0] = media.num;
-      videoTimeBaseData[1] = media.den;
+      videoTimeBaseData[0] = header.num;
+      videoTimeBaseData[1] = header.den;
 
       videoFps = torch::zeros({1}, torch::kFloat);
       float* videoFpsData = videoFps.data_ptr<float>();
@@ -325,8 +332,8 @@ torch::List<torch::Tensor> readVideo(
 
       videoDuration = torch::zeros({1}, torch::kLong);
       int64_t* videoDurationData = videoDuration.data_ptr<int64_t>();
-      AVRational avr = {(int)media.num, (int)media.den};
-      videoDurationData[0] = av_rescale_q(media.duration, AV_TIME_BASE_Q, avr);
+      AVRational vr = {(int)header.num, (int)header.den};
+      videoDurationData[0] = av_rescale_q(header.duration, AV_TIME_BASE_Q, vr);
       VLOG(1) << "Video decoding from " << logType << " [" << logMessage
               << "] filled video tensors";
     } else {
@@ -342,9 +349,8 @@ torch::List<torch::Tensor> readVideo(
   torch::Tensor audioDuration = torch::zeros({0}, torch::kLong);
   if (succeeded && readAudioStream == 1) {
     if (!audioMessages.empty()) {
-      const auto& header = audioMessages[0].header;
-      const auto& media = header.format;
-      const auto& format = media.format.audio;
+      const auto& header = audioMetadata;
+      const auto& format = header.format.format.audio;
 
       int64_t outAudioChannels = format.channels;
       int bytesPerSample =
@@ -366,21 +372,21 @@ torch::List<torch::Tensor> readVideo(
       }
       audioFramePts = torch::zeros({numAudioFrames}, torch::kLong);
 
-      VLOG(2) << "audio duration: " << media.duration
+      VLOG(2) << "audio duration: " << header.duration
               << ", channels: " << format.channels
-              << ", sample rate: " << format.samples << ", num: " << media.num
-              << ", den: " << media.den;
+              << ", sample rate: " << format.samples << ", num: " << header.num
+              << ", den: " << header.den;
 
       auto numberWrittenBytes = fillAudioTensor(
-          audioMessages, audioFrame, audioFramePts, media.num, media.den);
+          audioMessages, audioFrame, audioFramePts, header.num, header.den);
       CHECK_EQ(
           numberWrittenBytes,
           numAudioSamples * outAudioChannels * sizeof(float));
 
       audioTimeBase = torch::zeros({2}, torch::kInt);
       int* audioTimeBaseData = audioTimeBase.data_ptr<int>();
-      audioTimeBaseData[0] = media.num;
-      audioTimeBaseData[1] = media.den;
+      audioTimeBaseData[0] = header.num;
+      audioTimeBaseData[1] = header.den;
 
       audioSampleRate = torch::zeros({1}, torch::kInt);
       int* audioSampleRateData = audioSampleRate.data_ptr<int>();
@@ -388,8 +394,8 @@ torch::List<torch::Tensor> readVideo(
 
       audioDuration = torch::zeros({1}, torch::kLong);
       int64_t* audioDurationData = audioDuration.data_ptr<int64_t>();
-      AVRational avr = {(int)media.num, (int)media.den};
-      audioDurationData[0] = av_rescale_q(media.duration, AV_TIME_BASE_Q, avr);
+      AVRational ar = {(int)header.num, (int)header.den};
+      audioDurationData[0] = av_rescale_q(header.duration, AV_TIME_BASE_Q, ar);
       VLOG(1) << "Video decoding from " << logType << " [" << logMessage
               << "] filled audio tensors";
     } else {
@@ -519,7 +525,6 @@ torch::List<torch::Tensor> probeVideo(
   );
 
   SyncDecoder decoder;
-  DecoderOutputMessage audioMessage, videoMessage;
   DecoderInCallback callback = nullptr;
   std::string logMessage, logType;
   if (isReadFile) {
@@ -540,23 +545,18 @@ torch::List<torch::Tensor> probeVideo(
 
   bool succeeded;
   bool gotAudio = false, gotVideo = false;
-  if ((succeeded = decoder.init(params, std::move(callback)))) {
-    int res;
-    DecoderOutputMessage msg;
-    while (0 == (res = decoder.decode(&msg, decoderTimeoutMs)) &&
-           (!gotAudio || !gotVideo)) {
-      if (msg.header.format.type == TYPE_VIDEO && !gotVideo) {
-        videoMessage = std::move(msg);
+  DecoderMetadata audioMetadata, videoMetadata;
+  std::vector<DecoderMetadata> metadata;
+  if ((succeeded = decoder.init(params, std::move(callback), &metadata))) {
+    for (const auto& header : metadata) {
+      if (header.format.type == TYPE_VIDEO) {
         gotVideo = true;
-      }
-      if (msg.header.format.type == TYPE_AUDIO && !gotAudio) {
-        audioMessage = std::move(msg);
+        videoMetadata = header;
+      } else if (header.format.type == TYPE_AUDIO) {
         gotAudio = true;
+        audioMetadata = header;
       }
-      msg.payload.reset();
     }
-    succeeded = (res == 0 || res == ENODATA);
-
     const auto then = std::chrono::system_clock::now();
     VLOG(1) << "Video probing from " << logType << " [" << logMessage
             << "] has finished, "
@@ -577,11 +577,11 @@ torch::List<torch::Tensor> probeVideo(
   if (succeeded && gotVideo) {
     videoTimeBase = torch::zeros({2}, torch::kInt);
     int* videoTimeBaseData = videoTimeBase.data_ptr<int>();
-    const auto& header = videoMessage.header;
+    const auto& header = videoMetadata;
     const auto& media = header.format;
 
-    videoTimeBaseData[0] = media.num;
-    videoTimeBaseData[1] = media.den;
+    videoTimeBaseData[0] = header.num;
+    videoTimeBaseData[1] = header.den;
 
     videoFps = torch::zeros({1}, torch::kFloat);
     float* videoFpsData = videoFps.data_ptr<float>();
@@ -589,11 +589,11 @@ torch::List<torch::Tensor> probeVideo(
 
     videoDuration = torch::zeros({1}, torch::kLong);
     int64_t* videoDurationData = videoDuration.data_ptr<int64_t>();
-    AVRational avr = {(int)media.num, (int)media.den};
-    videoDurationData[0] = av_rescale_q(media.duration, AV_TIME_BASE_Q, avr);
+    AVRational avr = {(int)header.num, (int)header.den};
+    videoDurationData[0] = av_rescale_q(header.duration, AV_TIME_BASE_Q, avr);
 
-    VLOG(2) << "Prob fps: " << header.fps << ", duration: " << media.duration
-            << ", num: " << media.num << ", den: " << media.den;
+    VLOG(2) << "Prob fps: " << header.fps << ", duration: " << header.duration
+            << ", num: " << header.num << ", den: " << header.den;
 
     VLOG(1) << "Video probing from " << logType << " [" << logMessage
             << "] filled video tensors";
@@ -609,12 +609,12 @@ torch::List<torch::Tensor> probeVideo(
   if (succeeded && gotAudio) {
     audioTimeBase = torch::zeros({2}, torch::kInt);
     int* audioTimeBaseData = audioTimeBase.data_ptr<int>();
-    const auto& header = audioMessage.header;
+    const auto& header = audioMetadata;
     const auto& media = header.format;
     const auto& format = media.format.audio;
 
-    audioTimeBaseData[0] = media.num;
-    audioTimeBaseData[1] = media.den;
+    audioTimeBaseData[0] = header.num;
+    audioTimeBaseData[1] = header.den;
 
     audioSampleRate = torch::zeros({1}, torch::kInt);
     int* audioSampleRateData = audioSampleRate.data_ptr<int>();
@@ -622,12 +622,12 @@ torch::List<torch::Tensor> probeVideo(
 
     audioDuration = torch::zeros({1}, torch::kLong);
     int64_t* audioDurationData = audioDuration.data_ptr<int64_t>();
-    AVRational avr = {(int)media.num, (int)media.den};
-    audioDurationData[0] = av_rescale_q(media.duration, AV_TIME_BASE_Q, avr);
+    AVRational avr = {(int)header.num, (int)header.den};
+    audioDurationData[0] = av_rescale_q(header.duration, AV_TIME_BASE_Q, avr);
 
     VLOG(2) << "Prob sample rate: " << format.samples
-            << ", duration: " << media.duration << ", num: " << media.num
-            << ", den: " << media.den;
+            << ", duration: " << header.duration << ", num: " << header.num
+            << ", den: " << header.den;
 
     VLOG(1) << "Video probing from " << logType << " [" << logMessage
             << "] filled audio tensors";

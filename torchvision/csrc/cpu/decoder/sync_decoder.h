@@ -11,11 +11,12 @@ namespace ffmpeg {
  * or fetched internally by FFMPEG library
  */
 class SyncDecoder : public Decoder {
+ public:
   // Allocation of memory must be done with a proper alignment.
-  class VectorByteStorage : public ByteStorage {
+  class AVByteStorage : public ByteStorage {
    public:
-    VectorByteStorage(size_t n);
-    ~VectorByteStorage() override;
+    explicit AVByteStorage(size_t n);
+    ~AVByteStorage() override;
     void ensure(size_t n) override;
     uint8_t* writableTail() override;
     void append(size_t n) override;

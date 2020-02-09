@@ -35,8 +35,7 @@ class VideoSampler : public MediaSampler {
   int sample(
       const uint8_t* const srcSlice[],
       int srcStride[],
-      ByteStorage* out,
-      bool allocateBuffer);
+      ByteStorage* out);
 
  private:
   VideoFormat scaleFormat_;

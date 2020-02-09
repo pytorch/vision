@@ -34,7 +34,7 @@ int SeekableBuffer::init(
     return 1;
   }
 
-  if (!readBytes(in, maxSeekableBytes, timeoutMs)) {
+  if (!readBytes(in, maxSeekableBytes + (type ? 8 : 0), timeoutMs)) {
     return -1;
   }
 
