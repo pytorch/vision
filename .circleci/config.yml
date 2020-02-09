@@ -240,8 +240,8 @@ jobs:
             sh conda.sh -b
             source $HOME/miniconda3/bin/activate
             conda install -yq conda-build
-      - store_artifacts:
             packaging/build_conda.sh
+      - store_artifacts:
           path: /Users/distiller/miniconda3/conda-bld/osx-64
       - persist_to_workspace:
           root: /Users/distiller/miniconda3/conda-bld/osx-64
