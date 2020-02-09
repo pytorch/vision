@@ -80,6 +80,17 @@ third_party_dir = os.path.join(cwd, "third_party")
 third_party_lib_directories = ['libpng', 'libjpeg-turbo']
 third_party_search_directories = [os.path.join(third_party_dir, directory) for directory in third_party_lib_directories]
 
+def build_dependencies():
+    for directory in third_party_search_directories:
+        os.chdir(directory)
+        if sys.platform == 'win32':
+            os.system("cmake3.exe --clean .")
+            os.system("cmake3.exe --build .")
+        else: 
+            os.system("cmake --clean .")
+            os.system("cmake --build .")
+        os.chdir(cwd)
+
 
 def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -147,10 +158,10 @@ def get_extensions():
         extension(
             'torchvision._C',
             sources,
-            #libraries= ['turbojpeg', 'png'],
+            libraries= third_party_libraries,
             include_dirs=include_dirs + third_party_search_directories,
-            #library_dirs=third_party_search_directories,
-            #define_macros=define_macros,
+            library_dirs=third_party_search_directories,
+            define_macros=define_macros,
             extra_compile_args=extra_compile_args,
         )
     ]
@@ -203,6 +214,9 @@ class clean(distutils.command.clean.clean):
         # It's an old-style class in Python 2.7...
         distutils.command.clean.clean.run(self)
 
+def build_ext_with_dependencies(self):
+    build_dependencies()
+    return BuildExtension.with_options(no_python_abi_suffix=True)(self)
 
 setup(
         # Metadata
@@ -225,7 +239,7 @@ setup(
         },
         ext_modules=get_extensions(),
         cmdclass={
-            'build_ext': BuildExtension.with_options(no_python_abi_suffix=True),
+            'build_ext': build_ext_with_dependencies,
             'clean': clean,
         }
     )

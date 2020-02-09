@@ -32,7 +32,6 @@ rm -rf vision
 git clone https://github.com/pytorch/vision
 
 cd /tmp/vision
-yum install -y libpng libpng-devel
 for PYDIR in "${python_installations[@]}"; do
     export PATH=$PYDIR/bin:$OLD_PATH
     pip install --upgrade pip

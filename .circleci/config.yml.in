@@ -21,10 +21,7 @@ commands:
     description: "checkout merge branch"
     steps:
       - checkout
-      - run:
-        name: init submodules
-        command: |
-          git submodule update --init --recursive
+      - run: git submodule update --init --recursive
 #     - run:
 #         name: Checkout merge branch
 #         command: |
@@ -223,8 +220,7 @@ jobs:
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
             sh conda.sh -b
             source $HOME/miniconda3/bin/activate
-            conda install -yq libpng
-            packaging/build_wheel_macos.sh
+            packaging/build_wheel.sh
       - store_artifacts:
           path: dist
       - persist_to_workspace:
@@ -244,9 +240,8 @@ jobs:
             sh conda.sh -b
             source $HOME/miniconda3/bin/activate
             conda install -yq conda-build
-            conda install -yq libpng
-            packaging/build_conda.sh
       - store_artifacts:
+            packaging/build_conda.sh
           path: /Users/distiller/miniconda3/conda-bld/osx-64
       - persist_to_workspace:
           root: /Users/distiller/miniconda3/conda-bld/osx-64

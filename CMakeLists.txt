@@ -10,8 +10,8 @@ if(WITH_CUDA)
   add_definitions(-D__CUDA_NO_HALF_OPERATORS__)
 endif()
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/third_party/libpng/CMakeLists.txt)
-include(${CMAKE_CURRENT_SOURCE_DIR}/third_party/libjpeg-turbo/CMakeLists.txt)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/libpng)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/libjpeg-turbo)
 find_package(Torch REQUIRED)
 find_package(pybind11 REQUIRED)
 
