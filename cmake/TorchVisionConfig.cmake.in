@@ -33,5 +33,9 @@ find_package(pybind11 REQUIRED)
 endif()
 target_link_libraries(TorchVision::TorchVision INTERFACE ${TORCH_LIBRARIES} pybind11::pybind11)
 
+if(@WITH_CUDA@)
+  target_compile_definitions(TorchVision::TorchVision INTERFACE WITH_CUDA)
+endif()
+
 endif()
 endif()
