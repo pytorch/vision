@@ -96,10 +96,13 @@ def _build_cmake_dependency(directory, args=""):
 def build_dependencies():
     zlib_path = os.path.join(third_party_dir, "zlib")
     libpng_cmake_options="-DPNG_BUILD_ZLIB=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.so".format(zlib_path=zlib_path)
-    print("Zlib build options:", libpng_cmake_options)
     _build_cmake_dependency("./third_party/zlib")
+    # Deactivate SIMD on macOS 
+    jpeg_turbo_options = ""
+    if sys.platform == "darwin":
+        jpeg_turbo_options ="-DWITH_SIMD=0"
     _build_cmake_dependency("./third_party/libpng", libpng_cmake_options)
-    _build_cmake_dependency("./third_party/libjpeg-turbo")
+    _build_cmake_dependency("./third_party/libjpeg-turbo", jpeg_turbo_options)
 
 
 def get_extensions():
