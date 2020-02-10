@@ -150,7 +150,7 @@ class Normalize(object):
     ``output[channel] = (input[channel] - mean[channel]) / std[channel]``
 
     .. note::
-        This transform acts out of place, i.e., it does not mutates the input tensor.
+        This transform acts out of place, i.e., it does not mutate the input tensor.
 
     Args:
         mean (sequence): Sequence of means for each channel.
