@@ -84,16 +84,21 @@ def _build_cmake_dependency(directory, args=""):
     os.chdir(directory)
     if sys.platform == 'win32':
         os.system("cmake3.exe --clean .")
-        os.system("cmake3.exe {} --build .".format(args) )
+        os.system("cmake3.exe -G='Visual Studio 15 2017' {} .".format(args) )
+        os.system("cmake3.exe --build .")
     else: 
         os.system("cmake --clean .")
-        os.system("cmake {} --build .".format(args) )
+        os.system("cmake {} .".format(args) )
+        os.system("cmake --build .")
     os.chdir(cwd)
 
 
 def build_dependencies():
-    zlib_dep = os.path.join(third_party_dir, "zlib")
-    _build_cmake_dependency("./third_party/libpng", "-DPNG_BUILD_ZLIB={}".format(zlib_dep))
+    zlib_path = os.path.join(third_party_dir, "zlib")
+    libpng_cmake_options="-DPNG_BUILD_ZLIB=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.a".format(zlib_path=zlib_path)
+
+    _build_cmake_dependency("./third_party/zlib")
+    _build_cmake_dependency("./third_party/libpng", libpng_cmake_options)
     _build_cmake_dependency("./third_party/libjpeg-turbo")
 
 
