@@ -112,6 +112,8 @@ setup_build_version() {
 setup_macos() {
   if [[ "$(uname)" == Darwin ]]; then
     export MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++
+    # Deactivation SIMD support for MacOS for jpegturbo as the nasm version provided with the CI is failing
+    export WITH_SIMD=0
   fi
 }
 
