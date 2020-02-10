@@ -189,7 +189,7 @@ jobs:
             (& "C:\tools\miniconda3\Scripts\conda.exe" "shell.powershell" "hook") | Out-String | Invoke-Expression
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
-            conda install -c anaconda cmake
+            conda install -yq -c anaconda cmake
             bash packaging/build_conda.sh
           shell: powershell.exe
 
@@ -204,7 +204,7 @@ jobs:
             (& "C:\tools\miniconda3\Scripts\conda.exe" "shell.powershell" "hook") | Out-String | Invoke-Expression
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
-            conda install -c anaconda cmake
+            conda install -yq -c anaconda cmake
             bash packaging/build_conda.sh
           shell: powershell.exe
 
@@ -222,7 +222,7 @@ jobs:
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
             sh conda.sh -b
             source $HOME/miniconda3/bin/activate
-            conda install -c anaconda cmake 
+            conda install -yq -c anaconda cmake 
             packaging/build_wheel.sh
       - store_artifacts:
           path: dist
@@ -243,7 +243,7 @@ jobs:
             sh conda.sh -b
             source $HOME/miniconda3/bin/activate
             conda install -yq conda-build
-            conda install -c anaconda cmake 
+            conda install -yq -c anaconda cmake 
             packaging/build_conda.sh
       - store_artifacts:
           path: /Users/distiller/miniconda3/conda-bld/osx-64
