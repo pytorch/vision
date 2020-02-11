@@ -105,8 +105,8 @@ setup_build_version() {
     export BUILD_VERSION="$1.dev$(date "+%Y%m%d")$VERSION_SUFFIX"
   else
     export BUILD_VERSION="$BUILD_VERSION$VERSION_SUFFIX"
-    export PATH="$PATH:/Users/distiller/miniconda3/bin"
   fi
+  export PATH="$PATH:/Users/distiller/miniconda3/bin"
 }
 
 # Set some useful variables for OS X, if applicable
