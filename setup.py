@@ -84,7 +84,7 @@ def _build_cmake_dependency(directory, args=""):
     os.chdir(directory)
     if sys.platform == 'win32':
         os.system("cmake.exe --clean .")
-        os.system('cmake.exe -G="Visual Studio 16 2019" {} .'.format(args) )
+        os.system('cmake.exe -G"Visual Studio 16 2019" {} .'.format(args) )
         os.system("cmake.exe --build  .")
     else: 
         os.system("cmake --clean .")
