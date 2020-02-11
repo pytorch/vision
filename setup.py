@@ -83,13 +83,11 @@ third_party_search_directories = [os.path.join(third_party_dir, directory) for d
 def _build_cmake_dependency(directory, args=""):
     os.chdir(directory)
     if sys.platform == 'win32':
-        os.system("cmake3.exe --clean .")
-        os.system("cmake3.exe -G='Visual Studio 15 2017' {} .".format(args) )
-        os.system("cmake3.exe --build .")
+        os.system("cmake.exe --clean .")
+        os.system("cmake.exe --build --test .")
     else: 
         os.system("cmake --clean .")
-        os.system("cmake {} .".format(args) )
-        os.system("cmake --build .")
+        os.system("cmake --build --test .")
     os.chdir(cwd)
 
 
