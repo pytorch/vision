@@ -186,10 +186,10 @@ jobs:
       - run:
           command: |
             choco install miniconda3
+            choco install cmake
             (& "C:\tools\miniconda3\Scripts\conda.exe" "shell.powershell" "hook") | Out-String | Invoke-Expression
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
-            conda install -yq -c anaconda cmake
             bash packaging/build_conda.sh
           shell: powershell.exe
 
