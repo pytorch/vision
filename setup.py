@@ -84,7 +84,7 @@ def _build_cmake_dependency(directory, args=""):
     os.chdir(directory)
     if sys.platform == 'win32':
         os.system("cmake.exe --clean .")
-        os.system("cmake.exe -G='Visual Studio 16 2019' {} .".format(args) )
+        os.system('cmake.exe -G="Visual Studio 16 2019" {} .'.format(args) )
         os.system("cmake.exe --build  .")
     else: 
         os.system("cmake --clean .")
@@ -95,7 +95,12 @@ def _build_cmake_dependency(directory, args=""):
 
 def build_dependencies():
     zlib_path = os.path.join(third_party_dir, "zlib")
-    libpng_cmake_options="-DPNG_BUILD_ZLIB=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.so".format(zlib_path=zlib_path)
+    if sys.platform == "win32":
+        libpng_cmake_options="-DPNG_BUILD_ZLIB=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.lib".format(zlib_path=zlib_path)
+    elif sys.platform == "darwin":
+        libpng_cmake_options="-DPNG_BUILD_ZLIB=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.dylib".format(zlib_path=zlib_path)
+    else : 
+        libpng_cmake_options="-DPNG_BUILD_ZLIB=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.so".format(zlib_path=zlib_path)
     _build_cmake_dependency("./third_party/zlib")
     # Deactivate SIMD on macOS 
     jpeg_turbo_options = ""
