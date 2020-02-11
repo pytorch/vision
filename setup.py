@@ -229,7 +229,7 @@ class clean(distutils.command.clean.clean):
 
 def build_ext_with_dependencies(self):
     build_dependencies()
-    return BuildExtension.with_options(no_python_abi_suffix=True)(self)
+    return BuildExtension.with_options(no_python_abi_suffix=True, use_ninja=False )(self)
 
 setup(
         # Metadata
