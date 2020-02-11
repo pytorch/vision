@@ -12,6 +12,11 @@ endif()
 
 find_package(Torch REQUIRED)
 find_package(pybind11 REQUIRED)
+set(PYTHON_LIBRARIES "")
+if(MSVC)
+	find_package(PythonLibs REQUIRED)
+	set(PYTHON_LIBRARIES ${PYTHON_LIBRARY})
+endif()
 
 file(GLOB HEADERS torchvision/csrc/*.h)
 file(GLOB OPERATOR_SOURCES torchvision/csrc/cpu/*.h torchvision/csrc/cpu/*.cpp)
@@ -22,7 +27,7 @@ file(GLOB MODELS_HEADERS torchvision/csrc/models/*.h)
 file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} pybind11::pybind11)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PYTHON_LIBRARIES} pybind11::pybind11)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME TorchVision)
 
 target_include_directories(${PROJECT_NAME} INTERFACE
