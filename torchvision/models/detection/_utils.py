@@ -198,7 +198,8 @@ class BoxCoder(object):
             boxes (Tensor): reference boxes.
         """
 
-        boxes = boxes.to(rel_codes.dtype)
+        dtype = rel_codes.dtype
+        boxes = boxes.to(dtype)
 
         widths = boxes[:, 2] - boxes[:, 0]
         heights = boxes[:, 3] - boxes[:, 1]
@@ -206,10 +207,10 @@ class BoxCoder(object):
         ctr_y = boxes[:, 1] + 0.5 * heights
 
         wx, wy, ww, wh = self.weights
-        dx = rel_codes[:, 0::4] / wx
-        dy = rel_codes[:, 1::4] / wy
-        dw = rel_codes[:, 2::4] / ww
-        dh = rel_codes[:, 3::4] / wh
+        dx = rel_codes[:, 0::4] / torch.tensor(wx, dtype=dtype)
+        dy = rel_codes[:, 1::4] / torch.tensor(wy, dtype=dtype)
+        dw = rel_codes[:, 2::4] / torch.tensor(ww, dtype=dtype)
+        dh = rel_codes[:, 3::4] / torch.tensor(wh, dtype=dtype)
 
         # Prevent sending too large values into torch.exp()
         dw = torch.clamp(dw, max=self.bbox_xform_clip)
@@ -217,8 +218,8 @@ class BoxCoder(object):
 
         pred_ctr_x = dx * widths[:, None] + ctr_x[:, None]
         pred_ctr_y = dy * heights[:, None] + ctr_y[:, None]
-        pred_w = torch.exp(dw) * widths[:, None]
-        pred_h = torch.exp(dh) * heights[:, None]
+        pred_w = torch.exp(dw).to(dtype) * widths[:, None]
+        pred_h = torch.exp(dh).to(dtype) * heights[:, None]
 
         pred_boxes1 = pred_ctr_x - torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w
         pred_boxes2 = pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h

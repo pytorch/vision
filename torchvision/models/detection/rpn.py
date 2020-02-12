@@ -79,7 +79,7 @@ class AnchorGenerator(nn.Module):
         scales = torch.as_tensor(scales, dtype=dtype, device=device)
         aspect_ratios = torch.as_tensor(aspect_ratios, dtype=dtype, device=device)
         h_ratios = torch.sqrt(aspect_ratios)
-        w_ratios = 1 / h_ratios
+        w_ratios = torch.tensor(1, dtype=dtype) / h_ratios
 
         ws = (w_ratios[:, None] * scales[None, :]).view(-1)
         hs = (h_ratios[:, None] * scales[None, :]).view(-1)
@@ -122,16 +122,17 @@ class AnchorGenerator(nn.Module):
         ):
             grid_height, grid_width = size
             stride_height, stride_width = stride
-            if torchvision._is_tracing():
-                # required in ONNX export for mult operation with float32
-                stride_width = torch.tensor(stride_width, dtype=torch.float32)
-                stride_height = torch.tensor(stride_height, dtype=torch.float32)
             device = base_anchors.device
+            dtype = base_anchors.dtype
+            if torchvision._is_tracing():
+                # required in ONNX export for mult operation with float
+                stride_width = torch.tensor(stride_width, dtype=dtype)
+                stride_height = torch.tensor(stride_height, dtype=dtype)
             shifts_x = torch.arange(
-                0, grid_width, dtype=torch.float32, device=device
+                0, grid_width, dtype=dtype, device=device
             ) * stride_width
             shifts_y = torch.arange(
-                0, grid_height, dtype=torch.float32, device=device
+                0, grid_height, dtype=dtype, device=device
             ) * stride_height
             shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
             shift_x = shift_x.reshape(-1)
@@ -326,7 +327,7 @@ class RegionProposalNetwork(torch.nn.Module):
         labels = []
         matched_gt_boxes = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
-            gt_boxes = targets_per_image["boxes"]
+            gt_boxes = targets_per_image["boxes"].to(anchors_per_image.dtype)
             match_quality_matrix = box_ops.box_iou(gt_boxes, anchors_per_image)
             matched_idxs = self.proposal_matcher(match_quality_matrix)
             # get the targets corresponding GT for each proposal
