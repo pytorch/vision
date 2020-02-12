@@ -249,6 +249,7 @@ jobs:
             conda install -yq conda-build
             conda install -yq -c anaconda cmake 
             packaging/build_conda.sh
+          no_output_timeout: 30m
       - store_artifacts:
           path: /Users/distiller/miniconda3/conda-bld/osx-64
       - persist_to_workspace:
