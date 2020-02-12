@@ -96,7 +96,7 @@ def _build_cmake_dependency(directory, args=""):
 def build_dependencies():
     zlib_path = os.path.join(third_party_dir, "zlib")
     if sys.platform == "win32":
-        libpng_cmake_options="-DPNG_BUILD_ZLIB=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/Release/zlibd.dll".format(zlib_path=zlib_path)
+        libpng_cmake_options="-DPNG_BUILD_ZLIB=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/Debug/zlibd.dll".format(zlib_path=zlib_path)
     elif sys.platform == "darwin":
         libpng_cmake_options="-DPNG_BUILD_ZLIB=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.dylib".format(zlib_path=zlib_path)
     else : 
