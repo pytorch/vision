@@ -34,12 +34,8 @@ include(CMakePackageConfigHelpers)
 
 set(TORCHVISION_CMAKECONFIG_INSTALL_DIR "share/cmake/TorchVision" CACHE STRING "install path for TorchVisionConfig.cmake")
 
-if(NOT TORCHVISION_INSTALL_LIBRARY_DIR)
-  set(TORCHVISION_INSTALL_LIBRARY_DIR lib)
-endif()
-
-if(NOT TORCHVISION_INSTALL_ARCHIVE_DIR)
-  set(TORCHVISION_INSTALL_ARCHIVE_DIR lib)
+if(NOT CMAKE_INSTALL_LIBDIR)
+  set(CMAKE_INSTALL_LIBDIR lib)
 endif()
 
 configure_package_config_file(cmake/TorchVisionConfig.cmake.in
@@ -56,8 +52,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/TorchVisionConfig.cmake
 
 install(TARGETS ${PROJECT_NAME}
   EXPORT TorchVisionTargets
-  LIBRARY DESTINATION ${TORCHVISION_INSTALL_LIBRARY_DIR}
-  ARCHIVE DESTINATION ${TORCHVISION_INSTALL_ARCHIVE_DIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   )
 
 install(EXPORT TorchVisionTargets
