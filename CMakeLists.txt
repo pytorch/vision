@@ -10,6 +10,10 @@ if(WITH_CUDA)
   add_definitions(-D__CUDA_NO_HALF_OPERATORS__)
 endif()
 
+if(Unix)
+  add_subdirectory("third_party/libpng")
+endif()
+
 find_package(Python3 COMPONENTS Development)
 find_package(Torch REQUIRED)
 
@@ -21,8 +25,17 @@ endif()
 file(GLOB MODELS_HEADERS torchvision/csrc/models/*.h)
 file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.cpp)
 
-add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} Python3::Python)
+file(GLOB IMAGE_HEADERS torchvision/csrc/image.h)
+file(GLOB IMAGE_SOURCES torchvision/csrc/cpu/image/*.h torchvision/csrc/cpu/image/*.cpp)
+
+if(Unix)
+  add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES} {IMAGE_SOURCES})
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} Python3::Python "${PNG_LIBRARIES}")
+else()
+  add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES})
+  target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} Python3::Python)
+endif()
+
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME TorchVision)
 
 target_include_directories(${PROJECT_NAME} INTERFACE
