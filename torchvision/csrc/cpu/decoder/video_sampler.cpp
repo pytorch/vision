@@ -97,7 +97,7 @@ bool VideoSampler::init(const SamplerParameters& params) {
       cropContext_ = sws_getContext(
           params.out.video.width,
           params.out.video.height,
-          (AVPixelFormat)params_.out.video.format,
+          (AVPixelFormat)params.out.video.format,
           params.out.video.width,
           params.out.video.height,
           (AVPixelFormat)params.out.video.format,
