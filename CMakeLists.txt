@@ -34,10 +34,6 @@ include(CMakePackageConfigHelpers)
 
 set(TORCHVISION_CMAKECONFIG_INSTALL_DIR "share/cmake/TorchVision" CACHE STRING "install path for TorchVisionConfig.cmake")
 
-if(NOT CMAKE_INSTALL_LIBDIR)
-  set(CMAKE_INSTALL_LIBDIR lib)
-endif()
-
 configure_package_config_file(cmake/TorchVisionConfig.cmake.in
   "${CMAKE_CURRENT_BINARY_DIR}/TorchVisionConfig.cmake"
   INSTALL_DESTINATION ${TORCHVISION_CMAKECONFIG_INSTALL_DIR})
