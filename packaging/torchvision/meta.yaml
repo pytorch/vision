@@ -34,21 +34,21 @@ build:
   features:
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
 
-test:
-  imports:
-    - torchvision
-    - torchvision.datasets
-    - torchvision.transforms
-  source_files:
-    - test
-  requires:
-    - pytest
-    - scipy
-    - mock
-    - av
-    - typing # [py2k]
-  commands:
-    pytest .
+# test:
+#   imports:
+#     - torchvision
+#     - torchvision.datasets
+#     - torchvision.transforms
+#   source_files:
+#     - test
+#   requires:
+#     - pytest
+#     - scipy
+#     - mock
+#     - av
+#     - typing # [py2k]
+#   commands:
+#     pytest .
 
 
 about:
