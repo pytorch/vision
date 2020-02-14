@@ -27,8 +27,8 @@ class KeypointRCNN(FasterRCNN):
 
     During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
-        - boxes (FloatTensor[N, 4]): the ground-truth boxes in [x1, y1, x2, y2] format, with values
-          between 0 and H and 0 and W
+        - boxes (FloatTensor[N, 4]): the ground-truth boxes in [x1, y1, x2, y2] format, with values of x
+          between 0 and W and values of y between 0 and H
         - labels (Int64Tensor[N]): the class label for each ground-truth box
         - keypoints (FloatTensor[N, K, 3]): the K keypoints location for each of the N instances, in the
           format [x, y, visibility], where visibility=0 means that the keypoint is not visible.
@@ -39,8 +39,8 @@ class KeypointRCNN(FasterRCNN):
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
     follows:
-        - boxes (FloatTensor[N, 4]): the predicted boxes in [x1, y1, x2, y2] format, with values between
-          0 and H and 0 and W
+        - boxes (FloatTensor[N, 4]): the predicted boxes in [x1, y1, x2, y2] format, with values of x
+          between 0 and W and values of y between 0 and H
         - labels (Int64Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores or each prediction
         - keypoints (FloatTensor[N, K, 3]): the locations of the predicted keypoints, in [x, y, v] format.
@@ -281,8 +281,8 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
 
     During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
-        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with values
-          between ``0`` and ``H`` and ``0`` and ``W``
+        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with values of ``x``
+          between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``
         - labels (``Int64Tensor[N]``): the class label for each ground-truth box
         - keypoints (``FloatTensor[N, K, 3]``): the ``K`` keypoints location for each of the ``N`` instances, in the
           format ``[x, y, visibility]``, where ``visibility=0`` means that the keypoint is not visible.
@@ -293,8 +293,8 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as
     follows:
-        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with values between
-          ``0`` and ``H`` and ``0`` and ``W``
+        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format,  with values of ``x``
+          between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``
         - labels (``Int64Tensor[N]``): the predicted labels for each image
         - scores (``Tensor[N]``): the scores or each prediction
         - keypoints (``FloatTensor[N, K, 3]``): the locations of the predicted keypoints, in ``[x, y, v]`` format.
