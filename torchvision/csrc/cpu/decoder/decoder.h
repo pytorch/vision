@@ -71,8 +71,10 @@ class Decoder : public MediaDecoder {
   void flushStreams();
   void cleanUp();
 
- private:
+ protected:
   DecoderParameters params_;
+
+ private:
   SeekableBuffer seekableBuffer_;
   int printPrefix{1};
 
