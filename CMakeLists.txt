@@ -14,7 +14,7 @@ find_package(Python3 COMPONENTS Development)
 find_package(Torch REQUIRED)
 
 file(GLOB HEADERS torchvision/csrc/*.h)
-file(GLOB OPERATOR_SOURCES torchvision/csrc/cpu/*.h torchvision/csrc/cpu/*.cpp)
+file(GLOB OPERATOR_SOURCES torchvision/csrc/cpu/*.h torchvision/csrc/cpu/*.cpp torchvision/csrc/*.cpp)
 if(WITH_CUDA)
   file(GLOB OPERATOR_SOURCES ${OPERATOR_SOURCES} torchvision/csrc/cuda/*.h torchvision/csrc/cuda/*.cu)
 endif()
@@ -47,7 +47,9 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/TorchVisionConfig.cmake
   DESTINATION ${TORCHVISION_CMAKECONFIG_INSTALL_DIR})
 
 install(TARGETS ${PROJECT_NAME}
-  EXPORT TorchVisionTargets)
+  EXPORT TorchVisionTargets
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
 
 install(EXPORT TorchVisionTargets
   NAMESPACE TorchVision::
