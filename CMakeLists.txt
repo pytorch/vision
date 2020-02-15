@@ -11,8 +11,10 @@ if(WITH_CUDA)
 endif()
 
 find_package(Python3 COMPONENTS Development)
+
 find_package(Torch REQUIRED)
 find_package(PNG REQUIRED)
+
 
 file(GLOB HEADERS torchvision/csrc/*.h)
 file(GLOB IMAGE_HEADERS torchvision/csrc/cpu/image/*.h)
