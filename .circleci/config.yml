@@ -21,6 +21,9 @@ commands:
     description: "checkout merge branch"
     steps:
       - checkout
+      - run: 
+          name: initialize submodules
+          command: git submodule update --init --recursive
 #     - run:
 #         name: Checkout merge branch
 #         command: |
@@ -83,7 +86,9 @@ jobs:
     resource_class: 2xlarge+
     steps:
       - checkout_merge
-      - run: packaging/build_wheel.sh
+      - run: 
+          command: packaging/build_wheel.sh
+          no_output_timeout: 30m
       - store_artifacts:
           path: dist
       - persist_to_workspace:
@@ -98,7 +103,10 @@ jobs:
     resource_class: 2xlarge+
     steps:
       - checkout_merge
-      - run: packaging/build_conda.sh
+      - run: 
+          command: packaging/build_conda.sh
+          no_output_timeout: 30m
+       
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
       - persist_to_workspace:
@@ -167,6 +175,7 @@ jobs:
 
     - run:
         name: Build and run tests
+        no_output_timeout: 30m
         command: |
           set -e
 
@@ -191,6 +200,7 @@ jobs:
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
             bash packaging/build_conda.sh
+          no_output_timeout: 30m
           shell: powershell.exe
       - store_test_results:
           path: build_results/
@@ -207,6 +217,7 @@ jobs:
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
             bash packaging/build_conda.sh
+          no_output_timeout: 30m 
           shell: powershell.exe
 
   binary_macos_wheel:
@@ -219,6 +230,7 @@ jobs:
           # Cannot easily deduplicate this as source'ing activate
           # will set environment variables which we need to propagate
           # to build_wheel.sh
+          no_output_timeout: 30m 
           command: |
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
             sh conda.sh -b
@@ -238,6 +250,7 @@ jobs:
     steps:
       - checkout_merge
       - run:
+          no_output_timeout: 30m 
           command: |
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
             sh conda.sh -b

@@ -8,6 +8,7 @@ from pkg_resources import get_distribution, DistributionNotFound
 import subprocess
 import distutils.command.clean
 import distutils.spawn
+import multiprocessing
 import glob
 import shutil
 
@@ -83,9 +84,20 @@ def get_extensions():
 
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
     source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
+    source_image_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', 'image', '*.cpp'))
     source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
 
     sources = main_file + source_cpu
+
+    libraries = []
+    extra_compile_args = {}
+    third_party_search_directories = []
+
+    if sys.platform.startswith('linux'):
+        sources = sources + source_image_cpu
+        libraries.append('turbojpeg')
+        third_party_search_directories.append(os.path.join(cwd, "third_party/libjpeg-turbo"))
+
     extension = CppExtension
 
     compile_cpp_tests = os.getenv('WITH_CPP_MODELS_TEST', '0') == '1'
@@ -142,7 +154,9 @@ def get_extensions():
         extension(
             'torchvision._C',
             sources,
-            include_dirs=include_dirs,
+            libraries=libraries,
+            library_dirs=third_party_search_directories,
+            include_dirs=include_dirs + third_party_search_directories,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
         )
@@ -197,6 +211,26 @@ class clean(distutils.command.clean.clean):
         distutils.command.clean.clean.run(self)
 
 
+def throw_of_failure(command):
+    ret = os.system(command)
+    if ret != 0:
+        raise Exception("{} failed".format(command))
+
+
+def build_deps():
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    if sys.platform.startswith('linux'):
+        cpu_count = multiprocessing.cpu_count()
+        os.chdir("third_party/libjpeg-turbo/")
+        throw_of_failure('cmake .')
+        throw_of_failure("cmake --build . --parallel {}".format(cpu_count))
+        os.chdir(this_dir)
+
+
+def build_ext_with_dependencies(self):
+    build_deps()
+    return BuildExtension.with_options(no_python_abi_suffix=True)(self)
+
 setup(
     # Metadata
     name=package_name,
@@ -218,7 +252,7 @@ setup(
     },
     ext_modules=get_extensions(),
     cmdclass={
-        'build_ext': BuildExtension.with_options(no_python_abi_suffix=True),
+        'build_ext': build_ext_with_dependencies,
         'clean': clean,
     }
 )
