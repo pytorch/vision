@@ -11,7 +11,12 @@ if(WITH_CUDA)
 endif()
 
 find_package(Python3 COMPONENTS Development)
+
 find_package(Torch REQUIRED)
+
+if(Unix)
+  add_subdirectory("third_party/libjpeg-turbo")
+endif()
 
 file(GLOB HEADERS torchvision/csrc/*.h)
 file(GLOB OPERATOR_SOURCES torchvision/csrc/cpu/*.h torchvision/csrc/cpu/*.cpp torchvision/csrc/*.cpp)
