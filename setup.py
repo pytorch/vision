@@ -106,6 +106,8 @@ def get_extensions():
         models_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'models')
         test_file = glob.glob(os.path.join(test_dir, '*.cpp'))
         source_models = glob.glob(os.path.join(models_dir, '*.cpp'))
+        extra_compile_args.setdefault('cxx', [])
+        extra_compile_args['cxx'].append('-fPIC')
 
         test_file = [os.path.join(test_dir, s) for s in test_file]
         source_models = [os.path.join(models_dir, s) for s in source_models]
@@ -159,6 +161,7 @@ def get_extensions():
             include_dirs=include_dirs + third_party_search_directories,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
+            runtime_library_dirs=["torchvision/"]
         )
     ]
     if compile_cpp_tests:
@@ -223,13 +226,22 @@ def build_deps():
         cpu_count = multiprocessing.cpu_count()
         os.chdir("third_party/libjpeg-turbo/")
         throw_of_failure('cmake .')
-        throw_of_failure("cmake --build . --parallel {}".format(cpu_count))
+        throw_of_failure("cmake --build . -- -j {}".format(cpu_count))
         os.chdir(this_dir)
 
 
 def build_ext_with_dependencies(self):
     build_deps()
     return BuildExtension.with_options(no_python_abi_suffix=True)(self)
+
+
+data_files = []
+if sys.platform.startswith('linux'):
+    data_files = [
+        ('torchvision/lib', [
+            'third_party/libjpeg-turbo/libturbojpeg.so.0',
+            'third_party/libjpeg-turbo/libturbojpeg.so'])
+    ]
 
 setup(
     # Metadata
@@ -254,5 +266,5 @@ setup(
     cmdclass={
         'build_ext': build_ext_with_dependencies,
         'clean': clean,
-    }
-)
+    },
+    data_files=data_files)
