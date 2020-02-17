@@ -93,10 +93,13 @@ def get_extensions():
     extra_compile_args = {}
     third_party_search_directories = []
 
+
+    runtime_library_dirs = None
     if sys.platform.startswith('linux'):
         sources = sources + source_image_cpu
         libraries.append('png')
         third_party_search_directories.append(os.path.join(cwd, "third_party/libpng"))
+        runtime_library_dirs = ['lib']
 
     extension = CppExtension
 
@@ -159,7 +162,7 @@ def get_extensions():
             include_dirs=include_dirs + third_party_search_directories,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
-            runtime_library_dirs=['lib']
+            runtime_library_dirs=runtime_library_dirs
         )
     ]
     if compile_cpp_tests:
