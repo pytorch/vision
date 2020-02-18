@@ -1,8 +1,5 @@
 #include "time_keeper.h"
-
-extern "C" {
-#include <libavutil/avutil.h>
-}
+#include "defs.h"
 
 namespace ffmpeg {
 

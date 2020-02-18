@@ -4,12 +4,6 @@
 #include "defs.h"
 #include "time_keeper.h"
 
-extern "C" {
-#include <libavformat/avformat.h>
-#include <libavformat/avio.h>
-#include <libavutil/imgutils.h>
-}
-
 namespace ffmpeg {
 
 /**

@@ -3,10 +3,6 @@
 #include <chrono>
 #include "memory_buffer.h"
 
-extern "C" {
-#include <libavformat/avio.h>
-}
-
 namespace ffmpeg {
 
 int SeekableBuffer::init(

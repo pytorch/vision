@@ -1,10 +1,6 @@
 #include "memory_buffer.h"
 #include <c10/util/Logging.h>
 
-extern "C" {
-#include <libavformat/avio.h>
-}
-
 namespace ffmpeg {
 
 MemoryBuffer::MemoryBuffer(const uint8_t* buffer, size_t size)

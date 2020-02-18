@@ -2,10 +2,6 @@
 
 #include "defs.h"
 
-extern "C" {
-#include <libswresample/swresample.h>
-}
-
 namespace ffmpeg {
 
 /**
