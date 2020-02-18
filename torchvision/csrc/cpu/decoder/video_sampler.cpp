@@ -2,10 +2,6 @@
 #include <c10/util/Logging.h>
 #include "util.h"
 
-extern "C" {
-#include <libavutil/imgutils.h>
-}
-
 // www.ffmpeg.org/doxygen/0.5/swscale-example_8c-source.html
 
 namespace ffmpeg {

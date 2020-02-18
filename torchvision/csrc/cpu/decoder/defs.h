@@ -7,6 +7,16 @@
 #include <unordered_set>
 #include <vector>
 
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavformat/avio.h>
+#include <libavutil/avutil.h>
+#include <libavutil/imgutils.h>
+#include <libswresample/swresample.h>
+#include "libswscale/swscale.h"
+}
+
 namespace ffmpeg {
 
 // bit mask of formats, keep them in form 2^n
