@@ -2,10 +2,6 @@
 
 #include "defs.h"
 
-extern "C" {
-#include <libavcodec/avcodec.h>
-}
-
 namespace ffmpeg {
 
 /**

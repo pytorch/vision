@@ -2,11 +2,6 @@
 
 #include "defs.h"
 
-extern "C" {
-#include <libavformat/avformat.h>
-#include "libswscale/swscale.h"
-}
-
 namespace ffmpeg {
 
 /**
