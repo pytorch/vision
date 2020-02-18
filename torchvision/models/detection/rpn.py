@@ -14,19 +14,6 @@ from .image_list import ImageList
 from torch.jit.annotations import List, Optional, Dict, Tuple
 
 
-@torch.jit.unused
-def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
-    # type: (Tensor, int) -> Tuple[int, int]
-    num_anchors = ob.shape[1].unsqueeze(0)
-    # TODO : remove cast to IntTensor/num_anchors.dtype when
-    #        ONNX Runtime version is updated with ReduceMin int64 support
-    pre_nms_top_n = torch.min(torch.cat(
-        (torch.tensor([orig_pre_nms_top_n], dtype=num_anchors.dtype),
-         num_anchors), 0).to(torch.int32)).to(num_anchors.dtype)
-
-    return num_anchors, pre_nms_top_n
-
-
 class AnchorGenerator(nn.Module):
     __annotations__ = {
         "cell_anchors": Optional[List[torch.Tensor]],
@@ -354,22 +341,10 @@ class RegionProposalNetwork(torch.nn.Module):
         # type: (Tensor, List[int])
         r = []
         offset = 0
-        if torchvision._is_tracing():
-            # Split's split_size is traced as constant in onnx exporting, use Gather
-            start_list = [torch.tensor(0)]
-            end_list = [num_anchors_per_level[0].clone()]
-            for cnt in num_anchors_per_level[1:]:
-                start_list.append(end_list[-1].clone())
-                end_list.append(end_list[-1] + cnt)
-            objectness_per_level = [objectness[:, s:e] for s, e in zip(start_list, end_list)]
-        else:
-            objectness_per_level = objectness.split(num_anchors_per_level, 1)
+        objectness_per_level = objectness.split(num_anchors_per_level, 1)
         for ob in objectness_per_level:
-            if torchvision._is_tracing():
-                num_anchors, pre_nms_top_n = _onnx_get_num_anchors_and_pre_nms_top_n(ob, self.pre_nms_top_n())
-            else:
-                num_anchors = ob.shape[1]
-                pre_nms_top_n = min(self.pre_nms_top_n(), num_anchors)
+            num_anchors = ob.shape[1]
+            pre_nms_top_n = min(self.pre_nms_top_n(), num_anchors)
             _, top_n_idx = ob.topk(pre_nms_top_n, dim=1)
             r.append(top_n_idx + offset)
             offset += num_anchors
