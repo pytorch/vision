@@ -270,3 +270,9 @@ setup_visual_studio_constraint() {
       cp packaging/$VSTOOLCHAIN_PACKAGE/conda_build_config.yaml packaging/torchvision/conda_build_config.yaml
   fi
 }
+
+setup_junit_results_folder() {
+  if [[ "$CI" == "true" ]]; then
+    export CONDA_PYTORCH_BUILD_RESULTS_DIRECTORY="${SOURCE_ROOT_DIR}/build_results/results.xml"
+  fi
+}
