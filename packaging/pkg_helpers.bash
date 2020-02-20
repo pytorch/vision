@@ -153,6 +153,7 @@ setup_wheel_python() {
     conda env remove -n "env$PYTHON_VERSION" || true
     conda create -yn "env$PYTHON_VERSION" python="$PYTHON_VERSION"
     conda activate "env$PYTHON_VERSION"
+    export PATH="$PATH:/Users/distiller/miniconda3/bin"
   else
     case "$PYTHON_VERSION" in
       2.7)

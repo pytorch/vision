@@ -235,6 +235,7 @@ jobs:
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
             sh conda.sh -b
             source $HOME/miniconda3/bin/activate
+            conda install -yq cmake
             packaging/build_wheel.sh
       - store_artifacts:
           path: dist
@@ -255,7 +256,7 @@ jobs:
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
             sh conda.sh -b
             source $HOME/miniconda3/bin/activate
-            conda install -yq conda-build
+            conda install -yq conda-build cmake
             packaging/build_conda.sh
       - store_artifacts:
           path: /Users/distiller/miniconda3/conda-bld/osx-64

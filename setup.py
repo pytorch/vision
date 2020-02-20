@@ -94,11 +94,10 @@ def get_extensions():
     third_party_search_directories = []
 
     extra_objects = []
-    if sys.platform.startswith('linux'):
+    if sys.platform.startswith('linux') or sys.platform.startswith("darwin"):
         sources = sources + source_image_cpu
         libraries.append('png')
         third_party_search_directories.append(os.path.join(cwd, "third_party/libpng"))
-        runtime_library_dirs = ['lib']
         extra_objects = ['third_party/zlib/libz.a', 'third_party/libpng/libpng.a']
 
     extension = CppExtension
@@ -222,7 +221,7 @@ def throw_of_failure(command):
 
 def build_deps():
     this_dir = os.path.dirname(os.path.abspath(__file__))
-    if sys.platform.startswith('linux'):
+    if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
         cpu_count = multiprocessing.cpu_count()
         os.chdir("third_party/zlib/")
         throw_of_failure('cmake .')
@@ -230,7 +229,10 @@ def build_deps():
         os.chdir(this_dir)
 
         zlib_path = os.path.join(this_dir, "third_party/zlib")
-        libpng_cmake_options = "-DPNG_BUILD_ZLIB=ON -DPNG_STATIC=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.so".format(zlib_path=zlib_path)
+        if sys.platform.startswith("linux"):
+            libpng_cmake_options = "-DPNG_BUILD_ZLIB=ON -DPNG_STATIC=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.so".format(zlib_path=zlib_path)
+        if sys.platform.startswith("darwin"):
+            libpng_cmake_options = "-DPNG_BUILD_ZLIB=ON -DPNG_STATIC=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.dylib".format(zlib_path=zlib_path)
         os.chdir("third_party/libpng/")
         os.system('cmake -DCMAKE_C_FLAGS="-fPIC" {} .'.format(libpng_cmake_options))
         throw_of_failure("cmake --build . -- -j {}".format(cpu_count))
