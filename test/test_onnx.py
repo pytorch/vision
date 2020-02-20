@@ -34,7 +34,6 @@ class ONNXExporterTester(unittest.TestCase):
 
         onnx_io = io.BytesIO()
         # export to onnx with the first input
-
         torch.onnx.export(model, inputs_list[0], onnx_io,
                           do_constant_folding=do_constant_folding, opset_version=_onnx_opset_version,
                           dynamic_axes=dynamic_axes, input_names=input_names, output_names=output_names)
@@ -375,6 +374,7 @@ class ONNXExporterTester(unittest.TestCase):
                        dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
                        tolerate_small_mismatch=True)
 
+
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
     # This test also compares both heatmaps_to_keypoints and _onnx_heatmaps_to_keypoints
     # (since jit_trace witll call _heatmaps_to_keypoints).
@@ -419,7 +419,7 @@ class ONNXExporterTester(unittest.TestCase):
         images, test_images = self.get_test_images()
         model = KeyPointRCNN()
         model.eval()
-        model(test_images)
+        model(images)
         self.run_model(model, [(images,), (test_images,)],
                        input_names=["images_tensors"],
                        output_names=["outputs1", "outputs2", "outputs3", "outputs4"],

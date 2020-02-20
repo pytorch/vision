@@ -91,7 +91,7 @@ class GeneralizedRCNNTransform(nn.Module):
             scale_factor = self.max_size / max_size
         image = torch.nn.functional.interpolate(
             image[None], scale_factor=scale_factor, mode='bilinear',
-            align_corners=False, recompute_scale_factor=False)[0]
+            align_corners=False)[0]
 
         if target is None:
             return image, target
@@ -209,7 +209,11 @@ def resize_keypoints(keypoints, original_size, new_size):
 
 def resize_boxes(boxes, original_size, new_size):
     # type: (Tensor, List[int], List[int])
-    ratios = [float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size)]
+    if torchvision._is_tracing():
+        ratios = [s.to(dtype=torch.float32) / s_orig.to(dtype=torch.float32) for s, s_orig in
+                  zip(new_size, original_size)]
+    else:
+        ratios = [float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size)]
     ratio_height, ratio_width = ratios
     xmin, ymin, xmax, ymax = boxes.unbind(1)
 
