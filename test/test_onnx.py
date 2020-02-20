@@ -66,7 +66,6 @@ class ONNXExporterTester(unittest.TestCase):
         # compute onnxruntime output prediction
         ort_inputs = dict((ort_session.get_inputs()[i].name, inpt) for i, inpt in enumerate(inputs))
         ort_outs = ort_session.run(None, ort_inputs)
-
         for i in range(0, len(outputs)):
             try:
                 torch.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
