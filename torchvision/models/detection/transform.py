@@ -211,10 +211,9 @@ def resize_keypoints(keypoints, original_size, new_size):
 def resize_boxes(boxes, original_size, new_size):
     # type: (Tensor, List[int], List[int])
     if torchvision._is_tracing():
-        ratios = [torch.tensor(s, dtype=torch.float32) / torch.tensor(s_orig, dtype=torch.float32) for s, s_orig in
-                  zip(new_size, original_size)]
+        ratios = [s.to(dtype=torch.float32) / s_orig.to(dtype=torch.float32) for s, s_orig in zip(new_size, original_size)]
     else:
-        ratios = [float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size)]
+        ratios = [float(s) / (s_orig) for s, s_orig in zip(new_size, original_size)]
     ratio_height, ratio_width = ratios
     xmin, ymin, xmax, ymax = boxes.unbind(1)
 
