@@ -31,7 +31,7 @@ def get_dist(pkgname):
         return None
 
 
-version = '0.5.0a0'
+version = '0.6.0a0'
 sha = 'Unknown'
 package_name = 'torchvision'
 
@@ -135,7 +135,7 @@ def get_extensions():
             define_macros += [('WITH_HIP', None)]
             nvcc_flags = []
         extra_compile_args = {
-            'cxx': ['-O0'],
+            'cxx': [],
             'nvcc': nvcc_flags,
         }
 

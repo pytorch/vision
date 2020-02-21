@@ -115,6 +115,15 @@ setup_macos() {
   fi
 }
 
+# set variable to determine whether the typing library needs to be built in
+setup_typing() {
+  if [[ "$PYTHON_VERSION" == 3.5 ]]; then
+    export CONDA_TYPING_CONSTRAINT="- typing"
+  else
+    export CONDA_TYPING_CONSTRAINT=""
+  fi
+}
+
 # Top-level entry point for things every package will need to do
 #
 # Usage: setup_env 0.2.0
@@ -122,6 +131,7 @@ setup_env() {
   setup_cuda
   setup_build_version "$1"
   setup_macos
+  setup_typing
 }
 
 # Function to retry functions that sometimes timeout or have flaky failures
@@ -155,6 +165,7 @@ setup_wheel_python() {
       3.5) python_abi=cp35-cp35m ;;
       3.6) python_abi=cp36-cp36m ;;
       3.7) python_abi=cp37-cp37m ;;
+      3.8) python_abi=cp38-cp38 ;;
       *)
         echo "Unrecognized PYTHON_VERSION=$PYTHON_VERSION"
         exit 1
@@ -184,7 +195,7 @@ setup_pip_pytorch_version() {
       export PYTORCH_VERSION="$(pip show torch | grep ^Version: | sed 's/Version:  *//')"
     fi
   else
-    pip_install "torch==$PYTORCH_VERSION$CUDA_SUFFIX" \
+    pip_install "torch==$PYTORCH_VERSION$PYTORCH_VERSION_SUFFIX" \
       -f https://download.pytorch.org/whl/torch_stable.html \
       -f https://download.pytorch.org/whl/nightly/torch_nightly.html
   fi
@@ -193,7 +204,7 @@ setup_pip_pytorch_version() {
 # Fill PYTORCH_VERSION with the latest conda nightly version, and
 # CONDA_CHANNEL_FLAGS with appropriate flags to retrieve these versions
 #
-# You MUST have populated CUDA_SUFFIX before hand.
+# You MUST have populated PYTORCH_VERSION_SUFFIX before hand.
 setup_conda_pytorch_constraint() {
   if [[ -z "$PYTORCH_VERSION" ]]; then
     export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
@@ -257,5 +268,11 @@ setup_visual_studio_constraint() {
       export VSDEVCMD_ARGS=''
       conda build $CONDA_CHANNEL_FLAGS --no-anaconda-upload packaging/$VSTOOLCHAIN_PACKAGE
       cp packaging/$VSTOOLCHAIN_PACKAGE/conda_build_config.yaml packaging/torchvision/conda_build_config.yaml
+  fi
+}
+
+setup_junit_results_folder() {
+  if [[ "$CI" == "true" ]]; then
+    export CONDA_PYTORCH_BUILD_RESULTS_DIRECTORY="${SOURCE_ROOT_DIR}/build_results/results.xml"
   fi
 }

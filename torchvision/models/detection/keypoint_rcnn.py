@@ -27,8 +27,8 @@ class KeypointRCNN(FasterRCNN):
 
     During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
-        - boxes (FloatTensor[N, 4]): the ground-truth boxes in [x1, y1, x2, y2] format, with values
-          between 0 and H and 0 and W
+        - boxes (FloatTensor[N, 4]): the ground-truth boxes in [x1, y1, x2, y2] format, with values of x
+          between 0 and W and values of y between 0 and H
         - labels (Int64Tensor[N]): the class label for each ground-truth box
         - keypoints (FloatTensor[N, K, 3]): the K keypoints location for each of the N instances, in the
           format [x, y, visibility], where visibility=0 means that the keypoint is not visible.
@@ -39,8 +39,8 @@ class KeypointRCNN(FasterRCNN):
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
     follows:
-        - boxes (FloatTensor[N, 4]): the predicted boxes in [x1, y1, x2, y2] format, with values between
-          0 and H and 0 and W
+        - boxes (FloatTensor[N, 4]): the predicted boxes in [x1, y1, x2, y2] format, with values of x
+          between 0 and W and values of y between 0 and H
         - labels (Int64Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores or each prediction
         - keypoints (FloatTensor[N, K, 3]): the locations of the predicted keypoints, in [x, y, v] format.
@@ -102,6 +102,7 @@ class KeypointRCNN(FasterRCNN):
 
     Example::
 
+        >>> import torch
         >>> import torchvision
         >>> from torchvision.models.detection import KeypointRCNN
         >>> from torchvision.models.detection.rpn import AnchorGenerator
@@ -126,17 +127,17 @@ class KeypointRCNN(FasterRCNN):
         >>> # use to perform the region of interest cropping, as well as
         >>> # the size of the crop after rescaling.
         >>> # if your backbone returns a Tensor, featmap_names is expected to
-        >>> # be [0]. More generally, the backbone should return an
+        >>> # be ['0']. More generally, the backbone should return an
         >>> # OrderedDict[Tensor], and in featmap_names you can choose which
         >>> # feature maps to use.
-        >>> roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[0],
+        >>> roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=['0'],
         >>>                                                 output_size=7,
         >>>                                                 sampling_ratio=2)
         >>>
-        >>> keypoint_roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=[0],
+        >>> keypoint_roi_pooler = torchvision.ops.MultiScaleRoIAlign(featmap_names=['0'],
         >>>                                                          output_size=14,
         >>>                                                          sampling_ratio=2)
-        >>> # put the pieces together inside a FasterRCNN model
+        >>> # put the pieces together inside a KeypointRCNN model
         >>> model = KeypointRCNN(backbone,
         >>>                      num_classes=2,
         >>>                      rpn_anchor_generator=anchor_generator,
@@ -280,8 +281,8 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
 
     During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
-        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with values
-          between ``0`` and ``H`` and ``0`` and ``W``
+        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with values of ``x``
+          between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``
         - labels (``Int64Tensor[N]``): the class label for each ground-truth box
         - keypoints (``FloatTensor[N, K, 3]``): the ``K`` keypoints location for each of the ``N`` instances, in the
           format ``[x, y, visibility]``, where ``visibility=0`` means that the keypoint is not visible.
@@ -292,11 +293,13 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as
     follows:
-        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with values between
-          ``0`` and ``H`` and ``0`` and ``W``
+        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format,  with values of ``x``
+          between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``
         - labels (``Int64Tensor[N]``): the predicted labels for each image
         - scores (``Tensor[N]``): the scores or each prediction
         - keypoints (``FloatTensor[N, K, 3]``): the locations of the predicted keypoints, in ``[x, y, v]`` format.
+
+    Keypoint R-CNN is exportable to ONNX for a fixed batch size with inputs images of fixed size.
 
     Example::
 
@@ -304,6 +307,9 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
+        >>>
+        >>> # optionally, if you want to export the model to ONNX:
+        >>> torch.onnx.export(model, x, "keypoint_rcnn.onnx", opset_version = 11)
 
     Arguments:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
