@@ -71,6 +71,7 @@ __global__ void RoIAlignForward(
     const int pooled_height,
     const int pooled_width,
     const int sampling_ratio,
+    const bool aligned,
     const T* rois,
     T* output) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
@@ -201,6 +202,7 @@ __global__ void RoIAlignBackward(
     const int pooled_height,
     const int pooled_width,
     const int sampling_ratio,
+    const bool aligned,
     T* grad_input,
     const T* rois,
     const int n_stride,
@@ -303,7 +305,8 @@ at::Tensor ROIAlign_forward_cuda(
     const float spatial_scale,
     const int pooled_height,
     const int pooled_width,
-    const int sampling_ratio) {
+    const int sampling_ratio,
+    const bool aligned) {
   AT_ASSERTM(input.device().is_cuda(), "input must be a CUDA tensor");
   AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
 
@@ -348,6 +351,7 @@ at::Tensor ROIAlign_forward_cuda(
         pooled_height,
         pooled_width,
         sampling_ratio,
+        aligned,
         rois.contiguous().data_ptr<scalar_t>(),
         output.data_ptr<scalar_t>());
   });
@@ -365,7 +369,8 @@ at::Tensor ROIAlign_backward_cuda(
     const int channels,
     const int height,
     const int width,
-    const int sampling_ratio) {
+    const int sampling_ratio,
+    const bool aligned) {
   AT_ASSERTM(grad.device().is_cuda(), "grad must be a CUDA tensor");
   AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
 
@@ -410,6 +415,7 @@ at::Tensor ROIAlign_backward_cuda(
         pooled_height,
         pooled_width,
         sampling_ratio,
+        aligned,
         grad_input.data_ptr<scalar_t>(),
         rois.contiguous().data_ptr<scalar_t>(),
         n_stride,

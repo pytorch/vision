@@ -121,6 +121,7 @@ void ROIAlignForward(
     const int pooled_height,
     const int pooled_width,
     const int sampling_ratio,
+    const bool aligned,
     const T* rois,
     T* output) {
   int n_rois = nthreads / channels / pooled_width / pooled_height;
@@ -285,6 +286,7 @@ void ROIAlignBackward(
     const int pooled_height,
     const int pooled_width,
     const int sampling_ratio,
+    const bool aligned,
     T* grad_input,
     const T* rois,
     const int n_stride,
@@ -381,7 +383,8 @@ at::Tensor ROIAlign_forward_cpu(
     const float spatial_scale,
     const int pooled_height,
     const int pooled_width,
-    const int sampling_ratio) {
+    const int sampling_ratio,
+    const bool aligned) {
   AT_ASSERTM(input.device().is_cpu(), "input must be a CPU tensor");
   AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
 
@@ -414,6 +417,7 @@ at::Tensor ROIAlign_forward_cpu(
         pooled_height,
         pooled_width,
         sampling_ratio,
+        aligned,
         rois.contiguous().data_ptr<scalar_t>(),
         output.data_ptr<scalar_t>());
   });
@@ -430,7 +434,8 @@ at::Tensor ROIAlign_backward_cpu(
     const int channels,
     const int height,
     const int width,
-    const int sampling_ratio) {
+    const int sampling_ratio,
+    const bool aligned) {
   AT_ASSERTM(grad.device().is_cpu(), "grad must be a CPU tensor");
   AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
 
@@ -464,6 +469,7 @@ at::Tensor ROIAlign_backward_cpu(
         pooled_height,
         pooled_width,
         sampling_ratio,
+        aligned,
         grad_input.data_ptr<scalar_t>(),
         rois.contiguous().data_ptr<scalar_t>(),
         n_stride,
