@@ -135,18 +135,23 @@ void ROIAlignForward(
     int roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
-    T roi_start_w = offset_rois[1] * spatial_scale;
-    T roi_start_h = offset_rois[2] * spatial_scale;
-    T roi_end_w = offset_rois[3] * spatial_scale;
-    T roi_end_h = offset_rois[4] * spatial_scale;
-    // T roi_start_w = round(offset_rois[0] * spatial_scale);
-    // T roi_start_h = round(offset_rois[1] * spatial_scale);
-    // T roi_end_w = round(offset_rois[2] * spatial_scale);
-    // T roi_end_h = round(offset_rois[3] * spatial_scale);
+    T offset = aligned ? (T)0.5 : (T)0.0;
+    T roi_start_w = offset_rois[1] * spatial_scale - offset;
+    T roi_start_h = offset_rois[2] * spatial_scale - offset;
+    T roi_end_w = offset_rois[3] * spatial_scale - offset;
+    T roi_end_h = offset_rois[4] * spatial_scale - offset;
 
     // Force malformed ROIs to be 1x1
     T roi_width = std::max(roi_end_w - roi_start_w, (T)1.);
     T roi_height = std::max(roi_end_h - roi_start_h, (T)1.);
+    if (aligned) {
+      AT_ASSERTM(
+          roi_width >= 0 && roi_height >= 0,
+          "ROIs in ROIAlign do not have non-negative size!");
+    } else { // for backward-compatibility only
+      roi_width = std::max(roi_width, (T)1.);
+      roi_height = std::max(roi_height, (T)1.);
+    }
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
@@ -304,14 +309,23 @@ void ROIAlignBackward(
     int roi_batch_ind = offset_rois[0];
 
     // Do not using rounding; this implementation detail is critical
-    T roi_start_w = offset_rois[1] * spatial_scale;
-    T roi_start_h = offset_rois[2] * spatial_scale;
-    T roi_end_w = offset_rois[3] * spatial_scale;
-    T roi_end_h = offset_rois[4] * spatial_scale;
+    T offset = aligned ? (T)0.5 : (T)0.0;
+    T roi_start_w = offset_rois[1] * spatial_scale - offset;
+    T roi_start_h = offset_rois[2] * spatial_scale - offset;
+    T roi_end_w = offset_rois[3] * spatial_scale - offset;
+    T roi_end_h = offset_rois[4] * spatial_scale - offset;
 
     // Force malformed ROIs to be 1x1
     T roi_width = std::max(roi_end_w - roi_start_w, (T)1.);
     T roi_height = std::max(roi_end_h - roi_start_h, (T)1.);
+    if (aligned) {
+      AT_ASSERTM(
+          roi_width >= 0 && roi_height >= 0,
+          "ROIs in ROIAlign do not have non-negative size!");
+    } else { // for backward-compatibility only
+      roi_width = std::max(roi_width, (T)1.);
+      roi_height = std::max(roi_height, (T)1.);
+    }
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
