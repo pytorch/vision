@@ -4,7 +4,7 @@ import sys
 
 import torch
 from PIL import Image
-if sys.platform.startswith('linux'):
+if sys.platform.startswith('linux') or sys.platform.startswith("darwin"):
     from torchvision.io.image import read_png, decode_png
 import numpy as np
 
@@ -23,21 +23,27 @@ def get_images(directory, img_ext):
 class ImageTester(unittest.TestCase):
     @unittest.skipUnless(sys.platform.startswith("linux") or sys.platform.startswith("darwin"), "Support only available on linux for now.")
     def test_read_png(self):
-        for img_path in get_images(IMAGE_DIR, "png"):
+        for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_lpng = read_png(img_path)
-            self.assertEqual(img_lpng, img_pil)
+            self.assertTrue(torch.equal(img_lpng, img_pil))
 
     @unittest.skipUnless(sys.platform.startswith("linux") or sys.platform.startswith("darwin"), "Support only available on linux for now.")
     def test_decode_png(self):
-        for img_path in get_images(IMAGE_DIR, "png"):
+        for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             size = os.path.getsize(img_path)
             img_lpng = decode_png(torch.from_file(img_path, dtype=torch.uint8, size=size))
-            self.assertEqual(img_lpng, img_pil)
+            self.assertTrue(torch.equal(img_lpng, img_pil))
 
-            self.assertEqual(decode_png(torch.empty()), torch.empty())
-            self.assertEqual(decode_png(torch.randint(3, 5, (300,))), torch.empty())
+        with self.assertRaisesRegex(ValueError, "Expected a non empty 1-dimensional tensor."):
+            decode_png(torch.empty((100, 1), dtype=torch.uint8))
+
+        with self.assertRaisesRegex(ValueError, "Expected a torch.uint8 tensor."):
+            decode_png(torch.empty((100, ), dtype=torch.float16))
+
+        with self.assertRaisesRegex(ValueError, "Invalid png input."):
+            decode_png(torch.empty((100), dtype=torch.uint8))
 
 
 if __name__ == '__main__':
