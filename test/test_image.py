@@ -35,7 +35,9 @@ class ImageTester(unittest.TestCase):
         for img_path in get_images(IMAGE_DIR, ".jpg"):
             img_tjpeg = read_with_pyturbojpeg(img_path)
             img_ljpeg = read_jpeg(img_path)
-            self.assertTrue(torch.equal(img_ljpeg, img_tjpeg))
+
+            err = torch.abs(img_ljpeg.flatten().float() - img_tjpeg.flatten().float()).sum().float() / (img_ljpeg.shape[0] * img_ljpeg.shape[1] * img_ljpeg.shape[2] * 255)
+            self.assertLessEqual(err, 1e-2)
 
     @unittest.skipUnless(sys.platform.startswith("linux"), "Support only available on linux for now.")
     def test_decode_jpeg(self):
@@ -43,7 +45,10 @@ class ImageTester(unittest.TestCase):
             img_tjpeg = read_with_pyturbojpeg(img_path)
             size = os.path.getsize(img_path)
             img_ljpeg = decode_jpeg(torch.from_file(img_path, dtype=torch.uint8, size=size))
-            self.assertTrue(torch.equal(img_ljpeg, img_tjpeg))
+
+            err = torch.abs(img_ljpeg.flatten().float() - img_tjpeg.flatten().float()).sum().float() / (img_ljpeg.shape[0] * img_ljpeg.shape[1] * img_ljpeg.shape[2] * 255)
+
+            self.assertLessEqual(err, 1e-2)
 
         with self.assertRaisesRegex(ValueError, "Expected a non empty 1-dimensional tensor."):
             decode_jpeg(torch.empty((100, 1), dtype=torch.uint8))
