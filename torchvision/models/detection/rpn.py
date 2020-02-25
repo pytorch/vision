@@ -112,7 +112,7 @@ class AnchorGenerator(nn.Module):
         return [len(s) * len(a) for s, a in zip(self.sizes, self.aspect_ratios)]
 
     def grid_anchors(self, grid_sizes, strides):
-        # type: (List[List[int]], List[List[int]])
+        # type: (List[List[int]], List[List[Tensor]])
         anchors = []
         cell_anchors = self.cell_anchors
         assert cell_anchors is not None
@@ -141,8 +141,8 @@ class AnchorGenerator(nn.Module):
         return anchors
 
     def cached_grid_anchors(self, grid_sizes, strides):
-        # type: (List[List[int]], List[List[int]])
-        key = str(grid_sizes + strides)
+        # type: (List[List[int]], List[List[Tensor]])
+        key = str(str(grid_sizes) + str(strides))
         if key in self._cache:
             return self._cache[key]
         anchors = self.grid_anchors(grid_sizes, strides)
