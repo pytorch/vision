@@ -28,10 +28,6 @@ def _is_pil_image(img):
         return isinstance(img, Image.Image)
 
 
-def _is_tensor_image(img):
-    return torch.is_tensor(img) and img.ndimension() == 3
-
-
 def _is_numpy(img):
     return isinstance(img, np.ndarray)
 
@@ -200,8 +196,12 @@ def normalize(tensor, mean, std, inplace=False):
     Returns:
         Tensor: Normalized Tensor image.
     """
-    if not _is_tensor_image(tensor):
-        raise TypeError('tensor is not a torch image.')
+    if not torch.is_tensor(tensor):
+        raise TypeError('tensor should be a torch tensor. Got {}.'.format(type(tensor)))
+    
+    if tensor.ndimension() != 3:
+        raise ValueError('Expected tensor to be a tensor image of size (C, H, W). Got tensor.size() = '
+                         '{}.'.format(tensor.size()))
 
     if not inplace:
         tensor = tensor.clone()
