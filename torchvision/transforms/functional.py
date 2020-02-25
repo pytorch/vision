@@ -209,7 +209,7 @@ def normalize(tensor, mean, std, inplace=False):
     dtype = tensor.dtype
     mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
     std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
-    if std == 0:
+    if (std == 0).any():
         raise ValueError('std evaluated to zero after conversion to {}, leading to division by zero.'.format(dtype))
     tensor.sub_(mean[:, None, None]).div_(std[:, None, None])
     return tensor
