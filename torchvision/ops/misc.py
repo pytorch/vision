@@ -42,7 +42,7 @@ class ConvTranspose2d(torch.nn.ConvTranspose2d):
                 list(self.output_padding),
             )
         ]
-        output_shape = [x.shape[0], self.bias.shape[0]] + output_shape
+        output_shape = [x.shape[0], self.out_channels] + output_shape
         return _new_empty_tensor(x, output_shape)
 
     def super_forward(self, input, output_size=None):
