@@ -112,7 +112,8 @@ __global__ void RoIAlignForward(
         (sampling_ratio > 0) ? sampling_ratio : ceil(roi_width / pooled_width);
 
     // We do average (integral) pooling inside a bin
-    const T count = roi_bin_grid_h * roi_bin_grid_w; // e.g. = 4
+    // When the grid is empty, output zeros.
+    const T count = max(roi_bin_grid_h * roi_bin_grid_w, 1); // e.g. = 4
 
     T output_val = 0.;
     for (int iy = 0; iy < roi_bin_grid_h; iy++) // e.g., iy = 0, 1
