@@ -144,14 +144,7 @@ void ROIAlignForward(
     // Force malformed ROIs to be 1x1
     T roi_width = std::max(roi_end_w - roi_start_w, (T)1.);
     T roi_height = std::max(roi_end_h - roi_start_h, (T)1.);
-    if (aligned) {
-      AT_ASSERTM(
-          roi_width >= 0 && roi_height >= 0,
-          "ROIs in ROIAlign do not have non-negative size!");
-    } else { // for backward-compatibility only
-      roi_width = std::max(roi_width, (T)1.);
-      roi_height = std::max(roi_height, (T)1.);
-    }
+
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
@@ -319,14 +312,7 @@ void ROIAlignBackward(
     // Force malformed ROIs to be 1x1
     T roi_width = std::max(roi_end_w - roi_start_w, (T)1.);
     T roi_height = std::max(roi_end_h - roi_start_h, (T)1.);
-    if (aligned) {
-      AT_ASSERTM(
-          roi_width >= 0 && roi_height >= 0,
-          "ROIs in ROIAlign do not have non-negative size!");
-    } else { // for backward-compatibility only
-      roi_width = std::max(roi_width, (T)1.);
-      roi_height = std::max(roi_height, (T)1.);
-    }
+
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
 
