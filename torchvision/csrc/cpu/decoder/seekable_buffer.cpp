@@ -82,6 +82,8 @@ bool SeekableBuffer::readBytes(
     }
   }
 
+  buffer_.resize(end_);
+
   return hasTime;
 }
 
