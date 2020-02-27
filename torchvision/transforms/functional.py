@@ -348,6 +348,7 @@ def pad(img, padding, fill=0, padding_mode='constant'):
 
 def crop(img, top, left, height, width):
     """Crop the given PIL Image.
+    
     Args:
         img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
         top (int): Vertical component of the top left corner of the crop box.
