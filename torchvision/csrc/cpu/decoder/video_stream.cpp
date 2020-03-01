@@ -68,6 +68,7 @@ int VideoStream::initFormat() {
       codecCtx_->width,
       codecCtx_->height,
       format_.format.video.minDimension,
+      format_.format.video.maxDimension,
       0);
 
   if (format_.format.video.format == AV_PIX_FMT_NONE) {

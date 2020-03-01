@@ -49,11 +49,29 @@ struct VideoFormat {
   bool operator==(const VideoFormat& x) const {
     return x.format == format && x.width == width && x.height == height;
   }
-
+  /*
+  When width = 0, height = 0, minDimension = 0, and maxDimension = 0,
+    keep the orignal frame resolution
+  When width = 0, height = 0, minDimension != 0, and maxDimension = 0,
+    keep the aspect ratio and resize the frame so that shorter edge size is minDimension
+  When width = 0, height = 0, minDimension = 0, and maxDimension != 0,
+    keep the aspect ratio and resize the frame so that longer edge size is maxDimension
+  When width = 0, height = 0, minDimension != 0, and maxDimension != 0,
+    resize the frame so that shorter edge size is minDimension, and
+    longer edge size is maxDimension. The aspect ratio may not be preserved
+  When width = 0, height != 0, minDimension = 0, and maxDimension = 0,
+    keep the aspect ratio and resize the frame so that frame height is $height
+  When width != 0, height = 0, minDimension = 0, and maxDimension = 0,
+    keep the aspect ratio and resize the frame so that frame width is $width
+  When width != 0, height != 0, minDimension = 0, and maxDimension = 0,
+    resize the frame so that frame width and  height are set to $width and $height,
+    respectively
+  */
   size_t width{0}; // width in pixels
   size_t height{0}; // height in pixels
   long format{-1}; // AVPixelFormat, auto AV_PIX_FMT_NONE
   size_t minDimension{0}; // choose min dimension and rescale accordingly
+  size_t maxDimension{0}; // choose max dimension and rescale accordingly
   size_t cropImage{0}; // request image crop
   // -- alignment 40 bytes
 };

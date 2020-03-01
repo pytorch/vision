@@ -87,6 +87,7 @@ bool VideoSampler::init(const SamplerParameters& params) {
         params.in.video.width,
         params.in.video.height,
         0,
+        0,
         1);
 
     if (!(scaleFormat_ == params_.out.video)) { // crop required

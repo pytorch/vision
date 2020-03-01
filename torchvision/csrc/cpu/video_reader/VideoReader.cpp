@@ -44,6 +44,7 @@ DecoderParameters getDecoderParams(
     int videoWidth,
     int videoHeight,
     int videoMinDimension,
+    int videoMaxDimension,
     int64_t readAudioStream,
     int audioSamples,
     int audioChannels) {
@@ -62,6 +63,7 @@ DecoderParameters getDecoderParams(
     videoFormat.format.video.width = videoWidth;
     videoFormat.format.video.height = videoHeight;
     videoFormat.format.video.minDimension = videoMinDimension;
+    videoFormat.format.video.maxDimension = videoMaxDimension;
     params.formats.insert(videoFormat);
   }
 
@@ -190,6 +192,7 @@ torch::List<torch::Tensor> readVideo(
     int64_t width,
     int64_t height,
     int64_t minDimension,
+    int64_t maxDimension,
     int64_t videoStartPts,
     int64_t videoEndPts,
     int64_t videoTimeBaseNum,
@@ -227,6 +230,7 @@ torch::List<torch::Tensor> readVideo(
       width, // width
       height, // height
       minDimension, // minDimension
+      maxDimension, // maxDimension
       readAudioStream, // readAudioStream
       audioSamples, // audioSamples
       audioChannels // audioChannels
@@ -429,6 +433,7 @@ torch::List<torch::Tensor> readVideoFromMemory(
     int64_t width,
     int64_t height,
     int64_t minDimension,
+    int64_t maxDimension,
     int64_t videoStartPts,
     int64_t videoEndPts,
     int64_t videoTimeBaseNum,
@@ -450,6 +455,7 @@ torch::List<torch::Tensor> readVideoFromMemory(
       width,
       height,
       minDimension,
+      maxDimension,
       videoStartPts,
       videoEndPts,
       videoTimeBaseNum,
@@ -471,6 +477,7 @@ torch::List<torch::Tensor> readVideoFromFile(
     int64_t width,
     int64_t height,
     int64_t minDimension,
+    int64_t maxDimension,
     int64_t videoStartPts,
     int64_t videoEndPts,
     int64_t videoTimeBaseNum,
@@ -493,6 +500,7 @@ torch::List<torch::Tensor> readVideoFromFile(
       width,
       height,
       minDimension,
+      maxDimension,
       videoStartPts,
       videoEndPts,
       videoTimeBaseNum,
@@ -519,6 +527,7 @@ torch::List<torch::Tensor> probeVideo(
       0, // width
       0, // height
       0, // minDimension
+      0, // maxDimension
       1, // readAudioStream
       0, // audioSamples
       0 // audioChannels

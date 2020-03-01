@@ -286,31 +286,36 @@ size_t size(const AVSubtitle& sub) {
 bool validateVideoFormat(const VideoFormat& f) {
   /*
   Valid parameters values for decoder
-  ______________________________________________________________
-  |  W  |  H  | minDimension | cropImage |  algorithm           |
-  |_____________________________________________________________|
-  |  0  |  0  |     0        |  N/A      |   original           |
-  |_____________________________________________________________|
-  |  >0 |  0  |     N/A      |  N/A      |   scale keeping W    |
-  |_____________________________________________________________|
-  |  0  |  >0 |     N/A      |  N/A      |   scale keeping H    |
-  |_____________________________________________________________|
-  |  >0 |  >0 |     N/A      |   0       |   stretch/scale      |
-  |_____________________________________________________________|
-  |  >0 |  >0 |     N/A      |   >0      |   scale/crop         |
-  |_____________________________________________________________|
-  |  0  |  0  |     >0       |  N/A      |scale to min dimension|
-  |_____|_____|______________|___________|______________________|
+  ____________________________________________________________________________________
+  |  W  |  H  | minDimension | maxDimension | cropImage |  algorithm                 |
+  |__________________________________________________________________________________|
+  |  0  |  0  |     0        |  0           |  N/A      |   original                 |
+  |__________________________________________________________________________________|
+  |  >0 |  0  |     N/A      |  N/A         |  N/A      |   scale keeping W          |
+  |__________________________________________________________________________________|
+  |  0  |  >0 |     N/A      |  N/A         |  N/A      |   scale keeping H          |
+  |__________________________________________________________________________________|
+  |  >0 |  >0 |     N/A      |  N/A         |  0        |   stretch/scale            |
+  |__________________________________________________________________________________|
+  |  >0 |  >0 |     N/A      |  N/A         |  >0       |   scale/crop               |
+  |__________________________________________________________________________________|
+  |  0  |  0  |     >0       |  0           |  N/A      |scale to min dimension      |
+  |__________________________________________________________________________________|
+  |  0  |  0  |     0        |  >0          |  N/A      |scale to max dimension      |
+  |__________________________________________________________________________________|
+  |  0  |  0  |     >0       |  >0          |  N/A      |stretch to min/max dimension|
+  |_____|_____|______________|______________|___________|____________________________|
+
   */
-  return (f.width == 0 && // #1 and #6
+  return (f.width == 0 && // #1, #6, #7 and #8
           f.height == 0 && f.cropImage == 0) ||
       (f.width != 0 && // #4 and #5
-       f.height != 0 && f.minDimension == 0) ||
+       f.height != 0 && f.minDimension == 0 && f.maxDimension == 0) ||
       (((f.width != 0 && // #2
          f.height == 0) ||
         (f.width == 0 && // #3
          f.height != 0)) &&
-       f.minDimension == 0 && f.cropImage == 0);
+       f.minDimension == 0 && f.maxDimension == 0 && f.cropImage == 0);
 }
 
 void setFormatDimensions(
@@ -321,14 +326,17 @@ void setFormatDimensions(
     size_t srcW,
     size_t srcH,
     size_t minDimension,
+    size_t maxDimension,
     size_t cropImage) {
   // rounding rules
   // int -> double -> round up
   // if fraction is >= 0.5 or round down if fraction is < 0.5
   // int result = double(value) + 0.5
   // here we rounding double to int according to the above rule
+
+  // #1, #6, #7 and #8
   if (userW == 0 && userH == 0) {
-    if (minDimension > 0) {
+    if (minDimension > 0 && maxDimension == 0) { // #6
       if (srcW > srcH) {
         // landscape
         destH = minDimension;
@@ -338,21 +346,44 @@ void setFormatDimensions(
         destW = minDimension;
         destH = round(double(srcH * minDimension) / srcW);
       }
-    } else {
+    }
+    else if (minDimension == 0 && maxDimension > 0) { // #7
+      if (srcW > srcH) {
+        // landscape
+        destW = maxDimension;
+        destH = round(double(srcH * maxDimension) / srcW);
+      } else {
+        // portrait
+        destH = maxDimension;
+        destW = round(double(srcW * maxDimension) / srcH);
+      }
+    }
+    else if (minDimension > 0 && maxDimension > 0) { // #8
+      if (srcW > srcH) {
+        // landscape
+        destW = maxDimension;
+        destH = minDimension;
+      } else {
+        // portrait
+        destW = minDimension;
+        destH = maxDimension;
+      }
+    }
+    else { // #1
       destW = srcW;
       destH = srcH;
     }
-  } else if (userW != 0 && userH == 0) {
+  } else if (userW != 0 && userH == 0) { // #2
     destW = userW;
     destH = round(double(srcH * userW) / srcW);
-  } else if (userW == 0 && userH != 0) {
+  } else if (userW == 0 && userH != 0) { // #3
     destW = round(double(srcW * userH) / srcH);
     destH = userH;
   } else { // userW != 0 && userH != 0
-    if (cropImage == 0) {
+    if (cropImage == 0) { // #4
       destW = userW;
       destH = userH;
-    } else {
+    } else { // #5
       double userSlope = double(userH) / userW;
       double srcSlope = double(srcH) / srcW;
       if (srcSlope < userSlope) {
