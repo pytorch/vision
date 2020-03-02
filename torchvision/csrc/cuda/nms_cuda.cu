@@ -12,9 +12,9 @@ int const threadsPerBlock = sizeof(unsigned long long) * 8;
 
 template <typename T>
 __device__ inline bool devIoU(T const* const a, T const* const b, const float threshold) {
-  T left = fmaxf(a[0], b[0]), right = fminf(a[2], b[2]);
-  T top = fmaxf(a[1], b[1]), bottom = fminf(a[3], b[3]);
-  T width = fmaxf(right - left, (T)0), height = fmaxf(bottom - top, (T)0);
+  T left = max(a[0], b[0]), right = fminf(a[2], b[2]);
+  T top = max(a[1], b[1]), bottom = fminf(a[3], b[3]);
+  T width = max(right - left, (T)0), height = max(bottom - top, (T)0);
   T interS = width * height;
   T Sa = (a[2] - a[0]) * (a[3] - a[1]);
   T Sb = (b[2] - b[0]) * (b[3] - b[1]);
