@@ -85,7 +85,7 @@ def get_extensions():
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
     source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
 
-    is_rocm_pytorch = True if ROCM_HOME is not None else False
+    is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
 
     if is_rocm_pytorch:
         hipify_python.hipify(
