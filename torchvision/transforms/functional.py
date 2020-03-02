@@ -28,10 +28,6 @@ def _is_pil_image(img):
         return isinstance(img, Image.Image)
 
 
-def _is_tensor_image(img):
-    return torch.is_tensor(img) and img.ndimension() == 3
-
-
 def _is_numpy(img):
     return isinstance(img, np.ndarray)
 
@@ -200,8 +196,12 @@ def normalize(tensor, mean, std, inplace=False):
     Returns:
         Tensor: Normalized Tensor image.
     """
-    if not _is_tensor_image(tensor):
-        raise TypeError('tensor is not a torch image.')
+    if not torch.is_tensor(tensor):
+        raise TypeError('tensor should be a torch tensor. Got {}.'.format(type(tensor)))
+    
+    if tensor.ndimension() != 3:
+        raise ValueError('Expected tensor to be a tensor image of size (C, H, W). Got tensor.size() = '
+                         '{}.'.format(tensor.size()))
 
     if not inplace:
         tensor = tensor.clone()
@@ -209,6 +209,8 @@ def normalize(tensor, mean, std, inplace=False):
     dtype = tensor.dtype
     mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
     std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
+    if (std == 0).any():
+        raise ValueError('std evaluated to zero after conversion to {}, leading to division by zero.'.format(dtype))
     tensor.sub_(mean[:, None, None]).div_(std[:, None, None])
     return tensor
 
@@ -346,6 +348,7 @@ def pad(img, padding, fill=0, padding_mode='constant'):
 
 def crop(img, top, left, height, width):
     """Crop the given PIL Image.
+    
     Args:
         img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
         top (int): Vertical component of the top left corner of the crop box.
