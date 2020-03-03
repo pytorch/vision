@@ -224,6 +224,8 @@ class Inception(nn.Module):
 
         self.branch3 = nn.Sequential(
             conv_block(in_channels, ch5x5red, kernel_size=1),
+            # Here, kernel_size=3 instead of kernel_size=5 is a known bug.
+            # Please see https://github.com/pytorch/vision/issues/906 for details.
             conv_block(ch5x5red, ch5x5, kernel_size=3, padding=1)
         )
 
