@@ -369,10 +369,12 @@ class RegionProposalNetwork(torch.nn.Module):
         # do not backprop throught objectness
         objectness = objectness.detach()
         objectness = objectness.reshape(num_images, -1)
+
         levels = [
             torch.full((n,), idx, dtype=torch.int64, device=device)
             for idx, n in enumerate(num_anchors_per_level)
         ]
+
         levels = torch.cat(levels, 0)
         levels = levels.reshape(1, -1).expand_as(objectness)
         # select top_n boxes independently per level before applying nms
@@ -463,7 +465,6 @@ class RegionProposalNetwork(torch.nn.Module):
         num_images = len(anchors)
         num_anchors_per_level_shape_tensors = [o[0].shape for o in objectness]
         num_anchors_per_level = [s[0] * s[1] * s[2] for s in num_anchors_per_level_shape_tensors]
-
         objectness, pred_bbox_deltas = \
             concat_box_prediction_layers(objectness, pred_bbox_deltas)
         # apply pred_bbox_deltas to anchors to obtain the decoded proposals
