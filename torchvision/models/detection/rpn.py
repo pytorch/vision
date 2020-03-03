@@ -374,9 +374,9 @@ class RegionProposalNetwork(torch.nn.Module):
             torch.full((n,), idx, dtype=torch.int64, device=device)
             for idx, n in enumerate(num_anchors_per_level)
         ]
-
         levels = torch.cat(levels, 0)
         levels = levels.reshape(1, -1).expand_as(objectness)
+
         # select top_n boxes independently per level before applying nms
         top_n_idx = self._get_top_n_idx(objectness, num_anchors_per_level)
 
