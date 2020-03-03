@@ -142,7 +142,7 @@ class AnchorGenerator(nn.Module):
 
     def cached_grid_anchors(self, grid_sizes, strides):
         # type: (List[List[int]], List[List[Tensor]])
-        key = str(str(grid_sizes) + str(strides))
+        key = str(grid_sizes) + str(strides)
         if key in self._cache:
             return self._cache[key]
         anchors = self.grid_anchors(grid_sizes, strides)
