@@ -79,7 +79,7 @@ def download_url(url, root, filename=None, md5=None, header=None):
     if check_integrity(fpath, md5):
         print('Using downloaded and verified file: ' + fpath)
     else:   # download the file
-        # set header
+        # set header, see #1938
         if header is not None:
             opener = urllib.request.build_opener()
             opener.addheaders = header
@@ -104,6 +104,9 @@ def download_url(url, root, filename=None, md5=None, header=None):
         # check integrity of downloaded file
         if not check_integrity(fpath, md5):
             raise RuntimeError("File not found or corrupted.")
+        # reset header, see #1938
+        opener = urllib.request.build_opener()
+        urllib.request.install_opener(opener)
 
 
 def list_dir(root, prefix=False):
