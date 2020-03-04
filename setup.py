@@ -93,12 +93,12 @@ def get_extensions():
     extra_compile_args = {}
     third_party_search_directories = []
 
-    extra_objects = []
-    if sys.platform.startswith('linux') or sys.platform.startswith("darwin"):
+    runtime_library_dirs = None
+    if sys.platform.startswith('linux') or sys.platform.startswith('darwin'):
         sources = sources + source_image_cpu
         libraries.append('png')
         third_party_search_directories.append(os.path.join(cwd, "third_party/libpng"))
-        extra_objects = ['third_party/zlib/libz.a', 'third_party/libpng/libpng.a']
+        runtime_library_dirs = ['lib']
 
     extension = CppExtension
 
@@ -116,6 +116,7 @@ def get_extensions():
 
     define_macros = []
 
+    extra_compile_args = {}
     if (torch.cuda.is_available() and CUDA_HOME is not None) or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
         sources += source_cuda
@@ -160,7 +161,7 @@ def get_extensions():
             include_dirs=include_dirs + third_party_search_directories,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
-            extra_objects=extra_objects
+            runtime_library_dirs=runtime_library_dirs
         )
     ]
     if compile_cpp_tests:
@@ -230,11 +231,11 @@ def build_deps():
 
         zlib_path = os.path.join(this_dir, "third_party/zlib")
         if sys.platform.startswith("linux"):
-            libpng_cmake_options = "-DPNG_BUILD_ZLIB=ON -DPNG_STATIC=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.so".format(zlib_path=zlib_path)
+            libpng_cmake_options = "-DPNG_BUILD_ZLIB=ON -DPNG_STATIC=OFF -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.so".format(zlib_path=zlib_path)
         if sys.platform.startswith("darwin"):
-            libpng_cmake_options = "-DPNG_BUILD_ZLIB=ON -DPNG_STATIC=ON -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.dylib".format(zlib_path=zlib_path)
+            libpng_cmake_options = "-DPNG_BUILD_ZLIB=ON -DPNG_STATIC=OFF -DZLIB_INCLUDE_DIR:PATH={zlib_path} -DZLIB_LIBRARY:FILEPATH={zlib_path}/libz.dylib".format(zlib_path=zlib_path)
         os.chdir("third_party/libpng/")
-        os.system('cmake -DCMAKE_C_FLAGS="-fPIC" {} .'.format(libpng_cmake_options))
+        os.system('cmake {} .'.format(libpng_cmake_options))
         throw_of_failure("cmake --build . -- -j {}".format(cpu_count))
         os.chdir(this_dir)
 
@@ -242,6 +243,22 @@ def build_deps():
 def build_ext_with_dependencies(self):
     build_deps()
     return BuildExtension.with_options(no_python_abi_suffix=True)(self)
+
+
+data_files = []
+if sys.platform.startswith('linux'):
+    data_files = [
+        ('torchvision/lib', [
+            'third_party/zlib/libz.so',
+            'third_party/libpng/libpng.so'])
+    ]
+
+if sys.platform.startswith('darwin'):
+    data_files = [
+        ('torchvision/lib', [
+            'third_party/zlib/libz.dylib',
+            'third_party/libpng/libpng.dylib'])
+    ]
 
 
 setup(
@@ -268,4 +285,5 @@ setup(
         'build_ext': build_ext_with_dependencies,
         'clean': clean,
     },
+    data_files=data_files
 )
