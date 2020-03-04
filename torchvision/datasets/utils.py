@@ -56,7 +56,7 @@ def makedir_exist_ok(dirpath):
             raise
 
 
-def download_url(url, root, filename=None, md5=None):
+def download_url(url, root, filename=None, md5=None, header=None):
     """Download a file from a url and place it in root.
 
     Args:
@@ -64,6 +64,7 @@ def download_url(url, root, filename=None, md5=None):
         root (str): Directory to place downloaded file in
         filename (str, optional): Name to save the file under. If None, use the basename of the URL
         md5 (str, optional): MD5 checksum of the download. If None, do not check
+        header (list(tuples), optional): Header to pass to urlretrieve. If None, do not set
     """
     from six.moves import urllib
 
@@ -78,6 +79,11 @@ def download_url(url, root, filename=None, md5=None):
     if check_integrity(fpath, md5):
         print('Using downloaded and verified file: ' + fpath)
     else:   # download the file
+        # set header
+        if header is not None:
+            opener = urllib.request.build_opener()
+            opener.addheaders = header
+            urllib.request.install_opener(opener)
         try:
             print('Downloading ' + url + ' to ' + fpath)
             urllib.request.urlretrieve(
@@ -254,14 +260,14 @@ def extract_archive(from_path, to_path=None, remove_finished=False):
 
 
 def download_and_extract_archive(url, download_root, extract_root=None, filename=None,
-                                 md5=None, remove_finished=False):
+                                 md5=None, remove_finished=False, header=None):
     download_root = os.path.expanduser(download_root)
     if extract_root is None:
         extract_root = download_root
     if not filename:
         filename = os.path.basename(url)
 
-    download_url(url, download_root, filename, md5)
+    download_url(url, download_root, filename, md5, header)
 
     archive = os.path.join(download_root, filename)
     print("Extracting {} to {}".format(archive, extract_root))
