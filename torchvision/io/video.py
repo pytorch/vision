@@ -370,6 +370,7 @@ def read_video_from_memory(
     audio_pts_range=(0, -1),  # type: List[int]
     audio_timebase_numerator=0,  # type: int
     audio_timebase_denominator=1,  # type: int
+    video_max_dimension=0,  # type: int
 ):
     # type: (...) -> Tuple[torch.Tensor, torch.Tensor]
     return _video_opt._read_video_from_memory(
@@ -379,6 +380,7 @@ def read_video_from_memory(
         video_width,
         video_height,
         video_min_dimension,
+        video_max_dimension,
         video_pts_range,
         video_timebase_numerator,
         video_timebase_denominator,
