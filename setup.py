@@ -12,7 +12,7 @@ import glob
 import shutil
 
 import torch
-from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME, ROCM_HOME
+from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
 from torch.utils.hipify import hipify_python
 
 
@@ -87,6 +87,7 @@ def get_extensions():
 
     is_rocm_pytorch = False
     if torch.__version__ >= '1.5':
+        from torch.utils.cpp_extension import ROCM_HOME
         is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
 
     if is_rocm_pytorch:
