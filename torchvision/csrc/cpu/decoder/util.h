@@ -21,6 +21,7 @@ void setFormatDimensions(
     size_t srcW,
     size_t srcH,
     size_t minDimension,
+    size_t maxDimension,
     size_t cropImage);
 bool validateVideoFormat(const VideoFormat& format);
 } // namespace Util
