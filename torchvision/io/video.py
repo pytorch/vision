@@ -375,7 +375,7 @@ def read_video_from_memory(
     return _video_opt._read_video_from_memory(
         video_data,
         seek_frame_margin,
-        read_audio_stream,
+        read_video_stream,
         video_width,
         video_height,
         video_min_dimension,
