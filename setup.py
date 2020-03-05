@@ -85,7 +85,9 @@ def get_extensions():
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
     source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
 
-    is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
+    is_rocm_pytorch = False
+    if torch.__version__ >= '1.5':
+        is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
 
     if is_rocm_pytorch:
         hipify_python.hipify(
@@ -121,7 +123,7 @@ def get_extensions():
     define_macros = []
 
     extra_compile_args = {}
-    if (torch.cuda.is_available() and ((CUDA_HOME is not None)  or (ROCM_HOME is not None))) or os.getenv('FORCE_CUDA', '0') == '1':
+    if (torch.cuda.is_available() and ((CUDA_HOME is not None)  or is_rocm_pytorch)) or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
         sources += source_cuda
         if not is_rocm_pytorch:
