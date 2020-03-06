@@ -226,6 +226,10 @@ class ModelTester(TestCase):
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
 
+    def test_googlnet_eval(self):
+        m = torch.jit.script(models.googlenet(pretrained=True).eval())
+        self.checkModule(m, "googlenet", torch.rand(1, 3, 224, 224))
+
     @unittest.skipIf(not torch.cuda.is_available(), 'needs GPU')
     def test_fasterrcnn_switch_devices(self):
         model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
