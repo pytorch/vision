@@ -226,7 +226,7 @@ class ModelTester(TestCase):
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
 
-    def test_googlnet_eval(self):
+    def test_googlenet_eval(self):
         m = torch.jit.script(models.googlenet(pretrained=True).eval())
         self.checkModule(m, "googlenet", torch.rand(1, 3, 224, 224))
 
