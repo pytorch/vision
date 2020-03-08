@@ -37,8 +37,8 @@ build:
   rpaths:
     - lib
   missing_dso_withelist:
-    - */libturbojpeg.so.0 # [linux]
-    - */libturbojpeg.so # [linux]
+    - '*/libturbojpeg.so.0' # [linux]
+    - '*/libturbojpeg.so' # [linux]
 
 
 test:
