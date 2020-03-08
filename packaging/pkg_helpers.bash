@@ -276,3 +276,9 @@ setup_junit_results_folder() {
     export CONDA_PYTORCH_BUILD_RESULTS_DIRECTORY="${SOURCE_ROOT_DIR}/build_results/results.xml"
   fi
 }
+
+install_onnx_runtime_on_linux() { 
+  if [[ "$(uname)" == Linux ]]; then
+    pip install onnxruntime 
+  fi
+}
