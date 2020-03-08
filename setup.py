@@ -238,19 +238,19 @@ def build_ext_with_dependencies(self):
 
 data_files = []
 if sys.platform.startswith('linux'):
-    if os.environ.get('BUILD_TYPE', "") == "conda":
-        py_minor = os.environ['PYTHON_VERSION']
-        data_files = [
-            ('lib/python{}/site-packages/torchvision/lib'.format(py_minor), [
-                'third_party/libjpeg-turbo/libturbojpeg.so.0',
-                'third_party/libjpeg-turbo/libturbojpeg.so'])
-        ]
-    else:
-        data_files = [
-            ('torchvision/lib', [
-                'third_party/libjpeg-turbo/libturbojpeg.so.0',
-                'third_party/libjpeg-turbo/libturbojpeg.so'])
-        ]
+#if os.environ.get('BUILD_TYPE', "") == "conda":
+    py_minor = os.environ['PYTHON_VERSION']
+    data_files = [
+        ('lib/python3.7/site-packages/torchvision/lib'.format(py_minor), [
+            'third_party/libjpeg-turbo/libturbojpeg.so.0',
+            'third_party/libjpeg-turbo/libturbojpeg.so'])
+    ]
+    # else:
+        # data_files = [
+            # ('torchvision/lib', [
+                # 'third_party/libjpeg-turbo/libturbojpeg.so.0',
+                # 'third_party/libjpeg-turbo/libturbojpeg.so'])
+        # ]
 
 setup(
     # Metadata
