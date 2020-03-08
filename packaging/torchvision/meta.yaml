@@ -7,8 +7,8 @@ source:
 
 requirements:
   build:
-    - {{ compiler('c') }} 
-    - {{ compiler('cxx') }} 
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
 
   host:
     - python
@@ -34,6 +34,12 @@ build:
     - NVCC_FLAGS
   features:
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
+  rpaths:
+    - lib
+  missing_dso_withelist:
+    - lib/libturbojpeg.so.0 # [linux]
+    - lib/libturbojpeg.so # [linux]
+
 
 test:
   imports:

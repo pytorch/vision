@@ -98,7 +98,7 @@ def get_extensions():
         sources = sources + source_image_cpu
         libraries.append('turbojpeg')
         third_party_search_directories.append(os.path.join(cwd, "third_party/libjpeg-turbo"))
-        runtime_library_dirs = ['.']
+        runtime_library_dirs = ['lib']
 
     extension = CppExtension
 
@@ -226,7 +226,7 @@ def build_deps():
     if sys.platform.startswith('linux'):
         cpu_count = multiprocessing.cpu_count()
         os.chdir("third_party/libjpeg-turbo/")
-        throw_of_failure('cmake .')
+        throw_of_failure('cmake -DENABLE_STATIC=OFF -DREQUIRE_SIMD=TRUE  .')
         throw_of_failure("cmake --build . -- -j {}".format(cpu_count))
         os.chdir(this_dir)
 
@@ -239,7 +239,7 @@ def build_ext_with_dependencies(self):
 data_files = []
 if sys.platform.startswith('linux'):
     data_files = [
-        ('torchvision', [
+        ('torchvision/lib', [
             'third_party/libjpeg-turbo/libturbojpeg.so.0',
             'third_party/libjpeg-turbo/libturbojpeg.so'])
     ]
