@@ -4,7 +4,7 @@ import sys
 
 import torch
 from PIL import Image
-if sys.platform.startswith('linux') or sys.platform.startswith("darwin"):
+if sys.platform.startswith('linux'):
     from torchvision.io.image import read_png, decode_png
 import numpy as np
 
@@ -21,14 +21,14 @@ def get_images(directory, img_ext):
 
 
 class ImageTester(unittest.TestCase):
-    @unittest.skipUnless(sys.platform.startswith("linux") or sys.platform.startswith("darwin"), "Support only available on linux for now.")
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Support only available on linux for now.")
     def test_read_png(self):
         for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_lpng = read_png(img_path)
             self.assertTrue(torch.equal(img_lpng, img_pil))
 
-    @unittest.skipUnless(sys.platform.startswith("linux") or sys.platform.startswith("darwin"), "Support only available on linux for now.")
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Support only available on linux for now.")
     def test_decode_png(self):
         for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
