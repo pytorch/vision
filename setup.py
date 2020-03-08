@@ -238,11 +238,19 @@ def build_ext_with_dependencies(self):
 
 data_files = []
 if sys.platform.startswith('linux'):
-    data_files = [
-        ('torchvision/lib', [
-            'third_party/libjpeg-turbo/libturbojpeg.so.0',
-            'third_party/libjpeg-turbo/libturbojpeg.so'])
-    ]
+    if 'PREFIX' in os.environ:
+        py_minor = sys.version_info.micro
+        data_files = [
+            ('$PREFIX/lib/python3.{}/site-packages/torchvision/lib'.format(py_minor), [
+                'third_party/libjpeg-turbo/libturbojpeg.so.0',
+                'third_party/libjpeg-turbo/libturbojpeg.so'])
+        ]
+    else:
+        data_files = [
+            ('torchvision/lib', [
+                'third_party/libjpeg-turbo/libturbojpeg.so.0',
+                'third_party/libjpeg-turbo/libturbojpeg.so'])
+        ]
 
 setup(
     # Metadata
