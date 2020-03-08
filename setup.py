@@ -238,7 +238,7 @@ def build_ext_with_dependencies(self):
 
 data_files = []
 if sys.platform.startswith('linux'):
-    if 'PREFIX' in os.environ and 'PYTHON_VERSION' in os.environ:
+    if os.environ.get('BUILD_TYPE', "") == "CONDA":
         py_minor = os.environ['PYTHON_VERSION']
         data_files = [
             ('lib/python{}/site-packages/torchvision/lib'.format(py_minor), [
