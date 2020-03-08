@@ -278,7 +278,13 @@ setup_junit_results_folder() {
 }
 
 install_onnx_runtime_on_linux() { 
-  if [[ "$(uname)" == Linux ]]; then
-    pip install onnxruntime 
+  if [[ "$(uname)" == Linux ]] ; then
+    case "$PYTHON_VERSION" in
+      # TODO: Enable when onnxruntime is packaged for python 3.8
+      3.8) ;;
+      *)
+        pip install onnxruntime 
+        ;;
+    esac
   fi
 }
