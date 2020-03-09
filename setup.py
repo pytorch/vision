@@ -98,7 +98,7 @@ def get_extensions():
         sources = sources + source_image_cpu
         libraries.append('turbojpeg')
         third_party_search_directories.append(os.path.join(cwd, "third_party/libjpeg-turbo"))
-        # runtime_library_dirs = ['$PREFIX/lib/python3.5/site-packages/torchvision/lib']
+        runtime_library_dirs = ['lib']
 
     extension = CppExtension
 
