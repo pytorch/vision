@@ -7,8 +7,7 @@ source:
 
 requirements:
   build:
-    - {{ compiler('c') }}
-    - {{ compiler('cxx') }}
+    - {{ compiler('c') }} # [win]
 
   host:
     - python
