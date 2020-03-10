@@ -3,6 +3,7 @@ from collections import OrderedDict
 import torch
 from torch import nn
 from torch.nn import functional as F
+import nestedtensor
 
 
 class _SimpleSegmentationModel(nn.Module):
@@ -15,7 +16,7 @@ class _SimpleSegmentationModel(nn.Module):
         self.aux_classifier = aux_classifier
 
     def forward(self, x):
-        input_shape = x.shape[-2:]
+        input_shape = x.nested_size().unbind()[0][-2:]
         # contract: features is a dict of tensors
         features = self.backbone(x)
 

@@ -66,7 +66,8 @@ def evaluate(model, data_loader, device, num_classes):
             output = model(image)
             output = output['out']
 
-            confmat.update(target.flatten(), output.argmax(1).flatten())
+            for a in target.unbind():
+                confmat.update(a.flatten(), output.argmax(1).flatten())
 
         confmat.reduce_from_all_processes()
 
@@ -81,7 +82,9 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
         image, target = image.to(device), target.to(device)
         output = model(image)
-        loss = criterion(output, target)
+
+        t, m = target.to_tensor_mask()
+        loss = criterion(output, t)
 
         optimizer.zero_grad()
         loss.backward()
