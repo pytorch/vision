@@ -7,7 +7,7 @@ import torch.distributed as dist
 
 import errno
 import os
-
+import nestedtensor as nt
 
 class SmoothedValue(object):
     """Track a series of values and provide access to smoothed values over a
@@ -216,8 +216,9 @@ def cat_list(images, fill_value=0):
 
 def collate_fn(batch):
     images, targets = list(zip(*batch))
-    batched_imgs = cat_list(images, fill_value=0)
-    batched_targets = cat_list(targets, fill_value=255)
+    batched_imgs = nt.as_nested_tensor(images)
+    batched_targets = nt.as_nested_tensor(targets)
+
     return batched_imgs, batched_targets
 
 
