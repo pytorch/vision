@@ -1,6 +1,7 @@
 from __future__ import division
 import torch
-import torchvision.transforms as transforms
+import torchvision.transforms._transforms_video as transforms
+from torchvision.transforms import Compose
 import unittest
 import random
 import numpy as np
@@ -20,12 +21,12 @@ class TestVideoTransforms(unittest.TestCase):
         oheight = random.randint(5, (height - 2) / 2) * 2
         owidth = random.randint(5, (width - 2) / 2) * 2
         clip = torch.randint(0, 256, (numFrames, height, width, 3), dtype=torch.uint8)
-        result = transforms.Compose([
+        result = Compose([
             transforms.ToTensorVideo(),
             transforms.RandomCropVideo((oheight, owidth)),
         ])(clip)
-        assert result.size(2) == oheight
-        assert result.size(3) == owidth
+        self.assertEqual(result.size(2), oheight)
+        self.assertEqual(result.size(3), owidth)
 
         transforms.RandomCropVideo((oheight, owidth)).__repr__()
 
@@ -36,12 +37,12 @@ class TestVideoTransforms(unittest.TestCase):
         oheight = random.randint(5, (height - 2) / 2) * 2
         owidth = random.randint(5, (width - 2) / 2) * 2
         clip = torch.randint(0, 256, (numFrames, height, width, 3), dtype=torch.uint8)
-        result = transforms.Compose([
+        result = Compose([
             transforms.ToTensorVideo(),
             transforms.RandomResizedCropVideo((oheight, owidth)),
         ])(clip)
-        assert result.size(2) == oheight
-        assert result.size(3) == owidth
+        self.assertEqual(result.size(2), oheight)
+        self.assertEqual(result.size(3), owidth)
 
         transforms.RandomResizedCropVideo((oheight, owidth)).__repr__()
 
@@ -57,7 +58,7 @@ class TestVideoTransforms(unittest.TestCase):
         ow1 = (width - owidth) // 2
         clipNarrow = clip[:, oh1:oh1 + oheight, ow1:ow1 + owidth, :]
         clipNarrow.fill_(0)
-        result = transforms.Compose([
+        result = Compose([
             transforms.ToTensorVideo(),
             transforms.CenterCropVideo((oheight, owidth)),
         ])(clip)
@@ -68,7 +69,7 @@ class TestVideoTransforms(unittest.TestCase):
 
         oheight += 1
         owidth += 1
-        result = transforms.Compose([
+        result = Compose([
             transforms.ToTensorVideo(),
             transforms.CenterCropVideo((oheight, owidth)),
         ])(clip)
@@ -80,7 +81,7 @@ class TestVideoTransforms(unittest.TestCase):
 
         oheight += 1
         owidth += 1
-        result = transforms.Compose([
+        result = Compose([
             transforms.ToTensorVideo(),
             transforms.CenterCropVideo((oheight, owidth)),
         ])(clip)
@@ -109,13 +110,13 @@ class TestVideoTransforms(unittest.TestCase):
             mean = [clip[c].mean().item() for c in range(channels)]
             std = [clip[c].std().item() for c in range(channels)]
             normalized = transforms.NormalizeVideo(mean, std)(clip)
-            assert samples_from_standard_normal(normalized)
+            self.assertTrue(samples_from_standard_normal(normalized))
         random.setstate(random_state)
 
         # Checking the optional in-place behaviour
         tensor = torch.rand((3, 128, 16, 16))
         tensor_inplace = transforms.NormalizeVideo((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)(tensor)
-        assert torch.equal(tensor, tensor_inplace)
+        self.assertTrue(torch.equal(tensor, tensor_inplace))
 
         transforms.NormalizeVideo((0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True).__repr__()
 
@@ -151,7 +152,7 @@ class TestVideoTransforms(unittest.TestCase):
 
         p_value = stats.binom_test(num_horizontal, num_samples, p=0.5)
         random.setstate(random_state)
-        assert p_value > 0.0001
+        self.assertGreater(p_value, 0.0001)
 
         num_samples = 250
         num_horizontal = 0
@@ -162,7 +163,7 @@ class TestVideoTransforms(unittest.TestCase):
 
         p_value = stats.binom_test(num_horizontal, num_samples, p=0.7)
         random.setstate(random_state)
-        assert p_value > 0.0001
+        self.assertGreater(p_value, 0.0001)
 
         transforms.RandomHorizontalFlipVideo().__repr__()
 

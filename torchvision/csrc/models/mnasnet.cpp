@@ -23,9 +23,8 @@ struct MNASNetInvertedResidualImpl : torch::nn::Module {
     auto mid = int64_t(input * expansion_factor);
     apply_residual = input == output && stride == 1;
 
-    layers->push_back(
-        torch::nn::Conv2d(Options(input, mid, 1).with_bias(false)));
-    layers->push_back(torch::nn::BatchNorm(
+    layers->push_back(torch::nn::Conv2d(Options(input, mid, 1).bias(false)));
+    layers->push_back(torch::nn::BatchNorm2d(
         torch::nn::BatchNormOptions(mid).momentum(bn_momentum)));
     layers->push_back(
         torch::nn::Functional(torch::nn::Functional(modelsimpl::relu_)));
@@ -34,14 +33,13 @@ struct MNASNetInvertedResidualImpl : torch::nn::Module {
                                                 .padding(kernel / 2)
                                                 .stride(stride)
                                                 .groups(mid)
-                                                .with_bias(false))));
-    layers->push_back(torch::nn::BatchNorm(
+                                                .bias(false))));
+    layers->push_back(torch::nn::BatchNorm2d(
         torch::nn::BatchNormOptions(mid).momentum(bn_momentum)));
     layers->push_back(
         torch::nn::Functional(torch::nn::Functional(modelsimpl::relu_)));
-    layers->push_back(
-        torch::nn::Conv2d(Options(mid, output, 1).with_bias(false)));
-    layers->push_back(torch::nn::BatchNorm(
+    layers->push_back(torch::nn::Conv2d(Options(mid, output, 1).bias(false)));
+    layers->push_back(torch::nn::BatchNorm2d(
         torch::nn::BatchNormOptions(output).momentum(bn_momentum)));
 
     register_module("layers", layers);
@@ -109,8 +107,11 @@ void MNASNetImpl::_initialize_weights() {
   for (auto& module : modules(/*include_self=*/false)) {
     if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
       torch::nn::init::kaiming_normal_(
-          M->weight, 0, torch::kFanOut, torch::kReLU);
-    else if (auto M = dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
+          M->weight,
+          0,
+          torch::kFanOut,
+          torch::kReLU);
+    else if (auto M = dynamic_cast<torch::nn::BatchNorm2dImpl*>(module.get())) {
       torch::nn::init::ones_(M->weight);
       torch::nn::init::zeros_(M->bias);
     } else if (auto M = dynamic_cast<torch::nn::LinearImpl*>(module.get())) {
@@ -125,19 +126,19 @@ void MNASNetImpl::_initialize_weights() {
 MNASNetImpl::MNASNetImpl(double alpha, int64_t num_classes, double dropout) {
   auto depths = scale_depths({24, 40, 80, 96, 192, 320}, alpha);
 
-  layers->push_back(torch::nn::Conv2d(
-      Options(3, 32, 3).padding(1).stride(2).with_bias(false)));
-  layers->push_back(torch::nn::BatchNorm(
+  layers->push_back(
+      torch::nn::Conv2d(Options(3, 32, 3).padding(1).stride(2).bias(false)));
+  layers->push_back(torch::nn::BatchNorm2d(
       torch::nn::BatchNormOptions(32).momentum(BN_MOMENTUM)));
   layers->push_back(torch::nn::Functional(modelsimpl::relu_));
   layers->push_back(torch::nn::Conv2d(
-      Options(32, 32, 3).padding(1).stride(1).groups(32).with_bias(false)));
-  layers->push_back(torch::nn::BatchNorm(
+      Options(32, 32, 3).padding(1).stride(1).groups(32).bias(false)));
+  layers->push_back(torch::nn::BatchNorm2d(
       torch::nn::BatchNormOptions(32).momentum(BN_MOMENTUM)));
   layers->push_back(torch::nn::Functional(modelsimpl::relu_));
-  layers->push_back(torch::nn::Conv2d(
-      Options(32, 16, 1).padding(0).stride(1).with_bias(false)));
-  layers->push_back(torch::nn::BatchNorm(
+  layers->push_back(
+      torch::nn::Conv2d(Options(32, 16, 1).padding(0).stride(1).bias(false)));
+  layers->push_back(torch::nn::BatchNorm2d(
       torch::nn::BatchNormOptions(16).momentum(BN_MOMENTUM)));
 
   layers->push_back(stack(16, depths[0], 3, 2, 3, 3, BN_MOMENTUM));
@@ -148,8 +149,8 @@ MNASNetImpl::MNASNetImpl(double alpha, int64_t num_classes, double dropout) {
   layers->push_back(stack(depths[4], depths[5], 3, 1, 6, 1, BN_MOMENTUM));
 
   layers->push_back(torch::nn::Conv2d(
-      Options(depths[5], 1280, 1).padding(0).stride(1).with_bias(false)));
-  layers->push_back(torch::nn::BatchNorm(
+      Options(depths[5], 1280, 1).padding(0).stride(1).bias(false)));
+  layers->push_back(torch::nn::BatchNorm2d(
       torch::nn::BatchNormOptions(1280).momentum(BN_MOMENTUM)));
   layers->push_back(torch::nn::Functional(modelsimpl::relu_));
 

@@ -19,7 +19,7 @@ torch::nn::Sequential makeLayers(
           torch::nn::Conv2dOptions(channels, V, 3).padding(1)));
 
       if (batch_norm)
-        seq->push_back(torch::nn::BatchNorm(V));
+        seq->push_back(torch::nn::BatchNorm2d(V));
       seq->push_back(torch::nn::Functional(modelsimpl::relu_));
 
       channels = V;
@@ -38,7 +38,7 @@ void VGGImpl::_initialize_weights() {
           torch::kFanOut,
           torch::kReLU);
       torch::nn::init::constant_(M->bias, 0);
-    } else if (auto M = dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
+    } else if (auto M = dynamic_cast<torch::nn::BatchNorm2dImpl*>(module.get())) {
       torch::nn::init::constant_(M->weight, 1);
       torch::nn::init::constant_(M->bias, 0);
     } else if (auto M = dynamic_cast<torch::nn::LinearImpl*>(module.get())) {

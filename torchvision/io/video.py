@@ -1,27 +1,38 @@
-import re
 import gc
-import torch
-import numpy as np
 import math
+import re
 import warnings
+from typing import Tuple, List
+
+import numpy as np
+import torch
+
+from . import _video_opt
+from ._video_opt import VideoMetaData
+
 
 try:
     import av
+
     av.logging.set_level(av.logging.ERROR)
-    if not hasattr(av.video.frame.VideoFrame, 'pict_type'):
-        av = ImportError("""\
+    if not hasattr(av.video.frame.VideoFrame, "pict_type"):
+        av = ImportError(
+            """\
 Your version of PyAV is too old for the necessary video operations in torchvision.
 If you are on Python 3.5, you will have to build from source (the conda-forge
 packages are not up-to-date).  See
 https://github.com/mikeboers/PyAV#installation for instructions on how to
 install PyAV on your system.
-""")
+"""
+        )
 except ImportError:
-    av = ImportError("""\
+    av = ImportError(
+        """\
 PyAV is not installed, and is necessary for the video operations in torchvision.
 See https://github.com/mikeboers/PyAV#installation for instructions on how to
 install PyAV on your system.
-""")
+"""
+    )
 
 
 def _check_av_available():
@@ -38,7 +49,7 @@ _CALLED_TIMES = 0
 _GC_COLLECTION_INTERVAL = 10
 
 
-def write_video(filename, video_array, fps, video_codec='libx264', options=None):
+def write_video(filename, video_array, fps, video_codec="libx264", options=None):
     """
     Writes a 4d tensor in [T, H, W, C] format in a video file
 
@@ -54,17 +65,17 @@ def write_video(filename, video_array, fps, video_codec='libx264', options=None)
     _check_av_available()
     video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy()
 
-    container = av.open(filename, mode='w')
+    container = av.open(filename, mode="w")
 
     stream = container.add_stream(video_codec, rate=fps)
     stream.width = video_array.shape[2]
     stream.height = video_array.shape[1]
-    stream.pix_fmt = 'yuv420p' if video_codec != 'libx264rgb' else 'rgb24'
+    stream.pix_fmt = "yuv420p" if video_codec != "libx264rgb" else "rgb24"
     stream.options = options or {}
 
     for img in video_array:
-        frame = av.VideoFrame.from_ndarray(img, format='rgb24')
-        frame.pict_type = 'NONE'
+        frame = av.VideoFrame.from_ndarray(img, format="rgb24")
+        frame.pict_type = "NONE"
         for packet in stream.encode(frame):
             container.mux(packet)
 
@@ -76,19 +87,23 @@ def write_video(filename, video_array, fps, video_codec='libx264', options=None)
     container.close()
 
 
-def _read_from_stream(container, start_offset, end_offset, pts_unit, stream, stream_name):
+def _read_from_stream(
+    container, start_offset, end_offset, pts_unit, stream, stream_name
+):
     global _CALLED_TIMES, _GC_COLLECTION_INTERVAL
     _CALLED_TIMES += 1
     if _CALLED_TIMES % _GC_COLLECTION_INTERVAL == _GC_COLLECTION_INTERVAL - 1:
         gc.collect()
 
-    if pts_unit == 'sec':
+    if pts_unit == "sec":
         start_offset = int(math.floor(start_offset * (1 / stream.time_base)))
         if end_offset != float("inf"):
             end_offset = int(math.ceil(end_offset * (1 / stream.time_base)))
     else:
-        warnings.warn("The pts_unit 'pts' gives wrong results and will be removed in a " +
-                      "follow-up version. Please use pts_unit 'sec'.")
+        warnings.warn(
+            "The pts_unit 'pts' gives wrong results and will be removed in a "
+            + "follow-up version. Please use pts_unit 'sec'."
+        )
 
     frames = {}
     should_buffer = False
@@ -124,21 +139,29 @@ def _read_from_stream(container, start_offset, end_offset, pts_unit, stream, str
         # print("Corrupted file?", container.name)
         return []
     buffer_count = 0
-    for idx, frame in enumerate(container.decode(**stream_name)):
-        frames[frame.pts] = frame
-        if frame.pts >= end_offset:
-            if should_buffer and buffer_count < max_buffer_size:
-                buffer_count += 1
-                continue
-            break
+    try:
+        for _idx, frame in enumerate(container.decode(**stream_name)):
+            frames[frame.pts] = frame
+            if frame.pts >= end_offset:
+                if should_buffer and buffer_count < max_buffer_size:
+                    buffer_count += 1
+                    continue
+                break
+    except av.AVError:
+        # TODO add a warning
+        pass
     # ensure that the results are sorted wrt the pts
-    result = [frames[i] for i in sorted(frames) if start_offset <= frames[i].pts <= end_offset]
-    if start_offset > 0 and start_offset not in frames:
+    result = [
+        frames[i] for i in sorted(frames) if start_offset <= frames[i].pts <= end_offset
+    ]
+    if len(frames) > 0 and start_offset > 0 and start_offset not in frames:
         # if there is no frame that exactly matches the pts of start_offset
         # add the last frame smaller than start_offset, to guarantee that
         # we will have all the necessary data. This is most useful for audio
-        first_frame_pts = max(i for i in frames if i < start_offset)
-        result.insert(0, frames[first_frame_pts])
+        preceding_frames = [i for i in frames if i < start_offset]
+        if len(preceding_frames) > 0:
+            first_frame_pts = max(preceding_frames)
+            result.insert(0, frames[first_frame_pts])
     return result
 
 
@@ -155,7 +178,7 @@ def _align_audio_frames(aframes, audio_frames, ref_start, ref_end):
     return aframes[:, s_idx:e_idx]
 
 
-def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
+def read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
     """
     Reads a video from a file, returning both the video frames as well as
     the audio frames
@@ -184,34 +207,68 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit='pts'):
         metadata for the video and audio. Can contain the fields video_fps (float)
         and audio_fps (int)
     """
+
+    from torchvision import get_video_backend
+
+    if get_video_backend() != "pyav":
+        return _video_opt._read_video(filename, start_pts, end_pts, pts_unit)
+
     _check_av_available()
 
     if end_pts is None:
         end_pts = float("inf")
 
     if end_pts < start_pts:
-        raise ValueError("end_pts should be larger than start_pts, got "
-                         "start_pts={} and end_pts={}".format(start_pts, end_pts))
+        raise ValueError(
+            "end_pts should be larger than start_pts, got "
+            "start_pts={} and end_pts={}".format(start_pts, end_pts)
+        )
 
-    container = av.open(filename, metadata_errors='ignore')
     info = {}
-
     video_frames = []
-    if container.streams.video:
-        video_frames = _read_from_stream(container, start_pts, end_pts, pts_unit,
-                                         container.streams.video[0], {'video': 0})
-        info["video_fps"] = float(container.streams.video[0].average_rate)
     audio_frames = []
-    if container.streams.audio:
-        audio_frames = _read_from_stream(container, start_pts, end_pts, pts_unit,
-                                         container.streams.audio[0], {'audio': 0})
-        info["audio_fps"] = container.streams.audio[0].rate
 
-    container.close()
+    try:
+        container = av.open(filename, metadata_errors="ignore")
+    except av.AVError:
+        # TODO raise a warning?
+        pass
+    else:
+        if container.streams.video:
+            video_frames = _read_from_stream(
+                container,
+                start_pts,
+                end_pts,
+                pts_unit,
+                container.streams.video[0],
+                {"video": 0},
+            )
+            video_fps = container.streams.video[0].average_rate
+            # guard against potentially corrupted files
+            if video_fps is not None:
+                info["video_fps"] = float(video_fps)
+
+        if container.streams.audio:
+            audio_frames = _read_from_stream(
+                container,
+                start_pts,
+                end_pts,
+                pts_unit,
+                container.streams.audio[0],
+                {"audio": 0},
+            )
+            info["audio_fps"] = container.streams.audio[0].rate
+
+        container.close()
 
     vframes = [frame.to_rgb().to_ndarray() for frame in video_frames]
     aframes = [frame.to_ndarray() for frame in audio_frames]
-    vframes = torch.as_tensor(np.stack(vframes))
+
+    if vframes:
+        vframes = torch.as_tensor(np.stack(vframes))
+    else:
+        vframes = torch.empty((0, 1, 1, 3), dtype=torch.uint8)
+
     if aframes:
         aframes = np.concatenate(aframes, 1)
         aframes = torch.as_tensor(aframes)
@@ -231,7 +288,7 @@ def _can_read_timestamps_from_packets(container):
     return False
 
 
-def read_video_timestamps(filename, pts_unit='pts'):
+def read_video_timestamps(filename, pts_unit="pts"):
     """
     List the video frames timestamps.
 
@@ -253,23 +310,82 @@ def read_video_timestamps(filename, pts_unit='pts'):
         the frame rate for the video
 
     """
-    _check_av_available()
+    from torchvision import get_video_backend
 
-    container = av.open(filename, metadata_errors='ignore')
+    if get_video_backend() != "pyav":
+        return _video_opt._read_video_timestamps(filename, pts_unit)
+
+    _check_av_available()
 
     video_frames = []
     video_fps = None
-    if container.streams.video:
-        video_stream = container.streams.video[0]
-        video_time_base = video_stream.time_base
-        if _can_read_timestamps_from_packets(container):
-            # fast path
-            video_frames = [x for x in container.demux(video=0) if x.pts is not None]
-        else:
-            video_frames = _read_from_stream(container, 0, float("inf"), pts_unit,
-                                             video_stream, {'video': 0})
-        video_fps = float(video_stream.average_rate)
-    container.close()
-    if pts_unit == 'sec':
-        return [x.pts * video_time_base for x in video_frames], video_fps
-    return [x.pts for x in video_frames], video_fps
+
+    try:
+        container = av.open(filename, metadata_errors="ignore")
+    except av.AVError:
+        # TODO add a warning
+        pass
+    else:
+        if container.streams.video:
+            video_stream = container.streams.video[0]
+            video_time_base = video_stream.time_base
+            if _can_read_timestamps_from_packets(container):
+                # fast path
+                video_frames = [
+                    x for x in container.demux(video=0) if x.pts is not None
+                ]
+            else:
+                video_frames = _read_from_stream(
+                    container, 0, float("inf"), pts_unit, video_stream, {"video": 0}
+                )
+            video_fps = float(video_stream.average_rate)
+        container.close()
+
+    pts = [x.pts for x in video_frames]
+
+    if pts_unit == "sec":
+        pts = [x * video_time_base for x in pts]
+
+    return pts, video_fps
+
+
+def read_video_meta_data_from_memory(video_data):
+    # type: (torch.Tensor) -> VideoMetaData
+    return _video_opt._probe_video_from_memory(video_data)
+
+
+def read_video_from_memory(
+    video_data,  # type: torch.Tensor
+    seek_frame_margin=0.25,  # type: float
+    read_video_stream=1,  # type: int
+    video_width=0,  # type: int
+    video_height=0,  # type: int
+    video_min_dimension=0,  # type: int
+    video_pts_range=(0, -1),  # type: List[int]
+    video_timebase_numerator=0,  # type: int
+    video_timebase_denominator=1,  # type: int
+    read_audio_stream=1,  # type: int
+    audio_samples=0,  # type: int
+    audio_channels=0,  # type: int
+    audio_pts_range=(0, -1),  # type: List[int]
+    audio_timebase_numerator=0,  # type: int
+    audio_timebase_denominator=1,  # type: int
+):
+    # type: (...) -> Tuple[torch.Tensor, torch.Tensor]
+    return _video_opt._read_video_from_memory(
+        video_data,
+        seek_frame_margin,
+        read_audio_stream,
+        video_width,
+        video_height,
+        video_min_dimension,
+        video_pts_range,
+        video_timebase_numerator,
+        video_timebase_denominator,
+        read_audio_stream,
+        audio_samples,
+        audio_channels,
+        audio_pts_range,
+        audio_timebase_numerator,
+        audio_timebase_denominator,
+    )

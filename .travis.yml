@@ -16,18 +16,10 @@ matrix:
       install: skip
       script: ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
     - env: LINT_CHECK
-      python: "2.7"
-      install: pip install flake8 typing
-      script: flake8 --exclude .circleci
-      after_success: []
-    - env: LINT_CHECK
       python: "3.6"
       install: pip install flake8 typing
       script: flake8 .circleci
       after_success: []
-    - python: "2.7"
-      env: IMAGE_BACKEND=Pillow-SIMD
-    - python: "2.7"
     - python: "3.6"
       env: IMAGE_BACKEND=Pillow-SIMD
     - python: "3.6"
@@ -39,7 +31,6 @@ before_install:
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
 
@@ -56,7 +47,7 @@ before_install:
   - pip install typing
   - |
     if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then
-      pip install onnxruntime
+      pip install -q --user -i https://test.pypi.org/simple/ ort-nightly==1.0.0.dev1123
     fi
   - conda install av -c conda-forge
 

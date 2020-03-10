@@ -10,7 +10,7 @@ namespace models {
 namespace _googlenetimpl {
 struct VISION_API BasicConv2dImpl : torch::nn::Module {
   torch::nn::Conv2d conv{nullptr};
-  torch::nn::BatchNorm bn{nullptr};
+  torch::nn::BatchNorm2d bn{nullptr};
 
   BasicConv2dImpl(torch::nn::Conv2dOptions options);
 

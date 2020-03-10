@@ -90,13 +90,11 @@ class _DenseLayer(nn.Module):
         return new_features
 
 
-class _DenseBlock(nn.Module):
+class _DenseBlock(nn.ModuleDict):
     _version = 2
-    __constants__ = ['layers']
 
     def __init__(self, num_layers, num_input_features, bn_size, growth_rate, drop_rate, memory_efficient=False):
         super(_DenseBlock, self).__init__()
-        self.layers = nn.ModuleDict()
         for i in range(num_layers):
             layer = _DenseLayer(
                 num_input_features + i * growth_rate,
@@ -105,33 +103,14 @@ class _DenseBlock(nn.Module):
                 drop_rate=drop_rate,
                 memory_efficient=memory_efficient,
             )
-            self.layers['denselayer%d' % (i + 1)] = layer
+            self.add_module('denselayer%d' % (i + 1), layer)
 
     def forward(self, init_features):
         features = [init_features]
-        for name, layer in self.layers.items():
+        for name, layer in self.items():
             new_features = layer(features)
             features.append(new_features)
         return torch.cat(features, 1)
-
-    @torch.jit.ignore
-    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
-                              missing_keys, unexpected_keys, error_msgs):
-        version = local_metadata.get('version', None)
-        if (version is None or version < 2):
-            # now we have a new nesting level for torchscript support
-            for new_key in self.state_dict().keys():
-                # remove prefix "layers."
-                old_key = new_key[len("layers."):]
-                old_key = prefix + old_key
-                new_key = prefix + new_key
-                if old_key in state_dict:
-                    value = state_dict[old_key]
-                    del state_dict[old_key]
-                    state_dict[new_key] = value
-        super(_DenseBlock, self)._load_from_state_dict(
-            state_dict, prefix, local_metadata, strict,
-            missing_keys, unexpected_keys, error_msgs)
 
 
 class _Transition(nn.Sequential):
@@ -159,8 +138,6 @@ class DenseNet(nn.Module):
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
-
-    __constants__ = ['features']
 
     def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16),
                  num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):

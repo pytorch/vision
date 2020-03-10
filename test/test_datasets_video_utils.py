@@ -1,5 +1,4 @@
 import contextlib
-import sys
 import os
 import torch
 import unittest
@@ -59,10 +58,9 @@ class Tester(unittest.TestCase):
         self.assertTrue(r.equal(expected))
 
     @unittest.skipIf(not io.video._av_available(), "this test requires av")
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_video_clips(self):
         with get_list_of_videos(num_videos=3) as video_list:
-            video_clips = VideoClips(video_list, 5, 5)
+            video_clips = VideoClips(video_list, 5, 5, num_workers=2)
             self.assertEqual(video_clips.num_clips(), 1 + 2 + 3)
             for i, (v_idx, c_idx) in enumerate([(0, 0), (1, 0), (1, 1), (2, 0), (2, 1), (2, 2)]):
                 video_idx, clip_idx = video_clips.get_clip_location(i)
@@ -84,12 +82,11 @@ class Tester(unittest.TestCase):
                 self.assertEqual(clip_idx, c_idx)
 
     @unittest.skipIf(not io.video._av_available(), "this test requires av")
-    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_video_clips_custom_fps(self):
         with get_list_of_videos(num_videos=3, sizes=[12, 12, 12], fps=[3, 4, 6]) as video_list:
             num_frames = 4
             for fps in [1, 3, 4, 10]:
-                video_clips = VideoClips(video_list, num_frames, num_frames, fps)
+                video_clips = VideoClips(video_list, num_frames, num_frames, fps, num_workers=2)
                 for i in range(video_clips.num_clips()):
                     video, audio, info, video_idx = video_clips.get_clip(i)
                     self.assertEqual(video.shape[0], num_frames)

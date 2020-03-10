@@ -9,10 +9,10 @@ using Options = torch::nn::Conv2dOptions;
 
 namespace _googlenetimpl {
 BasicConv2dImpl::BasicConv2dImpl(torch::nn::Conv2dOptions options) {
-  options.with_bias(false);
+  options.bias(false);
   conv = torch::nn::Conv2d(options);
-  bn = torch::nn::BatchNorm(
-      torch::nn::BatchNormOptions(options.output_channels()).eps(0.001));
+  bn = torch::nn::BatchNorm2d(
+      torch::nn::BatchNormOptions(options.out_channels()).eps(0.001));
 
   register_module("conv", conv);
   register_module("bn", bn);
@@ -155,7 +155,7 @@ void GoogLeNetImpl::_initialize_weights() {
     else if (auto M = dynamic_cast<torch::nn::LinearImpl*>(module.get()))
       torch::nn::init::normal_(M->weight); // Note: used instead of truncated
                                            // normal initialization
-    else if (auto M = dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
+    else if (auto M = dynamic_cast<torch::nn::BatchNorm2dImpl*>(module.get())) {
       torch::nn::init::ones_(M->weight);
       torch::nn::init::zeros_(M->bias);
     }

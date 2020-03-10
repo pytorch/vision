@@ -15,11 +15,11 @@ class ResnetFPNBackboneTester(unittest.TestCase):
         x = torch.rand(1, 3, 300, 300, dtype=self.dtype, device=device)
         resnet18_fpn = resnet_fpn_backbone(backbone_name='resnet18', pretrained=False)
         y = resnet18_fpn(x)
-        assert list(y.keys()) == [0, 1, 2, 3, 'pool']
+        self.assertEqual(list(y.keys()), ['0', '1', '2', '3', 'pool'])
 
     def test_resnet50_fpn_backbone(self):
         device = torch.device('cpu')
         x = torch.rand(1, 3, 300, 300, dtype=self.dtype, device=device)
         resnet50_fpn = resnet_fpn_backbone(backbone_name='resnet50', pretrained=False)
         y = resnet50_fpn(x)
-        assert list(y.keys()) == [0, 1, 2, 3, 'pool']
+        self.assertEqual(list(y.keys()), ['0', '1', '2', '3', 'pool'])

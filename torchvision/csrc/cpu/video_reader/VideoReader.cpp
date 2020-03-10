@@ -27,8 +27,6 @@ PyMODINIT_FUNC PyInit_video_reader(void) {
 
 namespace video_reader {
 
-bool glog_initialized = false;
-
 class UnknownPixelFormatException : public exception {
   const char* what() const throw() override {
     return "Unknown pixel format";
@@ -167,11 +165,6 @@ torch::List<torch::Tensor> readVideo(
     int64_t audioEndPts,
     int64_t audioTimeBaseNum,
     int64_t audioTimeBaseDen) {
-  if (!glog_initialized) {
-    glog_initialized = true;
-    // google::InitGoogleLogging("VideoReader");
-  }
-
   unique_ptr<DecoderParameters> params = util::getDecoderParams(
       seekFrameMargin,
       getPtsOnly,
@@ -209,6 +202,8 @@ torch::List<torch::Tensor> readVideo(
   torch::Tensor videoFramePts = torch::zeros({0}, torch::kLong);
   torch::Tensor videoTimeBase = torch::zeros({0}, torch::kInt);
   torch::Tensor videoFps = torch::zeros({0}, torch::kFloat);
+  torch::Tensor videoDuration = torch::zeros({0}, torch::kLong);
+
   if (readVideoStream == 1) {
     auto it = decoderOutput.media_data_.find(TYPE_VIDEO);
     if (it != decoderOutput.media_data_.end()) {
@@ -236,6 +231,10 @@ torch::List<torch::Tensor> readVideo(
       videoFps = torch::zeros({1}, torch::kFloat);
       float* videoFpsData = videoFps.data_ptr<float>();
       videoFpsData[0] = it->second.format_.video.fps;
+
+      videoDuration = torch::zeros({1}, torch::kLong);
+      int64_t* videoDurationData = videoDuration.data_ptr<int64_t>();
+      videoDurationData[0] = it->second.format_.video.duration;
     } else {
       VLOG(1) << "Miss video stream";
     }
@@ -246,6 +245,7 @@ torch::List<torch::Tensor> readVideo(
   torch::Tensor audioFramePts = torch::zeros({0}, torch::kLong);
   torch::Tensor audioTimeBase = torch::zeros({0}, torch::kInt);
   torch::Tensor audioSampleRate = torch::zeros({0}, torch::kInt);
+  torch::Tensor audioDuration = torch::zeros({0}, torch::kLong);
   if (readAudioStream == 1) {
     auto it = decoderOutput.media_data_.find(TYPE_AUDIO);
     if (it != decoderOutput.media_data_.end()) {
@@ -275,6 +275,10 @@ torch::List<torch::Tensor> readVideo(
       audioSampleRate = torch::zeros({1}, torch::kInt);
       int* audioSampleRateData = audioSampleRate.data_ptr<int>();
       audioSampleRateData[0] = it->second.format_.audio.samples;
+
+      audioDuration = torch::zeros({1}, torch::kLong);
+      int64_t* audioDurationData = audioDuration.data_ptr<int64_t>();
+      audioDurationData[0] = it->second.format_.audio.duration;
     } else {
       VLOG(1) << "Miss audio stream";
     }
@@ -285,10 +289,12 @@ torch::List<torch::Tensor> readVideo(
   result.push_back(std::move(videoFramePts));
   result.push_back(std::move(videoTimeBase));
   result.push_back(std::move(videoFps));
+  result.push_back(std::move(videoDuration));
   result.push_back(std::move(audioFrame));
   result.push_back(std::move(audioFramePts));
   result.push_back(std::move(audioTimeBase));
   result.push_back(std::move(audioSampleRate));
+  result.push_back(std::move(audioDuration));
 
   return result;
 }
@@ -378,10 +384,117 @@ torch::List<torch::Tensor> readVideoFromFile(
       audioTimeBaseDen);
 }
 
+torch::List<torch::Tensor> probeVideo(
+    bool isReadFile,
+    const torch::Tensor& input_video,
+    std::string videoPath) {
+  unique_ptr<DecoderParameters> params = util::getDecoderParams(
+      0, // seekFrameMargin
+      0, // getPtsOnly
+      1, // readVideoStream
+      0, // width
+      0, // height
+      0, // minDimension
+      0, // videoStartPts
+      0, // videoEndPts
+      0, // videoTimeBaseNum
+      1, // videoTimeBaseDen
+      1, // readAudioStream
+      0, // audioSamples
+      0, // audioChannels
+      0, // audioStartPts
+      0, // audioEndPts
+      0, // audioTimeBaseNum
+      1 // audioTimeBaseDen
+  );
+
+  FfmpegDecoder decoder;
+  DecoderOutput decoderOutput;
+  if (isReadFile) {
+    decoder.probeFile(std::move(params), videoPath, decoderOutput);
+  } else {
+    decoder.probeMemory(
+        std::move(params),
+        input_video.data_ptr<uint8_t>(),
+        input_video.size(0),
+        decoderOutput);
+  }
+  // video section
+  torch::Tensor videoTimeBase = torch::zeros({0}, torch::kInt);
+  torch::Tensor videoFps = torch::zeros({0}, torch::kFloat);
+  torch::Tensor videoDuration = torch::zeros({0}, torch::kLong);
+
+  auto it = decoderOutput.media_data_.find(TYPE_VIDEO);
+  if (it != decoderOutput.media_data_.end()) {
+    VLOG(1) << "Find video stream";
+    videoTimeBase = torch::zeros({2}, torch::kInt);
+    int* videoTimeBaseData = videoTimeBase.data_ptr<int>();
+    videoTimeBaseData[0] = it->second.format_.video.timeBaseNum;
+    videoTimeBaseData[1] = it->second.format_.video.timeBaseDen;
+
+    videoFps = torch::zeros({1}, torch::kFloat);
+    float* videoFpsData = videoFps.data_ptr<float>();
+    videoFpsData[0] = it->second.format_.video.fps;
+
+    videoDuration = torch::zeros({1}, torch::kLong);
+    int64_t* videoDurationData = videoDuration.data_ptr<int64_t>();
+    videoDurationData[0] = it->second.format_.video.duration;
+  } else {
+    VLOG(1) << "Miss video stream";
+  }
+
+  // audio section
+  torch::Tensor audioTimeBase = torch::zeros({0}, torch::kInt);
+  torch::Tensor audioSampleRate = torch::zeros({0}, torch::kInt);
+  torch::Tensor audioDuration = torch::zeros({0}, torch::kLong);
+
+  it = decoderOutput.media_data_.find(TYPE_AUDIO);
+  if (it != decoderOutput.media_data_.end()) {
+    VLOG(1) << "Find audio stream";
+    audioTimeBase = torch::zeros({2}, torch::kInt);
+    int* audioTimeBaseData = audioTimeBase.data_ptr<int>();
+    audioTimeBaseData[0] = it->second.format_.audio.timeBaseNum;
+    audioTimeBaseData[1] = it->second.format_.audio.timeBaseDen;
+
+    audioSampleRate = torch::zeros({1}, torch::kInt);
+    int* audioSampleRateData = audioSampleRate.data_ptr<int>();
+    audioSampleRateData[0] = it->second.format_.audio.samples;
+
+    audioDuration = torch::zeros({1}, torch::kLong);
+    int64_t* audioDurationData = audioDuration.data_ptr<int64_t>();
+    audioDurationData[0] = it->second.format_.audio.duration;
+  } else {
+    VLOG(1) << "Miss audio stream";
+  }
+
+  torch::List<torch::Tensor> result;
+  result.push_back(std::move(videoTimeBase));
+  result.push_back(std::move(videoFps));
+  result.push_back(std::move(videoDuration));
+  result.push_back(std::move(audioTimeBase));
+  result.push_back(std::move(audioSampleRate));
+  result.push_back(std::move(audioDuration));
+
+  return result;
+}
+
+torch::List<torch::Tensor> probeVideoFromMemory(torch::Tensor input_video) {
+  return probeVideo(false, input_video, "");
+}
+
+torch::List<torch::Tensor> probeVideoFromFile(std::string videoPath) {
+  torch::Tensor dummy_input_video = torch::ones({0});
+  return probeVideo(true, dummy_input_video, videoPath);
+}
+
 } // namespace video_reader
 
 static auto registry = torch::RegisterOperators()
                            .op("video_reader::read_video_from_memory",
                                &video_reader::readVideoFromMemory)
                            .op("video_reader::read_video_from_file",
-                               &video_reader::readVideoFromFile);
+                               &video_reader::readVideoFromFile)
+                           .op("video_reader::probe_video_from_memory",
+                               &video_reader::probeVideoFromMemory)
+                           .op("video_reader::probe_video_from_file",
+                               &video_reader::probeVideoFromFile);

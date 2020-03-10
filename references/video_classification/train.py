@@ -116,8 +116,8 @@ def main(args):
 
     # Data loading code
     print("Loading data")
-    traindir = os.path.join(args.data_path, 'train_avi-480p')
-    valdir = os.path.join(args.data_path, 'val_avi-480p')
+    traindir = os.path.join(args.data_path, args.train_dir)
+    valdir = os.path.join(args.data_path, args.val_dir)
     normalize = T.Normalize(mean=[0.43216, 0.394666, 0.37645],
                             std=[0.22803, 0.22145, 0.216989])
 
@@ -144,13 +144,13 @@ def main(args):
             traindir,
             frames_per_clip=args.clip_len,
             step_between_clips=1,
-            transform=transform_train
+            transform=transform_train,
+            frame_rate=15
         )
         if args.cache_dataset:
             print("Saving dataset_train to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset, traindir), cache_path)
-    dataset.video_clips.compute_clips(args.clip_len, 1, frame_rate=15)
 
     print("Took", time.time() - st)
 
@@ -176,13 +176,13 @@ def main(args):
             valdir,
             frames_per_clip=args.clip_len,
             step_between_clips=1,
-            transform=transform_test
+            transform=transform_test,
+            frame_rate=15
         )
         if args.cache_dataset:
             print("Saving dataset_test to {}".format(cache_path))
             utils.mkdir(os.path.dirname(cache_path))
             utils.save_on_master((dataset_test, valdir), cache_path)
-    dataset_test.video_clips.compute_clips(args.clip_len, 1, frame_rate=15)
 
     print("Creating data loaders")
     train_sampler = RandomClipSampler(dataset.video_clips, args.clips_per_video)
@@ -274,6 +274,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='PyTorch Classification Training')
 
     parser.add_argument('--data-path', default='/datasets01_101/kinetics/070618/', help='dataset')
+    parser.add_argument('--train-dir', default='train_avi-480p', help='name of train dir')
+    parser.add_argument('--val-dir', default='val_avi-480p', help='name of val dir')
     parser.add_argument('--model', default='r2plus1d_18', help='model')
     parser.add_argument('--device', default='cuda', help='device')
     parser.add_argument('--clip-len', default=16, type=int, metavar='N',

@@ -16,10 +16,11 @@ torchvision
 
 The torchvision package consists of popular datasets, model architectures, and common image transformations for computer vision.
 
+
 Installation
 ============
 
-TorchVision requires PyTorch 1.2 or newer.
+TorchVision requires PyTorch 1.4 or newer.
 
 Anaconda:
 
@@ -69,9 +70,20 @@ Installation From source:
 
     mkdir build
     cd build
+    # Add -DWITH_CUDA=on support for the CUDA if needed
     cmake ..
     make 
     make install
+
+Once installed, the library can be accessed in cmake (after properly configuring ``CMAKE_PREFIX_PATH``) via the :code:`TorchVision::TorchVision` target:
+
+.. code:: rest
+
+	find_package(TorchVision REQUIRED)
+	target_link_libraries(my-target PUBLIC TorchVision::TorchVision)
+
+The ``TorchVision`` package will also automatically look for the ``Torch`` and ``pybind11`` packages and add them as dependencies to ``my-target``,
+so make sure that they are also available to cmake via the ``CMAKE_PREFIX_PATH``.
 
 Documentation
 =============
