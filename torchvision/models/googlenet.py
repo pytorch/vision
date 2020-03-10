@@ -54,7 +54,8 @@ def googlenet(pretrained=False, progress=True, **kwargs):
         model.load_state_dict(state_dict)
         if not original_aux_logits:
             model.aux_logits = False
-            del model.aux1, model.aux2
+            model.aux1 = None
+            model.aux2 = None
         return model
 
     return GoogLeNet(**kwargs)
@@ -99,7 +100,10 @@ class GoogLeNet(nn.Module):
         if aux_logits:
             self.aux1 = inception_aux_block(512, num_classes)
             self.aux2 = inception_aux_block(528, num_classes)
-
+        else:
+            self.aux1 = None
+            self.aux2 = None
+            
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.dropout = nn.Dropout(0.2)
         self.fc = nn.Linear(1024, num_classes)
@@ -151,11 +155,10 @@ class GoogLeNet(nn.Module):
         # N x 480 x 14 x 14
         x = self.inception4a(x)
         # N x 512 x 14 x 14
-        aux_defined = self.training and self.aux_logits
-        if aux_defined:
-            aux1 = self.aux1(x)
-        else:
-            aux1 = None
+        aux1 = torch.jit.annotate(Optional[Tensor], None)
+        if self.aux1 is not None:
+            if self.training:
+                aux1 = self.aux1(x)
 
         x = self.inception4b(x)
         # N x 512 x 14 x 14
@@ -163,10 +166,10 @@ class GoogLeNet(nn.Module):
         # N x 512 x 14 x 14
         x = self.inception4d(x)
         # N x 528 x 14 x 14
-        if aux_defined:
-            aux2 = self.aux2(x)
-        else:
-            aux2 = None
+        aux2 = torch.jit.annotate(Optional[Tensor], None)
+        if self.aux2 is not None:
+            if self.training:
+                aux2 = self.aux2(x)
 
         x = self.inception4e(x)
         # N x 832 x 14 x 14
@@ -208,7 +211,6 @@ class GoogLeNet(nn.Module):
 
 
 class Inception(nn.Module):
-    __constants__ = ['branch2', 'branch3', 'branch4']
 
     def __init__(self, in_channels, ch1x1, ch3x3red, ch3x3, ch5x5red, ch5x5, pool_proj,
                  conv_block=None):
