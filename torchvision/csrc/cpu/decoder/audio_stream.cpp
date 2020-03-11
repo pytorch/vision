@@ -79,6 +79,7 @@ int AudioStream::copyFrameBytes(ByteStorage* out, bool flush) {
     SamplerParameters params;
     params.type = format_.type;
     params.out = format_.format;
+    params.in = FormatUnion();
     flush ? toAudioFormat(params.in.audio, *codecCtx_)
           : toAudioFormat(params.in.audio, *frame_);
     if (!sampler_->init(params)) {
