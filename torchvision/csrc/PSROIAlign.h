@@ -5,6 +5,9 @@
 #ifdef WITH_CUDA
 #include "cuda/vision_cuda.h"
 #endif
+#ifdef WITH_HIP
+#include "hip/vision_cuda.h"
+#endif
 
 #include <iostream>
 
@@ -16,7 +19,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward(
     const int pooled_width,
     const int sampling_ratio) {
   if (input.type().is_cuda()) {
-#ifdef WITH_CUDA
+#if defined(WITH_CUDA) || defined(WITH_HIP)
     return PSROIAlign_forward_cuda(
         input,
         rois,
@@ -45,7 +48,7 @@ at::Tensor PSROIAlign_backward(
     const int height,
     const int width) {
   if (grad.type().is_cuda()) {
-#ifdef WITH_CUDA
+#if defined(WITH_CUDA) || defined(WITH_HIP)
     return PSROIAlign_backward_cuda(
         grad,
         rois,
