@@ -86,6 +86,8 @@ You can use the following transform to normalize::
 An example of such normalization can be found in the imagenet example
 `here <https://github.com/pytorch/examples/blob/42e5b996718797e45c46a25c55b031e6768f8440/imagenet/main.py#L89-L101>`_
 
+Shall I document this PR somewhere around here?
+
 ImageNet 1-crop error rates (224x224)
 
 ================================  =============   =============
