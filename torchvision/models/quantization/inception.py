@@ -65,6 +65,9 @@ def inception_v3(pretrained=False, progress=True, quantize=False, **kwargs):
 
     if pretrained:
         if quantize:
+            if not original_aux_logits:
+                model.aux_logits = False
+                del model.AuxLogits
             model_url = quant_model_urls['inception_v3_google' + '_' + backend]
         else:
             model_url = inception_module.model_urls['inception_v3_google']
@@ -74,9 +77,10 @@ def inception_v3(pretrained=False, progress=True, quantize=False, **kwargs):
 
         model.load_state_dict(state_dict)
 
-        if not original_aux_logits:
-            model.aux_logits = False
-            del model.AuxLogits
+        if not quantize:
+            if not original_aux_logits:
+                model.aux_logits = False
+                del model.AuxLogits
     return model
 
 
