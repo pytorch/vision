@@ -35,6 +35,15 @@ def roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1, a
     Returns:
         output (Tensor[K, C, output_size[0], output_size[1]])
     """
+    if isinstance(boxes, list):
+        for _tensor in boxes:
+            assert _tensor.size(1) == 4, \
+                'The shape of the tensor in the boxes list is not correct as List[Tensor[L, 4]]'
+    elif isinstance(boxes, torch.Tensor):
+        assert boxes.size(1) == 5, 'The boxes tensor shape is not correct as Tensor[K, 5]'
+    else:
+        assert False, 'boxes shape is not correct'
+
     rois = boxes
     output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):
