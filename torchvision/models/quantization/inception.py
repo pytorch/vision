@@ -20,7 +20,7 @@ __all__ = [
 quant_model_urls = {
     # fp32 weights ported from TensorFlow, quantized in PyTorch
     "inception_v3_google_fbgemm":
-        "https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-4f6e4894.pth"
+        "https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth"
 }
 
 
