@@ -17,6 +17,7 @@ set CUDA_VERSION_STR=%CUDA_VER_MAJOR%.%CUDA_VER_MINOR%
 if %CUDA_VER% EQU 92 goto cuda92
 if %CUDA_VER% EQU 100 goto cuda100
 if %CUDA_VER% EQU 101 goto cuda101
+if %CUDA_VER% EQU 102 goto cuda102
 
 echo CUDA %CUDA_VERSION_STR% is not supported
 exit /b 1
