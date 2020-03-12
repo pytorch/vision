@@ -92,6 +92,7 @@ int VideoStream::copyFrameBytes(ByteStorage* out, bool flush) {
     SamplerParameters params;
     params.type = format_.type;
     params.out = format_.format;
+    params.in = FormatUnion(0);
     flush ? toVideoFormat(params.in.video, *codecCtx_)
           : toVideoFormat(params.in.video, *frame_);
     if (!sampler_->init(params)) {
