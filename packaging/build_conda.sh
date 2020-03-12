@@ -17,7 +17,8 @@ setup_junit_results_folder
 if [[ "$(uname)" == Linux ]] ; then
     conda create -n build_env python="$PYTHON_VERSION" anaconda -yq
     activate build_env
-    conda install -c anaconda protobuf
+    conda install -yq -c anaconda protobuf
+    conda install -yq -c conda-forge pybind11
     "$(conda info --base)/envs/build_env/bin/python" -m pip -q install onnxruntime
 fi
 
