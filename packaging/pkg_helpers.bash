@@ -299,7 +299,7 @@ install_onnx_runtime_on_linux_conda() {
       # TODO: Enable when onnxruntime is packaged for python 3.8
       3.8) ;;
       *)
-        conda_python -m pip install onnxruntime 
+        "$(conda_python) -m pip install onnxruntime"
         ;;
     esac
   fi
