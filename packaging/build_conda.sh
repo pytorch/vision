@@ -16,7 +16,7 @@ setup_junit_results_folder
 # just to see if it works before cleanup
 if [[ "$(uname)" == Linux ]] ; then
     conda create -n build_env python="$PYTHON_VERSION" anaconda -yq
-    conda activate build_env
+    activate build_env
     install_onnx_runtime_on_linux_conda
 fi
 
