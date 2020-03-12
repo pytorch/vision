@@ -17,7 +17,10 @@ setup_junit_results_folder
 if [[ "$(uname)" == Linux ]] ; then
     conda create -n build_env python="$PYTHON_VERSION" anaconda -yq
     activate build_env
-    "$(conda env list \|grep build_env \|sed 's/ //g')/python" -m pip install -q onnxruntime
+    conda env list
+    conda env list |grep build_env
+    conda env list |grep build_env |sed 's/ //g'
+    "$(conda env list |grep build_env |sed 's/ //g')/python" -m pip install -q onnxruntime
 fi
 
 conda build $CONDA_CHANNEL_FLAGS -c defaults -c conda-forge --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
