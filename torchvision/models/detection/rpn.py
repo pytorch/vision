@@ -331,7 +331,7 @@ class RegionProposalNetwork(torch.nn.Module):
             if gt_boxes.numel() == 0:
                 # Background image (negative example)
                 device = anchors_per_image.device
-                matched_gt_boxes_per_image = torch.zeros_like(anchors_per_image, dtype=torch.float32, device=device)
+                matched_gt_boxes_per_image = torch.zeros(anchors_per_image.shape, dtype=torch.float32, device=device)
                 labels_per_image = torch.zeros((anchors_per_image.shape[0],), dtype=torch.float32, device=device)
             else:
                 match_quality_matrix = box_ops.box_iou(gt_boxes, anchors_per_image)
