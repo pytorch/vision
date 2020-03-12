@@ -103,7 +103,7 @@ class GoogLeNet(nn.Module):
         else:
             self.aux1 = None
             self.aux2 = None
-            
+
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.dropout = nn.Dropout(0.2)
         self.fc = nn.Linear(1024, num_classes)
