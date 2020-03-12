@@ -11,5 +11,5 @@ setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_constraint
 setup_visual_studio_constraint
 setup_junit_results_folder
-install_onnx_runtime_on_linux
+install_onnx_runtime_on_linux_conda
 conda build $CONDA_CHANNEL_FLAGS -c defaults -c conda-forge --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision

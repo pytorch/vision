@@ -10,4 +10,5 @@ setup_wheel_python
 pip_install numpy pyyaml future ninja
 setup_pip_pytorch_version
 python setup.py clean
+install_onnx_runtime_on_linux_wheel
 IS_WHEEL=1 python setup.py bdist_wheel
