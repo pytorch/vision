@@ -4,7 +4,7 @@ from torch import nn, Tensor
 from torch.nn.modules.utils import _pair
 from torch.jit.annotations import List, BroadcastingList2
 
-from ._utils import convert_boxes_to_roi_format
+from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
 def roi_pool(input, boxes, output_size, spatial_scale=1.0):
@@ -27,15 +27,7 @@ def roi_pool(input, boxes, output_size, spatial_scale=1.0):
     Returns:
         output (Tensor[K, C, output_size[0], output_size[1]])
     """
-    if isinstance(boxes, list):
-        for _tensor in boxes:
-            assert _tensor.size(1) == 4, \
-                'The shape of the tensor in the boxes list is not correct as List[Tensor[L, 4]]'
-    elif isinstance(boxes, torch.Tensor):
-        assert boxes.size(1) == 5, 'The boxes tensor shape is not correct as Tensor[K, 5]'
-    else:
-        assert False, 'boxes shape is not correct'
-
+    check_roi_boxes_shape(boxes)
     rois = boxes
     output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):

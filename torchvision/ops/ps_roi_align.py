@@ -4,7 +4,7 @@ from torch import nn, Tensor
 from torch.nn.modules.utils import _pair
 from torch.jit.annotations import List
 
-from ._utils import convert_boxes_to_roi_format
+from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
 def ps_roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1):
@@ -33,6 +33,7 @@ def ps_roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1
     Returns:
         output (Tensor[K, C, output_size[0], output_size[1]])
     """
+    check_roi_boxes_shape(boxes)
     rois = boxes
     output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):
