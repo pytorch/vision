@@ -283,7 +283,7 @@ install_onnx_runtime_on_linux() {
       # TODO: Enable when onnxruntime is packaged for python 3.8
       3.8) ;;
       *)
-        pip install onnxruntime 
+        pip_install onnxruntime 
         ;;
     esac
   fi
