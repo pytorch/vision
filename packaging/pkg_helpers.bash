@@ -277,10 +277,6 @@ setup_junit_results_folder() {
   fi
 }
 
-conda_python() {
-  "$(conda info --base)/bin/python"
-}
-
 install_onnx_runtime_on_linux_wheel() { 
   if [[ "$(uname)" == Linux ]] ; then
     case "$PYTHON_VERSION" in
@@ -299,7 +295,7 @@ install_onnx_runtime_on_linux_conda() {
       # TODO: Enable when onnxruntime is packaged for python 3.8
       3.8) ;;
       *)
-        "$(conda_python) -m pip install onnxruntime"
+        "$(conda info --base)/bin/python" -m pip install onnxruntime
         ;;
     esac
   fi
