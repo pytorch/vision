@@ -40,6 +40,27 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
 ```
 
 ## Quantized
+### INT8 models
+We add INT8 quantized models to follow the quantization support added in PyTorch 1.3. 
+
+Obtaining a pre-trained quantized model can be obtained with a few lines of code:
+```
+model = torchvision.models.quantization.mobilenet_v2(pretrained=True, quantize=True)
+model.eval()
+# run the model with quantized inputs and weights
+out = model(torch.rand(1, 3, 224, 224))
+```
+We provide pre-trained quantized weights for the following models:
+
+|       Model       |  Acc@1 |  Acc@5 |
+|:-----------------:|:------:|:------:|
+|    MobileNet V2   | 71.658 | 90.150 |
+|   ShuffleNet V2:  | 68.360 | 87.582 |
+|     ResNet 18     | 69.494 | 88.882 |
+|     ResNet 50     | 75.920 | 92.814 |
+| ResNext 101 32x8d | 78.986 | 94.480 |
+|    Inception V3   | 77.084 | 93.398 |
+|     GoogleNet     | 69.826 | 89.404 |
 
 ### Parameters used for generating quantized models:
 

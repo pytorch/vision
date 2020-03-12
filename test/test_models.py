@@ -226,6 +226,10 @@ class ModelTester(TestCase):
         self.assertTrue("scores" in out[0])
         self.assertTrue("labels" in out[0])
 
+    def test_googlenet_eval(self):
+        m = torch.jit.script(models.googlenet(pretrained=True).eval())
+        self.checkModule(m, "googlenet", torch.rand(1, 3, 224, 224))
+
     @unittest.skipIf(not torch.cuda.is_available(), 'needs GPU')
     def test_fasterrcnn_switch_devices(self):
         model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
@@ -247,6 +251,25 @@ class ModelTester(TestCase):
         self.assertTrue("boxes" in out_cpu[0])
         self.assertTrue("scores" in out_cpu[0])
         self.assertTrue("labels" in out_cpu[0])
+
+    def test_generalizedrcnn_transform_repr(self):
+
+        min_size, max_size = 224, 299
+        image_mean = [0.485, 0.456, 0.406]
+        image_std = [0.229, 0.224, 0.225]
+
+        t = models.detection.transform.GeneralizedRCNNTransform(min_size=min_size,
+                                                                max_size=max_size,
+                                                                image_mean=image_mean,
+                                                                image_std=image_std)
+
+        # Check integrity of object __repr__ attribute
+        expected_string = 'GeneralizedRCNNTransform('
+        _indent = '\n    '
+        expected_string += '{0}Normalize(mean={1}, std={2})'.format(_indent, image_mean, image_std)
+        expected_string += '{0}Resize(min_size=({1},), max_size={2}, '.format(_indent, min_size, max_size)
+        expected_string += "mode='bilinear')\n)"
+        self.assertEqual(t.__repr__(), expected_string)
 
 
 for model_name in get_available_classification_models():

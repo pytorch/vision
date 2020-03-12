@@ -23,7 +23,7 @@ def workflows(prefix='', filter_branch=None, upload=False, indentation=6):
     w = []
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos"]:
-            for python_version in ["2.7", "3.5", "3.6", "3.7"]:
+            for python_version in ["3.5", "3.6", "3.7", "3.8"]:
                 for cu_version in (["cpu", "cu92", "cu100", "cu101"] if os_type == "linux" else ["cpu"]):
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
                         w += workflow_pair(

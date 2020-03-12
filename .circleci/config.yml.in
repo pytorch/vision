@@ -105,6 +105,8 @@ jobs:
           root: /opt/conda/conda-bld/linux-64
           paths:
             - "*"
+      - store_test_results:
+          path: build_results/
 
   binary_linux_conda_cuda:
     <<: *binary_common
@@ -190,6 +192,8 @@ jobs:
             conda install -yq conda-build "conda-package-handling!=1.5.0"
             bash packaging/build_conda.sh
           shell: powershell.exe
+      - store_test_results:
+          path: build_results/
 
   binary_win_conda_cuda:
     <<: *binary_common
@@ -246,6 +250,8 @@ jobs:
           root: /Users/distiller/miniconda3/conda-bld/osx-64
           paths:
             - "*"
+      - store_test_results:
+          path: build_results/
 
   # Requires org-member context
   binary_conda_upload:
@@ -258,12 +264,8 @@ jobs:
           command: |
             # Prevent credential from leaking
             conda install -yq anaconda-client
-            set +x
-            anaconda login \
-                --username "$PYTORCH_BINARY_PJH5_CONDA_USERNAME" \
-                --password "$PYTORCH_BINARY_PJH5_CONDA_PASSWORD"
             set -x
-            anaconda upload ~/workspace/*.tar.bz2 -u pytorch-nightly --label main --no-progress --force
+            anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload ~/workspace/*.tar.bz2 -u pytorch-nightly --label main --no-progress --force
 
   # Requires org-member context
   binary_wheel_upload:

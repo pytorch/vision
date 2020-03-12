@@ -9,7 +9,8 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from common_utils import get_tmp_dir
 from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
-    cityscapes_root, svhn_root
+    cityscapes_root, svhn_root, voc_root
+import xml.etree.ElementTree as ET
 
 
 try:
@@ -39,10 +40,12 @@ class Tester(unittest.TestCase):
 
         with get_tmp_dir(src=os.path.join(FAKEDATA_DIR, 'imagefolder')) as root:
             classes = sorted(['a', 'b'])
-            class_a_image_files = [os.path.join(root, 'a', file)
-                                   for file in ('a1.png', 'a2.png', 'a3.png')]
-            class_b_image_files = [os.path.join(root, 'b', file)
-                                   for file in ('b1.png', 'b2.png', 'b3.png', 'b4.png')]
+            class_a_image_files = [
+                os.path.join(root, 'a', file) for file in ('a1.png', 'a2.png', 'a3.png')
+            ]
+            class_b_image_files = [
+                os.path.join(root, 'b', file) for file in ('b1.png', 'b2.png', 'b3.png', 'b4.png')
+            ]
             dataset = torchvision.datasets.ImageFolder(root, loader=lambda x: x)
 
             # test if all classes are present
@@ -65,8 +68,8 @@ class Tester(unittest.TestCase):
             self.assertEqual(imgs, outputs)
 
             # redo all tests with specified valid image files
-            dataset = torchvision.datasets.ImageFolder(root, loader=lambda x: x,
-                                                       is_valid_file=lambda x: '3' in x)
+            dataset = torchvision.datasets.ImageFolder(
+                root, loader=lambda x: x, is_valid_file=lambda x: '3' in x)
             self.assertEqual(classes, sorted(dataset.classes))
 
             class_a_idx = dataset.class_to_idx['a']
@@ -163,18 +166,18 @@ class Tester(unittest.TestCase):
 
                 for split in splits:
                     for target_type in ['semantic', 'instance']:
-                        dataset = torchvision.datasets.Cityscapes(root, split=split,
-                                                                  target_type=target_type, mode=mode)
+                        dataset = torchvision.datasets.Cityscapes(
+                            root, split=split, target_type=target_type, mode=mode)
                         self.generic_segmentation_dataset_test(dataset, num_images=2)
 
-                    color_dataset = torchvision.datasets.Cityscapes(root, split=split,
-                                                                    target_type='color', mode=mode)
+                    color_dataset = torchvision.datasets.Cityscapes(
+                        root, split=split, target_type='color', mode=mode)
                     color_img, color_target = color_dataset[0]
                     self.assertTrue(isinstance(color_img, PIL.Image.Image))
                     self.assertTrue(np.array(color_target).shape[2] == 4)
 
-                    polygon_dataset = torchvision.datasets.Cityscapes(root, split=split,
-                                                                      target_type='polygon', mode=mode)
+                    polygon_dataset = torchvision.datasets.Cityscapes(
+                        root, split=split, target_type='polygon', mode=mode)
                     polygon_img, polygon_target = polygon_dataset[0]
                     self.assertTrue(isinstance(polygon_img, PIL.Image.Image))
                     self.assertTrue(isinstance(polygon_target, dict))
@@ -183,9 +186,8 @@ class Tester(unittest.TestCase):
 
                     # Test multiple target types
                     targets_combo = ['semantic', 'polygon', 'color']
-                    multiple_types_dataset = torchvision.datasets.Cityscapes(root, split=split,
-                                                                             target_type=targets_combo,
-                                                                             mode=mode)
+                    multiple_types_dataset = torchvision.datasets.Cityscapes(
+                        root, split=split, target_type=targets_combo, mode=mode)
                     output = multiple_types_dataset[0]
                     self.assertTrue(isinstance(output, tuple))
                     self.assertTrue(len(output) == 2)
@@ -209,6 +211,38 @@ class Tester(unittest.TestCase):
 
             dataset = torchvision.datasets.SVHN(root, split="extra")
             self.generic_classification_dataset_test(dataset, num_images=2)
+
+    @mock.patch('torchvision.datasets.voc.download_extract')
+    def test_voc_parse_xml(self, mock_download_extract):
+        with voc_root() as root:
+            dataset = torchvision.datasets.VOCDetection(root)
+
+            single_object_xml = """<annotation>
+              <object>
+                <name>cat</name>
+              </object>
+            </annotation>"""
+            multiple_object_xml = """<annotation>
+              <object>
+                <name>cat</name>
+              </object>
+              <object>
+                <name>dog</name>
+              </object>
+            </annotation>"""
+
+            single_object_parsed = dataset.parse_voc_xml(ET.fromstring(single_object_xml))
+            multiple_object_parsed = dataset.parse_voc_xml(ET.fromstring(multiple_object_xml))
+
+            self.assertEqual(single_object_parsed, {'annotation': {'object': [{'name': 'cat'}]}})
+            self.assertEqual(multiple_object_parsed,
+                             {'annotation': {
+                                 'object': [{
+                                     'name': 'cat'
+                                 }, {
+                                     'name': 'dog'
+                                 }]
+                             }})
 
 
 if __name__ == '__main__':

@@ -42,7 +42,7 @@ class ConvTranspose2d(torch.nn.ConvTranspose2d):
                 list(self.output_padding),
             )
         ]
-        output_shape = [x.shape[0], self.bias.shape[0]] + output_shape
+        output_shape = [x.shape[0], self.out_channels] + output_shape
         return _new_empty_tensor(x, output_shape)
 
     def super_forward(self, input, output_size=None):
@@ -77,7 +77,8 @@ def _check_size_scale_factor(dim, size, scale_factor):
         raise ValueError("either size or scale_factor should be defined")
     if size is not None and scale_factor is not None:
         raise ValueError("only one of size or scale_factor should be defined")
-    if not (scale_factor is not None and len(scale_factor) != dim):
+    if scale_factor is not None and isinstance(scale_factor, tuple)\
+            and len(scale_factor) != dim:
         raise ValueError(
             "scale_factor shape must match input shape. "
             "Input is {}D, scale_factor size is {}".format(dim, len(scale_factor))

@@ -5,6 +5,9 @@
 #ifdef WITH_CUDA
 #include "cuda/vision_cuda.h"
 #endif
+#ifdef WITH_HIP
+#include "hip/vision_cuda.h"
+#endif
 
 std::tuple<at::Tensor, at::Tensor> PSROIPool_forward(
     const at::Tensor& input,
@@ -13,7 +16,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward(
     const int pooled_height,
     const int pooled_width) {
   if (input.type().is_cuda()) {
-#ifdef WITH_CUDA
+#if defined(WITH_CUDA) || defined(WITH_HIP)
     return PSROIPool_forward_cuda(
         input, rois, spatial_scale, pooled_height, pooled_width);
 #else
@@ -36,7 +39,7 @@ at::Tensor PSROIPool_backward(
     const int height,
     const int width) {
   if (grad.type().is_cuda()) {
-#ifdef WITH_CUDA
+#if defined(WITH_CUDA) || defined(WITH_HIP)
     return PSROIPool_backward_cuda(
         grad,
         rois,

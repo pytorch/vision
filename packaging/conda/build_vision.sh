@@ -104,7 +104,9 @@ if [[ "$desired_cuda" == 'cpu' ]]; then
 else
     export CONDA_CPUONLY_FEATURE=""
     . ./switch_cuda_version.sh $desired_cuda
-    if [[ "$desired_cuda" == "10.1" ]]; then
+    if [[ "$desired_cuda" == "10.2" ]]; then
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.2,<10.3 # [not osx]"
+    elif [[ "$desired_cuda" == "10.1" ]]; then
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.1,<10.2 # [not osx]"
     elif [[ "$desired_cuda" == "10.0" ]]; then
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.0,<10.1 # [not osx]"
@@ -156,6 +158,12 @@ for py_ver in "${DESIRED_PYTHON[@]}"; do
     output_folder="out_$folder_tag"
     rm -rf "$output_folder"
     mkdir "$output_folder"
+
+    if [[ "$py_ver" == 3.5 ]]; then
+	export CONDA_TYPING_CONSTRAINT="- typing"
+    else
+	export CONDA_TYPING_CONSTRAINT=""
+    fi
 
     export VSTOOLCHAIN_PACKAGE=vs2017
 
