@@ -13,6 +13,10 @@ class SVHN(VisionDataset):
     we assign the label `0` to the digit `0` to be compatible with PyTorch loss functions which
     expect the class labels to be in the range `[0, C-1]`
 
+    .. warning::
+
+        This class needs `scipy <https://docs.scipy.org/doc/>`_ to load data from `.mat` format.
+
     Args:
         root (string): Root directory of dataset where directory
             ``SVHN`` exists.

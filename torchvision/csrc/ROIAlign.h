@@ -36,7 +36,13 @@ at::Tensor ROIAlign_forward(
 #endif
   }
   return ROIAlign_forward_cpu(
-      input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned);
+      input,
+      rois,
+      spatial_scale,
+      pooled_height,
+      pooled_width,
+      sampling_ratio,
+      aligned);
 }
 
 at::Tensor ROIAlign_backward(
@@ -137,8 +143,13 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
         input_shape[3],
         ctx->saved_data["sampling_ratio"].toInt(),
         ctx->saved_data["aligned"].toBool());
-    return {
-        grad_in, Variable(), Variable(), Variable(), Variable(), Variable(), Variable()};
+    return {grad_in,
+            Variable(),
+            Variable(),
+            Variable(),
+            Variable(),
+            Variable(),
+            Variable()};
   }
 };
 
