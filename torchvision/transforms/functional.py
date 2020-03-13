@@ -446,7 +446,7 @@ def _get_perspective_coeffs(startpoints, endpoints):
     return res.squeeze_(1).tolist()
 
 
-def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC):
+def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC, fill=None):
     """Perform perspective transform of the given PIL Image.
 
     Args:
@@ -454,14 +454,39 @@ def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC):
         startpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the orignal image
         endpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image
         interpolation: Default- Image.BICUBIC
+        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+            image. If int or float, the value is used for all bands respectively.
+            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
     Returns:
         PIL Image:  Perspectively transformed Image.
     """
+    def parse_fill(fill, num_bands):
+        if PILLOW_VERSION < "5.2.0":
+            if fill is None:
+                return {}
+            else:
+                msg = ("The option to fill background area of the rotated image, "
+                       "requires pillow>=5.2.0")
+                raise RuntimeError(msg)
+
+        if fill is None:
+            fill = 0
+        if isinstance(fill, (int, float)) and num_bands > 1:
+            fill = tuple([fill] * num_bands)
+        if not isinstance(fill, (int, float)) and len(fill) != num_bands:
+            msg = ("The number of elements in 'fill' does not match the number of "
+                   "bands of the image ({} != {})")
+            raise ValueError(msg.format(len(fill), num_bands))
+
+        return {"fillcolor": fill}
+
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
+    opts = parse_fill(fill, len(img.getbands()))
+
     coeffs = _get_perspective_coeffs(startpoints, endpoints)
-    return img.transform(img.size, Image.PERSPECTIVE, coeffs, interpolation)
+    return img.transform(img.size, Image.PERSPECTIVE, coeffs, interpolation, **opts)
 
 
 def vflip(img):
