@@ -51,9 +51,6 @@ class OpTester(object):
     def _test_backward(self, device, contiguous):
         pass
 
-    def test_boxes_shape(self):
-        self._test_boxes_shape()
-
 
 class RoIOpTester(OpTester):
     def _test_forward(self, device, contiguous):
@@ -93,6 +90,9 @@ class RoIOpTester(OpTester):
 
         self.assertTrue(gradcheck(func, (x,)))
         self.assertTrue(gradcheck(script_func, (x,)))
+
+    def test_boxes_shape(self):
+        self._test_boxes_shape()
 
     def _helper_boxes_shape(self, func):
         # test boxes as Tensor[N, 5]
