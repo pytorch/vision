@@ -1,5 +1,5 @@
 
-import imp
+import importlib
 import math
 import os
 import warnings
@@ -14,9 +14,17 @@ _HAS_VIDEO_OPT = False
 
 try:
     lib_dir = os.path.join(os.path.dirname(__file__), "..")
-    _, path, description = imp.find_module("video_reader", [lib_dir])
-    torch.ops.load_library(path)
-    _HAS_VIDEO_OPT = True
+
+    loader_details = (
+        importlib.machinery.ExtensionFileLoader,
+        importlib.machinery.EXTENSION_SUFFIXES
+    )
+
+    extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)
+    ext_specs = extfinder.find_spec("video_reader")
+    if ext_specs is not None:
+        torch.ops.load_library(ext_specs.origin)
+        _HAS_VIDEO_OPT = True
 except (ImportError, OSError):
     pass
 
