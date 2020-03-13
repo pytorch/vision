@@ -59,7 +59,7 @@ We provide pre-trained quantized weights for the following models:
 |     ResNet 18     | 69.494 | 88.882 |
 |     ResNet 50     | 75.920 | 92.814 |
 | ResNext 101 32x8d | 78.986 | 94.480 |
-|    Inception V3   | 77.084 | 93.398 |
+|    Inception V3   | 77.176 | 93.354 |
 |     GoogleNet     | 69.826 | 89.404 |
 
 ### Parameters used for generating quantized models:
