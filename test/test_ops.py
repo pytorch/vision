@@ -52,7 +52,7 @@ class OpTester(object):
         pass
 
     def test_boxes_shape(self):
-        self._test_boxes_shape(self)
+        self._test_boxes_shape()
 
 
 class RoIOpTester(OpTester):
