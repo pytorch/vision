@@ -91,6 +91,22 @@ class RoIOpTester(OpTester):
         self.assertTrue(gradcheck(func, (x,)))
         self.assertTrue(gradcheck(script_func, (x,)))
 
+    def test_boxes_shape(self):
+        self._test_boxes_shape()
+
+    def _helper_boxes_shape(self, func):
+        # test boxes as Tensor[N, 5]
+        with self.assertRaises(AssertionError):
+            a = torch.linspace(1, 8 * 8, 8 * 8).reshape(1, 1, 8, 8)
+            boxes = torch.tensor([[0, 0, 3, 3]], dtype=a.dtype)
+            func(a, boxes, output_size=(2, 2))
+
+        # test boxes as List[Tensor[N, 4]]
+        with self.assertRaises(AssertionError):
+            a = torch.linspace(1, 8 * 8, 8 * 8).reshape(1, 1, 8, 8)
+            boxes = torch.tensor([[0, 0, 3]], dtype=a.dtype)
+            ops.roi_pool(a, [boxes], output_size=(2, 2))
+
     def fn(*args, **kwargs):
         pass
 
@@ -139,6 +155,9 @@ class RoIPoolTester(RoIOpTester, unittest.TestCase):
                         y[roi_idx, :, i, j] = bin_x.reshape(n_channels, -1).max(dim=1)[0]
         return y
 
+    def _test_boxes_shape(self):
+        self._helper_boxes_shape(ops.roi_pool)
+
 
 class PSRoIPoolTester(RoIOpTester, unittest.TestCase):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
@@ -183,6 +202,9 @@ class PSRoIPoolTester(RoIOpTester, unittest.TestCase):
                             y[roi_idx, c_out, i, j] = t / area
         return y
 
+    def _test_boxes_shape(self):
+        self._helper_boxes_shape(ops.ps_roi_pool)
+
 
 def bilinear_interpolate(data, y, x, snap_border=False):
     height, width = data.shape
@@ -217,9 +239,9 @@ def bilinear_interpolate(data, y, x, snap_border=False):
 
 
 class RoIAlignTester(RoIOpTester, unittest.TestCase):
-    def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
+    def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, aligned=False, **kwargs):
         return ops.RoIAlign((pool_h, pool_w), spatial_scale=spatial_scale,
-                            sampling_ratio=sampling_ratio)(x, rois)
+                            sampling_ratio=sampling_ratio, aligned=aligned)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
         @torch.jit.script
@@ -228,16 +250,18 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
             return ops.roi_align(input, rois, pool_size, 1.0)[0]
         return lambda x: script_fn(x, rois, pool_size)
 
-    def expected_fn(self, in_data, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1,
+    def expected_fn(self, in_data, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, aligned=False,
                     device=None, dtype=torch.float64):
         if device is None:
             device = torch.device("cpu")
         n_channels = in_data.size(1)
         out_data = torch.zeros(rois.size(0), n_channels, pool_h, pool_w, dtype=dtype, device=device)
 
+        offset = 0.5 if aligned else 0.
+
         for r, roi in enumerate(rois):
             batch_idx = int(roi[0])
-            j_begin, i_begin, j_end, i_end = (x.item() * spatial_scale for x in roi[1:])
+            j_begin, i_begin, j_end, i_end = (x.item() * spatial_scale - offset for x in roi[1:])
 
             roi_h = i_end - i_begin
             roi_w = j_end - j_begin
@@ -263,6 +287,9 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
 
                         out_data[r, channel, i, j] = val
         return out_data
+
+    def _test_boxes_shape(self):
+        self._helper_boxes_shape(ops.roi_align)
 
 
 class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
@@ -314,6 +341,9 @@ class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
 
                         out_data[r, c_out, i, j] = val
         return out_data
+
+    def _test_boxes_shape(self):
+        self._helper_boxes_shape(ops.ps_roi_align)
 
 
 class NMSTester(unittest.TestCase):

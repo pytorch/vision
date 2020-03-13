@@ -264,12 +264,8 @@ jobs:
           command: |
             # Prevent credential from leaking
             conda install -yq anaconda-client
-            set +x
-            anaconda login \
-                --username "$PYTORCH_BINARY_PJH5_CONDA_USERNAME" \
-                --password "$PYTORCH_BINARY_PJH5_CONDA_PASSWORD"
             set -x
-            anaconda upload ~/workspace/*.tar.bz2 -u pytorch-nightly --label main --no-progress --force
+            anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload ~/workspace/*.tar.bz2 -u pytorch-nightly --label main --no-progress --force
 
   # Requires org-member context
   binary_wheel_upload:

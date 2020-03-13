@@ -10,6 +10,10 @@ from .utils import download_and_extract_archive, makedir_exist_ok, verify_str_ar
 class Caltech101(VisionDataset):
     """`Caltech 101 <http://www.vision.caltech.edu/Image_Datasets/Caltech101/>`_ Dataset.
 
+    .. warning::
+
+        This class needs `scipy <https://docs.scipy.org/doc/>`_ to load target files from `.mat` format.
+
     Args:
         root (string): Root directory of dataset where directory
             ``caltech101`` exists or will be saved to if download is set to True.

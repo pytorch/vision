@@ -11,7 +11,7 @@ BasicConv2dImpl::BasicConv2dImpl(
     double std_dev) {
   options.bias(false);
   conv = torch::nn::Conv2d(options);
-  bn = torch::nn::BatchNorm(
+  bn = torch::nn::BatchNorm2d(
       torch::nn::BatchNormOptions(options.out_channels()).eps(0.001));
 
   register_module("conv", conv);
