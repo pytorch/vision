@@ -551,7 +551,7 @@ class RandomPerspective(object):
         distortion_scale(float): it controls the degree of distortion and ranges from 0 to 1. Default value is 0.5.
 
         fill (3-tuple or int): RGB pixel fill value for area outside the rotated image.
-        If int, it is used for all channels respectively. Default value is 0.
+            If int, it is used for all channels respectively. Default value is 0.
     """
 
     def __init__(self, distortion_scale=0.5, p=0.5, interpolation=Image.BICUBIC, fill=0):
