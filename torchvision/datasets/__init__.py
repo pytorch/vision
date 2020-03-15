@@ -1,5 +1,6 @@
 from .lsun import LSUN, LSUNClass
 from .folder import ImageFolder, DatasetFolder
+from .folder import UnsupervisedImageFolder, UnsupervisedDatasetFolder
 from .coco import CocoCaptions, CocoDetection
 from .cifar import CIFAR10, CIFAR100
 from .stl10 import STL10
