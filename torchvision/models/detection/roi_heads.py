@@ -577,10 +577,13 @@ class RoIHeads(torch.nn.Module):
 
             if gt_boxes_in_image.numel() == 0:
                 # Background image
+                device = proposals_in_image.device
                 clamped_matched_idxs_in_image = torch.zeros(
-                    (proposals_in_image.shape[0],), dtype=torch.int64
+                    (proposals_in_image.shape[0],), dtype=torch.int64, device=device
                 )
-                labels_in_image = torch.zeros((proposals_in_image.shape[0],), dtype=torch.int64)
+                labels_in_image = torch.zeros(
+                    (proposals_in_image.shape[0],), dtype=torch.int64, device=device
+                )
             else:
                 #  set to self.box_similarity when https://github.com/pytorch/pytorch/issues/27495 lands
                 match_quality_matrix = box_ops.box_iou(gt_boxes_in_image, proposals_in_image)
@@ -643,6 +646,7 @@ class RoIHeads(torch.nn.Module):
         self.check_targets(targets)
         assert targets is not None
         dtype = proposals[0].dtype
+        device = proposals[0].device
 
         gt_boxes = [t["boxes"].to(dtype) for t in targets]
         gt_labels = [t["labels"] for t in targets]
@@ -664,7 +668,7 @@ class RoIHeads(torch.nn.Module):
 
             gt_boxes_in_image = gt_boxes[img_id]
             if gt_boxes_in_image.numel() == 0:
-                gt_boxes_in_image = torch.zeros((1, 4), dtype=dtype)
+                gt_boxes_in_image = torch.zeros((1, 4), dtype=dtype, device=device)
             matched_gt_boxes.append(gt_boxes_in_image[matched_idxs[img_id]])
 
         regression_targets = self.box_coder.encode(matched_gt_boxes, proposals)
@@ -743,8 +747,7 @@ class RoIHeads(torch.nn.Module):
             for t in targets:
                 # TODO: https://github.com/pytorch/pytorch/issues/26731
                 floating_point_types = (torch.float, torch.double, torch.half)
-                if t["boxes"] is not None:
-                    assert t["boxes"].dtype in floating_point_types, 'target boxes must of float type'
+                assert t["boxes"].dtype in floating_point_types, 'target boxes must of float type'
                 assert t["labels"].dtype == torch.int64, 'target labels must of int64 type'
                 if self.has_keypoint():
                     assert t["keypoints"].dtype == torch.float32, 'target keypoints must of float type'
