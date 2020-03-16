@@ -161,10 +161,8 @@ class AnchorGenerator(nn.Module):
         # type: (ImageList, List[Tensor])
         grid_sizes = list([feature_map.shape[-2:] for feature_map in feature_maps])
         image_size = image_list.tensors.shape[-2:]
-
         strides = [[torch.scalar_tensor(image_size[0] / g[0], dtype=torch.int64),
                     torch.scalar_tensor(image_size[1] / g[1], dtype=torch.int64)] for g in grid_sizes]
-
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
