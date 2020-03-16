@@ -43,19 +43,6 @@ def check_integrity(fpath, md5=None):
     return check_md5(fpath, md5)
 
 
-def makedir_exist_ok(dirpath):
-    """
-    Python2 support for os.makedirs(.., exist_ok=True)
-    """
-    try:
-        os.makedirs(dirpath)
-    except OSError as e:
-        if e.errno == errno.EEXIST:
-            pass
-        else:
-            raise
-
-
 def download_url(url, root, filename=None, md5=None):
     """Download a file from a url and place it in root.
 
@@ -72,7 +59,7 @@ def download_url(url, root, filename=None, md5=None):
         filename = os.path.basename(url)
     fpath = os.path.join(root, filename)
 
-    makedir_exist_ok(root)
+    os.makedirs(root, exist_ok=True)
 
     # check if file is already present locally
     if check_integrity(fpath, md5):
@@ -164,7 +151,7 @@ def download_file_from_google_drive(file_id, root, filename=None, md5=None):
         filename = file_id
     fpath = os.path.join(root, filename)
 
-    makedir_exist_ok(root)
+    os.makedirs(root, exist_ok=True)
 
     if os.path.isfile(fpath) and check_integrity(fpath, md5):
         print('Using downloaded and verified file: ' + fpath)
