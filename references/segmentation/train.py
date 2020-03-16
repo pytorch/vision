@@ -65,7 +65,7 @@ def evaluate(model, data_loader, device, num_classes):
             image, target = image.to(device), target.to(device)
             output = model(image)
             output = output['out']
-
+            output, m = output.to_tensor_mask()
             for a in target.unbind():
                 confmat.update(a.flatten(), output.argmax(1).flatten())
 
