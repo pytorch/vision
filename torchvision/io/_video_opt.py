@@ -146,6 +146,7 @@ def _read_video_from_file(
     video_width=0,
     video_height=0,
     video_min_dimension=0,
+    video_max_dimension=0,
     video_pts_range=(0, -1),
     video_timebase=default_timebase,
     read_audio_stream=True,
@@ -163,21 +164,34 @@ def _read_video_from_file(
     filename : str
         path to the video file
     seek_frame_margin: double, optional
-        seeking frame in the stream is imprecise. Thus, when video_start_pts is specified,
-        we seek the pts earlier by seek_frame_margin seconds
+        seeking frame in the stream is imprecise. Thus, when video_start_pts
+        is specified, we seek the pts earlier by seek_frame_margin seconds
     read_video_stream: int, optional
         whether read video stream. If yes, set to 1. Otherwise, 0
-    video_width/video_height/video_min_dimension: int
+    video_width/video_height/video_min_dimension/video_max_dimension: int
         together decide the size of decoded frames
-        - when video_width = 0, video_height = 0, and video_min_dimension = 0, keep the orignal frame resolution
-        - when video_width = 0, video_height = 0, and video_min_dimension != 0, keep the aspect ratio and resize
-            the frame so that shorter edge size is video_min_dimension
-        - When video_width = 0, and video_height != 0, keep the aspect ratio and resize the frame
-            so that frame video_height is $video_height
-        - When video_width != 0, and video_height == 0, keep the aspect ratio and resize the frame
-            so that frame video_height is $video_width
-        - When video_width != 0, and video_height != 0, resize the frame so that frame video_width and video_height
-            are set to $video_width and $video_height, respectively
+        - When video_width = 0, video_height = 0, video_min_dimension = 0,
+            and video_max_dimension = 0, keep the orignal frame resolution
+        - When video_width = 0, video_height = 0, video_min_dimension != 0,
+            and video_max_dimension = 0, keep the aspect ratio and resize the
+            frame so that shorter edge size is video_min_dimension
+        - When video_width = 0, video_height = 0, video_min_dimension = 0,
+            and video_max_dimension != 0, keep the aspect ratio and resize
+            the frame so that longer edge size is video_max_dimension
+        - When video_width = 0, video_height = 0, video_min_dimension != 0,
+            and video_max_dimension != 0, resize the frame so that shorter
+            edge size is video_min_dimension, and longer edge size is
+            video_max_dimension. The aspect ratio may not be preserved
+        - When video_width = 0, video_height != 0, video_min_dimension = 0,
+            and video_max_dimension = 0, keep the aspect ratio and resize
+            the frame so that frame video_height is $video_height
+        - When video_width != 0, video_height == 0, video_min_dimension = 0,
+            and video_max_dimension = 0, keep the aspect ratio and resize
+            the frame so that frame video_width is $video_width
+        - When video_width != 0, video_height != 0, video_min_dimension = 0,
+            and video_max_dimension = 0, resize the frame so that frame
+            video_width and  video_height are set to $video_width and
+            $video_height, respectively
     video_pts_range : list(int), optional
         the start and end presentation timestamp of video stream
     video_timebase: Fraction, optional
@@ -215,6 +229,7 @@ def _read_video_from_file(
         video_width,
         video_height,
         video_min_dimension,
+        video_max_dimension,
         video_pts_range[0],
         video_pts_range[1],
         video_timebase.numerator,
@@ -252,6 +267,7 @@ def _read_video_timestamps_from_file(filename):
         0,  # video_width
         0,  # video_height
         0,  # video_min_dimension
+        0,  # video_max_dimension
         0,  # video_start_pts
         -1,  # video_end_pts
         0,  # video_timebase_num
@@ -290,6 +306,7 @@ def _read_video_from_memory(
     video_width=0,  # type: int
     video_height=0,  # type: int
     video_min_dimension=0,  # type: int
+    video_max_dimension=0,  # type: int
     video_pts_range=(0, -1),  # type: List[int]
     video_timebase_numerator=0,  # type: int
     video_timebase_denominator=1,  # type: int
@@ -315,17 +332,30 @@ def _read_video_from_memory(
         we seek the pts earlier by seek_frame_margin seconds
     read_video_stream: int, optional
         whether read video stream. If yes, set to 1. Otherwise, 0
-    video_width/video_height/video_min_dimension: int
+    video_width/video_height/video_min_dimension/video_max_dimension: int
         together decide the size of decoded frames
-        - when video_width = 0, video_height = 0, and video_min_dimension = 0, keep the orignal frame resolution
-        - when video_width = 0, video_height = 0, and video_min_dimension != 0, keep the aspect ratio and resize
-            the frame so that shorter edge size is video_min_dimension
-        - When video_width = 0, and video_height != 0, keep the aspect ratio and resize the frame
-            so that frame video_height is $video_height
-        - When video_width != 0, and video_height == 0, keep the aspect ratio and resize the frame
-            so that frame video_height is $video_width
-        - When video_width != 0, and video_height != 0, resize the frame so that frame video_width and video_height
-            are set to $video_width and $video_height, respectively
+        - When video_width = 0, video_height = 0, video_min_dimension = 0,
+            and video_max_dimension = 0, keep the orignal frame resolution
+        - When video_width = 0, video_height = 0, video_min_dimension != 0,
+            and video_max_dimension = 0, keep the aspect ratio and resize the
+            frame so that shorter edge size is video_min_dimension
+        - When video_width = 0, video_height = 0, video_min_dimension = 0,
+            and video_max_dimension != 0, keep the aspect ratio and resize
+            the frame so that longer edge size is video_max_dimension
+        - When video_width = 0, video_height = 0, video_min_dimension != 0,
+            and video_max_dimension != 0, resize the frame so that shorter
+            edge size is video_min_dimension, and longer edge size is
+            video_max_dimension. The aspect ratio may not be preserved
+        - When video_width = 0, video_height != 0, video_min_dimension = 0,
+            and video_max_dimension = 0, keep the aspect ratio and resize
+            the frame so that frame video_height is $video_height
+        - When video_width != 0, video_height == 0, video_min_dimension = 0,
+            and video_max_dimension = 0, keep the aspect ratio and resize
+            the frame so that frame video_width is $video_width
+        - When video_width != 0, video_height != 0, video_min_dimension = 0,
+            and video_max_dimension = 0, resize the frame so that frame
+            video_width and  video_height are set to $video_width and
+            $video_height, respectively
     video_pts_range : list(int), optional
         the start and end presentation timestamp of video stream
     video_timebase_numerator / video_timebase_denominator: optional
@@ -361,6 +391,7 @@ def _read_video_from_memory(
         video_width,
         video_height,
         video_min_dimension,
+        video_max_dimension,
         video_pts_range[0],
         video_pts_range[1],
         video_timebase_numerator,
@@ -402,6 +433,7 @@ def _read_video_timestamps_from_memory(video_data):
         0,  # video_width
         0,  # video_height
         0,  # video_min_dimension
+        0,  # video_max_dimension
         0,  # video_start_pts
         -1,  # video_end_pts
         0,  # video_timebase_num
