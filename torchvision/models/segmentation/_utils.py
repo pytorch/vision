@@ -17,7 +17,7 @@ class _SimpleSegmentationModel(nn.Module):
 
     def forward(self, x):
         if isinstance(x, torch.Tensor):
-            input_shape = x.shape[-2]
+            input_shape = x.shape[-2:]
         else:
             input_shape = x.nested_size().unbind()[0][-2:]
 
