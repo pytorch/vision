@@ -83,16 +83,17 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
         image, target = image.to(device), target.to(device)
         output = model(image)
 
-        t, m = target.to_tensor_mask()
-        loss = criterion(output, t)
+        loss = criterion(output, target)
 
         optimizer.zero_grad()
-        loss.backward()
+        for l in loss:
+            l.backward(retain_graph=True)
         optimizer.step()
 
         lr_scheduler.step()
 
-        metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
+        for l in loss:
+            metric_logger.update(loss=l.item(), lr=optimizer.param_groups[0]["lr"])
 
 
 def main(args):
