@@ -48,6 +48,7 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=''
 
     return w
 
+
 manylinux_images = {
     "cu92": "pytorch/manylinux-cuda92",
     "cu101": "pytorch/manylinux-cuda101",
