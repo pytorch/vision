@@ -361,6 +361,7 @@ class ONNXExporterTester(unittest.TestCase):
 
         assert torch.all(out2.eq(out_trace2))
 
+    @unittest.skip("Disable test until export of interpolate script module to ONNX is fixed")
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
 
@@ -400,7 +401,8 @@ class ONNXExporterTester(unittest.TestCase):
 
         assert torch.all(out2[0].eq(out_trace2[0]))
         assert torch.all(out2[1].eq(out_trace2[1]))
-
+        
+    @unittest.skip("Disable test until export of interpolate script module to ONNX is fixed")
     def test_keypoint_rcnn(self):
         class KeyPointRCNN(torch.nn.Module):
             def __init__(self):

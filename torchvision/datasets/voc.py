@@ -48,6 +48,12 @@ DATASET_YEAR_DICT = {
         'filename': 'VOCtrainval_06-Nov-2007.tar',
         'md5': 'c52e279531787c972589f7e41ab4ae64',
         'base_dir': os.path.join('VOCdevkit', 'VOC2007')
+    },
+    '2007-test': {
+        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtest_06-Nov-2007.tar',
+        'filename': 'VOCtest_06-Nov-2007.tar',
+        'md5': 'b6e924de25625d8de591ea690078ad9f',
+        'base_dir': os.path.join('VOCdevkit', 'VOC2007')
     }
 }
 
@@ -80,11 +86,13 @@ class VOCSegmentation(VisionDataset):
                  transforms=None):
         super(VOCSegmentation, self).__init__(root, transforms, transform, target_transform)
         self.year = year
+        if year == "2007" and image_set == "test":
+            year = "2007-test"
         self.url = DATASET_YEAR_DICT[year]['url']
         self.filename = DATASET_YEAR_DICT[year]['filename']
         self.md5 = DATASET_YEAR_DICT[year]['md5']
         valid_sets = ["train", "trainval", "val"]
-        if year == "2007":
+        if year == "2007-test":
             valid_sets.append("test")
         self.image_set = verify_str_arg(image_set, "image_set", valid_sets)
         base_dir = DATASET_YEAR_DICT[year]['base_dir']
@@ -159,11 +167,13 @@ class VOCDetection(VisionDataset):
                  transforms=None):
         super(VOCDetection, self).__init__(root, transforms, transform, target_transform)
         self.year = year
+        if year == "2007" and image_set == "test":
+            year = "2007-test"
         self.url = DATASET_YEAR_DICT[year]['url']
         self.filename = DATASET_YEAR_DICT[year]['filename']
         self.md5 = DATASET_YEAR_DICT[year]['md5']
         valid_sets = ["train", "trainval", "val"]
-        if year == "2007":
+        if year == "2007-test":
             valid_sets.append("test")
         self.image_set = verify_str_arg(image_set, "image_set", valid_sets)
 
