@@ -98,6 +98,7 @@ class VideoClips(object):
         _video_width=0,
         _video_height=0,
         _video_min_dimension=0,
+        _video_max_dimension=0,
         _audio_samples=0,
         _audio_channels=0,
     ):
@@ -109,6 +110,7 @@ class VideoClips(object):
         self._video_width = _video_width
         self._video_height = _video_height
         self._video_min_dimension = _video_min_dimension
+        self._video_max_dimension = _video_max_dimension
         self._audio_samples = _audio_samples
         self._audio_channels = _audio_channels
 
@@ -179,6 +181,7 @@ class VideoClips(object):
             _video_width=self._video_width,
             _video_height=self._video_height,
             _video_min_dimension=self._video_min_dimension,
+            _video_max_dimension=self._video_max_dimension,
             _audio_samples=self._audio_samples,
             _audio_channels=self._audio_channels,
         )
@@ -299,6 +302,10 @@ class VideoClips(object):
                 raise ValueError(
                     "pyav backend doesn't support _video_min_dimension != 0"
                 )
+            if self._video_max_dimension != 0:
+                raise ValueError(
+                    "pyav backend doesn't support _video_max_dimension != 0"
+                )
             if self._audio_samples != 0:
                 raise ValueError("pyav backend doesn't support _audio_samples != 0")
 
@@ -335,6 +342,7 @@ class VideoClips(object):
                 video_width=self._video_width,
                 video_height=self._video_height,
                 video_min_dimension=self._video_min_dimension,
+                video_max_dimension=self._video_max_dimension,
                 video_pts_range=(video_start_pts, video_end_pts),
                 video_timebase=video_timebase,
                 audio_samples=self._audio_samples,
