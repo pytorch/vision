@@ -54,11 +54,13 @@ manylinux_images = {
     "cu102": "pytorch/manylinux-cuda102",
 }
 
+
 def get_manylinux_image(cu_version):
     cu_suffix = "102"
     if cu_version.startswith('cu'):
         cu_suffix = cu_version[len('cu'):]
     return f"pytorch/manylinux-cuda{cu_suffix}"
+
 
 def generate_base_workflow(base_workflow_name, python_version, cu_version,
                            unicode, os_type, btype, *, filter_branch=None):
