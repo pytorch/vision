@@ -19,15 +19,16 @@ the following parameters:
 
 ### AlexNet and VGG
 
-Since `AlexNet` and `VGG*` do not include batch normalization, the default
-initial learning rate `--lr 0.1` is to high.
+Since `AlexNet` and the original `VGG` architectures do not include batch 
+normalization, the default initial learning rate `--lr 0.1` is to high.
 
 ```
 python main.py --model $MODEL --lr 1e-2
 ```
 
-Here `$MODEL` is one of `alexnet`, `vgg11`, `vgg11_bn`, `vgg13`, `vgg13_bn`, 
-`vgg16`, `vgg16_bn`, `vgg19` or `vgg19_bn`
+Here `$MODEL` is one of `alexnet`, `vgg11`, `vgg13`, `vgg16` or `vgg19`. Note
+that `vgg11_bn`, `vgg13_bn`, `vgg16_bn`, and `vgg19_bn` include batch
+normalization and thus are trained with the default parameters.
 
 ### ResNext-50 32x4d
 ```
