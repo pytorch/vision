@@ -94,7 +94,7 @@ The values of `mean` and `std` were obtained by running::
 Here `dataset` is the training split of the `ImageNet2012` dataset. The images
 are `transform`ed by resizing them to 256 and subsequently center cropping them
 to 224x224. Unfortunately, the concret `subset` that was used is lost. For more
-information see `this discussion <https://github.com/pytorch/vision/issues/1439>`_https://githubc
+information see `this discussion <https://github.com/pytorch/vision/issues/1439>`_
 or `these experiments <https://github.com/pytorch/vision/pull/1965>`_.
 
 ImageNet 1-crop error rates (224x224)
