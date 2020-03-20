@@ -92,7 +92,7 @@ to::
     import torch
     from torchvision import datasets, transforms as T
 
-    transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor])
+    transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
     dataset = datasets.ImageNet(".", split="train", transform=transform)
 
     means = []
