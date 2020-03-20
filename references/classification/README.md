@@ -4,7 +4,30 @@ This folder contains reference training scripts for image classification.
 They serve as a log of how to train specific models, as provide baseline
 training and evaluation scripts to quickly bootstrap research.
 
-Except otherwise noted, all models have been trained on 8x V100 GPUs.
+Except otherwise noted, all models have been trained on 8x V100 GPUs with 
+the following parameters:
+
+| Parameter                | value  |
+| ------------------------ | ------ |
+| `--batch_size`           | `32`   |
+| `--epochs`               | `90`   |
+| `--lr`                   | `0.1`  |
+| `--momentum`             | `0.9`  |
+| `--wd`, `--weight-decay` | `1e-4` |
+| `--lr-step-size`         | `30`   |
+| `--lr-gamma`             | `0.1`  |
+
+### AlexNet and VGG
+
+Since `AlexNet` and `VGG*` do not include batch normalization, the default
+initial learning rate `--lr 0.1` is to high.
+
+```
+python main.py --model $MODEL --lr 1e-2
+```
+
+Here `$MODEL` is one of `alexnet`, `vgg11`, `vgg11_bn`, `vgg13`, `vgg13_bn`, 
+`vgg16`, `vgg16_bn`, `vgg19` or `vgg19_bn`
 
 ### ResNext-50 32x4d
 ```
