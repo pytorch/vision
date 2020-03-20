@@ -10,4 +10,5 @@ export SOURCE_ROOT_DIR="$PWD"
 setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_constraint
 setup_visual_studio_constraint
+setup_junit_results_folder
 conda build $CONDA_CHANNEL_FLAGS -c defaults -c conda-forge --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision

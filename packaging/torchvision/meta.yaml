@@ -49,7 +49,7 @@ test:
     - ca-certificates
     {{ environ.get('CONDA_TYPING_CONSTRAINT') }}
   commands:
-    pytest .
+    pytest . --verbose --junitxml={{ environ.get("CONDA_PYTORCH_BUILD_RESULTS_DIRECTORY", "build/test_results.xml" )}}
 
 
 about:
