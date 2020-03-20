@@ -421,14 +421,14 @@ def hflip(img):
     return img.transpose(Image.FLIP_LEFT_RIGHT)
 
 
-def _parse_fill(fill, num_bands, min_pil_version):
+def _parse_fill(fill, img, min_pil_version):
     """Helper function to get the fill color for rotate and perspective transforms.
 
     Args:
         fill (n-tuple or int or float): Pixel fill value for area outside the transformed
             image. If int or float, the value is used for all bands respectively.
             Defaults to 0 for all bands.
-        num_bands (int): Number of bands (i.e. color channels) in the image.
+        img (PIL Image): Image to be filled.
         min_pil_version (str): The minimum PILLOW version for when the ``fillcolor`` option 
             was first introduced in the calling function. (e.g. rotate->5.2.0, perspective->5.0.0)
 
@@ -443,6 +443,7 @@ def _parse_fill(fill, num_bands, min_pil_version):
                    "requires pillow>={}")
             raise RuntimeError(msg.format(min_pil_version))
 
+    num_bands = len(img.getbands())
     if fill is None:
         fill = 0
     if isinstance(fill, (int, float)) and num_bands > 1:
@@ -488,8 +489,8 @@ def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC, fill=N
         startpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the orignal image
         endpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image
         interpolation: Default- Image.BICUBIC
-        fill (n-tuple or int or float or None): Pixel fill value for area outside the rotated
-            image. If None, defaults to 0. If int or float, the value is used for all bands respectively.
+        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+            image. If int or float, the value is used for all bands respectively.
             This option is only available for ``pillow>=5.0.0``.
 
     Returns:
@@ -499,7 +500,7 @@ def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC, fill=N
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    opts = _parse_fill(fill, len(img.getbands()), '5.0.0')
+    opts = _parse_fill(fill, img, '5.0.0')
 
     coeffs = _get_perspective_coeffs(startpoints, endpoints)
     return img.transform(img.size, Image.PERSPECTIVE, coeffs, interpolation, **opts)
@@ -751,8 +752,8 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
         center (2-tuple, optional): Optional center of rotation.
             Origin is the upper left corner.
             Default is the center of the image.
-        fill (n-tuple or int or float or None): Pixel fill value for area outside the rotated
-            image. If None, defaults to 0. If int or float, the value is used for all bands respectively.
+        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+            image. If int or float, the value is used for all bands respectively.
             Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
@@ -761,7 +762,7 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    opts = _parse_fill(fill, len(img.getbands()), '5.2.0')
+    opts = _parse_fill(fill, img, '5.2.0')
 
     return img.rotate(angle, resample, expand, center, **opts)
 
