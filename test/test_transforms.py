@@ -176,6 +176,41 @@ class Tester(unittest.TestCase):
             self.assertGreater(torch.nn.functional.mse_loss(tr_img, F.to_tensor(img)) + 0.3,
                                torch.nn.functional.mse_loss(tr_img2, F.to_tensor(img)))
 
+    def test_randomperspective_fill(self):
+        height = 100
+        width = 100
+        img = torch.ones(3, height, width)
+        to_pil_image = transforms.ToPILImage()
+        img = to_pil_image(img)
+
+        modes = ("L", "RGB", "F")
+        nums_bands = [len(mode) for mode in modes]
+        fill = 127
+
+        for mode, num_bands in zip(modes, nums_bands):
+            img_conv = img.convert(mode)
+            perspective = transforms.RandomPerspective(fill=fill)
+            tr_img = perspective(img_conv)
+            pixel = tr_img.getpixel((0, 0))
+
+            if not isinstance(pixel, tuple):
+                pixel = (pixel,)
+            self.assertTupleEqual(pixel, tuple([fill] * num_bands))
+
+        for mode, num_bands in zip(modes, nums_bands):
+            img_conv = img.convert(mode)
+            startpoints, endpoints = transforms.RandomPerspective.get_params(width, height, 0.5)
+            tr_img = F.perspective(img_conv, startpoints, endpoints, fill=fill)
+            pixel = tr_img.getpixel((0, 0))
+        
+            if not isinstance(pixel, tuple):
+                pixel = (pixel,)
+            self.assertTupleEqual(pixel, tuple([fill] * num_bands))
+
+            for wrong_num_bands in set(nums_bands) - {num_bands}:
+                with self.assertRaises(ValueError):
+                    F.perspective(img_conv, startpoints, endpoints, fill=tuple([fill] * wrong_num_bands))
+
     def test_resize(self):
         height = random.randint(24, 32) * 2
         width = random.randint(24, 32) * 2
