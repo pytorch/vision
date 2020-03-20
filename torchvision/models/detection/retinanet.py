@@ -14,6 +14,7 @@ from .transform import GeneralizedRCNNTransform
 from .backbone_utils import resnet_fpn_backbone
 from ...ops.feature_pyramid_network import LastLevelP6P7
 from ...ops import sigmoid_focal_loss
+from ...ops import boxes as box_ops
 
 
 __all__ = [
@@ -68,9 +69,10 @@ class RetinaNetClassificationHead(nn.Module):
             conv.append(nn.ReLU())
         self.conv = nn.Sequential(*conv)
 
-        for l in self.children():
-            torch.nn.init.normal_(l.weight, std=0.01)
-            torch.nn.init.constant_(l.bias, 0)
+        for l in self.conv.children():
+            if isinstance(l, nn.Conv2d):
+                torch.nn.init.normal_(l.weight, std=0.01)
+                torch.nn.init.constant_(l.bias, 0)
 
         self.cls_logits = nn.Conv2d(in_channels, num_anchors * num_classes, kernel_size=3, stride=1, padding=1)
         torch.nn.init.normal_(self.cls_logits.weight, std=0.01)
@@ -143,9 +145,10 @@ class RetinaNetRegressionHead(nn.Module):
 
         self.bbox_reg = nn.Conv2d(in_channels, num_anchors * 4, kernel_size=3, stride=1, padding=1)
 
-        for l in self.children():
-            torch.nn.init.normal_(l.weight, std=0.01)
-            torch.nn.init.zeros_(l.bias)
+        for l in self.conv.children():
+            if isinstance(l, nn.Conv2d):
+                torch.nn.init.normal_(l.weight, std=0.01)
+                torch.nn.init.zeros_(l.bias)
 
         self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
 
@@ -174,7 +177,7 @@ class RetinaNetRegressionHead(nn.Module):
             target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
 
             # compute the loss
-            loss.append(F.smooth_l1_loss((bbox_regression_per_image, target_regression) / max(1, num_foreground), reduction='sum')
+            loss.append(F.smooth_l1_loss(bbox_regression_per_image, target_regression, reduction='sum') / max(1, num_foreground))
 
         return sum(loss) / max(1, len(loss))
 
@@ -343,7 +346,8 @@ class RetinaNet(nn.Module):
     def compute_loss(self, targets, head_outputs, anchors):
         matched_idxs = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
-            matched_idxs.append(self.proposal_matcher(targets_per_image["boxes"], anchors_per_image))
+            match_quality_matrix = box_ops.box_iou(targets_per_image["boxes"], anchors_per_image)
+            matched_idxs.append(self.proposal_matcher(match_quality_matrix))
 
         return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
 
@@ -435,7 +439,7 @@ class RetinaNet(nn.Module):
 
         # TODO: Is there a better way to check for [P3, P4, P5, P6, P7]?
         if len(features) == 6:
-            # skip P2 because it generates too many anchors
+            # skip P2 because it generates too many anchors (according to their paper)
             features = features[1:]
 
         # compute the retinanet heads outputs using the features
