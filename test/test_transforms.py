@@ -189,7 +189,7 @@ class Tester(unittest.TestCase):
 
         for mode, num_bands in zip(modes, nums_bands):
             img_conv = img.convert(mode)
-            perspective = transforms.RandomPerspective(fill=fill)
+            perspective = transforms.RandomPerspective(p=1, fill=fill)
             tr_img = perspective(img_conv)
             pixel = tr_img.getpixel((0, 0))
 
