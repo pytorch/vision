@@ -5,6 +5,7 @@ import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
 from torch._utils_internal import get_file_path_2
+from numpy.testing import assert_array_almost_equal
 import unittest
 import math
 import random
@@ -842,6 +843,25 @@ class Tester(unittest.TestCase):
                 std = torch.tensor([1, 2, 1], dtype=dtype2)
                 # checks that it doesn't crash
                 transforms.functional.normalize(img, mean, std)
+
+    def test_normalize_3d_tensor(self):
+        torch.manual_seed(28)
+        n_channels = 3
+        img_size = 10
+        mean = torch.rand(n_channels)
+        std = torch.rand(n_channels)
+        img = torch.rand(n_channels, img_size, img_size)
+        target = F.normalize(img, mean, std).numpy()
+
+        mean_unsqueezed = mean.view(-1, 1, 1)
+        std_unsqueezed = std.view(-1, 1, 1)
+        result1 = F.normalize(img, mean_unsqueezed, std_unsqueezed)
+        result2 = F.normalize(img,
+                              mean_unsqueezed.repeat(1, img_size, img_size),
+                              std_unsqueezed.repeat(1, img_size, img_size))
+        assert_array_almost_equal(target, result1.numpy())
+        assert_array_almost_equal(target, result2.numpy())
+
 
     def test_adjust_brightness(self):
         x_shape = [2, 2, 3]
