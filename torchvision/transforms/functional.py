@@ -425,6 +425,41 @@ def hflip(img):
     return img.transpose(Image.FLIP_LEFT_RIGHT)
 
 
+def _parse_fill(fill, img, min_pil_version):
+    """Helper function to get the fill color for rotate and perspective transforms.
+
+    Args:
+        fill (n-tuple or int or float): Pixel fill value for area outside the transformed
+            image. If int or float, the value is used for all bands respectively.
+            Defaults to 0 for all bands.
+        img (PIL Image): Image to be filled.
+        min_pil_version (str): The minimum PILLOW version for when the ``fillcolor`` option 
+            was first introduced in the calling function. (e.g. rotate->5.2.0, perspective->5.0.0)
+
+    Returns:
+        dict: kwarg for ``fillcolor``
+    """
+    if PILLOW_VERSION < min_pil_version:
+        if fill is None:
+            return {}
+        else:
+            msg = ("The option to fill background area of the transformed image, "
+                   "requires pillow>={}")
+            raise RuntimeError(msg.format(min_pil_version))
+
+    num_bands = len(img.getbands())
+    if fill is None:
+        fill = 0
+    if isinstance(fill, (int, float)) and num_bands > 1:
+        fill = tuple([fill] * num_bands)
+    if not isinstance(fill, (int, float)) and len(fill) != num_bands:
+        msg = ("The number of elements in 'fill' does not match the number of "
+               "bands of the image ({} != {})")
+        raise ValueError(msg.format(len(fill), num_bands))
+
+    return {"fillcolor": fill}
+
+
 def _get_perspective_coeffs(startpoints, endpoints):
     """Helper function to get the coefficients (a, b, c, d, e, f, g, h) for the perspective transforms.
 
@@ -450,7 +485,7 @@ def _get_perspective_coeffs(startpoints, endpoints):
     return res.squeeze_(1).tolist()
 
 
-def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC):
+def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC, fill=None):
     """Perform perspective transform of the given PIL Image.
 
     Args:
@@ -458,14 +493,21 @@ def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC):
         startpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the orignal image
         endpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image
         interpolation: Default- Image.BICUBIC
+        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+            image. If int or float, the value is used for all bands respectively.
+            This option is only available for ``pillow>=5.0.0``.
+
     Returns:
         PIL Image:  Perspectively transformed Image.
     """
+
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
+    opts = _parse_fill(fill, img, '5.0.0')
+
     coeffs = _get_perspective_coeffs(startpoints, endpoints)
-    return img.transform(img.size, Image.PERSPECTIVE, coeffs, interpolation)
+    return img.transform(img.size, Image.PERSPECTIVE, coeffs, interpolation, **opts)
 
 
 def vflip(img):
@@ -721,30 +763,10 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
-    def parse_fill(fill, num_bands):
-        if PILLOW_VERSION < "5.2.0":
-            if fill is None:
-                return {}
-            else:
-                msg = ("The option to fill background area of the rotated image, "
-                       "requires pillow>=5.2.0")
-                raise RuntimeError(msg)
-
-        if fill is None:
-            fill = 0
-        if isinstance(fill, (int, float)) and num_bands > 1:
-            fill = tuple([fill] * num_bands)
-        if not isinstance(fill, (int, float)) and len(fill) != num_bands:
-            msg = ("The number of elements in 'fill' does not match the number of "
-                   "bands of the image ({} != {})")
-            raise ValueError(msg.format(len(fill), num_bands))
-
-        return {"fillcolor": fill}
-
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    opts = parse_fill(fill, len(img.getbands()))
+    opts = _parse_fill(fill, img, '5.2.0')
 
     return img.rotate(angle, resample, expand, center, **opts)
 
