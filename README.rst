@@ -82,8 +82,10 @@ Once installed, the library can be accessed in cmake (after properly configuring
 	find_package(TorchVision REQUIRED)
 	target_link_libraries(my-target PUBLIC TorchVision::TorchVision)
 
-The ``TorchVision`` package will also automatically look for the ``Torch`` and ``pybind11`` packages and add them as dependencies to ``my-target``,
-so make sure that they are also available to cmake via the ``CMAKE_PREFIX_PATH``.
+The ``TorchVision`` package will also automatically look for the ``Torch`` package and add it as a dependency to ``my-target``,
+so make sure that it is also available to cmake via the ``CMAKE_PREFIX_PATH``.
+
+For an example setup, take a look at ``examples/cpp/hello_world``.
 
 Documentation
 =============
