@@ -115,10 +115,10 @@ def clip_boxes_to_image(boxes, size):
     height, width = size
 
     if torchvision._is_tracing():
-        boxes_x = torch.max(boxes_x, torch.scalar_tensor(0.))
-        boxes_x = torch.min(boxes_x, torch.scalar_tensor(width, dtype=torch.float32))
-        boxes_y = torch.max(boxes_y, torch.scalar_tensor(0.))
-        boxes_y = torch.min(boxes_y, torch.scalar_tensor(height, dtype=torch.float32))
+        boxes_x = torch.max(boxes_x, torch.tensor(0., device=boxes.device))
+        boxes_x = torch.min(boxes_x, torch.tensor(width, dtype=torch.float32, device=boxes.device))
+        boxes_y = torch.max(boxes_y, torch.tensor(0., device=boxes.device))
+        boxes_y = torch.min(boxes_y, torch.tensor(height, dtype=torch.float32, device=boxes.device))
     else:
         boxes_x = boxes_x.clamp(min=0, max=width)
         boxes_y = boxes_y.clamp(min=0, max=height)
