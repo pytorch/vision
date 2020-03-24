@@ -88,8 +88,8 @@ inline bool serializeItem(
     size_t len,
     size_t& pos,
     const AVSubtitleRect& src) {
-  auto rectSerialize = [](
-      uint8_t* d, size_t l, size_t& p, const AVSubtitleRect& x) -> size_t {
+  auto rectSerialize =
+      [](uint8_t* d, size_t l, size_t& p, const AVSubtitleRect& x) -> size_t {
     switch (x.type) {
       case SUBTITLE_BITMAP:
         for (int i = 0; i < x.nb_colors; ++i) {
@@ -146,8 +146,8 @@ inline bool serializeItem(
     size_t len,
     size_t& pos,
     const AVSubtitle& src) {
-  auto rectSerialize = [](
-      uint8_t* d, size_t l, size_t& p, const AVSubtitle& x) -> bool {
+  auto rectSerialize =
+      [](uint8_t* d, size_t l, size_t& p, const AVSubtitle& x) -> bool {
     bool res = serializeItem(d, l, p, x.num_rects);
     for (unsigned i = 0; res && i < x.num_rects; ++i) {
       res = serializeItem(d, l, p, *(x.rects[i]));
@@ -167,8 +167,8 @@ inline bool deserializeItem(
     size_t len,
     size_t& pos,
     AVSubtitleRect& dest) {
-  auto rectDeserialize = [](
-      const uint8_t* y, size_t l, size_t& p, AVSubtitleRect& x) -> bool {
+  auto rectDeserialize =
+      [](const uint8_t* y, size_t l, size_t& p, AVSubtitleRect& x) -> bool {
     switch (x.type) {
       case SUBTITLE_BITMAP:
         for (int i = 0; i < x.nb_colors; ++i) {
@@ -231,8 +231,8 @@ inline bool deserializeItem(
     size_t len,
     size_t& pos,
     AVSubtitle& dest) {
-  auto rectDeserialize = [](
-      const uint8_t* y, size_t l, size_t& p, AVSubtitle& x) -> bool {
+  auto rectDeserialize =
+      [](const uint8_t* y, size_t l, size_t& p, AVSubtitle& x) -> bool {
     bool res = deserializeItem(y, l, p, x.num_rects);
     if (res && x.num_rects) {
       x.rects =
@@ -310,11 +310,9 @@ bool validateVideoFormat(const VideoFormat& f) {
   */
   // clang-format on
   return (f.width == 0 && // #1, #6, #7 and #8
-          f.height == 0 &&
-          f.cropImage == 0) ||
+          f.height == 0 && f.cropImage == 0) ||
       (f.width != 0 && // #4 and #5
-       f.height != 0 &&
-       f.minDimension == 0 && f.maxDimension == 0) ||
+       f.height != 0 && f.minDimension == 0 && f.maxDimension == 0) ||
       (((f.width != 0 && // #2
          f.height == 0) ||
         (f.width == 0 && // #3
