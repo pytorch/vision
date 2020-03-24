@@ -623,7 +623,7 @@ class RandomResizedCrop(object):
     """
 
     def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=Image.BILINEAR):
-        if isinstance(size, tuple):
+        if isinstance(size, (tuple, list)):
             self.size = size
         else:
             self.size = (size, size)
