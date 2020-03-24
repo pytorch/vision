@@ -207,6 +207,7 @@ setup_pip_pytorch_version() {
     fi
   else
     pip_install "torch==$PYTORCH_VERSION$PYTORCH_VERSION_SUFFIX" \
+      -f https://download.pytorch.org/whl/torch_test.html \
       -f https://download.pytorch.org/whl/torch_stable.html \
       -f https://download.pytorch.org/whl/nightly/torch_nightly.html
   fi
@@ -233,7 +234,7 @@ setup_conda_pytorch_constraint() {
       exit 1
     fi
   else
-    export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-nightly"
+    export CONDA_CHANNEL_FLAGS="-c pytorch-test -c pytorch -c pytorch-nightly"
   fi
   if [[ "$CU_VERSION" == cpu ]]; then
     export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==$PYTORCH_VERSION${PYTORCH_VERSION_SUFFIX}"
