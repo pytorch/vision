@@ -96,9 +96,8 @@ void SeekableBuffer::setImageType(ImageType* type) {
       buffer_[3] == 'G') {
     *type = ImageType::PNG;
   } else if (
-      buffer_.size() > 1 &&
-      ((buffer_[0] == 0x49 && buffer_[1] == 0x49) ||
-       (buffer_[0] == 0x4D && buffer_[1] == 0x4D))) {
+      buffer_.size() > 1 && ((buffer_[0] == 0x49 && buffer_[1] == 0x49) ||
+                             (buffer_[0] == 0x4D && buffer_[1] == 0x4D))) {
     *type = ImageType::TIFF;
   } else {
     *type = ImageType::UNKNOWN;

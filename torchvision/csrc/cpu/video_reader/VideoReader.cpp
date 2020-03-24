@@ -234,7 +234,7 @@ torch::List<torch::Tensor> readVideo(
       readAudioStream, // readAudioStream
       audioSamples, // audioSamples
       audioChannels // audioChannels
-  );
+      );
 
   SyncDecoder decoder;
   std::vector<DecoderOutputMessage> audioMessages, videoMessages;
@@ -531,7 +531,7 @@ torch::List<torch::Tensor> probeVideo(
       1, // readAudioStream
       0, // audioSamples
       0 // audioChannels
-  );
+      );
 
   SyncDecoder decoder;
   DecoderInCallback callback = nullptr;
