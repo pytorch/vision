@@ -24,7 +24,7 @@ def workflows(prefix='', filter_branch=None, upload=False, indentation=6):
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos"]:
             for python_version in ["3.5", "3.6", "3.7", "3.8"]:
-                for cu_version in (["cpu", "cu92", "cu100", "cu101"] if os_type == "linux" else ["cpu"]):
+                for cu_version in (["cpu", "cu92", "cu101", "cu102"] if os_type == "linux" else ["cpu"]):
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version,
@@ -49,6 +49,20 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=''
     return w
 
 
+manylinux_images = {
+    "cu92": "pytorch/manylinux-cuda92",
+    "cu101": "pytorch/manylinux-cuda101",
+    "cu102": "pytorch/manylinux-cuda102",
+}
+
+
+def get_manylinux_image(cu_version):
+    cu_suffix = "102"
+    if cu_version.startswith('cu'):
+        cu_suffix = cu_version[len('cu'):]
+    return f"pytorch/manylinux-cuda{cu_suffix}"
+
+
 def generate_base_workflow(base_workflow_name, python_version, cu_version,
                            unicode, os_type, btype, *, filter_branch=None):
 
@@ -61,10 +75,7 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
     if unicode:
         d["unicode_abi"] = '1'
 
-    if cu_version == "cu92":
-        d["wheel_docker_image"] = "pytorch/manylinux-cuda92"
-    elif cu_version == "cu100":
-        d["wheel_docker_image"] = "pytorch/manylinux-cuda100"
+    d["wheel_docker_image"] = get_manylinux_image(cu_version)
 
     if filter_branch is not None:
         d["filters"] = {"branches": {"only": filter_branch}}
