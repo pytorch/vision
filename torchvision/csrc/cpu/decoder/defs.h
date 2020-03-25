@@ -53,9 +53,11 @@ struct VideoFormat {
   When width = 0, height = 0, minDimension = 0, and maxDimension = 0,
     keep the orignal frame resolution
   When width = 0, height = 0, minDimension != 0, and maxDimension = 0,
-    keep the aspect ratio and resize the frame so that shorter edge size is minDimension
+    keep the aspect ratio and resize the frame so that shorter edge size is
+  minDimension
   When width = 0, height = 0, minDimension = 0, and maxDimension != 0,
-    keep the aspect ratio and resize the frame so that longer edge size is maxDimension
+    keep the aspect ratio and resize the frame so that longer edge size is
+  maxDimension
   When width = 0, height = 0, minDimension != 0, and maxDimension != 0,
     resize the frame so that shorter edge size is minDimension, and
     longer edge size is maxDimension. The aspect ratio may not be preserved
@@ -64,7 +66,8 @@ struct VideoFormat {
   When width != 0, height = 0, minDimension = 0, and maxDimension = 0,
     keep the aspect ratio and resize the frame so that frame width is $width
   When width != 0, height != 0, minDimension = 0, and maxDimension = 0,
-    resize the frame so that frame width and  height are set to $width and $height,
+    resize the frame so that frame width and  height are set to $width and
+  $height,
     respectively
   */
   size_t width{0}; // width in pixels
