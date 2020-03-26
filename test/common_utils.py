@@ -11,7 +11,6 @@ import errno
 import __main__
 
 from numbers import Number
-from torch._six import string_classes, inf
 from collections import OrderedDict
 
 
@@ -231,7 +230,7 @@ class TestCase(unittest.TestCase):
                                  message=message, allow_inf=allow_inf)
             else:
                 assertTensorsEqual(x, y)
-        elif isinstance(x, string_classes) and isinstance(y, string_classes):
+        elif isinstance(x, str) and isinstance(y, str):
             super(TestCase, self).assertEqual(x, y, message)
         elif type(x) == set and type(y) == set:
             super(TestCase, self).assertEqual(x, y, message)
@@ -255,6 +254,7 @@ class TestCase(unittest.TestCase):
         elif isinstance(x, bool) and isinstance(y, bool):
             super(TestCase, self).assertEqual(x, y, message)
         elif isinstance(x, Number) and isinstance(y, Number):
+            inf = float("inf")
             if abs(x) == inf or abs(y) == inf:
                 if allow_inf:
                     super(TestCase, self).assertEqual(x, y, message)
