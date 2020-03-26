@@ -2,7 +2,7 @@ from .vision import VisionDataset
 from PIL import Image
 import os
 import os.path
-import six
+import io
 import string
 import sys
 
@@ -43,7 +43,7 @@ class LSUNClass(VisionDataset):
         with env.begin(write=False) as txn:
             imgbuf = txn.get(self.keys[index])
 
-        buf = six.BytesIO()
+        buf = io.BytesIO()
         buf.write(imgbuf)
         buf.seek(0)
         img = Image.open(buf).convert('RGB')
