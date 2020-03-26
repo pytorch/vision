@@ -227,9 +227,9 @@ class ONNXExporterTester(unittest.TestCase):
                 images = ImageList(images, [i.shape[-2:] for i in images])
                 return self_module.rpn(images, features)
 
-        images = torch.rand(2, 3, 600, 600)
+        images = torch.rand(2, 3, 400, 400)
         features = self.get_features(images)
-        images2 = torch.rand(2, 3, 1000, 1000)
+        images2 = torch.rand(2, 3, 600, 600)
         test_features = self.get_features(images2)
 
         model = RPNModule()
