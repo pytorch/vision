@@ -5,6 +5,8 @@ from PIL import Image
 import os
 import os.path
 import sys
+import threading
+import queue
 
 
 def has_file_allowed_extension(filename, extensions):
@@ -87,7 +89,7 @@ class DatasetFolder(VisionDataset):
     """
 
     def __init__(self, root, loader, extensions=None, transform=None,
-                 target_transform=None, is_valid_file=None):
+                 target_transform=None, is_valid_file=None, load_threads=0):
         super(DatasetFolder, self).__init__(root, transform=transform,
                                             target_transform=target_transform)
         classes, class_to_idx = self._find_classes(self.root)
@@ -103,6 +105,9 @@ class DatasetFolder(VisionDataset):
         self.class_to_idx = class_to_idx
         self.samples = samples
         self.targets = [s[1] for s in samples]
+        self.index_queue = None
+        self.load_threads = load_threads
+        self.load_async = self.load_threads > 0 and (self.transform is not None or self.target_transform is not None)
 
     def _find_classes(self, dir):
         """
@@ -125,6 +130,30 @@ class DatasetFolder(VisionDataset):
         classes.sort()
         class_to_idx = {classes[i]: i for i in range(len(classes))}
         return classes, class_to_idx
+    
+    def _start_fetcher(self):
+        self.index_queue = queue.Queue()
+        self.data_queue = queue.Queue()
+        self.pre_loads = {}
+        for _ in range(self.fetch_threads):
+            t = threading.Thread(target=self._pre_loader, name='')
+            t.setDaemon(True)
+            t.start()
+    
+    def _pre_loader(self):
+        while True:
+            idx = self.index_queue.get()
+            path, _ = self.samples[idx]
+            sample = self.loader(path)
+            self.data_queue.put((idx,sample))
+    
+    def hint(self, batch_indices):
+        if not self.load_async:
+            return
+        if self.index_queue is None:
+            self._start_fetcher()
+        for i in batch_indices:
+            self.index_queue.put(i)
 
     def __getitem__(self, index):
         """
@@ -135,7 +164,20 @@ class DatasetFolder(VisionDataset):
             tuple: (sample, target) where target is class_index of the target class.
         """
         path, target = self.samples[index]
-        sample = self.loader(path)
+        if self.load_async and self.index_queue is not None:
+            if index in self.pre_loads:
+                sample = self.pre_loads[index]
+                del self.pre_loads[index]
+            else:
+                while True:
+                    idx, data = self.data_queue.get()
+                    if idx != index:
+                        self.pre_loads[idx] = data
+                        continue
+                    sample = data
+                    break
+        else:
+            sample = self.loader(path)
         if self.transform is not None:
             sample = self.transform(sample)
         if self.target_transform is not None:
