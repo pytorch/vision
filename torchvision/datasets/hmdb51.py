@@ -66,7 +66,6 @@ class HMDB51(VisionDataset):
             self.root,
             class_to_idx,
             extensions,
-            is_valid_file=None,
         )
 
         video_paths = [path for (path, _) in self.samples]
