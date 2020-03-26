@@ -285,9 +285,9 @@ class ONNXExporterTester(unittest.TestCase):
                                                                original_image_sizes)
                 return detections
 
-        images = torch.rand(2, 3, 600, 600)
+        images = torch.rand(2, 3, 400, 400)
         features = self.get_features(images)
-        images2 = torch.rand(2, 3, 1000, 1000)
+        images2 = torch.rand(2, 3, 600, 600)
         test_features = self.get_features(images2)
 
         model = RoiHeadsModule()
@@ -301,7 +301,6 @@ class ONNXExporterTester(unittest.TestCase):
 
     def get_image_from_url(self, url, size=None):
         import requests
-        import numpy
         from PIL import Image
         from io import BytesIO
         from torchvision import transforms

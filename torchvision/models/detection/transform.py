@@ -194,7 +194,8 @@ class GeneralizedRCNNTransform(nn.Module):
 
 def resize_keypoints(keypoints, original_size, new_size):
     # type: (Tensor, List[int], List[int])
-    ratios = [torch.tensor(s) / torch.tensor(s_orig) for s, s_orig in zip(new_size, original_size)]
+    ratios = [torch.tensor(s, dtype=torch.float32, device=keypoints.device) / torch.tensor(s_orig, dtype=torch.float32, device=keypoints.device)
+              for s, s_orig in zip(new_size, original_size)]
     ratio_h, ratio_w = ratios
     resized_data = keypoints.clone()
     if torch._C._get_tracing_state():
@@ -209,7 +210,8 @@ def resize_keypoints(keypoints, original_size, new_size):
 
 def resize_boxes(boxes, original_size, new_size):
     # type: (Tensor, List[int], List[int])
-    ratios = [torch.tensor(s, dtype=torch.float32) / torch.tensor(s_orig, dtype=torch.float32) for s, s_orig in zip(new_size, original_size)]
+    ratios = [torch.tensor(s, dtype=torch.float32, device=boxes.device) / torch.tensor(s_orig, dtype=torch.float32, device=boxes.device)
+              for s, s_orig in zip(new_size, original_size)]
     ratio_height, ratio_width = ratios
     xmin, ymin, xmax, ymax = boxes.unbind(1)
 
