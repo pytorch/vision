@@ -12,7 +12,7 @@ from torchvision.models.detection.mask_rcnn import MaskRCNNHeads, MaskRCNNPredic
 
 from collections import OrderedDict
 
-# onnxruntime requires python 3.5 or above
+# onnxruntime requires python 3.5 or above-
 try:
     import onnxruntime
 except ImportError:
