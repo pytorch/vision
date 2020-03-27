@@ -317,10 +317,10 @@ class ONNXExporterTester(unittest.TestCase):
 
     def get_test_images(self):
         image_url = "http://farm3.staticflickr.com/2469/3915380994_2e611b1779_z.jpg"
-        image = self.get_image_from_url(url=image_url, size=(800, 1201))
+        image = self.get_image_from_url(url=image_url, size=(200, 300))
 
         image_url2 = "https://pytorch.org/tutorials/_static/img/tv_tutorial/tv_image05.png"
-        image2 = self.get_image_from_url(url=image_url2, size=(873, 800))
+        image2 = self.get_image_from_url(url=image_url2, size=(250, 200))
 
         images = [image]
         test_images = [image2]
