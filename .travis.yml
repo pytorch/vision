@@ -46,7 +46,7 @@ before_install:
   - pip install typing
   - |
     if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then
-      pip install -q --user -i https://test.pypi.org/simple/ ort-nightly==1.2.0.dev202003241
+      pip install -q --user onnxruntime
     fi
   - conda install av -c conda-forge
 
