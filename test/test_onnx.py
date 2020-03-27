@@ -15,6 +15,7 @@ from collections import OrderedDict
 # onnxruntime requires python 3.5 or above-
 try:
     import onnxruntime
+    print("=== onnx === ", onnx.__version__)
     print("=== onnxruntime === ", onnxruntime.__version__)
 except ImportError:
     onnxruntime = None
