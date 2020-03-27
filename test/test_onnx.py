@@ -285,9 +285,9 @@ class ONNXExporterTester(unittest.TestCase):
                                                                original_image_sizes)
                 return detections
 
-        images = torch.rand(2, 3, 200, 200)
+        images = torch.rand(2, 3, 100, 100)
         features = self.get_features(images)
-        images2 = torch.rand(2, 3, 300, 300)
+        images2 = torch.rand(2, 3, 200, 200)
         test_features = self.get_features(images2)
 
         model = RoiHeadsModule()
