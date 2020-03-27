@@ -100,7 +100,6 @@ class ONNXExporterTester(unittest.TestCase):
 
         self.run_model(Module(), [(boxes, scores)])
 
-    @unittest.skip
     def test_clip_boxes_to_image(self):
         boxes = torch.randint(10, (5, 4))
         boxes[:, 2:] += torch.randint(500, (5, 2))
@@ -268,7 +267,6 @@ class ONNXExporterTester(unittest.TestCase):
 
         self.run_model(TransformModule(), [(i, [boxes],), (i1, [boxes1],)])
 
-    @unittest.skip
     def test_roi_heads(self):
         class RoiHeadsModule(torch.nn.Module):
             def __init__(self_module):
