@@ -267,6 +267,7 @@ class ONNXExporterTester(unittest.TestCase):
 
         self.run_model(TransformModule(), [(i, [boxes],), (i1, [boxes1],)])
 
+    @unittest.skip
     def test_roi_heads(self):
         class RoiHeadsModule(torch.nn.Module):
             def __init__(self_module):
