@@ -329,7 +329,7 @@ class ONNXExporterTester(unittest.TestCase):
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
 
-        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True)
+        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
         self.run_model(model, [(images,), (test_images,)], input_names=["images_tensors"],
@@ -375,7 +375,7 @@ class ONNXExporterTester(unittest.TestCase):
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
 
-        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True)
+        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
         self.run_model(model, [(images,), (test_images,)],
@@ -417,7 +417,7 @@ class ONNXExporterTester(unittest.TestCase):
         class KeyPointRCNN(torch.nn.Module):
             def __init__(self):
                 super(KeyPointRCNN, self).__init__()
-                self.model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(pretrained=True)
+                self.model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
 
             def forward(self, images):
                 output = self.model(images)
