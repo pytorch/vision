@@ -46,7 +46,7 @@ before_install:
   - pip install typing
   - |
     if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then
-      pip install -q --user onnxruntime
+      pip install -q --user -i https://test.pypi.org/simple/ ort-nightly==1.0.0.dev1123
     fi
   - conda install av -c conda-forge
 
@@ -67,7 +67,7 @@ install:
     cd -
 
 script:
-  - pytest -rA --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH -v -k 'not TestVideoReader and not TestVideoTransforms' test
+  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH -k 'not TestVideoReader and not TestVideoTransforms' test
   - pytest test/test_hub.py
 
 after_success:
