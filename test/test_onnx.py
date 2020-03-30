@@ -102,14 +102,18 @@ class ONNXExporterTester(unittest.TestCase):
 
     def test_clip_boxes_to_image(self):
         boxes = torch.randint(10, (5, 4))
-        boxes[:, 2:] += torch.randint(500, (5, 2))
+        boxes[:, 2:] += boxes[:, :2] + torch.randint(500, (5, 2))
         size = torch.randn(200, 300)
+
+        size_2 = torch.randn(300, 400)
 
         class Module(torch.nn.Module):
             def forward(self, boxes, size):
                 return ops.boxes.clip_boxes_to_image(boxes, size.shape)
 
-        self.run_model(Module(), [(boxes, size)])
+        self.run_model(Module(), [(boxes, size), (boxes, size_2)],
+                       input_names=["boxes", "size"],
+                       dynamic_axes={"size": [0, 1]})
 
     def test_roi_align(self):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
