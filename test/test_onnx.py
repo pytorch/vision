@@ -103,7 +103,6 @@ class ONNXExporterTester(unittest.TestCase):
     def test_clip_boxes_to_image(self):
         boxes = torch.randn(5, 4) * 500
         boxes[:, 2:] += boxes[:, :2]
-        print(boxes)
         size = torch.randn(200, 300)
 
         size_2 = torch.randn(300, 400)
