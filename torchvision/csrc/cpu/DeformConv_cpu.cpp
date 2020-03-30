@@ -392,6 +392,8 @@ at::Tensor DeformConv2d_forward_cpu(
                           .addmm_(weight[g].flatten(1), columns[g])
                           .view_as(out_buf[b][g]);
     }
+    columns = columns.view(
+        {columns.size(0) * columns.size(1), columns.size(2)});
   }
 
   out_buf = out_buf.view({batch_sz / n_parallel_imgs,
@@ -744,15 +746,16 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv2d_backward_input_cpu(
                             grad_out.size(3),
                             grad_out.size(4)});
 
+  weight = weight.view({n_weight_grps,
+                        weight.size(0) / n_weight_grps,
+                        weight.size(1),
+                        weight.size(2),
+                        weight.size(3)});
+    
   for (int elt = 0; elt < batch_sz / n_parallel_imgs; elt++) {
     // Separate into weight groups
     columns = columns.view(
         {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
-    weight = weight.view({n_weight_grps,
-                          weight.size(0) / n_weight_grps,
-                          weight.size(1),
-                          weight.size(2),
-                          weight.size(3)});
     for (int g = 0; g < n_weight_grps; g++) {
       columns[g] = columns[g].addmm_(
           weight[g].flatten(1).transpose(0, 1), grad_out[elt][g].flatten(1));
