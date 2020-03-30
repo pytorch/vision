@@ -346,7 +346,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cuda(
       input.scalar_type(), "PSROIAlign_forward", [&] {
         PSROIAlignForwardCUDA<scalar_t><<<grid, block, 0, stream>>>(
             output_size,
-            input.contiguous().data<scalar_t>(),
+            input.contiguous().data_ptr<scalar_t>(),
             spatial_scale,
             channels,
             height,
@@ -354,10 +354,10 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cuda(
             pooled_height,
             pooled_width,
             sampling_ratio,
-            rois.contiguous().data<scalar_t>(),
+            rois.contiguous().data_ptr<scalar_t>(),
             channels_out,
-            output.data<scalar_t>(),
-            channel_mapping.data<int>());
+            output.data_ptr<scalar_t>(),
+            channel_mapping.data_ptr<int>());
       });
   AT_CUDA_CHECK(cudaGetLastError());
   cudaDeviceSynchronize();
@@ -416,8 +416,8 @@ at::Tensor PSROIAlign_backward_cuda(
       grad.scalar_type(), "PSROIAlign_backward", [&] {
         PSROIAlignBackwardCUDA<scalar_t><<<grid, block, 0, stream>>>(
             grad.numel(),
-            grad.contiguous().data<scalar_t>(),
-            channel_mapping.data<int>(),
+            grad.contiguous().data_ptr<scalar_t>(),
+            channel_mapping.data_ptr<int>(),
             num_rois,
             spatial_scale,
             channels,
@@ -427,8 +427,8 @@ at::Tensor PSROIAlign_backward_cuda(
             pooled_width,
             sampling_ratio,
             channels_out,
-            grad_input.data<scalar_t>(),
-            rois.contiguous().data<scalar_t>());
+            grad_input.data_ptr<scalar_t>(),
+            rois.contiguous().data_ptr<scalar_t>());
       });
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;
