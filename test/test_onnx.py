@@ -101,8 +101,9 @@ class ONNXExporterTester(unittest.TestCase):
         self.run_model(Module(), [(boxes, scores)])
 
     def test_clip_boxes_to_image(self):
-        boxes = torch.randint(10, (5, 4))
-        boxes[:, 2:] += boxes[:, :2] + torch.randint(500, (5, 2))
+        boxes = torch.randn(5, 4) * 500
+        boxes[:, 2:] += boxes[:, :2]
+        print(boxes)
         size = torch.randn(200, 300)
 
         size_2 = torch.randn(300, 400)
