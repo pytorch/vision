@@ -3,12 +3,7 @@ from PIL import Image
 import os
 import os.path
 import numpy as np
-import sys
-
-if sys.version_info[0] == 2:
-    import cPickle as pickle
-else:
-    import pickle
+import pickle
 
 from .vision import VisionDataset
 from .utils import check_integrity, download_and_extract_archive
@@ -79,10 +74,7 @@ class CIFAR10(VisionDataset):
         for file_name, checksum in downloaded_list:
             file_path = os.path.join(self.root, self.base_folder, file_name)
             with open(file_path, 'rb') as f:
-                if sys.version_info[0] == 2:
-                    entry = pickle.load(f)
-                else:
-                    entry = pickle.load(f, encoding='latin1')
+                entry = pickle.load(f, encoding='latin1')
                 self.data.append(entry['data'])
                 if 'labels' in entry:
                     self.targets.extend(entry['labels'])
@@ -100,10 +92,7 @@ class CIFAR10(VisionDataset):
             raise RuntimeError('Dataset metadata file not found or corrupted.' +
                                ' You can use download=True to download it')
         with open(path, 'rb') as infile:
-            if sys.version_info[0] == 2:
-                data = pickle.load(infile)
-            else:
-                data = pickle.load(infile, encoding='latin1')
+            data = pickle.load(infile, encoding='latin1')
             self.classes = data[self.meta['key']]
         self.class_to_idx = {_class: i for i, _class in enumerate(self.classes)}
 

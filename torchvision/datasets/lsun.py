@@ -11,11 +11,7 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Iterable
 
-if sys.version_info[0] == 2:
-    import cPickle as pickle
-else:
-    import pickle
-
+import pickle
 from .utils import verify_str_arg, iterable_to_str
 
 
