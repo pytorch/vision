@@ -68,7 +68,6 @@ if os.getenv('PYTORCH_VERSION'):
 
 requirements = [
     'numpy',
-    'six',
     pytorch_dep,
 ]
 
