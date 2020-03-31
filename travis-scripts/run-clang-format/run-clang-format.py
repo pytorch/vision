@@ -8,8 +8,6 @@ A diff output is produced and a sensible exit code is returned.
 
 """
 
-from __future__ import print_function, unicode_literals
-
 import argparse
 import codecs
 import difflib
