@@ -1,10 +1,13 @@
+from typing import Union, Optional, Sequence, Tuple
+import io
 import torch
 import math
 irange = range
 
 
-def make_grid(tensor, nrow=8, padding=2,
-              normalize=False, range=None, scale_each=False, pad_value=0):
+def make_grid(tensor: Union[torch.Tensor, Sequence[torch.Tensor]], nrow: int = 8,
+              padding: int = 2, normalize=False, range: Optional[Tuple[int, int]] = None,
+              scale_each: bool = False, pad_value: int = 0) -> torch.Tensor:
     """Make a grid of images.
 
     Args:
@@ -88,8 +91,9 @@ def make_grid(tensor, nrow=8, padding=2,
     return grid
 
 
-def save_image(tensor, fp, nrow=8, padding=2,
-               normalize=False, range=None, scale_each=False, pad_value=0, format=None):
+def save_image(tensor: Union[torch.Tensor, Sequence[torch.Tensor]], fp: Union[str, io.FileIO, io.BytesIO],
+               nrow: int = 8, padding: int = 2, normalize: bool = False, range: Optional[Tuple[int, int]] = None,
+               scale_each: bool = False, pad_value: int = 0, format: Optional[str, io.FileIO] = None) -> None:
     """Save a given Tensor into an image file.
 
     Args:
