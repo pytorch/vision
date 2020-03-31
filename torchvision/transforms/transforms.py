@@ -1282,7 +1282,7 @@ class RandomErasing(object):
                 j = random.randint(0, img_w - w)
                 if isinstance(value, numbers.Number):
                     v = value
-                elif isinstance(value, str):
+                elif isinstance(value, torch._six.string_classes):
                     v = torch.empty([img_c, h, w], dtype=torch.float32).normal_()
                 elif isinstance(value, (list, tuple)):
                     v = torch.tensor(value, dtype=torch.float32).view(-1, 1, 1).expand(-1, h, w)
