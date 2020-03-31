@@ -10,6 +10,6 @@ steps:
     bucketName: 'pytorch'
     sourceFolder: 'packaging/windows/output/${{ parameters.cudaVer }}'
     globExpressions: '*.whl'
-    targetFolder: 'whl/nightly/${{ parameters.cuVer }}/'
+    targetFolder: 'whl/test/${{ parameters.cuVer }}/'
     filesAcl: 'public-read'
     flattenFolders: 'true'

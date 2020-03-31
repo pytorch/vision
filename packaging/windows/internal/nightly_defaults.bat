@@ -102,7 +102,7 @@ if "%PYTORCH_REPO%" == "" set PYTORCH_REPO=pytorch
 ::   my_branch_name) or can be a git commit (git checkout 4b2674n...). Default
 ::   is 'latest', which is a special term that signals to pull the last commit
 ::   before 0:00 midnight on the NIGHTLIES_DATE
-if "%PYTORCH_BRANCH%" == "" set PYTORCH_BRANCH=v0.6.0
+if "%PYTORCH_BRANCH%" == "" set PYTORCH_BRANCH=v0.5.1
 
 :: Clone the requested pytorch checkout
 if exist "%NIGHTLIES_PYTORCH_ROOT%" ( goto clone_end ) else ( goto clone_start )
@@ -128,7 +128,8 @@ set PYTORCH_BRANCH=%last_commit%
 :latest_end
 
 git checkout "%PYTORCH_BRANCH%"
-git submodule update
+git submodule sync
+git submodule update --init --recursive
 popd
 
 :clone_end

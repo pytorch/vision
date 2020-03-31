@@ -88,7 +88,7 @@ FOR %%v IN (%DESIRED_PYTHON%) DO (
     set PYTHON_VERSION_STR=!PYTHON_VERSION_STR:.=!
     set "PATH=%CONDA_HOME%\envs\py!PYTHON_VERSION_STR!;%CONDA_HOME%\envs\py!PYTHON_VERSION_STR!\scripts;%CONDA_HOME%\envs\py!PYTHON_VERSION_STR!\Library\bin;%ORIG_PATH%"
 
-    set TORCH_WHEEL=torch -f https://download.pytorch.org/whl/%CUVER%/torch_test.html
+    set TORCH_WHEEL=torch -f https://download.pytorch.org/whl/test/%CUVER%/torch_test.html
     echo Installing !TORCH_WHEEL!...
     pip install !TORCH_WHEEL!
 )

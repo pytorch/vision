@@ -79,7 +79,7 @@ IF ERRORLEVEL 1 (
 )
 
 echo Uploading %PYTORCH_FINAL_PACKAGE% to Anaconda Cloud
-anaconda upload "%PYTORCH_FINAL_PACKAGE%" -u pytorch-nightly --label main --force --no-progress
+anaconda upload "%PYTORCH_FINAL_PACKAGE%" -u pytorch-test --label main --force --no-progress
 
 IF ERRORLEVEL 1 (
     echo Anaconda upload retry times remaining: %RETRY_TIMES%
