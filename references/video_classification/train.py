@@ -1,9 +1,6 @@
-from __future__ import print_function
 import datetime
 import os
 import time
-import sys
-
 import torch
 import torch.utils.data
 from torch.utils.data.dataloader import default_collate
@@ -95,12 +92,9 @@ def collate_fn(batch):
 
 
 def main(args):
-    if args.apex:
-        if sys.version_info < (3, 0):
-            raise RuntimeError("Apex currently only supports Python 3. Aborting.")
-        if amp is None:
-            raise RuntimeError("Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
-                               "to enable mixed-precision training.")
+    if args.apex and amp is None:
+        raise RuntimeError("Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
+                           "to enable mixed-precision training.")
 
     if args.output_dir:
         utils.mkdir(args.output_dir)

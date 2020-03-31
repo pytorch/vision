@@ -1,4 +1,3 @@
-from __future__ import division
 import torch
 import torchvision.transforms.functional as F
 from torch import Tensor

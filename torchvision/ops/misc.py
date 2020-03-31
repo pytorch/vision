@@ -1,4 +1,3 @@
-from __future__ import division
 from collections import OrderedDict
 from torch.jit.annotations import Optional, List
 from torch import Tensor
