@@ -10,25 +10,25 @@ jobs:
   parameters:
     package: 'Wheels'
     spec: 'CPU'
-    msagent: true
+    msagent: false
 
 - template: templates/build_task.yml
   parameters:
     package: 'Conda'
     spec: 'CPU'
-    msagent: true
+    msagent: false
 
 - template: templates/build_task.yml
   parameters:
     package: 'Wheels'
     spec: 'CUDA'
-    msagent: true
+    msagent: false
 
 - template: templates/build_task.yml
   parameters:
     package: 'Conda'
     spec: 'CUDA'
-    msagent: true
+    msagent: false
 
 - template: templates/linux_build_task.yml
   parameters:
