@@ -378,7 +378,7 @@ class NMSTester(unittest.TestCase):
         boxes[:, 2:] += boxes[:, :2]
         boxes[-1, :] = boxes[0, :]
         x0, y0, x1, y1 = boxes[-1].tolist()
-        boxes[-1, 2] += (x1 - x0) * (1 - iou_thresh) / iou_thresh
+        boxes[-1, 2] += (x1 - x0) * (1 - iou_thresh) / (iou_thresh - 1e-5)
         scores = torch.rand(N)
         return boxes, scores
 
@@ -399,7 +399,7 @@ class NMSTester(unittest.TestCase):
             r_cpu = ops.nms(boxes, scores, iou)
             r_cuda = ops.nms(boxes.cuda(), scores.cuda(), iou)
 
-            self.assertTrue(torch.allclose(r_cpu, r_cuda.cpu()), err_msg.format(iou))
+            self.assertTrue(set(r_cpu.tolist()) == set(r_cuda.tolist()), err_msg.format(iou))
 
 
 class NewEmptyTensorTester(unittest.TestCase):
