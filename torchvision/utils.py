@@ -6,8 +6,9 @@ irange = range
 
 
 def make_grid(tensor: Union[torch.Tensor, Sequence[torch.Tensor]], nrow: int = 8,
-              padding: int = 2, normalize=False, range: Optional[Tuple[int, int]] = None,
-              scale_each: bool = False, pad_value: int = 0) -> torch.Tensor:
+              padding: int = 2, normalize: bool = False,
+              range: Optional[Tuple[int, int]] = None, scale_each: bool = False,
+              pad_value: int = 0) -> torch.Tensor:
     """Make a grid of images.
 
     Args:
