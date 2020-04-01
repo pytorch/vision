@@ -94,7 +94,7 @@ def make_grid(tensor: Union[torch.Tensor, Sequence[torch.Tensor]], nrow: int = 8
 
 def save_image(tensor: Union[torch.Tensor, Sequence[torch.Tensor]], fp: Union[str, io.FileIO, io.BytesIO],
                nrow: int = 8, padding: int = 2, normalize: bool = False, range: Optional[Tuple[int, int]] = None,
-               scale_each: bool = False, pad_value: int = 0, format: Optional[str, io.FileIO] = None) -> None:
+               scale_each: bool = False, pad_value: int = 0, format: Optional[str] = None) -> None:
     """Save a given Tensor into an image file.
 
     Args:
