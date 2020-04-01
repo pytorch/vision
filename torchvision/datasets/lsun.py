@@ -4,13 +4,7 @@ import os
 import os.path
 import io
 import string
-import sys
-
-if sys.version_info < (3, 3):
-    from collections import Iterable
-else:
-    from collections.abc import Iterable
-
+from collections.abc import Iterable
 import pickle
 from .utils import verify_str_arg, iterable_to_str
 

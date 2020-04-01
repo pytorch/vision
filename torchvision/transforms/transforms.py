@@ -1,6 +1,5 @@
 import torch
 import math
-import sys
 import random
 from PIL import Image
 try:
@@ -10,17 +9,10 @@ except ImportError:
 import numpy as np
 import numbers
 import types
-import collections
+from collections.abc import Sequence, Iterable
 import warnings
 
 from . import functional as F
-
-if sys.version_info < (3, 3):
-    Sequence = collections.Sequence
-    Iterable = collections.Iterable
-else:
-    Sequence = collections.abc.Sequence
-    Iterable = collections.abc.Iterable
 
 
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
