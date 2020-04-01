@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import io
 import re
@@ -69,7 +68,6 @@ if os.getenv('PYTORCH_VERSION'):
 
 requirements = [
     'numpy',
-    'six',
     pytorch_dep,
 ]
 

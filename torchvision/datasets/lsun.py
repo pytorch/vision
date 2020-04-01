@@ -2,7 +2,7 @@ from .vision import VisionDataset
 from PIL import Image
 import os
 import os.path
-import six
+import io
 import string
 import sys
 
@@ -11,11 +11,7 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Iterable
 
-if sys.version_info[0] == 2:
-    import cPickle as pickle
-else:
-    import pickle
-
+import pickle
 from .utils import verify_str_arg, iterable_to_str
 
 
@@ -43,7 +39,7 @@ class LSUNClass(VisionDataset):
         with env.begin(write=False) as txn:
             imgbuf = txn.get(self.keys[index])
 
-        buf = six.BytesIO()
+        buf = io.BytesIO()
         buf.write(imgbuf)
         buf.seek(0)
         img = Image.open(buf).convert('RGB')
