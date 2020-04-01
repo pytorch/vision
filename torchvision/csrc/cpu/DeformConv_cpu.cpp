@@ -713,55 +713,49 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv2d_backward_input_cpu(
 
   auto grad_input = at::zeros_like(input);
   auto grad_offset = at::zeros_like(offset);
-  auto columns = at::zeros(
+  auto columns = at::empty(
       {n_in_channels * weight_w * weight_h, n_parallel_imgs * out_h * out_w},
       input.options());
 
   // Separate into blocks
-  grad_input = grad_input.view(
+  grad_input = grad_input.reshape(
       {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
   input = input.reshape(
       {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
-  grad_offset = grad_offset.view({batch_sz / n_parallel_imgs,
-                                  n_parallel_imgs,
-                                  n_offset_grps * 2 * weight_h * weight_w,
-                                  out_h,
-                                  out_w});
-  offset = offset.view({batch_sz / n_parallel_imgs,
-                        n_parallel_imgs,
-                        n_offset_grps * 2 * weight_h * weight_w,
-                        out_h,
-                        out_w});
+  grad_offset = grad_offset.reshape({batch_sz / n_parallel_imgs,
+                                     n_parallel_imgs,
+                                     n_offset_grps * 2 * weight_h * weight_w,
+                                     out_h,
+                                     out_w});
+  offset = offset.reshape({batch_sz / n_parallel_imgs,
+                           n_parallel_imgs,
+                           n_offset_grps * 2 * weight_h * weight_w,
+                           out_h,
+                           out_w});
 
-  grad_out = grad_out.view({batch_sz / n_parallel_imgs,
-                            n_parallel_imgs,
-                            n_out_channels,
-                            out_h,
-                            out_w});
-  grad_out.transpose_(1, 2);
-  grad_out = grad_out.view({grad_out.size(0),
-                            n_weight_grps,
-                            grad_out.size(1) / n_weight_grps,
-                            grad_out.size(2),
-                            grad_out.size(3),
-                            grad_out.size(4)});
+  grad_out = grad_out.reshape({batch_sz / n_parallel_imgs,
+                               n_parallel_imgs,
+                               n_weight_grps,
+                               n_out_channels / n_weight_grps,
+                               out_h,
+                               out_w}).permute({0, 2, 3, 1, 4, 5});
 
-  weight = weight.view({n_weight_grps,
-                        weight.size(0) / n_weight_grps,
-                        weight.size(1),
-                        weight.size(2),
-                        weight.size(3)});
+  weight = weight.reshape({n_weight_grps,
+                           weight.size(0) / n_weight_grps,
+                           weight.size(1),
+                           weight.size(2),
+                           weight.size(3)});
+
+  columns = columns.view(
+      {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
 
   for (int elt = 0; elt < batch_sz / n_parallel_imgs; elt++) {
+    columns.zero_();
     // Separate into weight groups
-    columns = columns.view(
-        {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
     for (int g = 0; g < n_weight_grps; g++) {
       columns[g] = columns[g].addmm_(
           weight[g].flatten(1).transpose(0, 1), grad_out[elt][g].flatten(1));
     }
-    columns =
-        columns.view({columns.size(0) * columns.size(1), columns.size(2)});
 
     compute_grad_offset(
         columns,
@@ -801,19 +795,8 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv2d_backward_input_cpu(
         grad_input[elt]);
   }
 
-  grad_out = grad_out.view({grad_out.size(0),
-                            grad_out.size(1) * grad_out.size(2),
-                            grad_out.size(3),
-                            grad_out.size(4),
-                            grad_out.size(5)});
-  grad_out.transpose_(1, 2);
-  grad_out = grad_out.view({batch_sz, n_out_channels, out_h, out_w});
-
   grad_input = grad_input.view({batch_sz, n_in_channels, in_h, in_w});
-  input = input.view({batch_sz, n_in_channels, in_h, in_w});
   grad_offset = grad_offset.view(
-      {batch_sz, n_offset_grps * 2 * weight_h * weight_w, out_h, out_w});
-  offset = offset.view(
       {batch_sz, n_offset_grps * 2 * weight_h * weight_w, out_h, out_w});
 
   return std::make_tuple(grad_input, grad_offset);
