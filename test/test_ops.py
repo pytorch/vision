@@ -454,7 +454,7 @@ class DeformConvTester(OpTester, unittest.TestCase):
         return out
 
     def get_fn_args(self, device, contiguous):
-        batch_sz = 1
+        batch_sz = 33
         n_in_channels = 6
         n_out_channels = 2
         n_weight_grps = 2
