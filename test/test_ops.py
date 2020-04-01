@@ -374,11 +374,15 @@ class NMSTester(unittest.TestCase):
         # let b0 be [x0, y0, x1, y1], and b1 be [x0, y0, x1 + d, y1],
         # then, in order to satisfy ops.iou(b0, b1) == iou_thresh,
         # we need to have d = (x1 - x0) * (1 - iou_thresh) / iou_thresh
+        # Adjust the threshold upward a bit with the intent of creating
+        # at least one box that exceeds (barely) the threshold and so
+        # should be suppressed.
         boxes = torch.rand(N, 4) * 100
         boxes[:, 2:] += boxes[:, :2]
         boxes[-1, :] = boxes[0, :]
         x0, y0, x1, y1 = boxes[-1].tolist()
-        boxes[-1, 2] += (x1 - x0) * (1 - iou_thresh) / (iou_thresh - 1e-5)
+        iou_thresh += 1e-5
+        boxes[-1, 2] += (x1 - x0) * (1 - iou_thresh) / iou_thresh
         scores = torch.rand(N)
         return boxes, scores
 
