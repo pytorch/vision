@@ -399,7 +399,12 @@ class NMSTester(unittest.TestCase):
             r_cpu = ops.nms(boxes, scores, iou)
             r_cuda = ops.nms(boxes.cuda(), scores.cuda(), iou)
 
-            self.assertTrue(set(r_cpu.tolist()) == set(r_cuda.tolist()), err_msg.format(iou))
+            is_eq = torch.allclose(r_cpu, r_cuda.cpu())
+            if not is_eq:
+                # if the indices are not the same, ensure that it's because the scores
+                # are duplicate
+                is_eq = torch.allclose(scores[r_cpu], scores[r_cuda.cpu()])
+            self.assertTrue(is_eq, err_msg.format(iou))
 
 
 class NewEmptyTensorTester(unittest.TestCase):
