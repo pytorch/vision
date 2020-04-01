@@ -50,10 +50,10 @@ def set_video_backend(backend):
     Args:
         backend (string): Name of the video backend. one of {'pyav', 'video_reader'}.
             The :mod:`pyav` package uses the 3rd party PyAv library. It is a Pythonic
-                binding for the FFmpeg libraries.
-            The :mod:`video_reader` package includes a native c++ implementation on
-                top of FFMPEG libraries, and a python API of TorchScript custom operator.
-                It is generally decoding faster than pyav, but perhaps is less robust.
+            binding for the FFmpeg libraries.
+            The :mod:`video_reader` package includes a native C++ implementation on
+            top of FFMPEG libraries, and a python API of TorchScript custom operator.
+            It is generally decoding faster than :mod:`pyav`, but perhaps is less robust.
     """
     global _video_backend
     if backend not in ["pyav", "video_reader"]:

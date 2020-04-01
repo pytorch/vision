@@ -342,13 +342,14 @@ def pad(img, padding, fill=0, padding_mode='constant'):
 
 def crop(img, top, left, height, width):
     """Crop the given PIL Image.
-    
+
     Args:
         img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
         top (int): Vertical component of the top left corner of the crop box.
         left (int): Horizontal component of the top left corner of the crop box.
         height (int): Height of the crop box.
         width (int): Width of the crop box.
+
     Returns:
         PIL Image: Cropped image.
     """
@@ -361,13 +362,13 @@ def crop(img, top, left, height, width):
 def center_crop(img, output_size):
     """Crop the given PIL Image and resize it to desired size.
 
-        Args:
-            img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
-            output_size (sequence or int): (height, width) of the crop box. If int,
-                it is used for both directions
-        Returns:
-            PIL Image: Cropped image.
-        """
+    Args:
+        img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
+        output_size (sequence or int): (height, width) of the crop box. If int,
+            it is used for both directions
+    Returns:
+        PIL Image: Cropped image.
+    """
     if isinstance(output_size, numbers.Number):
         output_size = (int(output_size), int(output_size))
     image_width, image_height = img.size
@@ -554,23 +555,24 @@ def five_crop(img, size):
 
 
 def ten_crop(img, size, vertical_flip=False):
-    r"""Crop the given PIL Image into four corners and the central crop plus the
-        flipped version of these (horizontal flipping is used by default).
+    """Generate ten cropped images from the given PIL Image.
+    Crop the given PIL Image into four corners and the central crop plus the
+    flipped version of these (horizontal flipping is used by default).
 
     .. Note::
         This transform returns a tuple of images and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
 
     Args:
-       size (sequence or int): Desired output size of the crop. If size is an
+        size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
             made.
-       vertical_flip (bool): Use vertical flipping instead of horizontal
+        vertical_flip (bool): Use vertical flipping instead of horizontal
 
     Returns:
-       tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip)
-                Corresponding top left, top right, bottom left, bottom right and center crop
-                and same for the flipped image.
+        tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip)
+            Corresponding top left, top right, bottom left, bottom right and
+            center crop and same for the flipped image.
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
