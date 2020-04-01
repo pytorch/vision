@@ -95,7 +95,7 @@ def save_image(tensor, fp, nrow=8, padding=2,
     Args:
         tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,
             saves the tensor as a grid of images by calling ``make_grid``.
-        fp - A filename(string) or file object
+        fp (string or file object): A filename or a file object
         format(Optional):  If omitted, the format to use is determined from the filename extension.
             If a file object was used instead of a filename, this parameter should always be used.
         **kwargs: Other arguments are documented in ``make_grid``.
