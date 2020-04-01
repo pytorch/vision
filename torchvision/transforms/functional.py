@@ -1,5 +1,4 @@
 import torch
-import sys
 import math
 from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
 try:
@@ -9,15 +8,8 @@ except ImportError:
 import numpy as np
 from numpy import sin, cos, tan
 import numbers
-import collections
+from collections.abc import Sequence, Iterable
 import warnings
-
-if sys.version_info < (3, 3):
-    Sequence = collections.Sequence
-    Iterable = collections.Iterable
-else:
-    Sequence = collections.abc.Sequence
-    Iterable = collections.abc.Iterable
 
 
 def _is_pil_image(img):
