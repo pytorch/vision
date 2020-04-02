@@ -299,6 +299,10 @@ workflows:
     jobs:
       - circleci_consistency
       {{ workflows() }}
+      - binary_linux_conda_cuda:
+          name: torchvision_linux_py3.8_cu102_cuda
+          python_version: "3.8"
+          cu_version: "cu102"
       - binary_win_conda:
           name: torchvision_win_py3.6_cpu
           python_version: "3.6"
