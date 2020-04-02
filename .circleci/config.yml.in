@@ -85,7 +85,7 @@ jobs:
       - run:
           command: |
             pip install --user --progress-bar off flake8 typing
-            flake8 .circleci
+            flake8 .
 
   binary_linux_wheel:
     <<: *binary_common
