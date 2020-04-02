@@ -15,11 +15,6 @@ matrix:
       before_install: skip
       install: skip
       script: ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
-    - env: LINT_CHECK
-      python: "3.6"
-      install: pip install flake8 typing
-      script: flake8 .circleci
-      after_success: []
     - python: "3.6"
       env: IMAGE_BACKEND=Pillow-SIMD
     - python: "3.6"
