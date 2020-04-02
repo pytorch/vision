@@ -94,7 +94,7 @@ jobs:
       - run:
           command: |
             sudo apt-get update -y
-            sudo apt-get install -y clang-format-3.8
+            sudo apt-get install -y clang-format
             ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
 
   binary_linux_wheel:
