@@ -415,13 +415,14 @@ class ONNXExporterTester(unittest.TestCase):
 
         assert torch.all(out2[0].eq(out_trace2[0]))
         assert torch.all(out2[1].eq(out_trace2[1]))
-        
+
     @unittest.skip("Disable test until export of interpolate script module to ONNX is fixed")
     def test_keypoint_rcnn(self):
         class KeyPointRCNN(torch.nn.Module):
             def __init__(self):
                 super(KeyPointRCNN, self).__init__()
-                self.model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
+                self.model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(
+                    pretrained=True, min_size=200, max_size=300)
 
             def forward(self, images):
                 output = self.model(images)
