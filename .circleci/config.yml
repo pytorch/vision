@@ -76,7 +76,6 @@ jobs:
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
-
   python_lint:
     docker:
       - image: circleci/python:3.7
@@ -86,6 +85,17 @@ jobs:
           command: |
             pip install --user --progress-bar off flake8 typing
             flake8 .
+
+  clang_format:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            sudo apt-get update -y
+            sudo apt-get install -y clang-format-3.8
+            ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
 
   binary_linux_wheel:
     <<: *binary_common
@@ -308,220 +318,7 @@ workflows:
   build:
     jobs:
       - circleci_consistency
-      - binary_linux_wheel:
-          cu_version: cpu
-          name: binary_linux_wheel_py3.5_cpu
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cu92
-          name: binary_linux_wheel_py3.5_cu92
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_wheel:
-          cu_version: cu101
-          name: binary_linux_wheel_py3.5_cu101
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_wheel:
-          cu_version: cu102
-          name: binary_linux_wheel_py3.5_cu102
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cpu
-          name: binary_linux_wheel_py3.6_cpu
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cu92
-          name: binary_linux_wheel_py3.6_cu92
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_wheel:
-          cu_version: cu101
-          name: binary_linux_wheel_py3.6_cu101
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_wheel:
-          cu_version: cu102
-          name: binary_linux_wheel_py3.6_cu102
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cpu
-          name: binary_linux_wheel_py3.7_cpu
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cu92
-          name: binary_linux_wheel_py3.7_cu92
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_wheel:
-          cu_version: cu101
-          name: binary_linux_wheel_py3.7_cu101
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_wheel:
-          cu_version: cu102
-          name: binary_linux_wheel_py3.7_cu102
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cpu
-          name: binary_linux_wheel_py3.8_cpu
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cu92
-          name: binary_linux_wheel_py3.8_cu92
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_wheel:
-          cu_version: cu101
-          name: binary_linux_wheel_py3.8_cu101
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_wheel:
-          cu_version: cu102
-          name: binary_linux_wheel_py3.8_cu102
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_wheel:
-          cu_version: cpu
-          name: binary_macos_wheel_py3.5_cpu
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_wheel:
-          cu_version: cpu
-          name: binary_macos_wheel_py3.6_cpu
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_wheel:
-          cu_version: cpu
-          name: binary_macos_wheel_py3.7_cpu
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_wheel:
-          cu_version: cpu
-          name: binary_macos_wheel_py3.8_cpu
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cpu
-          name: binary_linux_conda_py3.5_cpu
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cu92
-          name: binary_linux_conda_py3.5_cu92
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_conda:
-          cu_version: cu101
-          name: binary_linux_conda_py3.5_cu101
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_conda:
-          cu_version: cu102
-          name: binary_linux_conda_py3.5_cu102
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cpu
-          name: binary_linux_conda_py3.6_cpu
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cu92
-          name: binary_linux_conda_py3.6_cu92
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_conda:
-          cu_version: cu101
-          name: binary_linux_conda_py3.6_cu101
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_conda:
-          cu_version: cu102
-          name: binary_linux_conda_py3.6_cu102
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cpu
-          name: binary_linux_conda_py3.7_cpu
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cu92
-          name: binary_linux_conda_py3.7_cu92
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_conda:
-          cu_version: cu101
-          name: binary_linux_conda_py3.7_cu101
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_conda:
-          cu_version: cu102
-          name: binary_linux_conda_py3.7_cu102
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cpu
-          name: binary_linux_conda_py3.8_cpu
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cu92
-          name: binary_linux_conda_py3.8_cu92
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_conda:
-          cu_version: cu101
-          name: binary_linux_conda_py3.8_cu101
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_conda:
-          cu_version: cu102
-          name: binary_linux_conda_py3.8_cu102
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_conda:
-          cu_version: cpu
-          name: binary_macos_conda_py3.5_cpu
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_conda:
-          cu_version: cpu
-          name: binary_macos_conda_py3.6_cpu
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_conda:
-          cu_version: cpu
-          name: binary_macos_conda_py3.7_cpu
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_conda:
-          cu_version: cpu
-          name: binary_macos_conda_py3.8_cpu
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda_cuda:
-          name: torchvision_linux_py3.8_cu102_cuda
-          python_version: "3.8"
-          cu_version: "cu102"
-      - binary_win_conda:
-          name: torchvision_win_py3.6_cpu
-          python_version: "3.6"
-          cu_version: "cpu"
-      - binary_win_conda_cuda:
-          name: torchvision_win_py3.6_cu101
-          python_version: "3.6"
-          cu_version: "cu101"
-      - python_lint
-
+      - clang_format
 
   nightly:
     jobs:
