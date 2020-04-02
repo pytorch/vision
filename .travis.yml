@@ -3,18 +3,6 @@ language: python
 dist: xenial
 matrix:
   include:
-    - env: FORMAT_CHECK
-      language: cpp
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-xenial-7
-          packages:
-            - clang-7
-            - clang-format-7
-      before_install: skip
-      install: skip
-      script: ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
     - python: "3.6"
       env: IMAGE_BACKEND=Pillow-SIMD
     - python: "3.6"
