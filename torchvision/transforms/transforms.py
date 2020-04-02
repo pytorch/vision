@@ -641,7 +641,7 @@ class RandomResizedCrop(object):
         width, height = _get_image_size(img)
         area = height * width
 
-        for attempt in range(10):
+        for _ in range(10):
             target_area = random.uniform(*scale) * area
             log_ratio = (math.log(ratio[0]), math.log(ratio[1]))
             aspect_ratio = math.exp(random.uniform(*log_ratio))
@@ -1150,8 +1150,8 @@ class Grayscale(object):
 
     Returns:
         PIL Image: Grayscale version of the input.
-        - If num_output_channels == 1 : returned image is single channel
-        - If num_output_channels == 3 : returned image is 3 channel with r == g == b
+         - If ``num_output_channels == 1`` : returned image is single channel
+         - If ``num_output_channels == 3`` : returned image is 3 channel with r == g == b
 
     """
 
@@ -1208,8 +1208,8 @@ class RandomGrayscale(object):
 
 class RandomErasing(object):
     """ Randomly selects a rectangle region in an image and erases its pixels.
-        'Random Erasing Data Augmentation' by Zhong et al.
-        See https://arxiv.org/pdf/1708.04896.pdf
+    'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/pdf/1708.04896.pdf
+
     Args:
          p: probability that the random erasing operation will be performed.
          scale: range of proportion of erased area against input image.
@@ -1222,12 +1222,13 @@ class RandomErasing(object):
 
     Returns:
         Erased Image.
+
     # Examples:
         >>> transform = transforms.Compose([
-        >>> transforms.RandomHorizontalFlip(),
-        >>> transforms.ToTensor(),
-        >>> transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        >>> transforms.RandomErasing(),
+        >>>   transforms.RandomHorizontalFlip(),
+        >>>   transforms.ToTensor(),
+        >>>   transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        >>>   transforms.RandomErasing(),
         >>> ])
     """
 
@@ -1261,7 +1262,7 @@ class RandomErasing(object):
         img_c, img_h, img_w = img.shape
         area = img_h * img_w
 
-        for attempt in range(10):
+        for _ in range(10):
             erase_area = random.uniform(scale[0], scale[1]) * area
             aspect_ratio = random.uniform(ratio[0], ratio[1])
 
