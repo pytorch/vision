@@ -1,5 +1,4 @@
 import torch
-import sys
 import math
 from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
 try:
@@ -9,15 +8,8 @@ except ImportError:
 import numpy as np
 from numpy import sin, cos, tan
 import numbers
-import collections
+from collections.abc import Sequence, Iterable
 import warnings
-
-if sys.version_info < (3, 3):
-    Sequence = collections.Sequence
-    Iterable = collections.Iterable
-else:
-    Sequence = collections.abc.Sequence
-    Iterable = collections.abc.Iterable
 
 
 def _is_pil_image(img):
@@ -437,7 +429,9 @@ def _parse_fill(fill, img, min_pil_version):
     Returns:
         dict: kwarg for ``fillcolor``
     """
-    if PILLOW_VERSION < min_pil_version:
+    major_found, minor_found = (int(v) for v in PILLOW_VERSION.split('.')[:2])
+    major_required, minor_required = (int(v) for v in min_pil_version.split('.')[:2])
+    if major_found < major_required or (major_found == major_required and minor_found < minor_required):
         if fill is None:
             return {}
         else:
@@ -853,7 +847,7 @@ def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
     output_size = img.size
     center = (img.size[0] * 0.5 + 0.5, img.size[1] * 0.5 + 0.5)
     matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
-    kwargs = {"fillcolor": fillcolor} if PILLOW_VERSION[0] >= '5' else {}
+    kwargs = {"fillcolor": fillcolor} if int(PILLOW_VERSION.split('.')[0]) >= 5 else {}
     return img.transform(output_size, Image.AFFINE, matrix, resample, **kwargs)
 
 
