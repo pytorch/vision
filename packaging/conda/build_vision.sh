@@ -211,7 +211,7 @@ for py_ver in "${DESIRED_PYTHON[@]}"; do
     echo "Finished conda-build at $(date)"
 
     # Extract the package for testing
-    ls -lah "$output_folder"
+    ls -lahR "$output_folder"
     built_package="$(find $output_folder/ -name '*torchvision*.tar.bz2')"
 
     # Copy the built package to the host machine for persistence before testing
