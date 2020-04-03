@@ -27,13 +27,14 @@ def _is_numpy_image(img):
     return img.ndim in {2, 3}
 
 
-def to_tensor(pic):
+def to_tensor(pic, normalize=True):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
 
     See ``ToTensor`` for more details.
 
     Args:
         pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
+        normalize (bool): whether the output tensor should be normalized.
 
     Returns:
         Tensor: Converted image.
@@ -52,7 +53,10 @@ def to_tensor(pic):
         img = torch.from_numpy(pic.transpose((2, 0, 1)))
         # backward compatibility
         if isinstance(img, torch.ByteTensor):
-            return img.float().div(255)
+            if normalize:
+                return img.float().div(255)
+            else:
+                return img.float()
         else:
             return img
 
@@ -77,7 +81,10 @@ def to_tensor(pic):
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1)).contiguous()
     if isinstance(img, torch.ByteTensor):
-        return img.float().div(255)
+        if normalize:
+            return img.float().div(255)
+        else:
+            return img.float()
     else:
         return img
 
