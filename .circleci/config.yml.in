@@ -388,6 +388,14 @@ workflows:
       - python_lint
       - clang_format
       - binary_win_conda_release:
+          name: torchvision_win_conda_py3.5_cpu
+          python_version: "3.5"
+          cu_version: "cpu"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.5_cpu
+          python_version: "3.5"
+          cu_version: "cpu"
+      - binary_win_conda_release:
           name: torchvision_win_conda_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
@@ -396,6 +404,62 @@ workflows:
           python_version: "3.6"
           cu_version: "cpu"
       - binary_win_conda_release:
+          name: torchvision_win_conda_py3.7_cpu
+          python_version: "3.7"
+          cu_version: "cpu"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.7_cpu
+          python_version: "3.7"
+          cu_version: "cpu"
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.8_cpu
+          python_version: "3.8"
+          cu_version: "cpu"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.8_cpu
+          python_version: "3.8"
+          cu_version: "cpu"
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.5_cu92
+          python_version: "3.5"
+          cu_version: "92"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.5_cu92
+          python_version: "3.5"
+          cu_version: "92"
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.6_cu92
+          python_version: "3.6"
+          cu_version: "92"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.6_cu92
+          python_version: "3.6"
+          cu_version: "92"
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.7_cu92
+          python_version: "3.7"
+          cu_version: "92"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.7_cu92
+          python_version: "3.7"
+          cu_version: "92"
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.8_cu92
+          python_version: "3.8"
+          cu_version: "92"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.8_cu92
+          python_version: "3.8"
+          cu_version: "92"
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.5_cu101
+          python_version: "3.5"
+          cu_version: "101"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.5_cu101
+          python_version: "3.5"
+          cu_version: "101"
+      - binary_win_conda_release:
           name: torchvision_win_conda_py3.6_cu101
           python_version: "3.6"
           cu_version: "101"
@@ -403,6 +467,54 @@ workflows:
           name: torchvision_win_wheel_py3.6_cu101
           python_version: "3.6"
           cu_version: "101"
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.7_cu101
+          python_version: "3.7"
+          cu_version: "101"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.7_cu101
+          python_version: "3.7"
+          cu_version: "101"
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.8_cu101
+          python_version: "3.8"
+          cu_version: "101"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.8_cu101
+          python_version: "3.8"
+          cu_version: "101"
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.5_cu102
+          python_version: "3.5"
+          cu_version: "102"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.5_cu102
+          python_version: "3.5"
+          cu_version: "102"
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.6_cu102
+          python_version: "3.6"
+          cu_version: "102"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.6_cu102
+          python_version: "3.6"
+          cu_version: "102"
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.7_cu102
+          python_version: "3.7"
+          cu_version: "102"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.7_cu102
+          python_version: "3.7"
+          cu_version: "102"
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.8_cu102
+          python_version: "3.8"
+          cu_version: "102"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.8_cu102
+          python_version: "3.8"
+          cu_version: "102"
 
   nightly:
 {%- endif %}

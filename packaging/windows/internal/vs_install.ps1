@@ -16,8 +16,6 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-$env:VSDEVCMD_ARGS="-vcvars_ver=14.11"
-
 $process = Start-Process "${PWD}\vs_installer.exe" -ArgumentList $VS_INSTALL_ARGS -NoNewWindow -Wait -PassThru
 Remove-Item -Path vs_installer.exe -Force
 $exitCode = $process.ExitCode

@@ -3,11 +3,11 @@ if [[ -x "/remote/anaconda_token" ]]; then
     . /remote/anaconda_token || true
 fi
 
+set -ex
+
 if [[ "$CIRCLECI" == 'true' ]]; then
     export PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:.:$PATH"
 fi
-
-set -ex
 
 # Function to retry functions that sometimes timeout or have flaky failures
 retry () {
