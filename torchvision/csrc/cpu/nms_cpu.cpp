@@ -6,9 +6,11 @@ at::Tensor nms_cpu_kernel(
     const at::Tensor& scores,
     const float iou_threshold) {
   AT_ASSERTM(!dets.options().device().is_cuda(), "dets must be a CPU tensor");
-  AT_ASSERTM(!scores.options().device().is_cuda(), "scores must be a CPU tensor");
   AT_ASSERTM(
-      dets.scalar_type() == scores.scalar_type(), "dets should have the same type as scores");
+      !scores.options().device().is_cuda(), "scores must be a CPU tensor");
+  AT_ASSERTM(
+      dets.scalar_type() == scores.scalar_type(),
+      "dets should have the same type as scores");
 
   if (dets.numel() == 0)
     return at::empty({0}, dets.options().dtype(at::kLong));
