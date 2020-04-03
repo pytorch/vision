@@ -846,8 +846,7 @@ static at::Tensor deform_conv2d_backward_parameters_cpu(
                                           n_weight_grps,
                                           n_out_channels / n_weight_grps,
                                           out_h,
-                                          out_w}
-                                     )
+                                          out_w})
                                 .permute({0, 2, 3, 1, 4, 5})
                                 .contiguous();
 
