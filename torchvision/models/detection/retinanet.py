@@ -39,7 +39,7 @@ class RetinaNetHead(nn.Module):
 
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
         return {
-            'classification': self.classification_head.compute_loss(targets, head_outputs, anchors, matched_idxs),
+            'classification': self.classification_head.compute_loss(targets, head_outputs, matched_idxs),
             'bbox_regression': self.regression_head.compute_loss(targets, head_outputs, anchors, matched_idxs),
         }
 
@@ -81,12 +81,12 @@ class RetinaNetClassificationHead(nn.Module):
         self.num_classes = num_classes
         self.num_anchors = num_anchors
 
-    def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
+    def compute_loss(self, targets, head_outputs, matched_idxs):
         loss = []
 
         cls_logits = head_outputs['cls_logits']
 
-        for targets_per_image, cls_logits_per_image, anchors_per_image, matched_idxs_per_image in zip(targets, cls_logits, anchors, matched_idxs):
+        for targets_per_image, cls_logits_per_image, matched_idxs_per_image in zip(targets, cls_logits, matched_idxs):
             # determine only the foreground
             foreground_idxs_per_image = matched_idxs_per_image >= 0
             num_foreground = foreground_idxs_per_image.sum()
