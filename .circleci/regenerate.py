@@ -22,9 +22,9 @@ import os.path
 def workflows(prefix='', filter_branch=None, upload=False, indentation=6):
     w = []
     for btype in ["wheel", "conda"]:
-        for os_type in ["linux", "macos"]:
+        for os_type in ["linux", "macos", "win"]:
             for python_version in ["3.5", "3.6", "3.7", "3.8"]:
-                for cu_version in (["cpu", "cu92", "cu101", "cu102"] if os_type == "linux" else ["cpu"]):
+                for cu_version in (["cpu", "cu92", "cu101", "cu102"] if os_type == "linux" or os_type == "win" else ["cpu"]):
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version,
@@ -69,18 +69,21 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
     d = {
         "name": base_workflow_name,
         "python_version": python_version,
-        "cu_version": cu_version,
+        "cu_version": cu_version.replace("cu", "") if os_type == "win" else cu_version,
     }
 
     if unicode:
         d["unicode_abi"] = '1'
 
-    d["wheel_docker_image"] = get_manylinux_image(cu_version)
+    if os_type != "win":
+        d["wheel_docker_image"] = get_manylinux_image(cu_version)
 
     if filter_branch is not None:
         d["filters"] = {"branches": {"only": filter_branch}}
 
-    return {f"binary_{os_type}_{btype}": d}
+    workflow_job = f"binary_{os_type}_{btype}_release" if os_type == "win" else f"binary_{os_type}_{btype}" 
+
+    return {workflow_job: d}
 
 
 def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, filter_branch=None):
@@ -91,7 +94,15 @@ def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, 
     }
 
     if btype == 'wheel':
-        d["subfolder"] = "" if os_type == 'macos' else cu_version + "/"
+        if os_type == 'macos':
+            d["subfolder"] = ""
+        elif os_type == 'win':
+            if cu_version == 'cpu':
+                d["subfolder"] = "cpu/"
+            else:
+                d["subfolder"] = cu_version.replace("cu", "cuda") + "/"
+        else:
+            d["subfolder"] = cu_version + "/"
 
     if filter_branch is not None:
         d["filters"] = {"branches": {"only": filter_branch}}
