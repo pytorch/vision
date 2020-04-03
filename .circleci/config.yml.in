@@ -319,7 +319,6 @@ workflows:
 {%- if True %}
     jobs:
       - circleci_consistency
-{%- if False  %}
       {{ workflows() }}
       - binary_linux_conda_cuda:
           name: torchvision_linux_py3.8_cu102_cuda
@@ -334,11 +333,12 @@ workflows:
           python_version: "3.6"
           cu_version: "cu101"
       - python_lint
-{%- endif %}
       - clang_format
 
   nightly:
 {%- endif %}
     jobs:
       - circleci_consistency
+      - python_lint
+      - clang_format
       {{ workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
