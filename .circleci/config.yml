@@ -259,20 +259,13 @@ jobs:
     <<: *binary_windows
     executor:
       name: win/default
-      shell: powershell.exe
+      shell: cmd.exe
     steps:
       - checkout_merge
       - run:
           name: Build conda packages
           command: |
-            if ("$env:VC_YEAR" -eq "2017") {
-              & ./packaging/windows/internal/vs_install.ps1
-            }
-            & packaging/windows/internal/cuda_install.bat
-            & packaging/windows/internal/nightly_defaults.bat Conda
-            $env:PYTORCH_FINAL_PACKAGE_DIR="$PWD\packaging\windows\output"
-            New-Item "$env:PYTORCH_FINAL_PACKAGE_DIR" -ItemType Directory -Force
-            bash ./packaging/conda/build_vision.sh $env:CUDA_VERSION $env:TORCHVISION_BUILD_VERSION $env:TORCHVISION_BUILD_NUMBER
+            call packaging/windows/internal/build_conda.bat
       - store_test_results:
           path: build_results/
 
@@ -280,18 +273,13 @@ jobs:
     <<: *binary_windows
     executor:
       name: win/default
-      shell: powershell.exe
+      shell: cmd.exe
     steps:
       - checkout_merge
       - run:
           name: Build wheel packages
           command: |
-            if ("$env:VC_YEAR" -eq "2017") {
-              & ./packaging/windows/internal/vs_install.ps1
-            }
-            & ./packaging/windows/internal/cuda_install.bat
-            & ./packaging/windows/internal/nightly_defaults.bat Conda
-            & ./packaging/windows/build_vision.bat $env:CUDA_VERSION $env:TORCHVISION_BUILD_VERSION $env:TORCHVISION_BUILD_NUMBER
+            call packaging/windows/internal/build_wheels.bat
       - store_test_results:
           path: build_results/
 
