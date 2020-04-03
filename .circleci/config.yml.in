@@ -64,6 +64,30 @@ binary_common: &binary_common
     UNICODE_ABI: << parameters.unicode_abi >>
     CU_VERSION: << parameters.cu_version >>
 
+binary_windows: &binary_windows
+  parameters:
+    # Edit these defaults to do a release`
+    build_version:
+      description: "version number of release binary; by default, build a nightly"
+      type: string
+      default: ""
+    pytorch_version:
+      description: "PyTorch version to build against; by default, use a nightly"
+      type: string
+      default: ""
+    # Don't edit these
+    python_version:
+      description: "Python version to build against (e.g., 3.7)"
+      type: string
+    cu_version:
+      description: "CUDA version to build against, in CU format (e.g., cpu or cu100)"
+      type: string
+  environment:
+    DESIRED_PYTHON: << parameters.python_version >>
+    PYTORCH_VERSION: << parameters.pytorch_version >>
+    CUDA_VERSION: << parameters.cu_version >>
+    USE_SCCACHE: "1"
+
 jobs:
   circleci_consistency:
     docker:
@@ -230,6 +254,65 @@ jobs:
             bash packaging/build_conda.sh
           shell: powershell.exe
 
+  binary_win_conda_release:
+    <<: *binary_windows
+    executor:
+      name: win/default
+      shell: bash.exe
+    steps:
+      - checkout_merge
+      - run:
+          name: Install VS2017
+          command: |
+            if [[ "${VC_YEAR}" == "2017" ]]; then
+              powershell packaging/windows/internal/vs_install.ps1
+            fi
+      - run:
+          name: Install CUDA
+          command: |
+            ./packaging/windows/internal/cuda_install.bat
+      - run:
+          name: Setup nightly variables
+          command: |
+            ./packaging/windows/internal/nightly_defaults.bat Conda
+      - run:
+          name: Build conda packages
+          command: |
+            export PYTORCH_FINAL_PACKAGE_DIR="$CD\\packaging\\windows\\output"
+            mkdir -p $PYTORCH_FINAL_PACKAGE_DIR
+            ./packaging/conda/build_vision.sh $CUDA_VERSION $TORCHVISION_BUILD_VERSION $TORCHVISION_BUILD_NUMBER
+      - store_test_results:
+          path: build_results/
+
+  binary_win_wheel_release:
+    <<: *binary_windows
+    executor:
+      name: win/default
+      shell: bash.exe
+    steps:
+      - checkout_merge
+      - run:
+          name: Install VS2017
+          command: |
+            if [[ "${VC_YEAR}" == "2017" ]]; then
+              powershell packaging/windows/internal/vs_install.ps1
+            fi
+      - run:
+          name: Install CUDA
+          command: |
+            ./packaging/windows/internal/cuda_install.bat
+      - run:
+          name: Setup nightly variables
+          command: |
+            ./packaging/windows/internal/nightly_defaults.bat Wheels
+      - run:
+          name: Build wheels packages
+          command: |
+            call packaging/windows/build_vision.bat %CUDA_VERSION% %TORCHVISION_BUILD_VERSION% %TORCHVISION_BUILD_NUMBER%
+          shell: cmd.exe
+      - store_test_results:
+          path: build_results/
+
   binary_macos_wheel:
     <<: *binary_common
     macos:
@@ -334,6 +417,22 @@ workflows:
           cu_version: "cu101"
       - python_lint
       - clang_format
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.6_cpu
+          python_version: "3.6"
+          cu_version: "cpu"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.6_cpu
+          python_version: "3.6"
+          cu_version: "cpu"
+      - binary_win_conda_release:
+          name: torchvision_win_conda_py3.6_cu101
+          python_version: "3.6"
+          cu_version: "101"
+      - binary_win_wheel_release:
+          name: torchvision_win_wheel_py3.6_cu101
+          python_version: "3.6"
+          cu_version: "101"
 
   nightly:
 {%- endif %}
