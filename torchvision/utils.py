@@ -1,5 +1,6 @@
-from typing import Union, Optional, Sequence, Tuple
+from typing import Union, Optional, Sequence, Tuple, Text, BinaryIO
 import io
+import pathlib
 import torch
 import math
 irange = range
@@ -92,7 +93,7 @@ def make_grid(tensor: Union[torch.Tensor, Sequence[torch.Tensor]], nrow: int = 8
     return grid
 
 
-def save_image(tensor: Union[torch.Tensor, Sequence[torch.Tensor]], fp: Union[str, io.FileIO, io.BytesIO],
+def save_image(tensor: Union[torch.Tensor, Sequence[torch.Tensor]], fp: Union[Text, pathlib.Path, BinaryIO],
                nrow: int = 8, padding: int = 2, normalize: bool = False, range: Optional[Tuple[int, int]] = None,
                scale_each: bool = False, pad_value: int = 0, format: Optional[str] = None) -> None:
     """Save a given Tensor into an image file.
