@@ -76,7 +76,7 @@ def _check_size_scale_factor(dim, size, scale_factor):
         raise ValueError("either size or scale_factor should be defined")
     if size is not None and scale_factor is not None:
         raise ValueError("only one of size or scale_factor should be defined")
-    if scale_factor is not None: 
+    if scale_factor is not None:
         if isinstance(scale_factor, (list, tuple)):
             if len(scale_factor) != dim:
                 raise ValueError(

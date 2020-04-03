@@ -188,7 +188,7 @@ def normalize(tensor, mean, std, inplace=False):
     """
     if not torch.is_tensor(tensor):
         raise TypeError('tensor should be a torch tensor. Got {}.'.format(type(tensor)))
-    
+
     if tensor.ndimension() != 3:
         raise ValueError('Expected tensor to be a tensor image of size (C, H, W). Got tensor.size() = '
                          '{}.'.format(tensor.size()))
@@ -424,7 +424,7 @@ def _parse_fill(fill, img, min_pil_version):
             image. If int or float, the value is used for all bands respectively.
             Defaults to 0 for all bands.
         img (PIL Image): Image to be filled.
-        min_pil_version (str): The minimum PILLOW version for when the ``fillcolor`` option 
+        min_pil_version (str): The minimum PILLOW version for when the ``fillcolor`` option
             was first introduced in the calling function. (e.g. rotate->5.2.0, perspective->5.0.0)
 
     Returns:

@@ -76,6 +76,17 @@ jobs:
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
+
+  python_lint:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off flake8 typing
+            flake8 .
+
   binary_linux_wheel:
     <<: *binary_common
     docker:
@@ -509,6 +520,8 @@ workflows:
           name: torchvision_win_py3.6_cu101
           python_version: "3.6"
           cu_version: "cu101"
+      - python_lint
+
 
   nightly:
     jobs:
