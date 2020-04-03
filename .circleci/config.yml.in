@@ -87,6 +87,7 @@ binary_windows: &binary_windows
     PYTORCH_VERSION: << parameters.pytorch_version >>
     CUDA_VERSION: << parameters.cu_version >>
     USE_SCCACHE: "1"
+    VC_YEAR: "2017"
 
 jobs:
   circleci_consistency:
@@ -274,7 +275,8 @@ jobs:
       - run:
           name: Setup nightly variables
           command: |
-            ./packaging/windows/internal/nightly_defaults.bat Conda
+            call ./packaging/windows/internal/nightly_defaults.bat Conda
+          shell: cmd.exe
       - run:
           name: Build conda packages
           command: |
@@ -304,7 +306,8 @@ jobs:
       - run:
           name: Setup nightly variables
           command: |
-            ./packaging/windows/internal/nightly_defaults.bat Wheels
+            call ./packaging/windows/internal/nightly_defaults.bat Wheels
+          shell: cmd.exe
       - run:
           name: Build wheels packages
           command: |
