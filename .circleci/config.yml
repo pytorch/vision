@@ -259,30 +259,20 @@ jobs:
     <<: *binary_windows
     executor:
       name: win/default
-      shell: bash.exe
+      shell: powershell.exe
     steps:
       - checkout_merge
       - run:
-          name: Install VS2017
-          command: |
-            if [[ "${VC_YEAR}" == "2017" ]]; then
-              powershell packaging/windows/internal/vs_install.ps1
-            fi
-      - run:
-          name: Install CUDA
-          command: |
-            ./packaging/windows/internal/cuda_install.bat
-      - run:
-          name: Setup nightly variables
-          command: |
-            call ./packaging/windows/internal/nightly_defaults.bat Conda
-          shell: cmd.exe
-      - run:
           name: Build conda packages
           command: |
-            export PYTORCH_FINAL_PACKAGE_DIR="$CD\\packaging\\windows\\output"
-            mkdir -p $PYTORCH_FINAL_PACKAGE_DIR
-            ./packaging/conda/build_vision.sh $CUDA_VERSION $TORCHVISION_BUILD_VERSION $TORCHVISION_BUILD_NUMBER
+            if ("$env:VC_YEAR" -eq "2017") {
+              & ./packaging/windows/internal/vs_install.ps1
+            }
+            & packaging/windows/internal/cuda_install.bat
+            & packaging/windows/internal/nightly_defaults.bat Conda
+            $env:PYTORCH_FINAL_PACKAGE_DIR="$PWD\packaging\windows\output"
+            New-Item "$env:PYTORCH_FINAL_PACKAGE_DIR" -ItemType Directory -Force
+            bash ./packaging/conda/build_vision.sh $env:CUDA_VERSION $env:TORCHVISION_BUILD_VERSION $env:TORCHVISION_BUILD_NUMBER
       - store_test_results:
           path: build_results/
 
@@ -290,29 +280,18 @@ jobs:
     <<: *binary_windows
     executor:
       name: win/default
-      shell: bash.exe
+      shell: powershell.exe
     steps:
       - checkout_merge
       - run:
-          name: Install VS2017
+          name: Build wheel packages
           command: |
-            if [[ "${VC_YEAR}" == "2017" ]]; then
-              powershell packaging/windows/internal/vs_install.ps1
-            fi
-      - run:
-          name: Install CUDA
-          command: |
-            ./packaging/windows/internal/cuda_install.bat
-      - run:
-          name: Setup nightly variables
-          command: |
-            call ./packaging/windows/internal/nightly_defaults.bat Wheels
-          shell: cmd.exe
-      - run:
-          name: Build wheels packages
-          command: |
-            call packaging/windows/build_vision.bat %CUDA_VERSION% %TORCHVISION_BUILD_VERSION% %TORCHVISION_BUILD_NUMBER%
-          shell: cmd.exe
+            if ("$env:VC_YEAR" -eq "2017") {
+              & ./packaging/windows/internal/vs_install.ps1
+            }
+            & ./packaging/windows/internal/cuda_install.bat
+            & ./packaging/windows/internal/nightly_defaults.bat Conda
+            & ./packaging/windows/build_vision.bat $env:CUDA_VERSION $env:TORCHVISION_BUILD_VERSION $env:TORCHVISION_BUILD_NUMBER
       - store_test_results:
           path: build_results/
 
