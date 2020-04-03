@@ -3,6 +3,10 @@ if [[ -x "/remote/anaconda_token" ]]; then
     . /remote/anaconda_token || true
 fi
 
+if [[ "$CIRCLECI" == 'true' ]]; then
+    export PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:.:$PATH"
+fi
+
 set -ex
 
 # Function to retry functions that sometimes timeout or have flaky failures
@@ -211,7 +215,7 @@ for py_ver in "${DESIRED_PYTHON[@]}"; do
     echo "Finished conda-build at $(date)"
 
     # Extract the package for testing
-    ls -lahR "$output_folder"
+    ls -lah "$output_folder"
     built_package="$(find $output_folder/ -name '*torchvision*.tar.bz2')"
 
     # Copy the built package to the host machine for persistence before testing
