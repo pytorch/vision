@@ -1102,7 +1102,7 @@ workflows:
           name: nightly_binary_win_wheel_py3.5_cu92_upload
           requires:
           - nightly_binary_win_wheel_py3.5_cu92
-          subfolder: cuda92/
+          subfolder: cu92/
       - binary_win_wheel_release:
           cu_version: '101'
           filters:
@@ -1118,7 +1118,7 @@ workflows:
           name: nightly_binary_win_wheel_py3.5_cu101_upload
           requires:
           - nightly_binary_win_wheel_py3.5_cu101
-          subfolder: cuda101/
+          subfolder: cu101/
       - binary_win_wheel_release:
           cu_version: '102'
           filters:
@@ -1134,7 +1134,7 @@ workflows:
           name: nightly_binary_win_wheel_py3.5_cu102_upload
           requires:
           - nightly_binary_win_wheel_py3.5_cu102
-          subfolder: cuda102/
+          subfolder: cu102/
       - binary_win_wheel_release:
           cu_version: cpu
           filters:
@@ -1166,7 +1166,7 @@ workflows:
           name: nightly_binary_win_wheel_py3.6_cu92_upload
           requires:
           - nightly_binary_win_wheel_py3.6_cu92
-          subfolder: cuda92/
+          subfolder: cu92/
       - binary_win_wheel_release:
           cu_version: '101'
           filters:
@@ -1182,7 +1182,7 @@ workflows:
           name: nightly_binary_win_wheel_py3.6_cu101_upload
           requires:
           - nightly_binary_win_wheel_py3.6_cu101
-          subfolder: cuda101/
+          subfolder: cu101/
       - binary_win_wheel_release:
           cu_version: '102'
           filters:
@@ -1198,7 +1198,7 @@ workflows:
           name: nightly_binary_win_wheel_py3.6_cu102_upload
           requires:
           - nightly_binary_win_wheel_py3.6_cu102
-          subfolder: cuda102/
+          subfolder: cu102/
       - binary_win_wheel_release:
           cu_version: cpu
           filters:
@@ -1230,7 +1230,7 @@ workflows:
           name: nightly_binary_win_wheel_py3.7_cu92_upload
           requires:
           - nightly_binary_win_wheel_py3.7_cu92
-          subfolder: cuda92/
+          subfolder: cu92/
       - binary_win_wheel_release:
           cu_version: '101'
           filters:
@@ -1246,7 +1246,7 @@ workflows:
           name: nightly_binary_win_wheel_py3.7_cu101_upload
           requires:
           - nightly_binary_win_wheel_py3.7_cu101
-          subfolder: cuda101/
+          subfolder: cu101/
       - binary_win_wheel_release:
           cu_version: '102'
           filters:
@@ -1262,7 +1262,7 @@ workflows:
           name: nightly_binary_win_wheel_py3.7_cu102_upload
           requires:
           - nightly_binary_win_wheel_py3.7_cu102
-          subfolder: cuda102/
+          subfolder: cu102/
       - binary_win_wheel_release:
           cu_version: cpu
           filters:
@@ -1294,7 +1294,7 @@ workflows:
           name: nightly_binary_win_wheel_py3.8_cu92_upload
           requires:
           - nightly_binary_win_wheel_py3.8_cu92
-          subfolder: cuda92/
+          subfolder: cu92/
       - binary_win_wheel_release:
           cu_version: '101'
           filters:
@@ -1310,7 +1310,7 @@ workflows:
           name: nightly_binary_win_wheel_py3.8_cu101_upload
           requires:
           - nightly_binary_win_wheel_py3.8_cu101
-          subfolder: cuda101/
+          subfolder: cu101/
       - binary_win_wheel_release:
           cu_version: '102'
           filters:
@@ -1326,7 +1326,7 @@ workflows:
           name: nightly_binary_win_wheel_py3.8_cu102_upload
           requires:
           - nightly_binary_win_wheel_py3.8_cu102
-          subfolder: cuda102/
+          subfolder: cu102/
       - binary_linux_conda:
           cu_version: cpu
           filters:

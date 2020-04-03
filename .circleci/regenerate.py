@@ -72,7 +72,7 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
         "cu_version": cu_version.replace("cu", "") if os_type == "win" else cu_version,
     }
 
-    if unicode:
+    if os_type != "win" and unicode:
         d["unicode_abi"] = '1'
 
     if os_type != "win":
@@ -81,9 +81,8 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
     if filter_branch is not None:
         d["filters"] = {"branches": {"only": filter_branch}}
 
-    workflow_job = f"binary_{os_type}_{btype}_release" if os_type == "win" else f"binary_{os_type}_{btype}" 
-
-    return {workflow_job: d}
+    w = f"binary_{os_type}_{btype}_release" if os_type == "win" else f"binary_{os_type}_{btype}" 
+    return {w: d}
 
 
 def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, filter_branch=None):
@@ -94,15 +93,7 @@ def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, 
     }
 
     if btype == 'wheel':
-        if os_type == 'macos':
-            d["subfolder"] = ""
-        elif os_type == 'win':
-            if cu_version == 'cpu':
-                d["subfolder"] = "cpu/"
-            else:
-                d["subfolder"] = cu_version.replace("cu", "cuda") + "/"
-        else:
-            d["subfolder"] = cu_version + "/"
+        d["subfolder"] = "" if os_type == 'macos' else cu_version + "/"
 
     if filter_branch is not None:
         d["filters"] = {"branches": {"only": filter_branch}}
