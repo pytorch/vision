@@ -76,7 +76,6 @@ jobs:
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
-
   python_lint:
     docker:
       - image: circleci/python:3.7
@@ -86,6 +85,17 @@ jobs:
           command: |
             pip install --user --progress-bar off flake8 typing
             flake8 .
+
+  clang_format:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            sudo apt-get update -y
+            sudo apt-get install -y clang-format
+            ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
 
   binary_linux_wheel:
     <<: *binary_common
@@ -521,11 +531,13 @@ workflows:
           python_version: "3.6"
           cu_version: "cu101"
       - python_lint
-
+      - clang_format
 
   nightly:
     jobs:
       - circleci_consistency
+      - python_lint
+      - clang_format
       - binary_linux_wheel:
           cu_version: cpu
           filters:

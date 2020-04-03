@@ -393,7 +393,7 @@ at::Tensor DeformConv2d_forward_cpu(
                           .view_as(out_buf[b][g]);
     }
     columns =
-      columns.view({columns.size(0) * columns.size(1), columns.size(2)});
+        columns.view({columns.size(0) * columns.size(1), columns.size(2)});
   }
 
   out_buf = out_buf.view({batch_sz / n_parallel_imgs,
@@ -733,12 +733,14 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv2d_backward_input_cpu(
                            out_h,
                            out_w});
 
-  grad_out = grad_out.reshape({batch_sz / n_parallel_imgs,
-                               n_parallel_imgs,
-                               n_weight_grps,
-                               n_out_channels / n_weight_grps,
-                               out_h,
-                               out_w}).permute({0, 2, 3, 1, 4, 5});
+  grad_out = grad_out
+                 .reshape({batch_sz / n_parallel_imgs,
+                           n_parallel_imgs,
+                           n_weight_grps,
+                           n_out_channels / n_weight_grps,
+                           out_h,
+                           out_w})
+                 .permute({0, 2, 3, 1, 4, 5});
 
   weight = weight.reshape({n_weight_grps,
                            weight.size(0) / n_weight_grps,
@@ -838,14 +840,15 @@ static at::Tensor deform_conv2d_backward_parameters_cpu(
 
   auto grad_weight = at::zeros_like(weight);
 
-  at::Tensor grad_out_buf = grad_out.reshape(
-      {batch_sz / n_parallel_imgs,
-       n_parallel_imgs,
-       n_weight_grps,
-       n_out_channels / n_weight_grps,
-       out_h,
-       out_w}
-  ).permute({0, 2, 3, 1, 4, 5}).contiguous();
+  at::Tensor grad_out_buf = grad_out
+                                .reshape({batch_sz / n_parallel_imgs,
+                                          n_parallel_imgs,
+                                          n_weight_grps,
+                                          n_out_channels / n_weight_grps,
+                                          out_h,
+                                          out_w})
+                                .permute({0, 2, 3, 1, 4, 5})
+                                .contiguous();
 
   input = input.reshape(
       {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
