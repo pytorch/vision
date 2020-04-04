@@ -351,9 +351,14 @@ class RetinaNet(nn.Module):
 
         return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
 
-    def postprocess_detections(self, class_logits, box_regression, anchors, image_shapes):
+    def postprocess_detections(self, head_outputs, anchors, image_shapes):
         # type: (Tensor, Tensor, List[Tensor], List[Tuple[int, int]])
         # TODO: Merge this with roi_heads.RoIHeads.postprocess_detections ?
+
+        class_logits = head_outputs.pop('cls_logits')
+        box_regression = head_outputs.pop('bbox_regression')
+        other_outputs = head_outputs
+
         device = class_logits.device
         num_classes = class_logits.shape[-1]
 
@@ -366,22 +371,27 @@ class RetinaNet(nn.Module):
 
         detections = []
 
-        for box_regression_per_image, scores_per_image, labels_per_image, anchors_per_image, image_shape in zip(box_regression, scores, labels, anchors, image_shapes):
+        for image_index, (box_regression_per_image, scores_per_image, labels_per_image, anchors_per_image, image_shape) in enumerate(zip(box_regression, scores, labels, anchors, image_shapes)):
             boxes_per_image = self.box_coder.decode_single(box_regression_per_image, anchors_per_image)
             boxes_per_image = box_ops.clip_boxes_to_image(boxes_per_image, image_shape)
+
+            other_outputs_per_image = [(k, v[image_index]) for k, v in other_outputs.items()]
 
             image_boxes = []
             image_scores = []
             image_labels = []
+            image_other_outputs = {k: [] for k in other_outputs.keys()}
 
             for class_index in range(num_classes):
                 # remove low scoring boxes
-                inds = torch.nonzero(scores_per_image[:, class_index] > self.score_thresh).squeeze(1)
+                inds = torch.gt(scores_per_image[:, class_index], self.score_thresh)
                 boxes_per_class, scores_per_class, labels_per_class = boxes_per_image[inds], scores_per_image[inds, class_index], labels_per_image[inds, class_index]
+                other_outputs_per_class = [(k, v[inds]) for k, v in other_outputs_per_image]
 
                 # remove empty boxes
                 keep = box_ops.remove_small_boxes(boxes_per_class, min_size=1e-2)
                 boxes_per_class, scores_per_class, labels_per_class = boxes_per_class[keep], scores_per_class[keep], labels_per_class[keep]
+                other_outputs_per_class = [(k, v[keep]) for k, v in other_outputs_per_class]
 
                 # non-maximum suppression, independently done per class
                 keep = box_ops.nms(boxes_per_class, scores_per_class, self.nms_thresh)
@@ -389,16 +399,23 @@ class RetinaNet(nn.Module):
                 # keep only topk scoring predictions
                 keep = keep[:self.detections_per_img]
                 boxes_per_class, scores_per_class, labels_per_class = boxes_per_class[keep], scores_per_class[keep], labels_per_class[keep]
+                other_outputs_per_class = [(k, v[keep]) for k, v in other_outputs_per_class]
 
                 image_boxes.append(boxes_per_class)
                 image_scores.append(scores_per_class)
                 image_labels.append(labels_per_class)
+
+                for k, v in other_outputs_per_class:
+                    image_other_outputs[k].append(v)
 
             detections.append({
                 'boxes': torch.cat(image_boxes, dim=0),
                 'scores': torch.cat(image_scores, dim=0),
                 'labels': torch.cat(image_labels, dim=0),
             })
+
+            for k, v in image_other_outputs.items():
+                detections[-1].update({k: torch.cat(v, dim=0)})
 
         return detections
 
@@ -457,7 +474,7 @@ class RetinaNet(nn.Module):
             losses = self.compute_loss(targets, head_outputs, anchors)
         else:
             # compute the detections
-            detections = self.postprocess_detections(head_outputs['cls_logits'], head_outputs['bbox_regression'], anchors, images.image_sizes)
+            detections = self.postprocess_detections(head_outputs, anchors, images.image_sizes)
             detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
 
         if torch.jit.is_scripting():
