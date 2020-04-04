@@ -33,7 +33,7 @@ class RetinaNetHead(nn.Module):
     """
 
     def __init__(self, in_channels, num_anchors, num_classes):
-        super(RetinaNetHead, self).__init__()
+        super().__init__()
         self.classification_head = RetinaNetClassificationHead(in_channels, num_anchors, num_classes)
         self.regression_head = RetinaNetRegressionHead(in_channels, num_anchors)
 
@@ -61,7 +61,7 @@ class RetinaNetClassificationHead(nn.Module):
     """
 
     def __init__(self, in_channels, num_anchors, num_classes, prior_probability=0.01):
-        super(RetinaNetClassificationHead, self).__init__()
+        super().__init__()
 
         conv = []
         for _ in range(4):
@@ -135,7 +135,7 @@ class RetinaNetRegressionHead(nn.Module):
     """
 
     def __init__(self, in_channels, num_anchors):
-        super(RetinaNetRegressionHead, self).__init__()
+        super().__init__()
 
         conv = []
         for _ in range(4):
@@ -292,7 +292,7 @@ class RetinaNet(nn.Module):
                  nms_thresh=0.5,
                  detections_per_img=300,
                  fg_iou_thresh=0.5, bg_iou_thresh=0.4):
-        super(RetinaNet, self).__init__()
+        super().__init__()
 
         if not hasattr(backbone, "out_channels"):
             raise ValueError(
