@@ -28,16 +28,14 @@ def workflows(prefix='', filter_branch=None, upload=False, indentation=6, window
             for python_version in python_versions:
                 for cu_version in cu_versions:
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
+                        fb = filter_branch
                         if windows_latest_only and os_type == "win" and filter_branch is None and \
                             (python_version != python_versions[-1] or
                              (not cu_version in [cu_versions[0], cu_versions[-1]])):
-                            w += workflow_pair(
-                                btype, os_type, python_version, cu_version,
-                                unicode, prefix, upload, filter_branch="master")
-                        else:
-                            w += workflow_pair(
-                                btype, os_type, python_version, cu_version,
-                                unicode, prefix, upload, filter_branch=filter_branch)
+                            fb = "master"
+                        w += workflow_pair(
+                            btype, os_type, python_version, cu_version,
+                            unicode, prefix, upload, filter_branch=fb)
 
     return indent(indentation, w)
 
