@@ -19,12 +19,17 @@ import yaml
 import os.path
 
 
-def workflows(prefix='', filter_branch=None, upload=False, indentation=6):
+def workflows(prefix='', filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
     w = []
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
-            for python_version in ["3.5", "3.6", "3.7", "3.8"]:
-                for cu_version in (["cpu", "cu92", "cu101", "cu102"] if os_type == "linux" or os_type == "win" else ["cpu"]):
+            python_versions = ["3.5", "3.6", "3.7", "3.8"]
+            cu_versions = (["cpu", "cu92", "cu101", "cu102"] if os_type == "linux" or os_type == "win" else ["cpu"])
+            if windows_latest_only and os_type == "win":
+                python_versions = ([python_versions[-1]] if len(python_versions) > 1 else python_versions)
+                cu_versions = ([cu_versions[0], cu_versions[-1]] if len(cu_versions) > 2 else cu_versions)
+            for python_version in python_versions:
+                for cu_version in cu_versions:
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version,
