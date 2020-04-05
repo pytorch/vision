@@ -121,8 +121,8 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(
     const float spatial_scale,
     const int pooled_height,
     const int pooled_width) {
-  AT_ASSERTM(input.device().is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(input.is_cuda(), "input must be a CUDA tensor");
+  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -187,9 +187,9 @@ at::Tensor ROIPool_backward_cuda(
     const int height,
     const int width) {
   // Check if input tensors are CUDA tensors
-  AT_ASSERTM(grad.device().is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
-  AT_ASSERTM(argmax.device().is_cuda(), "argmax must be a CUDA tensor");
+  AT_ASSERTM(grad.is_cuda(), "grad must be a CUDA tensor");
+  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(argmax.is_cuda(), "argmax must be a CUDA tensor");
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2},
       argmax_t{argmax, "argmax", 3};

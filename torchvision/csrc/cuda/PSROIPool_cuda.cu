@@ -139,8 +139,8 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cuda(
     const int pooled_height,
     const int pooled_width) {
   // Check if input tensors are CUDA tensors
-  AT_ASSERTM(input.type().is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(input.is_cuda(), "input must be a CUDA tensor");
+  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -211,10 +211,10 @@ at::Tensor PSROIPool_backward_cuda(
     const int height,
     const int width) {
   // Check if input tensors are CUDA tensors
-  AT_ASSERTM(grad.type().is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(grad.is_cuda(), "grad must be a CUDA tensor");
+  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
   AT_ASSERTM(
-      channel_mapping.type().is_cuda(),
+      channel_mapping.is_cuda(),
       "channel_mapping must be a CUDA tensor");
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2},

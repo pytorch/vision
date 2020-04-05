@@ -312,8 +312,8 @@ at::Tensor ROIAlign_forward_cuda(
     const int pooled_width,
     const int sampling_ratio,
     const bool aligned) {
-  AT_ASSERTM(input.device().is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(input.is_cuda(), "input must be a CUDA tensor");
+  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -376,8 +376,8 @@ at::Tensor ROIAlign_backward_cuda(
     const int width,
     const int sampling_ratio,
     const bool aligned) {
-  AT_ASSERTM(grad.device().is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(grad.is_cuda(), "grad must be a CUDA tensor");
+  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2};
 
