@@ -31,7 +31,7 @@ def workflows(prefix='', filter_branch=None, upload=False, indentation=6, window
                         fb = filter_branch
                         if windows_latest_only and os_type == "win" and filter_branch is None and \
                             (python_version != python_versions[-1] or
-                             (not cu_version in [cu_versions[0], cu_versions[-1]])):
+                             (cu_version not in [cu_versions[0], cu_versions[-1]])):
                             fb = "master"
                         w += workflow_pair(
                             btype, os_type, python_version, cu_version,
@@ -88,7 +88,7 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
     if filter_branch is not None:
         d["filters"] = {"branches": {"only": filter_branch}}
 
-    w = f"binary_{os_type}_{btype}_release" if os_type == "win" else f"binary_{os_type}_{btype}" 
+    w = f"binary_{os_type}_{btype}_release" if os_type == "win" else f"binary_{os_type}_{btype}"
     return {w: d}
 
 
