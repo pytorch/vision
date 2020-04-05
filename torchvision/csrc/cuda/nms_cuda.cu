@@ -91,7 +91,7 @@ at::Tensor nms_cuda(const at::Tensor& dets,
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      dets_sorted.type(), "nms_kernel_cuda", [&] {
+      dets_sorted.scalar_type(), "nms_kernel_cuda", [&] {
         nms_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
             dets_num,
             iou_threshold,
