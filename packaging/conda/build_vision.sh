@@ -5,6 +5,10 @@ fi
 
 set -ex
 
+if [[ "$CIRCLECI" == 'true' ]]; then
+    export PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:.:$PATH"
+fi
+
 # Function to retry functions that sometimes timeout or have flaky failures
 retry () {
     $*  || (sleep 1 && $*) || (sleep 2 && $*) || (sleep 4 && $*) || (sleep 8 && $*)
