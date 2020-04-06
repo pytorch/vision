@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import io
 import re
@@ -69,7 +68,6 @@ if os.getenv('PYTORCH_VERSION'):
 
 requirements = [
     'numpy',
-    'six',
     pytorch_dep,
 ]
 
@@ -97,9 +95,9 @@ def get_extensions():
             includes="torchvision/csrc/cuda/*",
             show_detailed=True,
             is_pytorch_extension=True,
-            )
+        )
         source_cuda = glob.glob(os.path.join(extensions_dir, 'hip', '*.hip'))
-        ## Copy over additional files
+        # Copy over additional files
         shutil.copy("torchvision/csrc/cuda/cuda_helpers.h", "torchvision/csrc/hip/cuda_helpers.h")
         shutil.copy("torchvision/csrc/cuda/vision_cuda.h", "torchvision/csrc/hip/vision_cuda.h")
 
@@ -124,7 +122,8 @@ def get_extensions():
     define_macros = []
 
     extra_compile_args = {}
-    if (torch.cuda.is_available() and ((CUDA_HOME is not None)  or is_rocm_pytorch)) or os.getenv('FORCE_CUDA', '0') == '1':
+    if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) \
+            or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
         sources += source_cuda
         if not is_rocm_pytorch:

@@ -86,6 +86,28 @@ You can use the following transform to normalize::
 An example of such normalization can be found in the imagenet example
 `here <https://github.com/pytorch/examples/blob/42e5b996718797e45c46a25c55b031e6768f8440/imagenet/main.py#L89-L101>`_
 
+The process for obtaining the values of `mean` and `std` is roughly equivalent
+to::
+
+    import torch
+    from torchvision import datasets, transforms as T
+
+    transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
+    dataset = datasets.ImageNet(".", split="train", transform=transform)
+
+    means = []
+    stds = []
+    for img in subset(dataset):
+        means.append(torch.mean(img))
+        stds.append(torch.std(img))
+
+    mean = torch.mean(torch.tensor(means))
+    std = torch.mean(torch.tensor(stds))
+
+Unfortunately, the concret `subset` that was used is lost. For more
+information see `this discussion <https://github.com/pytorch/vision/issues/1439>`_
+or `these experiments <https://github.com/pytorch/vision/pull/1965>`_.
+
 ImageNet 1-crop error rates (224x224)
 
 ================================  =============   =============

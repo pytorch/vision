@@ -1,4 +1,3 @@
-from __future__ import division
 import os
 import mock
 import torch
@@ -203,7 +202,7 @@ class Tester(unittest.TestCase):
             startpoints, endpoints = transforms.RandomPerspective.get_params(width, height, 0.5)
             tr_img = F.perspective(img_conv, startpoints, endpoints, fill=fill)
             pixel = tr_img.getpixel((0, 0))
-        
+
             if not isinstance(pixel, tuple):
                 pixel = (pixel,)
             self.assertTupleEqual(pixel, tuple([fill] * num_bands))
@@ -896,7 +895,6 @@ class Tester(unittest.TestCase):
                               std_unsqueezed.repeat(1, img_size, img_size))
         assert_array_almost_equal(target, result1.numpy())
         assert_array_almost_equal(target, result2.numpy())
-
 
     def test_adjust_brightness(self):
         x_shape = [2, 2, 3]

@@ -76,6 +76,27 @@ jobs:
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
+  python_lint:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off flake8 typing
+            flake8 .
+
+  clang_format:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            sudo apt-get update -y
+            sudo apt-get install -y clang-format
+            ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
+
   binary_linux_wheel:
     <<: *binary_common
     docker:
@@ -152,7 +173,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit=${NVIDIA_CONTAINER_VERSION}
           sudo systemctl restart docker
 
-          DRIVER_FN="NVIDIA-Linux-x86_64-410.104.run"
+          DRIVER_FN="NVIDIA-Linux-x86_64-440.59.run"
           wget "https://s3.amazonaws.com/ossci-linux/nvidia_driver/$DRIVER_FN"
           sudo /bin/bash "$DRIVER_FN" -s --no-drm || (sudo cat /var/log/nvidia-installer.log && false)
           nvidia-smi
@@ -497,6 +518,10 @@ workflows:
           name: binary_macos_conda_py3.8_cpu
           python_version: '3.8'
           wheel_docker_image: pytorch/manylinux-cuda102
+      - binary_linux_conda_cuda:
+          name: torchvision_linux_py3.8_cu102_cuda
+          python_version: "3.8"
+          cu_version: "cu102"
       - binary_win_conda:
           name: torchvision_win_py3.6_cpu
           python_version: "3.6"
@@ -505,10 +530,14 @@ workflows:
           name: torchvision_win_py3.6_cu101
           python_version: "3.6"
           cu_version: "cu101"
+      - python_lint
+      - clang_format
 
   nightly:
     jobs:
       - circleci_consistency
+      - python_lint
+      - clang_format
       - binary_linux_wheel:
           cu_version: cpu
           filters:
