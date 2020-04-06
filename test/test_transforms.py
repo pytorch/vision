@@ -1,10 +1,10 @@
-from __future__ import division
 import os
 import mock
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
 from torch._utils_internal import get_file_path_2
+from numpy.testing import assert_array_almost_equal
 import unittest
 import math
 import random
@@ -175,6 +175,41 @@ class Tester(unittest.TestCase):
             self.assertEqual(img.size[1], height)
             self.assertGreater(torch.nn.functional.mse_loss(tr_img, F.to_tensor(img)) + 0.3,
                                torch.nn.functional.mse_loss(tr_img2, F.to_tensor(img)))
+
+    def test_randomperspective_fill(self):
+        height = 100
+        width = 100
+        img = torch.ones(3, height, width)
+        to_pil_image = transforms.ToPILImage()
+        img = to_pil_image(img)
+
+        modes = ("L", "RGB", "F")
+        nums_bands = [len(mode) for mode in modes]
+        fill = 127
+
+        for mode, num_bands in zip(modes, nums_bands):
+            img_conv = img.convert(mode)
+            perspective = transforms.RandomPerspective(p=1, fill=fill)
+            tr_img = perspective(img_conv)
+            pixel = tr_img.getpixel((0, 0))
+
+            if not isinstance(pixel, tuple):
+                pixel = (pixel,)
+            self.assertTupleEqual(pixel, tuple([fill] * num_bands))
+
+        for mode, num_bands in zip(modes, nums_bands):
+            img_conv = img.convert(mode)
+            startpoints, endpoints = transforms.RandomPerspective.get_params(width, height, 0.5)
+            tr_img = F.perspective(img_conv, startpoints, endpoints, fill=fill)
+            pixel = tr_img.getpixel((0, 0))
+
+            if not isinstance(pixel, tuple):
+                pixel = (pixel,)
+            self.assertTupleEqual(pixel, tuple([fill] * num_bands))
+
+            for wrong_num_bands in set(nums_bands) - {num_bands}:
+                with self.assertRaises(ValueError):
+                    F.perspective(img_conv, startpoints, endpoints, fill=tuple([fill] * wrong_num_bands))
 
     def test_resize(self):
         height = random.randint(24, 32) * 2
@@ -842,6 +877,24 @@ class Tester(unittest.TestCase):
                 std = torch.tensor([1, 2, 1], dtype=dtype2)
                 # checks that it doesn't crash
                 transforms.functional.normalize(img, mean, std)
+
+    def test_normalize_3d_tensor(self):
+        torch.manual_seed(28)
+        n_channels = 3
+        img_size = 10
+        mean = torch.rand(n_channels)
+        std = torch.rand(n_channels)
+        img = torch.rand(n_channels, img_size, img_size)
+        target = F.normalize(img, mean, std).numpy()
+
+        mean_unsqueezed = mean.view(-1, 1, 1)
+        std_unsqueezed = std.view(-1, 1, 1)
+        result1 = F.normalize(img, mean_unsqueezed, std_unsqueezed)
+        result2 = F.normalize(img,
+                              mean_unsqueezed.repeat(1, img_size, img_size),
+                              std_unsqueezed.repeat(1, img_size, img_size))
+        assert_array_almost_equal(target, result1.numpy())
+        assert_array_almost_equal(target, result2.numpy())
 
     def test_adjust_brightness(self):
         x_shape = [2, 2, 3]

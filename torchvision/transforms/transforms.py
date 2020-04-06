@@ -1,7 +1,5 @@
-from __future__ import division
 import torch
 import math
-import sys
 import random
 from PIL import Image
 try:
@@ -11,17 +9,10 @@ except ImportError:
 import numpy as np
 import numbers
 import types
-import collections
+from collections.abc import Sequence, Iterable
 import warnings
 
 from . import functional as F
-
-if sys.version_info < (3, 3):
-    Sequence = collections.Sequence
-    Iterable = collections.Iterable
-else:
-    Sequence = collections.abc.Sequence
-    Iterable = collections.abc.Iterable
 
 
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
@@ -550,12 +541,15 @@ class RandomPerspective(object):
 
         distortion_scale(float): it controls the degree of distortion and ranges from 0 to 1. Default value is 0.5.
 
+        fill (3-tuple or int): RGB pixel fill value for area outside the rotated image.
+            If int, it is used for all channels respectively. Default value is 0.
     """
 
-    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=Image.BICUBIC):
+    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=Image.BICUBIC, fill=0):
         self.p = p
         self.interpolation = interpolation
         self.distortion_scale = distortion_scale
+        self.fill = fill
 
     def __call__(self, img):
         """
@@ -571,7 +565,7 @@ class RandomPerspective(object):
         if random.random() < self.p:
             width, height = img.size
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
-            return F.perspective(img, startpoints, endpoints, self.interpolation)
+            return F.perspective(img, startpoints, endpoints, self.interpolation, self.fill)
         return img
 
     @staticmethod
@@ -620,7 +614,7 @@ class RandomResizedCrop(object):
     """
 
     def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=Image.BILINEAR):
-        if isinstance(size, tuple):
+        if isinstance(size, (tuple, list)):
             self.size = size
         else:
             self.size = (size, size)
@@ -647,7 +641,7 @@ class RandomResizedCrop(object):
         width, height = _get_image_size(img)
         area = height * width
 
-        for attempt in range(10):
+        for _ in range(10):
             target_area = random.uniform(*scale) * area
             log_ratio = (math.log(ratio[0]), math.log(ratio[1]))
             aspect_ratio = math.exp(random.uniform(*log_ratio))
@@ -1156,8 +1150,8 @@ class Grayscale(object):
 
     Returns:
         PIL Image: Grayscale version of the input.
-        - If num_output_channels == 1 : returned image is single channel
-        - If num_output_channels == 3 : returned image is 3 channel with r == g == b
+         - If ``num_output_channels == 1`` : returned image is single channel
+         - If ``num_output_channels == 3`` : returned image is 3 channel with r == g == b
 
     """
 
@@ -1214,8 +1208,8 @@ class RandomGrayscale(object):
 
 class RandomErasing(object):
     """ Randomly selects a rectangle region in an image and erases its pixels.
-        'Random Erasing Data Augmentation' by Zhong et al.
-        See https://arxiv.org/pdf/1708.04896.pdf
+    'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/pdf/1708.04896.pdf
+
     Args:
          p: probability that the random erasing operation will be performed.
          scale: range of proportion of erased area against input image.
@@ -1228,12 +1222,13 @@ class RandomErasing(object):
 
     Returns:
         Erased Image.
+
     # Examples:
         >>> transform = transforms.Compose([
-        >>> transforms.RandomHorizontalFlip(),
-        >>> transforms.ToTensor(),
-        >>> transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        >>> transforms.RandomErasing(),
+        >>>   transforms.RandomHorizontalFlip(),
+        >>>   transforms.ToTensor(),
+        >>>   transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        >>>   transforms.RandomErasing(),
         >>> ])
     """
 
@@ -1267,7 +1262,7 @@ class RandomErasing(object):
         img_c, img_h, img_w = img.shape
         area = img_h * img_w
 
-        for attempt in range(10):
+        for _ in range(10):
             erase_area = random.uniform(scale[0], scale[1]) * area
             aspect_ratio = random.uniform(ratio[0], ratio[1])
 

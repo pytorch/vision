@@ -1,4 +1,3 @@
-from __future__ import division
 import torch
 import torchvision
 
@@ -574,22 +573,33 @@ class RoIHeads(torch.nn.Module):
         matched_idxs = []
         labels = []
         for proposals_in_image, gt_boxes_in_image, gt_labels_in_image in zip(proposals, gt_boxes, gt_labels):
-            #  set to self.box_similarity when https://github.com/pytorch/pytorch/issues/27495 lands
-            match_quality_matrix = box_ops.box_iou(gt_boxes_in_image, proposals_in_image)
-            matched_idxs_in_image = self.proposal_matcher(match_quality_matrix)
 
-            clamped_matched_idxs_in_image = matched_idxs_in_image.clamp(min=0)
+            if gt_boxes_in_image.numel() == 0:
+                # Background image
+                device = proposals_in_image.device
+                clamped_matched_idxs_in_image = torch.zeros(
+                    (proposals_in_image.shape[0],), dtype=torch.int64, device=device
+                )
+                labels_in_image = torch.zeros(
+                    (proposals_in_image.shape[0],), dtype=torch.int64, device=device
+                )
+            else:
+                #  set to self.box_similarity when https://github.com/pytorch/pytorch/issues/27495 lands
+                match_quality_matrix = box_ops.box_iou(gt_boxes_in_image, proposals_in_image)
+                matched_idxs_in_image = self.proposal_matcher(match_quality_matrix)
 
-            labels_in_image = gt_labels_in_image[clamped_matched_idxs_in_image]
-            labels_in_image = labels_in_image.to(dtype=torch.int64)
+                clamped_matched_idxs_in_image = matched_idxs_in_image.clamp(min=0)
 
-            # Label background (below the low threshold)
-            bg_inds = matched_idxs_in_image == self.proposal_matcher.BELOW_LOW_THRESHOLD
-            labels_in_image[bg_inds] = torch.tensor(0)
+                labels_in_image = gt_labels_in_image[clamped_matched_idxs_in_image]
+                labels_in_image = labels_in_image.to(dtype=torch.int64)
 
-            # Label ignore proposals (between low and high thresholds)
-            ignore_inds = matched_idxs_in_image == self.proposal_matcher.BETWEEN_THRESHOLDS
-            labels_in_image[ignore_inds] = torch.tensor(-1)  # -1 is ignored by sampler
+                # Label background (below the low threshold)
+                bg_inds = matched_idxs_in_image == self.proposal_matcher.BELOW_LOW_THRESHOLD
+                labels_in_image[bg_inds] = torch.tensor(0)
+
+                # Label ignore proposals (between low and high thresholds)
+                ignore_inds = matched_idxs_in_image == self.proposal_matcher.BETWEEN_THRESHOLDS
+                labels_in_image[ignore_inds] = torch.tensor(-1)  # -1 is ignored by sampler
 
             matched_idxs.append(clamped_matched_idxs_in_image)
             labels.append(labels_in_image)
@@ -635,6 +645,8 @@ class RoIHeads(torch.nn.Module):
         self.check_targets(targets)
         assert targets is not None
         dtype = proposals[0].dtype
+        device = proposals[0].device
+
         gt_boxes = [t["boxes"].to(dtype) for t in targets]
         gt_labels = [t["labels"] for t in targets]
 
@@ -652,7 +664,11 @@ class RoIHeads(torch.nn.Module):
             proposals[img_id] = proposals[img_id][img_sampled_inds]
             labels[img_id] = labels[img_id][img_sampled_inds]
             matched_idxs[img_id] = matched_idxs[img_id][img_sampled_inds]
-            matched_gt_boxes.append(gt_boxes[img_id][matched_idxs[img_id]])
+
+            gt_boxes_in_image = gt_boxes[img_id]
+            if gt_boxes_in_image.numel() == 0:
+                gt_boxes_in_image = torch.zeros((1, 4), dtype=dtype, device=device)
+            matched_gt_boxes.append(gt_boxes_in_image[matched_idxs[img_id]])
 
         regression_targets = self.box_coder.encode(matched_gt_boxes, proposals)
         return proposals, matched_idxs, labels, regression_targets
@@ -662,20 +678,13 @@ class RoIHeads(torch.nn.Module):
         device = class_logits.device
         num_classes = class_logits.shape[-1]
 
-        boxes_per_image = [len(boxes_in_image) for boxes_in_image in proposals]
+        boxes_per_image = [boxes_in_image.shape[0] for boxes_in_image in proposals]
         pred_boxes = self.box_coder.decode(box_regression, proposals)
 
         pred_scores = F.softmax(class_logits, -1)
 
-        # split boxes and scores per image
-        if len(boxes_per_image) == 1:
-            # TODO : remove this when ONNX support dynamic split sizes
-            # and just assign to pred_boxes instead of pred_boxes_list
-            pred_boxes_list = [pred_boxes]
-            pred_scores_list = [pred_scores]
-        else:
-            pred_boxes_list = pred_boxes.split(boxes_per_image, 0)
-            pred_scores_list = pred_scores.split(boxes_per_image, 0)
+        pred_boxes_list = pred_boxes.split(boxes_per_image, 0)
+        pred_scores_list = pred_scores.split(boxes_per_image, 0)
 
         all_boxes = []
         all_scores = []

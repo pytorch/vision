@@ -7,15 +7,10 @@ import zipfile
 import tarfile
 import gzip
 import warnings
-from torch._six import PY2
 from torch._utils_internal import get_file_path_2
+from urllib.error import URLError
 
 from common_utils import get_tmp_dir
-
-if sys.version_info < (3,):
-    from urllib2 import URLError
-else:
-    from urllib.error import URLError
 
 
 TEST_FILE = get_file_path_2(
@@ -41,7 +36,6 @@ class Tester(unittest.TestCase):
         self.assertTrue(utils.check_integrity(existing_fpath))
         self.assertFalse(utils.check_integrity(nonexisting_fpath))
 
-    @unittest.skipIf(PY2, "https://github.com/pytorch/vision/issues/1268")
     def test_download_url(self):
         with get_tmp_dir() as temp_dir:
             url = "http://github.com/pytorch/vision/archive/master.zip"
@@ -53,7 +47,6 @@ class Tester(unittest.TestCase):
                 warnings.warn(msg, RuntimeWarning)
                 raise unittest.SkipTest(msg)
 
-    @unittest.skipIf(PY2, "https://github.com/pytorch/vision/issues/1268")
     def test_download_url_retry_http(self):
         with get_tmp_dir() as temp_dir:
             url = "https://github.com/pytorch/vision/archive/master.zip"
@@ -65,7 +58,6 @@ class Tester(unittest.TestCase):
                 warnings.warn(msg, RuntimeWarning)
                 raise unittest.SkipTest(msg)
 
-    @unittest.skipIf(sys.version_info < (3,), "Python2 doesn't raise error")
     def test_download_url_dont_exist(self):
         with get_tmp_dir() as temp_dir:
             url = "http://github.com/pytorch/vision/archive/this_doesnt_exist.zip"
@@ -101,7 +93,6 @@ class Tester(unittest.TestCase):
                         self.assertEqual(data, 'this is the content')
 
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
-    @unittest.skipIf(sys.version_info < (3,), "Extracting .tar.xz files is not supported under Python 2.x")
     def test_extract_tar_xz(self):
         for ext, mode in zip(['.tar.xz'], ['w:xz']):
             with get_tmp_dir() as temp_dir:

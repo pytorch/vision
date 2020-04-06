@@ -5,6 +5,9 @@
 #ifdef WITH_CUDA
 #include "cuda/vision_cuda.h"
 #endif
+#ifdef WITH_HIP
+#include "hip/vision_cuda.h"
+#endif
 
 // Interface for Python
 at::Tensor ROIAlign_forward(
@@ -19,7 +22,7 @@ at::Tensor ROIAlign_forward(
 // along each axis.
 {
   if (input.type().is_cuda()) {
-#ifdef WITH_CUDA
+#if defined(WITH_CUDA) || defined(WITH_HIP)
     return ROIAlign_forward_cuda(
         input,
         rois,
@@ -33,7 +36,13 @@ at::Tensor ROIAlign_forward(
 #endif
   }
   return ROIAlign_forward_cpu(
-      input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned);
+      input,
+      rois,
+      spatial_scale,
+      pooled_height,
+      pooled_width,
+      sampling_ratio,
+      aligned);
 }
 
 at::Tensor ROIAlign_backward(
@@ -49,7 +58,7 @@ at::Tensor ROIAlign_backward(
     const int sampling_ratio,
     const bool aligned) {
   if (grad.type().is_cuda()) {
-#ifdef WITH_CUDA
+#if defined(WITH_CUDA) || defined(WITH_HIP)
     return ROIAlign_backward_cuda(
         grad,
         rois,
@@ -134,8 +143,13 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
         input_shape[3],
         ctx->saved_data["sampling_ratio"].toInt(),
         ctx->saved_data["aligned"].toBool());
-    return {
-        grad_in, Variable(), Variable(), Variable(), Variable(), Variable(), Variable()};
+    return {grad_in,
+            Variable(),
+            Variable(),
+            Variable(),
+            Variable(),
+            Variable(),
+            Variable()};
   }
 };
 

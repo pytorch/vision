@@ -1,5 +1,3 @@
-from __future__ import division
-
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
 import torch.nn.functional as F

@@ -1,4 +1,3 @@
-from __future__ import print_function
 from .vision import VisionDataset
 from PIL import Image
 import os
@@ -12,6 +11,10 @@ class SVHN(VisionDataset):
     Note: The SVHN dataset assigns the label `10` to the digit `0`. However, in this Dataset,
     we assign the label `0` to the digit `0` to be compatible with PyTorch loss functions which
     expect the class labels to be in the range `[0, C-1]`
+
+    .. warning::
+
+        This class needs `scipy <https://docs.scipy.org/doc/>`_ to load data from `.mat` format.
 
     Args:
         root (string): Root directory of dataset where directory

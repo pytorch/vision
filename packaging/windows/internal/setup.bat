@@ -30,7 +30,7 @@ if "%CXX%"=="sccache cl" (
 
 :pytorch
 :: This stores in e.g. D:/_work/1/s/windows/output/cpu
-pip wheel -e . --no-deps --wheel-dir ../output/%CUDA_PREFIX%
+pip wheel -e . --no-deps --wheel-dir ../output
 
 :build_end
 IF ERRORLEVEL 1 exit /b 1

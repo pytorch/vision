@@ -1,4 +1,3 @@
-from __future__ import print_function
 from .vision import VisionDataset
 import warnings
 from PIL import Image
@@ -9,7 +8,7 @@ import torch
 import codecs
 import string
 from .utils import download_url, download_and_extract_archive, extract_archive, \
-    makedir_exist_ok, verify_str_arg
+    verify_str_arg
 
 
 class MNIST(VisionDataset):
@@ -129,8 +128,8 @@ class MNIST(VisionDataset):
         if self._check_exists():
             return
 
-        makedir_exist_ok(self.raw_folder)
-        makedir_exist_ok(self.processed_folder)
+        os.makedirs(self.raw_folder, exist_ok=True)
+        os.makedirs(self.processed_folder, exist_ok=True)
 
         # download files
         for url, md5 in self.resources:
@@ -274,8 +273,8 @@ class EMNIST(MNIST):
         if self._check_exists():
             return
 
-        makedir_exist_ok(self.raw_folder)
-        makedir_exist_ok(self.processed_folder)
+        os.makedirs(self.raw_folder, exist_ok=True)
+        os.makedirs(self.processed_folder, exist_ok=True)
 
         # download files
         print('Downloading and extracting zip archive')
@@ -377,8 +376,8 @@ class QMNIST(MNIST):
         """
         if self._check_exists():
             return
-        makedir_exist_ok(self.raw_folder)
-        makedir_exist_ok(self.processed_folder)
+        os.makedirs(self.raw_folder, exist_ok=True)
+        os.makedirs(self.processed_folder, exist_ok=True)
         split = self.resources[self.subsets[self.what]]
         files = []
 

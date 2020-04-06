@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import io
 import re
@@ -13,6 +12,7 @@ import shutil
 
 import torch
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
+from torch.utils.hipify import hipify_python
 
 
 def read(*names, **kwargs):
@@ -68,7 +68,6 @@ if os.getenv('PYTORCH_VERSION'):
 
 requirements = [
     'numpy',
-    'six',
     pytorch_dep,
 ]
 
@@ -83,7 +82,27 @@ def get_extensions():
 
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
     source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
-    source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
+
+    is_rocm_pytorch = False
+    if torch.__version__ >= '1.5':
+        from torch.utils.cpp_extension import ROCM_HOME
+        is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
+
+    if is_rocm_pytorch:
+        hipify_python.hipify(
+            project_directory=this_dir,
+            output_directory=this_dir,
+            includes="torchvision/csrc/cuda/*",
+            show_detailed=True,
+            is_pytorch_extension=True,
+        )
+        source_cuda = glob.glob(os.path.join(extensions_dir, 'hip', '*.hip'))
+        # Copy over additional files
+        shutil.copy("torchvision/csrc/cuda/cuda_helpers.h", "torchvision/csrc/hip/cuda_helpers.h")
+        shutil.copy("torchvision/csrc/cuda/vision_cuda.h", "torchvision/csrc/hip/vision_cuda.h")
+
+    else:
+        source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
 
     sources = main_file + source_cpu
     extension = CppExtension
@@ -103,15 +122,20 @@ def get_extensions():
     define_macros = []
 
     extra_compile_args = {}
-    if (torch.cuda.is_available() and CUDA_HOME is not None) or os.getenv('FORCE_CUDA', '0') == '1':
+    if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) \
+            or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
         sources += source_cuda
-        define_macros += [('WITH_CUDA', None)]
-        nvcc_flags = os.getenv('NVCC_FLAGS', '')
-        if nvcc_flags == '':
-            nvcc_flags = []
+        if not is_rocm_pytorch:
+            define_macros += [('WITH_CUDA', None)]
+            nvcc_flags = os.getenv('NVCC_FLAGS', '')
+            if nvcc_flags == '':
+                nvcc_flags = []
+            else:
+                nvcc_flags = nvcc_flags.split(' ')
         else:
-            nvcc_flags = nvcc_flags.split(' ')
+            define_macros += [('WITH_HIP', None)]
+            nvcc_flags = []
         extra_compile_args = {
             'cxx': [],
             'nvcc': nvcc_flags,
@@ -126,17 +150,6 @@ def get_extensions():
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs = [extensions_dir]
-
-    ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
-    has_ffmpeg = ffmpeg_exe is not None
-    if has_ffmpeg:
-        ffmpeg_bin = os.path.dirname(ffmpeg_exe)
-        ffmpeg_root = os.path.dirname(ffmpeg_bin)
-        ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
-
-        # TorchVision video reader
-        video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
-        video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
 
     ext_modules = [
         extension(
@@ -157,12 +170,30 @@ def get_extensions():
                 extra_compile_args=extra_compile_args,
             )
         )
+
+    ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
+    has_ffmpeg = ffmpeg_exe is not None
+
     if has_ffmpeg:
+        ffmpeg_bin = os.path.dirname(ffmpeg_exe)
+        ffmpeg_root = os.path.dirname(ffmpeg_bin)
+        ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
+
+        # TorchVision base decoder + video reader
+        video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
+        video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
+        base_decoder_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'decoder')
+        base_decoder_src = glob.glob(
+            os.path.join(base_decoder_src_dir, "[!sync_decoder_test,!utils_test]*.cpp"))
+
+        combined_src = video_reader_src + base_decoder_src
+
         ext_modules.append(
             CppExtension(
                 'torchvision.video_reader',
-                video_reader_src,
+                combined_src,
                 include_dirs=[
+                    base_decoder_src_dir,
                     video_reader_src_dir,
                     ffmpeg_include_dir,
                     extensions_dir,

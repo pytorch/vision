@@ -3,13 +3,21 @@ _HAS_OPS = False
 
 def _register_extensions():
     import os
-    import imp
+    import importlib
     import torch
 
     # load the custom_op_library and register the custom ops
     lib_dir = os.path.dirname(__file__)
-    _, path, _ = imp.find_module("_C", [lib_dir])
-    torch.ops.load_library(path)
+    loader_details = (
+        importlib.machinery.ExtensionFileLoader,
+        importlib.machinery.EXTENSION_SUFFIXES
+    )
+
+    extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)
+    ext_specs = extfinder.find_spec("_C")
+    if ext_specs is None:
+        raise ImportError
+    torch.ops.load_library(ext_specs.origin)
 
 
 try:

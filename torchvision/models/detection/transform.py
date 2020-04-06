@@ -1,5 +1,3 @@
-from __future__ import division
-
 import random
 import math
 import torch
@@ -90,7 +88,8 @@ class GeneralizedRCNNTransform(nn.Module):
         if max_size * scale_factor > self.max_size:
             scale_factor = self.max_size / max_size
         image = torch.nn.functional.interpolate(
-            image[None], scale_factor=scale_factor, mode='bilinear', align_corners=False)[0]
+            image[None], scale_factor=scale_factor, mode='bilinear',
+            align_corners=False)[0]
 
         if target is None:
             return image, target
@@ -193,7 +192,11 @@ class GeneralizedRCNNTransform(nn.Module):
 
 def resize_keypoints(keypoints, original_size, new_size):
     # type: (Tensor, List[int], List[int])
-    ratios = [float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size)]
+    ratios = [
+        torch.tensor(s, dtype=torch.float32, device=keypoints.device) /
+        torch.tensor(s_orig, dtype=torch.float32, device=keypoints.device)
+        for s, s_orig in zip(new_size, original_size)
+    ]
     ratio_h, ratio_w = ratios
     resized_data = keypoints.clone()
     if torch._C._get_tracing_state():
@@ -208,7 +211,11 @@ def resize_keypoints(keypoints, original_size, new_size):
 
 def resize_boxes(boxes, original_size, new_size):
     # type: (Tensor, List[int], List[int])
-    ratios = [float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size)]
+    ratios = [
+        torch.tensor(s, dtype=torch.float32, device=boxes.device) /
+        torch.tensor(s_orig, dtype=torch.float32, device=boxes.device)
+        for s, s_orig in zip(new_size, original_size)
+    ]
     ratio_height, ratio_width = ratios
     xmin, ymin, xmax, ymax = boxes.unbind(1)
 

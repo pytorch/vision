@@ -5,6 +5,10 @@ fi
 
 set -ex
 
+if [[ "$CIRCLECI" == 'true' ]]; then
+    export PATH="/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:.:$PATH"
+fi
+
 # Function to retry functions that sometimes timeout or have flaky failures
 retry () {
     $*  || (sleep 1 && $*) || (sleep 2 && $*) || (sleep 4 && $*) || (sleep 8 && $*)
@@ -104,7 +108,9 @@ if [[ "$desired_cuda" == 'cpu' ]]; then
 else
     export CONDA_CPUONLY_FEATURE=""
     . ./switch_cuda_version.sh $desired_cuda
-    if [[ "$desired_cuda" == "10.1" ]]; then
+    if [[ "$desired_cuda" == "10.2" ]]; then
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.2,<10.3 # [not osx]"
+    elif [[ "$desired_cuda" == "10.1" ]]; then
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.1,<10.2 # [not osx]"
     elif [[ "$desired_cuda" == "10.0" ]]; then
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.0,<10.1 # [not osx]"
