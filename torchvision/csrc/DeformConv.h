@@ -19,7 +19,7 @@ at::Tensor DeformConv2d_forward(
     const std::pair<int, int>& dilation,
     const int groups,
     const int offset_groups) {
-  if (input.type().is_cuda()) {
+  if (input.is_cuda()) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
     return DeformConv2d_forward_cuda(
         input.contiguous(),
@@ -58,7 +58,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor> DeformConv2d_backward
     const std::pair<int, int>& dilation,
     const int groups,
     const int offset_groups) {
-  if (grad.type().is_cuda()) {
+  if (grad.is_cuda()) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
     return DeformConv2d_backward_cuda(
         grad.contiguous(),
