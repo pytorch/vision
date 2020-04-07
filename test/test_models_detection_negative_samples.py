@@ -128,5 +128,6 @@ class Tester(unittest.TestCase):
         self.assertEqual(loss_dict["loss_rpn_box_reg"], torch.tensor(0.))
         self.assertEqual(loss_dict["loss_keypoint"], torch.tensor(0.))
 
+
 if __name__ == '__main__':
     unittest.main()
