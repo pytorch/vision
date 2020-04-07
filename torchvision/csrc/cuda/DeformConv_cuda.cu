@@ -267,7 +267,7 @@ at::Tensor DeformConv2d_forward_cuda(
   TORCH_CHECK(input.is_contiguous());
   TORCH_CHECK(offset.is_contiguous());
   TORCH_CHECK(weight.is_contiguous());
-  TORCH_CHECK(input.device().is_cuda(), "input must be a CUDA tensor");
+  TORCH_CHECK(input.is_cuda(), "input must be a CUDA tensor");
 
   at::DeviceGuard guard(input.device());
 
@@ -411,7 +411,7 @@ at::Tensor DeformConv2d_forward_cuda(
                           .view_as(out_buf[b][g]);
     }
     columns = columns.view(
-        {columns.size(0) * columns.size(1), columns.size(2)});    
+        {columns.size(0) * columns.size(1), columns.size(2)});
   }
 
   out_buf = out_buf.view({batch_sz / n_parallel_imgs,
@@ -776,7 +776,7 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv_backward_input_cuda(
                            weight.size(1),
                            weight.size(2),
                            weight.size(3)});
-  
+
   columns = columns.view(
       {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
   for (int elt = 0; elt < batch_sz / n_parallel_imgs; elt++) {
