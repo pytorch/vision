@@ -113,6 +113,38 @@ def pil_to_tensor(pic):
     return img
 
 
+def convert_image_dtype(
+    image: torch.Tensor, dtype: torch.dtype = torch.float
+) -> torch.Tensor:
+    def scale_factor(dtype: torch.dtype) -> float:
+        if dtype in (
+            torch.float32,
+            torch.float,
+            torch.float64,
+            torch.double,
+            torch.float16,
+            torch.half,
+        ):
+            return 1.0
+
+        num_value_bits = {
+            torch.uint8: 8,
+            torch.int8: 7,
+            torch.int16: 15,
+            torch.short: 15,
+            torch.int32: 31,
+            torch.int: 31,
+            torch.int64: 63,
+            torch.long: 63,
+            torch.bool: 1,
+        }
+        return float(2 ** num_value_bits[dtype] - 1)
+
+    return (
+        image.double().div(scale_factor(image.dtype)).mul(scale_factor(dtype)).to(dtype)
+    )
+
+
 def to_pil_image(pic, mode=None):
     """Convert a tensor or an ndarray to PIL Image.
 
