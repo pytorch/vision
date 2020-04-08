@@ -510,6 +510,40 @@ class Tester(unittest.TestCase):
         output = trans(img)
         self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
+    def test_convert_image_dtype(self):
+        dtype_max_value = {
+            torch.float32: 1.0,
+            torch.float: 1.0,
+            torch.float64: 1.0,
+            torch.double: 1.0,
+            torch.float16: 1.0,
+            torch.half: 1.0,
+            torch.uint8: 255,
+            torch.int8: 127,
+            torch.int16: 32_767,
+            torch.short: 32_767,
+            torch.int32: 2_147_483_647,
+            torch.int: 2_147_483_647,
+            torch.int64: 9_223_372_036_854_775_807,
+            torch.long: 9_223_372_036_854_775_807,
+            torch.bool: 1,
+        }
+
+        def cycle_over(objs):
+            objs = list(objs)
+            for idx, obj in enumerate(objs):
+                yield obj, objs[:idx] + objs[idx + 1:]
+
+        for input_dtype, output_dtypes in cycle_over(dtype_max_value.keys()):
+            input_image = torch.ones(1, dtype=input_dtype) * dtype_max_value[input_dtype]
+
+            for output_dtype in output_dtypes:
+                transform = transforms.ConvertImageDtype(output_dtype)
+                output_image = transform(input_image)
+
+                self.assertEqual(output_image.dtype, output_dtype)
+                self.assertEqual(torch.max(output_image), dtype_max_value[output_dtype])
+
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_to_tensor(self):
         trans = transforms.ToTensor()
