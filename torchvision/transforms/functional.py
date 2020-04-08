@@ -117,7 +117,7 @@ def convert_image_dtype(
     image: torch.Tensor, dtype: torch.dtype = torch.float
 ) -> torch.Tensor:
     def scale_factor(dtype: torch.dtype) -> float:
-        if dtype.is_floating_point:
+        if dtype.is_floating_point or dtype == torch.bool:
             return 1.0
         else:
             return float(torch.iinfo(dtype))
