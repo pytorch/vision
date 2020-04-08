@@ -120,7 +120,7 @@ def convert_image_dtype(
         if dtype.is_floating_point or dtype == torch.bool:
             return 1.0
         else:
-            return float(torch.iinfo(dtype))
+            return float(torch.iinfo(dtype).max)
 
     image = image / scale_factor(image.dtype)
     image = image * scale_factor(dtype)
