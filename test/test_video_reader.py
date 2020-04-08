@@ -1187,8 +1187,8 @@ class TestVideoReader(unittest.TestCase):
             probe_result = torch.ops.video_reader.probe_video_from_memory(video_tensor)
             self.check_probe_result(probe_result, config)
 
-    def test_read_video_meta_data_from_memory_script(self):
-        scripted_fun = torch.jit.script(io.read_video_meta_data_from_memory)
+    def test_probe_video_from_memory_script(self):
+        scripted_fun = torch.jit.script(io._probe_video_from_memory)
         self.assertIsNotNone(scripted_fun)
 
         for test_video, config in test_videos.items():
@@ -1209,7 +1209,7 @@ class TestVideoReader(unittest.TestCase):
         audio_start_pts, audio_end_pts = 0, -1
         audio_timebase_num, audio_timebase_den = 0, 1
 
-        scripted_fun = torch.jit.script(io.read_video_from_memory)
+        scripted_fun = torch.jit.script(io._read_video_from_memory)
         self.assertIsNotNone(scripted_fun)
 
         for test_video, _config in test_videos.items():
@@ -1223,6 +1223,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 [video_start_pts, video_end_pts],
                 video_timebase_num,
                 video_timebase_den,
@@ -1232,7 +1233,6 @@ class TestVideoReader(unittest.TestCase):
                 [audio_start_pts, audio_end_pts],
                 audio_timebase_num,
                 audio_timebase_den,
-                max_dimension,
             )
             # FUTURE: check value of video / audio frames
 
