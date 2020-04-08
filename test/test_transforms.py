@@ -512,27 +512,37 @@ class Tester(unittest.TestCase):
 
     def test_convert_image_dtype(self):
         dtype_max_value = {
-            torch.float32: 1.0,
-            torch.float: 1.0,
-            torch.float64: 1.0,
-            torch.double: 1.0,
-            torch.float16: 1.0,
-            torch.half: 1.0,
-            torch.uint8: 2 ** 8 - 1,
-            torch.int8: 2 ** 7 - 1,
-            torch.int16: 2 ** 15 - 1,
-            torch.short: 2 ** 15 - 1,
-            torch.int32: 2 ** 31 - 1,
-            torch.int: 2 ** 31 - 1,
-            torch.int64: 2 ** 63 - 1,
-            torch.long: 2 ** 63 - 1,
-            torch.bool: 1,
-        }
+                dtype: 1.0
+                for dtype in (
+                    torch.float32,
+                    torch.float,
+                    torch.float64,
+                    torch.double,
+                    torch.float16,
+                    torch.half,
+                    torch.bool,
+                )
+            }
+        dtype_max_value.update(
+            {
+                dtype: torch.iinfo(dtype).max
+                for dtype in (
+                    torch.uint8,
+                    torch.int8,
+                    torch.int16,
+                    torch.short,
+                    torch.int32,
+                    torch.int,
+                    torch.int64,
+                    torch.long,
+                )
+            }
+        )
 
         def cycle_over(objs):
             objs = list(objs)
             for idx, obj in enumerate(objs):
-                yield obj, objs[:idx] + objs[idx + 1:]
+                yield obj, objs[:idx] + objs[idx + 1 :]
 
         for input_dtype, output_dtypes in cycle_over(dtype_max_value.keys()):
             input_image = torch.ones(1, dtype=input_dtype) * dtype_max_value[input_dtype]
@@ -542,7 +552,7 @@ class Tester(unittest.TestCase):
                 output_image = transform(input_image)
 
                 self.assertEqual(output_image.dtype, output_dtype)
-                self.assertEqual(
+                self.assertAlmostEqual(
                     torch.max(output_image).item(), dtype_max_value[output_dtype]
                 )
 
