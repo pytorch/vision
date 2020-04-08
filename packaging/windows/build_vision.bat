@@ -52,7 +52,7 @@ set "tmp_conda=%CONDA_HOME%"
 set "miniconda_exe=%CD%\miniconda.exe"
 rmdir /s /q conda
 del miniconda.exe
-curl -k https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe -o "%miniconda_exe%"
+curl -k https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe -o "%miniconda_exe%"
 call ..\conda\install_conda.bat
 IF ERRORLEVEL 1 exit /b 1
 set "ORIG_PATH=%PATH%"
