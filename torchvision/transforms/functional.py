@@ -122,9 +122,7 @@ def convert_image_dtype(
         else:
             return float(torch.iinfo(dtype))
 
-    old_dtype = image.dtype
-    image = image.double()
-    image = image / scale_factor(old_dtype)
+    image = image / scale_factor(image.dtype)
     image = image * scale_factor(dtype)
     return image.to(dtype)
 
