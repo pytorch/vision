@@ -518,14 +518,14 @@ class Tester(unittest.TestCase):
             torch.double: 1.0,
             torch.float16: 1.0,
             torch.half: 1.0,
-            torch.uint8: 255,
-            torch.int8: 127,
-            torch.int16: 32_767,
-            torch.short: 32_767,
-            torch.int32: 2_147_483_647,
-            torch.int: 2_147_483_647,
-            torch.int64: 9_223_372_036_854_775_807,
-            torch.long: 9_223_372_036_854_775_807,
+            torch.uint8: 2 ** 8 - 1,
+            torch.int8: 2 ** 7 - 1,
+            torch.int16: 2 ** 15 - 1,
+            torch.short: 2 ** 15 - 1,
+            torch.int32: 2 ** 31 - 1,
+            torch.int: 2 ** 31 - 1,
+            torch.int64: 2 ** 63 - 1,
+            torch.long: 2 ** 63 - 1,
             torch.bool: 1,
         }
 
@@ -542,7 +542,9 @@ class Tester(unittest.TestCase):
                 output_image = transform(input_image)
 
                 self.assertEqual(output_image.dtype, output_dtype)
-                self.assertEqual(torch.max(output_image), dtype_max_value[output_dtype])
+                self.assertEqual(
+                    torch.max(output_image).item(), dtype_max_value[output_dtype]
+                )
 
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_to_tensor(self):
