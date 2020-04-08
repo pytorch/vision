@@ -1,4 +1,3 @@
-from __future__ import division
 import math
 import unittest
 
@@ -375,10 +374,14 @@ class NMSTester(unittest.TestCase):
         # let b0 be [x0, y0, x1, y1], and b1 be [x0, y0, x1 + d, y1],
         # then, in order to satisfy ops.iou(b0, b1) == iou_thresh,
         # we need to have d = (x1 - x0) * (1 - iou_thresh) / iou_thresh
+        # Adjust the threshold upward a bit with the intent of creating
+        # at least one box that exceeds (barely) the threshold and so
+        # should be suppressed.
         boxes = torch.rand(N, 4) * 100
         boxes[:, 2:] += boxes[:, :2]
         boxes[-1, :] = boxes[0, :]
         x0, y0, x1, y1 = boxes[-1].tolist()
+        iou_thresh += 1e-5
         boxes[-1, 2] += (x1 - x0) * (1 - iou_thresh) / iou_thresh
         scores = torch.rand(N)
         return boxes, scores
@@ -400,7 +403,12 @@ class NMSTester(unittest.TestCase):
             r_cpu = ops.nms(boxes, scores, iou)
             r_cuda = ops.nms(boxes.cuda(), scores.cuda(), iou)
 
-            self.assertTrue(torch.allclose(r_cpu, r_cuda.cpu()), err_msg.format(iou))
+            is_eq = torch.allclose(r_cpu, r_cuda.cpu())
+            if not is_eq:
+                # if the indices are not the same, ensure that it's because the scores
+                # are duplicate
+                is_eq = torch.allclose(scores[r_cpu], scores[r_cuda.cpu()])
+            self.assertTrue(is_eq, err_msg.format(iou))
 
 
 class NewEmptyTensorTester(unittest.TestCase):
@@ -455,7 +463,7 @@ class DeformConvTester(OpTester, unittest.TestCase):
         return out
 
     def get_fn_args(self, device, contiguous):
-        batch_sz = 1
+        batch_sz = 33
         n_in_channels = 6
         n_out_channels = 2
         n_weight_grps = 2

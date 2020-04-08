@@ -1,7 +1,6 @@
 import collections
 import math
 import os
-import sys
 import time
 import unittest
 from fractions import Fraction
@@ -22,10 +21,7 @@ except ImportError:
     av = None
 
 
-if sys.version_info < (3,):
-    from urllib2 import URLError
-else:
-    from urllib.error import URLError
+from urllib.error import URLError
 
 
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")

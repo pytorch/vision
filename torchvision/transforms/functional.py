@@ -1,6 +1,4 @@
-from __future__ import division
 import torch
-import sys
 import math
 from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
 try:
@@ -10,15 +8,8 @@ except ImportError:
 import numpy as np
 from numpy import sin, cos, tan
 import numbers
-import collections
+from collections.abc import Sequence, Iterable
 import warnings
-
-if sys.version_info < (3, 3):
-    Sequence = collections.Sequence
-    Iterable = collections.Iterable
-else:
-    Sequence = collections.abc.Sequence
-    Iterable = collections.abc.Iterable
 
 
 def _is_pil_image(img):
@@ -84,8 +75,7 @@ def to_tensor(pic):
 
     img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
     # put it from HWC to CHW format
-    # yikes, this transpose takes 80% of the loading time/CPU
-    img = img.transpose(0, 1).transpose(0, 2).contiguous()
+    img = img.permute((2, 0, 1)).contiguous()
     if isinstance(img, torch.ByteTensor):
         return img.float().div(255)
     else:
@@ -198,7 +188,7 @@ def normalize(tensor, mean, std, inplace=False):
     """
     if not torch.is_tensor(tensor):
         raise TypeError('tensor should be a torch tensor. Got {}.'.format(type(tensor)))
-    
+
     if tensor.ndimension() != 3:
         raise ValueError('Expected tensor to be a tensor image of size (C, H, W). Got tensor.size() = '
                          '{}.'.format(tensor.size()))
@@ -352,13 +342,14 @@ def pad(img, padding, fill=0, padding_mode='constant'):
 
 def crop(img, top, left, height, width):
     """Crop the given PIL Image.
-    
+
     Args:
         img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
         top (int): Vertical component of the top left corner of the crop box.
         left (int): Horizontal component of the top left corner of the crop box.
         height (int): Height of the crop box.
         width (int): Width of the crop box.
+
     Returns:
         PIL Image: Cropped image.
     """
@@ -371,13 +362,13 @@ def crop(img, top, left, height, width):
 def center_crop(img, output_size):
     """Crop the given PIL Image and resize it to desired size.
 
-        Args:
-            img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
-            output_size (sequence or int): (height, width) of the crop box. If int,
-                it is used for both directions
-        Returns:
-            PIL Image: Cropped image.
-        """
+    Args:
+        img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
+        output_size (sequence or int): (height, width) of the crop box. If int,
+            it is used for both directions
+    Returns:
+        PIL Image: Cropped image.
+    """
     if isinstance(output_size, numbers.Number):
         output_size = (int(output_size), int(output_size))
     image_width, image_height = img.size
@@ -433,13 +424,15 @@ def _parse_fill(fill, img, min_pil_version):
             image. If int or float, the value is used for all bands respectively.
             Defaults to 0 for all bands.
         img (PIL Image): Image to be filled.
-        min_pil_version (str): The minimum PILLOW version for when the ``fillcolor`` option 
+        min_pil_version (str): The minimum PILLOW version for when the ``fillcolor`` option
             was first introduced in the calling function. (e.g. rotate->5.2.0, perspective->5.0.0)
 
     Returns:
         dict: kwarg for ``fillcolor``
     """
-    if PILLOW_VERSION < min_pil_version:
+    major_found, minor_found = (int(v) for v in PILLOW_VERSION.split('.')[:2])
+    major_required, minor_required = (int(v) for v in min_pil_version.split('.')[:2])
+    if major_found < major_required or (major_found == major_required and minor_found < minor_required):
         if fill is None:
             return {}
         else:
@@ -562,23 +555,24 @@ def five_crop(img, size):
 
 
 def ten_crop(img, size, vertical_flip=False):
-    r"""Crop the given PIL Image into four corners and the central crop plus the
-        flipped version of these (horizontal flipping is used by default).
+    """Generate ten cropped images from the given PIL Image.
+    Crop the given PIL Image into four corners and the central crop plus the
+    flipped version of these (horizontal flipping is used by default).
 
     .. Note::
         This transform returns a tuple of images and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
 
     Args:
-       size (sequence or int): Desired output size of the crop. If size is an
+        size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
             made.
-       vertical_flip (bool): Use vertical flipping instead of horizontal
+        vertical_flip (bool): Use vertical flipping instead of horizontal
 
     Returns:
-       tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip)
-                Corresponding top left, top right, bottom left, bottom right and center crop
-                and same for the flipped image.
+        tuple: tuple (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip)
+            Corresponding top left, top right, bottom left, bottom right and
+            center crop and same for the flipped image.
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
@@ -855,7 +849,7 @@ def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
     output_size = img.size
     center = (img.size[0] * 0.5 + 0.5, img.size[1] * 0.5 + 0.5)
     matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
-    kwargs = {"fillcolor": fillcolor} if PILLOW_VERSION[0] >= '5' else {}
+    kwargs = {"fillcolor": fillcolor} if int(PILLOW_VERSION.split('.')[0]) >= 5 else {}
     return img.transform(output_size, Image.AFFINE, matrix, resample, **kwargs)
 
 

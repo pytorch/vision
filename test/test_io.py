@@ -6,15 +6,11 @@ import torchvision.datasets.utils as utils
 import torchvision.io as io
 from torchvision import get_video_backend
 import unittest
-import sys
 import warnings
+from urllib.error import URLError
 
 from common_utils import get_tmp_dir
 
-if sys.version_info < (3,):
-    from urllib2 import URLError
-else:
-    from urllib.error import URLError
 
 try:
     import av

@@ -18,7 +18,7 @@ __device__ inline bool devIoU(T const* const a, T const* const b, const float th
   T interS = width * height;
   T Sa = (a[2] - a[0]) * (a[3] - a[1]);
   T Sb = (b[2] - b[0]) * (b[3] - b[1]);
-  return interS > threshold * (Sa + Sb - interS);
+  return (interS / (Sa + Sb - interS)) > threshold;
 }
 
 template <typename T>
@@ -72,8 +72,8 @@ __global__ void nms_kernel(
 at::Tensor nms_cuda(const at::Tensor& dets,
     const at::Tensor& scores,
     float iou_threshold) {
-  AT_ASSERTM(dets.type().is_cuda(), "dets must be a CUDA tensor");
-  AT_ASSERTM(scores.type().is_cuda(), "scores must be a CUDA tensor");
+  AT_ASSERTM(dets.is_cuda(), "dets must be a CUDA tensor");
+  AT_ASSERTM(scores.is_cuda(), "scores must be a CUDA tensor");
   at::cuda::CUDAGuard device_guard(dets.device());
 
   auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
@@ -91,7 +91,7 @@ at::Tensor nms_cuda(const at::Tensor& dets,
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      dets_sorted.type(), "nms_kernel_cuda", [&] {
+      dets_sorted.scalar_type(), "nms_kernel_cuda", [&] {
         nms_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
             dets_num,
             iou_threshold,

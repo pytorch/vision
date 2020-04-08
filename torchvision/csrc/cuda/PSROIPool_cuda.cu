@@ -139,8 +139,8 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cuda(
     const int pooled_height,
     const int pooled_width) {
   // Check if input tensors are CUDA tensors
-  AT_ASSERTM(input.type().is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(input.is_cuda(), "input must be a CUDA tensor");
+  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -183,17 +183,17 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cuda(
       input.scalar_type(), "PSROIPool_forward", [&] {
         PSROIPoolForward<scalar_t><<<grid, block, 0, stream>>>(
             output_size,
-            input.contiguous().data<scalar_t>(),
+            input.contiguous().data_ptr<scalar_t>(),
             spatial_scale,
             channels,
             height,
             width,
             pooled_height,
             pooled_width,
-            rois.contiguous().data<scalar_t>(),
+            rois.contiguous().data_ptr<scalar_t>(),
             channels_out,
-            output.data<scalar_t>(),
-            channel_mapping.data<int>());
+            output.data_ptr<scalar_t>(),
+            channel_mapping.data_ptr<int>());
       });
   AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(output, channel_mapping);
@@ -211,10 +211,10 @@ at::Tensor PSROIPool_backward_cuda(
     const int height,
     const int width) {
   // Check if input tensors are CUDA tensors
-  AT_ASSERTM(grad.type().is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERTM(rois.type().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(grad.is_cuda(), "grad must be a CUDA tensor");
+  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
   AT_ASSERTM(
-      channel_mapping.type().is_cuda(),
+      channel_mapping.is_cuda(),
       "channel_mapping must be a CUDA tensor");
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2},
@@ -250,8 +250,8 @@ at::Tensor PSROIPool_backward_cuda(
       grad.scalar_type(), "PSROIPool_backward", [&] {
         PSROIPoolBackward<scalar_t><<<grid, block, 0, stream>>>(
             grad.numel(),
-            grad.contiguous().data<scalar_t>(),
-            channel_mapping.data<int>(),
+            grad.contiguous().data_ptr<scalar_t>(),
+            channel_mapping.data_ptr<int>(),
             num_rois,
             spatial_scale,
             channels,
@@ -260,8 +260,8 @@ at::Tensor PSROIPool_backward_cuda(
             pooled_height,
             pooled_width,
             channels_out,
-            grad_input.data<scalar_t>(),
-            rois.contiguous().data<scalar_t>());
+            grad_input.data_ptr<scalar_t>(),
+            rois.contiguous().data_ptr<scalar_t>());
       });
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;

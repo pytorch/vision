@@ -312,8 +312,8 @@ at::Tensor ROIAlign_forward_cuda(
     const int pooled_width,
     const int sampling_ratio,
     const bool aligned) {
-  AT_ASSERTM(input.device().is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(input.is_cuda(), "input must be a CUDA tensor");
+  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -345,7 +345,7 @@ at::Tensor ROIAlign_forward_cuda(
     return output;
   }
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.type(), "ROIAlign_forward", [&] {
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.scalar_type(), "ROIAlign_forward", [&] {
     RoIAlignForward<scalar_t><<<grid, block, 0, stream>>>(
         output_size,
         input.contiguous().data_ptr<scalar_t>(),
@@ -376,8 +376,8 @@ at::Tensor ROIAlign_backward_cuda(
     const int width,
     const int sampling_ratio,
     const bool aligned) {
-  AT_ASSERTM(grad.device().is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERTM(rois.device().is_cuda(), "rois must be a CUDA tensor");
+  AT_ASSERTM(grad.is_cuda(), "grad must be a CUDA tensor");
+  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2};
 
@@ -409,7 +409,7 @@ at::Tensor ROIAlign_backward_cuda(
   int h_stride = grad.stride(2);
   int w_stride = grad.stride(3);
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIAlign_backward", [&] {
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.scalar_type(), "ROIAlign_backward", [&] {
     RoIAlignBackward<scalar_t><<<grid, block, 0, stream>>>(
         grad.numel(),
         grad.data_ptr<scalar_t>(),

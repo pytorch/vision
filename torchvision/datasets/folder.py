@@ -4,7 +4,6 @@ from PIL import Image
 
 import os
 import os.path
-import sys
 
 
 def has_file_allowed_extension(filename, extensions):
@@ -32,26 +31,28 @@ def is_image_file(filename):
     return has_file_allowed_extension(filename, IMG_EXTENSIONS)
 
 
-def make_dataset(dir, class_to_idx, extensions=None, is_valid_file=None):
-    images = []
-    dir = os.path.expanduser(dir)
-    if not ((extensions is None) ^ (is_valid_file is None)):
+def make_dataset(directory, class_to_idx, extensions=None, is_valid_file=None):
+    instances = []
+    directory = os.path.expanduser(directory)
+    both_none = extensions is None and is_valid_file is None
+    both_something = extensions is not None and is_valid_file is not None
+    if both_none or both_something:
         raise ValueError("Both extensions and is_valid_file cannot be None or not None at the same time")
     if extensions is not None:
         def is_valid_file(x):
             return has_file_allowed_extension(x, extensions)
-    for target in sorted(class_to_idx.keys()):
-        d = os.path.join(dir, target)
-        if not os.path.isdir(d):
+    for target_class in sorted(class_to_idx.keys()):
+        class_index = class_to_idx[target_class]
+        target_dir = os.path.join(directory, target_class)
+        if not os.path.isdir(target_dir):
             continue
-        for root, _, fnames in sorted(os.walk(d, followlinks=True)):
+        for root, _, fnames in sorted(os.walk(target_dir, followlinks=True)):
             for fname in sorted(fnames):
                 path = os.path.join(root, fname)
                 if is_valid_file(path):
-                    item = (path, class_to_idx[target])
-                    images.append(item)
-
-    return images
+                    item = path, class_index
+                    instances.append(item)
+    return instances
 
 
 class DatasetFolder(VisionDataset):
@@ -117,11 +118,7 @@ class DatasetFolder(VisionDataset):
         Ensures:
             No class is a subdirectory of another.
         """
-        if sys.version_info >= (3, 5):
-            # Faster and available in Python 3.5 and above
-            classes = [d.name for d in os.scandir(dir) if d.is_dir()]
-        else:
-            classes = [d for d in os.listdir(dir) if os.path.isdir(os.path.join(dir, d))]
+        classes = [d.name for d in os.scandir(dir) if d.is_dir()]
         classes.sort()
         class_to_idx = {classes[i]: i for i in range(len(classes))}
         return classes, class_to_idx

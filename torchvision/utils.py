@@ -1,10 +1,20 @@
+from typing import Union, Optional, Sequence, Tuple, Text, BinaryIO
+import io
+import pathlib
 import torch
 import math
 irange = range
 
 
-def make_grid(tensor, nrow=8, padding=2,
-              normalize=False, range=None, scale_each=False, pad_value=0):
+def make_grid(
+    tensor: Union[torch.Tensor, Sequence[torch.Tensor]],
+    nrow: int = 8,
+    padding: int = 2,
+    normalize: bool = False,
+    range: Optional[Tuple[int, int]] = None,
+    scale_each: bool = False,
+    pad_value: int = 0,
+) -> torch.Tensor:
     """Make a grid of images.
 
     Args:
@@ -88,14 +98,23 @@ def make_grid(tensor, nrow=8, padding=2,
     return grid
 
 
-def save_image(tensor, fp, nrow=8, padding=2,
-               normalize=False, range=None, scale_each=False, pad_value=0, format=None):
+def save_image(
+    tensor: Union[torch.Tensor, Sequence[torch.Tensor]],
+    fp: Union[Text, pathlib.Path, BinaryIO],
+    nrow: int = 8,
+    padding: int = 2,
+    normalize: bool = False,
+    range: Optional[Tuple[int, int]] = None,
+    scale_each: bool = False,
+    pad_value: int = 0,
+    format: Optional[str] = None,
+) -> None:
     """Save a given Tensor into an image file.
 
     Args:
         tensor (Tensor or list): Image to be saved. If given a mini-batch tensor,
             saves the tensor as a grid of images by calling ``make_grid``.
-        fp - A filename(string) or file object
+        fp (string or file object): A filename or a file object
         format(Optional):  If omitted, the format to use is determined from the filename extension.
             If a file object was used instead of a filename, this parameter should always be used.
         **kwargs: Other arguments are documented in ``make_grid``.
