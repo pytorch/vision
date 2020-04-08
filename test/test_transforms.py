@@ -542,7 +542,7 @@ class Tester(unittest.TestCase):
         def cycle_over(objs):
             objs = list(objs)
             for idx, obj in enumerate(objs):
-                yield obj, objs[:idx] + objs[idx + 1 :]
+                yield obj, objs[:idx] + objs[idx + 1:]
 
         for input_dtype, output_dtypes in cycle_over(dtype_max_value.keys()):
             input_image = torch.ones(1, dtype=input_dtype) * dtype_max_value[input_dtype]
