@@ -550,11 +550,21 @@ class Tester(unittest.TestCase):
             for output_dtype in output_dtypes:
                 transform = transforms.ConvertImageDtype(output_dtype)
                 output_image = transform(input_image)
-
-                self.assertEqual(output_image.dtype, output_dtype)
-                self.assertAlmostEqual(
-                    torch.max(output_image).item(), dtype_max_value[output_dtype]
+                msg_prefix = "Conversion from {input_dtype} to {output_dtype} resulted in ".format(
+                    input_dtype=input_dtype, output_dtype=output_dtype
                 )
+
+                actual = output_image.dtype
+                desired = output_dtype
+                msg = msg_prefix + "{actual_dtype}.".format(actual_dtype=actual)
+                self.assertEqual(actual, desired, msg=msg)
+
+                actual = torch.max(output_image).item()
+                desired = dtype_max_value[output_dtype]
+                msg = msg_prefix + "{actual_max_value} instead of {desired_max_value}.".format(
+                    actual_max_value=actual, desired_max_value=desired
+                )
+                self.assertAlmostEqual(actual, desired, msg=msg)
 
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_to_tensor(self):
