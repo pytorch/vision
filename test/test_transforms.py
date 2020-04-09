@@ -561,6 +561,53 @@ class Tester(unittest.TestCase):
                 )
                 self.assertAlmostEqual(actual, desired, msg=msg)
 
+    def test_convert_image_dtype_consistency(self):
+        def cycle_over(objs):
+            objs = list(objs)
+            for idx, obj in enumerate(objs):
+                yield obj, objs[:idx] + objs[idx + 1:]
+
+        def create_input_image(dtype, seed=0, size=(3, 4, 4)):
+            torch.manual_seed(seed)
+            if dtype.is_floating_point:
+                return torch.rand(size, dtype=dtype)
+            elif dtype == torch.bool:
+                return torch.rand(size) > 0.5
+            else:
+                return torch.randint(torch.iinfo(dtype).max, size, dtype=dtype)
+
+        dtypes = (
+            torch.float32,
+            torch.float,
+            torch.float64,
+            torch.double,
+            # torch.float16,
+            # torch.half,
+            torch.bool,
+            torch.uint8,
+            torch.int8,
+            torch.int16,
+            torch.short,
+            torch.int32,
+            torch.int,
+            torch.int64,
+            torch.long,
+        )
+
+        for dtype, intermediate_dtypes in cycle_over(dtypes):
+            input_image = create_input_image(dtype)
+            inverse_transform = transforms.ConvertImageDtype(dtype)
+
+            for intermediate_dtype in intermediate_dtypes:
+                transform = transforms.ConvertImageDtype(intermediate_dtype)
+                output_image = inverse_transform(transform(input_image))
+
+                msg = "Cycle conversion from {dtype} via {intermediate_dtype} resulted in inconsistent results.".format(
+                    dtype=dtype, intermediate_dtype=intermediate_dtype
+                )
+                # FIXME: This should compare floating point tensor for almost equality
+                # self.assertEqual(output_image, input_image, msg=msg)
+
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_to_tensor(self):
         trans = transforms.ToTensor()
