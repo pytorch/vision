@@ -96,7 +96,6 @@ class GeneralizedRCNNTransform(nn.Module):
         else:
             # FIXME assume for now that testing uses the largest scale
             size = float(self.min_size[-1])
-
         scale_factor = compute_scale_factor(image, size, float(self.max_size))
         image = torch.nn.functional.interpolate(
             image[None], scale_factor=scale_factor, mode='bilinear',
