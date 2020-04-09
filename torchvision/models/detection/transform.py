@@ -10,6 +10,21 @@ from .image_list import ImageList
 from .roi_heads import paste_masks_in_image
 
 
+@torch.jit.unused
+def compute_scale_factor(image, self_min_size, self_max_size):
+        # type: (Tensor, float, float) -> Tensor
+        from torch.onnx import operators
+        im_shape = operators.shape_as_tensor(image)[-2:]
+        min_size = torch.min(im_shape).to(dtype=torch.float32)
+        max_size = torch.max(im_shape).to(dtype=torch.float32)
+
+        scale_factor = self_min_size / min_size
+        if max_size * scale_factor > self_max_size:
+            scale_factor = self_max_size / max_size
+
+        return scale_factor
+
+
 class GeneralizedRCNNTransform(nn.Module):
     """
     Performs input / target transformation before feeding the data to a GeneralizedRCNN
@@ -76,17 +91,13 @@ class GeneralizedRCNNTransform(nn.Module):
     def resize(self, image, target):
         # type: (Tensor, Optional[Dict[str, Tensor]])
         h, w = image.shape[-2:]
-        im_shape = torch.tensor(image.shape[-2:])
-        min_size = float(torch.min(im_shape))
-        max_size = float(torch.max(im_shape))
         if self.training:
             size = float(self.torch_choice(self.min_size))
         else:
             # FIXME assume for now that testing uses the largest scale
             size = float(self.min_size[-1])
-        scale_factor = size / min_size
-        if max_size * scale_factor > self.max_size:
-            scale_factor = self.max_size / max_size
+
+        scale_factor = compute_scale_factor(image, size, float(self.max_size))
         image = torch.nn.functional.interpolate(
             image[None], scale_factor=scale_factor, mode='bilinear',
             align_corners=False)[0]

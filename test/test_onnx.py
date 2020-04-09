@@ -321,10 +321,10 @@ class ONNXExporterTester(unittest.TestCase):
 
     def get_test_images(self):
         image_url = "http://farm3.staticflickr.com/2469/3915380994_2e611b1779_z.jpg"
-        image = self.get_image_from_url(url=image_url, size=(200, 300))
+        image = self.get_image_from_url(url=image_url, size=(100, 320))
 
         image_url2 = "https://pytorch.org/tutorials/_static/img/tv_tutorial/tv_image05.png"
-        image2 = self.get_image_from_url(url=image_url2, size=(250, 200))
+        image2 = self.get_image_from_url(url=image_url2, size=(250, 380))
 
         images = [image]
         test_images = [image2]
@@ -375,7 +375,6 @@ class ONNXExporterTester(unittest.TestCase):
 
         assert torch.all(out2.eq(out_trace2))
 
-    @unittest.skip("Disable test until export of interpolate script module to ONNX is fixed")
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
 
@@ -416,7 +415,6 @@ class ONNXExporterTester(unittest.TestCase):
         assert torch.all(out2[0].eq(out_trace2[0]))
         assert torch.all(out2[1].eq(out_trace2[1]))
 
-    @unittest.skip("Disable test until export of interpolate script module to ONNX is fixed")
     def test_keypoint_rcnn(self):
         class KeyPointRCNN(torch.nn.Module):
             def __init__(self):
