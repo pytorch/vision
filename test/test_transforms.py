@@ -511,6 +511,11 @@ class Tester(unittest.TestCase):
         self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
     def test_convert_image_dtype(self):
+        def cycle_over(objs):
+            objs = list(objs)
+            for idx, obj in enumerate(objs):
+                yield obj, objs[:idx] + objs[idx + 1:]
+
         dtype_max_value = {
             dtype: 1.0
             for dtype in (torch.float32, torch.float, torch.float64, torch.double, torch.bool,)
@@ -533,11 +538,6 @@ class Tester(unittest.TestCase):
                 )
             }
         )
-
-        def cycle_over(objs):
-            objs = list(objs)
-            for idx, obj in enumerate(objs):
-                yield obj, objs[:idx] + objs[idx + 1:]
 
         for input_dtype, output_dtypes in cycle_over(dtype_max_value.keys()):
             input_image = torch.ones(1, dtype=input_dtype) * dtype_max_value[input_dtype]
