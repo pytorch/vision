@@ -513,15 +513,10 @@ class Tester(unittest.TestCase):
     def test_convert_image_dtype(self):
         dtype_max_value = {
             dtype: 1.0
-            for dtype in (
-                torch.float32,
-                torch.float,
-                torch.float64,
-                torch.double,
-                torch.float16,
-                torch.half,
-                torch.bool,
-            )
+            for dtype in (torch.float32, torch.float, torch.float64, torch.double, torch.bool,)
+            # torch.float16 and torch.half are disabled for now since they do not support torch.max
+            # See https://github.com/pytorch/pytorch/issues/28623#issuecomment-611379051
+            # (torch.float32, torch.float, torch.float64, torch.double, torch.float16, torch.half, torch.bool, )
         }
         dtype_max_value.update(
             {
