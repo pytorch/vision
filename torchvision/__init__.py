@@ -8,7 +8,6 @@ from torchvision import utils
 from torchvision import io
 
 from .extension import _HAS_OPS
-
 import torch
 
 try:

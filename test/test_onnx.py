@@ -382,7 +382,6 @@ class ONNXExporterTester(unittest.TestCase):
         model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
-
         self.run_model(model, [(images,), (test_images,)],
                        input_names=["images_tensors"],
                        output_names=["boxes", "labels", "scores"],
