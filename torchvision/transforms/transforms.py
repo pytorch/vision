@@ -116,7 +116,7 @@ class PILToTensor(object):
 
 
 class ConvertImageDtype(object):
-    """Convert a tensor to the given ``dtype`` and scale the values accordingly
+    """Convert a tensor image to the given ``dtype`` and scale the values accordingly
 
     Args:
         dtype (torch.dtype): Desired data type of the output
