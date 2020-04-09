@@ -42,9 +42,11 @@ def get_available_video_models():
 # before they are compared to the eager model outputs. This is useful if the
 # model outputs are different between TorchScript / Eager mode
 script_test_models = {
+    'deeplabv3_resnet50': {},
     'deeplabv3_resnet101': {},
     'mobilenet_v2': {},
     'resnext50_32x4d': {},
+    'fcn_resnet50': {},
     'fcn_resnet101': {},
     'googlenet': {
         'unwrapper': lambda x: x.logits
