@@ -4,7 +4,6 @@ from torch import Tensor
 import torchvision
 
 
-@torch.jit.script
 def nms(boxes, scores, iou_threshold):
     # type: (Tensor, Tensor, float)
     """
@@ -36,7 +35,6 @@ def nms(boxes, scores, iou_threshold):
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
 
 
-@torch.jit.script
 def batched_nms(boxes, scores, idxs, iou_threshold):
     # type: (Tensor, Tensor, Tensor, float)
     """

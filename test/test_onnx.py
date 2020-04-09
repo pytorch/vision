@@ -336,6 +336,7 @@ class ONNXExporterTester(unittest.TestCase):
         model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
+
         self.run_model(model, [(images,), (test_images,)], input_names=["images_tensors"],
                        output_names=["outputs"],
                        dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
@@ -381,10 +382,12 @@ class ONNXExporterTester(unittest.TestCase):
         model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
+
         self.run_model(model, [(images,), (test_images,)],
                        input_names=["images_tensors"],
-                       output_names=["outputs"],
-                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
+                       output_names=["boxes", "labels", "scores"],
+                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "boxes": [0, 1], "labels": [0],
+                                     "scores": [0], "masks": [0, 1, 2, 3]},
                        tolerate_small_mismatch=True)
 
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
