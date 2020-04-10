@@ -81,6 +81,53 @@ def to_tensor(pic):
     else:
         return img
 
+def as_tensor(pic):
+    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor of same type.
+
+    See ``AsTensor`` for more details.
+
+    Args:
+        pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
+
+    Returns:
+        Tensor: Converted image.
+    """
+    if not(_is_pil_image(pic) or _is_numpy(pic)):
+        raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
+
+    if _is_numpy(pic) and not _is_numpy_image(pic):
+        raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
+
+    if isinstance(pic, np.ndarray):
+        # handle numpy array
+        if pic.ndim == 2:
+            pic = pic[:, :, None]
+
+        img = torch.from_numpy(pic.transpose((2, 0, 1)))
+        return img
+
+    if accimage is not None and isinstance(pic, accimage.Image):
+        nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
+        pic.copyto(nppic)
+        return torch.from_numpy(nppic)
+
+    # handle PIL Image
+    if pic.mode == 'I':
+        img = torch.from_numpy(np.array(pic, np.int32, copy=False))
+    elif pic.mode == 'I;16':
+        img = torch.from_numpy(np.array(pic, np.int16, copy=False))
+    elif pic.mode == 'F':
+        img = torch.from_numpy(np.array(pic, np.float32, copy=False))
+    elif pic.mode == '1' or pic.mode == 'L':
+        img = torch.from_numpy(np.array(pic, np.uint8, copy=False))
+    else:
+        img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
+
+    img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
+    # put it from HWC to CHW format
+    img = img.permute((2, 0, 1)).contiguous()
+    return img
+
 
 def to_pil_image(pic, mode=None):
     """Convert a tensor or an ndarray to PIL Image.
