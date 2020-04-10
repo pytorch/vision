@@ -10,11 +10,9 @@ from .image_list import ImageList
 from .roi_heads import paste_masks_in_image
 
 
-@torch.jit.unused
-def compute_scale_factor(image, self_min_size, self_max_size):
+@torch.jit.script
+def compute_scale_factor(im_shape, self_min_size, self_max_size):
         # type: (Tensor, float, float) -> Tensor
-        from torch.onnx import operators
-        im_shape = operators.shape_as_tensor(image)[-2:]
         min_size = torch.min(im_shape).to(dtype=torch.float32)
         max_size = torch.max(im_shape).to(dtype=torch.float32)
 
@@ -96,7 +94,12 @@ class GeneralizedRCNNTransform(nn.Module):
         else:
             # FIXME assume for now that testing uses the largest scale
             size = float(self.min_size[-1])
-        scale_factor = compute_scale_factor(image, size, float(self.max_size))
+        if torchvision._is_tracing():
+            from torch.onnx import operators
+            im_shape = operators.shape_as_tensor(image)[-2:]
+        else:
+            im_shape = torch.tensor(image.shape[-2:])
+        scale_factor = compute_scale_factor(im_shape, size, float(self.max_size))
         image = torch.nn.functional.interpolate(
             image[None], scale_factor=scale_factor, mode='bilinear',
             align_corners=False)[0]
