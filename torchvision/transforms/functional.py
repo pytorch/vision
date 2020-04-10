@@ -81,6 +81,7 @@ def to_tensor(pic):
     else:
         return img
 
+
 def as_tensor(pic):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor of same type.
 
