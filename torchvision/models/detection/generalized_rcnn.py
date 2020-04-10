@@ -18,7 +18,7 @@ class GeneralizedRCNN(nn.Module):
     Arguments:
         backbone (nn.Module):
         rpn (nn.Module):
-        heads (nn.Module): takes the features + the proposals from the RPN and computes
+        roi_heads (nn.Module): takes the features + the proposals from the RPN and computes
             detections / masks from it.
         transform (nn.Module): performs the data transformation from the inputs to feed into
             the model
