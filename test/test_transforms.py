@@ -516,13 +516,14 @@ class Tester(unittest.TestCase):
             for idx, obj in enumerate(objs):
                 yield obj, objs[:idx] + objs[idx + 1:]
 
-        dtype_max_value = {
-            dtype: 1.0
-            for dtype in (torch.float32, torch.float, torch.float64, torch.double, torch.bool,)
-            # torch.float16 and torch.half are disabled for now since they do not support torch.max
-            # See https://github.com/pytorch/pytorch/issues/28623#issuecomment-611379051
-            # (torch.float32, torch.float, torch.float64, torch.double, torch.float16, torch.half, torch.bool, )
-        }
+        # dtype_max_value = {
+        #     dtype: 1.0
+        #     for dtype in (torch.float32, torch.float, torch.float64, torch.double)#, torch.bool,)
+        #     # torch.float16 and torch.half are disabled for now since they do not support torch.max
+        #     # See https://github.com/pytorch/pytorch/issues/28623#issuecomment-611379051
+        #     # (torch.float32, torch.float, torch.float64, torch.double, torch.float16, torch.half, torch.bool, )
+        # }
+        dtype_max_value = {}
         dtype_max_value.update(
             {
                 dtype: torch.iinfo(dtype).max
@@ -543,70 +544,20 @@ class Tester(unittest.TestCase):
             input_image = torch.ones(1, dtype=input_dtype) * dtype_max_value[input_dtype]
 
             for output_dtype in output_dtypes:
-                transform = transforms.ConvertImageDtype(output_dtype)
-                output_image = transform(input_image)
-                msg_prefix = "Conversion from {input_dtype} to {output_dtype} resulted in ".format(
-                    input_dtype=input_dtype, output_dtype=output_dtype
-                )
+                with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
+                    transform = transforms.ConvertImageDtype(output_dtype)
+                    output_image = transform(input_image)
 
-                actual = output_image.dtype
-                desired = output_dtype
-                msg = msg_prefix + "{actual_dtype}.".format(actual_dtype=actual)
-                self.assertEqual(actual, desired, msg=msg)
+                    actual = output_image.dtype
+                    desired = output_dtype
+                    self.assertEqual(actual, desired)
 
-                actual = torch.max(output_image).item()
-                desired = dtype_max_value[output_dtype]
-                msg = msg_prefix + "{actual_max_value} instead of {desired_max_value}.".format(
-                    actual_max_value=actual, desired_max_value=desired
-                )
-                self.assertAlmostEqual(actual, desired, msg=msg)
-
-    def test_convert_image_dtype_consistency(self):
-        def cycle_over(objs):
-            objs = list(objs)
-            for idx, obj in enumerate(objs):
-                yield obj, objs[:idx] + objs[idx + 1:]
-
-        def create_input_image(dtype, seed=0, size=(3, 4, 4)):
-            torch.manual_seed(seed)
-            if dtype.is_floating_point:
-                return torch.rand(size, dtype=dtype)
-            elif dtype == torch.bool:
-                return torch.rand(size) > 0.5
-            else:
-                return torch.randint(torch.iinfo(dtype).max, size, dtype=dtype)
-
-        dtypes = (
-            torch.float32,
-            torch.float,
-            torch.float64,
-            torch.double,
-            # torch.float16,
-            # torch.half,
-            torch.bool,
-            torch.uint8,
-            torch.int8,
-            torch.int16,
-            torch.short,
-            torch.int32,
-            torch.int,
-            torch.int64,
-            torch.long,
-        )
-
-        for dtype, intermediate_dtypes in cycle_over(dtypes):
-            input_image = create_input_image(dtype)
-            inverse_transform = transforms.ConvertImageDtype(dtype)
-
-            for intermediate_dtype in intermediate_dtypes:
-                transform = transforms.ConvertImageDtype(intermediate_dtype)
-                output_image = inverse_transform(transform(input_image))
-
-                msg = "Cycle conversion from {dtype} via {intermediate_dtype} resulted in inconsistent results.".format(
-                    dtype=dtype, intermediate_dtype=intermediate_dtype
-                )
-                # FIXME: This should compare floating point tensor for almost equality
-                # self.assertEqual(output_image, input_image, msg=msg)
+                    actual = torch.max(output_image).item()
+                    desired = dtype_max_value[output_dtype]
+                    if output_dtype.is_floating_point:
+                        self.assertAlmostEqual(actual, desired)
+                    else:
+                        self.assertEqual(actual, desired)
 
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_to_tensor(self):

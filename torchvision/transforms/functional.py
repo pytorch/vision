@@ -125,15 +125,46 @@ def convert_image_dtype(
     Returns:
         (torch.Tensor): Converted image
     """
-    def scale_factor(dtype: torch.dtype) -> float:
-        if dtype.is_floating_point or dtype == torch.bool:
-            return 1.0
-        else:
-            return float(torch.iinfo(dtype).max)
+    def float_to_float(image: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
+        return image.to(dtype)
 
-    image = image / scale_factor(image.dtype)
-    image = image * scale_factor(dtype)
-    return image.to(dtype)
+    def float_to_int(image: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
+        max = float(torch.iinfo(dtype).max)
+        image = image * (max + 1.0)
+        image = torch.clamp(image, max)
+        return image.to(dtype)
+
+    def int_to_float(image: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
+        max = torch.iinfo(image.dtype).max
+        image = image.to(dtype)
+        return image / max
+
+    def int_to_int(image: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
+        input_max = torch.iinfo(image.dtype).max
+        output_max = torch.iinfo(dtype).max
+
+        if input_max > output_max:
+            factor = (input_max + 1) // (output_max + 1)
+            image = image // factor
+            return image.to(dtype)
+        else:
+            factor = (output_max + 1) // (input_max + 1)
+            image = image.to(dtype)
+            return (image + 1) * factor - 1
+
+    if image.dtype == dtype:
+        return image
+
+    if image.dtype.is_floating_point:
+        if dtype.is_floating_point:
+            return float_to_float(image, dtype)
+        else:
+            return float_to_int(image, dtype)
+    else:
+        if dtype.is_floating_point:
+            return int_to_float(image, dtype)
+        else:
+            return int_to_int(image, dtype)
 
 
 def to_pil_image(pic, mode=None):
