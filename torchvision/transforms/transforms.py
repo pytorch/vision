@@ -15,7 +15,7 @@ import warnings
 from . import functional as F
 
 
-__all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
+__all__ = ["Compose", "ToTensor", "AsTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
            "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
@@ -90,6 +90,28 @@ class ToTensor(object):
             Tensor: Converted image.
         """
         return F.to_tensor(pic)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
+
+class AsTensor(object):
+    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor of the same type.
+
+    Converts a PIL Image or numpy.ndarray (H x W x C) to a torch.Tensor of shape (C x H x W)
+    if the PIL Image belongs to one of the modes (L, LA, P, I, F, RGB, YCbCr, RGBA, CMYK, 1)
+    or if the numpy.ndarray has dtype = np.uint8
+    """
+
+    def __call__(self, pic):
+        """
+        Args:
+            pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
+
+        Returns:
+            Tensor: Converted image.
+        """
+        return F.as_tensor(pic)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
