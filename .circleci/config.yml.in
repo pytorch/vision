@@ -319,7 +319,7 @@ workflows:
 {%- if True %}
     jobs:
       - circleci_consistency
-      {{ workflows() }}
+      {{ workflows(upload=True) }}
       - binary_linux_conda_cuda:
           name: torchvision_linux_py3.8_cu102_cuda
           python_version: "3.8"
