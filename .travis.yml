@@ -25,7 +25,6 @@ before_install:
     fi
   - pip install future
   - pip install pytest pytest-cov codecov
-  - pip install mock
   - pip install typing
   - |
     if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then
