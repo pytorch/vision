@@ -11,11 +11,25 @@ from .roi_heads import paste_masks_in_image
 
 
 @torch.jit.script
-def compute_scale_factor(im_shape, self_min_size, self_max_size):
+def _compute_scale_factor(image, self_min_size, self_max_size):
         # type: (Tensor, float, float) -> Tensor
+        im_shape = torch.tensor(image.shape[-2:])
+        min_size = float(torch.min(im_shape))
+        max_size = float(torch.max(im_shape))
+        scale_factor = self_min_size / min_size
+        if max_size * scale_factor > self_max_size:
+            scale_factor = self_max_size / max_size
+
+        return scale_factor
+
+
+@torch.jit.unused
+def _compute_scale_factor_onnx(image, self_min_size, self_max_size):
+        # type: (Tensor, float, float) -> Tensor
+        from torch.onnx import operators
+        im_shape = operators.shape_as_tensor(image)[-2:]
         min_size = torch.min(im_shape).to(dtype=torch.float32)
         max_size = torch.max(im_shape).to(dtype=torch.float32)
-
         scale_factor = self_min_size / min_size
         if max_size * scale_factor > self_max_size:
             scale_factor = self_max_size / max_size
@@ -95,11 +109,9 @@ class GeneralizedRCNNTransform(nn.Module):
             # FIXME assume for now that testing uses the largest scale
             size = float(self.min_size[-1])
         if torchvision._is_tracing():
-            from torch.onnx import operators
-            im_shape = operators.shape_as_tensor(image)[-2:]
+            scale_factor = _compute_scale_factor_onnx(image, size, float(self.max_size))
         else:
-            im_shape = torch.tensor(image.shape[-2:])
-        scale_factor = compute_scale_factor(im_shape, size, float(self.max_size))
+            scale_factor = _compute_scale_factor(image, size, float(self.max_size))
         image = torch.nn.functional.interpolate(
             image[None], scale_factor=scale_factor, mode='bilinear',
             align_corners=False)[0]
