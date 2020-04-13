@@ -12,29 +12,29 @@ from .roi_heads import paste_masks_in_image
 
 @torch.jit.script
 def _compute_scale_factor(image, self_min_size, self_max_size):
-        # type: (Tensor, float, float) -> float
-        im_shape = torch.tensor(image.shape[-2:])
-        min_size = float(torch.min(im_shape))
-        max_size = float(torch.max(im_shape))
-        scale_factor = self_min_size / min_size
-        if max_size * scale_factor > self_max_size:
-            scale_factor = self_max_size / max_size
+    # type: (Tensor, float, float) -> float
+    im_shape = torch.tensor(image.shape[-2:])
+    min_size = float(torch.min(im_shape))
+    max_size = float(torch.max(im_shape))
+    scale_factor = self_min_size / min_size
+    if max_size * scale_factor > self_max_size:
+        scale_factor = self_max_size / max_size
 
-        return scale_factor
+    return scale_factor
 
 
 @torch.jit.unused
 def _compute_scale_factor_onnx(image, self_min_size, self_max_size):
-        # type: (Tensor, float, float) -> Tensor
-        from torch.onnx import operators
-        im_shape = operators.shape_as_tensor(image)[-2:]
-        min_size = torch.min(im_shape).to(dtype=torch.float32)
-        max_size = torch.max(im_shape).to(dtype=torch.float32)
-        scale_factor = self_min_size / min_size
-        if max_size * scale_factor > self_max_size:
-            scale_factor = self_max_size / max_size
+    # type: (Tensor, float, float) -> Tensor
+    from torch.onnx import operators
+    im_shape = operators.shape_as_tensor(image)[-2:]
+    min_size = torch.min(im_shape).to(dtype=torch.float32)
+    max_size = torch.max(im_shape).to(dtype=torch.float32)
+    scale_factor = self_min_size / min_size
+    if max_size * scale_factor > self_max_size:
+        scale_factor = self_max_size / max_size
 
-        return scale_factor
+    return scale_factor
 
 
 class GeneralizedRCNNTransform(nn.Module):
