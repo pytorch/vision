@@ -12,7 +12,7 @@ from .roi_heads import paste_masks_in_image
 
 @torch.jit.script
 def _compute_scale_factor(image, self_min_size, self_max_size):
-        # type: (Tensor, float, float) -> Tensor
+        # type: (Tensor, float, float) -> float
         im_shape = torch.tensor(image.shape[-2:])
         min_size = float(torch.min(im_shape))
         max_size = float(torch.max(im_shape))
