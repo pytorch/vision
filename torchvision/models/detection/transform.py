@@ -38,10 +38,6 @@ def _resize_onnx(image, self_min_size, self_max_size, target):
         mask = misc_nn_ops.interpolate(mask[None].float(), scale_factor=scale_factor)[0].byte()
         target["masks"] = mask
 
-    if "keypoints" in target:
-        keypoints = target["keypoints"]
-        keypoints = resize_keypoints(keypoints, (h, w), image.shape[-2:])
-        target["keypoints"] = keypoints
     return image, target
 
 
@@ -122,26 +118,25 @@ class GeneralizedRCNNTransform(nn.Module):
 
         if torchvision._is_tracing():
             image, target = _resize_onnx(image, size, float(self.max_size), target)
-            return image, target
+        else:
+            scale_factor = size / min_size
+            if max_size * scale_factor > self.max_size:
+                scale_factor = self.max_size / max_size
+            image = torch.nn.functional.interpolate(
+                image[None], scale_factor=scale_factor, mode='bilinear',
+                align_corners=False)[0]
 
-        scale_factor = size / min_size
-        if max_size * scale_factor > self.max_size:
-            scale_factor = self.max_size / max_size
-        image = torch.nn.functional.interpolate(
-            image[None], scale_factor=scale_factor, mode='bilinear',
-            align_corners=False)[0]
+            if target is None:
+                return image, target
 
-        if target is None:
-            return image, target
+            bbox = target["boxes"]
+            bbox = resize_boxes(bbox, (h, w), image.shape[-2:])
+            target["boxes"] = bbox
 
-        bbox = target["boxes"]
-        bbox = resize_boxes(bbox, (h, w), image.shape[-2:])
-        target["boxes"] = bbox
-
-        if "masks" in target:
-            mask = target["masks"]
-            mask = misc_nn_ops.interpolate(mask[None].float(), scale_factor=scale_factor)[0].byte()
-            target["masks"] = mask
+            if "masks" in target:
+                mask = target["masks"]
+                mask = misc_nn_ops.interpolate(mask[None].float(), scale_factor=scale_factor)[0].byte()
+                target["masks"] = mask
 
         if "keypoints" in target:
             keypoints = target["keypoints"]
