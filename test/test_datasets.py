@@ -1,7 +1,7 @@
 import sys
 import os
 import unittest
-import mock
+from unittest import mock
 import numpy as np
 import PIL
 from PIL import Image
