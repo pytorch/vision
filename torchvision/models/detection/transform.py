@@ -12,7 +12,7 @@ from .roi_heads import paste_masks_in_image
 
 @torch.jit.unused
 def _resize_onnx(image, self_min_size, self_max_size, target):
-    # type: (Tensor, float, float) -> Tensor, Tensor
+    # type: (Tensor, float, float) -> Tuple[Tensor]
     h, w = image.shape[-2:]
     from torch.onnx import operators
     im_shape = operators.shape_as_tensor(image)[-2:]
