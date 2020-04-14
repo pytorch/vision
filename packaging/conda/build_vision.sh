@@ -75,6 +75,11 @@ mkdir -p "$WIN_PACKAGE_WORK_DIR" || true
 vision_rootdir="$(realpath ${WIN_PACKAGE_WORK_DIR})/torchvision-src"
 git config --system core.longpaths true
 
+# The jobs are seperated on Windows, so we don't need to clone again.
+if [[ -d "$NIGHTLIES_PYTORCH_ROOT" ]]; then
+    cp -R "$NIGHTLIES_PYTORCH_ROOT" "$vision_rootdir"
+fi
+
 if [[ ! -d "$vision_rootdir" ]]; then
     rm -rf "$vision_rootdir"
     git clone "https://github.com/pytorch/vision" "$vision_rootdir"
@@ -96,7 +101,7 @@ export PATH="$(pwd):$(pwd)/Library/usr/bin:$(pwd)/Library/bin:$(pwd)/Scripts:$(p
 popd
 retry conda install -yq conda-build
 
-ANACONDA_USER=pytorch-nightly
+ANACONDA_USER=pytorch-test
 conda config --set anaconda_upload no
 
 
@@ -126,23 +131,25 @@ else
     fi
 fi
 
-if [[ -z "$PYTORCH_VERSION" ]]; then
-    export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
-    export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
-                                python -c "import os, sys, json, re; cuver = '$cuver'; \
-                                cuver = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
-                                print(re.sub(r'\\+.*$', '', \
-                                [x['version'] for x in json.load(sys.stdin)['pytorch'] \
-                                    if (x['platform'] == 'darwin' or cuver in x['fn']) \
-                                    and 'py' + os.environ['DESIRED_PYTHON'] in x['fn']][-1]))")"
-    if [[ -z "$PYTORCH_VERSION" ]]; then
-        echo "PyTorch version auto detection failed"
-        echo "No package found for desired_cuda=$desired_cuda and DESIRED_PYTHON=$DESIRED_PYTHON"
-        exit 1
-    fi
-else
-    export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-nightly"
-fi
+export PYTORCH_VERSION=1.5.0
+export CONDA_CHANNEL_FLAGS="-c pytorch-test"
+# if [[ -z "$PYTORCH_VERSION" ]]; then
+#     export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
+#     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
+#                                 python -c "import os, sys, json, re; cuver = '$cuver'; \
+#                                 cuver = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
+#                                 print(re.sub(r'\\+.*$', '', \
+#                                 [x['version'] for x in json.load(sys.stdin)['pytorch'] \
+#                                     if (x['platform'] == 'darwin' or cuver in x['fn']) \
+#                                     and 'py' + os.environ['DESIRED_PYTHON'] in x['fn']][-1]))")"
+#     if [[ -z "$PYTORCH_VERSION" ]]; then
+#         echo "PyTorch version auto detection failed"
+#         echo "No package found for desired_cuda=$desired_cuda and DESIRED_PYTHON=$DESIRED_PYTHON"
+#         exit 1
+#     fi
+# else
+#     export CONDA_CHANNEL_FLAGS="-c pytorch -c pytorch-nightly"
+# fi
 if [[ "$desired_cuda" == 'cpu' ]]; then
     export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==$PYTORCH_VERSION"
     export CONDA_PYTORCH_CONSTRAINT="- pytorch==$PYTORCH_VERSION"
