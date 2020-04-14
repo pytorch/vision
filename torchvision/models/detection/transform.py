@@ -118,6 +118,8 @@ class GeneralizedRCNNTransform(nn.Module):
 
         if torchvision._is_tracing():
             image, target = _resize_onnx(image, size, float(self.max_size), target)
+            if target is None:
+                return image, target
         else:
             scale_factor = size / min_size
             if max_size * scale_factor > self.max_size:
