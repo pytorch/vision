@@ -11,7 +11,7 @@ from .roi_heads import paste_masks_in_image
 
 
 @torch.jit.script
-def _compute_scale_factor(image, self_min_size, self_max_size):
+def _resize_image(image, self_min_size, self_max_size):
     # type: (Tensor, float, float) -> Tensor
     im_shape = torch.tensor(image.shape[-2:])
     min_size = float(torch.min(im_shape))
@@ -20,11 +20,14 @@ def _compute_scale_factor(image, self_min_size, self_max_size):
     if max_size * scale_factor > self_max_size:
         scale_factor = self_max_size / max_size
 
-    return torch.tensor(scale_factor, dtype=torch.float32)
+    image = torch.nn.functional.interpolate(
+        image[None], scale_factor=float(scale_factor), mode='bilinear',
+        align_corners=False)[0]
+    return image
 
 
 @torch.jit.unused
-def _compute_scale_factor_onnx(image, self_min_size, self_max_size):
+def _resize_image_onnx(image, self_min_size, self_max_size):
     # type: (Tensor, float, float) -> Tensor
     from torch.onnx import operators
     im_shape = operators.shape_as_tensor(image)[-2:]
@@ -34,7 +37,10 @@ def _compute_scale_factor_onnx(image, self_min_size, self_max_size):
     if max_size * scale_factor > self_max_size:
         scale_factor = self_max_size / max_size
 
-    return scale_factor
+    image = torch.nn.functional.interpolate(
+        image[None], scale_factor=scale_factor, mode='bilinear',
+        align_corners=False)[0]
+    return image
 
 
 class GeneralizedRCNNTransform(nn.Module):
@@ -109,12 +115,9 @@ class GeneralizedRCNNTransform(nn.Module):
             # FIXME assume for now that testing uses the largest scale
             size = float(self.min_size[-1])
         if torchvision._is_tracing():
-            scale_factor = _compute_scale_factor_onnx(image, size, float(self.max_size))
+            image = _resize_image_onnx(image, size, float(self.max_size))
         else:
-            scale_factor = _compute_scale_factor(image, size, float(self.max_size))
-        image = torch.nn.functional.interpolate(
-            image[None], scale_factor=scale_factor, mode='bilinear',
-            align_corners=False)[0]
+            image = _resize_image(image, size, float(self.max_size))
 
         if target is None:
             return image, target
