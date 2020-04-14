@@ -351,7 +351,7 @@ jobs:
             # Prevent credential from leaking
             conda install -yq anaconda-client
             set -x
-            anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload ~/workspace/*.tar.bz2 -u pytorch-nightly --label main --no-progress --force
+            anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload ~/workspace/*.tar.bz2 -u pytorch-test --label main --no-progress --force
 
   # Requires org-member context
   binary_wheel_upload:
@@ -375,35 +375,12 @@ jobs:
             export AWS_SECRET_ACCESS_KEY="${PYTORCH_BINARY_AWS_SECRET_ACCESS_KEY}"
             set -x
             for pkg in ~/workspace/*.whl; do
-              aws s3 cp "$pkg" "s3://pytorch/whl/nightly/<< parameters.subfolder >>" --acl public-read
+              aws s3 cp "$pkg" "s3://pytorch/whl/test/<< parameters.subfolder >>" --acl public-read
             done
 
 
 workflows:
   build:
-{%- if True %}
     jobs:
       - circleci_consistency
-      {{ workflows(windows_latest_only=True) }}
-      - binary_linux_conda_cuda:
-          name: torchvision_linux_py3.8_cu102_cuda
-          python_version: "3.8"
-          cu_version: "cu102"
-      - binary_win_conda:
-          name: torchvision_win_py3.6_cpu
-          python_version: "3.6"
-          cu_version: "cpu"
-      - binary_win_conda_cuda:
-          name: torchvision_win_py3.6_cu101
-          python_version: "3.6"
-          cu_version: "cu101"
-      - python_lint
-      - clang_format
-
-  nightly:
-{%- endif %}
-    jobs:
-      - circleci_consistency
-      - python_lint
-      - clang_format
-      {{ workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
+      {{ workflows(upload=True) }}

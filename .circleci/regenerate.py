@@ -22,7 +22,7 @@ import os.path
 def workflows(prefix='', filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
     w = []
     for btype in ["wheel", "conda"]:
-        for os_type in ["linux", "macos", "win"]:
+        for os_type in ["win"]:
             python_versions = ["3.5", "3.6", "3.7", "3.8"]
             cu_versions = (["cpu", "cu92", "cu101", "cu102"] if os_type == "linux" or os_type == "win" else ["cpu"])
             for python_version in python_versions:
