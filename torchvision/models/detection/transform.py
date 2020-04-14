@@ -10,25 +10,10 @@ from .image_list import ImageList
 from .roi_heads import paste_masks_in_image
 
 
-@torch.jit.script
-def _resize_image(image, self_min_size, self_max_size):
-    # type: (Tensor, float, float) -> Tensor
-    im_shape = torch.tensor(image.shape[-2:])
-    min_size = float(torch.min(im_shape))
-    max_size = float(torch.max(im_shape))
-    scale_factor = self_min_size / min_size
-    if max_size * scale_factor > self_max_size:
-        scale_factor = self_max_size / max_size
-
-    image = torch.nn.functional.interpolate(
-        image[None], scale_factor=float(scale_factor), mode='bilinear',
-        align_corners=False)[0]
-    return image
-
-
 @torch.jit.unused
-def _resize_image_onnx(image, self_min_size, self_max_size):
-    # type: (Tensor, float, float) -> Tensor
+def _resize_onnx(image, self_min_size, self_max_size, target):
+    # type: (Tensor, float, float) -> Tensor, Tensor
+    h, w = image.shape[-2:]
     from torch.onnx import operators
     im_shape = operators.shape_as_tensor(image)[-2:]
     min_size = torch.min(im_shape).to(dtype=torch.float32)
@@ -40,7 +25,24 @@ def _resize_image_onnx(image, self_min_size, self_max_size):
     image = torch.nn.functional.interpolate(
         image[None], scale_factor=scale_factor, mode='bilinear',
         align_corners=False)[0]
-    return image
+
+    if target is None:
+        return image, target
+
+    bbox = target["boxes"]
+    bbox = resize_boxes(bbox, (h, w), image.shape[-2:])
+    target["boxes"] = bbox
+
+    if "masks" in target:
+        mask = target["masks"]
+        mask = misc_nn_ops.interpolate(mask[None].float(), scale_factor=scale_factor)[0].byte()
+        target["masks"] = mask
+
+    if "keypoints" in target:
+        keypoints = target["keypoints"]
+        keypoints = resize_keypoints(keypoints, (h, w), image.shape[-2:])
+        target["keypoints"] = keypoints
+    return image, target
 
 
 class GeneralizedRCNNTransform(nn.Module):
@@ -109,15 +111,25 @@ class GeneralizedRCNNTransform(nn.Module):
     def resize(self, image, target):
         # type: (Tensor, Optional[Dict[str, Tensor]])
         h, w = image.shape[-2:]
+        im_shape = torch.tensor(image.shape[-2:])
+        min_size = float(torch.min(im_shape))
+        max_size = float(torch.max(im_shape))
         if self.training:
             size = float(self.torch_choice(self.min_size))
         else:
             # FIXME assume for now that testing uses the largest scale
             size = float(self.min_size[-1])
+
         if torchvision._is_tracing():
-            image = _resize_image_onnx(image, size, float(self.max_size))
-        else:
-            image = _resize_image(image, size, float(self.max_size))
+            image, target = _resize_onnx(image, size, float(self.max_size), target)
+            return image, target
+
+        scale_factor = size / min_size
+        if max_size * scale_factor > self.max_size:
+            scale_factor = self.max_size / max_size
+        image = torch.nn.functional.interpolate(
+            image[None], scale_factor=scale_factor, mode='bilinear',
+            align_corners=False)[0]
 
         if target is None:
             return image, target
