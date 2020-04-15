@@ -129,6 +129,21 @@ class ONNXExporterTester(unittest.TestCase):
         model = ops.RoIPool((pool_h, pool_w), 2)
         self.run_model(model, [(x, rois)])
 
+    def test_resize_images(self):
+
+        class TransformModule(torch.nn.Module):
+            def __init__(self_module):
+                super(TransformModule, self_module).__init__()
+                self_module.transform = self._init_test_generalized_rcnn_transform()
+
+            def forward(self_module, images):
+                return self_module.transform.resize(images, None)[0]
+
+        input = torch.rand(3, 10, 20)
+        input_test = torch.rand(3, 100, 150)
+        self.run_model(TransformModule(), [(input,), (input_test,)],
+                       input_names=["input1"], dynamic_axes={"input1": [0, 1, 2, 3]})
+
     def test_transform_images(self):
 
         class TransformModule(torch.nn.Module):
