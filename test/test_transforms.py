@@ -1,5 +1,4 @@
 import os
-import mock
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
