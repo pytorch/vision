@@ -71,7 +71,7 @@ requirements = [
     pytorch_dep,
 ]
 
-pillow_ver = ' >= 4.1.1'
+pillow_ver = ' ==6.2.2'
 pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
