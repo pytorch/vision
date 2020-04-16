@@ -104,29 +104,20 @@ def as_tensor(pic):
         if pic.ndim == 2:
             pic = pic[:, :, None]
 
-        img = torch.from_numpy(pic.transpose((2, 0, 1)))
+        img = torch.as_tensor(pic.transpose((2, 0, 1)))
         return img
 
     if accimage is not None and isinstance(pic, accimage.Image):
         nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
         pic.copyto(nppic)
-        return torch.from_numpy(nppic)
+        return torch.as_tensor(nppic)
 
     # handle PIL Image
-    if pic.mode == 'I':
-        img = torch.from_numpy(np.array(pic, np.int32, copy=False))
-    elif pic.mode == 'I;16':
-        img = torch.from_numpy(np.array(pic, np.int16, copy=False))
-    elif pic.mode == 'F':
-        img = torch.from_numpy(np.array(pic, np.float32, copy=False))
-    elif pic.mode == '1':
-        img = torch.from_numpy(np.array(pic, np.uint8, copy=False))
-    else:
-        img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
+    img = torch.as_tensor(np.asarray(pic))
 
     img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
     # put it from HWC to CHW format
-    img = img.permute((2, 0, 1)).contiguous()
+    img = img.permute((2, 0, 1))
     return img
 
 
