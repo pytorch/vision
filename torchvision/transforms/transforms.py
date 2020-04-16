@@ -15,7 +15,7 @@ import warnings
 from . import functional as F
 
 
-__all__ = ["Compose", "ToTensor", "AsTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
+__all__ = ["Compose", "ToTensor", "PILToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
            "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
@@ -95,23 +95,24 @@ class ToTensor(object):
         return self.__class__.__name__ + '()'
 
 
-class AsTensor(object):
-    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor of the same type.
+class PILToTensor(object):
+    """Convert a ``PIL Image`` to a tensor of the same type.
 
-    Converts a PIL Image or numpy.ndarray (H x W x C) to a torch.Tensor of shape (C x H x W)
-    if the PIL Image belongs to one of the modes (L, LA, P, I, F, RGB, YCbCr, RGBA, CMYK, 1)
-    or if the numpy.ndarray has dtype = np.uint8
+    Converts a PIL Image (H x W x C) to a torch.Tensor. If swap_to_channelsfirst is True
+    the returned shape will be (C x H x W) otherwise the shape will remain unchanged.
     """
 
-    def __call__(self, pic):
+    def __call__(self, pic, swap_to_channelsfirst=True):
         """
         Args:
-            pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
+            pic (PIL Image): Image to be converted to tensor.
+            swap_to_channelsfirst (bool): Boolean indicator to swap to channels first format. 
+                Defaults to True.
 
         Returns:
             Tensor: Converted image.
         """
-        return F.as_tensor(pic)
+        return F.pil_to_tensor(pic)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
