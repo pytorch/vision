@@ -527,6 +527,9 @@ class Tester(unittest.TestCase):
             img = transforms.ToPILImage()(input_data)
             output = trans(img)
             self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
+
+            input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
+            img = transforms.ToPILImage()(input_data)
             output = trans_noswap(img)
             self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
@@ -535,6 +538,9 @@ class Tester(unittest.TestCase):
             output = trans(img)
             expected_output = input_data.transpose((2, 0, 1))
             self.assertTrue(np.allclose(output.numpy(), expected_output))
+
+            input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
+            img = transforms.ToPILImage()(input_data)
             output = trans_noswap(img)
             expected_output = input_data
             self.assertTrue(np.allclose(output.numpy(), expected_output))
@@ -544,6 +550,10 @@ class Tester(unittest.TestCase):
             output = trans(img)
             expected_output = input_data.transpose((2, 0, 1))
             self.assertTrue(np.allclose(output.numpy(), expected_output))
+            input_data = np.random.rand(height, width, channels).astype(np.float32)
+
+            input_data = np.random.rand(height, width, channels).astype(np.float32)
+            img = transforms.ToPILImage()(input_data)
             output = trans_noswap(img)
             expected_output = input_data
             self.assertTrue(np.allclose(output.numpy(), expected_output))
