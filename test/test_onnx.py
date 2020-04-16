@@ -130,7 +130,6 @@ class ONNXExporterTester(unittest.TestCase):
         self.run_model(model, [(x, rois)])
 
     def test_resize_images(self):
-
         class TransformModule(torch.nn.Module):
             def __init__(self_module):
                 super(TransformModule, self_module).__init__()
@@ -351,7 +350,6 @@ class ONNXExporterTester(unittest.TestCase):
         model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
-
         self.run_model(model, [(images,), (test_images,)], input_names=["images_tensors"],
                        output_names=["outputs"],
                        dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},

@@ -32,7 +32,6 @@ def _resize_image_and_masks_onnx(image, self_min_size, self_max_size, target):
         mask = target["masks"]
         mask = misc_nn_ops.interpolate(mask[None].float(), scale_factor=scale_factor)[0].byte()
         target["masks"] = mask
-
     return image, target
 
 
@@ -55,7 +54,6 @@ def _resize_image_and_masks(image, self_min_size, self_max_size, target):
         mask = target["masks"]
         mask = misc_nn_ops.interpolate(mask[None].float(), scale_factor=scale_factor)[0].byte()
         target["masks"] = mask
-
     return image, target
 
 
@@ -130,7 +128,6 @@ class GeneralizedRCNNTransform(nn.Module):
         else:
             # FIXME assume for now that testing uses the largest scale
             size = float(self.min_size[-1])
-
         if torchvision._is_tracing():
             image, target = _resize_image_and_masks_onnx(image, size, float(self.max_size), target)
         else:
@@ -147,7 +144,6 @@ class GeneralizedRCNNTransform(nn.Module):
             keypoints = target["keypoints"]
             keypoints = resize_keypoints(keypoints, (h, w), image.shape[-2:])
             target["keypoints"] = keypoints
-
         return image, target
 
     # _onnx_batch_images() is an implementation of
