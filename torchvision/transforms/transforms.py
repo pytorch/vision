@@ -108,7 +108,7 @@ class PILToTensor(object):
         """
         Args:
             pic (PIL Image): Image to be converted to tensor.
-            swap_to_channelsfirst (bool): Boolean indicator to swap to channels first format. 
+            swap_to_channelsfirst (bool): Boolean indicator to swap to channels first format.
                 Defaults to True.
 
         Returns:
