@@ -82,30 +82,20 @@ def to_tensor(pic):
         return img
 
 
-def as_tensor(pic):
-    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor of same type.
+def pil_to_tensor(pic, swap_to_channelsfirst=True):
+    """Convert a ``PIL Image`` to a tensor of the same type.
 
     See ``AsTensor`` for more details.
 
     Args:
-        pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
+        pic (PIL Image): Image to be converted to tensor.
+        swap_to_channelsfirst (bool): Boolean indicator to convert to CHW format.
 
     Returns:
         Tensor: Converted image.
     """
-    if not(_is_pil_image(pic) or _is_numpy(pic)):
-        raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
-
-    if _is_numpy(pic) and not _is_numpy_image(pic):
-        raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
-
-    if isinstance(pic, np.ndarray):
-        # handle numpy array
-        if pic.ndim == 2:
-            pic = pic[:, :, None]
-
-        img = torch.as_tensor(pic.transpose((2, 0, 1)))
-        return img
+    if not(_is_pil_image(pic)):
+        raise TypeError('pic should be PIL Image. Got {}'.format(type(pic)))
 
     if accimage is not None and isinstance(pic, accimage.Image):
         nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
@@ -115,9 +105,10 @@ def as_tensor(pic):
     # handle PIL Image
     img = torch.as_tensor(np.asarray(pic))
 
-    img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
-    # put it from HWC to CHW format
-    img = img.permute((2, 0, 1))
+    if swap_to_channelsfirst:
+        img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
+        # put it from HWC to CHW format
+        img = img.permute((2, 0, 1))
     return img
 
 
