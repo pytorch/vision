@@ -512,32 +512,40 @@ class Tester(unittest.TestCase):
         self.assertEqual(expected_output.size(), output.size())
         self.assertTrue(np.allclose(output.numpy(), expected_output.numpy()))
 
-    def test_as_tensor(self):
+    def test_pil_to_tensor(self):
         test_channels = [1, 3, 4]
         height, width = 4, 4
-        trans = transforms.AsTensor()
+        trans = transforms.PILToTensor()
+        trans_noswap = transforms.PILToTensor(swap_to_channelsfirst=False)
 
         with self.assertRaises(TypeError):
             trans(np.random.rand(1, height, width).tolist())
-
-        with self.assertRaises(ValueError):
-            trans(np.random.rand(height))
-            trans(np.random.rand(1, 1, height, width))
+            trans(np.random.rand(1, height, width))
 
         for channels in test_channels:
             input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
             img = transforms.ToPILImage()(input_data)
             output = trans(img)
             self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
+            output = trans_noswap(img)
+            self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
-            ndarray = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
-            output = trans(ndarray)
-            expected_output = ndarray.transpose((2, 0, 1))
+            input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
+            img = transforms.ToPILImage()(input_data)
+            output = trans(img)
+            expected_output = input_data.transpose((2, 0, 1))
+            self.assertTrue(np.allclose(output.numpy(), expected_output))
+            output = trans_noswap(img)
+            expected_output = input_data
             self.assertTrue(np.allclose(output.numpy(), expected_output))
 
-            ndarray = np.random.rand(height, width, channels).astype(np.float32)
-            output = trans(ndarray)
-            expected_output = ndarray.transpose((2, 0, 1))
+            input_data = np.random.rand(height, width, channels).astype(np.float32)
+            img = transforms.ToPILImage()(input_data)
+            output = trans(img)
+            expected_output = input_data.transpose((2, 0, 1))
+            self.assertTrue(np.allclose(output.numpy(), expected_output))
+            output = trans_noswap(img)
+            expected_output = input_data
             self.assertTrue(np.allclose(output.numpy(), expected_output))
 
         # separate test for mode '1' PIL images
@@ -547,8 +555,8 @@ class Tester(unittest.TestCase):
         self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
     @unittest.skipIf(accimage is None, 'accimage not available')
-    def test_accimage_as_tensor(self):
-        trans = transforms.AsTensor()
+    def test_accimage_pil_to_tensor(self):
+        trans = transforms.PILToTensor()
 
         expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
         output = trans(accimage.Image(GRACE_HOPPER))
