@@ -1,5 +1,6 @@
 import math
 from collections import OrderedDict
+import warnings
 
 import torch
 from torch import nn
@@ -335,6 +336,9 @@ class RetinaNet(nn.Module):
         self.nms_thresh = nms_thresh
         self.detections_per_img = detections_per_img
 
+        # used only on torchscript mode
+        self._has_warned = False
+
     @torch.jit.unused
     def eager_outputs(self, losses, detections):
         # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
@@ -482,8 +486,7 @@ class RetinaNet(nn.Module):
                 warnings.warn("RetinaNet always returns a (Losses, Detections) tuple in scripting")
                 self._has_warned = True
             return (losses, detections)
-        else:
-            return self.eager_outputs(losses, detections)
+        return self.eager_outputs(losses, detections)
 
 
 model_urls = {
