@@ -530,7 +530,7 @@ class Tester(unittest.TestCase):
 
             input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
             img = transforms.ToPILImage()(input_data)  # HWC
-            output = trans_noswap(img).transpose((2, 0, 1))  # HWC -> CHW 
+            output = trans_noswap(img).transpose((2, 0, 1))  # HWC -> CHW
             self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
             input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
