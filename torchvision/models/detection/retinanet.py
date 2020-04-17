@@ -289,7 +289,7 @@ class RetinaNet(nn.Module):
                  # Anchor parameters
                  anchor_generator=None, head=None,
                  proposal_matcher=None,
-                 score_thresh=0.5,
+                 score_thresh=0.05,
                  nms_thresh=0.5,
                  detections_per_img=300,
                  fg_iou_thresh=0.5, bg_iou_thresh=0.4):
