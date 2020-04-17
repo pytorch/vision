@@ -546,15 +546,15 @@ class Tester(unittest.TestCase):
             self.assertTrue(np.allclose(output.numpy(), expected_output))
 
             input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
-            img = transforms.ToPILImage()(input_data)  # CHW -> HWC
+            img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
             output = trans(img)  # HWC -> CHW
-            expected_output = input_data
+            expected_output = (input_data * 255).byte()
             self.assertTrue(np.allclose(output.numpy(), expected_output.numpy()))
 
             input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
             img = transforms.ToPILImage()(input_data)  # CHW -> HWC
             output = trans_noswap(img)  # HWC -> HWC
-            expected_output = input_data.permute(1, 2, 0)  # CHW -> HWC
+            expected_output = (input_data.permute(1, 2, 0) * 255).byte()  # CHW -> HWC
             self.assertTrue(np.allclose(output.numpy(), expected_output.numpy()))
 
         # separate test for mode '1' PIL images
