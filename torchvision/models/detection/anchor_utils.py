@@ -1,6 +1,5 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
-import torchvision
 from torch import nn
 
 from torch.jit.annotations import List, Optional, Dict
@@ -8,11 +7,6 @@ from .image_list import ImageList
 
 
 class AnchorGenerator(nn.Module):
-    __annotations__ = {
-        "cell_anchors": Optional[List[torch.Tensor]],
-        "_cache": Dict[str, List[torch.Tensor]]
-    }
-
     """
     Module that generates anchors for a set of feature maps and
     image sizes.
@@ -32,6 +26,11 @@ class AnchorGenerator(nn.Module):
         sizes (Tuple[Tuple[int]]):
         aspect_ratios (Tuple[Tuple[float]]):
     """
+
+    __annotations__ = {
+        "cell_anchors": Optional[List[torch.Tensor]],
+        "_cache": Dict[str, List[torch.Tensor]]
+    }
 
     def __init__(
         self,
