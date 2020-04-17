@@ -4,6 +4,7 @@ import torchvision
 from torch import nn
 
 from torch.jit.annotations import List, Optional, Dict
+from .image_list import ImageList
 
 
 class AnchorGenerator(nn.Module):
