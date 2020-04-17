@@ -366,7 +366,7 @@ class RetinaNet(nn.Module):
 
         # create labels for each score
         # the +1 is to make the labels identical to other object detection algorithms that treat background as label 0
-        labels = torch.arange(num_classes, device=device) + 1
+        labels = torch.arange(1, num_classes + 1, device=device)
         labels = labels.view(1, -1).expand_as(scores)
 
         detections = []
