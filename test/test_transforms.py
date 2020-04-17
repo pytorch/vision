@@ -546,14 +546,13 @@ class Tester(unittest.TestCase):
             self.assertTrue(np.allclose(output.numpy(), expected_output))
 
             input_data = np.random.rand(height, width, channels).astype(np.float32)
-            img = transforms.ToPILImage()(input_data)
+            img = transforms.ToPILImage(mode='F')(input_data)
             output = trans(img)
             expected_output = input_data.transpose((2, 0, 1))
             self.assertTrue(np.allclose(output.numpy(), expected_output))
-            input_data = np.random.rand(height, width, channels).astype(np.float32)
 
             input_data = np.random.rand(height, width, channels).astype(np.float32)
-            img = transforms.ToPILImage()(input_data)
+            img = transforms.ToPILImage(mode='F')(input_data)
             output = trans_noswap(img)
             expected_output = input_data
             self.assertTrue(np.allclose(output.numpy(), expected_output))
