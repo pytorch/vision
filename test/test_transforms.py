@@ -529,7 +529,7 @@ class Tester(unittest.TestCase):
             self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
             input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
-            img = transforms.ToPILImage()(input_data)  # HWC
+            img = transforms.ToPILImage()(input_data)  # CHW -> HWC
             output = trans_noswap(img).permute(2, 0, 1)  # HWC -> CHW
             self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
@@ -545,17 +545,17 @@ class Tester(unittest.TestCase):
             expected_output = input_data
             self.assertTrue(np.allclose(output.numpy(), expected_output))
 
-            input_data = np.random.rand(height, width, channels).astype(np.float32)
-            img = transforms.ToPILImage(mode='F')(input_data)
-            output = trans(img)
-            expected_output = input_data.transpose((2, 0, 1))
-            self.assertTrue(np.allclose(output.numpy(), expected_output))
-
-            input_data = np.random.rand(height, width, channels).astype(np.float32)
-            img = transforms.ToPILImage(mode='F')(input_data)
-            output = trans_noswap(img)
+            input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
+            img = transforms.ToPILImage()(input_data)  # CHW -> HWC
+            output = trans(img)  # HWC -> CHW
             expected_output = input_data
-            self.assertTrue(np.allclose(output.numpy(), expected_output))
+            self.assertTrue(np.allclose(output.numpy(), expected_output.numpy()))
+
+            input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
+            img = transforms.ToPILImage()(input_data)  # CHW -> HWC
+            output = trans_noswap(img)  # HWC -> HWC
+            expected_output = input_data.permute(1, 2, 0)  # CHW -> HWC
+            self.assertTrue(np.allclose(output.numpy(), expected_output.numpy()))
 
         # separate test for mode '1' PIL images
         input_data = torch.ByteTensor(1, height, width).bernoulli_()
