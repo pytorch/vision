@@ -79,18 +79,23 @@ class DatasetFolder(VisionDataset):
         is_valid_file (callable, optional): A function that takes path of a file
             and check if the file is a valid file (used to check of corrupt files)
             both extensions and is_valid_file should not be passed.
+        use_paths_in_target_transform: If true and target_transform is not None
+            calls the latter with two parameters: the target and the path to the
+            sample (allowing transformations that depend on the sample).
 
      Attributes:
         classes (list): List of the class names sorted alphabetically.
         class_to_idx (dict): Dict with items (class_name, class_index).
         samples (list): List of (sample path, class_index) tuples
-        targets (list): The class_index value for each image in the dataset
+        targets (list): The class_index value for each sample in the dataset
     """
 
     def __init__(self, root, loader, extensions=None, transform=None,
-                 target_transform=None, is_valid_file=None):
+                 target_transform=None, is_valid_file=None,
+                 use_paths_in_target_transform=False):
         super(DatasetFolder, self).__init__(root, transform=transform,
                                             target_transform=target_transform)
+        self.use_paths_in_target_transform = use_paths_in_target_transform
         classes, class_to_idx = self._find_classes(self.root)
         samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file)
         if len(samples) == 0:
@@ -136,7 +141,10 @@ class DatasetFolder(VisionDataset):
         if self.transform is not None:
             sample = self.transform(sample)
         if self.target_transform is not None:
-            target = self.target_transform(target)
+            if self.use_paths_in_target_transform:
+                target = self.target_transform(target, path)
+            else:
+                target = self.target_transform(target)
 
         return sample, target
 
@@ -191,6 +199,9 @@ class ImageFolder(DatasetFolder):
         loader (callable, optional): A function to load an image given its path.
         is_valid_file (callable, optional): A function that takes path of an Image file
             and check if the file is a valid file (used to check of corrupt files)
+        use_paths_in_target_transform: If true and target_transform is not None.
+            calls the latter with two parameters: the target and the path to the
+            sample (allowing transformations that depend on the sample).
 
      Attributes:
         classes (list): List of the class names sorted alphabetically.
@@ -199,9 +210,11 @@ class ImageFolder(DatasetFolder):
     """
 
     def __init__(self, root, transform=None, target_transform=None,
-                 loader=default_loader, is_valid_file=None):
+                 loader=default_loader, is_valid_file=None,
+                 use_paths_in_target_transform=False):
         super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS if is_valid_file is None else None,
                                           transform=transform,
                                           target_transform=target_transform,
-                                          is_valid_file=is_valid_file)
+                                          is_valid_file=is_valid_file,
+                                          use_paths_in_target_transform=use_paths_in_target_transform)
         self.imgs = self.samples
