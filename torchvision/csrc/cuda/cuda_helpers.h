@@ -4,7 +4,7 @@
   for (int i = (blockIdx.x * blockDim.x) + threadIdx.x; i < (n); \
        i += (blockDim.x * gridDim.x))
 
-template<typename integer>
+template <typename integer>
 constexpr inline integer ceil_div(integer n, integer m) {
   return (n + m - 1) / m;
 }
