@@ -348,7 +348,7 @@ class Matcher(object):
         matches[pred_inds_to_update] = all_matches[pred_inds_to_update]
 
 
-def smooth_l1_loss(input, target, beta=1. / 9, size_average=True):
+def smooth_l1_loss(input, target, beta: float = 1./9, size_average: bool = True):
     """
     very similar to the smooth_l1_loss from pytorch, but with
     the extra beta parameter
