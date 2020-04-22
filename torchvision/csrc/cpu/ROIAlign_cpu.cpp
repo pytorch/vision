@@ -407,8 +407,7 @@ at::Tensor ROIAlign_forward_cpu(
   if (output.numel() == 0)
     return output;
 
-  auto input_ = input.contiguous(),
-       rois_ = rois.contiguous();
+  auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "ROIAlign_forward", [&] {
         ROIAlignForward<scalar_t>(

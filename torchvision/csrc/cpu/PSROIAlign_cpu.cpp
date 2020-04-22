@@ -336,8 +336,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
     return std::make_tuple(output, channel_mapping);
   }
 
-  auto input_ = input.contiguous(),
-       rois_ = rois.contiguous();
+  auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "PSROIAlign_forward", [&] {
         PSROIAlignForwardCPU<scalar_t>(
@@ -394,8 +393,7 @@ at::Tensor PSROIAlign_backward_cpu(
 
   int channels_out = channels / (pooled_height * pooled_width);
 
-  auto grad_ = grad.contiguous(),
-       rois_ = rois.contiguous();
+  auto grad_ = grad.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       grad.scalar_type(), "PSROIAlign_backward", [&] {
         PSROIAlignBackwardCPU<scalar_t>(

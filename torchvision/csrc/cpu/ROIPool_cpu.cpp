@@ -149,8 +149,7 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(
     return std::make_tuple(output, argmax);
   }
 
-  auto input_ = input.contiguous(),
-       rois_ = rois.contiguous();
+  auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "ROIPool_forward", [&] {
         RoIPoolForward<scalar_t>(
