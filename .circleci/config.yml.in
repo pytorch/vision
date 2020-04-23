@@ -164,7 +164,7 @@ jobs:
     - run:
         name: Setup environment
         command: |
-          set -e
+          set -ex
 
           curl -L https://packagecloud.io/circleci/trusty/gpgkey | sudo apt-key add -
           curl -L https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
@@ -206,7 +206,7 @@ jobs:
     - run:
         name: Pull docker image
         command: |
-          set -e
+          set -ex
           export DOCKER_IMAGE=pytorch/conda-cuda
           echo Pulling docker image $DOCKER_IMAGE
           docker pull $DOCKER_IMAGE >/dev/null
@@ -214,7 +214,7 @@ jobs:
     - run:
         name: Build and run tests
         command: |
-          set -e
+          set -ex
 
           cd ${HOME}/project/
 

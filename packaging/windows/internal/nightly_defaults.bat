@@ -144,10 +144,10 @@ if "%CUDA_VERSION%" == "cpu" (
 ::       pytorch-nightly==1.0.0.dev20180908
 ::   or in manylinux like
 ::       torch_nightly-1.0.0.dev20180908-cp27-cp27m-linux_x86_64.whl
-if "%TORCHVISION_BUILD_VERSION%" == "" set TORCHVISION_BUILD_VERSION=0.6.0.dev%NIGHTLIES_DATE_COMPACT%
+if "%TORCHVISION_BUILD_VERSION%" == "" set TORCHVISION_BUILD_VERSION=0.7.0.dev%NIGHTLIES_DATE_COMPACT%
 
 if "%~1" == "Wheels" (
-    if not "%CUDA_VERSION%" == "101" (
+    if not "%CUDA_VERSION%" == "102" (
         set TORCHVISION_BUILD_VERSION=%TORCHVISION_BUILD_VERSION%+%_DESIRED_CUDA%
     )
 )

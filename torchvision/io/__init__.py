@@ -11,8 +11,6 @@ from ._video_opt import (
 )
 from .video import (
     read_video,
-    read_video_from_memory,
-    read_video_meta_data_from_memory,
     read_video_timestamps,
     write_video,
 )
@@ -22,8 +20,6 @@ __all__ = [
     "write_video",
     "read_video",
     "read_video_timestamps",
-    "read_video_meta_data_from_memory",
-    "read_video_from_memory",
     "_read_video_from_file",
     "_read_video_timestamps_from_file",
     "_probe_video_from_file",

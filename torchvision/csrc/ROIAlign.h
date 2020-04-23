@@ -21,7 +21,7 @@ at::Tensor ROIAlign_forward(
     const bool aligned) // The flag for pixel shift
 // along each axis.
 {
-  if (input.type().is_cuda()) {
+  if (input.is_cuda()) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
     return ROIAlign_forward_cuda(
         input,
@@ -57,7 +57,7 @@ at::Tensor ROIAlign_backward(
     const int width,
     const int sampling_ratio,
     const bool aligned) {
-  if (grad.type().is_cuda()) {
+  if (grad.is_cuda()) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
     return ROIAlign_backward_cuda(
         grad,

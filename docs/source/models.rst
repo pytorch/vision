@@ -258,8 +258,8 @@ Semantic Segmentation
 The models subpackage contains definitions for the following model
 architectures for semantic segmentation:
 
-- `FCN ResNet101 <https://arxiv.org/abs/1411.4038>`_
-- `DeepLabV3 ResNet101 <https://arxiv.org/abs/1706.05587>`_
+- `FCN ResNet50, ResNet101 <https://arxiv.org/abs/1411.4038>`_
+- `DeepLabV3 ResNet50, ResNet101 <https://arxiv.org/abs/1706.05587>`_
 
 As with image classification models, all pre-trained models expect input images normalized in the same way.
 The images have to be loaded in to a range of ``[0, 1]`` and then normalized using
@@ -282,7 +282,9 @@ The accuracies of the pre-trained models evaluated on COCO val2017 are as follow
 ================================  =============  ====================
 Network                           mean IoU       global pixelwise acc
 ================================  =============  ====================
+FCN ResNet50                      60.5           91.4
 FCN ResNet101                     63.7           91.9
+DeepLabV3 ResNet50                66.4           92.4
 DeepLabV3 ResNet101               67.4           92.4
 ================================  =============  ====================
 

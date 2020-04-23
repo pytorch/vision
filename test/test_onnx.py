@@ -129,6 +129,20 @@ class ONNXExporterTester(unittest.TestCase):
         model = ops.RoIPool((pool_h, pool_w), 2)
         self.run_model(model, [(x, rois)])
 
+    def test_resize_images(self):
+        class TransformModule(torch.nn.Module):
+            def __init__(self_module):
+                super(TransformModule, self_module).__init__()
+                self_module.transform = self._init_test_generalized_rcnn_transform()
+
+            def forward(self_module, images):
+                return self_module.transform.resize(images, None)[0]
+
+        input = torch.rand(3, 10, 20)
+        input_test = torch.rand(3, 100, 150)
+        self.run_model(TransformModule(), [(input,), (input_test,)],
+                       input_names=["input1"], dynamic_axes={"input1": [0, 1, 2, 3]})
+
     def test_transform_images(self):
 
         class TransformModule(torch.nn.Module):
@@ -321,10 +335,10 @@ class ONNXExporterTester(unittest.TestCase):
 
     def get_test_images(self):
         image_url = "http://farm3.staticflickr.com/2469/3915380994_2e611b1779_z.jpg"
-        image = self.get_image_from_url(url=image_url, size=(200, 300))
+        image = self.get_image_from_url(url=image_url, size=(100, 320))
 
         image_url2 = "https://pytorch.org/tutorials/_static/img/tv_tutorial/tv_image05.png"
-        image2 = self.get_image_from_url(url=image_url2, size=(250, 200))
+        image2 = self.get_image_from_url(url=image_url2, size=(250, 380))
 
         images = [image]
         test_images = [image2]
@@ -375,7 +389,6 @@ class ONNXExporterTester(unittest.TestCase):
 
         assert torch.all(out2.eq(out_trace2))
 
-    @unittest.skip("Disable test until export of interpolate script module to ONNX is fixed")
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
 
@@ -384,8 +397,9 @@ class ONNXExporterTester(unittest.TestCase):
         model(images)
         self.run_model(model, [(images,), (test_images,)],
                        input_names=["images_tensors"],
-                       output_names=["outputs"],
-                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
+                       output_names=["boxes", "labels", "scores"],
+                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "boxes": [0, 1], "labels": [0],
+                                     "scores": [0], "masks": [0, 1, 2, 3]},
                        tolerate_small_mismatch=True)
 
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
@@ -416,7 +430,6 @@ class ONNXExporterTester(unittest.TestCase):
         assert torch.all(out2[0].eq(out_trace2[0]))
         assert torch.all(out2[1].eq(out_trace2[1]))
 
-    @unittest.skip("Disable test until export of interpolate script module to ONNX is fixed")
     def test_keypoint_rcnn(self):
         class KeyPointRCNN(torch.nn.Module):
             def __init__(self):

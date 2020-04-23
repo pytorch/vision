@@ -113,7 +113,7 @@ def interpolate(input, size=None, scale_factor=None, mode="nearest", align_corne
         )
 
     output_shape = _output_size(2, input, size, scale_factor)
-    output_shape = input.shape[:-2] + output_shape
+    output_shape = list(input.shape[:-2]) + output_shape
     return _new_empty_tensor(input, output_shape)
 
 

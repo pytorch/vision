@@ -18,7 +18,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward(
     const int pooled_height,
     const int pooled_width,
     const int sampling_ratio) {
-  if (input.type().is_cuda()) {
+  if (input.is_cuda()) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
     return PSROIAlign_forward_cuda(
         input,
@@ -47,7 +47,7 @@ at::Tensor PSROIAlign_backward(
     const int channels,
     const int height,
     const int width) {
-  if (grad.type().is_cuda()) {
+  if (grad.is_cuda()) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
     return PSROIAlign_backward_cuda(
         grad,
