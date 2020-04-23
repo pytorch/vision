@@ -4,7 +4,6 @@ import pathlib
 import torch
 import math
 import numpy as np
-import torch
 
 irange = range
 
