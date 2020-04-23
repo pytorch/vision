@@ -11,13 +11,13 @@ torch::nn::Conv2d conv3x3(
     int64_t stride,
     int64_t groups) {
   torch::nn::Conv2dOptions O(in, out, 3);
-  O.padding(1).stride(stride).groups(groups).with_bias(false);
+  O.padding(1).stride(stride).groups(groups).bias(false);
   return torch::nn::Conv2d(O);
 }
 
 torch::nn::Conv2d conv1x1(int64_t in, int64_t out, int64_t stride) {
   torch::nn::Conv2dOptions O(in, out, 1);
-  O.stride(stride).with_bias(false);
+  O.stride(stride).bias(false);
   return torch::nn::Conv2d(O);
 }
 
@@ -40,8 +40,8 @@ BasicBlock::BasicBlock(
   conv1 = conv3x3(inplanes, planes, stride);
   conv2 = conv3x3(planes, planes);
 
-  bn1 = torch::nn::BatchNorm(planes);
-  bn2 = torch::nn::BatchNorm(planes);
+  bn1 = torch::nn::BatchNorm2d(planes);
+  bn2 = torch::nn::BatchNorm2d(planes);
 
   register_module("conv1", conv1);
   register_module("conv2", conv2);
@@ -68,9 +68,9 @@ Bottleneck::Bottleneck(
   conv2 = conv3x3(width, width, stride, groups);
   conv3 = conv1x1(width, planes * expansion);
 
-  bn1 = torch::nn::BatchNorm(width);
-  bn2 = torch::nn::BatchNorm(width);
-  bn3 = torch::nn::BatchNorm(planes * expansion);
+  bn1 = torch::nn::BatchNorm2d(width);
+  bn2 = torch::nn::BatchNorm2d(width);
+  bn3 = torch::nn::BatchNorm2d(planes * expansion);
 
   register_module("conv1", conv1);
   register_module("conv2", conv2);

@@ -57,7 +57,8 @@ class ASPPPooling(nn.Sequential):
 
     def forward(self, x):
         size = x.shape[-2:]
-        x = super(ASPPPooling, self).forward(x)
+        for mod in self:
+            x = mod(x)
         return F.interpolate(x, size=size, mode='bilinear', align_corners=False)
 
 

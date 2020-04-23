@@ -44,7 +44,7 @@ class TestHub(unittest.TestCase):
             progress=False)
         self.assertEqual(sum_of_model_parameters(hub_model).item(),
                          SUM_OF_PRETRAINED_RESNET18_PARAMS)
-        assert os.path.exists(temp_dir + '/pytorch_vision_master')
+        self.assertTrue(os.path.exists(temp_dir + '/pytorch_vision_master'))
         shutil.rmtree(temp_dir + '/pytorch_vision_master')
 
     def test_list_entrypoints(self):

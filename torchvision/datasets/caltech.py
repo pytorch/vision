@@ -1,14 +1,17 @@
-from __future__ import print_function
 from PIL import Image
 import os
 import os.path
 
 from .vision import VisionDataset
-from .utils import download_and_extract_archive, makedir_exist_ok, verify_str_arg
+from .utils import download_and_extract_archive, verify_str_arg
 
 
 class Caltech101(VisionDataset):
     """`Caltech 101 <http://www.vision.caltech.edu/Image_Datasets/Caltech101/>`_ Dataset.
+
+    .. warning::
+
+        This class needs `scipy <https://docs.scipy.org/doc/>`_ to load target files from `.mat` format.
 
     Args:
         root (string): Root directory of dataset where directory
@@ -31,7 +34,7 @@ class Caltech101(VisionDataset):
         super(Caltech101, self).__init__(os.path.join(root, 'caltech101'),
                                          transform=transform,
                                          target_transform=target_transform)
-        makedir_exist_ok(self.root)
+        os.makedirs(self.root, exist_ok=True)
         if not isinstance(target_type, list):
             target_type = [target_type]
         self.target_type = [verify_str_arg(t, "target_type", ("category", "annotation"))
@@ -144,7 +147,7 @@ class Caltech256(VisionDataset):
         super(Caltech256, self).__init__(os.path.join(root, 'caltech256'),
                                          transform=transform,
                                          target_transform=target_transform)
-        makedir_exist_ok(self.root)
+        os.makedirs(self.root, exist_ok=True)
 
         if download:
             self.download()

@@ -1,4 +1,3 @@
-from __future__ import print_function
 from .vision import VisionDataset
 import warnings
 from PIL import Image
@@ -7,8 +6,9 @@ import os.path
 import numpy as np
 import torch
 import codecs
+import string
 from .utils import download_url, download_and_extract_archive, extract_archive, \
-    makedir_exist_ok, verify_str_arg
+    verify_str_arg
 
 
 class MNIST(VisionDataset):
@@ -27,12 +27,14 @@ class MNIST(VisionDataset):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    urls = [
-        'http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz',
-        'http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz',
-        'http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz',
-        'http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz',
+
+    resources = [
+        ("http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz", "f68b3c2dcbeaaa9fbdd348bbdeb94873"),
+        ("http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz", "d53e105ee54ea40749a09fcbcd1e9432"),
+        ("http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz", "9fb629c4189551a2d022fa330f9573f3"),
+        ("http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz", "ec29112dd5afa0611ce80d1b7f02629c")
     ]
+
     training_file = 'training.pt'
     test_file = 'test.pt'
     classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
@@ -126,13 +128,13 @@ class MNIST(VisionDataset):
         if self._check_exists():
             return
 
-        makedir_exist_ok(self.raw_folder)
-        makedir_exist_ok(self.processed_folder)
+        os.makedirs(self.raw_folder, exist_ok=True)
+        os.makedirs(self.processed_folder, exist_ok=True)
 
         # download files
-        for url in self.urls:
+        for url, md5 in self.resources:
             filename = url.rpartition('/')[2]
-            download_and_extract_archive(url, download_root=self.raw_folder, filename=filename)
+            download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
 
         # process and save as torch files
         print('Processing...')
@@ -172,11 +174,15 @@ class FashionMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    urls = [
-        'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz',
-        'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz',
-        'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz',
-        'http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz',
+    resources = [
+        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-images-idx3-ubyte.gz",
+         "8d4fb7e6c68d591d4c3dfef9ec88bf0d"),
+        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/train-labels-idx1-ubyte.gz",
+         "25c81989df183df01b3e8a0aad5dffbe"),
+        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-images-idx3-ubyte.gz",
+         "bef4ecab320f06d8554ea6380940ec79"),
+        ("http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/t10k-labels-idx1-ubyte.gz",
+         "bb300cfdad3c16e7a12a480ee83cd310")
     ]
     classes = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal',
                'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
@@ -198,11 +204,11 @@ class KMNIST(MNIST):
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
-    urls = [
-        'http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-images-idx3-ubyte.gz',
-        'http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-labels-idx1-ubyte.gz',
-        'http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-images-idx3-ubyte.gz',
-        'http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-labels-idx1-ubyte.gz',
+    resources = [
+        ("http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-images-idx3-ubyte.gz", "bdb82020997e1d708af4cf47b453dcf7"),
+        ("http://codh.rois.ac.jp/kmnist/dataset/kmnist/train-labels-idx1-ubyte.gz", "e144d726b3acfaa3e44228e80efcd344"),
+        ("http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-images-idx3-ubyte.gz", "5c965bf0a639b31b8f53240b1b52f4d7"),
+        ("http://codh.rois.ac.jp/kmnist/dataset/kmnist/t10k-labels-idx1-ubyte.gz", "7320c461ea6c1c855c0b718fb2a4b134")
     ]
     classes = ['o', 'ki', 'su', 'tsu', 'na', 'ha', 'ma', 'ya', 're', 'wo']
 
@@ -231,13 +237,26 @@ class EMNIST(MNIST):
     # https://cloudstor.aarnet.edu.au/plus/s/ZNmuFiuQTqZlu9W/download
     # is (currently) unavailable
     url = 'http://www.itl.nist.gov/iaui/vip/cs_links/EMNIST/gzip.zip'
+    md5 = "58c8d27c78d21e728a6bc7b3cc06412e"
     splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
+    # Merged Classes assumes Same structure for both uppercase and lowercase version
+    _merged_classes = set(['C', 'I', 'J', 'K', 'L', 'M', 'O', 'P', 'S', 'U', 'V', 'W', 'X', 'Y', 'Z'])
+    _all_classes = set(list(string.digits + string.ascii_letters))
+    classes_split_dict = {
+        'byclass': list(_all_classes),
+        'bymerge': sorted(list(_all_classes - _merged_classes)),
+        'balanced': sorted(list(_all_classes - _merged_classes)),
+        'letters': list(string.ascii_lowercase),
+        'digits': list(string.digits),
+        'mnist': list(string.digits),
+    }
 
     def __init__(self, root, split, **kwargs):
         self.split = verify_str_arg(split, "split", self.splits)
         self.training_file = self._training_file(split)
         self.test_file = self._test_file(split)
         super(EMNIST, self).__init__(root, **kwargs)
+        self.classes = self.classes_split_dict[self.split]
 
     @staticmethod
     def _training_file(split):
@@ -254,13 +273,13 @@ class EMNIST(MNIST):
         if self._check_exists():
             return
 
-        makedir_exist_ok(self.raw_folder)
-        makedir_exist_ok(self.processed_folder)
+        os.makedirs(self.raw_folder, exist_ok=True)
+        os.makedirs(self.processed_folder, exist_ok=True)
 
         # download files
         print('Downloading and extracting zip archive')
         download_and_extract_archive(self.url, download_root=self.raw_folder, filename="emnist.zip",
-                                     remove_finished=True)
+                                     remove_finished=True, md5=self.md5)
         gzip_folder = os.path.join(self.raw_folder, 'gzip')
         for gzip_file in os.listdir(gzip_folder):
             if gzip_file.endswith('.gz'):
@@ -319,16 +338,24 @@ class QMNIST(MNIST):
 
     subsets = {
         'train': 'train',
-        'test': 'test', 'test10k': 'test', 'test50k': 'test',
+        'test': 'test',
+        'test10k': 'test',
+        'test50k': 'test',
         'nist': 'nist'
     }
-    urls = {
-        'train': ['https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-images-idx3-ubyte.gz',
-                  'https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-labels-idx2-int.gz'],
-        'test': ['https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-images-idx3-ubyte.gz',
-                 'https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-labels-idx2-int.gz'],
-        'nist': ['https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-images-idx3-ubyte.xz',
-                 'https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-labels-idx2-int.xz']
+    resources = {
+        'train': [('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-images-idx3-ubyte.gz',
+                   'ed72d4157d28c017586c42bc6afe6370'),
+                  ('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-labels-idx2-int.gz',
+                   '0058f8dd561b90ffdd0f734c6a30e5e4')],
+        'test': [('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-images-idx3-ubyte.gz',
+                  '1394631089c404de565df7b7aeaf9412'),
+                 ('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-test-labels-idx2-int.gz',
+                  '5b5b05890a5e13444e108efe57b788aa')],
+        'nist': [('https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-images-idx3-ubyte.xz',
+                  '7f124b3b8ab81486c9d8c2749c17f834'),
+                 ('https://raw.githubusercontent.com/facebookresearch/qmnist/master/xnist-labels-idx2-int.xz',
+                  '5ed0e788978e45d4a8bd4b7caec3d79d')]
     }
     classes = ['0 - zero', '1 - one', '2 - two', '3 - three', '4 - four',
                '5 - five', '6 - six', '7 - seven', '8 - eight', '9 - nine']
@@ -349,17 +376,17 @@ class QMNIST(MNIST):
         """
         if self._check_exists():
             return
-        makedir_exist_ok(self.raw_folder)
-        makedir_exist_ok(self.processed_folder)
-        urls = self.urls[self.subsets[self.what]]
+        os.makedirs(self.raw_folder, exist_ok=True)
+        os.makedirs(self.processed_folder, exist_ok=True)
+        split = self.resources[self.subsets[self.what]]
         files = []
 
         # download data files if not already there
-        for url in urls:
+        for url, md5 in split:
             filename = url.rpartition('/')[2]
             file_path = os.path.join(self.raw_folder, filename)
             if not os.path.isfile(file_path):
-                download_url(url, root=self.raw_folder, filename=filename, md5=None)
+                download_url(url, root=self.raw_folder, filename=filename, md5=md5)
             files.append(file_path)
 
         # process and save as torch files

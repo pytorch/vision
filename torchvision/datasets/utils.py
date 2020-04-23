@@ -8,7 +8,6 @@ import zipfile
 
 import torch
 from torch.utils.model_zoo import tqdm
-from torch._six import PY3
 
 
 def gen_bar_updater():
@@ -43,19 +42,6 @@ def check_integrity(fpath, md5=None):
     return check_md5(fpath, md5)
 
 
-def makedir_exist_ok(dirpath):
-    """
-    Python2 support for os.makedirs(.., exist_ok=True)
-    """
-    try:
-        os.makedirs(dirpath)
-    except OSError as e:
-        if e.errno == errno.EEXIST:
-            pass
-        else:
-            raise
-
-
 def download_url(url, root, filename=None, md5=None):
     """Download a file from a url and place it in root.
 
@@ -65,19 +51,19 @@ def download_url(url, root, filename=None, md5=None):
         filename (str, optional): Name to save the file under. If None, use the basename of the URL
         md5 (str, optional): MD5 checksum of the download. If None, do not check
     """
-    from six.moves import urllib
+    import urllib
 
     root = os.path.expanduser(root)
     if not filename:
         filename = os.path.basename(url)
     fpath = os.path.join(root, filename)
 
-    makedir_exist_ok(root)
+    os.makedirs(root, exist_ok=True)
 
-    # downloads file
+    # check if file is already present locally
     if check_integrity(fpath, md5):
         print('Using downloaded and verified file: ' + fpath)
-    else:
+    else:   # download the file
         try:
             print('Downloading ' + url + ' to ' + fpath)
             urllib.request.urlretrieve(
@@ -95,6 +81,9 @@ def download_url(url, root, filename=None, md5=None):
                 )
             else:
                 raise e
+        # check integrity of downloaded file
+        if not check_integrity(fpath, md5):
+            raise RuntimeError("File not found or corrupted.")
 
 
 def list_dir(root, prefix=False):
@@ -161,7 +150,7 @@ def download_file_from_google_drive(file_id, root, filename=None, md5=None):
         filename = file_id
     fpath = os.path.join(root, filename)
 
-    makedir_exist_ok(root)
+    os.makedirs(root, exist_ok=True)
 
     if os.path.isfile(fpath) and check_integrity(fpath, md5):
         print('Using downloaded and verified file: ' + fpath)
@@ -210,6 +199,10 @@ def _is_targz(filename):
     return filename.endswith(".tar.gz")
 
 
+def _is_tgz(filename):
+    return filename.endswith(".tgz")
+
+
 def _is_gzip(filename):
     return filename.endswith(".gz") and not filename.endswith(".tar.gz")
 
@@ -225,11 +218,10 @@ def extract_archive(from_path, to_path=None, remove_finished=False):
     if _is_tar(from_path):
         with tarfile.open(from_path, 'r') as tar:
             tar.extractall(path=to_path)
-    elif _is_targz(from_path):
+    elif _is_targz(from_path) or _is_tgz(from_path):
         with tarfile.open(from_path, 'r:gz') as tar:
             tar.extractall(path=to_path)
-    elif _is_tarxz(from_path) and PY3:
-        # .tar.xz archive only supported in Python 3.x
+    elif _is_tarxz(from_path):
         with tarfile.open(from_path, 'r:xz') as tar:
             tar.extractall(path=to_path)
     elif _is_gzip(from_path):

@@ -19,50 +19,80 @@ import yaml
 import os.path
 
 
-def workflows(prefix='', upload=False, indentation=6):
+def workflows(prefix='', filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
     w = []
     for btype in ["wheel", "conda"]:
-        for os_type in ["linux", "macos"]:
-            for python_version in ["2.7", "3.5", "3.6", "3.7"]:
-                for cu_version in (["cpu", "cu92", "cu100"] if os_type == "linux" else ["cpu"]):
+        for os_type in ["linux", "macos", "win"]:
+            python_versions = ["3.5", "3.6", "3.7", "3.8"]
+            cu_versions = (["cpu", "cu92", "cu101", "cu102"] if os_type == "linux" or os_type == "win" else ["cpu"])
+            for python_version in python_versions:
+                for cu_version in cu_versions:
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
-                        w += workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix, upload)
+                        fb = filter_branch
+                        if windows_latest_only and os_type == "win" and filter_branch is None and \
+                            (python_version != python_versions[-1] or
+                             (cu_version not in [cu_versions[0], cu_versions[-1]])):
+                            fb = "master"
+                        w += workflow_pair(
+                            btype, os_type, python_version, cu_version,
+                            unicode, prefix, upload, filter_branch=fb)
 
     return indent(indentation, w)
 
 
-def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix='', upload=False):
+def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix='', upload=False, *, filter_branch=None):
 
     w = []
     unicode_suffix = "u" if unicode else ""
     base_workflow_name = f"{prefix}binary_{os_type}_{btype}_py{python_version}{unicode_suffix}_{cu_version}"
 
-    w.append(generate_base_workflow(base_workflow_name, python_version, cu_version, unicode, os_type, btype))
+    w.append(generate_base_workflow(
+        base_workflow_name, python_version, cu_version,
+        unicode, os_type, btype, filter_branch=filter_branch))
 
     if upload:
-        w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version))
+        w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, filter_branch=filter_branch))
 
     return w
 
 
-def generate_base_workflow(base_workflow_name, python_version, cu_version, unicode, os_type, btype):
+manylinux_images = {
+    "cu92": "pytorch/manylinux-cuda92",
+    "cu101": "pytorch/manylinux-cuda101",
+    "cu102": "pytorch/manylinux-cuda102",
+}
+
+
+def get_manylinux_image(cu_version):
+    cu_suffix = "102"
+    if cu_version.startswith('cu'):
+        cu_suffix = cu_version[len('cu'):]
+    return f"pytorch/manylinux-cuda{cu_suffix}"
+
+
+def generate_base_workflow(base_workflow_name, python_version, cu_version,
+                           unicode, os_type, btype, *, filter_branch=None):
 
     d = {
         "name": base_workflow_name,
         "python_version": python_version,
-        "cu_version": cu_version,
+        "cu_version": cu_version.replace("cu", "") if os_type == "win" else cu_version,
     }
 
-    if unicode:
+    if os_type != "win" and unicode:
         d["unicode_abi"] = '1'
 
-    if cu_version == "cu92":
-        d["wheel_docker_image"] = "soumith/manylinux-cuda92"
+    if os_type != "win":
+        d["wheel_docker_image"] = get_manylinux_image(cu_version)
 
-    return {f"binary_{os_type}_{btype}": d}
+    if filter_branch is not None:
+        d["filters"] = {"branches": {"only": filter_branch}}
+
+    w = f"binary_{os_type}_{btype}_release" if os_type == "win" else f"binary_{os_type}_{btype}"
+    return {w: d}
 
 
-def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version):
+def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, filter_branch=None):
     d = {
         "name": f"{base_workflow_name}_upload",
         "context": "org-member",
@@ -71,6 +101,9 @@ def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version):
 
     if btype == 'wheel':
         d["subfolder"] = "" if os_type == 'macos' else cu_version + "/"
+
+    if filter_branch is not None:
+        d["filters"] = {"branches": {"only": filter_branch}}
 
     return {f"binary_{btype}_upload": d}
 

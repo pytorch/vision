@@ -15,7 +15,11 @@ if "%PACKAGEFULLNAME%" == "Conda" (
     set PACKAGE=wheels
 )
 
-set PUBLISH_BRANCH=%PACKAGE%_%DESIRED_PYTHON%%PACKAGE_SUFFIX%
+if not defined PACKAGE_SUFFIX (
+    set PUBLISH_BRANCH=vision_%PACKAGE%_%DESIRED_PYTHON%
+) else (
+    set PUBLISH_BRANCH=vision_%PACKAGE%_%DESIRED_PYTHON%%PACKAGE_SUFFIX%
+)
 
 git clone %ARTIFACT_REPO_URL% -b %PUBLISH_BRANCH% --single-branch >nul 2>&1
 

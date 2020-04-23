@@ -7,22 +7,29 @@ version: 2.1
 #       Job names are 'name:' key.
 
 orbs:
-  win: circleci/windows@1.0.0
+  win: circleci/windows@2.0.0
+
+executors:
+  windows-gpu-prototype:
+    machine:
+      resource_class: windows.gpu.small.prototype
+      image: windows-server-2019-nvidia:201908-28
+      shell: bash.exe
 
 commands:
   checkout_merge:
     description: "checkout merge branch"
     steps:
       - checkout
-      - run:
-          name: Checkout merge branch
-          command: |
-            set -ex
-            BRANCH=$(git rev-parse --abbrev-ref HEAD)
-            if [[ "$BRANCH" != "master" ]]; then
-              git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
-              git checkout "merged/$CIRCLE_BRANCH"
-            fi
+#     - run:
+#         name: Checkout merge branch
+#         command: |
+#           set -ex
+#           BRANCH=$(git rev-parse --abbrev-ref HEAD)
+#           if [[ "$BRANCH" != "master" ]]; then
+#             git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
+#             git checkout "merged/$CIRCLE_BRANCH"
+#           fi
 
 binary_common: &binary_common
   parameters:
@@ -49,13 +56,38 @@ binary_common: &binary_common
     wheel_docker_image:
       description: "Wheel only: what docker image to use"
       type: string
-      default: "soumith/manylinux-cuda100"
+      default: "pytorch/manylinux-cuda101"
   environment:
     PYTHON_VERSION: << parameters.python_version >>
     BUILD_VERSION: << parameters.build_version >>
     PYTORCH_VERSION: << parameters.pytorch_version >>
     UNICODE_ABI: << parameters.unicode_abi >>
     CU_VERSION: << parameters.cu_version >>
+
+binary_windows: &binary_windows
+  parameters:
+    # Edit these defaults to do a release`
+    build_version:
+      description: "version number of release binary; by default, build a nightly"
+      type: string
+      default: ""
+    pytorch_version:
+      description: "PyTorch version to build against; by default, use a nightly"
+      type: string
+      default: ""
+    # Don't edit these
+    python_version:
+      description: "Python version to build against (e.g., 3.7)"
+      type: string
+    cu_version:
+      description: "CUDA version to build against, in CU format (e.g., cpu or cu100)"
+      type: string
+  environment:
+    DESIRED_PYTHON: << parameters.python_version >>
+    PYTORCH_VERSION: << parameters.pytorch_version >>
+    CUDA_VERSION: << parameters.cu_version >>
+    USE_SCCACHE: "1"
+    VC_YEAR: "2017"
 
 jobs:
   circleci_consistency:
@@ -68,6 +100,27 @@ jobs:
             pip install --user --progress-bar off jinja2 pyyaml
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
+
+  python_lint:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off flake8 typing
+            flake8 .
+
+  clang_format:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            sudo apt-get update -y
+            sudo apt-get install -y clang-format
+            ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
 
   binary_linux_wheel:
     <<: *binary_common
@@ -87,7 +140,7 @@ jobs:
   binary_linux_conda:
     <<: *binary_common
     docker:
-      - image: "soumith/conda-cuda"
+      - image: "pytorch/conda-cuda"
     resource_class: 2xlarge+
     steps:
       - checkout_merge
@@ -98,6 +151,8 @@ jobs:
           root: /opt/conda/conda-bld/linux-64
           paths:
             - "*"
+      - store_test_results:
+          path: build_results/
 
   binary_linux_conda_cuda:
     <<: *binary_common
@@ -109,7 +164,7 @@ jobs:
     - run:
         name: Setup environment
         command: |
-          set -e
+          set -ex
 
           curl -L https://packagecloud.io/circleci/trusty/gpgkey | sudo apt-key add -
           curl -L https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
@@ -132,7 +187,7 @@ jobs:
 
           sudo apt-get update
           export DOCKER_VERSION="5:19.03.2~3-0~ubuntu-xenial"
-          sudo apt-get install docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io
+          sudo apt-get install docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io=1.2.6-3
 
           # Add the package repositories
           distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
@@ -143,7 +198,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit=${NVIDIA_CONTAINER_VERSION}
           sudo systemctl restart docker
 
-          DRIVER_FN="NVIDIA-Linux-x86_64-410.104.run"
+          DRIVER_FN="NVIDIA-Linux-x86_64-440.59.run"
           wget "https://s3.amazonaws.com/ossci-linux/nvidia_driver/$DRIVER_FN"
           sudo /bin/bash "$DRIVER_FN" -s --no-drm || (sudo cat /var/log/nvidia-installer.log && false)
           nvidia-smi
@@ -151,19 +206,19 @@ jobs:
     - run:
         name: Pull docker image
         command: |
-          set -e
-          export DOCKER_IMAGE=soumith/conda-cuda
+          set -ex
+          export DOCKER_IMAGE=pytorch/conda-cuda
           echo Pulling docker image $DOCKER_IMAGE
           docker pull $DOCKER_IMAGE >/dev/null
 
     - run:
         name: Build and run tests
         command: |
-          set -e
+          set -ex
 
           cd ${HOME}/project/
 
-          export DOCKER_IMAGE=soumith/conda-cuda
+          export DOCKER_IMAGE=pytorch/conda-cuda
           export VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e UNICODE_ABI -e CU_VERSION"
 
           docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${DOCKER_IMAGE} ./packaging/build_conda.sh
@@ -171,17 +226,74 @@ jobs:
   binary_win_conda:
     <<: *binary_common
     executor:
-      name: win/vs2019
+      name: win/default
       shell: bash.exe
     steps:
       - checkout_merge
       - run:
           command: |
             choco install miniconda3
-            $env:PATH = "C:\tools\miniconda3;C:\tools\miniconda3\Library\usr\bin;C:\tools\miniconda3\Scripts;C:\tools\miniconda3\bin" + $env:PATH
-            conda install -yq conda-build "conda-package-handling<1.5.0"
+            (& "C:\tools\miniconda3\Scripts\conda.exe" "shell.powershell" "hook") | Out-String | Invoke-Expression
+            conda activate base
+            conda install -yq conda-build "conda-package-handling!=1.5.0"
             bash packaging/build_conda.sh
           shell: powershell.exe
+      - store_test_results:
+          path: build_results/
+
+  binary_win_conda_cuda:
+    <<: *binary_common
+    executor: windows-gpu-prototype
+    steps:
+      - checkout_merge
+      - run:
+          command: |
+            choco install miniconda3
+            (& "C:\tools\miniconda3\Scripts\conda.exe" "shell.powershell" "hook") | Out-String | Invoke-Expression
+            conda activate base
+            conda install -yq conda-build "conda-package-handling!=1.5.0"
+            bash packaging/build_conda.sh
+          shell: powershell.exe
+
+  binary_win_conda_release:
+    <<: *binary_windows
+    executor:
+      name: win/default
+      shell: cmd.exe
+    steps:
+      - checkout_merge
+      - run:
+          name: Build conda packages
+          command: |
+            call packaging/windows/internal/build_conda.bat
+      - store_artifacts:
+          path: packaging/windows/output
+      - persist_to_workspace:
+          root: packaging/windows/output
+          paths:
+            - "*"
+      - store_test_results:
+          path: build_results/
+
+  binary_win_wheel_release:
+    <<: *binary_windows
+    executor:
+      name: win/default
+      shell: cmd.exe
+    steps:
+      - checkout_merge
+      - run:
+          name: Build wheel packages
+          command: |
+            call packaging/windows/internal/build_wheels.bat
+      - store_artifacts:
+          path: packaging/windows/output
+      - persist_to_workspace:
+          root: packaging/windows/output
+          paths:
+            - "*"
+      - store_test_results:
+          path: build_results/
 
   binary_macos_wheel:
     <<: *binary_common
@@ -224,6 +336,8 @@ jobs:
           root: /Users/distiller/miniconda3/conda-bld/osx-64
           paths:
             - "*"
+      - store_test_results:
+          path: build_results/
 
   # Requires org-member context
   binary_conda_upload:
@@ -236,12 +350,8 @@ jobs:
           command: |
             # Prevent credential from leaking
             conda install -yq anaconda-client
-            set +x
-            anaconda login \
-                --username "$PYTORCH_BINARY_PJH5_CONDA_USERNAME" \
-                --password "$PYTORCH_BINARY_PJH5_CONDA_PASSWORD"
             set -x
-            anaconda upload ~/workspace/*.tar.bz2 -u pytorch-nightly --label main --no-progress --force
+            anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload ~/workspace/*.tar.bz2 -u pytorch-nightly --label main --no-progress --force
 
   # Requires org-member context
   binary_wheel_upload:
@@ -274,25 +384,26 @@ workflows:
 {%- if True %}
     jobs:
       - circleci_consistency
-      {{ workflows() }}
+      {{ workflows(windows_latest_only=True) }}
       - binary_linux_conda_cuda:
-          name: torchvision_linux_py3.7_cu100
-          python_version: "3.7"
-          cu_version: "cu100"
+          name: torchvision_linux_py3.8_cu102_cuda
+          python_version: "3.8"
+          cu_version: "cu102"
       - binary_win_conda:
           name: torchvision_win_py3.6_cpu
           python_version: "3.6"
           cu_version: "cpu"
+      - binary_win_conda_cuda:
+          name: torchvision_win_py3.6_cu101
+          python_version: "3.6"
+          cu_version: "cu101"
+      - python_lint
+      - clang_format
 
   nightly:
-    triggers:
-      - schedule:
-          cron: "0 9 * * *"
-          filters:
-            branches:
-              only:
-                - master
 {%- endif %}
     jobs:
       - circleci_consistency
-      {{ workflows(prefix="nightly_", upload=True) }}
+      - python_lint
+      - clang_format
+      {{ workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}

@@ -4,15 +4,24 @@
 #ifdef WITH_CUDA
 #include "cuda/vision_cuda.h"
 #endif
+#ifdef WITH_HIP
+#include "hip/vision_cuda.h"
+#endif
 
 at::Tensor nms(
     const at::Tensor& dets,
     const at::Tensor& scores,
     const double iou_threshold) {
-  if (dets.device().is_cuda()) {
-#ifdef WITH_CUDA
+  if (dets.is_cuda()) {
+#if defined(WITH_CUDA)
     if (dets.numel() == 0) {
       at::cuda::CUDAGuard device_guard(dets.device());
+      return at::empty({0}, dets.options().dtype(at::kLong));
+    }
+    return nms_cuda(dets, scores, iou_threshold);
+#elif defined(WITH_HIP)
+    if (dets.numel() == 0) {
+      at::cuda::HIPGuard device_guard(dets.device());
       return at::empty({0}, dets.options().dtype(at::kLong));
     }
     return nms_cuda(dets, scores, iou_threshold);

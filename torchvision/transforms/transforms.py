@@ -1,7 +1,5 @@
-from __future__ import division
 import torch
 import math
-import sys
 import random
 from PIL import Image
 try:
@@ -11,17 +9,10 @@ except ImportError:
 import numpy as np
 import numbers
 import types
-import collections
+from collections.abc import Sequence, Iterable
 import warnings
 
 from . import functional as F
-
-if sys.version_info < (3, 3):
-    Sequence = collections.Sequence
-    Iterable = collections.Iterable
-else:
-    Sequence = collections.abc.Sequence
-    Iterable = collections.abc.Iterable
 
 
 __all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
@@ -148,7 +139,7 @@ class Normalize(object):
 
     Given mean: ``(M1,...,Mn)`` and std: ``(S1,..,Sn)`` for ``n`` channels, this transform
     will normalize each channel of the input ``torch.*Tensor`` i.e.
-    ``input[channel] = (input[channel] - mean[channel]) / std[channel]``
+    ``output[channel] = (input[channel] - mean[channel]) / std[channel]``
 
     .. note::
         This transform acts out of place, i.e., it does not mutate the input tensor.
@@ -546,12 +537,15 @@ class RandomPerspective(object):
 
         distortion_scale(float): it controls the degree of distortion and ranges from 0 to 1. Default value is 0.5.
 
+        fill (3-tuple or int): RGB pixel fill value for area outside the rotated image.
+            If int, it is used for all channels respectively. Default value is 0.
     """
 
-    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=Image.BICUBIC):
+    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=Image.BICUBIC, fill=0):
         self.p = p
         self.interpolation = interpolation
         self.distortion_scale = distortion_scale
+        self.fill = fill
 
     def __call__(self, img):
         """
@@ -567,7 +561,7 @@ class RandomPerspective(object):
         if random.random() < self.p:
             width, height = img.size
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
-            return F.perspective(img, startpoints, endpoints, self.interpolation)
+            return F.perspective(img, startpoints, endpoints, self.interpolation, self.fill)
         return img
 
     @staticmethod
@@ -616,7 +610,7 @@ class RandomResizedCrop(object):
     """
 
     def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=Image.BILINEAR):
-        if isinstance(size, tuple):
+        if isinstance(size, (tuple, list)):
             self.size = size
         else:
             self.size = (size, size)
@@ -643,7 +637,7 @@ class RandomResizedCrop(object):
         width, height = _get_image_size(img)
         area = height * width
 
-        for attempt in range(10):
+        for _ in range(10):
             target_area = random.uniform(*scale) * area
             log_ratio = (math.log(ratio[0]), math.log(ratio[1]))
             aspect_ratio = math.exp(random.uniform(*log_ratio))
@@ -949,14 +943,15 @@ class RandomRotation(object):
         center (2-tuple, optional): Optional center of rotation.
             Origin is the upper left corner.
             Default is the center of the image.
-        fill (3-tuple or int): RGB pixel fill value for area outside the rotated image.
-            If int, it is used for all channels respectively.
+        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+            image. If int or float, the value is used for all bands respectively.
+            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
 
-    def __init__(self, degrees, resample=False, expand=False, center=None, fill=0):
+    def __init__(self, degrees, resample=False, expand=False, center=None, fill=None):
         if isinstance(degrees, numbers.Number):
             if degrees < 0:
                 raise ValueError("If degrees is a single number, it must be positive.")
@@ -1148,8 +1143,8 @@ class Grayscale(object):
 
     Returns:
         PIL Image: Grayscale version of the input.
-        - If num_output_channels == 1 : returned image is single channel
-        - If num_output_channels == 3 : returned image is 3 channel with r == g == b
+         - If ``num_output_channels == 1`` : returned image is single channel
+         - If ``num_output_channels == 3`` : returned image is 3 channel with r == g == b
 
     """
 
@@ -1205,10 +1200,9 @@ class RandomGrayscale(object):
 
 
 class RandomErasing(object):
-    """Randomly selects a rectangle region in an image and erases its pixels.
 
-    'Random Erasing Data Augmentation' by Zhong et al.
-    See https://arxiv.org/pdf/1708.04896.pdf
+    """ Randomly selects a rectangle region in an image and erases its pixels.
+    'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/pdf/1708.04896.pdf
 
     Args:
          p: probability that the random erasing operation will be performed.
@@ -1220,13 +1214,16 @@ class RandomErasing(object):
             If a str of 'random', erasing each pixel with random values.
          inplace: boolean to make this transform inplace. Default set to False.
 
-    Example:
+    Returns:
+        Erased Image.
+
+    # Examples:
         >>> transform = transforms.Compose([
-        ...     transforms.RandomHorizontalFlip(),
-        ...     transforms.ToTensor(),
-        ...     transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        ...     transforms.RandomErasing(),
-        ... ])
+        >>>   transforms.RandomHorizontalFlip(),
+        >>>   transforms.ToTensor(),
+        >>>   transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        >>>   transforms.RandomErasing(),
+        >>> ])
     """
 
     def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0, inplace=False):
@@ -1259,7 +1256,7 @@ class RandomErasing(object):
         img_c, img_h, img_w = img.shape
         area = img_h * img_w
 
-        for attempt in range(10):
+        for _ in range(10):
             erase_area = random.uniform(scale[0], scale[1]) * area
             aspect_ratio = random.uniform(ratio[0], ratio[1])
 

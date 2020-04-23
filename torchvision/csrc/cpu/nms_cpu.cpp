@@ -1,14 +1,15 @@
-#include "cpu/vision_cpu.h"
+#include "vision_cpu.h"
 
 template <typename scalar_t>
 at::Tensor nms_cpu_kernel(
     const at::Tensor& dets,
     const at::Tensor& scores,
     const float iou_threshold) {
-  AT_ASSERTM(!dets.type().is_cuda(), "dets must be a CPU tensor");
-  AT_ASSERTM(!scores.type().is_cuda(), "scores must be a CPU tensor");
+  AT_ASSERTM(!dets.is_cuda(), "dets must be a CPU tensor");
+  AT_ASSERTM(!scores.is_cuda(), "scores must be a CPU tensor");
   AT_ASSERTM(
-      dets.type() == scores.type(), "dets should have the same type as scores");
+      dets.scalar_type() == scores.scalar_type(),
+      "dets should have the same type as scores");
 
   if (dets.numel() == 0)
     return at::empty({0}, dets.options().dtype(at::kLong));
@@ -61,7 +62,7 @@ at::Tensor nms_cpu_kernel(
       auto h = std::max(static_cast<scalar_t>(0), yy2 - yy1);
       auto inter = w * h;
       auto ovr = inter / (iarea + areas[j] - inter);
-      if (ovr >= iou_threshold)
+      if (ovr > iou_threshold)
         suppressed[j] = 1;
     }
   }
@@ -74,7 +75,7 @@ at::Tensor nms_cpu(
     const float iou_threshold) {
   auto result = at::empty({0}, dets.options());
 
-  AT_DISPATCH_FLOATING_TYPES(dets.type(), "nms", [&] {
+  AT_DISPATCH_FLOATING_TYPES(dets.scalar_type(), "nms", [&] {
     result = nms_cpu_kernel<scalar_t>(dets, scores, iou_threshold);
   });
   return result;

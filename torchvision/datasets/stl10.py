@@ -1,4 +1,3 @@
-from __future__ import print_function
 from PIL import Image
 import os
 import os.path
@@ -55,8 +54,7 @@ class STL10(VisionDataset):
 
         if download:
             self.download()
-
-        if not self._check_integrity():
+        elif not self._check_integrity():
             raise RuntimeError(
                 'Dataset not found or corrupted. '
                 'You can use download=True to download it')
@@ -161,6 +159,7 @@ class STL10(VisionDataset):
             print('Files already downloaded and verified')
             return
         download_and_extract_archive(self.url, self.root, filename=self.filename, md5=self.tgz_md5)
+        self._check_integrity()
 
     def extra_repr(self):
         return "Split: {split}".format(**self.__dict__)

@@ -84,7 +84,7 @@ class InvertedResidual(nn.Module):
 
 
 class ShuffleNetV2(nn.Module):
-    def __init__(self, stages_repeats, stages_out_channels, num_classes=1000):
+    def __init__(self, stages_repeats, stages_out_channels, num_classes=1000, inverted_residual=InvertedResidual):
         super(ShuffleNetV2, self).__init__()
 
         if len(stages_repeats) != 3:
@@ -107,9 +107,9 @@ class ShuffleNetV2(nn.Module):
         stage_names = ['stage{}'.format(i) for i in [2, 3, 4]]
         for name, repeats, output_channels in zip(
                 stage_names, stages_repeats, self._stage_out_channels[1:]):
-            seq = [InvertedResidual(input_channels, output_channels, 2)]
+            seq = [inverted_residual(input_channels, output_channels, 2)]
             for i in range(repeats - 1):
-                seq.append(InvertedResidual(output_channels, output_channels, 1))
+                seq.append(inverted_residual(output_channels, output_channels, 1))
             setattr(self, name, nn.Sequential(*seq))
             input_channels = output_channels
 
@@ -122,7 +122,8 @@ class ShuffleNetV2(nn.Module):
 
         self.fc = nn.Linear(output_channels, num_classes)
 
-    def forward(self, x):
+    def _forward_impl(self, x):
+        # See note [TorchScript super()]
         x = self.conv1(x)
         x = self.maxpool(x)
         x = self.stage2(x)
@@ -132,6 +133,9 @@ class ShuffleNetV2(nn.Module):
         x = x.mean([2, 3])  # globalpool
         x = self.fc(x)
         return x
+
+    def forward(self, x):
+        return self._forward_impl(x)
 
 
 def _shufflenetv2(arch, pretrained, progress, *args, **kwargs):

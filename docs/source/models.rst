@@ -71,7 +71,7 @@ This directory can be set using the `TORCH_MODEL_ZOO` environment variable. See
 Some models use modules which have different training and evaluation
 behavior, such as batch normalization. To switch between these modes, use
 ``model.train()`` or ``model.eval()`` as appropriate. See
-:meth:`~torch.nn.Module.train` or :meth:`~torch.nn.Module.eval` for details. 
+:meth:`~torch.nn.Module.train` or :meth:`~torch.nn.Module.eval` for details.
 
 All pre-trained models expect input images normalized in the same way,
 i.e. mini-batches of 3-channel RGB images of shape (3 x H x W),
@@ -85,6 +85,28 @@ You can use the following transform to normalize::
 
 An example of such normalization can be found in the imagenet example
 `here <https://github.com/pytorch/examples/blob/42e5b996718797e45c46a25c55b031e6768f8440/imagenet/main.py#L89-L101>`_
+
+The process for obtaining the values of `mean` and `std` is roughly equivalent
+to::
+
+    import torch
+    from torchvision import datasets, transforms as T
+
+    transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
+    dataset = datasets.ImageNet(".", split="train", transform=transform)
+
+    means = []
+    stds = []
+    for img in subset(dataset):
+        means.append(torch.mean(img))
+        stds.append(torch.std(img))
+
+    mean = torch.mean(torch.tensor(means))
+    std = torch.mean(torch.tensor(stds))
+
+Unfortunately, the concret `subset` that was used is lost. For more
+information see `this discussion <https://github.com/pytorch/vision/issues/1439>`_
+or `these experiments <https://github.com/pytorch/vision/pull/1965>`_.
 
 ImageNet 1-crop error rates (224x224)
 
@@ -183,10 +205,18 @@ Inception v3
 
 .. autofunction:: inception_v3
 
+.. note ::
+    This requires `scipy` to be installed
+
+
 GoogLeNet
 ------------
 
 .. autofunction:: googlenet
+
+.. note ::
+    This requires `scipy` to be installed
+
 
 ShuffleNet v2
 -------------
@@ -228,8 +258,8 @@ Semantic Segmentation
 The models subpackage contains definitions for the following model
 architectures for semantic segmentation:
 
-- `FCN ResNet101 <https://arxiv.org/abs/1411.4038>`_
-- `DeepLabV3 ResNet101 <https://arxiv.org/abs/1706.05587>`_
+- `FCN ResNet50, ResNet101 <https://arxiv.org/abs/1411.4038>`_
+- `DeepLabV3 ResNet50, ResNet101 <https://arxiv.org/abs/1706.05587>`_
 
 As with image classification models, all pre-trained models expect input images normalized in the same way.
 The images have to be loaded in to a range of ``[0, 1]`` and then normalized using
@@ -252,7 +282,9 @@ The accuracies of the pre-trained models evaluated on COCO val2017 are as follow
 ================================  =============  ====================
 Network                           mean IoU       global pixelwise acc
 ================================  =============  ====================
+FCN ResNet50                      60.5           91.4
 FCN ResNet101                     63.7           91.9
+DeepLabV3 ResNet50                66.4           92.4
 DeepLabV3 ResNet101               67.4           92.4
 ================================  =============  ====================
 

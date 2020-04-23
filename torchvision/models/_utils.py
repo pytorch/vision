@@ -5,7 +5,7 @@ from torch import nn
 from torch.jit.annotations import Dict
 
 
-class IntermediateLayerGetter(nn.Module):
+class IntermediateLayerGetter(nn.ModuleDict):
     """
     Module wrapper that returns intermediate layers from a model
 
@@ -37,7 +37,6 @@ class IntermediateLayerGetter(nn.Module):
         >>>      ('feat2', torch.Size([1, 256, 14, 14]))]
     """
     _version = 2
-    __constants__ = ['layers']
     __annotations__ = {
         "return_layers": Dict[str, str],
     }
@@ -45,10 +44,8 @@ class IntermediateLayerGetter(nn.Module):
     def __init__(self, model, return_layers):
         if not set(return_layers).issubset([name for name, _ in model.named_children()]):
             raise ValueError("return_layers are not present in model")
-        super(IntermediateLayerGetter, self).__init__()
-
         orig_return_layers = return_layers
-        return_layers = {k: v for k, v in return_layers.items()}
+        return_layers = {str(k): str(v) for k, v in return_layers.items()}
         layers = OrderedDict()
         for name, module in model.named_children():
             layers[name] = module
@@ -57,33 +54,14 @@ class IntermediateLayerGetter(nn.Module):
             if not return_layers:
                 break
 
-        self.layers = nn.ModuleDict(layers)
+        super(IntermediateLayerGetter, self).__init__(layers)
         self.return_layers = orig_return_layers
 
     def forward(self, x):
         out = OrderedDict()
-        for name, module in self.layers.items():
+        for name, module in self.items():
             x = module(x)
             if name in self.return_layers:
                 out_name = self.return_layers[name]
                 out[out_name] = x
         return out
-
-    @torch.jit.ignore
-    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
-                              missing_keys, unexpected_keys, error_msgs):
-        version = local_metadata.get('version', None)
-        if (version is None or version < 2):
-            # now we have a new nesting level for torchscript support
-            for new_key in self.state_dict().keys():
-                # remove prefix "layers."
-                old_key = new_key[len("layers."):]
-                old_key = prefix + old_key
-                new_key = prefix + new_key
-                if old_key in state_dict:
-                    value = state_dict[old_key]
-                    del state_dict[old_key]
-                    state_dict[new_key] = value
-        super(IntermediateLayerGetter, self)._load_from_state_dict(
-            state_dict, prefix, local_metadata, strict,
-            missing_keys, unexpected_keys, error_msgs)
