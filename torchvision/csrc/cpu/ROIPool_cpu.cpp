@@ -149,17 +149,18 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(
     return std::make_tuple(output, argmax);
   }
 
+  auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "ROIPool_forward", [&] {
         RoIPoolForward<scalar_t>(
-            input.contiguous().data_ptr<scalar_t>(),
+            input_.data_ptr<scalar_t>(),
             spatial_scale,
             channels,
             height,
             width,
             pooled_height,
             pooled_width,
-            rois.contiguous().data_ptr<scalar_t>(),
+            rois_.data_ptr<scalar_t>(),
             num_rois,
             output.data_ptr<scalar_t>(),
             argmax.data_ptr<int>());
@@ -204,6 +205,7 @@ at::Tensor ROIPool_backward_cpu(
   int h_stride = grad.stride(2);
   int w_stride = grad.stride(3);
 
+  auto rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       grad.scalar_type(), "ROIPool_backward", [&] {
         RoIPoolBackward<scalar_t>(
@@ -216,7 +218,7 @@ at::Tensor ROIPool_backward_cpu(
             pooled_height,
             pooled_width,
             grad_input.data_ptr<scalar_t>(),
-            rois.contiguous().data_ptr<scalar_t>(),
+            rois_.data_ptr<scalar_t>(),
             n_stride,
             c_stride,
             h_stride,

@@ -77,7 +77,7 @@ at::Tensor nms_cuda(const at::Tensor& dets,
   at::cuda::CUDAGuard device_guard(dets.device());
 
   auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
-  auto dets_sorted = dets.index_select(0, order_t);
+  auto dets_sorted = dets.index_select(0, order_t).contiguous();
 
   int dets_num = dets.size(0);
 

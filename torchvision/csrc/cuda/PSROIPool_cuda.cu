@@ -179,18 +179,20 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cuda(
       static_cast<int64_t>(4096)));
   dim3 block(512);
 
+  auto input_ = input.contiguous(),
+       rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "PSROIPool_forward", [&] {
         PSROIPoolForward<scalar_t><<<grid, block, 0, stream>>>(
             output_size,
-            input.contiguous().data_ptr<scalar_t>(),
+            input_.data_ptr<scalar_t>(),
             spatial_scale,
             channels,
             height,
             width,
             pooled_height,
             pooled_width,
-            rois.contiguous().data_ptr<scalar_t>(),
+            rois_.data_ptr<scalar_t>(),
             channels_out,
             output.data_ptr<scalar_t>(),
             channel_mapping.data_ptr<int>());
@@ -246,11 +248,13 @@ at::Tensor PSROIPool_backward_cuda(
 
   int channels_out = channels / (pooled_height * pooled_width);
 
+  auto grad_ = grad.contiguous(),
+       rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       grad.scalar_type(), "PSROIPool_backward", [&] {
         PSROIPoolBackward<scalar_t><<<grid, block, 0, stream>>>(
             grad.numel(),
-            grad.contiguous().data_ptr<scalar_t>(),
+            grad_.data_ptr<scalar_t>(),
             channel_mapping.data_ptr<int>(),
             num_rois,
             spatial_scale,
@@ -261,7 +265,7 @@ at::Tensor PSROIPool_backward_cuda(
             pooled_width,
             channels_out,
             grad_input.data_ptr<scalar_t>(),
-            rois.contiguous().data_ptr<scalar_t>());
+            rois_.data_ptr<scalar_t>());
       });
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;
