@@ -94,7 +94,6 @@ class Tester(unittest.TestCase):
                     root, loader=lambda x: x, is_valid_file=lambda x: False
                 )
 
-
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
     def test_mnist(self, mock_download_extract):
         num_examples = 30
