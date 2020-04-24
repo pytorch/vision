@@ -145,6 +145,8 @@ class RetinaNetRegressionHead(nn.Module):
         self.conv = nn.Sequential(*conv)
 
         self.bbox_reg = nn.Conv2d(in_channels, num_anchors * 4, kernel_size=3, stride=1, padding=1)
+        torch.nn.init.normal_(self.bbox_reg.weight, std=0.01)
+        torch.nn.init.zeros_(self.bbox_reg.bias)
 
         for l in self.conv.children():
             if isinstance(l, nn.Conv2d):
