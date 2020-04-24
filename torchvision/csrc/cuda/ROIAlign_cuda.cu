@@ -345,10 +345,12 @@ at::Tensor ROIAlign_forward_cuda(
     return output;
   }
 
+  auto input_ = input.contiguous(),
+       rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.scalar_type(), "ROIAlign_forward", [&] {
     RoIAlignForward<scalar_t><<<grid, block, 0, stream>>>(
         output_size,
-        input.contiguous().data_ptr<scalar_t>(),
+        input_.data_ptr<scalar_t>(),
         spatial_scale,
         channels,
         height,
@@ -357,7 +359,7 @@ at::Tensor ROIAlign_forward_cuda(
         pooled_width,
         sampling_ratio,
         aligned,
-        rois.contiguous().data_ptr<scalar_t>(),
+        rois_.data_ptr<scalar_t>(),
         output.data_ptr<scalar_t>());
   });
   AT_CUDA_CHECK(cudaGetLastError());
@@ -409,6 +411,7 @@ at::Tensor ROIAlign_backward_cuda(
   int h_stride = grad.stride(2);
   int w_stride = grad.stride(3);
 
+  auto rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.scalar_type(), "ROIAlign_backward", [&] {
     RoIAlignBackward<scalar_t><<<grid, block, 0, stream>>>(
         grad.numel(),
@@ -422,7 +425,7 @@ at::Tensor ROIAlign_backward_cuda(
         sampling_ratio,
         aligned,
         grad_input.data_ptr<scalar_t>(),
-        rois.contiguous().data_ptr<scalar_t>(),
+        rois_.data_ptr<scalar_t>(),
         n_stride,
         c_stride,
         h_stride,
