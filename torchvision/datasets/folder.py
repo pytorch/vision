@@ -94,8 +94,10 @@ class DatasetFolder(VisionDataset):
         classes, class_to_idx = self._find_classes(self.root)
         samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file)
         if len(samples) == 0:
-            raise (RuntimeError("Found 0 files in subfolders of: " + self.root + "\n"
-                                "Supported extensions are: " + ",".join(extensions)))
+            msg = "Found 0 files in subfolders of: {}\n".format(self.root)
+            if extensions is not None:
+                msg += "Supported extensions are: {}".format(",".join(extensions))
+            raise RuntimeError(msg)
 
         self.loader = loader
         self.extensions = extensions
