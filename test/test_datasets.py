@@ -84,6 +84,16 @@ class Tester(unittest.TestCase):
             outputs = sorted([dataset[i] for i in range(len(dataset))])
             self.assertEqual(imgs, outputs)
 
+    def test_imagefolder_empty(self):
+        with get_tmp_dir() as root:
+            with self.assertRaises(RuntimeError):
+                torchvision.datasets.ImageFolder(root, loader=lambda x: x)
+
+            with self.assertRaises(RuntimeError):
+                torchvision.datasets.ImageFolder(
+                    root, loader=lambda x: x, is_valid_file=lambda x: False
+                )
+
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
     def test_mnist(self, mock_download_extract):
         num_examples = 30
