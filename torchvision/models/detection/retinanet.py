@@ -191,7 +191,7 @@ class RetinaNetRegressionHead(nn.Module):
             target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
 
             # compute the loss
-            loss.append(F.smooth_l1_loss(bbox_regression_per_image, target_regression, reduction='sum') / max(1, num_foreground))
+            loss.append(det_utils.smooth_l1_loss(bbox_regression_per_image, target_regression, size_average=False) / max(1, num_foreground))
 
         return sum(loss) / max(1, len(loss))
 
