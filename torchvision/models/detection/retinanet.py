@@ -88,16 +88,22 @@ class RetinaNetClassificationHead(nn.Module):
         cls_logits = head_outputs['cls_logits']
 
         for targets_per_image, cls_logits_per_image, matched_idxs_per_image in zip(targets, cls_logits, matched_idxs):
-            # determine only the foreground
-            foreground_idxs_per_image = matched_idxs_per_image >= 0
-            num_foreground = foreground_idxs_per_image.sum()
+            # no matched_idxs means there were no annotations in this image
+            if matched_idxs_per_image is None:
+                gt_classes_target = torch.zeros_like(cls_logits_per_image)
+                valid_idxs_per_image = torch.arange(cls_logits_per_image.shape[0])
+                num_foreground = 0
+            else:
+                # determine only the foreground
+                foreground_idxs_per_image = matched_idxs_per_image >= 0
+                num_foreground = foreground_idxs_per_image.sum()
 
-            # create the target classification
-            gt_classes_target = torch.zeros_like(cls_logits_per_image)
-            gt_classes_target[foreground_idxs_per_image, targets_per_image['labels'][matched_idxs_per_image[foreground_idxs_per_image]]] = 1
+                # create the target classification
+                gt_classes_target = torch.zeros_like(cls_logits_per_image)
+                gt_classes_target[foreground_idxs_per_image, targets_per_image['labels'][matched_idxs_per_image[foreground_idxs_per_image]]] = 1
 
-            # find indices for which anchors should be ignored
-            valid_idxs_per_image = matched_idxs_per_image != det_utils.Matcher.BETWEEN_THRESHOLDS
+                # find indices for which anchors should be ignored
+                valid_idxs_per_image = matched_idxs_per_image != det_utils.Matcher.BETWEEN_THRESHOLDS
 
             # compute the classification loss
             loss.append(sigmoid_focal_loss(
@@ -161,6 +167,11 @@ class RetinaNetRegressionHead(nn.Module):
         bbox_regression = head_outputs['bbox_regression']
 
         for targets_per_image, bbox_regression_per_image, anchors_per_image, matched_idxs_per_image in zip(targets, bbox_regression, anchors, matched_idxs):
+            # no matched_idxs means there were no annotations in this image
+            if matched_idxs_per_image is None:
+                loss.append(0)
+                continue
+
             # get the targets corresponding GT for each proposal
             # NB: need to clamp the indices because we can have a single
             # GT in the image, and matched_idxs can be -2, which goes
@@ -352,7 +363,11 @@ class RetinaNet(nn.Module):
     def compute_loss(self, targets, head_outputs, anchors):
         matched_idxs = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
-            match_quality_matrix = box_ops.box_iou(targets_per_image["boxes"], anchors_per_image)
+            if targets_per_image['boxes'].numel() == 0:
+                matched_idxs.append(None)
+                continue
+
+            match_quality_matrix = box_ops.box_iou(targets_per_image['boxes'], anchors_per_image)
             matched_idxs.append(self.proposal_matcher(match_quality_matrix))
 
         return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
