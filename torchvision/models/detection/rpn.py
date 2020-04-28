@@ -458,7 +458,7 @@ class RegionProposalNetwork(torch.nn.Module):
         """
         Arguments:
             images (ImageList): images for which we want to compute the predictions
-            features (List[Tensor]): features computed from the images that are
+            features (OrderedDict[Tensor]): features computed from the images that are
                 used for computing the predictions. Each tensor in the list
                 correspond to different feature levels
             targets (List[Dict[Tensor]]): ground-truth boxes present in the image (optional).
