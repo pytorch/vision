@@ -440,10 +440,11 @@ class RegionProposalNetwork(torch.nn.Module):
         labels = torch.cat(labels, dim=0)
         regression_targets = torch.cat(regression_targets, dim=0)
 
-        box_loss = F.l1_loss(
+        box_loss = det_utils.smooth_l1_loss(
             pred_bbox_deltas[sampled_pos_inds],
             regression_targets[sampled_pos_inds],
-            reduction="sum",
+            beta=1 / 9,
+            size_average=False,
         ) / (sampled_inds.numel())
 
         objectness_loss = F.binary_cross_entropy_with_logits(
@@ -457,7 +458,7 @@ class RegionProposalNetwork(torch.nn.Module):
         """
         Arguments:
             images (ImageList): images for which we want to compute the predictions
-            features (List[Tensor]): features computed from the images that are
+            features (OrderedDict[Tensor]): features computed from the images that are
                 used for computing the predictions. Each tensor in the list
                 correspond to different feature levels
             targets (List[Dict[Tensor]]): ground-truth boxes present in the image (optional).
