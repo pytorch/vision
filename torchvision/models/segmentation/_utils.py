@@ -16,10 +16,11 @@ class _SimpleSegmentationModel(nn.Module):
         self.aux_classifier = aux_classifier
 
     def forward(self, x):
+        input_shape = ()
         if isinstance(x, torch.Tensor):
             input_shape = x.shape[-2:]
         else:
-            input_shape = x.nested_size().unbind()[0][-2:]
+            input_shape = [y[-2:] for y in x.nested_size().unbind()]
 
         # contract: features is a dict of tensors
         features = self.backbone(x)

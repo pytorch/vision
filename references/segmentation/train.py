@@ -65,7 +65,7 @@ def evaluate(model, data_loader, device, num_classes):
             image, target = image.to(device), target.to(device)
             output = model(image)
             output = output['out']
-
+            
             for a, b in zip(target, output):
                 confmat.update(a.flatten(), b.argmax(0).flatten())
 
@@ -121,7 +121,7 @@ def main(args):
         collate_fn=utils.collate_fn, drop_last=True)
 
     data_loader_test = torch.utils.data.DataLoader(
-        dataset_test, batch_size=1,
+        dataset_test, batch_size=args.batch_size,
         sampler=test_sampler, num_workers=args.workers,
         collate_fn=utils.collate_fn)
 
