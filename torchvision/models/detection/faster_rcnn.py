@@ -289,7 +289,7 @@ model_urls = {
 
 
 def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
-                            num_classes=91, pretrained_backbone=True, **kwargs):
+                            num_classes=91, pretrained_backbone=True, trainable_backbone_blocks=3, **kwargs):
     """
     Constructs a Faster R-CNN model with a ResNet-50-FPN backbone.
 
@@ -342,11 +342,24 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
     Arguments:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
+        num_classes (int): number of output classes of the model (including the background)
+        trainable_backbone_blocks (int): number of trainable (not frozen) resnet blocks starting from final block.
     """
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
     backbone = resnet_fpn_backbone('resnet50', pretrained_backbone)
+    
+    # select layers that wont be frozen
+    assert trainable_backbone_blocks<=4 and trainable_backbone_blocks >=0
+    layers_to_train = ['layer4', 'layer3', 'layer2', 'layer1'][:trainable_backbone_blocks]
+    # freeze layers only if pretrained backbone or pretrained model is used
+    if pretrained or pretrained_backbone:
+        for name, parameter in backbone.named_parameters():
+            if 'fpn' not in name and all([layer not in name for layer in layers_to_train]):
+                parameter.requires_grad_(False)
+    
     model = FasterRCNN(backbone, num_classes, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls['fasterrcnn_resnet50_fpn_coco'],
