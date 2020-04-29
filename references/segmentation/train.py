@@ -10,7 +10,8 @@ import torchvision
 from coco_utils import get_coco
 import transforms as T
 import utils
-
+import cProfile, pstats, io
+from pstats import SortKey
 
 def get_dataset(name, image_set, transform):
     def sbd(*args, **kwargs):
@@ -56,11 +57,16 @@ def criterion(inputs, target):
 
 
 def evaluate(model, data_loader, device, num_classes):
+    total_eval_time = time.time()
+    t = time.time()
     model.eval()
+    print("model.eval(): ", time.time() - t)
     confmat = utils.ConfusionMatrix(num_classes)
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
     with torch.no_grad():
+        i = 0
+        proc_images_t = time.time()
         for image, target in metric_logger.log_every(data_loader, 100, header):
             image, target = image.to(device), target.to(device)
             output = model(image)
@@ -68,8 +74,16 @@ def evaluate(model, data_loader, device, num_classes):
 
             confmat.update(target.flatten(), output.argmax(1).flatten())
 
-        confmat.reduce_from_all_processes()
+            i += 1
+            if i == 100:
+                break
+        print("PROC IMAGES TIME: ", time.time() - proc_images_t)
 
+        reduce_from_all_processes_t = time.time()
+        confmat.reduce_from_all_processes()
+        print("REDUCE IMAGES: ", time.time()- reduce_from_all_processes_t)
+
+    print("TOTAL EVAL TIME: ", time.time() - total_eval_time)
     return confmat
 
 
@@ -93,6 +107,10 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
 
 
 def main(args):
+    total_t = time.time()
+    pr = cProfile.Profile()
+    pr.enable()
+    
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -101,6 +119,7 @@ def main(args):
 
     device = torch.device(args.device)
 
+    load_data_t = time.time()
     dataset, num_classes = get_dataset(args.dataset, "train", get_transform(train=True))
     dataset_test, _ = get_dataset(args.dataset, "val", get_transform(train=False))
 
@@ -121,6 +140,9 @@ def main(args):
         sampler=test_sampler, num_workers=args.workers,
         collate_fn=utils.collate_fn)
 
+    print("\n LOADING DATA: ", time.time() - load_data_t)
+    
+    pre_eval_t = time.time()
     model = torchvision.models.segmentation.__dict__[args.model](num_classes=num_classes,
                                                                  aux_loss=args.aux_loss,
                                                                  pretrained=args.pretrained)
@@ -133,10 +155,22 @@ def main(args):
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
 
+    print("PREEVAL: ", time.time() - pre_eval_t)
+    t = time.time()
     if args.test_only:
         confmat = evaluate(model, data_loader_test, device=device, num_classes=num_classes)
         print(confmat)
+        print("\n\nEVAL: ", time.time() - t)
+        print("GLOBAL TIME :", time.time() - total_t)
+        pr.disable()
+        print("CPROF STATS: ")
+        s = io.StringIO()
+        sortby = SortKey.CUMULATIVE
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        print(s.getvalue())
         return
+    
 
     params_to_optimize = [
         {"params": [p for p in model_without_ddp.backbone.parameters() if p.requires_grad]},
