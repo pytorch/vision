@@ -350,16 +350,14 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
     backbone = resnet_fpn_backbone('resnet50', pretrained_backbone)
-    
     # select layers that wont be frozen
-    assert trainable_backbone_blocks<=4 and trainable_backbone_blocks >=0
+    assert trainable_backbone_blocks <= 4 and trainable_backbone_blocks >= 0
     layers_to_train = ['layer4', 'layer3', 'layer2', 'layer1'][:trainable_backbone_blocks]
     # freeze layers only if pretrained backbone or pretrained model is used
     if pretrained or pretrained_backbone:
         for name, parameter in backbone.named_parameters():
             if 'fpn' not in name and all([layer not in name for layer in layers_to_train]):
                 parameter.requires_grad_(False)
-    
     model = FasterRCNN(backbone, num_classes, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls['fasterrcnn_resnet50_fpn_coco'],
