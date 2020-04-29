@@ -47,11 +47,12 @@ def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.Frozen
         norm_layer=norm_layer)
     
     # select layers that wont be frozen
+    assert trainable_layers<=4 and trainable_layers >=0
     layers_to_train = ['layer4', 'layer3', 'layer2', 'layer1'][:trainable_layers]
     # freeze layers only if pretrained backbone is used
     if pretrained:
         for name, parameter in backbone.named_parameters():
-            if 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
+            if all([layer not in name for layer in layers_to_train]):
                 parameter.requires_grad_(False)
 
     return_layers = {'layer1': '0', 'layer2': '1', 'layer3': '2', 'layer4': '3'}
