@@ -41,10 +41,13 @@ class BackboneWithFPN(nn.Module):
         return x
 
 
-def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.FrozenBatchNorm2d):
+def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.FrozenBatchNorm2d, trainable_layers=3):
     backbone = resnet.__dict__[backbone_name](
         pretrained=pretrained,
         norm_layer=norm_layer)
+    
+    # select layers that wont be frozen
+    layers_to_train = ['layer4', 'layer3', 'layer2', 'layer1'][:trainable_layers]
     # freeze layers only if pretrained backbone is used
     if pretrained:
         for name, parameter in backbone.named_parameters():
