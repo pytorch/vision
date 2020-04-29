@@ -14,6 +14,9 @@ def nms(boxes, scores, iou_threshold):
     IoU greater than iou_threshold with another (higher scoring)
     box.
 
+    When all the values of the scores are the same, the results are 
+    not guaranteed to be the same between CPU and GPU.
+
     Parameters
     ----------
     boxes : Tensor[N, 4])
