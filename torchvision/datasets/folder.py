@@ -47,11 +47,8 @@ def make_dataset(directory, class_to_idx, extensions=None, is_valid_file=None):
         if not os.path.isdir(target_dir):
             continue
         for root, _, fnames in sorted(os.walk(target_dir, followlinks=True)):
-            for fname in sorted(fnames):
-                path = os.path.join(root, fname)
-                if is_valid_file(path):
-                    item = path, class_index
-                    instances.append(item)
+            instances.extend([(os.path.join(root, fname), class_index)
+                              for fname in sorted(fnames) if is_valid_file(fname)])
     return instances
 
 
