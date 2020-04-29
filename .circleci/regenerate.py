@@ -23,7 +23,7 @@ def workflows(prefix='', filter_branch=None, upload=False, indentation=6, window
     w = []
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
-            python_versions = ["3.5", "3.6", "3.7", "3.8"]
+            python_versions = ["3.6", "3.7", "3.8"]
             cu_versions = (["cpu", "cu92", "cu101", "cu102"] if os_type == "linux" or os_type == "win" else ["cpu"])
             for python_version in python_versions:
                 for cu_version in cu_versions:

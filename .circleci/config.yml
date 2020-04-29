@@ -364,26 +364,6 @@ workflows:
       - circleci_consistency
       - binary_linux_wheel:
           cu_version: cpu
-          name: binary_linux_wheel_py3.5_cpu
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cu92
-          name: binary_linux_wheel_py3.5_cu92
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_wheel:
-          cu_version: cu101
-          name: binary_linux_wheel_py3.5_cu101
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_wheel:
-          cu_version: cu102
-          name: binary_linux_wheel_py3.5_cu102
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cpu
           name: binary_linux_wheel_py3.6_cpu
           python_version: '3.6'
           wheel_docker_image: pytorch/manylinux-cuda102
@@ -444,11 +424,6 @@ workflows:
           wheel_docker_image: pytorch/manylinux-cuda102
       - binary_macos_wheel:
           cu_version: cpu
-          name: binary_macos_wheel_py3.5_cpu
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_wheel:
-          cu_version: cpu
           name: binary_macos_wheel_py3.6_cpu
           python_version: '3.6'
           wheel_docker_image: pytorch/manylinux-cuda102
@@ -462,34 +437,6 @@ workflows:
           name: binary_macos_wheel_py3.8_cpu
           python_version: '3.8'
           wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_win_wheel_release:
-          cu_version: cpu
-          filters:
-            branches:
-              only: master
-          name: binary_win_wheel_py3.5_cpu
-          python_version: '3.5'
-      - binary_win_wheel_release:
-          cu_version: '92'
-          filters:
-            branches:
-              only: master
-          name: binary_win_wheel_py3.5_cu92
-          python_version: '3.5'
-      - binary_win_wheel_release:
-          cu_version: '101'
-          filters:
-            branches:
-              only: master
-          name: binary_win_wheel_py3.5_cu101
-          python_version: '3.5'
-      - binary_win_wheel_release:
-          cu_version: '102'
-          filters:
-            branches:
-              only: master
-          name: binary_win_wheel_py3.5_cu102
-          python_version: '3.5'
       - binary_win_wheel_release:
           cu_version: cpu
           filters:
@@ -570,26 +517,6 @@ workflows:
           python_version: '3.8'
       - binary_linux_conda:
           cu_version: cpu
-          name: binary_linux_conda_py3.5_cpu
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cu92
-          name: binary_linux_conda_py3.5_cu92
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_conda:
-          cu_version: cu101
-          name: binary_linux_conda_py3.5_cu101
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_conda:
-          cu_version: cu102
-          name: binary_linux_conda_py3.5_cu102
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cpu
           name: binary_linux_conda_py3.6_cpu
           python_version: '3.6'
           wheel_docker_image: pytorch/manylinux-cuda102
@@ -650,11 +577,6 @@ workflows:
           wheel_docker_image: pytorch/manylinux-cuda102
       - binary_macos_conda:
           cu_version: cpu
-          name: binary_macos_conda_py3.5_cpu
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_conda:
-          cu_version: cpu
           name: binary_macos_conda_py3.6_cpu
           python_version: '3.6'
           wheel_docker_image: pytorch/manylinux-cuda102
@@ -668,34 +590,6 @@ workflows:
           name: binary_macos_conda_py3.8_cpu
           python_version: '3.8'
           wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_win_conda_release:
-          cu_version: cpu
-          filters:
-            branches:
-              only: master
-          name: binary_win_conda_py3.5_cpu
-          python_version: '3.5'
-      - binary_win_conda_release:
-          cu_version: '92'
-          filters:
-            branches:
-              only: master
-          name: binary_win_conda_py3.5_cu92
-          python_version: '3.5'
-      - binary_win_conda_release:
-          cu_version: '101'
-          filters:
-            branches:
-              only: master
-          name: binary_win_conda_py3.5_cu101
-          python_version: '3.5'
-      - binary_win_conda_release:
-          cu_version: '102'
-          filters:
-            branches:
-              only: master
-          name: binary_win_conda_py3.5_cu102
-          python_version: '3.5'
       - binary_win_conda_release:
           cu_version: cpu
           filters:
@@ -790,74 +684,6 @@ workflows:
   nightly:
     jobs:
       - circleci_consistency
-      - binary_linux_wheel:
-          cu_version: cpu
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_wheel_py3.5_cpu
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_wheel_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_wheel_py3.5_cpu_upload
-          requires:
-          - nightly_binary_linux_wheel_py3.5_cpu
-          subfolder: cpu/
-      - binary_linux_wheel:
-          cu_version: cu92
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_wheel_py3.5_cu92
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_wheel_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_wheel_py3.5_cu92_upload
-          requires:
-          - nightly_binary_linux_wheel_py3.5_cu92
-          subfolder: cu92/
-      - binary_linux_wheel:
-          cu_version: cu101
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_wheel_py3.5_cu101
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_wheel_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_wheel_py3.5_cu101_upload
-          requires:
-          - nightly_binary_linux_wheel_py3.5_cu101
-          subfolder: cu101/
-      - binary_linux_wheel:
-          cu_version: cu102
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_wheel_py3.5_cu102
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_wheel_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_wheel_py3.5_cu102_upload
-          requires:
-          - nightly_binary_linux_wheel_py3.5_cu102
-          subfolder: cu102/
       - binary_linux_wheel:
           cu_version: cpu
           filters:
@@ -1067,23 +893,6 @@ workflows:
           filters:
             branches:
               only: nightly
-          name: nightly_binary_macos_wheel_py3.5_cpu
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_wheel_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_macos_wheel_py3.5_cpu_upload
-          requires:
-          - nightly_binary_macos_wheel_py3.5_cpu
-          subfolder: ''
-      - binary_macos_wheel:
-          cu_version: cpu
-          filters:
-            branches:
-              only: nightly
           name: nightly_binary_macos_wheel_py3.6_cpu
           python_version: '3.6'
           wheel_docker_image: pytorch/manylinux-cuda102
@@ -1130,70 +939,6 @@ workflows:
           requires:
           - nightly_binary_macos_wheel_py3.8_cpu
           subfolder: ''
-      - binary_win_wheel_release:
-          cu_version: cpu
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_wheel_py3.5_cpu
-          python_version: '3.5'
-      - binary_wheel_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_wheel_py3.5_cpu_upload
-          requires:
-          - nightly_binary_win_wheel_py3.5_cpu
-          subfolder: cpu/
-      - binary_win_wheel_release:
-          cu_version: '92'
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_wheel_py3.5_cu92
-          python_version: '3.5'
-      - binary_wheel_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_wheel_py3.5_cu92_upload
-          requires:
-          - nightly_binary_win_wheel_py3.5_cu92
-          subfolder: cu92/
-      - binary_win_wheel_release:
-          cu_version: '101'
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_wheel_py3.5_cu101
-          python_version: '3.5'
-      - binary_wheel_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_wheel_py3.5_cu101_upload
-          requires:
-          - nightly_binary_win_wheel_py3.5_cu101
-          subfolder: cu101/
-      - binary_win_wheel_release:
-          cu_version: '102'
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_wheel_py3.5_cu102
-          python_version: '3.5'
-      - binary_wheel_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_wheel_py3.5_cu102_upload
-          requires:
-          - nightly_binary_win_wheel_py3.5_cu102
-          subfolder: cu102/
       - binary_win_wheel_release:
           cu_version: cpu
           filters:
@@ -1391,70 +1136,6 @@ workflows:
           filters:
             branches:
               only: nightly
-          name: nightly_binary_linux_conda_py3.5_cpu
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_conda_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_conda_py3.5_cpu_upload
-          requires:
-          - nightly_binary_linux_conda_py3.5_cpu
-      - binary_linux_conda:
-          cu_version: cu92
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_conda_py3.5_cu92
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_conda_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_conda_py3.5_cu92_upload
-          requires:
-          - nightly_binary_linux_conda_py3.5_cu92
-      - binary_linux_conda:
-          cu_version: cu101
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_conda_py3.5_cu101
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_conda_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_conda_py3.5_cu101_upload
-          requires:
-          - nightly_binary_linux_conda_py3.5_cu101
-      - binary_linux_conda:
-          cu_version: cu102
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_conda_py3.5_cu102
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_conda_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_linux_conda_py3.5_cu102_upload
-          requires:
-          - nightly_binary_linux_conda_py3.5_cu102
-      - binary_linux_conda:
-          cu_version: cpu
-          filters:
-            branches:
-              only: nightly
           name: nightly_binary_linux_conda_py3.6_cpu
           python_version: '3.6'
           wheel_docker_image: pytorch/manylinux-cuda102
@@ -1647,22 +1328,6 @@ workflows:
           filters:
             branches:
               only: nightly
-          name: nightly_binary_macos_conda_py3.5_cpu
-          python_version: '3.5'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_conda_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_macos_conda_py3.5_cpu_upload
-          requires:
-          - nightly_binary_macos_conda_py3.5_cpu
-      - binary_macos_conda:
-          cu_version: cpu
-          filters:
-            branches:
-              only: nightly
           name: nightly_binary_macos_conda_py3.6_cpu
           python_version: '3.6'
           wheel_docker_image: pytorch/manylinux-cuda102
@@ -1706,66 +1371,6 @@ workflows:
           name: nightly_binary_macos_conda_py3.8_cpu_upload
           requires:
           - nightly_binary_macos_conda_py3.8_cpu
-      - binary_win_conda_release:
-          cu_version: cpu
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_conda_py3.5_cpu
-          python_version: '3.5'
-      - binary_conda_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_conda_py3.5_cpu_upload
-          requires:
-          - nightly_binary_win_conda_py3.5_cpu
-      - binary_win_conda_release:
-          cu_version: '92'
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_conda_py3.5_cu92
-          python_version: '3.5'
-      - binary_conda_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_conda_py3.5_cu92_upload
-          requires:
-          - nightly_binary_win_conda_py3.5_cu92
-      - binary_win_conda_release:
-          cu_version: '101'
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_conda_py3.5_cu101
-          python_version: '3.5'
-      - binary_conda_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_conda_py3.5_cu101_upload
-          requires:
-          - nightly_binary_win_conda_py3.5_cu101
-      - binary_win_conda_release:
-          cu_version: '102'
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_conda_py3.5_cu102
-          python_version: '3.5'
-      - binary_conda_upload:
-          context: org-member
-          filters:
-            branches:
-              only: nightly
-          name: nightly_binary_win_conda_py3.5_cu102_upload
-          requires:
-          - nightly_binary_win_conda_py3.5_cu102
       - binary_win_conda_release:
           cu_version: cpu
           filters:
