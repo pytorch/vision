@@ -156,11 +156,12 @@ def main(args):
         model_without_ddp = model.module
 
     print("PREEVAL: ", time.time() - pre_eval_t)
-    t = time.time()
+   
     if args.test_only:
+        eval_t = time.time()
         confmat = evaluate(model, data_loader_test, device=device, num_classes=num_classes)
         print(confmat)
-        print("\n\nEVAL: ", time.time() - t)
+        print("\n\nEVAL: ", time.time() - eval_t)
         print("GLOBAL TIME :", time.time() - total_t)
         pr.disable()
         print("CPROF STATS: ")
