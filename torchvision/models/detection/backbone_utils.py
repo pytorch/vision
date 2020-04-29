@@ -44,7 +44,7 @@ class BackboneWithFPN(nn.Module):
 def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.FrozenBatchNorm2d):
     backbone = resnet.__dict__[backbone_name](
         pretrained=pretrained,
-        norm_layer=norm_layer)    
+        norm_layer=norm_layer)
 
     return_layers = {'layer1': '0', 'layer2': '1', 'layer3': '2', 'layer4': '3'}
 
