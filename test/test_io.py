@@ -236,6 +236,7 @@ class Tester(unittest.TestCase):
             self.assertEqual(video_pts, [])
             self.assertIs(video_fps, None)
 
+    @unittest.skip("Temporarily disabled due to new pyav")
     def test_read_video_partially_corrupted_file(self):
         with temp_video(5, 4, 4, 5, lossless=True) as (f_name, data):
             with open(f_name, 'r+b') as f:
