@@ -539,9 +539,7 @@ class DeformConvTester(OpTester, unittest.TestCase):
 
 
 class FrozenBNTester(unittest.TestCase):
-
     def test_frozenbatchnorm2d_repr(self):
-
         num_features = 32
         t = ops.misc.FrozenBatchNorm2d(num_features)
 
