@@ -11,6 +11,7 @@ import numbers
 import types
 from collections.abc import Sequence, Iterable
 import warnings
+import time
 
 from . import functional as F
 
@@ -406,6 +407,8 @@ class RandomCrop(object):
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant
         padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+        seed (int): Seed of random module. If you want to crop images on the same position, you should nominate the
+            same value of seed. Default is None, i.e time.time().
 
              - constant: pads with a constant value, this value is specified with fill
 
@@ -423,7 +426,7 @@ class RandomCrop(object):
 
     """
 
-    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode='constant'):
+    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode='constant', seed=None):
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
         else:
@@ -432,14 +435,16 @@ class RandomCrop(object):
         self.pad_if_needed = pad_if_needed
         self.fill = fill
         self.padding_mode = padding_mode
+        self.seed = seed
 
     @staticmethod
-    def get_params(img, output_size):
+    def get_params(img, output_size, seed):
         """Get parameters for ``crop`` for a random crop.
 
         Args:
             img (PIL Image): Image to be cropped.
             output_size (tuple): Expected output size of the crop.
+            seed (int): Seed of random module.
 
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
@@ -448,7 +453,8 @@ class RandomCrop(object):
         th, tw = output_size
         if w == tw and h == th:
             return 0, 0, h, w
-
+        if seed:
+            random.seed(seed)
         i = random.randint(0, h - th)
         j = random.randint(0, w - tw)
         return i, j, th, tw
@@ -471,7 +477,7 @@ class RandomCrop(object):
         if self.pad_if_needed and img.size[1] < self.size[0]:
             img = F.pad(img, (0, self.size[0] - img.size[1]), self.fill, self.padding_mode)
 
-        i, j, h, w = self.get_params(img, self.size)
+        i, j, h, w = self.get_params(img, self.size, self.seed)
 
         return F.crop(img, i, j, h, w)
 
