@@ -50,6 +50,7 @@ def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.Frozen
 
     Examples::
 
+        >>> from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
         >>> backbone = resnet_fpn_backbone('resnet50', pretrained=True, trainable_layers=3)
         >>> # get some dummy image
         >>> x = torch.rand(1,3,64,64)
@@ -79,7 +80,7 @@ def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.Frozen
     for name, parameter in backbone.named_parameters():
         if all([layer not in name for layer in layers_to_train]):
             parameter.requires_grad_(False)
-            
+
     return_layers = {'layer1': '0', 'layer2': '1', 'layer3': '2', 'layer4': '3'}
 
     in_channels_stage2 = backbone.inplanes // 8
