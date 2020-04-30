@@ -45,7 +45,7 @@ def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.Frozen
     backbone = resnet.__dict__[backbone_name](
         pretrained=pretrained,
         norm_layer=norm_layer)
-     """
+    """
     Constructs a specified ResNet backbone with FPN on top of it. Freezes the specified number of layers in the backbone.
 
     Examples::
