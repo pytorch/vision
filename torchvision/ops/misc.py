@@ -126,7 +126,6 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
     def __init__(self, n):
         super(FrozenBatchNorm2d, self).__init__()
-        self.num_features = n
         self.register_buffer("weight", torch.ones(n))
         self.register_buffer("bias", torch.zeros(n))
         self.register_buffer("running_mean", torch.zeros(n))
@@ -154,4 +153,4 @@ class FrozenBatchNorm2d(torch.nn.Module):
         return x * scale + bias
 
     def __repr__(self):
-        return '{0}({1})'.format(self.__class__.__name__, self.num_features)
+        return '{0}({1})'.format(self.__class__.__name__, self.weight.shape[O])
