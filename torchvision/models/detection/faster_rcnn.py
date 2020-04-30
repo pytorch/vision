@@ -350,7 +350,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
     assert trainable_backbone_layers<=5 and trainable_backbone_layers >=0
     # dont freeze any layers if pretrained model or backbone is not used
     if not (pretrained or pretrained_backbone):
-        trainable_backbone_blocks = 5
+        trainable_backbone_layers = 5
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
