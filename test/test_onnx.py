@@ -431,6 +431,7 @@ class ONNXExporterTester(unittest.TestCase):
         assert torch.all(out2[0].eq(out_trace2[0]))
         assert torch.all(out2[1].eq(out_trace2[1]))
 
+    @unittest.skip("Disable test until resize empty keypoints is fixed.")
     def test_keypoint_rcnn(self):
         class KeyPointRCNN(torch.nn.Module):
             def __init__(self):
