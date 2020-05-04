@@ -7,7 +7,7 @@
 # Inputs:
 #   CU_VERSION (cpu, cu92, cu100)
 #   NO_CUDA_PACKAGE (bool)
-#   BUILD_TYPE (conda, wheel)
+#   BUILD_conda, wheel)
 #
 # Outputs:
 #   VERSION_SUFFIX (e.g., "")
