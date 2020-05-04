@@ -544,7 +544,7 @@ class FrozenBNTester(unittest.TestCase):
         t = ops.misc.FrozenBatchNorm2d(num_features)
 
         # Check integrity of object __repr__ attribute
-        expected_string = 'FrozenBatchNorm2d({0})'.format(num_features)
+        expected_string = f"FrozenBatchNorm2d({num_features})"
         self.assertEqual(t.__repr__(), expected_string)
 
 
