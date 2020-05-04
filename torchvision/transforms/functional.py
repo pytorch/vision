@@ -408,7 +408,7 @@ def hflip(img):
         img (PIL Image): Image to be flipped.
 
     Returns:
-        PIL Image:  Horizontall flipped image.
+        PIL Image:  Horizontally flipped image.
     """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
