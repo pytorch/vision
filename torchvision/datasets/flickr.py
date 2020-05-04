@@ -51,7 +51,7 @@ class Flickr8kParser(HTMLParser):
 
 
 class Flickr8k(VisionDataset):
-    """`Flickr8k Entities <http://nlp.cs.illinois.edu/HockenmaierGroup/8k-pictures.html>`_ Dataset.
+    """`Flickr8k Entities <http://hockenmaier.cs.illinois.edu/8k-pictures.html>`_ Dataset.
 
     Args:
         root (string): Root directory where images are downloaded to.

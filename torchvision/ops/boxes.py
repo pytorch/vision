@@ -15,6 +15,11 @@ def nms(boxes, scores, iou_threshold):
     IoU greater than iou_threshold with another (higher scoring)
     box.
 
+    If multiple boxes have the exact same score and satisfy the IoU 
+    criterion with respect to a reference box, the selected box is 
+    not guaranteed to be the same between CPU and GPU. This is similar 
+    to the behavior of argsort in PyTorch when repeated values are present.
+
     Parameters
     ----------
     boxes : Tensor[N, 4])
