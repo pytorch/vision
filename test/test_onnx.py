@@ -458,8 +458,7 @@ class ONNXExporterTester(unittest.TestCase):
         # TODO:
         # Enable test for dummy_image (no detection) once issue is
         # _onnx_heatmaps_to_keypoints_loop for empty heatmaps is fixed
-        dummy_image = [torch.ones(3, 100, 100) * 0.3]
-        dummy_image = [torch.ones(3, 100, 100) * 0.3]
+        # dummy_image = [torch.ones(3, 100, 100) * 0.3]
         model = KeyPointRCNN()
         model.eval()
         model(images)
