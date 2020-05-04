@@ -1,7 +1,6 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
-#include <ATen/cuda/CUDAApplyUtils.cuh>
 
 #include "cuda_helpers.h"
 
@@ -64,7 +63,7 @@ __global__ void nms_kernel(
         t |= 1ULL << i;
       }
     }
-    const int col_blocks = at::cuda::ATenCeilDiv(n_boxes, threadsPerBlock);
+    const int col_blocks = ceil_div(n_boxes, threadsPerBlock);
     dev_mask[cur_box_idx * col_blocks + col_start] = t;
   }
 }
@@ -81,7 +80,7 @@ at::Tensor nms_cuda(const at::Tensor& dets,
 
   int dets_num = dets.size(0);
 
-  const int col_blocks = at::cuda::ATenCeilDiv(dets_num, threadsPerBlock);
+  const int col_blocks = ceil_div(dets_num, threadsPerBlock);
 
   at::Tensor mask =
       at::empty({dets_num * col_blocks}, dets.options().dtype(at::kLong));

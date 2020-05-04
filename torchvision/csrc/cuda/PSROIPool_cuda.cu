@@ -2,7 +2,7 @@
 #include <ATen/TensorUtils.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
-#include <ATen/cuda/CUDAApplyUtils.cuh>
+#include <THC/THCAtomics.cuh>
 
 #include "cuda_helpers.h"
 
@@ -174,8 +174,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cuda(
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   dim3 grid(std::min(
-      at::cuda::ATenCeilDiv(
-          static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
+    ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
       static_cast<int64_t>(4096)));
   dim3 block(512);
 
@@ -233,8 +232,7 @@ at::Tensor PSROIPool_backward_cuda(
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   dim3 grid(std::min(
-      at::cuda::ATenCeilDiv(
-          static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
+    ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
       static_cast<int64_t>(4096)));
   dim3 block(512);
 
