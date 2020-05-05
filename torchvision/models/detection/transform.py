@@ -82,7 +82,7 @@ class GeneralizedRCNNTransform(nn.Module):
                 images,       # type: List[Tensor]
                 targets=None  # type: Optional[List[Dict[str, Tensor]]]
                 ):
-        # type: (...) -> (ImageList, Optional[List[Dict[str, Tensor]]])
+        # type: (...) -> Tuple[ImageList, Optional[List[Dict[str, Tensor]]]]
         images = [img for img in images]
         for i in range(len(images)):
             image = images[i]
@@ -124,7 +124,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return l[index]
 
     def resize(self, image, target):
-        # type: (Tensor, Optional[Dict[str, Tensor]]) -> (Tensor, Optional[Dict[str, Tensor]])
+        # type: (Tensor, Optional[Dict[str, Tensor]]) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]
         h, w = image.shape[-2:]
         if self.training:
             size = float(self.torch_choice(self.min_size))
@@ -207,7 +207,7 @@ class GeneralizedRCNNTransform(nn.Module):
                     image_shapes,         # type: List[Tuple[int, int]]
                     original_image_sizes  # type: List[Tuple[int, int]]
                     ):
-        # type: (...) -> (List[Dict[str, Tensor]])
+        # type: (...) -> Tuple[List[Dict[str, Tensor]]]
         if self.training:
             return result
         for i, (pred, im_s, o_im_s) in enumerate(zip(result, image_shapes, original_image_sizes)):

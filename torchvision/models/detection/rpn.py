@@ -203,7 +203,7 @@ class RPNHead(nn.Module):
             torch.nn.init.constant_(l.bias, 0)
 
     def forward(self, x):
-        # type: (List[Tensor]) -> (List[Tensor], List[Tensor])
+        # type: (List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
         logits = []
         bbox_reg = []
         for feature in x:
@@ -222,7 +222,7 @@ def permute_and_flatten(layer, N, A, C, H, W):
 
 
 def concat_box_prediction_layers(box_cls, box_regression):
-    # type: (List[Tensor], List[Tensor]) -> (Tensor, Tensor)
+    # type: (List[Tensor], List[Tensor]) -> Tuple[Tensor, Tensor]
     box_cls_flattened = []
     box_regression_flattened = []
     # for each feature level, permute the outputs to make them be in the
@@ -328,7 +328,7 @@ class RegionProposalNetwork(torch.nn.Module):
         return self._post_nms_top_n['testing']
 
     def assign_targets_to_anchors(self, anchors, targets):
-        # type: (List[Tensor], List[Dict[str, Tensor]]) -> (List[Tensor], List[Tensor])
+        # type: (List[Tensor], List[Dict[str, Tensor]]) -> Tuple[List[Tensor], List[Tensor]]
         labels = []
         matched_gt_boxes = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
@@ -379,7 +379,7 @@ class RegionProposalNetwork(torch.nn.Module):
         return torch.cat(r, dim=1)
 
     def filter_proposals(self, proposals, objectness, image_shapes, num_anchors_per_level):
-        # type: (Tensor, Tensor, List[Tuple[int, int]], List[int]) -> (List[Tensor], List[Tensor])
+        # type: (Tensor, Tensor, List[Tuple[int, int]], List[int]) -> Tuple[List[Tensor], List[Tensor]]
         num_images = proposals.shape[0]
         device = proposals.device
         # do not backprop throught objectness
@@ -419,7 +419,7 @@ class RegionProposalNetwork(torch.nn.Module):
         return final_boxes, final_scores
 
     def compute_loss(self, objectness, pred_bbox_deltas, labels, regression_targets):
-        # type: (Tensor, Tensor, List[Tensor], List[Tensor]) -> (Tensor, Tensor)
+        # type: (Tensor, Tensor, List[Tensor], List[Tensor]) -> Tuple[Tensor, Tensor]
         """
         Arguments:
             objectness (Tensor)
@@ -461,7 +461,7 @@ class RegionProposalNetwork(torch.nn.Module):
                 features,     # type: Dict[str, Tensor]
                 targets=None  # type: Optional[List[Dict[str, Tensor]]]
                 ):
-        # type: (...) -> (List[Tensor], Dict[str, Tensor])
+        # type: (...) -> Tuple[List[Tensor], Dict[str, Tensor]]
         """
         Arguments:
             images (ImageList): images for which we want to compute the predictions

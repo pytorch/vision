@@ -15,7 +15,7 @@ from torch.jit.annotations import Optional, List, Dict, Tuple
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
-    # type: (Tensor, Tensor, List[Tensor], List[Tensor]) -> (Tensor, Tensor)
+    # type: (Tensor, Tensor, List[Tensor], List[Tensor]) -> Tuple[Tensor, Tensor]
     """
     Computes the loss for Faster R-CNN.
 
@@ -139,7 +139,7 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
 
 
 def keypoints_to_heatmap(keypoints, rois, heatmap_size):
-    # type: (Tensor, Tensor, int) -> (Tensor, Tensor)
+    # type: (Tensor, Tensor, int) -> Tuple[Tensor, Tensor]
     offset_x = rois[:, 0]
     offset_y = rois[:, 1]
     scale_x = heatmap_size / (rois[:, 2] - rois[:, 0])
@@ -313,7 +313,7 @@ def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched
 
 
 def keypointrcnn_inference(x, boxes):
-    # type: (Tensor, List[Tensor]) -> (List[Tensor], List[Tensor])
+    # type: (Tensor, List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
     kp_probs = []
     kp_scores = []
 
@@ -382,7 +382,7 @@ def expand_masks_tracing_scale(M, padding):
 
 
 def expand_masks(mask, padding):
-    # type: (Tensor, int) -> (Tensor, float)
+    # type: (Tensor, int) -> Tuple[Tensor, float]
     M = mask.shape[-1]
     if torch._C._get_tracing_state():  # could not import is_tracing(), not sure why
         scale = expand_masks_tracing_scale(M, padding)
@@ -570,7 +570,7 @@ class RoIHeads(torch.nn.Module):
         return True
 
     def assign_targets_to_proposals(self, proposals, gt_boxes, gt_labels):
-        # type: (List[Tensor], List[Tensor], List[Tensor]) -> (List[Tensor], List[Tensor])
+        # type: (List[Tensor], List[Tensor], List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
         matched_idxs = []
         labels = []
         for proposals_in_image, gt_boxes_in_image, gt_labels_in_image in zip(proposals, gt_boxes, gt_labels):
@@ -645,7 +645,7 @@ class RoIHeads(torch.nn.Module):
                                 proposals,  # type: List[Tensor]
                                 targets     # type: Optional[List[Dict[str, Tensor]]]
                                 ):
-        # type: (...) -> (List[Tensor], List[Tensor], List[Tensor], List[Tensor])
+        # type: (...) -> Tuple[List[Tensor], List[Tensor], List[Tensor], List[Tensor]]
         self.check_targets(targets)
         assert targets is not None
         dtype = proposals[0].dtype
@@ -683,7 +683,7 @@ class RoIHeads(torch.nn.Module):
                                proposals,       # type: List[Tensor]
                                image_shapes     # type: List[Tuple[int, int]]
                                ):
-        # type: (...) -> (List[Tensor], List[Tensor], List[Tensor])
+        # type: (...) -> Tuple[List[Tensor], List[Tensor], List[Tensor]]
         device = class_logits.device
         num_classes = class_logits.shape[-1]
 
@@ -741,7 +741,7 @@ class RoIHeads(torch.nn.Module):
                 image_shapes,  # type: List[Tuple[int, int]]
                 targets=None   # type: Optional[List[Dict[str, Tensor]]]
                 ):
-        # type: (...) -> (List[Dict[str, Tensor]], Dict[str, Tensor])
+        # type: (...) -> Tuple[List[Dict[str, Tensor]], Dict[str, Tensor]]
         """
         Arguments:
             features (List[Tensor])

@@ -30,7 +30,7 @@ class BalancedPositiveNegativeSampler(object):
         self.positive_fraction = positive_fraction
 
     def __call__(self, matched_idxs):
-        # type: (List[Tensor]) -> (List[Tensor], List[Tensor])
+        # type: (List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
         """
         Arguments:
             matched idxs: list of tensors containing -1, 0 or positive values.
