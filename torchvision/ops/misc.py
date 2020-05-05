@@ -177,3 +177,6 @@ class FrozenBatchNorm2d(torch.nn.Module):
         scale = w * rv.rsqrt()
         bias = b - rm * scale
         return x * scale + bias
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.weight.shape[0]})"
