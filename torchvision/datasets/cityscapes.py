@@ -17,7 +17,7 @@ class Cityscapes(VisionDataset):
         split (string, optional): The image split to use, ``train``, ``test`` or ``val`` if mode="fine"
             otherwise ``train``, ``train_extra`` or ``val``
         mode (string, optional): The quality mode to use, ``fine`` or ``coarse``
-        target_string or list, optional): Type of target to use, ``instance``, ``semantic``, ``polygon``
+        target_type (string or list, optional): Type of target to use, ``instance``, ``semantic``, ``polygon``
             or ``color``. Can also be a list to output a tuple with all specified target types.
         transform (callable, optional): A function/transform that takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``

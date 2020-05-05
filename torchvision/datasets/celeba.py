@@ -13,7 +13,7 @@ class CelebA(VisionDataset):
         root (string): Root directory where images are downloaded to.
         split (string): One of {'train', 'valid', 'test', 'all'}.
             Accordingly dataset is selected.
-        target_string or list, optional): Type of target to use, ``attr``, ``identity``, ``bbox``,
+        target_type (string or list, optional): Type of target to use, ``attr``, ``identity``, ``bbox``,
             or ``landmarks``. Can also be a list to output a tuple with all specified target types.
             The targets represent:
                 ``attr`` (np.array shape=(40,) dtype=int): binary (0, 1) labels for attributes
