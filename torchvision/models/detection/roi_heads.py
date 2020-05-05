@@ -312,12 +312,6 @@ def keypointrcnn_inference(x, boxes):
     kp_scores = []
 
     boxes_per_image = [box.size(0) for box in boxes]
-
-    if len(boxes_per_image) == 1:
-        # TODO : remove when dynamic split supported in ONNX
-        kp_prob, scores = heatmaps_to_keypoints(x, boxes[0])
-        return [kp_prob], [scores]
-
     x2 = x.split(boxes_per_image, dim=0)
 
     for xx, bb in zip(x2, boxes):
