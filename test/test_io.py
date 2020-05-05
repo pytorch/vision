@@ -62,7 +62,7 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
 @unittest.skipIf(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
                  "video_reader backend not available")
 @unittest.skipIf(av is None, "PyAV unavailable")
-class Tester(unittest.TestCase):
+class TestIO(unittest.TestCase):
     # compression adds artifacts, thus we add a tolerance of
     # 6 in 0-255 range
     TOLERANCE = 6
