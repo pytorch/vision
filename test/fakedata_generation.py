@@ -1,5 +1,4 @@
 import os
-import sys
 import contextlib
 import tarfile
 import json
@@ -7,12 +6,7 @@ import numpy as np
 import PIL
 import torch
 from common_utils import get_tmp_dir
-
-PYTHON2 = sys.version_info[0] == 2
-if PYTHON2:
-    import cPickle as pickle
-else:
-    import pickle
+import pickle
 
 
 @contextlib.contextmanager
@@ -259,13 +253,14 @@ def svhn_root():
 
         yield root
 
+
 @contextlib.contextmanager
 def voc_root():
     with get_tmp_dir() as tmp_dir:
         voc_dir = os.path.join(tmp_dir, 'VOCdevkit',
-                'VOC2012','ImageSets','Main')
+                               'VOC2012', 'ImageSets', 'Main')
         os.makedirs(voc_dir)
-        train_file = os.path.join(voc_dir,'train.txt')
+        train_file = os.path.join(voc_dir, 'train.txt')
         with open(train_file, 'w') as f:
             f.write('test')
 

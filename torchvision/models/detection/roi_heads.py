@@ -1,4 +1,3 @@
-from __future__ import division
 import torch
 import torchvision
 
@@ -44,10 +43,11 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     N, num_classes = class_logits.shape
     box_regression = box_regression.reshape(N, -1, 4)
 
-    box_loss = F.smooth_l1_loss(
+    box_loss = det_utils.smooth_l1_loss(
         box_regression[sampled_pos_inds_subset, labels_pos],
         regression_targets[sampled_pos_inds_subset],
-        reduction="sum",
+        beta=1 / 9,
+        size_average=False,
     )
     box_loss = box_loss / labels.numel()
 
@@ -687,20 +687,13 @@ class RoIHeads(torch.nn.Module):
         device = class_logits.device
         num_classes = class_logits.shape[-1]
 
-        boxes_per_image = [len(boxes_in_image) for boxes_in_image in proposals]
+        boxes_per_image = [boxes_in_image.shape[0] for boxes_in_image in proposals]
         pred_boxes = self.box_coder.decode(box_regression, proposals)
 
         pred_scores = F.softmax(class_logits, -1)
 
-        # split boxes and scores per image
-        if len(boxes_per_image) == 1:
-            # TODO : remove this when ONNX support dynamic split sizes
-            # and just assign to pred_boxes instead of pred_boxes_list
-            pred_boxes_list = [pred_boxes]
-            pred_scores_list = [pred_scores]
-        else:
-            pred_boxes_list = pred_boxes.split(boxes_per_image, 0)
-            pred_scores_list = pred_scores.split(boxes_per_image, 0)
+        pred_boxes_list = pred_boxes.split(boxes_per_image, 0)
+        pred_scores_list = pred_scores.split(boxes_per_image, 0)
 
         all_boxes = []
         all_scores = []

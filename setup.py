@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import io
 import re
@@ -31,7 +30,7 @@ def get_dist(pkgname):
         return None
 
 
-version = '0.6.0a0'
+version = '0.7.0a0'
 sha = 'Unknown'
 package_name = 'torchvision'
 
@@ -69,7 +68,6 @@ if os.getenv('PYTORCH_VERSION'):
 
 requirements = [
     'numpy',
-    'six',
     pytorch_dep,
 ]
 
@@ -97,9 +95,9 @@ def get_extensions():
             includes="torchvision/csrc/cuda/*",
             show_detailed=True,
             is_pytorch_extension=True,
-            )
+        )
         source_cuda = glob.glob(os.path.join(extensions_dir, 'hip', '*.hip'))
-        ## Copy over additional files
+        # Copy over additional files
         shutil.copy("torchvision/csrc/cuda/cuda_helpers.h", "torchvision/csrc/hip/cuda_helpers.h")
         shutil.copy("torchvision/csrc/cuda/vision_cuda.h", "torchvision/csrc/hip/vision_cuda.h")
 
@@ -124,7 +122,8 @@ def get_extensions():
     define_macros = []
 
     extra_compile_args = {}
-    if (torch.cuda.is_available() and ((CUDA_HOME is not None)  or is_rocm_pytorch)) or os.getenv('FORCE_CUDA', '0') == '1':
+    if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) \
+            or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
         sources += source_cuda
         if not is_rocm_pytorch:
@@ -185,7 +184,9 @@ def get_extensions():
         video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
         base_decoder_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'decoder')
         base_decoder_src = glob.glob(
-            os.path.join(base_decoder_src_dir, "[!sync_decoder_test,!utils_test]*.cpp"))
+            os.path.join(base_decoder_src_dir, "*.cpp"))
+        # exclude tests
+        base_decoder_src = [x for x in base_decoder_src if '_test.cpp' not in x]
 
         combined_src = video_reader_src + base_decoder_src
 

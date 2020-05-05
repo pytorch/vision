@@ -284,6 +284,7 @@ size_t size(const AVSubtitle& sub) {
 }
 
 bool validateVideoFormat(const VideoFormat& f) {
+  // clang-format off
   /*
   Valid parameters values for decoder
   ____________________________________________________________________________________
@@ -307,6 +308,7 @@ bool validateVideoFormat(const VideoFormat& f) {
   |_____|_____|______________|______________|___________|____________________________|
 
   */
+  // clang-format on
   return (f.width == 0 && // #1, #6, #7 and #8
           f.height == 0 && f.cropImage == 0) ||
       (f.width != 0 && // #4 and #5
@@ -346,8 +348,7 @@ void setFormatDimensions(
         destW = minDimension;
         destH = round(double(srcH * minDimension) / srcW);
       }
-    }
-    else if (minDimension == 0 && maxDimension > 0) { // #7
+    } else if (minDimension == 0 && maxDimension > 0) { // #7
       if (srcW > srcH) {
         // landscape
         destW = maxDimension;
@@ -357,8 +358,7 @@ void setFormatDimensions(
         destH = maxDimension;
         destW = round(double(srcW * maxDimension) / srcH);
       }
-    }
-    else if (minDimension > 0 && maxDimension > 0) { // #8
+    } else if (minDimension > 0 && maxDimension > 0) { // #8
       if (srcW > srcH) {
         // landscape
         destW = maxDimension;
@@ -368,8 +368,7 @@ void setFormatDimensions(
         destW = minDimension;
         destH = maxDimension;
       }
-    }
-    else { // #1
+    } else { // #1
       destW = srcW;
       destH = srcH;
     }

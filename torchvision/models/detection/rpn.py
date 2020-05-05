@@ -1,5 +1,3 @@
-from __future__ import division
-
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
 from torch.nn import functional as F
@@ -39,7 +37,8 @@ class AnchorGenerator(nn.Module):
     image sizes.
 
     The module support computing anchors at multiple sizes and aspect ratios
-    per feature map.
+    per feature map. This module assumes aspect ratio = height / width for
+    each anchor.
 
     sizes and aspect_ratios should have the same number of elements, and it should
     correspond to the number of feature maps.
@@ -76,6 +75,7 @@ class AnchorGenerator(nn.Module):
     # TODO: https://github.com/pytorch/pytorch/issues/26792
     # For every (aspect_ratios, scales) combination, output a zero-centered anchor with those values.
     # (scales, aspect_ratios) are usually an element of zip(self.scales, self.aspect_ratios)
+    # This method assumes aspect ratio = height / width for an anchor.
     def generate_anchors(self, scales, aspect_ratios, dtype=torch.float32, device="cpu"):
         # type: (List[int], List[float], int, Device) -> Tensor  # noqa: F821
         scales = torch.as_tensor(scales, dtype=dtype, device=device)
@@ -126,10 +126,6 @@ class AnchorGenerator(nn.Module):
         ):
             grid_height, grid_width = size
             stride_height, stride_width = stride
-            if torchvision._is_tracing():
-                # required in ONNX export for mult operation with float32
-                stride_width = torch.tensor(stride_width, dtype=torch.float32)
-                stride_height = torch.tensor(stride_height, dtype=torch.float32)
             device = base_anchors.device
 
             # For output anchor, compute [x_center, y_center, x_center, y_center]
@@ -155,6 +151,7 @@ class AnchorGenerator(nn.Module):
     def cached_grid_anchors(self, grid_sizes, strides):
         # type: (List[List[int]], List[List[int]]) -> List[Tensor]
         key = str(grid_sizes + strides)
+        key = str(grid_sizes) + str(strides)
         if key in self._cache:
             return self._cache[key]
         anchors = self.grid_anchors(grid_sizes, strides)
@@ -165,9 +162,9 @@ class AnchorGenerator(nn.Module):
         # type: (ImageList, List[Tensor]) -> List[List[Tensor]]
         grid_sizes = list([feature_map.shape[-2:] for feature_map in feature_maps])
         image_size = image_list.tensors.shape[-2:]
-        strides = [[int(image_size[0] / g[0]), int(image_size[1] / g[1])] for g in grid_sizes]
-        
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
+        strides = [[torch.tensor(image_size[0] / g[0], dtype=torch.int64, device=device),
+                    torch.tensor(image_size[1] / g[1], dtype=torch.int64, device=device)] for g in grid_sizes]
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
         anchors = torch.jit.annotate(List[List[torch.Tensor]], [])
@@ -446,10 +443,11 @@ class RegionProposalNetwork(torch.nn.Module):
         labels = torch.cat(labels, dim=0)
         regression_targets = torch.cat(regression_targets, dim=0)
 
-        box_loss = F.l1_loss(
+        box_loss = det_utils.smooth_l1_loss(
             pred_bbox_deltas[sampled_pos_inds],
             regression_targets[sampled_pos_inds],
-            reduction="sum",
+            beta=1 / 9,
+            size_average=False,
         ) / (sampled_inds.numel())
 
         objectness_loss = F.binary_cross_entropy_with_logits(
@@ -467,7 +465,7 @@ class RegionProposalNetwork(torch.nn.Module):
         """
         Arguments:
             images (ImageList): images for which we want to compute the predictions
-            features (List[Tensor]): features computed from the images that are
+            features (OrderedDict[Tensor]): features computed from the images that are
                 used for computing the predictions. Each tensor in the list
                 correspond to different feature levels
             targets (List[Dict[Tensor]]): ground-truth boxes present in the image (optional).
@@ -486,7 +484,8 @@ class RegionProposalNetwork(torch.nn.Module):
         anchors = self.anchor_generator(images, features)
 
         num_images = len(anchors)
-        num_anchors_per_level = [o[0].numel() for o in objectness]
+        num_anchors_per_level_shape_tensors = [o[0].shape for o in objectness]
+        num_anchors_per_level = [s[0] * s[1] * s[2] for s in num_anchors_per_level_shape_tensors]
         objectness, pred_bbox_deltas = \
             concat_box_prediction_layers(objectness, pred_bbox_deltas)
         # apply pred_bbox_deltas to anchors to obtain the decoded proposals

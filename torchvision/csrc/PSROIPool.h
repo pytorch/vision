@@ -15,7 +15,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward(
     const float spatial_scale,
     const int pooled_height,
     const int pooled_width) {
-  if (input.type().is_cuda()) {
+  if (input.is_cuda()) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
     return PSROIPool_forward_cuda(
         input, rois, spatial_scale, pooled_height, pooled_width);
@@ -38,7 +38,7 @@ at::Tensor PSROIPool_backward(
     const int channels,
     const int height,
     const int width) {
-  if (grad.type().is_cuda()) {
+  if (grad.is_cuda()) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
     return PSROIPool_backward_cuda(
         grad,

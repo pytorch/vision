@@ -1,13 +1,13 @@
 from collections import defaultdict
 from PIL import Image
-from six.moves import html_parser
+from html.parser import HTMLParser
 
 import glob
 import os
 from .vision import VisionDataset
 
 
-class Flickr8kParser(html_parser.HTMLParser):
+class Flickr8kParser(HTMLParser):
     """Parser for extracting captions from the Flickr8k dataset web page."""
 
     def __init__(self, root):
@@ -51,7 +51,7 @@ class Flickr8kParser(html_parser.HTMLParser):
 
 
 class Flickr8k(VisionDataset):
-    """`Flickr8k Entities <http://nlp.cs.illinois.edu/HockenmaierGroup/8k-pictures.html>`_ Dataset.
+    """`Flickr8k Entities <http://hockenmaier.cs.illinois.edu/8k-pictures.html>`_ Dataset.
 
     Args:
         root (string): Root directory where images are downloaded to.

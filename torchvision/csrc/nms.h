@@ -12,7 +12,7 @@ at::Tensor nms(
     const at::Tensor& dets,
     const at::Tensor& scores,
     const double iou_threshold) {
-  if (dets.device().is_cuda()) {
+  if (dets.is_cuda()) {
 #if defined(WITH_CUDA)
     if (dets.numel() == 0) {
       at::cuda::CUDAGuard device_guard(dets.device());
