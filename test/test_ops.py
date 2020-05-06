@@ -547,6 +547,30 @@ class FrozenBNTester(unittest.TestCase):
         expected_string = f"FrozenBatchNorm2d({num_features})"
         self.assertEqual(t.__repr__(), expected_string)
 
+    def test_frozenbatchnorm2d_eps(self):
+        sample_size = (4, 32, 28, 28)
+        x = torch.rand(sample_size)
+        state_dict = dict(weight=torch.rand(sample_size[1]),
+                          bias=torch.rand(sample_size[1]),
+                          running_mean=torch.rand(sample_size[1]),
+                          running_var=torch.rand(sample_size[1]),
+                          num_batches_tracked=torch.tensor(100))
+
+        # Check that default eps is zero for backward-compatibility
+        fbn = ops.misc.FrozenBatchNorm2d(sample_size[1])
+        fbn.load_state_dict(state_dict, strict=False)
+        bn = torch.nn.BatchNorm2d(sample_size[1], eps=0).eval()
+        bn.load_state_dict(state_dict)
+        # Difference is expected to fall in an acceptable range
+        self.assertTrue(torch.allclose(fbn(x), bn(x), atol=1e-6))
+
+        # Check computation for eps > 0
+        fbn = ops.misc.FrozenBatchNorm2d(sample_size[1], eps=1e-5)
+        fbn.load_state_dict(state_dict, strict=False)
+        bn = torch.nn.BatchNorm2d(sample_size[1], eps=1e-5).eval()
+        bn.load_state_dict(state_dict)
+        self.assertTrue(torch.allclose(fbn(x), bn(x), atol=1e-6))
+
 
 if __name__ == '__main__':
     unittest.main()
