@@ -114,7 +114,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return (image - mean[:, None, None]) / std[:, None, None]
 
     def torch_choice(self, l):
-        # type: (List[int]) -> Tensor
+        # type: (List[int]) -> int
         """
         Implements `random.choice` via torch ops so it can be compiled with
         TorchScript. Remove if https://github.com/pytorch/pytorch/issues/25803
