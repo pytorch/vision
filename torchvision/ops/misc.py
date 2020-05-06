@@ -124,12 +124,13 @@ class FrozenBatchNorm2d(torch.nn.Module):
     are fixed
     """
 
-    def __init__(self, n):
+    def __init__(self, num_features, eps=0.):
         super(FrozenBatchNorm2d, self).__init__()
-        self.register_buffer("weight", torch.ones(n))
-        self.register_buffer("bias", torch.zeros(n))
-        self.register_buffer("running_mean", torch.zeros(n))
-        self.register_buffer("running_var", torch.ones(n))
+        self.eps = eps
+        self.register_buffer("weight", torch.ones(num_features))
+        self.register_buffer("bias", torch.zeros(num_features))
+        self.register_buffer("running_mean", torch.zeros(num_features))
+        self.register_buffer("running_var", torch.ones(num_features))
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
@@ -142,15 +143,12 @@ class FrozenBatchNorm2d(torch.nn.Module):
             missing_keys, unexpected_keys, error_msgs)
 
     def forward(self, x):
-        # move reshapes to the beginning
-        # to make it fuser-friendly
-        w = self.weight.reshape(1, -1, 1, 1)
-        b = self.bias.reshape(1, -1, 1, 1)
-        rv = self.running_var.reshape(1, -1, 1, 1)
-        rm = self.running_mean.reshape(1, -1, 1, 1)
-        scale = w * rv.rsqrt()
-        bias = b - rm * scale
-        return x * scale + bias
+        # Scaling factor
+        scale = self.weight * (self.running_var + self.eps).rsqrt()
+        # Bias
+        bias = (self.bias - self.running_mean * scale)
+
+        return x * scale.view(1, -1, 1, 1) + bias.view(1, -1, 1, 1)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.weight.shape[0]})"
