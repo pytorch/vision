@@ -37,7 +37,8 @@ class AnchorGenerator(nn.Module):
     image sizes.
 
     The module support computing anchors at multiple sizes and aspect ratios
-    per feature map.
+    per feature map. This module assumes aspect ratio = height / width for
+    each anchor.
 
     sizes and aspect_ratios should have the same number of elements, and it should
     correspond to the number of feature maps.
@@ -74,6 +75,7 @@ class AnchorGenerator(nn.Module):
     # TODO: https://github.com/pytorch/pytorch/issues/26792
     # For every (aspect_ratios, scales) combination, output a zero-centered anchor with those values.
     # (scales, aspect_ratios) are usually an element of zip(self.scales, self.aspect_ratios)
+    # This method assumes aspect ratio = height / width for an anchor.
     def generate_anchors(self, scales, aspect_ratios, dtype=torch.float32, device="cpu"):
         # type: (List[int], List[float], int, Device)  # noqa: F821
         scales = torch.as_tensor(scales, dtype=dtype, device=device)

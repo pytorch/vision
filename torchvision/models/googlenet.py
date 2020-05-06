@@ -62,11 +62,16 @@ def googlenet(pretrained=False, progress=True, **kwargs):
 class GoogLeNet(nn.Module):
     __constants__ = ['aux_logits', 'transform_input']
 
-    def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, init_weights=True,
+    def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, init_weights=None,
                  blocks=None):
         super(GoogLeNet, self).__init__()
         if blocks is None:
             blocks = [BasicConv2d, Inception, InceptionAux]
+        if init_weights is None:
+            warnings.warn('The default weight initialization of GoogleNet will be changed in future releases of '
+                          'torchvision. If you wish to keep the old behavior (which leads to long initialization times'
+                          ' due to scipy/scipy#11299), please set init_weights=True.', FutureWarning)
+            init_weights = True
         assert len(blocks) == 3
         conv_block = blocks[0]
         inception_block = blocks[1]
