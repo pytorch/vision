@@ -236,7 +236,6 @@ class GeneralizedRCNNTransform(nn.Module):
 
 def resize_keypoints(keypoints, original_size, new_size):
     # type: (Tensor, List[int], List[int]) -> Tensor
-    ratios = [float(s) / float(s_orig) for s, s_orig in zip(new_size, original_size)]
     ratios = [
         torch.tensor(s, dtype=torch.float32, device=keypoints.device) /
         torch.tensor(s_orig, dtype=torch.float32, device=keypoints.device)
