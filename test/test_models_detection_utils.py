@@ -1,6 +1,7 @@
 import torch
 from torchvision.models.detection import _utils
 import unittest
+from torchvision.models.detection import fasterrcnn_resnet50_fpn
 
 
 class Tester(unittest.TestCase):
@@ -17,6 +18,21 @@ class Tester(unittest.TestCase):
         self.assertEqual(neg[0].sum(), 3)
         self.assertEqual(neg[0][0:6].sum(), 3)
 
+    def test_fasterrcnn_resnet50_fpn_frozen_layers(self):
+        # we know how many initial layers and parameters of the network should
+        # be frozen for each trainable_backbone_layers paramter value
+        # i.e all 53 params are frozen if trainable_backbone_layers=0
+        # ad first 24 params are frozen if trainable_backbone_layers=2
+        expected_frozen_params = {0:53, 1:43, 2:24, 3:11, 4:1, 5:0}   
+        for train_layers, exp_froz_params in expected_frozen_params.items():
+            model = fasterrcnn_resnet50_fpn(pretrained=True, progress=False,
+                                        num_classes=91, pretrained_backbone=False, 
+                                        trainable_backbone_layers=train_layers)
+            # boolean list that is true if the param at that index is frozen
+            is_frozen = [not parameter.requires_grad for _, parameter in model.named_parameters()]
+            #check that expected initial number of layers are frozen
+            self.assertTrue(all(is_frozen[:exp_froz_params]))
 
+           
 if __name__ == '__main__':
     unittest.main()
