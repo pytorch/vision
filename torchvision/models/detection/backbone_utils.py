@@ -46,7 +46,7 @@ def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.Frozen
         pretrained=pretrained,
         norm_layer=norm_layer)
     """
-    Constructs a specified ResNet backbone with FPN on top of it. Freezes the specified number of layers in the backbone.
+    Constructs a specified ResNet backbone with FPN on top. Freezes the specified number of layers in the backbone.
 
     Examples::
 
@@ -63,7 +63,7 @@ def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.Frozen
         >>>    ('2', torch.Size([1, 256, 4, 4])),
         >>>    ('3', torch.Size([1, 256, 2, 2])),
         >>>    ('pool', torch.Size([1, 256, 1, 1]))]
-        
+
     Arguments:
         backbone_name (string): resnet architecture. Possible values are 'ResNet', 'resnet18', 'resnet34', 'resnet50',
              'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2'
@@ -74,7 +74,7 @@ def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.Frozen
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
     # select layers that wont be frozen
-    assert trainable_layers<=5 and trainable_layers >=0
+    assert trainable_layers <= 5 and trainable_layers >= 0
     layers_to_train = ['layer4', 'layer3', 'layer2', 'layer1', 'conv1'][:trainable_layers]
     # freeze layers only if pretrained backbone is used
     for name, parameter in backbone.named_parameters():
