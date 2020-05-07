@@ -51,7 +51,6 @@ def main(args):
     print("Creating model", args.model)
     # when training quantized models, we always start from a pre-trained fp32 reference model
     model = torchvision.models.quantization.__dict__[args.model](pretrained=True, quantize=args.test_only)
-    model.to(device)
 
     if not (args.test_only or args.post_training_quantize):
         model.fuse_model()
@@ -65,6 +64,7 @@ def main(args):
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
                                                        step_size=args.lr_step_size,
                                                        gamma=args.lr_gamma)
+    model.to(device)
 
     criterion = nn.CrossEntropyLoss()
     model_without_ddp = model
@@ -129,7 +129,7 @@ def main(args):
             print('Evaluate QAT model')
 
             evaluate(model, criterion, data_loader_test, device=device)
-            quantized_eval_model = copy.deepcopy(model)
+            quantized_eval_model = copy.deepcopy(model_without_ddp)
             quantized_eval_model.eval()
             quantized_eval_model.to(torch.device('cpu'))
             torch.quantization.convert(quantized_eval_model, inplace=True)
