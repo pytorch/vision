@@ -78,8 +78,11 @@ class GeneralizedRCNNTransform(nn.Module):
         self.image_mean = image_mean
         self.image_std = image_std
 
-    def forward(self, images, targets=None):
-        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])
+    def forward(self,
+                images,       # type: List[Tensor]
+                targets=None  # type: Optional[List[Dict[str, Tensor]]]
+                ):
+        # type: (...) -> Tuple[ImageList, Optional[List[Dict[str, Tensor]]]]
         images = [img for img in images]
         for i in range(len(images)):
             image = images[i]
@@ -111,7 +114,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return (image - mean[:, None, None]) / std[:, None, None]
 
     def torch_choice(self, l):
-        # type: (List[int])
+        # type: (List[int]) -> int
         """
         Implements `random.choice` via torch ops so it can be compiled with
         TorchScript. Remove if https://github.com/pytorch/pytorch/issues/25803
@@ -121,7 +124,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return l[index]
 
     def resize(self, image, target):
-        # type: (Tensor, Optional[Dict[str, Tensor]])
+        # type: (Tensor, Optional[Dict[str, Tensor]]) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]
         h, w = image.shape[-2:]
         if self.training:
             size = float(self.torch_choice(self.min_size))
@@ -180,7 +183,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return maxes
 
     def batch_images(self, images, size_divisible=32):
-        # type: (List[Tensor], int)
+        # type: (List[Tensor], int) -> Tensor
         if torchvision._is_tracing():
             # batch_images() does not export well to ONNX
             # call _onnx_batch_images() instead
@@ -199,8 +202,12 @@ class GeneralizedRCNNTransform(nn.Module):
 
         return batched_imgs
 
-    def postprocess(self, result, image_shapes, original_image_sizes):
-        # type: (List[Dict[str, Tensor]], List[Tuple[int, int]], List[Tuple[int, int]])
+    def postprocess(self,
+                    result,               # type: List[Dict[str, Tensor]]
+                    image_shapes,         # type: List[Tuple[int, int]]
+                    original_image_sizes  # type: List[Tuple[int, int]]
+                    ):
+        # type: (...) -> List[Dict[str, Tensor]]
         if self.training:
             return result
         for i, (pred, im_s, o_im_s) in enumerate(zip(result, image_shapes, original_image_sizes)):
@@ -228,9 +235,12 @@ class GeneralizedRCNNTransform(nn.Module):
 
 
 def resize_keypoints(keypoints, original_size, new_size):
-    # type: (Tensor, List[int], List[int])
-    ratios = [torch.tensor(s, dtype=torch.float32, device=keypoints.device) / torch.tensor(s_orig, dtype=torch.float32, device=keypoints.device)
-              for s, s_orig in zip(new_size, original_size)]
+    # type: (Tensor, List[int], List[int]) -> Tensor
+    ratios = [
+        torch.tensor(s, dtype=torch.float32, device=keypoints.device) /
+        torch.tensor(s_orig, dtype=torch.float32, device=keypoints.device)
+        for s, s_orig in zip(new_size, original_size)
+    ]
     ratio_h, ratio_w = ratios
     resized_data = keypoints.clone()
     if torch._C._get_tracing_state():
@@ -244,9 +254,12 @@ def resize_keypoints(keypoints, original_size, new_size):
 
 
 def resize_boxes(boxes, original_size, new_size):
-    # type: (Tensor, List[int], List[int])
-    ratios = [torch.tensor(s, dtype=torch.float32, device=boxes.device) / torch.tensor(s_orig, dtype=torch.float32, device=boxes.device)
-              for s, s_orig in zip(new_size, original_size)]
+    # type: (Tensor, List[int], List[int]) -> Tensor
+    ratios = [
+        torch.tensor(s, dtype=torch.float32, device=boxes.device) /
+        torch.tensor(s_orig, dtype=torch.float32, device=boxes.device)
+        for s, s_orig in zip(new_size, original_size)
+    ]
     ratio_height, ratio_width = ratios
     xmin, ymin, xmax, ymax = boxes.unbind(1)
 
