@@ -75,19 +75,13 @@ def maskrcnn_inference(x, labels):
 
     # select masks coresponding to the predicted classes
     num_masks = x.shape[0]
-    boxes_per_image = [len(l) for l in labels]
+    boxes_per_image = [l.shape[0] for l in labels]
     labels = torch.cat(labels)
     index = torch.arange(num_masks, device=labels.device)
     mask_prob = mask_prob[index, labels][:, None]
+    mask_prob = mask_prob.split(boxes_per_image, dim=0)
 
-    if len(boxes_per_image) == 1:
-        # TODO : remove when dynamic split supported in ONNX
-        # and remove assignment to mask_prob_list, just assign to mask_prob
-        mask_prob_list = [mask_prob]
-    else:
-        mask_prob_list = mask_prob.split(boxes_per_image, dim=0)
-
-    return mask_prob_list
+    return mask_prob
 
 
 def project_masks_on_boxes(gt_masks, boxes, matched_idxs, M):
@@ -318,12 +312,6 @@ def keypointrcnn_inference(x, boxes):
     kp_scores = []
 
     boxes_per_image = [box.size(0) for box in boxes]
-
-    if len(boxes_per_image) == 1:
-        # TODO : remove when dynamic split supported in ONNX
-        kp_prob, scores = heatmaps_to_keypoints(x, boxes[0])
-        return [kp_prob], [scores]
-
     x2 = x.split(boxes_per_image, dim=0)
 
     for xx, bb in zip(x2, boxes):

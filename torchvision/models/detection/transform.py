@@ -19,9 +19,7 @@ def _resize_image_and_masks_onnx(image, self_min_size, self_max_size, target):
     im_shape = operators.shape_as_tensor(image)[-2:]
     min_size = torch.min(im_shape).to(dtype=torch.float32)
     max_size = torch.max(im_shape).to(dtype=torch.float32)
-    scale_factor = self_min_size / min_size
-    if max_size * scale_factor > self_max_size:
-        scale_factor = self_max_size / max_size
+    scale_factor = torch.min(self_min_size / min_size, self_max_size / max_size)
 
     image = torch.nn.functional.interpolate(
         image[None], scale_factor=scale_factor, mode='bilinear',

@@ -19,11 +19,9 @@ def _onnx_get_num_anchors_and_pre_nms_top_n(ob, orig_pre_nms_top_n):
     # type: (Tensor, int) -> Tuple[int, int]
     from torch.onnx import operators
     num_anchors = operators.shape_as_tensor(ob)[1].unsqueeze(0)
-    # TODO : remove cast to IntTensor/num_anchors.dtype when
-    #        ONNX Runtime version is updated with ReduceMin int64 support
     pre_nms_top_n = torch.min(torch.cat(
         (torch.tensor([orig_pre_nms_top_n], dtype=num_anchors.dtype),
-         num_anchors), 0).to(torch.int32)).to(num_anchors.dtype)
+         num_anchors), 0))
 
     return num_anchors, pre_nms_top_n
 
