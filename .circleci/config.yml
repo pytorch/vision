@@ -111,6 +111,16 @@ jobs:
             pip install --user --progress-bar off flake8 typing
             flake8 .
 
+  python_type_check:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off mypy
+            mypy
+
   clang_format:
     docker:
       - image: circleci/python:3.7
@@ -702,12 +712,14 @@ workflows:
           python_version: "3.6"
           cu_version: "cu101"
       - python_lint
+      - python_type_check
       - clang_format
 
   nightly:
     jobs:
       - circleci_consistency
       - python_lint
+      - python_type_check
       - clang_format
       - binary_linux_wheel:
           cu_version: cpu
