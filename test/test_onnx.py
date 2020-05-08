@@ -346,11 +346,17 @@ class ONNXExporterTester(unittest.TestCase):
 
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
-
+        dummy_image = [torch.ones(3, 100, 100) * 0.3]
         model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
-        self.run_model(model, [(images,), (test_images,)], input_names=["images_tensors"],
+        # Test exported model on images of different size, or dummy input
+        self.run_model(model, [(images,), (test_images,), (dummy_image,)], input_names=["images_tensors"],
+                       output_names=["outputs"],
+                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
+                       tolerate_small_mismatch=True)
+        # Test exported model for an image with no detections on other images
+        self.run_model(model, [(dummy_image,), (images,)], input_names=["images_tensors"],
                        output_names=["outputs"],
                        dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
                        tolerate_small_mismatch=True)
@@ -391,16 +397,25 @@ class ONNXExporterTester(unittest.TestCase):
 
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
-
+        dummy_image = [torch.ones(3, 100, 320) * 0.3]
         model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
-        self.run_model(model, [(images,), (test_images,)],
+        # Test exported model on images of different size, or dummy input
+        self.run_model(model, [(images,), (test_images,), (dummy_image,)],
                        input_names=["images_tensors"],
                        output_names=["boxes", "labels", "scores"],
                        dynamic_axes={"images_tensors": [0, 1, 2, 3], "boxes": [0, 1], "labels": [0],
                                      "scores": [0], "masks": [0, 1, 2, 3]},
                        tolerate_small_mismatch=True)
+        # TODO: enable this test once dynamic model export is fixed
+        # Test exported model for an image with no detections on other images
+        # self.run_model(model, [(images,),(test_images,)],
+        #                input_names=["images_tensors"],
+        #                output_names=["boxes", "labels", "scores"],
+        #                dynamic_axes={"images_tensors": [0, 1, 2, 3], "boxes": [0, 1], "labels": [0],
+        #                              "scores": [0], "masks": [0, 1, 2, 3]},
+        #                tolerate_small_mismatch=True)
 
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
     # This test also compares both heatmaps_to_keypoints and _onnx_heatmaps_to_keypoints
@@ -445,6 +460,10 @@ class ONNXExporterTester(unittest.TestCase):
                 return output[0]['boxes'], output[0]['labels'], output[0]['scores'], output[0]['keypoints']
 
         images, test_images = self.get_test_images()
+        # TODO:
+        # Enable test for dummy_image (no detection) once issue is
+        # _onnx_heatmaps_to_keypoints_loop for empty heatmaps is fixed
+        # dummy_images = [torch.ones(3, 100, 100) * 0.3]
         model = KeyPointRCNN()
         model.eval()
         model(images)
@@ -453,6 +472,13 @@ class ONNXExporterTester(unittest.TestCase):
                        output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
                        dynamic_axes={"images_tensors": [0, 1, 2, 3]},
                        tolerate_small_mismatch=True)
+        # TODO: enable this test once dynamic model export is fixed
+        # Test exported model for an image with no detections on other images
+        # self.run_model(model, [(dummy_images,), (test_images,)],
+        #                input_names=["images_tensors"],
+        #                output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
+        #                dynamic_axes={"images_tensors": [0, 1, 2, 3]},
+        #                tolerate_small_mismatch=True)
 
 
 if __name__ == '__main__':
