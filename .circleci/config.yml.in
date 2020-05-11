@@ -109,7 +109,19 @@ jobs:
       - run:
           command: |
             pip install --user --progress-bar off flake8 typing
-            flake8 .
+            flake8 --config=setup.cfg .
+
+  python_type_check:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off numpy mypy
+            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            pip install --user --progress-bar off .
+            mypy --config-file mypy.ini
 
   clang_format:
     docker:
@@ -398,6 +410,7 @@ workflows:
           python_version: "3.6"
           cu_version: "cu101"
       - python_lint
+      - python_type_check
       - clang_format
 
   nightly:
@@ -405,5 +418,6 @@ workflows:
     jobs:
       - circleci_consistency
       - python_lint
+      - python_type_check
       - clang_format
       {{ workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
