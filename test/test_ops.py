@@ -572,7 +572,8 @@ class FrozenBNTester(unittest.TestCase):
         self.assertTrue(torch.allclose(fbn(x), bn(x), atol=1e-6))
 
     def test_frozenbatchnorm2d_n_arg(self):
-        # Ensure a warning is thrown when passing `n` kwarg (remove this when support of `n` is dropped)
+        """Ensure a warning is thrown when passing `n` kwarg
+        (remove this when support of `n` is dropped)"""
         self.assertWarns(DeprecationWarning, ops.misc.FrozenBatchNorm2d, 32, eps=1e-5, n=32)
 
 
