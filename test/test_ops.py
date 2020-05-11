@@ -552,7 +552,7 @@ class BoxConversionTester(unittest.TestCase):
     @staticmethod
     def _get_box_sequences():
         # Define here the argument type of `boxes` supported by region pooling operations
-        box_tensor = torch.tensor([[0, 0, 0, 100, 100], [[1, 0, 0, 100, 100]]], dtype=torch.float)
+        box_tensor = torch.tensor([[0, 0, 0, 100, 100], [1, 0, 0, 100, 100]], dtype=torch.float)
         box_list = [torch.tensor([[0, 0, 100, 100]], dtype=torch.float),
                     torch.tensor([[0, 0, 100, 100]], dtype=torch.float)]
         box_tuple = tuple(box_list)
