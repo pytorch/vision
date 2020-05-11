@@ -562,7 +562,7 @@ class BoxConversionTester(unittest.TestCase):
         for box_sequence in self._get_box_sequences():
             self.assertIsNone(ops._utils.check_roi_boxes_shape(box_sequence))
 
-    def test_check_roi_boxes_shape(self):
+    def test_convert_boxes_to_roi_format(self):
         # Ensure common sequences of tensors yield the same result
         ref_tensor = None
         for box_sequence in self._get_box_sequences():
