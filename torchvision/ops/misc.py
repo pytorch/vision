@@ -13,6 +13,7 @@ is implemented
 """
 
 import math
+import warnings
 import torch
 from torchvision.ops import _new_empty_tensor
 from torch.nn import Module, Conv2d
@@ -124,7 +125,11 @@ class FrozenBatchNorm2d(torch.nn.Module):
     are fixed
     """
 
-    def __init__(self, num_features, eps=0.):
+    def __init__(self, num_features, eps=0., n=None):
+        # n=None for backward-compatibility
+        if n is not None:
+            warnings.warn("`n` argument is deprecated and has been renamed `num_features`")
+            num_features = n
         super(FrozenBatchNorm2d, self).__init__()
         self.eps = eps
         self.register_buffer("weight", torch.ones(num_features))
