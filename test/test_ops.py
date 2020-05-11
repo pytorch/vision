@@ -568,7 +568,7 @@ class BoxConversionTester(unittest.TestCase):
         ref_tensor = None
         for box_sequence in self._get_box_sequences():
             if ref_tensor is None:
-                ref_tensor = ops._utils.convert_boxes_to_roi_format(box_sequence)
+                ref_tensor = box_sequence
             else:
                 self.assertTrue(torch.equal(ref_tensor, ops._utils.convert_boxes_to_roi_format(box_sequence)))
 
