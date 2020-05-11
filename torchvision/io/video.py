@@ -318,6 +318,7 @@ def read_video_timestamps(filename, pts_unit="pts"):
     _check_av_available()
 
     video_fps = None
+    pts = []
 
     try:
         container = av.open(filename, metadata_errors="ignore")
@@ -335,6 +336,8 @@ def read_video_timestamps(filename, pts_unit="pts"):
                 pts = [x.pts for x in container.decode(video=0) if x.pts is not None]
             video_fps = float(video_stream.average_rate)
         container.close()
+
+    pts.sort()
 
     if pts_unit == "sec":
         pts = [x * video_time_base for x in pts]
