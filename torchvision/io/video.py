@@ -317,7 +317,6 @@ def read_video_timestamps(filename, pts_unit="pts"):
 
     _check_av_available()
 
-    video_frames = []
     video_fps = None
 
     try:
