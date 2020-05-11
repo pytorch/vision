@@ -29,3 +29,10 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --lr-steps 36 43 --aspect-ratio-group-factor 3
 ```
 
+# External repositories
+
+For further examples and explanations on how to use the object detection code in this folder, see Microsoft's [Computer Vision Best Practices](https://github.com/microsoft/computervision-recipes/tree/master/scenarios/detection) repository. The repository contains multiple notebooks with functionality to help with e.g. training on a custom dataset, model evaluation, parameters selection, etc., to more advanced topics such as hard-negative mining or model deployment.
+
+<p align="center">
+  <img src="https://cvbp.blob.core.windows.net/public/images/cvbp_notebooks.jpg" width="700" alt="CVBP notebooks"/>
+</p>
