@@ -128,7 +128,8 @@ class FrozenBatchNorm2d(torch.nn.Module):
     def __init__(self, num_features, eps=0., n=None):
         # n=None for backward-compatibility
         if n is not None:
-            warnings.warn("`n` argument is deprecated and has been renamed `num_features`")
+            warnings.warn("`n` argument is deprecated and has been renamed `num_features`",
+                          DeprecationWarning)
             num_features = n
         super(FrozenBatchNorm2d, self).__init__()
         self.eps = eps
