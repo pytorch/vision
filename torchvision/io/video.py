@@ -331,17 +331,11 @@ def read_video_timestamps(filename, pts_unit="pts"):
             video_time_base = video_stream.time_base
             if _can_read_timestamps_from_packets(container):
                 # fast path
-                video_frames = [
-                    x for x in container.demux(video=0) if x.pts is not None
-                ]
+                pts = [x.pts for x in container.demux(video=0) if x.pts is not None]
             else:
-                video_frames = _read_from_stream(
-                    container, 0, float("inf"), pts_unit, video_stream, {"video": 0}
-                )
+                pts = [x.pts for x in container.decode(video=0) if x.pts is not None]
             video_fps = float(video_stream.average_rate)
         container.close()
-
-    pts = [x.pts for x in video_frames]
 
     if pts_unit == "sec":
         pts = [x * video_time_base for x in pts]
