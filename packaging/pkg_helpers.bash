@@ -117,6 +117,12 @@ setup_build_version() {
   else
     export BUILD_VERSION="$BUILD_VERSION$VERSION_SUFFIX"
   fi
+
+  # Set build version based on tag if on tag
+  if [[ -n "${CIRCLE_TAG}" ]]; then
+    # Strip tag
+    export BUILD_VERSION="$(echo "${CIRCLE_TAG}" | sed -e 's/^v//' -e 's/-.*$//')"
+  fi
 }
 
 # Set some useful variables for OS X, if applicable
