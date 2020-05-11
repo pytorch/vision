@@ -18,4 +18,3 @@ from torchvision.models.mnasnet import mnasnet0_5, mnasnet0_75, mnasnet1_0, \
 # segmentation
 from torchvision.models.segmentation import fcn_resnet50, fcn_resnet101, \
     deeplabv3_resnet50, deeplabv3_resnet101
-
