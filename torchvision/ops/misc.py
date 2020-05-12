@@ -13,6 +13,7 @@ is implemented
 """
 
 import math
+import warnings
 import torch
 from torchvision.ops import _new_empty_tensor
 from torch.nn import Module, Conv2d
@@ -124,12 +125,18 @@ class FrozenBatchNorm2d(torch.nn.Module):
     are fixed
     """
 
-    def __init__(self, n):
+    def __init__(self, num_features, eps=0., n=None):
+        # n=None for backward-compatibility
+        if n is not None:
+            warnings.warn("`n` argument is deprecated and has been renamed `num_features`",
+                          DeprecationWarning)
+            num_features = n
         super(FrozenBatchNorm2d, self).__init__()
-        self.register_buffer("weight", torch.ones(n))
-        self.register_buffer("bias", torch.zeros(n))
-        self.register_buffer("running_mean", torch.zeros(n))
-        self.register_buffer("running_var", torch.ones(n))
+        self.eps = eps
+        self.register_buffer("weight", torch.ones(num_features))
+        self.register_buffer("bias", torch.zeros(num_features))
+        self.register_buffer("running_mean", torch.zeros(num_features))
+        self.register_buffer("running_var", torch.ones(num_features))
 
     def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
                               missing_keys, unexpected_keys, error_msgs):
@@ -148,7 +155,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
         b = self.bias.reshape(1, -1, 1, 1)
         rv = self.running_var.reshape(1, -1, 1, 1)
         rm = self.running_mean.reshape(1, -1, 1, 1)
-        scale = w * rv.rsqrt()
+        scale = w * (rv + self.eps).rsqrt()
         bias = b - rm * scale
         return x * scale + bias
 
