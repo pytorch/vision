@@ -80,7 +80,7 @@ struct ShuffleNetV2InvertedResidualImpl : torch::nn::Module {
     } else
       out = torch::cat({branch1->forward(x), branch2->forward(x)}, 1);
 
-    out = channel_shuffle(out, 2);
+    out = ::vision::models::channel_shuffle(out, 2);
     return out;
   }
 };
