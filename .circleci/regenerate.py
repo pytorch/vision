@@ -103,7 +103,16 @@ def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, 
         d["subfolder"] = "" if os_type == 'macos' else cu_version + "/"
 
     if filter_branch is not None:
-        d["filters"] = {"branches": {"only": filter_branch}}
+        d["filters"] = {
+            "branches": {
+                "only": filter_branch
+            },
+            "tags": {
+                # Using a raw string here to avoid having to escape
+                # anything
+                "only": r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
+            }
+        }
 
     return {f"binary_{btype}_upload": d}
 
