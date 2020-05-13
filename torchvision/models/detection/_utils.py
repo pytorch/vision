@@ -13,7 +13,6 @@ def zeros_like(tensor, dtype):
                             device=tensor.device, pin_memory=tensor.is_pinned())
 
 
-@torch.jit.script
 class BalancedPositiveNegativeSampler(object):
     """
     This class samples batches, ensuring that they contain a fixed proportion of positives
@@ -131,7 +130,6 @@ def encode_boxes(reference_boxes, proposals, weights):
     return targets
 
 
-@torch.jit.script
 class BoxCoder(object):
     """
     This class encodes and decodes a set of bounding boxes into
@@ -226,7 +224,6 @@ class BoxCoder(object):
         return pred_boxes
 
 
-@torch.jit.script
 class Matcher(object):
     """
     This class assigns to each predicted "element" (e.g., a box) a ground-truth
