@@ -71,10 +71,10 @@ def maskrcnn_inference(x, labels):
         results (list[BoxList]): one BoxList for each image, containing
             the extra field mask
     """
-    boxes_per_image = [l.shape[0] for l in labels]
     mask_prob = x.sigmoid()
     # select masks corresponding to the predicted classes
     num_masks = x.shape[0]
+    boxes_per_image = [l.shape[0] for l in labels]
     labels = torch.cat(labels)
     index = torch.arange(num_masks, device=labels.device)
     mask_prob = mask_prob[index, labels][:, None]

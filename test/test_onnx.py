@@ -410,7 +410,7 @@ class ONNXExporterTester(unittest.TestCase):
                        tolerate_small_mismatch=True)
         # TODO: enable this test once dynamic model export is fixed
         # Test exported model for an image with no detections on other images
-        self.run_model(model, [(test_images,), (images,)],
+        self.run_model(model, [(dummy_image,), (images,)],
                        input_names=["images_tensors"],
                        output_names=["boxes", "labels", "scores", "masks"],
                        dynamic_axes={"images_tensors": [0, 1, 2, 3], "boxes": [0, 1], "labels": [0],
