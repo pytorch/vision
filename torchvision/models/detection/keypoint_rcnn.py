@@ -237,7 +237,7 @@ class KeypointRCNNPredictor(nn.Module):
         super(KeypointRCNNPredictor, self).__init__()
         input_features = in_channels
         deconv_kernel = 4
-        self.kps_score_lowres = misc_nn_ops.ConvTranspose2d(
+        self.kps_score_lowres = nn.ConvTranspose2d(
             input_features,
             num_keypoints,
             deconv_kernel,

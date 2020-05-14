@@ -54,6 +54,20 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     return classification_loss, box_loss
 
 
+@torch.jit.script
+def _onnx_select_masks(x, labels):
+    # type: (Tensor, List[Tensor]) -> Tensor
+    if x.numel() == 0:
+        return torch.empty(0, 1, 1, 1)
+    else:
+        # select masks corresponding to the predicted classes
+        num_masks = x.shape[0]
+        labels_c = torch.cat(labels)
+        index = torch.arange(num_masks, device=x.device)
+        mask_prob = x[index, labels_c][:, None]
+        return mask_prob
+
+
 def maskrcnn_inference(x, labels):
     # type: (Tensor, List[Tensor])
     """
@@ -71,11 +85,14 @@ def maskrcnn_inference(x, labels):
         results (list[BoxList]): one BoxList for each image, containing
             the extra field mask
     """
-    mask_prob = x.sigmoid()
-
-    # select masks coresponding to the predicted classes
-    num_masks = x.shape[0]
     boxes_per_image = [l.shape[0] for l in labels]
+    mask_prob = x.sigmoid()
+    if torchvision._is_tracing():
+        mask_prob = _onnx_select_masks(mask_prob, labels)
+        return mask_prob.split(boxes_per_image, dim=0)
+
+    # select masks corresponding to the predicted classes
+    num_masks = x.shape[0]
     labels = torch.cat(labels)
     index = torch.arange(num_masks, device=labels.device)
     mask_prob = mask_prob[index, labels][:, None]
@@ -322,22 +339,26 @@ def keypointrcnn_inference(x, boxes):
     return kp_probs, kp_scores
 
 
+@torch.jit.script
 def _onnx_expand_boxes(boxes, scale):
     # type: (Tensor, float)
-    w_half = (boxes[:, 2] - boxes[:, 0]) * .5
-    h_half = (boxes[:, 3] - boxes[:, 1]) * .5
-    x_c = (boxes[:, 2] + boxes[:, 0]) * .5
-    y_c = (boxes[:, 3] + boxes[:, 1]) * .5
+    if boxes.numel() == 0:
+        return torch.empty(0, dtype=boxes.dtype)
+    else:
+        w_half = (boxes[:, 2] - boxes[:, 0]).to(dtype=torch.float64) * .5
+        h_half = (boxes[:, 3] - boxes[:, 1]).to(dtype=torch.float64) * .5
+        x_c = (boxes[:, 2] + boxes[:, 0]).to(dtype=torch.float64) * .5
+        y_c = (boxes[:, 3] + boxes[:, 1]).to(dtype=torch.float64) * .5
 
-    w_half = w_half.to(dtype=torch.float32) * scale
-    h_half = h_half.to(dtype=torch.float32) * scale
+        w_half = w_half.to(dtype=torch.float64) * scale
+        h_half = h_half.to(dtype=torch.float64) * scale
 
-    boxes_exp0 = x_c - w_half
-    boxes_exp1 = y_c - h_half
-    boxes_exp2 = x_c + w_half
-    boxes_exp3 = y_c + h_half
-    boxes_exp = torch.stack((boxes_exp0, boxes_exp1, boxes_exp2, boxes_exp3), 1)
-    return boxes_exp
+        boxes_exp0 = x_c - w_half
+        boxes_exp1 = y_c - h_half
+        boxes_exp2 = x_c + w_half
+        boxes_exp3 = y_c + h_half
+        boxes_exp = torch.stack((boxes_exp0, boxes_exp1, boxes_exp2, boxes_exp3), 1)
+        return boxes_exp.to(dtype=boxes.dtype)
 
 
 # the next two functions should be merged inside Masker
