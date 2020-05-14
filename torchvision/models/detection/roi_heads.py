@@ -54,20 +54,6 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     return classification_loss, box_loss
 
 
-@torch.jit.script
-def _onnx_select_masks(x, labels):
-    # type: (Tensor, List[Tensor]) -> Tensor
-    if x.numel() == 0:
-        return torch.empty(0, 1, 1, 1)
-    else:
-        # select masks corresponding to the predicted classes
-        num_masks = x.shape[0]
-        labels_c = torch.cat(labels)
-        index = torch.arange(num_masks, device=x.device)
-        mask_prob = x[index, labels_c][:, None]
-        return mask_prob
-
-
 def maskrcnn_inference(x, labels):
     # type: (Tensor, List[Tensor])
     """
@@ -87,10 +73,6 @@ def maskrcnn_inference(x, labels):
     """
     boxes_per_image = [l.shape[0] for l in labels]
     mask_prob = x.sigmoid()
-    if torchvision._is_tracing():
-        mask_prob = _onnx_select_masks(mask_prob, labels)
-        return mask_prob.split(boxes_per_image, dim=0)
-
     # select masks corresponding to the predicted classes
     num_masks = x.shape[0]
     labels = torch.cat(labels)
