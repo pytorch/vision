@@ -404,18 +404,18 @@ class ONNXExporterTester(unittest.TestCase):
         # Test exported model on images of different size, or dummy input
         self.run_model(model, [(images,), (test_images,), (dummy_image,)],
                        input_names=["images_tensors"],
-                       output_names=["boxes", "labels", "scores"],
+                       output_names=["boxes", "labels", "scores", "masks"],
                        dynamic_axes={"images_tensors": [0, 1, 2, 3], "boxes": [0, 1], "labels": [0],
                                      "scores": [0], "masks": [0, 1, 2, 3]},
                        tolerate_small_mismatch=True)
         # TODO: enable this test once dynamic model export is fixed
         # Test exported model for an image with no detections on other images
-        # self.run_model(model, [(images,),(test_images,)],
-        #                input_names=["images_tensors"],
-        #                output_names=["boxes", "labels", "scores"],
-        #                dynamic_axes={"images_tensors": [0, 1, 2, 3], "boxes": [0, 1], "labels": [0],
-        #                              "scores": [0], "masks": [0, 1, 2, 3]},
-        #                tolerate_small_mismatch=True)
+        self.run_model(model, [(test_images,), (images,)],
+                       input_names=["images_tensors"],
+                       output_names=["boxes", "labels", "scores", "masks"],
+                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "boxes": [0, 1], "labels": [0],
+                                     "scores": [0], "masks": [0, 1, 2, 3]},
+                       tolerate_small_mismatch=True)
 
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
     # This test also compares both heatmaps_to_keypoints and _onnx_heatmaps_to_keypoints
