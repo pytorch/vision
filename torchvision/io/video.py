@@ -106,7 +106,7 @@ def _read_from_stream(
         )
 
     frames = {}
-    should_buffer = False
+    should_buffer = True
     max_buffer_size = 5
     if stream.type == "video":
         # DivX-style packed B-frames can have out-of-order pts (2 frames in a single pkt)

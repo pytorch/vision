@@ -84,7 +84,8 @@ class VideoMetaData(object):
 
 
 def _validate_pts(pts_range):
-    # type: (List[int])
+    # type: (List[int]) -> None
+
     if pts_range[1] > 0:
         assert (
             pts_range[0] <= pts_range[1]

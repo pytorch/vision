@@ -1,4 +1,4 @@
-from typing import Union, Optional, Sequence, Tuple, Text, BinaryIO
+from typing import Union, Optional, List, Tuple, Text, BinaryIO
 import io
 import pathlib
 import torch
@@ -7,7 +7,7 @@ irange = range
 
 
 def make_grid(
-    tensor: Union[torch.Tensor, Sequence[torch.Tensor]],
+    tensor: Union[torch.Tensor, List[torch.Tensor]],
     nrow: int = 8,
     padding: int = 2,
     normalize: bool = False,
@@ -91,15 +91,17 @@ def make_grid(
         for x in irange(xmaps):
             if k >= nmaps:
                 break
-            grid.narrow(1, y * height + padding, height - padding)\
-                .narrow(2, x * width + padding, width - padding)\
-                .copy_(tensor[k])
+            # Tensor.copy_() is a valid method but seems to be missing from the stubs
+            # https://pytorch.org/docs/stable/tensors.html#torch.Tensor.copy_
+            grid.narrow(1, y * height + padding, height - padding).narrow(  # type: ignore[attr-defined]
+                2, x * width + padding, width - padding
+            ).copy_(tensor[k])
             k = k + 1
     return grid
 
 
 def save_image(
-    tensor: Union[torch.Tensor, Sequence[torch.Tensor]],
+    tensor: Union[torch.Tensor, List[torch.Tensor]],
     fp: Union[Text, pathlib.Path, BinaryIO],
     nrow: int = 8,
     padding: int = 2,
