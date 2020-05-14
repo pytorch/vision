@@ -48,6 +48,7 @@ def inception_v3(pretrained=False, progress=True, **kwargs):
             kwargs['aux_logits'] = True
         else:
             original_aux_logits = True
+        kwargs['init_weights'] = False  # we are loading weights from a pretrained model
         model = Inception3(**kwargs)
         state_dict = load_state_dict_from_url(model_urls['inception_v3_google'],
                                               progress=progress)
