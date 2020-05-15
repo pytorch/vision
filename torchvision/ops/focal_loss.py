@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 
+
 def sigmoid_focal_loss(
     inputs,
     targets,

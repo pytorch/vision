@@ -72,10 +72,10 @@ class RetinaNetClassificationHead(nn.Module):
             conv.append(nn.ReLU())
         self.conv = nn.Sequential(*conv)
 
-        for l in self.conv.children():
-            if isinstance(l, nn.Conv2d):
-                torch.nn.init.normal_(l.weight, std=0.01)
-                torch.nn.init.constant_(l.bias, 0)
+        for layer in self.conv.children():
+            if isinstance(layer, nn.Conv2d):
+                torch.nn.init.normal_(layer.weight, std=0.01)
+                torch.nn.init.constant_(layer.bias, 0)
 
         self.cls_logits = nn.Conv2d(in_channels, num_anchors * num_classes, kernel_size=3, stride=1, padding=1)
         torch.nn.init.normal_(self.cls_logits.weight, std=0.01)
@@ -161,10 +161,10 @@ class RetinaNetRegressionHead(nn.Module):
         torch.nn.init.normal_(self.bbox_reg.weight, std=0.01)
         torch.nn.init.zeros_(self.bbox_reg.bias)
 
-        for l in self.conv.children():
-            if isinstance(l, nn.Conv2d):
-                torch.nn.init.normal_(l.weight, std=0.01)
-                torch.nn.init.zeros_(l.bias)
+        for layer in self.conv.children():
+            if isinstance(layer, nn.Conv2d):
+                torch.nn.init.normal_(layer.weight, std=0.01)
+                torch.nn.init.zeros_(layer.bias)
 
         self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
 
@@ -174,7 +174,8 @@ class RetinaNetRegressionHead(nn.Module):
 
         bbox_regression = head_outputs['bbox_regression']
 
-        for targets_per_image, bbox_regression_per_image, anchors_per_image, matched_idxs_per_image in zip(targets, bbox_regression, anchors, matched_idxs):
+        for targets_per_image, bbox_regression_per_image, anchors_per_image, matched_idxs_per_image in \
+                zip(targets, bbox_regression, anchors, matched_idxs):
             # no matched_idxs means there were no annotations in this image
             if matched_idxs_per_image is None:
                 loss.append(0)
@@ -199,7 +200,13 @@ class RetinaNetRegressionHead(nn.Module):
             target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
 
             # compute the loss
-            loss.append(det_utils.smooth_l1_loss(bbox_regression_per_image, target_regression, size_average=False) / max(1, num_foreground))
+            loss.append(
+                det_utils.smooth_l1_loss(
+                    bbox_regression_per_image,
+                    target_regression,
+                    size_average=False
+                ) / max(1, num_foreground)
+            )
 
         return sum(loss) / max(1, len(loss))
 
@@ -292,8 +299,10 @@ class RetinaNet(nn.Module):
         >>> # ratios. We have a Tuple[Tuple[int]] because each feature
         >>> # map could potentially have different sizes and
         >>> # aspect ratios
-        >>> anchor_generator = AnchorGenerator(sizes=tuple((x, int(x * 2 ** (1.0 / 3)), int(x * 2 ** (2.0 / 3))) for x in [32, 64, 128, 256, 512]),
-        >>>                                    aspect_ratios=((0.5, 1.0, 2.0),) * 5)
+        >>> anchor_generator = AnchorGenerator(
+        >>>     sizes=tuple((x, int(x * 2 ** (1.0 / 3)), int(x * 2 ** (2.0 / 3))) for x in [32, 64, 128, 256, 512]),
+        >>>     aspect_ratios=((0.5, 1.0, 2.0),) * 5
+        >>> )
         >>>
         >>> # put the pieces together inside a RetinaNet model
         >>> model = RetinaNet(backbone,
@@ -401,11 +410,13 @@ class RetinaNet(nn.Module):
 
         detections = []
 
-        for image_index, (box_regression_per_image, scores_per_image, labels_per_image, anchors_per_image, image_shape) in enumerate(zip(box_regression, scores, labels, anchors, image_shapes)):
+        for index, (box_regression_per_image, scores_per_image, labels_per_image, anchors_per_image, image_shape) in \
+                enumerate(zip(box_regression, scores, labels, anchors, image_shapes)):
+
             boxes_per_image = self.box_coder.decode_single(box_regression_per_image, anchors_per_image)
             boxes_per_image = box_ops.clip_boxes_to_image(boxes_per_image, image_shape)
 
-            other_outputs_per_image = [(k, v[image_index]) for k, v in other_outputs.items()]
+            other_outputs_per_image = [(k, v[index]) for k, v in other_outputs.items()]
 
             image_boxes = []
             image_scores = []
@@ -415,12 +426,14 @@ class RetinaNet(nn.Module):
             for class_index in range(num_classes):
                 # remove low scoring boxes
                 inds = torch.gt(scores_per_image[:, class_index], self.score_thresh)
-                boxes_per_class, scores_per_class, labels_per_class = boxes_per_image[inds], scores_per_image[inds, class_index], labels_per_image[inds, class_index]
+                boxes_per_class, scores_per_class, labels_per_class = \
+                    boxes_per_image[inds], scores_per_image[inds, class_index], labels_per_image[inds, class_index]
                 other_outputs_per_class = [(k, v[inds]) for k, v in other_outputs_per_image]
 
                 # remove empty boxes
                 keep = box_ops.remove_small_boxes(boxes_per_class, min_size=1e-2)
-                boxes_per_class, scores_per_class, labels_per_class = boxes_per_class[keep], scores_per_class[keep], labels_per_class[keep]
+                boxes_per_class, scores_per_class, labels_per_class = \
+                    boxes_per_class[keep], scores_per_class[keep], labels_per_class[keep]
                 other_outputs_per_class = [(k, v[keep]) for k, v in other_outputs_per_class]
 
                 # non-maximum suppression, independently done per class
@@ -428,7 +441,8 @@ class RetinaNet(nn.Module):
 
                 # keep only topk scoring predictions
                 keep = keep[:self.detections_per_img]
-                boxes_per_class, scores_per_class, labels_per_class = boxes_per_class[keep], scores_per_class[keep], labels_per_class[keep]
+                boxes_per_class, scores_per_class, labels_per_class = \
+                    boxes_per_class[keep], scores_per_class[keep], labels_per_class[keep]
                 other_outputs_per_class = [(k, v[keep]) for k, v in other_outputs_per_class]
 
                 image_boxes.append(boxes_per_class)
