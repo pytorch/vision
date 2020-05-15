@@ -5,6 +5,6 @@
        i += (blockDim.x * gridDim.x))
 
 template <typename integer>
-constexpr inline integer ceil_div(integer n, integer m) {
+constexpr __host__ __device__ inline integer ceil_div(integer n, integer m) {
   return (n + m - 1) / m;
 }
