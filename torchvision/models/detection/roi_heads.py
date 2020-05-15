@@ -323,7 +323,7 @@ def keypointrcnn_inference(x, boxes):
 
 @torch.jit.script
 def _onnx_expand_boxes(boxes, scale):
-    # type: (Tensor, float)
+    # type: (Tensor, float) -> Tensor
     if boxes.numel() == 0:
         return torch.empty(0, dtype=boxes.dtype)
     else:
