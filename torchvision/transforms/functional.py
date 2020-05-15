@@ -82,14 +82,13 @@ def to_tensor(pic):
         return img
 
 
-def pil_to_tensor(pic, swap_to_channelsfirst=True):
+def pil_to_tensor(pic):
     """Convert a ``PIL Image`` to a tensor of the same type.
 
     See ``AsTensor`` for more details.
 
     Args:
         pic (PIL Image): Image to be converted to tensor.
-        swap_to_channelsfirst (bool): Boolean indicator to convert to CHW format.
 
     Returns:
         Tensor: Converted image.
@@ -105,10 +104,8 @@ def pil_to_tensor(pic, swap_to_channelsfirst=True):
     # handle PIL Image
     img = torch.as_tensor(np.asarray(pic))
     img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
-
-    if swap_to_channelsfirst:
-        # put it from HWC to CHW format
-        img = img.permute((2, 0, 1))
+    # put it from HWC to CHW format
+    img = img.permute((2, 0, 1))
     return img
 
 
