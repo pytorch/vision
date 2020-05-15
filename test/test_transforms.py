@@ -516,7 +516,6 @@ class Tester(unittest.TestCase):
         test_channels = [1, 3, 4]
         height, width = 4, 4
         trans = transforms.PILToTensor()
-        trans_noswap = transforms.PILToTensor(swap_to_channelsfirst=False)
 
         with self.assertRaises(TypeError):
             trans(np.random.rand(1, height, width).tolist())
@@ -528,33 +527,16 @@ class Tester(unittest.TestCase):
             output = trans(img)
             self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
-            input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
-            img = transforms.ToPILImage()(input_data)  # CHW -> HWC
-            output = trans_noswap(img).permute(2, 0, 1)  # HWC -> CHW
-            self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
-
             input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
             img = transforms.ToPILImage()(input_data)
             output = trans(img)
             expected_output = input_data.transpose((2, 0, 1))
             self.assertTrue(np.allclose(output.numpy(), expected_output))
 
-            input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
-            img = transforms.ToPILImage()(input_data)
-            output = trans_noswap(img)
-            expected_output = input_data
-            self.assertTrue(np.allclose(output.numpy(), expected_output))
-
             input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
             img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
             output = trans(img)  # HWC -> CHW
             expected_output = (input_data * 255).byte()
-            self.assertTrue(np.allclose(output.numpy(), expected_output.numpy()))
-
-            input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
-            img = transforms.ToPILImage()(input_data)  # CHW -> HWC
-            output = trans_noswap(img)  # HWC -> HWC
-            expected_output = (input_data.permute(1, 2, 0) * 255).byte()  # CHW -> HWC
             self.assertTrue(np.allclose(output.numpy(), expected_output.numpy()))
 
         # separate test for mode '1' PIL images
