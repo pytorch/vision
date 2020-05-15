@@ -39,12 +39,14 @@ class RetinaNetHead(nn.Module):
         self.regression_head = RetinaNetRegressionHead(in_channels, num_anchors)
 
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
+        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Tensor
         return {
             'classification': self.classification_head.compute_loss(targets, head_outputs, matched_idxs),
             'bbox_regression': self.regression_head.compute_loss(targets, head_outputs, anchors, matched_idxs),
         }
 
     def forward(self, x):
+        # type: (List[Tensor]) -> Dict[str, Tensor]
         return {
             'cls_logits': self.classification_head(x),
             'bbox_regression': self.regression_head(x)
@@ -83,13 +85,14 @@ class RetinaNetClassificationHead(nn.Module):
         self.num_anchors = num_anchors
 
     def compute_loss(self, targets, head_outputs, matched_idxs):
+        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor]) -> Tensor
         loss = []
 
         cls_logits = head_outputs['cls_logits']
 
         for targets_per_image, cls_logits_per_image, matched_idxs_per_image in zip(targets, cls_logits, matched_idxs):
             # no matched_idxs means there were no annotations in this image
-            if matched_idxs_per_image is None:
+            if matched_idxs_per_image.numel() == 0:
                 gt_classes_target = torch.zeros_like(cls_logits_per_image)
                 valid_idxs_per_image = torch.arange(cls_logits_per_image.shape[0])
                 num_foreground = 0
@@ -100,7 +103,10 @@ class RetinaNetClassificationHead(nn.Module):
 
                 # create the target classification
                 gt_classes_target = torch.zeros_like(cls_logits_per_image)
-                gt_classes_target[foreground_idxs_per_image, targets_per_image['labels'][matched_idxs_per_image[foreground_idxs_per_image]]] = 1
+                gt_classes_target[
+                    foreground_idxs_per_image,
+                    targets_per_image['labels'][matched_idxs_per_image[foreground_idxs_per_image]]
+                ] = torch.tensor(1.0)
 
                 # find indices for which anchors should be ignored
                 valid_idxs_per_image = matched_idxs_per_image != det_utils.Matcher.BETWEEN_THRESHOLDS
@@ -115,6 +121,7 @@ class RetinaNetClassificationHead(nn.Module):
         return sum(loss) / len(loss)
 
     def forward(self, x):
+        # type: (List[Tensor]) -> Tensor
         all_cls_logits = []
 
         for features in x:
@@ -162,6 +169,7 @@ class RetinaNetRegressionHead(nn.Module):
         self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
 
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
+        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Tensor
         loss = []
 
         bbox_regression = head_outputs['bbox_regression']
@@ -196,6 +204,7 @@ class RetinaNetRegressionHead(nn.Module):
         return sum(loss) / max(1, len(loss))
 
     def forward(self, x):
+        # type: (List[Tensor]) -> Tensor
         all_bbox_regression = []
 
         for features in x:
@@ -283,8 +292,8 @@ class RetinaNet(nn.Module):
         >>> # ratios. We have a Tuple[Tuple[int]] because each feature
         >>> # map could potentially have different sizes and
         >>> # aspect ratios
-        >>> anchor_generator = AnchorGenerator(sizes=[[x, x * 2 ** (1.0 / 3), x * 2 ** (2.0 / 3)] for x in [32, 64, 128, 256, 512]],
-        >>>                                    aspect_ratios=[[0.5, 1.0, 2.0]] * 5)
+        >>> anchor_generator = AnchorGenerator(sizes=tuple((x, int(x * 2 ** (1.0 / 3)), int(x * 2 ** (2.0 / 3))) for x in [32, 64, 128, 256, 512]),
+        >>>                                    aspect_ratios=((0.5, 1.0, 2.0),) * 5)
         >>>
         >>> # put the pieces together inside a RetinaNet model
         >>> model = RetinaNet(backbone,
@@ -318,7 +327,7 @@ class RetinaNet(nn.Module):
         assert isinstance(anchor_generator, (AnchorGenerator, type(None)))
 
         if anchor_generator is None:
-            anchor_sizes = [[x, x * 2 ** (1.0 / 3), x * 2 ** (2.0 / 3)] for x in [32, 64, 128, 256, 512]]
+            anchor_sizes = tuple((x, int(x * 2 ** (1.0 / 3)), int(x * 2 ** (2.0 / 3))) for x in [32, 64, 128, 256, 512])
             aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
             anchor_generator = AnchorGenerator(
                 anchor_sizes, aspect_ratios
@@ -361,10 +370,11 @@ class RetinaNet(nn.Module):
         return detections
 
     def compute_loss(self, targets, head_outputs, anchors):
+        # type: (List[Dict[str, Tensor]], List[Tensor], List[Tensor]) -> Dict[str, Tensor]
         matched_idxs = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
             if targets_per_image['boxes'].numel() == 0:
-                matched_idxs.append(None)
+                matched_idxs.append(torch.empty((0,)))
                 continue
 
             match_quality_matrix = box_ops.box_iou(targets_per_image['boxes'], anchors_per_image)
@@ -440,7 +450,7 @@ class RetinaNet(nn.Module):
         return detections
 
     def forward(self, images, targets=None):
-        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]])
+        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
         """
         Arguments:
             images (list[Tensor]): images to be processed
