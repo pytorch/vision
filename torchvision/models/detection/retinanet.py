@@ -392,7 +392,7 @@ class RetinaNet(nn.Module):
         return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
 
     def postprocess_detections(self, head_outputs, anchors, image_shapes):
-        # type: (Tensor, Tensor, List[Tensor], List[Tuple[int, int]])
+        # type: (Dict[str, Tensor], List[Tensor], List[Tuple[int, int]]) -> Dict[str, Tensor]
         # TODO: Merge this with roi_heads.RoIHeads.postprocess_detections ?
 
         class_logits = head_outputs.pop('cls_logits')
