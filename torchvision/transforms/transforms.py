@@ -98,23 +98,18 @@ class ToTensor(object):
 class PILToTensor(object):
     """Convert a ``PIL Image`` to a tensor of the same type.
 
-    Converts a PIL Image (H x W x C) to a torch.Tensor. If swap_to_channelsfirst is True
-    the returned shape will be (C x H x W) otherwise the shape will remain unchanged.
+    Converts a PIL Image (H x W x C) to a torch.Tensor of shape (C x H x W).
     """
-    def __init__(self, swap_to_channelsfirst=True):
-        self.swap_to_channelsfirst = swap_to_channelsfirst
 
     def __call__(self, pic):
         """
         Args:
             pic (PIL Image): Image to be converted to tensor.
-            swap_to_channelsfirst (bool): Boolean indicator to swap to channels first format.
-                Defaults to True.
 
         Returns:
             Tensor: Converted image.
         """
-        return F.pil_to_tensor(pic, self.swap_to_channelsfirst)
+        return F.pil_to_tensor(pic)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
