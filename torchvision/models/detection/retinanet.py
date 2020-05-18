@@ -3,8 +3,8 @@ from collections import OrderedDict
 import warnings
 
 import torch
-from torch import nn
-import torch.nn.functional as F
+import torch.nn as nn
+from torch import Tensor
 from torch.jit.annotations import Dict, List, Tuple
 
 from ..utils import load_state_dict_from_url
@@ -39,7 +39,7 @@ class RetinaNetHead(nn.Module):
         self.regression_head = RetinaNetRegressionHead(in_channels, num_anchors)
 
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
-        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Tensor
+        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Dict[str, Tensor]
         return {
             'classification': self.classification_head.compute_loss(targets, head_outputs, matched_idxs),
             'bbox_regression': self.regression_head.compute_loss(targets, head_outputs, anchors, matched_idxs),
@@ -84,9 +84,14 @@ class RetinaNetClassificationHead(nn.Module):
         self.num_classes = num_classes
         self.num_anchors = num_anchors
 
+        # This is to fix using det_utils.Matcher.BETWEEN_THRESHOLDS in TorchScript.
+        # TorchScript doesn't support class attributes.
+        # https://github.com/pytorch/vision/pull/1697#issuecomment-630255584
+        self.BETWEEN_THRESHOLDS = det_utils.Matcher.BETWEEN_THRESHOLDS
+
     def compute_loss(self, targets, head_outputs, matched_idxs):
         # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor]) -> Tensor
-        loss = []
+        loss = torch.tensor(0.0)
 
         cls_logits = head_outputs['cls_logits']
 
@@ -95,7 +100,7 @@ class RetinaNetClassificationHead(nn.Module):
             if matched_idxs_per_image.numel() == 0:
                 gt_classes_target = torch.zeros_like(cls_logits_per_image)
                 valid_idxs_per_image = torch.arange(cls_logits_per_image.shape[0])
-                num_foreground = 0
+                num_foreground = torch.tensor(0.0)
             else:
                 # determine only the foreground
                 foreground_idxs_per_image = matched_idxs_per_image >= 0
@@ -109,16 +114,16 @@ class RetinaNetClassificationHead(nn.Module):
                 ] = torch.tensor(1.0)
 
                 # find indices for which anchors should be ignored
-                valid_idxs_per_image = matched_idxs_per_image != det_utils.Matcher.BETWEEN_THRESHOLDS
+                valid_idxs_per_image = matched_idxs_per_image != self.BETWEEN_THRESHOLDS
 
             # compute the classification loss
-            loss.append(sigmoid_focal_loss(
+            loss += sigmoid_focal_loss(
                 cls_logits_per_image[valid_idxs_per_image],
                 gt_classes_target[valid_idxs_per_image],
                 reduction='sum',
-            ) / max(1, num_foreground))
+            ) / max(1, num_foreground)
 
-        return sum(loss) / len(loss)
+        return loss / len(targets)
 
     def forward(self, x):
         # type: (List[Tensor]) -> Tensor
@@ -170,7 +175,7 @@ class RetinaNetRegressionHead(nn.Module):
 
     def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
         # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Tensor
-        loss = []
+        loss = torch.tensor(0.0)
 
         bbox_regression = head_outputs['bbox_regression']
 
@@ -200,15 +205,13 @@ class RetinaNetRegressionHead(nn.Module):
             target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
 
             # compute the loss
-            loss.append(
-                det_utils.smooth_l1_loss(
-                    bbox_regression_per_image,
-                    target_regression,
-                    size_average=False
-                ) / max(1, num_foreground)
-            )
+            loss += det_utils.smooth_l1_loss(
+                bbox_regression_per_image,
+                target_regression,
+                size_average=False
+            ) / max(1, num_foreground)
 
-        return sum(loss) / max(1, len(loss))
+        return loss / max(1, len(targets))
 
     def forward(self, x):
         # type: (List[Tensor]) -> Tensor
@@ -379,7 +382,7 @@ class RetinaNet(nn.Module):
         return detections
 
     def compute_loss(self, targets, head_outputs, anchors):
-        # type: (List[Dict[str, Tensor]], List[Tensor], List[Tensor]) -> Dict[str, Tensor]
+        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor]) -> Dict[str, Tensor]
         matched_idxs = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
             if targets_per_image['boxes'].numel() == 0:
@@ -392,7 +395,7 @@ class RetinaNet(nn.Module):
         return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
 
     def postprocess_detections(self, head_outputs, anchors, image_shapes):
-        # type: (Dict[str, Tensor], List[Tensor], List[Tuple[int, int]]) -> Dict[str, Tensor]
+        # type: (Dict[str, Tensor], List[Tensor], List[Tuple[int, int]]) -> List[Dict[str, Tensor]]
         # TODO: Merge this with roi_heads.RoIHeads.postprocess_detections ?
 
         class_logits = head_outputs.pop('cls_logits')
@@ -408,7 +411,7 @@ class RetinaNet(nn.Module):
         labels = torch.arange(num_classes, device=device)
         labels = labels.view(1, -1).expand_as(scores)
 
-        detections = []
+        detections = torch.jit.annotate(List[Dict[str, Tensor]], [])
 
         for index, (box_regression_per_image, scores_per_image, labels_per_image, anchors_per_image, image_shape) in \
                 enumerate(zip(box_regression, scores, labels, anchors, image_shapes)):
@@ -421,7 +424,7 @@ class RetinaNet(nn.Module):
             image_boxes = []
             image_scores = []
             image_labels = []
-            image_other_outputs = {k: [] for k in other_outputs.keys()}
+            image_other_outputs = torch.jit.annotate(Dict[str, List[Tensor]], {})
 
             for class_index in range(num_classes):
                 # remove low scoring boxes
@@ -450,6 +453,8 @@ class RetinaNet(nn.Module):
                 image_labels.append(labels_per_class)
 
                 for k, v in other_outputs_per_class:
+                    if k not in image_other_outputs:
+                        image_other_outputs[k] = []
                     image_other_outputs[k].append(v)
 
             detections.append({
@@ -510,7 +515,7 @@ class RetinaNet(nn.Module):
         anchors = self.anchor_generator(images, features)
 
         losses = {}
-        detections = torch.jit.annotate(List[Dict[str, torch.Tensor]], [])
+        detections = torch.jit.annotate(List[Dict[str, Tensor]], [])
         if self.training:
             assert targets is not None
 
