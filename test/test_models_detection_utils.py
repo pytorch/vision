@@ -40,7 +40,7 @@ class Tester(unittest.TestCase):
         image = [torch.rand(3, 200, 300), torch.rand(3, 200, 200)]
         targets = [{'boxes': torch.rand(3, 4)}, {'boxes': torch.rand(2, 4)}]
         targets_copy = copy.deepcopy(targets)
-        out = transform(image, targets)
+        out = transform(image, targets)  # noqa: F841
         self.assertTrue(torch.equal(targets[0]['boxes'], targets_copy[0]['boxes']))
         self.assertTrue(torch.equal(targets[1]['boxes'], targets_copy[1]['boxes']))
 
