@@ -113,15 +113,15 @@ class GeneralizedRCNNTransform(nn.Module):
         std = torch.as_tensor(self.image_std, dtype=dtype, device=device)
         return (image - mean[:, None, None]) / std[:, None, None]
 
-    def torch_choice(self, l):
+    def torch_choice(self, k):
         # type: (List[int]) -> int
         """
         Implements `random.choice` via torch ops so it can be compiled with
         TorchScript. Remove if https://github.com/pytorch/pytorch/issues/25803
         is fixed.
         """
-        index = int(torch.empty(1).uniform_(0., float(len(l))).item())
-        return l[index]
+        index = int(torch.empty(1).uniform_(0., float(len(k))).item())
+        return k[index]
 
     def resize(self, image, target):
         # type: (Tensor, Optional[Dict[str, Tensor]]) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]
