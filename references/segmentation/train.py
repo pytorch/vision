@@ -66,7 +66,8 @@ def evaluate(model, data_loader, device, num_classes):
             output = model(image)
             output = output['out']
 
-            confmat.update(target.flatten(), output.argmax(1).flatten())
+            for a, b in zip(target, output):
+                confmat.update(a.flatten(), b.argmax(0).flatten())
 
         confmat.reduce_from_all_processes()
 
@@ -84,12 +85,15 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
         loss = criterion(output, target)
 
         optimizer.zero_grad()
-        loss.backward()
+        for l in loss:
+            l.backward(retain_graph=True)
+
         optimizer.step()
 
         lr_scheduler.step()
 
-        metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
+        for l in loss:
+            metric_logger.update(loss=l.item(), lr=optimizer.param_groups[0]["lr"])
 
 
 def main(args):
@@ -117,7 +121,7 @@ def main(args):
         collate_fn=utils.collate_fn, drop_last=True)
 
     data_loader_test = torch.utils.data.DataLoader(
-        dataset_test, batch_size=1,
+        dataset_test, batch_size=args.batch_size,
         sampler=test_sampler, num_workers=args.workers,
         collate_fn=utils.collate_fn)
 
