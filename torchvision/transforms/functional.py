@@ -82,6 +82,33 @@ def to_tensor(pic):
         return img
 
 
+def pil_to_tensor(pic):
+    """Convert a ``PIL Image`` to a tensor of the same type.
+
+    See ``AsTensor`` for more details.
+
+    Args:
+        pic (PIL Image): Image to be converted to tensor.
+
+    Returns:
+        Tensor: Converted image.
+    """
+    if not(_is_pil_image(pic)):
+        raise TypeError('pic should be PIL Image. Got {}'.format(type(pic)))
+
+    if accimage is not None and isinstance(pic, accimage.Image):
+        nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
+        pic.copyto(nppic)
+        return torch.as_tensor(nppic)
+
+    # handle PIL Image
+    img = torch.as_tensor(np.asarray(pic))
+    img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
+    # put it from HWC to CHW format
+    img = img.permute((2, 0, 1))
+    return img
+
+
 def to_pil_image(pic, mode=None):
     """Convert a tensor or an ndarray to PIL Image.
 
