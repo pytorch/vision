@@ -38,7 +38,6 @@ def initLevelMapper(k_min, k_max, canonical_scale=224, canonical_level=4, eps=1e
     return LevelMapper(k_min, k_max, canonical_scale, canonical_level, eps)
 
 
-@torch.jit.script
 class LevelMapper(object):
     """Determine which FPN level each RoI in a set of RoIs should map to based
     on the heuristic in the FPN paper.
