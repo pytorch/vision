@@ -82,6 +82,18 @@ class GeneralizedRCNNTransform(nn.Module):
                 ):
         # type: (...) -> Tuple[ImageList, Optional[List[Dict[str, Tensor]]]]
         images = [img for img in images]
+        if targets is not None:
+            # make a copy of targets to avoid modifying it in-place
+            # once torchscript supports dict comprehension
+            # this can be simplified as as follows
+            # targets = [{k: v for k,v in t.items()} for t in targets]
+            targets_copy: List[Dict[str, Tensor]] = []
+            for t in targets:
+                data: Dict[str, Tensor] = {}
+                for k, v in t.items():
+                    data[k] = v
+                targets_copy.append(data)
+            targets = targets_copy
         for i in range(len(images)):
             image = images[i]
             target_index = targets[i] if targets is not None else None

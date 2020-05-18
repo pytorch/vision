@@ -1,5 +1,7 @@
+import copy
 import torch
 from torchvision.models.detection import _utils
+from torchvision.models.detection.transform import GeneralizedRCNNTransform
 import unittest
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
 
@@ -32,6 +34,15 @@ class Tester(unittest.TestCase):
             is_frozen = [not parameter.requires_grad for _, parameter in model.named_parameters()]
             # check that expected initial number of layers are frozen
             self.assertTrue(all(is_frozen[:exp_froz_params]))
+
+    def test_transform_copy_targets(self):
+        transform = GeneralizedRCNNTransform(300, 500, torch.zeros(3), torch.ones(3))
+        image = [torch.rand(3, 200, 300), torch.rand(3, 200, 200)]
+        targets = [{'boxes': torch.rand(3, 4)}, {'boxes': torch.rand(2, 4)}]
+        targets_copy = copy.deepcopy(targets)
+        out = transform(image, targets)
+        self.assertTrue(torch.equal(targets[0]['boxes'], targets_copy[0]['boxes']))
+        self.assertTrue(torch.equal(targets[1]['boxes'], targets_copy[1]['boxes']))
 
 
 if __name__ == '__main__':
