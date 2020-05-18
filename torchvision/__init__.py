@@ -62,7 +62,11 @@ def set_video_backend(backend):
             "Invalid video backend '%s'. Options are 'pyav' and 'video_reader'" % backend
         )
     if backend == "video_reader" and not io._HAS_VIDEO_OPT:
-        warnings.warn("video_reader video backend is not available")
+        message = (
+            "video_reader video backend is not available."
+            " Please compile torchvision from source and try again"
+        )
+        warnings.warn(message)
     else:
         _video_backend = backend
 
