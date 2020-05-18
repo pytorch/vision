@@ -27,15 +27,15 @@ class Tester(unittest.TestCase):
 
         for _, labels in loader:
             bins = defaultdict(int)
-            for l in labels.tolist():
-                bins[l] += 1
+            for label in labels.tolist():
+                bins[label] += 1
 
             # Ensure that each batch has samples from exactly p classes
             self.assertEqual(len(bins), p)
 
             # Ensure that there are k samples from each class
-            for l in bins:
-                self.assertEqual(bins[l], k)
+            for b in bins:
+                self.assertEqual(bins[b], k)
 
 
 if __name__ == '__main__':
