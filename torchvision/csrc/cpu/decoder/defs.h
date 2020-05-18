@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <array>
 
 extern "C" {
 #include <libavcodec/avcodec.h>
