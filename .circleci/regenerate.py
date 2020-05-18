@@ -24,7 +24,7 @@ def workflows(prefix='', filter_branch=None, upload=False, indentation=6, window
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = ["3.6", "3.7", "3.8"]
-            cu_versions = (["cpu", "cu92", "cu101", "cu102"] if os_type == "linux" or os_type == "win" else ["cpu"])
+            cu_versions = (["cpu", "cu92", "cu101", "cu102"] if os_type in ("linux", "win") else ["cpu"])
             for python_version in python_versions:
                 for cu_version in cu_versions:
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
@@ -76,7 +76,7 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
     d = {
         "name": base_workflow_name,
         "python_version": python_version,
-        "cu_version": cu_version.replace("cu", "") if os_type == "win" else cu_version,
+        "cu_version": cu_version,
     }
 
     if os_type != "win" and unicode:
