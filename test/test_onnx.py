@@ -397,7 +397,7 @@ class ONNXExporterTester(unittest.TestCase):
 
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
-        dummy_image = [torch.ones(3, 100, 320) * 0.3]
+        dummy_image = [torch.ones(3, 100, 100) * 0.3]
         model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
