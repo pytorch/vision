@@ -321,26 +321,22 @@ def keypointrcnn_inference(x, boxes):
     return kp_probs, kp_scores
 
 
-@torch.jit.script
 def _onnx_expand_boxes(boxes, scale):
     # type: (Tensor, float) -> Tensor
-    if boxes.numel() == 0:
-        return torch.empty(0, dtype=boxes.dtype)
-    else:
-        w_half = (boxes[:, 2] - boxes[:, 0]).to(dtype=torch.float64) * .5
-        h_half = (boxes[:, 3] - boxes[:, 1]).to(dtype=torch.float64) * .5
-        x_c = (boxes[:, 2] + boxes[:, 0]).to(dtype=torch.float64) * .5
-        y_c = (boxes[:, 3] + boxes[:, 1]).to(dtype=torch.float64) * .5
+    w_half = (boxes[:, 2] - boxes[:, 0]) * .5
+    h_half = (boxes[:, 3] - boxes[:, 1]) * .5
+    x_c = (boxes[:, 2] + boxes[:, 0]) * .5
+    y_c = (boxes[:, 3] + boxes[:, 1]) * .5
 
-        w_half = w_half.to(dtype=torch.float64) * scale
-        h_half = h_half.to(dtype=torch.float64) * scale
+    w_half = w_half.to(dtype=torch.float32) * scale
+    h_half = h_half.to(dtype=torch.float32) * scale
 
-        boxes_exp0 = x_c - w_half
-        boxes_exp1 = y_c - h_half
-        boxes_exp2 = x_c + w_half
-        boxes_exp3 = y_c + h_half
-        boxes_exp = torch.stack((boxes_exp0, boxes_exp1, boxes_exp2, boxes_exp3), 1)
-        return boxes_exp.to(dtype=boxes.dtype)
+    boxes_exp0 = x_c - w_half
+    boxes_exp1 = y_c - h_half
+    boxes_exp2 = x_c + w_half
+    boxes_exp3 = y_c + h_half
+    boxes_exp = torch.stack((boxes_exp0, boxes_exp1, boxes_exp2, boxes_exp3), 1)
+    return boxes_exp
 
 
 # the next two functions should be merged inside Masker
