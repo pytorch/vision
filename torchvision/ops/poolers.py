@@ -9,6 +9,7 @@ from torchvision.ops.boxes import box_area
 from torch.jit.annotations import Optional, List, Dict, Tuple
 import torchvision
 
+
 # copying result_idx_in_level to a specific index in result[]
 # is not supported by ONNX tracing yet.
 # _onnx_merge_levels() is an implementation supported by ONNX
@@ -21,13 +22,13 @@ def _onnx_merge_levels(levels, unmerged_results):
     res = torch.zeros((levels.size(0), first_result.size(1),
                        first_result.size(2), first_result.size(3)),
                       dtype=dtype, device=device)
-    for l in range(len(unmerged_results)):
-        index = (levels == l).nonzero().view(-1, 1, 1, 1)
+    for level in range(len(unmerged_results)):
+        index = (levels == level).nonzero().view(-1, 1, 1, 1)
         index = index.expand(index.size(0),
-                             unmerged_results[l].size(1),
-                             unmerged_results[l].size(2),
-                             unmerged_results[l].size(3))
-        res = res.scatter(0, index, unmerged_results[l])
+                             unmerged_results[level].size(1),
+                             unmerged_results[level].size(2),
+                             unmerged_results[level].size(3))
+        res = res.scatter(0, index, unmerged_results[level])
     return res
 
 
@@ -37,7 +38,6 @@ def initLevelMapper(k_min, k_max, canonical_scale=224, canonical_level=4, eps=1e
     return LevelMapper(k_min, k_max, canonical_scale, canonical_level, eps)
 
 
-@torch.jit.script
 class LevelMapper(object):
     """Determine which FPN level each RoI in a set of RoIs should map to based
     on the heuristic in the FPN paper.

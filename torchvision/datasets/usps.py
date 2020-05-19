@@ -49,7 +49,7 @@ class USPS(VisionDataset):
 
         import bz2
         with bz2.open(full_path) as fp:
-            raw_data = [l.decode().split() for l in fp.readlines()]
+            raw_data = [line.decode().split() for line in fp.readlines()]
             imgs = [[x.split(':')[-1] for x in data[1:]] for data in raw_data]
             imgs = np.asarray(imgs, dtype=np.float32).reshape((-1, 16, 16))
             imgs = ((imgs + 1) / 2 * 255).astype(dtype=np.uint8)
