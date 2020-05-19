@@ -14,10 +14,16 @@ matplotlib
 
 Except otherwise noted, all models have been trained on 8x V100 GPUs. 
 
+You must modify the following flags:
+
+`--data-path=/path/to/coco/dataset`
+
+`--nproc_per_node=<number_of_gpus_available>`
+
 
 ### Faster R-CNN
 ```
-python -m torch.distributed.launch --nproc_per_node=<number_of_gpus> --use_env train.py\
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --dataset coco --model fasterrcnn_resnet50_fpn --epochs 26\
     --lr-steps 16 22 --aspect-ratio-group-factor 3
 ```
@@ -25,7 +31,7 @@ python -m torch.distributed.launch --nproc_per_node=<number_of_gpus> --use_env t
 
 ### Mask R-CNN
 ```
-python -m torch.distributed.launch --nproc_per_node=<number_of_gpus> --use_env train.py\
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --dataset coco --model maskrcnn_resnet50_fpn --epochs 26\
     --lr-steps 16 22 --aspect-ratio-group-factor 3
 ```
@@ -33,7 +39,7 @@ python -m torch.distributed.launch --nproc_per_node=<number_of_gpus> --use_env t
 
 ### Keypoint R-CNN
 ```
-python -m torch.distributed.launch --nproc_per_node=<number_of_gpus> --use_env train.py\
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --dataset coco_kp --model keypointrcnn_resnet50_fpn --epochs 46\
     --lr-steps 36 43 --aspect-ratio-group-factor 3
 ```
