@@ -4,12 +4,12 @@ This folder contains reference training scripts for object detection.
 They serve as a log of how to train specific models, to provide baseline
 training and evaluation scripts to quickly bootstrap research.
 
-Due to pycocotools not filling in their `setup.py` `install_requires` you
-must install pycocotools after you install cython seperately. 
+To execute the example commands below you must install the following:
 
 ```
-pip install cython
-pip install pycocotools matplotlib
+cython
+pycocotools
+matplotlib
 ```
 
 Except otherwise noted, all models have been trained on 8x V100 GPUs. 
