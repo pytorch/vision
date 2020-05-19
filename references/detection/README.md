@@ -12,14 +12,13 @@ pycocotools
 matplotlib
 ```
 
-Except otherwise noted, all models have been trained on 8x V100 GPUs. 
-
 You must modify the following flags:
 
 `--data-path=/path/to/coco/dataset`
 
 `--nproc_per_node=<number_of_gpus_available>`
 
+Except otherwise noted, all models have been trained on 8x V100 GPUs. 
 
 ### Faster R-CNN
 ```
