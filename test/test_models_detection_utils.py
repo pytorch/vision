@@ -3,7 +3,7 @@ import torch
 from torchvision.models.detection import _utils
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 import unittest
-from torchvision.models.detection import fasterrcnn_resnet50_fpn
+from torchvision.models.detection import fasterrcnn_resnet50_fpn, maskrcnn_resnet50_fpn, keypointrcnn_resnet50_fpn
 
 
 class Tester(unittest.TestCase):
@@ -33,6 +33,36 @@ class Tester(unittest.TestCase):
             # boolean list that is true if the param at that index is frozen
             is_frozen = [not parameter.requires_grad for _, parameter in model.named_parameters()]
             # check that expected initial number of layers are frozen
+            self.assertTrue(all(is_frozen[:exp_froz_params]))
+            
+    def test_maskrcnn_resnet50_fpn_frozen_layers(self):
+        # we know how many initial layers and parameters of the maskrcnn should
+        # be frozen for each trainable_backbone_layers paramter value
+        # i.e all 53 params are frozen if trainable_backbone_layers=0
+        # ad first 24 params are frozen if trainable_backbone_layers=2
+        expected_frozen_params = {0: 53, 1: 43, 2: 24, 3: 11, 4: 1, 5: 0}
+        for train_layers, exp_froz_params in expected_frozen_params.items():
+            model = maskrcnn_resnet50_fpn(pretrained=True, progress=False,
+                                            num_classes=91, pretrained_backbone=False,
+                                            trainable_backbone_layers=train_layers)
+            # boolean list that is true if the parameter at that index is frozen
+            is_frozen = [not parameter.requires_grad for _, parameter in model.named_parameters()]
+            # check that expected initial number of layers in maskrcnn are frozen
+            self.assertTrue(all(is_frozen[:exp_froz_params]))
+
+    def test_keypointrcnn_resnet50_fpn_frozen_layers(self):
+        # we know how many initial layers and parameters of the keypointrcnn should
+        # be frozen for each trainable_backbone_layers paramter value
+        # i.e all 53 params are frozen if trainable_backbone_layers=0
+        # ad first 24 params are frozen if trainable_backbone_layers=2
+        expected_frozen_params = {0: 53, 1: 43, 2: 24, 3: 11, 4: 1, 5: 0}
+        for train_layers, exp_froz_params in expected_frozen_params.items():
+            model = keypointrcnn_resnet50_fpn(pretrained=True, progress=False,
+                                            num_classes=2, pretrained_backbone=False,
+                                            trainable_backbone_layers=train_layers)
+            # boolean list that is true if the parameter at that index is frozen
+            is_frozen = [not parameter.requires_grad for _, parameter in model.named_parameters()]
+            # check that expected initial number of layers in keypointrcnn are frozen
             self.assertTrue(all(is_frozen[:exp_froz_params]))
 
     def test_transform_copy_targets(self):
