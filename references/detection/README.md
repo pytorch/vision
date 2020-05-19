@@ -5,7 +5,7 @@ They serve as a log of how to train specific models, to provide baseline
 training and evaluation scripts to quickly bootstrap research.
 
 Due to pycocotools not filling in their `setup.py` `install_requires` you
-must install it after you install cython seperately. 
+must install pycocotools after you install cython seperately. 
 
 ```
 pip install cython
