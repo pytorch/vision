@@ -7,8 +7,10 @@ training and evaluation scripts to quickly bootstrap research.
 Due to pycocotools not filling in their `setup.py` `install_requires` you
 must install it after you install cython seperately. 
 
-`pip install cython`
-`pip install pycocotools matplotlib`
+```
+pip install cython
+pip install pycocotools matplotlib
+```
 
 Except otherwise noted, all models have been trained on 8x V100 GPUs. 
 
