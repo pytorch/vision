@@ -72,6 +72,7 @@ def maskrcnn_inference(x, labels):
             the extra field mask
     """
     mask_prob = x.sigmoid()
+
     # select masks corresponding to the predicted classes
     num_masks = x.shape[0]
     boxes_per_image = [l.shape[0] for l in labels]
