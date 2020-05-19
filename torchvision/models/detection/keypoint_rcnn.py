@@ -270,7 +270,7 @@ model_urls = {
 
 def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
                               num_classes=2, num_keypoints=17,
-                              pretrained_backbone=True, **kwargs):
+                              pretrained_backbone=True, trainable_backbone_layers=3, **kwargs):
     """
     Constructs a Keypoint R-CNN model with a ResNet-50-FPN backbone.
 
@@ -314,11 +314,19 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
     Arguments:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
+        num_classes (int): number of output classes of the model (including the background)
+        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
+    assert trainable_backbone_layers<=5 and trainable_backbone_layers >=0
+    # dont freeze any layers if pretrained model or backbone is not used
+    if not (pretrained or pretrained_backbone):
+        trainable_backbone_layers = 5
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
-    backbone = resnet_fpn_backbone('resnet50', pretrained_backbone)
+    backbone = resnet_fpn_backbone('resnet50', pretrained_backbone, trainable_layers=trainable_backbone_layers)
     model = KeypointRCNN(backbone, num_classes, num_keypoints=num_keypoints, **kwargs)
     if pretrained:
         key = 'keypointrcnn_resnet50_fpn_coco'
