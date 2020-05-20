@@ -182,7 +182,7 @@ def _onnx_heatmaps_to_keypoints(maps, maps_i, roi_map_width, roi_map_height,
     pos = roi_map.reshape(num_keypoints, -1).argmax(dim=1)
 
     x_int = (pos % w)
-    y_int = ((pos - x_int) / w)
+    y_int = ((pos - x_int) // w)
 
     x = (torch.tensor(0.5, dtype=torch.float32) + x_int.to(dtype=torch.float32)) * \
         width_correction.to(dtype=torch.float32)
