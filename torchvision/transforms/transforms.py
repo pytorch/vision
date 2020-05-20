@@ -15,7 +15,7 @@ import warnings
 from . import functional as F
 
 
-__all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
+__all__ = ["Compose", "ToTensor", "PILToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
            "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
@@ -90,6 +90,26 @@ class ToTensor(object):
             Tensor: Converted image.
         """
         return F.to_tensor(pic)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
+
+class PILToTensor(object):
+    """Convert a ``PIL Image`` to a tensor of the same type.
+
+    Converts a PIL Image (H x W x C) to a torch.Tensor of shape (C x H x W).
+    """
+
+    def __call__(self, pic):
+        """
+        Args:
+            pic (PIL Image): Image to be converted to tensor.
+
+        Returns:
+            Tensor: Converted image.
+        """
+        return F.pil_to_tensor(pic)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
@@ -807,8 +827,8 @@ class LinearTransformation(object):
 
         if mean_vector.size(0) != transformation_matrix.size(0):
             raise ValueError("mean_vector should have the same length {}".format(mean_vector.size(0)) +
-                             " as any one of the dimensions of the transformation_matrix [{} x {}]"
-                             .format(transformation_matrix.size()))
+                             " as any one of the dimensions of the transformation_matrix [{}]"
+                             .format(tuple(transformation_matrix.size())))
 
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector

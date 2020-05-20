@@ -75,7 +75,7 @@ def maskrcnn_inference(x, labels):
 
     # select masks corresponding to the predicted classes
     num_masks = x.shape[0]
-    boxes_per_image = [l.shape[0] for l in labels]
+    boxes_per_image = [label.shape[0] for label in labels]
     labels = torch.cat(labels)
     index = torch.arange(num_masks, device=labels.device)
     mask_prob = mask_prob[index, labels][:, None]
@@ -112,7 +112,7 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
     """
 
     discretization_size = mask_logits.shape[-1]
-    labels = [l[idxs] for l, idxs in zip(gt_labels, mask_matched_idxs)]
+    labels = [gt_label[idxs] for gt_label, idxs in zip(gt_labels, mask_matched_idxs)]
     mask_targets = [
         project_masks_on_boxes(m, p, i, discretization_size)
         for m, p, i in zip(gt_masks, proposals, mask_matched_idxs)
