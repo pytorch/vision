@@ -21,22 +21,25 @@ from torchvision.ops import _new_empty_tensor
 class Conv2d(torch.nn.Conv2d):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        warnings.warn("torchvision.ops.misc.Conv2d is deprecated and will be "
-        "removed in future versions, use torch.nn.Conv2d instead.", FutureWarning)
+        warnings.warn(
+            "torchvision.ops.misc.Conv2d is deprecated and will be "
+            "removed in future versions, use torch.nn.Conv2d instead.", FutureWarning)
 
 
 class ConvTranspose2d(torch.nn.ConvTranspose2d):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        warnings.warn("torchvision.ops.misc.ConvTranspose2d is deprecated and will be "
-        "removed in future versions, use torch.nn.ConvTranspose2d instead.", FutureWarning)
+        warnings.warn(
+            "torchvision.ops.misc.ConvTranspose2d is deprecated and will be "
+            "removed in future versions, use torch.nn.ConvTranspose2d instead.", FutureWarning)
 
 
 class BatchNorm2d(torch.nn.BatchNorm2d):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        warnings.warn("torchvision.ops.misc.BatchNorm2d is deprecated and will be "
-        "removed in future versions, use torch.nn.BatchNorm2d instead.", FutureWarning)
+        warnings.warn(
+            "torchvision.ops.misc.BatchNorm2d is deprecated and will be "
+            "removed in future versions, use torch.nn.BatchNorm2d instead.", FutureWarning)
 
 
 def _check_size_scale_factor(dim, size, scale_factor):
