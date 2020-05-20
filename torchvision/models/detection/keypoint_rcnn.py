@@ -222,12 +222,12 @@ class KeypointRCNNHeads(nn.Sequential):
         d = []
         next_feature = in_channels
         for out_channels in layers:
-            d.append(misc_nn_ops.Conv2d(next_feature, out_channels, 3, stride=1, padding=1))
+            d.append(nn.Conv2d(next_feature, out_channels, 3, stride=1, padding=1))
             d.append(nn.ReLU(inplace=True))
             next_feature = out_channels
         super(KeypointRCNNHeads, self).__init__(*d)
         for m in self.children():
-            if isinstance(m, misc_nn_ops.Conv2d):
+            if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
                 nn.init.constant_(m.bias, 0)
 
@@ -237,7 +237,7 @@ class KeypointRCNNPredictor(nn.Module):
         super(KeypointRCNNPredictor, self).__init__()
         input_features = in_channels
         deconv_kernel = 4
-        self.kps_score_lowres = misc_nn_ops.ConvTranspose2d(
+        self.kps_score_lowres = nn.ConvTranspose2d(
             input_features,
             num_keypoints,
             deconv_kernel,
