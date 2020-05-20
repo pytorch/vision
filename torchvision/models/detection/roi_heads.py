@@ -73,7 +73,7 @@ def maskrcnn_inference(x, labels):
     """
     mask_prob = x.sigmoid()
 
-    # select masks coresponding to the predicted classes
+    # select masks corresponding to the predicted classes
     num_masks = x.shape[0]
     boxes_per_image = [label.shape[0] for label in labels]
     labels = torch.cat(labels)
