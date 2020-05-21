@@ -614,20 +614,13 @@ class RoIHeads(torch.nn.Module):
 
         return proposals
 
-    def DELTEME_all(self, the_list):
-        # type: (List[bool]) -> bool
-        for i in the_list:
-            if not i:
-                return False
-        return True
-
     def check_targets(self, targets):
         # type: (Optional[List[Dict[str, Tensor]]]) -> None
         assert targets is not None
-        assert self.DELTEME_all(["boxes" in t for t in targets])
-        assert self.DELTEME_all(["labels" in t for t in targets])
+        assert all(["boxes" in t for t in targets])
+        assert all(["labels" in t for t in targets])
         if self.has_mask():
-            assert self.DELTEME_all(["masks" in t for t in targets])
+            assert all(["masks" in t for t in targets])
 
     def select_training_samples(self,
                                 proposals,  # type: List[Tensor]
