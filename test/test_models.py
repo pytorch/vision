@@ -181,9 +181,11 @@ class ModelTester(TestCase):
         for name in ['densenet121', 'densenet169', 'densenet201', 'densenet161']:
             model1 = models.__dict__[name](num_classes=50, memory_efficient=True)
             params = model1.state_dict()
+            num_params = sum([x.numel() for x in model1.parameters()])
             model1.eval()
             out1 = model1(x)
             out1.sum().backward()
+            num_grad = sum([x.grad.numel() for x in model1.parameters() if x.grad is not None])
 
             model2 = models.__dict__[name](num_classes=50, memory_efficient=False)
             model2.load_state_dict(params)
@@ -192,6 +194,7 @@ class ModelTester(TestCase):
 
             max_diff = (out1 - out2).abs().max()
 
+            self.assertTrue(num_params == num_grad)
             self.assertTrue(max_diff < 1e-5)
 
     def test_resnet_dilation(self):
