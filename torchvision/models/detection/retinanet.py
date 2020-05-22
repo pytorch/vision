@@ -182,8 +182,7 @@ class RetinaNetRegressionHead(nn.Module):
         for targets_per_image, bbox_regression_per_image, anchors_per_image, matched_idxs_per_image in \
                 zip(targets, bbox_regression, anchors, matched_idxs):
             # no matched_idxs means there were no annotations in this image
-            if matched_idxs_per_image is None:
-                loss.append(0)
+            if matched_idxs_per_image.numel() == 0:
                 continue
 
             # get the targets corresponding GT for each proposal
@@ -386,7 +385,7 @@ class RetinaNet(nn.Module):
         matched_idxs = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
             if targets_per_image['boxes'].numel() == 0:
-                matched_idxs.append(torch.empty((0,)))
+                matched_idxs.append(torch.empty((0,), dtype=torch.int32))
                 continue
 
             match_quality_matrix = box_ops.box_iou(targets_per_image['boxes'], anchors_per_image)
