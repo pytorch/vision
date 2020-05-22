@@ -23,14 +23,16 @@ file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.c
 
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} Python3::Python)
-set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME TorchVision)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+  EXPORT_NAME TorchVision
+)
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
 
 target_include_directories(${PROJECT_NAME} INTERFACE
   $<BUILD_INTERFACE:${HEADERS}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
 
 set(TORCHVISION_CMAKECONFIG_INSTALL_DIR "share/cmake/TorchVision" CACHE STRING "install path for TorchVisionConfig.cmake")
 
