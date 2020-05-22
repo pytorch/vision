@@ -14,7 +14,7 @@ find_package(Python3 COMPONENTS Development)
 find_package(Torch REQUIRED)
 
 file(GLOB HEADERS torchvision/csrc/*.h)
-file(GLOB OPERATOR_SOURCES torchvision/csrc/cpu/*.h torchvision/csrc/cpu/*.cpp torchvision/csrc/*.cpp)
+file(GLOB OPERATOR_SOURCES torchvision/csrc/cpu/*.h torchvision/csrc/cpu/*.cpp torchvision/csrc/ops.cpp)
 if(WITH_CUDA)
   file(GLOB OPERATOR_SOURCES ${OPERATOR_SOURCES} torchvision/csrc/cuda/*.h torchvision/csrc/cuda/*.cu)
 endif()
