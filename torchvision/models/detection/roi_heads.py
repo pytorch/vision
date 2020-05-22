@@ -175,7 +175,7 @@ def _onnx_heatmaps_to_keypoints(maps, maps_i, roi_map_width, roi_map_height,
     height_correction = heights_i / roi_map_height
 
     roi_map = F.interpolate(
-        maps_i[None], size=(int(roi_map_height), int(roi_map_width)), mode='bicubic', align_corners=False)[0]
+        maps_i[:, None], size=(int(roi_map_height), int(roi_map_width)), mode='bicubic', align_corners=False)[:, 0]
 
     w = torch.scalar_tensor(roi_map.size(2), dtype=torch.int64)
     pos = roi_map.reshape(num_keypoints, -1).argmax(dim=1)
@@ -256,7 +256,7 @@ def heatmaps_to_keypoints(maps, rois):
         width_correction = widths[i] / roi_map_width
         height_correction = heights[i] / roi_map_height
         roi_map = F.interpolate(
-            maps[i][None], size=(roi_map_height, roi_map_width), mode='bicubic', align_corners=False)[0]
+            maps[i][:, None], size=(roi_map_height, roi_map_width), mode='bicubic', align_corners=False)[:, 0]
         # roi_map_probs = scores_to_probs(roi_map.copy())
         w = roi_map.shape[2]
         pos = roi_map.reshape(num_keypoints, -1).argmax(dim=1)
