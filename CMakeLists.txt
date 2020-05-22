@@ -25,6 +25,7 @@ add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} Python3::Python)
 set_target_properties(${PROJECT_NAME} PROPERTIES
   EXPORT_NAME TorchVision
+  INSTALL_RPATH ${TORCH_INSTALL_PREFIX}/lib
 )
 
 include(GNUInstallDirs)
