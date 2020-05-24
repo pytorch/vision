@@ -5,26 +5,20 @@
 // Python bindings for the C++ frontend (includes Python.h).
 #include <torch/python.h>
 
-using namespace at;
-using torch::Tensor;
-using torch::autograd::AutogradContext;
-using torch::autograd::Variable;
-using torch::autograd::variable_list;
-
 class NewEmptyTensorOp : public torch::autograd::Function<NewEmptyTensorOp> {
  public:
-  static variable_list forward(
-      AutogradContext* ctx,
-      Variable input,
+  static torch::autograd::variable_list forward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::Variable input,
       c10::List<int64_t> new_shape) {
     ctx->saved_data["shape"] = input.sizes();
     std::vector<int64_t> shape(new_shape.begin(), new_shape.end());
-    return {input.new_empty(shape, TensorOptions())};
+    return {input.new_empty(shape, at::TensorOptions())};
   }
 
-  static variable_list backward(
-      AutogradContext* ctx,
-      variable_list grad_output) {
+  static torch::autograd::variable_list backward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::variable_list grad_output) {
     // Use data saved in forward
     auto shape = ctx->saved_data["shape"].toIntList();
     auto out = forward(ctx, grad_output[0], shape);
@@ -32,6 +26,6 @@ class NewEmptyTensorOp : public torch::autograd::Function<NewEmptyTensorOp> {
   }
 };
 
-Tensor new_empty_tensor(const Tensor& input, c10::List<int64_t> shape) {
+at::Tensor new_empty_tensor(const at::Tensor& input, c10::List<int64_t> shape) {
   return NewEmptyTensorOp::apply(input, shape)[0];
 }
