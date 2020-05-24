@@ -126,9 +126,8 @@ void ROIAlignForward(
     T* output) {
   int n_rois = nthreads / channels / pooled_width / pooled_height;
   // (n, c, ph, pw) is an element in the pooled output
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
+  // can be parallelized using omp
+  // #pragma omp parallel for num_threads(32)
   for (int n = 0; n < n_rois; n++) {
     int index_n = n * channels * pooled_width * pooled_height;
 
