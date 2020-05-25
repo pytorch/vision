@@ -110,10 +110,10 @@ class PSROIPoolFunction : public torch::autograd::Function<PSROIPoolFunction> {
         input_shape[2],
         input_shape[3]);
     return {grad_in,
-        torch::autograd::Variable(),
-        torch::autograd::Variable(),
-        torch::autograd::Variable(),
-        torch::autograd::Variable()};
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable()};
   }
 };
 

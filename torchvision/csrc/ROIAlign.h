@@ -138,12 +138,12 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
         ctx->saved_data["sampling_ratio"].toInt(),
         ctx->saved_data["aligned"].toBool());
     return {grad_in,
-        torch::autograd::Variable(),
-        torch::autograd::Variable(),
-        torch::autograd::Variable(),
-        torch::autograd::Variable(),
-        torch::autograd::Variable(),
-        torch::autograd::Variable()};
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable()};
   }
 };
 
