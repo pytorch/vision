@@ -4,7 +4,6 @@ from torch import Tensor
 import torchvision
 
 
-@torch.jit._script_if_tracing
 def nms(boxes, scores, iou_threshold):
     # type: (Tensor, Tensor, float) -> Tensor
     """
