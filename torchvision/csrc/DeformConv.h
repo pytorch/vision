@@ -88,21 +88,15 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor> DeformConv2d_backward
       offset_groups);
 }
 
-using namespace at;
-using torch::Tensor;
-using torch::autograd::AutogradContext;
-using torch::autograd::Variable;
-using torch::autograd::variable_list;
-
 class DeformConv2dFunction
     : public torch::autograd::Function<DeformConv2dFunction> {
  public:
-  static variable_list forward(
-      AutogradContext* ctx,
-      Variable input,
-      Variable weight,
-      Variable offset,
-      Variable bias,
+  static torch::autograd::variable_list forward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::Variable input,
+      torch::autograd::Variable weight,
+      torch::autograd::Variable offset,
+      torch::autograd::Variable bias,
       int64_t stride_h,
       int64_t stride_w,
       int64_t pad_h,
@@ -137,9 +131,9 @@ class DeformConv2dFunction
     };
   }
 
-  static variable_list backward(
-      AutogradContext* ctx,
-      variable_list grad_output) {
+  static torch::autograd::variable_list backward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::variable_list grad_output) {
     auto saved = ctx->get_saved_variables();
     auto input = saved[0];
     auto weight = saved[1];
@@ -176,14 +170,14 @@ class DeformConv2dFunction
         grad_weight,
         grad_offset,
         grad_bias,
-        Variable(),
-        Variable(),
-        Variable(),
-        Variable(),
-        Variable(),
-        Variable(),
-        Variable(),
-        Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
     };
   }
 };
