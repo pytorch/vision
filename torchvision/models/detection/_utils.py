@@ -8,13 +8,6 @@ from torch import Tensor
 import torchvision
 
 
-# TODO: https://github.com/pytorch/pytorch/issues/26727
-def zeros_like(tensor, dtype):
-    # type: (Tensor, int) -> Tensor
-    return torch.zeros_like(tensor, dtype=dtype, layout=tensor.layout,
-                            device=tensor.device, pin_memory=tensor.is_pinned())
-
-
 class BalancedPositiveNegativeSampler(object):
     """
     This class samples batches, ensuring that they contain a fixed proportion of positives
@@ -68,15 +61,15 @@ class BalancedPositiveNegativeSampler(object):
             neg_idx_per_image = negative[perm2]
 
             # create binary mask from indices
-            pos_idx_per_image_mask = zeros_like(
+            pos_idx_per_image_mask = torch.zeros_like(
                 matched_idxs_per_image, dtype=torch.uint8
             )
-            neg_idx_per_image_mask = zeros_like(
+            neg_idx_per_image_mask = torch.zeros_like(
                 matched_idxs_per_image, dtype=torch.uint8
             )
 
-            pos_idx_per_image_mask[pos_idx_per_image] = torch.tensor(1, dtype=torch.uint8)
-            neg_idx_per_image_mask[neg_idx_per_image] = torch.tensor(1, dtype=torch.uint8)
+            pos_idx_per_image_mask[pos_idx_per_image] = 1
+            neg_idx_per_image_mask[neg_idx_per_image] = 1
 
             pos_idx.append(pos_idx_per_image_mask)
             neg_idx.append(neg_idx_per_image_mask)
@@ -306,8 +299,8 @@ class Matcher(object):
         between_thresholds = (matched_vals >= self.low_threshold) & (
             matched_vals < self.high_threshold
         )
-        matches[below_low_threshold] = torch.tensor(self.BELOW_LOW_THRESHOLD)
-        matches[between_thresholds] = torch.tensor(self.BETWEEN_THRESHOLDS)
+        matches[below_low_threshold] = self.BELOW_LOW_THRESHOLD
+        matches[between_thresholds] = self.BETWEEN_THRESHOLDS
 
         if self.allow_low_quality_matches:
             assert all_matches is not None

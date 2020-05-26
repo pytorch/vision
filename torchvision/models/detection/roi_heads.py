@@ -155,8 +155,8 @@ def keypoints_to_heatmap(keypoints, rois, heatmap_size):
     y = (y - offset_y) * scale_y
     y = y.floor().long()
 
-    x[x_boundary_inds] = torch.tensor(heatmap_size - 1)
-    y[y_boundary_inds] = torch.tensor(heatmap_size - 1)
+    x[x_boundary_inds] = heatmap_size - 1
+    y[y_boundary_inds] = heatmap_size - 1
 
     valid_loc = (x >= 0) & (y >= 0) & (x < heatmap_size) & (y < heatmap_size)
     vis = keypoints[..., 2] > 0
@@ -584,11 +584,11 @@ class RoIHeads(torch.nn.Module):
 
                 # Label background (below the low threshold)
                 bg_inds = matched_idxs_in_image == self.proposal_matcher.BELOW_LOW_THRESHOLD
-                labels_in_image[bg_inds] = torch.tensor(0)
+                labels_in_image[bg_inds] = 0
 
                 # Label ignore proposals (between low and high thresholds)
                 ignore_inds = matched_idxs_in_image == self.proposal_matcher.BETWEEN_THRESHOLDS
-                labels_in_image[ignore_inds] = torch.tensor(-1)  # -1 is ignored by sampler
+                labels_in_image[ignore_inds] = -1  # -1 is ignored by sampler
 
             matched_idxs.append(clamped_matched_idxs_in_image)
             labels.append(labels_in_image)
