@@ -76,7 +76,7 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
     d = {
         "name": base_workflow_name,
         "python_version": python_version,
-        "cu_version": cu_version.replace("cu", "") if os_type == "win" else cu_version,
+        "cu_version": cu_version,
     }
 
     if os_type != "win" and unicode:

@@ -78,30 +78,6 @@ binary_common: &binary_common
     UNICODE_ABI: << parameters.unicode_abi >>
     CU_VERSION: << parameters.cu_version >>
 
-binary_windows: &binary_windows
-  parameters:
-    # Edit these defaults to do a release`
-    build_version:
-      description: "version number of release binary; by default, build a nightly"
-      type: string
-      default: ""
-    pytorch_version:
-      description: "PyTorch version to build against; by default, use a nightly"
-      type: string
-      default: ""
-    # Don't edit these
-    python_version:
-      description: "Python version to build against (e.g., 3.7)"
-      type: string
-    cu_version:
-      description: "CUDA version to build against, in CU format (e.g., cpu or cu100)"
-      type: string
-  environment:
-    DESIRED_PYTHON: << parameters.python_version >>
-    PYTORCH_VERSION: << parameters.pytorch_version >>
-    CUDA_VERSION: << parameters.cu_version >>
-    USE_SCCACHE: "1"
-
 jobs:
   circleci_consistency:
     docker:
@@ -288,11 +264,11 @@ jobs:
           name: Build conda packages
           command: |
             set -ex
-            if [[ "$CUDA_VERSION" == "92" ]]; then
+            if [[ "$CU_VERSION" == "cu92" ]]; then
               export VC_YEAR=2017
               export VSDEVCMD_ARGS="-vcvars_ver=14.11"
               powershell packaging/windows/internal/vs2017_install.ps1
-            elif [["$CUDA_VERSION" == "100" ]]; then
+            elif [["$CU_VERSION" == "cu100" ]]; then
               export VC_YEAR=2017
               powershell packaging/windows/internal/vs2017_install.ps1
             else
@@ -321,11 +297,11 @@ jobs:
           name: Build wheel packages
           command: |
             set -ex
-            if [[ "$CUDA_VERSION" == "92" ]]; then
+            if [[ "$CU_VERSION" == "cu92" ]]; then
               export VC_YEAR=2017
               export VSDEVCMD_ARGS="-vcvars_ver=14.11"
               powershell packaging/windows/internal/vs2017_install.ps1
-            elif [["$CUDA_VERSION" == "100" ]]; then
+            elif [["$CU_VERSION" == "cu100" ]]; then
               export VC_YEAR=2017
               powershell packaging/windows/internal/vs2017_install.ps1
             else

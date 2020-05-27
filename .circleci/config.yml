@@ -78,30 +78,6 @@ binary_common: &binary_common
     UNICODE_ABI: << parameters.unicode_abi >>
     CU_VERSION: << parameters.cu_version >>
 
-binary_windows: &binary_windows
-  parameters:
-    # Edit these defaults to do a release`
-    build_version:
-      description: "version number of release binary; by default, build a nightly"
-      type: string
-      default: ""
-    pytorch_version:
-      description: "PyTorch version to build against; by default, use a nightly"
-      type: string
-      default: ""
-    # Don't edit these
-    python_version:
-      description: "Python version to build against (e.g., 3.7)"
-      type: string
-    cu_version:
-      description: "CUDA version to build against, in CU format (e.g., cpu or cu100)"
-      type: string
-  environment:
-    DESIRED_PYTHON: << parameters.python_version >>
-    PYTORCH_VERSION: << parameters.pytorch_version >>
-    CUDA_VERSION: << parameters.cu_version >>
-    USE_SCCACHE: "1"
-
 jobs:
   circleci_consistency:
     docker:
@@ -288,11 +264,11 @@ jobs:
           name: Build conda packages
           command: |
             set -ex
-            if [[ "$CUDA_VERSION" == "92" ]]; then
+            if [[ "$CU_VERSION" == "cu92" ]]; then
               export VC_YEAR=2017
               export VSDEVCMD_ARGS="-vcvars_ver=14.11"
               powershell packaging/windows/internal/vs2017_install.ps1
-            elif [["$CUDA_VERSION" == "100" ]]; then
+            elif [["$CU_VERSION" == "cu100" ]]; then
               export VC_YEAR=2017
               powershell packaging/windows/internal/vs2017_install.ps1
             else
@@ -321,11 +297,11 @@ jobs:
           name: Build wheel packages
           command: |
             set -ex
-            if [[ "$CUDA_VERSION" == "92" ]]; then
+            if [[ "$CU_VERSION" == "cu92" ]]; then
               export VC_YEAR=2017
               export VSDEVCMD_ARGS="-vcvars_ver=14.11"
               powershell packaging/windows/internal/vs2017_install.ps1
-            elif [["$CUDA_VERSION" == "100" ]]; then
+            elif [["$CU_VERSION" == "cu100" ]]; then
               export VC_YEAR=2017
               powershell packaging/windows/internal/vs2017_install.ps1
             else
@@ -514,21 +490,21 @@ workflows:
           name: binary_win_wheel_py3.6_cpu
           python_version: '3.6'
       - binary_win_wheel_release:
-          cu_version: '92'
+          cu_version: cu92
           filters:
             branches:
               only: master
           name: binary_win_wheel_py3.6_cu92
           python_version: '3.6'
       - binary_win_wheel_release:
-          cu_version: '101'
+          cu_version: cu101
           filters:
             branches:
               only: master
           name: binary_win_wheel_py3.6_cu101
           python_version: '3.6'
       - binary_win_wheel_release:
-          cu_version: '102'
+          cu_version: cu102
           filters:
             branches:
               only: master
@@ -542,21 +518,21 @@ workflows:
           name: binary_win_wheel_py3.7_cpu
           python_version: '3.7'
       - binary_win_wheel_release:
-          cu_version: '92'
+          cu_version: cu92
           filters:
             branches:
               only: master
           name: binary_win_wheel_py3.7_cu92
           python_version: '3.7'
       - binary_win_wheel_release:
-          cu_version: '101'
+          cu_version: cu101
           filters:
             branches:
               only: master
           name: binary_win_wheel_py3.7_cu101
           python_version: '3.7'
       - binary_win_wheel_release:
-          cu_version: '102'
+          cu_version: cu102
           filters:
             branches:
               only: master
@@ -567,21 +543,21 @@ workflows:
           name: binary_win_wheel_py3.8_cpu
           python_version: '3.8'
       - binary_win_wheel_release:
-          cu_version: '92'
+          cu_version: cu92
           filters:
             branches:
               only: master
           name: binary_win_wheel_py3.8_cu92
           python_version: '3.8'
       - binary_win_wheel_release:
-          cu_version: '101'
+          cu_version: cu101
           filters:
             branches:
               only: master
           name: binary_win_wheel_py3.8_cu101
           python_version: '3.8'
       - binary_win_wheel_release:
-          cu_version: '102'
+          cu_version: cu102
           name: binary_win_wheel_py3.8_cu102
           python_version: '3.8'
       - binary_linux_conda:
@@ -667,21 +643,21 @@ workflows:
           name: binary_win_conda_py3.6_cpu
           python_version: '3.6'
       - binary_win_conda_release:
-          cu_version: '92'
+          cu_version: cu92
           filters:
             branches:
               only: master
           name: binary_win_conda_py3.6_cu92
           python_version: '3.6'
       - binary_win_conda_release:
-          cu_version: '101'
+          cu_version: cu101
           filters:
             branches:
               only: master
           name: binary_win_conda_py3.6_cu101
           python_version: '3.6'
       - binary_win_conda_release:
-          cu_version: '102'
+          cu_version: cu102
           filters:
             branches:
               only: master
@@ -695,21 +671,21 @@ workflows:
           name: binary_win_conda_py3.7_cpu
           python_version: '3.7'
       - binary_win_conda_release:
-          cu_version: '92'
+          cu_version: cu92
           filters:
             branches:
               only: master
           name: binary_win_conda_py3.7_cu92
           python_version: '3.7'
       - binary_win_conda_release:
-          cu_version: '101'
+          cu_version: cu101
           filters:
             branches:
               only: master
           name: binary_win_conda_py3.7_cu101
           python_version: '3.7'
       - binary_win_conda_release:
-          cu_version: '102'
+          cu_version: cu102
           filters:
             branches:
               only: master
@@ -720,21 +696,21 @@ workflows:
           name: binary_win_conda_py3.8_cpu
           python_version: '3.8'
       - binary_win_conda_release:
-          cu_version: '92'
+          cu_version: cu92
           filters:
             branches:
               only: master
           name: binary_win_conda_py3.8_cu92
           python_version: '3.8'
       - binary_win_conda_release:
-          cu_version: '101'
+          cu_version: cu101
           filters:
             branches:
               only: master
           name: binary_win_conda_py3.8_cu101
           python_version: '3.8'
       - binary_win_conda_release:
-          cu_version: '102'
+          cu_version: cu102
           name: binary_win_conda_py3.8_cu102
           python_version: '3.8'
       - binary_linux_conda_cuda:
@@ -1063,7 +1039,7 @@ workflows:
           - nightly_binary_win_wheel_py3.6_cpu
           subfolder: cpu/
       - binary_win_wheel_release:
-          cu_version: '92'
+          cu_version: cu92
           filters:
             branches:
               only: nightly
@@ -1081,7 +1057,7 @@ workflows:
           - nightly_binary_win_wheel_py3.6_cu92
           subfolder: cu92/
       - binary_win_wheel_release:
-          cu_version: '101'
+          cu_version: cu101
           filters:
             branches:
               only: nightly
@@ -1099,7 +1075,7 @@ workflows:
           - nightly_binary_win_wheel_py3.6_cu101
           subfolder: cu101/
       - binary_win_wheel_release:
-          cu_version: '102'
+          cu_version: cu102
           filters:
             branches:
               only: nightly
@@ -1135,7 +1111,7 @@ workflows:
           - nightly_binary_win_wheel_py3.7_cpu
           subfolder: cpu/
       - binary_win_wheel_release:
-          cu_version: '92'
+          cu_version: cu92
           filters:
             branches:
               only: nightly
@@ -1153,7 +1129,7 @@ workflows:
           - nightly_binary_win_wheel_py3.7_cu92
           subfolder: cu92/
       - binary_win_wheel_release:
-          cu_version: '101'
+          cu_version: cu101
           filters:
             branches:
               only: nightly
@@ -1171,7 +1147,7 @@ workflows:
           - nightly_binary_win_wheel_py3.7_cu101
           subfolder: cu101/
       - binary_win_wheel_release:
-          cu_version: '102'
+          cu_version: cu102
           filters:
             branches:
               only: nightly
@@ -1207,7 +1183,7 @@ workflows:
           - nightly_binary_win_wheel_py3.8_cpu
           subfolder: cpu/
       - binary_win_wheel_release:
-          cu_version: '92'
+          cu_version: cu92
           filters:
             branches:
               only: nightly
@@ -1225,7 +1201,7 @@ workflows:
           - nightly_binary_win_wheel_py3.8_cu92
           subfolder: cu92/
       - binary_win_wheel_release:
-          cu_version: '101'
+          cu_version: cu101
           filters:
             branches:
               only: nightly
@@ -1243,7 +1219,7 @@ workflows:
           - nightly_binary_win_wheel_py3.8_cu101
           subfolder: cu101/
       - binary_win_wheel_release:
-          cu_version: '102'
+          cu_version: cu102
           filters:
             branches:
               only: nightly
@@ -1548,7 +1524,7 @@ workflows:
           requires:
           - nightly_binary_win_conda_py3.6_cpu
       - binary_win_conda_release:
-          cu_version: '92'
+          cu_version: cu92
           filters:
             branches:
               only: nightly
@@ -1565,7 +1541,7 @@ workflows:
           requires:
           - nightly_binary_win_conda_py3.6_cu92
       - binary_win_conda_release:
-          cu_version: '101'
+          cu_version: cu101
           filters:
             branches:
               only: nightly
@@ -1582,7 +1558,7 @@ workflows:
           requires:
           - nightly_binary_win_conda_py3.6_cu101
       - binary_win_conda_release:
-          cu_version: '102'
+          cu_version: cu102
           filters:
             branches:
               only: nightly
@@ -1616,7 +1592,7 @@ workflows:
           requires:
           - nightly_binary_win_conda_py3.7_cpu
       - binary_win_conda_release:
-          cu_version: '92'
+          cu_version: cu92
           filters:
             branches:
               only: nightly
@@ -1633,7 +1609,7 @@ workflows:
           requires:
           - nightly_binary_win_conda_py3.7_cu92
       - binary_win_conda_release:
-          cu_version: '101'
+          cu_version: cu101
           filters:
             branches:
               only: nightly
@@ -1650,7 +1626,7 @@ workflows:
           requires:
           - nightly_binary_win_conda_py3.7_cu101
       - binary_win_conda_release:
-          cu_version: '102'
+          cu_version: cu102
           filters:
             branches:
               only: nightly
@@ -1684,7 +1660,7 @@ workflows:
           requires:
           - nightly_binary_win_conda_py3.8_cpu
       - binary_win_conda_release:
-          cu_version: '92'
+          cu_version: cu92
           filters:
             branches:
               only: nightly
@@ -1701,7 +1677,7 @@ workflows:
           requires:
           - nightly_binary_win_conda_py3.8_cu92
       - binary_win_conda_release:
-          cu_version: '101'
+          cu_version: cu101
           filters:
             branches:
               only: nightly
@@ -1718,7 +1694,7 @@ workflows:
           requires:
           - nightly_binary_win_conda_py3.8_cu101
       - binary_win_conda_release:
-          cu_version: '102'
+          cu_version: cu102
           filters:
             branches:
               only: nightly
