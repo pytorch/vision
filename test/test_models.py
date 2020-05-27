@@ -235,6 +235,14 @@ class ModelTester(TestCase):
         out = model(x)
         self.assertEqual(out.shape[-1], 1000)
 
+    def test_mobilenetv2_norm_layer(self):
+        model = models.__dict__["mobilenet_v2"]()
+        self.assertTrue(any(isinstance(x, nn.BatchNorm2d) for x in model.parameters()))
+
+        model = models.__dict__["mobilenet_v2"](norm_layer=nn.GroupNorm2d)
+        self.assertFalse(any(isinstance(x, nn.BatchNorm2d) for x in model.parameters()))
+        self.assertTrue(any(isinstance(x, nn.GroupNorm2d) for x in model.parameters()))
+
     def test_fasterrcnn_double(self):
         model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
         model.double()
