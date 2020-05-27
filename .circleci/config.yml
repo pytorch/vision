@@ -232,7 +232,18 @@ jobs:
       - run:
           command: |
             set -ex
-            export VC_YEAR=2019
+            if [[ "$CU_VERSION" == "cu92" ]]; then
+              export VC_YEAR=2017
+              export VSDEVCMD_ARGS="-vcvars_ver=14.11"
+              powershell packaging/windows/internal/vs2017_install.ps1
+            elif [["$CU_VERSION" == "cu100" ]]; then
+              export VC_YEAR=2017
+              export VSDEVCMD_ARGS=""
+              powershell packaging/windows/internal/vs2017_install.ps1
+            else
+              export VC_YEAR=2019
+              export VSDEVCMD_ARGS=""
+            fi
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
@@ -248,7 +259,18 @@ jobs:
       - run:
           command: |
             set -ex
-            export VC_YEAR=2019
+            if [[ "$CU_VERSION" == "cu92" ]]; then
+              export VC_YEAR=2017
+              export VSDEVCMD_ARGS="-vcvars_ver=14.11"
+              powershell packaging/windows/internal/vs2017_install.ps1
+            elif [["$CU_VERSION" == "cu100" ]]; then
+              export VC_YEAR=2017
+              export VSDEVCMD_ARGS=""
+              powershell packaging/windows/internal/vs2017_install.ps1
+            else
+              export VC_YEAR=2019
+              export VSDEVCMD_ARGS=""
+            fi
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
@@ -269,9 +291,11 @@ jobs:
               powershell packaging/windows/internal/vs2017_install.ps1
             elif [["$CU_VERSION" == "cu100" ]]; then
               export VC_YEAR=2017
+              export VSDEVCMD_ARGS=""
               powershell packaging/windows/internal/vs2017_install.ps1
             else
               export VC_YEAR=2019
+              export VSDEVCMD_ARGS=""
             fi
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda activate base
@@ -302,9 +326,11 @@ jobs:
               powershell packaging/windows/internal/vs2017_install.ps1
             elif [["$CU_VERSION" == "cu100" ]]; then
               export VC_YEAR=2017
+              export VSDEVCMD_ARGS=""
               powershell packaging/windows/internal/vs2017_install.ps1
             else
               export VC_YEAR=2019
+              export VSDEVCMD_ARGS=""
             fi
             packaging/build_wheel.sh
       - store_artifacts:
