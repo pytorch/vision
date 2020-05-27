@@ -2,6 +2,7 @@ from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state
 from collections import OrderedDict
 from itertools import product
 import torch
+import torch.nn as nn
 import numpy as np
 from torchvision import models
 import unittest
@@ -237,11 +238,14 @@ class ModelTester(TestCase):
 
     def test_mobilenetv2_norm_layer(self):
         model = models.__dict__["mobilenet_v2"]()
-        self.assertTrue(any(isinstance(x, nn.BatchNorm2d) for x in model.parameters()))
+        self.assertTrue(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
 
-        model = models.__dict__["mobilenet_v2"](norm_layer=nn.GroupNorm2d)
-        self.assertFalse(any(isinstance(x, nn.BatchNorm2d) for x in model.parameters()))
-        self.assertTrue(any(isinstance(x, nn.GroupNorm2d) for x in model.parameters()))
+        def get_gn(num_channels):
+            return nn.GroupNorm(32, num_channels)
+
+        model = models.__dict__["mobilenet_v2"](norm_layer=get_gn)
+        self.assertFalse(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
+        self.assertTrue(any(isinstance(x, nn.GroupNorm) for x in model.modules()))
 
     def test_fasterrcnn_double(self):
         model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
