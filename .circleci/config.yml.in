@@ -236,7 +236,7 @@ jobs:
               export VC_YEAR=2017
               export VSDEVCMD_ARGS="-vcvars_ver=14.11"
               powershell packaging/windows/internal/vs2017_install.ps1
-            elif [["$CU_VERSION" == "cu100" ]]; then
+            elif [[ "$CU_VERSION" == "cu100" ]]; then
               export VC_YEAR=2017
               export VSDEVCMD_ARGS=""
               powershell packaging/windows/internal/vs2017_install.ps1
@@ -263,7 +263,7 @@ jobs:
               export VC_YEAR=2017
               export VSDEVCMD_ARGS="-vcvars_ver=14.11"
               powershell packaging/windows/internal/vs2017_install.ps1
-            elif [["$CU_VERSION" == "cu100" ]]; then
+            elif [[ "$CU_VERSION" == "cu100" ]]; then
               export VC_YEAR=2017
               export VSDEVCMD_ARGS=""
               powershell packaging/windows/internal/vs2017_install.ps1
@@ -289,7 +289,7 @@ jobs:
               export VC_YEAR=2017
               export VSDEVCMD_ARGS="-vcvars_ver=14.11"
               powershell packaging/windows/internal/vs2017_install.ps1
-            elif [["$CU_VERSION" == "cu100" ]]; then
+            elif [[ "$CU_VERSION" == "cu100" ]]; then
               export VC_YEAR=2017
               export VSDEVCMD_ARGS=""
               powershell packaging/windows/internal/vs2017_install.ps1
@@ -297,6 +297,7 @@ jobs:
               export VC_YEAR=2019
               export VSDEVCMD_ARGS=""
             fi
+            packaging/windows/internal/cuda_install.bat
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
@@ -324,7 +325,7 @@ jobs:
               export VC_YEAR=2017
               export VSDEVCMD_ARGS="-vcvars_ver=14.11"
               powershell packaging/windows/internal/vs2017_install.ps1
-            elif [["$CU_VERSION" == "cu100" ]]; then
+            elif [[ "$CU_VERSION" == "cu100" ]]; then
               export VC_YEAR=2017
               export VSDEVCMD_ARGS=""
               powershell packaging/windows/internal/vs2017_install.ps1
@@ -332,6 +333,7 @@ jobs:
               export VC_YEAR=2019
               export VSDEVCMD_ARGS=""
             fi
+            packaging/windows/internal/cuda_install.bat
             packaging/build_wheel.sh
       - store_artifacts:
           path: dist
