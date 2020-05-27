@@ -256,7 +256,7 @@ jobs:
           shell: powershell.exe
 
   binary_win_conda_release:
-    <<: *binary_windows
+    <<: *binary_common
     executor: windows-cpu
     steps:
       - checkout_merge
@@ -289,7 +289,7 @@ jobs:
           path: build_results/
 
   binary_win_wheel_release:
-    <<: *binary_windows
+    <<: *binary_common
     executor: windows-cpu
     steps:
       - checkout_merge
