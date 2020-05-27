@@ -10,4 +10,8 @@ setup_wheel_python
 pip_install numpy pyyaml future ninja
 setup_pip_pytorch_version
 python setup.py clean
-IS_WHEEL=1 python setup.py bdist_wheel
+if [[ "$OSTYPE" == "msys" ]]; then
+    IS_WHEEL=1 "$script_dir/build_wheel.bat"
+else
+    IS_WHEEL=1 python setup.py bdist_wheel
+fi

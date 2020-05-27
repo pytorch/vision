@@ -6,14 +6,17 @@ version: 2.1
 #     - Replace binary_linux_wheel_py3.7 with the name of the job you want to test.
 #       Job names are 'name:' key.
 
-orbs:
-  win: circleci/windows@2.0.0
-
 executors:
-  windows-gpu-prototype:
+  windows-cpu:
     machine:
-      resource_class: windows.gpu.small.prototype
-      image: windows-server-2019-nvidia:201908-28
+      resource_class: windows.xlarge
+      image: windows-server-2019-vs2019:stable
+      shell: bash.exe
+
+  windows-gpu:
+    machine:
+      resource_class: windows.gpu.nvidia.medium
+      image: windows-server-2019-nvidia:stable
       shell: bash.exe
 
 commands:
@@ -98,7 +101,6 @@ binary_windows: &binary_windows
     PYTORCH_VERSION: << parameters.pytorch_version >>
     CUDA_VERSION: << parameters.cu_version >>
     USE_SCCACHE: "1"
-    VC_YEAR: "2017"
 
 jobs:
   circleci_consistency:
@@ -248,51 +250,63 @@ jobs:
 
   binary_win_conda:
     <<: *binary_common
-    executor:
-      name: win/default
-      shell: bash.exe
+    executor: windows-cpu
     steps:
       - checkout_merge
       - run:
           command: |
-            choco install miniconda3
-            (& "C:\tools\miniconda3\Scripts\conda.exe" "shell.powershell" "hook") | Out-String | Invoke-Expression
+            set -ex
+            export VC_YEAR=2019
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
-            bash packaging/build_conda.sh
-          shell: powershell.exe
+            packaging/build_conda.sh
       - store_test_results:
           path: build_results/
 
   binary_win_conda_cuda:
     <<: *binary_common
-    executor: windows-gpu-prototype
+    executor: windows-gpu
     steps:
       - checkout_merge
       - run:
           command: |
-            choco install miniconda3
-            (& "C:\tools\miniconda3\Scripts\conda.exe" "shell.powershell" "hook") | Out-String | Invoke-Expression
+            set -ex
+            export VC_YEAR=2019
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
-            bash packaging/build_conda.sh
+            packaging/build_conda.sh
           shell: powershell.exe
 
   binary_win_conda_release:
     <<: *binary_windows
-    executor:
-      name: win/default
-      shell: cmd.exe
+    executor: windows-cpu
     steps:
       - checkout_merge
       - run:
           name: Build conda packages
           command: |
-            call packaging/windows/internal/build_conda.bat
+            set -ex
+            if [[ "$CUDA_VERSION" == "92" ]]; then
+              export VC_YEAR=2017
+              export VSDEVCMD_ARGS="-vcvars_ver=14.11"
+              powershell packaging/windows/internal/vs2017_install.ps1
+            elif [["$CUDA_VERSION" == "100" ]]; then
+              export VC_YEAR=2017
+              powershell packaging/windows/internal/vs2017_install.ps1
+            else
+              export VC_YEAR=2019
+            fi
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
+            conda activate base
+            conda install -yq conda-build "conda-package-handling!=1.5.0"
+            packaging/build_conda.sh
+            rm /C/tools/miniconda3/conda-bld/win-64/vs2019*.tar.bz2
       - store_artifacts:
-          path: packaging/windows/output
+          path: C:/tools/miniconda3/conda-bld/win-64
       - persist_to_workspace:
-          root: packaging/windows/output
+          root: C:/tools/miniconda3/conda-bld/win-64
           paths:
             - "*"
       - store_test_results:
@@ -300,19 +314,28 @@ jobs:
 
   binary_win_wheel_release:
     <<: *binary_windows
-    executor:
-      name: win/default
-      shell: cmd.exe
+    executor: windows-cpu
     steps:
       - checkout_merge
       - run:
           name: Build wheel packages
           command: |
-            call packaging/windows/internal/build_wheels.bat
+            set -ex
+            if [[ "$CUDA_VERSION" == "92" ]]; then
+              export VC_YEAR=2017
+              export VSDEVCMD_ARGS="-vcvars_ver=14.11"
+              powershell packaging/windows/internal/vs2017_install.ps1
+            elif [["$CUDA_VERSION" == "100" ]]; then
+              export VC_YEAR=2017
+              powershell packaging/windows/internal/vs2017_install.ps1
+            else
+              export VC_YEAR=2019
+            fi
+            packaging/build_wheel.sh
       - store_artifacts:
-          path: packaging/windows/output
+          path: dist
       - persist_to_workspace:
-          root: packaging/windows/output
+          root: dist
           paths:
             - "*"
       - store_test_results:
