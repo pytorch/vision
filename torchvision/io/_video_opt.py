@@ -34,7 +34,6 @@ default_timebase = Fraction(0, 1)
 
 # simple class for torch scripting
 # the complex Fraction class from fractions module is not scriptable
-@torch.jit.script
 class Timebase(object):
     __annotations__ = {"numerator": int, "denominator": int}
     __slots__ = ["numerator", "denominator"]
@@ -49,7 +48,6 @@ class Timebase(object):
         self.denominator = denominator
 
 
-@torch.jit.script
 class VideoMetaData(object):
     __annotations__ = {
         "has_video": bool,

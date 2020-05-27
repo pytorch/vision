@@ -73,9 +73,9 @@ def maskrcnn_inference(x, labels):
     """
     mask_prob = x.sigmoid()
 
-    # select masks coresponding to the predicted classes
+    # select masks corresponding to the predicted classes
     num_masks = x.shape[0]
-    boxes_per_image = [l.shape[0] for l in labels]
+    boxes_per_image = [label.shape[0] for label in labels]
     labels = torch.cat(labels)
     index = torch.arange(num_masks, device=labels.device)
     mask_prob = mask_prob[index, labels][:, None]
@@ -112,7 +112,7 @@ def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs
     """
 
     discretization_size = mask_logits.shape[-1]
-    labels = [l[idxs] for l, idxs in zip(gt_labels, mask_matched_idxs)]
+    labels = [gt_label[idxs] for gt_label, idxs in zip(gt_labels, mask_matched_idxs)]
     mask_targets = [
         project_masks_on_boxes(m, p, i, discretization_size)
         for m, p, i in zip(gt_masks, proposals, mask_matched_idxs)
@@ -155,8 +155,8 @@ def keypoints_to_heatmap(keypoints, rois, heatmap_size):
     y = (y - offset_y) * scale_y
     y = y.floor().long()
 
-    x[x_boundary_inds] = torch.tensor(heatmap_size - 1)
-    y[y_boundary_inds] = torch.tensor(heatmap_size - 1)
+    x[x_boundary_inds] = heatmap_size - 1
+    y[y_boundary_inds] = heatmap_size - 1
 
     valid_loc = (x >= 0) & (y >= 0) & (x < heatmap_size) & (y < heatmap_size)
     vis = keypoints[..., 2] > 0
@@ -182,7 +182,7 @@ def _onnx_heatmaps_to_keypoints(maps, maps_i, roi_map_width, roi_map_height,
     pos = roi_map.reshape(num_keypoints, -1).argmax(dim=1)
 
     x_int = (pos % w)
-    y_int = ((pos - x_int) / w)
+    y_int = ((pos - x_int) // w)
 
     x = (torch.tensor(0.5, dtype=torch.float32) + x_int.to(dtype=torch.float32)) * \
         width_correction.to(dtype=torch.float32)
@@ -584,11 +584,11 @@ class RoIHeads(torch.nn.Module):
 
                 # Label background (below the low threshold)
                 bg_inds = matched_idxs_in_image == self.proposal_matcher.BELOW_LOW_THRESHOLD
-                labels_in_image[bg_inds] = torch.tensor(0)
+                labels_in_image[bg_inds] = 0
 
                 # Label ignore proposals (between low and high thresholds)
                 ignore_inds = matched_idxs_in_image == self.proposal_matcher.BETWEEN_THRESHOLDS
-                labels_in_image[ignore_inds] = torch.tensor(-1)  # -1 is ignored by sampler
+                labels_in_image[ignore_inds] = -1  # -1 is ignored by sampler
 
             matched_idxs.append(clamped_matched_idxs_in_image)
             labels.append(labels_in_image)
@@ -614,20 +614,13 @@ class RoIHeads(torch.nn.Module):
 
         return proposals
 
-    def DELTEME_all(self, the_list):
-        # type: (List[bool]) -> bool
-        for i in the_list:
-            if not i:
-                return False
-        return True
-
     def check_targets(self, targets):
         # type: (Optional[List[Dict[str, Tensor]]]) -> None
         assert targets is not None
-        assert self.DELTEME_all(["boxes" in t for t in targets])
-        assert self.DELTEME_all(["labels" in t for t in targets])
+        assert all(["boxes" in t for t in targets])
+        assert all(["labels" in t for t in targets])
         if self.has_mask():
-            assert self.DELTEME_all(["masks" in t for t in targets])
+            assert all(["masks" in t for t in targets])
 
     def select_training_samples(self,
                                 proposals,  # type: List[Tensor]

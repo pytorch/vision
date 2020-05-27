@@ -89,18 +89,12 @@ at::Tensor ROIAlign_backward(
       aligned);
 }
 
-using namespace at;
-using torch::Tensor;
-using torch::autograd::AutogradContext;
-using torch::autograd::Variable;
-using torch::autograd::variable_list;
-
 class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
  public:
-  static variable_list forward(
-      AutogradContext* ctx,
-      Variable input,
-      Variable rois,
+  static torch::autograd::variable_list forward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::Variable input,
+      torch::autograd::Variable rois,
       const double spatial_scale,
       const int64_t pooled_height,
       const int64_t pooled_width,
@@ -124,9 +118,9 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
     return {result};
   }
 
-  static variable_list backward(
-      AutogradContext* ctx,
-      variable_list grad_output) {
+  static torch::autograd::variable_list backward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::variable_list grad_output) {
     // Use data saved in forward
     auto saved = ctx->get_saved_variables();
     auto rois = saved[0];
@@ -144,18 +138,18 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
         ctx->saved_data["sampling_ratio"].toInt(),
         ctx->saved_data["aligned"].toBool());
     return {grad_in,
-            Variable(),
-            Variable(),
-            Variable(),
-            Variable(),
-            Variable(),
-            Variable()};
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable()};
   }
 };
 
-Tensor roi_align(
-    const Tensor& input,
-    const Tensor& rois,
+at::Tensor roi_align(
+    const at::Tensor& input,
+    const at::Tensor& rois,
     const double spatial_scale,
     const int64_t pooled_height,
     const int64_t pooled_width,

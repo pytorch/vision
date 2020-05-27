@@ -16,59 +16,30 @@ import math
 import warnings
 import torch
 from torchvision.ops import _new_empty_tensor
-from torch.nn import Module, Conv2d
-import torch.nn.functional as F
+
+
+class Conv2d(torch.nn.Conv2d):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        warnings.warn(
+            "torchvision.ops.misc.Conv2d is deprecated and will be "
+            "removed in future versions, use torch.nn.Conv2d instead.", FutureWarning)
 
 
 class ConvTranspose2d(torch.nn.ConvTranspose2d):
-    """
-    Equivalent to nn.ConvTranspose2d, but with support for empty batch sizes.
-    This will eventually be supported natively by PyTorch, and this
-    class can go away.
-    """
-    def forward(self, x):
-        if x.numel() > 0:
-            return self.super_forward(x)
-        # get output shape
-
-        output_shape = [
-            (i - 1) * d - 2 * p + (di * (k - 1) + 1) + op
-            for i, p, di, k, d, op in zip(
-                x.shape[-2:],
-                list(self.padding),
-                list(self.dilation),
-                list(self.kernel_size),
-                list(self.stride),
-                list(self.output_padding),
-            )
-        ]
-        output_shape = [x.shape[0], self.out_channels] + output_shape
-        return _new_empty_tensor(x, output_shape)
-
-    def super_forward(self, input, output_size=None):
-        # type: (Tensor, Optional[List[int]]) -> Tensor
-        if self.padding_mode != 'zeros':
-            raise ValueError('Only `zeros` padding mode is supported for ConvTranspose2d')
-
-        output_padding = self._output_padding(input, output_size, self.stride, self.padding, self.kernel_size)
-
-        return F.conv_transpose2d(
-            input, self.weight, self.bias, self.stride, self.padding,
-            output_padding, self.groups, self.dilation)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        warnings.warn(
+            "torchvision.ops.misc.ConvTranspose2d is deprecated and will be "
+            "removed in future versions, use torch.nn.ConvTranspose2d instead.", FutureWarning)
 
 
 class BatchNorm2d(torch.nn.BatchNorm2d):
-    """
-    Equivalent to nn.BatchNorm2d, but with support for empty batch sizes.
-    This will eventually be supported natively by PyTorch, and this
-    class can go away.
-    """
-    def forward(self, x):
-        if x.numel() > 0:
-            return super(BatchNorm2d, self).forward(x)
-        # get output shape
-        output_shape = x.shape
-        return _new_empty_tensor(x, output_shape)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        warnings.warn(
+            "torchvision.ops.misc.BatchNorm2d is deprecated and will be "
+            "removed in future versions, use torch.nn.BatchNorm2d instead.", FutureWarning)
 
 
 def _check_size_scale_factor(dim, size, scale_factor):

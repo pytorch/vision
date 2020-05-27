@@ -155,6 +155,24 @@ class ModelTester(TestCase):
         # self.check_script(model, name)
         self.checkModule(model, name, ([x],))
 
+    def _test_detection_model_validation(self, name):
+        set_rng_seed(0)
+        model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
+        input_shape = (1, 3, 300, 300)
+        x = [torch.rand(input_shape)]
+
+        # validate that targets are present in training
+        self.assertRaises(ValueError, model, x)
+
+        # validate type
+        targets = [{'boxes': 0.}]
+        self.assertRaises(ValueError, model, x, targets=targets)
+
+        # validate boxes shape
+        for boxes in (torch.rand((4,)), torch.rand((1, 5))):
+            targets = [{'boxes': boxes}]
+            self.assertRaises(ValueError, model, x, targets=targets)
+
     def _test_video_model(self, name):
         # the default input shape is
         # bs * num_channels * clip_len * h *w
@@ -183,9 +201,11 @@ class ModelTester(TestCase):
         for name in ['densenet121', 'densenet169', 'densenet201', 'densenet161']:
             model1 = models.__dict__[name](num_classes=50, memory_efficient=True)
             params = model1.state_dict()
+            num_params = sum([x.numel() for x in model1.parameters()])
             model1.eval()
             out1 = model1(x)
             out1.sum().backward()
+            num_grad = sum([x.grad.numel() for x in model1.parameters() if x.grad is not None])
 
             model2 = models.__dict__[name](num_classes=50, memory_efficient=False)
             model2.load_state_dict(params)
@@ -194,6 +214,7 @@ class ModelTester(TestCase):
 
             max_diff = (out1 - out2).abs().max()
 
+            self.assertTrue(num_params == num_grad)
             self.assertTrue(max_diff < 1e-5)
 
     def test_resnet_dilation(self):
@@ -302,6 +323,11 @@ for model_name in get_available_detection_models():
         self._test_detection_model(model_name)
 
     setattr(ModelTester, "test_" + model_name, do_test)
+
+    def do_validation_test(self, model_name=model_name):
+        self._test_detection_model_validation(model_name)
+
+    setattr(ModelTester, "test_" + model_name + "_validation", do_validation_test)
 
 
 for model_name in get_available_video_models():
