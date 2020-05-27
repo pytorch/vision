@@ -253,7 +253,6 @@ jobs:
             conda activate base
             conda install -yq conda-build "conda-package-handling!=1.5.0"
             packaging/build_conda.sh
-          shell: powershell.exe
 
   binary_win_conda_release:
     <<: *binary_common
