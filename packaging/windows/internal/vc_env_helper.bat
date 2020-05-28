@@ -26,4 +26,18 @@ if "%VSDEVCMD_ARGS%" == "" (
 
 set DISTUTILS_USE_SDK=1
 
-python setup.py bdist_wheel || exit /b 1
+set args=%1
+shift
+:start
+if [%1] == [] goto done
+set args=%args% %1
+shift
+goto start
+
+:done
+if "%args%" == "" (
+    echo Usage: vc_env_helper.bat [command] [args]
+    echo e.g. vc_env_helper.bat cl /c test.cpp
+)
+
+%args% || exit /b 1
