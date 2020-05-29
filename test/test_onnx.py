@@ -463,22 +463,22 @@ class ONNXExporterTester(unittest.TestCase):
         # TODO:
         # Enable test for dummy_image (no detection) once issue is
         # _onnx_heatmaps_to_keypoints_loop for empty heatmaps is fixed
-        # dummy_images = [torch.ones(3, 100, 100) * 0.3]
+        dummy_images = [torch.ones(3, 100, 100) * 0.3]
         model = KeyPointRCNN()
         model.eval()
         model(images)
-        self.run_model(model, [(images,), (test_images,)],
+        self.run_model(model, [(images,), (test_images,), (dummy_images,)],
                        input_names=["images_tensors"],
                        output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
                        dynamic_axes={"images_tensors": [0, 1, 2, 3]},
                        tolerate_small_mismatch=True)
         # TODO: enable this test once dynamic model export is fixed
         # Test exported model for an image with no detections on other images
-        # self.run_model(model, [(dummy_images,), (test_images,)],
-        #                input_names=["images_tensors"],
-        #                output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
-        #                dynamic_axes={"images_tensors": [0, 1, 2, 3]},
-        #                tolerate_small_mismatch=True)
+        self.run_model(model, [(dummy_images,), (test_images,)],
+                       input_names=["images_tensors"],
+                       output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
+                       dynamic_axes={"images_tensors": [0, 1, 2, 3]},
+                       tolerate_small_mismatch=True)
 
 
 if __name__ == '__main__':
