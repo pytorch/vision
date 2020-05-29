@@ -350,11 +350,11 @@ class RegionProposalNetwork(torch.nn.Module):
 
                 # Background (negative examples)
                 bg_indices = matched_idxs == self.proposal_matcher.BELOW_LOW_THRESHOLD
-                labels_per_image[bg_indices] = torch.tensor(0.0)
+                labels_per_image[bg_indices] = 0.0
 
                 # discard indices that are between thresholds
                 inds_to_discard = matched_idxs == self.proposal_matcher.BETWEEN_THRESHOLDS
-                labels_per_image[inds_to_discard] = torch.tensor(-1.0)
+                labels_per_image[inds_to_discard] = -1.0
 
             labels.append(labels_per_image)
             matched_gt_boxes.append(matched_gt_boxes_per_image)
