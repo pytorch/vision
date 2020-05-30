@@ -329,11 +329,16 @@ def read_video_timestamps(filename, pts_unit="pts"):
         if container.streams.video:
             video_stream = container.streams.video[0]
             video_time_base = video_stream.time_base
-            if _can_read_timestamps_from_packets(container):
-                # fast path
-                pts = [x.pts for x in container.demux(video=0) if x.pts is not None]
-            else:
-                pts = [x.pts for x in container.decode(video=0) if x.pts is not None]
+            try:
+                if _can_read_timestamps_from_packets(container):
+                    # fast path
+                    pts = [x.pts for x in container.demux(video=0) if x.pts is not None]
+                else:
+                    pts = [
+                        x.pts for x in container.decode(video=0) if x.pts is not None
+                    ]
+            except av.AVError:
+                warnings.warn(f"Failed decoding frames for file {filename}")
             video_fps = float(video_stream.average_rate)
         container.close()
 
