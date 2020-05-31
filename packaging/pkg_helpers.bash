@@ -249,6 +249,9 @@ setup_conda_pytorch_constraint() {
     export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==${PYTORCH_VERSION}${PYTORCH_VERSION_SUFFIX}"
     export CONDA_PYTORCH_CONSTRAINT="- pytorch==${PYTORCH_VERSION}${PYTORCH_VERSION_SUFFIX}"
   fi
+  if [[ "$OSTYPE" == msys && "$CU_VERSION" == cu92 ]]; then
+    export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c defaults -c numba/label/dev"
+  fi
 }
 
 # Translate CUDA_VERSION into CUDA_CUDATOOLKIT_CONSTRAINT
