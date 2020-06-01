@@ -1,4 +1,5 @@
 import torch
+import copy
 import math
 import random
 from PIL import Image
@@ -19,7 +20,7 @@ __all__ = ["Compose", "ToTensor", "PILToTensor", "ToPILImage", "Normalize", "Res
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
            "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
-           "RandomPerspective", "RandomErasing"]
+           "RandomPerspective", "RandomErasing", "MultiCompose", "SegmentationCompose"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -68,6 +69,145 @@ class Compose(object):
             format_string += '    {0}'.format(t)
         format_string += '\n)'
         return format_string
+
+
+class MultiCompose(Compose):
+    """Like Compose, but processes tuples of images with the same random params.
+
+    That is, every image in a tuple/list will be transformed exactly the same way
+    (random rotation, crop, and so on).
+
+    Args:
+        transforms (list of ``Transform`` objects): list of transforms to compose.
+
+    Example:
+        >>> mc = transforms.MultiCompose([
+        >>>     transforms.CenterCrop(10),
+        >>>     transforms.Pad(1),
+        >>> ])
+        >>> imgs = mc([img1, img2, img3])
+    """
+    def __call__(self, imgs):
+        for t in self.transforms:
+            try:
+                params = t.generate_params(imgs[0])
+            except AttributeError:
+                params = None
+            # Non-random transforms will never generate any params, so we can call them
+            # in the old style "__call__(self, img)" instead of having to refactor them
+            # to take a "param" kwarg as well. This is only needed for actually random
+            # transforms.
+            if params is not None:
+                imgs = tuple(t(img, params) for img in imgs)
+            else:
+                imgs = tuple(t(img) for img in imgs)
+        return imgs
+
+
+class SegmentationCompose(MultiCompose):
+    """Composes multiple transforms together, specifically for segmentation data.
+
+    Assumes that the inputs are tuples of:
+        (image, label)
+    or even
+        (image, image, ..., image, label)
+    User-defined transforms are executed in sequence over the tuple, similar to
+    how MultiCompose does it. The difference in segmentation is that the last
+    element of this tuple has to be processed differently: e.g. it should never
+    be altered by transforms such as ColorJitter or RandomGrayscale. Transforms
+    that warp the image should never interpolate the label image.
+    To accomplish that, SegmentationCompose assemblies two lists of transforms.
+    The first is the same as in Compose or Multicompose ("transforms"). Second
+    is where magic happens: transforms stored there will be called only on the
+    label images. Transforms that shouldn't be performed on the label images are
+    removed and replaced with "NullTransform". Transforms that should operate
+    with a different interpolation mode are cloned and altered.
+    When processing a sample, images and labels are treated differently. Images
+    only go through the default transforms, while labels are processed with the
+    modified transforms list.
+    This mechanism can be quite easily extended to account for more differences
+    between transforms. An example of this is ToTensor, which should also work
+    differently for images and labels. It is handled by replacing with a lambda
+    which converts to int64 (label type).
+
+    Args:
+        transforms (list of ``Transform`` objects): list of transforms to compose.
+
+    Example:
+        >>> sc = transforms.SegmentationCompose([
+        >>>     transforms.CenterCrop(10),
+        >>>     transforms.Pad(1),
+        >>> ])
+        >>> image, label = sc((image, label))
+    """
+    _skip_transforms = [
+        "Normalize",
+        "ColorJitter",
+        "Grayscale",
+        "RandomGrayscale",
+        "RandomErasing",
+    ]
+    _interpolate_transforms = [
+        "Resize",
+        "RandomPerspective",
+        "RandomResizedCrop",
+        "RandomRotation",
+        "RandomAffine",
+    ]
+
+    @classmethod
+    def is_skip(self, transform):
+        return transform.__class__.__name__ in self._skip_transforms
+
+    @classmethod
+    def is_itpl(self, transform):
+        return transform.__class__.__name__ in self._interpolate_transforms
+
+    @classmethod
+    def is_tensor(self, transform):
+        return isinstance(transform, ToTensor)
+
+    def __init__(self, transforms):
+        super(SegmentationCompose, self).__init__(transforms)
+        # prepare separate lists for label transforms
+        self.label_transforms = []
+        for tf in self.transforms:
+            if self.is_skip(tf):
+                # some transforms can't be performed on labels - replace with NullTransform
+                self.label_transforms.append(NullTransform())
+            elif self.is_itpl(tf):
+                # some use interpolation - duplicate them and replace mode with NEAREST
+                ltf = copy.deepcopy(tf)
+                ltf.interpolation = Image.NEAREST
+                ltf.resample = Image.NEAREST  # really, RandomRotation & RandomAffine?
+                self.label_transforms.append(ltf)
+            elif self.is_tensor(tf):
+                # ToTensor transform should also work differently for labels
+                self.label_transforms.append(
+                    lambda img: F.to_tensor(np.array(img, np.int64))
+                )
+            else:
+                # all other transforms can be directly applied to labels
+                self.label_transforms.append(tf)
+
+    def __call__(self, imgs):
+        # separate the input into images and label
+        label = imgs[-1]
+        imgs = imgs[:-1]
+        # go sequentially over image and label transforms
+        for it, lt in zip(self.transforms, self.label_transforms):
+            try:
+                params = it.generate_params(imgs[0])
+            except AttributeError:
+                params = None
+            # transform MultiCompose-style, but separately for images and label
+            if params is not None:
+                imgs = tuple(it(img, params) for img in imgs)
+                label = lt(label, params)
+            else:
+                imgs = tuple(it(img) for img in imgs)
+                label = lt(label)
+        return imgs + (label,)
 
 
 class ToTensor(object):
@@ -337,6 +477,15 @@ class Lambda(object):
         return self.__class__.__name__ + '()'
 
 
+class NullTransform(object):
+    """Output the same image."""
+    def __call__(self, img, param=None):
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
+
 class RandomTransforms(object):
     """Base class for a list of transformations with randomness
 
@@ -454,6 +603,9 @@ class RandomCrop(object):
         self.fill = fill
         self.padding_mode = padding_mode
 
+    def generate_params(self, img):
+        return self.get_params(img, self.size)
+
     @staticmethod
     def get_params(img, output_size):
         """Get parameters for ``crop`` for a random crop.
@@ -474,7 +626,7 @@ class RandomCrop(object):
         j = random.randint(0, w - tw)
         return i, j, th, tw
 
-    def __call__(self, img):
+    def __call__(self, img, params=None):
         """
         Args:
             img (PIL Image): Image to be cropped.
@@ -492,7 +644,7 @@ class RandomCrop(object):
         if self.pad_if_needed and img.size[1] < self.size[0]:
             img = F.pad(img, (0, self.size[0] - img.size[1]), self.fill, self.padding_mode)
 
-        i, j, h, w = self.get_params(img, self.size)
+        i, j, h, w = params if params is not None else self.get_params(img, self.size)
 
         return F.crop(img, i, j, h, w)
 
@@ -510,7 +662,10 @@ class RandomHorizontalFlip(object):
     def __init__(self, p=0.5):
         self.p = p
 
-    def __call__(self, img):
+    def generate_params(self, img):
+        return random.random() < self.p
+
+    def __call__(self, img, params=None):
         """
         Args:
             img (PIL Image): Image to be flipped.
@@ -518,7 +673,8 @@ class RandomHorizontalFlip(object):
         Returns:
             PIL Image: Randomly flipped image.
         """
-        if random.random() < self.p:
+        do_flip = params if params is not None else self.generate_params(img)
+        if do_flip:
             return F.hflip(img)
         return img
 
@@ -536,7 +692,10 @@ class RandomVerticalFlip(object):
     def __init__(self, p=0.5):
         self.p = p
 
-    def __call__(self, img):
+    def generate_params(self, img):
+        return random.random() < self.p
+
+    def __call__(self, img, params=None):
         """
         Args:
             img (PIL Image): Image to be flipped.
@@ -544,7 +703,8 @@ class RandomVerticalFlip(object):
         Returns:
             PIL Image: Randomly flipped image.
         """
-        if random.random() < self.p:
+        do_flip = params if params is not None else self.generate_params(img)
+        if do_flip:
             return F.vflip(img)
         return img
 
@@ -572,7 +732,7 @@ class RandomPerspective(object):
         self.distortion_scale = distortion_scale
         self.fill = fill
 
-    def __call__(self, img):
+    def __call__(self, img, params=None):
         """
         Args:
             img (PIL Image): Image to be Perspectively transformed.
@@ -583,11 +743,21 @@ class RandomPerspective(object):
         if not F._is_pil_image(img):
             raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-        if random.random() < self.p:
+        if params:
+            p, startpoints, endpoints = params
+            if p:
+                return F.perspective(img, startpoints, endpoints, self.interpolation)
+        elif random.random() < self.p:
             width, height = img.size
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
             return F.perspective(img, startpoints, endpoints, self.interpolation, self.fill)
         return img
+
+    def generate_params(self, img):
+        width, height = img.size
+        params = self.get_params(width, height, self.distortion_scale)
+        flag = random.uniform(0, 1) < self.p
+        return (flag,) + params
 
     @staticmethod
     def get_params(width, height, distortion_scale):
@@ -646,6 +816,9 @@ class RandomResizedCrop(object):
         self.scale = scale
         self.ratio = ratio
 
+    def generate_params(self, img):
+        return self.get_params(img, self.scale, self.ratio)
+
     @staticmethod
     def get_params(img, scale, ratio):
         """Get parameters for ``crop`` for a random sized crop.
@@ -690,7 +863,7 @@ class RandomResizedCrop(object):
         j = (width - w) // 2
         return i, j, h, w
 
-    def __call__(self, img):
+    def __call__(self, img, params=None):
         """
         Args:
             img (PIL Image): Image to be cropped and resized.
@@ -698,7 +871,10 @@ class RandomResizedCrop(object):
         Returns:
             PIL Image: Randomly cropped and resized image.
         """
-        i, j, h, w = self.get_params(img, self.scale, self.ratio)
+        if params is None:
+            i, j, h, w = self.get_params(img, self.scale, self.ratio)
+        else:
+            i, j, h, w = params
         return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
 
     def __repr__(self):
@@ -900,6 +1076,9 @@ class ColorJitter(object):
             value = None
         return value
 
+    def generate_params(self, img):
+        return self.get_params(self.brightness, self.contrast, self.saturation, self.hue)
+
     @staticmethod
     def get_params(brightness, contrast, saturation, hue):
         """Get a randomized transform to be applied on image.
@@ -933,7 +1112,7 @@ class ColorJitter(object):
 
         return transform
 
-    def __call__(self, img):
+    def __call__(self, img, params=None):
         """
         Args:
             img (PIL Image): Input image.
@@ -941,8 +1120,11 @@ class ColorJitter(object):
         Returns:
             PIL Image: Color jittered image.
         """
-        transform = self.get_params(self.brightness, self.contrast,
-                                    self.saturation, self.hue)
+        if params is None:
+            transform = self.get_params(self.brightness, self.contrast,
+                                        self.saturation, self.hue)
+        else:
+            transform = params
         return transform(img)
 
     def __repr__(self):
@@ -994,6 +1176,9 @@ class RandomRotation(object):
         self.center = center
         self.fill = fill
 
+    def generate_params(self, img):
+        return self.get_params(self.degrees)
+
     @staticmethod
     def get_params(degrees):
         """Get parameters for ``rotate`` for a random rotation.
@@ -1005,7 +1190,7 @@ class RandomRotation(object):
 
         return angle
 
-    def __call__(self, img):
+    def __call__(self, img, params=None):
         """
         Args:
             img (PIL Image): Image to be rotated.
@@ -1014,7 +1199,7 @@ class RandomRotation(object):
             PIL Image: Rotated image.
         """
 
-        angle = self.get_params(self.degrees)
+        angle = self.get_params(self.degrees) if params is None else params
 
         return F.rotate(img, angle, self.resample, self.expand, self.center, self.fill)
 
@@ -1103,6 +1288,9 @@ class RandomAffine(object):
         self.resample = resample
         self.fillcolor = fillcolor
 
+    def generate_params(self, img):
+        return self.get_params(self.degrees, self.translate, self.scale, self.shear, img.size)
+
     @staticmethod
     def get_params(degrees, translate, scale_ranges, shears, img_size):
         """Get parameters for affine transformation
@@ -1135,15 +1323,16 @@ class RandomAffine(object):
 
         return angle, translations, scale, shear
 
-    def __call__(self, img):
+    def __call__(self, img, params=None):
         """
             img (PIL Image): Image to be transformed.
 
         Returns:
             PIL Image: Affine transformed image.
         """
-        ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img.size)
-        return F.affine(img, *ret, resample=self.resample, fillcolor=self.fillcolor)
+        if params is None:
+            params = self.get_params(self.degrees, self.translate, self.scale, self.shear, img.size)
+        return F.affine(img, *params, resample=self.resample, fillcolor=self.fillcolor)
 
     def __repr__(self):
         s = '{name}(degrees={degrees}'
@@ -1210,7 +1399,10 @@ class RandomGrayscale(object):
     def __init__(self, p=0.1):
         self.p = p
 
-    def __call__(self, img):
+    def generate_params(self, img):
+        return random.random() < self.p
+
+    def __call__(self, img, params=None):
         """
         Args:
             img (PIL Image): Image to be converted to grayscale.
@@ -1219,7 +1411,8 @@ class RandomGrayscale(object):
             PIL Image: Randomly grayscaled image.
         """
         num_output_channels = 1 if img.mode == 'L' else 3
-        if random.random() < self.p:
+        do_gray = params if params is not None else self.generate_params(img)
+        if do_gray:
             return F.to_grayscale(img, num_output_channels=num_output_channels)
         return img
 
@@ -1268,6 +1461,16 @@ class RandomErasing(object):
         self.value = value
         self.inplace = inplace
 
+    def generate_params(self, img):
+        params = self.get_params(
+            img=img,
+            scale=self.scale,
+            ratio=self.ratio,
+            value=self.value
+        )
+        flag = random.uniform(0, 1) < self.p
+        return (flag,) + params
+
     @staticmethod
     def get_params(img, scale, ratio, value=0):
         """Get parameters for ``erase`` for a random erasing.
@@ -1304,7 +1507,7 @@ class RandomErasing(object):
         # Return original image
         return 0, 0, img_h, img_w, img
 
-    def __call__(self, img):
+    def __call__(self, img, params=None):
         """
         Args:
             img (Tensor): Tensor image of size (C, H, W) to be erased.
@@ -1312,7 +1515,11 @@ class RandomErasing(object):
         Returns:
             img (Tensor): Erased Tensor image.
         """
-        if random.uniform(0, 1) < self.p:
+        if params:
+            p, x, y, h, w, v = params
+            if p:
+                return F.erase(img, x, y, h, w, v, self.inplace)
+        elif random.uniform(0, 1) < self.p:
             x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value)
             return F.erase(img, x, y, h, w, v, self.inplace)
         return img
