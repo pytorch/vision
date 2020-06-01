@@ -117,7 +117,7 @@ setup_build_version() {
   else
     export BUILD_VERSION="$BUILD_VERSION$VERSION_SUFFIX"
   fi
-
+  CIRCLE_TAG="v1.0.0-rc3"
   # Set build version based on tag if on tag
   if [[ -n "${CIRCLE_TAG}" ]]; then
     # Strip tag
