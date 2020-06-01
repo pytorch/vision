@@ -4,7 +4,7 @@ from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
 
 
 def _is_tensor_a_torch_image(input):
-    return len(input.shape) == 3
+    return input.ndim >= 2
 
 
 def vflip(img):
