@@ -39,5 +39,6 @@ class Tester(unittest.TestCase):
     def test_random_vertical_flip(self):
         self._test_flip('vflip', 'RandomVerticalFlip')
 
+
 if __name__ == '__main__':
     unittest.main()
