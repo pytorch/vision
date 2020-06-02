@@ -537,19 +537,22 @@ def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC, fill=N
     return img.transform(img.size, Image.PERSPECTIVE, coeffs, interpolation, **opts)
 
 
-def vflip(img):
-    """Vertically flip the given PIL Image.
+def vflip(img: Tensor) -> Tensor:
+    """Vertically flip the given PIL Image or torch Tensor.
 
     Args:
-        img (PIL Image): Image to be flipped.
+        img (PIL Image or Torch Tensor): Image to be flipped. If img
+            is a Tensor, it is expected to be in [..., H, W] format,
+            where ... means it can have an arbitrary number of trailing
+            dimensions.
 
     Returns:
         PIL Image:  Vertically flipped image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.vflip(img)
 
-    return img.transpose(Image.FLIP_TOP_BOTTOM)
+    return F_t.vflip(img)
 
 
 def five_crop(img, size):
