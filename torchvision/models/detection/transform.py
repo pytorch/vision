@@ -212,28 +212,6 @@ class GeneralizedRCNNTransform(nn.Module):
 
         return batched_imgs
 
-    def postprocess(self,
-                    result,               # type: List[Dict[str, Tensor]]
-                    image_shapes,         # type: List[Tuple[int, int]]
-                    original_image_sizes  # type: List[Tuple[int, int]]
-                    ):
-        # type: (...) -> List[Dict[str, Tensor]]
-        if self.training:
-            return result
-        for i, (pred, im_s, o_im_s) in enumerate(zip(result, image_shapes, original_image_sizes)):
-            boxes = pred["boxes"]
-            boxes = resize_boxes(boxes, im_s, o_im_s)
-            result[i]["boxes"] = boxes
-            if "masks" in pred:
-                masks = pred["masks"]
-                masks = paste_masks_in_image(masks, boxes, o_im_s)
-                result[i]["masks"] = masks
-            if "keypoints" in pred:
-                keypoints = pred["keypoints"]
-                keypoints = resize_keypoints(keypoints, im_s, o_im_s)
-                result[i]["keypoints"] = keypoints
-        return result
-
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
         _indent = '\n    '
@@ -278,3 +256,26 @@ def resize_boxes(boxes, original_size, new_size):
     ymin = ymin * ratio_height
     ymax = ymax * ratio_height
     return torch.stack((xmin, ymin, xmax, ymax), dim=1)
+
+
+def postprocess(result,               # type: List[Dict[str, Tensor]]
+                image_shapes,         # type: List[Tuple[int, int]]
+                original_image_sizes,  # type: List[Tuple[int, int]]
+                is_training               # type : bool
+                ):
+    # type: (...) -> List[Dict[str, Tensor]]
+    if is_training:
+        return result
+    for i, (pred, im_s, o_im_s) in enumerate(zip(result, image_shapes, original_image_sizes)):
+        boxes = pred["boxes"]
+        boxes = resize_boxes(boxes, im_s, o_im_s)
+        result[i]["boxes"] = boxes
+        if "masks" in pred:
+            masks = pred["masks"]
+            masks = paste_masks_in_image(masks, boxes, o_im_s)
+            result[i]["masks"] = masks
+        if "keypoints" in pred:
+            keypoints = pred["keypoints"]
+            keypoints = resize_keypoints(keypoints, im_s, o_im_s)
+            result[i]["keypoints"] = keypoints
+    return result
