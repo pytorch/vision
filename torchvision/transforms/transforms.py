@@ -500,25 +500,29 @@ class RandomCrop(object):
         return self.__class__.__name__ + '(size={0}, padding={1})'.format(self.size, self.padding)
 
 
-class RandomHorizontalFlip(object):
-    """Horizontally flip the given PIL Image randomly with a given probability.
+class RandomHorizontalFlip(torch.nn.Module):
+    """Horizontally flip the given image randomly with a given probability.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     Args:
         p (float): probability of the image being flipped. Default value is 0.5
     """
 
     def __init__(self, p=0.5):
+        super().__init__()
         self.p = p
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be flipped.
+            img (PIL Image or Tensor): Image to be flipped.
 
         Returns:
-            PIL Image: Randomly flipped image.
+            PIL Image or Tensor: Randomly flipped image.
         """
-        if random.random() < self.p:
+        if torch.rand(1) < self.p:
             return F.hflip(img)
         return img
 
@@ -526,25 +530,29 @@ class RandomHorizontalFlip(object):
         return self.__class__.__name__ + '(p={})'.format(self.p)
 
 
-class RandomVerticalFlip(object):
+class RandomVerticalFlip(torch.nn.Module):
     """Vertically flip the given PIL Image randomly with a given probability.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     Args:
         p (float): probability of the image being flipped. Default value is 0.5
     """
 
     def __init__(self, p=0.5):
+        super().__init__()
         self.p = p
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be flipped.
+            img (PIL Image or Tensor): Image to be flipped.
 
         Returns:
-            PIL Image: Randomly flipped image.
+            PIL Image or Tensor: Randomly flipped image.
         """
-        if random.random() < self.p:
+        if torch.rand(1) < self.p:
             return F.vflip(img)
         return img
 
