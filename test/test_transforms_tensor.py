@@ -18,20 +18,26 @@ class Tester(unittest.TestCase):
         pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
         self.assertTrue(tensor.equal(pil_tensor))
 
-    def test_random_horizontal_flip(self):
+    def _test_flip(self, func, method):
         tensor, pil_img = self._create_data()
-        flip_tensor = F.hflip(tensor)
-        flip_pil_img = F.hflip(pil_img)
+        flip_tensor = getattr(F, func)(tensor)
+        flip_pil_img = getattr(F, func)(pil_img)
         self.compareTensorToPIL(flip_tensor, flip_pil_img)
 
-        scripted_fn = torch.jit.script(F.hflip)
+        scripted_fn = torch.jit.script(getattr(F, func))
         flip_tensor_script = scripted_fn(tensor)
         self.assertTrue(flip_tensor.equal(flip_tensor_script))
 
         # test for class interface
-        f = T.RandomHorizontalFlip()
+        f = getattr(T, method)()
         scripted_fn = torch.jit.script(f)
         scripted_fn(tensor)
+
+    def test_random_horizontal_flip(self):
+        self._test_flip('hflip', 'RandomHorizontalFlip')
+
+    def test_random_vertical_flip(self):
+        self._test_flip('vflip', 'RandomVerticalFlip')
 
 
 if __name__ == '__main__':

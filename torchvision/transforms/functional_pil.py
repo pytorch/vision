@@ -28,3 +28,19 @@ def hflip(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     return img.transpose(Image.FLIP_LEFT_RIGHT)
+
+
+@torch.jit.unused
+def vflip(img):
+    """Vertically flip the given PIL Image.
+
+    Args:
+        img (PIL Image): Image to be flipped.
+
+    Returns:
+        PIL Image:  Vertically flipped image.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    return img.transpose(Image.FLIP_TOP_BOTTOM)
