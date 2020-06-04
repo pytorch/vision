@@ -331,6 +331,10 @@ def pad(img, padding, fill=0, padding_mode='constant'):
     if padding_mode == 'constant':
         if isinstance(fill, numbers.Number):
             fill = (fill,) * len(img.getbands())
+        if len(fill) != len(img.getbands()):
+            raise ValueError('fill should have the same number of elements '
+                             'as the number of channels in the image '
+                             '({}), got {} instead'.format(len(img.getbands()), len(fill)))
         if img.mode == 'P':
             palette = img.getpalette()
             image = ImageOps.expand(img, border=padding, fill=fill)

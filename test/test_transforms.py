@@ -309,8 +309,12 @@ class Tester(unittest.TestCase):
         self.assertEqual(result.size(2), width + 2 * padding)
         # check that all elements in the padded region correspond
         # to the pad value
-        self.assertTrue((result[:, :padding, :] == (fill / 255)).all())
-        self.assertTrue((result[:, :, :padding] == (fill / 255)).all())
+        fill_v = fill / 255
+        eps = 1e-5
+        self.assertTrue((result[:, :padding, :] - fill_v).abs().max() < eps)
+        self.assertTrue((result[:, :, :padding] - fill_v).abs().max() < eps)
+        self.assertRaises(ValueError, transforms.Pad(padding, fill=(1,2)),
+                          transforms.ToPILImage()(img))
 
     def test_pad_with_tuple_of_pad_values(self):
         height = random.randint(10, 32) * 2
