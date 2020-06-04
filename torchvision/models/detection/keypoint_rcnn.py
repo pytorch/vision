@@ -251,10 +251,9 @@ class KeypointRCNNPredictor(nn.Module):
 
     def forward(self, x):
         x = self.kps_score_lowres(x)
-        x = torch.nn.functional.interpolate(
-            x, scale_factor=float(self.up_scale), mode="bilinear", align_corners=False
+        return torch.nn.functional.interpolate(
+            x, scale_factor=float(self.up_scale), mode="bilinear", align_corners=False, recompute_scale_factor=False
         )
-        return x
 
 
 model_urls = {
