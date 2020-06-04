@@ -313,7 +313,7 @@ class Tester(unittest.TestCase):
         eps = 1e-5
         self.assertTrue((result[:, :padding, :] - fill_v).abs().max() < eps)
         self.assertTrue((result[:, :, :padding] - fill_v).abs().max() < eps)
-        self.assertRaises(ValueError, transforms.Pad(padding, fill=(1,2)),
+        self.assertRaises(ValueError, transforms.Pad(padding, fill=(1, 2)),
                           transforms.ToPILImage()(img))
 
     def test_pad_with_tuple_of_pad_values(self):
