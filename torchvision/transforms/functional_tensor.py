@@ -119,6 +119,50 @@ def adjust_contrast(img, contrast_factor):
     return _blend(img, mean, contrast_factor)
 
 
+def adjust_hue(img, hue_factor):
+    """Adjust hue of an image.
+
+    The image hue is adjusted by converting the image to HSV and
+    cyclically shifting the intensities in the hue channel (H).
+    The image is then converted back to original image mode.
+
+    `hue_factor` is the amount of shift in H channel and must be in the
+    interval `[-0.5, 0.5]`.
+
+    See `Hue`_ for more details.
+
+    .. _Hue: https://en.wikipedia.org/wiki/Hue
+
+    Args:
+        img (Tensor): Image to be adjusted.
+        hue_factor (float):  How much to shift the hue channel. Should be in
+            [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
+            HSV space in positive and negative direction respectively.
+            0 means no shift. Therefore, both -0.5 and 0.5 will give an image
+            with complementary colors while 0 gives the original image.
+
+    Returns:
+         Tensor: Hue adjusted image.
+    """
+    if not(-0.5 <= hue_factor <= 0.5):
+        raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
+
+    if not _is_tensor_a_torch_image(img):
+        raise TypeError('tensor is not a torch image.')
+
+    # the default ToTensor in torchvision scale the RGB from [0,255] to [0, 1]
+    img = _rgb2hsv(img)
+    h, s, v = img[0], img[1], img[2]
+    new_h = h * 255
+    new_h = (new_h).to(dtype=torch.int32)
+    new_h += int(hue_factor * 255)
+
+    new_h = new_h.to(dtype=torch.float32)
+    new_h = new_h / 255.0
+    new_img = _hsv2rgb(torch.stack((new_h, s, v)))
+    return new_img
+
+
 def adjust_saturation(img, saturation_factor):
     # type: (Tensor, float) -> Tensor
     """Adjust color saturation of an RGB image.
@@ -236,3 +280,41 @@ def _blend(img1, img2, ratio):
     # type: (Tensor, Tensor, float) -> Tensor
     bound = 1 if img1.dtype in [torch.half, torch.float32, torch.float64] else 255
     return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
+
+
+def _rgb2hsv(testing):
+    r, g, b = testing[0], testing[1], testing[2]
+
+    maxc, _ = torch.max(testing, dim=0)
+    minc, _ = torch.min(testing, dim=0)
+    uv = maxc
+
+    cr = (maxc - minc).to(dtype=torch.float32)
+    s = cr / maxc.to(dtype=torch.float32)
+    rc = (maxc-r).to(dtype=torch.float32)/cr
+    gc = (maxc-g).to(dtype=torch.float32)/cr
+    bc = (maxc-b).to(dtype=torch.float32)/cr
+
+
+    h = maxc != minc
+    hr = (maxc == r) * (bc-gc)
+    hg = (maxc == g) * (2.0 + rc - bc)
+    hb = (maxc == b) * (4.0 + gc - rc)
+    h = h * (hr + hg + hb)
+    h = torch.fmod((h / 6.0) + 1.0, 1.0)
+
+    h[h != h] = 0
+    return torch.stack((h, s, v))
+
+def _hsv2rgb(testing):
+    h, s, v = testing[0], testing[1], testing[2]
+    i = (h * 6.0).to(dtype=torch.int32)
+    f = (h * 6.0) - i
+    p = torch.clamp(torch.round(v * (1.0 - s)), 0, 255)
+    q = torch.clamp(torch.round(v * (1.0 - f * s)), 0, 255)
+    t = torch.clamp(torch.round(v * (1.0 - (1.0 - f) * s)), 0, 255)
+    i = i % 6
+    r = (i == 0) * v + (i == 1) * q +  (i == 2) * p + (i == 3) * p + (i == 4) * t + (i == 5) * v
+    g = (i == 0) * t + (i == 1) * v +  (i == 2) * v + (i == 3) * q + (i == 4) * p + (i == 5) * p
+    b = (i == 0) * p + (i == 1) * p +  (i == 2) * t + (i == 3) * v + (i == 4) * v + (i == 5) * q
+    return torch.stack((r, g, b))
