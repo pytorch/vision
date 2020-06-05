@@ -299,13 +299,22 @@ class Tester(unittest.TestCase):
         width = random.randint(10, 32) * 2
         img = torch.ones(3, height, width)
         padding = random.randint(1, 20)
+        fill = random.randint(1, 50)
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Pad(padding),
+            transforms.Pad(padding, fill=fill),
             transforms.ToTensor(),
         ])(img)
         self.assertEqual(result.size(1), height + 2 * padding)
         self.assertEqual(result.size(2), width + 2 * padding)
+        # check that all elements in the padded region correspond
+        # to the pad value
+        fill_v = fill / 255
+        eps = 1e-5
+        self.assertTrue((result[:, :padding, :] - fill_v).abs().max() < eps)
+        self.assertTrue((result[:, :, :padding] - fill_v).abs().max() < eps)
+        self.assertRaises(ValueError, transforms.Pad(padding, fill=(1, 2)),
+                          transforms.ToPILImage()(img))
 
     def test_pad_with_tuple_of_pad_values(self):
         height = random.randint(10, 32) * 2
