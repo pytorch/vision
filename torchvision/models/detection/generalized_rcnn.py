@@ -10,8 +10,6 @@ import warnings
 from torch.jit.annotations import Tuple, List, Dict, Optional
 from torch import Tensor
 
-from .transform import postprocess
-
 
 class GeneralizedRCNN(nn.Module):
     """
@@ -26,7 +24,7 @@ class GeneralizedRCNN(nn.Module):
             the model
     """
 
-    def __init__(self, backbone, rpn, roi_heads, transform):
+    def __init__(self, backbone, rpn, roi_heads, transform, postprocess):
         super(GeneralizedRCNN, self).__init__()
         self.transform = transform
         self.backbone = backbone
@@ -34,6 +32,7 @@ class GeneralizedRCNN(nn.Module):
         self.roi_heads = roi_heads
         # used only on torchscript mode
         self._has_warned = False
+        self.postprocess = postprocess
 
     @torch.jit.unused
     def eager_outputs(self, losses, detections):
@@ -99,7 +98,7 @@ class GeneralizedRCNN(nn.Module):
             features = OrderedDict([('0', features)])
         proposals, proposal_losses = self.rpn(images, features, targets)
         detections, detector_losses = self.roi_heads(features, proposals, images.image_sizes, targets)
-        detections = postprocess(detections, images.image_sizes, original_image_sizes, self.training)
+        detections = self.postprocess(detections, images.image_sizes, original_image_sizes, self.training)
 
         losses = {}
         losses.update(detector_losses)
