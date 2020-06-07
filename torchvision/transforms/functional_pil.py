@@ -44,3 +44,59 @@ def vflip(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     return img.transpose(Image.FLIP_TOP_BOTTOM)
+
+
+@torch.jit.unused
+def adjust_brightness(img, brightness_factor):
+    """Adjust brightness of an RGB image.
+
+    Args:
+        img (PIL Image): Image to be adjusted.
+        brightness_factor (float):  How much to adjust the brightness. Can be
+            any non negative number. 0 gives a black image, 1 gives the
+            original image while 2 increases the brightness by a factor of 2.
+
+    Returns:
+        PIL Image: Brightness adjusted image.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    enhancer = ImageEnhance.Brightness(img)
+    img = enhancer.enhance(brightness_factor)
+    return img
+
+
+@torch.jit.unused
+def adjust_contrast(img, contrast_factor):
+    """Adjust contrast of an Image.
+    Args:
+        img (PIL Image): PIL Image to be adjusted.
+        contrast_factor (float): How much to adjust the contrast. Can be any
+            non negative number. 0 gives a solid gray image, 1 gives the
+            original image while 2 increases the contrast by a factor of 2.
+    Returns:
+        PIL Image: Contrast adjusted image.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    enhancer = ImageEnhance.Contrast(img)
+    img = enhancer.enhance(contrast_factor)
+    return img
+
+
+@torch.jit.unused
+def adjust_saturation(img, saturation_factor):
+    """Adjust color saturation of an image.
+    Args:
+        img (PIL Image): PIL Image to be adjusted.
+        saturation_factor (float):  How much to adjust the saturation. 0 will
+            give a black and white image, 1 will give the original image while
+            2 will enhance the saturation by a factor of 2.
+    Returns:
+        PIL Image: Saturation adjusted image.
+    """
+    enhancer = ImageEnhance.Color(img)
+    img = enhancer.enhance(saturation_factor)
+    return img

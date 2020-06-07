@@ -865,7 +865,7 @@ class LinearTransformation(object):
         return format_string
 
 
-class ColorJitter(object):
+class ColorJitter(torch.nn.Module):
     """Randomly change the brightness, contrast and saturation of an image.
 
     Args:
@@ -883,6 +883,7 @@ class ColorJitter(object):
             Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
     """
     def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
+        super().__init__()
         self.brightness = self._check_input(brightness, 'brightness')
         self.contrast = self._check_input(contrast, 'contrast')
         self.saturation = self._check_input(saturation, 'saturation')
@@ -941,13 +942,13 @@ class ColorJitter(object):
 
         return transform
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Input image.
+            img (PIL Image or Tensor): Input image.
 
         Returns:
-            PIL Image: Color jittered image.
+            PIL Image or Tensor: Color jittered image.
         """
         transform = self.get_params(self.brightness, self.contrast,
                                     self.saturation, self.hue)
