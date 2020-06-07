@@ -651,7 +651,7 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     return F_t.adjust_brightness(img, brightness_factor)
 
 
-def adjust_contrast(img: Tensor, contrast_factor: float):
+def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     """Adjust contrast of an Image.
 
     Args:
@@ -669,7 +669,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float):
     return F_t.adjust_contrast(img, contrast_factor)
 
 
-def adjust_saturation(img: Tensor, saturation_factor: float):
+def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     """Adjust color saturation of an image.
 
     Args:
