@@ -156,8 +156,12 @@ class Normalize(object):
         self.inplace = inplace
 
     def __call__(self, tensor):
-        """Apply the transform to the given tensor (C x H x W) and return the
-        transformed tensor (C x H x W).
+        """
+        Args:
+            tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
+
+        Returns:
+            Tensor: Normalized Tensor image.
         """
         return F.normalize(tensor, self.mean, self.std, self.inplace)
 
@@ -810,8 +814,12 @@ class LinearTransformation(object):
         self.mean_vector = mean_vector
 
     def __call__(self, tensor):
-        """Apply the transform to the given tensor (C x H x W) and return the
-        transformed tensor (C x H x W).
+        """
+        Args:
+            tensor (Tensor): Tensor image of size (C, H, W) to be whitened.
+
+        Returns:
+            Tensor: Transformed image.
         """
         if tensor.size(0) * tensor.size(1) * tensor.size(2) != self.transformation_matrix.size(0):
             raise ValueError("tensor and transformation matrix have incompatible shape." +
@@ -1278,8 +1286,12 @@ class RandomErasing(object):
         return 0, 0, img_h, img_w, img
 
     def __call__(self, img):
-        """Apply the transform to the given tensor (C x H x W) and return the
-        transformed tensor (C x H x W).
+        """
+        Args:
+            img (Tensor): Tensor image of size (C, H, W) to be erased.
+
+        Returns:
+            img (Tensor): Erased Tensor image.
         """
         if random.uniform(0, 1) < self.p:
             x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value)
