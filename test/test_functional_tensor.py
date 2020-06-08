@@ -56,6 +56,36 @@ class Tester(unittest.TestCase):
         cropped_img_script = script_crop(img_tensor, top, left, height, width)
         self.assertTrue(torch.equal(img_cropped, cropped_img_script))
 
+    def test_hue(self):
+        script_adjust_hue = torch.jit.script(F_t.adjust_hue)
+        fns = ((F.adjust_hue, F_t.adjust_hue, script_adjust_hue),)
+
+        for _ in range(20):
+            channels = 3
+            dims = torch.randint(1, 50, (2,))
+            shape = (channels, dims[0], dims[1])
+            img = torch.randint(0, 256, shape, dtype=torch.uint8)
+
+            factor = torch.rand(1) - 0.5
+
+            img_clone = img.clone()
+            for f, ft, sft in fns:
+
+                ft_img = ft(img, factor)
+                sft_img = sft(img, factor)
+
+                img_pil = transforms.ToPILImage()(img)
+                f_img_pil = f(img_pil, factor)
+                f_img = np.array(f_img_pil, dtype=np.float)
+
+                diff = (ft_img.to(dtype=torch.float) - f_img.astype(float)).norm().numpy()
+                rel_err =  diff / np.linalg.norm(f_img.astype(float))
+                max_diff_scripted = (sft_img - f_img).norm().numpy()
+                rel_err_scripted  = max_diff_scripted /  np.linalg.norm(f_img.astype(float))
+                self.assertLess(rel_err, 1e-2)
+                self.assertLess(rel_err_scripted, 1e-2)
+                self.assertTrue(torch.equal(img, img_clone))
+
     def test_adjustments(self):
         script_adjust_brightness = torch.jit.script(F_t.adjust_brightness)
         script_adjust_contrast = torch.jit.script(F_t.adjust_contrast)
