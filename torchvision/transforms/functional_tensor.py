@@ -3,6 +3,7 @@ import torchvision.transforms.functional as F
 from torch import Tensor
 from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
 
+
 def _is_tensor_a_torch_image(input):
     return len(input.shape) == 3
 
@@ -149,7 +150,6 @@ def adjust_hue(img, hue_factor):
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
-    # the default ToTensor in torchvision scale the RGB from [0,255] to [0, 1]
     img = _rgb2hsv(img)
     h, s, v = img[0], img[1], img[2]
     new_h = h + (hue_factor*255).to(dtype=torch.uint8)
