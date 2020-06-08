@@ -77,7 +77,7 @@ requirements.append(pillow_req + pillow_ver)
 
 
 def get_extensions():
-    this_dir = os.path.dirname(os.path.relpath(__file__))
+    this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
 
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
@@ -146,6 +146,8 @@ def get_extensions():
 
         extra_compile_args.setdefault('cxx', [])
         extra_compile_args['cxx'].append('/MP')
+
+    sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs = [extensions_dir]
 
