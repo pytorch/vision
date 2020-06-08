@@ -150,13 +150,20 @@ def adjust_hue(img, hue_factor):
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
+    orig_dtype = img.dtype
+    if img.dtype == torch.uint8:
+        img = img.to(dtype=torch.float32) / 255.0
+
     img = _rgb2hsv(img)
-    h, s, v = img[0], img[1], img[2]
-    new_h = h + (hue_factor*255).to(dtype=img.dtype)
-    if img.dtype == torch.float:
-        new_h /= 255.0
-    img = torch.stack((new_h, s, v))
-    return  _hsv2rgb(img).transpose(0, 1).transpose(1, 2)
+    h, s, v = img.unbind(0)
+    h += hue_factor
+    img = torch.stack((h, s, v))
+    img_hue_adj = _hsv2rgb(img).transpose(0, 1).transpose(1, 2)
+    img_hue_adj_1 = _hsv2rgb_1((img*255.0).to(dtype=torch.uint8)).transpose(0, 1).transpose(1, 2)
+    img_hue_adj_2 = _hsv2rgb_2((img*255.0)).transpose(0, 1).transpose(1, 2).to(dtype=torch.uint8)
+
+
+    return (img_hue_adj * 255.0).to(dtype=orig_dtype), img_hue_adj_1, img_hue_adj_2
 
 
 def adjust_saturation(img, saturation_factor):
@@ -279,13 +286,10 @@ def _blend(img1, img2, ratio):
 
 
 def _rgb2hsv(img):
-    orig_dtype = img.dtype
-    img = img.to(dtype=torch.float32)
     r, g, b = img.unbind(0)
 
     maxc, _ = torch.max(img, dim=0)
     minc, _ = torch.min(img, dim=0)
-    uv = maxc.to(dtype=orig_dtype)
 
     cr = maxc - minc
     s = cr / maxc
@@ -299,19 +303,40 @@ def _rgb2hsv(img):
     hb = ((maxc != g) & (maxc != r)) * (4.0 + gc - rc)
     h = (hr + hg + hb)
 
-    #  torch.fmod and  math.fmod have different precision.
     h = torch.fmod((h / 6.0 + 1.0), 1.0)
-    uh = torch.clamp(h * 255.0, 0.0, 255.0)
-    us = torch.clamp(s * 255.0, 0.0, 255.0)
+    uh = torch.clamp(h, 0.0, 1.0)
+    us = torch.clamp(s, 0.0, 1.0)
 
-    if orig_dtype == torch.uint8:
-        uh = uh.to(dtype=torch.uint8)
-        us = us.to(dtype=torch.uint8)
-
-    return torch.stack((uh, us, uv))
+    return torch.stack((uh, us, maxc))
 
 
-def _hsv2rgb(img):
+def _hsv2rgb_2(img):
+    h, s, v = img.unbind(0)
+    tmp  = h * 6.0 / 255.0
+    i = torch.floor(tmp)
+    f = tmp - i
+    i = i.to(dtype=torch.int32)
+    fs = s / 255.0
+
+    f_v = v
+    p = torch.clamp(torch.round(f_v * (1.0 - fs)), 0, 255).to(dtype=torch.uint8)
+    q = torch.clamp(torch.round(f_v * (1.0 - fs * f)), 0, 255).to(dtype=torch.uint8)
+    t = torch.clamp(torch.round(f_v * (1.0 - fs * (1.0 - f))), 0, 255).to(dtype=torch.uint8)
+    i = i % 6
+
+    mask = i[..., None] == torch.arange(6)
+    mask = mask.transpose(1, 2).transpose(0,1)
+
+    v = v.to(dtype=torch.uint8)
+    a1=torch.stack((v, q, p, p, t, v))
+    a2=torch.stack((t, v, v, q, p, p))
+    a3=torch.stack((p, p, t, v, v, q))
+    a4 = torch.stack((a1, a2, a3))
+
+    return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=img.dtype), a4)
+
+
+def _hsv2rgb_1(img):
     h, s, v = img.unbind(0)
     tmp  = h.to(dtype=torch.float32) * 6.0 / 255.0
     i = torch.floor(tmp)
@@ -334,3 +359,24 @@ def _hsv2rgb(img):
     a4 = torch.stack((a1, a2, a3))
 
     return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=img.dtype), a4)
+
+def _hsv2rgb(img):
+    h, s, v = img.unbind(0)
+    i = torch.floor(h * 6.0)
+    f = (h * 6.0) - i
+    i = i.to(dtype=torch.int32)
+
+    p = torch.clamp((v * (1.0 - s)), 0.0, 1.0)
+    q = torch.clamp((v * (1.0 - s * f)), 0.0, 1.0)
+    t = torch.clamp((v * (1.0 - s * (1.0 - f))), 0.0, 1.0)
+    i = i % 6
+
+    mask = i[..., None] == torch.arange(6)
+    mask = mask.transpose(1, 2).transpose(0,1)
+
+    a1=torch.stack((v, q, p, p, t, v))
+    a2=torch.stack((t, v, v, q, p, p))
+    a3=torch.stack((p, p, t, v, v, q))
+    a4 = torch.stack((a1, a2, a3))
+
+    return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=torch.float32), a4)

@@ -56,6 +56,23 @@ class Tester(unittest.TestCase):
         cropped_img_script = script_crop(img_tensor, top, left, height, width)
         self.assertTrue(torch.equal(img_cropped, cropped_img_script))
 
+
+    def test_hsv_rgb_conv(self):
+        for _ in range(20):
+            channels = 3
+            dims = torch.randint(1, 50, (2,))
+            shape = (channels, dims[0], dims[1])
+            shape = (3, 2, 2)
+            img = torch.rand(*shape, dtype=torch.float)
+
+            img_clone = img.clone()
+            hsv_img = F_t._rgb2hsv(img)
+            img_conv = F_t._hsv2rgb(hsv_img)
+
+            max_diff = (img - img_conv).abs().max()
+            self.assertLess(max_diff, 5 / 255 + 1e-5)
+
+
     def test_hue(self):
         script_adjust_hue = torch.jit.script(F_t.adjust_hue)
         fns = ((F.adjust_hue, F_t.adjust_hue, script_adjust_hue),)
@@ -64,26 +81,37 @@ class Tester(unittest.TestCase):
             channels = 3
             dims = torch.randint(1, 50, (2,))
             shape = (channels, dims[0], dims[1])
-            img = torch.randint(0, 256, shape, dtype=torch.uint8)
+            shape = (3, 2, 2)
+
+            # img = torch.randint(0, 256, shape, dtype=torch.uint8)
+            img = torch.rand(*shape, dtype=torch.float)
 
             factor = torch.rand(1) - 0.5
 
             img_clone = img.clone()
             for f, ft, sft in fns:
 
-                ft_img = ft(img, factor)
-                sft_img = sft(img, factor)
+                ft_img, ft_img_1, ft_img_2 = ft(img, factor)
+                sft_img, _, _ = sft(img, factor)
 
                 img_pil = transforms.ToPILImage()(img)
                 f_img_pil = f(img_pil, factor)
-                f_img = np.array(f_img_pil, dtype=np.float)
+                # dtype(f_img_pil) = np.uint8
+                f_img = np.array(f_img_pil, dtype=np.int32)
 
 
-                diff = (ft_img.to(dtype=torch.float) - f_img.astype(float)).norm().numpy()
-                rel_err =  diff / np.linalg.norm(f_img.astype(float))
+                ft_img = ft_img.to(dtype=torch.int32)
+                ft_img_1 = ft_img_1.to(dtype=torch.int32)
+                ft_img_2 = ft_img_2.to(dtype=torch.int32)
+
+                diff = (ft_img - f_img).to(dtype=torch.float).norm().numpy()
+                rel_err =  diff / np.linalg.norm(f_img)
+                max_diff = (ft_img - f_img).abs().max()
                 max_diff_scripted = (sft_img - f_img).norm().numpy()
                 rel_err_scripted  = max_diff_scripted /  np.linalg.norm(f_img.astype(float))
+                import pdb; pdb.set_trace()
                 self.assertLess(rel_err, 1e-2)
+                self.assertLess(max_diff, 5)
                 self.assertLess(rel_err_scripted, 1e-2)
                 self.assertTrue(torch.equal(img, img_clone))
 
