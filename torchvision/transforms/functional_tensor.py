@@ -152,7 +152,9 @@ def adjust_hue(img, hue_factor):
 
     img = _rgb2hsv(img)
     h, s, v = img[0], img[1], img[2]
-    new_h = h + (hue_factor*255).to(dtype=torch.uint8)
+    new_h = h + (hue_factor*255).to(dtype=img.dtype)
+    if img.dtype == torch.float:
+        new_h /= 255.0
     img = torch.stack((new_h, s, v))
     return  _hsv2rgb(img).transpose(0, 1).transpose(1, 2)
 
@@ -298,20 +300,24 @@ def _rgb2hsv(img):
     #  torch.fmod and  math.fmod have different precision.
     h = torch.fmod((h / 6.0 + 1.0), 1.0)
 
-    uh = torch.clamp((h*255.0).to(dtype=torch.int32), 0, 255).to(dtype=torch.uint8)
-    us = torch.clamp((s*255.0).to(dtype=torch.int32), 0, 255).to(dtype=torch.uint8)
+    if img.dtype == torch.uint8:
+        uh = torch.clamp((h*255.0).to(dtype=torch.int32), 0, 255).to(dtype=torch.uint8)
+        us = torch.clamp((s*255.0).to(dtype=torch.int32), 0, 255).to(dtype=torch.uint8)
+    else:
+        uh = torch.clamp(h * 255.0, 0.0, 255.0)
+        us = torch.clamp(s * 255.0, 0.0, 255.0)
 
     return torch.stack((uh, us, uv))
 
 def _hsv2rgb(img):
     h, s, v = img[0], img[1], img[2]
-    i = torch.floor(h.to(dtype=torch.float32) * 6.0 / 255.0)
+    i = torch.floor(h.to(dtype=torch.float32) * 6.0 / 255.0).to(dtype=torch.int32)
     f = (h.to(dtype=torch.float32) * 6.0 / 255.0) - i.to(dtype=torch.float32)
     fs = s.to(dtype=torch.float32) / 255.0
 
-    p = torch.clamp(torch.round(v.to(dtype=torch.float32) * (1.0 - fs)), 0, 255).to(dtype=torch.uint8)
-    q = torch.clamp(torch.round(v.to(dtype=torch.float32) * (1.0 - fs * f)), 0, 255).to(dtype=torch.uint8)
-    t = torch.clamp(torch.round(v.to(dtype=torch.float32) * (1.0 - fs * (1.0 - f))), 0, 255).to(dtype=torch.uint8)
+    p = torch.clamp(torch.round(v.to(dtype=torch.float32) * (1.0 - fs)), 0, 255).to(dtype=img.dtype)
+    q = torch.clamp(torch.round(v.to(dtype=torch.float32) * (1.0 - fs * f)), 0, 255).to(dtype=img.dtype)
+    t = torch.clamp(torch.round(v.to(dtype=torch.float32) * (1.0 - fs * (1.0 - f))), 0, 255).to(dtype=img.dtype)
     i = i % 6
 
     r = (i == 0) * v + (i == 1) * q +  (i == 2) * p + (i == 3) * p + (i == 4) * t + (i == 5) * v
