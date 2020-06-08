@@ -1,6 +1,6 @@
 @echo on
 
-if "%CUDA_VERSION%" == "cpu" (
+if "%CU_VERSION%" == "cpu" (
     echo Skipping for CPU builds
     exit /b 0
 )
@@ -9,9 +9,9 @@ set SRC_DIR=%~dp0\..
 
 if not exist "%SRC_DIR%\temp_build" mkdir "%SRC_DIR%\temp_build"
 
-set /a CUDA_VER=%CUDA_VERSION%
-set CUDA_VER_MAJOR=%CUDA_VERSION:~0,-1%
-set CUDA_VER_MINOR=%CUDA_VERSION:~-1,1%
+set /a CUDA_VER=%CU_VERSION:cu=%
+set CUDA_VER_MAJOR=%CUDA_VER:~0,-1%
+set CUDA_VER_MINOR=%CUDA_VER:~-1,1%
 set CUDA_VERSION_STR=%CUDA_VER_MAJOR%.%CUDA_VER_MINOR%
 
 if %CUDA_VER% EQU 92 goto cuda92
@@ -82,7 +82,7 @@ if not exist "%SRC_DIR%\temp_build\cuda_10.2.89_441.22_win10.exe" (
 )
 
 if not exist "%SRC_DIR%\temp_build\cudnn-10.2-windows10-x64-v7.6.5.32.zip" (
-    curl -k -L https://ossci-windows.s3.amazonaws.com/cudnn-10.1-windows10-x64-v7.6.4.38.zip --output "%SRC_DIR%\temp_build\cudnn-10.2-windows10-x64-v7.6.5.32.zip"
+    curl -k -L https://ossci-windows.s3.amazonaws.com/cudnn-10.2-windows10-x64-v7.6.5.32.zip --output "%SRC_DIR%\temp_build\cudnn-10.2-windows10-x64-v7.6.5.32.zip"
     if errorlevel 1 exit /b 1
     set "CUDNN_SETUP_FILE=%SRC_DIR%\temp_build\cudnn-10.2-windows10-x64-v7.6.5.32.zip"
 )

@@ -106,7 +106,7 @@ def _read_from_stream(
         )
 
     frames = {}
-    should_buffer = False
+    should_buffer = True
     max_buffer_size = 5
     if stream.type == "video":
         # DivX-style packed B-frames can have out-of-order pts (2 frames in a single pkt)
@@ -317,8 +317,8 @@ def read_video_timestamps(filename, pts_unit="pts"):
 
     _check_av_available()
 
-    video_frames = []
     video_fps = None
+    pts = []
 
     try:
         container = av.open(filename, metadata_errors="ignore")
@@ -329,19 +329,20 @@ def read_video_timestamps(filename, pts_unit="pts"):
         if container.streams.video:
             video_stream = container.streams.video[0]
             video_time_base = video_stream.time_base
-            if _can_read_timestamps_from_packets(container):
-                # fast path
-                video_frames = [
-                    x for x in container.demux(video=0) if x.pts is not None
-                ]
-            else:
-                video_frames = _read_from_stream(
-                    container, 0, float("inf"), pts_unit, video_stream, {"video": 0}
-                )
+            try:
+                if _can_read_timestamps_from_packets(container):
+                    # fast path
+                    pts = [x.pts for x in container.demux(video=0) if x.pts is not None]
+                else:
+                    pts = [
+                        x.pts for x in container.decode(video=0) if x.pts is not None
+                    ]
+            except av.AVError:
+                warnings.warn(f"Failed decoding frames for file {filename}")
             video_fps = float(video_stream.average_rate)
         container.close()
 
-    pts = [x.pts for x in video_frames]
+    pts.sort()
 
     if pts_unit == "sec":
         pts = [x * video_time_base for x in pts]

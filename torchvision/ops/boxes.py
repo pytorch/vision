@@ -4,8 +4,9 @@ from torch import Tensor
 import torchvision
 
 
+@torch.jit.script
 def nms(boxes, scores, iou_threshold):
-    # type: (Tensor, Tensor, float)
+    # type: (Tensor, Tensor, float) -> Tensor
     """
     Performs non-maximum suppression (NMS) on the boxes according
     to their intersection-over-union (IoU).
@@ -13,6 +14,11 @@ def nms(boxes, scores, iou_threshold):
     NMS iteratively removes lower scoring boxes which have an
     IoU greater than iou_threshold with another (higher scoring)
     box.
+
+    If multiple boxes have the exact same score and satisfy the IoU
+    criterion with respect to a reference box, the selected box is
+    not guaranteed to be the same between CPU and GPU. This is similar
+    to the behavior of argsort in PyTorch when repeated values are present.
 
     Parameters
     ----------
@@ -35,8 +41,9 @@ def nms(boxes, scores, iou_threshold):
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
 
 
+@torch.jit.script
 def batched_nms(boxes, scores, idxs, iou_threshold):
-    # type: (Tensor, Tensor, Tensor, float)
+    # type: (Tensor, Tensor, Tensor, float) -> Tensor
     """
     Performs non-maximum suppression in a batched fashion.
 
@@ -69,15 +76,16 @@ def batched_nms(boxes, scores, idxs, iou_threshold):
     # we add an offset to all the boxes. The offset is dependent
     # only on the class idx, and is large enough so that boxes
     # from different classes do not overlap
-    max_coordinate = boxes.max()
-    offsets = idxs.to(boxes) * (max_coordinate + 1)
-    boxes_for_nms = boxes + offsets[:, None]
-    keep = nms(boxes_for_nms, scores, iou_threshold)
-    return keep
+    else:
+        max_coordinate = boxes.max()
+        offsets = idxs.to(boxes) * (max_coordinate + torch.tensor(1).to(boxes))
+        boxes_for_nms = boxes + offsets[:, None]
+        keep = nms(boxes_for_nms, scores, iou_threshold)
+        return keep
 
 
 def remove_small_boxes(boxes, min_size):
-    # type: (Tensor, float)
+    # type: (Tensor, float) -> Tensor
     """
     Remove boxes which contains at least one side smaller than min_size.
 
@@ -96,7 +104,7 @@ def remove_small_boxes(boxes, min_size):
 
 
 def clip_boxes_to_image(boxes, size):
-    # type: (Tensor, Tuple[int, int])
+    # type: (Tensor, Tuple[int, int]) -> Tensor
     """
     Clip boxes so that they lie inside an image of size `size`.
 

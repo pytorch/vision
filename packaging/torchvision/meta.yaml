@@ -30,6 +30,7 @@ build:
     - CUDA_HOME
     - FORCE_CUDA
     - NVCC_FLAGS
+    - BUILD_VERSION
   features:
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
 

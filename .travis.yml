@@ -29,7 +29,7 @@ before_install:
   - |
     if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then
       pip install -q --user typing-extensions==3.6.6
-      pip install -q --user -i https://test.pypi.org/simple/ ort-nightly==1.2.0.dev202004141
+      pip install -q --user -i https://test.pypi.org/simple/ ort-nightly==1.3.0.dev202005123
     fi
   - conda install av -c conda-forge
 
@@ -50,7 +50,7 @@ install:
     cd -
 
 script:
-  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH -k 'not TestVideoReader and not TestVideoTransforms' test
+  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH -k 'not TestVideoReader and not TestVideoTransforms and not TestIO' test
   - pytest test/test_hub.py
 
 after_success:

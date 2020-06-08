@@ -12,6 +12,24 @@ at::Tensor nms(
     const at::Tensor& dets,
     const at::Tensor& scores,
     const double iou_threshold) {
+  TORCH_CHECK(
+      dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
+  TORCH_CHECK(
+      dets.size(1) == 4,
+      "boxes should have 4 elements in dimension 1, got ",
+      dets.size(1));
+  TORCH_CHECK(
+      scores.dim() == 1,
+      "scores should be a 1d tensor, got ",
+      scores.dim(),
+      "D");
+  TORCH_CHECK(
+      dets.size(0) == scores.size(0),
+      "boxes and scores should have same number of elements in ",
+      "dimension 0, got ",
+      dets.size(0),
+      " and ",
+      scores.size(0));
   if (dets.is_cuda()) {
 #if defined(WITH_CUDA)
     if (dets.numel() == 0) {

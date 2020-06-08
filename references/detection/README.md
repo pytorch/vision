@@ -1,10 +1,24 @@
 # Object detection reference training scripts
 
 This folder contains reference training scripts for object detection.
-They serve as a log of how to train specific models, as provide baseline
+They serve as a log of how to train specific models, to provide baseline
 training and evaluation scripts to quickly bootstrap research.
 
-Except otherwise noted, all models have been trained on 8x V100 GPUs.
+To execute the example commands below you must install the following:
+
+```
+cython
+pycocotools
+matplotlib
+```
+
+You must modify the following flags:
+
+`--data-path=/path/to/coco/dataset`
+
+`--nproc_per_node=<number_of_gpus_available>`
+
+Except otherwise noted, all models have been trained on 8x V100 GPUs. 
 
 ### Faster R-CNN
 ```

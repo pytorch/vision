@@ -59,10 +59,11 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
         yield f.name, data
     os.unlink(f.name)
 
+
 @unittest.skipIf(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
                  "video_reader backend not available")
 @unittest.skipIf(av is None, "PyAV unavailable")
-class Tester(unittest.TestCase):
+class TestIO(unittest.TestCase):
     # compression adds artifacts, thus we add a tolerance of
     # 6 in 0-255 range
     TOLERANCE = 6
@@ -108,10 +109,10 @@ class Tester(unittest.TestCase):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name)
             for start in range(5):
-                for l in range(1, 4):
-                    lv, _, _ = io.read_video(f_name, pts[start], pts[start + l - 1])
-                    s_data = data[start:(start + l)]
-                    self.assertEqual(len(lv), l)
+                for offset in range(1, 4):
+                    lv, _, _ = io.read_video(f_name, pts[start], pts[start + offset - 1])
+                    s_data = data[start:(start + offset)]
+                    self.assertEqual(len(lv), offset)
                     self.assertTrue(s_data.equal(lv))
 
             if get_video_backend() == "pyav":
@@ -127,10 +128,10 @@ class Tester(unittest.TestCase):
         with temp_video(100, 300, 300, 5, options=options) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name)
             for start in range(0, 80, 20):
-                for l in range(1, 4):
-                    lv, _, _ = io.read_video(f_name, pts[start], pts[start + l - 1])
-                    s_data = data[start:(start + l)]
-                    self.assertEqual(len(lv), l)
+                for offset in range(1, 4):
+                    lv, _, _ = io.read_video(f_name, pts[start], pts[start + offset - 1])
+                    s_data = data[start:(start + offset)]
+                    self.assertEqual(len(lv), offset)
                     self.assertTrue((s_data.float() - lv.float()).abs().max() < self.TOLERANCE)
 
             lv, _, _ = io.read_video(f_name, pts[4] + 1, pts[7])
@@ -201,10 +202,10 @@ class Tester(unittest.TestCase):
             pts, _ = io.read_video_timestamps(f_name, pts_unit='sec')
 
             for start in range(5):
-                for l in range(1, 4):
-                    lv, _, _ = io.read_video(f_name, pts[start], pts[start + l - 1], pts_unit='sec')
-                    s_data = data[start:(start + l)]
-                    self.assertEqual(len(lv), l)
+                for offset in range(1, 4):
+                    lv, _, _ = io.read_video(f_name, pts[start], pts[start + offset - 1], pts_unit='sec')
+                    s_data = data[start:(start + offset)]
+                    self.assertEqual(len(lv), offset)
                     self.assertTrue(s_data.equal(lv))
 
             container = av.open(f_name)
@@ -236,6 +237,7 @@ class Tester(unittest.TestCase):
             self.assertEqual(video_pts, [])
             self.assertIs(video_fps, None)
 
+    @unittest.skip("Temporarily disabled due to new pyav")
     def test_read_video_partially_corrupted_file(self):
         with temp_video(5, 4, 4, 5, lossless=True) as (f_name, data):
             with open(f_name, 'r+b') as f:
