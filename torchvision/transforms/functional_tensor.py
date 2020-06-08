@@ -279,17 +279,19 @@ def _blend(img1, img2, ratio):
 
 
 def _rgb2hsv(img):
-    r, g, b = img[0], img[1], img[2]
+    orig_dtype = img.dtype
+    img = img.to(dtype=torch.float32)
+    r, g, b = img.unbind(0)
 
     maxc, _ = torch.max(img, dim=0)
     minc, _ = torch.min(img, dim=0)
-    uv = maxc
+    uv = maxc.to(dtype=orig_dtype)
 
-    cr = maxc.to(dtype=torch.float32) - minc.to(dtype=torch.float32)
-    s = cr / maxc.to(dtype=torch.float32)
-    rc = (maxc-r).to(dtype=torch.float32) / cr
-    gc = (maxc-g).to(dtype=torch.float32) / cr
-    bc = (maxc-b).to(dtype=torch.float32) / cr
+    cr = maxc - minc
+    s = cr / maxc
+    rc = (maxc-r) / cr
+    gc = (maxc-g) / cr
+    bc = (maxc-b) / cr
 
     s = (maxc != minc) * s
     hr = (maxc == r) * (bc - gc)
@@ -299,28 +301,36 @@ def _rgb2hsv(img):
 
     #  torch.fmod and  math.fmod have different precision.
     h = torch.fmod((h / 6.0 + 1.0), 1.0)
+    uh = torch.clamp(h * 255.0, 0.0, 255.0)
+    us = torch.clamp(s * 255.0, 0.0, 255.0)
 
-    if img.dtype == torch.uint8:
-        uh = torch.clamp((h*255.0).to(dtype=torch.int32), 0, 255).to(dtype=torch.uint8)
-        us = torch.clamp((s*255.0).to(dtype=torch.int32), 0, 255).to(dtype=torch.uint8)
-    else:
-        uh = torch.clamp(h * 255.0, 0.0, 255.0)
-        us = torch.clamp(s * 255.0, 0.0, 255.0)
+    if orig_dtype == torch.uint8:
+        uh = uh.to(dtype=torch.uint8)
+        us = us.to(dtype=torch.uint8)
 
     return torch.stack((uh, us, uv))
 
+
 def _hsv2rgb(img):
-    h, s, v = img[0], img[1], img[2]
-    i = torch.floor(h.to(dtype=torch.float32) * 6.0 / 255.0).to(dtype=torch.int32)
-    f = (h.to(dtype=torch.float32) * 6.0 / 255.0) - i.to(dtype=torch.float32)
+    h, s, v = img.unbind(0)
+    tmp  = h.to(dtype=torch.float32) * 6.0 / 255.0
+    i = torch.floor(tmp)
+    f = tmp - i
+    i = i.to(dtype=torch.int32)
     fs = s.to(dtype=torch.float32) / 255.0
 
-    p = torch.clamp(torch.round(v.to(dtype=torch.float32) * (1.0 - fs)), 0, 255).to(dtype=img.dtype)
-    q = torch.clamp(torch.round(v.to(dtype=torch.float32) * (1.0 - fs * f)), 0, 255).to(dtype=img.dtype)
-    t = torch.clamp(torch.round(v.to(dtype=torch.float32) * (1.0 - fs * (1.0 - f))), 0, 255).to(dtype=img.dtype)
+    f_v = v.to(dtype=torch.float32)
+    p = torch.clamp(torch.round(f_v * (1.0 - fs)), 0, 255).to(dtype=img.dtype)
+    q = torch.clamp(torch.round(f_v * (1.0 - fs * f)), 0, 255).to(dtype=img.dtype)
+    t = torch.clamp(torch.round(f_v * (1.0 - fs * (1.0 - f))), 0, 255).to(dtype=img.dtype)
     i = i % 6
 
-    r = (i == 0) * v + (i == 1) * q +  (i == 2) * p + (i == 3) * p + (i == 4) * t + (i == 5) * v
-    g = (i == 0) * t + (i == 1) * v +  (i == 2) * v + (i == 3) * q + (i == 4) * p + (i == 5) * p
-    b = (i == 0) * p + (i == 1) * p +  (i == 2) * t + (i == 3) * v + (i == 4) * v + (i == 5) * q
-    return torch.stack((r, g, b))
+    mask = i[..., None] == torch.arange(6)
+    mask = mask.transpose(1, 2).transpose(0,1)
+
+    a1=torch.stack((v, q, p, p, t,v))
+    a2=torch.stack((t, v, v, q, p, p))
+    a3=torch.stack((p, p, t, v, v, q))
+    a4 = torch.stack((a1, a2, a3))
+
+    return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=img.dtype), a4)
