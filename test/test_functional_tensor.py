@@ -64,7 +64,6 @@ class Tester(unittest.TestCase):
             channels = 3
             dims = torch.randint(1, 50, (2,))
             shape = (channels, dims[0], dims[1])
-            shape = (3, 2, 2)
             img = torch.randint(0, 256, shape, dtype=torch.uint8)
 
             factor = torch.rand(1) - 0.5
@@ -79,11 +78,11 @@ class Tester(unittest.TestCase):
                 f_img_pil = f(img_pil, factor)
                 f_img = np.array(f_img_pil, dtype=np.float)
 
+
                 diff = (ft_img.to(dtype=torch.float) - f_img.astype(float)).norm().numpy()
                 rel_err =  diff / np.linalg.norm(f_img.astype(float))
                 max_diff_scripted = (sft_img - f_img).norm().numpy()
                 rel_err_scripted  = max_diff_scripted /  np.linalg.norm(f_img.astype(float))
-
                 self.assertLess(rel_err, 1e-2)
                 self.assertLess(rel_err_scripted, 1e-2)
                 self.assertTrue(torch.equal(img, img_clone))

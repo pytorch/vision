@@ -279,17 +279,19 @@ def _blend(img1, img2, ratio):
 
 
 def _rgb2hsv(img):
-    r, g, b = img[0], img[1], img[2]
+    orig_dtype = img.dtype
+    img = img.to(dtype=torch.float32)
+    r, g, b = img.unbind(0)
 
     maxc, _ = torch.max(img, dim=0)
     minc, _ = torch.min(img, dim=0)
-    uv = maxc
+    uv = maxc.to(dtype=orig_dtype)
 
-    cr = maxc.to(dtype=torch.float32) - minc.to(dtype=torch.float32)
-    s = cr / maxc.to(dtype=torch.float32)
-    rc = (maxc-r).to(dtype=torch.float32) / cr
-    gc = (maxc-g).to(dtype=torch.float32) / cr
-    bc = (maxc-b).to(dtype=torch.float32) / cr
+    cr = maxc - minc
+    s = cr / maxc
+    rc = (maxc-r) / cr
+    gc = (maxc-g) / cr
+    bc = (maxc-b) / cr
 
     s = (maxc != minc) * s
     hr = (maxc == r) * (bc - gc)
@@ -300,7 +302,7 @@ def _rgb2hsv(img):
     #  torch.fmod and  math.fmod have different precision.
     h = torch.fmod((h / 6.0 + 1.0), 1.0)
 
-    if img.dtype == torch.uint8:
+    if orig_dtype == torch.uint8:
         uh = torch.clamp((h*255.0).to(dtype=torch.int32), 0, 255).to(dtype=torch.uint8)
         us = torch.clamp((s*255.0).to(dtype=torch.int32), 0, 255).to(dtype=torch.uint8)
     else:
@@ -308,6 +310,7 @@ def _rgb2hsv(img):
         us = torch.clamp(s * 255.0, 0.0, 255.0)
 
     return torch.stack((uh, us, uv))
+
 
 def _hsv2rgb(img):
     h, s, v = img[0], img[1], img[2]
