@@ -34,7 +34,7 @@ version = '0.7.0a0'
 sha = 'Unknown'
 package_name = 'torchvision'
 
-cwd = os.path.dirname(os.path.relpath(__file__))
+cwd = os.path.dirname(os.path.abspath(__file__))
 
 try:
     sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=cwd).decode('ascii').strip()
