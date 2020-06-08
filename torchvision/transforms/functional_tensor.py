@@ -153,7 +153,6 @@ def adjust_hue(img, hue_factor):
     img = _rgb2hsv(img)
     h, s, v = img[0], img[1], img[2]
     new_h = h + (hue_factor*255).to(dtype=torch.uint8)
-    # new_h = torch.clamp(new_h, 0, 255)
     img = torch.stack((new_h, s, v))
     return  _hsv2rgb(img).transpose(0, 1).transpose(1, 2)
 
