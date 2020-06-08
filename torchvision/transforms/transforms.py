@@ -15,7 +15,7 @@ import warnings
 from . import functional as F
 
 
-__all__ = ["Compose", "ToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
+__all__ = ["Compose", "ToTensor", "PILToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
            "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
            "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
            "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
@@ -95,6 +95,26 @@ class ToTensor(object):
         return self.__class__.__name__ + '()'
 
 
+class PILToTensor(object):
+    """Convert a ``PIL Image`` to a tensor of the same type.
+
+    Converts a PIL Image (H x W x C) to a torch.Tensor of shape (C x H x W).
+    """
+
+    def __call__(self, pic):
+        """
+        Args:
+            pic (PIL Image): Image to be converted to tensor.
+
+        Returns:
+            Tensor: Converted image.
+        """
+        return F.pil_to_tensor(pic)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '()'
+
+
 class ToPILImage(object):
     """Convert a tensor or an ndarray to PIL Image.
 
@@ -137,8 +157,9 @@ class ToPILImage(object):
 class Normalize(object):
     """Normalize a tensor image with mean and standard deviation.
 
-    Given mean: ``(M1,...,Mn)`` and std: ``(S1,..,Sn)`` for ``n`` channels, this transform
-    will normalize each channel of the input ``torch.*Tensor`` i.e.
+    Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``
+    channels, this transform will normalize each channel of the input
+    ``torch.*Tensor`` i.e.,
     ``output[channel] = (input[channel] - mean[channel]) / std[channel]``
 
     .. note::
@@ -479,25 +500,29 @@ class RandomCrop(object):
         return self.__class__.__name__ + '(size={0}, padding={1})'.format(self.size, self.padding)
 
 
-class RandomHorizontalFlip(object):
-    """Horizontally flip the given PIL Image randomly with a given probability.
+class RandomHorizontalFlip(torch.nn.Module):
+    """Horizontally flip the given image randomly with a given probability.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     Args:
         p (float): probability of the image being flipped. Default value is 0.5
     """
 
     def __init__(self, p=0.5):
+        super().__init__()
         self.p = p
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be flipped.
+            img (PIL Image or Tensor): Image to be flipped.
 
         Returns:
-            PIL Image: Randomly flipped image.
+            PIL Image or Tensor: Randomly flipped image.
         """
-        if random.random() < self.p:
+        if torch.rand(1) < self.p:
             return F.hflip(img)
         return img
 
@@ -505,25 +530,29 @@ class RandomHorizontalFlip(object):
         return self.__class__.__name__ + '(p={})'.format(self.p)
 
 
-class RandomVerticalFlip(object):
+class RandomVerticalFlip(torch.nn.Module):
     """Vertically flip the given PIL Image randomly with a given probability.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     Args:
         p (float): probability of the image being flipped. Default value is 0.5
     """
 
     def __init__(self, p=0.5):
+        super().__init__()
         self.p = p
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be flipped.
+            img (PIL Image or Tensor): Image to be flipped.
 
         Returns:
-            PIL Image: Randomly flipped image.
+            PIL Image or Tensor: Randomly flipped image.
         """
-        if random.random() < self.p:
+        if torch.rand(1) < self.p:
             return F.vflip(img)
         return img
 
@@ -807,8 +836,8 @@ class LinearTransformation(object):
 
         if mean_vector.size(0) != transformation_matrix.size(0):
             raise ValueError("mean_vector should have the same length {}".format(mean_vector.size(0)) +
-                             " as any one of the dimensions of the transformation_matrix [{} x {}]"
-                             .format(transformation_matrix.size()))
+                             " as any one of the dimensions of the transformation_matrix [{}]"
+                             .format(tuple(transformation_matrix.size())))
 
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector

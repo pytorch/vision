@@ -20,3 +20,4 @@ htmlcov
 *.swp
 *.swo
 gen.yml
+.mypy_cache

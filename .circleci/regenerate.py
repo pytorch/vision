@@ -23,7 +23,7 @@ def workflows(prefix='', filter_branch=None, upload=False, indentation=6, window
     w = []
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
-            python_versions = ["3.5", "3.6", "3.7", "3.8"]
+            python_versions = ["3.6", "3.7", "3.8"]
             cu_versions = (["cpu", "cu92", "cu101", "cu102"] if os_type == "linux" or os_type == "win" else ["cpu"])
             for python_version in python_versions:
                 for cu_version in cu_versions:
@@ -76,7 +76,7 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
     d = {
         "name": base_workflow_name,
         "python_version": python_version,
-        "cu_version": cu_version.replace("cu", "") if os_type == "win" else cu_version,
+        "cu_version": cu_version,
     }
 
     if os_type != "win" and unicode:
@@ -103,7 +103,16 @@ def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, 
         d["subfolder"] = "" if os_type == 'macos' else cu_version + "/"
 
     if filter_branch is not None:
-        d["filters"] = {"branches": {"only": filter_branch}}
+        d["filters"] = {
+            "branches": {
+                "only": filter_branch
+            },
+            "tags": {
+                # Using a raw string here to avoid having to escape
+                # anything
+                "only": r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
+            }
+        }
 
     return {f"binary_{btype}_upload": d}
 

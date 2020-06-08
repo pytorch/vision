@@ -299,13 +299,22 @@ class Tester(unittest.TestCase):
         width = random.randint(10, 32) * 2
         img = torch.ones(3, height, width)
         padding = random.randint(1, 20)
+        fill = random.randint(1, 50)
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Pad(padding),
+            transforms.Pad(padding, fill=fill),
             transforms.ToTensor(),
         ])(img)
         self.assertEqual(result.size(1), height + 2 * padding)
         self.assertEqual(result.size(2), width + 2 * padding)
+        # check that all elements in the padded region correspond
+        # to the pad value
+        fill_v = fill / 255
+        eps = 1e-5
+        self.assertTrue((result[:, :padding, :] - fill_v).abs().max() < eps)
+        self.assertTrue((result[:, :, :padding] - fill_v).abs().max() < eps)
+        self.assertRaises(ValueError, transforms.Pad(padding, fill=(1, 2)),
+                          transforms.ToPILImage()(img))
 
     def test_pad_with_tuple_of_pad_values(self):
         height = random.randint(10, 32) * 2
@@ -504,6 +513,49 @@ class Tester(unittest.TestCase):
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_to_tensor(self):
         trans = transforms.ToTensor()
+
+        expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
+        output = trans(accimage.Image(GRACE_HOPPER))
+
+        self.assertEqual(expected_output.size(), output.size())
+        self.assertTrue(np.allclose(output.numpy(), expected_output.numpy()))
+
+    def test_pil_to_tensor(self):
+        test_channels = [1, 3, 4]
+        height, width = 4, 4
+        trans = transforms.PILToTensor()
+
+        with self.assertRaises(TypeError):
+            trans(np.random.rand(1, height, width).tolist())
+            trans(np.random.rand(1, height, width))
+
+        for channels in test_channels:
+            input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
+            img = transforms.ToPILImage()(input_data)
+            output = trans(img)
+            self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
+
+            input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
+            img = transforms.ToPILImage()(input_data)
+            output = trans(img)
+            expected_output = input_data.transpose((2, 0, 1))
+            self.assertTrue(np.allclose(output.numpy(), expected_output))
+
+            input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
+            img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
+            output = trans(img)  # HWC -> CHW
+            expected_output = (input_data * 255).byte()
+            self.assertTrue(np.allclose(output.numpy(), expected_output.numpy()))
+
+        # separate test for mode '1' PIL images
+        input_data = torch.ByteTensor(1, height, width).bernoulli_()
+        img = transforms.ToPILImage()(input_data.mul(255)).convert('1')
+        output = trans(img)
+        self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
+
+    @unittest.skipIf(accimage is None, 'accimage not available')
+    def test_accimage_pil_to_tensor(self):
+        trans = transforms.PILToTensor()
 
         expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
         output = trans(accimage.Image(GRACE_HOPPER))

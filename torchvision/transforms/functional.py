@@ -1,4 +1,5 @@
 import torch
+from torch import Tensor
 import math
 from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
 try:
@@ -10,6 +11,9 @@ from numpy import sin, cos, tan
 import numbers
 from collections.abc import Sequence, Iterable
 import warnings
+
+from . import functional_pil as F_pil
+from . import functional_tensor as F_t
 
 
 def _is_pil_image(img):
@@ -80,6 +84,33 @@ def to_tensor(pic):
         return img.float().div(255)
     else:
         return img
+
+
+def pil_to_tensor(pic):
+    """Convert a ``PIL Image`` to a tensor of the same type.
+
+    See ``AsTensor`` for more details.
+
+    Args:
+        pic (PIL Image): Image to be converted to tensor.
+
+    Returns:
+        Tensor: Converted image.
+    """
+    if not(_is_pil_image(pic)):
+        raise TypeError('pic should be PIL Image. Got {}'.format(type(pic)))
+
+    if accimage is not None and isinstance(pic, accimage.Image):
+        nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
+        pic.copyto(nppic)
+        return torch.as_tensor(nppic)
+
+    # handle PIL Image
+    img = torch.as_tensor(np.asarray(pic))
+    img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
+    # put it from HWC to CHW format
+    img = img.permute((2, 0, 1))
+    return img
 
 
 def to_pil_image(pic, mode=None):
@@ -302,6 +333,12 @@ def pad(img, padding, fill=0, padding_mode='constant'):
         'Padding mode should be either constant, edge, reflect or symmetric'
 
     if padding_mode == 'constant':
+        if isinstance(fill, numbers.Number):
+            fill = (fill,) * len(img.getbands())
+        if len(fill) != len(img.getbands()):
+            raise ValueError('fill should have the same number of elements '
+                             'as the number of channels in the image '
+                             '({}), got {} instead'.format(len(img.getbands()), len(fill)))
         if img.mode == 'P':
             palette = img.getpalette()
             image = ImageOps.expand(img, border=padding, fill=fill)
@@ -401,19 +438,22 @@ def resized_crop(img, top, left, height, width, size, interpolation=Image.BILINE
     return img
 
 
-def hflip(img):
-    """Horizontally flip the given PIL Image.
+def hflip(img: Tensor) -> Tensor:
+    """Horizontally flip the given PIL Image or torch Tensor.
 
     Args:
-        img (PIL Image): Image to be flipped.
+        img (PIL Image or Torch Tensor): Image to be flipped. If img
+            is a Tensor, it is expected to be in [..., H, W] format,
+            where ... means it can have an arbitrary number of trailing
+            dimensions.
 
     Returns:
-        PIL Image:  Horizontall flipped image.
+        PIL Image:  Horizontally flipped image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.hflip(img)
 
-    return img.transpose(Image.FLIP_LEFT_RIGHT)
+    return F_t.hflip(img)
 
 
 def _parse_fill(fill, img, min_pil_version):
@@ -503,19 +543,22 @@ def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC, fill=N
     return img.transform(img.size, Image.PERSPECTIVE, coeffs, interpolation, **opts)
 
 
-def vflip(img):
-    """Vertically flip the given PIL Image.
+def vflip(img: Tensor) -> Tensor:
+    """Vertically flip the given PIL Image or torch Tensor.
 
     Args:
-        img (PIL Image): Image to be flipped.
+        img (PIL Image or Torch Tensor): Image to be flipped. If img
+            is a Tensor, it is expected to be in [..., H, W] format,
+            where ... means it can have an arbitrary number of trailing
+            dimensions.
 
     Returns:
         PIL Image:  Vertically flipped image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.vflip(img)
 
-    return img.transpose(Image.FLIP_TOP_BOTTOM)
+    return F_t.vflip(img)
 
 
 def five_crop(img, size):
@@ -676,7 +719,7 @@ def adjust_hue(img, hue_factor):
         PIL Image: Hue adjusted image.
     """
     if not(-0.5 <= hue_factor <= 0.5):
-        raise ValueError('hue_factor is not in [-0.5, 0.5].'.format(hue_factor))
+        raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
 
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
