@@ -83,6 +83,7 @@ class Tester(unittest.TestCase):
                 rel_err =  diff / np.linalg.norm(f_img.astype(float))
                 max_diff_scripted = (sft_img - f_img).norm().numpy()
                 rel_err_scripted  = max_diff_scripted /  np.linalg.norm(f_img.astype(float))
+
                 self.assertLess(rel_err, 1e-2)
                 self.assertLess(rel_err_scripted, 1e-2)
                 self.assertTrue(torch.equal(img, img_clone))
