@@ -134,7 +134,7 @@ def adjust_hue(img, hue_factor):
     .. _Hue: https://en.wikipedia.org/wiki/Hue
 
     Args:
-        img (Tensor): Image to be adjusted.
+        img (Tensor): Image to be adjusted. Image type is either uint8 or float.
         hue_factor (float):  How much to shift the hue channel. Should be in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
