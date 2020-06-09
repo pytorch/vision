@@ -6,6 +6,7 @@ import torchvision.transforms.functional as F
 import numpy as np
 import unittest
 import random
+import colorsys
 from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
 
 
@@ -56,64 +57,47 @@ class Tester(unittest.TestCase):
         cropped_img_script = script_crop(img_tensor, top, left, height, width)
         self.assertTrue(torch.equal(img_cropped, cropped_img_script))
 
+    def test_hsv2rgb(self):
+         shape = (3, 10, 10)
+         for _ in range(20):
+            img = torch.rand(*shape, dtype=torch.float)
+            ft_img =  F_t._hsv2rgb(img).transpose(0, 1).transpose(1, 2).reshape(np.prod(shape[1:]), shape[0])
 
-    def test_hsv_rgb_conv(self):
-        for _ in range(20):
-            channels = 3
-            dims = torch.randint(1, 50, (2,))
-            shape = (channels, dims[0], dims[1])
-            shape = (3, 2, 2)
+            h, s, v, = img.unbind(0)
+            h = h.flatten().numpy()
+            s = s.flatten().numpy()
+            v = v.flatten().numpy()
+
+            rgb = []
+            for h1, s1, v1 in zip(h, s, v):
+                rgb.append(colorsys.hsv_to_rgb(h1, s1, v1))
+
+            colorsys_img = torch.tensor(rgb, dtype=torch.float32)
+            max_diff = (ft_img- colorsys_img).abs().max()
+            self.assertLess(max_diff, 1e-5)
+
+
+    def test_rgb2hsv(self):
+         shape = (3, 2, 2)
+         for _ in range(20):
             img = torch.rand(*shape, dtype=torch.float)
 
-            img_clone = img.clone()
-            hsv_img = F_t._rgb2hsv(img)
-            img_conv = F_t._hsv2rgb(hsv_img)
+            ft_hsv_img = F_t._rgb2hsv(img).transpose(0, 1).transpose(1, 2).reshape(np.prod(shape[1:]), shape[0])
 
-            max_diff = (img - img_conv).abs().max()
-            self.assertLess(max_diff, 5 / 255 + 1e-5)
+            r, g, b, = img.unbind(0)
+            r = r.flatten().numpy()
+            g = g.flatten().numpy()
+            b = b.flatten().numpy()
 
+            hsv = []
+            for r1, g1, b1 in zip(r, g, b):
+                hsv.append(colorsys.rgb_to_hsv(r1, g1, b1))
 
-    def test_hue(self):
-        script_adjust_hue = torch.jit.script(F_t.adjust_hue)
-        fns = ((F.adjust_hue, F_t.adjust_hue, script_adjust_hue),)
+            colorsys_img = torch.tensor(hsv, dtype=torch.float32)
 
-        for _ in range(20):
-            channels = 3
-            dims = torch.randint(1, 50, (2,))
-            shape = (channels, dims[0], dims[1])
-            shape = (3, 2, 2)
+            max_diff = (colorsys_img- ft_hsv_img).abs().max()
+            self.assertLess(max_diff, 1e-5)
 
-            # img = torch.randint(0, 256, shape, dtype=torch.uint8)
-            img = torch.rand(*shape, dtype=torch.float)
-
-            factor = torch.rand(1) - 0.5
-
-            img_clone = img.clone()
-            for f, ft, sft in fns:
-
-                ft_img, ft_img_1, ft_img_2 = ft(img, factor)
-                sft_img, _, _ = sft(img, factor)
-
-                img_pil = transforms.ToPILImage()(img)
-                f_img_pil = f(img_pil, factor)
-                # dtype(f_img_pil) = np.uint8
-                f_img = np.array(f_img_pil, dtype=np.int32)
-
-
-                ft_img = ft_img.to(dtype=torch.int32)
-                ft_img_1 = ft_img_1.to(dtype=torch.int32)
-                ft_img_2 = ft_img_2.to(dtype=torch.int32)
-
-                diff = (ft_img - f_img).to(dtype=torch.float).norm().numpy()
-                rel_err =  diff / np.linalg.norm(f_img)
-                max_diff = (ft_img - f_img).abs().max()
-                max_diff_scripted = (sft_img - f_img).norm().numpy()
-                rel_err_scripted  = max_diff_scripted /  np.linalg.norm(f_img.astype(float))
-                import pdb; pdb.set_trace()
-                self.assertLess(rel_err, 1e-2)
-                self.assertLess(max_diff, 5)
-                self.assertLess(rel_err_scripted, 1e-2)
-                self.assertTrue(torch.equal(img, img_clone))
 
     def test_adjustments(self):
         script_adjust_brightness = torch.jit.script(F_t.adjust_brightness)
