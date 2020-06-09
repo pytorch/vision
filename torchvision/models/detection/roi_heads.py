@@ -491,19 +491,17 @@ def check_target_item(target, key, dtype, shape, shape_string=None):
         target (Dict[str, Tensor]): target for a training instance containing
             the Tensors to be checked
         key (str): key for the Tensor to be checked in target.
-        dtype (Union[torch.dtype, Tuple[torch.dtype]]): the expected dtype of
-            the Tensor. Can be either a type or a tuple of acceptable types.
-        shape (Tuple): the expected shape of the Tensor. This function checks
-            the number of dimensions and any non-None values of this tuple.
+        dtype (List[int]): a list containing the possible dtypes of
+            the Tensor.
+        shape (List[int]): the expected shape of the Tensor. This function checks
+            the number of dimensions and any non-None values of this list.
         shape_string (Optional[str]): optional string for exception messages.
             If messages. If not specified, shape will be cast into string and
             used instead.
 
         Raises:
             ValueError if the Tensor fails a check.
-        """
-    if not isinstance(dtype, tuple):
-        dtype = (dtype,)
+     """
     if not shape_string:
         shape_string = str(shape_string)
 
@@ -676,19 +674,19 @@ class RoIHeads(torch.nn.Module):
             ValueError if targets fails a check.
         """
         # TODO: https://github.com/pytorch/pytorch/issues/26731
-        floating_point_types = (torch.float, torch.double, torch.half)
+        floating_point_types = [torch.float, torch.double, torch.half]
 
         if targets is None:
             raise ValueError("In training mode, targets should be passed")
 
         for t in targets:
-            check_target_item(t, "boxes", floating_point_types, (None, 4), shape_string="(N, 4)")
+            check_target_item(t, "boxes", floating_point_types, [None, 4], shape_string="[N, 4]")
             N = t["boxes"].shape[0] # must match for labels, masks and keypoints
-            check_target_item(t, "labels", torch.int64, (N,), shape_string="(N,)")
+            check_target_item(t, "labels", [torch.int64], [N], shape_string="[N,]")
             if self.has_mask():
-                check_target_item(t, "masks", torch.uint8, (N, None, None), shape_string="(N, H, W)")
+                check_target_item(t, "masks", [torch.uint8], [N, None, None], shape_string="[N, H, W]")
             if self.has_keypoint():
-                check_target_item(t, "keypoints", floating_point_types, (N, None, 3), shape_string="(N, K, 3)")
+                check_target_item(t, "keypoints", floating_point_types, [N, None, 3], shape_string="[N, K, 3]")
 
     def select_training_samples(self,
                                 proposals,  # type: List[Tensor]
