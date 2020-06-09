@@ -156,10 +156,10 @@ def main(args):
         model_without_ddp = model.module
 
     if args.test_only:
-        #eval_t = time.time()
-        with torch.autograd.profiler.profile() as prof:
+        eval_t = time.time()
+        with torch.autograd.profiler.profile(enabled=True, use_cuda=True, record_shapes=True) as prof:
             confmat = evaluate(model, data_loader_test, device=device, num_classes=num_classes)
-        print(prof.key_averages(group_by_input_shape=True).table(sort_by="self_cpu_time_total"))
+        print(prof.key_averages(group_by_input_shape=True).table(sort_by="cuda_time_total", row_limit=100))
         #print(confmat)
         #print("\n\nEVAL: ", time.time() - eval_t)
         #print("GLOBAL TIME :", time.time() - total_t)
