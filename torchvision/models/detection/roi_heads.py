@@ -491,7 +491,7 @@ def _check_target_item(target, key, dtype, shape, shape_string=None):
         target (Dict[str, Tensor]): target for a training instance containing
             the Tensors to be checked
         key (str): key for the Tensor to be checked in target.
-        dtype (List[int]): a list containing the possible dtypes of
+        dtype (List[torch.dtype]): a list containing the possible dtypes of
             the Tensor.
         shape (List[int]): the expected shape of the Tensor. This function checks
             the number of dimensions and any non-None values of this list.
