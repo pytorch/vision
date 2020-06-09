@@ -1,4 +1,5 @@
 from __future__ import division
+import warnings
 from collections import OrderedDict
 from torch.jit.annotations import Optional, List
 from torch import Tensor
