@@ -1,5 +1,7 @@
 import warnings
 
+from .extension import _HAS_OPS
+
 from torchvision import models
 from torchvision import datasets
 from torchvision import ops
@@ -7,7 +9,7 @@ from torchvision import transforms
 from torchvision import utils
 from torchvision import io
 
-from .extension import _HAS_OPS
+import torch
 
 try:
     from .version import __version__  # noqa: F401
@@ -70,5 +72,4 @@ def get_video_backend():
 
 
 def _is_tracing():
-    import torch
     return torch._C._get_tracing_state()

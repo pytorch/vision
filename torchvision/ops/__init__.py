@@ -1,4 +1,5 @@
 from .boxes import nms, box_iou
+from .new_empty_tensor import _new_empty_tensor
 from .roi_align import roi_align, RoIAlign
 from .roi_pool import roi_pool, RoIPool
 from .ps_roi_align import ps_roi_align, PSRoIAlign
@@ -12,7 +13,7 @@ _register_custom_op()
 
 
 __all__ = [
-    'nms', 'roi_align', 'RoIAlign', 'roi_pool', 'RoIPool',
+    'nms', 'roi_align', 'RoIAlign', 'roi_pool', 'RoIPool', '_new_empty_tensor',
     'ps_roi_align', 'PSRoIAlign', 'ps_roi_pool', 'PSRoIPool',
     'MultiScaleRoIAlign', 'FeaturePyramidNetwork'
 ]

@@ -194,7 +194,8 @@ class ResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
-    def _forward(self, x):
+    def _forward_impl(self, x):
+        # See note [TorchScript super()]
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -211,8 +212,8 @@ class ResNet(nn.Module):
 
         return x
 
-    # Allow for accessing forward method in a inherited class
-    forward = _forward
+    def forward(self, x):
+        return self._forward_impl(x)
 
 
 def _resnet(arch, block, layers, pretrained, progress, **kwargs):
