@@ -109,7 +109,7 @@ class Tester(unittest.TestCase):
                 max_diff = (ft_img - f_img).abs().max()
                 max_diff_scripted = (sft_img - f_img).norm().numpy()
                 rel_err_scripted  = max_diff_scripted /  np.linalg.norm(f_img.astype(float))
-                import pdb; pdb.set_trace()
+
                 self.assertLess(rel_err, 1e-2)
                 self.assertLess(max_diff, 5)
                 self.assertLess(rel_err_scripted, 1e-2)
