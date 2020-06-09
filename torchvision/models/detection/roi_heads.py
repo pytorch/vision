@@ -482,7 +482,7 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
     return ret
 
 
-def check_target_item(target, key, dtype, shape, shape_string=None):
+def _check_target_item(target, key, dtype, shape, shape_string=None):
     """
     Checks that a key in target corresponds to a Tensor with correct shape and
     dtype.
@@ -503,7 +503,7 @@ def check_target_item(target, key, dtype, shape, shape_string=None):
             ValueError if the Tensor fails a check.
      """
     if not shape_string:
-        shape_string = str(shape_string)
+        shape_string = str(shape)
 
     if key not in target:
         raise ValueError("Key '{:}' not found in targets.".format(key))
@@ -680,13 +680,13 @@ class RoIHeads(torch.nn.Module):
             raise ValueError("In training mode, targets should be passed")
 
         for t in targets:
-            check_target_item(t, "boxes", floating_point_types, [None, 4], shape_string="[N, 4]")
+            _check_target_item(t, "boxes", floating_point_types, [None, 4], shape_string="[N, 4]")
             N = t["boxes"].shape[0] # must match for labels, masks and keypoints
-            check_target_item(t, "labels", [torch.int64], [N], shape_string="[N,]")
+            _check_target_item(t, "labels", [torch.int64], [N], shape_string="[N,]")
             if self.has_mask():
-                check_target_item(t, "masks", [torch.uint8], [N, None, None], shape_string="[N, H, W]")
+                _check_target_item(t, "masks", [torch.uint8], [N, None, None], shape_string="[N, H, W]")
             if self.has_keypoint():
-                check_target_item(t, "keypoints", floating_point_types, [N, None, 3], shape_string="[N, K, 3]")
+                _check_target_item(t, "keypoints", floating_point_types, [N, None, 3], shape_string="[N, K, 3]")
 
     def select_training_samples(self,
                                 proposals,  # type: List[Tensor]
