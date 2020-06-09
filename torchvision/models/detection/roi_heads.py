@@ -482,7 +482,13 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
     return ret
 
 
-def _check_target_item(target, key, dtype, shape, shape_string=None):
+def _check_target_item(target,              # type: Dict[str, Tensor]
+                       key,                 # type: str
+                       dtype,               # type: List[torch.dtype]
+                       shape,               # type: List[int]
+                       shape_string=None,   # type: Optional[str]
+                    ):
+    # type: (...) -> None
     """
     Checks that a key in target corresponds to a Tensor with correct shape and
     dtype.
