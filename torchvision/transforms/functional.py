@@ -633,67 +633,61 @@ def ten_crop(img, size, vertical_flip=False):
     return first_five + second_five
 
 
-def adjust_brightness(img, brightness_factor):
+def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     """Adjust brightness of an Image.
 
     Args:
-        img (PIL Image): PIL Image to be adjusted.
+        img (PIL Image or Torch Tensor): Image to be adjusted.
         brightness_factor (float):  How much to adjust the brightness. Can be
             any non negative number. 0 gives a black image, 1 gives the
             original image while 2 increases the brightness by a factor of 2.
 
     Returns:
-        PIL Image: Brightness adjusted image.
+        PIL Image or Torch Tensor: Brightness adjusted image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.adjust_brightness(img, brightness_factor)
 
-    enhancer = ImageEnhance.Brightness(img)
-    img = enhancer.enhance(brightness_factor)
-    return img
+    return F_t.adjust_brightness(img, brightness_factor)
 
 
-def adjust_contrast(img, contrast_factor):
+def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     """Adjust contrast of an Image.
 
     Args:
-        img (PIL Image): PIL Image to be adjusted.
+        img (PIL Image or Torch Tensor): Image to be adjusted.
         contrast_factor (float): How much to adjust the contrast. Can be any
             non negative number. 0 gives a solid gray image, 1 gives the
             original image while 2 increases the contrast by a factor of 2.
 
     Returns:
-        PIL Image: Contrast adjusted image.
+        PIL Image or Torch Tensor: Contrast adjusted image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.adjust_contrast(img, contrast_factor)
 
-    enhancer = ImageEnhance.Contrast(img)
-    img = enhancer.enhance(contrast_factor)
-    return img
+    return F_t.adjust_contrast(img, contrast_factor)
 
 
-def adjust_saturation(img, saturation_factor):
+def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     """Adjust color saturation of an image.
 
     Args:
-        img (PIL Image): PIL Image to be adjusted.
+        img (PIL Image or Torch Tensor): Image to be adjusted.
         saturation_factor (float):  How much to adjust the saturation. 0 will
             give a black and white image, 1 will give the original image while
             2 will enhance the saturation by a factor of 2.
 
     Returns:
-        PIL Image: Saturation adjusted image.
+        PIL Image or Torch Tensor: Saturation adjusted image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.adjust_saturation(img, saturation_factor)
 
-    enhancer = ImageEnhance.Color(img)
-    img = enhancer.enhance(saturation_factor)
-    return img
+    return F_t.adjust_saturation(img, saturation_factor)
 
 
-def adjust_hue(img, hue_factor):
+def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     """Adjust hue of an image.
 
     The image hue is adjusted by converting the image to HSV and
@@ -718,26 +712,10 @@ def adjust_hue(img, hue_factor):
     Returns:
         PIL Image: Hue adjusted image.
     """
-    if not(-0.5 <= hue_factor <= 0.5):
-        raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.adjust_hue(img, hue_factor)
 
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-
-    input_mode = img.mode
-    if input_mode in {'L', '1', 'I', 'F'}:
-        return img
-
-    h, s, v = img.convert('HSV').split()
-
-    np_h = np.array(h, dtype=np.uint8)
-    # uint8 addition take cares of rotation across boundaries
-    with np.errstate(over='ignore'):
-        np_h += np.uint8(hue_factor * 255)
-    h = Image.fromarray(np_h, 'L')
-
-    img = Image.merge('HSV', (h, s, v)).convert(input_mode)
-    return img
+    raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
 
 def adjust_gamma(img, gamma, gain=1):
