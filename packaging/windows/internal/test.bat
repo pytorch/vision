@@ -11,7 +11,7 @@ if "%BUILD_VISION%" == "" (
     pip install future pytest "pillow>=4.1.1" mock
 )
 
-for /F "delims=" %%i in ('where /R %SRC_DIR%\output\%CUDA_PREFIX% *%MODULE_NAME%*%PYTHON_VERSION%*.whl') do pip install "%%i"
+for /F "delims=" %%i in ('where /R %SRC_DIR%\output *%MODULE_NAME%*%PYTHON_VERSION%*.whl') do pip install "%%i"
 
 if ERRORLEVEL 1 exit /b 1
 

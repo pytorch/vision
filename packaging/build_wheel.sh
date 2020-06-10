@@ -12,4 +12,8 @@ pip_install numpy pyyaml future ninja
 pip_install six
 setup_pip_pytorch_version
 python setup.py clean
-IS_WHEEL=1 python setup.py bdist_wheel
+if [[ "$OSTYPE" == "msys" ]]; then
+    IS_WHEEL=1 "$script_dir/windows/internal/vc_env_helper.bat" python setup.py bdist_wheel
+else
+    IS_WHEEL=1 python setup.py bdist_wheel
+fi

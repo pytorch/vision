@@ -117,6 +117,12 @@ setup_build_version() {
   else
     export BUILD_VERSION="$BUILD_VERSION$VERSION_SUFFIX"
   fi
+
+  # Set build version based on tag if on tag
+  if [[ -n "${CIRCLE_TAG}" ]]; then
+    # Strip tag
+    export BUILD_VERSION="$(echo "${CIRCLE_TAG}" | sed -e 's/^v//' -e 's/-.*$//')"
+  fi
 }
 
 # Set some useful variables for OS X, if applicable
@@ -159,7 +165,7 @@ retry () {
 #
 # Precondition: If Linux, you are in a soumith/manylinux-cuda* Docker image
 setup_wheel_python() {
-  if [[ "$(uname)" == Darwin ]]; then
+  if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     eval "$(conda shell.bash hook)"
     conda env remove -n "env$PYTHON_VERSION" || true
     conda create -yn "env$PYTHON_VERSION" python="$PYTHON_VERSION"
@@ -242,6 +248,9 @@ setup_conda_pytorch_constraint() {
     export CONDA_PYTORCH_BUILD_CONSTRAINT="- pytorch==${PYTORCH_VERSION}${PYTORCH_VERSION_SUFFIX}"
     export CONDA_PYTORCH_CONSTRAINT="- pytorch==${PYTORCH_VERSION}${PYTORCH_VERSION_SUFFIX}"
   fi
+  if [[ "$OSTYPE" == msys && "$CU_VERSION" == cu92 ]]; then
+    export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c defaults -c numba/label/dev"
+  fi
 }
 
 # Translate CUDA_VERSION into CUDA_CUDATOOLKIT_CONSTRAINT
@@ -278,8 +287,7 @@ setup_conda_cudatoolkit_constraint() {
 # Build the proper compiler package before building the final package
 setup_visual_studio_constraint() {
   if [[ "$OSTYPE" == "msys" ]]; then
-      export VSTOOLCHAIN_PACKAGE=vs2019
-      export VSDEVCMD_ARGS=''
+      export VSTOOLCHAIN_PACKAGE=vs$VC_YEAR
       conda build $CONDA_CHANNEL_FLAGS --no-anaconda-upload packaging/$VSTOOLCHAIN_PACKAGE
       cp packaging/$VSTOOLCHAIN_PACKAGE/conda_build_config.yaml packaging/torchvision/conda_build_config.yaml
   fi
