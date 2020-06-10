@@ -882,6 +882,7 @@ class ColorJitter(torch.nn.Module):
             hue_factor is chosen uniformly from [-hue, hue] or the given [min, max].
             Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
     """
+
     def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
         super().__init__()
         self.brightness = self._check_input(brightness, 'brightness')
@@ -895,9 +896,9 @@ class ColorJitter(torch.nn.Module):
         if isinstance(value, numbers.Number):
             if value < 0:
                 raise ValueError("If {} is a single number, it must be non negative.".format(name))
-            value = [center - value, center + value]
+            value = [center - float(value), center + float(value)]
             if clip_first_on_zero:
-                value[0] = max(value[0], 0)
+                value[0] = max(value[0], 0.0)
         elif isinstance(value, (tuple, list)) and len(value) == 2:
             if not bound[0] <= value[0] <= value[1] <= bound[1]:
                 raise ValueError("{} values should be between {}".format(name, bound))
@@ -907,8 +908,8 @@ class ColorJitter(torch.nn.Module):
         # if value is 0 or (1., 1.) for brightness/contrast/saturation
         # or (0., 0.) for hue, do nothing
         if value[0] == value[1] == center:
-            return torch.FloatTensor()
-        return torch.FloatTensor(value)
+            return None
+        return value
 
     @staticmethod
     @torch.jit.unused
@@ -954,20 +955,24 @@ class ColorJitter(torch.nn.Module):
         """
         fn_idx = torch.randperm(4)
         for fn_id in fn_idx:
-            if fn_id == 0 and len(self.brightness):
-                brightness_factor = torch.tensor(1.0).uniform_(self.brightness[0], self.brightness[1]).item()
+            if fn_id == 0 and self.brightness is not None:
+                brightness = self.brightness
+                brightness_factor = torch.tensor(1.0).uniform_(brightness[0], brightness[1]).item()
                 img = F.adjust_brightness(img, brightness_factor)
 
-            if fn_id == 1 and len(self.contrast):
-                contrast_factor = torch.tensor(1.0).uniform_(self.contrast[0], self.contrast[1]).item()
+            if fn_id == 1 and self.contrast is not None:
+                contrast = self.contrast
+                contrast_factor = torch.tensor(1.0).uniform_(contrast[0], contrast[1]).item()
                 img = F.adjust_contrast(img, contrast_factor)
 
-            if fn_id == 2 and len(self.saturation):
-                saturation_factor = torch.tensor(1.0).uniform_(self.saturation[0], self.saturation[1]).item()
+            if fn_id == 2 and self.saturation is not None:
+                saturation = self.saturation
+                saturation_factor = torch.tensor(1.0).uniform_(saturation[0], saturation[1]).item()
                 img = F.adjust_saturation(img, saturation_factor)
 
-            if fn_id == 3 and len(self.hue):
-                hue_factor = torch.tensor(1.0).uniform_(self.hue[0], self.hue[1]).item()
+            if fn_id == 3 and self.hue is not None:
+                hue = self.hue
+                hue_factor = torch.tensor(1.0).uniform_(hue[0], hue[1]).item()
                 img = F.adjust_hue(img, hue_factor)
 
         return img
