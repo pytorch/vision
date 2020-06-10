@@ -65,15 +65,9 @@ def evaluate(model, data_loader, device, num_classes):
     with torch.no_grad():
         i = 0
         for image, target in metric_logger.log_every(data_loader, 100, header):
-            to_device_t = time.time()
             image, target = image.to(device), target.to(device)
-            
-            model_t = time.time()
             output = model(image)
-
             output = output['out']
-
-            cmp_upd = time.time()
             for a, b in zip(target, output):
                 confmat.update(a.flatten(), b.argmax(0).flatten())
 
