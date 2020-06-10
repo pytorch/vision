@@ -890,6 +890,7 @@ class ColorJitter(torch.nn.Module):
         self.hue = self._check_input(hue, 'hue', center=0, bound=(-0.5, 0.5),
                                      clip_first_on_zero=False)
 
+    @torch.jit.unused
     def _check_input(self, value, name, center=1, bound=(0, float('inf')), clip_first_on_zero=True):
         if isinstance(value, numbers.Number):
             if value < 0:
@@ -910,9 +911,12 @@ class ColorJitter(torch.nn.Module):
         return torch.FloatTensor(value)
 
     @staticmethod
+    @torch.jit.unused
     def get_params(brightness, contrast, saturation, hue):
         """Get a randomized transform to be applied on image.
+
         Arguments are same as that of __init__.
+
         Returns:
             Transform which randomly adjusts brightness, contrast and
             saturation in a random order.
