@@ -908,7 +908,7 @@ class ColorJitter(torch.nn.Module):
         # if value is 0 or (1., 1.) for brightness/contrast/saturation
         # or (0., 0.) for hue, do nothing
         if value[0] == value[1] == center:
-            return None
+            value = None
         return value
 
     @staticmethod
