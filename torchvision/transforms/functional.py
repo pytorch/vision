@@ -687,7 +687,7 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     return F_t.adjust_saturation(img, saturation_factor)
 
 
-def adjust_hue(img, hue_factor):
+def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     """Adjust hue of an image.
 
     The image hue is adjusted by converting the image to HSV and
@@ -712,26 +712,10 @@ def adjust_hue(img, hue_factor):
     Returns:
         PIL Image: Hue adjusted image.
     """
-    if not(-0.5 <= hue_factor <= 0.5):
-        raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.adjust_hue(img, hue_factor)
 
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-
-    input_mode = img.mode
-    if input_mode in {'L', '1', 'I', 'F'}:
-        return img
-
-    h, s, v = img.convert('HSV').split()
-
-    np_h = np.array(h, dtype=np.uint8)
-    # uint8 addition take cares of rotation across boundaries
-    with np.errstate(over='ignore'):
-        np_h += np.uint8(hue_factor * 255)
-    h = Image.fromarray(np_h, 'L')
-
-    img = Image.merge('HSV', (h, s, v)).convert(input_mode)
-    return img
+    raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
 
 def adjust_gamma(img, gamma, gain=1):

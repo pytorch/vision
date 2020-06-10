@@ -906,15 +906,13 @@ class ColorJitter(torch.nn.Module):
         # if value is 0 or (1., 1.) for brightness/contrast/saturation
         # or (0., 0.) for hue, do nothing
         if value[0] == value[1] == center:
-            value = None
-        return value
+            return torch.FloatTensor()
+        return torch.FloatTensor(value)
 
     @staticmethod
     def get_params(brightness, contrast, saturation, hue):
         """Get a randomized transform to be applied on image.
-
         Arguments are same as that of __init__.
-
         Returns:
             Transform which randomly adjusts brightness, contrast and
             saturation in a random order.
@@ -950,9 +948,25 @@ class ColorJitter(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Color jittered image.
         """
-        transform = self.get_params(self.brightness, self.contrast,
-                                    self.saturation, self.hue)
-        return transform(img)
+        fn_idx = torch.randperm(4)
+        for fn_id in fn_idx:
+            if fn_id == 0 and len(self.brightness):
+                brightness_factor = torch.tensor(1.0).uniform_(self.brightness[0], self.brightness[1]).item()
+                img = F.adjust_brightness(img, brightness_factor)
+
+            if fn_id == 1 and len(self.contrast):
+                contrast_factor = torch.tensor(1.0).uniform_(self.contrast[0], self.contrast[1]).item()
+                img = F.adjust_contrast(img, contrast_factor)
+
+            if fn_id == 2 and len(self.saturation):
+                saturation_factor = torch.tensor(1.0).uniform_(self.saturation[0], self.saturation[1]).item()
+                img = F.adjust_saturation(img, saturation_factor)
+
+            if fn_id == 3 and len(self.hue):
+                hue_factor = torch.tensor(1.0).uniform_(self.hue[0], self.hue[1]).item()
+                img = F.adjust_hue(img, hue_factor)
+
+        return img
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
