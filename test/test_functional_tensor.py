@@ -110,7 +110,6 @@ class Tester(unittest.TestCase):
             scripted_fn = torch.jit.script(f)
             scripted_fn(img)
 
-
     def test_rgb_to_grayscale(self):
         script_rgb_to_grayscale = torch.jit.script(F_t.rgb_to_grayscale)
         img_tensor = torch.randint(0, 255, (3, 16, 16), dtype=torch.uint8)
