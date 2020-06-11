@@ -124,15 +124,22 @@ def convert_image_dtype(
 
     Returns:
         (torch.Tensor): Converted image
+
+    Raises:
+        TypeError: When trying to cast :class:`torch.float32` to :class:`torch.int32`
+            or :class:`torch.int64` as well as for trying to cast
+            :class:`torch.float64` to :class:`torch.int64`. These conversions are
+            unsafe since the floating point ``dtype`` cannot store consecutive XXX. which might lead to overflow errors
     """
     def float_to_float(image: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
         return image.to(dtype)
 
-    def float_to_int(image: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
-        max = float(torch.iinfo(dtype).max)
-        image = image * (max + 1.0)
-        image = torch.clamp(image, max)
-        return image.to(dtype)
+    def float_to_int(image: torch.Tensor, dtype: torch.dtype, eps=1e-3) -> torch.Tensor:
+        if (image.dtype == torch.float32 and dtype in (torch.int32, torch.int64)) or (image.dtype == torch.float64 and dtype == torch.int64):
+            msg = (f"The cast from {image.dtype} to {dtype} cannot be performed safely, " 
+                   f"since {image.dtype} cannot ")
+            raise TypeError(msg)
+        return image.mul(torch.iinfo(dtype).max + 1 - eps).to(dtype)
 
     def int_to_float(image: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
         max = torch.iinfo(image.dtype).max
