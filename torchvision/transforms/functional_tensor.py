@@ -302,7 +302,6 @@ def _rgb2hsv(img):
     h = (hr + hg + hb)
     h = t * h
     h = torch.fmod((h / 6.0 + 1.0), 1.0)
-
     return torch.stack((h, s, maxc))
 
 
