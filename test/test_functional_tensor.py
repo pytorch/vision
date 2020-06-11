@@ -58,10 +58,10 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(img_cropped, cropped_img_script))
 
     def test_hsv2rgb(self):
-         shape = (3, 10, 10)
+         shape = (3, 100, 150)
          for _ in range(20):
             img = torch.rand(*shape, dtype=torch.float)
-            ft_img =  F_t._hsv2rgb(img).transpose(0, 1).transpose(1, 2).reshape(np.prod(shape[1:]), shape[0])
+            ft_img =  F_t._hsv2rgb(img).permute(1, 2, 0).flatten(0, 1)
 
             h, s, v, = img.unbind(0)
             h = h.flatten().numpy()
@@ -76,13 +76,11 @@ class Tester(unittest.TestCase):
             max_diff = (ft_img- colorsys_img).abs().max()
             self.assertLess(max_diff, 1e-5)
 
-
     def test_rgb2hsv(self):
-         shape = (3, 2, 2)
+         shape = (3, 150, 100)
          for _ in range(20):
             img = torch.rand(*shape, dtype=torch.float)
-
-            ft_hsv_img = F_t._rgb2hsv(img).transpose(0, 1).transpose(1, 2).reshape(np.prod(shape[1:]), shape[0])
+            ft_hsv_img = F_t._rgb2hsv(img).permute(1, 2, 0).flatten(0, 1)
 
             r, g, b, = img.unbind(0)
             r = r.flatten().numpy()
@@ -97,7 +95,6 @@ class Tester(unittest.TestCase):
 
             max_diff = (colorsys_img- ft_hsv_img).abs().max()
             self.assertLess(max_diff, 1e-5)
-
 
     def test_adjustments(self):
         script_adjust_brightness = torch.jit.script(F_t.adjust_brightness)

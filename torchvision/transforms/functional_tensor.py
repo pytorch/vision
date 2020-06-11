@@ -157,10 +157,14 @@ def adjust_hue(img, hue_factor):
     img = _rgb2hsv(img)
     h, s, v = img.unbind(0)
     h += hue_factor
+    h = h % 1.0
     img = torch.stack((h, s, v))
-    img_hue_adj = _hsv2rgb(img).transpose(0, 1).transpose(1, 2)
+    img_hue_adj = _hsv2rgb(img)
 
-    return (img_hue_adj * 255.0).to(dtype=orig_dtype)
+    if orig_dtype == torch.uint8:
+        img_hue_adj = (img_hue_adj * 255.0).to(dtype=orig_dtype)
+
+    return img_hue_adj
 
 
 def adjust_saturation(img, saturation_factor):
@@ -302,7 +306,6 @@ def _rgb2hsv(img):
     h = (hr + hg + hb)
     h = t * h
     h = torch.fmod((h / 6.0 + 1.0), 1.0)
-
     return torch.stack((h, s, maxc))
 
 
