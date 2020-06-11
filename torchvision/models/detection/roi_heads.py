@@ -483,7 +483,7 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
 
 
 def _TEMP_any(bool_list):
-    # type: List[bool] -> bool
+    # type: (List[bool]) -> bool
     # torchscript does not support bultins
     for b in bool_list:
         if b:
