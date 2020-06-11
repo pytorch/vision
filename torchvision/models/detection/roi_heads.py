@@ -526,11 +526,11 @@ def _check_target_item(target,          # type: Dict[str, Tensor]
                          " {:}.".format(key, shape_string, arr.shape))
     for i in range(len(shape)):
         if shape[i] is not None:
+            assert shape[i] is not None # for torchsript
             if arr.shape[i] != shape[i]:
                 raise ValueError("Expected target {:} to be Tensor with shape "
                                  "{:}, got {:}.".format(key,
                                  shape_string, arr.shape))
-
 
 
 class RoIHeads(torch.nn.Module):
