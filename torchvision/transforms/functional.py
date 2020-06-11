@@ -113,9 +113,7 @@ def pil_to_tensor(pic):
     return img
 
 
-def convert_image_dtype(
-    image: torch.Tensor, dtype: torch.dtype = torch.float
-) -> torch.Tensor:
+def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
     """Convert a tensor image to the given ``dtype`` and scale the values accordingly
 
     Args:
@@ -125,28 +123,42 @@ def convert_image_dtype(
     Returns:
         (torch.Tensor): Converted image
 
+    .. note::
+
+        When converting from a smaller to a larger integer ``dtype`` the maximum values are **not** mapped exactly.
+        If converted back and forth, this mismatch has no effect.
+
     Raises:
-        TypeError: When trying to cast :class:`torch.float32` to :class:`torch.int32`
-            or :class:`torch.int64` as well as for trying to cast
-            :class:`torch.float64` to :class:`torch.int64`. These conversions are
-            unsafe since the floating point ``dtype`` cannot store consecutive XXX. which might lead to overflow errors
+        RuntimeError: When trying to cast :class:`torch.float32` to :class:`torch.int32` or :class:`torch.int64` as
+            well as for trying to cast :class:`torch.float64` to :class:`torch.int64`. These conversions might lead to
+            overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
+            of the integer ``dtype``.
     """
-    def float_to_float(image: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
-        return image.to(dtype)
+    if image.dtype == dtype:
+        return image
 
-    def float_to_int(image: torch.Tensor, dtype: torch.dtype, eps=1e-3) -> torch.Tensor:
-        if (image.dtype == torch.float32 and dtype in (torch.int32, torch.int64)) or (image.dtype == torch.float64 and dtype == torch.int64):
-            msg = (f"The cast from {image.dtype} to {dtype} cannot be performed safely, " 
-                   f"since {image.dtype} cannot ")
-            raise TypeError(msg)
+    if image.dtype.is_floating_point:
+        # float to float
+        if dtype.is_floating_point:
+            return image.to(dtype)
+
+        # float to int
+        if (image.dtype == torch.float32 and dtype in (torch.int32, torch.int64)) or (
+            image.dtype == torch.float64 and dtype == torch.int64
+        ):
+            msg = f"The cast from {image.dtype} to {dtype} cannot be performed safely."
+            raise RuntimeError(msg)
+
+        eps = 1e-3
         return image.mul(torch.iinfo(dtype).max + 1 - eps).to(dtype)
+    else:
+        # int to float
+        if dtype.is_floating_point:
+            max = torch.iinfo(image.dtype).max
+            image = image.to(dtype)
+            return image / max
 
-    def int_to_float(image: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
-        max = torch.iinfo(image.dtype).max
-        image = image.to(dtype)
-        return image / max
-
-    def int_to_int(image: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
+        # int to int
         input_max = torch.iinfo(image.dtype).max
         output_max = torch.iinfo(dtype).max
 
@@ -157,21 +169,7 @@ def convert_image_dtype(
         else:
             factor = (output_max + 1) // (input_max + 1)
             image = image.to(dtype)
-            return (image + 1) * factor - 1
-
-    if image.dtype == dtype:
-        return image
-
-    if image.dtype.is_floating_point:
-        if dtype.is_floating_point:
-            return float_to_float(image, dtype)
-        else:
-            return float_to_int(image, dtype)
-    else:
-        if dtype.is_floating_point:
-            return int_to_float(image, dtype)
-        else:
-            return int_to_int(image, dtype)
+            return image * factor
 
 
 def to_pil_image(pic, mode=None):

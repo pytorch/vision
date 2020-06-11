@@ -23,6 +23,20 @@ GRACE_HOPPER = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
 
 
+def cycle_over(objs):
+    objs = list(objs)
+    for idx, obj in enumerate(objs):
+        yield obj, objs[:idx] + objs[idx + 1:]
+
+def int_dtypes():
+    yield from iter(
+        (torch.uint8, torch.int8, torch.int16, torch.short, torch.int32, torch.int, torch.int64, torch.long,)
+    )
+
+def float_dtypes():
+    yield from iter((torch.float32, torch.float, torch.float64, torch.double))
+
+
 class Tester(unittest.TestCase):
 
     def test_crop(self):
@@ -510,54 +524,99 @@ class Tester(unittest.TestCase):
         output = trans(img)
         self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
-    def test_convert_image_dtype(self):
-        def cycle_over(objs):
-            objs = list(objs)
-            for idx, obj in enumerate(objs):
-                yield obj, objs[:idx] + objs[idx + 1:]
-
-        # dtype_max_value = {
-        #     dtype: 1.0
-        #     for dtype in (torch.float32, torch.float, torch.float64, torch.double)#, torch.bool,)
-        #     # torch.float16 and torch.half are disabled for now since they do not support torch.max
-        #     # See https://github.com/pytorch/pytorch/issues/28623#issuecomment-611379051
-        #     # (torch.float32, torch.float, torch.float64, torch.double, torch.float16, torch.half, torch.bool, )
-        # }
-        dtype_max_value = {}
-        dtype_max_value.update(
-            {
-                dtype: torch.iinfo(dtype).max
-                for dtype in (
-                    torch.uint8,
-                    torch.int8,
-                    torch.int16,
-                    torch.short,
-                    torch.int32,
-                    torch.int,
-                    torch.int64,
-                    torch.long,
-                )
-            }
-        )
-
-        for input_dtype, output_dtypes in cycle_over(dtype_max_value.keys()):
-            input_image = torch.ones(1, dtype=input_dtype) * dtype_max_value[input_dtype]
-
+    def test_convert_image_dtype_float_to_float(self):
+        for input_dtype, output_dtypes in cycle_over(float_dtypes()):
+            input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
             for output_dtype in output_dtypes:
                 with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
                     transform = transforms.ConvertImageDtype(output_dtype)
                     output_image = transform(input_image)
 
-                    actual = output_image.dtype
-                    desired = output_dtype
-                    self.assertEqual(actual, desired)
+                    actual_min, actual_max = output_image.tolist()
+                    desired_min, desired_max = 0.0, 1.0
 
-                    actual = torch.max(output_image).item()
-                    desired = dtype_max_value[output_dtype]
-                    if output_dtype.is_floating_point:
-                        self.assertAlmostEqual(actual, desired)
+                    self.assertAlmostEqual(actual_min, desired_min)
+                    self.assertAlmostEqual(actual_max, desired_max)
+
+    def test_convert_image_dtype_float_to_int(self):
+        for input_dtype in float_dtypes():
+            input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
+            for output_dtype in int_dtypes():
+                with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
+                    transform = transforms.ConvertImageDtype(output_dtype)
+
+                    if (input_dtype == torch.float32 and output_dtype in (torch.int32, torch.int64)) or (
+                            input_dtype == torch.float64 and output_dtype == torch.int64
+                    ):
+                        with self.assertRaises(RuntimeError):
+                            transform(input_image)
                     else:
-                        self.assertEqual(actual, desired)
+                        output_image = transform(input_image)
+
+                        actual_min, actual_max = output_image.tolist()
+                        desired_min, desired_max = 0, torch.iinfo(output_dtype).max
+
+                        self.assertEqual(actual_min, desired_min)
+                        self.assertEqual(actual_max, desired_max)
+
+    def test_convert_image_dtype_int_to_float(self):
+        for input_dtype in int_dtypes():
+            input_image = torch.tensor((0, torch.iinfo(input_dtype).max), dtype=input_dtype)
+            for output_dtype in float_dtypes():
+                with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
+                    transform = transforms.ConvertImageDtype(output_dtype)
+                    output_image = transform(input_image)
+
+                    actual_min, actual_max = output_image.tolist()
+                    desired_min, desired_max = 0.0, 1.0
+
+                    self.assertAlmostEqual(actual_min, desired_min)
+                    self.assertGreaterEqual(actual_min, desired_min)
+                    self.assertAlmostEqual(actual_max, desired_max)
+                    self.assertLessEqual(actual_max, desired_max)
+
+    def test_convert_image_dtype_int_to_int(self):
+        for input_dtype, output_dtypes in cycle_over(int_dtypes()):
+            input_max = torch.iinfo(input_dtype).max
+            input_image = torch.tensor((0, input_max), dtype=input_dtype)
+            for output_dtype in output_dtypes:
+                output_max = torch.iinfo(output_dtype).max
+
+                with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
+                    transform = transforms.ConvertImageDtype(output_dtype)
+                    output_image = transform(input_image)
+
+                    actual_min, actual_max = output_image.tolist()
+                    desired_min, desired_max = 0, output_max
+
+                    # see https://github.com/pytorch/vision/pull/2078#issuecomment-641036236 for details
+                    if input_max >= output_max:
+                        error_term = 0
+                    else:
+                        error_term = 1 - (torch.iinfo(output_dtype).max + 1) // (torch.iinfo(input_dtype).max + 1)
+
+                    self.assertEqual(actual_min, desired_min)
+                    self.assertEqual(actual_max, desired_max + error_term)
+
+    def test_convert_image_dtype_int_to_int_consistency(self):
+        for input_dtype, output_dtypes in cycle_over(int_dtypes()):
+            input_max = torch.iinfo(input_dtype).max
+            input_image = torch.tensor((0, input_max), dtype=input_dtype)
+            for output_dtype in output_dtypes:
+                output_max = torch.iinfo(output_dtype).max
+                if output_max <= input_max:
+                    continue
+
+                with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
+                    transform = transforms.ConvertImageDtype(output_dtype)
+                    inverse_transfrom = transforms.ConvertImageDtype(input_dtype)
+                    output_image = inverse_transfrom(transform(input_image))
+
+                    actual_min, actual_max = output_image.tolist()
+                    desired_min, desired_max = 0, input_max
+
+                    self.assertEqual(actual_min, desired_min)
+                    self.assertEqual(actual_max, desired_max)
 
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_to_tensor(self):

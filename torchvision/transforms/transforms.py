@@ -121,7 +121,18 @@ class ConvertImageDtype(object):
     Args:
         dtype (torch.dtype): Desired data type of the output
 
+    .. note::
+
+        When converting from a smaller to a larger integer ``dtype`` the maximum values are **not** mapped exactly.
+        If converted back and forth, this mismatch has no effect.
+
+    Raises:
+        RuntimeError: When trying to cast :class:`torch.float32` to :class:`torch.int32` or :class:`torch.int64` as
+            well as for trying to cast :class:`torch.float64` to :class:`torch.int64`. These conversions might lead to
+            overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
+            of the integer ``dtype``.
     """
+
     def __init__(self, dtype: torch.dtype) -> None:
         self.dtype = dtype
 
