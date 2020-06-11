@@ -28,10 +28,12 @@ def cycle_over(objs):
     for idx, obj in enumerate(objs):
         yield obj, objs[:idx] + objs[idx + 1:]
 
+
 def int_dtypes():
     yield from iter(
         (torch.uint8, torch.int8, torch.int16, torch.short, torch.int32, torch.int, torch.int64, torch.long,)
     )
+
 
 def float_dtypes():
     yield from iter((torch.float32, torch.float, torch.float64, torch.double))
