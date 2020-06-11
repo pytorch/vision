@@ -494,7 +494,7 @@ def _TEMP_any(bool_list):
 def _check_target_item(target,          # type: Dict[str, Tensor]
                        key,             # type: str
                        dtype,           # type: List[torch.dtype]
-                       shape,           # type: List[int]
+                       shape,           # type: List[Optional[int]]
                        shape_string="", # type: Optional[str]
                        ):
     # type: (...) -> None
