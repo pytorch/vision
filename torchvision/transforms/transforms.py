@@ -15,10 +15,10 @@ import warnings
 from . import functional as F
 
 
-__all__ = ["Compose", "ToTensor", "PILToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
-           "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
-           "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
-           "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
+__all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize", "Resize", "Scale",
+           "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
+           "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
+           "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
            "RandomPerspective", "RandomErasing"]
 
 _pil_interpolation_to_str = {
@@ -113,6 +113,31 @@ class PILToTensor(object):
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
+
+
+class ConvertImageDtype(object):
+    """Convert a tensor image to the given ``dtype`` and scale the values accordingly
+
+    Args:
+        dtype (torch.dtype): Desired data type of the output
+
+    .. note::
+
+        When converting from a smaller to a larger integer ``dtype`` the maximum values are **not** mapped exactly.
+        If converted back and forth, this mismatch has no effect.
+
+    Raises:
+        RuntimeError: When trying to cast :class:`torch.float32` to :class:`torch.int32` or :class:`torch.int64` as
+            well as for trying to cast :class:`torch.float64` to :class:`torch.int64`. These conversions might lead to
+            overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
+            of the integer ``dtype``.
+    """
+
+    def __init__(self, dtype: torch.dtype) -> None:
+        self.dtype = dtype
+
+    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+        return F.convert_image_dtype(image, self.dtype)
 
 
 class ToPILImage(object):

@@ -113,6 +113,65 @@ def pil_to_tensor(pic):
     return img
 
 
+def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
+    """Convert a tensor image to the given ``dtype`` and scale the values accordingly
+
+    Args:
+        image (torch.Tensor): Image to be converted
+        dtype (torch.dtype): Desired data type of the output
+
+    Returns:
+        (torch.Tensor): Converted image
+
+    .. note::
+
+        When converting from a smaller to a larger integer ``dtype`` the maximum values are **not** mapped exactly.
+        If converted back and forth, this mismatch has no effect.
+
+    Raises:
+        RuntimeError: When trying to cast :class:`torch.float32` to :class:`torch.int32` or :class:`torch.int64` as
+            well as for trying to cast :class:`torch.float64` to :class:`torch.int64`. These conversions might lead to
+            overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
+            of the integer ``dtype``.
+    """
+    if image.dtype == dtype:
+        return image
+
+    if image.dtype.is_floating_point:
+        # float to float
+        if dtype.is_floating_point:
+            return image.to(dtype)
+
+        # float to int
+        if (image.dtype == torch.float32 and dtype in (torch.int32, torch.int64)) or (
+            image.dtype == torch.float64 and dtype == torch.int64
+        ):
+            msg = f"The cast from {image.dtype} to {dtype} cannot be performed safely."
+            raise RuntimeError(msg)
+
+        eps = 1e-3
+        return image.mul(torch.iinfo(dtype).max + 1 - eps).to(dtype)
+    else:
+        # int to float
+        if dtype.is_floating_point:
+            max = torch.iinfo(image.dtype).max
+            image = image.to(dtype)
+            return image / max
+
+        # int to int
+        input_max = torch.iinfo(image.dtype).max
+        output_max = torch.iinfo(dtype).max
+
+        if input_max > output_max:
+            factor = (input_max + 1) // (output_max + 1)
+            image = image // factor
+            return image.to(dtype)
+        else:
+            factor = (output_max + 1) // (input_max + 1)
+            image = image.to(dtype)
+            return image * factor
+
+
 def to_pil_image(pic, mode=None):
     """Convert a tensor or an ndarray to PIL Image.
 
