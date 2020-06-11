@@ -35,10 +35,10 @@ class ImageTester(unittest.TestCase):
             size = os.path.getsize(img_path)
             img_lpng = decode_png(torch.from_file(img_path, dtype=torch.uint8, size=size))
             self.assertEqual(img_lpng, img_pil)
-            
+
             self.assertEqual(decode_png(torch.empty()), torch.empty())
             self.assertEqual(decode_png(torch.randint(3, 5, (300,))), torch.empty())
-    
+
 
 if __name__ == '__main__':
     unittest.main()

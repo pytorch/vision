@@ -171,6 +171,28 @@ def get_extensions():
             )
         )
 
+    try:
+        include_dirs += [os.environ['LIBRARY_INC']]
+    except KeyError:
+        pass
+
+    try:
+        library_dirs = [os.environ['LIBRARY_LIB']]
+    except KeyError:
+        library_dirs = []
+
+    # Image reading extension
+    image_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'image')
+    image_src = glob.glob(os.path.join(image_src_dir, "*.cpp"))
+    ext_modules.append(extension(
+        'torchvision.image',
+        image_src,
+        include_dirs=include_dirs + image_src_dir,
+        library_dirs=library_dirs,
+        define_macros=define_macros,
+        extra_compile_args=extra_compile_args
+    ))
+
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
 
