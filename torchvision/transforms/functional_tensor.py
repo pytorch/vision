@@ -320,8 +320,7 @@ def _hsv2rgb(img):
     t = torch.clamp((v * (1.0 - s * (1.0 - f))), 0.0, 1.0)
     i = i % 6
 
-    mask = i[..., None] == torch.arange(6)
-    mask = mask.transpose(1, 2).transpose(0,1)
+    mask = i == torch.arange(6)[:, None, None]
 
     a1=torch.stack((v, q, p, p, t, v))
     a2=torch.stack((t, v, v, q, p, p))
