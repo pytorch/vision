@@ -58,10 +58,10 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(img_cropped, cropped_img_script))
 
     def test_hsv2rgb(self):
-         shape = (3, 100, 150)
-         for _ in range(20):
+        shape = (3, 100, 150)
+        for _ in range(20):
             img = torch.rand(*shape, dtype=torch.float)
-            ft_img =  F_t._hsv2rgb(img).permute(1, 2, 0).flatten(0, 1)
+            ft_img = F_t._hsv2rgb(img).permute(1, 2, 0).flatten(0, 1)
 
             h, s, v, = img.unbind(0)
             h = h.flatten().numpy()
@@ -73,12 +73,12 @@ class Tester(unittest.TestCase):
                 rgb.append(colorsys.hsv_to_rgb(h1, s1, v1))
 
             colorsys_img = torch.tensor(rgb, dtype=torch.float32)
-            max_diff = (ft_img- colorsys_img).abs().max()
+            max_diff = (ft_img - colorsys_img).abs().max()
             self.assertLess(max_diff, 1e-5)
 
     def test_rgb2hsv(self):
-         shape = (3, 150, 100)
-         for _ in range(20):
+        shape = (3, 150, 100)
+        for _ in range(20):
             img = torch.rand(*shape, dtype=torch.float)
             ft_hsv_img = F_t._rgb2hsv(img).permute(1, 2, 0).flatten(0, 1)
 
@@ -93,7 +93,7 @@ class Tester(unittest.TestCase):
 
             colorsys_img = torch.tensor(hsv, dtype=torch.float32)
 
-            max_diff = (colorsys_img- ft_hsv_img).abs().max()
+            max_diff = (colorsys_img - ft_hsv_img).abs().max()
             self.assertLess(max_diff, 1e-5)
 
     def test_adjustments(self):

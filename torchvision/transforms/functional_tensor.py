@@ -294,9 +294,9 @@ def _rgb2hsv(img):
 
     cr = maxc - minc
     s = cr / maxc
-    rc = (maxc-r) / cr
-    gc = (maxc-g) / cr
-    bc = (maxc-b) / cr
+    rc = (maxc - r) / cr
+    gc = (maxc - g) / cr
+    bc = (maxc - b) / cr
 
     t = (maxc != minc)
     s = t * s
@@ -322,9 +322,9 @@ def _hsv2rgb(img):
 
     mask = i == torch.arange(6)[:, None, None]
 
-    a1=torch.stack((v, q, p, p, t, v))
-    a2=torch.stack((t, v, v, q, p, p))
-    a3=torch.stack((p, p, t, v, v, q))
+    a1 = torch.stack((v, q, p, p, t, v))
+    a2 = torch.stack((t, v, v, q, p, p))
+    a3 = torch.stack((p, p, t, v, v, q))
     a4 = torch.stack((a1, a2, a3))
 
     return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=img.dtype), a4)
