@@ -327,4 +327,4 @@ def _hsv2rgb(img):
     a3=torch.stack((p, p, t, v, v, q))
     a4 = torch.stack((a1, a2, a3))
 
-    return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=torch.float32), a4)
+    return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=img.dtype), a4)
