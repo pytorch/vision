@@ -15,6 +15,8 @@ from .video import (
     write_video,
 )
 
+from .image import (read_png)
+
 
 __all__ = [
     "write_video",
@@ -31,4 +33,5 @@ __all__ = [
     "_read_video_meta_data",
     "VideoMetaData",
     "Timebase",
+    "read_png"
 ]
