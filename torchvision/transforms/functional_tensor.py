@@ -1,11 +1,10 @@
 import torch
-import torchvision.transforms.functional as F
 from torch import Tensor
 from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
 
 
 def _is_tensor_a_torch_image(input):
-    return len(input.shape) == 3
+    return input.ndim >= 2
 
 
 def vflip(img):
@@ -117,6 +116,54 @@ def adjust_contrast(img, contrast_factor):
     mean = torch.mean(rgb_to_grayscale(img).to(torch.float))
 
     return _blend(img, mean, contrast_factor)
+
+
+def adjust_hue(img, hue_factor):
+    """Adjust hue of an image.
+
+    The image hue is adjusted by converting the image to HSV and
+    cyclically shifting the intensities in the hue channel (H).
+    The image is then converted back to original image mode.
+
+    `hue_factor` is the amount of shift in H channel and must be in the
+    interval `[-0.5, 0.5]`.
+
+    See `Hue`_ for more details.
+
+    .. _Hue: https://en.wikipedia.org/wiki/Hue
+
+    Args:
+        img (Tensor): Image to be adjusted. Image type is either uint8 or float.
+        hue_factor (float):  How much to shift the hue channel. Should be in
+            [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
+            HSV space in positive and negative direction respectively.
+            0 means no shift. Therefore, both -0.5 and 0.5 will give an image
+            with complementary colors while 0 gives the original image.
+
+    Returns:
+         Tensor: Hue adjusted image.
+    """
+    if not(-0.5 <= hue_factor <= 0.5):
+        raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
+
+    if not _is_tensor_a_torch_image(img):
+        raise TypeError('tensor is not a torch image.')
+
+    orig_dtype = img.dtype
+    if img.dtype == torch.uint8:
+        img = img.to(dtype=torch.float32) / 255.0
+
+    img = _rgb2hsv(img)
+    h, s, v = img.unbind(0)
+    h += hue_factor
+    h = h % 1.0
+    img = torch.stack((h, s, v))
+    img_hue_adj = _hsv2rgb(img)
+
+    if orig_dtype == torch.uint8:
+        img_hue_adj = (img_hue_adj * 255.0).to(dtype=orig_dtype)
+
+    return img_hue_adj
 
 
 def adjust_saturation(img, saturation_factor):
@@ -236,3 +283,47 @@ def _blend(img1, img2, ratio):
     # type: (Tensor, Tensor, float) -> Tensor
     bound = 1 if img1.dtype in [torch.half, torch.float32, torch.float64] else 255
     return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
+
+
+def _rgb2hsv(img):
+    r, g, b = img.unbind(0)
+
+    maxc, _ = torch.max(img, dim=0)
+    minc, _ = torch.min(img, dim=0)
+
+    cr = maxc - minc
+    s = cr / maxc
+    rc = (maxc - r) / cr
+    gc = (maxc - g) / cr
+    bc = (maxc - b) / cr
+
+    t = (maxc != minc)
+    s = t * s
+    hr = (maxc == r) * (bc - gc)
+    hg = ((maxc == g) & (maxc != r)) * (2.0 + rc - bc)
+    hb = ((maxc != g) & (maxc != r)) * (4.0 + gc - rc)
+    h = (hr + hg + hb)
+    h = t * h
+    h = torch.fmod((h / 6.0 + 1.0), 1.0)
+    return torch.stack((h, s, maxc))
+
+
+def _hsv2rgb(img):
+    h, s, v = img.unbind(0)
+    i = torch.floor(h * 6.0)
+    f = (h * 6.0) - i
+    i = i.to(dtype=torch.int32)
+
+    p = torch.clamp((v * (1.0 - s)), 0.0, 1.0)
+    q = torch.clamp((v * (1.0 - s * f)), 0.0, 1.0)
+    t = torch.clamp((v * (1.0 - s * (1.0 - f))), 0.0, 1.0)
+    i = i % 6
+
+    mask = i == torch.arange(6)[:, None, None]
+
+    a1 = torch.stack((v, q, p, p, t, v))
+    a2 = torch.stack((t, v, v, q, p, p))
+    a3 = torch.stack((p, p, t, v, v, q))
+    a4 = torch.stack((a1, a2, a3))
+
+    return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=img.dtype), a4)

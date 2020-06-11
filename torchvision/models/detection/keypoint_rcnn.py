@@ -1,8 +1,6 @@
 import torch
 from torch import nn
 
-from torchvision.ops import misc as misc_nn_ops
-
 from torchvision.ops import MultiScaleRoIAlign
 
 from ..utils import load_state_dict_from_url
@@ -253,10 +251,9 @@ class KeypointRCNNPredictor(nn.Module):
 
     def forward(self, x):
         x = self.kps_score_lowres(x)
-        x = misc_nn_ops.interpolate(
-            x, scale_factor=float(self.up_scale), mode="bilinear", align_corners=False
+        return torch.nn.functional.interpolate(
+            x, scale_factor=float(self.up_scale), mode="bilinear", align_corners=False, recompute_scale_factor=False
         )
-        return x
 
 
 model_urls = {

@@ -5,7 +5,6 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 
 from torchvision.ops import boxes as box_ops
-from torchvision.ops import misc as misc_nn_ops
 
 from torchvision.ops import roi_align
 
@@ -175,8 +174,8 @@ def _onnx_heatmaps_to_keypoints(maps, maps_i, roi_map_width, roi_map_height,
     width_correction = widths_i / roi_map_width
     height_correction = heights_i / roi_map_height
 
-    roi_map = torch.nn.functional.interpolate(
-        maps_i[None], size=(int(roi_map_height), int(roi_map_width)), mode='bicubic', align_corners=False)[0]
+    roi_map = F.interpolate(
+        maps_i[:, None], size=(int(roi_map_height), int(roi_map_width)), mode='bicubic', align_corners=False)[:, 0]
 
     w = torch.scalar_tensor(roi_map.size(2), dtype=torch.int64)
     pos = roi_map.reshape(num_keypoints, -1).argmax(dim=1)
@@ -197,8 +196,12 @@ def _onnx_heatmaps_to_keypoints(maps, maps_i, roi_map_width, roi_map_height,
                               xy_preds_i_2.to(dtype=torch.float32)], 0)
 
     # TODO: simplify when indexing without rank will be supported by ONNX
+    base = num_keypoints * num_keypoints + num_keypoints + 1
+    ind = torch.arange(num_keypoints)
+    ind = ind.to(dtype=torch.int64) * base
     end_scores_i = roi_map.index_select(1, y_int.to(dtype=torch.int64)) \
-        .index_select(2, x_int.to(dtype=torch.int64))[:num_keypoints, 0, 0]
+        .index_select(2, x_int.to(dtype=torch.int64)).view(-1).index_select(0, ind.to(dtype=torch.int64))
+
     return xy_preds_i, end_scores_i
 
 
@@ -256,8 +259,8 @@ def heatmaps_to_keypoints(maps, rois):
         roi_map_height = int(heights_ceil[i].item())
         width_correction = widths[i] / roi_map_width
         height_correction = heights[i] / roi_map_height
-        roi_map = torch.nn.functional.interpolate(
-            maps[i][None], size=(roi_map_height, roi_map_width), mode='bicubic', align_corners=False)[0]
+        roi_map = F.interpolate(
+            maps[i][:, None], size=(roi_map_height, roi_map_width), mode='bicubic', align_corners=False)[:, 0]
         # roi_map_probs = scores_to_probs(roi_map.copy())
         w = roi_map.shape[2]
         pos = roi_map.reshape(num_keypoints, -1).argmax(dim=1)
@@ -392,7 +395,7 @@ def paste_mask_in_image(mask, box, im_h, im_w):
     mask = mask.expand((1, 1, -1, -1))
 
     # Resize mask
-    mask = misc_nn_ops.interpolate(mask, size=(h, w), mode='bilinear', align_corners=False)
+    mask = F.interpolate(mask, size=(h, w), mode='bilinear', align_corners=False)
     mask = mask[0][0]
 
     im_mask = torch.zeros((im_h, im_w), dtype=mask.dtype, device=mask.device)
@@ -420,7 +423,7 @@ def _onnx_paste_mask_in_image(mask, box, im_h, im_w):
     mask = mask.expand((1, 1, mask.size(0), mask.size(1)))
 
     # Resize mask
-    mask = torch.nn.functional.interpolate(mask, size=(int(h), int(w)), mode='bilinear', align_corners=False)
+    mask = F.interpolate(mask, size=(int(h), int(w)), mode='bilinear', align_corners=False)
     mask = mask[0][0]
 
     x_0 = torch.max(torch.cat((box[0].unsqueeze(0), zero)))

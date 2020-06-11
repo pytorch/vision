@@ -6,6 +6,7 @@ import torchvision.transforms.functional as F
 import numpy as np
 import unittest
 import random
+import colorsys
 from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
 
 
@@ -56,6 +57,45 @@ class Tester(unittest.TestCase):
         cropped_img_script = script_crop(img_tensor, top, left, height, width)
         self.assertTrue(torch.equal(img_cropped, cropped_img_script))
 
+    def test_hsv2rgb(self):
+        shape = (3, 100, 150)
+        for _ in range(20):
+            img = torch.rand(*shape, dtype=torch.float)
+            ft_img = F_t._hsv2rgb(img).permute(1, 2, 0).flatten(0, 1)
+
+            h, s, v, = img.unbind(0)
+            h = h.flatten().numpy()
+            s = s.flatten().numpy()
+            v = v.flatten().numpy()
+
+            rgb = []
+            for h1, s1, v1 in zip(h, s, v):
+                rgb.append(colorsys.hsv_to_rgb(h1, s1, v1))
+
+            colorsys_img = torch.tensor(rgb, dtype=torch.float32)
+            max_diff = (ft_img - colorsys_img).abs().max()
+            self.assertLess(max_diff, 1e-5)
+
+    def test_rgb2hsv(self):
+        shape = (3, 150, 100)
+        for _ in range(20):
+            img = torch.rand(*shape, dtype=torch.float)
+            ft_hsv_img = F_t._rgb2hsv(img).permute(1, 2, 0).flatten(0, 1)
+
+            r, g, b, = img.unbind(0)
+            r = r.flatten().numpy()
+            g = g.flatten().numpy()
+            b = b.flatten().numpy()
+
+            hsv = []
+            for r1, g1, b1 in zip(r, g, b):
+                hsv.append(colorsys.rgb_to_hsv(r1, g1, b1))
+
+            colorsys_img = torch.tensor(hsv, dtype=torch.float32)
+
+            max_diff = (colorsys_img - ft_hsv_img).abs().max()
+            self.assertLess(max_diff, 1e-5)
+
     def test_adjustments(self):
         script_adjust_brightness = torch.jit.script(F_t.adjust_brightness)
         script_adjust_contrast = torch.jit.script(F_t.adjust_contrast)
@@ -96,6 +136,23 @@ class Tester(unittest.TestCase):
                 self.assertLess(max_diff, 5 / 255 + 1e-5)
                 self.assertLess(max_diff_scripted, 5 / 255 + 1e-5)
                 self.assertTrue(torch.equal(img, img_clone))
+
+            # test for class interface
+            f = transforms.ColorJitter(brightness=factor.item())
+            scripted_fn = torch.jit.script(f)
+            scripted_fn(img)
+
+            f = transforms.ColorJitter(contrast=factor.item())
+            scripted_fn = torch.jit.script(f)
+            scripted_fn(img)
+
+            f = transforms.ColorJitter(saturation=factor.item())
+            scripted_fn = torch.jit.script(f)
+            scripted_fn(img)
+
+        f = transforms.ColorJitter(brightness=1)
+        scripted_fn = torch.jit.script(f)
+        scripted_fn(img)
 
     def test_rgb_to_grayscale(self):
         script_rgb_to_grayscale = torch.jit.script(F_t.rgb_to_grayscale)
