@@ -41,8 +41,8 @@ class BalancedPositiveNegativeSampler(object):
         pos_idx = []
         neg_idx = []
         for matched_idxs_per_image in matched_idxs:
-            positive = torch.nonzero(matched_idxs_per_image >= 1).squeeze(1)
-            negative = torch.nonzero(matched_idxs_per_image == 0).squeeze(1)
+            positive = torch.nonzero(matched_idxs_per_image >= 1, as_tuple=True)[0]
+            negative = torch.nonzero(matched_idxs_per_image == 0, as_tuple=True)[0]
 
             num_pos = int(self.batch_size_per_image * self.positive_fraction)
             # protect against not enough positive examples
@@ -318,8 +318,8 @@ class Matcher(object):
         highest_quality_foreach_gt, _ = match_quality_matrix.max(dim=1)
         # Find highest quality match available, even if it is low, including ties
         gt_pred_pairs_of_highest_quality = torch.nonzero(
-            match_quality_matrix == highest_quality_foreach_gt[:, None]
-        )
+            match_quality_matrix == highest_quality_foreach_gt[:, None], as_tuple=True
+        )[0]
         # Example gt_pred_pairs_of_highest_quality:
         #   tensor([[    0, 39796],
         #           [    1, 32055],

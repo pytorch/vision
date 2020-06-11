@@ -99,7 +99,7 @@ def remove_small_boxes(boxes, min_size):
     """
     ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
     keep = (ws >= min_size) & (hs >= min_size)
-    keep = keep.nonzero().squeeze(1)
+    keep = keep.nonzero(as_tuple=True)[0]
     return keep
 
 

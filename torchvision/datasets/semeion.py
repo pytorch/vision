@@ -42,7 +42,7 @@ class SEMEION(VisionDataset):
         # color (white #255) the pixels
         self.data = (data[:, :256] * 255).astype('uint8')
         self.data = np.reshape(self.data, (-1, 16, 16))
-        self.labels = np.nonzero(data[:, 256:])[1]
+        self.labels = np.nonzero(data[:, 256:], as_tuple=True)[0][1]
 
     def __getitem__(self, index):
         """
