@@ -45,4 +45,3 @@ def read_png(path):
         raise ValueError("Expected a non empty file.")
     data = torch.from_file(path, dtype=torch.uint8, size=size)
     return decode_png(data)
-
