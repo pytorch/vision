@@ -87,6 +87,16 @@ def get_extensions():
     except KeyError:
         library_dirs = []
 
+    # Check if building on Conda
+    build_prefix = os.environ.get('BUILD_PREFIX', None)
+    is_conda_build = build_prefix is not None
+    if is_conda_build:
+        # Add LibPNG headers/libraries
+        png_include = os.path.join(build_prefix, 'include/libpng16/png')
+        conda_library = os.path.join(build_prefix, 'lib')
+        include_dirs.append(png_include)
+        library_dirs.append(conda_library)
+
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
 
