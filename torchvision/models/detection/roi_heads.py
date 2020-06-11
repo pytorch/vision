@@ -482,15 +482,6 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
     return ret
 
 
-def _TEMP_any(bool_list):
-    # type: (List[bool]) -> bool
-    # torchscript does not support bultins
-    for b in bool_list:
-        if b:
-            return True
-    return False
-
-
 def _check_target_item(target,          # type: Dict[str, Tensor]
                        key,             # type: str
                        dtype,           # type: List[torch.dtype]
@@ -530,13 +521,16 @@ def _check_target_item(target,          # type: Dict[str, Tensor]
     if arr.dtype not in dtype:
         raise ValueError("Expected target {:} to be a Tensor with dtype {:}, "
                          "got {:}.".format(key, dtype, arr.dtype))
-    if (len(arr.shape) != len(shape) or
-        _TEMP_any([shape[i] is not None and arr.shape[i] != shape[i]
-                   for i in range(len(shape))])):
-        # if either the lentgh or one of the non-None elements of shape
-        # don't match with arr's shape
+    if len(arr.shape) != len(shape):
         raise ValueError("Expected target {:} to be Tensor with shape {:}, got"
                          " {:}.".format(key, shape_string, arr.shape))
+    for i in range(len(shape)):
+        if shape[i] is not None:
+            if arr.shape[i] != shape[i]:
+                raise ValueError("Expected target {:} to be Tensor with shape "
+                                 "{:}, got {:}.".format(key,
+                                 shape_string, arr.shape))
+
 
 
 class RoIHeads(torch.nn.Module):
