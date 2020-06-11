@@ -24,7 +24,7 @@ class Tester(unittest.TestCase):
             negative_target["masks"] = torch.zeros(0, 100, 100, dtype=torch.uint8)
 
         if add_keypoints:
-            negative_target["keypoints"] = torch.zeros(17, 0, 3, dtype=torch.float32)
+            negative_target["keypoints"] = torch.zeros(0, 17, 3, dtype=torch.float32)
 
         targets = [negative_target]
         return images, targets
