@@ -532,9 +532,7 @@ class Tester(unittest.TestCase):
             for output_dtype in output_dtypes:
                 with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
                     transform = transforms.ConvertImageDtype(output_dtype)
-                    transform_script = lambda image: torch.jit.script(  # noqa: E731
-                        F.convert_image_dtype(image, output_dtype)
-                    )
+                    transform_script = torch.jit.script(lambda image: F.convert_image_dtype(image, output_dtype))
 
                     output_image = transform(input_image)
                     output_image_script = transform_script(input_image)
@@ -554,9 +552,7 @@ class Tester(unittest.TestCase):
             for output_dtype in int_dtypes():
                 with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
                     transform = transforms.ConvertImageDtype(output_dtype)
-                    transform_script = lambda image: torch.jit.script(  # noqa: E731
-                        F.convert_image_dtype(image, output_dtype)
-                    )
+                    transform_script = torch.jit.script(lambda image: F.convert_image_dtype(image, output_dtype))
 
                     if (input_dtype == torch.float32 and output_dtype in (torch.int32, torch.int64)) or (
                             input_dtype == torch.float64 and output_dtype == torch.int64
@@ -582,9 +578,7 @@ class Tester(unittest.TestCase):
             for output_dtype in float_dtypes():
                 with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
                     transform = transforms.ConvertImageDtype(output_dtype)
-                    transform_script = lambda image: torch.jit.script(  # noqa: E731
-                        F.convert_image_dtype(image, output_dtype)
-                    )
+                    transform_script = torch.jit.script(lambda image: F.convert_image_dtype(image, output_dtype))
 
                     output_image = transform(input_image)
                     output_image_script = transform_script(input_image)
@@ -609,9 +603,7 @@ class Tester(unittest.TestCase):
 
                 with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
                     transform = transforms.ConvertImageDtype(output_dtype)
-                    transform_script = lambda image: torch.jit.script(  # noqa: E731
-                        F.convert_image_dtype(image, output_dtype)
-                    )
+                    transform_script = torch.jit.script(lambda image: F.convert_image_dtype(image, output_dtype))
 
                     output_image = transform(input_image)
                     output_image_script = transform_script(input_image)
