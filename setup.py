@@ -182,7 +182,7 @@ def get_extensions():
             sources,
             include_dirs=include_dirs,
             library_dirs=library_dirs,
-            libraries=['libpng'],
+            libraries=['png'],
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
         )
