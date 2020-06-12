@@ -93,13 +93,25 @@ def get_extensions():
     print('Running build on conda-build: {0}'.format(is_conda_build))
     if is_conda_build:
         # Add LibPNG headers/libraries
-        png_include = os.path.join(build_prefix, 'include/libpng16')
+        png_include = os.path.join(build_prefix, 'include', 'libpng16')
         print('PNG found? {0}'.format(os.path.isdir(png_include)))
-        print('Library path: {0}'.format(
-            glob.glob(os.path.join(build_prefix, 'include/libpng16/*'))))
         conda_library = os.path.join(build_prefix, 'lib')
         include_dirs.append(png_include)
         library_dirs.append(conda_library)
+    else:
+        # Check if using Anaconda to produce wheels
+        conda = distutils.spawn.find_executable('conda')
+        is_conda = conda is not None
+        print('Running build on conda: {0}'.format(is_conda))
+        if is_conda:
+            python_executable = sys.executable
+            env_bin_folder = os.path.dirname(python_executable)
+            env_folder = os.path.dirname(env_bin_folder)
+            env_lib_folder = os.path.join(env_folder, 'lib')
+            env_png_folder = os.path.join(env_folder, 'include', 'libpng16')
+            print('PNG found? {0}'.format(os.path.isdir(env_png_folder)))
+            include_dirs.append(env_png_folder)
+            library_dirs.append(env_lib_folder)
 
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
