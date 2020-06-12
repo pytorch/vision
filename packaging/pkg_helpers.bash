@@ -174,7 +174,7 @@ setup_wheel_python() {
     conda install libpng -y
   else
     # Install native CentOS libPNG
-    yum install libpng-devel
+    yum install -y libpng-devel
     case "$PYTHON_VERSION" in
       2.7)
         if [[ -n "$UNICODE_ABI" ]]; then
