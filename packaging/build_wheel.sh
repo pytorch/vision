@@ -18,7 +18,7 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     env_path=$(dirname $bin_path)
     if [[ "$(uname)" == Darwin ]]; then
         # Include LibPNG
-        cp "$env_path/lib/libpng.so" torchvision
+        cp "$env_path/lib/libpng16.so" torchvision
     fi
 fi
 
