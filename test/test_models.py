@@ -159,12 +159,8 @@ class ModelTester(TestCase):
     def _test_detection_model_checks(self, name):
         set_rng_seed(0)
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
-<<<<<<< HEAD
-        input_shape = (3, 300, 300)
-=======
 
         input_shape = (1, 3, 300, 300)
->>>>>>> Add tests for new detection models target validation
         x = [torch.rand(input_shape)]
 
         N = 4 # nb of boxes
@@ -185,12 +181,6 @@ class ModelTester(TestCase):
             targets[0][tname] = torch.zeros((*shape, 1), dtype=dtype)
             self.assertRaises(ValueError, model, x, targets=targets)
 
-<<<<<<< HEAD
-        # validate that no degenerate boxes are present
-        boxes = torch.tensor([[1, 3, 1, 4], [2, 4, 3, 4]])
-        targets = [{'boxes': boxes}]
-        self.assertRaises(ValueError, model, x, targets=targets)
-=======
             # set the Tensor to the correct shape and dtype for next tests
             targets[0][tname] = torch.zeros(shape, dtype=dtype)
 
@@ -204,7 +194,6 @@ class ModelTester(TestCase):
             test_tensor_checks("masks", torch.uint8, (N, 300, 300))
         if "keypoint" in name:
             test_tensor_checks("keypoints", torch.float, (N, 5, 3))
->>>>>>> Add tests for new detection models target validation
 
     def _test_video_model(self, name):
         # the default input shape is
