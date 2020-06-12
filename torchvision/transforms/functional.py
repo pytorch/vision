@@ -113,6 +113,11 @@ def pil_to_tensor(pic):
     return img
 
 
+def _is_floating_point(dtype: torch.dtype) -> bool:
+    # helper function since torch.dtype.is_floating_point is not scriptable
+    return isinstance(dtype, (torch.float32, torch.float, torch.float64, torch.double))
+
+
 def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
     """Convert a tensor image to the given ``dtype`` and scale the values accordingly
 
@@ -137,9 +142,12 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
     if image.dtype == dtype:
         return image
 
-    if image.dtype.is_floating_point:
+    input_is_float = _is_floating_point(image.dtype)
+    output_is_float = _is_floating_point(dtype)
+
+    if input_is_float:
         # float to float
-        if dtype.is_floating_point:
+        if output_is_float:
             return image.to(dtype)
 
         # float to int
@@ -153,7 +161,7 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         return image.mul(torch.iinfo(dtype).max + 1 - eps).to(dtype)
     else:
         # int to float
-        if dtype.is_floating_point:
+        if output_is_float:
             max = torch.iinfo(image.dtype).max
             image = image.to(dtype)
             return image / max
