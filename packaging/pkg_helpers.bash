@@ -171,7 +171,7 @@ setup_wheel_python() {
     conda create -yn "env$PYTHON_VERSION" python="$PYTHON_VERSION"
     conda activate "env$PYTHON_VERSION"
     # Install libPNG from conda
-    conda install libpng
+    conda install libpng -y
   else
     # Install native CentOS libPNG
     yum install libpng-devel
