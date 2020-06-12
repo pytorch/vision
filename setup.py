@@ -93,7 +93,7 @@ def get_extensions():
     print('Running build on conda-build: {0}'.format(is_conda_build))
     if is_conda_build:
         # Add LibPNG headers/libraries
-        png_include = os.path.join(build_prefix, 'include/libpng16/png')
+        png_include = os.path.join(build_prefix, 'include/libpng16')
         print('PNG found? {0}'.format(os.path.isdir(png_include)))
         print('Library path: {0}'.format(
             glob.glob(os.path.join(build_prefix, 'include/libpng16/*'))))
