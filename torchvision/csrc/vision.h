@@ -1,8 +1,8 @@
 #ifndef VISION_H
 #define VISION_H
 
-#include <torchvision/ops.h>
-#include <torchvision/models/models.h>
+#include "ops.h"
+#include "models/models.h"
 
 
 #if (defined __cpp_inline_variables) || __cplusplus >= 201703L
