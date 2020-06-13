@@ -109,9 +109,10 @@ def get_extensions():
                 env_folder = os.path.dirname(python_executable)
                 env_library_path = os.path.join(env_folder, 'Library')
                 env_include_folder = os.path.join(env_library_path, 'include')
-                env_png_folder = os.path.join(env_include_folder, 'libpng16')
+                env_png_folder = env_include_folder
+                png_header = os.path.join(env_include_folder, 'png.h')
                 env_lib_folder = os.path.join(env_library_path, 'lib')
-                print('PNG found? {0}'.format(os.path.isdir(env_png_folder)))
+                print('PNG found? {0}'.format(os.path.isfile(png_header)))
             else:
                 env_bin_folder = os.path.dirname(python_executable)
                 env_folder = os.path.dirname(env_bin_folder)

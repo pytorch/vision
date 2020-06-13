@@ -9,7 +9,7 @@ requirements:
   build:
     - {{ compiler('c') }} # [win]
     - libpng
-    - libjpeg-turbo
+    # - libjpeg-turbo
 
   host:
     - python
