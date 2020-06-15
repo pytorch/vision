@@ -8,7 +8,7 @@ export BUILD_TYPE=wheel
 setup_env 0.7.0
 setup_wheel_python
 if [[ "$OSTYPE" == "msys" ]]; then
-    pip_install numpy pyyaml future "ninja==1.9.0"
+    pip_install numpy pyyaml future "ninja==1.9.0.post1"
 else
     pip_install numpy pyyaml future ninja
 fi
