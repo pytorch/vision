@@ -170,8 +170,10 @@ setup_wheel_python() {
     conda env remove -n "env$PYTHON_VERSION" || true
     conda create -yn "env$PYTHON_VERSION" python="$PYTHON_VERSION"
     conda activate "env$PYTHON_VERSION"
-    # Install libPNG, libJPEG-turbo from conda
-    conda install libpng libjpeg-turbo -y
+    # Install libPNG from Anaconda (defaults)
+    conda install libpng -y
+    # Install libJPEG-turbo from conda-forge
+    conda install -y libjpeg-turbo -c conda-forge
   else
     # Install native CentOS libPNG, libJPEG-turbo
     yum install -y libpng-devel libjpeg-turbo
