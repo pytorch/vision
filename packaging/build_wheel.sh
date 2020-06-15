@@ -7,7 +7,17 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 export BUILD_TYPE=wheel
 setup_env 0.7.0
 setup_wheel_python
-pip_install numpy pyyaml future ninja
+
+pip_install numpy pyyaml future
+
+if [[ "$OSTYPE" == "msys" ]]; then
+    # Apparently, there are some errors trying to compile ninja locally on
+    # Windows, better to use conda on this case
+    conda install ninja
+else
+    pip install ninja
+fi
+
 setup_pip_pytorch_version
 python setup.py clean
 
