@@ -176,7 +176,7 @@ setup_wheel_python() {
     conda install -y libjpeg-turbo -c conda-forge
   else
     # Install native CentOS libPNG, libJPEG-turbo
-    yum install -y libpng-devel libjpeg-turbo-devel
+    yum install -y libpng-devel turbojpeg-devel
     case "$PYTHON_VERSION" in
       2.7)
         if [[ -n "$UNICODE_ABI" ]]; then
