@@ -28,15 +28,15 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
   int pixelFormat = TJPF_RGB;
 
   auto ret = tjDecompress2(
-    tjInstance,
-    datap,
-    data.numel(),
-    ptr,
-    width,
-    0,
-    height,
-    pixelFormat,
-    NULL);
+      tjInstance,
+      datap,
+      data.numel(),
+      ptr,
+      width,
+      0,
+      height,
+      pixelFormat,
+      NULL);
   if (ret != 0) {
     tjDestroy(tjInstance);
     TORCH_CHECK(false, "decompressing JPEG image");
