@@ -101,11 +101,12 @@ def get_extensions():
             include_dirs.append(include_folder)
             library_dirs.append(lib_folder)
         else:
-            # Add LibPNG headers/libraries
-            png_include = os.path.join(build_prefix, 'include', 'libpng16')
-            print('PNG found? {0}'.format(os.path.isdir(png_include)))
+            # Add conda headers/libraries
+            conda_include = os.path.join(build_prefix, 'include')
+            png_header = os.path.join(conda_include, 'png.h')
+            print('PNG found? {0}'.format(os.path.isfile(png_header)))
             conda_library = os.path.join(build_prefix, 'lib')
-            include_dirs.append(png_include)
+            include_dirs.append(conda_include)
             library_dirs.append(conda_library)
     else:
         # Check if using Anaconda to produce wheels
@@ -118,17 +119,17 @@ def get_extensions():
                 env_folder = os.path.dirname(python_executable)
                 env_library_path = os.path.join(env_folder, 'Library')
                 env_include_folder = os.path.join(env_library_path, 'include')
-                env_png_folder = env_include_folder
-                png_header = os.path.join(env_include_folder, 'png.h')
                 env_lib_folder = os.path.join(env_library_path, 'lib')
+                png_header = os.path.join(env_include_folder, 'png.h')
                 print('PNG found? {0}'.format(os.path.isfile(png_header)))
             else:
                 env_bin_folder = os.path.dirname(python_executable)
                 env_folder = os.path.dirname(env_bin_folder)
                 env_lib_folder = os.path.join(env_folder, 'lib')
-                env_png_folder = os.path.join(env_folder, 'include', 'libpng16')
-                print('PNG found? {0}'.format(os.path.isdir(env_png_folder)))
-            include_dirs.append(env_png_folder)
+                env_include_folder = os.path.join(env_folder, 'include')
+                png_header = os.path.join(env_include_folder, 'png.h')
+                print('PNG found? {0}'.format(os.path.isfile(png_header)))
+            include_dirs.append(env_include_folder)
             library_dirs.append(env_lib_folder)
 
     this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -208,6 +209,8 @@ def get_extensions():
     libraries = []
     # Add libPNG
     libraries.append('png' if os.name != 'nt' else 'libpng')
+    # Add libJPEG-turbo
+    libraries.append('turbojpeg' if os.name != 'nt' else 'libturbojpeg')
 
     ext_modules = [
         extension(
