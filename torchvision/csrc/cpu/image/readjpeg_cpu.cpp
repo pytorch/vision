@@ -38,8 +38,8 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
     pixelFormat,
     NULL);
   if (ret != 0) {
-      tjDestroy(tjInstance);
-      TORCH_CHECK(false, "decompressing JPEG image");
+    tjDestroy(tjInstance);
+    TORCH_CHECK(false, "decompressing JPEG image");
   }
 
   return tensor;
