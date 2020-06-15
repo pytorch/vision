@@ -92,12 +92,21 @@ def get_extensions():
     is_conda_build = build_prefix is not None
     print('Running build on conda-build: {0}'.format(is_conda_build))
     if is_conda_build:
-        # Add LibPNG headers/libraries
-        png_include = os.path.join(build_prefix, 'include', 'libpng16')
-        print('PNG found? {0}'.format(os.path.isdir(png_include)))
-        conda_library = os.path.join(build_prefix, 'lib')
-        include_dirs.append(png_include)
-        library_dirs.append(conda_library)
+        if os.name == 'nt':
+            lib_path = os.path.join(build_prefix, 'Library')
+            include_folder = os.path.join(lib_path, 'include')
+            png_header = os.path.join(include_folder, 'png.h')
+            lib_folder = os.path.join(lib_path, 'lib')
+            print('PNG found? {0}'.format(os.path.isfile(png_header)))
+            include_dirs.append(include_folder)
+            library_dirs.append(lib_folder)
+        else:
+            # Add LibPNG headers/libraries
+            png_include = os.path.join(build_prefix, 'include', 'libpng16')
+            print('PNG found? {0}'.format(os.path.isdir(png_include)))
+            conda_library = os.path.join(build_prefix, 'lib')
+            include_dirs.append(png_include)
+            library_dirs.append(conda_library)
     else:
         # Check if using Anaconda to produce wheels
         conda = distutils.spawn.find_executable('conda')
