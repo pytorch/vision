@@ -26,7 +26,8 @@ class ImageTester(unittest.TestCase):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_ljpeg = read_jpeg(img_path)
 
-            err = torch.abs(img_ljpeg.flatten().float() - img_pil.flatten().float()).sum().float() / (img_ljpeg.shape[0] * img_ljpeg.shape[1] * img_ljpeg.shape[2] * 255)
+            norm = img_ljpeg.shape[0] * img_ljpeg.shape[1] * img_ljpeg.shape[2] * 255
+            err = torch.abs(img_ljpeg.flatten().float() - img_pil.flatten().float()).sum().float() / (norm)
             self.assertLessEqual(err, 1e-2)
 
     def test_decode_jpeg(self):
@@ -35,7 +36,8 @@ class ImageTester(unittest.TestCase):
             size = os.path.getsize(img_path)
             img_ljpeg = decode_jpeg(torch.from_file(img_path, dtype=torch.uint8, size=size))
 
-            err = torch.abs(img_ljpeg.flatten().float() - img_pil.flatten().float()).sum().float() / (img_ljpeg.shape[0] * img_ljpeg.shape[1] * img_ljpeg.shape[2] * 255)
+            norm = img_ljpeg.shape[0] * img_ljpeg.shape[1] * img_ljpeg.shape[2] * 255
+            err = torch.abs(img_ljpeg.flatten().float() - img_pil.flatten().float()).sum().float() / (norm)
 
             self.assertLessEqual(err, 1e-2)
 
@@ -67,4 +69,3 @@ class ImageTester(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
