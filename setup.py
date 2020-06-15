@@ -196,6 +196,9 @@ def get_extensions():
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs += [extensions_dir]
+    libraries = []
+    # Add libPNG
+    libraries.append('png' if os.name != 'nt' else 'libpng')
 
     ext_modules = [
         extension(
@@ -203,7 +206,7 @@ def get_extensions():
             sources,
             include_dirs=include_dirs,
             library_dirs=library_dirs,
-            libraries=['png'],
+            libraries=libraries,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
         )

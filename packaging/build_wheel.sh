@@ -13,9 +13,9 @@ pip_install numpy pyyaml future
 if [[ "$OSTYPE" == "msys" ]]; then
     # Apparently, there are some errors trying to compile ninja locally on
     # Windows, better to use conda on this case
-    conda install ninja
+    conda install ninja -y
 else
-    pip install ninja
+    pip_install ninja
 fi
 
 setup_pip_pytorch_version
