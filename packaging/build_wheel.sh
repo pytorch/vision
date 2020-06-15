@@ -7,7 +7,11 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 export BUILD_TYPE=wheel
 setup_env 0.7.0
 setup_wheel_python
-pip_install numpy pyyaml future ninja
+if [[ "$OSTYPE" == "msys" ]]; then
+    pip_install numpy pyyaml future "ninja==1.9.0"
+else
+    pip_install numpy pyyaml future ninja
+fi
 setup_pip_pytorch_version
 python setup.py clean
 if [[ "$OSTYPE" == "msys" ]]; then
