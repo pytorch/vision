@@ -1,8 +1,8 @@
 #include "readjpeg_cpu.h"
 
 #include <setjmp.h>
-#include <string>
 #include <turbojpeg.h>
+#include <string>
 
 torch::Tensor decodeJPEG(const torch::Tensor& data) {
 
@@ -15,7 +15,8 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
 
   int width, height;
 
-  if (tjDecompressHeader(tjInstance, datap, data.numel(), &width, &height) < 0) {
+  if (tjDecompressHeader(tjInstance, datap, data.numel(), &width, &height) <
+      0) {
     tjDestroy(tjInstance);
     TORCH_CHECK(false, "Error while reading jpeg headers");
   }
@@ -26,8 +27,16 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
 
   int pixelFormat = TJPF_RGB;
 
-  auto ret = tjDecompress2(tjInstance, datap, data.numel(), ptr, width, 0, height,
-                      pixelFormat, NULL);
+  auto ret = tjDecompress2(
+    tjInstance,
+    datap,
+    data.numel(),
+    ptr,
+    width,
+    0,
+    height,
+    pixelFormat,
+    NULL);
   if(ret != 0){
       tjDestroy(tjInstance);
       TORCH_CHECK(false, "decompressing JPEG image");
