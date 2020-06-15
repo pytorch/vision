@@ -21,14 +21,12 @@ def get_images(directory, img_ext):
 
 
 class ImageTester(unittest.TestCase):
-    @unittest.skipUnless(sys.platform.startswith("linux"), "Support only available on linux for now.")
     def test_read_png(self):
         for img_path in get_images(IMAGE_DIR, "png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_lpng = read_png(img_path)
             self.assertEqual(img_lpng, img_pil)
 
-    @unittest.skipUnless(sys.platform.startswith("linux"), "Support only available on linux for now.")
     def test_decode_png(self):
         for img_path in get_images(IMAGE_DIR, "png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
