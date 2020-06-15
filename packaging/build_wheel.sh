@@ -31,7 +31,7 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
         cp "$env_path/lib/libpng16.dylib" torchvision
     else
         # Include libPNG
-        cp "$env_path/Library/lib/libpng.lib" torchvision
+        cp "$bin_path/Library/lib/libpng.lib" torchvision
     fi
 fi
 
