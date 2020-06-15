@@ -48,7 +48,9 @@ test:
   requires:
     - pytest
     - scipy
-    - av
+    # AV is disabled temporarily until the jpeg/jpeg-turbo conflicts are solved
+    # in conda-forge
+    # - av
     - ca-certificates
     {{ environ.get('CONDA_TYPING_CONSTRAINT') }}
   commands:
