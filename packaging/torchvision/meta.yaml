@@ -9,7 +9,7 @@ requirements:
   build:
     - {{ compiler('c') }} # [win]
     - libpng
-    # - libjpeg-turbo
+    - libjpeg-turbo
 
   host:
     - python
@@ -21,7 +21,7 @@ requirements:
   run:
     - python
     - libpng
-    # - libjpeg-turbo
+    - libjpeg-turbo
     - pillow >=4.1.1
     - numpy >=1.11
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
