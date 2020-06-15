@@ -210,7 +210,7 @@ def get_extensions():
     # Add libPNG
     libraries.append('png' if os.name != 'nt' else 'libpng')
     # Add libJPEG-turbo
-    libraries.append('turbojpeg' if os.name != 'nt' else 'libturbojpeg')
+    libraries.append('turbojpeg')
 
     ext_modules = [
         extension(
