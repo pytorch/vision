@@ -33,6 +33,8 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
         # Include libPNG
         cp "$bin_path/Library/lib/libpng.lib" torchvision
     fi
+else
+    cp "/usr/lib64/libpng.so" torchvision
 fi
 
 if [[ "$OSTYPE" == "msys" ]]; then
