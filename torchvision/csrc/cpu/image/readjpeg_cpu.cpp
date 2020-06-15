@@ -5,7 +5,6 @@
 #include <string>
 
 torch::Tensor decodeJPEG(const torch::Tensor& data) {
-
   tjhandle tjInstance = tjInitDecompress();
   if (tjInstance == NULL) {
     TORCH_CHECK(false, "libjpeg-turbo decompression initialization failed.");
