@@ -131,7 +131,7 @@ else
     fi
 fi
 
-export PYTORCH_VERSION=1.5.0
+export PYTORCH_VERSION=1.5.1
 export CONDA_CHANNEL_FLAGS="-c pytorch-test"
 # if [[ -z "$PYTORCH_VERSION" ]]; then
 #     export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
