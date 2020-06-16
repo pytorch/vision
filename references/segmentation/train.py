@@ -72,7 +72,7 @@ def evaluate(model, data_loader, device, num_classes):
                 confmat.update(a.flatten(), b.argmax(0).flatten())
 
             i += 1
-            if i == 300:
+            if i == 256:
                 break
 
     return confmat
@@ -102,8 +102,8 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
 
 def main(args):
     total_t = time.time()
-    pr = cProfile.Profile()
-    pr.enable()
+    #pr = cProfile.Profile()
+    #pr.enable()
     
     if args.output_dir:
         utils.mkdir(args.output_dir)
@@ -155,13 +155,13 @@ def main(args):
         print(confmat)
         print("\n\nEVAL: ", time.time() - eval_t)
         print("GLOBAL TIME :", time.time() - total_t)
-        pr.disable()
-        print("CPROF STATS: ")
-        s = io.StringIO()
-        sortby = SortKey.CUMULATIVE
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-        print(s.getvalue())
+        #pr.disable()
+        #print("CPROF STATS: ")
+        #s = io.StringIO()
+        #sortby = SortKey.CUMULATIVE
+        #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        #ps.print_stats()
+        #print(s.getvalue())
         return
     
     params_to_optimize = [

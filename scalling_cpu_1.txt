@@ -1,0 +1,21 @@
+Not using distributed mode
+Namespace(aux_loss=False, batch_size=1, dataset='coco', device='cuda', dist_url='env://', distributed=False, epochs=30, lr=0.01, model='fcn_resnet101', momentum=0.9, output_dir='.', pretrained=True, print_freq=10, resume='', start_epoch=0, test_only=True, weight_decay=0.0001, workers=0, world_size=1)
+loading annotations into memory...
+Done (t=15.92s)
+creating index...
+index created!
+loading annotations into memory...
+Done (t=0.46s)
+creating index...
+index created!
+Test:  [   0/5000]  eta: 0:26:15    time: 0.3151  data: 0.0463  max mem: 403
+Test:  [ 100/5000]  eta: 0:11:25    time: 0.1348  data: 0.0231  max mem: 486
+Test:  [ 200/5000]  eta: 0:11:04    time: 0.1379  data: 0.0216  max mem: 486
+global correct: 90.7
+average row correct: ['93.3', '92.4', '71.4', '14.9', '78.8', '43.0', '73.9', '70.2', '96.3', '47.7', '16.9', '71.3', '90.3', '90.3', '70.9', '92.2', '62.2', '85.7', '37.8', '64.2', '54.3']
+IoU: ['89.1', '88.9', '50.5', '10.9', '56.5', '33.9', '67.8', '65.1', '90.2', '40.9', '13.6', '37.5', '36.3', '82.4', '66.3', '84.3', '48.5', '74.3', '30.4', '59.4', '50.0']
+mean IoU: 56.0
+
+
+EVAL:  35.452271461486816
+GLOBAL TIME : 58.99048089981079
