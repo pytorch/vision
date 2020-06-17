@@ -216,8 +216,8 @@ def cat_list(images, fill_value=0):
 
 def collate_fn(batch):
     images, targets = list(zip(*batch))
-    batched_imgs = nt.as_nested_tensor(images)
-    batched_targets = nt.as_nested_tensor(targets)
+    batched_imgs = nt.nested_tensor(images)
+    batched_targets = nt.nested_tensor(targets)
 
     return batched_imgs, batched_targets
 
