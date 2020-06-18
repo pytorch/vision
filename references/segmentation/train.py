@@ -68,11 +68,10 @@ def evaluate(model, data_loader, device, num_classes):
             image, target = image.to(device), target.to(device)
             output = model(image)
             output = output['out']
-            for a, b in zip(target, output):
-                confmat.update(a.flatten(), b.argmax(0).flatten())
+            confmat.update(target.flatten(), output.argmax(1).flatten())
 
             i += 1
-            if i == 256:
+            if i == 300:
                 break
 
     return confmat
@@ -89,15 +88,13 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
         loss = criterion(output, target)
 
         optimizer.zero_grad()
-        for l in loss:
-            l.backward(retain_graph=True)
+        loss.backward()
 
         optimizer.step()
 
         lr_scheduler.step()
 
-        for l in loss:
-            metric_logger.update(loss=l.item(), lr=optimizer.param_groups[0]["lr"])
+        metric_logger.update(loss=loss.item(), lr=optimizer.param_groups[0]["lr"])
 
 
 def main(args):
@@ -129,7 +126,7 @@ def main(args):
         collate_fn=utils.collate_fn, drop_last=True)
 
     data_loader_test = torch.utils.data.DataLoader(
-        dataset_test, batch_size=args.batch_size,
+        dataset_test, batch_size=1,
         sampler=test_sampler, num_workers=args.workers,
         collate_fn=utils.collate_fn)
 
@@ -139,10 +136,6 @@ def main(args):
     model.to(device)
     if args.distributed:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-
-    if args.resume:
-        checkpoint = torch.load(args.resume, map_location='cpu')
-        model.load_state_dict(checkpoint['model'])
 
     model_without_ddp = model
     if args.distributed:
@@ -178,13 +171,6 @@ def main(args):
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
         optimizer,
         lambda x: (1 - x / (len(data_loader) * args.epochs)) ** 0.9)
-
-    if args.resume:
-        checkpoint = torch.load(args.resume, map_location='cpu')
-        model_without_ddp.load_state_dict(checkpoint['model'])
-        optimizer.load_state_dict(checkpoint['optimizer'])
-        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
-        args.start_epoch = checkpoint['epoch'] + 1
 
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):

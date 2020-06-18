@@ -4,6 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+
 class _SimpleSegmentationModel(nn.Module):
     __constants__ = ['aux_classifier']
 
