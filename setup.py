@@ -277,14 +277,15 @@ def get_extensions():
     image_src = glob.glob(
         os.path.join(extensions_dir, 'cpu', 'image', '*.cpp'))
 
-    ext_modules.append(extension(
-        'torchvision.image',
-        image_src,
-        include_dirs=include_dirs + [image_src] + image_include,
-        library_dirs=library_dirs + image_library,
-        define_macros=image_macros,
-        extra_compile_args=extra_compile_args
-    ))
+    if png_found or turbojpeg_found:
+        ext_modules.append(extension(
+            'torchvision.image',
+            image_src,
+            include_dirs=include_dirs + [image_src] + image_include,
+            library_dirs=library_dirs + image_library,
+            define_macros=image_macros,
+            extra_compile_args=extra_compile_args
+        ))
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
