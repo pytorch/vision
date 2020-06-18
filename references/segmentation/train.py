@@ -89,7 +89,6 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
 
         optimizer.zero_grad()
         loss.backward()
-
         optimizer.step()
 
         lr_scheduler.step()
@@ -171,6 +170,13 @@ def main(args):
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
         optimizer,
         lambda x: (1 - x / (len(data_loader) * args.epochs)) ** 0.9)
+
+    if args.resume:	
+        checkpoint = torch.load(args.resume, map_location='cpu')	
+        model_without_ddp.load_state_dict(checkpoint['model'])	
+        optimizer.load_state_dict(checkpoint['optimizer'])	
+        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])	
+        args.start_epoch = checkpoint['epoch'] + 1
 
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
