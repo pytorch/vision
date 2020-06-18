@@ -281,7 +281,7 @@ def get_extensions():
         ext_modules.append(extension(
             'torchvision.image',
             image_src,
-            include_dirs=include_dirs + image_path + image_include,
+            include_dirs=include_dirs + [image_path] + image_include,
             library_dirs=library_dirs + image_library,
             define_macros=image_macros,
             extra_compile_args=extra_compile_args
