@@ -197,8 +197,8 @@ def get_extensions():
         png_lib = subprocess.run([libpng, '--libdir'], stdout=subprocess.PIPE)
         png_include = subprocess.run([libpng, '--I_opts'],
                                      stdout=subprocess.PIPE)
-        image_library += [png_lib]
-        image_include += [png_include]
+        image_library += [png_lib.stdout]
+        image_include += [png_include.stdout]
         image_link_flags.append('png' if os.name != 'nt' else 'libpng')
 
     # Locating libjpegturbo
