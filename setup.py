@@ -284,6 +284,7 @@ def get_extensions():
             include_dirs=include_dirs + [image_path] + image_include,
             library_dirs=library_dirs + image_library,
             define_macros=image_macros,
+            libraries=image_link_flags,
             extra_compile_args=extra_compile_args
         ))
 
