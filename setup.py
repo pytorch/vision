@@ -197,8 +197,8 @@ def get_extensions():
         png_lib = subprocess.run([libpng, '--libdir'], stdout=subprocess.PIPE)
         png_include = subprocess.run([libpng, '--I_opts'],
                                      stdout=subprocess.PIPE)
-        image_library += [png_lib.stdout]
-        image_include += [png_include.stdout]
+        image_library += [png_lib.stdout.strip().decode('utf-8')]
+        image_include += [png_include.stdout.strip().decode('utf-8')]
         image_link_flags.append('png' if os.name != 'nt' else 'libpng')
 
     # Locating libjpegturbo
@@ -281,7 +281,7 @@ def get_extensions():
         ext_modules.append(extension(
             'torchvision.image',
             image_src,
-            include_dirs=include_dirs + [image_src] + image_include,
+            include_dirs=include_dirs + image_src + image_include,
             library_dirs=library_dirs + image_library,
             define_macros=image_macros,
             extra_compile_args=extra_compile_args
