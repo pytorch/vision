@@ -274,14 +274,14 @@ def get_extensions():
             image_library += [turbo_lib_folder]
             image_include += [turbo_include_folder]
 
-    image_src = glob.glob(
-        os.path.join(extensions_dir, 'cpu', 'image', '*.cpp'))
+    image_path = os.path.join(extensions_dir, 'cpu', 'image')
+    image_src = glob.glob(os.path.join(image_path, '*.cpp'))
 
     if png_found or turbojpeg_found:
         ext_modules.append(extension(
             'torchvision.image',
             image_src,
-            include_dirs=include_dirs + image_src + image_include,
+            include_dirs=include_dirs + image_path + image_include,
             library_dirs=library_dirs + image_library,
             define_macros=image_macros,
             extra_compile_args=extra_compile_args
