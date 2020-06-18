@@ -155,106 +155,7 @@ jobs:
       - store_test_results:
           path: build_results/
 
-  binary_linux_conda_cuda:
-    <<: *binary_common
-    machine:
-      image: ubuntu-1604:201903-01
-    resource_class: gpu.medium
-    steps:
-    - checkout_merge
-    - run:
-        name: Setup environment
-        command: |
-          set -ex
-
-          curl -L https://packagecloud.io/circleci/trusty/gpgkey | sudo apt-key add -
-          curl -L https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-
-          sudo apt-get update
-
-          sudo apt-get install \
-              apt-transport-https \
-              ca-certificates \
-              curl \
-              gnupg-agent \
-              software-properties-common
-
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-
-          sudo add-apt-repository \
-             "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-             $(lsb_release -cs) \
-             stable"
-
-          sudo apt-get update
-          export DOCKER_VERSION="5:19.03.2~3-0~ubuntu-xenial"
-          sudo apt-get install docker-ce=${DOCKER_VERSION} docker-ce-cli=${DOCKER_VERSION} containerd.io=1.2.6-3
-
-          # Add the package repositories
-          distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-          curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-          curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-
-          export NVIDIA_CONTAINER_VERSION="1.0.3-1"
-          sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit=${NVIDIA_CONTAINER_VERSION}
-          sudo systemctl restart docker
-
-          DRIVER_FN="NVIDIA-Linux-x86_64-440.59.run"
-          wget "https://s3.amazonaws.com/ossci-linux/nvidia_driver/$DRIVER_FN"
-          sudo /bin/bash "$DRIVER_FN" -s --no-drm || (sudo cat /var/log/nvidia-installer.log && false)
-          nvidia-smi
-
-    - run:
-        name: Pull docker image
-        command: |
-          set -ex
-          export DOCKER_IMAGE=pytorch/conda-cuda
-          echo Pulling docker image $DOCKER_IMAGE
-          docker pull $DOCKER_IMAGE >/dev/null
-
-    - run:
-        name: Build and run tests
-        command: |
-          set -ex
-
-          cd ${HOME}/project/
-
-          export DOCKER_IMAGE=pytorch/conda-cuda
-          export VARS_TO_PASS="-e PYTHON_VERSION -e BUILD_VERSION -e PYTORCH_VERSION -e UNICODE_ABI -e CU_VERSION"
-
-          docker run --gpus all  --ipc=host -v $(pwd):/remote -w /remote ${VARS_TO_PASS} ${DOCKER_IMAGE} ./packaging/build_conda.sh
-
   binary_win_conda:
-    <<: *binary_common
-    executor: windows-cpu
-    steps:
-      - checkout_merge
-      - run:
-          command: |
-            set -ex
-            source packaging/windows/internal/vc_install_helper.sh
-            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
-            conda activate base
-            conda install -yq conda-build "conda-package-handling!=1.5.0"
-            packaging/build_conda.sh
-      - store_test_results:
-          path: build_results/
-
-  binary_win_conda_cuda:
-    <<: *binary_common
-    executor: windows-gpu
-    steps:
-      - checkout_merge
-      - run:
-          command: |
-            set -ex
-            source packaging/windows/internal/vc_install_helper.sh
-            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
-            conda activate base
-            conda install -yq conda-build "conda-package-handling!=1.5.0"
-            packaging/build_conda.sh
-
-  binary_win_conda_release:
     <<: *binary_common
     executor: windows-cpu
     steps:
@@ -279,7 +180,7 @@ jobs:
       - store_test_results:
           path: build_results/
 
-  binary_win_wheel_release:
+  binary_win_wheel:
     <<: *binary_common
     executor: windows-cpu
     steps:
@@ -385,29 +286,173 @@ jobs:
               aws s3 cp "$pkg" "s3://pytorch/whl/${UPLOAD_CHANNEL}/<< parameters.subfolder >>" --acl public-read
             done
 
+  unittest_linux_cpu:
+    <<: *binary_common
+    docker:
+      - image: "pytorch/manylinux-cuda102"
+    resource_class: 2xlarge+
+    steps:
+      - checkout
+      - run:
+          name: Generate cache key
+          # This will refresh cache on Sundays, nightly build should generate new cache.
+          command: echo "$(date +"%Y-%U")" > .circleci-weekly
+      - restore_cache:
+          {% raw %}
+          keys:
+            - env-v2-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+      - run:
+          name: Setup
+          command: .circleci/unittest/linux/scripts/setup_env.sh
+      - save_cache:
+          {% raw %}
+          key: env-v2-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+          paths:
+            - conda
+            - env
+      - run:
+          name: Install torchvision
+          command: .circleci/unittest/linux/scripts/install.sh
+      - run:
+          name: Run tests
+          command: .circleci/unittest/linux/scripts/run_test.sh
+      - run:
+          name: Post process
+          command: .circleci/unittest/linux/scripts/post_process.sh
+      - store_test_results:
+          path: test-results
+
+  unittest_linux_gpu:
+    <<: *binary_common
+    machine:
+      image: ubuntu-1604-cuda-10.1:201909-23
+    resource_class: gpu.small
+    environment:
+      image_name: "pytorch/manylinux-cuda101"
+    steps:
+      - checkout
+      - run:
+          name: Generate cache key
+          # This will refresh cache on Sundays, nightly build should generate new cache.
+          command: echo "$(date +"%Y-%U")" > .circleci-weekly
+      - restore_cache:
+          {% raw %}
+          keys:
+            - env-v2-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+      - run:
+          name: Setup
+          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/setup_env.sh
+      - save_cache:
+          {% raw %}
+          key: env-v2-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+          paths:
+            - conda
+            - env
+      - run:
+          name: Install torchvision
+          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/install.sh
+      - run:
+          name: Run tests
+          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
+      - run:
+          name: Post Process
+          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/post_process.sh
+      - store_test_results:
+          path: test-results
+
+  unittest_windows_cpu:
+    <<: *binary_common
+    executor:
+      name: windows-cpu
+    steps:
+      - checkout
+      - run:
+          name: Generate cache key
+          # This will refresh cache on Sundays, nightly build should generate new cache.
+          command: echo "$(date +"%Y-%U")" > .circleci-weekly
+      - restore_cache:
+          {% raw %}
+          keys:
+            - env-v2-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+      - run:
+          name: Setup
+          command: .circleci/unittest/windows/scripts/setup_env.sh
+      - save_cache:
+          {% raw %}
+          key: env-v2-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+          paths:
+            - conda
+            - env
+      - run:
+          name: Install torchvision
+          command: .circleci/unittest/windows/scripts/install.sh
+      - run:
+          name: Run tests
+          command: .circleci/unittest/windows/scripts/run_test.sh
+      - run:
+          name: Post process
+          command: .circleci/unittest/windows/scripts/post_process.sh
+      - store_test_results:
+          path: test-results
+
+  unittest_windows_gpu:
+    <<: *binary_common
+    executor:
+      name: windows-gpu
+    environment:
+      CUDA_VERSION: "10.1"
+    steps:
+      - checkout
+      - run:
+          name: Generate cache key
+          # This will refresh cache on Sundays, nightly build should generate new cache.
+          command: echo "$(date +"%Y-%U")" > .circleci-weekly
+      - restore_cache:
+          {% raw %}
+          keys:
+            - env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+      - run:
+          name: Setup
+          command: .circleci/unittest/windows/scripts/setup_env.sh
+      - save_cache:
+          {% raw %}
+          key: env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+          paths:
+            - conda
+            - env
+      - run:
+          name: Install torchvision
+          command: .circleci/unittest/windows/scripts/install.sh
+      - run:
+          name: Run tests
+          command: .circleci/unittest/windows/scripts/run_test.sh
+      - run:
+          name: Post process
+          command: .circleci/unittest/windows/scripts/post_process.sh
+      - store_test_results:
+          path: test-results
 
 workflows:
   build:
 {%- if True %}
     jobs:
       - circleci_consistency
-      {{ workflows(windows_latest_only=True) }}
-      - binary_linux_conda_cuda:
-          name: torchvision_linux_py3.8_cu102_cuda
-          python_version: "3.8"
-          cu_version: "cu102"
-      - binary_win_conda:
-          name: torchvision_win_py3.6_cpu
-          python_version: "3.6"
-          cu_version: "cpu"
-      - binary_win_conda_cuda:
-          name: torchvision_win_py3.6_cu101
-          python_version: "3.6"
-          cu_version: "cu101"
+      {{ build_workflows(windows_latest_only=True) }}
       - python_lint
       - python_type_check
       - clang_format
 
+  unittest:
+    jobs:
+      {{ unittest_workflows() }}
   nightly:
 {%- endif %}
     jobs:
@@ -415,4 +460,4 @@ workflows:
       - python_lint
       - python_type_check
       - clang_format
-      {{ workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
+      {{ build_workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
