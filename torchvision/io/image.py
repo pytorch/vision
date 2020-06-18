@@ -1,6 +1,27 @@
 import torch
 from torch import nn, Tensor
+
 import os
+import os.path as osp
+import importlib
+
+_HAS_IMAGE_OPT = False
+
+try:
+    lib_dir = osp.join(osp.dirname(__file__), "..")
+
+    loader_details = (
+        importlib.machinery.ExtensionFileLoader,
+        importlib.machinery.EXTENSION_SUFFIXES
+    )
+
+    extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)
+    ext_specs = extfinder.find_spec("image")
+    if ext_specs is not None:
+        torch.ops.load_library(ext_specs.origin)
+        _HAS_IMAGE_OPT = True
+except (ImportError, OSError):
+    pass
 
 
 def decode_png(input):
@@ -21,7 +42,7 @@ def decode_png(input):
 
     if not input.dtype == torch.uint8:
         raise ValueError("Expected a torch.uint8 tensor.")
-    output = torch.ops.torchvision.decode_png(input)
+    output = torch.ops.image.decode_png(input)
     return output
 
 
@@ -65,7 +86,7 @@ def decode_jpeg(input):
         raise ValueError("Expected a torch.uint8 tensor.")
 
     try:
-        output = torch.ops.torchvision.decode_jpeg(input)
+        output = torch.ops.image.decode_jpeg(input)
     except RuntimeError:
         raise ValueError("Invalid jpeg input.")
     return output

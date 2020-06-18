@@ -1,9 +1,17 @@
 #include "readjpeg_cpu.h"
 
+#include <ATen/ATen.h>
 #include <setjmp.h>
 #include <turbojpeg.h>
 #include <string>
 
+#if !JPEG_FOUND
+
+torch::Tensor decodeJPEG(const torch::Tensor& data) {
+  AT_ERROR("decodeJPEG: torchvision not compiled with turboJPEG support");
+}
+
+#else
 torch::Tensor decodeJPEG(const torch::Tensor& data) {
   tjhandle tjInstance = tjInitDecompress();
   if (tjInstance == NULL) {
@@ -43,3 +51,5 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
 
   return tensor;
 }
+
+#endif // JPEG_FOUND

@@ -77,67 +77,20 @@ requirements.append(pillow_req + pillow_ver)
 
 
 def get_extensions():
-    try:
-        include_dirs = [os.environ['LIBRARY_INC']]
-    except KeyError:
-        include_dirs = []
-
-    try:
-        library_dirs = [os.environ['LIBRARY_LIB']]
-    except KeyError:
-        library_dirs = []
-
-    # Check if building on Conda
-    build_prefix = os.environ.get('BUILD_PREFIX', None)
-    is_conda_build = build_prefix is not None
-    print('Running build on conda-build: {0}'.format(is_conda_build))
-    if is_conda_build:
-        if os.name == 'nt':
-            lib_path = os.path.join(build_prefix, 'Library')
-            include_folder = os.path.join(lib_path, 'include')
-            png_header = os.path.join(include_folder, 'png.h')
-            lib_folder = os.path.join(lib_path, 'lib')
-            print('PNG found? {0}'.format(os.path.isfile(png_header)))
-            include_dirs.append(include_folder)
-            library_dirs.append(lib_folder)
-        else:
-            # Add conda headers/libraries
-            conda_include = os.path.join(build_prefix, 'include')
-            png_header = os.path.join(conda_include, 'png.h')
-            print('PNG found? {0}'.format(os.path.isfile(png_header)))
-            conda_library = os.path.join(build_prefix, 'lib')
-            include_dirs.append(conda_include)
-            library_dirs.append(conda_library)
-    else:
-        # Check if using Anaconda to produce wheels
-        conda = distutils.spawn.find_executable('conda')
-        is_conda = conda is not None
-        print('Running build on conda: {0}'.format(is_conda))
-        if is_conda:
-            python_executable = sys.executable
-            if os.name == 'nt':
-                env_folder = os.path.dirname(python_executable)
-                env_library_path = os.path.join(env_folder, 'Library')
-                env_include_folder = os.path.join(env_library_path, 'include')
-                env_lib_folder = os.path.join(env_library_path, 'lib')
-                png_header = os.path.join(env_include_folder, 'png.h')
-                print('PNG found? {0}'.format(os.path.isfile(png_header)))
-            else:
-                env_bin_folder = os.path.dirname(python_executable)
-                env_folder = os.path.dirname(env_bin_folder)
-                env_lib_folder = os.path.join(env_folder, 'lib')
-                env_include_folder = os.path.join(env_folder, 'include')
-                png_header = os.path.join(env_include_folder, 'png.h')
-                print('PNG found? {0}'.format(os.path.isfile(png_header)))
-            include_dirs.append(env_include_folder)
-            library_dirs.append(env_lib_folder)
+    vision_include = os.environ.get('TORCHVISION_INCLUDE', None)
+    vision_library = os.environ.get('TORCHVISION_LIBRARY', None)
+    vision_include = (vision_include.split(os.pathsep)
+                      if vision_include is not None else [])
+    vision_library = (vision_library.split(os.pathsep)
+                      if vision_library is not None else [])
+    include_dirs = vision_include
+    library_dirs = vision_library
 
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
 
     main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
     source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
-    image_src = glob.glob(os.path.join(extensions_dir, 'cpu', 'image', '*.cpp'))
 
     is_rocm_pytorch = False
     if torch.__version__ >= '1.5':
@@ -160,7 +113,7 @@ def get_extensions():
     else:
         source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
 
-    sources = main_file + source_cpu + image_src
+    sources = main_file + source_cpu
     extension = CppExtension
 
     compile_cpp_tests = os.getenv('WITH_CPP_MODELS_TEST', '0') == '1'
@@ -206,11 +159,6 @@ def get_extensions():
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs += [extensions_dir]
-    libraries = []
-    # Add libPNG
-    libraries.append('png' if os.name != 'nt' else 'libpng')
-    # Add libJPEG-turbo
-    libraries.append('turbojpeg')
 
     ext_modules = [
         extension(
@@ -218,7 +166,6 @@ def get_extensions():
             sources,
             include_dirs=include_dirs,
             library_dirs=library_dirs,
-            libraries=libraries,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
         )
@@ -235,16 +182,108 @@ def get_extensions():
         )
 
     # Image reading extension
-    # image_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'image')
-    # image_src = glob.glob(os.path.join(image_src_dir, "*.cpp"))
-    # ext_modules.append(extension(
-    #     'torchvision.image',
-    #     image_src,
-    #     include_dirs=include_dirs + [image_src_dir],
-    #     library_dirs=library_dirs,
-    #     define_macros=define_macros,
-    #     extra_compile_args=extra_compile_args
-    # ))
+    image_macros = []
+    image_include = [extensions_dir]
+    image_library = []
+    image_link_flags = []
+
+    # Locating libPNG
+    libpng = distutils.spawn.find_executable('libpng-config')
+    png_found = libpng is not None
+    image_macros += [('PNG_FOUND', str(int(png_found)))]
+    print('PNG found: {0}'.format(png_found))
+    if png_found:
+        print('Building torchvision with PNG image support')
+        png_lib = subprocess.run([libpng, '--libdir'], capture_output=True)
+        png_include = subprocess.run([libpng, '--I_opts'], capture_output=True)
+        image_library += [png_lib]
+        image_include += [png_include]
+        image_link_flags.append('png' if os.name != 'nt' else 'libpng')
+
+    # Locating libjpegturbo
+    build_prefix = os.environ.get('BUILD_PREFIX', None)
+    is_conda_build = build_prefix is not None
+    turbojpeg_found = False
+    conda_installed = False
+    turbojpeg_header = 'turbojpeg.h'
+    print('Running build on conda-build: {0}'.format(is_conda_build))
+    if is_conda_build:
+        if os.name == 'nt':
+            lib_path = os.path.join(build_prefix, 'Library')
+            turbo_include_folder = os.path.join(lib_path, 'include')
+            turbojpeg_header = os.path.join(
+                turbo_include_folder, 'turbojpeg.h')
+            turbo_lib_folder = os.path.join(lib_path, 'lib')
+            turbojpeg_found = os.path.isfile(turbojpeg_header)
+        else:
+            # Add conda headers/libraries
+            turbo_include_folder = os.path.join(build_prefix, 'include')
+            turbo_lib_folder = os.path.join(build_prefix, 'lib')
+            turbojpeg_header = os.path.join(
+                turbo_include_folder, 'turbojpeg.h')
+            turbojpeg_found = os.path.isfile(turbojpeg_header)
+        conda_installed = turbojpeg_header
+    else:
+        # Check if using Anaconda to produce wheels
+        conda = distutils.spawn.find_executable('conda')
+        is_conda = conda is not None
+        print('Running build on conda: {0}'.format(is_conda))
+        if is_conda:
+            python_executable = sys.executable
+            if os.name == 'nt':
+                env_folder = os.path.dirname(python_executable)
+                env_library_path = os.path.join(env_folder, 'Library')
+                turbo_include_folder = os.path.join(
+                    env_library_path, 'include')
+                turbojpeg_header = os.path.join(
+                    turbo_include_folder, 'turbojpeg.h')
+                turbo_lib_folder = os.path.join(env_library_path, 'lib')
+                turbojpeg_found = os.path.isfile(turbojpeg_header)
+            else:
+                env_bin_folder = os.path.dirname(python_executable)
+                env_folder = os.path.dirname(env_bin_folder)
+                turbo_lib_folder = os.path.join(env_folder, 'lib')
+                turbo_include_folder = os.path.join(env_folder, 'include')
+                turbojpeg_header = os.path.join(
+                    turbo_include_folder, 'turbojpeg.h')
+                turbojpeg_found = os.path.isfile(turbojpeg_header)
+            conda_installed = turbojpeg_header
+
+    # Try to locate turbojpeg in Linux standard paths
+    if not turbojpeg_found:
+        if sys.platform == 'linux':
+            turbojpeg_found = os.path.exists('/usr/include/turbojpeg.h')
+            turbojpeg_found = turbojpeg_found or os.path.exists(
+                '/usr/local/include/turbojpeg.h')
+        else:
+            # Lookup in TORCHVISION_INCLUDE or in the package file
+            package_path = os.path.join(this_dir, 'torchvision')
+            for folder in vision_include + package_path:
+                candidate_path = os.path.join(folder, 'turbojpeg.h')
+                turbojpeg_found = os.path.exists(candidate_path)
+                if turbojpeg_found:
+                    break
+
+    image_macros += [('JPEG_FOUND', str(int(turbojpeg_found)))]
+    print('turboJPEG found: {0}'.format(turbojpeg_found))
+    if turbojpeg_found:
+        print('Building torchvision with JPEG image support')
+        image_link_flags.append('turbojpeg')
+        if conda_installed:
+            image_library += [turbo_lib_folder]
+            image_include += [turbo_include_folder]
+
+    image_src = glob.glob(
+        os.path.join(extensions_dir, 'cpu', 'image', '*.cpp'))
+
+    ext_modules.append(extension(
+        'torchvision.image',
+        image_src,
+        include_dirs=include_dirs + [image_src] + image_include,
+        library_dirs=library_dirs + image_library,
+        define_macros=image_macros,
+        extra_compile_args=extra_compile_args
+    ))
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
