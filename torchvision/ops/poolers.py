@@ -6,7 +6,7 @@ from torch import nn, Tensor
 from torchvision.ops import roi_align
 from torchvision.ops.boxes import box_area
 
-from torch.jit.annotations import Optional, List, Dict, Tuple
+from torch.jit.annotations import Optional, List, Dict, Tuple, Union
 import torchvision
 
 
@@ -15,7 +15,7 @@ import torchvision
 # _onnx_merge_levels() is an implementation supported by ONNX
 # that merges the levels to the right indices
 @torch.jit.unused
-def _onnx_merge_levels(levels, unmerged_results):
+def _onnx_merge_levels(levels: Tensor, unmerged_results: List[Tensor]) -> Tensor:
     # type: (Tensor, List[Tensor]) -> Tensor
     first_result = unmerged_results[0]
     dtype, device = first_result.dtype, first_result.device
@@ -33,7 +33,13 @@ def _onnx_merge_levels(levels, unmerged_results):
 
 
 # TODO: (eellison) T54974082 https://github.com/pytorch/pytorch/issues/26744/pytorch/issues/26744
-def initLevelMapper(k_min, k_max, canonical_scale=224, canonical_level=4, eps=1e-6):
+def initLevelMapper(
+    k_min: int,
+    k_max: int,
+    canonical_scale: int = 224,
+    canonical_level: int = 4,
+    eps: float = 1e-6,
+):
     # type: (int, int, int, int, float) -> LevelMapper
     return LevelMapper(k_min, k_max, canonical_scale, canonical_level, eps)
 
@@ -50,7 +56,14 @@ class LevelMapper(object):
         eps (float)
     """
 
-    def __init__(self, k_min, k_max, canonical_scale=224, canonical_level=4, eps=1e-6):
+    def __init__(
+        self,
+        k_min: int,
+        k_max: int,
+        canonical_scale: int = 224,
+        canonical_level: int = 4,
+        eps: float = 1e-6,
+    ):
         # type: (int, int, int, int, float) -> None
         self.k_min = k_min
         self.k_max = k_max
@@ -58,7 +71,7 @@ class LevelMapper(object):
         self.lvl0 = canonical_level
         self.eps = eps
 
-    def __call__(self, boxlists):
+    def __call__(self, boxlists: List[Tensor]) -> Tensor:
         # type: (List[Tensor]) -> Tensor
         """
         Arguments:
@@ -107,7 +120,12 @@ class MultiScaleRoIAlign(nn.Module):
         'map_levels': Optional[LevelMapper]
     }
 
-    def __init__(self, featmap_names, output_size, sampling_ratio):
+    def __init__(
+        self,
+        featmap_names: List[str],
+        output_size: Union[List[Tuple[int, int]], List[int]],
+        sampling_ratio: int,
+    ):
         super(MultiScaleRoIAlign, self).__init__()
         if isinstance(output_size, int):
             output_size = (output_size, output_size)
@@ -117,7 +135,7 @@ class MultiScaleRoIAlign(nn.Module):
         self.scales = None
         self.map_levels = None
 
-    def convert_to_roi_format(self, boxes):
+    def convert_to_roi_format(self, boxes: List[Tensor]) -> Tensor:
         # type: (List[Tensor]) -> Tensor
         concat_boxes = torch.cat(boxes, dim=0)
         device, dtype = concat_boxes.device, concat_boxes.dtype
@@ -131,7 +149,7 @@ class MultiScaleRoIAlign(nn.Module):
         rois = torch.cat([ids, concat_boxes], dim=1)
         return rois
 
-    def infer_scale(self, feature, original_size):
+    def infer_scale(self, feature: Tensor, original_size: List[int]) -> float:
         # type: (Tensor, List[int]) -> float
         # assumption: the scale is of the form 2 ** (-k), with k integer
         size = feature.shape[-2:]
@@ -143,7 +161,11 @@ class MultiScaleRoIAlign(nn.Module):
         assert possible_scales[0] == possible_scales[1]
         return possible_scales[0]
 
-    def setup_scales(self, features, image_shapes):
+    def setup_scales(
+        self,
+        features: List[Tensor],
+        image_shapes: List[Tuple[int, int]],
+    ) -> None:
         # type: (List[Tensor], List[Tuple[int, int]]) -> None
         assert len(image_shapes) != 0
         max_x = 0
@@ -161,7 +183,12 @@ class MultiScaleRoIAlign(nn.Module):
         self.scales = scales
         self.map_levels = initLevelMapper(int(lvl_min), int(lvl_max))
 
-    def forward(self, x, boxes, image_shapes):
+    def forward(
+        self,
+        x: Dict[str, Tensor],
+        boxes:  List[Tensor],
+        image_shapes: List[Tuple[int, int]],
+    ) -> Tensor:
         # type: (Dict[str, Tensor], List[Tensor], List[Tuple[int, int]]) -> Tensor
         """
         Arguments:

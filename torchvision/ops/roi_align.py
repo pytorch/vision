@@ -2,12 +2,19 @@ import torch
 from torch import nn, Tensor
 
 from torch.nn.modules.utils import _pair
-from torch.jit.annotations import List, BroadcastingList2
+from torch.jit.annotations import List, BroadcastingList2, Union
 
 from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
-def roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1, aligned=False):
+def roi_align(
+    input: Tensor,
+    boxes: Union[Tensor, List[Tensor]],
+    output_size: BroadcastingList2[int],
+    spatial_scale: float = 1.0,
+    sampling_ratio: int = -1,
+    aligned: bool = False,
+) -> Tensor:
     # type: (Tensor, Tensor, BroadcastingList2[int], float, int, bool) -> Tensor
     """
     Performs Region of Interest (RoI) Align operator described in Mask R-CNN
@@ -49,17 +56,23 @@ class RoIAlign(nn.Module):
     """
     See roi_align
     """
-    def __init__(self, output_size, spatial_scale, sampling_ratio, aligned=False):
+    def __init__(
+        self,
+        output_size: BroadcastingList2[int],
+        spatial_scale: float,
+        sampling_ratio: int,
+        aligned: bool = False,
+    ):
         super(RoIAlign, self).__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale
         self.sampling_ratio = sampling_ratio
         self.aligned = aligned
 
-    def forward(self, input, rois):
+    def forward(self, input: Tensor, rois: Union[Tensor, List[Tensor]]) -> Tensor:
         return roi_align(input, rois, self.output_size, self.spatial_scale, self.sampling_ratio, self.aligned)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         tmpstr = self.__class__.__name__ + '('
         tmpstr += 'output_size=' + str(self.output_size)
         tmpstr += ', spatial_scale=' + str(self.spatial_scale)
