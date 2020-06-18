@@ -194,8 +194,9 @@ def get_extensions():
     print('PNG found: {0}'.format(png_found))
     if png_found:
         print('Building torchvision with PNG image support')
-        png_lib = subprocess.run([libpng, '--libdir'], capture_output=True)
-        png_include = subprocess.run([libpng, '--I_opts'], capture_output=True)
+        png_lib = subprocess.run([libpng, '--libdir'], stdout=subprocess.PIPE)
+        png_include = subprocess.run([libpng, '--I_opts'],
+                                     stdout=subprocess.PIPE)
         image_library += [png_lib]
         image_include += [png_include]
         image_link_flags.append('png' if os.name != 'nt' else 'libpng')
