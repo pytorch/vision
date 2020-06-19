@@ -65,26 +65,22 @@ def write_video(filename, video_array, fps, video_codec="libx264", options=None)
     _check_av_available()
     video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy()
 
-    container = av.open(filename, mode="w")
+    with av.open(filename, mode="w") as container:
+        stream = container.add_stream(video_codec, rate=fps)
+        stream.width = video_array.shape[2]
+        stream.height = video_array.shape[1]
+        stream.pix_fmt = "yuv420p" if video_codec != "libx264rgb" else "rgb24"
+        stream.options = options or {}
 
-    stream = container.add_stream(video_codec, rate=fps)
-    stream.width = video_array.shape[2]
-    stream.height = video_array.shape[1]
-    stream.pix_fmt = "yuv420p" if video_codec != "libx264rgb" else "rgb24"
-    stream.options = options or {}
+        for img in video_array:
+            frame = av.VideoFrame.from_ndarray(img, format="rgb24")
+            frame.pict_type = "NONE"
+            for packet in stream.encode(frame):
+                container.mux(packet)
 
-    for img in video_array:
-        frame = av.VideoFrame.from_ndarray(img, format="rgb24")
-        frame.pict_type = "NONE"
-        for packet in stream.encode(frame):
+        # Flush stream
+        for packet in stream.encode():
             container.mux(packet)
-
-    # Flush stream
-    for packet in stream.encode():
-        container.mux(packet)
-
-    # Close the file
-    container.close()
 
 
 def _read_from_stream(
@@ -229,37 +225,35 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
     audio_frames = []
 
     try:
-        container = av.open(filename, metadata_errors="ignore")
+        with av.open(filename, metadata_errors="ignore") as container:
+            if container.streams.video:
+                video_frames = _read_from_stream(
+                    container,
+                    start_pts,
+                    end_pts,
+                    pts_unit,
+                    container.streams.video[0],
+                    {"video": 0},
+                )
+                video_fps = container.streams.video[0].average_rate
+                # guard against potentially corrupted files
+                if video_fps is not None:
+                    info["video_fps"] = float(video_fps)
+
+            if container.streams.audio:
+                audio_frames = _read_from_stream(
+                    container,
+                    start_pts,
+                    end_pts,
+                    pts_unit,
+                    container.streams.audio[0],
+                    {"audio": 0},
+                )
+                info["audio_fps"] = container.streams.audio[0].rate
+
     except av.AVError:
         # TODO raise a warning?
         pass
-    else:
-        if container.streams.video:
-            video_frames = _read_from_stream(
-                container,
-                start_pts,
-                end_pts,
-                pts_unit,
-                container.streams.video[0],
-                {"video": 0},
-            )
-            video_fps = container.streams.video[0].average_rate
-            # guard against potentially corrupted files
-            if video_fps is not None:
-                info["video_fps"] = float(video_fps)
-
-        if container.streams.audio:
-            audio_frames = _read_from_stream(
-                container,
-                start_pts,
-                end_pts,
-                pts_unit,
-                container.streams.audio[0],
-                {"audio": 0},
-            )
-            info["audio_fps"] = container.streams.audio[0].rate
-
-        container.close()
 
     vframes = [frame.to_rgb().to_ndarray() for frame in video_frames]
     aframes = [frame.to_ndarray() for frame in audio_frames]
@@ -286,6 +280,14 @@ def _can_read_timestamps_from_packets(container):
     if b"Lavc" in extradata:
         return True
     return False
+
+
+def _decode_video_timestamps(container):
+    if _can_read_timestamps_from_packets(container):
+        # fast path
+        return [x.pts for x in container.demux(video=0) if x.pts is not None]
+    else:
+        return [x.pts for x in container.decode(video=0) if x.pts is not None]
 
 
 def read_video_timestamps(filename, pts_unit="pts"):
@@ -321,26 +323,18 @@ def read_video_timestamps(filename, pts_unit="pts"):
     pts = []
 
     try:
-        container = av.open(filename, metadata_errors="ignore")
+        with av.open(filename, metadata_errors="ignore") as container:
+            if container.streams.video:
+                video_stream = container.streams.video[0]
+                video_time_base = video_stream.time_base
+                try:
+                    pts = _decode_video_timestamps(container)
+                except av.AVError:
+                    warnings.warn(f"Failed decoding frames for file {filename}")
+                video_fps = float(video_stream.average_rate)
     except av.AVError:
         # TODO add a warning
         pass
-    else:
-        if container.streams.video:
-            video_stream = container.streams.video[0]
-            video_time_base = video_stream.time_base
-            try:
-                if _can_read_timestamps_from_packets(container):
-                    # fast path
-                    pts = [x.pts for x in container.demux(video=0) if x.pts is not None]
-                else:
-                    pts = [
-                        x.pts for x in container.decode(video=0) if x.pts is not None
-                    ]
-            except av.AVError:
-                warnings.warn(f"Failed decoding frames for file {filename}")
-            video_fps = float(video_stream.average_rate)
-        container.close()
 
     pts.sort()
 
