@@ -2,7 +2,7 @@ import gc
 import math
 import re
 import warnings
-from typing import Tuple, List
+from typing import List, Tuple, Union
 
 import numpy as np
 import torch
@@ -49,7 +49,7 @@ _CALLED_TIMES = 0
 _GC_COLLECTION_INTERVAL = 10
 
 
-def write_video(filename, video_array, fps, video_codec="libx264", options=None):
+def write_video(filename, video_array, fps: Union[int, float], video_codec="libx264", options=None):
     """
     Writes a 4d tensor in [T, H, W, C] format in a video file
 
@@ -64,6 +64,11 @@ def write_video(filename, video_array, fps, video_codec="libx264", options=None)
     """
     _check_av_available()
     video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy()
+
+    # PyAV does not support floating point numbers with decimal point
+    # and will throw OverflowException in case this is not the case
+    if isinstance(fps, float):
+        fps = np.round(fps)
 
     container = av.open(filename, mode="w")
 
