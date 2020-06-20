@@ -784,7 +784,7 @@ class RoIHeads(torch.nn.Module):
                 mask_proposals = []
                 pos_matched_idxs = []
                 for img_id in range(num_images):
-                    pos = torch.stack(torch.where((labels[img_id]>0)>0), dim=1).squeeze(1)
+                    pos = torch.stack(torch.where((labels[img_id] > 0) > 0), dim=1).squeeze(1)
                     mask_proposals.append(proposals[img_id][pos])
                     pos_matched_idxs.append(matched_idxs[img_id][pos])
             else:
@@ -832,7 +832,7 @@ class RoIHeads(torch.nn.Module):
                 pos_matched_idxs = []
                 assert matched_idxs is not None
                 for img_id in range(num_images):
-                    pos = torch.stack(torch.where((labels[img_id]>0) > 0), dim=1).squeeze(1)
+                    pos = torch.stack(torch.where((labels[img_id] > 0) > 0), dim=1).squeeze(1)
                     keypoint_proposals.append(proposals[img_id][pos])
                     pos_matched_idxs.append(matched_idxs[img_id][pos])
             else:
