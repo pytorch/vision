@@ -86,7 +86,7 @@ class GeneralizedRCNN(nn.Module):
                 degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
                 if degenerate_boxes.any():
                     # print the first degenrate box
-                    bb_idx = degenerate_boxes.any(dim=1).nonzero().view(-1)[0]
+                    bb_idx = torch.stack(torch.where((degenerate_boxes.any(dim=1)) > 0), dim=1).squeeze(1).view(-1)[0]
                     degen_bb: List[float] = boxes[bb_idx].tolist()
                     raise ValueError("All bounding boxes should have positive height and width."
                                      " Found invaid box {} for target at index {}."

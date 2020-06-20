@@ -23,7 +23,7 @@ def _onnx_merge_levels(levels, unmerged_results):
                        first_result.size(2), first_result.size(3)),
                       dtype=dtype, device=device)
     for level in range(len(unmerged_results)):
-        index = (levels == level).nonzero(as_tuple=True).view(-1, 1, 1, 1)
+        index = torch.stack(torch.where((levels == level) > 0), dim=1).view(-1, 1, 1, 1)
         index = index.expand(index.size(0),
                              unmerged_results[level].size(1),
                              unmerged_results[level].size(2),
@@ -213,7 +213,7 @@ class MultiScaleRoIAlign(nn.Module):
 
         tracing_results = []
         for level, (per_level_feature, scale) in enumerate(zip(x_filtered, scales)):
-            idx_in_level = torch.nonzero(levels == level, as_tuple=True)[0]
+            idx_in_level = torch.stack(torch.where((levels == level) > 0), dim=1).squeeze(1)
             rois_per_level = rois[idx_in_level]
 
             result_idx_in_level = roi_align(
