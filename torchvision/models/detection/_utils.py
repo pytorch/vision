@@ -320,7 +320,7 @@ class Matcher(object):
         gt_pred_pairs_of_highest_quality = torch.stack(
             torch.where(
                 (match_quality_matrix == highest_quality_foreach_gt[:, None]) > 0
-                        ), dim=1
+            ), dim=1
         ).squeeze(1)
         # Example gt_pred_pairs_of_highest_quality:
         #   tensor([[    0, 39796],
