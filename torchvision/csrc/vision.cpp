@@ -1,7 +1,7 @@
-#include <Python.h>
-#include <torch/script.h>
+// Autoregister all the torchvision ops.
+#include "ops_autoregister.h"
 
-#include "vision.h"
+#include <Python.h>
 
 // If we are in a Windows environment, we need to define
 // initialization functions for the _C extension
