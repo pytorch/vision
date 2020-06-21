@@ -1,4 +1,4 @@
-// Autoregister all the torchvision ops.
+// Autoregister all the torchvision ops (for C++).
 #include "ops_autoregister.h"
 
 #include <Python.h>
@@ -8,14 +8,14 @@
 #ifdef _WIN32
 #if PY_MAJOR_VERSION < 3
 PyMODINIT_FUNC init_C(void) {
-  // No need to do anything.
-  // extension.py will run on load
+  // Register torchvision ops for python.
+  vision::RegisterOps();
   return NULL;
 }
 #else
 PyMODINIT_FUNC PyInit__C(void) {
-  // No need to do anything.
-  // extension.py will run on load
+  // Register torchvision ops for python.
+  vision::RegisterOps();
   return NULL;
 }
 #endif
