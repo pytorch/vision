@@ -50,7 +50,7 @@ class _VideoTimestampsDataset(object):
     """
     Dataset used to parallelize the reading of the timestamps
     of a list of videos, given their paths in the filesystem.
-    
+
     Used in VideoClips and defined at top level so it can be
     pickled when forking.
     """
