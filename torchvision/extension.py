@@ -24,8 +24,6 @@ try:
     _register_extensions()
     _HAS_OPS = True
 except (ImportError, OSError):
-    import traceback
-    traceback.print_exc()
     pass
 
 

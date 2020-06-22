@@ -2,7 +2,6 @@
 
 #include <ATen/ATen.h>
 #include <setjmp.h>
-#include <turbojpeg.h>
 #include <string>
 
 #if !JPEG_FOUND
@@ -12,13 +11,15 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
 }
 
 #else
+#include <turbojpeg.h>
+
 torch::Tensor decodeJPEG(const torch::Tensor& data) {
   tjhandle tjInstance = tjInitDecompress();
   if (tjInstance == NULL) {
     TORCH_CHECK(false, "libjpeg-turbo decompression initialization failed.");
   }
 
-  auto datap = data.accessor<unsigned char, 1>().data();
+  auto datap = data.accessor<unsigned char>().data();
 
   int width, height;
 

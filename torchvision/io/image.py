@@ -85,10 +85,7 @@ def decode_jpeg(input):
     if not input.dtype == torch.uint8:
         raise ValueError("Expected a torch.uint8 tensor.")
 
-    try:
-        output = torch.ops.image.decode_jpeg(input)
-    except RuntimeError:
-        raise ValueError("Invalid jpeg input.")
+    output = torch.ops.image.decode_jpeg(input)
     return output
 
 

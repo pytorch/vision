@@ -1,7 +1,6 @@
 #include "readpng_cpu.h"
 
 #include <ATen/ATen.h>
-#include <png.h>
 #include <setjmp.h>
 #include <string>
 
@@ -10,6 +9,8 @@ torch::Tensor decodePNG(const torch::Tensor& data) {
   AT_ERROR("decodePNG: torchvision not compiled with libPNG support");
 }
 #else
+#include <png.h>
+
 torch::Tensor decodePNG(const torch::Tensor& data) {
   auto png_ptr =
       png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
