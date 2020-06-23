@@ -1081,6 +1081,8 @@ class RandomRotation(object):
         format_string += ', expand={0}'.format(self.expand)
         if self.center is not None:
             format_string += ', center={0}'.format(self.center)
+        if self.fill is not None:
+            format_string += ', fill={0}'.format(self.fill)
         format_string += ')'
         return format_string
 
