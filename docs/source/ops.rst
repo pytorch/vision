@@ -6,7 +6,7 @@ torchvision.ops
 :mod:`torchvision.ops` implements operators that are specific for Computer Vision.
 
 .. note::
-  As now all operators support TorchScript.
+  All operators have native support for TorchScript.
 
 
 .. autofunction:: nms
