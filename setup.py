@@ -76,6 +76,66 @@ pillow_req = 'pillow-simd' if get_dist('pillow-simd') is not None else 'pillow'
 requirements.append(pillow_req + pillow_ver)
 
 
+def find_library(name, vision_include):
+    this_dir = os.path.dirname(os.path.abspath(__file__))
+    build_prefix = os.environ.get('BUILD_PREFIX', None)
+    is_conda_build = build_prefix is not None
+
+    library_found = False
+    conda_installed = False
+    lib_folder = None
+    include_folder = None
+    library_header = '{0}.h'.format(name)
+
+    print('Running build on conda-build: {0}'.format(is_conda_build))
+    if is_conda_build:
+        # Add conda headers/libraries
+        if os.name == 'nt':
+            build_prefix = os.path.join(build_prefix, 'Library')
+        include_folder = os.path.join(build_prefix, 'include')
+        lib_folder = os.path.join(build_prefix, 'lib')
+        library_header_path = os.path.join(
+            include_folder, library_header)
+        library_found = os.path.isfile(library_header_path)
+        conda_installed = library_found
+    else:
+        # Check if using Anaconda to produce wheels
+        conda = distutils.spawn.find_executable('conda')
+        is_conda = conda is not None
+        print('Running build on conda: {0}'.format(is_conda))
+        if is_conda:
+            python_executable = sys.executable
+            py_folder = os.path.dirname(python_executable)
+            if os.name == 'nt':
+                env_path = os.path.join(py_folder, 'Library')
+            else:
+                env_path = os.path.dirname(py_folder)
+            lib_folder = os.path.join(env_path, 'lib')
+            include_folder = os.path.join(env_path, 'include')
+            library_header_path = os.path.join(
+                include_folder, library_header)
+            library_found = os.path.isfile(library_header_path)
+            conda_installed = library_found
+
+    # Try to locate turbojpeg in Linux standard paths
+    if not library_found:
+        if sys.platform == 'linux':
+            library_found = os.path.exists('/usr/include/{0}'.format(
+                library_header))
+            library_found = library_found or os.path.exists(
+                '/usr/local/include/{0}'.format(library_header))
+        else:
+            # Lookup in TORCHVISION_INCLUDE or in the package file
+            package_path = os.path.join(this_dir, 'torchvision')
+            for folder in vision_include + package_path:
+                candidate_path = os.path.join(folder, library_header)
+                library_found = os.path.exists(candidate_path)
+                if library_found:
+                    break
+
+    return library_found, conda_installed, include_folder, lib_folder
+
+
 def get_extensions():
     vision_include = os.environ.get('TORCHVISION_INCLUDE', None)
     vision_library = os.environ.get('TORCHVISION_LIBRARY', None)
@@ -202,68 +262,9 @@ def get_extensions():
         image_link_flags.append('png' if os.name != 'nt' else 'libpng')
 
     # Locating libjpegturbo
-    build_prefix = os.environ.get('BUILD_PREFIX', None)
-    is_conda_build = build_prefix is not None
-    turbojpeg_found = False
-    conda_installed = False
-    turbojpeg_header = 'turbojpeg.h'
-    print('Running build on conda-build: {0}'.format(is_conda_build))
-    if is_conda_build:
-        if os.name == 'nt':
-            lib_path = os.path.join(build_prefix, 'Library')
-            turbo_include_folder = os.path.join(lib_path, 'include')
-            turbojpeg_header = os.path.join(
-                turbo_include_folder, 'turbojpeg.h')
-            turbo_lib_folder = os.path.join(lib_path, 'lib')
-            turbojpeg_found = os.path.isfile(turbojpeg_header)
-        else:
-            # Add conda headers/libraries
-            turbo_include_folder = os.path.join(build_prefix, 'include')
-            turbo_lib_folder = os.path.join(build_prefix, 'lib')
-            turbojpeg_header = os.path.join(
-                turbo_include_folder, 'turbojpeg.h')
-            turbojpeg_found = os.path.isfile(turbojpeg_header)
-        conda_installed = turbojpeg_header
-    else:
-        # Check if using Anaconda to produce wheels
-        conda = distutils.spawn.find_executable('conda')
-        is_conda = conda is not None
-        print('Running build on conda: {0}'.format(is_conda))
-        if is_conda:
-            python_executable = sys.executable
-            if os.name == 'nt':
-                env_folder = os.path.dirname(python_executable)
-                env_library_path = os.path.join(env_folder, 'Library')
-                turbo_include_folder = os.path.join(
-                    env_library_path, 'include')
-                turbojpeg_header = os.path.join(
-                    turbo_include_folder, 'turbojpeg.h')
-                turbo_lib_folder = os.path.join(env_library_path, 'lib')
-                turbojpeg_found = os.path.isfile(turbojpeg_header)
-            else:
-                env_bin_folder = os.path.dirname(python_executable)
-                env_folder = os.path.dirname(env_bin_folder)
-                turbo_lib_folder = os.path.join(env_folder, 'lib')
-                turbo_include_folder = os.path.join(env_folder, 'include')
-                turbojpeg_header = os.path.join(
-                    turbo_include_folder, 'turbojpeg.h')
-                turbojpeg_found = os.path.isfile(turbojpeg_header)
-            conda_installed = turbojpeg_header
-
-    # Try to locate turbojpeg in Linux standard paths
-    if not turbojpeg_found:
-        if sys.platform == 'linux':
-            turbojpeg_found = os.path.exists('/usr/include/turbojpeg.h')
-            turbojpeg_found = turbojpeg_found or os.path.exists(
-                '/usr/local/include/turbojpeg.h')
-        else:
-            # Lookup in TORCHVISION_INCLUDE or in the package file
-            package_path = os.path.join(this_dir, 'torchvision')
-            for folder in vision_include + package_path:
-                candidate_path = os.path.join(folder, 'turbojpeg.h')
-                turbojpeg_found = os.path.exists(candidate_path)
-                if turbojpeg_found:
-                    break
+    turbojpeg_info = find_library('turbojpeg', vision_include)
+    (turbojpeg_found, conda_installed,
+     turbo_include_folder, turbo_lib_folder) = turbojpeg_info
 
     image_macros += [('JPEG_FOUND', str(int(turbojpeg_found)))]
     print('turboJPEG found: {0}'.format(turbojpeg_found))
