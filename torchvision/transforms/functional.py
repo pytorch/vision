@@ -357,10 +357,10 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
             is used to pad all borders. If tuple of length 2 is provided this is the padding
             on left/right and top/bottom respectively. If a tuple of length 4 is provided
             this is the padding for the left, top, right and bottom borders
-            respectively.
-        fill: Pixel fill value for constant fill. Default is 0. If a tuple of
+            respectively. Only list and tuple types are supported for Tensors.
+        fill (int or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
-            This value is only used when the padding_mode is constant
+            This value is only used when the padding_mode is constant. Only int value is supported for Tensors.
         padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
             Only constant supported for Tensors.
 

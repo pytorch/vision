@@ -329,7 +329,7 @@ def _hsv2rgb(img):
     return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=img.dtype), a4)
 
 
-def pad(img: Tensor, padding: List[int], fill: int, padding_mode: str = 'constant'):
+def pad(img: Tensor, padding: List[int], fill: int, padding_mode: str = "constant") -> Tensor:
     r"""Pad the given Tensor Image on all sides with specified padding mode and fill value.
 
     Args:

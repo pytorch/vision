@@ -157,7 +157,7 @@ def adjust_hue(img, hue_factor):
 
 
 @torch.jit.unused
-def pad(img, padding, fill=0, padding_mode='constant'):
+def pad(img, padding, fill=0, padding_mode="constant"):
     r"""Pad the given PIL.Image on all sides with the given "pad" value.
 
     Args:

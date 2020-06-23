@@ -70,9 +70,13 @@ class Tester(unittest.TestCase):
                 self.assertLess(max_diff_scripted, 5 / 255 + 1e-5)
 
     def test_pad(self):
-        fn_kwargs = meth_kwargs = {"padding": [4, 4], "fill": 0, "padding_mode": 'constant'}
+        fn_kwargs = meth_kwargs = {"padding": [4, 4], "fill": 0, "padding_mode": "constant"}
         self._test_geom_op(
-            'pad', 'Pad', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+            "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = meth_kwargs = {"padding": (2, 2, 2, 2), "fill": 127, "padding_mode": 'constant'}
+        self._test_geom_op(
+            "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
 
