@@ -48,7 +48,7 @@ class ImageTester(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Expected a torch.uint8 tensor."):
             decode_jpeg(torch.empty((100, ), dtype=torch.float16))
 
-        with self.assertRaisesRegex(ValueError, "Invalid jpeg input."):
+        with self.assertRaisesRegex(RuntimeError, "Error while reading jpeg headers."):
             decode_jpeg(torch.empty((100), dtype=torch.uint8))
 
     def test_read_png(self):
