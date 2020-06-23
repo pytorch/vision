@@ -465,6 +465,7 @@ class RandomCrop(torch.nn.Module):
 
     @staticmethod
     def get_params(img, output_size):
+        # type: (Tensor, Tuple[int, int]) -> Tuple[int, int, int, int]
         """Get parameters for ``crop`` for a random crop.
 
         Args:
@@ -474,7 +475,6 @@ class RandomCrop(torch.nn.Module):
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
         """
-        # type: (Tensor, Tuple[int, int]) -> Tuple[int, int, int, int]
         w, h = F._get_image_size(img)
         th, tw = output_size
         if w == tw and h == th:
