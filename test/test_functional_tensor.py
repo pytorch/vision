@@ -9,8 +9,19 @@ import random
 import colorsys
 from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
 
+from PIL import Image
+
 
 class Tester(unittest.TestCase):
+
+    def _create_data(self, height=3, width=3, channels=3):
+        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8)
+        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().numpy())
+        return tensor, pil_img
+
+    def compareTensorToPIL(self, tensor, pil_image, msg=None):
+        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
+        self.assertTrue(tensor.equal(pil_tensor), msg)
 
     def test_vflip(self):
         script_vflip = torch.jit.script(F_t.vflip)
@@ -233,6 +244,19 @@ class Tester(unittest.TestCase):
         cropped_script = script_ten_crop(img_tensor, [10, 10])
         for cropped_script_img, cropped_tensor_img in zip(cropped_script, cropped_tensor):
             self.assertTrue(torch.equal(cropped_script_img, cropped_tensor_img))
+
+    def test_pad(self):
+        script_fn = torch.jit.script(F_t.pad)
+        tensor, pil_img = self._create_data(7, 8)
+        for pad in [1, (0, 1), (2, 2), (1, 0, 1, 2)]:
+            padding_mode = 'constant'
+            for fill in [0, 10, 20]:
+                pad_tensor = F_t.pad(tensor, pad, fill=fill, padding_mode=padding_mode)
+                pad_pil_img = F.pad(pil_img, pad, fill=fill, padding_mode=padding_mode)
+                self.compareTensorToPIL(pad_tensor, pad_pil_img, f'{pad}, {fill}')
+                if not isinstance(pad, int):
+                    pad_tensor_script = script_fn(tensor, pad, fill=fill, padding_mode=padding_mode)
+                    self.assertTrue(pad_tensor.equal(pad_tensor_script), f'{pad}, {fill}')
 
 
 if __name__ == '__main__':
