@@ -12,6 +12,8 @@ torchvision.ops
 .. autofunction:: nms
 .. autofunction:: roi_align
 .. autofunction:: roi_pool
+.. autofunction:: deform_conv2d
 
 .. autoclass:: RoIAlign
 .. autoclass:: RoIPool
+.. autoclass:: DeformConv2d
