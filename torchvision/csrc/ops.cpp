@@ -15,7 +15,7 @@
 #include "empty_tensor_op.h"
 #include "nms.h"
 
-int64_t _cuda_version() {
+C10_EXPORT int64_t _cuda_version() {
 #ifdef WITH_CUDA
   return CUDA_VERSION;
 #else
