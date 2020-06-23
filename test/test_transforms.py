@@ -1651,6 +1651,44 @@ class Tester(unittest.TestCase):
         img_re = transforms.RandomErasing(ratio=(0.1, 0.2), value='random')(img)
         self.assertTrue(torch.equal(img_re, img))
 
+    def test_add_gaussian_noise(self):
+        """Unit tests for add gaussian noise transform"""
+
+        size = (2, 2)
+        tensor = torch.rand(size)
+
+        t = transforms.AddGaussianNoise()
+
+        # 1. Test values are as expected
+        torch.manual_seed(42)
+        transformed_tensor = t(tensor)
+        self.assertEqual(transformed_tensor.size(), size)
+
+        torch.manual_seed(42)
+        torch.rand(1)  # Repro steps within transform to align random seed
+
+        self.assertTrue(torch.all(transformed_tensor.eq(tensor + torch.randn(size))))
+
+        # 2. Test different types
+        self.assertEqual(t(tensor).dtype, torch.float32)  # int
+        self.assertEqual(t(tensor.float()).dtype, torch.float32)  # float
+        self.assertEqual(t(tensor.double()).dtype, torch.float64)  # double
+
+        # 3. Test repr
+        self.assertEqual(str(t), "AddGaussianNoise(mean=0.0, std=1.0, p=1.0)")
+
+        # 4. Test 0 prob
+        t = transforms.AddGaussianNoise(p=0.)
+        self.assertTrue(torch.all(t(tensor).eq(tensor)))
+
+        # 5. Test errors
+        with self.assertRaises(ValueError):
+            transforms.AddGaussianNoise(p=1.5)
+        with self.assertRaises(ValueError):
+            transforms.AddGaussianNoise(p=-1.5)
+        with self.assertRaises(ValueError):
+            transforms.AddGaussianNoise(std=-1.5)
+
 
 if __name__ == '__main__':
     unittest.main()

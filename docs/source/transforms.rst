@@ -65,6 +65,8 @@ Transforms on torch.\*Tensor
 
 .. autoclass:: RandomErasing
 
+.. autoclass:: AddGaussianNoise
+
 Conversion Transforms
 ---------------------
 

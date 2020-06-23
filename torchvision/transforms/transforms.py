@@ -22,7 +22,7 @@ __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImag
            "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
            "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
-           "RandomPerspective", "RandomErasing"]
+           "RandomPerspective", "RandomErasing", "AddGaussianNoise"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -1432,3 +1432,47 @@ class RandomErasing(object):
             x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value)
             return F.erase(img, x, y, h, w, v, self.inplace)
         return img
+
+
+class AddGaussianNoise(object):
+    """Add gaussian noise to a given tensor with probability p. More specifically,
+    for each value in the tensor, add a random number sampled from a Gaussian
+    with the given mean and std.
+
+    Useful to apply to images during the training phase to reduce overfitting.
+
+    Args:
+        mean (float): mean of the Gaussian distribution from which to sample.
+        std (float): std of the Gaussian distribution from which to sample.
+        p (float): probability that noise is added.
+
+    Returns:
+        Tensor with Gaussian noise added.
+    """
+
+    def __init__(self, mean=0., std=1., p = 1.):
+        if p < 0 or p > 1:
+            raise ValueError("Probability (p) should be between 0 and 1")
+        if std < 0:
+            raise ValueError("std must be positive")
+        self.std = std
+        self.mean = mean
+        self.p = p
+
+    def __call__(self, tensor):
+        """
+        Args:
+            tensor (Tensor): Input tensor to which noise is added.
+
+        Returns:
+            Tensor with Gaussian noise added.
+        """
+        if torch.rand(1) < self.p:
+            return tensor + torch.randn(tensor.size()) * self.std + self.mean
+        return tensor
+
+    def __repr__(self):
+        return (
+            self.__class__.__name__ +
+            '(mean={0}, std={1}, p={2})'.format(self.mean, self.std, self.p)
+        )
