@@ -19,7 +19,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
     TORCH_CHECK(false, "libjpeg-turbo decompression initialization failed.");
   }
 
-  auto datap = data.accessor<unsigned char>().data();
+  auto datap = data.accessor<unsigned char, 1>().data();
 
   int width, height;
 
