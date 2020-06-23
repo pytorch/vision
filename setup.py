@@ -3,6 +3,7 @@ import io
 import re
 import sys
 from setuptools import setup, find_packages
+from packaging import version
 from pkg_resources import get_distribution, DistributionNotFound
 import subprocess
 import distutils.command.clean
@@ -253,13 +254,24 @@ def get_extensions():
     image_macros += [('PNG_FOUND', str(int(png_found)))]
     print('PNG found: {0}'.format(png_found))
     if png_found:
-        print('Building torchvision with PNG image support')
-        png_lib = subprocess.run([libpng, '--libdir'], stdout=subprocess.PIPE)
-        png_include = subprocess.run([libpng, '--I_opts'],
+        png_version = subprocess.run([libpng, '--version'],
                                      stdout=subprocess.PIPE)
-        image_library += [png_lib.stdout.strip().decode('utf-8')]
-        image_include += [png_include.stdout.strip().decode('utf-8')]
-        image_link_flags.append('png' if os.name != 'nt' else 'libpng')
+        png_version = png_version.stdout.strip().decode('utf-8')
+        print('libpng version: {0}'.format(png_version))
+        png_version = version.parse(png_version)
+        if png_version >= version.parse("1.6.0"):
+            print('Building torchvision with PNG image support')
+            png_lib = subprocess.run([libpng, '--libdir'],
+                                     stdout=subprocess.PIPE)
+            png_include = subprocess.run([libpng, '--I_opts'],
+                                         stdout=subprocess.PIPE)
+            image_library += [png_lib.stdout.strip().decode('utf-8')]
+            image_include += [png_include.stdout.strip().decode('utf-8')]
+            image_link_flags.append('png' if os.name != 'nt' else 'libpng')
+        else:
+            print('libpng installed version is less than 1.6.0, '
+                  'disabling PNG support')
+            png_found = False
 
     # Locating libjpegturbo
     turbojpeg_info = find_library('turbojpeg', vision_include)
