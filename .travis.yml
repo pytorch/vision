@@ -9,7 +9,9 @@ matrix:
 
 before_install:
   - sudo apt-get update
-  - sudo apt-get install -y libpng16-dev libturbojpeg-dev
+  - sudo apt-get install -y libpng16-dev libturbojpeg
+  # Prevent static library to be picked up
+  - sudo ln -s /usr/lib/x86_64-linux-gnu/libturbojpeg.so.0.1.0 /usr/lib/x86_64-linux-gnu/libturbojpeg.so
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
