@@ -18,26 +18,30 @@ class Tester(unittest.TestCase):
         pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
         self.assertTrue(tensor.equal(pil_tensor))
 
-    def _test_flip(self, func, method):
-        tensor, pil_img = self._create_data()
-        flip_tensor = getattr(F, func)(tensor)
-        flip_pil_img = getattr(F, func)(pil_img)
-        self.compareTensorToPIL(flip_tensor, flip_pil_img)
+    def _test_geom_op(self, func, method, fn_kwargs=None, meth_kwargs=None):
+        if fn_kwargs is None:
+            fn_kwargs = {}
+        if meth_kwargs is None:
+            meth_kwargs = {}
+        tensor, pil_img = self._create_data(height=10, width=10)
+        transformed_tensor = getattr(F, func)(tensor, **fn_kwargs)
+        transformed_pil_img = getattr(F, func)(pil_img, **fn_kwargs)
+        self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
 
         scripted_fn = torch.jit.script(getattr(F, func))
-        flip_tensor_script = scripted_fn(tensor)
-        self.assertTrue(flip_tensor.equal(flip_tensor_script))
+        transformed_tensor_script = scripted_fn(tensor, **fn_kwargs)
+        self.assertTrue(transformed_tensor.equal(transformed_tensor_script))
 
         # test for class interface
-        f = getattr(T, method)()
+        f = getattr(T, method)(**meth_kwargs)
         scripted_fn = torch.jit.script(f)
         scripted_fn(tensor)
 
     def test_random_horizontal_flip(self):
-        self._test_flip('hflip', 'RandomHorizontalFlip')
+        self._test_geom_op('hflip', 'RandomHorizontalFlip')
 
     def test_random_vertical_flip(self):
-        self._test_flip('vflip', 'RandomVerticalFlip')
+        self._test_geom_op('vflip', 'RandomVerticalFlip')
 
     def test_adjustments(self):
         fns = ['adjust_brightness', 'adjust_contrast', 'adjust_saturation']
@@ -64,6 +68,13 @@ class Tester(unittest.TestCase):
                 max_diff_scripted = (adjusted_tensor - adjusted_tensor_script).abs().max()
                 self.assertLess(max_diff, 5 / 255 + 1e-5)
                 self.assertLess(max_diff_scripted, 5 / 255 + 1e-5)
+
+    def test_crop(self):
+        fn_kwargs = {"top": 2, "left": 3, "height": 4, "width": 5}
+        meth_kwargs = {"size": (4, 5), "padding": 4, "pad_if_needed": True, }
+        self._test_geom_op(
+            'crop', 'RandomCrop', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
 
 
 if __name__ == '__main__':

@@ -16,18 +16,24 @@ from . import functional_pil as F_pil
 from . import functional_tensor as F_t
 
 
-def _is_pil_image(img):
-    if accimage is not None:
-        return isinstance(img, (Image.Image, accimage.Image))
-    else:
-        return isinstance(img, Image.Image)
+@torch.jit.export
+def _get_image_size(img):
+    # type: (Tensor) -> List[int]
+    if isinstance(img, torch.Tensor):
+        return F_t._get_image_size(img)
+
+    return F_pil._get_image_size(img)
 
 
+@torch.jit.ignore
 def _is_numpy(img):
+    # type: (Any) -> bool
     return isinstance(img, np.ndarray)
 
 
+@torch.jit.ignore
 def _is_numpy_image(img):
+    # type: (Any) -> bool
     return img.ndim in {2, 3}
 
 
@@ -42,7 +48,7 @@ def to_tensor(pic):
     Returns:
         Tensor: Converted image.
     """
-    if not(_is_pil_image(pic) or _is_numpy(pic)):
+    if not(F_pil._is_pil_image(pic) or _is_numpy(pic)):
         raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
 
     if _is_numpy(pic) and not _is_numpy_image(pic):
@@ -97,7 +103,7 @@ def pil_to_tensor(pic):
     Returns:
         Tensor: Converted image.
     """
-    if not(_is_pil_image(pic)):
+    if not(F_pil._is_pil_image(pic)):
         raise TypeError('pic should be PIL Image. Got {}'.format(type(pic)))
 
     if accimage is not None and isinstance(pic, accimage.Image):
@@ -315,7 +321,7 @@ def resize(img, size, interpolation=Image.BILINEAR):
     Returns:
         PIL Image: Resized image.
     """
-    if not _is_pil_image(img):
+    if not F_pil._is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
     if not (isinstance(size, int) or (isinstance(size, Iterable) and len(size) == 2)):
         raise TypeError('Got inappropriate size arg: {}'.format(size))
@@ -374,7 +380,7 @@ def pad(img, padding, fill=0, padding_mode='constant'):
     Returns:
         PIL Image: Padded image.
     """
-    if not _is_pil_image(img):
+    if not F_pil._is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     if not isinstance(padding, (numbers.Number, tuple)):
@@ -436,23 +442,24 @@ def pad(img, padding, fill=0, padding_mode='constant'):
         return Image.fromarray(img)
 
 
-def crop(img, top, left, height, width):
+def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     """Crop the given PIL Image.
 
     Args:
-        img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
+        img (PIL Image or torch.Tensor): Image to be cropped. (0,0) denotes the top left corner of the image.
         top (int): Vertical component of the top left corner of the crop box.
         left (int): Horizontal component of the top left corner of the crop box.
         height (int): Height of the crop box.
         width (int): Width of the crop box.
 
     Returns:
-        PIL Image: Cropped image.
+        PIL Image or torch.Tensor: Cropped image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
-    return img.crop((left, top, left + width, top + height))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.crop(img, top, left, height, width)
+
+    return F_t.crop(img, top, left, height, width)
 
 
 def center_crop(img, output_size):
@@ -491,7 +498,7 @@ def resized_crop(img, top, left, height, width, size, interpolation=Image.BILINE
     Returns:
         PIL Image: Cropped image.
     """
-    assert _is_pil_image(img), 'img should be PIL Image'
+    assert F_pil._is_pil_image(img), 'img should be PIL Image'
     img = crop(img, top, left, height, width)
     img = resize(img, size, interpolation)
     return img
@@ -501,13 +508,13 @@ def hflip(img: Tensor) -> Tensor:
     """Horizontally flip the given PIL Image or torch Tensor.
 
     Args:
-        img (PIL Image or Torch Tensor): Image to be flipped. If img
+        img (PIL Image or torch.Tensor): Image to be flipped. If img
             is a Tensor, it is expected to be in [..., H, W] format,
             where ... means it can have an arbitrary number of trailing
             dimensions.
 
     Returns:
-        PIL Image:  Horizontally flipped image.
+        PIL Image or torch.Tensor:  Horizontally flipped image.
     """
     if not isinstance(img, torch.Tensor):
         return F_pil.hflip(img)
@@ -593,7 +600,7 @@ def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC, fill=N
         PIL Image:  Perspectively transformed Image.
     """
 
-    if not _is_pil_image(img):
+    if not F_pil._is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     opts = _parse_fill(fill, img, '5.0.0')
@@ -797,7 +804,7 @@ def adjust_gamma(img, gamma, gain=1):
             while gamma smaller than 1 make dark regions lighter.
         gain (float): The constant multiplier.
     """
-    if not _is_pil_image(img):
+    if not F_pil._is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     if gamma < 0:
@@ -837,7 +844,7 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
-    if not _is_pil_image(img):
+    if not F_pil._is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     opts = _parse_fill(fill, img, '5.2.0')
@@ -918,7 +925,7 @@ def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
             If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
         fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
     """
-    if not _is_pil_image(img):
+    if not F_pil._is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     assert isinstance(translate, (tuple, list)) and len(translate) == 2, \
@@ -945,7 +952,7 @@ def to_grayscale(img, num_output_channels=1):
 
             if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
-    if not _is_pil_image(img):
+    if not F_pil._is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     if num_output_channels == 1:

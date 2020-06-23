@@ -3,16 +3,25 @@ try:
     import accimage
 except ImportError:
     accimage = None
-from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
+from PIL import Image, ImageOps, ImageEnhance
 import numpy as np
 
 
 @torch.jit.unused
 def _is_pil_image(img):
+    # type: (Any) -> bool
     if accimage is not None:
         return isinstance(img, (Image.Image, accimage.Image))
     else:
         return isinstance(img, Image.Image)
+
+
+@torch.jit.unused
+def _get_image_size(img):
+    # type: (Any) -> List[int]
+    if _is_pil_image(img):
+        return img.size
+    raise TypeError("Unexpected type {}".format(type(img)))
 
 
 @torch.jit.unused
@@ -152,3 +161,23 @@ def adjust_hue(img, hue_factor):
 
     img = Image.merge('HSV', (h, s, v)).convert(input_mode)
     return img
+
+
+@torch.jit.unused
+def crop(img: Image.Image, top: int, left: int, height: int, width: int) -> Image.Image:
+    """Crop the given PIL Image.
+
+    Args:
+        img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
+        top (int): Vertical component of the top left corner of the crop box.
+        left (int): Horizontal component of the top left corner of the crop box.
+        height (int): Height of the crop box.
+        width (int): Width of the crop box.
+
+    Returns:
+        PIL Image: Cropped image.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    return img.crop((left, top, left + width, top + height))

@@ -3,8 +3,18 @@ from torch import Tensor
 from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
 
 
-def _is_tensor_a_torch_image(input):
-    return input.ndim >= 2
+@torch.jit.export
+def _is_tensor_a_torch_image(x):
+    # type: (Tensor) -> bool
+    return x.ndim >= 2
+
+
+@torch.jit.export
+def _get_image_size(img):
+    # type: (Tensor) -> List[int]
+    if _is_tensor_a_torch_image(img):
+        return [img.shape[-1], img.shape[-2]]
+    raise TypeError("Unexpected type {}".format(type(img)))
 
 
 def vflip(img):
