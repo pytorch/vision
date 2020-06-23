@@ -3,8 +3,7 @@ import io
 import re
 import sys
 from setuptools import setup, find_packages
-from packaging import version
-from pkg_resources import get_distribution, DistributionNotFound
+from pkg_resources import parse_version, get_distribution, DistributionNotFound
 import subprocess
 import distutils.command.clean
 import distutils.spawn
