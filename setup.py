@@ -257,8 +257,8 @@ def get_extensions():
                                      stdout=subprocess.PIPE)
         png_version = png_version.stdout.strip().decode('utf-8')
         print('libpng version: {0}'.format(png_version))
-        png_version = version.parse(png_version)
-        if png_version >= version.parse("1.6.0"):
+        png_version = parse_version(png_version)
+        if png_version >= parse_version("1.6.0"):
             print('Building torchvision with PNG image support')
             png_lib = subprocess.run([libpng, '--libdir'],
                                      stdout=subprocess.PIPE)
