@@ -10,7 +10,7 @@ from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
 
 import torch
 from torch import Tensor
-from torch.jit.annotations import List
+from torch.jit.annotations import List, Tuple
 
 try:
     import accimage
@@ -423,6 +423,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
         img (PIL Image or Tensor): Image to be cropped.
         output_size (sequence or int): (height, width) of the crop box. If int or sequence with single int
             it is used for both directions
+
     Returns:
         PIL Image or Tensor: Cropped image.
     """
@@ -430,6 +431,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
         output_size = (int(output_size), int(output_size))
     elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
         output_size = (output_size[0], output_size[0])
+
     image_width, image_height = _get_image_size(img)
     crop_height, crop_width = output_size
 
@@ -589,8 +591,10 @@ def vflip(img: Tensor) -> Tensor:
     return F_t.vflip(img)
 
 
-def five_crop(img, size):
-    """Crop the given PIL Image into four corners and the central crop.
+def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+    """Crop the given image into four corners and the central crop.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     .. Note::
         This transform returns a tuple of images and there may be a
@@ -607,22 +611,26 @@ def five_crop(img, size):
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
-    else:
-        assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
+    elif isinstance(size, (tuple, list)) and len(size) == 1:
+        size = (size[0], size[0])
 
-    image_width, image_height = img.size
+    if len(size) != 2:
+        raise ValueError("Please provide only two dimensions (h, w) for size.")
+
+    image_width, image_height = _get_image_size(img)
     crop_height, crop_width = size
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
         raise ValueError(msg.format(size, (image_height, image_width)))
 
-    tl = img.crop((0, 0, crop_width, crop_height))
-    tr = img.crop((image_width - crop_width, 0, image_width, crop_height))
-    bl = img.crop((0, image_height - crop_height, crop_width, image_height))
-    br = img.crop((image_width - crop_width, image_height - crop_height,
-                   image_width, image_height))
-    center = center_crop(img, (crop_height, crop_width))
-    return (tl, tr, bl, br, center)
+    tl = crop(img, 0, 0, crop_height, crop_width)
+    tr = crop(img, 0, image_width - crop_width, crop_height, crop_width)
+    bl = crop(img, image_height - crop_height, 0, crop_height, crop_width)
+    br = crop(img, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
+
+    center = center_crop(img, [crop_height, crop_width])
+
+    return tl, tr, bl, br, center
 
 
 def ten_crop(img, size, vertical_flip=False):

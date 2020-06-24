@@ -118,6 +118,45 @@ class Tester(unittest.TestCase):
             "center_crop", "CenterCrop", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
+    def _test_geom_op_list_output(self, func, method, out_length, fn_kwargs=None, meth_kwargs=None):
+        if fn_kwargs is None:
+            fn_kwargs = {}
+        if meth_kwargs is None:
+            meth_kwargs = {}
+        tensor, pil_img = self._create_data(height=20, width=20)
+        transformed_t_list = getattr(F, func)(tensor, **fn_kwargs)
+        transformed_p_list = getattr(F, func)(pil_img, **fn_kwargs)
+        self.assertEqual(len(transformed_t_list), len(transformed_p_list))
+        self.assertEqual(len(transformed_t_list), out_length)
+        for transformed_tensor, transformed_pil_img in zip(transformed_t_list, transformed_p_list):
+            self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
+
+        scripted_fn = torch.jit.script(getattr(F, func))
+        transformed_t_list_script = scripted_fn(tensor.detach().clone(), **fn_kwargs)
+        self.assertEqual(len(transformed_t_list), len(transformed_t_list_script))
+        self.assertEqual(len(transformed_t_list_script), out_length)
+        for transformed_tensor, transformed_tensor_script in zip(transformed_t_list, transformed_t_list_script):
+            self.assertTrue(transformed_tensor.equal(transformed_tensor_script),
+                            msg="{} vs {}".format(transformed_tensor, transformed_tensor_script))
+
+        # test for class interface
+        f = getattr(T, method)(**meth_kwargs)
+        scripted_fn = torch.jit.script(f)
+        output = scripted_fn(tensor)
+        self.assertEqual(len(output), len(transformed_t_list_script))
+
+    def test_five_crop(self):
+        fn_kwargs = {"size": (5,)}
+        meth_kwargs = {"size": (5, )}
+        self._test_geom_op_list_output(
+            "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = {"size": (4, 5)}
+        meth_kwargs = {"size": (4, 5)}
+        self._test_geom_op_list_output(
+            "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

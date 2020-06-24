@@ -260,7 +260,7 @@ class CenterCrop(torch.nn.Module):
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made. For scripted operation please use a list: (size, ) or (size_x, size_y)
+            made. For scripted operation, please use a list: (size, ) or (size_x, size_y)
     """
 
     def __init__(self, size):
@@ -270,6 +270,9 @@ class CenterCrop(torch.nn.Module):
         elif isinstance(size, (tuple, list)) and len(size) == 1:
             self.size = (size[0], size[0])
         else:
+            if len(size) != 2:
+                raise ValueError("Please provide only two dimensions (h, w) for size.")
+
             self.size = size
 
     def forward(self, img):
@@ -572,7 +575,7 @@ class RandomHorizontalFlip(torch.nn.Module):
 
 
 class RandomVerticalFlip(torch.nn.Module):
-    """Vertically flip the given PIL Image randomly with a given probability.
+    """Vertically flip the given image randomly with a given probability.
     The image can be a PIL Image or a torch Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading
     dimensions
@@ -769,8 +772,11 @@ class RandomSizedCrop(RandomResizedCrop):
         super(RandomSizedCrop, self).__init__(*args, **kwargs)
 
 
-class FiveCrop(object):
-    """Crop the given PIL Image into four corners and the central crop
+class FiveCrop(torch.nn.Module):
+    """Crop the given image into four corners and the central crop.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     .. Note::
          This transform returns a tuple of images and there may be a mismatch in the number of
@@ -780,6 +786,7 @@ class FiveCrop(object):
     Args:
          size (sequence or int): Desired output size of the crop. If size is an ``int``
             instead of sequence like (h, w), a square crop of size (size, size) is made.
+            For scripted operation, please use a list: (size, ) or (size_x, size_y)
 
     Example:
          >>> transform = Compose([
@@ -794,14 +801,26 @@ class FiveCrop(object):
     """
 
     def __init__(self, size):
+        super().__init__()
         self.size = size
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
+        elif isinstance(size, (tuple, list)) and len(size) == 1:
+            self.size = (size[0], size[0])
         else:
-            assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
+            if len(size) != 2:
+                raise ValueError("Please provide only two dimensions (h, w) for size.")
+
             self.size = size
 
-    def __call__(self, img):
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be cropped.
+
+        Returns:
+            PIL Image or Tensor: Cropped image.
+        """
         return F.five_crop(img, self.size)
 
     def __repr__(self):
