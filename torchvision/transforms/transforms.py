@@ -1450,7 +1450,7 @@ class AddGaussianNoise(object):
         Tensor with Gaussian noise added.
     """
 
-    def __init__(self, mean=0., std=1., p=1.):
+    def __init__(self, p=0.5, mean=0., std=1.):
         if p < 0 or p > 1:
             raise ValueError("Probability (p) should be between 0 and 1")
         if std < 0:

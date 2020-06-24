@@ -1657,7 +1657,7 @@ class Tester(unittest.TestCase):
         size = (2, 2)
         tensor = torch.rand(size)
 
-        t = transforms.AddGaussianNoise()
+        t = transforms.AddGaussianNoise(p=1.)
 
         # 1. Test values are as expected
         torch.manual_seed(42)
