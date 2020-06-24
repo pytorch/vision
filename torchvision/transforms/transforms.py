@@ -1,16 +1,19 @@
-import torch
 import math
+import numbers
 import random
+import warnings
+from collections.abc import Sequence, Iterable
+from typing import Tuple
+
+import numpy as np
+import torch
 from PIL import Image
+from torch import Tensor
+
 try:
     import accimage
 except ImportError:
     accimage = None
-import numpy as np
-import numbers
-import types
-from collections.abc import Sequence, Iterable
-import warnings
 
 from . import functional as F
 
@@ -249,28 +252,33 @@ class Scale(Resize):
         super(Scale, self).__init__(*args, **kwargs)
 
 
-class CenterCrop(object):
-    """Crops the given PIL Image at the center.
+class CenterCrop(torch.nn.Module):
+    """Crops the given image at the center.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made.
+            made. For scripted operation please use a list: (size, ) or (size_x, size_y)
     """
 
     def __init__(self, size):
+        super().__init__()
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
+        elif isinstance(size, (tuple, list)) and len(size) == 1:
+            self.size = (size[0], size[0])
         else:
             self.size = size
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be cropped.
+            img (PIL Image or Tensor): Image to be cropped.
 
         Returns:
-            PIL Image: Cropped image.
+            PIL Image or Tensor: Cropped image.
         """
         return F.center_crop(img, self.size)
 
@@ -474,8 +482,7 @@ class RandomCrop(torch.nn.Module):
     """
 
     @staticmethod
-    def get_params(img, output_size):
-        # type: (Tensor, Tuple[int, int]) -> Tuple[int, int, int, int]
+    def get_params(img: Tensor, output_size: Tuple[int, int]) -> Tuple[int, int, int, int]:
         """Get parameters for ``crop`` for a random crop.
 
         Args:
@@ -490,7 +497,6 @@ class RandomCrop(torch.nn.Module):
         if w == tw and h == th:
             return 0, 0, h, w
 
-        print(h, th, w, tw)
         i = torch.randint(0, h - th, size=(1, )).item()
         j = torch.randint(0, w - tw, size=(1, )).item()
         return i, j, th, tw
@@ -519,12 +525,12 @@ class RandomCrop(torch.nn.Module):
 
         width, height = F._get_image_size(img)
         # pad the width if needed
-        if self.pad_if_needed and height < self.size[1]:
-            padding = [self.size[1] - height, 0]
+        if self.pad_if_needed and width < self.size[1]:
+            padding = [self.size[1] - width, 0]
             img = F.pad(img, padding, self.fill, self.padding_mode)
         # pad the height if needed
-        if self.pad_if_needed and width < self.size[0]:
-            padding = [0, self.size[0] - width]
+        if self.pad_if_needed and height < self.size[0]:
+            padding = [0, self.size[0] - height]
             img = F.pad(img, padding, self.fill, self.padding_mode)
 
         i, j, h, w = self.get_params(img, self.size)

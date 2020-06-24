@@ -2,6 +2,7 @@ import math
 import numbers
 import warnings
 from collections.abc import Iterable
+from typing import Any
 
 import numpy as np
 from numpy import sin, cos, tan
@@ -21,8 +22,9 @@ from . import functional_tensor as F_t
 
 
 @torch.jit.export
-def _get_image_size(img):
-    # type: (Tensor) -> List[int]
+def _get_image_size(img: Tensor) -> List[int]:
+    """Returns image sizea as (w, h)
+    """
     if isinstance(img, torch.Tensor):
         return F_t._get_image_size(img)
 
@@ -30,14 +32,12 @@ def _get_image_size(img):
 
 
 @torch.jit.ignore
-def _is_numpy(img):
-    # type: (Any) -> bool
+def _is_numpy(img: Any) -> bool:
     return isinstance(img, np.ndarray)
 
 
 @torch.jit.ignore
-def _is_numpy_image(img):
-    # type: (Any) -> bool
+def _is_numpy_image(img: Any) -> bool:
     return img.ndim in {2, 3}
 
 
@@ -414,22 +414,32 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     return F_t.crop(img, top, left, height, width)
 
 
-def center_crop(img, output_size):
-    """Crop the given PIL Image and resize it to desired size.
+def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
+    """Crops the given image at the center.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
-        img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
-        output_size (sequence or int): (height, width) of the crop box. If int,
+        img (PIL Image or Tensor): Image to be cropped.
+        output_size (sequence or int): (height, width) of the crop box. If int or sequence with single int
             it is used for both directions
     Returns:
-        PIL Image: Cropped image.
+        PIL Image or Tensor: Cropped image.
     """
     if isinstance(output_size, numbers.Number):
         output_size = (int(output_size), int(output_size))
-    image_width, image_height = img.size
+    elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
+        output_size = (output_size[0], output_size[0])
+    image_width, image_height = _get_image_size(img)
     crop_height, crop_width = output_size
-    crop_top = int(round((image_height - crop_height) / 2.))
-    crop_left = int(round((image_width - crop_width) / 2.))
+
+    # crop_top = int(round((image_height - crop_height) / 2.))
+    # Result can be different between python func and scripted func
+    crop_top = int((image_height - crop_height + 1) * 0.5)
+    # crop_left = int(round((image_width - crop_width) / 2.))
+    # Result can be different between python func and scripted func
+    crop_left = int((image_width - crop_width + 1) * 0.5)
+
     return crop(img, crop_top, crop_left, crop_height, crop_width)
 
 

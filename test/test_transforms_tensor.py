@@ -101,9 +101,21 @@ class Tester(unittest.TestCase):
 
     def test_crop(self):
         fn_kwargs = {"top": 2, "left": 3, "height": 4, "width": 5}
-        meth_kwargs = {"size": (4, 5), "padding": 4, "pad_if_needed": True, }
+        meth_kwargs = {"size": (4, 5), "padding": [4, ], "pad_if_needed": True, }
         self._test_geom_op(
             'crop', 'RandomCrop', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
+    def test_center_crop(self):
+        fn_kwargs = {"output_size": (4, 5)}
+        meth_kwargs = {"size": (4, 5), }
+        self._test_geom_op(
+            "center_crop", "CenterCrop", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = {"output_size": (5,)}
+        meth_kwargs = {"size": (5, )}
+        self._test_geom_op(
+            "center_crop", "CenterCrop", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
 

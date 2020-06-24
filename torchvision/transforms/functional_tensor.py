@@ -4,21 +4,18 @@ from torch.jit.annotations import List, BroadcastingList2
 
 
 @torch.jit.export
-def _is_tensor_a_torch_image(x):
-    # type: (Tensor) -> bool
+def _is_tensor_a_torch_image(x: Tensor) -> bool:
     return x.ndim >= 2
 
 
 @torch.jit.export
-def _get_image_size(img):
-    # type: (Tensor) -> List[int]
+def _get_image_size(img: Tensor) -> List[int]:
     if _is_tensor_a_torch_image(img):
         return [img.shape[-1], img.shape[-2]]
     raise TypeError("Unexpected type {}".format(type(img)))
 
 
-def vflip(img):
-    # type: (Tensor) -> Tensor
+def vflip(img: Tensor) -> Tensor:
     """Vertically flip the given the Image Tensor.
 
     Args:
@@ -33,8 +30,7 @@ def vflip(img):
     return img.flip(-2)
 
 
-def hflip(img):
-    # type: (Tensor) -> Tensor
+def hflip(img: Tensor) -> Tensor:
     """Horizontally flip the given the Image Tensor.
 
     Args:
@@ -49,8 +45,7 @@ def hflip(img):
     return img.flip(-1)
 
 
-def crop(img, top, left, height, width):
-    # type: (Tensor, int, int, int, int) -> Tensor
+def crop(img: Tensor, top: int, left: int, height: int, width: int):
     """Crop the given Image Tensor.
 
     Args:
@@ -64,7 +59,7 @@ def crop(img, top, left, height, width):
         Tensor: Cropped image.
     """
     if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+        raise TypeError("tensor is not a torch image.")
 
     return img[..., top:top + height, left:left + width]
 
