@@ -50,9 +50,7 @@ test:
   requires:
     - pytest
     - scipy
-    # AV is disabled temporarily until the jpeg/jpeg-turbo conflicts are solved
-    # in conda-forge
-    # - av
+    - av
     - ca-certificates
     {{ environ.get('CONDA_TYPING_CONSTRAINT') }}
   commands:
