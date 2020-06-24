@@ -89,7 +89,7 @@ class ToTensor(object):
 class PILToTensor(object):
     """Convert a ``PIL Image`` to a tensor of the same type.
 
-    Converts a PIL Image (H x W x C) to a torch.Tensor of shape (C x H x W).
+    Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
     """
 
     def __call__(self, pic):
@@ -490,6 +490,7 @@ class RandomCrop(torch.nn.Module):
         if w == tw and h == th:
             return 0, 0, h, w
 
+        print(h, th, w, tw)
         i = torch.randint(0, h - th, size=(1, )).item()
         j = torch.randint(0, w - tw, size=(1, )).item()
         return i, j, th, tw
@@ -508,20 +509,23 @@ class RandomCrop(torch.nn.Module):
     def forward(self, img):
         """
         Args:
-            img (PIL Image or torch.Tensor): Image to be cropped.
+            img (PIL Image or Tensor): Image to be cropped.
 
         Returns:
-            PIL Image or torch.Tensor: Cropped image.
+            PIL Image or Tensor: Cropped image.
         """
-        # if self.padding is not None:
-        #     img = F.pad(img, self.padding, self.fill, self.padding_mode)
+        if self.padding is not None:
+            img = F.pad(img, self.padding, self.fill, self.padding_mode)
 
-        # # pad the width if needed
-        # if self.pad_if_needed and img.size[0] < self.size[1]:
-        #     img = F.pad(img, (self.size[1] - img.size[0], 0), self.fill, self.padding_mode)
-        # # pad the height if needed
-        # if self.pad_if_needed and img.size[1] < self.size[0]:
-        #     img = F.pad(img, (0, self.size[0] - img.size[1]), self.fill, self.padding_mode)
+        width, height = F._get_image_size(img)
+        # pad the width if needed
+        if self.pad_if_needed and height < self.size[1]:
+            padding = [self.size[1] - height, 0]
+            img = F.pad(img, padding, self.fill, self.padding_mode)
+        # pad the height if needed
+        if self.pad_if_needed and width < self.size[0]:
+            padding = [0, self.size[0] - width]
+            img = F.pad(img, padding, self.fill, self.padding_mode)
 
         i, j, h, w = self.get_params(img, self.size)
 
@@ -548,10 +552,10 @@ class RandomHorizontalFlip(torch.nn.Module):
     def forward(self, img):
         """
         Args:
-            img (PIL Image or torch.Tensor): Image to be flipped.
+            img (PIL Image or Tensor): Image to be flipped.
 
         Returns:
-            PIL Image or torch.Tensor: Randomly flipped image.
+            PIL Image or Tensor: Randomly flipped image.
         """
         if torch.rand(1) < self.p:
             return F.hflip(img)
@@ -578,10 +582,10 @@ class RandomVerticalFlip(torch.nn.Module):
     def forward(self, img):
         """
         Args:
-            img (PIL Image or torch.Tensor): Image to be flipped.
+            img (PIL Image or Tensor): Image to be flipped.
 
         Returns:
-            PIL Image or torch.Tensor: Randomly flipped image.
+            PIL Image or Tensor: Randomly flipped image.
         """
         if torch.rand(1) < self.p:
             return F.vflip(img)
@@ -619,7 +623,7 @@ class RandomPerspective(object):
         Returns:
             PIL Image: Random perspectivley transformed image.
         """
-        if not F._is_pil_image(img):
+        if not F.F_pil._is_pil_image(img):
             raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
         if random.random() < self.p:
@@ -698,7 +702,7 @@ class RandomResizedCrop(object):
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
                 sized crop.
         """
-        width, height = _get_image_size(img)
+        width, height = F._get_image_size(img)
         area = height * width
 
         for _ in range(10):

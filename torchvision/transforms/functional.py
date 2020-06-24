@@ -398,14 +398,14 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     """Crop the given PIL Image.
 
     Args:
-        img (PIL Image or torch.Tensor): Image to be cropped. (0,0) denotes the top left corner of the image.
+        img (PIL Image or Tensor): Image to be cropped. (0,0) denotes the top left corner of the image.
         top (int): Vertical component of the top left corner of the crop box.
         left (int): Horizontal component of the top left corner of the crop box.
         height (int): Height of the crop box.
         width (int): Width of the crop box.
 
     Returns:
-        PIL Image or torch.Tensor: Cropped image.
+        PIL Image or Tensor: Cropped image.
     """
 
     if not isinstance(img, torch.Tensor):
@@ -460,13 +460,13 @@ def hflip(img: Tensor) -> Tensor:
     """Horizontally flip the given PIL Image or torch Tensor.
 
     Args:
-        img (PIL Image or torch.Tensor): Image to be flipped. If img
+        img (PIL Image or Tensor): Image to be flipped. If img
             is a Tensor, it is expected to be in [..., H, W] format,
             where ... means it can have an arbitrary number of trailing
             dimensions.
 
     Returns:
-        PIL Image or torch.Tensor:  Horizontally flipped image.
+        PIL Image or Tensor:  Horizontally flipped image.
     """
     if not isinstance(img, torch.Tensor):
         return F_pil.hflip(img)
