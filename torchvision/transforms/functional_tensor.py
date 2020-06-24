@@ -341,7 +341,7 @@ def pad(img: Tensor, padding: List[int], fill: int, padding_mode: str = "constan
             respectively.
         fill (int): Pixel fill value for constant fill. Default is 0.
             This value is only used when the padding_mode is constant
-        padding_mode (str): Type of padding. Only constant supported for Tensors.
+        padding_mode (str): Type of padding. Only "constant" is supported for Tensors as of now.
 
             - constant: pads with a constant value, this value is specified with fill
 
@@ -365,7 +365,7 @@ def pad(img: Tensor, padding: List[int], fill: int, padding_mode: str = "constan
         raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
                          "{} element tuple".format(len(padding)))
 
-    if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
+    if padding_mode not in ["constant", ]:
         raise ValueError("Only constant padding_mode supported for torch tensors")
 
     if isinstance(padding, int):
