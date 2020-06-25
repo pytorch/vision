@@ -18,6 +18,14 @@ class Tester(unittest.TestCase):
         pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
         self.assertTrue(tensor.equal(pil_tensor))
 
+    def _test_functional_geom_op(self, func, fn_kwargs):
+        if fn_kwargs is None:
+            fn_kwargs = {}
+        tensor, pil_img = self._create_data(height=10, width=10)
+        transformed_tensor = getattr(F, func)(tensor, **fn_kwargs)
+        transformed_pil_img = getattr(F, func)(pil_img, **fn_kwargs)
+        self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
+
     def _test_geom_op(self, func, method, fn_kwargs=None, meth_kwargs=None):
         if fn_kwargs is None:
             fn_kwargs = {}
@@ -70,11 +78,23 @@ class Tester(unittest.TestCase):
                 self.assertLess(max_diff_scripted, 5 / 255 + 1e-5)
 
     def test_pad(self):
+
+        # Test functional.pad (PIL and Tensor) with padding as single int
+        self._test_functional_geom_op(
+            "pad", fn_kwargs={"padding": 2, "fill": 0, "padding_mode": "constant"}
+        )
+        # Test functional.pad and transforms.Pad with padding as [int, ]
+        fn_kwargs = meth_kwargs = {"padding": [2, ], "fill": 0, "padding_mode": "constant"}
+        self._test_geom_op(
+            "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        # Test functional.pad and transforms.Pad with padding as list
         fn_kwargs = meth_kwargs = {"padding": [4, 4], "fill": 0, "padding_mode": "constant"}
         self._test_geom_op(
             "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
-        fn_kwargs = meth_kwargs = {"padding": (2, 2, 2, 2), "fill": 127, "padding_mode": 'constant'}
+        # Test functional.pad and transforms.Pad with padding as tuple
+        fn_kwargs = meth_kwargs = {"padding": (2, 2, 2, 2), "fill": 127, "padding_mode": "constant"}
         self._test_geom_op(
             "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )

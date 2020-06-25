@@ -335,10 +335,11 @@ def pad(img: Tensor, padding: List[int], fill: int, padding_mode: str = "constan
     Args:
         img (Tensor): Image to be padded.
         padding (int or tuple or list): Padding on each border. If a single int is provided this
-            is used to pad all borders. If tuple of length 2 is provided this is the padding
-            on left/right and top/bottom respectively. If a tuple of length 4 is provided
+            is used to pad all borders. If a tuple or list of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a tuple or list of length 4 is provided
             this is the padding for the left, top, right and bottom borders
-            respectively.
+            respectively. In torchscript mode padding as single int is not supported, use a tuple or
+            list of length 1: ``[padding, ]``.
         fill (int): Pixel fill value for constant fill. Default is 0.
             This value is only used when the padding_mode is constant
         padding_mode (str): Type of padding. Only "constant" is supported for Tensors as of now.
@@ -362,7 +363,7 @@ def pad(img: Tensor, padding: List[int], fill: int, padding_mode: str = "constan
         padding = list(padding)
 
     if isinstance(padding, list) and len(padding) not in [1, 2, 4]:
-        raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
+        raise ValueError("Padding must be an int or a 1, 2, or 4 element tuple, not a " +
                          "{} element tuple".format(len(padding)))
 
     if padding_mode not in ["constant", ]:

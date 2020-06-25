@@ -247,15 +247,18 @@ class Tester(unittest.TestCase):
     def test_pad(self):
         script_fn = torch.jit.script(F_t.pad)
         tensor, pil_img = self._create_data(7, 8)
-        for pad in [1, [0, 1], (2, 2), [1, 0, 1, 2]]:
+        for pad in [1, [1, ], [0, 1], (2, 2), [1, 0, 1, 2]]:
             padding_mode = "constant"
             for fill in [0, 10, 20]:
                 pad_tensor = F_t.pad(tensor, pad, fill=fill, padding_mode=padding_mode)
                 pad_pil_img = F_pil.pad(pil_img, pad, fill=fill, padding_mode=padding_mode)
                 self.compareTensorToPIL(pad_tensor, pad_pil_img, msg="{}, {}".format(pad, fill))
-                if not isinstance(pad, int):
-                    pad_tensor_script = script_fn(tensor, pad, fill=fill, padding_mode=padding_mode)
-                    self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, fill))
+                if isinstance(pad, int):
+                    script_pad = [pad, ]
+                else:
+                    script_pad = pad
+                pad_tensor_script = script_fn(tensor, script_pad, fill=fill, padding_mode=padding_mode)
+                self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, fill))
 
 
 if __name__ == '__main__':
