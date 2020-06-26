@@ -1,7 +1,11 @@
 language: python
 
-dist: xenial
-matrix:
+os:
+  - linux
+
+dist: bionic
+
+jobs:
   include:
     - python: "3.6"
       env: IMAGE_BACKEND=Pillow-SIMD
