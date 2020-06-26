@@ -1,4 +1,5 @@
 import numbers
+from typing import Any, List
 
 import torch
 try:
@@ -10,8 +11,7 @@ import numpy as np
 
 
 @torch.jit.unused
-def _is_pil_image(img):
-    # type: (Any) -> bool
+def _is_pil_image(img: Any) -> bool:
     if accimage is not None:
         return isinstance(img, (Image.Image, accimage.Image))
     else:
@@ -19,15 +19,14 @@ def _is_pil_image(img):
 
 
 @torch.jit.unused
-def _get_image_size(img):
-    # type: (Any) -> List[int]
+def _get_image_size(img: Any) -> List[int]:
     if _is_pil_image(img):
         return img.size
     raise TypeError("Unexpected type {}".format(type(img)))
 
 
 @torch.jit.unused
-def hflip(img):
+def hflip(img: Any):
     """Horizontally flip the given PIL Image.
 
     Args:
@@ -43,7 +42,7 @@ def hflip(img):
 
 
 @torch.jit.unused
-def vflip(img):
+def vflip(img: Any):
     """Vertically flip the given PIL Image.
 
     Args:

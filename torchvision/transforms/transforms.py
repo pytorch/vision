@@ -260,14 +260,14 @@ class CenterCrop(torch.nn.Module):
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made. For scripted operation, please use a list: (size, ) or (size_x, size_y)
+            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
     """
 
     def __init__(self, size):
         super().__init__()
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
-        elif isinstance(size, (tuple, list)) and len(size) == 1:
+        elif isinstance(size, Sequence) and len(size) == 1:
             self.size = (size[0], size[0])
         else:
             if len(size) != 2:
@@ -447,26 +447,28 @@ class RandomChoice(RandomTransforms):
 
 class RandomCrop(torch.nn.Module):
     """Crop the given image at a random location.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    The image can be a PIL Image or a Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading
     dimensions
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made.
+            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
         padding (int or sequence, optional): Optional padding on each border
-            of the image. Default is None, i.e no padding. If a sequence of length
-            4 is provided, it is used to pad left, top, right, bottom borders
-            respectively. If a sequence of length 2 is provided, it is used to
-            pad left/right, top/bottom borders, respectively.
+            of the image. Default is None. If a single int is provided this
+            is used to pad all borders. If tuple of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a tuple of length 4 is provided
+            this is the padding for the left, top, right and bottom borders respectively.
+            In torchscript mode padding as single int is not supported, use a tuple or
+            list of length 1: ``[padding, ]``.
         pad_if_needed (boolean): It will pad the image if smaller than the
             desired size to avoid raising an exception. Since cropping is done
             after padding, the padding seems to be done at a random offset.
-        fill: Pixel fill value for constant fill. Default is 0. If a tuple of
+        fill (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant
-        padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
 
              - constant: pads with a constant value, this value is specified with fill
 
@@ -489,7 +491,7 @@ class RandomCrop(torch.nn.Module):
         """Get parameters for ``crop`` for a random crop.
 
         Args:
-            img (PIL Image): Image to be cropped.
+            img (PIL Image or Tensor): Image to be cropped.
             output_size (tuple): Expected output size of the crop.
 
         Returns:
@@ -504,12 +506,18 @@ class RandomCrop(torch.nn.Module):
         j = torch.randint(0, w - tw, size=(1, )).item()
         return i, j, th, tw
 
-    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode='constant'):
+    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
         super().__init__()
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
+        elif isinstance(size, Sequence) and len(size) == 1:
+            self.size = (size[0], size[0])
         else:
-            self.size = size
+            if len(size) != 2:
+                raise ValueError("Please provide only two dimensions (h, w) for size.")
+
+            # cast to tuple for torchscript
+            self.size = tuple(size)
         self.padding = padding
         self.pad_if_needed = pad_if_needed
         self.fill = fill
@@ -541,7 +549,7 @@ class RandomCrop(torch.nn.Module):
         return F.crop(img, i, j, h, w)
 
     def __repr__(self):
-        return self.__class__.__name__ + '(size={0}, padding={1})'.format(self.size, self.padding)
+        return self.__class__.__name__ + "(size={0}, padding={1})".format(self.size, self.padding)
 
 
 class RandomHorizontalFlip(torch.nn.Module):
@@ -774,7 +782,7 @@ class RandomSizedCrop(RandomResizedCrop):
 
 class FiveCrop(torch.nn.Module):
     """Crop the given image into four corners and the central crop.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    The image can be a PIL Image or a Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading
     dimensions
 
@@ -786,7 +794,7 @@ class FiveCrop(torch.nn.Module):
     Args:
          size (sequence or int): Desired output size of the crop. If size is an ``int``
             instead of sequence like (h, w), a square crop of size (size, size) is made.
-            For scripted operation, please use a list: (size, ) or (size_x, size_y)
+            If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
 
     Example:
          >>> transform = Compose([
@@ -802,10 +810,9 @@ class FiveCrop(torch.nn.Module):
 
     def __init__(self, size):
         super().__init__()
-        self.size = size
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
-        elif isinstance(size, (tuple, list)) and len(size) == 1:
+        elif isinstance(size, Sequence) and len(size) == 1:
             self.size = (size[0], size[0])
         else:
             if len(size) != 2:

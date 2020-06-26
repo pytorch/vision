@@ -101,10 +101,27 @@ class Tester(unittest.TestCase):
 
     def test_crop(self):
         fn_kwargs = {"top": 2, "left": 3, "height": 4, "width": 5}
-        meth_kwargs = {"size": (4, 5), "padding": [4, ], "pad_if_needed": True, }
+        # Test transforms.RandomCrop with size and padding as tuple
+        meth_kwargs = {"size": (4, 5), "padding": (4, 4), "pad_if_needed": True, }
         self._test_geom_op(
             'crop', 'RandomCrop', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
+
+        tensor = torch.randint(0, 255, (3, 10, 10), dtype=torch.uint8)
+        # Test torchscript of transforms.RandomCrop with size as int
+        f = T.RandomCrop(size=5)
+        scripted_fn = torch.jit.script(f)
+        scripted_fn(tensor)
+
+        # Test torchscript of transforms.RandomCrop with size as [int, ]
+        f = T.RandomCrop(size=[5, ], padding=[2, ])
+        scripted_fn = torch.jit.script(f)
+        scripted_fn(tensor)
+
+        # Test torchscript of transforms.RandomCrop with size as list
+        f = T.RandomCrop(size=[6, 6])
+        scripted_fn = torch.jit.script(f)
+        scripted_fn(tensor)
 
     def test_center_crop(self):
         fn_kwargs = {"output_size": (4, 5)}
@@ -117,6 +134,21 @@ class Tester(unittest.TestCase):
         self._test_geom_op(
             "center_crop", "CenterCrop", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
+        tensor = torch.randint(0, 255, (3, 10, 10), dtype=torch.uint8)
+        # Test torchscript of transforms.CenterCrop with size as int
+        f = T.CenterCrop(size=5)
+        scripted_fn = torch.jit.script(f)
+        scripted_fn(tensor)
+
+        # Test torchscript of transforms.CenterCrop with size as [int, ]
+        f = T.CenterCrop(size=[5, ])
+        scripted_fn = torch.jit.script(f)
+        scripted_fn(tensor)
+
+        # Test torchscript of transforms.CenterCrop with size as tuple
+        f = T.CenterCrop(size=(6, 6))
+        scripted_fn = torch.jit.script(f)
+        scripted_fn(tensor)
 
     def _test_geom_op_list_output(self, func, method, out_length, fn_kwargs=None, meth_kwargs=None):
         if fn_kwargs is None:
@@ -146,13 +178,19 @@ class Tester(unittest.TestCase):
         self.assertEqual(len(output), len(transformed_t_list_script))
 
     def test_five_crop(self):
-        fn_kwargs = {"size": (5,)}
-        meth_kwargs = {"size": (5, )}
+        fn_kwargs = meth_kwargs = {"size": (5,)}
         self._test_geom_op_list_output(
             "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
-        fn_kwargs = {"size": (4, 5)}
-        meth_kwargs = {"size": (4, 5)}
+        fn_kwargs = meth_kwargs = {"size": [5, ]}
+        self._test_geom_op_list_output(
+            "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = meth_kwargs = {"size": (4, 5)}
+        self._test_geom_op_list_output(
+            "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = meth_kwargs = {"size": [4, 5]}
         self._test_geom_op_list_output(
             "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )

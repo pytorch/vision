@@ -49,7 +49,7 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int):
     """Crop the given Image Tensor.
 
     Args:
-        img (Tensor): Image to be cropped in the form [C, H, W]. (0,0) denotes the top left corner of the image.
+        img (Tensor): Image to be cropped in the form [..., H, W]. (0,0) denotes the top left corner of the image.
         top (int): Vertical component of the top left corner of the crop box.
         left (int): Horizontal component of the top left corner of the crop box.
         height (int): Height of the crop box.
@@ -64,8 +64,7 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int):
     return img[..., top:top + height, left:left + width]
 
 
-def rgb_to_grayscale(img):
-    # type: (Tensor) -> Tensor
+def rgb_to_grayscale(img: Tensor) -> Tensor:
     """Convert the given RGB Image Tensor to Grayscale.
     For RGB to Grayscale conversion, ITU-R 601-2 luma transform is performed which
     is L = R * 0.2989 + G * 0.5870 + B * 0.1140
@@ -83,8 +82,7 @@ def rgb_to_grayscale(img):
     return (0.2989 * img[0] + 0.5870 * img[1] + 0.1140 * img[2]).to(img.dtype)
 
 
-def adjust_brightness(img, brightness_factor):
-    # type: (Tensor, float) -> Tensor
+def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     """Adjust brightness of an RGB image.
 
     Args:
@@ -102,8 +100,7 @@ def adjust_brightness(img, brightness_factor):
     return _blend(img, torch.zeros_like(img), brightness_factor)
 
 
-def adjust_contrast(img, contrast_factor):
-    # type: (Tensor, float) -> Tensor
+def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     """Adjust contrast of an RGB image.
 
     Args:
@@ -171,8 +168,7 @@ def adjust_hue(img, hue_factor):
     return img_hue_adj
 
 
-def adjust_saturation(img, saturation_factor):
-    # type: (Tensor, float) -> Tensor
+def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     """Adjust color saturation of an RGB image.
 
     Args:
@@ -190,12 +186,11 @@ def adjust_saturation(img, saturation_factor):
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
 
 
-def center_crop(img, output_size):
-    # type: (Tensor, BroadcastingList2[int]) -> Tensor
+def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
     """Crop the Image Tensor and resize it to desired size.
 
     Args:
-        img (Tensor): Image to be cropped. (0,0) denotes the top left corner of the image.
+        img (Tensor): Image to be cropped.
         output_size (sequence or int): (height, width) of the crop box. If int,
                 it is used for both directions
 
@@ -213,17 +208,17 @@ def center_crop(img, output_size):
     return crop(img, crop_top, crop_left, crop_height, crop_width)
 
 
-def five_crop(img, size):
-    # type: (Tensor, BroadcastingList2[int]) -> List[Tensor]
+def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
     """Crop the given Image Tensor into four corners and the central crop.
     .. Note::
         This transform returns a List of Tensors and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
 
     Args:
-       size (sequence or int): Desired output size of the crop. If size is an
-           int instead of sequence like (h, w), a square crop (size, size) is
-           made.
+        img (Tensor): Image to be cropped.
+        size (sequence or int): Desired output size of the crop. If size is an
+            int instead of sequence like (h, w), a square crop (size, size) is
+            made.
 
     Returns:
        List: List (tl, tr, bl, br, center)
@@ -249,19 +244,20 @@ def five_crop(img, size):
     return [tl, tr, bl, br, center]
 
 
-def ten_crop(img, size, vertical_flip=False):
-    # type: (Tensor, BroadcastingList2[int], bool) -> List[Tensor]
+def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = False) -> List[Tensor]:
     """Crop the given Image Tensor into four corners and the central crop plus the
         flipped version of these (horizontal flipping is used by default).
+
     .. Note::
         This transform returns a List of images and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
 
     Args:
-       size (sequence or int): Desired output size of the crop. If size is an
+        img (Tensor): Image to be cropped.
+        size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
             made.
-       vertical_flip (bool): Use vertical flipping instead of horizontal
+        vertical_flip (bool): Use vertical flipping instead of horizontal
 
     Returns:
        List: List (tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip)
@@ -284,8 +280,7 @@ def ten_crop(img, size, vertical_flip=False):
     return first_five + second_five
 
 
-def _blend(img1, img2, ratio):
-    # type: (Tensor, Tensor, float) -> Tensor
+def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
     bound = 1 if img1.dtype in [torch.half, torch.float32, torch.float64] else 255
     return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 

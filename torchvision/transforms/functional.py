@@ -395,7 +395,10 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 
 
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
-    """Crop the given PIL Image.
+    """Crop the given image at specified location and output size.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     Args:
         img (PIL Image or Tensor): Image to be cropped. (0,0) denotes the top left corner of the image.
@@ -416,13 +419,13 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
 
 def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
     """Crops the given image at the center.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    The image can be a PIL Image or a Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         img (PIL Image or Tensor): Image to be cropped.
         output_size (sequence or int): (height, width) of the crop box. If int or sequence with single int
-            it is used for both directions
+            it is used for both directions.
 
     Returns:
         PIL Image or Tensor: Cropped image.
@@ -469,7 +472,7 @@ def resized_crop(img, top, left, height, width, size, interpolation=Image.BILINE
 
 
 def hflip(img: Tensor) -> Tensor:
-    """Horizontally flip the given PIL Image or torch Tensor.
+    """Horizontally flip the given PIL Image or Tensor.
 
     Args:
         img (PIL Image or Tensor): Image to be flipped. If img
@@ -531,8 +534,7 @@ def _get_perspective_coeffs(startpoints, endpoints):
 
     Args:
         List containing [top-left, top-right, bottom-right, bottom-left] of the original image,
-        List containing [top-left, top-right, bottom-right, bottom-left] of the transformed
-                   image
+        List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image
     Returns:
         octuple (a, b, c, d, e, f, g, h) for transforming each pixel.
     """
@@ -577,7 +579,7 @@ def vflip(img: Tensor) -> Tensor:
     """Vertically flip the given PIL Image or torch Tensor.
 
     Args:
-        img (PIL Image or Torch Tensor): Image to be flipped. If img
+        img (PIL Image or Tensor): Image to be flipped. If img
             is a Tensor, it is expected to be in [..., H, W] format,
             where ... means it can have an arbitrary number of trailing
             dimensions.
@@ -593,7 +595,7 @@ def vflip(img: Tensor) -> Tensor:
 
 def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
     """Crop the given image into four corners and the central crop.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    The image can be a PIL Image or a Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     .. Note::
@@ -601,9 +603,10 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
         mismatch in the number of inputs and targets your ``Dataset`` returns.
 
     Args:
-       size (sequence or int): Desired output size of the crop. If size is an
-           int instead of sequence like (h, w), a square crop (size, size) is
-           made.
+        img (PIL Image or Tensor): Image to be cropped.
+        size (sequence or int): Desired output size of the crop. If size is an
+            int instead of sequence like (h, w), a square crop (size, size) is
+            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
 
     Returns:
        tuple: tuple (tl, tr, bl, br, center)
@@ -673,13 +676,13 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     """Adjust brightness of an Image.
 
     Args:
-        img (PIL Image or Torch Tensor): Image to be adjusted.
+        img (PIL Image or Tensor): Image to be adjusted.
         brightness_factor (float):  How much to adjust the brightness. Can be
             any non negative number. 0 gives a black image, 1 gives the
             original image while 2 increases the brightness by a factor of 2.
 
     Returns:
-        PIL Image or Torch Tensor: Brightness adjusted image.
+        PIL Image or Tensor: Brightness adjusted image.
     """
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_brightness(img, brightness_factor)
@@ -691,13 +694,13 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     """Adjust contrast of an Image.
 
     Args:
-        img (PIL Image or Torch Tensor): Image to be adjusted.
+        img (PIL Image or Tensor): Image to be adjusted.
         contrast_factor (float): How much to adjust the contrast. Can be any
             non negative number. 0 gives a solid gray image, 1 gives the
             original image while 2 increases the contrast by a factor of 2.
 
     Returns:
-        PIL Image or Torch Tensor: Contrast adjusted image.
+        PIL Image or Tensor: Contrast adjusted image.
     """
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_contrast(img, contrast_factor)
@@ -709,13 +712,13 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     """Adjust color saturation of an image.
 
     Args:
-        img (PIL Image or Torch Tensor): Image to be adjusted.
+        img (PIL Image or Tensor): Image to be adjusted.
         saturation_factor (float):  How much to adjust the saturation. 0 will
             give a black and white image, 1 will give the original image while
             2 will enhance the saturation by a factor of 2.
 
     Returns:
-        PIL Image or Torch Tensor: Saturation adjusted image.
+        PIL Image or Tensor: Saturation adjusted image.
     """
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_saturation(img, saturation_factor)
