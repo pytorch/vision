@@ -1,15 +1,26 @@
 import torch
-from torch import Tensor
 import torchvision.transforms as transforms
 import torchvision.transforms.functional_tensor as F_t
+import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional as F
 import numpy as np
 import unittest
 import random
-from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
+import colorsys
+
+from PIL import Image
 
 
 class Tester(unittest.TestCase):
+
+    def _create_data(self, height=3, width=3, channels=3):
+        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8)
+        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().numpy())
+        return tensor, pil_img
+
+    def compareTensorToPIL(self, tensor, pil_image, msg=None):
+        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
+        self.assertTrue(tensor.equal(pil_tensor), msg)
 
     def test_vflip(self):
         script_vflip = torch.jit.script(F_t.vflip)
@@ -56,6 +67,45 @@ class Tester(unittest.TestCase):
         cropped_img_script = script_crop(img_tensor, top, left, height, width)
         self.assertTrue(torch.equal(img_cropped, cropped_img_script))
 
+    def test_hsv2rgb(self):
+        shape = (3, 100, 150)
+        for _ in range(20):
+            img = torch.rand(*shape, dtype=torch.float)
+            ft_img = F_t._hsv2rgb(img).permute(1, 2, 0).flatten(0, 1)
+
+            h, s, v, = img.unbind(0)
+            h = h.flatten().numpy()
+            s = s.flatten().numpy()
+            v = v.flatten().numpy()
+
+            rgb = []
+            for h1, s1, v1 in zip(h, s, v):
+                rgb.append(colorsys.hsv_to_rgb(h1, s1, v1))
+
+            colorsys_img = torch.tensor(rgb, dtype=torch.float32)
+            max_diff = (ft_img - colorsys_img).abs().max()
+            self.assertLess(max_diff, 1e-5)
+
+    def test_rgb2hsv(self):
+        shape = (3, 150, 100)
+        for _ in range(20):
+            img = torch.rand(*shape, dtype=torch.float)
+            ft_hsv_img = F_t._rgb2hsv(img).permute(1, 2, 0).flatten(0, 1)
+
+            r, g, b, = img.unbind(0)
+            r = r.flatten().numpy()
+            g = g.flatten().numpy()
+            b = b.flatten().numpy()
+
+            hsv = []
+            for r1, g1, b1 in zip(r, g, b):
+                hsv.append(colorsys.rgb_to_hsv(r1, g1, b1))
+
+            colorsys_img = torch.tensor(hsv, dtype=torch.float32)
+
+            max_diff = (colorsys_img - ft_hsv_img).abs().max()
+            self.assertLess(max_diff, 1e-5)
+
     def test_adjustments(self):
         script_adjust_brightness = torch.jit.script(F_t.adjust_brightness)
         script_adjust_contrast = torch.jit.script(F_t.adjust_contrast)
@@ -96,6 +146,23 @@ class Tester(unittest.TestCase):
                 self.assertLess(max_diff, 5 / 255 + 1e-5)
                 self.assertLess(max_diff_scripted, 5 / 255 + 1e-5)
                 self.assertTrue(torch.equal(img, img_clone))
+
+            # test for class interface
+            f = transforms.ColorJitter(brightness=factor.item())
+            scripted_fn = torch.jit.script(f)
+            scripted_fn(img)
+
+            f = transforms.ColorJitter(contrast=factor.item())
+            scripted_fn = torch.jit.script(f)
+            scripted_fn(img)
+
+            f = transforms.ColorJitter(saturation=factor.item())
+            scripted_fn = torch.jit.script(f)
+            scripted_fn(img)
+
+        f = transforms.ColorJitter(brightness=1)
+        scripted_fn = torch.jit.script(f)
+        scripted_fn(img)
 
     def test_rgb_to_grayscale(self):
         script_rgb_to_grayscale = torch.jit.script(F_t.rgb_to_grayscale)
@@ -176,6 +243,22 @@ class Tester(unittest.TestCase):
         cropped_script = script_ten_crop(img_tensor, [10, 10])
         for cropped_script_img, cropped_tensor_img in zip(cropped_script, cropped_tensor):
             self.assertTrue(torch.equal(cropped_script_img, cropped_tensor_img))
+
+    def test_pad(self):
+        script_fn = torch.jit.script(F_t.pad)
+        tensor, pil_img = self._create_data(7, 8)
+        for pad in [1, [1, ], [0, 1], (2, 2), [1, 0, 1, 2]]:
+            padding_mode = "constant"
+            for fill in [0, 10, 20]:
+                pad_tensor = F_t.pad(tensor, pad, fill=fill, padding_mode=padding_mode)
+                pad_pil_img = F_pil.pad(pil_img, pad, fill=fill, padding_mode=padding_mode)
+                self.compareTensorToPIL(pad_tensor, pad_pil_img, msg="{}, {}".format(pad, fill))
+                if isinstance(pad, int):
+                    script_pad = [pad, ]
+                else:
+                    script_pad = pad
+                pad_tensor_script = script_fn(tensor, script_pad, fill=fill, padding_mode=padding_mode)
+                self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, fill))
 
 
 if __name__ == '__main__':

@@ -77,6 +77,21 @@ class GeneralizedRCNN(nn.Module):
             original_image_sizes.append((val[0], val[1]))
 
         images, targets = self.transform(images, targets)
+
+        # Check for degenerate boxes
+        # TODO: Move this to a function
+        if targets is not None:
+            for target_idx, target in enumerate(targets):
+                boxes = target["boxes"]
+                degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
+                if degenerate_boxes.any():
+                    # print the first degenrate box
+                    bb_idx = degenerate_boxes.any(dim=1).nonzero().view(-1)[0]
+                    degen_bb: List[float] = boxes[bb_idx].tolist()
+                    raise ValueError("All bounding boxes should have positive height and width."
+                                     " Found invaid box {} for target at index {}."
+                                     .format(degen_bb, target_idx))
+
         features = self.backbone(images.tensors)
         if isinstance(features, torch.Tensor):
             features = OrderedDict([('0', features)])

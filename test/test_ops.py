@@ -393,6 +393,10 @@ class NMSTester(unittest.TestCase):
             keep_ref = self.reference_nms(boxes, scores, iou)
             keep = ops.nms(boxes, scores, iou)
             self.assertTrue(torch.allclose(keep, keep_ref), err_msg.format(iou))
+        self.assertRaises(RuntimeError, ops.nms, torch.rand(4), torch.rand(3), 0.5)
+        self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 5), torch.rand(3), 0.5)
+        self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 4), torch.rand(3, 2), 0.5)
+        self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 4), torch.rand(4), 0.5)
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_nms_cuda(self):

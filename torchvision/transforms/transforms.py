@@ -15,10 +15,10 @@ import warnings
 from . import functional as F
 
 
-__all__ = ["Compose", "ToTensor", "PILToTensor", "ToPILImage", "Normalize", "Resize", "Scale", "CenterCrop", "Pad",
-           "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop", "RandomHorizontalFlip",
-           "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop", "LinearTransformation",
-           "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
+__all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize", "Resize", "Scale",
+           "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
+           "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
+           "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
            "RandomPerspective", "RandomErasing"]
 
 _pil_interpolation_to_str = {
@@ -113,6 +113,31 @@ class PILToTensor(object):
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
+
+
+class ConvertImageDtype(object):
+    """Convert a tensor image to the given ``dtype`` and scale the values accordingly
+
+    Args:
+        dtype (torch.dtype): Desired data type of the output
+
+    .. note::
+
+        When converting from a smaller to a larger integer ``dtype`` the maximum values are **not** mapped exactly.
+        If converted back and forth, this mismatch has no effect.
+
+    Raises:
+        RuntimeError: When trying to cast :class:`torch.float32` to :class:`torch.int32` or :class:`torch.int64` as
+            well as for trying to cast :class:`torch.float64` to :class:`torch.int64`. These conversions might lead to
+            overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
+            of the integer ``dtype``.
+    """
+
+    def __init__(self, dtype: torch.dtype) -> None:
+        self.dtype = dtype
+
+    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+        return F.convert_image_dtype(image, self.dtype)
 
 
 class ToPILImage(object):
@@ -262,20 +287,23 @@ class CenterCrop(object):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
 
 
-class Pad(object):
-    """Pad the given PIL Image on all sides with the given "pad" value.
+class Pad(torch.nn.Module):
+    """Pad the given image on all sides with the given "pad" value.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
-        padding (int or tuple): Padding on each border. If a single int is provided this
+        padding (int or tuple or list): Padding on each border. If a single int is provided this
             is used to pad all borders. If tuple of length 2 is provided this is the padding
             on left/right and top/bottom respectively. If a tuple of length 4 is provided
-            this is the padding for the left, top, right and bottom borders
-            respectively.
+            this is the padding for the left, top, right and bottom borders respectively.
+            In torchscript mode padding as single int is not supported, use a tuple or
+            list of length 1: ``[padding, ]``.
         fill (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
-            Default is constant.
+            Default is constant. Only "constant" is supported for Tensors as of now.
 
             - constant: pads with a constant value, this value is specified with fill
 
@@ -292,25 +320,32 @@ class Pad(object):
                 will result in [2, 1, 1, 2, 3, 4, 4, 3]
     """
 
-    def __init__(self, padding, fill=0, padding_mode='constant'):
-        assert isinstance(padding, (numbers.Number, tuple))
-        assert isinstance(fill, (numbers.Number, str, tuple))
-        assert padding_mode in ['constant', 'edge', 'reflect', 'symmetric']
-        if isinstance(padding, Sequence) and len(padding) not in [2, 4]:
-            raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
+    def __init__(self, padding, fill=0, padding_mode="constant"):
+        super().__init__()
+        if not isinstance(padding, (numbers.Number, tuple, list)):
+            raise TypeError("Got inappropriate padding arg")
+
+        if not isinstance(fill, (numbers.Number, str, tuple)):
+            raise TypeError("Got inappropriate fill arg")
+
+        if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
+            raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
+
+        if isinstance(padding, Sequence) and len(padding) not in [1, 2, 4]:
+            raise ValueError("Padding must be an int or a 1, 2, or 4 element tuple, not a " +
                              "{} element tuple".format(len(padding)))
 
         self.padding = padding
         self.fill = fill
         self.padding_mode = padding_mode
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be padded.
+            img (PIL Image or Tensor): Image to be padded.
 
         Returns:
-            PIL Image: Padded image.
+            PIL Image or Tensor: Padded image.
         """
         return F.pad(img, self.padding, self.fill, self.padding_mode)
 
@@ -500,25 +535,29 @@ class RandomCrop(object):
         return self.__class__.__name__ + '(size={0}, padding={1})'.format(self.size, self.padding)
 
 
-class RandomHorizontalFlip(object):
-    """Horizontally flip the given PIL Image randomly with a given probability.
+class RandomHorizontalFlip(torch.nn.Module):
+    """Horizontally flip the given image randomly with a given probability.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     Args:
         p (float): probability of the image being flipped. Default value is 0.5
     """
 
     def __init__(self, p=0.5):
+        super().__init__()
         self.p = p
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be flipped.
+            img (PIL Image or Tensor): Image to be flipped.
 
         Returns:
-            PIL Image: Randomly flipped image.
+            PIL Image or Tensor: Randomly flipped image.
         """
-        if random.random() < self.p:
+        if torch.rand(1) < self.p:
             return F.hflip(img)
         return img
 
@@ -526,25 +565,29 @@ class RandomHorizontalFlip(object):
         return self.__class__.__name__ + '(p={})'.format(self.p)
 
 
-class RandomVerticalFlip(object):
+class RandomVerticalFlip(torch.nn.Module):
     """Vertically flip the given PIL Image randomly with a given probability.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     Args:
         p (float): probability of the image being flipped. Default value is 0.5
     """
 
     def __init__(self, p=0.5):
+        super().__init__()
         self.p = p
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be flipped.
+            img (PIL Image or Tensor): Image to be flipped.
 
         Returns:
-            PIL Image: Randomly flipped image.
+            PIL Image or Tensor: Randomly flipped image.
         """
-        if random.random() < self.p:
+        if torch.rand(1) < self.p:
             return F.vflip(img)
         return img
 
@@ -857,7 +900,7 @@ class LinearTransformation(object):
         return format_string
 
 
-class ColorJitter(object):
+class ColorJitter(torch.nn.Module):
     """Randomly change the brightness, contrast and saturation of an image.
 
     Args:
@@ -874,20 +917,23 @@ class ColorJitter(object):
             hue_factor is chosen uniformly from [-hue, hue] or the given [min, max].
             Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
     """
+
     def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
+        super().__init__()
         self.brightness = self._check_input(brightness, 'brightness')
         self.contrast = self._check_input(contrast, 'contrast')
         self.saturation = self._check_input(saturation, 'saturation')
         self.hue = self._check_input(hue, 'hue', center=0, bound=(-0.5, 0.5),
                                      clip_first_on_zero=False)
 
+    @torch.jit.unused
     def _check_input(self, value, name, center=1, bound=(0, float('inf')), clip_first_on_zero=True):
         if isinstance(value, numbers.Number):
             if value < 0:
                 raise ValueError("If {} is a single number, it must be non negative.".format(name))
-            value = [center - value, center + value]
+            value = [center - float(value), center + float(value)]
             if clip_first_on_zero:
-                value[0] = max(value[0], 0)
+                value[0] = max(value[0], 0.0)
         elif isinstance(value, (tuple, list)) and len(value) == 2:
             if not bound[0] <= value[0] <= value[1] <= bound[1]:
                 raise ValueError("{} values should be between {}".format(name, bound))
@@ -901,6 +947,7 @@ class ColorJitter(object):
         return value
 
     @staticmethod
+    @torch.jit.unused
     def get_params(brightness, contrast, saturation, hue):
         """Get a randomized transform to be applied on image.
 
@@ -933,17 +980,37 @@ class ColorJitter(object):
 
         return transform
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Input image.
+            img (PIL Image or Tensor): Input image.
 
         Returns:
-            PIL Image: Color jittered image.
+            PIL Image or Tensor: Color jittered image.
         """
-        transform = self.get_params(self.brightness, self.contrast,
-                                    self.saturation, self.hue)
-        return transform(img)
+        fn_idx = torch.randperm(4)
+        for fn_id in fn_idx:
+            if fn_id == 0 and self.brightness is not None:
+                brightness = self.brightness
+                brightness_factor = torch.tensor(1.0).uniform_(brightness[0], brightness[1]).item()
+                img = F.adjust_brightness(img, brightness_factor)
+
+            if fn_id == 1 and self.contrast is not None:
+                contrast = self.contrast
+                contrast_factor = torch.tensor(1.0).uniform_(contrast[0], contrast[1]).item()
+                img = F.adjust_contrast(img, contrast_factor)
+
+            if fn_id == 2 and self.saturation is not None:
+                saturation = self.saturation
+                saturation_factor = torch.tensor(1.0).uniform_(saturation[0], saturation[1]).item()
+                img = F.adjust_saturation(img, saturation_factor)
+
+            if fn_id == 3 and self.hue is not None:
+                hue = self.hue
+                hue_factor = torch.tensor(1.0).uniform_(hue[0], hue[1]).item()
+                img = F.adjust_hue(img, hue_factor)
+
+        return img
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
@@ -1024,6 +1091,8 @@ class RandomRotation(object):
         format_string += ', expand={0}'.format(self.expand)
         if self.center is not None:
             format_string += ', center={0}'.format(self.center)
+        if self.fill is not None:
+            format_string += ', fill={0}'.format(self.fill)
         format_string += ')'
         return format_string
 

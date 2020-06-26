@@ -1,15 +1,23 @@
-import torch
 import math
+import numbers
+import warnings
+from collections.abc import Iterable
+
+import numpy as np
+from numpy import sin, cos, tan
 from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
+
+import torch
+from torch import Tensor
+from torch.jit.annotations import List
+
 try:
     import accimage
 except ImportError:
     accimage = None
-import numpy as np
-from numpy import sin, cos, tan
-import numbers
-from collections.abc import Sequence, Iterable
-import warnings
+
+from . import functional_pil as F_pil
+from . import functional_tensor as F_t
 
 
 def _is_pil_image(img):
@@ -107,6 +115,65 @@ def pil_to_tensor(pic):
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1))
     return img
+
+
+def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
+    """Convert a tensor image to the given ``dtype`` and scale the values accordingly
+
+    Args:
+        image (torch.Tensor): Image to be converted
+        dtype (torch.dtype): Desired data type of the output
+
+    Returns:
+        (torch.Tensor): Converted image
+
+    .. note::
+
+        When converting from a smaller to a larger integer ``dtype`` the maximum values are **not** mapped exactly.
+        If converted back and forth, this mismatch has no effect.
+
+    Raises:
+        RuntimeError: When trying to cast :class:`torch.float32` to :class:`torch.int32` or :class:`torch.int64` as
+            well as for trying to cast :class:`torch.float64` to :class:`torch.int64`. These conversions might lead to
+            overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
+            of the integer ``dtype``.
+    """
+    if image.dtype == dtype:
+        return image
+
+    if image.dtype.is_floating_point:
+        # float to float
+        if dtype.is_floating_point:
+            return image.to(dtype)
+
+        # float to int
+        if (image.dtype == torch.float32 and dtype in (torch.int32, torch.int64)) or (
+            image.dtype == torch.float64 and dtype == torch.int64
+        ):
+            msg = f"The cast from {image.dtype} to {dtype} cannot be performed safely."
+            raise RuntimeError(msg)
+
+        eps = 1e-3
+        return image.mul(torch.iinfo(dtype).max + 1 - eps).to(dtype)
+    else:
+        # int to float
+        if dtype.is_floating_point:
+            max = torch.iinfo(image.dtype).max
+            image = image.to(dtype)
+            return image / max
+
+        # int to int
+        input_max = torch.iinfo(image.dtype).max
+        output_max = torch.iinfo(dtype).max
+
+        if input_max > output_max:
+            factor = (input_max + 1) // (output_max + 1)
+            image = image // factor
+            return image.to(dtype)
+        else:
+            factor = (output_max + 1) // (input_max + 1)
+            image = image.to(dtype)
+            return image * factor
 
 
 def to_pil_image(pic, mode=None):
@@ -243,7 +310,7 @@ def resize(img, size, interpolation=Image.BILINEAR):
         img (PIL Image): Image to be resized.
         size (sequence or int): Desired output size. If size is a sequence like
             (h, w), the output size will be matched to this. If size is an int,
-            the smaller edge of the image will be matched to this number maintaing
+            the smaller edge of the image will be matched to this number maintaining
             the aspect ratio. i.e, if height > width, then image will be rescaled to
             :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`
         interpolation (int, optional): Desired interpolation. Default is
@@ -279,20 +346,24 @@ def scale(*args, **kwargs):
     return resize(*args, **kwargs)
 
 
-def pad(img, padding, fill=0, padding_mode='constant'):
-    r"""Pad the given PIL Image on all sides with specified padding mode and fill value.
+def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
+    r"""Pad the given image on all sides with the given "pad" value.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
-        img (PIL Image): Image to be padded.
-        padding (int or tuple): Padding on each border. If a single int is provided this
+        img (PIL Image or Tensor): Image to be padded.
+        padding (int or tuple or list): Padding on each border. If a single int is provided this
             is used to pad all borders. If tuple of length 2 is provided this is the padding
             on left/right and top/bottom respectively. If a tuple of length 4 is provided
-            this is the padding for the left, top, right and bottom borders
-            respectively.
-        fill: Pixel fill value for constant fill. Default is 0. If a tuple of
+            this is the padding for the left, top, right and bottom borders respectively.
+            In torchscript mode padding as single int is not supported, use a tuple or
+            list of length 1: ``[padding, ]``.
+        fill (int or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
-            This value is only used when the padding_mode is constant
+            This value is only used when the padding_mode is constant. Only int value is supported for Tensors.
         padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+            Only "constant" is supported for Tensors as of now.
 
             - constant: pads with a constant value, this value is specified with fill
 
@@ -309,62 +380,12 @@ def pad(img, padding, fill=0, padding_mode='constant'):
                          will result in [2, 1, 1, 2, 3, 4, 4, 3]
 
     Returns:
-        PIL Image: Padded image.
+        PIL Image or Tensor: Padded image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.pad(img, padding=padding, fill=fill, padding_mode=padding_mode)
 
-    if not isinstance(padding, (numbers.Number, tuple)):
-        raise TypeError('Got inappropriate padding arg')
-    if not isinstance(fill, (numbers.Number, str, tuple)):
-        raise TypeError('Got inappropriate fill arg')
-    if not isinstance(padding_mode, str):
-        raise TypeError('Got inappropriate padding_mode arg')
-
-    if isinstance(padding, Sequence) and len(padding) not in [2, 4]:
-        raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
-                         "{} element tuple".format(len(padding)))
-
-    assert padding_mode in ['constant', 'edge', 'reflect', 'symmetric'], \
-        'Padding mode should be either constant, edge, reflect or symmetric'
-
-    if padding_mode == 'constant':
-        if img.mode == 'P':
-            palette = img.getpalette()
-            image = ImageOps.expand(img, border=padding, fill=fill)
-            image.putpalette(palette)
-            return image
-
-        return ImageOps.expand(img, border=padding, fill=fill)
-    else:
-        if isinstance(padding, int):
-            pad_left = pad_right = pad_top = pad_bottom = padding
-        if isinstance(padding, Sequence) and len(padding) == 2:
-            pad_left = pad_right = padding[0]
-            pad_top = pad_bottom = padding[1]
-        if isinstance(padding, Sequence) and len(padding) == 4:
-            pad_left = padding[0]
-            pad_top = padding[1]
-            pad_right = padding[2]
-            pad_bottom = padding[3]
-
-        if img.mode == 'P':
-            palette = img.getpalette()
-            img = np.asarray(img)
-            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
-            img = Image.fromarray(img)
-            img.putpalette(palette)
-            return img
-
-        img = np.asarray(img)
-        # RGB image
-        if len(img.shape) == 3:
-            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), padding_mode)
-        # Grayscale image
-        if len(img.shape) == 2:
-            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
-
-        return Image.fromarray(img)
+    return F_t.pad(img, padding=padding, fill=fill, padding_mode=padding_mode)
 
 
 def crop(img, top, left, height, width):
@@ -428,19 +449,22 @@ def resized_crop(img, top, left, height, width, size, interpolation=Image.BILINE
     return img
 
 
-def hflip(img):
-    """Horizontally flip the given PIL Image.
+def hflip(img: Tensor) -> Tensor:
+    """Horizontally flip the given PIL Image or torch Tensor.
 
     Args:
-        img (PIL Image): Image to be flipped.
+        img (PIL Image or Torch Tensor): Image to be flipped. If img
+            is a Tensor, it is expected to be in [..., H, W] format,
+            where ... means it can have an arbitrary number of trailing
+            dimensions.
 
     Returns:
         PIL Image:  Horizontally flipped image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.hflip(img)
 
-    return img.transpose(Image.FLIP_LEFT_RIGHT)
+    return F_t.hflip(img)
 
 
 def _parse_fill(fill, img, min_pil_version):
@@ -483,11 +507,11 @@ def _parse_fill(fill, img, min_pil_version):
 def _get_perspective_coeffs(startpoints, endpoints):
     """Helper function to get the coefficients (a, b, c, d, e, f, g, h) for the perspective transforms.
 
-    In Perspective Transform each pixel (x, y) in the orignal image gets transformed as,
+    In Perspective Transform each pixel (x, y) in the original image gets transformed as,
      (x, y) -> ( (ax + by + c) / (gx + hy + 1), (dx + ey + f) / (gx + hy + 1) )
 
     Args:
-        List containing [top-left, top-right, bottom-right, bottom-left] of the orignal image,
+        List containing [top-left, top-right, bottom-right, bottom-left] of the original image,
         List containing [top-left, top-right, bottom-right, bottom-left] of the transformed
                    image
     Returns:
@@ -510,7 +534,7 @@ def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC, fill=N
 
     Args:
         img (PIL Image): Image to be transformed.
-        startpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the orignal image
+        startpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the original image
         endpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image
         interpolation: Default- Image.BICUBIC
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
@@ -530,19 +554,22 @@ def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC, fill=N
     return img.transform(img.size, Image.PERSPECTIVE, coeffs, interpolation, **opts)
 
 
-def vflip(img):
-    """Vertically flip the given PIL Image.
+def vflip(img: Tensor) -> Tensor:
+    """Vertically flip the given PIL Image or torch Tensor.
 
     Args:
-        img (PIL Image): Image to be flipped.
+        img (PIL Image or Torch Tensor): Image to be flipped. If img
+            is a Tensor, it is expected to be in [..., H, W] format,
+            where ... means it can have an arbitrary number of trailing
+            dimensions.
 
     Returns:
         PIL Image:  Vertically flipped image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.vflip(img)
 
-    return img.transpose(Image.FLIP_TOP_BOTTOM)
+    return F_t.vflip(img)
 
 
 def five_crop(img, size):
@@ -617,67 +644,61 @@ def ten_crop(img, size, vertical_flip=False):
     return first_five + second_five
 
 
-def adjust_brightness(img, brightness_factor):
+def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     """Adjust brightness of an Image.
 
     Args:
-        img (PIL Image): PIL Image to be adjusted.
+        img (PIL Image or Torch Tensor): Image to be adjusted.
         brightness_factor (float):  How much to adjust the brightness. Can be
             any non negative number. 0 gives a black image, 1 gives the
             original image while 2 increases the brightness by a factor of 2.
 
     Returns:
-        PIL Image: Brightness adjusted image.
+        PIL Image or Torch Tensor: Brightness adjusted image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.adjust_brightness(img, brightness_factor)
 
-    enhancer = ImageEnhance.Brightness(img)
-    img = enhancer.enhance(brightness_factor)
-    return img
+    return F_t.adjust_brightness(img, brightness_factor)
 
 
-def adjust_contrast(img, contrast_factor):
+def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     """Adjust contrast of an Image.
 
     Args:
-        img (PIL Image): PIL Image to be adjusted.
+        img (PIL Image or Torch Tensor): Image to be adjusted.
         contrast_factor (float): How much to adjust the contrast. Can be any
             non negative number. 0 gives a solid gray image, 1 gives the
             original image while 2 increases the contrast by a factor of 2.
 
     Returns:
-        PIL Image: Contrast adjusted image.
+        PIL Image or Torch Tensor: Contrast adjusted image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.adjust_contrast(img, contrast_factor)
 
-    enhancer = ImageEnhance.Contrast(img)
-    img = enhancer.enhance(contrast_factor)
-    return img
+    return F_t.adjust_contrast(img, contrast_factor)
 
 
-def adjust_saturation(img, saturation_factor):
+def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     """Adjust color saturation of an image.
 
     Args:
-        img (PIL Image): PIL Image to be adjusted.
+        img (PIL Image or Torch Tensor): Image to be adjusted.
         saturation_factor (float):  How much to adjust the saturation. 0 will
             give a black and white image, 1 will give the original image while
             2 will enhance the saturation by a factor of 2.
 
     Returns:
-        PIL Image: Saturation adjusted image.
+        PIL Image or Torch Tensor: Saturation adjusted image.
     """
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.adjust_saturation(img, saturation_factor)
 
-    enhancer = ImageEnhance.Color(img)
-    img = enhancer.enhance(saturation_factor)
-    return img
+    return F_t.adjust_saturation(img, saturation_factor)
 
 
-def adjust_hue(img, hue_factor):
+def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     """Adjust hue of an image.
 
     The image hue is adjusted by converting the image to HSV and
@@ -702,26 +723,10 @@ def adjust_hue(img, hue_factor):
     Returns:
         PIL Image: Hue adjusted image.
     """
-    if not(-0.5 <= hue_factor <= 0.5):
-        raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.adjust_hue(img, hue_factor)
 
-    if not _is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-
-    input_mode = img.mode
-    if input_mode in {'L', '1', 'I', 'F'}:
-        return img
-
-    h, s, v = img.convert('HSV').split()
-
-    np_h = np.array(h, dtype=np.uint8)
-    # uint8 addition take cares of rotation across boundaries
-    with np.errstate(over='ignore'):
-        np_h += np.uint8(hue_factor * 255)
-    h = Image.fromarray(np_h, 'L')
-
-    img = Image.merge('HSV', (h, s, v)).convert(input_mode)
-    return img
+    raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
 
 def adjust_gamma(img, gamma, gain=1):

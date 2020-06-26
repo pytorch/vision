@@ -68,18 +68,12 @@ at::Tensor ROIPool_backward(
       width);
 }
 
-using namespace at;
-using torch::Tensor;
-using torch::autograd::AutogradContext;
-using torch::autograd::Variable;
-using torch::autograd::variable_list;
-
 class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
  public:
-  static variable_list forward(
-      AutogradContext* ctx,
-      Variable input,
-      Variable rois,
+  static torch::autograd::variable_list forward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::Variable input,
+      torch::autograd::Variable rois,
       const double spatial_scale,
       const int64_t pooled_height,
       const int64_t pooled_width) {
@@ -96,9 +90,9 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
     return {output, argmax};
   }
 
-  static variable_list backward(
-      AutogradContext* ctx,
-      variable_list grad_output) {
+  static torch::autograd::variable_list backward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::variable_list grad_output) {
     // Use data saved in forward
     auto saved = ctx->get_saved_variables();
     auto rois = saved[0];
@@ -115,17 +109,21 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
         input_shape[1],
         input_shape[2],
         input_shape[3]);
-    return {grad_in, Variable(), Variable(), Variable(), Variable()};
+    return {grad_in,
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable()};
   }
 };
 
-std::tuple<Tensor, Tensor> roi_pool(
-    const Tensor& input,
-    const Tensor& rois,
+std::tuple<at::Tensor, at::Tensor> roi_pool(
+    const at::Tensor& input,
+    const at::Tensor& rois,
     const double spatial_scale,
     const int64_t pooled_height,
     const int64_t pooled_width) {
   auto result = ROIPoolFunction::apply(
       input, rois, spatial_scale, pooled_height, pooled_width);
-  return std::tuple<Tensor, Tensor>(result[0], result[1]);
+  return std::tuple<at::Tensor, at::Tensor>(result[0], result[1]);
 }
