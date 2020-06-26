@@ -287,20 +287,23 @@ class CenterCrop(object):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
 
 
-class Pad(object):
-    """Pad the given PIL Image on all sides with the given "pad" value.
+class Pad(torch.nn.Module):
+    """Pad the given image on all sides with the given "pad" value.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
-        padding (int or tuple): Padding on each border. If a single int is provided this
+        padding (int or tuple or list): Padding on each border. If a single int is provided this
             is used to pad all borders. If tuple of length 2 is provided this is the padding
             on left/right and top/bottom respectively. If a tuple of length 4 is provided
-            this is the padding for the left, top, right and bottom borders
-            respectively.
+            this is the padding for the left, top, right and bottom borders respectively.
+            In torchscript mode padding as single int is not supported, use a tuple or
+            list of length 1: ``[padding, ]``.
         fill (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
-            Default is constant.
+            Default is constant. Only "constant" is supported for Tensors as of now.
 
             - constant: pads with a constant value, this value is specified with fill
 
@@ -317,25 +320,32 @@ class Pad(object):
                 will result in [2, 1, 1, 2, 3, 4, 4, 3]
     """
 
-    def __init__(self, padding, fill=0, padding_mode='constant'):
-        assert isinstance(padding, (numbers.Number, tuple))
-        assert isinstance(fill, (numbers.Number, str, tuple))
-        assert padding_mode in ['constant', 'edge', 'reflect', 'symmetric']
-        if isinstance(padding, Sequence) and len(padding) not in [2, 4]:
-            raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
+    def __init__(self, padding, fill=0, padding_mode="constant"):
+        super().__init__()
+        if not isinstance(padding, (numbers.Number, tuple, list)):
+            raise TypeError("Got inappropriate padding arg")
+
+        if not isinstance(fill, (numbers.Number, str, tuple)):
+            raise TypeError("Got inappropriate fill arg")
+
+        if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
+            raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
+
+        if isinstance(padding, Sequence) and len(padding) not in [1, 2, 4]:
+            raise ValueError("Padding must be an int or a 1, 2, or 4 element tuple, not a " +
                              "{} element tuple".format(len(padding)))
 
         self.padding = padding
         self.fill = fill
         self.padding_mode = padding_mode
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be padded.
+            img (PIL Image or Tensor): Image to be padded.
 
         Returns:
-            PIL Image: Padded image.
+            PIL Image or Tensor: Padded image.
         """
         return F.pad(img, self.padding, self.fill, self.padding_mode)
 

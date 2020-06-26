@@ -1,6 +1,6 @@
 import torch
 from torch import Tensor
-from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
+from torch.jit.annotations import List, BroadcastingList2
 
 
 def _is_tensor_a_torch_image(input):
@@ -327,3 +327,64 @@ def _hsv2rgb(img):
     a4 = torch.stack((a1, a2, a3))
 
     return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=img.dtype), a4)
+
+
+def pad(img: Tensor, padding: List[int], fill: int, padding_mode: str = "constant") -> Tensor:
+    r"""Pad the given Tensor Image on all sides with specified padding mode and fill value.
+
+    Args:
+        img (Tensor): Image to be padded.
+        padding (int or tuple or list): Padding on each border. If a single int is provided this
+            is used to pad all borders. If a tuple or list of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a tuple or list of length 4 is provided
+            this is the padding for the left, top, right and bottom borders
+            respectively. In torchscript mode padding as single int is not supported, use a tuple or
+            list of length 1: ``[padding, ]``.
+        fill (int): Pixel fill value for constant fill. Default is 0.
+            This value is only used when the padding_mode is constant
+        padding_mode (str): Type of padding. Only "constant" is supported for Tensors as of now.
+
+            - constant: pads with a constant value, this value is specified with fill
+
+    Returns:
+        Tensor: Padded image.
+    """
+    if not _is_tensor_a_torch_image(img):
+        raise TypeError("tensor is not a torch image.")
+
+    if not isinstance(padding, (int, tuple, list)):
+        raise TypeError("Got inappropriate padding arg")
+    if not isinstance(fill, (int, float)):
+        raise TypeError("Got inappropriate fill arg")
+    if not isinstance(padding_mode, str):
+        raise TypeError("Got inappropriate padding_mode arg")
+
+    if isinstance(padding, tuple):
+        padding = list(padding)
+
+    if isinstance(padding, list) and len(padding) not in [1, 2, 4]:
+        raise ValueError("Padding must be an int or a 1, 2, or 4 element tuple, not a " +
+                         "{} element tuple".format(len(padding)))
+
+    if padding_mode not in ["constant", ]:
+        raise ValueError("Only constant padding_mode supported for torch tensors")
+
+    if isinstance(padding, int):
+        if torch.jit.is_scripting():
+            raise ValueError("padding can't be an int while torchscripting, set it as a list [value, ]")
+        pad_left = pad_right = pad_top = pad_bottom = padding
+    elif len(padding) == 1:
+        pad_left = pad_right = pad_top = pad_bottom = padding[0]
+    elif len(padding) == 2:
+        pad_left = pad_right = padding[0]
+        pad_top = pad_bottom = padding[1]
+    else:
+        pad_left = padding[0]
+        pad_top = padding[1]
+        pad_right = padding[2]
+        pad_bottom = padding[3]
+
+    p = [pad_left, pad_right, pad_top, pad_bottom]
+
+    img = torch.nn.functional.pad(img, p, mode=padding_mode, value=float(fill))
+    return img
