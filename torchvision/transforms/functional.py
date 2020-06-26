@@ -636,19 +636,22 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
     return tl, tr, bl, br, center
 
 
-def ten_crop(img, size, vertical_flip=False):
-    """Generate ten cropped images from the given PIL Image.
-    Crop the given PIL Image into four corners and the central crop plus the
+def ten_crop(img: Tensor, size: List[int], vertical_flip: bool = False) -> List[Tensor]:
+    """Generate ten cropped images from the given image.
+    Crop the given image into four corners and the central crop plus the
     flipped version of these (horizontal flipping is used by default).
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     .. Note::
         This transform returns a tuple of images and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
 
     Args:
+        img (PIL Image or Tensor): Image to be cropped.
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made.
+            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
         vertical_flip (bool): Use vertical flipping instead of horizontal
 
     Returns:
@@ -658,8 +661,11 @@ def ten_crop(img, size, vertical_flip=False):
     """
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
-    else:
-        assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
+    elif isinstance(size, (tuple, list)) and len(size) == 1:
+        size = (size[0], size[0])
+
+    if len(size) != 2:
+        raise ValueError("Please provide only two dimensions (h, w) for size.")
 
     first_five = five_crop(img, size)
 

@@ -195,6 +195,24 @@ class Tester(unittest.TestCase):
             "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
+    def test_ten_crop(self):
+        fn_kwargs = meth_kwargs = {"size": (5,)}
+        self._test_geom_op_list_output(
+            "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = meth_kwargs = {"size": [5, ]}
+        self._test_geom_op_list_output(
+            "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = meth_kwargs = {"size": (4, 5)}
+        self._test_geom_op_list_output(
+            "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = meth_kwargs = {"size": [4, 5]}
+        self._test_geom_op_list_output(
+            "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -826,7 +826,7 @@ class FiveCrop(torch.nn.Module):
             img (PIL Image or Tensor): Image to be cropped.
 
         Returns:
-            PIL Image or Tensor: Cropped image.
+            tuple of 5 images. Image can be PIL Image or Tensor
         """
         return F.five_crop(img, self.size)
 
@@ -834,9 +834,12 @@ class FiveCrop(torch.nn.Module):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
 
 
-class TenCrop(object):
-    """Crop the given PIL Image into four corners and the central crop plus the flipped version of
-    these (horizontal flipping is used by default)
+class TenCrop(torch.nn.Module):
+    """Crop the given image into four corners and the central crop plus the flipped version of
+    these (horizontal flipping is used by default).
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     .. Note::
          This transform returns a tuple of images and there may be a mismatch in the number of
@@ -846,7 +849,7 @@ class TenCrop(object):
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made.
+            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
         vertical_flip (bool): Use vertical flipping instead of horizontal
 
     Example:
@@ -862,15 +865,26 @@ class TenCrop(object):
     """
 
     def __init__(self, size, vertical_flip=False):
-        self.size = size
+        super().__init__()
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
+        elif isinstance(size, Sequence) and len(size) == 1:
+            self.size = (size[0], size[0])
         else:
-            assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
+            if len(size) != 2:
+                raise ValueError("Please provide only two dimensions (h, w) for size.")
+
             self.size = size
         self.vertical_flip = vertical_flip
 
-    def __call__(self, img):
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be cropped.
+
+        Returns:
+            tuple of 10 images. Image can be PIL Image or Tensor
+        """
         return F.ten_crop(img, self.size, self.vertical_flip)
 
     def __repr__(self):
