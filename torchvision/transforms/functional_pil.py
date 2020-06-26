@@ -26,7 +26,7 @@ def _get_image_size(img: Any) -> List[int]:
 
 
 @torch.jit.unused
-def hflip(img: Any):
+def hflip(img):
     """Horizontally flip the given PIL Image.
 
     Args:
@@ -42,7 +42,7 @@ def hflip(img: Any):
 
 
 @torch.jit.unused
-def vflip(img: Any):
+def vflip(img):
     """Vertically flip the given PIL Image.
 
     Args:
