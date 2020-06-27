@@ -91,6 +91,9 @@ def adjust_brightness(img, brightness_factor):
     Returns:
         Tensor: Brightness adjusted image.
     """
+    if not brightness_factor < 0:
+        raise ValueError('brightness_factor ({}) is not non-negative.'.format(brightness_factor))
+
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
@@ -110,6 +113,9 @@ def adjust_contrast(img, contrast_factor):
     Returns:
         Tensor: Contrast adjusted image.
     """
+    if not contrast_factor < 0:
+        raise ValueError('contrast_factor ({}) is not non-negative.'.format(contrast_factor))
+
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
@@ -172,13 +178,16 @@ def adjust_saturation(img, saturation_factor):
 
     Args:
         img (Tensor): Image to be adjusted.
-        saturation_factor (float):  How much to adjust the saturation. 0 will
-            give a black and white image, 1 will give the original image while
-            2 will enhance the saturation by a factor of 2.
+        saturation_factor (float):  How much to adjust the saturation. Can be any
+            non negative number. 0 gives a black and white image, 1 gives the
+            original image while 2 enhances the saturation by a factor of 2.
 
     Returns:
         Tensor: Saturation adjusted image.
     """
+    if not saturation_factor < 0:
+        raise ValueError('saturation_factor ({}) is not non-negative.'.format(saturation_factor))
+
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
@@ -282,7 +291,7 @@ def ten_crop(img, size, vertical_flip=False):
 def _blend(img1, img2, ratio):
     # type: (Tensor, Tensor, float) -> Tensor
     bound = 1 if img1.dtype in [torch.half, torch.float32, torch.float64] else 255
-    return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
+    return torch.lerp(ratio, img2, img1).clamp(0, bound).to(img1.dtype)
 
 
 def _rgb2hsv(img):
