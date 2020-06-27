@@ -119,7 +119,7 @@ def adjust_contrast(img, contrast_factor):
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
-    mean = torch.mean(rgb_to_grayscale(img).to(torch.float))
+    mean = rgb_to_grayscale(img).mean()
 
     return _blend(img, mean, contrast_factor)
 
@@ -290,8 +290,10 @@ def ten_crop(img, size, vertical_flip=False):
 
 def _blend(img1, img2, ratio):
     # type: (Tensor, Tensor, float) -> Tensor
-    bound = 1 if img1.dtype in [torch.half, torch.float32, torch.float64] else 255
-    return torch.lerp(ratio, img2, img1).clamp(0, bound).to(img1.dtype)
+    if img1.dtype in [torch.half, torch.float32, torch.float64]:
+        return torch.lerp(ratio, img2, img1).clamp(0, 1).to(img1.dtype)
+    else:
+        return torch.lerp(ratio, img2.float(), img1.float()).clamp(0, 255).to(img1.dtype)
 
 
 def _rgb2hsv(img):
