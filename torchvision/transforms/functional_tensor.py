@@ -91,7 +91,7 @@ def adjust_brightness(img, brightness_factor):
     Returns:
         Tensor: Brightness adjusted image.
     """
-    if not brightness_factor < 0:
+    if brightness_factor < 0:
         raise ValueError('brightness_factor ({}) is not non-negative.'.format(brightness_factor))
 
     if not _is_tensor_a_torch_image(img):
@@ -113,7 +113,7 @@ def adjust_contrast(img, contrast_factor):
     Returns:
         Tensor: Contrast adjusted image.
     """
-    if not contrast_factor < 0:
+    if contrast_factor < 0:
         raise ValueError('contrast_factor ({}) is not non-negative.'.format(contrast_factor))
 
     if not _is_tensor_a_torch_image(img):
@@ -149,7 +149,7 @@ def adjust_hue(img, hue_factor):
     Returns:
          Tensor: Hue adjusted image.
     """
-    if not(-0.5 <= hue_factor <= 0.5):
+    if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
 
     if not _is_tensor_a_torch_image(img):
@@ -185,7 +185,7 @@ def adjust_saturation(img, saturation_factor):
     Returns:
         Tensor: Saturation adjusted image.
     """
-    if not saturation_factor < 0:
+    if saturation_factor < 0:
         raise ValueError('saturation_factor ({}) is not non-negative.'.format(saturation_factor))
 
     if not _is_tensor_a_torch_image(img):
