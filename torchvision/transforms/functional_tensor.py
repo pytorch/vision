@@ -290,10 +290,8 @@ def ten_crop(img, size, vertical_flip=False):
 
 def _blend(img1, img2, ratio):
     # type: (Tensor, Tensor, float) -> Tensor
-    if img1.dtype in [torch.half, torch.float32, torch.float64]:
-        return torch.lerp(ratio, img2, img1).clamp(0, 1).to(img1.dtype)
-    else:
-        return torch.lerp(ratio, img2.float(), img1.float()).clamp(0, 255).to(img1.dtype)
+    bound = 1 if img1.dtype in [torch.half, torch.float32, torch.float64] else 255
+    return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
 
 def _rgb2hsv(img):
