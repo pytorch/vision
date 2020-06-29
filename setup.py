@@ -126,7 +126,7 @@ def find_library(name, vision_include):
                 '/usr/local/include/{0}'.format(library_header))
         else:
             # Lookup in TORCHVISION_INCLUDE or in the package file
-            package_path = os.path.join(this_dir, 'torchvision')
+            package_path = [os.path.join(this_dir, 'torchvision')]
             for folder in vision_include + package_path:
                 candidate_path = os.path.join(folder, library_header)
                 library_found = os.path.exists(candidate_path)
