@@ -248,17 +248,21 @@ class Tester(unittest.TestCase):
         script_fn = torch.jit.script(F_t.pad)
         tensor, pil_img = self._create_data(7, 8)
         for pad in [1, [1, ], [0, 1], (2, 2), [1, 0, 1, 2]]:
-            padding_mode = "constant"
-            for fill in [0, 10, 20]:
-                pad_tensor = F_t.pad(tensor, pad, fill=fill, padding_mode=padding_mode)
-                pad_pil_img = F_pil.pad(pil_img, pad, fill=fill, padding_mode=padding_mode)
-                self.compareTensorToPIL(pad_tensor, pad_pil_img, msg="{}, {}".format(pad, fill))
+            configs = [
+                {"padding_mode": "constant", "fill": 0},
+                {"padding_mode": "constant", "fill": 10},
+                {"padding_mode": "constant", "fill": 20},
+            ]
+            for kwargs in configs:
+                pad_tensor = F_t.pad(tensor, pad, **kwargs)
+                pad_pil_img = F_pil.pad(pil_img, pad, **kwargs)
+                self.compareTensorToPIL(pad_tensor, pad_pil_img, msg="{}, {}".format(pad, kwargs))
                 if isinstance(pad, int):
                     script_pad = [pad, ]
                 else:
                     script_pad = pad
-                pad_tensor_script = script_fn(tensor, script_pad, fill=fill, padding_mode=padding_mode)
-                self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, fill))
+                pad_tensor_script = script_fn(tensor, script_pad, **kwargs)
+                self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, kwargs))
 
 
 if __name__ == '__main__':

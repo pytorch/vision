@@ -359,6 +359,13 @@ def pad(img: Tensor, padding: List[int], fill: int, padding_mode: str = "constan
 
             - constant: pads with a constant value, this value is specified with fill
 
+            - edge: pads with the last value on the edge of the image
+
+            - reflect: pads with reflection of image (without repeating the last value on the edge)
+
+                       padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+                       will result in [3, 2, 1, 2, 3, 4, 3, 2]
+
     Returns:
         Tensor: Padded image.
     """
@@ -379,8 +386,8 @@ def pad(img: Tensor, padding: List[int], fill: int, padding_mode: str = "constan
         raise ValueError("Padding must be an int or a 1, 2, or 4 element tuple, not a " +
                          "{} element tuple".format(len(padding)))
 
-    if padding_mode not in ["constant", ]:
-        raise ValueError("Only constant padding_mode supported for torch tensors")
+    if padding_mode not in ["constant", "edge", "reflect"]:
+        raise ValueError("Padding mode should be either constant, edge, reflect")
 
     if isinstance(padding, int):
         if torch.jit.is_scripting():
