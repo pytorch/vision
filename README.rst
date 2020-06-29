@@ -82,9 +82,11 @@ Torchvision currently supports the following image backends:
 
 * `libturbojpeg`_ - blazing speed, fast JPEG image loading. Can be installed from conda-forge :code:`conda install libjpeg-turbo -c conda-forge`.
 
-**Notes:** `libpng`_ and `libturbojpeg`_ must be available at compilation time in order to be available. Also, most linux distributions distinguish between
-`libturbojpeg`_ and `libjpeg-turbo`_, where the former should be installed instead of the latter one.
+**Notes:** ``libpng`` and ``libturbojpeg`` must be available at compilation time in order to be available. Also, most linux distributions distinguish between
+``libturbojpeg`` and ``libjpeg-turbo``, where the former should be installed instead of the latter one.
 
+.. _libpng : http://www.libpng.org/pub/png/libpng.html
+.. _libturbojpeg: https://github.com/libjpeg-turbo/libjpeg-turbo
 .. _Pillow : https://python-pillow.org/
 .. _Pillow-SIMD : https://github.com/uploadcare/pillow-simd
 .. _accimage: https://github.com/pytorch/accimage
