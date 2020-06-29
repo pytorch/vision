@@ -86,7 +86,16 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
         d["wheel_docker_image"] = get_manylinux_image(cu_version)
 
     if filter_branch is not None:
-        d["filters"] = {"branches": {"only": filter_branch}}
+        d["filters"] = {
+            "branches": {
+                "only": filter_branch
+            },
+            "tags": {
+                # Using a raw string here to avoid having to escape
+                # anything
+                "only": r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
+            }
+        }
 
     w = f"binary_{os_type}_{btype}_release" if os_type == "win" else f"binary_{os_type}_{btype}"
     return {w: d}
