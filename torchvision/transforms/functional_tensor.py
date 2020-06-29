@@ -3,12 +3,10 @@ from torch import Tensor
 from torch.jit.annotations import List, BroadcastingList2
 
 
-@torch.jit.export
 def _is_tensor_a_torch_image(x: Tensor) -> bool:
     return x.ndim >= 2
 
 
-@torch.jit.export
 def _get_image_size(img: Tensor) -> List[int]:
     if _is_tensor_a_torch_image(img):
         return [img.shape[-1], img.shape[-2]]
@@ -45,7 +43,7 @@ def hflip(img: Tensor) -> Tensor:
     return img.flip(-1)
 
 
-def crop(img: Tensor, top: int, left: int, height: int, width: int):
+def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     """Crop the given Image Tensor.
 
     Args:

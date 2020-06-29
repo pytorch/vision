@@ -21,6 +21,9 @@ from . import functional_pil as F_pil
 from . import functional_tensor as F_t
 
 
+_is_pil_image = F_pil._is_pil_image
+
+
 @torch.jit.export
 def _get_image_size(img: Tensor) -> List[int]:
     """Returns image sizea as (w, h)

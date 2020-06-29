@@ -640,7 +640,7 @@ class RandomPerspective(object):
         Returns:
             PIL Image: Random perspectivley transformed image.
         """
-        if not F.F_pil._is_pil_image(img):
+        if not F._is_pil_image(img):
             raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
         if random.random() < self.p:
