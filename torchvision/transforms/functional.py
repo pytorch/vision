@@ -33,12 +33,12 @@ def _get_image_size(img: Tensor) -> List[int]:
     return F_pil._get_image_size(img)
 
 
-@torch.jit.ignore
+@torch.jit.unused
 def _is_numpy(img: Any) -> bool:
     return isinstance(img, np.ndarray)
 
 
-@torch.jit.ignore
+@torch.jit.unused
 def _is_numpy_image(img: Any) -> bool:
     return img.ndim in {2, 3}
 
@@ -442,11 +442,12 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
 
     # crop_top = int(round((image_height - crop_height) / 2.))
     # Result can be different between python func and scripted func
+    # Temporary workaround:
     crop_top = int((image_height - crop_height + 1) * 0.5)
     # crop_left = int(round((image_width - crop_width) / 2.))
     # Result can be different between python func and scripted func
+    # Temporary workaround:
     crop_left = int((image_width - crop_width + 1) * 0.5)
-
     return crop(img, crop_top, crop_left, crop_height, crop_width)
 
 

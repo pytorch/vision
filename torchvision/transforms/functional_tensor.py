@@ -200,8 +200,14 @@ def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
 
     _, image_width, image_height = img.size()
     crop_height, crop_width = output_size
-    crop_top = int(round((image_height - crop_height) / 2.))
-    crop_left = int(round((image_width - crop_width) / 2.))
+    # crop_top = int(round((image_height - crop_height) / 2.))
+    # Result can be different between python func and scripted func
+    # Temporary workaround:
+    crop_top = int((image_height - crop_height + 1) * 0.5)
+    # crop_left = int(round((image_width - crop_width) / 2.))
+    # Result can be different between python func and scripted func
+    # Temporary workaround:
+    crop_left = int((image_width - crop_width + 1) * 0.5)
 
     return crop(img, crop_top, crop_left, crop_height, crop_width)
 
