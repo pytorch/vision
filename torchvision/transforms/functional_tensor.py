@@ -119,7 +119,7 @@ def adjust_contrast(img, contrast_factor):
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
-    mean = rgb_to_grayscale(img).mean()
+    mean = torch.mean(rgb_to_grayscale(img).to(torch.float))
 
     return _blend(img, mean, contrast_factor)
 
