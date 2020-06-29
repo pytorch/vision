@@ -25,7 +25,6 @@ before_install:
   - conda info -a
 
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch scipy -c pytorch-nightly
-  # LibPNG version in Ubuntu 16.04 is outdated
   - source activate test-environment
   - |
     if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
