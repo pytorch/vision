@@ -346,7 +346,7 @@ def _hsv2rgb(img):
     return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=img.dtype), a4)
 
 
-def pad(img: Tensor, padding: List[int], fill: int, padding_mode: str = "constant") -> Tensor:
+def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
     r"""Pad the given Tensor Image on all sides with specified padding mode and fill value.
 
     Args:
@@ -362,6 +362,13 @@ def pad(img: Tensor, padding: List[int], fill: int, padding_mode: str = "constan
         padding_mode (str): Type of padding. Only "constant" is supported for Tensors as of now.
 
             - constant: pads with a constant value, this value is specified with fill
+
+            - edge: pads with the last value on the edge of the image
+
+            - reflect: pads with reflection of image (without repeating the last value on the edge)
+
+                       padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
+                       will result in [3, 2, 1, 2, 3, 4, 3, 2]
 
     Returns:
         Tensor: Padded image.
@@ -383,8 +390,8 @@ def pad(img: Tensor, padding: List[int], fill: int, padding_mode: str = "constan
         raise ValueError("Padding must be an int or a 1, 2, or 4 element tuple, not a " +
                          "{} element tuple".format(len(padding)))
 
-    if padding_mode not in ["constant", ]:
-        raise ValueError("Only constant padding_mode supported for torch tensors")
+    if padding_mode not in ["constant", "edge", "reflect"]:
+        raise ValueError("Padding mode should be either constant, edge or reflect")
 
     if isinstance(padding, int):
         if torch.jit.is_scripting():
@@ -403,5 +410,30 @@ def pad(img: Tensor, padding: List[int], fill: int, padding_mode: str = "constan
 
     p = [pad_left, pad_right, pad_top, pad_bottom]
 
+    if padding_mode == "edge":
+        # remap padding_mode str
+        padding_mode = "replicate"
+
+    need_squeeze = False
+    if img.ndim < 4:
+        img = img.unsqueeze(dim=0)
+        need_squeeze = True
+
+    out_dtype = img.dtype
+    need_cast = False
+    if (padding_mode != "constant") and img.dtype not in (torch.float32, torch.float64):
+        # Here we temporary cast input tensor to float
+        # until pytorch issue is resolved :
+        # https://github.com/pytorch/pytorch/issues/40763
+        need_cast = True
+        img = img.to(torch.float32)
+
     img = torch.nn.functional.pad(img, p, mode=padding_mode, value=float(fill))
+
+    if need_squeeze:
+        img = img.squeeze(dim=0)
+
+    if need_cast:
+        img = img.to(out_dtype)
+
     return img
