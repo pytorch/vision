@@ -305,7 +305,7 @@ class Pad(torch.nn.Module):
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
-            Default is constant. Only "constant" is supported for Tensors as of now.
+            Default is constant. Mode symmetric is not yet supported for Tensor inputs.
 
             - constant: pads with a constant value, this value is specified with fill
 
@@ -469,6 +469,7 @@ class RandomCrop(torch.nn.Module):
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+            Mode symmetric is not yet supported for Tensor inputs.
 
              - constant: pads with a constant value, this value is specified with fill
 

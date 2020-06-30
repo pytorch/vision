@@ -368,7 +368,8 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
             list of length 1: ``[padding, ]``.
         fill (int): Pixel fill value for constant fill. Default is 0.
             This value is only used when the padding_mode is constant
-        padding_mode (str): Type of padding. Only "constant" is supported for Tensors as of now.
+        padding_mode (str): Type of padding. Should be: constant, edge or reflect. Default is constant.
+            Mode symmetric is not yet supported for Tensor inputs.
 
             - constant: pads with a constant value, this value is specified with fill
 
