@@ -20,8 +20,6 @@ class Tester(unittest.TestCase):
 
     def compareTensorToPIL(self, tensor, pil_image, msg=None):
         pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
-        if pil_tensor.dtype != tensor.dtype:
-            pil_tensor = pil_tensor.to(tensor.dtype)
         self.assertTrue(tensor.equal(pil_tensor), msg)
 
     def test_vflip(self):
@@ -252,6 +250,7 @@ class Tester(unittest.TestCase):
 
         for dt in [None, torch.float32, torch.float64]:
             if dt is not None:
+                # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
             for pad in [2, [3, ], [0, 3], (3, 3), [4, 2, 4, 3]]:
                 configs = [
@@ -264,7 +263,14 @@ class Tester(unittest.TestCase):
                 for kwargs in configs:
                     pad_tensor = F_t.pad(tensor, pad, **kwargs)
                     pad_pil_img = F_pil.pad(pil_img, pad, **kwargs)
-                    self.compareTensorToPIL(pad_tensor, pad_pil_img, msg="{}, {}".format(pad, kwargs))
+
+                    pad_tensor_8b = pad_tensor
+                    # we need to cast to uint8 to compare with PIL image
+                    if pad_tensor_8b.dtype != torch.uint8:
+                        pad_tensor_8b = pad_tensor_8b.to(torch.uint8)
+
+                    self.compareTensorToPIL(pad_tensor_8b, pad_pil_img, msg="{}, {}".format(pad, kwargs))
+
                     if isinstance(pad, int):
                         script_pad = [pad, ]
                     else:

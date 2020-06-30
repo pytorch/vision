@@ -417,7 +417,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 
     out_dtype = img.dtype
     need_cast = False
-    if img.dtype not in (torch.float32, torch.float64):
+    if (padding_mode != "constant") and img.dtype not in (torch.float32, torch.float64):
         # Here we temporary cast input tensor to float
         # until pytorch issue is resolved :
         # https://github.com/pytorch/pytorch/issues/40763
