@@ -41,7 +41,7 @@ def focal_loss(class_logits, target_tensor, gamma=2, reduction='mean', weight=No
         ((1 - prob) ** gamma) * log_prob,
         target_tensor,
         weight=weight,
-        reduction =reduction
+        reduction=reduction
     )
 
 
