@@ -1,4 +1,4 @@
-#include "inception.h"
+#include "models/inception.h"
 
 namespace vision {
 namespace models {

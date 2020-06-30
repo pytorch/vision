@@ -1,7 +1,7 @@
-#include "squeezenet.h"
+#include "models/squeezenet.h"
 
 #include <limits>
-#include "modelsimpl.h"
+#include "models/modelsimpl.h"
 
 namespace vision {
 namespace models {

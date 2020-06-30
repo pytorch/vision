@@ -1,6 +1,6 @@
-#include "resnet.h"
+#include "models/resnet.h"
 
-#include "modelsimpl.h"
+#include "models/modelsimpl.h"
 
 namespace vision {
 namespace models {

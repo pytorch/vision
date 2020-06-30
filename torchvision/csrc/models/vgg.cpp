@@ -1,7 +1,7 @@
-#include "vgg.h"
+#include "models/vgg.h"
 
 #include <unordered_map>
-#include "modelsimpl.h"
+#include "models/modelsimpl.h"
 
 namespace vision {
 namespace models {

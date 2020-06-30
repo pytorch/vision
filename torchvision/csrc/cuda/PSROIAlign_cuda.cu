@@ -5,7 +5,7 @@
 #include <THC/THCAtomics.cuh>
 #include <stdio.h>
 
-#include "cuda_helpers.h"
+#include "cuda/cuda_helpers.h"
 
 template <typename T>
 __device__ T bilinear_interpolate(

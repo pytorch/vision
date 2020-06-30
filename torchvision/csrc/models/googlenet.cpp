@@ -1,6 +1,6 @@
-#include "googlenet.h"
+#include "models/googlenet.h"
 
-#include "modelsimpl.h"
+#include "models/modelsimpl.h"
 
 namespace vision {
 namespace models {

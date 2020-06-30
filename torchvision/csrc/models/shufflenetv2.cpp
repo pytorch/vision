@@ -1,6 +1,6 @@
-#include "shufflenetv2.h"
+#include "models/shufflenetv2.h"
 
-#include "modelsimpl.h"
+#include "models/modelsimpl.h"
 
 namespace vision {
 namespace models {

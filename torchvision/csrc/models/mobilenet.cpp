@@ -1,6 +1,6 @@
-#include "mobilenet.h"
+#include "models/mobilenet.h"
 
-#include "modelsimpl.h"
+#include "models/modelsimpl.h"
 
 namespace vision {
 namespace models {
