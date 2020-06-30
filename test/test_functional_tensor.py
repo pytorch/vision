@@ -14,12 +14,15 @@ from PIL import Image
 class Tester(unittest.TestCase):
 
     def _create_data(self, height=3, width=3, channels=3):
-        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8)
+        # tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8)
+        tensor = torch.arange(0, channels * height * width,  dtype=torch.uint8).reshape(channels, height, width)
         pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().numpy())
         return tensor, pil_img
 
     def compareTensorToPIL(self, tensor, pil_image, msg=None):
         pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
+        if pil_tensor.dtype != tensor.dtype:
+            pil_tensor = pil_tensor.to(tensor.dtype)
         self.assertTrue(tensor.equal(pil_tensor), msg)
 
     def test_vflip(self):
@@ -247,22 +250,29 @@ class Tester(unittest.TestCase):
     def test_pad(self):
         script_fn = torch.jit.script(F_t.pad)
         tensor, pil_img = self._create_data(7, 8)
-        for pad in [1, [1, ], [0, 1], (2, 2), [1, 0, 1, 2]]:
-            configs = [
-                {"padding_mode": "constant", "fill": 0},
-                {"padding_mode": "constant", "fill": 10},
-                {"padding_mode": "constant", "fill": 20},
-            ]
-            for kwargs in configs:
-                pad_tensor = F_t.pad(tensor, pad, **kwargs)
-                pad_pil_img = F_pil.pad(pil_img, pad, **kwargs)
-                self.compareTensorToPIL(pad_tensor, pad_pil_img, msg="{}, {}".format(pad, kwargs))
-                if isinstance(pad, int):
-                    script_pad = [pad, ]
-                else:
-                    script_pad = pad
-                pad_tensor_script = script_fn(tensor, script_pad, **kwargs)
-                self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, kwargs))
+
+        for dt in [None, torch.float32, torch.float64]:
+            if dt is not None:
+                tensor = tensor.to(dt)
+            for pad in [2, [3, ], [0, 3], (3, 3), [4, 2, 4, 3]]:
+                configs = [
+                    {"padding_mode": "constant", "fill": 0},
+                    {"padding_mode": "constant", "fill": 10},
+                    {"padding_mode": "constant", "fill": 20},
+                    {"padding_mode": "edge"},
+                    {"padding_mode": "reflect"},
+                    # {"padding_mode": "symmetric"},
+                ]
+                for kwargs in configs:
+                    pad_tensor = F_t.pad(tensor, pad, **kwargs)
+                    pad_pil_img = F_pil.pad(pil_img, pad, **kwargs)
+                    self.compareTensorToPIL(pad_tensor, pad_pil_img, msg="{}, {}".format(pad, kwargs))
+                    if isinstance(pad, int):
+                        script_pad = [pad, ]
+                    else:
+                        script_pad = pad
+                    pad_tensor_script = script_fn(tensor, script_pad, **kwargs)
+                    self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, kwargs))
 
 
 if __name__ == '__main__':
