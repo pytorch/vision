@@ -158,16 +158,18 @@ def get_linux_distribution():
 
 def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
-    extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
+    extensions_src_dir = os.path.join(this_dir, 'torchvision', 'csrc')
+    extensions_include_dir = os.path.join(this_dir, 'torchvision', 'cinclude', 'torchvision')
 
-    main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
-    source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
+    main_file = glob.glob(os.path.join(extensions_src_dir, '*.cpp'))
+    source_cpu = glob.glob(os.path.join(extensions_src_dir, 'cpu', '*.cpp'))
 
     is_rocm_pytorch = False
     if torch.__version__ >= '1.5':
         from torch.utils.cpp_extension import ROCM_HOME
         is_rocm_pytorch = True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
 
+    # TODO fix this
     if is_rocm_pytorch:
         hipify_python.hipify(
             project_directory=this_dir,
@@ -176,13 +178,14 @@ def get_extensions():
             show_detailed=True,
             is_pytorch_extension=True,
         )
-        source_cuda = glob.glob(os.path.join(extensions_dir, 'hip', '*.hip'))
+        source_cuda = glob.glob(os.path.join(extensions_src_dir, 'hip', '*.hip'))
         # Copy over additional files
         shutil.copy("torchvision/csrc/cuda/cuda_helpers.h", "torchvision/csrc/hip/cuda_helpers.h")
         shutil.copy("torchvision/csrc/cuda/vision_cuda.h", "torchvision/csrc/hip/vision_cuda.h")
 
     else:
-        source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
+        source_cuda = glob.glob(os.path.join(extensions_src_dir, 'cuda', '*.cu'))
+        cuda_include_dir = os.path.join(this_dir, 'torchvision', 'cinclude', 'torchvision_cuda')
 
     sources = main_file + source_cpu
     extension = CppExtension
@@ -201,11 +204,14 @@ def get_extensions():
 
     define_macros = []
 
+    include_dirs = [extensions_include_dir]
+
     extra_compile_args = {}
     if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) \
             or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
         sources += source_cuda
+        include_dirs.append(cuda_include_dir)
         if not is_rocm_pytorch:
             define_macros += [('WITH_CUDA', None)]
             nvcc_flags = os.getenv('NVCC_FLAGS', '')
@@ -227,9 +233,8 @@ def get_extensions():
         extra_compile_args.setdefault('cxx', [])
         extra_compile_args['cxx'].append('/MP')
 
-    sources = [os.path.join(extensions_dir, s) for s in sources]
+    sources = [os.path.join(extensions_src_dir, s) for s in sources]
 
-    include_dirs = [extensions_dir]
 
     ext_modules = [
         extension(
@@ -368,7 +373,7 @@ def get_extensions():
                     base_decoder_src_dir,
                     video_reader_src_dir,
                     ffmpeg_include_dir,
-                    extensions_dir,
+                    extensions_src_dir,
                 ],
                 libraries=[
                     'avcodec',
