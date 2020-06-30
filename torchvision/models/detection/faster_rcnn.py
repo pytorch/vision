@@ -159,7 +159,7 @@ class FasterRCNN(GeneralizedRCNN):
                  box_fg_iou_thresh=0.5, box_bg_iou_thresh=0.5,
                  box_batch_size_per_image=512, box_positive_fraction=0.25,
                  bbox_reg_weights=None,
-                 focal_loss = False, focal_loss_gamma = 2):
+                 focal_loss=False, focal_loss_gamma=2):
 
         if not hasattr(backbone, "out_channels"):
             raise ValueError(
