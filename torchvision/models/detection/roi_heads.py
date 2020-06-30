@@ -12,8 +12,38 @@ from . import _utils as det_utils
 
 from torch.jit.annotations import Optional, List, Dict, Tuple
 
+def focal_loss(class_logits, target_tensor, gamma=2, reduction='mean', weight=None):
+    """
+    Computes the focal loss for classification head 
+    of Faster R-CNN. This variant of focal loss does
+    not use alpha balancing. Beecause we can use foreground
+    background sampling paramters instead to tackle 
+    foreground background class imballance. This deals 
+    with class imballance and has similar impact to 
+    hard negative mining.
 
-def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
+    Arguments:
+        class_logits (Tensor)
+        labels (Tensor): ground truth
+        gamma (int): adjusts the rate at which easy examples are down-weighted
+        reduction (string, optional) – Specifies the reduction to apply to the output:
+            'none' | 'mean' | 'sum'.
+        weight (Tensor, optional): a manual rescaling weight given to each class.
+            If given, has to be a Tensor of size C.
+
+    Returns:
+        classification_loss (Tensor)
+    """
+    log_prob = F.log_softmax(class_logits, dim=-1)
+    prob = torch.exp(log_prob)
+    return F.nll_loss(
+        ((1 - prob) ** gamma) * log_prob,
+        target_tensor,
+        weight=weight,
+        reduction = reduction
+    )
+
+def fastrcnn_loss(class_logits, box_regression, labels, regression_targets, use_focal_loss=False, gamma=2):
     # type: (Tensor, Tensor, List[Tensor], List[Tensor]) -> Tuple[Tensor, Tensor]
     """
     Computes the loss for Faster R-CNN.
@@ -32,7 +62,10 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     labels = torch.cat(labels, dim=0)
     regression_targets = torch.cat(regression_targets, dim=0)
 
-    classification_loss = F.cross_entropy(class_logits, labels)
+    if use_focal_loss:
+        classification_loss = focal_loss(class_logits, labels, gamma=gamma)
+    else:
+        classification_loss = F.cross_entropy(class_logits, labels)
 
     # get indices that correspond to the regression targets for
     # the corresponding ground truth labels, to be used with
@@ -508,6 +541,8 @@ class RoIHeads(torch.nn.Module):
                  keypoint_roi_pool=None,
                  keypoint_head=None,
                  keypoint_predictor=None,
+                 focal_loss=False,
+                 focal_loss_gamma=2
                  ):
         super(RoIHeads, self).__init__()
 
@@ -541,6 +576,9 @@ class RoIHeads(torch.nn.Module):
         self.keypoint_roi_pool = keypoint_roi_pool
         self.keypoint_head = keypoint_head
         self.keypoint_predictor = keypoint_predictor
+        
+        self.focal_loss = focal_loss
+        self.focal_loss_gamma = focal_loss_gamma
 
     def has_mask(self):
         if self.mask_roi_pool is None:
@@ -758,7 +796,7 @@ class RoIHeads(torch.nn.Module):
         if self.training:
             assert labels is not None and regression_targets is not None
             loss_classifier, loss_box_reg = fastrcnn_loss(
-                class_logits, box_regression, labels, regression_targets)
+                class_logits, box_regression, labels, regression_targets, use_focal_loss=self.focal_loss, gamma= self.focal_loss_gamma)
             losses = {
                 "loss_classifier": loss_classifier,
                 "loss_box_reg": loss_box_reg
