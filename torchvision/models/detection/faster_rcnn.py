@@ -96,6 +96,8 @@ class FasterRCNN(GeneralizedRCNN):
             of the classification head
         bbox_reg_weights (Tuple[float, float, float, float]): weights for the encoding/decoding of the
             bounding boxes
+        focal_loss (bool): set to true to use focal loss for clasification rather than simple cross entropy
+        focal_loss_gamma (int): adjusts the rate at which easy examples are down-weighted in focal loss
 
     Example::
 
