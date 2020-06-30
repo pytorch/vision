@@ -55,6 +55,8 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets, use_
         box_regression (Tensor)
         labels (list[BoxList])
         regression_targets (Tensor)
+        use_focal_loss (bool): set to true to use focal loss for clasification
+        gamma (int): adjusts the rate at which easy examples are down-weighted in focal loss
 
     Returns:
         classification_loss (Tensor)
