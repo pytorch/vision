@@ -8,6 +8,8 @@ source:
 requirements:
   build:
     - {{ compiler('c') }} # [win]
+    - libpng
+    - libjpeg-turbo
 
   host:
     - python
@@ -18,6 +20,10 @@ requirements:
 
   run:
     - python
+    - libpng
+    - libjpeg-turbo
+    # Pillow introduces unwanted conflicts with libjpeg-turbo, as it depends on jpeg
+    # The fix depends on https://github.com/conda-forge/conda-forge.github.io/issues/673
     - pillow >=4.1.1
     - numpy >=1.11
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
