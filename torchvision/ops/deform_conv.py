@@ -5,7 +5,7 @@ from torch import nn, Tensor
 from torch.nn import init
 from torch.nn.parameter import Parameter
 from torch.nn.modules.utils import _pair
-from torch.jit.annotations import Optional, Tuple, Union
+from torch.jit.annotations import Optional, Tuple
 
 
 def deform_conv2d(
@@ -13,11 +13,10 @@ def deform_conv2d(
     offset: Tensor,
     weight: Tensor,
     bias: Optional[Tensor] = None,
-    stride: Union[int, Tuple[int, int]] = (1, 1),
-    padding: Union[int, Tuple[int, int]] = (0, 0),
-    dilation: Union[int, Tuple[int, int]] = (1, 1),
+    stride: Tuple[int, int] = (1, 1),
+    padding: Tuple[int, int] = (0, 0),
+    dilation: Tuple[int, int] = (1, 1),
 ) -> Tensor:
-    # type: (Tensor, Tensor, Tensor, Optional[Tensor], Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> Tensor
     """
     Performs Deformable Convolution, described in Deformable Convolutional Networks
 
@@ -92,10 +91,10 @@ class DeformConv2d(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
-        kernel_size: Union[int, Tuple[int, int]],
-        stride: Union[int, Tuple[int, int]] = 1,
-        padding: Union[int, Tuple[int, int]] = 0,
-        dilation: Union[int, Tuple[int, int]] = 1,
+        kernel_size: int,
+        stride: int = 1,
+        padding: int = 0,
+        dilation: int = 1,
         groups: int = 1,
         bias: bool = True,
     ):

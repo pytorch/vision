@@ -4,7 +4,6 @@ from torch import Tensor
 
 
 def _new_empty_tensor(x: Tensor, shape: List[int]) -> Tensor:
-    # type: (Tensor, List[int]) -> Tensor
     """
     Arguments:
         input (Tensor): input tensor

@@ -2,18 +2,17 @@ import torch
 from torch import nn, Tensor
 
 from torch.nn.modules.utils import _pair
-from torch.jit.annotations import List, BroadcastingList2, Union
+from torch.jit.annotations import List, BroadcastingList2
 
 from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
 def roi_pool(
     input: Tensor,
-    boxes: Union[Tensor, List[Tensor]],
+    boxes: Tensor,
     output_size: BroadcastingList2[int],
     spatial_scale: float = 1.0,
 ) -> Tensor:
-    # type: (Tensor, Tensor, BroadcastingList2[int], float) -> Tensor
     """
     Performs Region of Interest (RoI) Pool operator described in Fast R-CNN
 
@@ -51,7 +50,7 @@ class RoIPool(nn.Module):
         self.output_size = output_size
         self.spatial_scale = spatial_scale
 
-    def forward(self, input: Tensor, rois: Union[Tensor, List[Tensor]]) -> Tensor:
+    def forward(self, input: Tensor, rois: Tensor) -> Tensor:
         return roi_pool(input, rois, self.output_size, self.spatial_scale)
 
     def __repr__(self) -> str:

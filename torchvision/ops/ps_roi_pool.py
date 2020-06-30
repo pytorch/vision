@@ -2,18 +2,17 @@ import torch
 from torch import nn, Tensor
 
 from torch.nn.modules.utils import _pair
-from torch.jit.annotations import List, Tuple, Union
+from torch.jit.annotations import List, Tuple
 
 from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
 def ps_roi_pool(
     input: Tensor,
-    boxes: Union[Tensor, List[Tensor]],
-    output_size: Union[int, Tuple[int, int]],
+    boxes: Tensor,
+    output_size: int,
     spatial_scale: float = 1.0,
 ) -> Tensor:
-    # type: (Tensor, Tensor, int, float) -> Tensor
     """
     Performs Position-Sensitive Region of Interest (RoI) Pool operator
     described in R-FCN
@@ -48,12 +47,12 @@ class PSRoIPool(nn.Module):
     """
     See ps_roi_pool
     """
-    def __init__(self, output_size: Union[int, Tuple[int, int]], spatial_scale: float):
+    def __init__(self, output_size: int, spatial_scale: float):
         super(PSRoIPool, self).__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale
 
-    def forward(self, input: Tensor, rois: Union[Tensor, List[Tensor]]) -> Tensor:
+    def forward(self, input: Tensor, rois: Tensor) -> Tensor:
         return ps_roi_pool(input, rois, self.output_size, self.spatial_scale)
 
     def __repr__(self) -> str:

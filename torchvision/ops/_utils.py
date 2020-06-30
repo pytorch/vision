@@ -1,10 +1,9 @@
 import torch
 from torch import Tensor
-from torch.jit.annotations import List, Tuple, Union
+from torch.jit.annotations import List, Tuple
 
 
-def _cat(tensors: Union[List[Tensor], Tuple[Tensor, ...]], dim: int = 0) -> Tensor:
-    # type: (List[Tensor], int) -> Tensor
+def _cat(tensors: List[Tensor], dim: int = 0) -> Tensor:
     """
     Efficient version of torch.cat that avoids a copy if there is only a single element in a list
     """
@@ -16,7 +15,6 @@ def _cat(tensors: Union[List[Tensor], Tuple[Tensor, ...]], dim: int = 0) -> Tens
 
 
 def convert_boxes_to_roi_format(boxes: List[Tensor]) -> Tensor:
-    # type: (List[Tensor]) -> Tensor
     concat_boxes = _cat([b for b in boxes], dim=0)
     temp = []
     for i, b in enumerate(boxes):
@@ -26,7 +24,7 @@ def convert_boxes_to_roi_format(boxes: List[Tensor]) -> Tensor:
     return rois
 
 
-def check_roi_boxes_shape(boxes: Union[List[Tensor], Tuple[Tensor, ...], Tensor]):
+def check_roi_boxes_shape(boxes: Tensor):
     if isinstance(boxes, (list, tuple)):
         for _tensor in boxes:
             assert _tensor.size(1) == 4, \

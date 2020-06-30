@@ -11,7 +11,7 @@ is implemented
 import warnings
 import torch
 from torch import Tensor, Size
-from torch.jit.annotations import List, Optional, Tuple, Union
+from torch.jit.annotations import List, Optional, Tuple
 
 
 class Conv2d(torch.nn.Conv2d):
@@ -50,9 +50,9 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
     def __init__(
         self,
-        num_features: Union[Size, List[int], Tuple[int, ...]],
+        num_features: Tuple[int, ...],
         eps: float = 0.,
-        n: Optional[Size, Union[List[int], Tuple[int, ...]]] = None,
+        n: Optional[Tuple[int, ...]] = None,
     ):
         # n=None for backward-compatibility
         if n is not None:

@@ -72,7 +72,6 @@ class FeaturePyramidNetwork(nn.Module):
         self.extra_blocks = extra_blocks
 
     def get_result_from_inner_blocks(self, x: Tensor, idx: int) -> Tensor:
-        # type: (Tensor, int) -> Tensor
         """
         This is equivalent to self.inner_blocks[idx](x),
         but torchscript doesn't support this yet
@@ -91,7 +90,6 @@ class FeaturePyramidNetwork(nn.Module):
         return out
 
     def get_result_from_layer_blocks(self, x: Tensor, idx: int) -> Tensor:
-        # type: (Tensor, int) -> Tensor
         """
         This is equivalent to self.layer_blocks[idx](x),
         but torchscript doesn't support this yet
@@ -110,7 +108,6 @@ class FeaturePyramidNetwork(nn.Module):
         return out
 
     def forward(self, x: Dict[str, Tensor]) -> Dict[str, Tensor]:
-        # type: (Dict[str, Tensor]) -> Dict[str, Tensor]
         """
         Computes the FPN for a set of feature maps.
 
@@ -179,7 +176,6 @@ class LastLevelMaxPool(ExtraFPNBlock):
         y: List[Tensor],
         names: List[str],
     ) -> Tuple[List[Tensor], List[str]]:
-        # type: (List[Tensor], List[Tensor], List[str]) -> Tuple[List[Tensor], List[str]]
         names.append("pool")
         x.append(F.max_pool2d(x[-1], 1, 2, 0))
         return x, names

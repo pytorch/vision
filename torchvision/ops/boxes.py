@@ -6,7 +6,6 @@ import torchvision
 
 @torch.jit.script
 def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
-    # type: (Tensor, Tensor, float) -> Tensor
     """
     Performs non-maximum suppression (NMS) on the boxes according
     to their intersection-over-union (IoU).
@@ -48,7 +47,6 @@ def batched_nms(
     idxs: Tensor,
     iou_threshold: float,
 ) -> Tensor:
-    # type: (Tensor, Tensor, Tensor, float) -> Tensor
     """
     Performs non-maximum suppression in a batched fashion.
 
@@ -90,7 +88,6 @@ def batched_nms(
 
 
 def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
-    # type: (Tensor, float) -> Tensor
     """
     Remove boxes which contains at least one side smaller than min_size.
 
@@ -109,7 +106,6 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
 
 
 def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
-    # type: (Tensor, Tuple[int, int]) -> Tensor
     """
     Clip boxes so that they lie inside an image of size `size`.
 

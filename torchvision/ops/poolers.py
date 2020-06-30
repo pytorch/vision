@@ -6,7 +6,7 @@ from torch import nn, Tensor
 from torchvision.ops import roi_align
 from torchvision.ops.boxes import box_area
 
-from torch.jit.annotations import Optional, List, Dict, Tuple, Union
+from torch.jit.annotations import Optional, List, Dict, Tuple
 import torchvision
 
 
@@ -16,7 +16,6 @@ import torchvision
 # that merges the levels to the right indices
 @torch.jit.unused
 def _onnx_merge_levels(levels: Tensor, unmerged_results: List[Tensor]) -> Tensor:
-    # type: (Tensor, List[Tensor]) -> Tensor
     first_result = unmerged_results[0]
     dtype, device = first_result.dtype, first_result.device
     res = torch.zeros((levels.size(0), first_result.size(1),
@@ -40,7 +39,6 @@ def initLevelMapper(
     canonical_level: int = 4,
     eps: float = 1e-6,
 ):
-    # type: (int, int, int, int, float) -> LevelMapper
     return LevelMapper(k_min, k_max, canonical_scale, canonical_level, eps)
 
 
@@ -64,7 +62,6 @@ class LevelMapper(object):
         canonical_level: int = 4,
         eps: float = 1e-6,
     ):
-        # type: (int, int, int, int, float) -> None
         self.k_min = k_min
         self.k_max = k_max
         self.s0 = canonical_scale
@@ -72,7 +69,6 @@ class LevelMapper(object):
         self.eps = eps
 
     def __call__(self, boxlists: List[Tensor]) -> Tensor:
-        # type: (List[Tensor]) -> Tensor
         """
         Arguments:
             boxlists (list[BoxList])
@@ -123,7 +119,7 @@ class MultiScaleRoIAlign(nn.Module):
     def __init__(
         self,
         featmap_names: List[str],
-        output_size: Union[List[Tuple[int, int]], List[int]],
+        output_size: List[int],
         sampling_ratio: int,
     ):
         super(MultiScaleRoIAlign, self).__init__()
@@ -136,7 +132,6 @@ class MultiScaleRoIAlign(nn.Module):
         self.map_levels = None
 
     def convert_to_roi_format(self, boxes: List[Tensor]) -> Tensor:
-        # type: (List[Tensor]) -> Tensor
         concat_boxes = torch.cat(boxes, dim=0)
         device, dtype = concat_boxes.device, concat_boxes.dtype
         ids = torch.cat(
@@ -150,7 +145,6 @@ class MultiScaleRoIAlign(nn.Module):
         return rois
 
     def infer_scale(self, feature: Tensor, original_size: List[int]) -> float:
-        # type: (Tensor, List[int]) -> float
         # assumption: the scale is of the form 2 ** (-k), with k integer
         size = feature.shape[-2:]
         possible_scales = torch.jit.annotate(List[float], [])
@@ -166,7 +160,6 @@ class MultiScaleRoIAlign(nn.Module):
         features: List[Tensor],
         image_shapes: List[Tuple[int, int]],
     ) -> None:
-        # type: (List[Tensor], List[Tuple[int, int]]) -> None
         assert len(image_shapes) != 0
         max_x = 0
         max_y = 0
@@ -186,10 +179,9 @@ class MultiScaleRoIAlign(nn.Module):
     def forward(
         self,
         x: Dict[str, Tensor],
-        boxes:  List[Tensor],
+        boxes: List[Tensor],
         image_shapes: List[Tuple[int, int]],
     ) -> Tensor:
-        # type: (Dict[str, Tensor], List[Tensor], List[Tuple[int, int]]) -> Tensor
         """
         Arguments:
             x (OrderedDict[Tensor]): feature maps for each level. They are assumed to have
