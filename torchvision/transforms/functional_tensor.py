@@ -92,6 +92,9 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     Returns:
         Tensor: Brightness adjusted image.
     """
+    if brightness_factor < 0:
+        raise ValueError('brightness_factor ({}) is not non-negative.'.format(brightness_factor))
+
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
@@ -110,6 +113,9 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     Returns:
         Tensor: Contrast adjusted image.
     """
+    if contrast_factor < 0:
+        raise ValueError('contrast_factor ({}) is not non-negative.'.format(contrast_factor))
+
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
@@ -143,7 +149,7 @@ def adjust_hue(img, hue_factor):
     Returns:
          Tensor: Hue adjusted image.
     """
-    if not(-0.5 <= hue_factor <= 0.5):
+    if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
 
     if not _is_tensor_a_torch_image(img):
@@ -171,13 +177,16 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
 
     Args:
         img (Tensor): Image to be adjusted.
-        saturation_factor (float):  How much to adjust the saturation. 0 will
-            give a black and white image, 1 will give the original image while
-            2 will enhance the saturation by a factor of 2.
+        saturation_factor (float):  How much to adjust the saturation. Can be any
+            non negative number. 0 gives a black and white image, 1 gives the
+            original image while 2 enhances the saturation by a factor of 2.
 
     Returns:
         Tensor: Saturation adjusted image.
     """
+    if saturation_factor < 0:
+        raise ValueError('saturation_factor ({}) is not non-negative.'.format(saturation_factor))
+
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
