@@ -366,11 +366,6 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
                        padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
                        will result in [3, 2, 1, 2, 3, 4, 3, 2]
 
-            - symmetric: pads with reflection of image (repeating the last value on the edge)
-
-                         padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
-                         will result in [2, 1, 1, 2, 3, 4, 4, 3]
-
     Returns:
         Tensor: Padded image.
     """
@@ -391,8 +386,8 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         raise ValueError("Padding must be an int or a 1, 2, or 4 element tuple, not a " +
                          "{} element tuple".format(len(padding)))
 
-    if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
-        raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
+    if padding_mode not in ["constant", "edge", "reflect"]:
+        raise ValueError("Padding mode should be either constant, edge or reflect")
 
     if isinstance(padding, int):
         if torch.jit.is_scripting():
@@ -423,6 +418,9 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     out_dtype = img.dtype
     need_cast = False
     if img.dtype not in (torch.float32, torch.float64):
+        # Here we temporary cast input tensor to float
+        # until pytorch issue is resolved :
+        # https://github.com/pytorch/pytorch/issues/40763
         need_cast = True
         img = img.to(torch.float32)
 

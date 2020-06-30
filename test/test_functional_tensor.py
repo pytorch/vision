@@ -14,8 +14,7 @@ from PIL import Image
 class Tester(unittest.TestCase):
 
     def _create_data(self, height=3, width=3, channels=3):
-        # tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8)
-        tensor = torch.arange(0, channels * height * width,  dtype=torch.uint8).reshape(channels, height, width)
+        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8)
         pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().numpy())
         return tensor, pil_img
 
@@ -261,7 +260,6 @@ class Tester(unittest.TestCase):
                     {"padding_mode": "constant", "fill": 20},
                     {"padding_mode": "edge"},
                     {"padding_mode": "reflect"},
-                    # {"padding_mode": "symmetric"},
                 ]
                 for kwargs in configs:
                     pad_tensor = F_t.pad(tensor, pad, **kwargs)
