@@ -259,6 +259,7 @@ class Tester(unittest.TestCase):
                     {"padding_mode": "constant", "fill": 20},
                     {"padding_mode": "edge"},
                     {"padding_mode": "reflect"},
+                    {"padding_mode": "symmetric"},
                 ]
                 for kwargs in configs:
                     pad_tensor = F_t.pad(tensor, pad, **kwargs)
