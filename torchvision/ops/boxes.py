@@ -4,7 +4,6 @@ from torch import Tensor
 import torchvision
 
 
-@torch.jit.script
 def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     """
     Performs non-maximum suppression (NMS) on the boxes according
@@ -40,7 +39,7 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
 
 
-@torch.jit.script
+@torch.jit._script_if_tracing
 def batched_nms(
     boxes: Tensor,
     scores: Tensor,
