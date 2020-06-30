@@ -371,7 +371,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant. Only int value is supported for Tensors.
         padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
-            Only "constant" is supported for Tensors as of now.
+            Mode symmetric is not yet supported for Tensor inputs.
 
             - constant: pads with a constant value, this value is specified with fill
 
