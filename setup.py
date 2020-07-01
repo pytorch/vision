@@ -136,15 +136,6 @@ def find_library(name, vision_include):
 
 
 def get_extensions():
-    vision_include = os.environ.get('TORCHVISION_INCLUDE', None)
-    vision_library = os.environ.get('TORCHVISION_LIBRARY', None)
-    vision_include = (vision_include.split(os.pathsep)
-                      if vision_include is not None else [])
-    vision_library = (vision_library.split(os.pathsep)
-                      if vision_library is not None else [])
-    include_dirs = vision_include
-    library_dirs = vision_library
-
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
 
@@ -217,7 +208,7 @@ def get_extensions():
 
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
-    include_dirs += [extensions_dir]
+    include_dirs = [extensions_dir]
 
     ext_modules = [
         extension(
@@ -238,6 +229,16 @@ def get_extensions():
                 extra_compile_args=extra_compile_args,
             )
         )
+
+    # ------------------- Torchvision extra extensions ------------------------
+    vision_include = os.environ.get('TORCHVISION_INCLUDE', None)
+    vision_library = os.environ.get('TORCHVISION_LIBRARY', None)
+    vision_include = (vision_include.split(os.pathsep)
+                      if vision_include is not None else [])
+    vision_library = (vision_library.split(os.pathsep)
+                      if vision_library is not None else [])
+    include_dirs += vision_include
+    library_dirs = vision_library
 
     # Image reading extension
     image_macros = []
