@@ -133,11 +133,12 @@ def get_extensions():
                 nvcc_flags = []
             else:
                 nvcc_flags = nvcc_flags.split(' ')
+            nvcc_flags.append('-O3')
         else:
             define_macros += [('WITH_HIP', None)]
             nvcc_flags = []
         extra_compile_args = {
-            'cxx': [],
+            'cxx': ['-O3'],
             'nvcc': nvcc_flags,
         }
 
