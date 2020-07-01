@@ -117,7 +117,6 @@ def find_library(name, vision_include):
             library_found = os.path.isfile(library_header_path)
             conda_installed = library_found
 
-    # Try to locate turbojpeg in Linux standard paths
     if not library_found:
         if sys.platform == 'linux':
             library_found = os.path.exists('/usr/include/{0}'.format(
