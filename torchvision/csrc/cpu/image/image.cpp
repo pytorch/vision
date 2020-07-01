@@ -20,5 +20,4 @@ PyMODINIT_FUNC PyInit_image(void) {
 #endif
 
 static auto registry = torch::RegisterOperators()
-                           .op("image::decode_png", &decodePNG)
-                           .op("image::decode_jpeg", &decodeJPEG);
+                           .op("image::decode_png", &decodePNG);

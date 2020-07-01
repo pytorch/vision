@@ -272,24 +272,10 @@ def get_extensions():
                   'disabling PNG support')
             png_found = False
 
-    # Locating libjpegturbo
-    turbojpeg_info = find_library('turbojpeg', vision_include)
-    (turbojpeg_found, conda_installed,
-     turbo_include_folder, turbo_lib_folder) = turbojpeg_info
-
-    image_macros += [('JPEG_FOUND', str(int(turbojpeg_found)))]
-    print('turboJPEG found: {0}'.format(turbojpeg_found))
-    if turbojpeg_found:
-        print('Building torchvision with JPEG image support')
-        image_link_flags.append('turbojpeg')
-        if conda_installed:
-            image_library += [turbo_lib_folder]
-            image_include += [turbo_include_folder]
-
     image_path = os.path.join(extensions_dir, 'cpu', 'image')
     image_src = glob.glob(os.path.join(image_path, '*.cpp'))
 
-    if png_found or turbojpeg_found:
+    if png_found:
         ext_modules.append(extension(
             'torchvision.image',
             image_src,
