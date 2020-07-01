@@ -26,24 +26,29 @@ class Tester(unittest.TestCase):
         transformed_pil_img = getattr(F, func)(pil_img, **fn_kwargs)
         self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
 
-    def _test_geom_op(self, func, method, fn_kwargs=None, meth_kwargs=None):
-        if fn_kwargs is None:
-            fn_kwargs = {}
+    def _test_class_geom_op(self, method, meth_kwargs=None):
         if meth_kwargs is None:
             meth_kwargs = {}
+
         tensor, pil_img = self._create_data(height=10, width=10)
-        transformed_tensor = getattr(F, func)(tensor, **fn_kwargs)
-        transformed_pil_img = getattr(F, func)(pil_img, **fn_kwargs)
-        self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
-
-        scripted_fn = torch.jit.script(getattr(F, func))
-        transformed_tensor_script = scripted_fn(tensor, **fn_kwargs)
-        self.assertTrue(transformed_tensor.equal(transformed_tensor_script))
-
         # test for class interface
         f = getattr(T, method)(**meth_kwargs)
         scripted_fn = torch.jit.script(f)
-        scripted_fn(tensor)
+
+        # set seed to reproduce the same transformation for tensor and PIL image
+        torch.manual_seed(12)
+        transformed_tensor = f(tensor)
+        torch.manual_seed(12)
+        transformed_pil_img = f(pil_img)
+        self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
+
+        torch.manual_seed(12)
+        transformed_tensor_script = scripted_fn(tensor)
+        self.assertTrue(transformed_tensor.equal(transformed_tensor_script))
+
+    def _test_geom_op(self, func, method, fn_kwargs=None, meth_kwargs=None):
+        self._test_functional_geom_op(func, fn_kwargs)
+        self._test_class_geom_op(method, meth_kwargs)
 
     def test_random_horizontal_flip(self):
         self._test_geom_op('hflip', 'RandomHorizontalFlip')
@@ -97,6 +102,119 @@ class Tester(unittest.TestCase):
         fn_kwargs = meth_kwargs = {"padding": (2, 2, 2, 2), "fill": 127, "padding_mode": "constant"}
         self._test_geom_op(
             "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
+    def test_crop(self):
+        fn_kwargs = {"top": 2, "left": 3, "height": 4, "width": 5}
+        # Test transforms.RandomCrop with size and padding as tuple
+        meth_kwargs = {"size": (4, 5), "padding": (4, 4), "pad_if_needed": True, }
+        self._test_geom_op(
+            'crop', 'RandomCrop', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
+        sizes = [5, [5, ], [6, 6]]
+        padding_configs = [
+            {"padding_mode": "constant", "fill": 0},
+            {"padding_mode": "constant", "fill": 10},
+            {"padding_mode": "constant", "fill": 20},
+            {"padding_mode": "edge"},
+            {"padding_mode": "reflect"},
+        ]
+
+        for size in sizes:
+            for padding_config in padding_configs:
+                config = dict(padding_config)
+                config["size"] = size
+                self._test_class_geom_op("RandomCrop", config)
+
+    def test_center_crop(self):
+        fn_kwargs = {"output_size": (4, 5)}
+        meth_kwargs = {"size": (4, 5), }
+        self._test_geom_op(
+            "center_crop", "CenterCrop", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = {"output_size": (5,)}
+        meth_kwargs = {"size": (5, )}
+        self._test_geom_op(
+            "center_crop", "CenterCrop", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        tensor = torch.randint(0, 255, (3, 10, 10), dtype=torch.uint8)
+        # Test torchscript of transforms.CenterCrop with size as int
+        f = T.CenterCrop(size=5)
+        scripted_fn = torch.jit.script(f)
+        scripted_fn(tensor)
+
+        # Test torchscript of transforms.CenterCrop with size as [int, ]
+        f = T.CenterCrop(size=[5, ])
+        scripted_fn = torch.jit.script(f)
+        scripted_fn(tensor)
+
+        # Test torchscript of transforms.CenterCrop with size as tuple
+        f = T.CenterCrop(size=(6, 6))
+        scripted_fn = torch.jit.script(f)
+        scripted_fn(tensor)
+
+    def _test_geom_op_list_output(self, func, method, out_length, fn_kwargs=None, meth_kwargs=None):
+        if fn_kwargs is None:
+            fn_kwargs = {}
+        if meth_kwargs is None:
+            meth_kwargs = {}
+        tensor, pil_img = self._create_data(height=20, width=20)
+        transformed_t_list = getattr(F, func)(tensor, **fn_kwargs)
+        transformed_p_list = getattr(F, func)(pil_img, **fn_kwargs)
+        self.assertEqual(len(transformed_t_list), len(transformed_p_list))
+        self.assertEqual(len(transformed_t_list), out_length)
+        for transformed_tensor, transformed_pil_img in zip(transformed_t_list, transformed_p_list):
+            self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
+
+        scripted_fn = torch.jit.script(getattr(F, func))
+        transformed_t_list_script = scripted_fn(tensor.detach().clone(), **fn_kwargs)
+        self.assertEqual(len(transformed_t_list), len(transformed_t_list_script))
+        self.assertEqual(len(transformed_t_list_script), out_length)
+        for transformed_tensor, transformed_tensor_script in zip(transformed_t_list, transformed_t_list_script):
+            self.assertTrue(transformed_tensor.equal(transformed_tensor_script),
+                            msg="{} vs {}".format(transformed_tensor, transformed_tensor_script))
+
+        # test for class interface
+        f = getattr(T, method)(**meth_kwargs)
+        scripted_fn = torch.jit.script(f)
+        output = scripted_fn(tensor)
+        self.assertEqual(len(output), len(transformed_t_list_script))
+
+    def test_five_crop(self):
+        fn_kwargs = meth_kwargs = {"size": (5,)}
+        self._test_geom_op_list_output(
+            "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = meth_kwargs = {"size": [5, ]}
+        self._test_geom_op_list_output(
+            "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = meth_kwargs = {"size": (4, 5)}
+        self._test_geom_op_list_output(
+            "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = meth_kwargs = {"size": [4, 5]}
+        self._test_geom_op_list_output(
+            "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
+    def test_ten_crop(self):
+        fn_kwargs = meth_kwargs = {"size": (5,)}
+        self._test_geom_op_list_output(
+            "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = meth_kwargs = {"size": [5, ]}
+        self._test_geom_op_list_output(
+            "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = meth_kwargs = {"size": (4, 5)}
+        self._test_geom_op_list_output(
+            "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+        fn_kwargs = meth_kwargs = {"size": [4, 5]}
+        self._test_geom_op_list_output(
+            "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
 
