@@ -5,7 +5,7 @@ import sys
 import torch
 import torchvision
 from PIL import Image
-from torchvision.io.image import read_png, decode_png, read_jpeg, decode_jpeg
+from torchvision.io.image import read_png, decode_png
 import numpy as np
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
