@@ -263,8 +263,10 @@ def get_extensions():
                                      stdout=subprocess.PIPE)
             png_include = subprocess.run([libpng, '--I_opts'],
                                          stdout=subprocess.PIPE)
+            png_include = png_include.stdout.strip().decode('utf-8')
+            _, png_include = png_include.split('-I')
             image_library += [png_lib.stdout.strip().decode('utf-8')]
-            image_include += [png_include.stdout.strip().decode('utf-8')]
+            image_include += [png_include]
             image_link_flags.append('png' if os.name != 'nt' else 'libpng')
         else:
             print('libpng installed version is less than 1.6.0, '
@@ -278,8 +280,8 @@ def get_extensions():
         ext_modules.append(extension(
             'torchvision.image',
             image_src,
-            include_dirs=include_dirs + [image_path] + image_include,
-            library_dirs=library_dirs + image_library,
+            include_dirs=image_include + include_dirs + [image_path],
+            library_dirs=image_library + library_dirs,
             define_macros=image_macros,
             libraries=image_link_flags,
             extra_compile_args=extra_compile_args
