@@ -1,5 +1,5 @@
 channel_sources:
-  - defaults,conda-forge
+  - defaults
 
 blas_impl:
   - mkl                        # [x86_64]
