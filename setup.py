@@ -224,7 +224,6 @@ def get_extensions():
             'torchvision._C',
             sources,
             include_dirs=include_dirs,
-            library_dirs=library_dirs,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
         )
