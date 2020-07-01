@@ -172,11 +172,9 @@ setup_wheel_python() {
     conda activate "env$PYTHON_VERSION"
     # Install libPNG from Anaconda (defaults)
     conda install libpng -y
-    # Install libJPEG-turbo from conda-forge
-    conda install -y libjpeg-turbo -c conda-forge
   else
-    # Install native CentOS libPNG, libJPEG-turbo
-    yum install -y libpng-devel turbojpeg-devel
+    # Install native CentOS libPNG
+    yum install -y libpng-devel
     case "$PYTHON_VERSION" in
       2.7)
         if [[ -n "$UNICODE_ABI" ]]; then
