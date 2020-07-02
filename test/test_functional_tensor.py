@@ -278,6 +278,19 @@ class Tester(unittest.TestCase):
                     pad_tensor_script = script_fn(tensor, script_pad, **kwargs)
                     self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, kwargs))
 
+    # def test_to_grayscale(self):
+    #     script_to_grayscale = torch.jit.script(F_t.to_grayscale)
+    #     img_tensor = torch.randint(0, 255, (4, 3, 16, 16), dtype=torch.uint8)
+    #     img_tensor_clone = img_tensor.clone()
+    #     grayscale_tensor = F_t.rgb_to_grayscale(img_tensor).to(int)
+    #     grayscale_pil_img = torch.tensor(np.array(F.to_grayscale(F.to_pil_image(img_tensor)))).to(int)
+    #     max_diff = (grayscale_tensor - grayscale_pil_img).abs().max()
+    #     self.assertLess(max_diff, 1.0001)
+    #     self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
+    #     # scriptable function test
+    #     grayscale_script = script_rgb_to_grayscale(img_tensor).to(int)
+    #     self.assertTrue(torch.equal(grayscale_script, grayscale_tensor))
+
 
 if __name__ == '__main__':
     unittest.main()

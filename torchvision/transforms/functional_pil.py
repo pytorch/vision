@@ -26,6 +26,13 @@ def _get_image_size(img: Any) -> List[int]:
 
 
 @torch.jit.unused
+def _get_image_num_channels(img: Any) -> int:
+    if _is_pil_image(img):
+        return 1 if img.mode == 'L' else 3
+    raise TypeError("Unexpected type {}".format(type(img)))
+
+
+@torch.jit.unused
 def hflip(img):
     """Horizontally flip the given PIL Image.
 
@@ -286,3 +293,33 @@ def crop(img: Image.Image, top: int, left: int, height: int, width: int) -> Imag
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     return img.crop((left, top, left + width, top + height))
+
+
+@torch.jit.unused
+def to_grayscale(img: Image.Image, num_output_channels: int = 1) -> Image.Image:
+    """Convert image to grayscale version of image.
+
+    Args:
+        img (PIL Image): Image to be converted to grayscale.
+        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
+
+    Returns:
+        PIL Image: Grayscale version of the image.
+            if num_output_channels = 1 : returned image is single channel
+
+            if num_output_channels = 3 : returned image is 3 channel with r = g = b
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    if num_output_channels == 1:
+        img = img.convert('L')
+    elif num_output_channels == 3:
+        img = img.convert('L')
+        np_img = np.array(img, dtype=np.uint8)
+        np_img = np.dstack([np_img, np_img, np_img])
+        img = Image.fromarray(np_img, 'RGB')
+    else:
+        raise ValueError('num_output_channels should be either 1 or 3')
+
+    return img

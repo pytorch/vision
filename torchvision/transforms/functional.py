@@ -33,6 +33,13 @@ def _get_image_size(img: Tensor) -> List[int]:
     return F_pil._get_image_size(img)
 
 
+def _get_image_num_channels(img: Tensor) -> int:
+    if isinstance(img, torch.Tensor):
+        return F_t._get_image_num_channels(img)
+
+    return F_pil._get_image_num_channels(img)
+
+
 @torch.jit.unused
 def _is_numpy(img: Any) -> bool:
     return isinstance(img, np.ndarray)
@@ -922,32 +929,25 @@ def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
     return img.transform(output_size, Image.AFFINE, matrix, resample, **kwargs)
 
 
-def to_grayscale(img, num_output_channels=1):
+def to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     """Convert image to grayscale version of image.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
-        img (PIL Image): Image to be converted to grayscale.
+        img (PIL Image or Tensor): Image to be converted to grayscale.
+        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
 
     Returns:
-        PIL Image: Grayscale version of the image.
+        PIL Image or Tensor: Grayscale version of the image.
             if num_output_channels = 1 : returned image is single channel
 
             if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
-    if not F_pil._is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.to_grayscale(img, num_output_channels)
 
-    if num_output_channels == 1:
-        img = img.convert('L')
-    elif num_output_channels == 3:
-        img = img.convert('L')
-        np_img = np.array(img, dtype=np.uint8)
-        np_img = np.dstack([np_img, np_img, np_img])
-        img = Image.fromarray(np_img, 'RGB')
-    else:
-        raise ValueError('num_output_channels should be either 1 or 3')
-
-    return img
+    return F_t.to_grayscale(img, num_output_channels)
 
 
 def erase(img, i, j, h, w, v, inplace=False):

@@ -15,10 +15,13 @@ class Tester(unittest.TestCase):
         return tensor, pil_img
 
     def compareTensorToPIL(self, tensor, pil_image):
-        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
+        pil_tensor = np.array(pil_image)
+        if pil_tensor.ndim == 2:
+            pil_tensor = pil_tensor[:, :, None]
+        pil_tensor = torch.as_tensor(pil_tensor.transpose((2, 0, 1)))
         self.assertTrue(tensor.equal(pil_tensor))
 
-    def _test_functional_geom_op(self, func, fn_kwargs):
+    def _test_functional_op(self, func, fn_kwargs):
         if fn_kwargs is None:
             fn_kwargs = {}
         tensor, pil_img = self._create_data(height=10, width=10)
@@ -26,7 +29,7 @@ class Tester(unittest.TestCase):
         transformed_pil_img = getattr(F, func)(pil_img, **fn_kwargs)
         self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
 
-    def _test_class_geom_op(self, method, meth_kwargs=None):
+    def _test_class_op(self, method, meth_kwargs=None):
         if meth_kwargs is None:
             meth_kwargs = {}
 
@@ -46,15 +49,15 @@ class Tester(unittest.TestCase):
         transformed_tensor_script = scripted_fn(tensor)
         self.assertTrue(transformed_tensor.equal(transformed_tensor_script))
 
-    def _test_geom_op(self, func, method, fn_kwargs=None, meth_kwargs=None):
-        self._test_functional_geom_op(func, fn_kwargs)
-        self._test_class_geom_op(method, meth_kwargs)
+    def _test_op(self, func, method, fn_kwargs=None, meth_kwargs=None):
+        self._test_functional_op(func, fn_kwargs)
+        self._test_class_op(method, meth_kwargs)
 
     def test_random_horizontal_flip(self):
-        self._test_geom_op('hflip', 'RandomHorizontalFlip')
+        self._test_op('hflip', 'RandomHorizontalFlip')
 
     def test_random_vertical_flip(self):
-        self._test_geom_op('vflip', 'RandomVerticalFlip')
+        self._test_op('vflip', 'RandomVerticalFlip')
 
     def test_adjustments(self):
         fns = ['adjust_brightness', 'adjust_contrast', 'adjust_saturation']
@@ -85,22 +88,22 @@ class Tester(unittest.TestCase):
     def test_pad(self):
 
         # Test functional.pad (PIL and Tensor) with padding as single int
-        self._test_functional_geom_op(
+        self._test_functional_op(
             "pad", fn_kwargs={"padding": 2, "fill": 0, "padding_mode": "constant"}
         )
         # Test functional.pad and transforms.Pad with padding as [int, ]
         fn_kwargs = meth_kwargs = {"padding": [2, ], "fill": 0, "padding_mode": "constant"}
-        self._test_geom_op(
+        self._test_op(
             "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
         # Test functional.pad and transforms.Pad with padding as list
         fn_kwargs = meth_kwargs = {"padding": [4, 4], "fill": 0, "padding_mode": "constant"}
-        self._test_geom_op(
+        self._test_op(
             "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
         # Test functional.pad and transforms.Pad with padding as tuple
         fn_kwargs = meth_kwargs = {"padding": (2, 2, 2, 2), "fill": 127, "padding_mode": "constant"}
-        self._test_geom_op(
+        self._test_op(
             "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
@@ -108,7 +111,7 @@ class Tester(unittest.TestCase):
         fn_kwargs = {"top": 2, "left": 3, "height": 4, "width": 5}
         # Test transforms.RandomCrop with size and padding as tuple
         meth_kwargs = {"size": (4, 5), "padding": (4, 4), "pad_if_needed": True, }
-        self._test_geom_op(
+        self._test_op(
             'crop', 'RandomCrop', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
@@ -125,17 +128,17 @@ class Tester(unittest.TestCase):
             for padding_config in padding_configs:
                 config = dict(padding_config)
                 config["size"] = size
-                self._test_class_geom_op("RandomCrop", config)
+                self._test_class_op("RandomCrop", config)
 
     def test_center_crop(self):
         fn_kwargs = {"output_size": (4, 5)}
         meth_kwargs = {"size": (4, 5), }
-        self._test_geom_op(
+        self._test_op(
             "center_crop", "CenterCrop", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
         fn_kwargs = {"output_size": (5,)}
         meth_kwargs = {"size": (5, )}
-        self._test_geom_op(
+        self._test_op(
             "center_crop", "CenterCrop", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
         tensor = torch.randint(0, 255, (3, 10, 10), dtype=torch.uint8)
@@ -154,7 +157,7 @@ class Tester(unittest.TestCase):
         scripted_fn = torch.jit.script(f)
         scripted_fn(tensor)
 
-    def _test_geom_op_list_output(self, func, method, out_length, fn_kwargs=None, meth_kwargs=None):
+    def _test_op_list_output(self, func, method, out_length, fn_kwargs=None, meth_kwargs=None):
         if fn_kwargs is None:
             fn_kwargs = {}
         if meth_kwargs is None:
@@ -183,39 +186,50 @@ class Tester(unittest.TestCase):
 
     def test_five_crop(self):
         fn_kwargs = meth_kwargs = {"size": (5,)}
-        self._test_geom_op_list_output(
+        self._test_op_list_output(
             "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
         fn_kwargs = meth_kwargs = {"size": [5, ]}
-        self._test_geom_op_list_output(
+        self._test_op_list_output(
             "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
         fn_kwargs = meth_kwargs = {"size": (4, 5)}
-        self._test_geom_op_list_output(
+        self._test_op_list_output(
             "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
         fn_kwargs = meth_kwargs = {"size": [4, 5]}
-        self._test_geom_op_list_output(
+        self._test_op_list_output(
             "five_crop", "FiveCrop", out_length=5, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
     def test_ten_crop(self):
         fn_kwargs = meth_kwargs = {"size": (5,)}
-        self._test_geom_op_list_output(
+        self._test_op_list_output(
             "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
         fn_kwargs = meth_kwargs = {"size": [5, ]}
-        self._test_geom_op_list_output(
+        self._test_op_list_output(
             "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
         fn_kwargs = meth_kwargs = {"size": (4, 5)}
-        self._test_geom_op_list_output(
+        self._test_op_list_output(
             "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
         fn_kwargs = meth_kwargs = {"size": [4, 5]}
-        self._test_geom_op_list_output(
+        self._test_op_list_output(
             "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
+
+    def test_to_grayscale(self):
+
+        fn_kwargs = meth_kwargs = {"num_output_channels": 1}
+        self._test_op("to_grayscale", "Grayscale", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs)
+
+        fn_kwargs = meth_kwargs = {"num_output_channels": 3}
+        self._test_op("to_grayscale", "Grayscale", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs)
+
+        meth_kwargs = {}
+        self._test_class_op("RandomGrayscale", meth_kwargs=meth_kwargs)
 
 
 if __name__ == '__main__':

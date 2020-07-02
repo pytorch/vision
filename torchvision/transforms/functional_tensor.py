@@ -13,6 +13,15 @@ def _get_image_size(img: Tensor) -> List[int]:
     raise TypeError("Unexpected type {}".format(type(img)))
 
 
+def _get_image_num_channels(img: Tensor) -> int:
+    if img.ndim == 2:
+        return 1
+    elif img.ndim > 2:
+        return img.shape[-3]
+
+    raise TypeError("Unexpected type {}".format(type(img)))
+
+
 def vflip(img: Tensor) -> Tensor:
     """Vertically flip the given the Image Tensor.
 
@@ -447,3 +456,39 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         img = img.to(out_dtype)
 
     return img
+
+
+def to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
+    """Convert image to grayscale version of image.
+
+    Args:
+        img (Tensor): Image to be converted to grayscale. We assume (..., 3, H, W) layout.
+        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
+
+    Returns:
+        Tensor: Grayscale version of the image.
+            if num_output_channels = 1 : returned image is single channel
+
+            if num_output_channels = 3 : returned image is 3 channel with r = g = b
+    """
+    if img.ndim < 3:
+        raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
+    c = img.shape[-3]
+    if c != 3:
+        raise TypeError("Input image tensor should 3 channels, but found {}".format(c))
+
+    if num_output_channels not in (1, 3):
+        raise ValueError('num_output_channels should be either 1 or 3')
+
+    # PIL grayscale L mode is L = R * 299/1000 + G * 587/1000 + B * 114/1000
+    r = img[..., 0, :, :]
+    g = img[..., 1, :, :]
+    b = img[..., 2, :, :]
+    l_img = (0.299 * r + 0.587 * g + 0.114 * b + 0.5).to(img.dtype)
+
+    if num_output_channels == 3:
+        l_img = torch.stack([l_img, l_img, l_img], dim=-3)
+    else:
+        l_img = l_img.unsqueeze(dim=-3)
+
+    return l_img
