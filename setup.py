@@ -248,31 +248,42 @@ def get_extensions():
 
     # Locating libPNG
     libpng = distutils.spawn.find_executable('libpng-config')
-    png_found = libpng is not None
+    pngfix = distutils.spawn.find_executable('pngfix')
+    png_found = libpng is not None or pngfix is not None
     image_macros += [('PNG_FOUND', str(int(png_found)))]
     print('PNG found: {0}'.format(png_found))
     if png_found:
-        png_version = subprocess.run([libpng, '--version'],
-                                     stdout=subprocess.PIPE)
-        png_version = png_version.stdout.strip().decode('utf-8')
-        print('libpng version: {0}'.format(png_version))
-        png_version = parse_version(png_version)
-        if png_version >= parse_version("1.6.0"):
-            print('Building torchvision with PNG image support')
-            png_lib = subprocess.run([libpng, '--libdir'],
-                                     stdout=subprocess.PIPE)
-            png_include = subprocess.run([libpng, '--I_opts'],
-                                         stdout=subprocess.PIPE)
-            png_include = png_include.stdout.strip().decode('utf-8')
-            _, png_include = png_include.split('-I')
-            print('libpng include path: {0}'.format(png_include))
-            image_library += [png_lib.stdout.strip().decode('utf-8')]
-            image_include += [png_include]
-            image_link_flags.append('png' if os.name != 'nt' else 'libpng')
+        if libpng is not None:
+            # Linux / Mac
+            png_version = subprocess.run([libpng, '--version'],
+                                        stdout=subprocess.PIPE)
+            png_version = png_version.stdout.strip().decode('utf-8')
+            print('libpng version: {0}'.format(png_version))
+            png_version = parse_version(png_version)
+            if png_version >= parse_version("1.6.0"):
+                print('Building torchvision with PNG image support')
+                png_lib = subprocess.run([libpng, '--libdir'],
+                                        stdout=subprocess.PIPE)
+                png_include = subprocess.run([libpng, '--I_opts'],
+                                            stdout=subprocess.PIPE)
+                png_include = png_include.stdout.strip().decode('utf-8')
+                _, png_include = png_include.split('-I')
+                print('libpng include path: {0}'.format(png_include))
+                image_library += [png_lib.stdout.strip().decode('utf-8')]
+                image_include += [png_include]
+                image_link_flags.append('png' if os.name != 'nt' else 'libpng')
+            else:
+                print('libpng installed version is less than 1.6.0, '
+                      'disabling PNG support')
+                png_found = False
         else:
-            print('libpng installed version is less than 1.6.0, '
-                  'disabling PNG support')
-            png_found = False
+            # Windows
+            png_lib = os.path.join(
+                os.path.dirname(os.path.dirname(pngfix)), 'lib')
+            png_include = os.path.join(os.path.dirname(
+                os.path.dirname(pngfix)), 'include', 'libpng16')
+            image_library += [png_lib]
+            image_include += [png_include]
 
     image_path = os.path.join(extensions_dir, 'cpu', 'image')
     image_src = glob.glob(os.path.join(image_path, '*.cpp'))
@@ -361,7 +372,7 @@ setup(
     # Package info
     packages=find_packages(exclude=('test',)),
     package_data={
-        package_name: ['*.lib', '*.dylib', '*.so']
+        package_name: ['*.dll', '*.dylib', '*.so']
     },
     zip_safe=False,
     install_requires=requirements,
