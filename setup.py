@@ -271,7 +271,7 @@ def get_extensions():
                 print('libpng include path: {0}'.format(png_include))
                 image_library += [png_lib.stdout.strip().decode('utf-8')]
                 image_include += [png_include]
-                image_link_flags.append('png' if os.name != 'nt' else 'libpng')
+                image_link_flags.append('png')
             else:
                 print('libpng installed version is less than 1.6.0, '
                       'disabling PNG support')
@@ -284,6 +284,7 @@ def get_extensions():
                 os.path.dirname(pngfix)), 'include', 'libpng16')
             image_library += [png_lib]
             image_include += [png_include]
+            image_link_flags.append('libpng')
 
     image_path = os.path.join(extensions_dir, 'cpu', 'image')
     image_src = glob.glob(os.path.join(image_path, '*.cpp'))
