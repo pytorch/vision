@@ -224,7 +224,7 @@ class MultiScaleRoIAlign(nn.Module):
             if torchvision._is_tracing():
                 tracing_results.append(result_idx_in_level.to(dtype))
             else:
-                result[idx_in_level] = result_idx_in_level
+                result[idx_in_level] = result_idx_in_level.to(result.dtype)
 
         if torchvision._is_tracing():
             result = _onnx_merge_levels(levels, tracing_results)
