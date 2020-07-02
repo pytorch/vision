@@ -171,11 +171,8 @@ setup_wheel_python() {
     conda create -yn "env$PYTHON_VERSION" python="$PYTHON_VERSION"
     conda activate "env$PYTHON_VERSION"
   else
-<<<<<<< HEAD
-    # Install native CentOS libPNG16
+    # Install native CentOS libPNG
     yum install -y libpng-devel
-=======
->>>>>>> upstream/master
     case "$PYTHON_VERSION" in
       2.7)
         if [[ -n "$UNICODE_ABI" ]]; then
