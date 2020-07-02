@@ -78,19 +78,13 @@ Torchvision currently supports the following image backends:
 
 * `accimage`_ - if installed can be activated by calling :code:`torchvision.set_image_backend('accimage')`
 
-* `libpng`_ - can be installed via conda :code:`conda install libpng` or any of the package managers for debian-based and RHEL-based Linux distributions.
-
-**Notes:** ``libpng`` must be available at compilation time in order to be available. Make sure that it is available on the standard library locations,
-otherwise, add the include and library paths in the environment variables ``TORCHVISION_INCLUDE`` and ``TORCHVISION_LIBRARY``, respectively.
-
-.. _libpng : http://www.libpng.org/pub/png/libpng.html
 .. _Pillow : https://python-pillow.org/
 .. _Pillow-SIMD : https://github.com/uploadcare/pillow-simd
 .. _accimage: https://github.com/pytorch/accimage
 
 C++ API
 =======
-TorchVision also offers a C++ API that contains C++ equivalent of python models.
+TorchVision also offers a C++ API that contains C++ equivalent of python models. 
 
 Installation From source:
 
@@ -100,7 +94,7 @@ Installation From source:
     cd build
     # Add -DWITH_CUDA=on support for the CUDA if needed
     cmake ..
-    make
+    make 
     make install
 
 Once installed, the library can be accessed in cmake (after properly configuring ``CMAKE_PREFIX_PATH``) via the :code:`TorchVision::TorchVision` target:
