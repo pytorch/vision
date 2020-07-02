@@ -10,6 +10,7 @@ setup_wheel_python
 pip_install numpy pyyaml future ninja
 setup_pip_pytorch_version
 python setup.py clean
+<<<<<<< HEAD
 
 # Copy binaries to be included in the wheel distribution
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
@@ -28,6 +29,8 @@ else
     cp "/usr/lib64/libpng.so" torchvision
 fi
 
+=======
+>>>>>>> upstream/master
 if [[ "$OSTYPE" == "msys" ]]; then
     IS_WHEEL=1 "$script_dir/windows/internal/vc_env_helper.bat" python setup.py bdist_wheel
 else

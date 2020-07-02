@@ -21,6 +21,9 @@ htmlcov
 *.swo
 gen.yml
 .mypy_cache
+<<<<<<< HEAD
 .vscode/
 # Introduced during merge errors
 *.orig
+=======
+>>>>>>> upstream/master

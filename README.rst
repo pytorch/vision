@@ -78,7 +78,7 @@ Torchvision currently supports the following image backends:
 
 * `accimage`_ - if installed can be activated by calling :code:`torchvision.set_image_backend('accimage')`
 
-* `libpng`_ - can be installed via conda :code:`conda install libpng` or any of the package managers for debian-based and RHEL-based Linux distributions
+* `libpng`_ - can be installed via conda :code:`conda install libpng` or any of the package managers for debian-based and RHEL-based Linux distributions.
 
 **Notes:** ``libpng`` must be available at compilation time in order to be available. Make sure that it is available on the standard library locations,
 otherwise, add the include and library paths in the environment variables ``TORCHVISION_INCLUDE`` and ``TORCHVISION_LIBRARY``, respectively.

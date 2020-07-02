@@ -259,6 +259,7 @@ class Tester(unittest.TestCase):
                     {"padding_mode": "constant", "fill": 20},
                     {"padding_mode": "edge"},
                     {"padding_mode": "reflect"},
+                    {"padding_mode": "symmetric"},
                 ]
                 for kwargs in configs:
                     pad_tensor = F_t.pad(tensor, pad, **kwargs)
@@ -277,6 +278,9 @@ class Tester(unittest.TestCase):
                         script_pad = pad
                     pad_tensor_script = script_fn(tensor, script_pad, **kwargs)
                     self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, kwargs))
+
+        with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
+            F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
 
 
 if __name__ == '__main__':

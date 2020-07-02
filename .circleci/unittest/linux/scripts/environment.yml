@@ -6,8 +6,11 @@ dependencies:
   - pytest-cov
   - codecov
   - pip
+<<<<<<< HEAD
   # Required by the image extension
   - libpng
+=======
+>>>>>>> upstream/master
   - ca-certificates
   - pip:
     - future
