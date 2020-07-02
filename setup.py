@@ -129,7 +129,8 @@ def get_extensions():
             or os.getenv('FORCE_CUDA', '0') == '1':
         extension = CUDAExtension
         sources += source_cuda
-        opt_flag = '/O2' if IS_WINDOWS else '-O3'
+        opt_flag_cxx = '/O2' if IS_WINDOWS else '-O3'
+        opt_flag_nvcc = '-O2' if IS_WINDOWS else '-O3'
         if not is_rocm_pytorch:
             define_macros += [('WITH_CUDA', None)]
             nvcc_flags = os.getenv('NVCC_FLAGS', '')
@@ -137,12 +138,12 @@ def get_extensions():
                 nvcc_flags = []
             else:
                 nvcc_flags = nvcc_flags.split(' ')
-            nvcc_flags.append(opt_flag)
+            nvcc_flags.append(opt_flag_nvcc)
         else:
             define_macros += [('WITH_HIP', None)]
             nvcc_flags = []
         extra_compile_args = {
-            'cxx': [opt_flag],
+            'cxx': [opt_flag_cxx],
             'nvcc': nvcc_flags,
         }
 
