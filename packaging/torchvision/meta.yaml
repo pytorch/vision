@@ -8,6 +8,7 @@ source:
 requirements:
   build:
     - {{ compiler('c') }} # [win]
+    # Required by the image extension
     - libpng
 
   host:

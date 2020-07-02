@@ -6,6 +6,7 @@ dependencies:
   - pytest-cov
   - codecov
   - pip
+  # Required by the image extension
   - libpng
   - ca-certificates
   - pip:

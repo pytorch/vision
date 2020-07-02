@@ -23,6 +23,7 @@ def get_images(directory, img_ext):
 
 class ImageTester(unittest.TestCase):
     def test_read_png(self):
+        # Check across .png
         for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_lpng = read_png(img_path)

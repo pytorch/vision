@@ -265,6 +265,7 @@ def get_extensions():
                                          stdout=subprocess.PIPE)
             png_include = png_include.stdout.strip().decode('utf-8')
             _, png_include = png_include.split('-I')
+            print('libpng include path: {0}'.format(png_include))
             image_library += [png_lib.stdout.strip().decode('utf-8')]
             image_include += [png_include]
             image_link_flags.append('png' if os.name != 'nt' else 'libpng')

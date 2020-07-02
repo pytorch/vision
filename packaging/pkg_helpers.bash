@@ -173,7 +173,7 @@ setup_wheel_python() {
     # Install libPNG from Anaconda (defaults)
     conda install libpng -y
   else
-    # Install native CentOS libPNG
+    # Install native CentOS libPNG16
     yum install -y libpng-devel
     case "$PYTHON_VERSION" in
       2.7)

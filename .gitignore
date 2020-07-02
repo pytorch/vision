@@ -22,4 +22,5 @@ htmlcov
 gen.yml
 .mypy_cache
 .vscode/
+# Introduced during merge errors
 *.orig
