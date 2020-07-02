@@ -279,6 +279,9 @@ class Tester(unittest.TestCase):
                     pad_tensor_script = script_fn(tensor, script_pad, **kwargs)
                     self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, kwargs))
 
+        with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
+            F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
+
 
 if __name__ == '__main__':
     unittest.main()
