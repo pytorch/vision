@@ -37,8 +37,7 @@ def decode_png(input):
     Returns:
         output (Tensor[image_width, image_height, 3])
     """
-    if not (isinstance(input, torch.Tensor) or
-            input.numel() == 0 or input.ndim != 1):
+    if not isinstance(input, torch.Tensor) or input.numel() == 0 or input.ndim != 1:
         raise ValueError("Expected a non empty 1-dimensional tensor.")
 
     if not input.dtype == torch.uint8:
