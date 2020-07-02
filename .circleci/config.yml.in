@@ -107,7 +107,6 @@ jobs:
       - checkout
       - run:
           command: |
-            sudo apt-get update -y
             pip install --user --progress-bar off numpy mypy
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             pip install --user --progress-bar off --editable .
