@@ -8,7 +8,6 @@ source:
 requirements:
   build:
     - {{ compiler('c') }} # [win]
-    - libpng
 
   host:
     - python
@@ -19,7 +18,6 @@ requirements:
 
   run:
     - python
-    - libpng
     - pillow >=4.1.1
     - numpy >=1.11
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
