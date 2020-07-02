@@ -23,13 +23,13 @@ def get_images(directory, img_ext):
 
 class ImageTester(unittest.TestCase):
     def test_read_png(self):
-        for img_path in get_images(IMAGE_DIR, "png"):
+        for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_lpng = read_png(img_path)
             self.assertEqual(img_lpng, img_pil)
 
     def test_decode_png(self):
-        for img_path in get_images(IMAGE_DIR, "png"):
+        for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             size = os.path.getsize(img_path)
             img_lpng = decode_png(torch.from_file(img_path, dtype=torch.uint8, size=size))
