@@ -443,6 +443,8 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         padding_mode = "replicate"
     elif padding_mode == "symmetric":
         # route to another implementation
+        if p[0] < 0 or p[1] < 0 or p[2] < 0 or p[3] < 0:  # no any support for torch script
+            raise ValueError("Padding can not be negative for symmetric padding_mode")
         return _pad_symmetric(img, p)
 
     need_squeeze = False
