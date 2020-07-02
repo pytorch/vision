@@ -256,16 +256,16 @@ def get_extensions():
         if libpng is not None:
             # Linux / Mac
             png_version = subprocess.run([libpng, '--version'],
-                                        stdout=subprocess.PIPE)
+                                         stdout=subprocess.PIPE)
             png_version = png_version.stdout.strip().decode('utf-8')
             print('libpng version: {0}'.format(png_version))
             png_version = parse_version(png_version)
             if png_version >= parse_version("1.6.0"):
                 print('Building torchvision with PNG image support')
                 png_lib = subprocess.run([libpng, '--libdir'],
-                                        stdout=subprocess.PIPE)
+                                         stdout=subprocess.PIPE)
                 png_include = subprocess.run([libpng, '--I_opts'],
-                                            stdout=subprocess.PIPE)
+                                             stdout=subprocess.PIPE)
                 png_include = png_include.stdout.strip().decode('utf-8')
                 _, png_include = png_include.split('-I')
                 print('libpng include path: {0}'.format(png_include))
