@@ -247,18 +247,40 @@ class Tester(unittest.TestCase):
     def test_pad(self):
         script_fn = torch.jit.script(F_t.pad)
         tensor, pil_img = self._create_data(7, 8)
-        for pad in [1, [1, ], [0, 1], (2, 2), [1, 0, 1, 2]]:
-            padding_mode = "constant"
-            for fill in [0, 10, 20]:
-                pad_tensor = F_t.pad(tensor, pad, fill=fill, padding_mode=padding_mode)
-                pad_pil_img = F_pil.pad(pil_img, pad, fill=fill, padding_mode=padding_mode)
-                self.compareTensorToPIL(pad_tensor, pad_pil_img, msg="{}, {}".format(pad, fill))
-                if isinstance(pad, int):
-                    script_pad = [pad, ]
-                else:
-                    script_pad = pad
-                pad_tensor_script = script_fn(tensor, script_pad, fill=fill, padding_mode=padding_mode)
-                self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, fill))
+
+        for dt in [None, torch.float32, torch.float64]:
+            if dt is not None:
+                # This is a trivial cast to float of uint8 data to test all cases
+                tensor = tensor.to(dt)
+            for pad in [2, [3, ], [0, 3], (3, 3), [4, 2, 4, 3]]:
+                configs = [
+                    {"padding_mode": "constant", "fill": 0},
+                    {"padding_mode": "constant", "fill": 10},
+                    {"padding_mode": "constant", "fill": 20},
+                    {"padding_mode": "edge"},
+                    {"padding_mode": "reflect"},
+                    {"padding_mode": "symmetric"},
+                ]
+                for kwargs in configs:
+                    pad_tensor = F_t.pad(tensor, pad, **kwargs)
+                    pad_pil_img = F_pil.pad(pil_img, pad, **kwargs)
+
+                    pad_tensor_8b = pad_tensor
+                    # we need to cast to uint8 to compare with PIL image
+                    if pad_tensor_8b.dtype != torch.uint8:
+                        pad_tensor_8b = pad_tensor_8b.to(torch.uint8)
+
+                    self.compareTensorToPIL(pad_tensor_8b, pad_pil_img, msg="{}, {}".format(pad, kwargs))
+
+                    if isinstance(pad, int):
+                        script_pad = [pad, ]
+                    else:
+                        script_pad = pad
+                    pad_tensor_script = script_fn(tensor, script_pad, **kwargs)
+                    self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, kwargs))
+
+        with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
+            F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
 
 
 if __name__ == '__main__':

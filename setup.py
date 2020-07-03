@@ -117,7 +117,6 @@ def find_library(name, vision_include):
             library_found = os.path.isfile(library_header_path)
             conda_installed = library_found
 
-    # Try to locate turbojpeg in Linux standard paths
     if not library_found:
         if sys.platform == 'linux':
             library_found = os.path.exists('/usr/include/{0}'.format(
@@ -137,15 +136,6 @@ def find_library(name, vision_include):
 
 
 def get_extensions():
-    vision_include = os.environ.get('TORCHVISION_INCLUDE', None)
-    vision_library = os.environ.get('TORCHVISION_LIBRARY', None)
-    vision_include = (vision_include.split(os.pathsep)
-                      if vision_include is not None else [])
-    vision_library = (vision_library.split(os.pathsep)
-                      if vision_library is not None else [])
-    include_dirs = vision_include
-    library_dirs = vision_library
-
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
 
@@ -218,14 +208,13 @@ def get_extensions():
 
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
-    include_dirs += [extensions_dir]
+    include_dirs = [extensions_dir]
 
     ext_modules = [
         extension(
             'torchvision._C',
             sources,
             include_dirs=include_dirs,
-            library_dirs=library_dirs,
             define_macros=define_macros,
             extra_compile_args=extra_compile_args,
         )
@@ -241,6 +230,16 @@ def get_extensions():
             )
         )
 
+    # ------------------- Torchvision extra extensions ------------------------
+    vision_include = os.environ.get('TORCHVISION_INCLUDE', None)
+    vision_library = os.environ.get('TORCHVISION_LIBRARY', None)
+    vision_include = (vision_include.split(os.pathsep)
+                      if vision_include is not None else [])
+    vision_library = (vision_library.split(os.pathsep)
+                      if vision_library is not None else [])
+    include_dirs += vision_include
+    library_dirs = vision_library
+
     # Image reading extension
     image_macros = []
     image_include = [extensions_dir]
@@ -249,52 +248,53 @@ def get_extensions():
 
     # Locating libPNG
     libpng = distutils.spawn.find_executable('libpng-config')
-    png_found = libpng is not None
+    pngfix = distutils.spawn.find_executable('pngfix')
+    png_found = libpng is not None or pngfix is not None
     image_macros += [('PNG_FOUND', str(int(png_found)))]
     print('PNG found: {0}'.format(png_found))
     if png_found:
-        png_version = subprocess.run([libpng, '--version'],
-                                     stdout=subprocess.PIPE)
-        png_version = png_version.stdout.strip().decode('utf-8')
-        print('libpng version: {0}'.format(png_version))
-        png_version = parse_version(png_version)
-        if png_version >= parse_version("1.6.0"):
-            print('Building torchvision with PNG image support')
-            png_lib = subprocess.run([libpng, '--libdir'],
-                                     stdout=subprocess.PIPE)
-            png_include = subprocess.run([libpng, '--I_opts'],
+        if libpng is not None:
+            # Linux / Mac
+            png_version = subprocess.run([libpng, '--version'],
                                          stdout=subprocess.PIPE)
-            image_library += [png_lib.stdout.strip().decode('utf-8')]
-            image_include += [png_include.stdout.strip().decode('utf-8')]
-            image_link_flags.append('png' if os.name != 'nt' else 'libpng')
+            png_version = png_version.stdout.strip().decode('utf-8')
+            print('libpng version: {0}'.format(png_version))
+            png_version = parse_version(png_version)
+            if png_version >= parse_version("1.6.0"):
+                print('Building torchvision with PNG image support')
+                png_lib = subprocess.run([libpng, '--libdir'],
+                                         stdout=subprocess.PIPE)
+                png_include = subprocess.run([libpng, '--I_opts'],
+                                             stdout=subprocess.PIPE)
+                png_include = png_include.stdout.strip().decode('utf-8')
+                _, png_include = png_include.split('-I')
+                print('libpng include path: {0}'.format(png_include))
+                image_library += [png_lib.stdout.strip().decode('utf-8')]
+                image_include += [png_include]
+                image_link_flags.append('png')
+            else:
+                print('libpng installed version is less than 1.6.0, '
+                      'disabling PNG support')
+                png_found = False
         else:
-            print('libpng installed version is less than 1.6.0, '
-                  'disabling PNG support')
-            png_found = False
-
-    # Locating libjpegturbo
-    turbojpeg_info = find_library('turbojpeg', vision_include)
-    (turbojpeg_found, conda_installed,
-     turbo_include_folder, turbo_lib_folder) = turbojpeg_info
-
-    image_macros += [('JPEG_FOUND', str(int(turbojpeg_found)))]
-    print('turboJPEG found: {0}'.format(turbojpeg_found))
-    if turbojpeg_found:
-        print('Building torchvision with JPEG image support')
-        image_link_flags.append('turbojpeg')
-        if conda_installed:
-            image_library += [turbo_lib_folder]
-            image_include += [turbo_include_folder]
+            # Windows
+            png_lib = os.path.join(
+                os.path.dirname(os.path.dirname(pngfix)), 'lib')
+            png_include = os.path.join(os.path.dirname(
+                os.path.dirname(pngfix)), 'include', 'libpng16')
+            image_library += [png_lib]
+            image_include += [png_include]
+            image_link_flags.append('libpng')
 
     image_path = os.path.join(extensions_dir, 'cpu', 'image')
     image_src = glob.glob(os.path.join(image_path, '*.cpp'))
 
-    if png_found or turbojpeg_found:
+    if png_found:
         ext_modules.append(extension(
             'torchvision.image',
             image_src,
-            include_dirs=include_dirs + [image_path] + image_include,
-            library_dirs=library_dirs + image_library,
+            include_dirs=image_include + include_dirs + [image_path],
+            library_dirs=image_library + library_dirs,
             define_macros=image_macros,
             libraries=image_link_flags,
             extra_compile_args=extra_compile_args
@@ -373,7 +373,7 @@ setup(
     # Package info
     packages=find_packages(exclude=('test',)),
     package_data={
-        package_name: ['*.lib', '*.dylib', '*.so']
+        package_name: ['*.dll', '*.dylib', '*.so']
     },
     zip_safe=False,
     install_requires=requirements,

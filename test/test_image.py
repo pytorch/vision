@@ -52,20 +52,23 @@ class ImageTester(unittest.TestCase):
             decode_jpeg(torch.empty((100), dtype=torch.uint8))
 
     def test_read_png(self):
-        for img_path in get_images(IMAGE_DIR, "png"):
+        # Check across .png
+        for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_lpng = read_png(img_path)
-            self.assertEqual(img_lpng, img_pil)
+            self.assertTrue(img_lpng.equal(img_pil))
 
     def test_decode_png(self):
-        for img_path in get_images(IMAGE_DIR, "png"):
+        for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             size = os.path.getsize(img_path)
             img_lpng = decode_png(torch.from_file(img_path, dtype=torch.uint8, size=size))
-            self.assertEqual(img_lpng, img_pil)
+            self.assertTrue(img_lpng.equal(img_pil))
 
-            self.assertEqual(decode_png(torch.empty()), torch.empty())
-            self.assertEqual(decode_png(torch.randint(3, 5, (300,))), torch.empty())
+            with self.assertRaises(ValueError):
+                decode_png(torch.empty((), dtype=torch.uint8))
+            with self.assertRaises(RuntimeError):
+                decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
 
 
 if __name__ == '__main__':
