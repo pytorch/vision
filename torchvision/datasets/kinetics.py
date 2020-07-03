@@ -39,7 +39,8 @@ class Kinetics400(VisionDataset):
     def __init__(self, root, frames_per_clip, step_between_clips=1, frame_rate=None,
                  extensions=('avi',), transform=None, _precomputed_metadata=None,
                  num_workers=1, _video_width=0, _video_height=0,
-                 _video_min_dimension=0, _audio_samples=0, _audio_channels=0):
+                 _video_min_dimension=0, _audio_samples=0, _audio_channels=0,
+                 dilation=1):
         super(Kinetics400, self).__init__(root)
 
         classes = list(sorted(list_dir(root)))
@@ -59,6 +60,7 @@ class Kinetics400(VisionDataset):
             _video_min_dimension=_video_min_dimension,
             _audio_samples=_audio_samples,
             _audio_channels=_audio_channels,
+            dilation=dilation,
         )
         self.transform = transform
 

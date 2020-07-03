@@ -101,6 +101,7 @@ class VideoClips(object):
         _video_max_dimension=0,
         _audio_samples=0,
         _audio_channels=0,
+        dilation=1,
     ):
 
         self.video_paths = video_paths
@@ -118,7 +119,7 @@ class VideoClips(object):
             self._compute_frame_pts()
         else:
             self._init_from_metadata(_precomputed_metadata)
-        self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate)
+        self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate, dilation)
 
     def _collate_fn(self, x):
         return x
@@ -190,7 +191,7 @@ class VideoClips(object):
         )
 
     @staticmethod
-    def compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate):
+    def compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate, dilation=1):
         if fps is None:
             # if for some reason the video doesn't have fps (because doesn't have a video stream)
             # set the fps to 1. The value doesn't matter, because video_pts is empty anyway
@@ -202,14 +203,14 @@ class VideoClips(object):
             int(math.floor(total_frames)), fps, frame_rate
         )
         video_pts = video_pts[idxs]
-        clips = unfold(video_pts, num_frames, step)
+        clips = unfold(video_pts, num_frames, step, dilation)
         if isinstance(idxs, slice):
-            idxs = [idxs] * len(clips)
+            idxs = [slice(None, None, idxs.step * dilation)] * len(clips)
         else:
-            idxs = unfold(idxs, num_frames, step)
+            idxs = unfold(idxs, num_frames, step, dilation)
         return clips, idxs
 
-    def compute_clips(self, num_frames, step, frame_rate=None):
+    def compute_clips(self, num_frames, step, frame_rate=None, dilation=1):
         """
         Compute all consecutive sequences of clips from video_pts.
         Always returns clips of size `num_frames`, meaning that the
@@ -222,11 +223,12 @@ class VideoClips(object):
         self.num_frames = num_frames
         self.step = step
         self.frame_rate = frame_rate
+        self.dilation = dilation
         self.clips = []
         self.resampling_idxs = []
         for video_pts, fps in zip(self.video_pts, self.video_fps):
             clips, idxs = self.compute_clips_for_video(
-                video_pts, num_frames, step, fps, frame_rate
+                video_pts, num_frames, step, fps, frame_rate, dilation
             )
             self.clips.append(clips)
             self.resampling_idxs.append(idxs)
@@ -409,4 +411,4 @@ class VideoClips(object):
         d["video_pts"] = video_pts
         self.__dict__ = d
         # recompute attributes "clips", "resampling_idxs" and other derivative ones
-        self.compute_clips(self.num_frames, self.step, self.frame_rate)
+        self.compute_clips(self.num_frames, self.step, self.frame_rate, self.dilation)
