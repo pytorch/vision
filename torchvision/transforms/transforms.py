@@ -3,7 +3,7 @@ import numbers
 import random
 import warnings
 from collections.abc import Sequence, Iterable
-from typing import Tuple
+from typing import Tuple, List, Optional
 
 import numpy as np
 import torch
@@ -1343,7 +1343,7 @@ class RandomGrayscale(object):
         return self.__class__.__name__ + '(p={0})'.format(self.p)
 
 
-class RandomErasing(object):
+class RandomErasing(torch.nn.Module):
     """ Randomly selects a rectangle region in an image and erases its pixels.
     'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/pdf/1708.04896.pdf
 
@@ -1370,13 +1370,21 @@ class RandomErasing(object):
     """
 
     def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0, inplace=False):
-        assert isinstance(value, (numbers.Number, str, tuple, list))
+        super().__init__()
+        if not isinstance(value, (numbers.Number, str, tuple, list)):
+            raise TypeError("Argument value should be either a number or str or a sequence")
+        if isinstance(value, str) and value != "random":
+            raise ValueError("If value is str, it should be 'random'")
+        if not isinstance(scale, (tuple, list)):
+            raise TypeError("Scale should be a sequence")
+        if not isinstance(ratio, (tuple, list)):
+            raise TypeError("Ratio should be a sequence")
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
-            warnings.warn("range should be of kind (min, max)")
+            warnings.warn("Scale and ratio should be of kind (min, max)")
         if scale[0] < 0 or scale[1] > 1:
-            raise ValueError("range of scale should be between 0 and 1")
+            raise ValueError("Scale should be between 0 and 1")
         if p < 0 or p > 1:
-            raise ValueError("range of random erasing probability should be between 0 and 1")
+            raise ValueError("Random erasing probability should be between 0 and 1")
 
         self.p = p
         self.scale = scale
@@ -1385,13 +1393,18 @@ class RandomErasing(object):
         self.inplace = inplace
 
     @staticmethod
-    def get_params(img, scale, ratio, value=0):
+    def get_params(
+            img: Tensor, scale: Tuple[float, float], ratio: Tuple[float, float], value: Optional[List[float]] = None
+    ) -> Tuple[int, int, int, int, Tensor]:
         """Get parameters for ``erase`` for a random erasing.
 
         Args:
             img (Tensor): Tensor image of size (C, H, W) to be erased.
-            scale: range of proportion of erased area against input image.
-            ratio: range of aspect ratio of erased area.
+            scale (tuple or list): range of proportion of erased area against input image.
+            ratio (tuple or list): range of aspect ratio of erased area.
+            value (list, optional): erasing value. If None, it is interpreted as "random"
+                (erasing each pixel with random values). If ``len(value)`` is 1, it is interpreted as a number,
+                i.e. ``value[0]``.
 
         Returns:
             tuple: params (i, j, h, w, v) to be passed to ``erase`` for random erasing.
@@ -1400,27 +1413,27 @@ class RandomErasing(object):
         area = img_h * img_w
 
         for _ in range(10):
-            erase_area = random.uniform(scale[0], scale[1]) * area
-            aspect_ratio = random.uniform(ratio[0], ratio[1])
+            erase_area = area * torch.empty(1).uniform_(scale[0], scale[1]).item()
+            aspect_ratio = torch.empty(1).uniform_(ratio[0], ratio[1]).item()
 
             h = int(round(math.sqrt(erase_area * aspect_ratio)))
             w = int(round(math.sqrt(erase_area / aspect_ratio)))
+            if not (h < img_h and w < img_w):
+                continue
 
-            if h < img_h and w < img_w:
-                i = random.randint(0, img_h - h)
-                j = random.randint(0, img_w - w)
-                if isinstance(value, numbers.Number):
-                    v = value
-                elif isinstance(value, torch._six.string_classes):
-                    v = torch.empty([img_c, h, w], dtype=torch.float32).normal_()
-                elif isinstance(value, (list, tuple)):
-                    v = torch.tensor(value, dtype=torch.float32).view(-1, 1, 1).expand(-1, h, w)
-                return i, j, h, w, v
+            if value is None:
+                v = torch.empty([img_c, h, w], dtype=torch.float32).normal_()
+            else:
+                v = torch.tensor(value)[:, None, None]
+
+            i = torch.randint(0, img_h - h, size=(1, )).item()
+            j = torch.randint(0, img_w - w, size=(1, )).item()
+            return i, j, h, w, v
 
         # Return original image
         return 0, 0, img_h, img_w, img
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
             img (Tensor): Tensor image of size (C, H, W) to be erased.
@@ -1428,7 +1441,24 @@ class RandomErasing(object):
         Returns:
             img (Tensor): Erased Tensor image.
         """
-        if random.uniform(0, 1) < self.p:
-            x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value)
+        if torch.rand(1) < self.p:
+
+            # cast self.value to script acceptable type
+            if isinstance(self.value, (int, float)):
+                value = [self.value, ]
+            elif isinstance(self.value, str):
+                value = None
+            elif isinstance(self.value, tuple):
+                value = list(self.value)
+            else:
+                value = self.value
+
+            if value is not None and not (len(value) in (1, img.shape[-3])):
+                raise ValueError(
+                    "If value is a sequence, it should have either a single value or "
+                    "{} (number of input channels)".format(img.shape[-3])
+                )
+
+            x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=value)
             return F.erase(img, x, y, h, w, v, self.inplace)
         return img

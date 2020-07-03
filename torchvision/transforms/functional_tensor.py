@@ -1,4 +1,4 @@
-from PIL.Image import NEAREST, BOX, BILINEAR, HAMMING, BICUBIC, LANCZOS
+from PIL.Image import NEAREST, BILINEAR, BICUBIC
 
 import torch
 from torch import Tensor
@@ -436,6 +436,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 
     if isinstance(padding, int):
         if torch.jit.is_scripting():
+            # This maybe unreachable
             raise ValueError("padding can't be an int while torchscripting, set it as a list [value, ]")
         pad_left = pad_right = pad_top = pad_bottom = padding
     elif len(padding) == 1:
@@ -485,14 +486,6 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     return img
 
 
-_interpolation_modes = {
-    NEAREST: "nearest",
-    BOX: "linear",
-    BILINEAR: "bilinear",
-    BICUBIC: "bicubic",
-}
-
-
 def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
     r"""Resize the input Tensor to the given size.
 
@@ -518,6 +511,15 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
     if not isinstance(interpolation, int):
         raise TypeError("Got inappropriate interpolation arg")
 
+    _interpolation_modes = {
+        0: "nearest",
+        2: "bilinear",
+        3: "bicubic",
+    }
+
+    if interpolation not in _interpolation_modes:
+        raise ValueError("This interpolation mode is unsupported with Tensor input")
+
     if isinstance(size, tuple):
         size = list(size)
 
@@ -529,17 +531,19 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
         raise ValueError("Interpolation mode should be either constant, edge, reflect or symmetric")
 
     w, h = _get_image_size(img)
-    if isinstance(size, int) or len(size) == 1:
-        if isinstance(size, list):
-            size = size[0]
-        if w < h:
-            size_w = size
-            size_h = int(size * h / w)
-        else:
-            size_h = size
-            size_w = int(size * w / h)
+
+    if isinstance(size, int):
+        size_w, size_h = size, size
+    elif len(size) < 2:
+        size_w, size_h = size[0], size[0]
     else:
-        size_w = size_h = size[0], size[1]
+        size_w, size_h = size[0], size[1]
+
+    if isinstance(size, int) or len(size) < 2:
+        if w < h:
+            size_h = int(size_w * h / w)
+        else:
+            size_w = int(size_h * w / h)
 
     if (w <= h and w == size_w) or (h <= w and h == size_h):
         return img
@@ -550,12 +554,25 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
         img = img.unsqueeze(dim=0)
         need_squeeze = True
 
-    # get mode from interpolation
-    mode = "nearest"
+    mode = _interpolation_modes[interpolation]
 
-    img = torch.nn.functional.interpolate(img, size=(size_h, size_w), mode=mode)
+    out_dtype = img.dtype
+    need_cast = False
+    if img.dtype not in (torch.float32, torch.float64):
+        need_cast = True
+        img = img.to(torch.float32)
+
+    # Define align_corners to avoid warnings
+    align_corners = False if mode in ["bilinear", "bicubic"] else None
+
+    img = torch.nn.functional.interpolate(img, size=(size_h, size_w), mode=mode, align_corners=align_corners)
 
     if need_squeeze:
         img = img.squeeze(dim=0)
+
+    if need_cast:
+        if mode == "bicubic":
+            img = img.clamp(min=0, max=255)
+        img = img.to(out_dtype)
 
     return img

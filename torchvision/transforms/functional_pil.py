@@ -1,5 +1,5 @@
 import numbers
-from typing import Any, List, Iterable
+from typing import Any, List, Sequence
 
 import torch
 try:
@@ -298,19 +298,22 @@ def resize(img, size, interpolation=Image.BILINEAR):
             (h, w), the output size will be matched to this. If size is an int,
             the smaller edge of the image will be matched to this number maintaining
             the aspect ratio. i.e, if height > width, then image will be rescaled to
-            :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`
-        interpolation (int, optional): Desired interpolation. Default is
-            ``PIL.Image.BILINEAR``
+            :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
+            For compatibility reasons with ``functional_tensor.resize``, if a tuple or list of length 1 is provided,
+            it is interpreted as a single int.
+        interpolation (int, optional): Desired interpolation. Default is ``PIL.Image.BILINEAR``.
 
     Returns:
         PIL Image: Resized image.
     """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-    if not (isinstance(size, int) or (isinstance(size, Iterable) and len(size) == 2)):
+    if not (isinstance(size, int) or (isinstance(size, Sequence) and len(size) in (1, 2))):
         raise TypeError('Got inappropriate size arg: {}'.format(size))
 
-    if isinstance(size, int):
+    if isinstance(size, int) or len(size) == 1:
+        if isinstance(size, Sequence):
+            size = size[0]
         w, h = img.size
         if (w <= h and w == size) or (h <= w and h == size):
             return img
