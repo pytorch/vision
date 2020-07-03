@@ -120,8 +120,8 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
   int components = cinfo.output_components;
 
   auto stride = width * components;
-  auto tensor =
-      torch::empty({int64_t(height), int64_t(width), int64_t(components)}, torch::kU8);
+  auto tensor = torch::empty(
+      {int64_t(height), int64_t(width), int64_t(components)}, torch::kU8);
   auto ptr = tensor.accessor<uint8_t, components>().data();
 
   while (cinfo.output_scanline < cinfo.output_height) {
