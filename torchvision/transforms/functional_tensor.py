@@ -1,3 +1,5 @@
+from PIL.Image import NEAREST, BOX, BILINEAR, HAMMING, BICUBIC, LANCZOS
+
 import torch
 from torch import Tensor
 from torch.jit.annotations import List, BroadcastingList2
@@ -8,6 +10,7 @@ def _is_tensor_a_torch_image(x: Tensor) -> bool:
 
 
 def _get_image_size(img: Tensor) -> List[int]:
+    """Returns (w, h) of tensor image"""
     if _is_tensor_a_torch_image(img):
         return [img.shape[-1], img.shape[-2]]
     raise TypeError("Unexpected type {}".format(type(img)))
@@ -478,5 +481,81 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 
     if need_cast:
         img = img.to(out_dtype)
+
+    return img
+
+
+_interpolation_modes = {
+    NEAREST: "nearest",
+    BOX: "linear",
+    BILINEAR: "bilinear",
+    BICUBIC: "bicubic",
+}
+
+
+def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
+    r"""Resize the input Tensor to the given size.
+
+    Args:
+        img (Tensor): Image to be resized.
+        size (int or tuple or list): Desired output size. If size is a sequence like
+            (h, w), the output size will be matched to this. If size is an int,
+            the smaller edge of the image will be matched to this number maintaining
+            the aspect ratio. i.e, if height > width, then image will be rescaled to
+            :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
+            In torchscript mode padding as a single int is not supported, use a tuple or
+            list of length 1: ``[size, ]``.
+        interpolation (int, optional): Desired interpolation. Default is bilinear.
+
+    Returns:
+        Tensor: Resized image.
+    """
+    if not _is_tensor_a_torch_image(img):
+        raise TypeError("tensor is not a torch image.")
+
+    if not isinstance(size, (int, tuple, list)):
+        raise TypeError("Got inappropriate size arg")
+    if not isinstance(interpolation, int):
+        raise TypeError("Got inappropriate interpolation arg")
+
+    if isinstance(size, tuple):
+        size = list(size)
+
+    if isinstance(size, list) and len(size) not in [1, 2]:
+        raise ValueError("Padding must be an int or a 1 or 2 element tuple/list, not a " +
+                         "{} element tuple/list".format(len(size)))
+
+    if interpolation not in [0, 1, 2, 3, 4]:
+        raise ValueError("Interpolation mode should be either constant, edge, reflect or symmetric")
+
+    w, h = _get_image_size(img)
+    if isinstance(size, int) or len(size) == 1:
+        if isinstance(size, list):
+            size = size[0]
+        if w < h:
+            size_w = size
+            size_h = int(size * h / w)
+        else:
+            size_h = size
+            size_w = int(size * w / h)
+    else:
+        size_w = size_h = size[0], size[1]
+
+    if (w <= h and w == size_w) or (h <= w and h == size_h):
+        return img
+
+    # make image NCHW
+    need_squeeze = False
+    if img.ndim < 4:
+        img = img.unsqueeze(dim=0)
+        need_squeeze = True
+
+    # get mode from interpolation
+    mode = "nearest"
+
+    img = torch.nn.functional.interpolate(img, size=(size_h, size_w), mode=mode)
+
+    if need_squeeze:
+        img = img.squeeze(dim=0)
 
     return img
