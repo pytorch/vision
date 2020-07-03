@@ -1,16 +1,19 @@
-import torch
 import math
+import numbers
 import random
+import warnings
+from collections.abc import Sequence, Iterable
+from typing import Tuple
+
+import numpy as np
+import torch
 from PIL import Image
+from torch import Tensor
+
 try:
     import accimage
 except ImportError:
     accimage = None
-import numpy as np
-import numbers
-import types
-from collections.abc import Sequence, Iterable
-import warnings
 
 from . import functional as F
 
@@ -29,15 +32,6 @@ _pil_interpolation_to_str = {
     Image.HAMMING: 'PIL.Image.HAMMING',
     Image.BOX: 'PIL.Image.BOX',
 }
-
-
-def _get_image_size(img):
-    if F._is_pil_image(img):
-        return img.size
-    elif isinstance(img, torch.Tensor) and img.dim() > 2:
-        return img.shape[-2:][::-1]
-    else:
-        raise TypeError("Unexpected type {}".format(type(img)))
 
 
 class Compose(object):
@@ -98,7 +92,7 @@ class ToTensor(object):
 class PILToTensor(object):
     """Convert a ``PIL Image`` to a tensor of the same type.
 
-    Converts a PIL Image (H x W x C) to a torch.Tensor of shape (C x H x W).
+    Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
     """
 
     def __call__(self, pic):
@@ -258,28 +252,36 @@ class Scale(Resize):
         super(Scale, self).__init__(*args, **kwargs)
 
 
-class CenterCrop(object):
-    """Crops the given PIL Image at the center.
+class CenterCrop(torch.nn.Module):
+    """Crops the given image at the center.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made.
+            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
     """
 
     def __init__(self, size):
+        super().__init__()
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
+        elif isinstance(size, Sequence) and len(size) == 1:
+            self.size = (size[0], size[0])
         else:
+            if len(size) != 2:
+                raise ValueError("Please provide only two dimensions (h, w) for size.")
+
             self.size = size
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be cropped.
+            img (PIL Image or Tensor): Image to be cropped.
 
         Returns:
-            PIL Image: Cropped image.
+            PIL Image or Tensor: Cropped image.
         """
         return F.center_crop(img, self.size)
 
@@ -287,20 +289,23 @@ class CenterCrop(object):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
 
 
-class Pad(object):
-    """Pad the given PIL Image on all sides with the given "pad" value.
+class Pad(torch.nn.Module):
+    """Pad the given image on all sides with the given "pad" value.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
-        padding (int or tuple): Padding on each border. If a single int is provided this
+        padding (int or tuple or list): Padding on each border. If a single int is provided this
             is used to pad all borders. If tuple of length 2 is provided this is the padding
             on left/right and top/bottom respectively. If a tuple of length 4 is provided
-            this is the padding for the left, top, right and bottom borders
-            respectively.
+            this is the padding for the left, top, right and bottom borders respectively.
+            In torchscript mode padding as single int is not supported, use a tuple or
+            list of length 1: ``[padding, ]``.
         fill (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
-            Default is constant.
+            Default is constant. Mode symmetric is not yet supported for Tensor inputs.
 
             - constant: pads with a constant value, this value is specified with fill
 
@@ -317,25 +322,32 @@ class Pad(object):
                 will result in [2, 1, 1, 2, 3, 4, 4, 3]
     """
 
-    def __init__(self, padding, fill=0, padding_mode='constant'):
-        assert isinstance(padding, (numbers.Number, tuple))
-        assert isinstance(fill, (numbers.Number, str, tuple))
-        assert padding_mode in ['constant', 'edge', 'reflect', 'symmetric']
-        if isinstance(padding, Sequence) and len(padding) not in [2, 4]:
-            raise ValueError("Padding must be an int or a 2, or 4 element tuple, not a " +
+    def __init__(self, padding, fill=0, padding_mode="constant"):
+        super().__init__()
+        if not isinstance(padding, (numbers.Number, tuple, list)):
+            raise TypeError("Got inappropriate padding arg")
+
+        if not isinstance(fill, (numbers.Number, str, tuple)):
+            raise TypeError("Got inappropriate fill arg")
+
+        if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
+            raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
+
+        if isinstance(padding, Sequence) and len(padding) not in [1, 2, 4]:
+            raise ValueError("Padding must be an int or a 1, 2, or 4 element tuple, not a " +
                              "{} element tuple".format(len(padding)))
 
         self.padding = padding
         self.fill = fill
         self.padding_mode = padding_mode
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be padded.
+            img (PIL Image or Tensor): Image to be padded.
 
         Returns:
-            PIL Image: Padded image.
+            PIL Image or Tensor: Padded image.
         """
         return F.pad(img, self.padding, self.fill, self.padding_mode)
 
@@ -433,25 +445,31 @@ class RandomChoice(RandomTransforms):
         return t(img)
 
 
-class RandomCrop(object):
-    """Crop the given PIL Image at a random location.
+class RandomCrop(torch.nn.Module):
+    """Crop the given image at a random location.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made.
+            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
         padding (int or sequence, optional): Optional padding on each border
-            of the image. Default is None, i.e no padding. If a sequence of length
-            4 is provided, it is used to pad left, top, right, bottom borders
-            respectively. If a sequence of length 2 is provided, it is used to
-            pad left/right, top/bottom borders, respectively.
+            of the image. Default is None. If a single int is provided this
+            is used to pad all borders. If tuple of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a tuple of length 4 is provided
+            this is the padding for the left, top, right and bottom borders respectively.
+            In torchscript mode padding as single int is not supported, use a tuple or
+            list of length 1: ``[padding, ]``.
         pad_if_needed (boolean): It will pad the image if smaller than the
             desired size to avoid raising an exception. Since cropping is done
             after padding, the padding seems to be done at a random offset.
-        fill: Pixel fill value for constant fill. Default is 0. If a tuple of
+        fill (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant
-        padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+            Mode symmetric is not yet supported for Tensor inputs.
 
              - constant: pads with a constant value, this value is specified with fill
 
@@ -469,60 +487,70 @@ class RandomCrop(object):
 
     """
 
-    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode='constant'):
-        if isinstance(size, numbers.Number):
-            self.size = (int(size), int(size))
-        else:
-            self.size = size
-        self.padding = padding
-        self.pad_if_needed = pad_if_needed
-        self.fill = fill
-        self.padding_mode = padding_mode
-
     @staticmethod
-    def get_params(img, output_size):
+    def get_params(img: Tensor, output_size: Tuple[int, int]) -> Tuple[int, int, int, int]:
         """Get parameters for ``crop`` for a random crop.
 
         Args:
-            img (PIL Image): Image to be cropped.
+            img (PIL Image or Tensor): Image to be cropped.
             output_size (tuple): Expected output size of the crop.
 
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
         """
-        w, h = _get_image_size(img)
+        w, h = F._get_image_size(img)
         th, tw = output_size
         if w == tw and h == th:
             return 0, 0, h, w
 
-        i = random.randint(0, h - th)
-        j = random.randint(0, w - tw)
+        i = torch.randint(0, h - th, size=(1, )).item()
+        j = torch.randint(0, w - tw, size=(1, )).item()
         return i, j, th, tw
 
-    def __call__(self, img):
+    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
+        super().__init__()
+        if isinstance(size, numbers.Number):
+            self.size = (int(size), int(size))
+        elif isinstance(size, Sequence) and len(size) == 1:
+            self.size = (size[0], size[0])
+        else:
+            if len(size) != 2:
+                raise ValueError("Please provide only two dimensions (h, w) for size.")
+
+            # cast to tuple for torchscript
+            self.size = tuple(size)
+        self.padding = padding
+        self.pad_if_needed = pad_if_needed
+        self.fill = fill
+        self.padding_mode = padding_mode
+
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be cropped.
+            img (PIL Image or Tensor): Image to be cropped.
 
         Returns:
-            PIL Image: Cropped image.
+            PIL Image or Tensor: Cropped image.
         """
         if self.padding is not None:
             img = F.pad(img, self.padding, self.fill, self.padding_mode)
 
+        width, height = F._get_image_size(img)
         # pad the width if needed
-        if self.pad_if_needed and img.size[0] < self.size[1]:
-            img = F.pad(img, (self.size[1] - img.size[0], 0), self.fill, self.padding_mode)
+        if self.pad_if_needed and width < self.size[1]:
+            padding = [self.size[1] - width, 0]
+            img = F.pad(img, padding, self.fill, self.padding_mode)
         # pad the height if needed
-        if self.pad_if_needed and img.size[1] < self.size[0]:
-            img = F.pad(img, (0, self.size[0] - img.size[1]), self.fill, self.padding_mode)
+        if self.pad_if_needed and height < self.size[0]:
+            padding = [0, self.size[0] - height]
+            img = F.pad(img, padding, self.fill, self.padding_mode)
 
         i, j, h, w = self.get_params(img, self.size)
 
         return F.crop(img, i, j, h, w)
 
     def __repr__(self):
-        return self.__class__.__name__ + '(size={0}, padding={1})'.format(self.size, self.padding)
+        return self.__class__.__name__ + "(size={0}, padding={1})".format(self.size, self.padding)
 
 
 class RandomHorizontalFlip(torch.nn.Module):
@@ -556,7 +584,7 @@ class RandomHorizontalFlip(torch.nn.Module):
 
 
 class RandomVerticalFlip(torch.nn.Module):
-    """Vertically flip the given PIL Image randomly with a given probability.
+    """Vertically flip the given image randomly with a given probability.
     The image can be a PIL Image or a torch Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading
     dimensions
@@ -692,7 +720,7 @@ class RandomResizedCrop(object):
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
                 sized crop.
         """
-        width, height = _get_image_size(img)
+        width, height = F._get_image_size(img)
         area = height * width
 
         for _ in range(10):
@@ -753,8 +781,11 @@ class RandomSizedCrop(RandomResizedCrop):
         super(RandomSizedCrop, self).__init__(*args, **kwargs)
 
 
-class FiveCrop(object):
-    """Crop the given PIL Image into four corners and the central crop
+class FiveCrop(torch.nn.Module):
+    """Crop the given image into four corners and the central crop.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     .. Note::
          This transform returns a tuple of images and there may be a mismatch in the number of
@@ -764,6 +795,7 @@ class FiveCrop(object):
     Args:
          size (sequence or int): Desired output size of the crop. If size is an ``int``
             instead of sequence like (h, w), a square crop of size (size, size) is made.
+            If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
 
     Example:
          >>> transform = Compose([
@@ -778,23 +810,37 @@ class FiveCrop(object):
     """
 
     def __init__(self, size):
-        self.size = size
+        super().__init__()
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
+        elif isinstance(size, Sequence) and len(size) == 1:
+            self.size = (size[0], size[0])
         else:
-            assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
+            if len(size) != 2:
+                raise ValueError("Please provide only two dimensions (h, w) for size.")
+
             self.size = size
 
-    def __call__(self, img):
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be cropped.
+
+        Returns:
+            tuple of 5 images. Image can be PIL Image or Tensor
+        """
         return F.five_crop(img, self.size)
 
     def __repr__(self):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
 
 
-class TenCrop(object):
-    """Crop the given PIL Image into four corners and the central crop plus the flipped version of
-    these (horizontal flipping is used by default)
+class TenCrop(torch.nn.Module):
+    """Crop the given image into four corners and the central crop plus the flipped version of
+    these (horizontal flipping is used by default).
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     .. Note::
          This transform returns a tuple of images and there may be a mismatch in the number of
@@ -804,7 +850,7 @@ class TenCrop(object):
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made.
+            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
         vertical_flip (bool): Use vertical flipping instead of horizontal
 
     Example:
@@ -820,15 +866,26 @@ class TenCrop(object):
     """
 
     def __init__(self, size, vertical_flip=False):
-        self.size = size
+        super().__init__()
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
+        elif isinstance(size, Sequence) and len(size) == 1:
+            self.size = (size[0], size[0])
         else:
-            assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
+            if len(size) != 2:
+                raise ValueError("Please provide only two dimensions (h, w) for size.")
+
             self.size = size
         self.vertical_flip = vertical_flip
 
-    def __call__(self, img):
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be cropped.
+
+        Returns:
+            tuple of 10 images. Image can be PIL Image or Tensor
+        """
         return F.ten_crop(img, self.size, self.vertical_flip)
 
     def __repr__(self):
@@ -1081,6 +1138,8 @@ class RandomRotation(object):
         format_string += ', expand={0}'.format(self.expand)
         if self.center is not None:
             format_string += ', center={0}'.format(self.center)
+        if self.fill is not None:
+            format_string += ', fill={0}'.format(self.fill)
         format_string += ')'
         return format_string
 

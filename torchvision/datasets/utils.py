@@ -95,16 +95,9 @@ def list_dir(root, prefix=False):
             only returns the name of the directories found
     """
     root = os.path.expanduser(root)
-    directories = list(
-        filter(
-            lambda p: os.path.isdir(os.path.join(root, p)),
-            os.listdir(root)
-        )
-    )
-
+    directories = [p for p in os.listdir(root) if os.path.isdir(os.path.join(root, p))]
     if prefix is True:
         directories = [os.path.join(root, d) for d in directories]
-
     return directories
 
 
@@ -119,16 +112,9 @@ def list_files(root, suffix, prefix=False):
             only returns the name of the files found
     """
     root = os.path.expanduser(root)
-    files = list(
-        filter(
-            lambda p: os.path.isfile(os.path.join(root, p)) and p.endswith(suffix),
-            os.listdir(root)
-        )
-    )
-
+    files = [p for p in os.listdir(root) if os.path.isfile(os.path.join(root, p)) and p.endswith(suffix)]
     if prefix is True:
         files = [os.path.join(root, d) for d in files]
-
     return files
 
 

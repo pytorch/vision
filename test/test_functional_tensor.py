@@ -1,16 +1,26 @@
 import torch
-from torch import Tensor
 import torchvision.transforms as transforms
 import torchvision.transforms.functional_tensor as F_t
+import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional as F
 import numpy as np
 import unittest
 import random
 import colorsys
-from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
+
+from PIL import Image
 
 
 class Tester(unittest.TestCase):
+
+    def _create_data(self, height=3, width=3, channels=3):
+        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8)
+        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().numpy())
+        return tensor, pil_img
+
+    def compareTensorToPIL(self, tensor, pil_image, msg=None):
+        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
+        self.assertTrue(tensor.equal(pil_tensor), msg)
 
     def test_vflip(self):
         script_vflip = torch.jit.script(F_t.vflip)
@@ -233,6 +243,44 @@ class Tester(unittest.TestCase):
         cropped_script = script_ten_crop(img_tensor, [10, 10])
         for cropped_script_img, cropped_tensor_img in zip(cropped_script, cropped_tensor):
             self.assertTrue(torch.equal(cropped_script_img, cropped_tensor_img))
+
+    def test_pad(self):
+        script_fn = torch.jit.script(F_t.pad)
+        tensor, pil_img = self._create_data(7, 8)
+
+        for dt in [None, torch.float32, torch.float64]:
+            if dt is not None:
+                # This is a trivial cast to float of uint8 data to test all cases
+                tensor = tensor.to(dt)
+            for pad in [2, [3, ], [0, 3], (3, 3), [4, 2, 4, 3]]:
+                configs = [
+                    {"padding_mode": "constant", "fill": 0},
+                    {"padding_mode": "constant", "fill": 10},
+                    {"padding_mode": "constant", "fill": 20},
+                    {"padding_mode": "edge"},
+                    {"padding_mode": "reflect"},
+                    {"padding_mode": "symmetric"},
+                ]
+                for kwargs in configs:
+                    pad_tensor = F_t.pad(tensor, pad, **kwargs)
+                    pad_pil_img = F_pil.pad(pil_img, pad, **kwargs)
+
+                    pad_tensor_8b = pad_tensor
+                    # we need to cast to uint8 to compare with PIL image
+                    if pad_tensor_8b.dtype != torch.uint8:
+                        pad_tensor_8b = pad_tensor_8b.to(torch.uint8)
+
+                    self.compareTensorToPIL(pad_tensor_8b, pad_pil_img, msg="{}, {}".format(pad, kwargs))
+
+                    if isinstance(pad, int):
+                        script_pad = [pad, ]
+                    else:
+                        script_pad = pad
+                    pad_tensor_script = script_fn(tensor, script_pad, **kwargs)
+                    self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, kwargs))
+
+        with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
+            F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
 
 
 if __name__ == '__main__':
