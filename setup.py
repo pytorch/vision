@@ -291,6 +291,7 @@ def get_extensions():
      jpeg_include, jpeg_lib) = find_library('jpeglib', vision_include)
 
     print('JPEG found: {0}'.format(jpeg_found))
+    image_macros += [('JPEG_FOUND', str(int(jpeg_found)))]
     if jpeg_found:
         print('Building torchvision with JPEG image support')
         image_link_flags.append('jpeg')
