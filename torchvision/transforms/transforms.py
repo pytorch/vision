@@ -1378,7 +1378,7 @@ class RandomErasing(torch.nn.Module):
         if not isinstance(scale, (tuple, list)):
             raise TypeError("Scale should be a sequence")
         if not isinstance(ratio, (tuple, list)):
-            raise TypeError("Scale should be a sequence")
+            raise TypeError("Ratio should be a sequence")
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
             warnings.warn("Scale and ratio should be of kind (min, max)")
         if scale[0] < 0 or scale[1] > 1:
@@ -1418,17 +1418,17 @@ class RandomErasing(torch.nn.Module):
 
             h = int(round(math.sqrt(erase_area * aspect_ratio)))
             w = int(round(math.sqrt(erase_area / aspect_ratio)))
+            if not (h < img_h and w < img_w):
+                continue
+
             if value is None:
                 v = torch.empty([img_c, h, w], dtype=torch.float32).normal_()
-            elif len(value) == 1:
-                v = torch.tensor(value[0])
             else:
-                v = torch.tensor(value, dtype=torch.float32).view(-1, 1, 1).expand(-1, h, w)
+                v = torch.tensor(value)[:, None, None]
 
-            if h < img_h and w < img_w:
-                i = torch.randint(0, img_h - h, size=(1, )).item()
-                j = torch.randint(0, img_w - w, size=(1, )).item()
-                return i, j, h, w, v
+            i = torch.randint(0, img_h - h, size=(1, )).item()
+            j = torch.randint(0, img_w - w, size=(1, )).item()
+            return i, j, h, w, v
 
         # Return original image
         return 0, 0, img_h, img_w, img
@@ -1452,6 +1452,12 @@ class RandomErasing(torch.nn.Module):
                 value = list(self.value)
             else:
                 value = self.value
+
+            if value is not None and not (len(value) in (1, img.shape[-3])):
+                raise ValueError(
+                    "If value is a sequence, it should have either a single value or "
+                    "{} (number of input channels)".format(img.shape[-3])
+                )
 
             x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=value)
             return F.erase(img, x, y, h, w, v, self.inplace)

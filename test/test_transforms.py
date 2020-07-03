@@ -1622,6 +1622,11 @@ class Tester(unittest.TestCase):
             torch.manual_seed(12)
             img = torch.rand(3, 60, 60)
 
+            # Test Set 0: invalid value
+            random_erasing = transforms.RandomErasing(value=(0.1, 0.2, 0.3, 0.4), p=1.0)
+            with self.assertRaises(ValueError, msg="If value is a sequence, it should have either a single value or 3"):
+                img_re = random_erasing(img)
+
             # Test Set 1: Erasing with int value
             random_erasing = transforms.RandomErasing(value=0.2)
             if is_scripted:
