@@ -118,6 +118,10 @@ def list_files(root, suffix, prefix=False):
     return files
 
 
+def _quota_exceeded(response: "requests.models.Response") -> bool:
+    return "Google Drive - Quota exceeded" in response.text
+
+
 def download_file_from_google_drive(file_id, root, filename=None, md5=None):
     """Download a Google Drive file from  and place it in root.
 
@@ -149,6 +153,14 @@ def download_file_from_google_drive(file_id, root, filename=None, md5=None):
         if token:
             params = {'id': file_id, 'confirm': token}
             response = session.get(url, params=params, stream=True)
+
+        if _quota_exceeded(response):
+            msg = (
+                f"The daily quota of the file {filename} is exceeded and it "
+                f"can't be downloaded. This is a limitation of Google Drive "
+                f"and can only be overcome by trying again later."
+            )
+            raise RuntimeError(msg)
 
         _save_response_content(response, fpath)
 
