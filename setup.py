@@ -286,10 +286,21 @@ def get_extensions():
             image_include += [png_include]
             image_link_flags.append('libpng')
 
+    # Locating libjpeg
+    (jpeg_found, _,
+     jpeg_include, jpeg_lib) = find_library('jpeglib', vision_include)
+
+    print('JPEG found: {0}'.format(jpeg_found))
+    if jpeg_found:
+        print('Building torchvision with JPEG image support')
+        image_library += [jpeg_lib]
+        image_include += [jpeg_include]
+        image_link_flags.append('jpeg')
+
     image_path = os.path.join(extensions_dir, 'cpu', 'image')
     image_src = glob.glob(os.path.join(image_path, '*.cpp'))
 
-    if png_found:
+    if png_found or jpeg_found:
         ext_modules.append(extension(
             'torchvision.image',
             image_src,

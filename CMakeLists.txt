@@ -14,6 +14,7 @@ find_package(Python3 COMPONENTS Development)
 
 find_package(Torch REQUIRED)
 find_package(PNG REQUIRED)
+find_package(JPEG REQUIRED)
 
 
 file(GLOB HEADERS torchvision/csrc/*.h)
@@ -28,12 +29,12 @@ file(GLOB MODELS_HEADERS torchvision/csrc/models/*.h)
 file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES} ${IMAGE_SOURCES})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} Python3::Python)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} ${JPEG_LIBRARIES} Python3::Python)
 # target_link_libraries(${PROJECT_NAME} PRIVATE ${PNG_LIBRARY} Python3::Python)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME TorchVision)
 
 target_include_directories(${PROJECT_NAME} INTERFACE
-  $<BUILD_INTERFACE:${HEADERS}:${PNG_INCLUDE_DIR}>
+  $<BUILD_INTERFACE:${HEADERS}:${PNG_INCLUDE_DIR}:${JPEG_INCLUDE_DIRS}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 include(GNUInstallDirs)
