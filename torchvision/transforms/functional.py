@@ -950,7 +950,7 @@ def to_grayscale(img, num_output_channels=1):
     return img
 
 
-def erase(img, i, j, h, w, v, inplace=False):
+def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool = False) -> Tensor:
     """ Erase the input Tensor Image with given value.
 
     Args:
