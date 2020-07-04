@@ -109,7 +109,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
   }
 
   jpeg_create_decompress(&cinfo);
-  torch_jpeg_source_mgr(&cinfo, datap, data.numel());
+  torch_jpeg_set_source_mgr(&cinfo, datap, data.numel());
 
   // read info from header.
   jpeg_read_header(&cinfo, TRUE);
@@ -122,7 +122,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
   auto stride = width * components;
   auto tensor = torch::empty(
       {int64_t(height), int64_t(width), int64_t(components)}, torch::kU8);
-  auto ptr = tensor.accessor<uint8_t, components>().data();
+  auto ptr = tensor.accessor<uint8_t, 3>().data();
 
   while (cinfo.output_scanline < cinfo.output_height) {
     /* jpeg_read_scanlines expects an array of pointers to scanlines.
