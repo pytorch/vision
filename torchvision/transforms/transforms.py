@@ -1,16 +1,19 @@
-import torch
 import math
+import numbers
 import random
+import warnings
+from collections.abc import Sequence, Iterable
+from typing import Tuple, List, Optional
+
+import numpy as np
+import torch
 from PIL import Image
+from torch import Tensor
+
 try:
     import accimage
 except ImportError:
     accimage = None
-import numpy as np
-import numbers
-import types
-from collections.abc import Sequence, Iterable
-import warnings
 
 from . import functional as F
 
@@ -29,15 +32,6 @@ _pil_interpolation_to_str = {
     Image.HAMMING: 'PIL.Image.HAMMING',
     Image.BOX: 'PIL.Image.BOX',
 }
-
-
-def _get_image_size(img):
-    if F._is_pil_image(img):
-        return img.size
-    elif isinstance(img, torch.Tensor) and img.dim() > 2:
-        return img.shape[-2:][::-1]
-    else:
-        raise TypeError("Unexpected type {}".format(type(img)))
 
 
 class Compose(object):
@@ -98,7 +92,7 @@ class ToTensor(object):
 class PILToTensor(object):
     """Convert a ``PIL Image`` to a tensor of the same type.
 
-    Converts a PIL Image (H x W x C) to a torch.Tensor of shape (C x H x W).
+    Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
     """
 
     def __call__(self, pic):
@@ -258,28 +252,36 @@ class Scale(Resize):
         super(Scale, self).__init__(*args, **kwargs)
 
 
-class CenterCrop(object):
-    """Crops the given PIL Image at the center.
+class CenterCrop(torch.nn.Module):
+    """Crops the given image at the center.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made.
+            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
     """
 
     def __init__(self, size):
+        super().__init__()
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
+        elif isinstance(size, Sequence) and len(size) == 1:
+            self.size = (size[0], size[0])
         else:
+            if len(size) != 2:
+                raise ValueError("Please provide only two dimensions (h, w) for size.")
+
             self.size = size
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be cropped.
+            img (PIL Image or Tensor): Image to be cropped.
 
         Returns:
-            PIL Image: Cropped image.
+            PIL Image or Tensor: Cropped image.
         """
         return F.center_crop(img, self.size)
 
@@ -303,7 +305,7 @@ class Pad(torch.nn.Module):
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
-            Default is constant. Only "constant" is supported for Tensors as of now.
+            Default is constant. Mode symmetric is not yet supported for Tensor inputs.
 
             - constant: pads with a constant value, this value is specified with fill
 
@@ -443,25 +445,31 @@ class RandomChoice(RandomTransforms):
         return t(img)
 
 
-class RandomCrop(object):
-    """Crop the given PIL Image at a random location.
+class RandomCrop(torch.nn.Module):
+    """Crop the given image at a random location.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made.
+            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
         padding (int or sequence, optional): Optional padding on each border
-            of the image. Default is None, i.e no padding. If a sequence of length
-            4 is provided, it is used to pad left, top, right, bottom borders
-            respectively. If a sequence of length 2 is provided, it is used to
-            pad left/right, top/bottom borders, respectively.
+            of the image. Default is None. If a single int is provided this
+            is used to pad all borders. If tuple of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a tuple of length 4 is provided
+            this is the padding for the left, top, right and bottom borders respectively.
+            In torchscript mode padding as single int is not supported, use a tuple or
+            list of length 1: ``[padding, ]``.
         pad_if_needed (boolean): It will pad the image if smaller than the
             desired size to avoid raising an exception. Since cropping is done
             after padding, the padding seems to be done at a random offset.
-        fill: Pixel fill value for constant fill. Default is 0. If a tuple of
+        fill (int or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant
-        padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+        padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
+            Mode symmetric is not yet supported for Tensor inputs.
 
              - constant: pads with a constant value, this value is specified with fill
 
@@ -479,60 +487,70 @@ class RandomCrop(object):
 
     """
 
-    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode='constant'):
-        if isinstance(size, numbers.Number):
-            self.size = (int(size), int(size))
-        else:
-            self.size = size
-        self.padding = padding
-        self.pad_if_needed = pad_if_needed
-        self.fill = fill
-        self.padding_mode = padding_mode
-
     @staticmethod
-    def get_params(img, output_size):
+    def get_params(img: Tensor, output_size: Tuple[int, int]) -> Tuple[int, int, int, int]:
         """Get parameters for ``crop`` for a random crop.
 
         Args:
-            img (PIL Image): Image to be cropped.
+            img (PIL Image or Tensor): Image to be cropped.
             output_size (tuple): Expected output size of the crop.
 
         Returns:
             tuple: params (i, j, h, w) to be passed to ``crop`` for random crop.
         """
-        w, h = _get_image_size(img)
+        w, h = F._get_image_size(img)
         th, tw = output_size
         if w == tw and h == th:
             return 0, 0, h, w
 
-        i = random.randint(0, h - th)
-        j = random.randint(0, w - tw)
+        i = torch.randint(0, h - th, size=(1, )).item()
+        j = torch.randint(0, w - tw, size=(1, )).item()
         return i, j, th, tw
 
-    def __call__(self, img):
+    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
+        super().__init__()
+        if isinstance(size, numbers.Number):
+            self.size = (int(size), int(size))
+        elif isinstance(size, Sequence) and len(size) == 1:
+            self.size = (size[0], size[0])
+        else:
+            if len(size) != 2:
+                raise ValueError("Please provide only two dimensions (h, w) for size.")
+
+            # cast to tuple for torchscript
+            self.size = tuple(size)
+        self.padding = padding
+        self.pad_if_needed = pad_if_needed
+        self.fill = fill
+        self.padding_mode = padding_mode
+
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be cropped.
+            img (PIL Image or Tensor): Image to be cropped.
 
         Returns:
-            PIL Image: Cropped image.
+            PIL Image or Tensor: Cropped image.
         """
         if self.padding is not None:
             img = F.pad(img, self.padding, self.fill, self.padding_mode)
 
+        width, height = F._get_image_size(img)
         # pad the width if needed
-        if self.pad_if_needed and img.size[0] < self.size[1]:
-            img = F.pad(img, (self.size[1] - img.size[0], 0), self.fill, self.padding_mode)
+        if self.pad_if_needed and width < self.size[1]:
+            padding = [self.size[1] - width, 0]
+            img = F.pad(img, padding, self.fill, self.padding_mode)
         # pad the height if needed
-        if self.pad_if_needed and img.size[1] < self.size[0]:
-            img = F.pad(img, (0, self.size[0] - img.size[1]), self.fill, self.padding_mode)
+        if self.pad_if_needed and height < self.size[0]:
+            padding = [0, self.size[0] - height]
+            img = F.pad(img, padding, self.fill, self.padding_mode)
 
         i, j, h, w = self.get_params(img, self.size)
 
         return F.crop(img, i, j, h, w)
 
     def __repr__(self):
-        return self.__class__.__name__ + '(size={0}, padding={1})'.format(self.size, self.padding)
+        return self.__class__.__name__ + "(size={0}, padding={1})".format(self.size, self.padding)
 
 
 class RandomHorizontalFlip(torch.nn.Module):
@@ -566,7 +584,7 @@ class RandomHorizontalFlip(torch.nn.Module):
 
 
 class RandomVerticalFlip(torch.nn.Module):
-    """Vertically flip the given PIL Image randomly with a given probability.
+    """Vertically flip the given image randomly with a given probability.
     The image can be a PIL Image or a torch Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading
     dimensions
@@ -702,7 +720,7 @@ class RandomResizedCrop(object):
             tuple: params (i, j, h, w) to be passed to ``crop`` for a random
                 sized crop.
         """
-        width, height = _get_image_size(img)
+        width, height = F._get_image_size(img)
         area = height * width
 
         for _ in range(10):
@@ -763,8 +781,11 @@ class RandomSizedCrop(RandomResizedCrop):
         super(RandomSizedCrop, self).__init__(*args, **kwargs)
 
 
-class FiveCrop(object):
-    """Crop the given PIL Image into four corners and the central crop
+class FiveCrop(torch.nn.Module):
+    """Crop the given image into four corners and the central crop.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     .. Note::
          This transform returns a tuple of images and there may be a mismatch in the number of
@@ -774,6 +795,7 @@ class FiveCrop(object):
     Args:
          size (sequence or int): Desired output size of the crop. If size is an ``int``
             instead of sequence like (h, w), a square crop of size (size, size) is made.
+            If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
 
     Example:
          >>> transform = Compose([
@@ -788,23 +810,37 @@ class FiveCrop(object):
     """
 
     def __init__(self, size):
-        self.size = size
+        super().__init__()
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
+        elif isinstance(size, Sequence) and len(size) == 1:
+            self.size = (size[0], size[0])
         else:
-            assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
+            if len(size) != 2:
+                raise ValueError("Please provide only two dimensions (h, w) for size.")
+
             self.size = size
 
-    def __call__(self, img):
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be cropped.
+
+        Returns:
+            tuple of 5 images. Image can be PIL Image or Tensor
+        """
         return F.five_crop(img, self.size)
 
     def __repr__(self):
         return self.__class__.__name__ + '(size={0})'.format(self.size)
 
 
-class TenCrop(object):
-    """Crop the given PIL Image into four corners and the central crop plus the flipped version of
-    these (horizontal flipping is used by default)
+class TenCrop(torch.nn.Module):
+    """Crop the given image into four corners and the central crop plus the flipped version of
+    these (horizontal flipping is used by default).
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     .. Note::
          This transform returns a tuple of images and there may be a mismatch in the number of
@@ -814,7 +850,7 @@ class TenCrop(object):
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made.
+            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
         vertical_flip (bool): Use vertical flipping instead of horizontal
 
     Example:
@@ -830,15 +866,26 @@ class TenCrop(object):
     """
 
     def __init__(self, size, vertical_flip=False):
-        self.size = size
+        super().__init__()
         if isinstance(size, numbers.Number):
             self.size = (int(size), int(size))
+        elif isinstance(size, Sequence) and len(size) == 1:
+            self.size = (size[0], size[0])
         else:
-            assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
+            if len(size) != 2:
+                raise ValueError("Please provide only two dimensions (h, w) for size.")
+
             self.size = size
         self.vertical_flip = vertical_flip
 
-    def __call__(self, img):
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be cropped.
+
+        Returns:
+            tuple of 10 images. Image can be PIL Image or Tensor
+        """
         return F.ten_crop(img, self.size, self.vertical_flip)
 
     def __repr__(self):
@@ -1296,7 +1343,7 @@ class RandomGrayscale(object):
         return self.__class__.__name__ + '(p={0})'.format(self.p)
 
 
-class RandomErasing(object):
+class RandomErasing(torch.nn.Module):
     """ Randomly selects a rectangle region in an image and erases its pixels.
     'Random Erasing Data Augmentation' by Zhong et al. See https://arxiv.org/pdf/1708.04896.pdf
 
@@ -1323,13 +1370,21 @@ class RandomErasing(object):
     """
 
     def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0, inplace=False):
-        assert isinstance(value, (numbers.Number, str, tuple, list))
+        super().__init__()
+        if not isinstance(value, (numbers.Number, str, tuple, list)):
+            raise TypeError("Argument value should be either a number or str or a sequence")
+        if isinstance(value, str) and value != "random":
+            raise ValueError("If value is str, it should be 'random'")
+        if not isinstance(scale, (tuple, list)):
+            raise TypeError("Scale should be a sequence")
+        if not isinstance(ratio, (tuple, list)):
+            raise TypeError("Ratio should be a sequence")
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
-            warnings.warn("range should be of kind (min, max)")
+            warnings.warn("Scale and ratio should be of kind (min, max)")
         if scale[0] < 0 or scale[1] > 1:
-            raise ValueError("range of scale should be between 0 and 1")
+            raise ValueError("Scale should be between 0 and 1")
         if p < 0 or p > 1:
-            raise ValueError("range of random erasing probability should be between 0 and 1")
+            raise ValueError("Random erasing probability should be between 0 and 1")
 
         self.p = p
         self.scale = scale
@@ -1338,13 +1393,18 @@ class RandomErasing(object):
         self.inplace = inplace
 
     @staticmethod
-    def get_params(img, scale, ratio, value=0):
+    def get_params(
+            img: Tensor, scale: Tuple[float, float], ratio: Tuple[float, float], value: Optional[List[float]] = None
+    ) -> Tuple[int, int, int, int, Tensor]:
         """Get parameters for ``erase`` for a random erasing.
 
         Args:
             img (Tensor): Tensor image of size (C, H, W) to be erased.
-            scale: range of proportion of erased area against input image.
-            ratio: range of aspect ratio of erased area.
+            scale (tuple or list): range of proportion of erased area against input image.
+            ratio (tuple or list): range of aspect ratio of erased area.
+            value (list, optional): erasing value. If None, it is interpreted as "random"
+                (erasing each pixel with random values). If ``len(value)`` is 1, it is interpreted as a number,
+                i.e. ``value[0]``.
 
         Returns:
             tuple: params (i, j, h, w, v) to be passed to ``erase`` for random erasing.
@@ -1353,27 +1413,27 @@ class RandomErasing(object):
         area = img_h * img_w
 
         for _ in range(10):
-            erase_area = random.uniform(scale[0], scale[1]) * area
-            aspect_ratio = random.uniform(ratio[0], ratio[1])
+            erase_area = area * torch.empty(1).uniform_(scale[0], scale[1]).item()
+            aspect_ratio = torch.empty(1).uniform_(ratio[0], ratio[1]).item()
 
             h = int(round(math.sqrt(erase_area * aspect_ratio)))
             w = int(round(math.sqrt(erase_area / aspect_ratio)))
+            if not (h < img_h and w < img_w):
+                continue
 
-            if h < img_h and w < img_w:
-                i = random.randint(0, img_h - h)
-                j = random.randint(0, img_w - w)
-                if isinstance(value, numbers.Number):
-                    v = value
-                elif isinstance(value, torch._six.string_classes):
-                    v = torch.empty([img_c, h, w], dtype=torch.float32).normal_()
-                elif isinstance(value, (list, tuple)):
-                    v = torch.tensor(value, dtype=torch.float32).view(-1, 1, 1).expand(-1, h, w)
-                return i, j, h, w, v
+            if value is None:
+                v = torch.empty([img_c, h, w], dtype=torch.float32).normal_()
+            else:
+                v = torch.tensor(value)[:, None, None]
+
+            i = torch.randint(0, img_h - h, size=(1, )).item()
+            j = torch.randint(0, img_w - w, size=(1, )).item()
+            return i, j, h, w, v
 
         # Return original image
         return 0, 0, img_h, img_w, img
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
             img (Tensor): Tensor image of size (C, H, W) to be erased.
@@ -1381,7 +1441,24 @@ class RandomErasing(object):
         Returns:
             img (Tensor): Erased Tensor image.
         """
-        if random.uniform(0, 1) < self.p:
-            x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=self.value)
+        if torch.rand(1) < self.p:
+
+            # cast self.value to script acceptable type
+            if isinstance(self.value, (int, float)):
+                value = [self.value, ]
+            elif isinstance(self.value, str):
+                value = None
+            elif isinstance(self.value, tuple):
+                value = list(self.value)
+            else:
+                value = self.value
+
+            if value is not None and not (len(value) in (1, img.shape[-3])):
+                raise ValueError(
+                    "If value is a sequence, it should have either a single value or "
+                    "{} (number of input channels)".format(img.shape[-3])
+                )
+
+            x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=value)
             return F.erase(img, x, y, h, w, v, self.inplace)
         return img

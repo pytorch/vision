@@ -1,4 +1,5 @@
 import numbers
+from typing import Any, List
 
 import torch
 try:
@@ -10,11 +11,18 @@ import numpy as np
 
 
 @torch.jit.unused
-def _is_pil_image(img):
+def _is_pil_image(img: Any) -> bool:
     if accimage is not None:
         return isinstance(img, (Image.Image, accimage.Image))
     else:
         return isinstance(img, Image.Image)
+
+
+@torch.jit.unused
+def _get_image_size(img: Any) -> List[int]:
+    if _is_pil_image(img):
+        return img.size
+    raise TypeError("Unexpected type {}".format(type(img)))
 
 
 @torch.jit.unused
@@ -258,3 +266,23 @@ def pad(img, padding, fill=0, padding_mode="constant"):
             img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
 
         return Image.fromarray(img)
+
+
+@torch.jit.unused
+def crop(img: Image.Image, top: int, left: int, height: int, width: int) -> Image.Image:
+    """Crop the given PIL Image.
+
+    Args:
+        img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
+        top (int): Vertical component of the top left corner of the crop box.
+        left (int): Horizontal component of the top left corner of the crop box.
+        height (int): Height of the crop box.
+        width (int): Width of the crop box.
+
+    Returns:
+        PIL Image: Cropped image.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    return img.crop((left, top, left + width, top + height))
