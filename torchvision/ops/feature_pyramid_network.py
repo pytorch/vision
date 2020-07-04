@@ -7,6 +7,30 @@ from torch import nn, Tensor
 from torch.jit.annotations import Tuple, List, Dict, Optional
 
 
+class ExtraFPNBlock(nn.Module):
+    """
+    Base class for the extra block in the FPN.
+
+    Arguments:
+        results (List[Tensor]): the result of the FPN
+        x (List[Tensor]): the original feature maps
+        names (List[str]): the names for each one of the
+            original feature maps
+
+    Returns:
+        results (List[Tensor]): the extended set of results
+            of the FPN
+        names (List[str]): the extended set of names for the results
+    """
+    def forward(
+        self,
+        results: List[Tensor],
+        x: List[Tensor],
+        names: List[str],
+    ) -> Tuple[List[Tensor], List[str]]:
+        pass
+
+
 class FeaturePyramidNetwork(nn.Module):
     """
     Module that adds a FPN from on top of a set of feature maps. This is based on
@@ -140,30 +164,6 @@ class FeaturePyramidNetwork(nn.Module):
         out = OrderedDict([(k, v) for k, v in zip(names, results)])
 
         return out
-
-
-class ExtraFPNBlock(nn.Module):
-    """
-    Base class for the extra block in the FPN.
-
-    Arguments:
-        results (List[Tensor]): the result of the FPN
-        x (List[Tensor]): the original feature maps
-        names (List[str]): the names for each one of the
-            original feature maps
-
-    Returns:
-        results (List[Tensor]): the extended set of results
-            of the FPN
-        names (List[str]): the extended set of names for the results
-    """
-    def forward(
-        self,
-        results: List[Tensor],
-        x: List[Tensor],
-        names: List[str],
-    ) -> Tuple[List[Tensor], List[str]]:
-        pass
 
 
 class LastLevelMaxPool(ExtraFPNBlock):
