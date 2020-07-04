@@ -93,11 +93,11 @@ static void torch_jpeg_set_source_mgr(
 
 torch::Tensor decodeJPEG(const torch::Tensor& data) {
   struct jpeg_decompress_struct cinfo;
-  struct jpeg_error_mgr jerr;
+  struct torch_jpeg_error_mgr jerr;
 
   auto datap = data.accessor<unsigned char, 1>().data();
   // Setup decompression structure
-  cinfo.err = jpeg_std_error(&jerr);
+  cinfo.err = jpeg_std_error(&jerr.pub);
   jerr.pub.error_exit = torch_jpeg_error_exit;
   /* Establish the setjmp return context for my_error_exit to use. */
   if (setjmp(jerr.setjmp_buffer)) {
