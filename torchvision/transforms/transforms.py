@@ -680,8 +680,10 @@ class RandomPerspective(object):
         return self.__class__.__name__ + '(p={})'.format(self.p)
 
 
-class RandomResizedCrop(object):
-    """Crop the given PIL Image to random size and aspect ratio.
+class RandomResizedCrop(torch.nn.Module):
+    """Crop the given image to random size and aspect ratio.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     A crop of random size (default: of 0.08 to 1.0) of the original size and a random
     aspect ratio (default: of 3/4 to 4/3) of the original aspect ratio is made. This crop
@@ -689,10 +691,11 @@ class RandomResizedCrop(object):
     This is popularly used to train the Inception networks.
 
     Args:
-        size: expected output size of each edge
-        scale: range of size of the origin size cropped
-        ratio: range of aspect ratio of the origin aspect ratio cropped
-        interpolation: Default: PIL.Image.BILINEAR
+        size (int or sequence): expected output size of each edge. If provided a tuple or list of length 1,
+            it will be interpreted as (size[0], size[0]).
+        scale (): range of size of the origin size cropped
+        ratio (): range of aspect ratio of the origin aspect ratio cropped.
+        interpolation (int): Desired interpolation. Default: ``PIL.Image.BILINEAR``
     """
 
     def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=Image.BILINEAR):

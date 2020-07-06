@@ -217,6 +217,9 @@ class Tester(unittest.TestCase):
             "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
+    def test_resized_crop(self):
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()
