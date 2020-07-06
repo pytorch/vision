@@ -258,7 +258,9 @@ class Tester(unittest.TestCase):
                 )
                 s_transform = torch.jit.script(transform)
 
+                torch.manual_seed(12)
                 out1 = transform(tensor)
+                torch.manual_seed(12)
                 out2 = s_transform(tensor)
                 self.assertTrue(out1.equal(out2))
 
