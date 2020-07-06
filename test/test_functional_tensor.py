@@ -1,14 +1,17 @@
-import torch
-import torchvision.transforms as transforms
-import torchvision.transforms.functional_tensor as F_t
-import torchvision.transforms.functional_pil as F_pil
-import torchvision.transforms.functional as F
-import numpy as np
 import unittest
 import random
 import colorsys
 
 from PIL import Image
+from PIL.Image import NEAREST, BILINEAR, BICUBIC
+
+import numpy as np
+
+import torch
+import torchvision.transforms as transforms
+import torchvision.transforms.functional_tensor as F_t
+import torchvision.transforms.functional_pil as F_pil
+import torchvision.transforms.functional as F
 
 
 class Tester(unittest.TestCase):
@@ -21,6 +24,14 @@ class Tester(unittest.TestCase):
     def compareTensorToPIL(self, tensor, pil_image, msg=None):
         pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
         self.assertTrue(tensor.equal(pil_tensor), msg)
+
+    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None):
+        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1))).to(tensor)
+        mae = torch.abs(tensor - pil_tensor).mean().item()
+        self.assertTrue(
+            mae < tol,
+            msg="{}: mae={}, tol={}: \n{}\nvs\n{}".format(msg, mae, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
+        )
 
     def test_vflip(self):
         script_vflip = torch.jit.script(F_t.vflip)
@@ -281,6 +292,44 @@ class Tester(unittest.TestCase):
 
         with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
             F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
+
+    def test_resize(self):
+        script_fn = torch.jit.script(F_t.resize)
+        tensor, pil_img = self._create_data(26, 36)
+
+        for dt in [None, torch.float32, torch.float64]:
+            if dt is not None:
+                # This is a trivial cast to float of uint8 data to test all cases
+                tensor = tensor.to(dt)
+            for size in [32, [32, ], [32, 32], (32, 32), ]:
+                for interpolation in [BILINEAR, BICUBIC, NEAREST]:
+                    resized_tensor = F_t.resize(tensor, size=size, interpolation=interpolation)
+                    resized_pil_img = F_pil.resize(pil_img, size=size, interpolation=interpolation)
+
+                    self.assertEqual(
+                        resized_tensor.size()[1:], resized_pil_img.size[::-1], msg="{}, {}".format(size, interpolation)
+                    )
+
+                    if interpolation != NEAREST:
+                        # We can not check values if mode = NEAREST, as results are different
+                        # E.g. resized_tensor  = [[a, a, b, c, d, d, e, ...]]
+                        # E.g. resized_pil_img = [[a, b, c, c, d, e, f, ...]]
+                        resized_tensor_f = resized_tensor
+                        # we need to cast to uint8 to compare with PIL image
+                        if resized_tensor_f.dtype == torch.uint8:
+                            resized_tensor_f = resized_tensor_f.to(torch.float)
+
+                        # Pay attention to high tolerance for MAE
+                        self.approxEqualTensorToPIL(
+                            resized_tensor_f, resized_pil_img, tol=8.0, msg="{}, {}".format(size, interpolation)
+                        )
+
+                    if isinstance(size, int):
+                        script_size = [size, ]
+                    else:
+                        script_size = size
+                    pad_tensor_script = script_fn(tensor, size=script_size, interpolation=interpolation)
+                    self.assertTrue(resized_tensor.equal(pad_tensor_script), msg="{}, {}".format(size, interpolation))
 
 
 if __name__ == '__main__':

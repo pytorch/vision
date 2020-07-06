@@ -218,6 +218,33 @@ class Tester(unittest.TestCase):
             "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
+    def test_resize(self):
+        tensor, _ = self._create_data(height=34, width=36)
+        script_fn = torch.jit.script(F.resize)
+
+        for dt in [None, torch.float32, torch.float64]:
+            if dt is not None:
+                # This is a trivial cast to float of uint8 data to test all cases
+                tensor = tensor.to(dt)
+            for size in [32, [32, ], [32, 32], (32, 32), ]:
+                for interpolation in [BILINEAR, BICUBIC, NEAREST]:
+
+                    resized_tensor = F.resize(tensor, size=size, interpolation=interpolation)
+
+                    if isinstance(size, int):
+                        script_size = [size, ]
+                    else:
+                        script_size = size
+
+                    s_resized_tensor = script_fn(tensor, size=script_size, interpolation=interpolation)
+                    self.assertTrue(s_resized_tensor.equal(resized_tensor))
+
+                    transform = T.Resize(size=script_size, interpolation=interpolation)
+                    resized_tensor = transform(tensor)
+                    script_transform = torch.jit.script(transform)
+                    s_resized_tensor = script_transform(tensor)
+                    self.assertTrue(s_resized_tensor.equal(resized_tensor))
+
     def test_resized_crop(self):
         tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
 
