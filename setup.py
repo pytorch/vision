@@ -291,18 +291,21 @@ def get_extensions():
             png_version = parse_version(png_version)
             if png_version >= parse_version("1.6.0"):
                 print('Building torchvision with PNG image support')
-                if sys.platform == 'linux':
+                linux = sys.platform == 'linux'
+                not_debian = False
+                libpng_on_conda = False
+                if linux:
                     bin_folder = os.path.dirname(sys.executable)
                     png_bin_folder = os.path.dirname(libpng)
                     libpng_on_conda = (
                         running_under_conda and bin_folder == png_bin_folder)
                     release_info = get_linux_distribution()
                     not_debian = release_info["NAME"] not in {'Ubuntu', 'Debian'}
-                    if libpng_on_conda or not_debian:
-                        png_lib = subprocess.run([libpng, '--libdir'],
-                                                 stdout=subprocess.PIPE)
-                        png_lib = png_lib.stdout.strip().decode('utf-8')
-                        image_library += [png_lib]
+                if not linux or libpng_on_conda or not_debian:
+                    png_lib = subprocess.run([libpng, '--libdir'],
+                                             stdout=subprocess.PIPE)
+                    png_lib = png_lib.stdout.strip().decode('utf-8')
+                    image_library += [png_lib]
                 png_include = subprocess.run([libpng, '--I_opts'],
                                              stdout=subprocess.PIPE)
                 png_include = png_include.stdout.strip().decode('utf-8')
