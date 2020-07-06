@@ -322,7 +322,9 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
             (h, w), the output size will be matched to this. If size is an int,
             the smaller edge of the image will be matched to this number maintaining
             the aspect ratio. i.e, if height > width, then image will be rescaled to
-            :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`
+            :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
+            In torchscript mode padding as single int is not supported, use a tuple or
+            list of length 1: ``[size, ]``.
         interpolation (int, optional): Desired interpolation. Default is bilinear.
 
     Returns:
