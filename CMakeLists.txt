@@ -22,7 +22,8 @@ include_directories(torchvision/cinclude/${PROJECT_NAME})
 
 if(WITH_CUDA)
   # Gather cuda source files.
-  file(GLOB OPERATOR_SOURCES ${OPERATOR_SOURCES} torchvision/csrc/cuda/*.cu)
+  file(GLOB OPERATOR_CUDA_SOURCES torchvision/csrc/cuda/*.cu)
+  list(APPEND OPERATOR_SOURCES ${OPERATOR_CUDA_SOURCES})
 
   # Set cuda include directories.
   include_directories(torchvision/cinclude/${PROJECT_NAME}_cuda)
