@@ -1,5 +1,3 @@
-from PIL.Image import NEAREST, BILINEAR, BICUBIC
-
 import torch
 from torch import Tensor
 from torch.jit.annotations import List, BroadcastingList2
@@ -524,11 +522,8 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
         size = list(size)
 
     if isinstance(size, list) and len(size) not in [1, 2]:
-        raise ValueError("Padding must be an int or a 1 or 2 element tuple/list, not a " +
+        raise ValueError("Size must be an int or a 1 or 2 element tuple/list, not a "
                          "{} element tuple/list".format(len(size)))
-
-    if interpolation not in [0, 1, 2, 3, 4]:
-        raise ValueError("Interpolation mode should be either constant, edge, reflect or symmetric")
 
     w, h = _get_image_size(img)
 
