@@ -4,8 +4,7 @@ from torch import Tensor
 import torchvision
 
 
-def nms(boxes, scores, iou_threshold):
-    # type: (Tensor, Tensor, float) -> Tensor
+def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     """
     Performs non-maximum suppression (NMS) on the boxes according
     to their intersection-over-union (IoU).
@@ -41,8 +40,12 @@ def nms(boxes, scores, iou_threshold):
 
 
 @torch.jit._script_if_tracing
-def batched_nms(boxes, scores, idxs, iou_threshold):
-    # type: (Tensor, Tensor, Tensor, float) -> Tensor
+def batched_nms(
+    boxes: Tensor,
+    scores: Tensor,
+    idxs: Tensor,
+    iou_threshold: float,
+) -> Tensor:
     """
     Performs non-maximum suppression in a batched fashion.
 
@@ -83,8 +86,7 @@ def batched_nms(boxes, scores, idxs, iou_threshold):
         return keep
 
 
-def remove_small_boxes(boxes, min_size):
-    # type: (Tensor, float) -> Tensor
+def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     """
     Remove boxes which contains at least one side smaller than min_size.
 
@@ -102,8 +104,7 @@ def remove_small_boxes(boxes, min_size):
     return keep
 
 
-def clip_boxes_to_image(boxes, size):
-    # type: (Tensor, Tuple[int, int]) -> Tensor
+def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     """
     Clip boxes so that they lie inside an image of size `size`.
 
@@ -132,7 +133,7 @@ def clip_boxes_to_image(boxes, size):
     return clipped_boxes.reshape(boxes.shape)
 
 
-def box_area(boxes):
+def box_area(boxes: Tensor) -> Tensor:
     """
     Computes the area of a set of bounding boxes, which are specified by its
     (x1, y1, x2, y2) coordinates.
@@ -149,7 +150,7 @@ def box_area(boxes):
 
 # implementation from https://github.com/kuangliu/torchcv/blob/master/torchcv/utils/box.py
 # with slight modifications
-def box_iou(boxes1, boxes2):
+def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
     Return intersection-over-union (Jaccard index) of boxes.
 
