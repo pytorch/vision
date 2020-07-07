@@ -34,7 +34,7 @@ at::Tensor roi_align(
       pooled_height,
       pooled_width,
       sampling_ratio,
-      aligned).to(input.scalar_type());
+      aligned);
 }
 
 #ifdef WITH_CUDA
@@ -54,7 +54,7 @@ at::Tensor ROIAlign_autocast(
       pooled_height,
       pooled_width,
       sampling_ratio,
-      aligned);
+      aligned).to(input.scalar_type());
 }
 #endif
 
