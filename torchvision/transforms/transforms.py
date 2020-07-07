@@ -2,7 +2,7 @@ import math
 import numbers
 import random
 import warnings
-from collections.abc import Sequence, Iterable
+from collections.abc import Sequence
 from typing import Tuple, List, Optional
 
 import numpy as np
@@ -209,31 +209,38 @@ class Normalize(object):
         return self.__class__.__name__ + '(mean={0}, std={1})'.format(self.mean, self.std)
 
 
-class Resize(object):
-    """Resize the input PIL Image to the given size.
+class Resize(torch.nn.Module):
+    """Resize the input image to the given size.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         size (sequence or int): Desired output size. If size is a sequence like
             (h, w), output size will be matched to this. If size is an int,
             smaller edge of the image will be matched to this number.
             i.e, if height > width, then image will be rescaled to
-            (size * height / width, size)
-        interpolation (int, optional): Desired interpolation. Default is
-            ``PIL.Image.BILINEAR``
+            (size * height / width, size).
+            In torchscript mode padding as single int is not supported, use a tuple or
+            list of length 1: ``[size, ]``.
+        interpolation (int, optional): Desired interpolation. Default is ``PIL.Image.BILINEAR``
     """
 
     def __init__(self, size, interpolation=Image.BILINEAR):
-        assert isinstance(size, int) or (isinstance(size, Iterable) and len(size) == 2)
+        super().__init__()
+        if not isinstance(size, (int, Sequence)):
+            raise TypeError("Size should be int or sequence. Got {}".format(type(size)))
+        if isinstance(size, Sequence) and len(size) not in (1, 2):
+            raise ValueError("If size is a sequence, it should have 1 or 2 values")
         self.size = size
         self.interpolation = interpolation
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be scaled.
+            img (PIL Image or Tensor): Image to be scaled.
 
         Returns:
-            PIL Image: Rescaled image.
+            PIL Image or Tensor: Rescaled image.
         """
         return F.resize(img, self.size, self.interpolation)
 

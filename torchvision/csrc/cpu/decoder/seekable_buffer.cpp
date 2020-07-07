@@ -55,7 +55,7 @@ bool SeekableBuffer::readBytes(
     size_t maxBytes,
     uint64_t timeoutMs) {
   // Resize to th minimum 4K page or less
-  buffer_.resize(std::min(maxBytes, 4 * 1024UL));
+  buffer_.resize(std::min(maxBytes, size_t(4 * 1024UL)));
   end_ = 0;
   eof_ = false;
 
@@ -72,7 +72,7 @@ bool SeekableBuffer::readBytes(
     if (res > 0) {
       end_ += res;
       if (end_ == buffer_.size()) {
-        buffer_.resize(std::min(end_ * 4UL, maxBytes));
+        buffer_.resize(std::min(size_t(end_ * 4UL), maxBytes));
       }
     } else if (res == 0) {
       eof_ = true;
