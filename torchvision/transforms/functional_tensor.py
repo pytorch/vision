@@ -532,7 +532,7 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
     elif len(size) < 2:
         size_w, size_h = size[0], size[0]
     else:
-        size_w, size_h = size[0], size[1]
+        size_w, size_h = size[1], size[0]  # Convention (h, w)
 
     if isinstance(size, int) or len(size) < 2:
         if w < h:
