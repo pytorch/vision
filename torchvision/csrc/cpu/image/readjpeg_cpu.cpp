@@ -94,8 +94,6 @@ static void torch_jpeg_set_source_mgr(
 torch::Tensor decodeJPEG(const torch::Tensor& data) {
   struct jpeg_decompress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;
-  /* Output row buffer */
-  JSAMPARRAY buffer;
 
   auto datap = data.data_ptr<uint8_t>();
   // Setup decompression structure
@@ -125,18 +123,12 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
   auto tensor = torch::empty(
       {int64_t(height), int64_t(width), int64_t(components)}, torch::kU8);
   auto ptr = tensor.data_ptr<uint8_t>();
-  /* Make a one-row-high sample array that will go away when done with image */
-  buffer =
-      (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, stride, 1);
-
   while (cinfo.output_scanline < cinfo.output_height) {
     /* jpeg_read_scanlines expects an array of pointers to scanlines.
      * Here the array is only one element long, but you could ask for
      * more than one scanline at a time if that's more convenient.
      */
-    jpeg_read_scanlines(&cinfo, buffer, 1);
-    JSAMPROW line = buffer[0];
-    std::copy(&line[0], &line[stride - 1], ptr);
+    jpeg_read_scanlines(&cinfo, &ptr, 1);
     ptr += stride;
   }
 
