@@ -107,7 +107,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
      * We need to clean up the JPEG object.
      */
     jpeg_destroy_decompress(&cinfo);
-    TORCH_CHECK(false, jpegLastErrorMsg);
+    AT_ERROR(jpegLastErrorMsg);
   }
 
   jpeg_create_decompress(&cinfo);
