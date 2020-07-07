@@ -51,7 +51,7 @@ static boolean torch_jpeg_fill_input_buffer(j_decompress_ptr cinfo) {
   // No more data.  Probably an incomplete image;  just output EOI.
   src->pub.next_input_byte = EOI_BUFFER;
   src->pub.bytes_in_buffer = 1;
-  return true;
+  return TRUE;
 }
 
 static void torch_jpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes) {
