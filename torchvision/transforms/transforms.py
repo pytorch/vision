@@ -756,9 +756,9 @@ class RandomResizedCrop(torch.nn.Module):
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
 
-            if 0 < w < width and 0 < h < height:
-                i = torch.randint(0, height - h, size=(1,)).item()
-                j = torch.randint(0, width - w, size=(1,)).item()
+            if 0 < w <= width and 0 < h <= height:
+                i = torch.randint(0, max(height - h, 1), size=(1,)).item()
+                j = torch.randint(0, max(width - w, 1), size=(1,)).item()
                 return i, j, h, w
 
         # Fallback to central crop
