@@ -97,7 +97,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
   /* Output row buffer */
   JSAMPARRAY buffer;
 
-  auto datap = data.accessor<unsigned char, 1>().data();
+  auto datap = data.data_ptr<uint8_t>();
   // Setup decompression structure
   cinfo.err = jpeg_std_error(&jerr.pub);
   jerr.pub.error_exit = torch_jpeg_error_exit;
