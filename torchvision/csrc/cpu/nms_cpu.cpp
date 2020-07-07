@@ -4,7 +4,7 @@ template <typename scalar_t>
 at::Tensor nms_cpu_kernel(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const float iou_threshold) {
+    const double iou_threshold) {
   AT_ASSERTM(!dets.is_cuda(), "dets must be a CPU tensor");
   AT_ASSERTM(!scores.is_cuda(), "scores must be a CPU tensor");
   AT_ASSERTM(
@@ -72,7 +72,7 @@ at::Tensor nms_cpu_kernel(
 at::Tensor nms_cpu(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const float iou_threshold) {
+    const double iou_threshold) {
   auto result = at::empty({0}, dets.options());
 
   AT_DISPATCH_FLOATING_TYPES(dets.scalar_type(), "nms", [&] {

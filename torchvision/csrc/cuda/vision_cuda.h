@@ -90,7 +90,7 @@ at::Tensor PSROIAlign_backward_cuda(
 at::Tensor nms_cuda(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const float iou_threshold);
+    const double iou_threshold);
 
 at::Tensor DeformConv2d_forward_cuda(
     const at::Tensor& input,

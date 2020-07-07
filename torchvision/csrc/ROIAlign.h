@@ -12,6 +12,7 @@
 
 // TODO: put this stuff in torchvision namespace
 
+// roi_align dispatch nexus
 at::Tensor roi_align(
     const at::Tensor& input, // Input feature map.
     const at::Tensor& rois, // List of ROIs to pool over.
@@ -33,9 +34,10 @@ at::Tensor roi_align(
       pooled_height,
       pooled_width,
       sampling_ratio,
-      aligned);
+      aligned).to(input.scalar_type());
 }
 
+#ifdef WITH_CUDA
 at::Tensor ROIAlign_autocast(
     const at::Tensor& input,
     const at::Tensor& rois,
@@ -54,6 +56,7 @@ at::Tensor ROIAlign_autocast(
       sampling_ratio,
       aligned);
 }
+#endif
 
 at::Tensor _roi_align_backward(
     const at::Tensor& grad,

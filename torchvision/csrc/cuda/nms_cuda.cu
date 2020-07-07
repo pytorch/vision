@@ -70,10 +70,13 @@ __global__ void nms_kernel(
 
 at::Tensor nms_cuda(const at::Tensor& dets,
     const at::Tensor& scores,
-    float iou_threshold) {
+    const double iou_threshold) {
   AT_ASSERTM(dets.is_cuda(), "dets must be a CUDA tensor");
   AT_ASSERTM(scores.is_cuda(), "scores must be a CUDA tensor");
   at::cuda::CUDAGuard device_guard(dets.device());
+  if (dets.numel() == 0) {
+    return at::empty({0}, dets.options().dtype(at::kLong));
+  }
 
   auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
   auto dets_sorted = dets.index_select(0, order_t).contiguous();
