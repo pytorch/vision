@@ -23,7 +23,7 @@ def get_images(directory, img_ext):
 
 class ImageTester(unittest.TestCase):
     def test_read_jpeg(self):
-        for img_path in get_images(IMAGE_ROOT, "jpg"):
+        for img_path in get_images(IMAGE_ROOT, ".jpg"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_ljpeg = read_jpeg(img_path)
 
@@ -32,7 +32,7 @@ class ImageTester(unittest.TestCase):
             self.assertLessEqual(err, 1e-2)
 
     def test_decode_jpeg(self):
-        for img_path in get_images(IMAGE_ROOT, "jpg"):
+        for img_path in get_images(IMAGE_ROOT, ".jpg"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             size = os.path.getsize(img_path)
             img_ljpeg = decode_jpeg(torch.from_file(img_path, dtype=torch.uint8, size=size))
