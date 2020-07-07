@@ -8,6 +8,7 @@ def _is_tensor_a_torch_image(x: Tensor) -> bool:
 
 
 def _get_image_size(img: Tensor) -> List[int]:
+    """Returns (w, h) of tensor image"""
     if _is_tensor_a_torch_image(img):
         return [img.shape[-1], img.shape[-2]]
     raise TypeError("Unexpected type {}".format(type(img)))
@@ -355,6 +356,29 @@ def _hsv2rgb(img):
     return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=img.dtype), a4)
 
 
+def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
+    # padding is left, right, top, bottom
+    in_sizes = img.size()
+
+    x_indices = [i for i in range(in_sizes[-1])]  # [0, 1, 2, 3, ...]
+    left_indices = [i for i in range(padding[0] - 1, -1, -1)]  # e.g. [3, 2, 1, 0]
+    right_indices = [-(i + 1) for i in range(padding[1])]  # e.g. [-1, -2, -3]
+    x_indices = torch.tensor(left_indices + x_indices + right_indices)
+
+    y_indices = [i for i in range(in_sizes[-2])]
+    top_indices = [i for i in range(padding[2] - 1, -1, -1)]
+    bottom_indices = [-(i + 1) for i in range(padding[3])]
+    y_indices = torch.tensor(top_indices + y_indices + bottom_indices)
+
+    ndim = img.ndim
+    if ndim == 3:
+        return img[:, y_indices[:, None], x_indices[None, :]]
+    elif ndim == 4:
+        return img[:, :, y_indices[:, None], x_indices[None, :]]
+    else:
+        raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
+
+
 def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
     r"""Pad the given Tensor Image on all sides with specified padding mode and fill value.
 
@@ -380,6 +404,11 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
                        padding [1, 2, 3, 4] with 2 elements on both sides in reflect mode
                        will result in [3, 2, 1, 2, 3, 4, 3, 2]
 
+            - symmetric: pads with reflection of image (repeating the last value on the edge)
+
+                         padding [1, 2, 3, 4] with 2 elements on both sides in symmetric mode
+                         will result in [2, 1, 1, 2, 3, 4, 4, 3]
+
     Returns:
         Tensor: Padded image.
     """
@@ -400,11 +429,12 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         raise ValueError("Padding must be an int or a 1, 2, or 4 element tuple, not a " +
                          "{} element tuple".format(len(padding)))
 
-    if padding_mode not in ["constant", "edge", "reflect"]:
-        raise ValueError("Padding mode should be either constant, edge or reflect")
+    if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
+        raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
     if isinstance(padding, int):
         if torch.jit.is_scripting():
+            # This maybe unreachable
             raise ValueError("padding can't be an int while torchscripting, set it as a list [value, ]")
         pad_left = pad_right = pad_top = pad_bottom = padding
     elif len(padding) == 1:
@@ -423,6 +453,11 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     if padding_mode == "edge":
         # remap padding_mode str
         padding_mode = "replicate"
+    elif padding_mode == "symmetric":
+        # route to another implementation
+        if p[0] < 0 or p[1] < 0 or p[2] < 0 or p[3] < 0:  # no any support for torch script
+            raise ValueError("Padding can not be negative for symmetric padding_mode")
+        return _pad_symmetric(img, p)
 
     need_squeeze = False
     if img.ndim < 4:
@@ -444,6 +479,95 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         img = img.squeeze(dim=0)
 
     if need_cast:
+        img = img.to(out_dtype)
+
+    return img
+
+
+def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
+    r"""Resize the input Tensor to the given size.
+
+    Args:
+        img (Tensor): Image to be resized.
+        size (int or tuple or list): Desired output size. If size is a sequence like
+            (h, w), the output size will be matched to this. If size is an int,
+            the smaller edge of the image will be matched to this number maintaining
+            the aspect ratio. i.e, if height > width, then image will be rescaled to
+            :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
+            In torchscript mode padding as a single int is not supported, use a tuple or
+            list of length 1: ``[size, ]``.
+        interpolation (int, optional): Desired interpolation. Default is bilinear.
+
+    Returns:
+        Tensor: Resized image.
+    """
+    if not _is_tensor_a_torch_image(img):
+        raise TypeError("tensor is not a torch image.")
+
+    if not isinstance(size, (int, tuple, list)):
+        raise TypeError("Got inappropriate size arg")
+    if not isinstance(interpolation, int):
+        raise TypeError("Got inappropriate interpolation arg")
+
+    _interpolation_modes = {
+        0: "nearest",
+        2: "bilinear",
+        3: "bicubic",
+    }
+
+    if interpolation not in _interpolation_modes:
+        raise ValueError("This interpolation mode is unsupported with Tensor input")
+
+    if isinstance(size, tuple):
+        size = list(size)
+
+    if isinstance(size, list) and len(size) not in [1, 2]:
+        raise ValueError("Size must be an int or a 1 or 2 element tuple/list, not a "
+                         "{} element tuple/list".format(len(size)))
+
+    w, h = _get_image_size(img)
+
+    if isinstance(size, int):
+        size_w, size_h = size, size
+    elif len(size) < 2:
+        size_w, size_h = size[0], size[0]
+    else:
+        size_w, size_h = size[0], size[1]
+
+    if isinstance(size, int) or len(size) < 2:
+        if w < h:
+            size_h = int(size_w * h / w)
+        else:
+            size_w = int(size_h * w / h)
+
+    if (w <= h and w == size_w) or (h <= w and h == size_h):
+        return img
+
+    # make image NCHW
+    need_squeeze = False
+    if img.ndim < 4:
+        img = img.unsqueeze(dim=0)
+        need_squeeze = True
+
+    mode = _interpolation_modes[interpolation]
+
+    out_dtype = img.dtype
+    need_cast = False
+    if img.dtype not in (torch.float32, torch.float64):
+        need_cast = True
+        img = img.to(torch.float32)
+
+    # Define align_corners to avoid warnings
+    align_corners = False if mode in ["bilinear", "bicubic"] else None
+
+    img = torch.nn.functional.interpolate(img, size=(size_h, size_w), mode=mode, align_corners=align_corners)
+
+    if need_squeeze:
+        img = img.squeeze(dim=0)
+
+    if need_cast:
+        if mode == "bicubic":
+            img = img.clamp(min=0, max=255)
         img = img.to(out_dtype)
 
     return img

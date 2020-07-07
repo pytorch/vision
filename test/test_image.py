@@ -5,7 +5,7 @@ import sys
 import torch
 import torchvision
 from PIL import Image
-from torchvision.io.image import read_png, decode_png, read_jpeg, decode_jpeg
+from torchvision.io.image import read_png, decode_png
 import numpy as np
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
@@ -22,50 +22,24 @@ def get_images(directory, img_ext):
 
 
 class ImageTester(unittest.TestCase):
-    def test_read_jpeg(self):
-        for img_path in get_images(IMAGE_ROOT, "jpg"):
-            img_pil = torch.from_numpy(np.array(Image.open(img_path)))
-            img_ljpeg = read_jpeg(img_path)
-
-            norm = img_ljpeg.shape[0] * img_ljpeg.shape[1] * img_ljpeg.shape[2] * 255
-            err = torch.abs(img_ljpeg.flatten().float() - img_pil.flatten().float()).sum().float() / (norm)
-            self.assertLessEqual(err, 1e-2)
-
-    def test_decode_jpeg(self):
-        for img_path in get_images(IMAGE_ROOT, "jpg"):
-            img_pil = torch.from_numpy(np.array(Image.open(img_path)))
-            size = os.path.getsize(img_path)
-            img_ljpeg = decode_jpeg(torch.from_file(img_path, dtype=torch.uint8, size=size))
-
-            norm = img_ljpeg.shape[0] * img_ljpeg.shape[1] * img_ljpeg.shape[2] * 255
-            err = torch.abs(img_ljpeg.flatten().float() - img_pil.flatten().float()).sum().float() / (norm)
-
-            self.assertLessEqual(err, 1e-2)
-
-        with self.assertRaisesRegex(ValueError, "Expected a non empty 1-dimensional tensor."):
-            decode_jpeg(torch.empty((100, 1), dtype=torch.uint8))
-
-        with self.assertRaisesRegex(ValueError, "Expected a torch.uint8 tensor."):
-            decode_jpeg(torch.empty((100, ), dtype=torch.float16))
-
-        with self.assertRaisesRegex(RuntimeError, "Error while reading jpeg headers"):
-            decode_jpeg(torch.empty((100), dtype=torch.uint8))
-
     def test_read_png(self):
-        for img_path in get_images(IMAGE_DIR, "png"):
+        # Check across .png
+        for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_lpng = read_png(img_path)
-            self.assertEqual(img_lpng, img_pil)
+            self.assertTrue(img_lpng.equal(img_pil))
 
     def test_decode_png(self):
-        for img_path in get_images(IMAGE_DIR, "png"):
+        for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             size = os.path.getsize(img_path)
             img_lpng = decode_png(torch.from_file(img_path, dtype=torch.uint8, size=size))
-            self.assertEqual(img_lpng, img_pil)
+            self.assertTrue(img_lpng.equal(img_pil))
 
-            self.assertEqual(decode_png(torch.empty()), torch.empty())
-            self.assertEqual(decode_png(torch.randint(3, 5, (300,))), torch.empty())
+            with self.assertRaises(ValueError):
+                decode_png(torch.empty((), dtype=torch.uint8))
+            with self.assertRaises(RuntimeError):
+                decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
 
 
 if __name__ == '__main__':

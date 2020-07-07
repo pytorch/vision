@@ -17,6 +17,7 @@ find_package(PNG REQUIRED)
 
 
 file(GLOB HEADERS torchvision/csrc/*.h)
+# Image extension
 file(GLOB IMAGE_HEADERS torchvision/csrc/cpu/image/*.h)
 file(GLOB IMAGE_SOURCES torchvision/csrc/cpu/image/*.cpp)
 file(GLOB OPERATOR_SOURCES torchvision/csrc/cpu/*.h torchvision/csrc/cpu/*.cpp ${IMAGE_HEADERS} ${IMAGE_SOURCES} ${HEADERS} torchvision/csrc/*.cpp)
