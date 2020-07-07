@@ -2,8 +2,8 @@
 #include "cpu/vision_cpu.h"
 
 #ifdef WITH_CUDA
-#include "cuda/vision_cuda.h"
 #include "autocast.h"
+#include "cuda/vision_cuda.h"
 #endif
 #ifdef WITH_HIP
 #include "hip/vision_cuda.h"
@@ -17,10 +17,7 @@ at::Tensor nms(
   static auto op = c10::Dispatcher::singleton()
                        .findSchemaOrThrow("torchvision::nms", "")
                        .typed<decltype(nms)>();
-  return op.call(
-      dets,
-      scores,
-      iou_threshold);
+  return op.call(dets, scores, iou_threshold);
 }
 
 #ifdef WITH_CUDA

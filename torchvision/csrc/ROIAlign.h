@@ -3,8 +3,8 @@
 #include "cpu/vision_cpu.h"
 
 #ifdef WITH_CUDA
-#include "cuda/vision_cuda.h"
 #include "autocast.h"
+#include "cuda/vision_cuda.h"
 #endif
 #ifdef WITH_HIP
 #include "hip/vision_cuda.h"
@@ -48,13 +48,14 @@ at::Tensor ROIAlign_autocast(
     const bool aligned) {
   c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
   return roi_align(
-      autocast::_cast(at::kFloat, input),
-      autocast::_cast(at::kFloat, rois),
-      spatial_scale,
-      pooled_height,
-      pooled_width,
-      sampling_ratio,
-      aligned).to(input.scalar_type());
+             autocast::_cast(at::kFloat, input),
+             autocast::_cast(at::kFloat, rois),
+             spatial_scale,
+             pooled_height,
+             pooled_width,
+             sampling_ratio,
+             aligned)
+      .to(input.scalar_type());
 }
 #endif
 
