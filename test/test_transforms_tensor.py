@@ -2,6 +2,7 @@ import torch
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
 from PIL import Image
+from PIL.Image import NEAREST, BILINEAR, BICUBIC
 
 import numpy as np
 
@@ -216,6 +217,52 @@ class Tester(unittest.TestCase):
         self._test_geom_op_list_output(
             "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
+
+    def test_resize(self):
+        tensor, _ = self._create_data(height=34, width=36)
+        script_fn = torch.jit.script(F.resize)
+
+        for dt in [None, torch.float32, torch.float64]:
+            if dt is not None:
+                # This is a trivial cast to float of uint8 data to test all cases
+                tensor = tensor.to(dt)
+            for size in [32, [32, ], [32, 32], (32, 32), ]:
+                for interpolation in [BILINEAR, BICUBIC, NEAREST]:
+
+                    resized_tensor = F.resize(tensor, size=size, interpolation=interpolation)
+
+                    if isinstance(size, int):
+                        script_size = [size, ]
+                    else:
+                        script_size = size
+
+                    s_resized_tensor = script_fn(tensor, size=script_size, interpolation=interpolation)
+                    self.assertTrue(s_resized_tensor.equal(resized_tensor))
+
+                    transform = T.Resize(size=script_size, interpolation=interpolation)
+                    resized_tensor = transform(tensor)
+                    script_transform = torch.jit.script(transform)
+                    s_resized_tensor = script_transform(tensor)
+                    self.assertTrue(s_resized_tensor.equal(resized_tensor))
+
+    def test_resized_crop(self):
+        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
+
+        scale = (0.7, 1.2)
+        ratio = (0.75, 1.333)
+
+        for size in [(32, ), [32, ], [32, 32], (32, 32)]:
+            for interpolation in [NEAREST, BILINEAR, BICUBIC]:
+                transform = T.RandomResizedCrop(
+                    size=size, scale=scale, ratio=ratio, interpolation=interpolation
+                )
+                s_transform = torch.jit.script(transform)
+
+                torch.manual_seed(12)
+                out1 = transform(tensor)
+                torch.manual_seed(12)
+                out2 = s_transform(tensor)
+                self.assertTrue(out1.equal(out2))
 
 
 if __name__ == '__main__':
