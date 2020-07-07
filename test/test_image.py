@@ -26,21 +26,14 @@ class ImageTester(unittest.TestCase):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_ljpeg = read_jpeg(img_path)
-
-            norm = img_ljpeg.shape[0] * img_ljpeg.shape[1] * img_ljpeg.shape[2] * 255
-            err = torch.abs(img_ljpeg.flatten().float() - img_pil.flatten().float()).sum().float() / (norm)
-            self.assertLessEqual(err, 1e-2)
+            self.assertTrue(img_ljpeg.equal(img_pil))
 
     def test_decode_jpeg(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             size = os.path.getsize(img_path)
             img_ljpeg = decode_jpeg(torch.from_file(img_path, dtype=torch.uint8, size=size))
-
-            norm = img_ljpeg.shape[0] * img_ljpeg.shape[1] * img_ljpeg.shape[2] * 255
-            err = torch.abs(img_ljpeg.flatten().float() - img_pil.flatten().float()).sum().float() / (norm)
-
-            self.assertLessEqual(err, 1e-2)
+            self.assertTrue(img_ljpeg.equal(img_pil))
 
         with self.assertRaisesRegex(ValueError, "Expected a non empty 1-dimensional tensor."):
             decode_jpeg(torch.empty((100, 1), dtype=torch.uint8))
