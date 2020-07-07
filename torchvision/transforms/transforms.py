@@ -510,8 +510,8 @@ class RandomCrop(torch.nn.Module):
         if w == tw and h == th:
             return 0, 0, h, w
 
-        i = torch.randint(0, h - th, size=(1, )).item()
-        j = torch.randint(0, w - tw, size=(1, )).item()
+        i = torch.randint(0, h - th + 1, size=(1, )).item()
+        j = torch.randint(0, w - tw + 1, size=(1, )).item()
         return i, j, th, tw
 
     def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
@@ -1433,8 +1433,8 @@ class RandomErasing(torch.nn.Module):
             else:
                 v = torch.tensor(value)[:, None, None]
 
-            i = torch.randint(0, img_h - h, size=(1, )).item()
-            j = torch.randint(0, img_w - w, size=(1, )).item()
+            i = torch.randint(0, img_h - h + 1, size=(1, )).item()
+            j = torch.randint(0, img_w - w + 1, size=(1, )).item()
             return i, j, h, w, v
 
         # Return original image
