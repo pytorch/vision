@@ -331,6 +331,23 @@ class Tester(unittest.TestCase):
                     pad_tensor_script = script_fn(tensor, size=script_size, interpolation=interpolation)
                     self.assertTrue(resized_tensor.equal(pad_tensor_script), msg="{}, {}".format(size, interpolation))
 
+    def test_resized_crop(self):
+        # test values of F.resized_crop in several cases:
+        # 1) resize to the same size, crop to the same size => should be identity
+        tensor, _ = self._create_data(26, 36)
+        for i in [0, 2, 3]:
+            out_tensor = F.resized_crop(tensor, top=0, left=0, height=26, width=36, size=[26, 36], interpolation=i)
+            self.assertTrue(tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5]))
+
+        # 2) resize by half and crop a TL corner
+        tensor, _ = self._create_data(26, 36)
+        out_tensor = F.resized_crop(tensor, top=0, left=0, height=20, width=30, size=[10, 15], interpolation=0)
+        expected_out_tensor = tensor[:, :20:2, :30:2]
+        self.assertTrue(
+            expected_out_tensor.equal(out_tensor),
+            msg="{} vs {}".format(expected_out_tensor[0, :10, :10], out_tensor[0, :10, :10])
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
