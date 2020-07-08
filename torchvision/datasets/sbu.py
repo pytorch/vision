@@ -1,5 +1,4 @@
 from PIL import Image
-from six.moves import zip
 from .utils import download_url, check_integrity
 
 import os

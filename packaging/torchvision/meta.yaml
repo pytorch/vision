@@ -20,7 +20,6 @@ requirements:
     - python
     - pillow >=4.1.1
     - numpy >=1.11
-    - six
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
 
