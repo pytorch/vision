@@ -74,6 +74,26 @@ script_test_models = {
 }
 
 
+# The following models exhibit flaky numerics under autocast in _test_*_model harnesses.
+# This may be caused by the harness environment (e.g. num classes, input initialization
+# via torch.rand), and does not prove autocast is unsuitable when training with real data
+# (autocast has been used successfully with real data for some of these models).
+# TODO:  investigate why autocast numerics are flaky in the harnesses.
+#
+# For the following models, _test_*_model harnesses skip numerical checks on outputs when
+# trying autocast. However, they still try an autocasted forward pass, so they still ensure
+# autocast coverage suffices to prevent dtype errors in each model.
+autocast_flaky_numerics = (
+    "fasterrcnn_resnet50_fpn",
+    "inception_v3",
+    "keypointrcnn_resnet50_fpn",
+    "maskrcnn_resnet50_fpn",
+    "resnet101",
+    "resnet152",
+    "wide_resnet101_2",
+)
+
+
 class ModelTester(TestCase):
     def checkModule(self, model, name, args):
         if name not in script_test_models:
@@ -97,7 +117,9 @@ class ModelTester(TestCase):
         if dev == "cuda":
             with torch.cuda.amp.autocast():
                 out = model(x)
-                # self.assertExpected(out.cpu(), prec=0.1, strip_suffix="_" + dev)
+                # See autocast_flaky_numerics comment at top of file.
+                if name not in autocast_flaky_numerics:
+                    self.assertExpected(out.cpu(), prec=0.1, strip_suffix="_" + dev)
                 self.assertEqual(out.shape[-1], 50)
 
     def _test_segmentation_model(self, name, dev):
@@ -161,28 +183,27 @@ class ModelTester(TestCase):
 
         check_out(out)
 
+        scripted_model = torch.jit.script(model)
+        scripted_model.eval()
+        scripted_out = scripted_model(model_input)[1]
+        self.assertEqual(scripted_out[0]["boxes"], out[0]["boxes"])
+        self.assertEqual(scripted_out[0]["scores"], out[0]["scores"])
+        # labels currently float in script: need to investigate (though same result)
+        self.assertEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
+        self.assertTrue("boxes" in out[0])
+        self.assertTrue("scores" in out[0])
+        self.assertTrue("labels" in out[0])
+        # don't check script because we are compiling it here:
+        # TODO: refactor tests
+        # self.check_script(model, name)
+        self.checkModule(model, name, ([x],))
+
         if dev == "cuda":
             with torch.cuda.amp.autocast():
                 out = model(model_input)
-                # check_out(out)
-        else:
-            # ASK FRANCISCO:  The lines below seem to break sometimes if the model is cuda.
-            # Under what circumstances can/should the lines below be allowed?
-            _ = 1  # deliberate flake8 error so we don't forget to address ^^^^
-            scripted_model = torch.jit.script(model)
-            scripted_model.eval()
-            scripted_out = scripted_model(model_input)[1]
-            self.assertEqual(scripted_out[0]["boxes"], out[0]["boxes"])
-            self.assertEqual(scripted_out[0]["scores"], out[0]["scores"])
-            # labels currently float in script: need to investigate (though same result)
-            self.assertEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
-            self.assertTrue("boxes" in out[0])
-            self.assertTrue("scores" in out[0])
-            self.assertTrue("labels" in out[0])
-            # don't check script because we are compiling it here:
-            # TODO: refactor tests
-            # self.check_script(model, name)
-            self.checkModule(model, name, ([x],))
+                # See autocast_flaky_numerics comment at top of file.
+                if name not in autocast_flaky_numerics:
+                    check_out(out)
 
     def _test_detection_model_validation(self, name):
         set_rng_seed(0)
