@@ -24,18 +24,13 @@ def get_images(directory, img_ext):
 class ImageTester(unittest.TestCase):
     def test_read_jpeg(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            img_pil = torch.from_numpy(np.array(Image.open(img_path)))
+            img_pil = torch.load(img_path.replace('jpg', 'pth'))
             img_ljpeg = read_jpeg(img_path)
-            norm = img_ljpeg.shape[0] * img_ljpeg.shape[1] * img_ljpeg.shape[2] * 255
-            err = torch.abs(img_ljpeg.flatten().float() - img_pil.flatten().float()).sum().float() / (norm)
-            print(err)
-            diff = (img_ljpeg.float() - img_pil.float()).abs().max()
-            print(diff)
             self.assertTrue(img_ljpeg.equal(img_pil))
 
     def test_decode_jpeg(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            img_pil = torch.from_numpy(np.array(Image.open(img_path)))
+            img_pil = torch.load(img_path.replace('jpg', 'pth'))
             size = os.path.getsize(img_path)
             img_ljpeg = decode_jpeg(torch.from_file(img_path, dtype=torch.uint8, size=size))
             self.assertTrue(img_ljpeg.equal(img_pil))
