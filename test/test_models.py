@@ -87,16 +87,17 @@ class ModelTester(TestCase):
         # more enforcing in nature
         model = models.__dict__[name](num_classes=50)
         model.eval().to(device=dev)
-        x = torch.rand(input_shape, device=dev)
+        # randn always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+        x = torch.rand(input_shape).to(device=dev)
         out = model(x)
-        # self.assertExpected(out, prec=0.1)
+        self.assertExpected(out.cpu(), prec=0.1, strip_suffix="_" + dev)
         self.assertEqual(out.shape[-1], 50)
         self.checkModule(model, name, (x,))
 
         if dev == "cuda":
             with torch.cuda.amp.autocast():
                 out = model(x)
-                # self.assertExpected(out, prec=0.1)
+                # self.assertExpected(out.cpu(), prec=0.1, strip_suffix="_" + dev)
                 self.assertEqual(out.shape[-1], 50)
 
     def _test_segmentation_model(self, name, dev):
@@ -105,7 +106,8 @@ class ModelTester(TestCase):
         model = models.segmentation.__dict__[name](num_classes=50, pretrained_backbone=False)
         model.eval().to(device=dev)
         input_shape = (1, 3, 300, 300)
-        x = torch.rand(input_shape, device=dev)
+        # randn always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+        x = torch.rand(input_shape).to(device=dev)
         out = model(x)
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
         self.checkModule(model, name, (x,))
@@ -120,7 +122,8 @@ class ModelTester(TestCase):
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
         model.eval().to(device=dev)
         input_shape = (3, 300, 300)
-        x = torch.rand(input_shape, device=dev)
+        # randn always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+        x = torch.rand(input_shape).to(device=dev)
         model_input = [x]
         out = model(model_input)
         self.assertIs(model_input[0], x)
@@ -150,17 +153,18 @@ class ModelTester(TestCase):
             if name == "maskrcnn_resnet50_fpn":
                 test_value = map_nested_tensor_object(out, tensor_map_fn=compute_mean_std)
                 # mean values are small, use large prec
-                # self.assertExpected(test_value, prec=.01)
+                self.assertExpected(test_value, prec=.01, strip_suffix="_" + dev)
             else:
-                pass
-                # self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor), prec=0.01)
+                self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor),
+                                    prec=0.01,
+                                    strip_suffix="_" + dev)
 
         check_out(out)
 
         if dev == "cuda":
             with torch.cuda.amp.autocast():
                 out = model(model_input)
-                check_out(out)
+                # check_out(out)
         else:
             # ASK FRANCISCO:  The lines below seem to break sometimes if the model is cuda.
             # Under what circumstances can/should the lines below be allowed?
@@ -210,7 +214,8 @@ class ModelTester(TestCase):
         # test both basicblock and Bottleneck
         model = models.video.__dict__[name](num_classes=50)
         model.eval().to(device=dev)
-        x = torch.rand(input_shape, device=dev)
+        # randn always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+        x = torch.rand(input_shape).to(device=dev)
         out = model(x)
         self.checkModule(model, name, (x,))
         self.assertEqual(out.shape[-1], 50)
