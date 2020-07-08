@@ -162,6 +162,9 @@ class ModelTester(TestCase):
                 out = model(model_input)
                 check_out(out)
         else:
+            # ASK FRANCISCO:  The lines below seem to break sometimes if the model is cuda.
+            # Under what circumstances can/should the lines below be allowed?
+            _ = 1  # deliberate flake8 error so we don't forget to address ^^^^
             scripted_model = torch.jit.script(model)
             scripted_model.eval()
             scripted_out = scripted_model(model_input)[1]
