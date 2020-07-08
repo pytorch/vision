@@ -880,11 +880,13 @@ def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     return M
 
 
-def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
-    """Apply affine transformation on the image keeping image center invariant
+def affine(img: Tensor, angle: int, translate: List[int], scale: float, shear List: , resample=0, fillcolor=None):
+    """Apply affine transformation on the image keeping image center invariant.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        img (PIL Image): PIL Image to be rotated.
+        img (PIL Image or Tensor): image to be rotated.
         angle (float or int): rotation angle in degrees between -180 and 180, clockwise direction.
         translate (list or tuple of integers): horizontal and vertical translations (post-rotation translation)
         scale (float): overall scale
