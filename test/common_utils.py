@@ -85,7 +85,7 @@ def is_iterable(obj):
 class TestCase(unittest.TestCase):
     precision = 1e-5
 
-    def assertExpected(self, output, subname=None, prec=None, strip_suffix=""):
+    def assertExpected(self, output, subname=None, prec=None, strip_suffix=None):
         r"""
         Test that a python value matches the recorded contents of a file
         derived from the name of this test and subname.  The value must be
@@ -106,7 +106,7 @@ class TestCase(unittest.TestCase):
         def remove_prefix_suffix(text, prefix, suffix):
             if text.startswith(prefix):
                 text = text[len(prefix):]
-            if text.endswith(suffix):
+            if suffix is not None and text.endswith(suffix):
                 text = text[:len(text) - len(suffix)]
             return text
         # NB: we take __file__ from the module that defined the test
