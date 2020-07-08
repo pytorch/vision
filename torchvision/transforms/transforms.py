@@ -222,7 +222,9 @@ class Resize(torch.nn.Module):
             (size * height / width, size).
             In torchscript mode padding as single int is not supported, use a tuple or
             list of length 1: ``[size, ]``.
-        interpolation (int, optional): Desired interpolation. Default is ``PIL.Image.BILINEAR``
+        interpolation (int, optional): Desired interpolation enum defined by `filters`_.
+            Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
+            and ``PIL.Image.BICUBIC`` are supported.
     """
 
     def __init__(self, size, interpolation=Image.BILINEAR):
@@ -703,7 +705,9 @@ class RandomResizedCrop(torch.nn.Module):
             made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
         scale (tuple of float): range of size of the origin size cropped
         ratio (tuple of float): range of aspect ratio of the origin aspect ratio cropped.
-        interpolation (int): Desired interpolation. Default: ``PIL.Image.BILINEAR``
+        interpolation (int): Desired interpolation enum defined by `filters`_.
+            Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
+            and ``PIL.Image.BICUBIC`` are supported.
     """
 
     def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=Image.BILINEAR):
