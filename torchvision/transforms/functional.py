@@ -325,8 +325,7 @@ def resize(img: Tensor, size: List[int], interpolation: int = Image.BILINEAR) ->
             :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
             In torchscript mode padding as single int is not supported, use a tuple or
             list of length 1: ``[size, ]``.
-        interpolation (int, optional): Desired interpolation enum defined by
-            `PIL resampling filters <https://pillow.readthedocs.io/en/stable/handbook/concepts.html?#filters>`_ .
+        interpolation (int, optional): Desired interpolation enum defined by `filters`_.
             Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
             and ``PIL.Image.BICUBIC`` are supported.
 
@@ -458,8 +457,7 @@ def resized_crop(
         height (int): Height of the crop box.
         width (int): Width of the crop box.
         size (sequence or int): Desired output size. Same semantics as ``resize``.
-        interpolation (int, optional): Desired interpolation enum defined by
-            `PIL resampling filters <https://pillow.readthedocs.io/en/stable/handbook/concepts.html?#filters>`_ .
+        interpolation (int, optional): Desired interpolation enum defined by `filters`_.
             Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
             and ``PIL.Image.BICUBIC`` are supported.
     Returns:
