@@ -161,21 +161,21 @@ class ModelTester(TestCase):
             with torch.cuda.amp.autocast():
                 out = model(model_input)
                 check_out(out)
-
-        scripted_model = torch.jit.script(model)
-        scripted_model.eval()
-        scripted_out = scripted_model(model_input)[1]
-        self.assertEqual(scripted_out[0]["boxes"], out[0]["boxes"])
-        self.assertEqual(scripted_out[0]["scores"], out[0]["scores"])
-        # labels currently float in script: need to investigate (though same result)
-        self.assertEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
-        self.assertTrue("boxes" in out[0])
-        self.assertTrue("scores" in out[0])
-        self.assertTrue("labels" in out[0])
-        # don't check script because we are compiling it here:
-        # TODO: refactor tests
-        # self.check_script(model, name)
-        self.checkModule(model, name, ([x],))
+        else:
+            scripted_model = torch.jit.script(model)
+            scripted_model.eval()
+            scripted_out = scripted_model(model_input)[1]
+            self.assertEqual(scripted_out[0]["boxes"], out[0]["boxes"])
+            self.assertEqual(scripted_out[0]["scores"], out[0]["scores"])
+            # labels currently float in script: need to investigate (though same result)
+            self.assertEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
+            self.assertTrue("boxes" in out[0])
+            self.assertTrue("scores" in out[0])
+            self.assertTrue("labels" in out[0])
+            # don't check script because we are compiling it here:
+            # TODO: refactor tests
+            # self.check_script(model, name)
+            self.checkModule(model, name, ([x],))
 
     def _test_detection_model_validation(self, name):
         set_rng_seed(0)
@@ -347,8 +347,7 @@ class ModelTester(TestCase):
         self.assertEqual(t.__repr__(), expected_string)
 
 
-# _devs = ["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"]
-_devs = ["cpu"]
+_devs = ["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"]
 
 
 for model_name in get_available_classification_models():
