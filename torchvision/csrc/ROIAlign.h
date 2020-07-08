@@ -14,7 +14,8 @@ at::Tensor ROIAlign_forward(
     // scaled to this.
     const int64_t pooled_height, // The height of the pooled feature map.
     const int64_t pooled_width, // The width of the pooled feature
-    const int64_t sampling_ratio) // The number of points to sample in each bin
+    const int64_t sampling_ratio, // The number of points to sample in each bin
+    const bool aligned) // The flag for pixel shift
 // along each axis.
 {
   if (input.type().is_cuda()) {
@@ -25,13 +26,14 @@ at::Tensor ROIAlign_forward(
         spatial_scale,
         pooled_height,
         pooled_width,
-        sampling_ratio);
+        sampling_ratio,
+        aligned);
 #else
     AT_ERROR("Not compiled with GPU support");
 #endif
   }
   return ROIAlign_forward_cpu(
-      input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio);
+      input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned);
 }
 
 at::Tensor ROIAlign_backward(
@@ -44,7 +46,8 @@ at::Tensor ROIAlign_backward(
     const int channels,
     const int height,
     const int width,
-    const int sampling_ratio) {
+    const int sampling_ratio,
+    const bool aligned) {
   if (grad.type().is_cuda()) {
 #ifdef WITH_CUDA
     return ROIAlign_backward_cuda(
@@ -57,7 +60,8 @@ at::Tensor ROIAlign_backward(
         channels,
         height,
         width,
-        sampling_ratio);
+        sampling_ratio,
+        aligned);
 #else
     AT_ERROR("Not compiled with GPU support");
 #endif
@@ -72,7 +76,8 @@ at::Tensor ROIAlign_backward(
       channels,
       height,
       width,
-      sampling_ratio);
+      sampling_ratio,
+      aligned);
 }
 
 using namespace at;
@@ -90,11 +95,13 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
       const double spatial_scale,
       const int64_t pooled_height,
       const int64_t pooled_width,
-      const int64_t sampling_ratio) {
+      const int64_t sampling_ratio,
+      const bool aligned) {
     ctx->saved_data["spatial_scale"] = spatial_scale;
     ctx->saved_data["pooled_height"] = pooled_height;
     ctx->saved_data["pooled_width"] = pooled_width;
     ctx->saved_data["sampling_ratio"] = sampling_ratio;
+    ctx->saved_data["aligned"] = aligned;
     ctx->saved_data["input_shape"] = input.sizes();
     ctx->save_for_backward({rois});
     auto result = ROIAlign_forward(
@@ -103,7 +110,8 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
         spatial_scale,
         pooled_height,
         pooled_width,
-        sampling_ratio);
+        sampling_ratio,
+        aligned);
     return {result};
   }
 
@@ -124,9 +132,10 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
         input_shape[1],
         input_shape[2],
         input_shape[3],
-        ctx->saved_data["sampling_ratio"].toInt());
+        ctx->saved_data["sampling_ratio"].toInt(),
+        ctx->saved_data["aligned"].toBool());
     return {
-        grad_in, Variable(), Variable(), Variable(), Variable(), Variable()};
+        grad_in, Variable(), Variable(), Variable(), Variable(), Variable(), Variable()};
   }
 };
 
@@ -136,12 +145,14 @@ Tensor roi_align(
     const double spatial_scale,
     const int64_t pooled_height,
     const int64_t pooled_width,
-    const int64_t sampling_ratio) {
+    const int64_t sampling_ratio,
+    const bool aligned) {
   return ROIAlignFunction::apply(
       input,
       rois,
       spatial_scale,
       pooled_height,
       pooled_width,
-      sampling_ratio)[0];
+      sampling_ratio,
+      aligned)[0];
 }

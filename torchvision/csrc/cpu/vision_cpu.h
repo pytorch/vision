@@ -26,7 +26,8 @@ at::Tensor ROIAlign_forward_cpu(
     const float spatial_scale,
     const int pooled_height,
     const int pooled_width,
-    const int sampling_ratio);
+    const int sampling_ratio,
+    const bool aligned);
 
 at::Tensor ROIAlign_backward_cpu(
     const at::Tensor& grad,
@@ -38,7 +39,8 @@ at::Tensor ROIAlign_backward_cpu(
     const int channels,
     const int height,
     const int width,
-    const int sampling_ratio);
+    const int sampling_ratio,
+    const bool aligned);
 
 std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cpu(
     const at::Tensor& input,

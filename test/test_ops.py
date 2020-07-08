@@ -217,9 +217,9 @@ def bilinear_interpolate(data, y, x, snap_border=False):
 
 
 class RoIAlignTester(RoIOpTester, unittest.TestCase):
-    def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
+    def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, aligned=False, **kwargs):
         return ops.RoIAlign((pool_h, pool_w), spatial_scale=spatial_scale,
-                            sampling_ratio=sampling_ratio)(x, rois)
+                            sampling_ratio=sampling_ratio, aligned=aligned)(x, rois)
 
     def get_script_fn(self, rois, pool_size):
         @torch.jit.script
@@ -228,16 +228,18 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
             return ops.roi_align(input, rois, pool_size, 1.0)[0]
         return lambda x: script_fn(x, rois, pool_size)
 
-    def expected_fn(self, in_data, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1,
+    def expected_fn(self, in_data, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, aligned=False,
                     device=None, dtype=torch.float64):
         if device is None:
             device = torch.device("cpu")
         n_channels = in_data.size(1)
         out_data = torch.zeros(rois.size(0), n_channels, pool_h, pool_w, dtype=dtype, device=device)
 
+        offset = 0.5 if aligned else 0.
+
         for r, roi in enumerate(rois):
             batch_idx = int(roi[0])
-            j_begin, i_begin, j_end, i_end = (x.item() * spatial_scale for x in roi[1:])
+            j_begin, i_begin, j_end, i_end = (x.item() * spatial_scale - offset for x in roi[1:])
 
             roi_h = i_end - i_begin
             roi_w = j_end - j_begin
