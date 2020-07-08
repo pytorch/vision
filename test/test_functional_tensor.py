@@ -348,6 +348,49 @@ class Tester(unittest.TestCase):
             msg="{} vs {}".format(expected_out_tensor[0, :10, :10], out_tensor[0, :10, :10])
         )
 
+    def test_affine(self):
+        # Let's do some tests on square image at first
+        tensor, pil_img = self._create_data(26, 26)
+        # 1) identity map
+        out_tensor = F.affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
+        self.assertTrue(
+            tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5])
+        )
+        # 2) Test rotation
+        test_configs = [
+            (90, torch.rot90(tensor, k=1, dims=(-1, -2))),
+            (45, None),
+            (30, None),
+            (-30, None),
+            (-45, None),
+            (-90, torch.rot90(tensor, k=-1, dims=(-1, -2))),
+            (180, torch.rot90(tensor, k=2, dims=(-1, -2))),
+        ]
+        for a, true_tensor in test_configs:
+
+            out_tensor = F.affine(tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
+            if true_tensor is not None:
+                self.assertTrue(
+                    true_tensor.equal(out_tensor),
+                    msg="{}\n{} vs \n{}".format(a, out_tensor[0, :5, :5], true_tensor[0, :5, :5])
+                )
+            else:
+                true_tensor = out_tensor
+
+            out_pil_img = F.affine(pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
+            out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+
+            num_diff_pixels = (true_tensor != out_pil_tensor).sum().item() / 3.0
+            ratio_diff_pixels = num_diff_pixels / true_tensor.shape[-1] / true_tensor.shape[-2]
+            # Tolerence : 6% of different pixels
+            self.assertLess(
+                ratio_diff_pixels,
+                0.06,
+                msg="{}\n{} vs \n{}".format(
+                    ratio_diff_pixels, true_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
+                )
+            )
+
 
 if __name__ == '__main__':
     unittest.main()
