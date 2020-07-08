@@ -222,7 +222,9 @@ class Resize(torch.nn.Module):
             (size * height / width, size).
             In torchscript mode padding as single int is not supported, use a tuple or
             list of length 1: ``[size, ]``.
-        interpolation (int, optional): Desired interpolation. Default is ``PIL.Image.BILINEAR``
+        interpolation (int, optional): Desired interpolation enum defined by `filters`_.
+            Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
+            and ``PIL.Image.BICUBIC`` are supported.
     """
 
     def __init__(self, size, interpolation=Image.BILINEAR):
@@ -510,8 +512,8 @@ class RandomCrop(torch.nn.Module):
         if w == tw and h == th:
             return 0, 0, h, w
 
-        i = torch.randint(0, h - th, size=(1, )).item()
-        j = torch.randint(0, w - tw, size=(1, )).item()
+        i = torch.randint(0, h - th + 1, size=(1, )).item()
+        j = torch.randint(0, w - tw + 1, size=(1, )).item()
         return i, j, th, tw
 
     def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
@@ -687,8 +689,10 @@ class RandomPerspective(object):
         return self.__class__.__name__ + '(p={})'.format(self.p)
 
 
-class RandomResizedCrop(object):
-    """Crop the given PIL Image to random size and aspect ratio.
+class RandomResizedCrop(torch.nn.Module):
+    """Crop the given image to random size and aspect ratio.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     A crop of random size (default: of 0.08 to 1.0) of the original size and a random
     aspect ratio (default: of 3/4 to 4/3) of the original aspect ratio is made. This crop
@@ -696,31 +700,47 @@ class RandomResizedCrop(object):
     This is popularly used to train the Inception networks.
 
     Args:
-        size: expected output size of each edge
-        scale: range of size of the origin size cropped
-        ratio: range of aspect ratio of the origin aspect ratio cropped
-        interpolation: Default: PIL.Image.BILINEAR
+        size (int or sequence): expected output size of each edge. If size is an
+            int instead of sequence like (h, w), a square output size ``(size, size)`` is
+            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
+        scale (tuple of float): range of size of the origin size cropped
+        ratio (tuple of float): range of aspect ratio of the origin aspect ratio cropped.
+        interpolation (int): Desired interpolation enum defined by `filters`_.
+            Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
+            and ``PIL.Image.BICUBIC`` are supported.
     """
 
     def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=Image.BILINEAR):
-        if isinstance(size, (tuple, list)):
-            self.size = size
+        super().__init__()
+        if isinstance(size, numbers.Number):
+            self.size = (int(size), int(size))
+        elif isinstance(size, Sequence) and len(size) == 1:
+            self.size = (size[0], size[0])
         else:
-            self.size = (size, size)
+            if len(size) != 2:
+                raise ValueError("Please provide only two dimensions (h, w) for size.")
+            self.size = size
+
+        if not isinstance(scale, (tuple, list)):
+            raise TypeError("Scale should be a sequence")
+        if not isinstance(ratio, (tuple, list)):
+            raise TypeError("Ratio should be a sequence")
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
-            warnings.warn("range should be of kind (min, max)")
+            warnings.warn("Scale and ratio should be of kind (min, max)")
 
         self.interpolation = interpolation
         self.scale = scale
         self.ratio = ratio
 
     @staticmethod
-    def get_params(img, scale, ratio):
+    def get_params(
+            img: Tensor, scale: Tuple[float, float], ratio: Tuple[float, float]
+    ) -> Tuple[int, int, int, int]:
         """Get parameters for ``crop`` for a random sized crop.
 
         Args:
-            img (PIL Image): Image to be cropped.
-            scale (tuple): range of size of the origin size cropped
+            img (PIL Image or Tensor): Input image.
+            scale (tuple): range of scale of the origin size cropped
             ratio (tuple): range of aspect ratio of the origin aspect ratio cropped
 
         Returns:
@@ -731,24 +751,26 @@ class RandomResizedCrop(object):
         area = height * width
 
         for _ in range(10):
-            target_area = random.uniform(*scale) * area
-            log_ratio = (math.log(ratio[0]), math.log(ratio[1]))
-            aspect_ratio = math.exp(random.uniform(*log_ratio))
+            target_area = area * torch.empty(1).uniform_(*scale).item()
+            log_ratio = torch.log(torch.tensor(ratio))
+            aspect_ratio = torch.exp(
+                torch.empty(1).uniform_(log_ratio[0], log_ratio[1])
+            ).item()
 
             w = int(round(math.sqrt(target_area * aspect_ratio)))
             h = int(round(math.sqrt(target_area / aspect_ratio)))
 
             if 0 < w <= width and 0 < h <= height:
-                i = random.randint(0, height - h)
-                j = random.randint(0, width - w)
+                i = torch.randint(0, height - h + 1, size=(1,)).item()
+                j = torch.randint(0, width - w + 1, size=(1,)).item()
                 return i, j, h, w
 
         # Fallback to central crop
         in_ratio = float(width) / float(height)
-        if (in_ratio < min(ratio)):
+        if in_ratio < min(ratio):
             w = width
             h = int(round(w / min(ratio)))
-        elif (in_ratio > max(ratio)):
+        elif in_ratio > max(ratio):
             h = height
             w = int(round(h * max(ratio)))
         else:  # whole image
@@ -758,13 +780,13 @@ class RandomResizedCrop(object):
         j = (width - w) // 2
         return i, j, h, w
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be cropped and resized.
+            img (PIL Image or Tensor): Image to be cropped and resized.
 
         Returns:
-            PIL Image: Randomly cropped and resized image.
+            PIL Image or Tensor: Randomly cropped and resized image.
         """
         i, j, h, w = self.get_params(img, self.scale, self.ratio)
         return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
@@ -1433,8 +1455,8 @@ class RandomErasing(torch.nn.Module):
             else:
                 v = torch.tensor(value)[:, None, None]
 
-            i = torch.randint(0, img_h - h, size=(1, )).item()
-            j = torch.randint(0, img_w - w, size=(1, )).item()
+            i = torch.randint(0, img_h - h + 1, size=(1, )).item()
+            j = torch.randint(0, img_w - w + 1, size=(1, )).item()
             return i, j, h, w, v
 
         # Return original image

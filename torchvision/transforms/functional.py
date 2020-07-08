@@ -311,7 +311,7 @@ def normalize(tensor, mean, std, inplace=False):
     return tensor
 
 
-def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
+def resize(img: Tensor, size: List[int], interpolation: int = Image.BILINEAR) -> Tensor:
     r"""Resize the input image to the given size.
     The image can be a PIL Image or a torch Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
@@ -325,7 +325,9 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
             :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
             In torchscript mode padding as single int is not supported, use a tuple or
             list of length 1: ``[size, ]``.
-        interpolation (int, optional): Desired interpolation. Default is bilinear.
+        interpolation (int, optional): Desired interpolation enum defined by `filters`_.
+            Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
+            and ``PIL.Image.BICUBIC`` are supported.
 
     Returns:
         PIL Image or Tensor: Resized image.
@@ -439,24 +441,28 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
     return crop(img, crop_top, crop_left, crop_height, crop_width)
 
 
-def resized_crop(img, top, left, height, width, size, interpolation=Image.BILINEAR):
-    """Crop the given PIL Image and resize it to desired size.
+def resized_crop(
+        img: Tensor, top: int, left: int, height: int, width: int, size: List[int], interpolation: int = Image.BILINEAR
+) -> Tensor:
+    """Crop the given image and resize it to desired size.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Notably used in :class:`~torchvision.transforms.RandomResizedCrop`.
 
     Args:
-        img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
+        img (PIL Image or Tensor): Image to be cropped. (0,0) denotes the top left corner of the image.
         top (int): Vertical component of the top left corner of the crop box.
         left (int): Horizontal component of the top left corner of the crop box.
         height (int): Height of the crop box.
         width (int): Width of the crop box.
         size (sequence or int): Desired output size. Same semantics as ``resize``.
-        interpolation (int, optional): Desired interpolation. Default is
-            ``PIL.Image.BILINEAR``.
+        interpolation (int, optional): Desired interpolation enum defined by `filters`_.
+            Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
+            and ``PIL.Image.BICUBIC`` are supported.
     Returns:
-        PIL Image: Cropped image.
+        PIL Image or Tensor: Cropped image.
     """
-    assert F_pil._is_pil_image(img), 'img should be PIL Image'
     img = crop(img, top, left, height, width)
     img = resize(img, size, interpolation)
     return img
