@@ -65,7 +65,7 @@ def inception_v3(pretrained=False, progress=True, **kwargs):
 class Inception3(nn.Module):
 
     def __init__(self, num_classes=1000, aux_logits=True, transform_input=False,
-                 inception_blocks=None):
+                 inception_blocks=None, init_weights=True):
         super(Inception3, self).__init__()
         if inception_blocks is None:
             inception_blocks = [
@@ -86,8 +86,10 @@ class Inception3(nn.Module):
         self.Conv2d_1a_3x3 = conv_block(3, 32, kernel_size=3, stride=2)
         self.Conv2d_2a_3x3 = conv_block(32, 32, kernel_size=3)
         self.Conv2d_2b_3x3 = conv_block(32, 64, kernel_size=3, padding=1)
+        self.maxpool1 = nn.MaxPool2d(kernel_size=3, stride=2)
         self.Conv2d_3b_1x1 = conv_block(64, 80, kernel_size=1)
         self.Conv2d_4a_3x3 = conv_block(80, 192, kernel_size=3)
+        self.maxpool2 = nn.MaxPool2d(kernel_size=3, stride=2)
         self.Mixed_5b = inception_a(192, pool_features=32)
         self.Mixed_5c = inception_a(256, pool_features=64)
         self.Mixed_5d = inception_a(288, pool_features=64)
@@ -101,20 +103,22 @@ class Inception3(nn.Module):
         self.Mixed_7a = inception_d(768)
         self.Mixed_7b = inception_e(1280)
         self.Mixed_7c = inception_e(2048)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.dropout = nn.Dropout()
         self.fc = nn.Linear(2048, num_classes)
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
-                import scipy.stats as stats
-                stddev = m.stddev if hasattr(m, 'stddev') else 0.1
-                X = stats.truncnorm(-2, 2, scale=stddev)
-                values = torch.as_tensor(X.rvs(m.weight.numel()), dtype=m.weight.dtype)
-                values = values.view(m.weight.size())
-                with torch.no_grad():
-                    m.weight.copy_(values)
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
+        if init_weights:
+            for m in self.modules():
+                if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+                    import scipy.stats as stats
+                    stddev = m.stddev if hasattr(m, 'stddev') else 0.1
+                    X = stats.truncnorm(-2, 2, scale=stddev)
+                    values = torch.as_tensor(X.rvs(m.weight.numel()), dtype=m.weight.dtype)
+                    values = values.view(m.weight.size())
+                    with torch.no_grad():
+                        m.weight.copy_(values)
+                elif isinstance(m, nn.BatchNorm2d):
+                    nn.init.constant_(m.weight, 1)
+                    nn.init.constant_(m.bias, 0)
 
     def _transform_input(self, x):
         if self.transform_input:
@@ -132,13 +136,13 @@ class Inception3(nn.Module):
         # N x 32 x 147 x 147
         x = self.Conv2d_2b_3x3(x)
         # N x 64 x 147 x 147
-        x = F.max_pool2d(x, kernel_size=3, stride=2)
+        x = self.maxpool1(x)
         # N x 64 x 73 x 73
         x = self.Conv2d_3b_1x1(x)
         # N x 80 x 73 x 73
         x = self.Conv2d_4a_3x3(x)
         # N x 192 x 71 x 71
-        x = F.max_pool2d(x, kernel_size=3, stride=2)
+        x = self.maxpool2(x)
         # N x 192 x 35 x 35
         x = self.Mixed_5b(x)
         # N x 256 x 35 x 35
@@ -169,9 +173,9 @@ class Inception3(nn.Module):
         x = self.Mixed_7c(x)
         # N x 2048 x 8 x 8
         # Adaptive average pooling
-        x = F.adaptive_avg_pool2d(x, (1, 1))
+        x = self.avgpool(x)
         # N x 2048 x 1 x 1
-        x = F.dropout(x, training=self.training)
+        x = self.dropout(x)
         # N x 2048 x 1 x 1
         x = torch.flatten(x, 1)
         # N x 2048

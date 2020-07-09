@@ -40,8 +40,8 @@ BasicBlock::BasicBlock(
   conv1 = conv3x3(inplanes, planes, stride);
   conv2 = conv3x3(planes, planes);
 
-  bn1 = torch::nn::BatchNorm(planes);
-  bn2 = torch::nn::BatchNorm(planes);
+  bn1 = torch::nn::BatchNorm2d(planes);
+  bn2 = torch::nn::BatchNorm2d(planes);
 
   register_module("conv1", conv1);
   register_module("conv2", conv2);
@@ -68,9 +68,9 @@ Bottleneck::Bottleneck(
   conv2 = conv3x3(width, width, stride, groups);
   conv3 = conv1x1(width, planes * expansion);
 
-  bn1 = torch::nn::BatchNorm(width);
-  bn2 = torch::nn::BatchNorm(width);
-  bn3 = torch::nn::BatchNorm(planes * expansion);
+  bn1 = torch::nn::BatchNorm2d(width);
+  bn2 = torch::nn::BatchNorm2d(width);
+  bn3 = torch::nn::BatchNorm2d(planes * expansion);
 
   register_module("conv1", conv1);
   register_module("conv2", conv2);

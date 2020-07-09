@@ -26,7 +26,8 @@ at::Tensor ROIAlign_forward_cpu(
     const float spatial_scale,
     const int pooled_height,
     const int pooled_width,
-    const int sampling_ratio);
+    const int sampling_ratio,
+    const bool aligned);
 
 at::Tensor ROIAlign_backward_cpu(
     const at::Tensor& grad,
@@ -38,7 +39,8 @@ at::Tensor ROIAlign_backward_cpu(
     const int channels,
     const int height,
     const int width,
-    const int sampling_ratio);
+    const int sampling_ratio,
+    const bool aligned);
 
 std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cpu(
     const at::Tensor& input,
@@ -84,3 +86,27 @@ at::Tensor nms_cpu(
     const at::Tensor& dets,
     const at::Tensor& scores,
     const float iou_threshold);
+
+at::Tensor DeformConv2d_forward_cpu(
+    const at::Tensor& input,
+    const at::Tensor& weight,
+    const at::Tensor& offset,
+    const at::Tensor& bias,
+    std::pair<int, int> stride,
+    std::pair<int, int> pad,
+    std::pair<int, int> dilation,
+    int groups,
+    int deformable_groups);
+
+std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
+DeformConv2d_backward_cpu(
+    const at::Tensor& grad_out,
+    const at::Tensor& input,
+    const at::Tensor& weight,
+    const at::Tensor& offset,
+    const at::Tensor& bias,
+    std::pair<int, int> stride,
+    std::pair<int, int> pad,
+    std::pair<int, int> dilation,
+    int groups,
+    int deformable_groups);

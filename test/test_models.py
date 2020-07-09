@@ -2,6 +2,7 @@ from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state
 from collections import OrderedDict
 from itertools import product
 import torch
+import torch.nn as nn
 import numpy as np
 from torchvision import models
 import unittest
@@ -42,9 +43,11 @@ def get_available_video_models():
 # before they are compared to the eager model outputs. This is useful if the
 # model outputs are different between TorchScript / Eager mode
 script_test_models = {
+    'deeplabv3_resnet50': {},
     'deeplabv3_resnet101': {},
     'mobilenet_v2': {},
     'resnext50_32x4d': {},
+    'fcn_resnet50': {},
     'fcn_resnet101': {},
     'googlenet': {
         'unwrapper': lambda x: x.logits
@@ -181,9 +184,11 @@ class ModelTester(TestCase):
         for name in ['densenet121', 'densenet169', 'densenet201', 'densenet161']:
             model1 = models.__dict__[name](num_classes=50, memory_efficient=True)
             params = model1.state_dict()
+            num_params = sum([x.numel() for x in model1.parameters()])
             model1.eval()
             out1 = model1(x)
             out1.sum().backward()
+            num_grad = sum([x.grad.numel() for x in model1.parameters() if x.grad is not None])
 
             model2 = models.__dict__[name](num_classes=50, memory_efficient=False)
             model2.load_state_dict(params)
@@ -192,6 +197,7 @@ class ModelTester(TestCase):
 
             max_diff = (out1 - out2).abs().max()
 
+            self.assertTrue(num_params == num_grad)
             self.assertTrue(max_diff < 1e-5)
 
     def test_resnet_dilation(self):
@@ -211,6 +217,17 @@ class ModelTester(TestCase):
         x = torch.rand(1, 3, 224, 224)
         out = model(x)
         self.assertEqual(out.shape[-1], 1000)
+
+    def test_mobilenetv2_norm_layer(self):
+        model = models.__dict__["mobilenet_v2"]()
+        self.assertTrue(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
+
+        def get_gn(num_channels):
+            return nn.GroupNorm(32, num_channels)
+
+        model = models.__dict__["mobilenet_v2"](norm_layer=get_gn)
+        self.assertFalse(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
+        self.assertTrue(any(isinstance(x, nn.GroupNorm) for x in model.modules()))
 
     def test_fasterrcnn_double(self):
         model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)

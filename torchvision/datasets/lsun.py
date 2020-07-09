@@ -2,7 +2,7 @@ from .vision import VisionDataset
 from PIL import Image
 import os
 import os.path
-import six
+import io
 import string
 import sys
 
@@ -43,7 +43,7 @@ class LSUNClass(VisionDataset):
         with env.begin(write=False) as txn:
             imgbuf = txn.get(self.keys[index])
 
-        buf = six.BytesIO()
+        buf = io.BytesIO()
         buf.write(imgbuf)
         buf.seek(0)
         img = Image.open(buf).convert('RGB')
@@ -67,7 +67,7 @@ class LSUN(VisionDataset):
     Args:
         root (string): Root directory for the database files.
         classes (string or list): One of {'train', 'val', 'test'} or a list of
-            categories to load. e,g. ['bedroom_train', 'church_train'].
+            categories to load. e,g. ['bedroom_train', 'church_outdoor_train'].
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
