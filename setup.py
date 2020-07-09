@@ -235,7 +235,6 @@ def get_extensions():
 
     sources = [os.path.join(extensions_src_dir, s) for s in sources]
 
-
     ext_modules = [
         extension(
             'torchvision._C',
