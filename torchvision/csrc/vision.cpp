@@ -42,14 +42,34 @@ int64_t _cuda_version() {
 #endif
 }
 
-static auto registry =
-    torch::RegisterOperators()
-        .op("torchvision::nms", &nms)
-        .op("torchvision::roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio, bool aligned) -> Tensor",
-            &roi_align)
-        .op("torchvision::roi_pool", &roi_pool)
-        .op("torchvision::_new_empty_tensor_op", &new_empty_tensor)
-        .op("torchvision::ps_roi_align", &ps_roi_align)
-        .op("torchvision::ps_roi_pool", &ps_roi_pool)
-        .op("torchvision::deform_conv2d", &deform_conv2d)
-        .op("torchvision::_cuda_version", &_cuda_version);
+TORCH_LIBRARY(torchvision, m) {
+  m.def("nms", &nms);
+  m.def(
+      "roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio, bool aligned) -> Tensor");
+  m.def(
+      "_roi_align_backward(Tensor grad, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int batch_size, int channels, int height, int width, int sampling_ratio, bool aligned) -> Tensor");
+  m.def("roi_pool", &roi_pool);
+  m.def("_new_empty_tensor_op", &new_empty_tensor);
+  m.def("ps_roi_align", &ps_roi_align);
+  m.def("ps_roi_pool", &ps_roi_pool);
+  m.def("deform_conv2d", &deform_conv2d);
+  m.def("_cuda_version", &_cuda_version);
+}
+
+TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
+  m.impl("roi_align", ROIAlign_forward_cpu);
+  m.impl("_roi_align_backward", ROIAlign_backward_cpu);
+}
+
+// TODO: Place this in a hypothetical separate torchvision_cuda library
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
+  m.impl("roi_align", ROIAlign_forward_cuda);
+  m.impl("_roi_align_backward", ROIAlign_backward_cuda);
+}
+#endif
+
+TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
+  m.impl("roi_align", ROIAlign_autograd);
+  m.impl("_roi_align_backward", ROIAlign_backward_autograd);
+}
