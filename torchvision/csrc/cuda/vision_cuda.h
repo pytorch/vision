@@ -1,9 +1,4 @@
 #pragma once
-#if defined(WITH_CUDA)
-#include <c10/cuda/CUDAGuard.h>
-#elif defined(WITH_HIP)
-#include <c10/hip/HIPGuard.h>
-#endif
 #include <torch/extension.h>
 
 at::Tensor ROIAlign_forward_cuda(
@@ -90,7 +85,7 @@ at::Tensor PSROIAlign_backward_cuda(
 at::Tensor nms_cuda(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const float iou_threshold);
+    const double iou_threshold);
 
 at::Tensor DeformConv2d_forward_cuda(
     const at::Tensor& input,
