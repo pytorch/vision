@@ -19,12 +19,17 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     if [[ "$(uname)" == Darwin ]]; then
         # Include LibPNG
         cp "$env_path/lib/libpng16.dylib" torchvision
+        # Include LibJPEG
+        cp "$env_path/lib/libjpeg.dylib" torchvision
     else
         cp "$bin_path/Library/bin/libpng16.dll" torchvision
+        cp "$bin_path/Library/bin/libjpeg.dll" torchvision
     fi
 else
     # Include LibPNG
     cp "/usr/lib64/libpng.so" torchvision
+    # Include LibJPEG
+    cp "/usr/lib64/libjpeg.so" torchvision
 fi
 
 if [[ "$OSTYPE" == "msys" ]]; then

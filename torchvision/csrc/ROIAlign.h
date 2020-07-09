@@ -3,6 +3,7 @@
 #include "cpu/vision_cpu.h"
 
 #ifdef WITH_CUDA
+#include "autocast.h"
 #include "cuda/vision_cuda.h"
 #endif
 #ifdef WITH_HIP
@@ -11,6 +12,7 @@
 
 // TODO: put this stuff in torchvision namespace
 
+// roi_align dispatch nexus
 at::Tensor roi_align(
     const at::Tensor& input, // Input feature map.
     const at::Tensor& rois, // List of ROIs to pool over.
@@ -34,6 +36,28 @@ at::Tensor roi_align(
       sampling_ratio,
       aligned);
 }
+
+#ifdef WITH_CUDA
+at::Tensor ROIAlign_autocast(
+    const at::Tensor& input,
+    const at::Tensor& rois,
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width,
+    const int64_t sampling_ratio,
+    const bool aligned) {
+  c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
+  return roi_align(
+             autocast::_cast(at::kFloat, input),
+             autocast::_cast(at::kFloat, rois),
+             spatial_scale,
+             pooled_height,
+             pooled_width,
+             sampling_ratio,
+             aligned)
+      .to(input.scalar_type());
+}
+#endif
 
 at::Tensor _roi_align_backward(
     const at::Tensor& grad,
