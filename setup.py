@@ -268,7 +268,7 @@ def get_extensions():
 
     # Image reading extension
     image_macros = []
-    image_include = [extensions_dir]
+    image_include = [extensions_include_dir]
     image_library = []
     image_link_flags = []
 
@@ -332,7 +332,7 @@ def get_extensions():
             image_include += [png_include]
             image_link_flags.append('libpng')
 
-    image_path = os.path.join(extensions_dir, 'cpu', 'image')
+    image_path = os.path.join(extensions_src_dir, 'cpu', 'image')
     image_src = glob.glob(os.path.join(image_path, '*.cpp'))
 
     if png_found:
