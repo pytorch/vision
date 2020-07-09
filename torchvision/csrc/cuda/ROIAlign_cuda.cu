@@ -91,10 +91,12 @@ __global__ void RoIAlignForward(
     T roi_end_w = offset_rois[3] * spatial_scale - offset;
     T roi_end_h = offset_rois[4] * spatial_scale - offset;
 
+    T roi_width = roi_end_w - roi_start_w;
+    T roi_height = roi_end_h - roi_start_h;
     if (!aligned) {
       // Force malformed ROIs to be 1x1
-      T roi_width = max(roi_end_w - roi_start_w, (T)1.);
-      T roi_height = max(roi_end_h - roi_start_h, (T)1.);
+      roi_width = max(roi_width, (T)1.);
+      roi_height = max(roi_height, (T)1.);
     }
 
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
@@ -231,10 +233,12 @@ __global__ void RoIAlignBackward(
     T roi_end_w = offset_rois[3] * spatial_scale - offset;
     T roi_end_h = offset_rois[4] * spatial_scale - offset;
 
+    T roi_width = roi_end_w - roi_start_w;
+    T roi_height = roi_end_h - roi_start_h;
     if (!aligned) {
       // Force malformed ROIs to be 1x1
-      T roi_width = max(roi_end_w - roi_start_w, (T)1.);
-      T roi_height = max(roi_end_h - roi_start_h, (T)1.);
+      roi_width = max(roi_width, (T)1.);
+      roi_height = max(roi_height, (T)1.);
     }
 
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
