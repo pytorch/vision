@@ -1,5 +1,4 @@
 import os
-import sys
 import contextlib
 import tarfile
 import json
@@ -7,12 +6,7 @@ import numpy as np
 import PIL
 import torch
 from common_utils import get_tmp_dir
-
-PYTHON2 = sys.version_info[0] == 2
-if PYTHON2:
-    import cPickle as pickle
-else:
-    import pickle
+import pickle
 
 
 @contextlib.contextmanager

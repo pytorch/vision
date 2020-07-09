@@ -1,14 +1,8 @@
 import os
-import sys
 import tarfile
 import collections
 from .vision import VisionDataset
-
-if sys.version_info[0] == 2:
-    import xml.etree.cElementTree as ET
-else:
-    import xml.etree.ElementTree as ET
-
+import xml.etree.ElementTree as ET
 from PIL import Image
 from .utils import download_url, check_integrity, verify_str_arg
 

@@ -1,4 +1,3 @@
-from __future__ import print_function
 from .vision import VisionDataset
 import warnings
 from PIL import Image
