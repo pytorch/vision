@@ -107,7 +107,7 @@ class ModelTester(TestCase):
         # more enforcing in nature
         model = models.__dict__[name](num_classes=50)
         model.eval().to(device=dev)
-        # randn always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+        # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         out = model(x)
         self.assertExpected(out.cpu(), prec=0.1, strip_suffix="_" + dev)
@@ -128,7 +128,7 @@ class ModelTester(TestCase):
         model = models.segmentation.__dict__[name](num_classes=50, pretrained_backbone=False)
         model.eval().to(device=dev)
         input_shape = (1, 3, 300, 300)
-        # randn always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+        # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         out = model(x)
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
@@ -144,7 +144,7 @@ class ModelTester(TestCase):
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
         model.eval().to(device=dev)
         input_shape = (3, 300, 300)
-        # randn always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+        # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         model_input = [x]
         out = model(model_input)
@@ -235,7 +235,7 @@ class ModelTester(TestCase):
         # test both basicblock and Bottleneck
         model = models.video.__dict__[name](num_classes=50)
         model.eval().to(device=dev)
-        # randn always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+        # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         out = model(x)
         self.checkModule(model, name, (x,))
