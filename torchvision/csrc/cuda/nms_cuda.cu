@@ -1,6 +1,11 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
+
+#if defined(WITH_CUDA)
 #include <c10/cuda/CUDAGuard.h>
+#elif defined(WITH_HIP)
+#include <c10/hip/HIPGuard.h>
+#endif
 
 #include "cuda_helpers.h"
 
@@ -70,10 +75,40 @@ __global__ void nms_kernel(
 
 at::Tensor nms_cuda(const at::Tensor& dets,
     const at::Tensor& scores,
-    float iou_threshold) {
+    const double iou_threshold) {
   AT_ASSERTM(dets.is_cuda(), "dets must be a CUDA tensor");
   AT_ASSERTM(scores.is_cuda(), "scores must be a CUDA tensor");
+
+  TORCH_CHECK(
+      dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
+  TORCH_CHECK(
+      dets.size(1) == 4,
+      "boxes should have 4 elements in dimension 1, got ",
+      dets.size(1));
+  TORCH_CHECK(
+      scores.dim() == 1,
+      "scores should be a 1d tensor, got ",
+      scores.dim(),
+      "D");
+  TORCH_CHECK(
+      dets.size(0) == scores.size(0),
+      "boxes and scores should have same number of elements in ",
+      "dimension 0, got ",
+      dets.size(0),
+      " and ",
+      scores.size(0))
+
+#if defined(WITH_CUDA)
   at::cuda::CUDAGuard device_guard(dets.device());
+#elif defined(WITH_HIP)
+  at::cuda::HIPGuard device_guard(dets.device());
+#else
+  AT_ERROR("Not compiled with GPU support");
+#endif
+
+  if (dets.numel() == 0) {
+    return at::empty({0}, dets.options().dtype(at::kLong));
+  }
 
   auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
   auto dets_sorted = dets.index_select(0, order_t).contiguous();

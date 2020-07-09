@@ -43,7 +43,7 @@ int64_t _cuda_version() {
 }
 
 TORCH_LIBRARY(torchvision, m) {
-  m.def("nms", &nms);
+  m.def("nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor");
   m.def(
       "roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio, bool aligned) -> Tensor");
   m.def(
@@ -59,6 +59,7 @@ TORCH_LIBRARY(torchvision, m) {
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
   m.impl("roi_align", ROIAlign_forward_cpu);
   m.impl("_roi_align_backward", ROIAlign_backward_cpu);
+  m.impl("nms", nms_cpu);
 }
 
 // TODO: Place this in a hypothetical separate torchvision_cuda library
@@ -66,6 +67,15 @@ TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
 TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
   m.impl("roi_align", ROIAlign_forward_cuda);
   m.impl("_roi_align_backward", ROIAlign_backward_cuda);
+  m.impl("nms", nms_cuda);
+}
+#endif
+
+// Autocast only needs to wrap forward pass ops.
+#if defined(WITH_CUDA)
+TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
+  m.impl("roi_align", ROIAlign_autocast);
+  m.impl("nms", nms_autocast);
 }
 #endif
 
