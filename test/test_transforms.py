@@ -1311,14 +1311,11 @@ class Tester(unittest.TestCase):
 
     def test_affine(self):
         input_img = np.zeros((40, 40, 3), dtype=np.uint8)
-        # pts = []
         cnt = [20, 20]
         for pt in [(16, 16), (20, 16), (20, 20)]:
             for i in range(-5, 5):
                 for j in range(-5, 5):
                     input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
-                    # pts.append((pt[0] + i, pt[1] + j))
-        # pts = list(set(pts))
 
         with self.assertRaises(TypeError, msg="Argument translate should be a sequence"):
             F.affine(input_img, 10, translate=0, scale=1, shear=1)
