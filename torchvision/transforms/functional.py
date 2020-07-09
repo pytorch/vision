@@ -791,7 +791,9 @@ def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
     return img.rotate(angle, resample, expand, center, **opts)
 
 
-def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
+def _get_inverse_affine_matrix(
+        center: List[int], angle: float, translate: List[float], scale: float, shear: List[float]
+) -> List[float]:
     # Helper method to compute inverse matrix for affine transformation
 
     # As it is explained in PIL.Image.rotate
@@ -818,14 +820,14 @@ def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     tx, ty = translate
 
     # RSS without scaling
-    a = cos(rot - sy) / cos(sy)
-    b = -cos(rot - sy) * tan(sx) / cos(sy) - sin(rot)
-    c = sin(rot - sy) / cos(sy)
-    d = -sin(rot - sy) * tan(sx) / cos(sy) + cos(rot)
+    a = math.cos(rot - sy) / math.cos(sy)
+    b = -math.cos(rot - sy) * math.tan(sx) / math.cos(sy) - math.sin(rot)
+    c = math.sin(rot - sy) / math.cos(sy)
+    d = -math.sin(rot - sy) * math.tan(sx) / math.cos(sy) + math.cos(rot)
 
     # Inverted rotation matrix with scale and shear
     # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
-    matrix = [d, -b, 0, -c, a, 0]
+    matrix = [d, -b, 0.0, -c, a, 0.0]
     matrix = [x / scale for x in matrix]
 
     # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
@@ -835,11 +837,12 @@ def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     # Apply center translation: C * RSS^-1 * C^-1 * T^-1
     matrix[2] += cx
     matrix[5] += cy
+
     return matrix
 
 
 def affine(
-        img: Tensor, angle: int, translate: List[int], scale: float, shear: List[float],
+        img: Tensor, angle: float, translate: List[int], scale: float, shear: List[float],
         resample: int = 0, fillcolor: Optional[int] = None
 ) -> Tensor:
     """Apply affine transformation on the image keeping image center invariant.
@@ -863,7 +866,10 @@ def affine(
     Returns:
         PIL Image or Tensor: Transformed image.
     """
-    if not isinstance(translate, Sequence):
+    if not isinstance(angle, (int, float)):
+        raise TypeError("Argument angle should be int or float")
+
+    if not isinstance(translate, (list, tuple)):
         raise TypeError("Argument translate should be a sequence")
 
     if len(translate) != 2:
@@ -872,30 +878,41 @@ def affine(
     if scale <= 0.0:
         raise ValueError("Argument scale should be positive")
 
-    if not isinstance(shear, (numbers.Number, Sequence)):
+    if not isinstance(shear, (numbers.Number, (list, tuple))):
         raise TypeError("Shear should be either a single value or a sequence of two values")
 
+    if isinstance(angle, int):
+        angle = float(angle)
+
+    if isinstance(translate, tuple):
+        translate = list(translate)
+
     if isinstance(shear, numbers.Number):
-        shear = [shear, 0]
+        shear = [shear, 0.0]
+
+    if isinstance(shear, tuple):
+        shear = list(shear)
+
+    if len(shear) == 1:
+        shear = [shear[0], shear[0]]
 
     if len(shear) != 2:
         raise ValueError("Shear should be a sequence containing two values. Got {}".format(shear))
 
+    img_size = _get_image_size(img)
     if not isinstance(img, torch.Tensor):
-        img_size = _get_image_size(img)
         # center = (img_size[0] * 0.5 + 0.5, img_size[1] * 0.5 + 0.5)
         # it is visually better to estimate the center without 0.5 offset
         # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
-        center = (img_size[0] * 0.5, img_size[1] * 0.5)
+        center = [img_size[0] * 0.5, img_size[1] * 0.5]
         matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
 
         return F_pil.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 
-    # compute affine matrix (not inversed)
-    # matrix = _get_inverse_affine_matrix(
-    #     (0, 0), -angle, [-t for t in translate], 1.0 / scale, [-s for s in shear]
-    # )
-    matrix = _get_inverse_affine_matrix((0, 0), angle, translate, scale, shear)
+    # we need to rescale translate by image size / 2 as its values can be between -1 and 1
+    translate = [2.0 * t / s for s, t in zip(img_size, translate)]
+
+    matrix = _get_inverse_affine_matrix([0, 0], angle, translate, scale, shear)
     return F_t.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 
 

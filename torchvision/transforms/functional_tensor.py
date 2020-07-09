@@ -579,7 +579,7 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
 
 
 def affine(
-        img: Tensor, matrix: List[int], resample: int = 0, fillcolor: Optional[int] = None
+        img: Tensor, matrix: List[float], resample: int = 0, fillcolor: Optional[int] = None
 ) -> Tensor:
     """Apply affine transformation on the Tensor image keeping image center invariant.
 

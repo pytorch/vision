@@ -1373,9 +1373,10 @@ class Tester(unittest.TestCase):
             inv_true_matrix = np.linalg.inv(true_matrix)
             for y in range(true_result.shape[0]):
                 for x in range(true_result.shape[1]):
-                    res = np.dot(inv_true_matrix, [x, y, 1])
-                    _x = int(res[0] + 0.5)
-                    _y = int(res[1] + 0.5)
+                    # transform pixel's center instead of pixel's TL corner
+                    res = np.dot(inv_true_matrix, [x + 0.5, y + 0.5, 1])
+                    _x = int(res[0])
+                    _y = int(res[1])
                     if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
                         true_result[y, x, :] = input_img[_y, _x, :]
 
@@ -1384,8 +1385,8 @@ class Tester(unittest.TestCase):
             # Compute number of different pixels:
             np_result = np.array(result)
             n_diff_pixels = np.sum(np_result != true_result) / 3
-            # Accept 3 wrong pixels
-            self.assertLess(n_diff_pixels, 3,
+            # Accept 7 wrong pixels
+            self.assertLess(n_diff_pixels, 7,
                             "a={}, t={}, s={}, sh={}\n".format(a, t, s, sh) +
                             "n diff pixels={}\n".format(np.sum(np.array(result)[:, :, 0] != true_result[:, :, 0])))
 
