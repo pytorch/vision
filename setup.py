@@ -248,13 +248,6 @@ def get_extensions():
     image_library = []
     image_link_flags = []
 
-    # Detect if build is running under conda/conda-build
-    conda = distutils.spawn.find_executable('conda')
-    is_conda = conda is not None
-
-    build_prefix = os.environ.get('BUILD_PREFIX', None)
-    is_conda_build = build_prefix is not None
-
     # Locating libPNG
     libpng = distutils.spawn.find_executable('libpng-config')
     pngfix = distutils.spawn.find_executable('pngfix')
