@@ -254,7 +254,6 @@ def get_extensions():
 
     build_prefix = os.environ.get('BUILD_PREFIX', None)
     is_conda_build = build_prefix is not None
-    running_under_conda = is_conda or is_conda_build
 
     # Locating libPNG
     libpng = distutils.spawn.find_executable('libpng-config')
@@ -275,7 +274,7 @@ def get_extensions():
                 png_lib = subprocess.run([libpng, '--libdir'],
                                          stdout=subprocess.PIPE)
                 png_lib = png_lib.stdout.strip().decode('utf-8')
-                if not png_lib.contains('disabled'):
+                if 'disabled' not in png_lib:
                     image_library += [png_lib]
                 png_include = subprocess.run([libpng, '--I_opts'],
                                              stdout=subprocess.PIPE)
