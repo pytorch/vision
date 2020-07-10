@@ -194,6 +194,44 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
 
 
+def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
+    r"""Adjust gamma of an RGB image.
+
+    Also known as Power Law Transform. Intensities in RGB mode are adjusted
+    based on the following equation:
+
+    .. math::
+        `I_{\text{out}} = 255 \times \text{gain} \times \left(\frac{I_{\text{in}}}{255}\right)^{\gamma}`
+
+    See `Gamma Correction`_ for more details.
+
+    .. _Gamma Correction: https://en.wikipedia.org/wiki/Gamma_correction
+
+    Args:
+        img (Tensor): PIL Image to be adjusted.
+        gamma (float): Non negative real number, same as :math:`\gamma` in the equation.
+            gamma larger than 1 make the shadows darker,
+            while gamma smaller than 1 make dark regions lighter.
+        gain (float): The constant multiplier.
+    """
+
+    if not isinstance(img, torch.Tensor):
+        raise TypeError('img should be a Tensor. Got {}'.format(type(img)))
+
+    if gamma < 0:
+        raise ValueError('Gamma should be a non-negative real number')
+
+    result = img
+    dtype = img.dtype
+    if torch.is_floating_point(img):
+        return gain * result ** gamma
+
+    result = 255.0 * gain * (result / 255.0) ** gamma
+    # PIL clamps, to(torch.uint8) would wrap
+    result = result.clamp(0, 255).to(dtype)
+    return result
+
+
 def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
     """Crop the Image Tensor and resize it to desired size.
 
