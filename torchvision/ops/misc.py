@@ -1,4 +1,3 @@
-from __future__ import division
 import warnings
 from collections import OrderedDict
 from torch.jit.annotations import Optional, List
@@ -43,7 +42,7 @@ class ConvTranspose2d(torch.nn.ConvTranspose2d):
                 list(self.output_padding),
             )
         ]
-        output_shape = [x.shape[0], self.bias.shape[0]] + output_shape
+        output_shape = [x.shape[0], self.out_channels] + output_shape
         return _new_empty_tensor(x, output_shape)
 
     def super_forward(self, input, output_size=None):
@@ -177,3 +176,6 @@ class FrozenBatchNorm2d(torch.nn.Module):
         scale = w * rv.rsqrt()
         bias = b - rm * scale
         return x * scale + bias
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.weight.shape[0]})"

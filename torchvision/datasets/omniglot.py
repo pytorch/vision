@@ -1,4 +1,3 @@
-from __future__ import print_function
 from PIL import Image
 from os.path import join
 import os

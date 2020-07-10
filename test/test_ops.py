@@ -1,4 +1,3 @@
-from __future__ import division
 import math
 import unittest
 
@@ -91,6 +90,22 @@ class RoIOpTester(OpTester):
         self.assertTrue(gradcheck(func, (x,)))
         self.assertTrue(gradcheck(script_func, (x,)))
 
+    def test_boxes_shape(self):
+        self._test_boxes_shape()
+
+    def _helper_boxes_shape(self, func):
+        # test boxes as Tensor[N, 5]
+        with self.assertRaises(AssertionError):
+            a = torch.linspace(1, 8 * 8, 8 * 8).reshape(1, 1, 8, 8)
+            boxes = torch.tensor([[0, 0, 3, 3]], dtype=a.dtype)
+            func(a, boxes, output_size=(2, 2))
+
+        # test boxes as List[Tensor[N, 4]]
+        with self.assertRaises(AssertionError):
+            a = torch.linspace(1, 8 * 8, 8 * 8).reshape(1, 1, 8, 8)
+            boxes = torch.tensor([[0, 0, 3]], dtype=a.dtype)
+            ops.roi_pool(a, [boxes], output_size=(2, 2))
+
     def fn(*args, **kwargs):
         pass
 
@@ -139,6 +154,9 @@ class RoIPoolTester(RoIOpTester, unittest.TestCase):
                         y[roi_idx, :, i, j] = bin_x.reshape(n_channels, -1).max(dim=1)[0]
         return y
 
+    def _test_boxes_shape(self):
+        self._helper_boxes_shape(ops.roi_pool)
+
 
 class PSRoIPoolTester(RoIOpTester, unittest.TestCase):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
@@ -182,6 +200,9 @@ class PSRoIPoolTester(RoIOpTester, unittest.TestCase):
                             t = torch.sum(bin_x[c_in, :, :])
                             y[roi_idx, c_out, i, j] = t / area
         return y
+
+    def _test_boxes_shape(self):
+        self._helper_boxes_shape(ops.ps_roi_pool)
 
 
 def bilinear_interpolate(data, y, x, snap_border=False):
@@ -266,6 +287,9 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
                         out_data[r, channel, i, j] = val
         return out_data
 
+    def _test_boxes_shape(self):
+        self._helper_boxes_shape(ops.roi_align)
+
 
 class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
@@ -316,6 +340,9 @@ class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
 
                         out_data[r, c_out, i, j] = val
         return out_data
+
+    def _test_boxes_shape(self):
+        self._helper_boxes_shape(ops.ps_roi_align)
 
 
 class NMSTester(unittest.TestCase):
@@ -500,6 +527,16 @@ class DeformConvTester(OpTester, unittest.TestCase):
 
         gradcheck(lambda z, off, wei, bi: script_func(z, off, wei, bi, stride, padding, dilation),
                   (x, offset, weight, bias), nondet_tol=1e-5)
+
+
+class FrozenBNTester(unittest.TestCase):
+    def test_frozenbatchnorm2d_repr(self):
+        num_features = 32
+        t = ops.misc.FrozenBatchNorm2d(num_features)
+
+        # Check integrity of object __repr__ attribute
+        expected_string = f"FrozenBatchNorm2d({num_features})"
+        self.assertEqual(t.__repr__(), expected_string)
 
 
 if __name__ == '__main__':

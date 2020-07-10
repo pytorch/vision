@@ -1,5 +1,3 @@
-from __future__ import division
-
 import torch
 from torch.jit.annotations import Tuple
 from torch import Tensor
@@ -16,6 +14,11 @@ def nms(boxes, scores, iou_threshold):
     NMS iteratively removes lower scoring boxes which have an
     IoU greater than iou_threshold with another (higher scoring)
     box.
+
+    If multiple boxes have the exact same score and satisfy the IoU 
+    criterion with respect to a reference box, the selected box is 
+    not guaranteed to be the same between CPU and GPU. This is similar 
+    to the behavior of argsort in PyTorch when repeated values are present.
 
     Parameters
     ----------
