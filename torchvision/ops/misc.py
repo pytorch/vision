@@ -50,9 +50,9 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
     def __init__(
         self,
-        num_features: Tuple[int, ...],
+        num_features: int,
         eps: float = 0.,
-        n: Optional[Tuple[int, ...]] = None,
+        n: Optional[int] = None,
     ):
         # n=None for backward-compatibility
         if n is not None:
