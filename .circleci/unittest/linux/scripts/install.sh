@@ -10,7 +10,7 @@ set -e
 eval "$(./conda/bin/conda shell.bash hook)"
 conda activate ./env
 
-if [ -z "${CUDA_VERSION:-}" ] ; then
+if [ "${CUDA_VERSION:-}" == cpuonly ] ; then
     cudatoolkit="cpuonly"
 else
     version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
