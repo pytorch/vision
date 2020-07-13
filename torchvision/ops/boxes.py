@@ -2,6 +2,7 @@ import torch
 from torch.jit.annotations import Tuple
 from torch import Tensor
 import torchvision
+from torchvision.extension import _assert_has_ops
 
 
 def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
@@ -36,6 +37,7 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
         of the elements that have been kept
         by NMS, sorted in decreasing order of scores
     """
+    _assert_has_ops()
     return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
 
 
