@@ -117,7 +117,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
 
       /* Note that we cannot return unless we have decoded
           as much data as possible. */
-      ok = jpeg_read_header(&context->cinfo, TRUE);
+      ok = jpeg_read_header(&cinfo, TRUE);
 
   } while (ok == JPEG_HEADER_TABLES_ONLY);
 
