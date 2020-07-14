@@ -1,4 +1,5 @@
 import os
+import glob
 import unittest
 import sys
 
@@ -10,6 +11,7 @@ import numpy as np
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 IMAGE_DIR = os.path.join(IMAGE_ROOT, "fakedata", "imagefolder")
+DAMAGED_JPEG = os.path.join(IMAGE_ROOT, 'damaged_jpeg')
 
 
 def get_images(directory, img_ext):
@@ -43,6 +45,21 @@ class ImageTester(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             decode_jpeg(torch.empty((100), dtype=torch.uint8))
+
+    def test_damaged_images(self):
+        # Test image with bad Huffman encoding (should not raise)
+        bad_huff = os.path.join(DAMAGED_JPEG, 'bad_huffman.jpg')
+        try:
+            _ = read_jpeg(bad_huff)
+        except RuntimeError:
+            self.assertTrue(False)
+
+        # Truncated images should raise an exception
+        truncated_images = glob.glob(
+            os.path.join(DAMAGED_JPEG, 'corrupt*.jpg'))
+        for image_path in truncated_images:
+            with self.assertRaises(RuntimeError):
+                read_jpeg(image_path)
 
     def test_read_png(self):
         # Check across .png
