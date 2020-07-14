@@ -111,8 +111,19 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
   jpeg_create_decompress(&cinfo);
   torch_jpeg_set_source_mgr(&cinfo, datap, data.numel());
 
+  int ok;
+  /* Read JPEG header, until we find an image body. */
+  do {
+
+      /* Note that we cannot return unless we have decoded
+          as much data as possible. */
+      ok = jpeg_read_header(&context->cinfo, TRUE);
+
+  } while (ok == JPEG_HEADER_TABLES_ONLY);
+
   // read info from header.
-  jpeg_read_header(&cinfo, TRUE);
+
+  // jpeg_read_header(&cinfo, TRUE);
   jpeg_start_decompress(&cinfo);
 
   int height = cinfo.output_height;
