@@ -48,7 +48,10 @@ static void torch_jpeg_init_source(j_decompress_ptr cinfo) {}
 
 static boolean torch_jpeg_fill_input_buffer(j_decompress_ptr cinfo) {
   torch_jpeg_mgr* src = (torch_jpeg_mgr*)cinfo->src;
-  // No more data.  Probably an incomplete image;  just output EOI.
+  // No more data.  Probably an incomplete image;  Raise exception.
+  torch_jpeg_error_ptr myerr = (torch_jpeg_error_ptr)cinfo->err;
+  strcpy(jpegLastErrorMsg, "Image is incomplete or truncated");
+  longjmp(myerr->setjmp_buffer, 1);
   src->pub.next_input_byte = EOI_BUFFER;
   src->pub.bytes_in_buffer = 1;
   return TRUE;
@@ -111,19 +114,8 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
   jpeg_create_decompress(&cinfo);
   torch_jpeg_set_source_mgr(&cinfo, datap, data.numel());
 
-  int ok;
-  /* Read JPEG header, until we find an image body. */
-  do {
-
-      /* Note that we cannot return unless we have decoded
-          as much data as possible. */
-      ok = jpeg_read_header(&cinfo, TRUE);
-
-  } while (ok == JPEG_HEADER_TABLES_ONLY);
-
   // read info from header.
-
-  // jpeg_read_header(&cinfo, TRUE);
+  jpeg_read_header(&cinfo, TRUE);
   jpeg_start_decompress(&cinfo);
 
   int height = cinfo.output_height;
