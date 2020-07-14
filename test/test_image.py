@@ -17,6 +17,9 @@ DAMAGED_JPEG = os.path.join(IMAGE_ROOT, 'damaged_jpeg')
 def get_images(directory, img_ext):
     assert os.path.isdir(directory)
     for root, _, files in os.walk(directory):
+        if root == 'damaged_jpeg':
+            continue
+
         for fl in files:
             _, ext = os.path.splitext(fl)
             if ext == img_ext:
