@@ -1370,10 +1370,12 @@ class Tester(unittest.TestCase):
             inv_true_matrix = np.linalg.inv(true_matrix)
             for y in range(true_result.shape[0]):
                 for x in range(true_result.shape[1]):
-                    # transform pixel's center instead of pixel's TL corner
-                    res = np.dot(inv_true_matrix, [x + 0.5, y + 0.5, 1])
-                    _x = int(res[0])
-                    _y = int(res[1])
+                    # Same as for PIL:
+                    # https://github.com/python-pillow/Pillow/blob/71f8ec6a0cfc1008076a023c0756542539d057ab/
+                    # src/libImaging/Geometry.c#L1060
+                    input_pt = np.array([x + 0.5, y + 0.5, 1.0])
+                    res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(np.int)
+                    _x, _y = res[:2]
                     if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
                         true_result[y, x, :] = input_img[_y, _x, :]
 
@@ -1382,8 +1384,8 @@ class Tester(unittest.TestCase):
             # Compute number of different pixels:
             np_result = np.array(result)
             n_diff_pixels = np.sum(np_result != true_result) / 3
-            # Accept 7 wrong pixels
-            self.assertLess(n_diff_pixels, 7,
+            # Accept 3 wrong pixels
+            self.assertLess(n_diff_pixels, 3,
                             "a={}, t={}, s={}, sh={}\n".format(a, t, s, sh) +
                             "n diff pixels={}\n".format(np.sum(np.array(result)[:, :, 0] != true_result[:, :, 0])))
 
@@ -1406,7 +1408,7 @@ class Tester(unittest.TestCase):
         # Test rotation, scale, translation, shear
         for a in range(-90, 90, 25):
             for t1 in range(-10, 10, 5):
-                for s in [0.75, 0.98, 1.0, 1.1, 1.2]:
+                for s in [0.75, 0.98, 1.0, 1.2, 1.4]:
                     for sh in range(-15, 15, 5):
                         _test_transformation(a=a, t=(t1, t1), s=s, sh=(sh, sh))
 

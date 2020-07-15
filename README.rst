@@ -80,13 +80,17 @@ Torchvision currently supports the following image backends:
 
 * `libpng`_ - can be installed via conda :code:`conda install libpng` or any of the package managers for debian-based and RHEL-based Linux distributions.
 
-**Notes:** ``libpng`` must be available at compilation time in order to be available. Make sure that it is available on the standard library locations,
+* `libjpeg`_ - can be installed via conda :code:`conda install jpeg` or any of the package managers for debian-based and RHEL-based Linux distributions. `libjpeg-turbo`_ can be used as well.
+
+**Notes:** ``libpng`` and ``libjpeg`` must be available at compilation time in order to be available. Make sure that it is available on the standard library locations,
 otherwise, add the include and library paths in the environment variables ``TORCHVISION_INCLUDE`` and ``TORCHVISION_LIBRARY``, respectively.
 
 .. _libpng : http://www.libpng.org/pub/png/libpng.html
 .. _Pillow : https://python-pillow.org/
 .. _Pillow-SIMD : https://github.com/uploadcare/pillow-simd
 .. _accimage: https://github.com/pytorch/accimage
+.. _libjpeg: http://ijg.org/
+.. _libjpeg-turbo: https://libjpeg-turbo.org/
 
 C++ API
 =======

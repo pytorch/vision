@@ -85,7 +85,7 @@ def is_iterable(obj):
 class TestCase(unittest.TestCase):
     precision = 1e-5
 
-    def assertExpected(self, output, subname=None, prec=None):
+    def assertExpected(self, output, subname=None, prec=None, strip_suffix=None):
         r"""
         Test that a python value matches the recorded contents of a file
         derived from the name of this test and subname.  The value must be
@@ -96,16 +96,24 @@ class TestCase(unittest.TestCase):
 
         If you call this multiple times in a single function, you must
         give a unique subname each time.
+
+        strip_suffix allows different tests that expect similar numerics, e.g.
+        "test_xyz_cuda" and "test_xyz_cpu", to use the same pickled data.
+        test_xyz_cuda would pass strip_suffix="_cuda", test_xyz_cpu would pass
+        strip_suffix="_cpu", and they would both use a data file name based on
+        "test_xyz".
         """
-        def remove_prefix(text, prefix):
+        def remove_prefix_suffix(text, prefix, suffix):
             if text.startswith(prefix):
-                return text[len(prefix):]
+                text = text[len(prefix):]
+            if suffix is not None and text.endswith(suffix):
+                text = text[:len(text) - len(suffix)]
             return text
         # NB: we take __file__ from the module that defined the test
         # class, so we place the expect directory where the test script
         # lives, NOT where test/common_utils.py lives.
         module_id = self.__class__.__module__
-        munged_id = remove_prefix(self.id(), module_id + ".")
+        munged_id = remove_prefix_suffix(self.id(), module_id + ".", strip_suffix)
         test_file = os.path.realpath(sys.modules[module_id].__file__)
         expected_file = os.path.join(os.path.dirname(test_file),
                                      "expect",

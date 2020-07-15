@@ -328,8 +328,8 @@ class Tester(unittest.TestCase):
                         script_size = [size, ]
                     else:
                         script_size = size
-                    pad_tensor_script = script_fn(tensor, size=script_size, interpolation=interpolation)
-                    self.assertTrue(resized_tensor.equal(pad_tensor_script), msg="{}, {}".format(size, interpolation))
+                    resize_result = script_fn(tensor, size=script_size, interpolation=interpolation)
+                    self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
 
     def test_resized_crop(self):
         # test values of F.resized_crop in several cases:
