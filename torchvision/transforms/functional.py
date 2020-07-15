@@ -1,12 +1,11 @@
 import math
 import numbers
 import warnings
-from collections.abc import Iterable
 from typing import Any
 
 import numpy as np
 from numpy import sin, cos, tan
-from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
+from PIL import Image, __version__ as PILLOW_VERSION
 
 import torch
 from torch import Tensor
@@ -910,7 +909,10 @@ def affine(img, angle, translate, scale, shear, resample=0, fillcolor=None):
     assert scale > 0.0, "Argument scale should be positive"
 
     output_size = img.size
-    center = (img.size[0] * 0.5 + 0.5, img.size[1] * 0.5 + 0.5)
+    # center = (img.size[0] * 0.5 + 0.5, img.size[1] * 0.5 + 0.5)
+    # it is visually better to estimate the center without 0.5 offset
+    # otherwise image rotated by 90 degrees is shifted 1 pixel
+    center = (img.size[0] * 0.5, img.size[1] * 0.5)
     matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
     kwargs = {"fillcolor": fillcolor} if int(PILLOW_VERSION.split('.')[0]) >= 5 else {}
     return img.transform(output_size, Image.AFFINE, matrix, resample, **kwargs)
