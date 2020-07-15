@@ -248,21 +248,20 @@ class Tester(unittest.TestCase):
     def test_resized_crop(self):
         tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
 
-        scale = (0.7, 1.2)
-        ratio = (0.75, 1.333)
+        for scale in [(0.7, 1.2), [0.7, 1.2]]:
+            for ratio in [(0.75, 1.333), [0.75, 1.333]]:
+                for size in [(32, ), [32, ], [32, 32], (32, 32)]:
+                    for interpolation in [NEAREST, BILINEAR, BICUBIC]:
+                        transform = T.RandomResizedCrop(
+                            size=size, scale=scale, ratio=ratio, interpolation=interpolation
+                        )
+                        s_transform = torch.jit.script(transform)
 
-        for size in [(32, ), [32, ], [32, 32], (32, 32)]:
-            for interpolation in [NEAREST, BILINEAR, BICUBIC]:
-                transform = T.RandomResizedCrop(
-                    size=size, scale=scale, ratio=ratio, interpolation=interpolation
-                )
-                s_transform = torch.jit.script(transform)
-
-                torch.manual_seed(12)
-                out1 = transform(tensor)
-                torch.manual_seed(12)
-                out2 = s_transform(tensor)
-                self.assertTrue(out1.equal(out2))
+                        torch.manual_seed(12)
+                        out1 = transform(tensor)
+                        torch.manual_seed(12)
+                        out2 = s_transform(tensor)
+                        self.assertTrue(out1.equal(out2))
 
 
 if __name__ == '__main__':

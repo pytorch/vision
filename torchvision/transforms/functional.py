@@ -1,12 +1,11 @@
 import math
 import numbers
 import warnings
-from collections.abc import Iterable
 from typing import Any
 
 import numpy as np
 from numpy import sin, cos, tan
-from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
+from PIL import Image, __version__ as PILLOW_VERSION
 
 import torch
 from torch import Tensor
