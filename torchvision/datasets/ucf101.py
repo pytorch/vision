@@ -69,7 +69,7 @@ class UCF101(VisionDataset):
         self.samples = [o for o in self.samples if o[0] in _video_paths_in_fold]
 
         # At this point, only the needed videos' path are selected
-        video_clips = VideoClips(
+        self.video_clips = VideoClips(
             [x[0] for x in self.samples],
             frames_per_clip,
             step_between_clips,
@@ -81,7 +81,7 @@ class UCF101(VisionDataset):
             _video_min_dimension=_video_min_dimension,
             _audio_samples=_audio_samples,
         )
-        self.video_clips_metadata = video_clips.metadata
+        self.video_clips_metadata = self.video_clips.metadata
 
     @property
     def metadata(self):
@@ -104,7 +104,7 @@ class UCF101(VisionDataset):
 
     def __getitem__(self, idx):
         video, audio, info, video_idx = self.video_clips.get_clip(idx)
-        label = self.samples[1]
+        label = self.samples[video_idx][1]
 
         if self.transform is not None:
             video = self.transform(video)
