@@ -1,10 +1,9 @@
 import math
 import numbers
 import warnings
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
 
 import numpy as np
-from numpy import sin, cos, tan
 from PIL import Image
 
 import torch
