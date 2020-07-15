@@ -2,6 +2,7 @@ from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state
 from collections import OrderedDict
 from itertools import product
 import torch
+import torch.nn as nn
 import numpy as np
 from torchvision import models
 import unittest
@@ -73,6 +74,26 @@ script_test_models = {
 }
 
 
+# The following models exhibit flaky numerics under autocast in _test_*_model harnesses.
+# This may be caused by the harness environment (e.g. num classes, input initialization
+# via torch.rand), and does not prove autocast is unsuitable when training with real data
+# (autocast has been used successfully with real data for some of these models).
+# TODO:  investigate why autocast numerics are flaky in the harnesses.
+#
+# For the following models, _test_*_model harnesses skip numerical checks on outputs when
+# trying autocast. However, they still try an autocasted forward pass, so they still ensure
+# autocast coverage suffices to prevent dtype errors in each model.
+autocast_flaky_numerics = (
+    "fasterrcnn_resnet50_fpn",
+    "inception_v3",
+    "keypointrcnn_resnet50_fpn",
+    "maskrcnn_resnet50_fpn",
+    "resnet101",
+    "resnet152",
+    "wide_resnet101_2",
+)
+
+
 class ModelTester(TestCase):
     def checkModule(self, model, name, args):
         if name not in script_test_models:
@@ -80,65 +101,87 @@ class ModelTester(TestCase):
         unwrapper = script_test_models[name].get('unwrapper', None)
         return super(ModelTester, self).checkModule(model, args, unwrapper=unwrapper, skip=False)
 
-    def _test_classification_model(self, name, input_shape):
+    def _test_classification_model(self, name, input_shape, dev):
         set_rng_seed(0)
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
         model = models.__dict__[name](num_classes=50)
-        model.eval()
-        x = torch.rand(input_shape)
+        model.eval().to(device=dev)
+        # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+        x = torch.rand(input_shape).to(device=dev)
         out = model(x)
-        self.assertExpected(out, prec=0.1)
+        self.assertExpected(out.cpu(), prec=0.1, strip_suffix="_" + dev)
         self.assertEqual(out.shape[-1], 50)
         self.checkModule(model, name, (x,))
 
-    def _test_segmentation_model(self, name):
+        if dev == "cuda":
+            with torch.cuda.amp.autocast():
+                out = model(x)
+                # See autocast_flaky_numerics comment at top of file.
+                if name not in autocast_flaky_numerics:
+                    self.assertExpected(out.cpu(), prec=0.1, strip_suffix="_" + dev)
+                self.assertEqual(out.shape[-1], 50)
+
+    def _test_segmentation_model(self, name, dev):
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
         model = models.segmentation.__dict__[name](num_classes=50, pretrained_backbone=False)
-        model.eval()
+        model.eval().to(device=dev)
         input_shape = (1, 3, 300, 300)
-        x = torch.rand(input_shape)
+        # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+        x = torch.rand(input_shape).to(device=dev)
         out = model(x)
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
         self.checkModule(model, name, (x,))
 
-    def _test_detection_model(self, name):
+        if dev == "cuda":
+            with torch.cuda.amp.autocast():
+                out = model(x)
+                self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
+
+    def _test_detection_model(self, name, dev):
         set_rng_seed(0)
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
-        model.eval()
+        model.eval().to(device=dev)
         input_shape = (3, 300, 300)
-        x = torch.rand(input_shape)
+        # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+        x = torch.rand(input_shape).to(device=dev)
         model_input = [x]
         out = model(model_input)
         self.assertIs(model_input[0], x)
-        self.assertEqual(len(out), 1)
 
-        def subsample_tensor(tensor):
-            num_elems = tensor.numel()
-            num_samples = 20
-            if num_elems <= num_samples:
-                return tensor
+        def check_out(out):
+            self.assertEqual(len(out), 1)
 
-            flat_tensor = tensor.flatten()
-            ith_index = num_elems // num_samples
-            return flat_tensor[ith_index - 1::ith_index]
+            def subsample_tensor(tensor):
+                num_elems = tensor.numel()
+                num_samples = 20
+                if num_elems <= num_samples:
+                    return tensor
 
-        def compute_mean_std(tensor):
-            # can't compute mean of integral tensor
-            tensor = tensor.to(torch.double)
-            mean = torch.mean(tensor)
-            std = torch.std(tensor)
-            return {"mean": mean, "std": std}
+                flat_tensor = tensor.flatten()
+                ith_index = num_elems // num_samples
+                return flat_tensor[ith_index - 1::ith_index]
 
-        # maskrcnn_resnet_50_fpn numerically unstable across platforms, so for now
-        # compare results with mean and std
-        if name == "maskrcnn_resnet50_fpn":
-            test_value = map_nested_tensor_object(out, tensor_map_fn=compute_mean_std)
-            # mean values are small, use large prec
-            self.assertExpected(test_value, prec=.01)
-        else:
-            self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor), prec=0.01)
+            def compute_mean_std(tensor):
+                # can't compute mean of integral tensor
+                tensor = tensor.to(torch.double)
+                mean = torch.mean(tensor)
+                std = torch.std(tensor)
+                return {"mean": mean, "std": std}
+
+            # maskrcnn_resnet_50_fpn numerically unstable across platforms, so for now
+            # compare results with mean and std
+            if name == "maskrcnn_resnet50_fpn":
+                test_value = map_nested_tensor_object(out, tensor_map_fn=compute_mean_std)
+                # mean values are small, use large prec
+                self.assertExpected(test_value, prec=.01, strip_suffix="_" + dev)
+            else:
+                self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor),
+                                    prec=0.01,
+                                    strip_suffix="_" + dev)
+
+        check_out(out)
 
         scripted_model = torch.jit.script(model)
         scripted_model.eval()
@@ -155,17 +198,53 @@ class ModelTester(TestCase):
         # self.check_script(model, name)
         self.checkModule(model, name, ([x],))
 
-    def _test_video_model(self, name):
+        if dev == "cuda":
+            with torch.cuda.amp.autocast():
+                out = model(model_input)
+                # See autocast_flaky_numerics comment at top of file.
+                if name not in autocast_flaky_numerics:
+                    check_out(out)
+
+    def _test_detection_model_validation(self, name):
+        set_rng_seed(0)
+        model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
+        input_shape = (3, 300, 300)
+        x = [torch.rand(input_shape)]
+
+        # validate that targets are present in training
+        self.assertRaises(ValueError, model, x)
+
+        # validate type
+        targets = [{'boxes': 0.}]
+        self.assertRaises(ValueError, model, x, targets=targets)
+
+        # validate boxes shape
+        for boxes in (torch.rand((4,)), torch.rand((1, 5))):
+            targets = [{'boxes': boxes}]
+            self.assertRaises(ValueError, model, x, targets=targets)
+
+        # validate that no degenerate boxes are present
+        boxes = torch.tensor([[1, 3, 1, 4], [2, 4, 3, 4]])
+        targets = [{'boxes': boxes}]
+        self.assertRaises(ValueError, model, x, targets=targets)
+
+    def _test_video_model(self, name, dev):
         # the default input shape is
         # bs * num_channels * clip_len * h *w
         input_shape = (1, 3, 4, 112, 112)
         # test both basicblock and Bottleneck
         model = models.video.__dict__[name](num_classes=50)
-        model.eval()
-        x = torch.rand(input_shape)
+        model.eval().to(device=dev)
+        # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
+        x = torch.rand(input_shape).to(device=dev)
         out = model(x)
         self.checkModule(model, name, (x,))
         self.assertEqual(out.shape[-1], 50)
+
+        if dev == "cuda":
+            with torch.cuda.amp.autocast():
+                out = model(x)
+                self.assertEqual(out.shape[-1], 50)
 
     def _make_sliced_model(self, model, stop_layer):
         layers = OrderedDict()
@@ -183,9 +262,11 @@ class ModelTester(TestCase):
         for name in ['densenet121', 'densenet169', 'densenet201', 'densenet161']:
             model1 = models.__dict__[name](num_classes=50, memory_efficient=True)
             params = model1.state_dict()
+            num_params = sum([x.numel() for x in model1.parameters()])
             model1.eval()
             out1 = model1(x)
             out1.sum().backward()
+            num_grad = sum([x.grad.numel() for x in model1.parameters() if x.grad is not None])
 
             model2 = models.__dict__[name](num_classes=50, memory_efficient=False)
             model2.load_state_dict(params)
@@ -194,6 +275,7 @@ class ModelTester(TestCase):
 
             max_diff = (out1 - out2).abs().max()
 
+            self.assertTrue(num_params == num_grad)
             self.assertTrue(max_diff < 1e-5)
 
     def test_resnet_dilation(self):
@@ -213,6 +295,17 @@ class ModelTester(TestCase):
         x = torch.rand(1, 3, 224, 224)
         out = model(x)
         self.assertEqual(out.shape[-1], 1000)
+
+    def test_mobilenetv2_norm_layer(self):
+        model = models.__dict__["mobilenet_v2"]()
+        self.assertTrue(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
+
+        def get_gn(num_channels):
+            return nn.GroupNorm(32, num_channels)
+
+        model = models.__dict__["mobilenet_v2"](norm_layer=get_gn)
+        self.assertFalse(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
+        self.assertTrue(any(isinstance(x, nn.GroupNorm) for x in model.modules()))
 
     def test_fasterrcnn_double(self):
         model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
@@ -234,6 +327,12 @@ class ModelTester(TestCase):
 
     @unittest.skipIf(not torch.cuda.is_available(), 'needs GPU')
     def test_fasterrcnn_switch_devices(self):
+        def checkOut(out):
+            self.assertEqual(len(out), 1)
+            self.assertTrue("boxes" in out[0])
+            self.assertTrue("scores" in out[0])
+            self.assertTrue("labels" in out[0])
+
         model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
         model.cuda()
         model.eval()
@@ -242,17 +341,20 @@ class ModelTester(TestCase):
         model_input = [x]
         out = model(model_input)
         self.assertIs(model_input[0], x)
-        self.assertEqual(len(out), 1)
-        self.assertTrue("boxes" in out[0])
-        self.assertTrue("scores" in out[0])
-        self.assertTrue("labels" in out[0])
+
+        checkOut(out)
+
+        with torch.cuda.amp.autocast():
+            out = model(model_input)
+
+        checkOut(out)
+
         # now switch to cpu and make sure it works
         model.cpu()
         x = x.cpu()
         out_cpu = model([x])
-        self.assertTrue("boxes" in out_cpu[0])
-        self.assertTrue("scores" in out_cpu[0])
-        self.assertTrue("labels" in out_cpu[0])
+
+        checkOut(out_cpu)
 
     def test_generalizedrcnn_transform_repr(self):
 
@@ -274,42 +376,53 @@ class ModelTester(TestCase):
         self.assertEqual(t.__repr__(), expected_string)
 
 
-for model_name in get_available_classification_models():
-    # for-loop bodies don't define scopes, so we have to save the variables
-    # we want to close over in some way
-    def do_test(self, model_name=model_name):
-        input_shape = (1, 3, 224, 224)
-        if model_name in ['inception_v3']:
-            input_shape = (1, 3, 299, 299)
-        self._test_classification_model(model_name, input_shape)
+_devs = ["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"]
 
-    setattr(ModelTester, "test_" + model_name, do_test)
+
+for model_name in get_available_classification_models():
+    for dev in _devs:
+        # for-loop bodies don't define scopes, so we have to save the variables
+        # we want to close over in some way
+        def do_test(self, model_name=model_name, dev=dev):
+            input_shape = (1, 3, 224, 224)
+            if model_name in ['inception_v3']:
+                input_shape = (1, 3, 299, 299)
+            self._test_classification_model(model_name, input_shape, dev)
+
+        setattr(ModelTester, "test_" + model_name + "_" + dev, do_test)
 
 
 for model_name in get_available_segmentation_models():
-    # for-loop bodies don't define scopes, so we have to save the variables
-    # we want to close over in some way
-    def do_test(self, model_name=model_name):
-        self._test_segmentation_model(model_name)
+    for dev in _devs:
+        # for-loop bodies don't define scopes, so we have to save the variables
+        # we want to close over in some way
+        def do_test(self, model_name=model_name, dev=dev):
+            self._test_segmentation_model(model_name, dev)
 
-    setattr(ModelTester, "test_" + model_name, do_test)
+        setattr(ModelTester, "test_" + model_name + "_" + dev, do_test)
 
 
 for model_name in get_available_detection_models():
-    # for-loop bodies don't define scopes, so we have to save the variables
-    # we want to close over in some way
-    def do_test(self, model_name=model_name):
-        self._test_detection_model(model_name)
+    for dev in _devs:
+        # for-loop bodies don't define scopes, so we have to save the variables
+        # we want to close over in some way
+        def do_test(self, model_name=model_name, dev=dev):
+            self._test_detection_model(model_name, dev)
 
-    setattr(ModelTester, "test_" + model_name, do_test)
+        setattr(ModelTester, "test_" + model_name + "_" + dev, do_test)
+
+    def do_validation_test(self, model_name=model_name):
+        self._test_detection_model_validation(model_name)
+
+    setattr(ModelTester, "test_" + model_name + "_validation", do_validation_test)
 
 
 for model_name in get_available_video_models():
+    for dev in _devs:
+        def do_test(self, model_name=model_name, dev=dev):
+            self._test_video_model(model_name, dev)
 
-    def do_test(self, model_name=model_name):
-        self._test_video_model(model_name)
-
-    setattr(ModelTester, "test_" + model_name, do_test)
+        setattr(ModelTester, "test_" + model_name + "_" + dev, do_test)
 
 if __name__ == '__main__':
     unittest.main()

@@ -95,16 +95,9 @@ def list_dir(root, prefix=False):
             only returns the name of the directories found
     """
     root = os.path.expanduser(root)
-    directories = list(
-        filter(
-            lambda p: os.path.isdir(os.path.join(root, p)),
-            os.listdir(root)
-        )
-    )
-
+    directories = [p for p in os.listdir(root) if os.path.isdir(os.path.join(root, p))]
     if prefix is True:
         directories = [os.path.join(root, d) for d in directories]
-
     return directories
 
 
@@ -119,17 +112,14 @@ def list_files(root, suffix, prefix=False):
             only returns the name of the files found
     """
     root = os.path.expanduser(root)
-    files = list(
-        filter(
-            lambda p: os.path.isfile(os.path.join(root, p)) and p.endswith(suffix),
-            os.listdir(root)
-        )
-    )
-
+    files = [p for p in os.listdir(root) if os.path.isfile(os.path.join(root, p)) and p.endswith(suffix)]
     if prefix is True:
         files = [os.path.join(root, d) for d in files]
-
     return files
+
+
+def _quota_exceeded(response: "requests.models.Response") -> bool:
+    return "Google Drive - Quota exceeded" in response.text
 
 
 def download_file_from_google_drive(file_id, root, filename=None, md5=None):
@@ -163,6 +153,14 @@ def download_file_from_google_drive(file_id, root, filename=None, md5=None):
         if token:
             params = {'id': file_id, 'confirm': token}
             response = session.get(url, params=params, stream=True)
+
+        if _quota_exceeded(response):
+            msg = (
+                f"The daily quota of the file {filename} is exceeded and it "
+                f"can't be downloaded. This is a limitation of Google Drive "
+                f"and can only be overcome by trying again later."
+            )
+            raise RuntimeError(msg)
 
         _save_response_content(response, fpath)
 

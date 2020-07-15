@@ -23,6 +23,22 @@ GRACE_HOPPER = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
 
 
+def cycle_over(objs):
+    objs = list(objs)
+    for idx, obj in enumerate(objs):
+        yield obj, objs[:idx] + objs[idx + 1:]
+
+
+def int_dtypes():
+    yield from iter(
+        (torch.uint8, torch.int8, torch.int16, torch.short, torch.int32, torch.int, torch.int64, torch.long,)
+    )
+
+
+def float_dtypes():
+    yield from iter((torch.float32, torch.float, torch.float64, torch.double))
+
+
 class Tester(unittest.TestCase):
 
     def test_crop(self):
@@ -299,13 +315,22 @@ class Tester(unittest.TestCase):
         width = random.randint(10, 32) * 2
         img = torch.ones(3, height, width)
         padding = random.randint(1, 20)
+        fill = random.randint(1, 50)
         result = transforms.Compose([
             transforms.ToPILImage(),
-            transforms.Pad(padding),
+            transforms.Pad(padding, fill=fill),
             transforms.ToTensor(),
         ])(img)
         self.assertEqual(result.size(1), height + 2 * padding)
         self.assertEqual(result.size(2), width + 2 * padding)
+        # check that all elements in the padded region correspond
+        # to the pad value
+        fill_v = fill / 255
+        eps = 1e-5
+        self.assertTrue((result[:, :padding, :] - fill_v).abs().max() < eps)
+        self.assertTrue((result[:, :, :padding] - fill_v).abs().max() < eps)
+        self.assertRaises(ValueError, transforms.Pad(padding, fill=(1, 2)),
+                          transforms.ToPILImage()(img))
 
     def test_pad_with_tuple_of_pad_values(self):
         height = random.randint(10, 32) * 2
@@ -501,9 +526,146 @@ class Tester(unittest.TestCase):
         output = trans(img)
         self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
+    def test_convert_image_dtype_float_to_float(self):
+        for input_dtype, output_dtypes in cycle_over(float_dtypes()):
+            input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
+            for output_dtype in output_dtypes:
+                with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
+                    transform = transforms.ConvertImageDtype(output_dtype)
+                    output_image = transform(input_image)
+
+                    actual_min, actual_max = output_image.tolist()
+                    desired_min, desired_max = 0.0, 1.0
+
+                    self.assertAlmostEqual(actual_min, desired_min)
+                    self.assertAlmostEqual(actual_max, desired_max)
+
+    def test_convert_image_dtype_float_to_int(self):
+        for input_dtype in float_dtypes():
+            input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
+            for output_dtype in int_dtypes():
+                with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
+                    transform = transforms.ConvertImageDtype(output_dtype)
+
+                    if (input_dtype == torch.float32 and output_dtype in (torch.int32, torch.int64)) or (
+                            input_dtype == torch.float64 and output_dtype == torch.int64
+                    ):
+                        with self.assertRaises(RuntimeError):
+                            transform(input_image)
+                    else:
+                        output_image = transform(input_image)
+
+                        actual_min, actual_max = output_image.tolist()
+                        desired_min, desired_max = 0, torch.iinfo(output_dtype).max
+
+                        self.assertEqual(actual_min, desired_min)
+                        self.assertEqual(actual_max, desired_max)
+
+    def test_convert_image_dtype_int_to_float(self):
+        for input_dtype in int_dtypes():
+            input_image = torch.tensor((0, torch.iinfo(input_dtype).max), dtype=input_dtype)
+            for output_dtype in float_dtypes():
+                with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
+                    transform = transforms.ConvertImageDtype(output_dtype)
+                    output_image = transform(input_image)
+
+                    actual_min, actual_max = output_image.tolist()
+                    desired_min, desired_max = 0.0, 1.0
+
+                    self.assertAlmostEqual(actual_min, desired_min)
+                    self.assertGreaterEqual(actual_min, desired_min)
+                    self.assertAlmostEqual(actual_max, desired_max)
+                    self.assertLessEqual(actual_max, desired_max)
+
+    def test_convert_image_dtype_int_to_int(self):
+        for input_dtype, output_dtypes in cycle_over(int_dtypes()):
+            input_max = torch.iinfo(input_dtype).max
+            input_image = torch.tensor((0, input_max), dtype=input_dtype)
+            for output_dtype in output_dtypes:
+                output_max = torch.iinfo(output_dtype).max
+
+                with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
+                    transform = transforms.ConvertImageDtype(output_dtype)
+                    output_image = transform(input_image)
+
+                    actual_min, actual_max = output_image.tolist()
+                    desired_min, desired_max = 0, output_max
+
+                    # see https://github.com/pytorch/vision/pull/2078#issuecomment-641036236 for details
+                    if input_max >= output_max:
+                        error_term = 0
+                    else:
+                        error_term = 1 - (torch.iinfo(output_dtype).max + 1) // (torch.iinfo(input_dtype).max + 1)
+
+                    self.assertEqual(actual_min, desired_min)
+                    self.assertEqual(actual_max, desired_max + error_term)
+
+    def test_convert_image_dtype_int_to_int_consistency(self):
+        for input_dtype, output_dtypes in cycle_over(int_dtypes()):
+            input_max = torch.iinfo(input_dtype).max
+            input_image = torch.tensor((0, input_max), dtype=input_dtype)
+            for output_dtype in output_dtypes:
+                output_max = torch.iinfo(output_dtype).max
+                if output_max <= input_max:
+                    continue
+
+                with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
+                    transform = transforms.ConvertImageDtype(output_dtype)
+                    inverse_transfrom = transforms.ConvertImageDtype(input_dtype)
+                    output_image = inverse_transfrom(transform(input_image))
+
+                    actual_min, actual_max = output_image.tolist()
+                    desired_min, desired_max = 0, input_max
+
+                    self.assertEqual(actual_min, desired_min)
+                    self.assertEqual(actual_max, desired_max)
+
     @unittest.skipIf(accimage is None, 'accimage not available')
     def test_accimage_to_tensor(self):
         trans = transforms.ToTensor()
+
+        expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
+        output = trans(accimage.Image(GRACE_HOPPER))
+
+        self.assertEqual(expected_output.size(), output.size())
+        self.assertTrue(np.allclose(output.numpy(), expected_output.numpy()))
+
+    def test_pil_to_tensor(self):
+        test_channels = [1, 3, 4]
+        height, width = 4, 4
+        trans = transforms.PILToTensor()
+
+        with self.assertRaises(TypeError):
+            trans(np.random.rand(1, height, width).tolist())
+            trans(np.random.rand(1, height, width))
+
+        for channels in test_channels:
+            input_data = torch.ByteTensor(channels, height, width).random_(0, 255)
+            img = transforms.ToPILImage()(input_data)
+            output = trans(img)
+            self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
+
+            input_data = np.random.randint(low=0, high=255, size=(height, width, channels)).astype(np.uint8)
+            img = transforms.ToPILImage()(input_data)
+            output = trans(img)
+            expected_output = input_data.transpose((2, 0, 1))
+            self.assertTrue(np.allclose(output.numpy(), expected_output))
+
+            input_data = torch.as_tensor(np.random.rand(channels, height, width).astype(np.float32))
+            img = transforms.ToPILImage()(input_data)  # CHW -> HWC and (* 255).byte()
+            output = trans(img)  # HWC -> CHW
+            expected_output = (input_data * 255).byte()
+            self.assertTrue(np.allclose(output.numpy(), expected_output.numpy()))
+
+        # separate test for mode '1' PIL images
+        input_data = torch.ByteTensor(1, height, width).bernoulli_()
+        img = transforms.ToPILImage()(input_data.mul(255)).convert('1')
+        output = trans(img)
+        self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
+
+    @unittest.skipIf(accimage is None, 'accimage not available')
+    def test_accimage_pil_to_tensor(self):
+        trans = transforms.PILToTensor()
 
         expected_output = trans(Image.open(GRACE_HOPPER).convert('RGB'))
         output = trans(accimage.Image(GRACE_HOPPER))
@@ -1456,38 +1618,64 @@ class Tester(unittest.TestCase):
 
     def test_random_erasing(self):
         """Unit tests for random erasing transform"""
+        for is_scripted in [False, True]:
+            torch.manual_seed(12)
+            img = torch.rand(3, 60, 60)
 
-        img = torch.rand([3, 60, 60])
+            # Test Set 0: invalid value
+            random_erasing = transforms.RandomErasing(value=(0.1, 0.2, 0.3, 0.4), p=1.0)
+            with self.assertRaises(ValueError, msg="If value is a sequence, it should have either a single value or 3"):
+                img_re = random_erasing(img)
 
-        # Test Set 1: Erasing with int value
-        img_re = transforms.RandomErasing(value=0.2)
-        i, j, h, w, v = img_re.get_params(img, scale=img_re.scale, ratio=img_re.ratio, value=img_re.value)
-        img_output = F.erase(img, i, j, h, w, v)
-        self.assertEqual(img_output.size(0), 3)
+            # Test Set 1: Erasing with int value
+            random_erasing = transforms.RandomErasing(value=0.2)
+            if is_scripted:
+                random_erasing = torch.jit.script(random_erasing)
 
-        # Test Set 2: Check if the unerased region is preserved
-        orig_unerased = img.clone()
-        orig_unerased[:, i:i + h, j:j + w] = 0
-        output_unerased = img_output.clone()
-        output_unerased[:, i:i + h, j:j + w] = 0
-        self.assertTrue(torch.equal(orig_unerased, output_unerased))
+            i, j, h, w, v = transforms.RandomErasing.get_params(
+                img, scale=random_erasing.scale, ratio=random_erasing.ratio, value=[random_erasing.value, ]
+            )
+            img_output = F.erase(img, i, j, h, w, v)
+            self.assertEqual(img_output.size(0), 3)
 
-        # Test Set 3: Erasing with random value
-        img_re = transforms.RandomErasing(value='random')(img)
-        self.assertEqual(img_re.size(0), 3)
+            # Test Set 2: Check if the unerased region is preserved
+            true_output = img.clone()
+            true_output[:, i:i + h, j:j + w] = random_erasing.value
+            self.assertTrue(torch.equal(true_output, img_output))
 
-        # Test Set 4: Erasing with tuple value
-        img_re = transforms.RandomErasing(value=(0.2, 0.2, 0.2))(img)
-        self.assertEqual(img_re.size(0), 3)
+            # Test Set 3: Erasing with random value
+            random_erasing = transforms.RandomErasing(value="random")
+            if is_scripted:
+                random_erasing = torch.jit.script(random_erasing)
+            img_re = random_erasing(img)
 
-        # Test Set 5: Testing the inplace behaviour
-        img_re = transforms.RandomErasing(value=(0.2), inplace=True)(img)
-        self.assertTrue(torch.equal(img_re, img))
+            self.assertEqual(img_re.size(0), 3)
 
-        # Test Set 6: Checking when no erased region is selected
-        img = torch.rand([3, 300, 1])
-        img_re = transforms.RandomErasing(ratio=(0.1, 0.2), value='random')(img)
-        self.assertTrue(torch.equal(img_re, img))
+            # Test Set 4: Erasing with tuple value
+            random_erasing = transforms.RandomErasing(value=(0.2, 0.2, 0.2))
+            if is_scripted:
+                random_erasing = torch.jit.script(random_erasing)
+            img_re = random_erasing(img)
+            self.assertEqual(img_re.size(0), 3)
+            true_output = img.clone()
+            true_output[:, i:i + h, j:j + w] = torch.tensor(random_erasing.value)[:, None, None]
+            self.assertTrue(torch.equal(true_output, img_output))
+
+            # Test Set 5: Testing the inplace behaviour
+            random_erasing = transforms.RandomErasing(value=(0.2,), inplace=True)
+            if is_scripted:
+                random_erasing = torch.jit.script(random_erasing)
+
+            img_re = random_erasing(img)
+            self.assertTrue(torch.equal(img_re, img))
+
+            # Test Set 6: Checking when no erased region is selected
+            img = torch.rand([3, 300, 1])
+            random_erasing = transforms.RandomErasing(ratio=(0.1, 0.2), value="random")
+            if is_scripted:
+                random_erasing = torch.jit.script(random_erasing)
+            img_re = random_erasing(img)
+            self.assertTrue(torch.equal(img_re, img))
 
 
 if __name__ == '__main__':

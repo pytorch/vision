@@ -52,25 +52,30 @@ class OpTester(object):
 
 
 class RoIOpTester(OpTester):
-    def _test_forward(self, device, contiguous):
+    def _test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None):
+        x_dtype = self.dtype if x_dtype is None else x_dtype
+        rois_dtype = self.dtype if rois_dtype is None else rois_dtype
         pool_size = 5
         # n_channels % (pool_size ** 2) == 0 required for PS opeartions.
         n_channels = 2 * (pool_size ** 2)
-        x = torch.rand(2, n_channels, 10, 10, dtype=self.dtype, device=device)
+        x = torch.rand(2, n_channels, 10, 10, dtype=x_dtype, device=device)
         if not contiguous:
             x = x.permute(0, 1, 3, 2)
         rois = torch.tensor([[0, 0, 0, 9, 9],  # format is (xyxy)
                              [0, 0, 5, 4, 9],
                              [0, 5, 5, 9, 9],
                              [1, 0, 0, 9, 9]],
-                            dtype=self.dtype, device=device)
+                            dtype=rois_dtype, device=device)
 
         pool_h, pool_w = pool_size, pool_size
         y = self.fn(x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1)
+        # the following should be true whether we're running an autocast test or not.
+        self.assertTrue(y.dtype == x.dtype)
         gt_y = self.expected_fn(x, rois, pool_h, pool_w, spatial_scale=1,
                                 sampling_ratio=-1, device=device, dtype=self.dtype)
 
-        self.assertTrue(torch.allclose(gt_y, y))
+        tol = 1e-3 if (x_dtype is torch.half or rois_dtype is torch.half) else 1e-5
+        self.assertTrue(torch.allclose(gt_y.to(y.dtype), y, rtol=tol, atol=tol))
 
     def _test_backward(self, device, contiguous):
         pool_size = 2
@@ -290,6 +295,13 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
     def _test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
 
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_roi_align_autocast(self):
+        for x_dtype in (torch.float, torch.half):
+            for rois_dtype in (torch.float, torch.half):
+                with torch.cuda.amp.autocast():
+                    self._test_forward(torch.device("cuda"), contiguous=False, x_dtype=x_dtype, rois_dtype=rois_dtype)
+
 
 class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
@@ -393,6 +405,10 @@ class NMSTester(unittest.TestCase):
             keep_ref = self.reference_nms(boxes, scores, iou)
             keep = ops.nms(boxes, scores, iou)
             self.assertTrue(torch.allclose(keep, keep_ref), err_msg.format(iou))
+        self.assertRaises(RuntimeError, ops.nms, torch.rand(4), torch.rand(3), 0.5)
+        self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 5), torch.rand(3), 0.5)
+        self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 4), torch.rand(3, 2), 0.5)
+        self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 4), torch.rand(4), 0.5)
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_nms_cuda(self):
@@ -546,6 +562,60 @@ class FrozenBNTester(unittest.TestCase):
         # Check integrity of object __repr__ attribute
         expected_string = f"FrozenBatchNorm2d({num_features})"
         self.assertEqual(t.__repr__(), expected_string)
+
+    def test_frozenbatchnorm2d_eps(self):
+        sample_size = (4, 32, 28, 28)
+        x = torch.rand(sample_size)
+        state_dict = dict(weight=torch.rand(sample_size[1]),
+                          bias=torch.rand(sample_size[1]),
+                          running_mean=torch.rand(sample_size[1]),
+                          running_var=torch.rand(sample_size[1]),
+                          num_batches_tracked=torch.tensor(100))
+
+        # Check that default eps is zero for backward-compatibility
+        fbn = ops.misc.FrozenBatchNorm2d(sample_size[1])
+        fbn.load_state_dict(state_dict, strict=False)
+        bn = torch.nn.BatchNorm2d(sample_size[1], eps=0).eval()
+        bn.load_state_dict(state_dict)
+        # Difference is expected to fall in an acceptable range
+        self.assertTrue(torch.allclose(fbn(x), bn(x), atol=1e-6))
+
+        # Check computation for eps > 0
+        fbn = ops.misc.FrozenBatchNorm2d(sample_size[1], eps=1e-5)
+        fbn.load_state_dict(state_dict, strict=False)
+        bn = torch.nn.BatchNorm2d(sample_size[1], eps=1e-5).eval()
+        bn.load_state_dict(state_dict)
+        self.assertTrue(torch.allclose(fbn(x), bn(x), atol=1e-6))
+
+    def test_frozenbatchnorm2d_n_arg(self):
+        """Ensure a warning is thrown when passing `n` kwarg
+        (remove this when support of `n` is dropped)"""
+        self.assertWarns(DeprecationWarning, ops.misc.FrozenBatchNorm2d, 32, eps=1e-5, n=32)
+
+
+class BoxConversionTester(unittest.TestCase):
+    @staticmethod
+    def _get_box_sequences():
+        # Define here the argument type of `boxes` supported by region pooling operations
+        box_tensor = torch.tensor([[0, 0, 0, 100, 100], [1, 0, 0, 100, 100]], dtype=torch.float)
+        box_list = [torch.tensor([[0, 0, 100, 100]], dtype=torch.float),
+                    torch.tensor([[0, 0, 100, 100]], dtype=torch.float)]
+        box_tuple = tuple(box_list)
+        return box_tensor, box_list, box_tuple
+
+    def test_check_roi_boxes_shape(self):
+        # Ensure common sequences of tensors are supported
+        for box_sequence in self._get_box_sequences():
+            self.assertIsNone(ops._utils.check_roi_boxes_shape(box_sequence))
+
+    def test_convert_boxes_to_roi_format(self):
+        # Ensure common sequences of tensors yield the same result
+        ref_tensor = None
+        for box_sequence in self._get_box_sequences():
+            if ref_tensor is None:
+                ref_tensor = box_sequence
+            else:
+                self.assertTrue(torch.equal(ref_tensor, ops._utils.convert_boxes_to_roi_format(box_sequence)))
 
 
 if __name__ == '__main__':

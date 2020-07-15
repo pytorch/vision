@@ -346,11 +346,17 @@ class ONNXExporterTester(unittest.TestCase):
 
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
-
+        dummy_image = [torch.ones(3, 100, 100) * 0.3]
         model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
-        self.run_model(model, [(images,), (test_images,)], input_names=["images_tensors"],
+        # Test exported model on images of different size, or dummy input
+        self.run_model(model, [(images,), (test_images,), (dummy_image,)], input_names=["images_tensors"],
+                       output_names=["outputs"],
+                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
+                       tolerate_small_mismatch=True)
+        # Test exported model for an image with no detections on other images
+        self.run_model(model, [(dummy_image,), (images,)], input_names=["images_tensors"],
                        output_names=["outputs"],
                        dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
                        tolerate_small_mismatch=True)
@@ -391,13 +397,22 @@ class ONNXExporterTester(unittest.TestCase):
 
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
-
+        dummy_image = [torch.ones(3, 100, 100) * 0.3]
         model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
-        self.run_model(model, [(images,), (test_images,)],
+        # Test exported model on images of different size, or dummy input
+        self.run_model(model, [(images,), (test_images,), (dummy_image,)],
                        input_names=["images_tensors"],
-                       output_names=["boxes", "labels", "scores"],
+                       output_names=["boxes", "labels", "scores", "masks"],
+                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "boxes": [0, 1], "labels": [0],
+                                     "scores": [0], "masks": [0, 1, 2, 3]},
+                       tolerate_small_mismatch=True)
+        # TODO: enable this test once dynamic model export is fixed
+        # Test exported model for an image with no detections on other images
+        self.run_model(model, [(dummy_image,), (images,)],
+                       input_names=["images_tensors"],
+                       output_names=["boxes", "labels", "scores", "masks"],
                        dynamic_axes={"images_tensors": [0, 1, 2, 3], "boxes": [0, 1], "labels": [0],
                                      "scores": [0], "masks": [0, 1, 2, 3]},
                        tolerate_small_mismatch=True)
@@ -431,24 +446,18 @@ class ONNXExporterTester(unittest.TestCase):
         assert torch.all(out2[1].eq(out_trace2[1]))
 
     def test_keypoint_rcnn(self):
-        class KeyPointRCNN(torch.nn.Module):
-            def __init__(self):
-                super(KeyPointRCNN, self).__init__()
-                self.model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(
-                    pretrained=True, min_size=200, max_size=300)
-
-            def forward(self, images):
-                output = self.model(images)
-                # TODO: The keypoints_scores require the use of Argmax that is updated in ONNX.
-                #       For now we are testing all the output of KeypointRCNN except keypoints_scores.
-                #       Enable When Argmax is updated in ONNX Runtime.
-                return output[0]['boxes'], output[0]['labels'], output[0]['scores'], output[0]['keypoints']
-
         images, test_images = self.get_test_images()
-        model = KeyPointRCNN()
+        dummy_images = [torch.ones(3, 100, 100) * 0.3]
+        model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
-        self.run_model(model, [(images,), (test_images,)],
+        self.run_model(model, [(images,), (test_images,), (dummy_images,)],
+                       input_names=["images_tensors"],
+                       output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
+                       dynamic_axes={"images_tensors": [0, 1, 2, 3]},
+                       tolerate_small_mismatch=True)
+
+        self.run_model(model, [(dummy_images,), (test_images,)],
                        input_names=["images_tensors"],
                        output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
                        dynamic_axes={"images_tensors": [0, 1, 2, 3]},

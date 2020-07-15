@@ -11,22 +11,30 @@ if(WITH_CUDA)
 endif()
 
 find_package(Python3 COMPONENTS Development)
+
 find_package(Torch REQUIRED)
+find_package(PNG REQUIRED)
+find_package(JPEG REQUIRED)
+
 
 file(GLOB HEADERS torchvision/csrc/*.h)
-file(GLOB OPERATOR_SOURCES torchvision/csrc/cpu/*.h torchvision/csrc/cpu/*.cpp torchvision/csrc/*.cpp)
+# Image extension
+file(GLOB IMAGE_HEADERS torchvision/csrc/cpu/image/*.h)
+file(GLOB IMAGE_SOURCES torchvision/csrc/cpu/image/*.cpp)
+file(GLOB OPERATOR_SOURCES torchvision/csrc/cpu/*.h torchvision/csrc/cpu/*.cpp ${IMAGE_HEADERS} ${IMAGE_SOURCES} ${HEADERS} torchvision/csrc/*.cpp)
 if(WITH_CUDA)
   file(GLOB OPERATOR_SOURCES ${OPERATOR_SOURCES} torchvision/csrc/cuda/*.h torchvision/csrc/cuda/*.cu)
 endif()
 file(GLOB MODELS_HEADERS torchvision/csrc/models/*.h)
 file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.cpp)
 
-add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} Python3::Python)
+add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES} ${IMAGE_SOURCES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} ${JPEG_LIBRARIES} Python3::Python)
+# target_link_libraries(${PROJECT_NAME} PRIVATE ${PNG_LIBRARY} Python3::Python)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME TorchVision)
 
 target_include_directories(${PROJECT_NAME} INTERFACE
-  $<BUILD_INTERFACE:${HEADERS}>
+  $<BUILD_INTERFACE:${HEADERS}:${PNG_INCLUDE_DIR}:${JPEG_INCLUDE_DIRS}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 include(GNUInstallDirs)
@@ -61,7 +69,7 @@ install(FILES
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/cpu)
 if(WITH_CUDA)
   install(FILES
-    torchvision/csrc/cuda/vision_cuda.h 
+    torchvision/csrc/cuda/vision_cuda.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/cuda)
 endif()
 install(FILES ${MODELS_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/models)

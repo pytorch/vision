@@ -1,15 +1,37 @@
-import torch
-from torch import Tensor
-import torchvision.transforms as transforms
-import torchvision.transforms.functional_tensor as F_t
-import torchvision.transforms.functional as F
-import numpy as np
 import unittest
 import random
-from torch.jit.annotations import Optional, List, BroadcastingList2, Tuple
+import colorsys
+
+from PIL import Image
+from PIL.Image import NEAREST, BILINEAR, BICUBIC
+
+import numpy as np
+
+import torch
+import torchvision.transforms as transforms
+import torchvision.transforms.functional_tensor as F_t
+import torchvision.transforms.functional_pil as F_pil
+import torchvision.transforms.functional as F
 
 
 class Tester(unittest.TestCase):
+
+    def _create_data(self, height=3, width=3, channels=3):
+        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8)
+        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().numpy())
+        return tensor, pil_img
+
+    def compareTensorToPIL(self, tensor, pil_image, msg=None):
+        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
+        self.assertTrue(tensor.equal(pil_tensor), msg)
+
+    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None):
+        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1))).to(tensor)
+        mae = torch.abs(tensor - pil_tensor).mean().item()
+        self.assertTrue(
+            mae < tol,
+            msg="{}: mae={}, tol={}: \n{}\nvs\n{}".format(msg, mae, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
+        )
 
     def test_vflip(self):
         script_vflip = torch.jit.script(F_t.vflip)
@@ -56,6 +78,45 @@ class Tester(unittest.TestCase):
         cropped_img_script = script_crop(img_tensor, top, left, height, width)
         self.assertTrue(torch.equal(img_cropped, cropped_img_script))
 
+    def test_hsv2rgb(self):
+        shape = (3, 100, 150)
+        for _ in range(20):
+            img = torch.rand(*shape, dtype=torch.float)
+            ft_img = F_t._hsv2rgb(img).permute(1, 2, 0).flatten(0, 1)
+
+            h, s, v, = img.unbind(0)
+            h = h.flatten().numpy()
+            s = s.flatten().numpy()
+            v = v.flatten().numpy()
+
+            rgb = []
+            for h1, s1, v1 in zip(h, s, v):
+                rgb.append(colorsys.hsv_to_rgb(h1, s1, v1))
+
+            colorsys_img = torch.tensor(rgb, dtype=torch.float32)
+            max_diff = (ft_img - colorsys_img).abs().max()
+            self.assertLess(max_diff, 1e-5)
+
+    def test_rgb2hsv(self):
+        shape = (3, 150, 100)
+        for _ in range(20):
+            img = torch.rand(*shape, dtype=torch.float)
+            ft_hsv_img = F_t._rgb2hsv(img).permute(1, 2, 0).flatten(0, 1)
+
+            r, g, b, = img.unbind(0)
+            r = r.flatten().numpy()
+            g = g.flatten().numpy()
+            b = b.flatten().numpy()
+
+            hsv = []
+            for r1, g1, b1 in zip(r, g, b):
+                hsv.append(colorsys.rgb_to_hsv(r1, g1, b1))
+
+            colorsys_img = torch.tensor(hsv, dtype=torch.float32)
+
+            max_diff = (colorsys_img - ft_hsv_img).abs().max()
+            self.assertLess(max_diff, 1e-5)
+
     def test_adjustments(self):
         script_adjust_brightness = torch.jit.script(F_t.adjust_brightness)
         script_adjust_contrast = torch.jit.script(F_t.adjust_contrast)
@@ -96,6 +157,23 @@ class Tester(unittest.TestCase):
                 self.assertLess(max_diff, 5 / 255 + 1e-5)
                 self.assertLess(max_diff_scripted, 5 / 255 + 1e-5)
                 self.assertTrue(torch.equal(img, img_clone))
+
+            # test for class interface
+            f = transforms.ColorJitter(brightness=factor.item())
+            scripted_fn = torch.jit.script(f)
+            scripted_fn(img)
+
+            f = transforms.ColorJitter(contrast=factor.item())
+            scripted_fn = torch.jit.script(f)
+            scripted_fn(img)
+
+            f = transforms.ColorJitter(saturation=factor.item())
+            scripted_fn = torch.jit.script(f)
+            scripted_fn(img)
+
+        f = transforms.ColorJitter(brightness=1)
+        scripted_fn = torch.jit.script(f)
+        scripted_fn(img)
 
     def test_rgb_to_grayscale(self):
         script_rgb_to_grayscale = torch.jit.script(F_t.rgb_to_grayscale)
@@ -176,6 +254,99 @@ class Tester(unittest.TestCase):
         cropped_script = script_ten_crop(img_tensor, [10, 10])
         for cropped_script_img, cropped_tensor_img in zip(cropped_script, cropped_tensor):
             self.assertTrue(torch.equal(cropped_script_img, cropped_tensor_img))
+
+    def test_pad(self):
+        script_fn = torch.jit.script(F_t.pad)
+        tensor, pil_img = self._create_data(7, 8)
+
+        for dt in [None, torch.float32, torch.float64]:
+            if dt is not None:
+                # This is a trivial cast to float of uint8 data to test all cases
+                tensor = tensor.to(dt)
+            for pad in [2, [3, ], [0, 3], (3, 3), [4, 2, 4, 3]]:
+                configs = [
+                    {"padding_mode": "constant", "fill": 0},
+                    {"padding_mode": "constant", "fill": 10},
+                    {"padding_mode": "constant", "fill": 20},
+                    {"padding_mode": "edge"},
+                    {"padding_mode": "reflect"},
+                    {"padding_mode": "symmetric"},
+                ]
+                for kwargs in configs:
+                    pad_tensor = F_t.pad(tensor, pad, **kwargs)
+                    pad_pil_img = F_pil.pad(pil_img, pad, **kwargs)
+
+                    pad_tensor_8b = pad_tensor
+                    # we need to cast to uint8 to compare with PIL image
+                    if pad_tensor_8b.dtype != torch.uint8:
+                        pad_tensor_8b = pad_tensor_8b.to(torch.uint8)
+
+                    self.compareTensorToPIL(pad_tensor_8b, pad_pil_img, msg="{}, {}".format(pad, kwargs))
+
+                    if isinstance(pad, int):
+                        script_pad = [pad, ]
+                    else:
+                        script_pad = pad
+                    pad_tensor_script = script_fn(tensor, script_pad, **kwargs)
+                    self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, kwargs))
+
+        with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
+            F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
+
+    def test_resize(self):
+        script_fn = torch.jit.script(F_t.resize)
+        tensor, pil_img = self._create_data(26, 36)
+
+        for dt in [None, torch.float32, torch.float64]:
+            if dt is not None:
+                # This is a trivial cast to float of uint8 data to test all cases
+                tensor = tensor.to(dt)
+            for size in [32, [32, ], [32, 32], (32, 32), ]:
+                for interpolation in [BILINEAR, BICUBIC, NEAREST]:
+                    resized_tensor = F_t.resize(tensor, size=size, interpolation=interpolation)
+                    resized_pil_img = F_pil.resize(pil_img, size=size, interpolation=interpolation)
+
+                    self.assertEqual(
+                        resized_tensor.size()[1:], resized_pil_img.size[::-1], msg="{}, {}".format(size, interpolation)
+                    )
+
+                    if interpolation != NEAREST:
+                        # We can not check values if mode = NEAREST, as results are different
+                        # E.g. resized_tensor  = [[a, a, b, c, d, d, e, ...]]
+                        # E.g. resized_pil_img = [[a, b, c, c, d, e, f, ...]]
+                        resized_tensor_f = resized_tensor
+                        # we need to cast to uint8 to compare with PIL image
+                        if resized_tensor_f.dtype == torch.uint8:
+                            resized_tensor_f = resized_tensor_f.to(torch.float)
+
+                        # Pay attention to high tolerance for MAE
+                        self.approxEqualTensorToPIL(
+                            resized_tensor_f, resized_pil_img, tol=8.0, msg="{}, {}".format(size, interpolation)
+                        )
+
+                    if isinstance(size, int):
+                        script_size = [size, ]
+                    else:
+                        script_size = size
+                    resize_result = script_fn(tensor, size=script_size, interpolation=interpolation)
+                    self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
+
+    def test_resized_crop(self):
+        # test values of F.resized_crop in several cases:
+        # 1) resize to the same size, crop to the same size => should be identity
+        tensor, _ = self._create_data(26, 36)
+        for i in [0, 2, 3]:
+            out_tensor = F.resized_crop(tensor, top=0, left=0, height=26, width=36, size=[26, 36], interpolation=i)
+            self.assertTrue(tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5]))
+
+        # 2) resize by half and crop a TL corner
+        tensor, _ = self._create_data(26, 36)
+        out_tensor = F.resized_crop(tensor, top=0, left=0, height=20, width=30, size=[10, 15], interpolation=0)
+        expected_out_tensor = tensor[:, :20:2, :30:2]
+        self.assertTrue(
+            expected_out_tensor.equal(out_tensor),
+            msg="{} vs {}".format(expected_out_tensor[0, :10, :10], out_tensor[0, :10, :10])
+        )
 
 
 if __name__ == '__main__':
