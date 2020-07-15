@@ -161,8 +161,14 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
             msg = f"The cast from {image.dtype} to {dtype} cannot be performed safely."
             raise RuntimeError(msg)
 
-        max = torch.iinfo(dtype).max
-        return image.mul(torch.iinfo(dtype).max).clamp(0, max).to(dtype)
+        # https://github.com/pytorch/vision/pull/2078#issuecomment-612045321
+        # For data in the range 0-1, (float * 255).to(uint) is only 255
+        # when float is exactly 1.0.
+        # `max + 1 - epsilon` provides more evenly distributed mapping of
+        # ranges of floats to ints.
+        eps = 1e-3
+        result = image.mul(torch.iinfo(dtype).max + 1 - eps)
+        return result.to(dtype)
     else:
         # int to float
         if dtype.is_floating_point:
@@ -779,8 +785,10 @@ def adjust_gamma(img, gamma: float, gain: float = 1):
             gamma larger than 1 make the shadows darker,
             while gamma smaller than 1 make dark regions lighter.
         gain (float): The constant multiplier.
+    Returns:
+        PIL Image or Tensor: Gamma correction adjusted image.
     """
-    if F_pil._is_pil_image(img):
+    if not isinstance(img, torch.Tensor):
         return F_pil.adjust_gamma(img, gamma, gain)
 
     return F_t.adjust_gamma(img, gamma, gain)

@@ -1179,14 +1179,14 @@ class Tester(unittest.TestCase):
         # test 1
         y_pil = F.adjust_gamma(x_pil, 0.5)
         y_np = np.array(y_pil)
-        y_ans = [0, 35, 57, 117, 185, 240, 97, 45, 244, 151, 255, 15]
+        y_ans = [0, 35, 57, 117, 186, 241, 97, 45, 245, 152, 255, 16]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         self.assertTrue(np.allclose(y_np, y_ans))
 
         # test 2
         y_pil = F.adjust_gamma(x_pil, 2)
         y_np = np.array(y_pil)
-        y_ans = [0, 0, 0, 11, 71, 200, 5, 0, 214, 31, 255, 0]
+        y_ans = [0, 0, 0, 11, 71, 201, 5, 0, 215, 31, 255, 0]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         self.assertTrue(np.allclose(y_np, y_ans))
 

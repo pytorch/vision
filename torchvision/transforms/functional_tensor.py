@@ -208,7 +208,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     .. _Gamma Correction: https://en.wikipedia.org/wiki/Gamma_correction
 
     Args:
-        img (Tensor): PIL Image to be adjusted.
+        img (Tensor): Tensor of RBG values to be adjusted.
         gamma (float): Non negative real number, same as :math:`\gamma` in the equation.
             gamma larger than 1 make the shadows darker,
             while gamma smaller than 1 make dark regions lighter.
@@ -223,12 +223,15 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
     result = img
     dtype = img.dtype
-    if torch.is_floating_point(img):
-        return gain * result ** gamma
+    if not torch.is_floating_point(img):
+        result = result / 255.0
 
-    result = 255.0 * gain * (result / 255.0) ** gamma
-    # PIL clamps, to(torch.uint8) would wrap
-    result = result.clamp(0, 255).to(dtype)
+    result = (gain * result ** gamma).clamp(0, 1)
+
+    if result.dtype != dtype:
+        eps = 1e-3
+        result = (255 + 1.0 - eps) * result
+    result = result.to(dtype)
     return result
 
 
