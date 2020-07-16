@@ -1,5 +1,9 @@
+import warnings
+from typing import Optional
+
 import torch
 from torch import Tensor
+from torch.nn.functional import affine_grid, grid_sample
 from torch.jit.annotations import List, BroadcastingList2
 
 
@@ -496,7 +500,8 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
             :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
             In torchscript mode padding as a single int is not supported, use a tuple or
             list of length 1: ``[size, ]``.
-        interpolation (int, optional): Desired interpolation. Default is bilinear.
+        interpolation (int, optional): Desired interpolation. Default is bilinear (=2). Other supported values:
+            nearest(=0) and bicubic(=3).
 
     Returns:
         Tensor: Resized image.
@@ -569,5 +574,65 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
         if mode == "bicubic":
             img = img.clamp(min=0, max=255)
         img = img.to(out_dtype)
+
+    return img
+
+
+def affine(
+        img: Tensor, matrix: List[float], resample: int = 0, fillcolor: Optional[int] = None
+) -> Tensor:
+    """Apply affine transformation on the Tensor image keeping image center invariant.
+
+    Args:
+        img (Tensor): image to be rotated.
+        matrix (list of floats): list of 6 float values representing inverse matrix for affine transformation.
+        resample (int, optional): An optional resampling filter. Default is nearest (=2). Other supported values:
+            bilinear(=2).
+        fillcolor (int, optional): this option is not supported for Tensor input. Fill value for the area outside the
+            transform in the output image is always 0.
+
+    Returns:
+        Tensor: Transformed image.
+    """
+    if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
+        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+
+    if fillcolor is not None:
+        warnings.warn("Argument fillcolor is not supported for Tensor input. Fill value is zero")
+
+    _interpolation_modes = {
+        0: "nearest",
+        2: "bilinear",
+    }
+
+    if resample not in _interpolation_modes:
+        raise ValueError("This resampling mode is unsupported with Tensor input")
+
+    theta = torch.tensor(matrix, dtype=torch.float).reshape(1, 2, 3)
+    shape = img.shape
+    grid = affine_grid(theta, size=(1, shape[-3], shape[-2], shape[-1]), align_corners=False)
+
+    # make image NCHW
+    need_squeeze = False
+    if img.ndim < 4:
+        img = img.unsqueeze(dim=0)
+        need_squeeze = True
+
+    mode = _interpolation_modes[resample]
+
+    out_dtype = img.dtype
+    need_cast = False
+    if img.dtype not in (torch.float32, torch.float64):
+        need_cast = True
+        img = img.to(torch.float32)
+
+    img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
+
+    if need_squeeze:
+        img = img.squeeze(dim=0)
+
+    if need_cast:
+        # it is better to round before cast
+        img = torch.round(img).to(out_dtype)
 
     return img
