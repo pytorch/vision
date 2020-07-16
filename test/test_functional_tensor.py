@@ -1,7 +1,7 @@
 import unittest
 import random
 import colorsys
-import math 
+import math
 
 from PIL import Image
 from PIL.Image import NEAREST, BILINEAR, BICUBIC
@@ -115,10 +115,10 @@ class Tester(unittest.TestCase):
 
             colorsys_img = torch.tensor(hsv, dtype=torch.float32)
 
-            ft_hsv_img_h, ft_hsv_img_sv = torch.split(ft_hsv_img, [1,2], dim=1)
-            colorsys_img_h, colorsys_img_sv = torch.split(colorsys_img, [1,2], dim=1)
-            
-            max_diff_h = ((colorsys_img_h*2*math.pi).sin() - (ft_hsv_img_h*2*math.pi).sin()).abs().max()
+            ft_hsv_img_h, ft_hsv_img_sv = torch.split(ft_hsv_img, [1, 2], dim=1)
+            colorsys_img_h, colorsys_img_sv = torch.split(colorsys_img, [1, 2], dim=1)
+
+            max_diff_h = ((colorsys_img_h * 2 * math.pi).sin() - (ft_hsv_img_h * 2 * math.pi).sin()).abs().max()
             max_diff_sv = (colorsys_img_sv - ft_hsv_img_sv).abs().max()
             max_diff = max(max_diff_h, max_diff_sv)
 
