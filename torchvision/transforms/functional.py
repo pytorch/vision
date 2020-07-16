@@ -766,7 +766,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
 
-def adjust_gamma(img, gamma: float, gain: float = 1):
+def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     r"""Perform gamma correction on an image.
 
     Also known as Power Law Transform. Intensities in RGB mode are adjusted
