@@ -1317,8 +1317,8 @@ class Tester(unittest.TestCase):
                 for j in range(-5, 5):
                     input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
 
-        with self.assertRaises(TypeError):
-            F.affine(input_img, 10)
+        with self.assertRaises(TypeError, msg="Argument translate should be a sequence"):
+            F.affine(input_img, 10, translate=0, scale=1, shear=1)
 
         pil_img = F.to_pil_image(input_img)
 
