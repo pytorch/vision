@@ -263,6 +263,26 @@ class Tester(unittest.TestCase):
                         out2 = s_transform(tensor)
                         self.assertTrue(out1.equal(out2))
 
+    def test_random_affine(self):
+        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
+
+        for shear in [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]]:
+            for scale in [(0.7, 1.2), [0.7, 1.2]]:
+                for translate in [(0.1, 0.2), [0.2, 0.1]]:
+                    for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
+                        for interpolation in [NEAREST, BILINEAR]:
+                            transform = T.RandomAffine(
+                                degrees=degrees, translate=translate,
+                                scale=scale, shear=shear, resample=interpolation
+                            )
+                            s_transform = torch.jit.script(transform)
+
+                            torch.manual_seed(12)
+                            out1 = transform(tensor)
+                            torch.manual_seed(12)
+                            out2 = s_transform(tensor)
+                            self.assertTrue(out1.equal(out2))
+
 
 if __name__ == '__main__':
     unittest.main()
