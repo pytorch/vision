@@ -1311,17 +1311,14 @@ class Tester(unittest.TestCase):
 
     def test_affine(self):
         input_img = np.zeros((40, 40, 3), dtype=np.uint8)
-        pts = []
         cnt = [20, 20]
         for pt in [(16, 16), (20, 16), (20, 20)]:
             for i in range(-5, 5):
                 for j in range(-5, 5):
                     input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
-                    pts.append((pt[0] + i, pt[1] + j))
-        pts = list(set(pts))
 
-        with self.assertRaises(TypeError):
-            F.affine(input_img, 10)
+        with self.assertRaises(TypeError, msg="Argument translate should be a sequence"):
+            F.affine(input_img, 10, translate=0, scale=1, shear=1)
 
         pil_img = F.to_pil_image(input_img)
 
@@ -1373,9 +1370,12 @@ class Tester(unittest.TestCase):
             inv_true_matrix = np.linalg.inv(true_matrix)
             for y in range(true_result.shape[0]):
                 for x in range(true_result.shape[1]):
-                    res = np.dot(inv_true_matrix, [x, y, 1])
-                    _x = int(res[0] + 0.5)
-                    _y = int(res[1] + 0.5)
+                    # Same as for PIL:
+                    # https://github.com/python-pillow/Pillow/blob/71f8ec6a0cfc1008076a023c0756542539d057ab/
+                    # src/libImaging/Geometry.c#L1060
+                    input_pt = np.array([x + 0.5, y + 0.5, 1.0])
+                    res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(np.int)
+                    _x, _y = res[:2]
                     if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
                         true_result[y, x, :] = input_img[_y, _x, :]
 
@@ -1408,7 +1408,7 @@ class Tester(unittest.TestCase):
         # Test rotation, scale, translation, shear
         for a in range(-90, 90, 25):
             for t1 in range(-10, 10, 5):
-                for s in [0.75, 0.98, 1.0, 1.1, 1.2]:
+                for s in [0.75, 0.98, 1.0, 1.2, 1.4]:
                     for sh in range(-15, 15, 5):
                         _test_transformation(a=a, t=(t1, t1), s=s, sh=(sh, sh))
 
