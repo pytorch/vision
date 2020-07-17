@@ -16,7 +16,7 @@ except ImportError:
     accimage = None
 
 from . import functional as F
-
+from . import functional_tensor as F_t
 
 __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize", "Resize", "Scale",
            "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
@@ -131,7 +131,7 @@ class ConvertImageDtype(object):
         self.dtype = dtype
 
     def __call__(self, image: torch.Tensor) -> torch.Tensor:
-        return F.convert_image_dtype(image, self.dtype)
+        return F_t.convert_image_dtype(image, self.dtype)
 
 
 class ToPILImage(object):

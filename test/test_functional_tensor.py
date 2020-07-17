@@ -309,7 +309,7 @@ class Tester(unittest.TestCase):
         for dt in [torch.float64, torch.float32, None]:
 
             if dt is not None:
-                tensor = F.convert_image_dtype(tensor, dt)
+                tensor = F_t.convert_image_dtype(tensor, dt)
 
             gammas = [0.8, 1.0, 1.2]
             gains = [0.7, 1.0, 1.3]
@@ -323,7 +323,7 @@ class Tester(unittest.TestCase):
 
                 rbg_tensor = adjusted_tensor
                 if adjusted_tensor.dtype != torch.uint8:
-                    rbg_tensor = F.convert_image_dtype(adjusted_tensor, torch.uint8)
+                    rbg_tensor = F_t.convert_image_dtype(adjusted_tensor, torch.uint8)
 
                 self.compareTensorToPIL(rbg_tensor, adjusted_pil)
 

@@ -2,6 +2,7 @@ import os
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
+import torchvision.transforms.functional_tensor as F_t
 from torch._utils_internal import get_file_path_2
 from numpy.testing import assert_array_almost_equal
 import unittest
@@ -528,7 +529,7 @@ class Tester(unittest.TestCase):
 
     def test_max_value(self):
         for dtype in int_dtypes():
-            self.assertEqual(F._max_value(dtype), torch.iinfo(dtype).max)
+            self.assertEqual(F_t._max_value(dtype), torch.iinfo(dtype).max)
 
     def test_convert_image_dtype_float_to_float(self):
         for input_dtype, output_dtypes in cycle_over(float_dtypes()):
