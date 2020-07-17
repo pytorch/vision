@@ -23,7 +23,7 @@ def gen_bar_updater() -> Callable[[int, int, int], None]:
     return bar_update
 
 
-def calculate_md5(fpath: str, chunk_size: int =1024 * 1024) -> str:
+def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
     md5 = hashlib.md5()
     with open(fpath, 'rb') as f:
         for chunk in iter(lambda: f.read(chunk_size), b''):
