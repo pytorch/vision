@@ -118,7 +118,7 @@ def list_files(root, suffix, prefix=False):
     return files
 
 
-def _quota_exceeded(response: "requests.models.Response") -> bool:
+def _quota_exceeded(response: "requests.models.Response") -> bool:  # type: ignore[name-defined]
     return "Google Drive - Quota exceeded" in response.text
 
 

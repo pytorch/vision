@@ -343,7 +343,7 @@ class QMNIST(MNIST):
         'test50k': 'test',
         'nist': 'nist'
     }
-    resources = {
+    resources = {  # type: ignore[assignment]
         'train': [('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-images-idx3-ubyte.gz',
                    'ed72d4157d28c017586c42bc6afe6370'),
                   ('https://raw.githubusercontent.com/facebookresearch/qmnist/master/qmnist-train-labels-idx2-int.gz',
