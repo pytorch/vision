@@ -526,6 +526,10 @@ class Tester(unittest.TestCase):
         output = trans(img)
         self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
+    def test_max_value(self):
+        for dtype in int_dtypes():
+            self.assertEqual(F._max_value(dtype), torch.iinfo(dtype).max)
+
     def test_convert_image_dtype_float_to_float(self):
         for input_dtype, output_dtypes in cycle_over(float_dtypes()):
             input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)

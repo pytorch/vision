@@ -124,7 +124,24 @@ def pil_to_tensor(pic):
     return img
 
 
-def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
+# torch.iinfo isn't scriptable so using this helper function
+# https://github.com/pytorch/pytorch/issues/41492
+def _max_value(dtype: int) -> int:
+    a = torch.tensor(2, dtype=dtype)
+    signed = 1 if torch.tensor(0, dtype=dtype).is_signed() else 0
+    bits = 1
+    max_value = torch.tensor(-signed, dtype=torch.long)
+    while(True):
+        next_value = a.pow(bits - signed).sub(1)
+        if next_value > max_value:
+            max_value = next_value
+            bits *= 2
+        else:
+            return max_value.item()
+    return max_value.item()
+
+
+def convert_image_dtype(image: torch.Tensor, dtype: int = torch.float) -> torch.Tensor:
     """Convert a tensor image to the given ``dtype`` and scale the values accordingly
 
     Args:
@@ -148,9 +165,9 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
     if image.dtype == dtype:
         return image
 
-    if image.dtype.is_floating_point:
+    if torch.empty(0, dtype=image.dtype).is_floating_point():
         # float to float
-        if dtype.is_floating_point:
+        if torch.tensor(0, dtype=dtype).is_floating_point():
             return image.to(dtype)
 
         # float to int
@@ -166,19 +183,19 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         # `max + 1 - epsilon` provides more evenly distributed mapping of
         # ranges of floats to ints.
         eps = 1e-3
-        result = image.mul(torch.iinfo(dtype).max + 1 - eps)
+        max_val = _max_value(dtype)
+        result = image.mul(max_val + 1.0 - eps)
         return result.to(dtype)
     else:
+        input_max = _max_value(image.dtype)
+        output_max = _max_value(dtype)
+
         # int to float
-        if dtype.is_floating_point:
-            max = torch.iinfo(image.dtype).max
+        if torch.tensor(0, dtype=dtype).is_floating_point():
             image = image.to(dtype)
-            return image / max
+            return image / input_max
 
         # int to int
-        input_max = torch.iinfo(image.dtype).max
-        output_max = torch.iinfo(dtype).max
-
         if input_max > output_max:
             factor = (input_max + 1) // (output_max + 1)
             image = image // factor

@@ -6,6 +6,8 @@ from torch import Tensor
 from torch.nn.functional import affine_grid, grid_sample
 from torch.jit.annotations import List, BroadcastingList2
 
+import torchvision.transforms.functional as F
+
 
 def _is_tensor_a_torch_image(x: Tensor) -> bool:
     return x.ndim >= 2
@@ -228,13 +230,11 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     result = img
     dtype = img.dtype
     if not torch.is_floating_point(img):
-        result = result / 255.0
+        result = F.convert_image_dtype(result, torch.get_default_dtype())
 
     result = (gain * result ** gamma).clamp(0, 1)
 
-    if result.dtype != dtype:
-        eps = 1e-3
-        result = (255 + 1.0 - eps) * result
+    result = F.convert_image_dtype(result, dtype)
     result = result.to(dtype)
     return result
 
