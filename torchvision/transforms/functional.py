@@ -160,8 +160,14 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
             msg = f"The cast from {image.dtype} to {dtype} cannot be performed safely."
             raise RuntimeError(msg)
 
+        # https://github.com/pytorch/vision/pull/2078#issuecomment-612045321
+        # For data in the range 0-1, (float * 255).to(uint) is only 255
+        # when float is exactly 1.0.
+        # `max + 1 - epsilon` provides more evenly distributed mapping of
+        # ranges of floats to ints.
         eps = 1e-3
-        return image.mul(torch.iinfo(dtype).max + 1 - eps).to(dtype)
+        result = image.mul(torch.iinfo(dtype).max + 1 - eps)
+        return result.to(dtype)
     else:
         # int to float
         if dtype.is_floating_point:
@@ -722,7 +728,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
 
-def adjust_gamma(img, gamma, gain=1):
+def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     r"""Perform gamma correction on an image.
 
     Also known as Power Law Transform. Intensities in RGB mode are adjusted
@@ -736,26 +742,18 @@ def adjust_gamma(img, gamma, gain=1):
     .. _Gamma Correction: https://en.wikipedia.org/wiki/Gamma_correction
 
     Args:
-        img (PIL Image): PIL Image to be adjusted.
+        img (PIL Image or Tensor): PIL Image to be adjusted.
         gamma (float): Non negative real number, same as :math:`\gamma` in the equation.
             gamma larger than 1 make the shadows darker,
             while gamma smaller than 1 make dark regions lighter.
         gain (float): The constant multiplier.
+    Returns:
+        PIL Image or Tensor: Gamma correction adjusted image.
     """
-    if not F_pil._is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.adjust_gamma(img, gamma, gain)
 
-    if gamma < 0:
-        raise ValueError('Gamma should be a non-negative real number')
-
-    input_mode = img.mode
-    img = img.convert('RGB')
-
-    gamma_map = [255 * gain * pow(ele / 255., gamma) for ele in range(256)] * 3
-    img = img.point(gamma_map)  # use PIL's point-function to accelerate this part
-
-    img = img.convert(input_mode)
-    return img
+    return F_t.adjust_gamma(img, gamma, gain)
 
 
 def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
