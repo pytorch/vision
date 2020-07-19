@@ -36,7 +36,6 @@ int RegisterOps() noexcept {
           .op("torchvision::ps_roi_pool", &ps_roi_pool)
           .op("torchvision::deform_conv2d", &deform_conv2d)
           .op("torchvision::_cuda_version", &_cuda_version);
-  std::cout << "1111" << std::endl;
   return 0;
 }
 } // namespace vision

@@ -10,8 +10,14 @@
 #endif
 #endif
 
+#ifdef _MSC_VER
+#define VISION_NO_OPTIMIZE_STATIC_VARIABLE __declspec(dllexport)
+#else
+#define VISION_NO_OPTIMIZE_STATIC_VARIABLE
+#endif
+
 namespace vision {
 namespace impl {
-VISION_INLINE_VARIABLE int dummy = RegisterOps();
+VISION_INLINE_VARIABLE VISION_NO_OPTIMIZE_STATIC_VARIABLE int dummy = RegisterOps();
 }
 } // namespace vision
