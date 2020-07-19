@@ -1,4 +1,5 @@
 import torch
+from typing import Any, Callable, Optional, Tuple
 from .vision import VisionDataset
 from .. import transforms
 
@@ -19,16 +20,23 @@ class FakeData(VisionDataset):
 
     """
 
-    def __init__(self, size=1000, image_size=(3, 224, 224), num_classes=10,
-                 transform=None, target_transform=None, random_offset=0):
-        super(FakeData, self).__init__(None, transform=transform,
+    def __init__(
+            self,
+            size: int = 1000,
+            image_size: Tuple[int, int, int] = (3, 224, 224),
+            num_classes: int = 10,
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
+            random_offset: int = 0,
+    ) -> None:
+        super(FakeData, self).__init__(None, transform=transform,  # type: ignore[arg-type]
                                        target_transform=target_transform)
         self.size = size
         self.num_classes = num_classes
         self.image_size = image_size
         self.random_offset = random_offset
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -54,5 +62,5 @@ class FakeData(VisionDataset):
 
         return img, target
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.size
