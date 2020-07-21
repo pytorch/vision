@@ -830,7 +830,9 @@ def rotate(
             Default is the center of the image.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
-            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
+            Defaults to 0 for all bands. This option is only available for Pillow>=5.2.0.
+            This option is not supported for Tensor input. Fill value for the area outside the transform in the output
+            image is always 0.
 
     Returns:
         PIL Image or Tensor: Rotated image.

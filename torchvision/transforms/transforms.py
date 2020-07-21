@@ -1097,16 +1097,18 @@ class ColorJitter(torch.nn.Module):
         return format_string
 
 
-class RandomRotation(object):
+class RandomRotation(torch.nn.Module):
     """Rotate the image by angle.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
         degrees (sequence or float or int): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
             will be (-degrees, +degrees).
-        resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
-            An optional resampling filter. See `filters`_ for more information.
+        resample (int, optional): An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
+            If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
@@ -1116,13 +1118,14 @@ class RandomRotation(object):
             Default is the center of the image.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
-            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
+            Defaults to 0 for all bands. This option is only available for Pillow>=5.2.0.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
 
     def __init__(self, degrees, resample=False, expand=False, center=None, fill=None):
+        super().__init__()
         if isinstance(degrees, numbers.Number):
             if degrees < 0:
                 raise ValueError("If degrees is a single number, it must be positive.")
@@ -1148,13 +1151,13 @@ class RandomRotation(object):
 
         return angle
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
             img (PIL Image): Image to be rotated.
 
         Returns:
-            PIL Image: Rotated image.
+            PIL Image or Tensor: Rotated image.
         """
 
         angle = self.get_params(self.degrees)
