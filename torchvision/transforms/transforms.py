@@ -1197,7 +1197,8 @@ class RandomAffine(torch.nn.Module):
             If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
             If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
         fillcolor (tuple or int): Optional fill color (Tuple for RGB Image and int for grayscale) for the area
-            outside the transform in the output image (Pillow>=5.0.0).
+            outside the transform in the output image (Pillow>=5.0.0). This option is not supported for Tensor
+            input. Fill value for the area outside the transform in the output image is always 0.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
