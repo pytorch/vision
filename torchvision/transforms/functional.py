@@ -758,40 +758,8 @@ def adjust_gamma(img, gamma, gain=1):
     return img
 
 
-def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
-    """Rotate the image by angle.
-
-
-    Args:
-        img (PIL Image): PIL Image to be rotated.
-        angle (float or int): In degrees degrees counter clockwise order.
-        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
-            An optional resampling filter. See `filters`_ for more information.
-            If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
-        expand (bool, optional): Optional expansion flag.
-            If true, expands the output image to make it large enough to hold the entire rotated image.
-            If false or omitted, make the output image the same size as the input image.
-            Note that the expand flag assumes rotation around the center and no translation.
-        center (2-tuple, optional): Optional center of rotation.
-            Origin is the upper left corner.
-            Default is the center of the image.
-        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
-            image. If int or float, the value is used for all bands respectively.
-            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
-
-    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
-
-    """
-    if not F_pil._is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-
-    opts = _parse_fill(fill, img, '5.2.0')
-
-    return img.rotate(angle, resample, expand, center, **opts)
-
-
 def _get_inverse_affine_matrix(
-        center: List[int], angle: float, translate: List[float], scale: float, shear: List[float]
+        center: List[float], angle: float, translate: List[float], scale: float, shear: List[float]
 ) -> List[float]:
     # Helper method to compute inverse matrix for affine transformation
 
@@ -840,6 +808,56 @@ def _get_inverse_affine_matrix(
     return matrix
 
 
+def rotate(
+        img: Tensor, angle: float, resample: int = 0, expand: bool = False,
+        center: Optional[List[int]] = None, fill: Optional[int] = None
+) -> Tensor:
+    """Rotate the image by angle.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+
+    Args:
+        img (PIL Image or Tensor): image to be rotated.
+        angle (float or int): rotation angle value in degrees, counter-clockwise.
+        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
+            An optional resampling filter. See `filters`_ for more information.
+            If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
+        expand (bool, optional): Optional expansion flag.
+            If true, expands the output image to make it large enough to hold the entire rotated image.
+            If false or omitted, make the output image the same size as the input image.
+            Note that the expand flag assumes rotation around the center and no translation.
+        center (list or tuple, optional): Optional center of rotation. Origin is the upper left corner.
+            Default is the center of the image.
+        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+            image. If int or float, the value is used for all bands respectively.
+            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
+
+    Returns:
+        PIL Image or Tensor: Rotated image.
+
+    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
+
+    """
+    if not isinstance(angle, (int, float)):
+        raise TypeError("Argument angle should be int or float")
+
+    if center is not None and not isinstance(center, (list, tuple)):
+        raise TypeError("Argument center should be a sequence")
+
+    if not isinstance(img, torch.Tensor):
+        return F_pil.rotate(img, angle=angle, resample=resample, expand=expand, center=center, fill=fill)
+
+    center_f = [0.0, 0.0]
+    if center is not None:
+        img_size = _get_image_size(img)
+        # Center is normalized to [-1, +1]
+        center_f = [2.0 * t / s - 1.0 for s, t in zip(img_size, center)]
+    # due to current incoherence of rotation angle direction between affine and rotate implementations
+    # we need to set -angle.
+    matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
+    return F_t.rotate(img, matrix=matrix, resample=resample, expand=expand, fill=fill)
+
+
 def affine(
         img: Tensor, angle: float, translate: List[int], scale: float, shear: List[float],
         resample: int = 0, fillcolor: Optional[int] = None
@@ -849,7 +867,7 @@ def affine(
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        img (PIL Image or Tensor): image to be rotated.
+        img (PIL Image or Tensor): image to transform.
         angle (float or int): rotation angle in degrees between -180 and 180, clockwise direction.
         translate (list or tuple of integers): horizontal and vertical translations (post-rotation translation)
         scale (float): overall scale
@@ -911,7 +929,7 @@ def affine(
     # we need to rescale translate by image size / 2 as its values can be between -1 and 1
     translate = [2.0 * t / s for s, t in zip(img_size, translate)]
 
-    matrix = _get_inverse_affine_matrix([0, 0], angle, translate, scale, shear)
+    matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, translate, scale, shear)
     return F_t.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 
 
