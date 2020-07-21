@@ -1258,7 +1258,7 @@ class Tester(unittest.TestCase):
         x = np.zeros((100, 100, 3), dtype=np.uint8)
         x[40, 40] = [255, 255, 255]
 
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, r"img should be PIL Image"):
             F.rotate(x, 10)
 
         img = F.to_pil_image(x)

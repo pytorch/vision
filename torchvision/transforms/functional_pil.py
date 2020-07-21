@@ -419,5 +419,8 @@ def rotate(img, angle, resample=0, expand=False, center=None, fill=None):
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
+    if not _is_pil_image(img):
+        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+
     opts = _parse_fill(fill, img, '5.2.0')
     return img.rotate(angle, resample, expand, center, **opts)
