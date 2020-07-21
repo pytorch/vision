@@ -264,6 +264,24 @@ class Tester(unittest.TestCase):
                 out2 = s_transform(tensor)
                 self.assertTrue(out1.equal(out2))
 
+    def test_random_rotate(self):
+        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
+
+        for center in [(0, 0), [10, 10], None, (56, 44)]:
+            for expand in [True, False]:
+                for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
+                    for interpolation in [NEAREST, BILINEAR]:
+                        transform = T.RandomRotation(
+                            degrees=degrees, resample=interpolation, expand=expand, center=center
+                        )
+                        s_transform = torch.jit.script(transform)
+
+                        torch.manual_seed(12)
+                        out1 = transform(tensor)
+                        torch.manual_seed(12)
+                        out2 = s_transform(tensor)
+                        self.assertTrue(out1.equal(out2))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -826,7 +826,7 @@ def rotate(
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
             Note that the expand flag assumes rotation around the center and no translation.
-        center (list or tuple, optional): Optional center of rotation. Origin is the upper left corner.
+        center (list or tuple, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
