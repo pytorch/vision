@@ -476,10 +476,10 @@ class Tester(unittest.TestCase):
                             )
                             num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
                             ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                            # Tolerance : less than 1% of different pixels
+                            # Tolerance : less than 2% of different pixels
                             self.assertLess(
                                 ratio_diff_pixels,
-                                0.01,
+                                0.02,
                                 msg="{}: {}\n{} vs \n{}".format(
                                     (r, a, e, c), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
                                 )
