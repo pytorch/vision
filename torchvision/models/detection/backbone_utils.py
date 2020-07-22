@@ -12,7 +12,7 @@ class BackboneWithFPN(nn.Module):
     Adds a FPN on top of a model.
     Internally, it uses torchvision.models._utils.IntermediateLayerGetter to
     extract a submodel that returns the feature maps specified in return_layers.
-    The same limitations of IntermediatLayerGetter apply here.
+    The same limitations of IntermediateLayerGetter apply here.
     Arguments:
         backbone (nn.Module)
         return_layers (Dict[name, new_name]): a dict containing the names
@@ -41,10 +41,7 @@ class BackboneWithFPN(nn.Module):
         return x
 
 
-def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.FrozenBatchNorm2d, trainable_layers=3):
-    backbone = resnet.__dict__[backbone_name](
-        pretrained=pretrained,
-        norm_layer=norm_layer)
+def resnet_fpn_backbone(backbone, pretrained, norm_layer=misc_nn_ops.FrozenBatchNorm2d, trainable_layers=3):
     """
     Constructs a specified ResNet backbone with FPN on top. Freezes the specified number of layers in the backbone.
 
@@ -65,16 +62,24 @@ def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.Frozen
         >>>    ('pool', torch.Size([1, 256, 1, 1]))]
 
     Arguments:
-        backbone_name (string): resnet architecture. Possible values are 'ResNet', 'resnet18', 'resnet34', 'resnet50',
-             'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2'
+        backbone (string or callable): resnet architecture. Possible values are 'ResNet',
+            'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152', 'resnext50_32x4d',
+            'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2'; you can also pass in your own
+            callable, e.g. functools.partial(torch.hub.load, 'zhanghang1989/ResNeSt', 'resnest50').
         norm_layer (torchvision.ops): it is recommended to use the default value. For details visit:
-            (https://github.com/facebookresearch/maskrcnn-benchmark/issues/267)
-        pretrained (bool): If True, returns a model with backbone pre-trained on Imagenet
+            (https://github.com/facebookresearch/maskrcnn-benchmark/issues/267).
+        pretrained (bool): If True, returns a model with backbone pre-trained on Imagenet.
         trainable_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
+    if isinstance(backbone, str):
+        backbone = resnet.__dict__[backbone](pretrained=pretrained, norm_layer=norm_layer)
+    elif callable(backbone):
+        backbone = backbone(pretrained=pretrained, norm_layer=norm_layer)
+    else:
+        assert False, 'backbone must either be a callable or a str'
     # select layers that wont be frozen
-    assert trainable_layers <= 5 and trainable_layers >= 0
+    assert 0 <= trainable_layers <= 5, 'trainable_layers should be between [0, 5]'
     layers_to_train = ['layer4', 'layer3', 'layer2', 'layer1', 'conv1'][:trainable_layers]
     # freeze layers only if pretrained backbone is used
     for name, parameter in backbone.named_parameters():
