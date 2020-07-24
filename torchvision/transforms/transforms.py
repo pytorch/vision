@@ -1204,7 +1204,7 @@ class RandomAffine(torch.nn.Module):
 
     """
 
-    def __init__(self, degrees, translate=None, scale=None, shear=None, resample=False, fillcolor=0):
+    def __init__(self, degrees, translate=None, scale=None, shear=None, resample=0, fillcolor=0):
         super().__init__()
         if isinstance(degrees, numbers.Number):
             if degrees < 0:
