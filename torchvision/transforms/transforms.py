@@ -73,6 +73,10 @@ class ToTensor(object):
     or if the numpy.ndarray has dtype = np.uint8
 
     In the other cases, tensors are returned without scaling.
+
+    .. note::
+        Because the input image is scaled to [0.0, 1.0], this transformation should not be used when
+        transforming target image masks. See the references for implementing the transforms for image masks.
     """
 
     def __call__(self, pic):
