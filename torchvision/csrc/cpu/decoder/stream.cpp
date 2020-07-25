@@ -32,30 +32,30 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
 
   AVCodec* codec = findCodec(steam->codecpar);
   if (!codec) {
-    LOG(ERROR) << "LoggingUuid #" << loggingUuid_
-               << ", avcodec_find_decoder failed for codec_id: "
+    LOG(ERROR) << "uuid=" << loggingUuid_
+               << " avcodec_find_decoder failed for codec_id="
                << int(steam->codecpar->codec_id);
     return AVERROR(EINVAL);
   }
 
   if (!(codecCtx_ = avcodec_alloc_context3(codec))) {
-    LOG(ERROR) << "LoggingUuid #" << loggingUuid_
-               << ", avcodec_alloc_context3 failed";
+    LOG(ERROR) << "uuid=" << loggingUuid_
+               << " avcodec_alloc_context3 failed";
     return AVERROR(ENOMEM);
   }
 
   int ret;
   // Copy codec parameters from input stream to output codec context
   if ((ret = avcodec_parameters_to_context(codecCtx_, steam->codecpar)) < 0) {
-    LOG(ERROR) << "LoggingUuid #" << loggingUuid_
-               << ", avcodec_parameters_to_context failed";
+    LOG(ERROR) << "uuid=" << loggingUuid_
+               << " avcodec_parameters_to_context failed";
     return ret;
   }
 
   // after avcodec_open2, value of codecCtx_->time_base is NOT meaningful
   if ((ret = avcodec_open2(codecCtx_, codec, nullptr)) < 0) {
-    LOG(ERROR) << "LoggingUuid #" << loggingUuid_
-               << ", avcodec_open2 failed: " << Util::generateErrorDesc(ret);
+    LOG(ERROR) << "uuid=" << loggingUuid_
+               << " avcodec_open2 failed: " << Util::generateErrorDesc(ret);
     avcodec_free_context(&codecCtx_);
     codecCtx_ = nullptr;
     return ret;
@@ -75,7 +75,8 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
   }
 
   if ((ret = initFormat())) {
-    LOG(ERROR) << "initFormat failed, type: " << format_.type;
+    LOG(ERROR) << "uuid=" << loggingUuid_
+               << " initFormat failed, type=" << format_.type;
   }
 
   if (metadata) {
@@ -104,7 +105,8 @@ int Stream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
       return result;
     }
   } else if (result < 0) {
-    LOG(ERROR) << "avcodec_send_packet failed, err: "
+    LOG(ERROR) << "uuid=" << loggingUuid_
+               << " avcodec_send_packet failed, err="
                << Util::generateErrorDesc(result);
     return result; // error
   } else {
@@ -126,7 +128,8 @@ int Stream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
     // precaution, if no more frames are available assume we consume all bytes
     consumed = 0;
   } else { // error
-    LOG(ERROR) << "avcodec_receive_frame failed, err: "
+    LOG(ERROR) << "uuid=" << loggingUuid_
+               << " avcodec_receive_frame failed, err="
                << Util::generateErrorDesc(result);
     return result;
   }
