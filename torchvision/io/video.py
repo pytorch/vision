@@ -10,6 +10,7 @@ import torch
 from . import _video_opt
 from ._video_opt import VideoMetaData
 
+
 try:
     import av
 
@@ -88,7 +89,7 @@ def write_video(filename, video_array, fps: Union[int, float], video_codec="libx
 
 
 def _read_from_stream(
-        container, start_offset, end_offset, pts_unit, stream, stream_name
+    container, start_offset, end_offset, pts_unit, stream, stream_name
 ):
     global _CALLED_TIMES, _GC_COLLECTION_INTERVAL
     _CALLED_TIMES += 1
