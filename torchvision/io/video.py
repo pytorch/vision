@@ -10,7 +10,6 @@ import torch
 from . import _video_opt
 from ._video_opt import VideoMetaData
 
-
 try:
     import av
 
@@ -89,7 +88,7 @@ def write_video(filename, video_array, fps: Union[int, float], video_codec="libx
 
 
 def _read_from_stream(
-    container, start_offset, end_offset, pts_unit, stream, stream_name
+        container, start_offset, end_offset, pts_unit, stream, stream_name
 ):
     global _CALLED_TIMES, _GC_COLLECTION_INTERVAL
     _CALLED_TIMES += 1
@@ -141,13 +140,19 @@ def _read_from_stream(
         return []
     buffer_count = 0
     try:
+        max_pts = float('-inf')
         for _idx, frame in enumerate(container.decode(**stream_name)):
+            max_pts = max(max_pts, frame.pts)
             frames[frame.pts] = frame
             if frame.pts >= end_offset:
                 if should_buffer and buffer_count < max_buffer_size:
                     buffer_count += 1
                     continue
                 break
+        if max_pts < seek_offset:
+            raise BufferError(
+                ' %s-stream decoder is seeking for a pts out of the video.'% stream.type
+                +' Have you chosen proper start_pts?' )
     except av.AVError:
         # TODO add a warning
         pass
