@@ -183,12 +183,14 @@ class TestIO(unittest.TestCase):
             self.assertTrue(data.equal(lv))
             self.assertEqual(info["video_fps"], 5)
             self.assertEqual(info, {"video_fps": 5})
+
     def test_read_video_pts_out_of_stream(self):
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
             with self.assertRaises(BufferError):
                 lv, _, info = io.read_video(f_name, start_pts=5, pts_unit='sec')
         with temp_video(10, 300, 300, 5, lossless=True) as (f_name, data):
             lv, _, info = io.read_video(f_name, start_pts=1.5, pts_unit='sec')
+
     def test_read_timestamps_pts_unit_sec(self):
         with temp_video(10, 300, 300, 5) as (f_name, data):
             pts, _ = io.read_video_timestamps(f_name, pts_unit='sec')

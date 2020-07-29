@@ -152,8 +152,8 @@ def _read_from_stream(
                 break
         if max_pts < seek_offset:
             raise BufferError(
-                ' %s-stream decoder is seeking for a pts out of the video.'% stream.type
-                +' Have you chosen proper start_pts?' )
+                ' %s-stream decoder is seeking for a pts out of the video.' % stream.type
+                + ' Have you chosen proper start_pts?')
     except av.AVError:
         # TODO add a warning
         pass
