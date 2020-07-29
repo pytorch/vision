@@ -586,8 +586,8 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
         else:
             size_w = int(size_h * w / h)
 
-    if (w <= h and w == size_w) or (h <= w and h == size_h):
-        return img
+        if (w <= h and w == size_w) or (h <= w and h == size_h):
+            return img
 
     # make image NCHW
     need_squeeze = False
