@@ -55,7 +55,7 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=''
 
     if upload:
         w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, filter_branch=filter_branch))
-        if filter_branch == 'nightly' and os_type in ['linux', 'windows']:
+        if filter_branch == 'nightly' and os_type in ['linux', 'win']:
             pydistro = 'pip' if btype == 'wheel' else 'conda'
             w.append(generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, python_version, os_type))
 
@@ -91,7 +91,7 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
     if os_type != "win":
         d["wheel_docker_image"] = get_manylinux_image(cu_version)
 
-    if filter_branch is not None:
+    if os_type == "macos" and filter_branch is not None:
         d["filters"] = {
             "branches": {
                 "only": filter_branch
@@ -138,8 +138,7 @@ def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, 
 
 def generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, python_version, os_type):
 
-    required_build_suffix = "_upload"
-    required_build_name = base_workflow_name + required_build_suffix
+    required_build_name = base_workflow_name
 
     smoke_suffix = f"smoke_test_{pydistro}"
     d = {
@@ -147,9 +146,6 @@ def generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, pyt
         "requires": [required_build_name],
         "python_version": python_version,
     }
-
-    if filter_branch:
-        d["filters"] = gen_filter_branch_tree(filter_branch)
 
     return {"smoke_test_{os_type}_{pydistro}".format(os_type=os_type, pydistro=pydistro): d}
 

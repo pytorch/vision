@@ -82,7 +82,7 @@ binary_common: &binary_common
 smoke_test_common: &smoke_test_common
   <<: *binary_common
   docker:
-    - image: torchvision/smoke_test:latest
+    - image: guyang3532/torchvision:latest
 
 jobs:
   circleci_consistency:
@@ -305,7 +305,7 @@ jobs:
             set -x
             source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
             conda install -v -y -c pytorch-nightly pytorch
-            conda install -v -y -c file://$HOME/workspace/conda-bld torchvision
+            conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:
           name: smoke test
           command: |
@@ -349,7 +349,7 @@ jobs:
             docker push ${image_name}:${CIRCLE_WORKFLOW_ID}
             docker push ${image_name}:latest
 
-  smoke_test_windows_conda:
+  smoke_test_win_conda:
     <<: *binary_common
     executor:
       name: windows-cpu
@@ -364,8 +364,9 @@ jobs:
             conda env remove -n python${PYTHON_VERSION} || true
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
+            conda install Pillow
             conda install -v -y -c pytorch-nightly pytorch
-            conda install -v -y -c ~/workspace/conda-bld torchvision
+            conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:
           name: smoke test
           command: |
@@ -373,7 +374,7 @@ jobs:
             conda activate python${PYTHON_VERSION}
             python -c "import torchvision"
 
-  smoke_test_windows_pip:
+  smoke_test_win_pip:
     <<: *binary_common
     executor:
       name: windows-cpu
