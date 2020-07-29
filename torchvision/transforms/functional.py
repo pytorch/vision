@@ -858,7 +858,9 @@ def affine(
             An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image is PIL Image and has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
             If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
-        fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
+        fillcolor (int): Optional fill color for the area outside the transform in the output image (Pillow>=5.0.0).
+            This option is not supported for Tensor input. Fill value for the area outside the transform in the output
+            image is always 0.
 
     Returns:
         PIL Image or Tensor: Transformed image.
