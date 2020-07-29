@@ -30,5 +30,5 @@ __all__ = [
     "_read_video_clip_from_memory",
     "_read_video_meta_data",
     "VideoMetaData",
-    "Timebase",
+    "Timebase"
 ]

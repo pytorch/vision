@@ -4,7 +4,31 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from torch.jit.annotations import Tuple, List, Dict
+from torch.jit.annotations import Tuple, List, Dict, Optional
+
+
+class ExtraFPNBlock(nn.Module):
+    """
+    Base class for the extra block in the FPN.
+
+    Arguments:
+        results (List[Tensor]): the result of the FPN
+        x (List[Tensor]): the original feature maps
+        names (List[str]): the names for each one of the
+            original feature maps
+
+    Returns:
+        results (List[Tensor]): the extended set of results
+            of the FPN
+        names (List[str]): the extended set of names for the results
+    """
+    def forward(
+        self,
+        results: List[Tensor],
+        x: List[Tensor],
+        names: List[str],
+    ) -> Tuple[List[Tensor], List[str]]:
+        pass
 
 
 class FeaturePyramidNetwork(nn.Module):
@@ -44,7 +68,12 @@ class FeaturePyramidNetwork(nn.Module):
         >>>    ('feat3', torch.Size([1, 5, 8, 8]))]
 
     """
-    def __init__(self, in_channels_list, out_channels, extra_blocks=None):
+    def __init__(
+        self,
+        in_channels_list: List[int],
+        out_channels: int,
+        extra_blocks: Optional[ExtraFPNBlock] = None,
+    ):
         super(FeaturePyramidNetwork, self).__init__()
         self.inner_blocks = nn.ModuleList()
         self.layer_blocks = nn.ModuleList()
@@ -66,8 +95,7 @@ class FeaturePyramidNetwork(nn.Module):
             assert isinstance(extra_blocks, ExtraFPNBlock)
         self.extra_blocks = extra_blocks
 
-    def get_result_from_inner_blocks(self, x, idx):
-        # type: (Tensor, int) -> Tensor
+    def get_result_from_inner_blocks(self, x: Tensor, idx: int) -> Tensor:
         """
         This is equivalent to self.inner_blocks[idx](x),
         but torchscript doesn't support this yet
@@ -85,8 +113,7 @@ class FeaturePyramidNetwork(nn.Module):
             i += 1
         return out
 
-    def get_result_from_layer_blocks(self, x, idx):
-        # type: (Tensor, int) -> Tensor
+    def get_result_from_layer_blocks(self, x: Tensor, idx: int) -> Tensor:
         """
         This is equivalent to self.layer_blocks[idx](x),
         but torchscript doesn't support this yet
@@ -104,8 +131,7 @@ class FeaturePyramidNetwork(nn.Module):
             i += 1
         return out
 
-    def forward(self, x):
-        # type: (Dict[str, Tensor]) -> Dict[str, Tensor]
+    def forward(self, x: Dict[str, Tensor]) -> Dict[str, Tensor]:
         """
         Computes the FPN for a set of feature maps.
 
@@ -140,31 +166,16 @@ class FeaturePyramidNetwork(nn.Module):
         return out
 
 
-class ExtraFPNBlock(nn.Module):
-    """
-    Base class for the extra block in the FPN.
-
-    Arguments:
-        results (List[Tensor]): the result of the FPN
-        x (List[Tensor]): the original feature maps
-        names (List[str]): the names for each one of the
-            original feature maps
-
-    Returns:
-        results (List[Tensor]): the extended set of results
-            of the FPN
-        names (List[str]): the extended set of names for the results
-    """
-    def forward(self, results, x, names):
-        pass
-
-
 class LastLevelMaxPool(ExtraFPNBlock):
     """
     Applies a max_pool2d on top of the last feature map
     """
-    def forward(self, x, y, names):
-        # type: (List[Tensor], List[Tensor], List[str]) -> Tuple[List[Tensor], List[str]]
+    def forward(
+        self,
+        x: List[Tensor],
+        y: List[Tensor],
+        names: List[str],
+    ) -> Tuple[List[Tensor], List[str]]:
         names.append("pool")
         x.append(F.max_pool2d(x[-1], 1, 2, 0))
         return x, names
@@ -174,7 +185,7 @@ class LastLevelP6P7(ExtraFPNBlock):
     """
     This module is used in RetinaNet to generate extra layers, P6 and P7.
     """
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels: int, out_channels: int):
         super(LastLevelP6P7, self).__init__()
         self.p6 = nn.Conv2d(in_channels, out_channels, 3, 2, 1)
         self.p7 = nn.Conv2d(out_channels, out_channels, 3, 2, 1)
@@ -183,7 +194,12 @@ class LastLevelP6P7(ExtraFPNBlock):
             nn.init.constant_(module.bias, 0)
         self.use_P5 = in_channels == out_channels
 
-    def forward(self, p, c, names):
+    def forward(
+        self,
+        p: List[Tensor],
+        c: List[Tensor],
+        names: List[str],
+    ) -> Tuple[List[Tensor], List[str]]:
         p5, c5 = p[-1], c[-1]
         x = p5 if self.use_P5 else c5
         p6 = self.p6(x)

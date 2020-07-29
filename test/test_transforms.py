@@ -1179,14 +1179,14 @@ class Tester(unittest.TestCase):
         # test 1
         y_pil = F.adjust_gamma(x_pil, 0.5)
         y_np = np.array(y_pil)
-        y_ans = [0, 35, 57, 117, 185, 240, 97, 45, 244, 151, 255, 15]
+        y_ans = [0, 35, 57, 117, 186, 241, 97, 45, 245, 152, 255, 16]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         self.assertTrue(np.allclose(y_np, y_ans))
 
         # test 2
         y_pil = F.adjust_gamma(x_pil, 2)
         y_np = np.array(y_pil)
-        y_ans = [0, 0, 0, 11, 71, 200, 5, 0, 214, 31, 255, 0]
+        y_ans = [0, 0, 0, 11, 71, 201, 5, 0, 215, 31, 255, 0]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         self.assertTrue(np.allclose(y_np, y_ans))
 
@@ -1311,17 +1311,14 @@ class Tester(unittest.TestCase):
 
     def test_affine(self):
         input_img = np.zeros((40, 40, 3), dtype=np.uint8)
-        pts = []
         cnt = [20, 20]
         for pt in [(16, 16), (20, 16), (20, 20)]:
             for i in range(-5, 5):
                 for j in range(-5, 5):
                     input_img[pt[0] + i, pt[1] + j, :] = [255, 155, 55]
-                    pts.append((pt[0] + i, pt[1] + j))
-        pts = list(set(pts))
 
-        with self.assertRaises(TypeError):
-            F.affine(input_img, 10)
+        with self.assertRaises(TypeError, msg="Argument translate should be a sequence"):
+            F.affine(input_img, 10, translate=0, scale=1, shear=1)
 
         pil_img = F.to_pil_image(input_img)
 
@@ -1373,9 +1370,12 @@ class Tester(unittest.TestCase):
             inv_true_matrix = np.linalg.inv(true_matrix)
             for y in range(true_result.shape[0]):
                 for x in range(true_result.shape[1]):
-                    res = np.dot(inv_true_matrix, [x, y, 1])
-                    _x = int(res[0] + 0.5)
-                    _y = int(res[1] + 0.5)
+                    # Same as for PIL:
+                    # https://github.com/python-pillow/Pillow/blob/71f8ec6a0cfc1008076a023c0756542539d057ab/
+                    # src/libImaging/Geometry.c#L1060
+                    input_pt = np.array([x + 0.5, y + 0.5, 1.0])
+                    res = np.floor(np.dot(inv_true_matrix, input_pt)).astype(np.int)
+                    _x, _y = res[:2]
                     if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
                         true_result[y, x, :] = input_img[_y, _x, :]
 
@@ -1408,7 +1408,7 @@ class Tester(unittest.TestCase):
         # Test rotation, scale, translation, shear
         for a in range(-90, 90, 25):
             for t1 in range(-10, 10, 5):
-                for s in [0.75, 0.98, 1.0, 1.1, 1.2]:
+                for s in [0.75, 0.98, 1.0, 1.2, 1.4]:
                     for sh in range(-15, 15, 5):
                         _test_transformation(a=a, t=(t1, t1), s=s, sh=(sh, sh))
 
@@ -1618,38 +1618,64 @@ class Tester(unittest.TestCase):
 
     def test_random_erasing(self):
         """Unit tests for random erasing transform"""
+        for is_scripted in [False, True]:
+            torch.manual_seed(12)
+            img = torch.rand(3, 60, 60)
 
-        img = torch.rand([3, 60, 60])
+            # Test Set 0: invalid value
+            random_erasing = transforms.RandomErasing(value=(0.1, 0.2, 0.3, 0.4), p=1.0)
+            with self.assertRaises(ValueError, msg="If value is a sequence, it should have either a single value or 3"):
+                img_re = random_erasing(img)
 
-        # Test Set 1: Erasing with int value
-        img_re = transforms.RandomErasing(value=0.2)
-        i, j, h, w, v = img_re.get_params(img, scale=img_re.scale, ratio=img_re.ratio, value=img_re.value)
-        img_output = F.erase(img, i, j, h, w, v)
-        self.assertEqual(img_output.size(0), 3)
+            # Test Set 1: Erasing with int value
+            random_erasing = transforms.RandomErasing(value=0.2)
+            if is_scripted:
+                random_erasing = torch.jit.script(random_erasing)
 
-        # Test Set 2: Check if the unerased region is preserved
-        orig_unerased = img.clone()
-        orig_unerased[:, i:i + h, j:j + w] = 0
-        output_unerased = img_output.clone()
-        output_unerased[:, i:i + h, j:j + w] = 0
-        self.assertTrue(torch.equal(orig_unerased, output_unerased))
+            i, j, h, w, v = transforms.RandomErasing.get_params(
+                img, scale=random_erasing.scale, ratio=random_erasing.ratio, value=[random_erasing.value, ]
+            )
+            img_output = F.erase(img, i, j, h, w, v)
+            self.assertEqual(img_output.size(0), 3)
 
-        # Test Set 3: Erasing with random value
-        img_re = transforms.RandomErasing(value='random')(img)
-        self.assertEqual(img_re.size(0), 3)
+            # Test Set 2: Check if the unerased region is preserved
+            true_output = img.clone()
+            true_output[:, i:i + h, j:j + w] = random_erasing.value
+            self.assertTrue(torch.equal(true_output, img_output))
 
-        # Test Set 4: Erasing with tuple value
-        img_re = transforms.RandomErasing(value=(0.2, 0.2, 0.2))(img)
-        self.assertEqual(img_re.size(0), 3)
+            # Test Set 3: Erasing with random value
+            random_erasing = transforms.RandomErasing(value="random")
+            if is_scripted:
+                random_erasing = torch.jit.script(random_erasing)
+            img_re = random_erasing(img)
 
-        # Test Set 5: Testing the inplace behaviour
-        img_re = transforms.RandomErasing(value=(0.2), inplace=True)(img)
-        self.assertTrue(torch.equal(img_re, img))
+            self.assertEqual(img_re.size(0), 3)
 
-        # Test Set 6: Checking when no erased region is selected
-        img = torch.rand([3, 300, 1])
-        img_re = transforms.RandomErasing(ratio=(0.1, 0.2), value='random')(img)
-        self.assertTrue(torch.equal(img_re, img))
+            # Test Set 4: Erasing with tuple value
+            random_erasing = transforms.RandomErasing(value=(0.2, 0.2, 0.2))
+            if is_scripted:
+                random_erasing = torch.jit.script(random_erasing)
+            img_re = random_erasing(img)
+            self.assertEqual(img_re.size(0), 3)
+            true_output = img.clone()
+            true_output[:, i:i + h, j:j + w] = torch.tensor(random_erasing.value)[:, None, None]
+            self.assertTrue(torch.equal(true_output, img_output))
+
+            # Test Set 5: Testing the inplace behaviour
+            random_erasing = transforms.RandomErasing(value=(0.2,), inplace=True)
+            if is_scripted:
+                random_erasing = torch.jit.script(random_erasing)
+
+            img_re = random_erasing(img)
+            self.assertTrue(torch.equal(img_re, img))
+
+            # Test Set 6: Checking when no erased region is selected
+            img = torch.rand([3, 300, 1])
+            random_erasing = transforms.RandomErasing(ratio=(0.1, 0.2), value="random")
+            if is_scripted:
+                random_erasing = torch.jit.script(random_erasing)
+            img_re = random_erasing(img)
+            self.assertTrue(torch.equal(img_re, img))
 
 
 if __name__ == '__main__':

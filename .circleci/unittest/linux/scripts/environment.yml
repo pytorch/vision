@@ -1,0 +1,16 @@
+channels:
+  - defaults
+dependencies:
+  - numpy
+  - pytest
+  - pytest-cov
+  - codecov
+  - pip
+  - libpng
+  - jpeg
+  - ca-certificates
+  - pip:
+    - future
+    - pillow>=4.1.1
+    - scipy
+    - av

@@ -19,11 +19,14 @@ import yaml
 import os.path
 
 
-def workflows(prefix='', filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
+PYTHON_VERSIONS = ["3.6", "3.7", "3.8"]
+
+
+def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
     w = []
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
-            python_versions = ["3.6", "3.7", "3.8"]
+            python_versions = PYTHON_VERSIONS
             cu_versions = (["cpu", "cu92", "cu101", "cu102"] if os_type == "linux" or os_type == "win" else ["cpu"])
             for python_version in python_versions:
                 for cu_version in cu_versions:
@@ -86,10 +89,23 @@ def generate_base_workflow(base_workflow_name, python_version, cu_version,
         d["wheel_docker_image"] = get_manylinux_image(cu_version)
 
     if filter_branch is not None:
-        d["filters"] = {"branches": {"only": filter_branch}}
+        d["filters"] = {
+            "branches": {
+                "only": filter_branch
+            },
+            "tags": {
+                # Using a raw string here to avoid having to escape
+                # anything
+                "only": r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
+            }
+        }
 
-    w = f"binary_{os_type}_{btype}_release" if os_type == "win" else f"binary_{os_type}_{btype}"
+    w = f"binary_{os_type}_{btype}"
     return {w: d}
+
+
+def gen_filter_branch_tree(*branches):
+    return {"branches": {"only": [b for b in branches]}}
 
 
 def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, filter_branch=None):
@@ -122,6 +138,28 @@ def indent(indentation, data_list):
         yaml.dump(data_list, default_flow_style=False).splitlines())
 
 
+def unittest_workflows(indentation=6):
+    jobs = []
+    for os_type in ["linux", "windows"]:
+        for device_type in ["cpu", "gpu"]:
+            for i, python_version in enumerate(PYTHON_VERSIONS):
+                job = {
+                    "name": f"unittest_{os_type}_{device_type}_py{python_version}",
+                    "python_version": python_version,
+                }
+
+                if device_type == 'gpu':
+                    if python_version != "3.8":
+                        job['filters'] = gen_filter_branch_tree('master', 'nightly')
+                    job['cu_version'] = 'cu101'
+                else:
+                    job['cu_version'] = 'cpu'
+
+                jobs.append({f"unittest_{os_type}_{device_type}": job})
+
+    return indent(indentation, jobs)
+
+
 if __name__ == "__main__":
     d = os.path.dirname(__file__)
     env = jinja2.Environment(
@@ -131,4 +169,7 @@ if __name__ == "__main__":
     )
 
     with open(os.path.join(d, 'config.yml'), 'w') as f:
-        f.write(env.get_template('config.yml.in').render(workflows=workflows))
+        f.write(env.get_template('config.yml.in').render(
+            build_workflows=build_workflows,
+            unittest_workflows=unittest_workflows,
+        ))

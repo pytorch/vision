@@ -10,6 +10,8 @@ is implemented
 
 import warnings
 import torch
+from torch import Tensor, Size
+from torch.jit.annotations import List, Optional, Tuple
 
 
 class Conv2d(torch.nn.Conv2d):
@@ -46,7 +48,12 @@ class FrozenBatchNorm2d(torch.nn.Module):
     are fixed
     """
 
-    def __init__(self, num_features, eps=0., n=None):
+    def __init__(
+        self,
+        num_features: int,
+        eps: float = 0.,
+        n: Optional[int] = None,
+    ):
         # n=None for backward-compatibility
         if n is not None:
             warnings.warn("`n` argument is deprecated and has been renamed `num_features`",
@@ -59,8 +66,16 @@ class FrozenBatchNorm2d(torch.nn.Module):
         self.register_buffer("running_mean", torch.zeros(num_features))
         self.register_buffer("running_var", torch.ones(num_features))
 
-    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict,
-                              missing_keys, unexpected_keys, error_msgs):
+    def _load_from_state_dict(
+        self,
+        state_dict: dict,
+        prefix: str,
+        local_metadata: dict,
+        strict: bool,
+        missing_keys: List[str],
+        unexpected_keys: List[str],
+        error_msgs: List[str],
+    ):
         num_batches_tracked_key = prefix + 'num_batches_tracked'
         if num_batches_tracked_key in state_dict:
             del state_dict[num_batches_tracked_key]
@@ -69,7 +84,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
             state_dict, prefix, local_metadata, strict,
             missing_keys, unexpected_keys, error_msgs)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         # move reshapes to the beginning
         # to make it fuser-friendly
         w = self.weight.reshape(1, -1, 1, 1)
@@ -80,5 +95,5 @@ class FrozenBatchNorm2d(torch.nn.Module):
         bias = b - rm * scale
         return x * scale + bias
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.weight.shape[0]})"
