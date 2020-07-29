@@ -261,8 +261,7 @@ def pad(img, padding, fill=0, padding_mode="constant"):
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
     if padding_mode == "constant":
-        if isinstance(fill, numbers.Number):
-            fill = (fill,) * len(img.getbands())
+        fill = _parse_fill(fill, img, "2.3.0")["fillcolor"]
         if len(fill) != len(img.getbands()):
             raise ValueError("fill should have the same number of elements "
                              "as the number of channels in the image "
