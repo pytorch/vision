@@ -398,7 +398,6 @@ class Tester(unittest.TestCase):
         padded_img = transform(img)
         self.assertSequenceEqual(padded_img.size, [edge_size + 2 * pad for edge_size in img.size])
 
-
     def test_lambda(self):
         trans = transforms.Lambda(lambda x: x.add(10))
         x = torch.randn(10)
