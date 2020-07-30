@@ -261,18 +261,14 @@ def pad(img, padding, fill=0, padding_mode="constant"):
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
     if padding_mode == "constant":
-        fill = _parse_fill(fill, img, "2.3.0")["fillcolor"]
-        if len(fill) != len(img.getbands()):
-            raise ValueError("fill should have the same number of elements "
-                             "as the number of channels in the image "
-                             "({}), got {} instead".format(len(img.getbands()), len(fill)))
+        opts = _parse_fill(fill, img, "2.3.0", name="fill")
         if img.mode == "P":
             palette = img.getpalette()
-            image = ImageOps.expand(img, border=padding, fill=fill)
+            image = ImageOps.expand(img, border=padding, **opts)
             image.putpalette(palette)
             return image
 
-        return ImageOps.expand(img, border=padding, fill=fill)
+        return ImageOps.expand(img, border=padding, **opts)
     else:
         if isinstance(padding, int):
             pad_left = pad_right = pad_top = pad_bottom = padding
@@ -366,8 +362,8 @@ def resize(img, size, interpolation=Image.BILINEAR):
 
 
 @torch.jit.unused
-def _parse_fill(fill, img, min_pil_version):
-    """Helper function to get the fill color for rotate and perspective transforms.
+def _parse_fill(fill, img, min_pil_version, name="fillcolor"):
+    """Helper function to get the fill color for rotate, perspective transforms, and pad.
 
     Args:
         fill (n-tuple or int or float): Pixel fill value for area outside the transformed
@@ -376,6 +372,7 @@ def _parse_fill(fill, img, min_pil_version):
         img (PIL Image): Image to be filled.
         min_pil_version (str): The minimum PILLOW version for when the ``fillcolor`` option
             was first introduced in the calling function. (e.g. rotate->5.2.0, perspective->5.0.0)
+        name (str): Name of the ``fillcolor`` option in the output. Defaults to ``"fillcolor"``.
 
     Returns:
         dict: kwarg for ``fillcolor``
@@ -400,7 +397,7 @@ def _parse_fill(fill, img, min_pil_version):
                "bands of the image ({} != {})")
         raise ValueError(msg.format(len(fill), num_bands))
 
-    return {"fillcolor": fill}
+    return {name: fill}
 
 
 @torch.jit.unused
