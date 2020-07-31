@@ -11,25 +11,22 @@ if(WITH_CUDA)
 endif()
 
 find_package(Python3 COMPONENTS Development)
-find_package(Torch REQUIRED)
 
-# Gather source files.
+find_package(Torch REQUIRED)
+find_package(PNG REQUIRED)
+
 file(GLOB OPERATOR_SOURCES torchvision/csrc/cpu/*.cpp torchvision/csrc/*.cpp)
 file(GLOB MODELS_SOURCES torchvision/csrc/models/*.cpp)
 
-# Set include directories.
 include_directories(torchvision/cinclude/${PROJECT_NAME})
 
 if(WITH_CUDA)
-  # Gather cuda source files.
   file(GLOB OPERATOR_CUDA_SOURCES torchvision/csrc/cuda/*.cu)
   list(APPEND OPERATOR_SOURCES ${OPERATOR_CUDA_SOURCES})
 
-  # Set cuda include directories.
   include_directories(torchvision/cinclude/${PROJECT_NAME}_cuda)
 endif()
 
-# Add library.
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} Python3::Python)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME TorchVision)
@@ -40,41 +37,33 @@ include(CMakePackageConfigHelpers)
 set(TORCHVISION_CMAKECONFIG_INSTALL_DIR "share/cmake/TorchVision" CACHE STRING "install path for TorchVisionConfig.cmake")
 
 configure_package_config_file(cmake/TorchVisionConfig.cmake.in
-    "${CMAKE_CURRENT_BINARY_DIR}/TorchVisionConfig.cmake"
-    INSTALL_DESTINATION ${TORCHVISION_CMAKECONFIG_INSTALL_DIR}
-)
+  "${CMAKE_CURRENT_BINARY_DIR}/TorchVisionConfig.cmake"
+  INSTALL_DESTINATION ${TORCHVISION_CMAKECONFIG_INSTALL_DIR})
 
 write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/TorchVisionConfigVersion.cmake
-    VERSION ${TORCHVISION_VERSION}
-    COMPATIBILITY AnyNewerVersion
-)
+  VERSION ${TORCHVISION_VERSION}
+  COMPATIBILITY AnyNewerVersion)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/TorchVisionConfig.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/TorchVisionConfigVersion.cmake
-    DESTINATION ${TORCHVISION_CMAKECONFIG_INSTALL_DIR}
-)
+  ${CMAKE_CURRENT_BINARY_DIR}/TorchVisionConfigVersion.cmake
+  DESTINATION ${TORCHVISION_CMAKECONFIG_INSTALL_DIR})
 
-# Install library.
 install(TARGETS ${PROJECT_NAME}
-    EXPORT TorchVisionTargets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
+  EXPORT TorchVisionTargets
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
 
 install(EXPORT TorchVisionTargets
-    NAMESPACE TorchVision::
-    DESTINATION ${TORCHVISION_CMAKECONFIG_INSTALL_DIR}
-)
+  NAMESPACE TorchVision::
+  DESTINATION ${TORCHVISION_CMAKECONFIG_INSTALL_DIR})
 
-# Install headers.
 install(
-    DIRECTORY "torchvision/cinclude/${PROJECT_NAME}/"
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}"
-)
+  DIRECTORY "torchvision/cinclude/${PROJECT_NAME}/"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}")
 
 if(WITH_CUDA)
-  # Install cuda headers.
   install(
-      DIRECTORY "torchvision/cinclude/${PROJECT_NAME}_cuda/cuda"
-      DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}"
+    DIRECTORY "torchvision/cinclude/${PROJECT_NAME}_cuda/cuda"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}"
   )
 endif()
