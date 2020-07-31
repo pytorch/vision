@@ -55,6 +55,9 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=''
 
     if upload:
         w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, filter_branch=filter_branch))
+        if filter_branch == 'nightly' and os_type in ['linux', 'win']:
+            pydistro = 'pip' if btype == 'wheel' else 'conda'
+            w.append(generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, python_version, os_type))
 
     return w
 
@@ -131,6 +134,24 @@ def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, 
         }
 
     return {f"binary_{btype}_upload": d}
+
+
+def generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, python_version, os_type):
+
+    required_build_suffix = "_upload"
+    required_build_name = base_workflow_name + required_build_suffix
+
+    smoke_suffix = f"smoke_test_{pydistro}"
+    d = {
+        "name": f"{base_workflow_name}_{smoke_suffix}",
+        "requires": [required_build_name],
+        "python_version": python_version,
+    }
+
+    if filter_branch:
+        d["filters"] = gen_filter_branch_tree(filter_branch)
+
+    return {"smoke_test_{os_type}_{pydistro}".format(os_type=os_type, pydistro=pydistro): d}
 
 
 def indent(indentation, data_list):

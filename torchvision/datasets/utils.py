@@ -4,13 +4,14 @@ import hashlib
 import gzip
 import errno
 import tarfile
+from typing import Any, Callable, List, Iterable, Optional, TypeVar
 import zipfile
 
 import torch
 from torch.utils.model_zoo import tqdm
 
 
-def gen_bar_updater():
+def gen_bar_updater() -> Callable[[int, int, int], None]:
     pbar = tqdm(total=None)
 
     def bar_update(count, block_size, total_size):
@@ -22,7 +23,7 @@ def gen_bar_updater():
     return bar_update
 
 
-def calculate_md5(fpath, chunk_size=1024 * 1024):
+def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
     md5 = hashlib.md5()
     with open(fpath, 'rb') as f:
         for chunk in iter(lambda: f.read(chunk_size), b''):
@@ -30,11 +31,11 @@ def calculate_md5(fpath, chunk_size=1024 * 1024):
     return md5.hexdigest()
 
 
-def check_md5(fpath, md5, **kwargs):
+def check_md5(fpath: str, md5: str, **kwargs: Any) -> bool:
     return md5 == calculate_md5(fpath, **kwargs)
 
 
-def check_integrity(fpath, md5=None):
+def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
     if not os.path.isfile(fpath):
         return False
     if md5 is None:
@@ -42,7 +43,7 @@ def check_integrity(fpath, md5=None):
     return check_md5(fpath, md5)
 
 
-def download_url(url, root, filename=None, md5=None):
+def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None) -> None:
     """Download a file from a url and place it in root.
 
     Args:
@@ -70,7 +71,7 @@ def download_url(url, root, filename=None, md5=None):
                 url, fpath,
                 reporthook=gen_bar_updater()
             )
-        except (urllib.error.URLError, IOError) as e:
+        except (urllib.error.URLError, IOError) as e:  # type: ignore[attr-defined]
             if url[:5] == 'https':
                 url = url.replace('https:', 'http:')
                 print('Failed download. Trying https -> http instead.'
@@ -86,7 +87,7 @@ def download_url(url, root, filename=None, md5=None):
             raise RuntimeError("File not found or corrupted.")
 
 
-def list_dir(root, prefix=False):
+def list_dir(root: str, prefix: bool = False) -> List[str]:
     """List all directories at a given root
 
     Args:
@@ -101,7 +102,7 @@ def list_dir(root, prefix=False):
     return directories
 
 
-def list_files(root, suffix, prefix=False):
+def list_files(root: str, suffix: str, prefix: bool = False) -> List[str]:
     """List all files ending with a suffix at a given root
 
     Args:
@@ -118,11 +119,11 @@ def list_files(root, suffix, prefix=False):
     return files
 
 
-def _quota_exceeded(response: "requests.models.Response") -> bool:
+def _quota_exceeded(response: "requests.models.Response") -> bool:  # type: ignore[name-defined]
     return "Google Drive - Quota exceeded" in response.text
 
 
-def download_file_from_google_drive(file_id, root, filename=None, md5=None):
+def download_file_from_google_drive(file_id: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None):
     """Download a Google Drive file from  and place it in root.
 
     Args:
@@ -165,7 +166,7 @@ def download_file_from_google_drive(file_id, root, filename=None, md5=None):
         _save_response_content(response, fpath)
 
 
-def _get_confirm_token(response):
+def _get_confirm_token(response: "requests.models.Response") -> Optional[str]:  # type: ignore[name-defined]
     for key, value in response.cookies.items():
         if key.startswith('download_warning'):
             return value
@@ -173,7 +174,9 @@ def _get_confirm_token(response):
     return None
 
 
-def _save_response_content(response, destination, chunk_size=32768):
+def _save_response_content(
+    response: "requests.models.Response", destination: str, chunk_size: int = 32768,  # type: ignore[name-defined]
+) -> None:
     with open(destination, "wb") as f:
         pbar = tqdm(total=None)
         progress = 0
@@ -185,31 +188,31 @@ def _save_response_content(response, destination, chunk_size=32768):
         pbar.close()
 
 
-def _is_tarxz(filename):
+def _is_tarxz(filename: str) -> bool:
     return filename.endswith(".tar.xz")
 
 
-def _is_tar(filename):
+def _is_tar(filename: str) -> bool:
     return filename.endswith(".tar")
 
 
-def _is_targz(filename):
+def _is_targz(filename: str) -> bool:
     return filename.endswith(".tar.gz")
 
 
-def _is_tgz(filename):
+def _is_tgz(filename: str) -> bool:
     return filename.endswith(".tgz")
 
 
-def _is_gzip(filename):
+def _is_gzip(filename: str) -> bool:
     return filename.endswith(".gz") and not filename.endswith(".tar.gz")
 
 
-def _is_zip(filename):
+def _is_zip(filename: str) -> bool:
     return filename.endswith(".zip")
 
 
-def extract_archive(from_path, to_path=None, remove_finished=False):
+def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finished: bool = False) -> None:
     if to_path is None:
         to_path = os.path.dirname(from_path)
 
@@ -236,8 +239,14 @@ def extract_archive(from_path, to_path=None, remove_finished=False):
         os.remove(from_path)
 
 
-def download_and_extract_archive(url, download_root, extract_root=None, filename=None,
-                                 md5=None, remove_finished=False):
+def download_and_extract_archive(
+    url: str,
+    download_root: str,
+    extract_root: Optional[str] = None,
+    filename: Optional[str] = None,
+    md5: Optional[str] = None,
+    remove_finished: bool = False,
+) -> None:
     download_root = os.path.expanduser(download_root)
     if extract_root is None:
         extract_root = download_root
@@ -251,11 +260,16 @@ def download_and_extract_archive(url, download_root, extract_root=None, filename
     extract_archive(archive, extract_root, remove_finished)
 
 
-def iterable_to_str(iterable):
+def iterable_to_str(iterable: Iterable) -> str:
     return "'" + "', '".join([str(item) for item in iterable]) + "'"
 
 
-def verify_str_arg(value, arg=None, valid_values=None, custom_msg=None):
+T = TypeVar("T", str, bytes)
+
+
+def verify_str_arg(
+    value: T, arg: Optional[str] = None, valid_values: Iterable[T] = None, custom_msg: Optional[str] = None,
+) -> T:
     if not isinstance(value, torch._six.string_classes):
         if arg is None:
             msg = "Expected type str, but got type {type}."
