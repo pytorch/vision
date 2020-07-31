@@ -56,15 +56,15 @@ class UCF101(VisionDataset):
         # Create class to index mapping with sorted class names
         self.classes = list(sorted(list_dir(root)))
         class_to_idx = {c: i for i, c in enumerate(self.classes)}
-        
+
         # Iterate through root directory to retrieve the path and the labels
         # for each dataset example
         self.samples = make_dataset(
             self.root, class_to_idx, ('avi',), is_valid_file=None)
-        
+
         # Get the video paths that belong to the selected fold and split
         _video_paths_in_fold = self._fold_paths(annotation_path, fold, train)
-        # Filter the dataset samples so only the video paths belonging to the 
+        # Filter the dataset samples so only the video paths belonging to the
         # selected fold are processed
         self.samples = [o for o in self.samples if o[0] in _video_paths_in_fold]
 
