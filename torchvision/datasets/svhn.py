@@ -43,6 +43,7 @@ class SVHN(VisionDataset):
                  download=False):
         super(SVHN, self).__init__(root, transform=transform,
                                    target_transform=target_transform)
+        self.svhn_root = os.path.join(self.root, 'SVHN')
         self.split = verify_str_arg(split, "split", tuple(self.split_list.keys()))
         self.url = self.split_list[split][0]
         self.filename = self.split_list[split][1]
@@ -60,7 +61,7 @@ class SVHN(VisionDataset):
         import scipy.io as sio
 
         # reading(loading) mat file as array
-        loaded_mat = sio.loadmat(os.path.join(self.root, self.filename))
+        loaded_mat = sio.loadmat(os.path.join(self.svhn_root, self.filename))
 
         self.data = loaded_mat['X']
         # loading from the .mat file gives an np array of type np.uint8
@@ -101,14 +102,14 @@ class SVHN(VisionDataset):
         return len(self.data)
 
     def _check_integrity(self):
-        root = self.root
+        root = self.svhn_root
         md5 = self.split_list[self.split][2]
         fpath = os.path.join(root, self.filename)
         return check_integrity(fpath, md5)
 
     def download(self):
         md5 = self.split_list[self.split][2]
-        download_url(self.url, self.root, self.filename, md5)
+        download_url(self.url, self.svhn_root, self.filename, md5)
 
     def extra_repr(self):
         return "Split: {split}".format(**self.__dict__)
