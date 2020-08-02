@@ -24,7 +24,7 @@ class LSUNClass(VisionDataset):
             self.keys = pickle.load(open(cache_file, "rb"))
         else:
             with self.env.begin(write=False) as txn:
-                self.keys = [key for key, _ in txn.cursor()]
+                self.keys = [key for key in txn.cursor().iternext(keys=True, values=False)]
             pickle.dump(self.keys, open(cache_file, "wb"))
 
     def __getitem__(self, index):
