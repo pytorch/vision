@@ -1,10 +1,10 @@
 
-import importlib
+import importlib.machinery
 import math
 import os
 import warnings
 from fractions import Fraction
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import numpy as np
 import torch
@@ -306,13 +306,13 @@ def _read_video_from_memory(
     video_height=0,  # type: int
     video_min_dimension=0,  # type: int
     video_max_dimension=0,  # type: int
-    video_pts_range=(0, -1),  # type: List[int]
+    video_pts_range=None,  # type: Optional[List[int]]
     video_timebase_numerator=0,  # type: int
     video_timebase_denominator=1,  # type: int
     read_audio_stream=1,  # type: int
     audio_samples=0,  # type: int
     audio_channels=0,  # type: int
-    audio_pts_range=(0, -1),  # type: List[int]
+    audio_pts_range=None,  # type: Optional[List[int]]
     audio_timebase_numerator=0,  # type: int
     audio_timebase_denominator=1,  # type: int
 ):
@@ -378,9 +378,15 @@ def _read_video_from_memory(
         the audio frames, where `L` is the number of points and
             `K` is the number of channels
     """
+    if video_pts_range is None:
+        video_pts_range = [0, -1]
+    else:
+        _validate_pts(video_pts_range)
 
-    _validate_pts(video_pts_range)
-    _validate_pts(audio_pts_range)
+    if audio_pts_range is None:
+        audio_pts_range = [0, -1]
+    else:
+        _validate_pts(audio_pts_range)
 
     result = torch.ops.video_reader.read_video_from_memory(
         video_data,
