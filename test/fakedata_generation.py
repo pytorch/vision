@@ -290,7 +290,7 @@ def ucf101_root():
         file_handles = [open(x, 'w') for x in fold_files]
         file_iter = cycle(file_handles)
 
-        for i in range(0, 20):
+        for i in range(0, 2):
             current_class = 'class_{0}'.format(i + 1)
             class_dir = os.path.join(video_dir, current_class)
             os.makedirs(class_dir)
