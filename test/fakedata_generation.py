@@ -7,6 +7,9 @@ import PIL
 import torch
 from common_utils import get_tmp_dir
 import pickle
+import random
+from itertools import cycle
+from torchvision.io.video import write_video
 
 
 @contextlib.contextmanager
@@ -265,3 +268,43 @@ def voc_root():
             f.write('test')
 
         yield tmp_dir
+
+
+@contextlib.contextmanager
+def ucf101_root():
+    with get_tmp_dir() as tmp_dir:
+        ucf_dir = os.path.join(tmp_dir, 'UCF-101')
+        video_dir = os.path.join(ucf_dir, 'video')
+        annotations = os.path.join(ucf_dir, 'annotations')
+
+        os.makedirs(ucf_dir)
+        os.makedirs(video_dir)
+        os.makedirs(annotations)
+
+        fold_files = []
+        for split in {'train', 'test'}:
+            for fold in range(1, 4):
+                fold_file = '{0}_list{:02d}.txt'.format(split, fold)
+                fold_files.append(os.path.join(annotations, fold_file))
+
+        file_handles = [open(x, 'w') for x in fold_files]
+        file_iter = cycle(file_handles)
+
+        for i in range(0, 20):
+            current_class = 'class_{0}'.format(i + 1)
+            class_dir = os.path.join(video_dir, current_class)
+            os.makedirs(class_dir)
+            for group in range(0, 3):
+                for clip in range(0, 4):
+                    # Save sample file
+                    clip_name = 'v_{0}_g{1}_c{2}.avi'.format(
+                        current_class, group, clip)
+                    clip_path = os.path.join(class_dir, clip_name)
+                    length = random.randrange(1, 20)
+                    this_clip = torch.rand(length * 25, 320, 240, 3)
+                    write_video(clip_path, this_clip, 25)
+                    # Add to annotations
+                    ann_file = next(file_iter)
+                    ann_file.write('{0}\n'.format(
+                        os.path.join(current_class, clip_name)))
+        yield (video_dir, annotations)

@@ -9,7 +9,7 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from common_utils import get_tmp_dir
 from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
-    cityscapes_root, svhn_root, voc_root
+    cityscapes_root, svhn_root, voc_root, ucf101_root
 import xml.etree.ElementTree as ET
 
 
@@ -18,6 +18,12 @@ try:
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
+
+try:
+    import av
+    HAS_PYAV = True
+except ImportError:
+    HAS_PYAV = False
 
 
 class Tester(unittest.TestCase):
@@ -253,6 +259,12 @@ class Tester(unittest.TestCase):
                                      'name': 'dog'
                                  }]
                              }})
+
+    @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
+    def test_ucf101(self):
+        with ucf101_root() as (root, ann_root):
+            dataset = torchvision.datasets.UCF101(root, ann_root, 10)
+            self.assertEqual(len(dataset), 0)
 
 
 if __name__ == '__main__':
