@@ -719,17 +719,14 @@ def _expanded_affine_grid(theta: Tensor, w: int, h: int, expand: bool = False) -
         ow, oh = _compute_output_size(theta, w, h)
     else:
         ow, oh = w, h
-    output_grid = torch.zeros(1, oh, ow, 2)
-
     d = 0.5  # if not align_corners
 
-    point = torch.tensor([0.0, 0.0, 1.0])
-    for i in range(oh):
-        for j in range(ow):
-            point[1] = (i + d - oh * 0.5) / (0.5 * h)
-            point[0] = (j + d - ow * 0.5) / (0.5 * w)
-            output_grid[0, i, j, :] = torch.matmul(theta, point)
-    return output_grid
+    x = (torch.arange(ow) + d - ow * 0.5) / (0.5 * w)
+    y = (torch.arange(oh) + d - oh * 0.5) / (0.5 * h)
+    y, x = torch.meshgrid(y, x)
+    pts = torch.stack([x, y, torch.ones_like(x)], dim=-1)
+    output_grid = torch.matmul(pts, theta.t())
+    return output_grid.unsqueeze(dim=0)
 
 
 def rotate(
