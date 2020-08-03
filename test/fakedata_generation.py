@@ -308,4 +308,7 @@ def ucf101_root():
                     ann_file = next(file_iter)
                     ann_file.write('{0}\n'.format(
                         os.path.join(current_class, clip_name)))
+        # Close all file descriptors
+        for f in file_handles:
+            f.close()
         yield (video_dir, annotations)
