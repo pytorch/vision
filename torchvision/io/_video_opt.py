@@ -20,7 +20,7 @@ try:
         importlib.machinery.EXTENSION_SUFFIXES
     )
 
-    extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)
+    extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)  # type: ignore[arg-type]
     ext_specs = extfinder.find_spec("video_reader")
     if ext_specs is not None:
         torch.ops.load_library(ext_specs.origin)
