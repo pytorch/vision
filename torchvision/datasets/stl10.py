@@ -46,8 +46,6 @@ class STL10(VisionDataset):
     ]
     splits = ('train', 'train+unlabeled', 'unlabeled', 'test')
 
-    labels: np.ndarray
-
     def __init__(
             self,
             root: str,
@@ -70,6 +68,7 @@ class STL10(VisionDataset):
                 'You can use download=True to download it')
 
         # now load the picked numpy arrays
+        self.labels: np.ndarray
         if self.split == 'train':
             self.data, self.labels = self.__loadfile(
                 self.train_list[0][0], self.train_list[1][0])
