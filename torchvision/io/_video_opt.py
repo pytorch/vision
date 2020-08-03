@@ -380,13 +380,12 @@ def _read_video_from_memory(
     """
     if video_pts_range is None:
         video_pts_range = [0, -1]
-    else:
-        _validate_pts(video_pts_range)
 
     if audio_pts_range is None:
         audio_pts_range = [0, -1]
-    else:
-        _validate_pts(audio_pts_range)
+
+    _validate_pts(video_pts_range)
+    _validate_pts(audio_pts_range)
 
     result = torch.ops.video_reader.read_video_from_memory(
         video_data,
