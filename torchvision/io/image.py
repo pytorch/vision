@@ -1,5 +1,4 @@
 import torch
-from torch import nn, Tensor
 
 import os
 import os.path as osp
@@ -24,8 +23,7 @@ except (ImportError, OSError):
     pass
 
 
-def decode_png(input):
-    # type: (Tensor) -> Tensor
+def decode_png(input: torch.Tensor) -> torch.Tensor:
     """
     Decodes a PNG image into a 3 dimensional RGB Tensor.
     The values of the output tensor are uint8 between 0 and 255.
@@ -46,8 +44,7 @@ def decode_png(input):
     return output
 
 
-def read_png(path):
-    # type: (str) -> Tensor
+def read_png(path: str) -> torch.Tensor:
     """
     Reads a PNG image into a 3 dimensional RGB Tensor.
     The values of the output tensor are uint8 between 0 and 255.
@@ -68,8 +65,7 @@ def read_png(path):
     return decode_png(data)
 
 
-def decode_jpeg(input):
-    # type: (Tensor) -> Tensor
+def decode_jpeg(input: torch.Tensor) -> torch.Tensor:
     """
     Decodes a JPEG image into a 3 dimensional RGB Tensor.
     The values of the output tensor are uint8 between 0 and 255.
@@ -89,8 +85,7 @@ def decode_jpeg(input):
     return output
 
 
-def read_jpeg(path):
-    # type: (str) -> Tensor
+def read_jpeg(path: str) -> torch.Tensor:
     """
     Reads a JPEG image into a 3 dimensional RGB Tensor.
     The values of the output tensor are uint8 between 0 and 255.
