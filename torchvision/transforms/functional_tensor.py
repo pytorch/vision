@@ -695,21 +695,20 @@ def affine(
 
 
 def _compute_output_size(theta: Tensor, w: int, h: int) -> Tuple[int, int]:
-    point = torch.tensor([0.0, 0.0, 1.0])
-    pts = []
-    for i in [0.0, float(h)]:
-        for j in [0.0, float(w)]:
-            # we need to normalize coordinates according to
-            # [0, s] is mapped [-1, +1] as theta translation parameters are
-            # normalized like that
-            point[1], point[0] = 2.0 * i / w - 1.0, 2.0 * j / h - 1.0
-            new_point = torch.matmul(theta, point)
-            # denormalize back to w, h:
-            new_point = (new_point + 1.0) * torch.tensor([w, h]) / 2.0
-            pts.append(new_point)
-    pts = torch.stack(pts)
-    min_vals, _ = pts.min(dim=0)
-    max_vals, _ = pts.max(dim=0)
+
+    # pts are Top-Left, Top-Right, Bottom-Left, Bottom-Right points.
+    # we need to normalize coordinates according to
+    # [0, s] is mapped [-1, +1] as theta translation parameters are normalized like that
+    pts = torch.tensor([
+        [-1.0, -1.0, 1.0],
+        [-1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0],
+        [1.0, -1.0, 1.0],
+    ])
+    # denormalize back to w, h:
+    new_pts = (torch.matmul(pts, theta.t()) + 1.0) * torch.tensor([w, h]) / 2.0
+    min_vals, _ = new_pts.min(dim=0)
+    max_vals, _ = new_pts.max(dim=0)
     size = torch.ceil(max_vals) - torch.floor(min_vals)
     return int(size[0]), int(size[1])
 
