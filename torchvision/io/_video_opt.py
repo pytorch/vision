@@ -91,7 +91,14 @@ def _validate_pts(pts_range: List[int]) -> None:
         )
 
 
-def _fill_info(vtimebase: torch.Tensor, vfps: torch.Tensor, vduration: torch.Tensor, atimebase:torch.Tensor, asample_rate:torch.Tensor, aduration: torch.Tensor) -> VideoMetaData:
+def _fill_info(
+    vtimebase: torch.Tensor,
+    vfps: torch.Tensor,
+    vduration: torch.Tensor,
+    atimebase: torch.Tensor,
+    asample_rate: torch.Tensor,
+    aduration: torch.Tensor,
+) -> VideoMetaData:
     """
     Build update VideoMetaData struct with info about the video
     """
