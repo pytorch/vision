@@ -677,3 +677,24 @@ def affine(
         img = torch.round(img).to(out_dtype)
 
     return img
+
+
+def perspective(
+        img: Tensor, perspective_coeffs: List[float], interpolation: int = 2, fill: Optional[int] = None
+) -> Tensor:
+    """Perform perspective transform of the given Tensor image.
+
+    Args:
+        img (Tensor): Image to be transformed.
+        perspective_coeffs (list of float): perspective transformation coefficients.
+        interpolation (int): Interpolation type. Default, ``Image.BICUBIC``.
+        fill (n-tuple or int or float): this option is not supported for Tensor input. Fill value for the area
+            outside the transform in the output image is always 0.
+
+    Returns:
+        Tensor: Perspectively transformed Image.
+    """
+    if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
+        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+
+    return None

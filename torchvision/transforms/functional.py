@@ -491,15 +491,20 @@ def hflip(img: Tensor) -> Tensor:
     return F_t.hflip(img)
 
 
-def _get_perspective_coeffs(startpoints, endpoints):
+def _get_perspective_coeffs(
+        startpoints: List[Tuple[int, int]], endpoints: List[Tuple[int, int]]
+) -> List[float]:
     """Helper function to get the coefficients (a, b, c, d, e, f, g, h) for the perspective transforms.
 
     In Perspective Transform each pixel (x, y) in the original image gets transformed as,
      (x, y) -> ( (ax + by + c) / (gx + hy + 1), (dx + ey + f) / (gx + hy + 1) )
 
     Args:
-        List containing [top-left, top-right, bottom-right, bottom-left] of the original image,
-        List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image
+        startpoints (list of tuples): List containing four tuples of two integers corresponding to four corners
+            ``[top-left, top-right, bottom-right, bottom-left]`` of the original image.
+        endpoints (list of tuples): List containing four tuples of two integers corresponding to four corners
+            ``[top-left, top-right, bottom-right, bottom-left]`` of the transformed image.
+
     Returns:
         octuple (a, b, c, d, e, f, g, h) for transforming each pixel.
     """
@@ -515,29 +520,41 @@ def _get_perspective_coeffs(startpoints, endpoints):
     return res.squeeze_(1).tolist()
 
 
-def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC, fill=None):
-    """Perform perspective transform of the given PIL Image.
+def perspective(
+        img: Tensor,
+        startpoints: List[Tuple[int, int]],
+        endpoints: List[Tuple[int, int]],
+        interpolation: int = 3,
+        fill: Optional[int] = None
+) -> Tensor:
+    """Perform perspective transform of the given image.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        img (PIL Image): Image to be transformed.
-        startpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the original image
-        endpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image
-        interpolation: Default- Image.BICUBIC
+        img (PIL Image or Tensor): Image to be transformed.
+        startpoints (list of tuples): List containing four tuples of two integers corresponding to four corners
+            ``[top-left, top-right, bottom-right, bottom-left]`` of the original image.
+        endpoints (list of tuples): List containing four tuples of two integers corresponding to four corners
+            ``[top-left, top-right, bottom-right, bottom-left]`` of the transformed image.
+        interpolation (int): Interpolation type. If input is Tensor, only ``PIL.Image.NEAREST`` and
+            ``PIL.Image.BILINEAR`` are supported. Default, ``PIL.Image.BICUBIC`` for PIL images and
+            ``PIL.Image.BILINEAR`` for Tensors.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
-            This option is only available for ``pillow>=5.0.0``.
+            This option is only available for ``pillow>=5.0.0``. This option is not supported for Tensor
+            input. Fill value for the area outside the transform in the output image is always 0.
 
     Returns:
-        PIL Image:  Perspectively transformed Image.
+        PIL Image or Tensor: Perspectively transformed Image.
     """
 
-    if not F_pil._is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-
-    opts = _parse_fill(fill, img, '5.0.0')
-
     coeffs = _get_perspective_coeffs(startpoints, endpoints)
-    return img.transform(img.size, Image.PERSPECTIVE, coeffs, interpolation, **opts)
+
+    if not isinstance(img, torch.Tensor):
+        return F_pil.perspective(img, coeffs, interpolation=interpolation, fill=fill)
+
+    return F_t.perspective()
 
 
 def vflip(img: Tensor) -> Tensor:

@@ -426,3 +426,27 @@ def affine(img, matrix, resample=0, fillcolor=None):
     output_size = img.size
     opts = _parse_fill(fillcolor, img, '5.0.0')
     return img.transform(output_size, Image.AFFINE, matrix, resample, **opts)
+
+
+@torch.jit.unused
+def perspective(img, perspective_coeffs, interpolation=Image.BICUBIC, fill=None):
+    """Perform perspective transform of the given PIL Image.
+
+    Args:
+        img (PIL Image): Image to be transformed.
+        perspective_coeffs (list of float): perspective transformation coefficients.
+        interpolation (int): Interpolation type. Default, ``Image.BICUBIC``.
+        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+            image. If int or float, the value is used for all bands respectively.
+            This option is only available for ``pillow>=5.0.0``.
+
+    Returns:
+        PIL Image: Perspectively transformed Image.
+    """
+
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    opts = _parse_fill(fill, img, '5.0.0')
+
+    return img.transform(img.size, Image.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
