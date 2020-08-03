@@ -260,7 +260,7 @@ class Tester(unittest.TestCase):
                                  }]
                              }})
 
-    @unittest.skipIf(not HAS_SCIPY, "scipy unavailable")
+    @unittest.skipIf(not HAS_PYAV, "PyAV unavailable")
     def test_ucf101(self):
         with ucf101_root() as (root, ann_root):
             dataset = torchvision.datasets.UCF101(root, ann_root, 10)

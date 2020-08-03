@@ -300,7 +300,7 @@ def ucf101_root():
                     clip_name = 'v_{0}_g{1}_c{2}.avi'.format(
                         current_class, group, clip)
                     clip_path = os.path.join(class_dir, clip_name)
-                    length = random.randrange(1, 20)
+                    length = random.randrange(10, 21)
                     this_clip = torch.rand(length * 25, 320, 240, 3)
                     write_video(clip_path, this_clip, 25)
                     # Add to annotations
