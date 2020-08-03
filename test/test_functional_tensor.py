@@ -24,6 +24,8 @@ class Tester(unittest.TestCase):
 
     def compareTensorToPIL(self, tensor, pil_image, msg=None):
         pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
+        if msg is None:
+            msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
         self.assertTrue(tensor.equal(pil_tensor), msg)
 
     def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None):
@@ -300,6 +302,33 @@ class Tester(unittest.TestCase):
         with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
             F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
 
+    def test_adjust_gamma(self):
+        script_fn = torch.jit.script(F_t.adjust_gamma)
+        tensor, pil_img = self._create_data(26, 36)
+
+        for dt in [torch.float64, torch.float32, None]:
+
+            if dt is not None:
+                tensor = F.convert_image_dtype(tensor, dt)
+
+            gammas = [0.8, 1.0, 1.2]
+            gains = [0.7, 1.0, 1.3]
+            for gamma, gain in zip(gammas, gains):
+
+                adjusted_tensor = F_t.adjust_gamma(tensor, gamma, gain)
+                adjusted_pil = F_pil.adjust_gamma(pil_img, gamma, gain)
+                scripted_result = script_fn(tensor, gamma, gain)
+                self.assertEqual(adjusted_tensor.dtype, scripted_result.dtype)
+                self.assertEqual(adjusted_tensor.size()[1:], adjusted_pil.size[::-1])
+
+                rbg_tensor = adjusted_tensor
+                if adjusted_tensor.dtype != torch.uint8:
+                    rbg_tensor = F.convert_image_dtype(adjusted_tensor, torch.uint8)
+
+                self.compareTensorToPIL(rbg_tensor, adjusted_pil)
+
+                self.assertTrue(adjusted_tensor.equal(scripted_result))
+
     def test_resize(self):
         script_fn = torch.jit.script(F_t.resize)
         tensor, pil_img = self._create_data(26, 36)
@@ -308,7 +337,7 @@ class Tester(unittest.TestCase):
             if dt is not None:
                 # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
-            for size in [32, [32, ], [32, 32], (32, 32), ]:
+            for size in [32, 26, [32, ], [32, 32], (32, 32), [26, 35]]:
                 for interpolation in [BILINEAR, BICUBIC, NEAREST]:
                     resized_tensor = F_t.resize(tensor, size=size, interpolation=interpolation)
                     resized_pil_img = F_pil.resize(pil_img, size=size, interpolation=interpolation)

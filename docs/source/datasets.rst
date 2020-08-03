@@ -231,3 +231,8 @@ CelebA
 .. autoclass:: CelebA
   :members: __getitem__
   :special-members:
+
+Omniglot
+~~~~~~
+
+..autoclass:: Omniglot

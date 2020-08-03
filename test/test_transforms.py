@@ -390,6 +390,14 @@ class Tester(unittest.TestCase):
         with self.assertRaises(ValueError):
             transforms.Pad((1, 2, 3, 4, 5))
 
+    def test_pad_with_mode_F_images(self):
+        pad = 2
+        transform = transforms.Pad(pad)
+
+        img = Image.new("F", (10, 10))
+        padded_img = transform(img)
+        self.assertSequenceEqual(padded_img.size, [edge_size + 2 * pad for edge_size in img.size])
+
     def test_lambda(self):
         trans = transforms.Lambda(lambda x: x.add(10))
         x = torch.randn(10)
@@ -1179,14 +1187,14 @@ class Tester(unittest.TestCase):
         # test 1
         y_pil = F.adjust_gamma(x_pil, 0.5)
         y_np = np.array(y_pil)
-        y_ans = [0, 35, 57, 117, 185, 240, 97, 45, 244, 151, 255, 15]
+        y_ans = [0, 35, 57, 117, 186, 241, 97, 45, 245, 152, 255, 16]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         self.assertTrue(np.allclose(y_np, y_ans))
 
         # test 2
         y_pil = F.adjust_gamma(x_pil, 2)
         y_np = np.array(y_pil)
-        y_ans = [0, 0, 0, 11, 71, 200, 5, 0, 214, 31, 255, 0]
+        y_ans = [0, 0, 0, 11, 71, 201, 5, 0, 215, 31, 255, 0]
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         self.assertTrue(np.allclose(y_np, y_ans))
 
