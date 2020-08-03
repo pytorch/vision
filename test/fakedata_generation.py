@@ -284,7 +284,7 @@ def ucf101_root():
         fold_files = []
         for split in {'train', 'test'}:
             for fold in range(1, 4):
-                fold_file = '{:s}_list{:02d}.txt'.format(split, fold)
+                fold_file = '{:s}list{:02d}.txt'.format(split, fold)
                 fold_files.append(os.path.join(annotations, fold_file))
 
         file_handles = [open(x, 'w') for x in fold_files]
