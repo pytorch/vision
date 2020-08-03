@@ -4,7 +4,8 @@ import math
 import os
 import warnings
 from fractions import Fraction
-from typing import List, Tuple, Optional
+from typing import Any, Dict, List, Tuple, Optional, Union
+from io import BufferedIOBase
 
 import numpy as np
 import torch
@@ -141,21 +142,21 @@ def _align_audio_frames(aframes: torch.Tensor, aframe_pts: torch.Tensor, audio_p
 
 
 def _read_video_from_file(
-    filename,
-    seek_frame_margin=0.25,
-    read_video_stream=True,
-    video_width=0,
-    video_height=0,
-    video_min_dimension=0,
-    video_max_dimension=0,
-    video_pts_range=(0, -1),
-    video_timebase=default_timebase,
-    read_audio_stream=True,
-    audio_samples=0,
-    audio_channels=0,
-    audio_pts_range=(0, -1),
-    audio_timebase=default_timebase,
-):
+    filename: str,
+    seek_frame_margin: float = 0.25,
+    read_video_stream: bool = True,
+    video_width: int = 0,
+    video_height: int = 0,
+    video_min_dimension: int = 0,
+    video_max_dimension: int = 0,
+    video_pts_range: Optional[List[int]] = None,
+    video_timebase: Fraction = default_timebase,
+    read_audio_stream: bool = True,
+    audio_samples: int = 0,
+    audio_channels: int = 0,
+    audio_pts_range: Optional[List[int]] = None,
+    audio_timebase: Fraction = default_timebase,
+) -> Tuple[torch.Tensor, torch.Tensor, VideoMetaData]:
     """
     Reads a video from a file, returning both the video frames as well as
     the audio frames
@@ -219,6 +220,12 @@ def _read_video_from_file(
         metadata for the video and audio. Can contain the fields video_fps (float)
         and audio_fps (int)
     """
+    if video_pts_range is None:
+        video_pts_range = [0, -1]
+
+    if audio_pts_range is None:
+        audio_pts_range = [0, -1]
+
     _validate_pts(video_pts_range)
     _validate_pts(audio_pts_range)
 
@@ -254,7 +261,7 @@ def _read_video_from_file(
     return vframes, aframes, info
 
 
-def _read_video_timestamps_from_file(filename):
+def _read_video_timestamps_from_file(filename: str) -> Tuple[List[int], List[int], VideoMetaData]:
     """
     Decode all video- and audio frames in the video. Only pts
     (presentation timestamp) is returned. The actual frame pixel data is not
@@ -290,7 +297,7 @@ def _read_video_timestamps_from_file(filename):
     return vframe_pts, aframe_pts, info
 
 
-def _probe_video_from_file(filename):
+def _probe_video_from_file(filename: str) -> VideoMetaData:
     """
     Probe a video file and return VideoMetaData with info about the video
     """
@@ -422,7 +429,9 @@ def _read_video_from_memory(
     return vframes, aframes
 
 
-def _read_video_timestamps_from_memory(video_data):
+def _read_video_timestamps_from_memory(
+    video_data: Union[torch.Tensor, BufferedIOBase]
+) -> Tuple[List[int], List[int], VideoMetaData]:
     """
     Decode all frames in the video. Only pts (presentation timestamp) is returned.
     The actual frame pixel data is not copied. Thus, read_video_timestamps(...)
@@ -475,7 +484,9 @@ def _probe_video_from_memory(video_data: torch.Tensor) -> VideoMetaData:
     return info
 
 
-def _read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
+def _read_video(
+    filename: str, start_pts: int = 0, end_pts: Optional[float] = None, pts_unit: str = "pts"
+) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
     if end_pts is None:
         end_pts = float("inf")
 
@@ -499,23 +510,25 @@ def _read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
                 end_offset = int(math.ceil(end_pts * (1 / time_base)))
         if end_offset == float("inf"):
             end_offset = -1
-        return start_offset, end_offset
+        return [start_offset, end_offset]
 
-    video_pts_range = (0, -1)
-    video_timebase = default_timebase
     if has_video:
         video_timebase = Fraction(
             info.video_timebase.numerator, info.video_timebase.denominator
         )
         video_pts_range = get_pts(video_timebase)
+    else:
+        video_timebase = default_timebase
+        video_pts_range = None
 
-    audio_pts_range = (0, -1)
-    audio_timebase = default_timebase
     if has_audio:
         audio_timebase = Fraction(
             info.audio_timebase.numerator, info.audio_timebase.denominator
         )
         audio_pts_range = get_pts(audio_timebase)
+    else:
+        audio_timebase = default_timebase
+        audio_pts_range = None
 
     vframes, aframes, info = _read_video_from_file(
         filename,
@@ -535,7 +548,7 @@ def _read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
     return vframes, aframes, _info
 
 
-def _read_video_timestamps(filename, pts_unit="pts"):
+def _read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[int], Optional[float]]:
     if pts_unit == "pts":
         warnings.warn(
             "The pts_unit 'pts' gives wrong results and will be removed in a "
