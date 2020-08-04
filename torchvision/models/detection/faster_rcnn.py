@@ -1,14 +1,19 @@
-import torch
-import torch.nn.functional as F
-from torch import nn
+from collections import OrderedDict
 
+import torch
+from torch import nn
+import torch.nn.functional as F
+
+from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops import MultiScaleRoIAlign
-from .backbone_utils import resnet_fpn_backbone
-from .generalized_rcnn import GeneralizedRCNN
-from .roi_heads import RoIHeads
-from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
-from .transform import GeneralizedRCNNTransform
+
 from ..utils import load_state_dict_from_url
+
+from .generalized_rcnn import GeneralizedRCNN
+from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
+from .roi_heads import RoIHeads
+from .transform import GeneralizedRCNNTransform
+from .backbone_utils import resnet_fpn_backbone
 
 __all__ = [
     "FasterRCNN", "fasterrcnn_resnet50_fpn",
