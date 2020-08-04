@@ -95,13 +95,13 @@ def write_video(
 
 
 def _read_from_stream(
-    container: av.container.Container,
+    container: "av.container.Container",
     start_offset: int,
     end_offset: float,
     pts_unit: str,
-    stream: av.stream.Stream,
+    stream: "av.stream.Stream",
     stream_name: Dict[str, Optional[Union[int, Tuple[int, ...], List[int]]]],
-) -> List[av.frame.Frame]:
+) -> List["av.frame.Frame"]:
     global _CALLED_TIMES, _GC_COLLECTION_INTERVAL
     _CALLED_TIMES += 1
     if _CALLED_TIMES % _GC_COLLECTION_INTERVAL == _GC_COLLECTION_INTERVAL - 1:
@@ -178,7 +178,7 @@ def _read_from_stream(
 
 
 def _align_audio_frames(
-    aframes: torch.Tensor, audio_frames: List[av.frame.Frame], ref_start: int, ref_end: int
+    aframes: torch.Tensor, audio_frames: List["av.frame.Frame"], ref_start: int, ref_end: int
 ) -> torch.Tensor:
     start, end = audio_frames[0].pts, audio_frames[-1].pts
     total_aframes = aframes.shape[1]
@@ -293,7 +293,7 @@ def read_video(
     return vframes, aframes, info
 
 
-def _can_read_timestamps_from_packets(container: av.container.Container) -> bool:
+def _can_read_timestamps_from_packets(container: "av.container.Container") -> bool:
     extradata = container.streams[0].codec_context.extradata
     if extradata is None:
         return False
@@ -302,7 +302,7 @@ def _can_read_timestamps_from_packets(container: av.container.Container) -> bool
     return False
 
 
-def _decode_video_timestamps(container: av.container.Container) -> List[int]:
+def _decode_video_timestamps(container: "av.container.Container") -> List[int]:
     if _can_read_timestamps_from_packets(container):
         # fast path
         return [x.pts for x in container.demux(video=0) if x.pts is not None]
