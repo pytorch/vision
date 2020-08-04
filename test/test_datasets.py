@@ -268,12 +268,12 @@ class Tester(unittest.TestCase):
 
             video, audio, label = dataset[0]
             self.assertEqual(video.size(), (10, 320, 240, 3))
-            self.assertEqual(audio.size(), (1, 0))
+            self.assertEqual(audio.numel(), 0)
             self.assertEqual(label, 0)
 
             video, audio, label = dataset[len(dataset) - 1]
             self.assertEqual(video.size(), (10, 320, 240, 3))
-            self.assertEqual(audio.size(), (1, 0))
+            self.assertEqual(audio.numel(), 0)
             self.assertEqual(label, 1)
 
 
