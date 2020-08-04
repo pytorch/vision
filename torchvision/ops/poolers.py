@@ -1,4 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+from typing import Union
+
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
@@ -119,7 +121,7 @@ class MultiScaleRoIAlign(nn.Module):
     def __init__(
         self,
         featmap_names: List[str],
-        output_size: List[int],
+        output_size: Union[int, Tuple[int], List[int]],
         sampling_ratio: int,
     ):
         super(MultiScaleRoIAlign, self).__init__()
