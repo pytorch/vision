@@ -264,7 +264,7 @@ class Tester(unittest.TestCase):
     def test_ucf101(self):
         with ucf101_root() as (root, ann_root):
             dataset = torchvision.datasets.UCF101(root, ann_root, 10)
-            self.assertEqual(len(dataset), 0)
+            self.assertGreater(len(dataset), 0)
 
 
 if __name__ == '__main__':
