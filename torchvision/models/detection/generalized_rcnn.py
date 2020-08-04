@@ -80,7 +80,7 @@ class GeneralizedRCNN(nn.Module):
 
         # Check for degenerate boxes
         if targets is not None:
-            GeneralizedRCNN._check_for_degenerate_boxes(targets)
+            self._check_for_degenerate_boxes(targets)
 
         features = self.backbone(images.tensors)
         if isinstance(features, torch.Tensor):
@@ -101,8 +101,7 @@ class GeneralizedRCNN(nn.Module):
         else:
             return self.eager_outputs(losses, detections)
 
-    @staticmethod
-    def _check_for_degenerate_boxes(targets):
+    def _check_for_degenerate_boxes(self, targets):
         for target_idx, target in enumerate(targets):
             boxes = target["boxes"]
             degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
