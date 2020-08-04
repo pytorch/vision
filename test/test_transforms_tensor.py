@@ -226,7 +226,7 @@ class Tester(unittest.TestCase):
             if dt is not None:
                 # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
-            for size in [32, [32, ], [32, 32], (32, 32), ]:
+            for size in [32, 34, [32, ], [32, 32], (32, 32), [34, 35]]:
                 for interpolation in [BILINEAR, BICUBIC, NEAREST]:
 
                     resized_tensor = F.resize(tensor, size=size, interpolation=interpolation)
@@ -250,7 +250,7 @@ class Tester(unittest.TestCase):
 
         for scale in [(0.7, 1.2), [0.7, 1.2]]:
             for ratio in [(0.75, 1.333), [0.75, 1.333]]:
-                for size in [(32, ), [32, ], [32, 32], (32, 32)]:
+                for size in [(32, ), [44, ], [32, ], [32, 32], (32, 32), [44, 55]]:
                     for interpolation in [NEAREST, BILINEAR, BICUBIC]:
                         transform = T.RandomResizedCrop(
                             size=size, scale=scale, ratio=ratio, interpolation=interpolation

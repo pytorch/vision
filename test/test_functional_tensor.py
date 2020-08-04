@@ -337,7 +337,7 @@ class Tester(unittest.TestCase):
             if dt is not None:
                 # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
-            for size in [32, [32, ], [32, 32], (32, 32), ]:
+            for size in [32, 26, [32, ], [32, 32], (32, 32), [26, 35]]:
                 for interpolation in [BILINEAR, BICUBIC, NEAREST]:
                     resized_tensor = F_t.resize(tensor, size=size, interpolation=interpolation)
                     resized_pil_img = F_pil.resize(pil_img, size=size, interpolation=interpolation)
