@@ -454,6 +454,7 @@ class Tester(unittest.TestCase):
             (25, [0, 0], 1.2, [0.0, 15.0]),
             (45, [-10, 0], 0.7, [2.0, 5.0]),
             (45, [-10, -10], 1.2, [4.0, 5.0]),
+            (90, [0, 0], 1.0, [0.0, 0.0]),
         ]
         for r in [0, ]:
             for a, t, s, sh in test_configs:
@@ -475,7 +476,7 @@ class Tester(unittest.TestCase):
 
     def test_rotate(self):
         # Tests on square image
-        tensor, pil_img = self._create_data(26, 26)
+        tensor, pil_img = self._create_data(32, 26)
         scripted_rotate = torch.jit.script(F.rotate)
 
         img_size = pil_img.size
@@ -487,7 +488,7 @@ class Tester(unittest.TestCase):
         ]
 
         for r in [0, ]:
-            for a in range(-120, 120, 23):
+            for a in range(-180, 180, 23):
                 for e in [True, False]:
                     for c in centers:
 
