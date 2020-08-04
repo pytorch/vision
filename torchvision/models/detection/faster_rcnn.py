@@ -347,7 +347,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
-    assert 0 <= trainable_backbone_layers <= 5
+    assert trainable_backbone_layers <= 5 and trainable_backbone_layers >= 0
     # dont freeze any layers if pretrained model or backbone is not used
     if not (pretrained or pretrained_backbone):
         trainable_backbone_layers = 5
