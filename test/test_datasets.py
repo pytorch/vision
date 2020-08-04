@@ -263,18 +263,22 @@ class Tester(unittest.TestCase):
     @unittest.skipIf(not HAS_PYAV, "PyAV unavailable")
     def test_ucf101(self):
         with ucf101_root() as (root, ann_root):
-            dataset = torchvision.datasets.UCF101(root, ann_root, 10)
-            self.assertGreater(len(dataset), 0)
+            for split in {True, False}:
+                for fold in range(1, 4):
+                    for length in {10, 15, 20}:
+                        dataset = torchvision.datasets.UCF101(
+                            root, ann_root, length, fold=fold, train=split)
+                        self.assertGreater(len(dataset), 0)
 
-            video, audio, label = dataset[0]
-            self.assertEqual(video.size(), (10, 320, 240, 3))
-            self.assertEqual(audio.numel(), 0)
-            self.assertEqual(label, 0)
+                        video, audio, label = dataset[0]
+                        self.assertEqual(video.size(), (length, 320, 240, 3))
+                        self.assertEqual(audio.numel(), 0)
+                        self.assertEqual(label, 0)
 
-            video, audio, label = dataset[len(dataset) - 1]
-            self.assertEqual(video.size(), (10, 320, 240, 3))
-            self.assertEqual(audio.numel(), 0)
-            self.assertEqual(label, 1)
+                        video, audio, label = dataset[len(dataset) - 1]
+                        self.assertEqual(video.size(), (length, 320, 240, 3))
+                        self.assertEqual(audio.numel(), 0)
+                        self.assertEqual(label, 1)
 
 
 if __name__ == '__main__':
