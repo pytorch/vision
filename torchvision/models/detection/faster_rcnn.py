@@ -1,20 +1,14 @@
-from collections import OrderedDict
-
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
-from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops import MultiScaleRoIAlign
-
-from ..utils import load_state_dict_from_url
-
-from .generalized_rcnn import GeneralizedRCNN
-from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
-from .roi_heads import RoIHeads
-from .transform import GeneralizedRCNNTransform
 from .backbone_utils import resnet_fpn_backbone
-
+from .generalized_rcnn import GeneralizedRCNN
+from .roi_heads import RoIHeads
+from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
+from .transform import GeneralizedRCNNTransform
+from ..utils import load_state_dict_from_url
 
 __all__ = [
     "FasterRCNN", "fasterrcnn_resnet50_fpn",
@@ -347,7 +341,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
-    assert trainable_backbone_layers <= 5 and trainable_backbone_layers >= 0
+    assert 0 <= trainable_backbone_layers <= 5
     # dont freeze any layers if pretrained model or backbone is not used
     if not (pretrained or pretrained_backbone):
         trainable_backbone_layers = 5
