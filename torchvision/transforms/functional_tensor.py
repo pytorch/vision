@@ -619,6 +619,22 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
     return img
 
 
+def _gen_affine_grid(
+        theta: Tensor, w: int, h: int, ow: int, oh: int,
+) -> Tensor:
+    d = 0.5
+    x = torch.arange(ow) + d - ow * 0.5
+    y = torch.arange(oh) + d - oh * 0.5
+
+    y, x = torch.meshgrid(y, x)
+    pts = torch.stack([x, y, torch.ones_like(x)], dim=-1)
+    output_grid = torch.matmul(pts, theta.t())
+
+    output_grid = output_grid / torch.tensor([0.5 * w, 0.5 * h])
+
+    return output_grid.unsqueeze(dim=0)
+
+
 def affine(
         img: Tensor, matrix: List[float], resample: int = 0, fillcolor: Optional[int] = None
 ) -> Tensor:
@@ -651,7 +667,12 @@ def affine(
 
     theta = torch.tensor(matrix, dtype=torch.float).reshape(1, 2, 3)
     shape = img.shape
-    grid = affine_grid(theta, size=(1, shape[-3], shape[-2], shape[-1]), align_corners=False)
+    if shape[-2] == shape[-1]:
+        # here we need normalized translation part of theta
+        grid = affine_grid(theta, size=(1, shape[-3], shape[-2], shape[-1]), align_corners=False)
+    else:
+        # here we need denormalized translation part of theta
+        grid = _gen_affine_grid(theta[0, :, :], w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
 
     # make image NCHW
     need_squeeze = False
