@@ -121,7 +121,7 @@ class GeneralizedRCNNTransform(nn.Module):
         dtype, device = image.dtype, image.device
         mean = torch.as_tensor(self.image_mean, dtype=dtype, device=device)
         std = torch.as_tensor(self.image_std, dtype=dtype, device=device)
-        return (image - mean[:, None, None]) / std[:, None, None]
+        return torch.true_divide(image - mean[:, None, None], std[:, None, None])
 
     def torch_choice(self, k):
         # type: (List[int]) -> int
