@@ -166,7 +166,10 @@ def _read_from_stream(
     return result
 
 
-def _align_audio_frames(aframes, audio_frames, ref_start, ref_end):
+def _align_audio_frames(aframes, audio_frames, ref_start, ref_end, time_base=None):
+    if time_base is not None:
+        ref_start = int(math.floor(ref_start * (1 / time_base)))
+        ref_end = int(math.floor(ref_end * (1 / time_base)))
     start, end = audio_frames[0].pts, audio_frames[-1].pts
     total_aframes = aframes.shape[1]
     step_per_aframe = (end - start + 1) / total_aframes
@@ -228,6 +231,7 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
     info = {}
     video_frames = []
     audio_frames = []
+    audio_time_base = None
 
     try:
         with av.open(filename, metadata_errors="ignore") as container:
@@ -255,6 +259,7 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
                     {"audio": 0},
                 )
                 info["audio_fps"] = container.streams.audio[0].rate
+                audio_time_base = container.streams.audio[0].time_base
 
     except av.AVError:
         # TODO raise a warning?
@@ -271,7 +276,7 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
     if aframes:
         aframes = np.concatenate(aframes, 1)
         aframes = torch.as_tensor(aframes)
-        aframes = _align_audio_frames(aframes, audio_frames, start_pts, end_pts)
+        aframes = _align_audio_frames(aframes, audio_frames, start_pts, end_pts, audio_time_base)
     else:
         aframes = torch.empty((1, 0), dtype=torch.float32)
 
