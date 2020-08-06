@@ -926,13 +926,7 @@ def affine(
 
         return F_pil.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 
-    if img_size[0] == img_size[1]:
-        # we need to rescale translate by image size / 2 as its values can be between -1 and 1
-        translate_f = [2.0 * t / s for s, t in zip(img_size, translate)]
-    else:
-        # if rectangular image, we should not rescale translation part
-        translate_f = [1.0 * t for t in translate]
-
+    translate_f = [1.0 * t for t in translate]
     matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, translate_f, scale, shear)
     return F_t.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 
