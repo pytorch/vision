@@ -103,10 +103,10 @@ class LSUN(VisionDataset):
                 raise ValueError(msg.format(type(classes)))
 
             classes = list(classes)
-            msg_fmtstr = ("Expected type str for elements in argument classes, "
+            msg_fmtstr_type = ("Expected type str for elements in argument classes, "
                           "but got type {}.")
             for c in classes:
-                verify_str_arg(c, custom_msg=msg_fmtstr.format(type(c)))
+                verify_str_arg(c, custom_msg=msg_fmtstr_type.format(type(c)))
                 c_short = c.split('_')
                 category, dset_opt = '_'.join(c_short[:-1]), c_short[-1]
 
