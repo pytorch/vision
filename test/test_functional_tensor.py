@@ -546,33 +546,37 @@ class Tester(unittest.TestCase):
                                 )
 
     def test_perspective(self):
-        tensor, pil_img = self._create_data(26, 34)
 
-        scripted_tranform = torch.jit.script(F.perspective)
+        for tensor, pil_img in [self._create_data(26, 34), self._create_data(26, 26)]:
 
-        test_configs = [
-            ([(0, 0), (33, 0), (33, 25), (0, 25)], [(3, 2), (32, 3), (30, 24), (2, 25)]),
-            ([(3, 2), (32, 3), (30, 24), (2, 25)], [(0, 0), (33, 0), (33, 25), (0, 25)]),
-            ([(3, 2), (32, 3), (30, 24), (2, 25)], [(5, 5), (30, 3), (33, 19), (4, 25)]),
-        ]
-        for r in [0, ]:
-            for spoints, epoints in test_configs:
-                out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r)
-                out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+            scripted_tranform = torch.jit.script(F.perspective)
 
-                for fn in [F.perspective, scripted_tranform]:
-                    out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r)
+            test_configs = [
+                [[[0, 0], [33, 0], [33, 25], [0, 25]], [[3, 2], [32, 3], [30, 24], [2, 25]]],
+                [[[3, 2], [32, 3], [30, 24], [2, 25]], [[0, 0], [33, 0], [33, 25], [0, 25]]],
+                [[[3, 2], [32, 3], [30, 24], [2, 25]], [[5, 5], [30, 3], [33, 19], [4, 25]]],
+            ]
+            for r in [0, ]:
+                for spoints, epoints in test_configs:
+                    out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r)
+                    out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
-                    num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
-                    ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                    # Tolerance : less than 5% of different pixels
-                    self.assertLess(
-                        ratio_diff_pixels,
-                        0.05,
-                        msg="{}: {}\n{} vs \n{}".format(
-                            (r, spoints, epoints), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
+                    for fn in [F.perspective, scripted_tranform]:
+                        out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r)
+
+                        num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+                        ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+                        # Tolerance : less than 3% of different pixels
+                        self.assertLess(
+                            ratio_diff_pixels,
+                            0.03,
+                            msg="{}: {}\n{} vs \n{}".format(
+                                (r, spoints, epoints),
+                                ratio_diff_pixels,
+                                out_tensor[0, :7, :7],
+                                out_pil_tensor[0, :7, :7]
+                            )
                         )
-                    )
 
 
 if __name__ == '__main__':

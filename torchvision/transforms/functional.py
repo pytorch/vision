@@ -492,7 +492,7 @@ def hflip(img: Tensor) -> Tensor:
 
 
 def _get_perspective_coeffs(
-        startpoints: List[Tuple[int, int]], endpoints: List[Tuple[int, int]]
+        startpoints: List[List[int]], endpoints: List[List[int]]
 ) -> List[float]:
     """Helper function to get the coefficients (a, b, c, d, e, f, g, h) for the perspective transforms.
 
@@ -500,30 +500,31 @@ def _get_perspective_coeffs(
      (x, y) -> ( (ax + by + c) / (gx + hy + 1), (dx + ey + f) / (gx + hy + 1) )
 
     Args:
-        startpoints (list of tuples): List containing four tuples of two integers corresponding to four corners
+        startpoints (list of list of ints): List containing four lists of two integers corresponding to four corners
             ``[top-left, top-right, bottom-right, bottom-left]`` of the original image.
-        endpoints (list of tuples): List containing four tuples of two integers corresponding to four corners
+        endpoints (list of list of ints): List containing four lists of two integers corresponding to four corners
             ``[top-left, top-right, bottom-right, bottom-left]`` of the transformed image.
 
     Returns:
         octuple (a, b, c, d, e, f, g, h) for transforming each pixel.
     """
-    matrix = []
+    a_matrix = torch.zeros(2 * len(startpoints), 8, dtype=torch.float)
 
-    for p1, p2 in zip(endpoints, startpoints):
-        matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0] * p1[0], -p2[0] * p1[1]])
-        matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]])
+    for i, (p1, p2) in enumerate(zip(endpoints, startpoints)):
+        a_matrix[2 * i, :] = torch.tensor([p1[0], p1[1], 1, 0, 0, 0, -p2[0] * p1[0], -p2[0] * p1[1]])
+        a_matrix[2 * i + 1, :] = torch.tensor([0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]])
 
-    A = torch.tensor(matrix, dtype=torch.float)
-    B = torch.tensor(startpoints, dtype=torch.float).view(8)
-    res = torch.lstsq(B, A)[0]
-    return res.squeeze_(1).tolist()
+    b_matrix = torch.tensor(startpoints, dtype=torch.float).view(8)
+    res = torch.lstsq(b_matrix, a_matrix)[0]
+    # We have to explicitly produce the list of floats, otherwise torch.jit.script does recognize output type
+    # RuntimeError: Expected type hint for result of tolist()
+    return [float(i.item()) for i in res[:, 0]]
 
 
 def perspective(
         img: Tensor,
-        startpoints: List[Tuple[int, int]],
-        endpoints: List[Tuple[int, int]],
+        startpoints: List[List[int]],
+        endpoints: List[List[int]],
         interpolation: int = 3,
         fill: Optional[int] = None
 ) -> Tensor:
@@ -533,9 +534,9 @@ def perspective(
 
     Args:
         img (PIL Image or Tensor): Image to be transformed.
-        startpoints (list of tuples): List containing four tuples of two integers corresponding to four corners
+        startpoints (list of list of ints): List containing four lists of two integers corresponding to four corners
             ``[top-left, top-right, bottom-right, bottom-left]`` of the original image.
-        endpoints (list of tuples): List containing four tuples of two integers corresponding to four corners
+        endpoints (list of list of ints): List containing four lists of two integers corresponding to four corners
             ``[top-left, top-right, bottom-right, bottom-left]`` of the transformed image.
         interpolation (int): Interpolation type. If input is Tensor, only ``PIL.Image.NEAREST`` and
             ``PIL.Image.BILINEAR`` are supported. Default, ``PIL.Image.BICUBIC`` for PIL images and
@@ -546,7 +547,7 @@ def perspective(
             input. Fill value for the area outside the transform in the output image is always 0.
 
     Returns:
-        PIL Image or Tensor: Perspectively transformed Image.
+        PIL Image or Tensor: transformed Image.
     """
 
     coeffs = _get_perspective_coeffs(startpoints, endpoints)
@@ -554,7 +555,12 @@ def perspective(
     if not isinstance(img, torch.Tensor):
         return F_pil.perspective(img, coeffs, interpolation=interpolation, fill=fill)
 
-    return F_t.perspective()
+    if interpolation == Image.BICUBIC:
+        # bicubic is not supported by pytorch
+        # set to bilinear interpolation
+        interpolation = 2
+
+    return F_t.perspective(img, coeffs, interpolation=interpolation, fill=fill)
 
 
 def vflip(img: Tensor) -> Tensor:
