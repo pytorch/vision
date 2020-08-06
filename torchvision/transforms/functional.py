@@ -756,38 +756,6 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     return F_t.adjust_gamma(img, gamma, gain)
 
 
-def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
-    """Rotate the image by angle.
-
-
-    Args:
-        img (PIL Image): PIL Image to be rotated.
-        angle (float or int): In degrees degrees counter clockwise order.
-        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
-            An optional resampling filter. See `filters`_ for more information.
-            If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
-        expand (bool, optional): Optional expansion flag.
-            If true, expands the output image to make it large enough to hold the entire rotated image.
-            If false or omitted, make the output image the same size as the input image.
-            Note that the expand flag assumes rotation around the center and no translation.
-        center (2-tuple, optional): Optional center of rotation.
-            Origin is the upper left corner.
-            Default is the center of the image.
-        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
-            image. If int or float, the value is used for all bands respectively.
-            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
-
-    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
-
-    """
-    if not F_pil._is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-
-    opts = _parse_fill(fill, img, '5.2.0')
-
-    return img.rotate(angle, resample, expand, center, **opts)
-
-
 def _get_inverse_affine_matrix(
         center: List[float], angle: float, translate: List[float], scale: float, shear: List[float]
 ) -> List[float]:
@@ -880,7 +848,7 @@ def rotate(
     center_f = [0.0, 0.0]
     if center is not None:
         img_size = _get_image_size(img)
-        # Center values should be in pixel coordinates but translated such (0, 0) corresponds to image center.
+        # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
         center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
