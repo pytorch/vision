@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional
+from typing import Optional, Dict, Tuple
 
 import torch
 from torch import Tensor
@@ -586,8 +586,8 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
         else:
             size_w = int(size_h * w / h)
 
-    if (w <= h and w == size_w) or (h <= w and h == size_h):
-        return img
+        if (w <= h and w == size_w) or (h <= w and h == size_h):
+            return img
 
     # make image NCHW
     need_squeeze = False
@@ -619,47 +619,31 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
     return img
 
 
-def affine(
-        img: Tensor, matrix: List[float], resample: int = 0, fillcolor: Optional[int] = None
-) -> Tensor:
-    """Apply affine transformation on the Tensor image keeping image center invariant.
-
-    Args:
-        img (Tensor): image to be rotated.
-        matrix (list of floats): list of 6 float values representing inverse matrix for affine transformation.
-        resample (int, optional): An optional resampling filter. Default is nearest (=2). Other supported values:
-            bilinear(=2).
-        fillcolor (int, optional): this option is not supported for Tensor input. Fill value for the area outside the
-            transform in the output image is always 0.
-
-    Returns:
-        Tensor: Transformed image.
-    """
+def _assert_grid_transform_inputs(
+        img: Tensor, matrix: List[float], resample: int, fillcolor: Optional[int], _interpolation_modes: Dict[int, str]
+):
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
-        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+        raise TypeError("img should be Tensor Image. Got {}".format(type(img)))
+
+    if not isinstance(matrix, list):
+        raise TypeError("Argument matrix should be a list. Got {}".format(type(matrix)))
+
+    if len(matrix) != 6:
+        raise ValueError("Argument matrix should have 6 float values")
 
     if fillcolor is not None:
-        warnings.warn("Argument fillcolor is not supported for Tensor input. Fill value is zero")
-
-    _interpolation_modes = {
-        0: "nearest",
-        2: "bilinear",
-    }
+        warnings.warn("Argument fill/fillcolor is not supported for Tensor input. Fill value is zero")
 
     if resample not in _interpolation_modes:
         raise ValueError("This resampling mode is unsupported with Tensor input")
 
-    theta = torch.tensor(matrix, dtype=torch.float).reshape(1, 2, 3)
-    shape = img.shape
-    grid = affine_grid(theta, size=(1, shape[-3], shape[-2], shape[-1]), align_corners=False)
 
+def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
     # make image NCHW
     need_squeeze = False
     if img.ndim < 4:
         img = img.unsqueeze(dim=0)
         need_squeeze = True
-
-    mode = _interpolation_modes[resample]
 
     out_dtype = img.dtype
     need_cast = False
@@ -677,6 +661,118 @@ def affine(
         img = torch.round(img).to(out_dtype)
 
     return img
+
+
+def _gen_affine_grid(
+        theta: Tensor, w: int, h: int, ow: int, oh: int,
+) -> Tensor:
+    # https://github.com/pytorch/pytorch/blob/74b65c32be68b15dc7c9e8bb62459efbfbde33d8/aten/src/ATen/native/
+    # AffineGridGenerator.cpp#L18
+    # Difference with AffineGridGenerator is that:
+    # 1) we normalize grid values after applying theta
+    # 2) we can normalize by other image size, such that it covers "extend" option like in PIL.Image.rotate
+
+    d = 0.5
+    base_grid = torch.empty(1, oh, ow, 3)
+    base_grid[..., 0].copy_(torch.linspace(-ow * 0.5 + d, ow * 0.5 + d - 1, steps=ow))
+    base_grid[..., 1].copy_(torch.linspace(-oh * 0.5 + d, oh * 0.5 + d - 1, steps=oh).unsqueeze_(-1))
+    base_grid[..., 2].fill_(1)
+
+    output_grid = base_grid.view(1, oh * ow, 3).bmm(theta.transpose(1, 2) / torch.tensor([0.5 * w, 0.5 * h]))
+    return output_grid.view(1, oh, ow, 2)
+
+
+def affine(
+        img: Tensor, matrix: List[float], resample: int = 0, fillcolor: Optional[int] = None
+) -> Tensor:
+    """Apply affine transformation on the Tensor image keeping image center invariant.
+
+    Args:
+        img (Tensor): image to be rotated.
+        matrix (list of floats): list of 6 float values representing inverse matrix for affine transformation.
+        resample (int, optional): An optional resampling filter. Default is nearest (=0). Other supported values:
+            bilinear(=2).
+        fillcolor (int, optional): this option is not supported for Tensor input. Fill value for the area outside the
+            transform in the output image is always 0.
+
+    Returns:
+        Tensor: Transformed image.
+    """
+    _interpolation_modes = {
+        0: "nearest",
+        2: "bilinear",
+    }
+
+    _assert_grid_transform_inputs(img, matrix, resample, fillcolor, _interpolation_modes)
+
+    theta = torch.tensor(matrix, dtype=torch.float).reshape(1, 2, 3)
+    shape = img.shape
+    grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
+    mode = _interpolation_modes[resample]
+    return _apply_grid_transform(img, grid, mode)
+
+
+def _compute_output_size(theta: Tensor, w: int, h: int) -> Tuple[int, int]:
+
+    # Inspired of PIL implementation:
+    # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
+
+    # pts are Top-Left, Top-Right, Bottom-Left, Bottom-Right points.
+    pts = torch.tensor([
+        [-0.5 * w, -0.5 * h, 1.0],
+        [-0.5 * w, 0.5 * h, 1.0],
+        [0.5 * w, 0.5 * h, 1.0],
+        [0.5 * w, -0.5 * h, 1.0],
+    ])
+    new_pts = pts.view(1, 4, 3).bmm(theta.transpose(1, 2)).view(4, 2)
+    min_vals, _ = new_pts.min(dim=0)
+    max_vals, _ = new_pts.max(dim=0)
+
+    # Truncate precision to 1e-4 to avoid ceil of Xe-15 to 1.0
+    tol = 1e-4
+    cmax = torch.ceil((max_vals / tol).trunc_() * tol)
+    cmin = torch.floor((min_vals / tol).trunc_() * tol)
+    size = cmax - cmin
+    return int(size[0]), int(size[1])
+
+
+def rotate(
+        img: Tensor, matrix: List[float], resample: int = 0, expand: bool = False, fill: Optional[int] = None
+) -> Tensor:
+    """Rotate the Tensor image by angle.
+
+    Args:
+        img (Tensor): image to be rotated.
+        matrix (list of floats): list of 6 float values representing inverse matrix for rotation transformation.
+            Translation part (``matrix[2]`` and ``matrix[5]``) should be in pixel coordinates.
+        resample (int, optional): An optional resampling filter. Default is nearest (=0). Other supported values:
+            bilinear(=2).
+        expand (bool, optional): Optional expansion flag.
+            If true, expands the output image to make it large enough to hold the entire rotated image.
+            If false or omitted, make the output image the same size as the input image.
+            Note that the expand flag assumes rotation around the center and no translation.
+        fill (n-tuple or int or float): this option is not supported for Tensor input.
+            Fill value for the area outside the transform in the output image is always 0.
+
+    Returns:
+        Tensor: Rotated image.
+
+    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
+
+    """
+    _interpolation_modes = {
+        0: "nearest",
+        2: "bilinear",
+    }
+
+    _assert_grid_transform_inputs(img, matrix, resample, fill, _interpolation_modes)
+    theta = torch.tensor(matrix).reshape(1, 2, 3)
+    w, h = img.shape[-1], img.shape[-2]
+    ow, oh = _compute_output_size(theta, w, h) if expand else (w, h)
+    grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
+    mode = _interpolation_modes[resample]
+
+    return _apply_grid_transform(img, grid, mode)
 
 
 def perspective(

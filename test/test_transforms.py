@@ -390,6 +390,14 @@ class Tester(unittest.TestCase):
         with self.assertRaises(ValueError):
             transforms.Pad((1, 2, 3, 4, 5))
 
+    def test_pad_with_mode_F_images(self):
+        pad = 2
+        transform = transforms.Pad(pad)
+
+        img = Image.new("F", (10, 10))
+        padded_img = transform(img)
+        self.assertSequenceEqual(padded_img.size, [edge_size + 2 * pad for edge_size in img.size])
+
     def test_lambda(self):
         trans = transforms.Lambda(lambda x: x.add(10))
         x = torch.randn(10)
@@ -1258,7 +1266,7 @@ class Tester(unittest.TestCase):
         x = np.zeros((100, 100, 3), dtype=np.uint8)
         x[40, 40] = [255, 255, 255]
 
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, r"img should be PIL Image"):
             F.rotate(x, 10)
 
         img = F.to_pil_image(x)

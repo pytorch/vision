@@ -261,19 +261,14 @@ def pad(img, padding, fill=0, padding_mode="constant"):
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
     if padding_mode == "constant":
-        if isinstance(fill, numbers.Number):
-            fill = (fill,) * len(img.getbands())
-        if len(fill) != len(img.getbands()):
-            raise ValueError("fill should have the same number of elements "
-                             "as the number of channels in the image "
-                             "({}), got {} instead".format(len(img.getbands()), len(fill)))
+        opts = _parse_fill(fill, img, "2.3.0", name="fill")
         if img.mode == "P":
             palette = img.getpalette()
-            image = ImageOps.expand(img, border=padding, fill=fill)
+            image = ImageOps.expand(img, border=padding, **opts)
             image.putpalette(palette)
             return image
 
-        return ImageOps.expand(img, border=padding, fill=fill)
+        return ImageOps.expand(img, border=padding, **opts)
     else:
         if isinstance(padding, int):
             pad_left = pad_right = pad_top = pad_bottom = padding
@@ -367,8 +362,8 @@ def resize(img, size, interpolation=Image.BILINEAR):
 
 
 @torch.jit.unused
-def _parse_fill(fill, img, min_pil_version):
-    """Helper function to get the fill color for rotate and perspective transforms.
+def _parse_fill(fill, img, min_pil_version, name="fillcolor"):
+    """Helper function to get the fill color for rotate, perspective transforms, and pad.
 
     Args:
         fill (n-tuple or int or float): Pixel fill value for area outside the transformed
@@ -377,6 +372,7 @@ def _parse_fill(fill, img, min_pil_version):
         img (PIL Image): Image to be filled.
         min_pil_version (str): The minimum PILLOW version for when the ``fillcolor`` option
             was first introduced in the calling function. (e.g. rotate->5.2.0, perspective->5.0.0)
+        name (str): Name of the ``fillcolor`` option in the output. Defaults to ``"fillcolor"``.
 
     Returns:
         dict: kwarg for ``fillcolor``
@@ -401,7 +397,7 @@ def _parse_fill(fill, img, min_pil_version):
                "bands of the image ({} != {})")
         raise ValueError(msg.format(len(fill), num_bands))
 
-    return {"fillcolor": fill}
+    return {name: fill}
 
 
 @torch.jit.unused
@@ -426,6 +422,40 @@ def affine(img, matrix, resample=0, fillcolor=None):
     output_size = img.size
     opts = _parse_fill(fillcolor, img, '5.0.0')
     return img.transform(output_size, Image.AFFINE, matrix, resample, **opts)
+
+
+@torch.jit.unused
+def rotate(img, angle, resample=0, expand=False, center=None, fill=None):
+    """Rotate PIL image by angle.
+
+    Args:
+        img (PIL Image): image to be rotated.
+        angle (float or int): rotation angle value in degrees, counter-clockwise.
+        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
+            An optional resampling filter. See `filters`_ for more information.
+            If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
+        expand (bool, optional): Optional expansion flag.
+            If true, expands the output image to make it large enough to hold the entire rotated image.
+            If false or omitted, make the output image the same size as the input image.
+            Note that the expand flag assumes rotation around the center and no translation.
+        center (2-tuple, optional): Optional center of rotation.
+            Origin is the upper left corner.
+            Default is the center of the image.
+        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+            image. If int or float, the value is used for all bands respectively.
+            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
+
+    Returns:
+        PIL Image: Rotated image.
+
+    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
+
+    """
+    if not _is_pil_image(img):
+        raise TypeError("img should be PIL Image. Got {}".format(type(img)))
+
+    opts = _parse_fill(fill, img, '5.2.0')
+    return img.rotate(angle, resample, expand, center, **opts)
 
 
 @torch.jit.unused
