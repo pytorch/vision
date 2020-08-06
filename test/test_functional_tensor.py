@@ -422,7 +422,9 @@ class Tester(unittest.TestCase):
                         else:
                             true_tensor = out_tensor
 
-                        out_pil_img = F.affine(pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
+                        out_pil_img = F.affine(
+                            pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                        )
                         out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
                         num_diff_pixels = (true_tensor != out_pil_tensor).sum().item() / 3.0
@@ -442,7 +444,9 @@ class Tester(unittest.TestCase):
                 for a in test_configs:
                     for fn in [F.affine, scripted_affine]:
                         out_tensor = fn(tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
-                        out_pil_img = F.affine(pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
+                        out_pil_img = F.affine(
+                            pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                        )
                         out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
                         num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0

@@ -622,17 +622,20 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
 def _gen_affine_grid(
         theta: Tensor, w: int, h: int, ow: int, oh: int,
 ) -> Tensor:
+    # https://github.com/pytorch/pytorch/blob/74b65c32be68b15dc7c9e8bb62459efbfbde33d8/aten/src/ATen/native/
+    # AffineGridGenerator.cpp#L18
+    # Difference with AffineGridGenerator is that:
+    # 1) we normalize grid values after applying theta
+    # 2) we can normalize by other image size, such that it covers "extend" option like in PIL.Image.rotate
+
     d = 0.5
-    x = torch.arange(ow) + d - ow * 0.5
-    y = torch.arange(oh) + d - oh * 0.5
+    base_grid = torch.empty(1, oh, ow, 3)
+    base_grid[..., 0].copy_(torch.linspace(-ow * 0.5 + d, ow * 0.5 + d - 1, steps=ow))
+    base_grid[..., 1].copy_(torch.linspace(-oh * 0.5 + d, oh * 0.5 + d - 1, steps=oh).unsqueeze_(-1))
+    base_grid[..., 2].fill_(1)
 
-    y, x = torch.meshgrid(y, x)
-    pts = torch.stack([x, y, torch.ones_like(x)], dim=-1)
-    output_grid = torch.matmul(pts, theta.t())
-
-    output_grid = output_grid / torch.tensor([0.5 * w, 0.5 * h])
-
-    return output_grid.unsqueeze(dim=0)
+    output_grid = base_grid.view(1, oh * ow, 3).bmm(theta.transpose(1, 2) / torch.tensor([0.5 * w, 0.5 * h]))
+    return output_grid.view(1, oh, ow, 2)
 
 
 def affine(
