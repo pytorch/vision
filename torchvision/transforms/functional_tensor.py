@@ -712,24 +712,49 @@ def affine(
     return _apply_grid_transform(img, grid, mode)
 
 
-def _compute_output_size(theta: Tensor, w: int, h: int) -> Tuple[int, int]:
+def _compute_output_size(theta: Tensor, w: int, h: int, center: Optional[List[int]] = None) -> Tuple[int, int]:
 
     # pts are Top-Left, Top-Right, Bottom-Left, Bottom-Right points.
-    # we need to normalize coordinates according to
-    # [0, s] is mapped [-1, +1] as theta translation parameters are normalized like that
+    # To compute extended output image size we should use denormalized theta
+    # where translation part (theta[0, 2] and theta[1, 2]) is computed using original center values in range [0, w]
+    # and [0, h]. Currently, theta[0, 2] and theta[1, 2] are normalized to [-1, 1] range
+
+    center_f = [w * 0.5, h * 0.5]
+    if center is not None:
+        center_f = [float(v) for v in center]
+
+    denorm_theta = theta.clone()
+    denorm_theta[0, 2] = center_f[0] * (1.0 - denorm_theta[0, 0]) - center_f[1] * denorm_theta[0, 1]
+    denorm_theta[1, 2] = center_f[0] * (1.0 - denorm_theta[1, 0]) - center_f[1] * denorm_theta[1, 1]
+
     pts = torch.tensor([
-        [-1.0, -1.0, 1.0],
-        [-1.0, 1.0, 1.0],
-        [1.0, 1.0, 1.0],
-        [1.0, -1.0, 1.0],
+        [0.0, 0.0, 1.0],
+        [0.0, 1.0 * h, 1.0],
+        [1.0 * w, 1.0 * h, 1.0],
+        [1.0 * w, 0.0, 1.0],
     ])
-    # denormalize back to w, h:
-    theta = theta[0, ...]
-    new_pts = (torch.matmul(pts, theta.t()) + 1.0) * torch.tensor([w, h]) / 2.0
+    new_pts = torch.matmul(pts, denorm_theta.t())
     min_vals, _ = new_pts.min(dim=0)
     max_vals, _ = new_pts.max(dim=0)
     size = torch.ceil(max_vals) - torch.floor(min_vals)
     return int(size[0]), int(size[1])
+
+
+def _expanded_affine_grid(
+        theta: Tensor, w: int, h: int, expand: bool = False, center: Optional[List[int]] = None
+) -> Tensor:
+    if expand:
+        ow, oh = _compute_output_size(theta, w, h, center)
+    else:
+        ow, oh = w, h
+    d = 0.5  # if not align_corners
+
+    x = (torch.arange(ow) + d - ow * 0.5) / (0.5 * w)
+    y = (torch.arange(oh) + d - oh * 0.5) / (0.5 * h)
+    y, x = torch.meshgrid(y, x)
+    pts = torch.stack([x, y, torch.ones_like(x)], dim=-1)
+    output_grid = torch.matmul(pts, theta.t())
+    return output_grid.unsqueeze(dim=0)
 
 
 def rotate(
@@ -740,6 +765,7 @@ def rotate(
     Args:
         img (Tensor): image to be rotated.
         matrix (list of floats): list of 6 float values representing inverse matrix for rotation transformation.
+            Translation part (``matrix[2]`` and ``matrix[5]``) should be in pixel coordinates.
         resample (int, optional): An optional resampling filter. Default is nearest (=0). Other supported values:
             bilinear(=2).
         expand (bool, optional): Optional expansion flag.

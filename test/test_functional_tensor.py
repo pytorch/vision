@@ -462,7 +462,7 @@ class Tester(unittest.TestCase):
 
             # 3) Test translation
             test_configs = [
-                [10, 12], (12, 13)
+                [10, 12], (-12, -13)
             ]
             for t in test_configs:
                 for fn in [F.affine, scripted_affine]:
@@ -478,9 +478,10 @@ class Tester(unittest.TestCase):
                 (33, (-4, -8), 2.0, [0.0, 0.0]),
                 (85, (10, -10), 0.7, [0.0, 0.0]),
                 (0, [0, 0], 1.0, [35.0, ]),
-                (25, [0, 0], 1.2, [0.0, 15.0]),
-                (45, [-10, 0], 0.7, [2.0, 5.0]),
-                (45, [-10, -10], 1.2, [4.0, 5.0]),
+                (-25, [0, 0], 1.2, [0.0, 15.0]),
+                (-45, [-10, 0], 0.7, [2.0, 5.0]),
+                (-45, [-10, -10], 1.2, [4.0, 5.0]),
+                (-90, [0, 0], 1.0, [0.0, 0.0]),
             ]
             for r in [0, ]:
                 for a, t, s, sh in test_configs:
@@ -514,7 +515,7 @@ class Tester(unittest.TestCase):
         ]
 
         for r in [0, ]:
-            for a in range(-120, 120, 23):
+            for a in range(-180, 180, 23):
                 for e in [True, False]:
                     for c in centers:
 
