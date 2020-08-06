@@ -663,6 +663,25 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
     return img
 
 
+def _gen_affine_grid(
+        theta: Tensor, w: int, h: int, ow: int, oh: int,
+) -> Tensor:
+    # https://github.com/pytorch/pytorch/blob/74b65c32be68b15dc7c9e8bb62459efbfbde33d8/aten/src/ATen/native/
+    # AffineGridGenerator.cpp#L18
+    # Difference with AffineGridGenerator is that:
+    # 1) we normalize grid values after applying theta
+    # 2) we can normalize by other image size, such that it covers "extend" option like in PIL.Image.rotate
+
+    d = 0.5
+    base_grid = torch.empty(1, oh, ow, 3)
+    base_grid[..., 0].copy_(torch.linspace(-ow * 0.5 + d, ow * 0.5 + d - 1, steps=ow))
+    base_grid[..., 1].copy_(torch.linspace(-oh * 0.5 + d, oh * 0.5 + d - 1, steps=oh).unsqueeze_(-1))
+    base_grid[..., 2].fill_(1)
+
+    output_grid = base_grid.view(1, oh * ow, 3).bmm(theta.transpose(1, 2) / torch.tensor([0.5 * w, 0.5 * h]))
+    return output_grid.view(1, oh, ow, 2)
+
+
 def affine(
         img: Tensor, matrix: List[float], resample: int = 0, fillcolor: Optional[int] = None
 ) -> Tensor:
@@ -688,44 +707,33 @@ def affine(
 
     theta = torch.tensor(matrix, dtype=torch.float).reshape(1, 2, 3)
     shape = img.shape
-    grid = affine_grid(theta, size=(1, shape[-3], shape[-2], shape[-1]), align_corners=False)
+    grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
     mode = _interpolation_modes[resample]
-
     return _apply_grid_transform(img, grid, mode)
 
 
 def _compute_output_size(theta: Tensor, w: int, h: int) -> Tuple[int, int]:
 
+    # Inspired of PIL implementation:
+    # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
+
     # pts are Top-Left, Top-Right, Bottom-Left, Bottom-Right points.
-    # we need to normalize coordinates according to
-    # [0, s] is mapped [-1, +1] as theta translation parameters are normalized like that
     pts = torch.tensor([
-        [-1.0, -1.0, 1.0],
-        [-1.0, 1.0, 1.0],
-        [1.0, 1.0, 1.0],
-        [1.0, -1.0, 1.0],
+        [-0.5 * w, -0.5 * h, 1.0],
+        [-0.5 * w, 0.5 * h, 1.0],
+        [0.5 * w, 0.5 * h, 1.0],
+        [0.5 * w, -0.5 * h, 1.0],
     ])
-    # denormalize back to w, h:
-    new_pts = (torch.matmul(pts, theta.t()) + 1.0) * torch.tensor([w, h]) / 2.0
+    new_pts = pts.view(1, 4, 3).bmm(theta.transpose(1, 2)).view(4, 2)
     min_vals, _ = new_pts.min(dim=0)
     max_vals, _ = new_pts.max(dim=0)
-    size = torch.ceil(max_vals) - torch.floor(min_vals)
+
+    # Truncate precision to 1e-4 to avoid ceil of Xe-15 to 1.0
+    tol = 1e-4
+    cmax = torch.ceil((max_vals / tol).trunc_() * tol)
+    cmin = torch.floor((min_vals / tol).trunc_() * tol)
+    size = cmax - cmin
     return int(size[0]), int(size[1])
-
-
-def _expanded_affine_grid(theta: Tensor, w: int, h: int, expand: bool = False) -> Tensor:
-    if expand:
-        ow, oh = _compute_output_size(theta, w, h)
-    else:
-        ow, oh = w, h
-    d = 0.5  # if not align_corners
-
-    x = (torch.arange(ow) + d - ow * 0.5) / (0.5 * w)
-    y = (torch.arange(oh) + d - oh * 0.5) / (0.5 * h)
-    y, x = torch.meshgrid(y, x)
-    pts = torch.stack([x, y, torch.ones_like(x)], dim=-1)
-    output_grid = torch.matmul(pts, theta.t())
-    return output_grid.unsqueeze(dim=0)
 
 
 def rotate(
@@ -736,6 +744,7 @@ def rotate(
     Args:
         img (Tensor): image to be rotated.
         matrix (list of floats): list of 6 float values representing inverse matrix for rotation transformation.
+            Translation part (``matrix[2]`` and ``matrix[5]``) should be in pixel coordinates.
         resample (int, optional): An optional resampling filter. Default is nearest (=0). Other supported values:
             bilinear(=2).
         expand (bool, optional): Optional expansion flag.
@@ -757,10 +766,10 @@ def rotate(
     }
 
     _assert_grid_transform_inputs(img, matrix, resample, fill, _interpolation_modes)
-
-    theta = torch.tensor(matrix).reshape(2, 3)
-    shape = img.shape
-    grid = _expanded_affine_grid(theta, shape[-1], shape[-2], expand=expand)
+    theta = torch.tensor(matrix).reshape(1, 2, 3)
+    w, h = img.shape[-1], img.shape[-2]
+    ow, oh = _compute_output_size(theta, w, h) if expand else (w, h)
+    grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
     mode = _interpolation_modes[resample]
 
     return _apply_grid_transform(img, grid, mode)
