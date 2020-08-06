@@ -160,8 +160,14 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
             msg = f"The cast from {image.dtype} to {dtype} cannot be performed safely."
             raise RuntimeError(msg)
 
+        # https://github.com/pytorch/vision/pull/2078#issuecomment-612045321
+        # For data in the range 0-1, (float * 255).to(uint) is only 255
+        # when float is exactly 1.0.
+        # `max + 1 - epsilon` provides more evenly distributed mapping of
+        # ranges of floats to ints.
         eps = 1e-3
-        return image.mul(torch.iinfo(dtype).max + 1 - eps).to(dtype)
+        result = image.mul(torch.iinfo(dtype).max + 1 - eps)
+        return result.to(dtype)
     else:
         # int to float
         if dtype.is_floating_point:
@@ -722,7 +728,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
 
-def adjust_gamma(img, gamma, gain=1):
+def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     r"""Perform gamma correction on an image.
 
     Also known as Power Law Transform. Intensities in RGB mode are adjusted
@@ -736,26 +742,18 @@ def adjust_gamma(img, gamma, gain=1):
     .. _Gamma Correction: https://en.wikipedia.org/wiki/Gamma_correction
 
     Args:
-        img (PIL Image): PIL Image to be adjusted.
+        img (PIL Image or Tensor): PIL Image to be adjusted.
         gamma (float): Non negative real number, same as :math:`\gamma` in the equation.
             gamma larger than 1 make the shadows darker,
             while gamma smaller than 1 make dark regions lighter.
         gain (float): The constant multiplier.
+    Returns:
+        PIL Image or Tensor: Gamma correction adjusted image.
     """
-    if not F_pil._is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if not isinstance(img, torch.Tensor):
+        return F_pil.adjust_gamma(img, gamma, gain)
 
-    if gamma < 0:
-        raise ValueError('Gamma should be a non-negative real number')
-
-    input_mode = img.mode
-    img = img.convert('RGB')
-
-    gamma_map = [255 * gain * pow(ele / 255., gamma) for ele in range(256)] * 3
-    img = img.point(gamma_map)  # use PIL's point-function to accelerate this part
-
-    img = img.convert(input_mode)
-    return img
+    return F_t.adjust_gamma(img, gamma, gain)
 
 
 def _get_inverse_affine_matrix(
@@ -826,11 +824,11 @@ def rotate(
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
             Note that the expand flag assumes rotation around the center and no translation.
-        center (list or tuple, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
+        center (list or tuple, optional): Optional center of rotation. Origin is the upper left corner.
             Default is the center of the image.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
-            Defaults to 0 for all bands. This option is only available for Pillow>=5.2.0.
+            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
             This option is not supported for Tensor input. Fill value for the area outside the transform in the output
             image is always 0.
 
@@ -852,8 +850,9 @@ def rotate(
     center_f = [0.0, 0.0]
     if center is not None:
         img_size = _get_image_size(img)
-        # Center is normalized to [-1, +1]
-        center_f = [2.0 * t / s - 1.0 for s, t in zip(img_size, center)]
+        # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
+        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
+
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
     matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
@@ -880,7 +879,9 @@ def affine(
             An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image is PIL Image and has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
             If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
-        fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
+        fillcolor (int): Optional fill color for the area outside the transform in the output image (Pillow>=5.0.0).
+            This option is not supported for Tensor input. Fill value for the area outside the transform in the output
+            image is always 0.
 
     Returns:
         PIL Image or Tensor: Transformed image.
@@ -928,10 +929,8 @@ def affine(
 
         return F_pil.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 
-    # we need to rescale translate by image size / 2 as its values can be between -1 and 1
-    translate = [2.0 * t / s for s, t in zip(img_size, translate)]
-
-    matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, translate, scale, shear)
+    translate_f = [1.0 * t for t in translate]
+    matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, translate_f, scale, shear)
     return F_t.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 
 

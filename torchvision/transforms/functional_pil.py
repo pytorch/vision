@@ -166,6 +166,42 @@ def adjust_hue(img, hue_factor):
 
 
 @torch.jit.unused
+def adjust_gamma(img, gamma, gain=1):
+    r"""Perform gamma correction on an image.
+
+    Also known as Power Law Transform. Intensities in RGB mode are adjusted
+    based on the following equation:
+
+    .. math::
+        I_{\text{out}} = 255 \times \text{gain} \times \left(\frac{I_{\text{in}}}{255}\right)^{\gamma}
+
+    See `Gamma Correction`_ for more details.
+
+    .. _Gamma Correction: https://en.wikipedia.org/wiki/Gamma_correction
+
+    Args:
+        img (PIL Image): PIL Image to be adjusted.
+        gamma (float): Non negative real number, same as :math:`\gamma` in the equation.
+            gamma larger than 1 make the shadows darker,
+            while gamma smaller than 1 make dark regions lighter.
+        gain (float): The constant multiplier.
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    if gamma < 0:
+        raise ValueError('Gamma should be a non-negative real number')
+
+    input_mode = img.mode
+    img = img.convert('RGB')
+    gamma_map = [(255 + 1 - 1e-3) * gain * pow(ele / 255., gamma) for ele in range(256)] * 3
+    img = img.point(gamma_map)  # use PIL's point-function to accelerate this part
+
+    img = img.convert(input_mode)
+    return img
+
+
+@torch.jit.unused
 def pad(img, padding, fill=0, padding_mode="constant"):
     r"""Pad the given PIL.Image on all sides with the given "pad" value.
 
@@ -225,19 +261,14 @@ def pad(img, padding, fill=0, padding_mode="constant"):
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
     if padding_mode == "constant":
-        if isinstance(fill, numbers.Number):
-            fill = (fill,) * len(img.getbands())
-        if len(fill) != len(img.getbands()):
-            raise ValueError("fill should have the same number of elements "
-                             "as the number of channels in the image "
-                             "({}), got {} instead".format(len(img.getbands()), len(fill)))
+        opts = _parse_fill(fill, img, "2.3.0", name="fill")
         if img.mode == "P":
             palette = img.getpalette()
-            image = ImageOps.expand(img, border=padding, fill=fill)
+            image = ImageOps.expand(img, border=padding, **opts)
             image.putpalette(palette)
             return image
 
-        return ImageOps.expand(img, border=padding, fill=fill)
+        return ImageOps.expand(img, border=padding, **opts)
     else:
         if isinstance(padding, int):
             pad_left = pad_right = pad_top = pad_bottom = padding
@@ -331,8 +362,8 @@ def resize(img, size, interpolation=Image.BILINEAR):
 
 
 @torch.jit.unused
-def _parse_fill(fill, img, min_pil_version):
-    """Helper function to get the fill color for rotate and perspective transforms.
+def _parse_fill(fill, img, min_pil_version, name="fillcolor"):
+    """Helper function to get the fill color for rotate, perspective transforms, and pad.
 
     Args:
         fill (n-tuple or int or float): Pixel fill value for area outside the transformed
@@ -341,6 +372,7 @@ def _parse_fill(fill, img, min_pil_version):
         img (PIL Image): Image to be filled.
         min_pil_version (str): The minimum PILLOW version for when the ``fillcolor`` option
             was first introduced in the calling function. (e.g. rotate->5.2.0, perspective->5.0.0)
+        name (str): Name of the ``fillcolor`` option in the output. Defaults to ``"fillcolor"``.
 
     Returns:
         dict: kwarg for ``fillcolor``
@@ -365,7 +397,7 @@ def _parse_fill(fill, img, min_pil_version):
                "bands of the image ({} != {})")
         raise ValueError(msg.format(len(fill), num_bands))
 
-    return {"fillcolor": fill}
+    return {name: fill}
 
 
 @torch.jit.unused
