@@ -503,44 +503,47 @@ class Tester(unittest.TestCase):
 
     def test_rotate(self):
         # Tests on square image
-        tensor, pil_img = self._create_data(26, 26)
         scripted_rotate = torch.jit.script(F.rotate)
 
-        img_size = pil_img.size
+        for tensor, pil_img in [self._create_data(26, 26), self._create_data(32, 26)]:
 
-        centers = [
-            None,
-            (int(img_size[0] * 0.3), int(img_size[0] * 0.4)),
-            [int(img_size[0] * 0.5), int(img_size[0] * 0.6)]
-        ]
+            img_size = pil_img.size
+            centers = [
+                None,
+                (int(img_size[0] * 0.3), int(img_size[0] * 0.4)),
+                [int(img_size[0] * 0.5), int(img_size[0] * 0.6)]
+            ]
 
-        for r in [0, ]:
-            for a in range(-180, 180, 23):
-                for e in [True, False]:
-                    for c in centers:
+            for r in [0, ]:
+                for a in range(-180, 180, 17):
+                    for e in [True, False]:
+                        for c in centers:
 
-                        out_pil_img = F.rotate(pil_img, angle=a, resample=r, expand=e, center=c)
-                        out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
-                        for fn in [F.rotate, scripted_rotate]:
-                            out_tensor = fn(tensor, angle=a, resample=r, expand=e, center=c)
+                            out_pil_img = F.rotate(pil_img, angle=a, resample=r, expand=e, center=c)
+                            out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+                            for fn in [F.rotate, scripted_rotate]:
+                                out_tensor = fn(tensor, angle=a, resample=r, expand=e, center=c)
 
-                            self.assertEqual(
-                                out_tensor.shape,
-                                out_pil_tensor.shape,
-                                msg="{}: {} vs {}".format(
-                                    (r, a, e, c), out_tensor.shape, out_pil_tensor.shape
+                                self.assertEqual(
+                                    out_tensor.shape,
+                                    out_pil_tensor.shape,
+                                    msg="{}: {} vs {}".format(
+                                        (img_size, r, a, e, c), out_tensor.shape, out_pil_tensor.shape
+                                    )
                                 )
-                            )
-                            num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
-                            ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                            # Tolerance : less than 2% of different pixels
-                            self.assertLess(
-                                ratio_diff_pixels,
-                                0.02,
-                                msg="{}: {}\n{} vs \n{}".format(
-                                    (r, a, e, c), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
+                                num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+                                ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+                                # Tolerance : less than 2% of different pixels
+                                self.assertLess(
+                                    ratio_diff_pixels,
+                                    0.02,
+                                    msg="{}: {}\n{} vs \n{}".format(
+                                        (img_size, r, a, e, c),
+                                        ratio_diff_pixels,
+                                        out_tensor[0, :7, :7],
+                                        out_pil_tensor[0, :7, :7]
+                                    )
                                 )
-                            )
 
 
 if __name__ == '__main__':

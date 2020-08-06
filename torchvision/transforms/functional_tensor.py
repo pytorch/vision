@@ -712,49 +712,28 @@ def affine(
     return _apply_grid_transform(img, grid, mode)
 
 
-def _compute_output_size(theta: Tensor, w: int, h: int, center: Optional[List[int]] = None) -> Tuple[int, int]:
+def _compute_output_size(theta: Tensor, w: int, h: int) -> Tuple[int, int]:
+
+    # Inspired of PIL implementation:
+    # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
 
     # pts are Top-Left, Top-Right, Bottom-Left, Bottom-Right points.
-    # To compute extended output image size we should use denormalized theta
-    # where translation part (theta[0, 2] and theta[1, 2]) is computed using original center values in range [0, w]
-    # and [0, h]. Currently, theta[0, 2] and theta[1, 2] are normalized to [-1, 1] range
-
-    center_f = [w * 0.5, h * 0.5]
-    if center is not None:
-        center_f = [float(v) for v in center]
-
-    denorm_theta = theta.clone()
-    denorm_theta[0, 2] = center_f[0] * (1.0 - denorm_theta[0, 0]) - center_f[1] * denorm_theta[0, 1]
-    denorm_theta[1, 2] = center_f[0] * (1.0 - denorm_theta[1, 0]) - center_f[1] * denorm_theta[1, 1]
-
     pts = torch.tensor([
-        [0.0, 0.0, 1.0],
-        [0.0, 1.0 * h, 1.0],
-        [1.0 * w, 1.0 * h, 1.0],
-        [1.0 * w, 0.0, 1.0],
+        [-0.5 * w, -0.5 * h, 1.0],
+        [-0.5 * w, 0.5 * h, 1.0],
+        [0.5 * w, 0.5 * h, 1.0],
+        [0.5 * w, -0.5 * h, 1.0],
     ])
-    new_pts = torch.matmul(pts, denorm_theta.t())
+    new_pts = pts.view(1, 4, 3).bmm(theta.transpose(1, 2)).view(4, 2)
     min_vals, _ = new_pts.min(dim=0)
     max_vals, _ = new_pts.max(dim=0)
-    size = torch.ceil(max_vals) - torch.floor(min_vals)
+
+    # Truncate precision to 1e-4 to avoid ceil of Xe-15 to 1.0
+    tol = 1e-4
+    cmax = torch.ceil((max_vals / tol).trunc_() * tol)
+    cmin = torch.floor((min_vals / tol).trunc_() * tol)
+    size = cmax - cmin
     return int(size[0]), int(size[1])
-
-
-def _expanded_affine_grid(
-        theta: Tensor, w: int, h: int, expand: bool = False, center: Optional[List[int]] = None
-) -> Tensor:
-    if expand:
-        ow, oh = _compute_output_size(theta, w, h, center)
-    else:
-        ow, oh = w, h
-    d = 0.5  # if not align_corners
-
-    x = (torch.arange(ow) + d - ow * 0.5) / (0.5 * w)
-    y = (torch.arange(oh) + d - oh * 0.5) / (0.5 * h)
-    y, x = torch.meshgrid(y, x)
-    pts = torch.stack([x, y, torch.ones_like(x)], dim=-1)
-    output_grid = torch.matmul(pts, theta.t())
-    return output_grid.unsqueeze(dim=0)
 
 
 def rotate(
@@ -787,10 +766,8 @@ def rotate(
     }
 
     _assert_grid_transform_inputs(img, matrix, resample, fill, _interpolation_modes)
-
     theta = torch.tensor(matrix).reshape(1, 2, 3)
     w, h = img.shape[-1], img.shape[-2]
-
     ow, oh = _compute_output_size(theta, w, h) if expand else (w, h)
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
     mode = _interpolation_modes[resample]
