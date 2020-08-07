@@ -682,20 +682,20 @@ class RandomPerspective(torch.nn.Module):
         half_height = height // 2
         half_width = width // 2
         topleft = [
-            int(torch.randint(0, int(distortion_scale * half_width), size=(1, )).item()),
-            int(torch.randint(0, int(distortion_scale * half_height), size=(1, )).item())
+            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1, )).item()),
+            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1, )).item())
         ]
         topright = [
-            int(torch.randint(width - int(distortion_scale * half_width) - 1, width - 1, size=(1, )).item()),
-            int(torch.randint(0, int(distortion_scale * half_height), size=(1, )).item())
+            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1, )).item()),
+            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1, )).item())
         ]
         botright = [
-            int(torch.randint(width - int(distortion_scale * half_width) - 1, width - 1, size=(1, )).item()),
-            int(torch.randint(height - int(distortion_scale * half_height) - 1, height - 1, size=(1, )).item())
+            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1, )).item()),
+            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1, )).item())
         ]
         botleft = [
-            int(torch.randint(0, int(distortion_scale * half_width), size=(1, )).item()),
-            int(torch.randint(height - int(distortion_scale * half_height) - 1, height - 1, size=(1, )).item())
+            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1, )).item()),
+            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1, )).item())
         ]
         startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
         endpoints = [topleft, topright, botright, botleft]
