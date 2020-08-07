@@ -124,6 +124,12 @@ def pil_to_tensor(pic):
     return img
 
 
+# import to main namespace
+# this is temporary until we merge the implementation of
+# F_t inside functional.py
+convert_image_dtype = F_t.convert_image_dtype
+
+
 def to_pil_image(pic, mode=None):
     """Convert a tensor or an ndarray to PIL Image.
 
