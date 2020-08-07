@@ -643,7 +643,7 @@ def _assert_grid_transform_inputs(
         warnings.warn("Argument fill/fillcolor is not supported for Tensor input. Fill value is zero")
 
     if resample not in _interpolation_modes:
-        raise ValueError("This resampling mode is unsupported with Tensor input")
+        raise ValueError("Resampling mode '{}' is unsupported with Tensor input".format(resample))
 
 
 def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:

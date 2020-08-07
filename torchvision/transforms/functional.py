@@ -516,16 +516,16 @@ def _get_perspective_coeffs(
 
     b_matrix = torch.tensor(startpoints, dtype=torch.float).view(8)
     res = torch.lstsq(b_matrix, a_matrix)[0]
-    # We have to explicitly produce the list of floats, otherwise torch.jit.script does recognize output type
-    # RuntimeError: Expected type hint for result of tolist()
-    return [float(i.item()) for i in res[:, 0]]
+
+    output: List[float] = res.squeeze(1).tolist()
+    return output
 
 
 def perspective(
         img: Tensor,
         startpoints: List[List[int]],
         endpoints: List[List[int]],
-        interpolation: int = 3,
+        interpolation: int = 2,
         fill: Optional[int] = None
 ) -> Tensor:
     """Perform perspective transform of the given image.
@@ -539,8 +539,7 @@ def perspective(
         endpoints (list of list of ints): List containing four lists of two integers corresponding to four corners
             ``[top-left, top-right, bottom-right, bottom-left]`` of the transformed image.
         interpolation (int): Interpolation type. If input is Tensor, only ``PIL.Image.NEAREST`` and
-            ``PIL.Image.BILINEAR`` are supported. Default, ``PIL.Image.BICUBIC`` for PIL images and
-            ``PIL.Image.BILINEAR`` for Tensors.
+            ``PIL.Image.BILINEAR`` are supported. Default, ``PIL.Image.BILINEAR`` for PIL images and Tensors.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
             This option is only available for ``pillow>=5.0.0``. This option is not supported for Tensor
@@ -554,11 +553,6 @@ def perspective(
 
     if not isinstance(img, torch.Tensor):
         return F_pil.perspective(img, coeffs, interpolation=interpolation, fill=fill)
-
-    if interpolation == Image.BICUBIC:
-        # bicubic is not supported by pytorch
-        # set to bilinear interpolation
-        interpolation = 2
 
     return F_t.perspective(img, coeffs, interpolation=interpolation, fill=fill)
 
