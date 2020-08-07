@@ -628,14 +628,14 @@ class RandomVerticalFlip(torch.nn.Module):
 
 
 class RandomPerspective(torch.nn.Module):
-    """Performs Perspective transformation of the given image randomly with a given probability.
+    """Performs a random perspective transformation of the given image with a given probability.
     The image can be a PIL Image or a Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
         distortion_scale (float): argument to control the degree of distortion and ranges from 0 to 1.
             Default is 0.5.
-        p (float): probability of the image being perspectively transformed. Default is 0.5.
+        p (float): probability of the image being transformed. Default is 0.5.
         interpolation (int): Interpolation type. If input is Tensor, only ``PIL.Image.NEAREST`` and
             ``PIL.Image.BILINEAR`` are supported. Default, ``PIL.Image.BILINEAR`` for PIL images and Tensors.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
