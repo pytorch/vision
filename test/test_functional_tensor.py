@@ -547,6 +547,8 @@ class Tester(unittest.TestCase):
 
     def test_perspective(self):
 
+        from torchvision.transforms import RandomPerspective
+
         for tensor, pil_img in [self._create_data(26, 34), self._create_data(26, 26)]:
 
             scripted_tranform = torch.jit.script(F.perspective)
@@ -556,6 +558,11 @@ class Tester(unittest.TestCase):
                 [[[3, 2], [32, 3], [30, 24], [2, 25]], [[0, 0], [33, 0], [33, 25], [0, 25]]],
                 [[[3, 2], [32, 3], [30, 24], [2, 25]], [[5, 5], [30, 3], [33, 19], [4, 25]]],
             ]
+            n = 10
+            test_configs += [
+                RandomPerspective.get_params(pil_img.size[0], pil_img.size[1], i / n) for i in range(n)
+            ]
+
             for r in [0, ]:
                 for spoints, epoints in test_configs:
                     out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r)
