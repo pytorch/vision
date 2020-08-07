@@ -1102,68 +1102,79 @@ class ColorJitter(torch.nn.Module):
         return format_string
 
 
-class RandomRotation(object):
+class RandomRotation(torch.nn.Module):
     """Rotate the image by angle.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
         degrees (sequence or float or int): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
             will be (-degrees, +degrees).
-        resample ({PIL.Image.NEAREST, PIL.Image.BILINEAR, PIL.Image.BICUBIC}, optional):
-            An optional resampling filter. See `filters`_ for more information.
+        resample (int, optional): An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
+            If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
             Note that the expand flag assumes rotation around the center and no translation.
-        center (2-tuple, optional): Optional center of rotation.
-            Origin is the upper left corner.
+        center (list or tuple, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
-            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
+            Defaults to 0 for all bands. This option is only available for Pillow>=5.2.0.
+            This option is not supported for Tensor input. Fill value for the area outside the transform in the output
+            image is always 0.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
 
     def __init__(self, degrees, resample=False, expand=False, center=None, fill=None):
+        super().__init__()
         if isinstance(degrees, numbers.Number):
             if degrees < 0:
                 raise ValueError("If degrees is a single number, it must be positive.")
-            self.degrees = (-degrees, degrees)
+            degrees = [-degrees, degrees]
         else:
+            if not isinstance(degrees, Sequence):
+                raise TypeError("degrees should be a sequence of length 2.")
             if len(degrees) != 2:
                 raise ValueError("If degrees is a sequence, it must be of len 2.")
-            self.degrees = degrees
+
+        self.degrees = [float(d) for d in degrees]
+
+        if center is not None:
+            if not isinstance(center, Sequence):
+                raise TypeError("center should be a sequence of length 2.")
+            if len(center) != 2:
+                raise ValueError("center should be a sequence of length 2.")
+
+        self.center = center
 
         self.resample = resample
         self.expand = expand
-        self.center = center
         self.fill = fill
 
     @staticmethod
-    def get_params(degrees):
+    def get_params(degrees: List[float]) -> float:
         """Get parameters for ``rotate`` for a random rotation.
 
         Returns:
-            sequence: params to be passed to ``rotate`` for random rotation.
+            float: angle parameter to be passed to ``rotate`` for random rotation.
         """
-        angle = random.uniform(degrees[0], degrees[1])
-
+        angle = float(torch.empty(1).uniform_(float(degrees[0]), float(degrees[1])).item())
         return angle
 
-    def __call__(self, img):
+    def forward(self, img):
         """
         Args:
-            img (PIL Image): Image to be rotated.
+            img (PIL Image or Tensor): Image to be rotated.
 
         Returns:
-            PIL Image: Rotated image.
+            PIL Image or Tensor: Rotated image.
         """
-
         angle = self.get_params(self.degrees)
-
         return F.rotate(img, angle, self.resample, self.expand, self.center, self.fill)
 
     def __repr__(self):

@@ -829,6 +829,8 @@ def rotate(
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
             Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
+            This option is not supported for Tensor input. Fill value for the area outside the transform in the output
+            image is always 0.
 
     Returns:
         PIL Image or Tensor: Rotated image.
@@ -848,8 +850,9 @@ def rotate(
     center_f = [0.0, 0.0]
     if center is not None:
         img_size = _get_image_size(img)
-        # Center is normalized to [-1, +1]
-        center_f = [2.0 * t / s - 1.0 for s, t in zip(img_size, center)]
+        # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
+        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
+
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
     matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
@@ -926,10 +929,8 @@ def affine(
 
         return F_pil.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 
-    # we need to rescale translate by image size / 2 as its values can be between -1 and 1
-    translate = [2.0 * t / s for s, t in zip(img_size, translate)]
-
-    matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, translate, scale, shear)
+    translate_f = [1.0 * t for t in translate]
+    matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, translate_f, scale, shear)
     return F_t.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 
 
