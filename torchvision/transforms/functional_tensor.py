@@ -620,22 +620,30 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
 
 
 def _assert_grid_transform_inputs(
-        img: Tensor, matrix: List[float], resample: int, fillcolor: Optional[int], _interpolation_modes: Dict[int, str]
+        img: Tensor,
+        matrix: Optional[List[float]],
+        resample: int,
+        fillcolor: Optional[int],
+        _interpolation_modes: Dict[int, str],
+        coeffs: Optional[List[float]] = None,
 ):
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
         raise TypeError("img should be Tensor Image. Got {}".format(type(img)))
 
-    if not isinstance(matrix, list):
+    if matrix is not None and not isinstance(matrix, list):
         raise TypeError("Argument matrix should be a list. Got {}".format(type(matrix)))
 
-    if len(matrix) != 6:
+    if matrix is not None and len(matrix) != 6:
         raise ValueError("Argument matrix should have 6 float values")
+
+    if coeffs is not None and len(coeffs) != 8:
+        raise ValueError("Argument coeffs should have 8 float values")
 
     if fillcolor is not None:
         warnings.warn("Argument fill/fillcolor is not supported for Tensor input. Fill value is zero")
 
     if resample not in _interpolation_modes:
-        raise ValueError("This resampling mode is unsupported with Tensor input")
+        raise ValueError("Resampling mode '{}' is unsupported with Tensor input".format(resample))
 
 
 def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
@@ -771,5 +779,75 @@ def rotate(
     ow, oh = _compute_output_size(theta, w, h) if expand else (w, h)
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
     mode = _interpolation_modes[resample]
+
+    return _apply_grid_transform(img, grid, mode)
+
+
+def _perspective_grid(coeffs: List[float], ow: int, oh: int):
+    # https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/
+    # src/libImaging/Geometry.c#L394
+
+    #
+    # x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
+    # y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
+    #
+
+    theta1 = torch.tensor([[
+        [coeffs[0], coeffs[1], coeffs[2]],
+        [coeffs[3], coeffs[4], coeffs[5]]
+    ]])
+    theta2 = torch.tensor([[
+        [coeffs[6], coeffs[7], 1.0],
+        [coeffs[6], coeffs[7], 1.0]
+    ]])
+
+    d = 0.5
+    base_grid = torch.empty(1, oh, ow, 3)
+    base_grid[..., 0].copy_(torch.linspace(d, ow * 1.0 + d - 1.0, steps=ow))
+    base_grid[..., 1].copy_(torch.linspace(d, oh * 1.0 + d - 1.0, steps=oh).unsqueeze_(-1))
+    base_grid[..., 2].fill_(1)
+
+    output_grid1 = base_grid.view(1, oh * ow, 3).bmm(theta1.transpose(1, 2) / torch.tensor([0.5 * ow, 0.5 * oh]))
+    output_grid2 = base_grid.view(1, oh * ow, 3).bmm(theta2.transpose(1, 2))
+
+    output_grid = output_grid1 / output_grid2 - 1.0
+    return output_grid.view(1, oh, ow, 2)
+
+
+def perspective(
+        img: Tensor, perspective_coeffs: List[float], interpolation: int = 2, fill: Optional[int] = None
+) -> Tensor:
+    """Perform perspective transform of the given Tensor image.
+
+    Args:
+        img (Tensor): Image to be transformed.
+        perspective_coeffs (list of float): perspective transformation coefficients.
+        interpolation (int): Interpolation type. Default, ``PIL.Image.BILINEAR``.
+        fill (n-tuple or int or float): this option is not supported for Tensor input. Fill value for the area
+            outside the transform in the output image is always 0.
+
+    Returns:
+        Tensor: transformed image.
+    """
+    if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
+        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+
+    _interpolation_modes = {
+        0: "nearest",
+        2: "bilinear",
+    }
+
+    _assert_grid_transform_inputs(
+        img,
+        matrix=None,
+        resample=interpolation,
+        fillcolor=fill,
+        _interpolation_modes=_interpolation_modes,
+        coeffs=perspective_coeffs
+    )
+
+    ow, oh = img.shape[-1], img.shape[-2]
+    grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh)
+    mode = _interpolation_modes[interpolation]
 
     return _apply_grid_transform(img, grid, mode)
