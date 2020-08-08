@@ -301,6 +301,23 @@ class Tester(unittest.TestCase):
                         out2 = s_transform(tensor)
                         self.assertTrue(out1.equal(out2))
 
+    def test_random_perspective(self):
+        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
+
+        for distortion_scale in np.linspace(0.1, 1.0, num=20):
+            for interpolation in [NEAREST, BILINEAR]:
+                transform = T.RandomPerspective(
+                    distortion_scale=distortion_scale,
+                    interpolation=interpolation
+                )
+                s_transform = torch.jit.script(transform)
+
+                torch.manual_seed(12)
+                out1 = transform(tensor)
+                torch.manual_seed(12)
+                out2 = s_transform(tensor)
+                self.assertTrue(out1.equal(out2))
+
 
 if __name__ == '__main__':
     unittest.main()
