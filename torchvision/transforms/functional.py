@@ -223,12 +223,10 @@ def to_pil_image(pic, mode=None):
             pic = np.expand_dims(pic, 2)
 
     npimg = pic
-    if pic.is_floating_point() and mode != 'F':
-        pic = pic.mul(255).byte()
     if isinstance(pic, torch.Tensor):
-        if pic.device != torch.device("cpu"):
-            pic = pic.cpu()
-        npimg = np.transpose(pic.numpy(), (1, 2, 0))
+        if pic.is_floating_point() and mode != 'F':
+            pic = pic.mul(255).byte()
+        npimg = np.transpose(pic.cpu().numpy(), (1, 2, 0))
 
     if not isinstance(npimg, np.ndarray):
         raise TypeError('Input pic must be a torch.Tensor or NumPy ndarray, ' +
