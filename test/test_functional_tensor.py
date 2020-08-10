@@ -52,7 +52,7 @@ class Tester(unittest.TestCase):
     @run_on_cpu_and_cuda
     def test_vflip(self, device):
         script_vflip = torch.jit.script(F_t.vflip)
-        img_tensor = torch.randn(3, 16, 16).to(device=device)
+        img_tensor = torch.randn(3, 16, 16, device=device)
         img_tensor_clone = img_tensor.clone()
         vflipped_img = F_t.vflip(img_tensor)
         vflipped_img_again = F_t.vflip(vflipped_img)
@@ -66,7 +66,7 @@ class Tester(unittest.TestCase):
     @run_on_cpu_and_cuda
     def test_hflip(self, device):
         script_hflip = torch.jit.script(F_t.hflip)
-        img_tensor = torch.randn(3, 16, 16).to(device)
+        img_tensor = torch.randn(3, 16, 16, device=device)
         img_tensor_clone = img_tensor.clone()
         hflipped_img = F_t.hflip(img_tensor)
         hflipped_img_again = F_t.hflip(hflipped_img)
