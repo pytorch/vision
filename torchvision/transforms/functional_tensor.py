@@ -659,6 +659,9 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
         need_cast = True
         img = img.to(torch.float32)
 
+    if grid.device.type != img.device.type:
+        grid = grid.to(img)
+
     img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
 
     if need_squeeze:
