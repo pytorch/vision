@@ -240,7 +240,12 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
 
 def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
-    """Crop the Image Tensor and resize it to desired size.
+    """DEPRECATED. Crop the Image Tensor and resize it to desired size.
+
+    .. warning::
+
+        This method is deprecated and will be removed in future releases.
+        Please, use ``F.center_crop`` instead.
 
     Args:
         img (Tensor): Image to be cropped.
@@ -250,6 +255,11 @@ def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
     Returns:
             Tensor: Cropped image.
     """
+    warnings.warn(
+        "This method is deprecated and will be removed in future releases. "
+        "Please, use ``F.center_crop`` instead."
+    )
+
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
@@ -268,8 +278,15 @@ def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
 
 
 def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
-    """Crop the given Image Tensor into four corners and the central crop.
+    """DEPRECATED. Crop the given Image Tensor into four corners and the central crop.
+
+    .. warning::
+
+        This method is deprecated and will be removed in future releases.
+        Please, use ``F.five_crop`` instead.
+
     .. Note::
+
         This transform returns a List of Tensors and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
 
@@ -283,6 +300,11 @@ def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
        List: List (tl, tr, bl, br, center)
                 Corresponding top left, top right, bottom left, bottom right and center crop.
     """
+    warnings.warn(
+        "This method is deprecated and will be removed in future releases. "
+        "Please, use ``F.five_crop`` instead."
+    )
+
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
@@ -304,10 +326,16 @@ def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
 
 
 def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = False) -> List[Tensor]:
-    """Crop the given Image Tensor into four corners and the central crop plus the
+    """DEPRECATED. Crop the given Image Tensor into four corners and the central crop plus the
         flipped version of these (horizontal flipping is used by default).
 
+    .. warning::
+
+        This method is deprecated and will be removed in future releases.
+        Please, use ``F.ten_crop`` instead.
+
     .. Note::
+
         This transform returns a List of images and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
 
@@ -323,6 +351,11 @@ def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = Fa
                 Corresponding top left, top right, bottom left, bottom right and center crop
                 and same for the flipped image's tensor.
     """
+    warnings.warn(
+        "This method is deprecated and will be removed in future releases. "
+        "Please, use ``F.ten_crop`` instead."
+    )
+
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
