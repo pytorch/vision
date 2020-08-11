@@ -17,6 +17,8 @@ fi
 setup_visual_studio_constraint
 setup_junit_results_folder
 
+conda install $CONDA_PYTORCH_BUILD_CONSTRAINT $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE  -c pytorch-nightly
+
 mkdir cpp_build
 cd cpp_build
 cmake ..
