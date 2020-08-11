@@ -551,6 +551,63 @@ jobs:
       - store_test_results:
           path: test-results
 
+  cmake_linux_cpu:
+    <<: *binary_common
+    docker:
+      - image: "pytorch/conda-cuda"
+    resource_class: 2xlarge+
+    steps:
+      - checkout_merge
+      - run: packaging/build_cmake.sh
+
+  cmake_linux_gpu:
+    <<: *binary_common
+    docker:
+      - image: "pytorch/conda-cuda"
+    resource_class: 2xlarge+
+    steps:
+      - checkout_merge
+      - run: packaging/build_cmake.sh
+
+  cmake_macos_cpu:
+    <<: *binary_common
+    macos:
+      xcode: "9.0"
+    steps:
+      - checkout_merge
+      - run:
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            conda install -yq conda-build
+            packaging/build_cmake.sh
+
+  cmake_windows_cpu:
+    <<: *binary_common
+    executor:
+      name: windows-cpu
+    steps:
+      - checkout_merge
+      - run:
+          command: |
+            set -ex
+            source packaging/windows/internal/vc_install_helper.sh
+            packaging/build_cmake.sh
+
+  cmake_windows_gpu:
+    <<: *binary_common
+    executor:
+      name: windows-gpu
+    steps:
+      - checkout_merge
+      - run:
+          command: |
+            set -ex
+            source packaging/windows/internal/vc_install_helper.sh
+            packaging/windows/internal/cuda_install.bat
+            packaging/build_cmake.sh
+
 workflows:
   build:
     jobs:
@@ -975,6 +1032,30 @@ workflows:
           cu_version: cu101
           name: unittest_windows_gpu_py3.8
           python_version: '3.8'
+
+  cmake:
+    jobs:
+      - cmake_linux_cpu:
+          cu_version: cpu
+          name: cmake_linux_cpu
+          python_version: '3.8'
+      - cmake_linux_gpu:
+          cu_version: cu101
+          name: cmake_linux_gpu
+          python_version: '3.8'
+      - cmake_windows_cpu:
+          cu_version: cpu
+          name: cmake_windows_cpu
+          python_version: '3.8'
+      - cmake_windows_gpu:
+          cu_version: cu101
+          name: cmake_windows_gpu
+          python_version: '3.8'
+      - cmake_macos_cpu:
+          cu_version: cpu
+          name: cmake_macos_cpu
+          python_version: '3.8'
+
   nightly:
     jobs:
       - circleci_consistency

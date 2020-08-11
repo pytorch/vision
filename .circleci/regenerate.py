@@ -181,6 +181,22 @@ def unittest_workflows(indentation=6):
     return indent(indentation, jobs)
 
 
+def cmake_workflows(indentation=6):
+    jobs = []
+    python_version = '3.8'
+    for os_type in ['linux', 'windows', 'macos']:
+        device_types = ['cpu', 'gpu'] if os_type != 'macos' else ['cpu']
+        for device in device_types:
+            job = {
+                'name': f'cmake_{os_type}_{device}',
+                'python_version': python_version
+            }
+
+            job['cu_version'] = 'cu101' if device == 'gpu' else 'cpu'
+            jobs.append({f'cmake_{os_type}_{device}': job})
+    return indent(indentation, jobs)
+
+
 if __name__ == "__main__":
     d = os.path.dirname(__file__)
     env = jinja2.Environment(
@@ -193,4 +209,5 @@ if __name__ == "__main__":
         f.write(env.get_template('config.yml.in').render(
             build_workflows=build_workflows,
             unittest_workflows=unittest_workflows,
+            cmake_workflows=cmake_workflows,
         ))
