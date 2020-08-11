@@ -163,6 +163,15 @@ jobs:
       - store_test_results:
           path: build_results/
 
+  cmake_linux:
+    <<: *binary_common
+    docker:
+      - image: "pytorch/conda-cuda"
+    resource_class: 2xlarge+
+    steps:
+      - checkout_merge
+      - run: packaging/build_cmake.sh
+
   binary_win_conda:
     <<: *binary_common
     executor: windows-cpu
