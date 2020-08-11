@@ -9,12 +9,13 @@ setup_env 0.8.0
 export SOURCE_ROOT_DIR="$PWD"
 setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_constraint
-setup_visual_studio_constraint
-setup_junit_results_folder
 
 if [[ "$OSTYPE" == "msys" ]]; then
     conda install -yq conda-build cmake
 fi
+
+setup_visual_studio_constraint
+setup_junit_results_folder
 
 mkdir cpp_build
 cd cpp_build
