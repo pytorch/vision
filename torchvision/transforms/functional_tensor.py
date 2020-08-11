@@ -128,8 +128,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
 
     return _blend(img, mean, contrast_factor)
 
-
-def adjust_hue(img, hue_factor):
+def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     """Adjust hue of an image.
 
     The image hue is adjusted by converting the image to HSV and
@@ -164,7 +163,7 @@ def adjust_hue(img, hue_factor):
     if img.dtype == torch.uint8:
         img = img.to(dtype=torch.float32) / 255.0
 
-    img = _rgb2hsv(img)
+    img: Tensor = _rgb2hsv(img)
     h, s, v = img.unbind(0)
     h += hue_factor
     h = h % 1.0
@@ -344,7 +343,7 @@ def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
     return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
 
-def _rgb2hsv(img):
+def _rgb2hsv(img: Tensor) -> Tensor:
     r, g, b = img.unbind(0)
 
     maxc = torch.max(img, dim=0).values
@@ -362,7 +361,7 @@ def _rgb2hsv(img):
 
     cr = maxc - minc
     # Since `eqc => cr = 0`, replacing denominator with 1 when `eqc` is fine.
-    s = cr / torch.where(eqc, maxc.new_ones(()), maxc)
+    s: Tensor = cr / torch.where(eqc, maxc.new_ones(()), maxc)
     # Note that `eqc => maxc = minc = r = g = b`. So the following calculation
     # of `h` would reduce to `bc - gc + 2 + rc - bc + 4 + rc - bc = 6` so it
     # would not matter what values `rc`, `gc`, and `bc` have here, and thus
@@ -380,7 +379,7 @@ def _rgb2hsv(img):
     return torch.stack((h, s, maxc))
 
 
-def _hsv2rgb(img):
+def _hsv2rgb(img: Tensor) -> Tensor:
     h, s, v = img.unbind(0)
     i = torch.floor(h * 6.0)
     f = (h * 6.0) - i
