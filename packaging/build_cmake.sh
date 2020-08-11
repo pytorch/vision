@@ -12,6 +12,10 @@ setup_conda_cudatoolkit_constraint
 setup_visual_studio_constraint
 setup_junit_results_folder
 
+if [[ "$OSTYPE" == "msys" ]]; then
+    conda install -yq conda-build cmake
+fi
+
 mkdir cpp_build
 cd cpp_build
 cmake ..
