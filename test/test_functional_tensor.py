@@ -130,10 +130,12 @@ class Tester(unittest.TestCase):
         script_adjust_brightness = torch.jit.script(F_t.adjust_brightness)
         script_adjust_contrast = torch.jit.script(F_t.adjust_contrast)
         script_adjust_saturation = torch.jit.script(F_t.adjust_saturation)
+        script_adjust_hue = torch.jit.script(F_t.adjust_hue)
 
         fns = ((F.adjust_brightness, F_t.adjust_brightness, script_adjust_brightness),
                (F.adjust_contrast, F_t.adjust_contrast, script_adjust_contrast),
-               (F.adjust_saturation, F_t.adjust_saturation, script_adjust_saturation))
+               (F.adjust_saturation, F_t.adjust_saturation, script_adjust_saturation),
+               (F.adjust_hue, F_t.adjust_hue, script_adjust_hue))
 
         for _ in range(20):
             channels = 3
