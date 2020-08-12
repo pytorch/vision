@@ -18,7 +18,8 @@ setup_visual_studio_constraint
 setup_junit_results_folder
 
 conda install pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE  -c pytorch-nightly
+TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 
 mkdir cpp_build
 cd cpp_build
-cmake ..
+cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch
