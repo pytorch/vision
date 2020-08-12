@@ -163,7 +163,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     if img.dtype == torch.uint8:
         img = img.to(dtype=torch.float32) / 255.0
 
-    img: Tensor = _rgb2hsv(img)
+    img = _rgb2hsv(img)
     h, s, v = img.unbind(0)
     h += hue_factor
     h = h % 1.0
@@ -344,6 +344,8 @@ def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
 
 
 def _rgb2hsv(img: Tensor) -> Tensor:
+    if not isinstance(img, torch.Tensor):
+        raise TypeError("img should be of type torch.Tensor. Got {}".format(type(img)))
     r, g, b = img.unbind(0)
 
     maxc = torch.max(img, dim=0).values
@@ -361,12 +363,13 @@ def _rgb2hsv(img: Tensor) -> Tensor:
 
     cr = maxc - minc
     # Since `eqc => cr = 0`, replacing denominator with 1 when `eqc` is fine.
-    s: Tensor = cr / torch.where(eqc, maxc.new_ones(()), maxc)
+    ones = torch.ones_like(maxc)
+    s = cr / torch.where(eqc, ones, maxc)
     # Note that `eqc => maxc = minc = r = g = b`. So the following calculation
     # of `h` would reduce to `bc - gc + 2 + rc - bc + 4 + rc - bc = 6` so it
     # would not matter what values `rc`, `gc`, and `bc` have here, and thus
     # replacing denominator with 1 when `eqc` is fine.
-    cr_divisor = torch.where(eqc, maxc.new_ones(()), cr)
+    cr_divisor = torch.where(eqc, ones, cr)
     rc = (maxc - r) / cr_divisor
     gc = (maxc - g) / cr_divisor
     bc = (maxc - b) / cr_divisor
@@ -380,6 +383,8 @@ def _rgb2hsv(img: Tensor) -> Tensor:
 
 
 def _hsv2rgb(img: Tensor) -> Tensor:
+    if not isinstance(img, torch.Tensor):
+        raise TypeError("img should be of type torch.Tensor. Got {}".format(type(img)))
     h, s, v = img.unbind(0)
     i = torch.floor(h * 6.0)
     f = (h * 6.0) - i
