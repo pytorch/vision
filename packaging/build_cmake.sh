@@ -29,3 +29,4 @@ fi
 mkdir cpp_build
 cd cpp_build
 cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch
+make
