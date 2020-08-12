@@ -291,8 +291,10 @@ setup_conda_cudatoolkit_constraint() {
 
 setup_conda_cudatoolkit_plain_constraint() {
   export CONDA_CPUONLY_FEATURE=""
+  export CMAKE_USE_CUDA=1
   if [[ "$(uname)" == Darwin ]]; then
     export CONDA_CUDATOOLKIT_CONSTRAINT=""
+    export CMAKE_USE_CUDA=0
   else
     case "$CU_VERSION" in
       cu102)
@@ -310,6 +312,7 @@ setup_conda_cudatoolkit_plain_constraint() {
       cpu)
         export CONDA_CUDATOOLKIT_CONSTRAINT=""
         export CONDA_CPUONLY_FEATURE="cpuonly"
+        export CMAKE_USE_CUDA=0
         ;;
       *)
         echo "Unrecognized CU_VERSION=$CU_VERSION"

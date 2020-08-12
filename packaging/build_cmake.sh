@@ -17,7 +17,7 @@ fi
 setup_visual_studio_constraint
 setup_junit_results_folder
 
-conda install pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE  -c pytorch-nightly
+conda install -yq pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE  -c pytorch-nightly
 TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
@@ -28,5 +28,10 @@ fi
 
 mkdir cpp_build
 cd cpp_build
-cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch
-make
+cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch -DWITH_CUDA=$CMAKE_USE_CUDA
+
+if [[ "$OSTYPE" == "msys" ]]; then
+    msbuild /P:Configuration=Release INSTALL.vcxproj
+else
+    make
+fi
