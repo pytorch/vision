@@ -21,7 +21,7 @@ conda install -yq pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_
 TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
-    conda install libpng jpeg
+    conda install -yq libpng jpeg
 else
     yum install -y libpng-devel libjpeg-turbo-devel
 fi
