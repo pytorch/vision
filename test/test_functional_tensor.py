@@ -149,7 +149,7 @@ class Tester(unittest.TestCase):
 
             self.assertLess(max_diff, 1e-5)
 
-    def test_adjustments(self):
+    def _test_adjustments(self, device):
         script_adjust_brightness = torch.jit.script(F_t.adjust_brightness)
         script_adjust_contrast = torch.jit.script(F_t.adjust_contrast)
         script_adjust_saturation = torch.jit.script(F_t.adjust_saturation)
@@ -164,16 +164,16 @@ class Tester(unittest.TestCase):
             shape = (channels, dims[0], dims[1])
 
             if torch.randint(0, 2, (1,)) == 0:
-                img = torch.rand(*shape, dtype=torch.float)
+                img = torch.rand(*shape, dtype=torch.float, device=device)
             else:
-                img = torch.randint(0, 256, shape, dtype=torch.uint8)
+                img = torch.randint(0, 256, shape, dtype=torch.uint8, device=device)
 
-            factor = 3 * torch.rand(1)
+            factor = 3 * torch.rand(1).item()
             img_clone = img.clone()
             for f, ft, sft in fns:
 
-                ft_img = ft(img, factor)
-                sft_img = sft(img, factor)
+                ft_img = ft(img, factor).cpu()
+                sft_img = sft(img, factor).cpu()
                 if not img.dtype.is_floating_point:
                     ft_img = ft_img.to(torch.float) / 255
                     sft_img = sft_img.to(torch.float) / 255
@@ -191,21 +191,28 @@ class Tester(unittest.TestCase):
                 self.assertTrue(torch.equal(img, img_clone))
 
             # test for class interface
-            f = transforms.ColorJitter(brightness=factor.item())
+            f = transforms.ColorJitter(brightness=factor)
             scripted_fn = torch.jit.script(f)
             scripted_fn(img)
 
-            f = transforms.ColorJitter(contrast=factor.item())
+            f = transforms.ColorJitter(contrast=factor)
             scripted_fn = torch.jit.script(f)
             scripted_fn(img)
 
-            f = transforms.ColorJitter(saturation=factor.item())
+            f = transforms.ColorJitter(saturation=factor)
             scripted_fn = torch.jit.script(f)
             scripted_fn(img)
 
         f = transforms.ColorJitter(brightness=1)
         scripted_fn = torch.jit.script(f)
         scripted_fn(img)
+
+    def test_adjustments(self):
+        self._test_adjustments("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_adjustments_cuda(self):
+        self._test_adjustments("cuda")
 
     def test_rgb_to_grayscale(self):
         script_rgb_to_grayscale = torch.jit.script(F_t.rgb_to_grayscale)
