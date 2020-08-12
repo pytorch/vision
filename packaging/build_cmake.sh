@@ -31,7 +31,7 @@ cd cpp_build
 cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch -DWITH_CUDA=$CMAKE_USE_CUDA
 
 if [[ "$OSTYPE" == "msys" ]]; then
-    "$script_dir/windows/internal/vc_env_helper.bat" "msbuild /P:Configuration=Release INSTALL.vcxproj"
+    "$script_dir/windows/internal/vc_env_helper.bat" msbuild "/P:Configuration=Release" INSTALL.vcxproj
 else
     make
 fi
