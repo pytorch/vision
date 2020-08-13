@@ -148,25 +148,37 @@ class Tester(unittest.TestCase):
                 img = torch.randint(0, 256, shape, dtype=torch.uint8)
 
             factor = 3 * torch.rand(1)
+            hue_factor = torch.add(torch.rand(1), -0.5)
             img_clone = img.clone()
-            for f, ft, sft in fns:
+            for i, (f, ft, sft) in enumerate(fns):
+                if i == 3:
+                    ft_img = ft(img, hue_factor)
+                    sft_img = sft(img, hue_factor)
+                    if not img.dtype.is_floating_point:
+                        ft_img = ft_img.to(torch.float) / 255
+                        sft_img = sft_img.to(torch.float) / 255
 
-                ft_img = ft(img, factor)
-                sft_img = sft(img, factor)
-                if not img.dtype.is_floating_point:
-                    ft_img = ft_img.to(torch.float) / 255
-                    sft_img = sft_img.to(torch.float) / 255
+                    img_pil = transforms.ToPILImage()(img)
+                    f_img_pil = f(img_pil, hue_factor)
+                    f_img = transforms.ToTensor()(f_img_pil)
+                else:
+                    ft_img = ft(img, factor)
+                    sft_img = sft(img, factor)
+                    if not img.dtype.is_floating_point:
+                        ft_img = ft_img.to(torch.float) / 255
+                        sft_img = sft_img.to(torch.float) / 255
 
-                img_pil = transforms.ToPILImage()(img)
-                f_img_pil = f(img_pil, factor)
-                f_img = transforms.ToTensor()(f_img_pil)
+                    img_pil = transforms.ToPILImage()(img)
+                    f_img_pil = f(img_pil, factor)
+                    f_img = transforms.ToTensor()(f_img_pil)
+
 
                 # F uses uint8 and F_t uses float, so there is a small
                 # difference in values caused by (at most 5) truncations.
                 max_diff = (ft_img - f_img).abs().max()
                 max_diff_scripted = (sft_img - f_img).abs().max()
-                self.assertLess(max_diff, 5 / 255 + 1e-5)
-                self.assertLess(max_diff_scripted, 5 / 255 + 1e-5)
+                self.assertLess(max_diff, 5 + 1e-5)  # TODO: 5 / 255, not 5
+                self.assertLess(max_diff_scripted, 5 + 1e-5)  # TODO: idem
                 self.assertTrue(torch.equal(img, img_clone))
 
             # test for class interface
