@@ -1,0 +1,15 @@
+The new API:
+    ☐ the c++ extension is going to live in torchvision/csrc/cpu/video
+    ☐ modification of the build needs to go to setup.py
+    ☐ torchvision/io/_video something needs to happen somehow
+
+Tests changes:
+    ☐ test/test_io.py
+    ☐ test/test_video_reader.py (change to test video api)
+
+
+
+Implementation:
+    ☐ Datatype for strem
+    ☐ Datatype for container
+    ☐ Do I use tensor as a type in metadata 
