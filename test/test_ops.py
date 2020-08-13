@@ -52,25 +52,30 @@ class OpTester(object):
 
 
 class RoIOpTester(OpTester):
-    def _test_forward(self, device, contiguous):
+    def _test_forward(self, device, contiguous, x_dtype=None, rois_dtype=None):
+        x_dtype = self.dtype if x_dtype is None else x_dtype
+        rois_dtype = self.dtype if rois_dtype is None else rois_dtype
         pool_size = 5
         # n_channels % (pool_size ** 2) == 0 required for PS opeartions.
         n_channels = 2 * (pool_size ** 2)
-        x = torch.rand(2, n_channels, 10, 10, dtype=self.dtype, device=device)
+        x = torch.rand(2, n_channels, 10, 10, dtype=x_dtype, device=device)
         if not contiguous:
             x = x.permute(0, 1, 3, 2)
         rois = torch.tensor([[0, 0, 0, 9, 9],  # format is (xyxy)
                              [0, 0, 5, 4, 9],
                              [0, 5, 5, 9, 9],
                              [1, 0, 0, 9, 9]],
-                            dtype=self.dtype, device=device)
+                            dtype=rois_dtype, device=device)
 
         pool_h, pool_w = pool_size, pool_size
         y = self.fn(x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1)
+        # the following should be true whether we're running an autocast test or not.
+        self.assertTrue(y.dtype == x.dtype)
         gt_y = self.expected_fn(x, rois, pool_h, pool_w, spatial_scale=1,
                                 sampling_ratio=-1, device=device, dtype=self.dtype)
 
-        self.assertTrue(torch.allclose(gt_y, y))
+        tol = 1e-3 if (x_dtype is torch.half or rois_dtype is torch.half) else 1e-5
+        self.assertTrue(torch.allclose(gt_y.to(y.dtype), y, rtol=tol, atol=tol))
 
     def _test_backward(self, device, contiguous):
         pool_size = 2
@@ -289,6 +294,13 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
 
     def _test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
+
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_roi_align_autocast(self):
+        for x_dtype in (torch.float, torch.half):
+            for rois_dtype in (torch.float, torch.half):
+                with torch.cuda.amp.autocast():
+                    self._test_forward(torch.device("cuda"), contiguous=False, x_dtype=x_dtype, rois_dtype=rois_dtype)
 
 
 class PSRoIAlignTester(RoIOpTester, unittest.TestCase):

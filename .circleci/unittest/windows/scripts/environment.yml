@@ -6,6 +6,8 @@ dependencies:
   - pytest-cov
   - codecov
   - pip
+  - libpng
+  - jpeg
   - ca-certificates
   - pip:
     - future

@@ -2,6 +2,7 @@ import torch
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
 from PIL import Image
+from PIL.Image import NEAREST, BILINEAR, BICUBIC
 
 import numpy as np
 
@@ -219,6 +220,106 @@ class Tester(unittest.TestCase):
         self._test_op_list_output(
             "ten_crop", "TenCrop", out_length=10, fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
+
+    def test_resize(self):
+        tensor, _ = self._create_data(height=34, width=36)
+        script_fn = torch.jit.script(F.resize)
+
+        for dt in [None, torch.float32, torch.float64]:
+            if dt is not None:
+                # This is a trivial cast to float of uint8 data to test all cases
+                tensor = tensor.to(dt)
+            for size in [32, 34, [32, ], [32, 32], (32, 32), [34, 35]]:
+                for interpolation in [BILINEAR, BICUBIC, NEAREST]:
+
+                    resized_tensor = F.resize(tensor, size=size, interpolation=interpolation)
+
+                    if isinstance(size, int):
+                        script_size = [size, ]
+                    else:
+                        script_size = size
+
+                    s_resized_tensor = script_fn(tensor, size=script_size, interpolation=interpolation)
+                    self.assertTrue(s_resized_tensor.equal(resized_tensor))
+
+                    transform = T.Resize(size=script_size, interpolation=interpolation)
+                    resized_tensor = transform(tensor)
+                    script_transform = torch.jit.script(transform)
+                    s_resized_tensor = script_transform(tensor)
+                    self.assertTrue(s_resized_tensor.equal(resized_tensor))
+
+    def test_resized_crop(self):
+        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
+
+        for scale in [(0.7, 1.2), [0.7, 1.2]]:
+            for ratio in [(0.75, 1.333), [0.75, 1.333]]:
+                for size in [(32, ), [44, ], [32, ], [32, 32], (32, 32), [44, 55]]:
+                    for interpolation in [NEAREST, BILINEAR, BICUBIC]:
+                        transform = T.RandomResizedCrop(
+                            size=size, scale=scale, ratio=ratio, interpolation=interpolation
+                        )
+                        s_transform = torch.jit.script(transform)
+
+                        torch.manual_seed(12)
+                        out1 = transform(tensor)
+                        torch.manual_seed(12)
+                        out2 = s_transform(tensor)
+                        self.assertTrue(out1.equal(out2))
+
+    def test_random_affine(self):
+        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
+
+        for shear in [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]]:
+            for scale in [(0.7, 1.2), [0.7, 1.2]]:
+                for translate in [(0.1, 0.2), [0.2, 0.1]]:
+                    for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
+                        for interpolation in [NEAREST, BILINEAR]:
+                            transform = T.RandomAffine(
+                                degrees=degrees, translate=translate,
+                                scale=scale, shear=shear, resample=interpolation
+                            )
+                            s_transform = torch.jit.script(transform)
+
+                            torch.manual_seed(12)
+                            out1 = transform(tensor)
+                            torch.manual_seed(12)
+                            out2 = s_transform(tensor)
+                            self.assertTrue(out1.equal(out2))
+
+    def test_random_rotate(self):
+        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
+
+        for center in [(0, 0), [10, 10], None, (56, 44)]:
+            for expand in [True, False]:
+                for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
+                    for interpolation in [NEAREST, BILINEAR]:
+                        transform = T.RandomRotation(
+                            degrees=degrees, resample=interpolation, expand=expand, center=center
+                        )
+                        s_transform = torch.jit.script(transform)
+
+                        torch.manual_seed(12)
+                        out1 = transform(tensor)
+                        torch.manual_seed(12)
+                        out2 = s_transform(tensor)
+                        self.assertTrue(out1.equal(out2))
+
+    def test_random_perspective(self):
+        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
+
+        for distortion_scale in np.linspace(0.1, 1.0, num=20):
+            for interpolation in [NEAREST, BILINEAR]:
+                transform = T.RandomPerspective(
+                    distortion_scale=distortion_scale,
+                    interpolation=interpolation
+                )
+                s_transform = torch.jit.script(transform)
+
+                torch.manual_seed(12)
+                out1 = transform(tensor)
+                torch.manual_seed(12)
+                out2 = s_transform(tensor)
+                self.assertTrue(out1.equal(out2))
 
     def test_to_grayscale(self):
 
