@@ -172,7 +172,6 @@ class Tester(unittest.TestCase):
                     f_img_pil = f(img_pil, factor)
                     f_img = transforms.ToTensor()(f_img_pil)
 
-
                 # F uses uint8 and F_t uses float, so there is a small
                 # difference in values caused by (at most 5) truncations.
                 max_diff = (ft_img - f_img).abs().max()

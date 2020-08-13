@@ -128,6 +128,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
 
     return _blend(img, mean, contrast_factor)
 
+
 def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     """Adjust hue of an image.
 
