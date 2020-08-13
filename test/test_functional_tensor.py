@@ -22,6 +22,10 @@ class Tester(unittest.TestCase):
         pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().numpy())
         return tensor, pil_img
 
+    def _create_data_batch(self, height=3, width=3, channels=3, num_samples=4):
+        batch_tensor = torch.randint(0, 255, (num_samples, channels, height, width), dtype=torch.uint8)
+        return batch_tensor
+
     def compareTensorToPIL(self, tensor, pil_image, msg=None):
         pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
         if msg is None:
@@ -36,36 +40,53 @@ class Tester(unittest.TestCase):
             msg="{}: mae={}, tol={}: \n{}\nvs\n{}".format(msg, mae, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
         )
 
+    def _test_fn_on_batch(self, batch_tensors, fn, **fn_kwargs):
+        transformed_batch = fn(batch_tensors, **fn_kwargs)
+        for i in range(len(batch_tensors)):
+            img_tensor = batch_tensors[i, ...]
+            transformed_img = fn(img_tensor, **fn_kwargs)
+            self.assertTrue(transformed_img.equal(transformed_batch[i, ...]))
+
+        scripted_fn = torch.jit.script(fn)
+        # scriptable function test
+        s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
+        self.assertTrue(transformed_batch.equal(s_transformed_batch))
+
     def test_vflip(self):
-        script_vflip = torch.jit.script(F_t.vflip)
-        img_tensor = torch.randn(3, 16, 16)
-        img_tensor_clone = img_tensor.clone()
-        vflipped_img = F_t.vflip(img_tensor)
-        vflipped_img_again = F_t.vflip(vflipped_img)
-        self.assertEqual(vflipped_img.shape, img_tensor.shape)
-        self.assertTrue(torch.equal(img_tensor, vflipped_img_again))
-        self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        # scriptable function test
-        vflipped_img_script = script_vflip(img_tensor)
-        self.assertTrue(torch.equal(vflipped_img, vflipped_img_script))
-
-    def test_hflip(self):
-        script_hflip = torch.jit.script(F_t.hflip)
-        img_tensor = torch.randn(3, 16, 16)
-        img_tensor_clone = img_tensor.clone()
-        hflipped_img = F_t.hflip(img_tensor)
-        hflipped_img_again = F_t.hflip(hflipped_img)
-        self.assertEqual(hflipped_img.shape, img_tensor.shape)
-        self.assertTrue(torch.equal(img_tensor, hflipped_img_again))
-        self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        # scriptable function test
-        hflipped_img_script = script_hflip(img_tensor)
-        self.assertTrue(torch.equal(hflipped_img, hflipped_img_script))
-
-    def test_crop(self):
-        script_crop = torch.jit.script(F_t.crop)
+        script_vflip = torch.jit.script(F.vflip)
 
         img_tensor, pil_img = self._create_data(16, 18)
+        vflipped_img = F.vflip(img_tensor)
+        vflipped_pil_img = F.vflip(pil_img)
+        self.compareTensorToPIL(vflipped_img, vflipped_pil_img)
+
+        # scriptable function test
+        vflipped_img_script = script_vflip(img_tensor)
+        self.assertTrue(vflipped_img.equal(vflipped_img_script))
+
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4)
+        self._test_fn_on_batch(batch_tensors, F.vflip)
+
+    def test_hflip(self):
+        script_hflip = torch.jit.script(F.hflip)
+
+        img_tensor, pil_img = self._create_data(16, 18)
+        hflipped_img = F.hflip(img_tensor)
+        hflipped_pil_img = F.hflip(pil_img)
+        self.compareTensorToPIL(hflipped_img, hflipped_pil_img)
+
+        # scriptable function test
+        hflipped_img_script = script_hflip(img_tensor)
+        self.assertTrue(hflipped_img.equal(hflipped_img_script))
+
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4)
+        self._test_fn_on_batch(batch_tensors, F.hflip)
+
+    def test_crop(self):
+        script_crop = torch.jit.script(F.crop)
+
+        img_tensor, pil_img = self._create_data(16, 18)
+        batch_tensor = self._create_data_batch(16, 18, num_samples=4)
 
         test_configs = [
             (1, 2, 4, 5),   # crop inside top-left corner
@@ -82,6 +103,9 @@ class Tester(unittest.TestCase):
 
             img_tensor_cropped = script_crop(img_tensor, top, left, height, width)
             self.compareTensorToPIL(img_tensor_cropped, pil_img_cropped)
+
+            batch_tensors = self._create_data_batch(16, 18, num_samples=4)
+            self._test_fn_on_batch(batch_tensors, F.crop, top=top, left=left, height=height, width=width)
 
     def test_hsv2rgb(self):
         shape = (3, 100, 150)
@@ -212,6 +236,9 @@ class Tester(unittest.TestCase):
         cropped_tensor = script_center_crop(img_tensor, [10, 11])
         self.compareTensorToPIL(cropped_tensor, cropped_pil_image)
 
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4)
+        self._test_fn_on_batch(batch_tensors, F.center_crop, output_size=[10, 11])
+
     def test_five_crop(self):
         script_five_crop = torch.jit.script(F.five_crop)
 
@@ -226,6 +253,23 @@ class Tester(unittest.TestCase):
         cropped_tensors = script_five_crop(img_tensor, [10, 11])
         for i in range(5):
             self.compareTensorToPIL(cropped_tensors[i], cropped_pil_images[i])
+
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4)
+        tuple_transformed_batches = F.five_crop(batch_tensors, [10, 11])
+        for i in range(len(batch_tensors)):
+            img_tensor = batch_tensors[i, ...]
+            tuple_transformed_imgs = F.five_crop(img_tensor, [10, 11])
+            self.assertEqual(len(tuple_transformed_imgs), len(tuple_transformed_batches))
+
+            for j in range(len(tuple_transformed_imgs)):
+                true_transformed_img = tuple_transformed_imgs[j]
+                transformed_img = tuple_transformed_batches[j][i, ...]
+                self.assertTrue(true_transformed_img.equal(transformed_img))
+
+        # scriptable function test
+        s_tuple_transformed_batches = script_five_crop(batch_tensors, [10, 11])
+        for transformed_batch, s_transformed_batch in zip(tuple_transformed_batches, s_tuple_transformed_batches):
+            self.assertTrue(transformed_batch.equal(s_transformed_batch))
 
     def test_ten_crop(self):
         script_ten_crop = torch.jit.script(F.ten_crop)
@@ -242,8 +286,25 @@ class Tester(unittest.TestCase):
         for i in range(10):
             self.compareTensorToPIL(cropped_tensors[i], cropped_pil_images[i])
 
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4)
+        tuple_transformed_batches = F.ten_crop(batch_tensors, [10, 11])
+        for i in range(len(batch_tensors)):
+            img_tensor = batch_tensors[i, ...]
+            tuple_transformed_imgs = F.ten_crop(img_tensor, [10, 11])
+            self.assertEqual(len(tuple_transformed_imgs), len(tuple_transformed_batches))
+
+            for j in range(len(tuple_transformed_imgs)):
+                true_transformed_img = tuple_transformed_imgs[j]
+                transformed_img = tuple_transformed_batches[j][i, ...]
+                self.assertTrue(true_transformed_img.equal(transformed_img))
+
+        # scriptable function test
+        s_tuple_transformed_batches = script_ten_crop(batch_tensors, [10, 11])
+        for transformed_batch, s_transformed_batch in zip(tuple_transformed_batches, s_tuple_transformed_batches):
+            self.assertTrue(transformed_batch.equal(s_transformed_batch))
+
     def test_pad(self):
-        script_fn = torch.jit.script(F_t.pad)
+        script_fn = torch.jit.script(F.pad)
         tensor, pil_img = self._create_data(7, 8)
 
         for dt in [None, torch.float32, torch.float64]:
@@ -276,6 +337,9 @@ class Tester(unittest.TestCase):
                         script_pad = pad
                     pad_tensor_script = script_fn(tensor, script_pad, **kwargs)
                     self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, kwargs))
+
+                    batch_tensors = self._create_data_batch(16, 18, num_samples=4)
+                    self._test_fn_on_batch(batch_tensors, F.pad, padding=script_pad, **kwargs)
 
         with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
             F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
@@ -345,6 +409,11 @@ class Tester(unittest.TestCase):
                     resize_result = script_fn(tensor, size=script_size, interpolation=interpolation)
                     self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
 
+                    batch_tensors = self._create_data_batch(16, 18, num_samples=4)
+                    self._test_fn_on_batch(
+                        batch_tensors, F.resize, size=script_size, interpolation=interpolation
+                    )
+
     def test_resized_crop(self):
         # test values of F.resized_crop in several cases:
         # 1) resize to the same size, crop to the same size => should be identity
@@ -360,6 +429,11 @@ class Tester(unittest.TestCase):
         self.assertTrue(
             expected_out_tensor.equal(out_tensor),
             msg="{} vs {}".format(expected_out_tensor[0, :10, :10], out_tensor[0, :10, :10])
+        )
+
+        batch_tensors = self._create_data_batch(26, 36, num_samples=4)
+        self._test_fn_on_batch(
+            batch_tensors, F.resized_crop, top=1, left=2, height=20, width=30, size=[10, 15], interpolation=0
         )
 
     def test_affine(self):
@@ -448,7 +522,7 @@ class Tester(unittest.TestCase):
                     out_pil_img = F.affine(pil_img, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], resample=0)
                     self.compareTensorToPIL(out_tensor, out_pil_img)
 
-            # 3) Test rotation + translation + scale + share
+            # 3) Test rotation + translation + scale + shear
             test_configs = [
                 (45, [5, 6], 1.0, [0.0, 0.0]),
                 (33, (5, -4), 1.0, [0.0, 0.0]),
@@ -478,6 +552,11 @@ class Tester(unittest.TestCase):
                                 (r, a, t, s, sh), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
                             )
                         )
+
+        batch_tensors = self._create_data_batch(26, 36, num_samples=4)
+        self._test_fn_on_batch(
+            batch_tensors, F.affine, angle=-43, translate=[-3, 4], scale=1.2, shear=[4.0, 5.0]
+        )
 
     def test_rotate(self):
         # Tests on square image
@@ -523,6 +602,12 @@ class Tester(unittest.TestCase):
                                     )
                                 )
 
+        batch_tensors = self._create_data_batch(26, 36, num_samples=4)
+        center = (20, 22)
+        self._test_fn_on_batch(
+            batch_tensors, F.rotate, angle=34, resample=0, expand=True, center=center
+        )
+
     def test_perspective(self):
 
         from torchvision.transforms import RandomPerspective
@@ -562,6 +647,12 @@ class Tester(unittest.TestCase):
                                 out_pil_tensor[0, :7, :7]
                             )
                         )
+        batch_tensors = self._create_data_batch(26, 36, num_samples=4)
+        spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
+        epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
+        self._test_fn_on_batch(
+            batch_tensors, F.perspective, startpoints=spoints, endpoints=epoints, interpolation=0
+        )
 
 
 if __name__ == '__main__':
