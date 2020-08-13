@@ -714,7 +714,7 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     return F_t.adjust_saturation(img, saturation_factor)
 
 
-def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
+def adjust_hue(img, hue_factor: float):
     """Adjust hue of an image.
 
     The image hue is adjusted by converting the image to HSV and
