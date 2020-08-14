@@ -76,22 +76,47 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     return img[..., top:top + height, left:left + width]
 
 
-def rgb_to_grayscale(img: Tensor) -> Tensor:
+def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     """Convert the given RGB Image Tensor to Grayscale.
     For RGB to Grayscale conversion, ITU-R 601-2 luma transform is performed which
     is L = R * 0.2989 + G * 0.5870 + B * 0.1140
 
     Args:
         img (Tensor): Image to be converted to Grayscale in the form [C, H, W].
+        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
 
     Returns:
-        Tensor: Grayscale image.
+        Tensor: Grayscale version of the image.
+            if num_output_channels = 1 : returned image is single channel
+
+            if num_output_channels = 3 : returned image is 3 channel with r = g = b
 
     """
-    if img.shape[0] != 3:
-        raise TypeError('Input Image does not contain 3 Channels')
+    if img.ndim < 3:
+        raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
+    c = img.shape[-3]
+    if c != 3:
+        raise TypeError("Input image tensor should 3 channels, but found {}".format(c))
 
-    return (0.2989 * img[0] + 0.5870 * img[1] + 0.1140 * img[2]).to(img.dtype)
+    if num_output_channels not in (1, 3):
+        raise ValueError('num_output_channels should be either 1 or 3')
+
+    r = img[..., 0, :, :].float()
+    g = img[..., 1, :, :].float()
+    b = img[..., 2, :, :].float()
+    # According to PIL docs: PIL grayscale L mode is L = R * 299/1000 + G * 587/1000 + B * 114/1000
+    # but implementation is slightly different:
+    # https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/
+    # src/libImaging/Convert.c#L47
+    # ((rgb)[0]*19595 + (rgb)[1]*38470 + (rgb)[2]*7471 + 0x8000) >> 16
+    l_img = torch.floor((19595 * r + 38470 * g + 7471 * b + 2 ** 15) / 2 ** 16).to(img.dtype)
+
+    if num_output_channels == 3:
+        l_img = torch.stack([l_img, l_img, l_img], dim=-3)
+    else:
+        l_img = l_img.unsqueeze(dim=-3)
+
+    return l_img
 
 
 def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
@@ -893,39 +918,3 @@ def perspective(
     mode = _interpolation_modes[interpolation]
 
     return _apply_grid_transform(img, grid, mode)
-
-
-def to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
-    """Convert image to grayscale version of image.
-
-    Args:
-        img (Tensor): Image to be converted to grayscale. We assume (..., 3, H, W) layout.
-        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
-
-    Returns:
-        Tensor: Grayscale version of the image.
-            if num_output_channels = 1 : returned image is single channel
-
-            if num_output_channels = 3 : returned image is 3 channel with r = g = b
-    """
-    if img.ndim < 3:
-        raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
-    c = img.shape[-3]
-    if c != 3:
-        raise TypeError("Input image tensor should 3 channels, but found {}".format(c))
-
-    if num_output_channels not in (1, 3):
-        raise ValueError('num_output_channels should be either 1 or 3')
-
-    # PIL grayscale L mode is L = R * 299/1000 + G * 587/1000 + B * 114/1000
-    r = img[..., 0, :, :]
-    g = img[..., 1, :, :]
-    b = img[..., 2, :, :]
-    l_img = (0.299 * r + 0.587 * g + 0.114 * b + 0.5).to(img.dtype)
-
-    if num_output_channels == 3:
-        l_img = torch.stack([l_img, l_img, l_img], dim=-3)
-    else:
-        l_img = l_img.unsqueeze(dim=-3)
-
-    return l_img

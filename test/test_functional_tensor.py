@@ -1,5 +1,4 @@
 import unittest
-import random
 import colorsys
 import math
 
@@ -23,7 +22,10 @@ class Tester(unittest.TestCase):
         return tensor, pil_img
 
     def compareTensorToPIL(self, tensor, pil_image, msg=None):
-        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
+        np_pil_image = np.array(pil_image)
+        if np_pil_image.ndim == 2:
+            np_pil_image = np_pil_image[:, :, None]
+        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
         if msg is None:
             msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
         self.assertTrue(tensor.equal(pil_tensor), msg)
@@ -187,17 +189,21 @@ class Tester(unittest.TestCase):
         scripted_fn(img)
 
     def test_rgb_to_grayscale(self):
-        script_rgb_to_grayscale = torch.jit.script(F_t.rgb_to_grayscale)
-        img_tensor = torch.randint(0, 255, (3, 16, 16), dtype=torch.uint8)
-        img_tensor_clone = img_tensor.clone()
-        grayscale_tensor = F_t.rgb_to_grayscale(img_tensor).to(int)
-        grayscale_pil_img = torch.tensor(np.array(F.to_grayscale(F.to_pil_image(img_tensor)))).to(int)
-        max_diff = (grayscale_tensor - grayscale_pil_img).abs().max()
-        self.assertLess(max_diff, 1.0001)
-        self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        # scriptable function test
-        grayscale_script = script_rgb_to_grayscale(img_tensor).to(int)
-        self.assertTrue(torch.equal(grayscale_script, grayscale_tensor))
+        script_rgb_to_grayscale = torch.jit.script(F.rgb_to_grayscale)
+
+        img_tensor, pil_img = self._create_data(32, 34)
+
+        for num_output_channels in (3, 1):
+            gray_pil_image = F.rgb_to_grayscale(pil_img, num_output_channels=num_output_channels)
+            gray_tensor = F.rgb_to_grayscale(img_tensor, num_output_channels=num_output_channels)
+
+            if num_output_channels == 1:
+                print(gray_tensor.shape)
+
+            self.compareTensorToPIL(gray_tensor, gray_pil_image)
+
+            s_gray_tensor = script_rgb_to_grayscale(img_tensor, num_output_channels=num_output_channels)
+            self.assertTrue(s_gray_tensor.equal(gray_tensor))
 
     def test_center_crop(self):
         script_center_crop = torch.jit.script(F.center_crop)

@@ -959,12 +959,39 @@ def affine(
 
 
 def to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
-    """Convert image to grayscale version of image.
+    """DEPRECATED. Convert RGB image to grayscale version of image.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+
+    .. warning::
+
+        This method is deprecated and will be removed in future releases.
+        Please, use ``F.rgb_to_grayscale`` instead.
+
+
+    Args:
+        img (PIL Image or Tensor): RGB Image to be converted to grayscale.
+        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
+
+    Returns:
+        PIL Image or Tensor: Grayscale version of the image.
+            if num_output_channels = 1 : returned image is single channel
+
+            if num_output_channels = 3 : returned image is 3 channel with r = g = b
+    """
+    warnings.warn("The use of the F.to_grayscale transform is deprecated, " +
+                  "please use F.rgb_to_grayscale instead.")
+
+    return rgb_to_grayscale(img, num_output_channels)
+
+
+def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
+    """Convert RGB image to grayscale version of image.
     The image can be a PIL Image or a Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
-        img (PIL Image or Tensor): Image to be converted to grayscale.
+        img (PIL Image or Tensor): RGB Image to be converted to grayscale.
         num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
 
     Returns:
@@ -974,9 +1001,9 @@ def to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
             if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
     if not isinstance(img, torch.Tensor):
-        return F_pil.to_grayscale(img, num_output_channels)
+        return F_pil.rgb_to_grayscale(img, num_output_channels)
 
-    return F_t.to_grayscale(img, num_output_channels)
+    return F_t.rgb_to_grayscale(img, num_output_channels)
 
 
 def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool = False) -> Tensor:

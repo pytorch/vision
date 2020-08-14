@@ -1382,7 +1382,7 @@ class Grayscale(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Grayscaled image.
         """
-        return F.to_grayscale(img, num_output_channels=self.num_output_channels)
+        return F.rgb_to_grayscale(img, num_output_channels=self.num_output_channels)
 
     def __repr__(self):
         return self.__class__.__name__ + '(num_output_channels={0})'.format(self.num_output_channels)
@@ -1419,7 +1419,7 @@ class RandomGrayscale(torch.nn.Module):
         """
         num_output_channels = F._get_image_num_channels(img)
         if torch.rand(1) < self.p:
-            return F.to_grayscale(img, num_output_channels=num_output_channels)
+            return F.rgb_to_grayscale(img, num_output_channels=num_output_channels)
         return img
 
     def __repr__(self):
