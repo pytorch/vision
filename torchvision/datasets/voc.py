@@ -11,7 +11,7 @@ DATASET_YEAR_DICT = {
     '2012': {
         'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2012/VOCtrainval_11-May-2012.tar',
         'filename': 'VOCtrainval_11-May-2012.tar',
-        'md5': '6cd6e144f989b92b3379bac3b3de84fd',
+        'md5': 'af08689459fe018b209e8d8fb5d4eb2e',
         'base_dir': os.path.join('VOCdevkit', 'VOC2012')
     },
     '2011': {
