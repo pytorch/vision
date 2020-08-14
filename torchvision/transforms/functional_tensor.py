@@ -157,8 +157,8 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
 
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+    if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
+        raise TypeError('img should be Tensor image. Got {}'.format(type(img)))
 
     orig_dtype = img.dtype
     if img.dtype == torch.uint8:
@@ -344,9 +344,7 @@ def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
     return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
 
-def _rgb2hsv(img: Tensor) -> Tensor:
-    if not isinstance(img, torch.Tensor):
-        raise TypeError("img should be of type torch.Tensor. Got {}".format(type(img)))
+def _rgb2hsv(img):
     r, g, b = img.unbind(0)
 
     maxc = torch.max(img, dim=0).values
@@ -383,9 +381,7 @@ def _rgb2hsv(img: Tensor) -> Tensor:
     return torch.stack((h, s, maxc))
 
 
-def _hsv2rgb(img: Tensor) -> Tensor:
-    if not isinstance(img, torch.Tensor):
-        raise TypeError("img should be of type torch.Tensor. Got {}".format(type(img)))
+def _hsv2rgb(img):
     h, s, v = img.unbind(0)
     i = torch.floor(h * 6.0)
     f = (h * 6.0) - i

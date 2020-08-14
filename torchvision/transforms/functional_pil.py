@@ -118,7 +118,7 @@ def adjust_saturation(img, saturation_factor):
 
 
 @torch.jit.unused
-def adjust_hue(img, hue_factor: float):
+def adjust_hue(img, hue_factor):
     """Adjust hue of an image.
 
     The image hue is adjusted by converting the image to HSV and

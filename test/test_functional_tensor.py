@@ -147,30 +147,22 @@ class Tester(unittest.TestCase):
             else:
                 img = torch.randint(0, 256, shape, dtype=torch.uint8)
 
-            factor = 3 * torch.rand(1)
-            hue_factor = torch.add(torch.rand(1), -0.5)
+            bcs_factor = 3 * torch.rand(1).item()
+            hue_factor = torch.rand(1).item() - 0.5
+            factor = bcs_factor
             img_clone = img.clone()
-            for i, (f, ft, sft) in enumerate(fns):
-                if i == 3:
-                    ft_img = ft(img, hue_factor)
-                    sft_img = sft(img, hue_factor)
-                    if not img.dtype.is_floating_point:
-                        ft_img = ft_img.to(torch.float) / 255
-                        sft_img = sft_img.to(torch.float) / 255
+            for f, ft, sft in fns:
+                if f == F.adjust_hue:
+                    factor = hue_factor
+                ft_img = ft(img, factor)
+                sft_img = sft(img, factor)
+                if not img.dtype.is_floating_point:
+                    ft_img = ft_img.to(torch.float) / 255
+                    sft_img = sft_img.to(torch.float) / 255
 
-                    img_pil = transforms.ToPILImage()(img)
-                    f_img_pil = f(img_pil, hue_factor)
-                    f_img = transforms.ToTensor()(f_img_pil)
-                else:
-                    ft_img = ft(img, factor)
-                    sft_img = sft(img, factor)
-                    if not img.dtype.is_floating_point:
-                        ft_img = ft_img.to(torch.float) / 255
-                        sft_img = sft_img.to(torch.float) / 255
-
-                    img_pil = transforms.ToPILImage()(img)
-                    f_img_pil = f(img_pil, factor)
-                    f_img = transforms.ToTensor()(f_img_pil)
+                img_pil = transforms.ToPILImage()(img)
+                f_img_pil = f(img_pil, factor)
+                f_img = transforms.ToTensor()(f_img_pil)
 
                 # F uses uint8 and F_t uses float, so there is a small
                 # difference in values caused by (at most 5) truncations.
@@ -181,15 +173,19 @@ class Tester(unittest.TestCase):
                 self.assertTrue(torch.equal(img, img_clone))
 
             # test for class interface
-            f = transforms.ColorJitter(brightness=factor.item())
+            f = transforms.ColorJitter(brightness=bcs_factor)
             scripted_fn = torch.jit.script(f)
             scripted_fn(img)
 
-            f = transforms.ColorJitter(contrast=factor.item())
+            f = transforms.ColorJitter(contrast=bcs_factor)
             scripted_fn = torch.jit.script(f)
             scripted_fn(img)
 
-            f = transforms.ColorJitter(saturation=factor.item())
+            f = transforms.ColorJitter(saturation=bcs_factor)
+            scripted_fn = torch.jit.script(f)
+            scripted_fn(img)
+
+            f = transforms.ColorJitter(hue=abs(hue_factor))
             scripted_fn = torch.jit.script(f)
             scripted_fn(img)
 
