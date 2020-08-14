@@ -4,7 +4,7 @@ template <typename scalar_t>
 at::Tensor nms_cpu_kernel(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const float iou_threshold) {
+    const double iou_threshold) {
   AT_ASSERTM(!dets.is_cuda(), "dets must be a CPU tensor");
   AT_ASSERTM(!scores.is_cuda(), "scores must be a CPU tensor");
   AT_ASSERTM(
@@ -72,7 +72,26 @@ at::Tensor nms_cpu_kernel(
 at::Tensor nms_cpu(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const float iou_threshold) {
+    const double iou_threshold) {
+  TORCH_CHECK(
+      dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
+  TORCH_CHECK(
+      dets.size(1) == 4,
+      "boxes should have 4 elements in dimension 1, got ",
+      dets.size(1));
+  TORCH_CHECK(
+      scores.dim() == 1,
+      "scores should be a 1d tensor, got ",
+      scores.dim(),
+      "D");
+  TORCH_CHECK(
+      dets.size(0) == scores.size(0),
+      "boxes and scores should have same number of elements in ",
+      "dimension 0, got ",
+      dets.size(0),
+      " and ",
+      scores.size(0));
+
   auto result = at::empty({0}, dets.options());
 
   AT_DISPATCH_FLOATING_TYPES(dets.scalar_type(), "nms", [&] {
