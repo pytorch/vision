@@ -104,12 +104,16 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     r = img[..., 0, :, :].float()
     g = img[..., 1, :, :].float()
     b = img[..., 2, :, :].float()
-    # According to PIL docs: PIL grayscale L mode is L = R * 299/1000 + G * 587/1000 + B * 114/1000
-    # but implementation is slightly different:
-    # https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/
-    # src/libImaging/Convert.c#L47
-    # ((rgb)[0]*19595 + (rgb)[1]*38470 + (rgb)[2]*7471 + 0x8000) >> 16
-    l_img = torch.floor((19595 * r + 38470 * g + 7471 * b + 2 ** 15) / 2 ** 16).to(img.dtype)
+    if not img.is_floating_point():
+        # According to PIL docs: PIL grayscale L mode is L = R * 299/1000 + G * 587/1000 + B * 114/1000
+        # but implementation is slightly different:
+        # https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/
+        # src/libImaging/Convert.c#L47
+        # ((rgb)[0]*19595 + (rgb)[1]*38470 + (rgb)[2]*7471 + 0x8000) >> 16
+        # l_img = ((19595 * r + 38470 * g + 7471 * b + 2 ** 15) / 2 ** 16).to(img.dtype)
+        l_img = torch.floor((19595 * r + 38470 * g + 7471 * b + 2 ** 15) / 2 ** 16).to(img.dtype)
+    else:
+        l_img = (0.299 * r + 0.587 * g + 0.114 * b).to(img.dtype)
 
     if num_output_channels == 3:
         l_img = torch.stack([l_img, l_img, l_img], dim=-3)
@@ -407,8 +411,8 @@ def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = Fa
 
 
 def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
-    bound = 1 if img1.dtype in [torch.half, torch.float32, torch.float64] else 255
-    return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
+    bound = 1.0 if img1.is_floating_point() else 255.0
+    return (ratio * img1 + (1.0 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
 
 def _rgb2hsv(img):
