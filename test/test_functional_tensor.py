@@ -298,14 +298,6 @@ class Tester(unittest.TestCase):
             [{"hue_factor": f} for f in [-0.5, -0.25, 0.0, 0.25, 0.5]]
         )
 
-    def test_class_interface(self):
-        tensor, _ = self._create_data(26, 34)
-        configs = [{"brightness": 0.1}, {"contrast": 0.2}, {"saturation": 0.5}, {"hue": 0.5}]
-        for config in configs:
-            f = transforms.ColorJitter(**config)
-            scripted_fn = torch.jit.script(f)
-            scripted_fn(tensor)
-
     def test_adjust_gamma(self):
         self._test_adjust_fn(
             F.adjust_gamma,
