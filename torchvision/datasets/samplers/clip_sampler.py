@@ -34,7 +34,15 @@ class DistributedSampler(Sampler):
 
     """
 
-    def __init__(self, dataset, num_replicas=None, rank=None, shuffle=False, group_size=1):
+    def __init__(
+        self,
+        dataset,
+        num_replicas=None,
+        rank=None,
+        shuffle=False,
+        group_size=1,
+        num_samples=None,
+    ):
         if num_replicas is None:
             if not dist.is_available():
                 raise RuntimeError("Requires distributed package to be available")
@@ -43,21 +51,27 @@ class DistributedSampler(Sampler):
             if not dist.is_available():
                 raise RuntimeError("Requires distributed package to be available")
             rank = dist.get_rank()
-        assert len(dataset) % group_size == 0, (
-            "dataset length must be a multiplier of group size"
-            "dataset length: %d, group size: %d" % (len(dataset), group_size)
+
+        if num_samples is None:
+            num_samples = len(dataset)
+        self.num_samples = num_samples
+
+        assert num_samples % group_size == 0, (
+            "num_samples must be a multiplier of group size"
+            "num_samples: %d, group size: %d" % (num_samples, group_size)
         )
         self.dataset = dataset
         self.group_size = group_size
         self.num_replicas = num_replicas
         self.rank = rank
         self.epoch = 0
-        dataset_group_length = len(dataset) // group_size
+
+        dataset_group_length = num_samples // group_size
         self.num_group_samples = int(
             math.ceil(dataset_group_length * 1.0 / self.num_replicas)
         )
-        self.num_samples = self.num_group_samples * group_size
-        self.total_size = self.num_samples * self.num_replicas
+        self.adjusted_num_samples = self.num_group_samples * group_size
+        self.total_size = self.adjusted_num_samples * self.num_replicas
         self.shuffle = shuffle
 
     def __iter__(self):
@@ -65,9 +79,9 @@ class DistributedSampler(Sampler):
         g = torch.Generator()
         g.manual_seed(self.epoch)
         if self.shuffle:
-            indices = torch.randperm(len(self.dataset), generator=g).tolist()
+            indices = torch.randperm(self.num_samples, generator=g).tolist()
         else:
-            indices = list(range(len(self.dataset)))
+            indices = list(range(self.num_samples))
 
         # add extra samples to make it evenly divisible
         indices += indices[:(self.total_size - len(indices))]
@@ -81,7 +95,7 @@ class DistributedSampler(Sampler):
         # subsample
         indices = indices[self.rank:total_group_size:self.num_replicas, :]
         indices = torch.reshape(indices, (-1,)).tolist()
-        assert len(indices) == self.num_samples
+        assert len(indices) == self.adjusted_num_samples
 
         if isinstance(self.dataset, Sampler):
             orig_indices = list(iter(self.dataset))
@@ -90,7 +104,7 @@ class DistributedSampler(Sampler):
         return iter(indices)
 
     def __len__(self):
-        return self.num_samples
+        return self.adjusted_num_samples
 
     def set_epoch(self, epoch):
         self.epoch = epoch
