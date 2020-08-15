@@ -1,5 +1,4 @@
 import unittest
-import random
 import colorsys
 import math
 
@@ -23,9 +22,11 @@ class Tester(unittest.TestCase):
         return tensor, pil_img
 
     def compareTensorToPIL(self, tensor, pil_image, msg=None):
-        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
-        if msg is None:
-            msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
+        np_pil_image = np.array(pil_image)
+        if np_pil_image.ndim == 2:
+            np_pil_image = np_pil_image[:, :, None]
+        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
+        msg = "{}: tensor:\n{} \ndid not equal PIL tensor:\n{}".format(msg, tensor, pil_tensor)
         self.assertTrue(tensor.equal(pil_tensor), msg)
 
     def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None):
@@ -64,22 +65,24 @@ class Tester(unittest.TestCase):
 
     def test_crop(self):
         script_crop = torch.jit.script(F_t.crop)
-        img_tensor = torch.randint(0, 255, (3, 16, 16), dtype=torch.uint8)
-        img_tensor_clone = img_tensor.clone()
-        top = random.randint(0, 15)
-        left = random.randint(0, 15)
-        height = random.randint(1, 16 - top)
-        width = random.randint(1, 16 - left)
-        img_cropped = F_t.crop(img_tensor, top, left, height, width)
-        img_PIL = transforms.ToPILImage()(img_tensor)
-        img_PIL_cropped = F.crop(img_PIL, top, left, height, width)
-        img_cropped_GT = transforms.ToTensor()(img_PIL_cropped)
-        self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        self.assertTrue(torch.equal(img_cropped, (img_cropped_GT * 255).to(torch.uint8)),
-                        "functional_tensor crop not working")
-        # scriptable function test
-        cropped_img_script = script_crop(img_tensor, top, left, height, width)
-        self.assertTrue(torch.equal(img_cropped, cropped_img_script))
+
+        img_tensor, pil_img = self._create_data(16, 18)
+
+        test_configs = [
+            (1, 2, 4, 5),   # crop inside top-left corner
+            (2, 12, 3, 4),  # crop inside top-right corner
+            (8, 3, 5, 6),   # crop inside bottom-left corner
+            (8, 11, 4, 3),  # crop inside bottom-right corner
+        ]
+
+        for top, left, height, width in test_configs:
+            pil_img_cropped = F.crop(pil_img, top, left, height, width)
+
+            img_tensor_cropped = F.crop(img_tensor, top, left, height, width)
+            self.compareTensorToPIL(img_tensor_cropped, pil_img_cropped)
+
+            img_tensor_cropped = script_crop(img_tensor, top, left, height, width)
+            self.compareTensorToPIL(img_tensor_cropped, pil_img_cropped)
 
     def test_hsv2rgb(self):
         shape = (3, 100, 150)
@@ -126,152 +129,65 @@ class Tester(unittest.TestCase):
 
             self.assertLess(max_diff, 1e-5)
 
-    def test_adjustments(self):
-        script_adjust_brightness = torch.jit.script(F_t.adjust_brightness)
-        script_adjust_contrast = torch.jit.script(F_t.adjust_contrast)
-        script_adjust_saturation = torch.jit.script(F_t.adjust_saturation)
-        script_adjust_hue = torch.jit.script(F_t.adjust_hue)
-
-        fns = ((F.adjust_brightness, F_t.adjust_brightness, script_adjust_brightness),
-               (F.adjust_contrast, F_t.adjust_contrast, script_adjust_contrast),
-               (F.adjust_saturation, F_t.adjust_saturation, script_adjust_saturation),
-               (F.adjust_hue, F_t.adjust_hue, script_adjust_hue))
-
-        for _ in range(20):
-            channels = 3
-            dims = torch.randint(1, 50, (2,))
-            shape = (channels, dims[0], dims[1])
-
-            if torch.randint(0, 2, (1,)) == 0:
-                img = torch.rand(*shape, dtype=torch.float)
-            else:
-                img = torch.randint(0, 256, shape, dtype=torch.uint8)
-
-            bcs_factor = 3 * torch.rand(1).item()
-            hue_factor = torch.rand(1).item() - 0.5
-            factor = bcs_factor
-            img_clone = img.clone()
-            for f, ft, sft in fns:
-                if f == F.adjust_hue:
-                    factor = hue_factor
-                ft_img = ft(img, factor)
-                sft_img = sft(img, factor)
-                if not img.dtype.is_floating_point:
-                    ft_img = ft_img.to(torch.float) / 255
-                    sft_img = sft_img.to(torch.float) / 255
-
-                img_pil = transforms.ToPILImage()(img)
-                f_img_pil = f(img_pil, factor)
-                f_img = transforms.ToTensor()(f_img_pil)
-
-                # F uses uint8 and F_t uses float, so there is a small
-                # difference in values caused by (at most 5) truncations.
-                max_diff = (ft_img - f_img).abs().max()
-                max_diff_scripted = (sft_img - f_img).abs().max()
-                self.assertLess(max_diff, 5 + 1e-5)  # TODO: 5 / 255, not 5
-                self.assertLess(max_diff_scripted, 5 + 1e-5)  # TODO: idem
-                self.assertTrue(torch.equal(img, img_clone))
-
-            # test for class interface
-            f = transforms.ColorJitter(brightness=bcs_factor)
-            scripted_fn = torch.jit.script(f)
-            scripted_fn(img)
-
-            f = transforms.ColorJitter(contrast=bcs_factor)
-            scripted_fn = torch.jit.script(f)
-            scripted_fn(img)
-
-            f = transforms.ColorJitter(saturation=bcs_factor)
-            scripted_fn = torch.jit.script(f)
-            scripted_fn(img)
-
-            f = transforms.ColorJitter(hue=abs(hue_factor))
-            scripted_fn = torch.jit.script(f)
-            scripted_fn(img)
-
-        f = transforms.ColorJitter(brightness=1)
-        scripted_fn = torch.jit.script(f)
-        scripted_fn(img)
-
     def test_rgb_to_grayscale(self):
-        script_rgb_to_grayscale = torch.jit.script(F_t.rgb_to_grayscale)
-        img_tensor = torch.randint(0, 255, (3, 16, 16), dtype=torch.uint8)
-        img_tensor_clone = img_tensor.clone()
-        grayscale_tensor = F_t.rgb_to_grayscale(img_tensor).to(int)
-        grayscale_pil_img = torch.tensor(np.array(F.to_grayscale(F.to_pil_image(img_tensor)))).to(int)
-        max_diff = (grayscale_tensor - grayscale_pil_img).abs().max()
-        self.assertLess(max_diff, 1.0001)
-        self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        # scriptable function test
-        grayscale_script = script_rgb_to_grayscale(img_tensor).to(int)
-        self.assertTrue(torch.equal(grayscale_script, grayscale_tensor))
+        script_rgb_to_grayscale = torch.jit.script(F.rgb_to_grayscale)
+
+        img_tensor, pil_img = self._create_data(32, 34)
+
+        for num_output_channels in (3, 1):
+            gray_pil_image = F.rgb_to_grayscale(pil_img, num_output_channels=num_output_channels)
+            gray_tensor = F.rgb_to_grayscale(img_tensor, num_output_channels=num_output_channels)
+
+            if num_output_channels == 1:
+                print(gray_tensor.shape)
+
+            self.compareTensorToPIL(gray_tensor, gray_pil_image)
+
+            s_gray_tensor = script_rgb_to_grayscale(img_tensor, num_output_channels=num_output_channels)
+            self.assertTrue(s_gray_tensor.equal(gray_tensor))
 
     def test_center_crop(self):
-        script_center_crop = torch.jit.script(F_t.center_crop)
-        img_tensor = torch.randint(0, 255, (1, 32, 32), dtype=torch.uint8)
-        img_tensor_clone = img_tensor.clone()
-        cropped_tensor = F_t.center_crop(img_tensor, [10, 10])
-        cropped_pil_image = F.center_crop(transforms.ToPILImage()(img_tensor), [10, 10])
-        cropped_pil_tensor = (transforms.ToTensor()(cropped_pil_image) * 255).to(torch.uint8)
-        self.assertTrue(torch.equal(cropped_tensor, cropped_pil_tensor))
-        self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        # scriptable function test
-        cropped_script = script_center_crop(img_tensor, [10, 10])
-        self.assertTrue(torch.equal(cropped_script, cropped_tensor))
+        script_center_crop = torch.jit.script(F.center_crop)
+
+        img_tensor, pil_img = self._create_data(32, 34)
+
+        cropped_pil_image = F.center_crop(pil_img, [10, 11])
+
+        cropped_tensor = F.center_crop(img_tensor, [10, 11])
+        self.compareTensorToPIL(cropped_tensor, cropped_pil_image)
+
+        cropped_tensor = script_center_crop(img_tensor, [10, 11])
+        self.compareTensorToPIL(cropped_tensor, cropped_pil_image)
 
     def test_five_crop(self):
-        script_five_crop = torch.jit.script(F_t.five_crop)
-        img_tensor = torch.randint(0, 255, (1, 32, 32), dtype=torch.uint8)
-        img_tensor_clone = img_tensor.clone()
-        cropped_tensor = F_t.five_crop(img_tensor, [10, 10])
-        cropped_pil_image = F.five_crop(transforms.ToPILImage()(img_tensor), [10, 10])
-        self.assertTrue(torch.equal(cropped_tensor[0],
-                                    (transforms.ToTensor()(cropped_pil_image[0]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(cropped_tensor[1],
-                                    (transforms.ToTensor()(cropped_pil_image[2]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(cropped_tensor[2],
-                                    (transforms.ToTensor()(cropped_pil_image[1]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(cropped_tensor[3],
-                                    (transforms.ToTensor()(cropped_pil_image[3]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(cropped_tensor[4],
-                                    (transforms.ToTensor()(cropped_pil_image[4]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        # scriptable function test
-        cropped_script = script_five_crop(img_tensor, [10, 10])
-        for cropped_script_img, cropped_tensor_img in zip(cropped_script, cropped_tensor):
-            self.assertTrue(torch.equal(cropped_script_img, cropped_tensor_img))
+        script_five_crop = torch.jit.script(F.five_crop)
+
+        img_tensor, pil_img = self._create_data(32, 34)
+
+        cropped_pil_images = F.five_crop(pil_img, [10, 11])
+
+        cropped_tensors = F.five_crop(img_tensor, [10, 11])
+        for i in range(5):
+            self.compareTensorToPIL(cropped_tensors[i], cropped_pil_images[i])
+
+        cropped_tensors = script_five_crop(img_tensor, [10, 11])
+        for i in range(5):
+            self.compareTensorToPIL(cropped_tensors[i], cropped_pil_images[i])
 
     def test_ten_crop(self):
-        script_ten_crop = torch.jit.script(F_t.ten_crop)
-        img_tensor = torch.randint(0, 255, (1, 32, 32), dtype=torch.uint8)
-        img_tensor_clone = img_tensor.clone()
-        cropped_tensor = F_t.ten_crop(img_tensor, [10, 10])
-        cropped_pil_image = F.ten_crop(transforms.ToPILImage()(img_tensor), [10, 10])
-        self.assertTrue(torch.equal(cropped_tensor[0],
-                                    (transforms.ToTensor()(cropped_pil_image[0]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(cropped_tensor[1],
-                                    (transforms.ToTensor()(cropped_pil_image[2]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(cropped_tensor[2],
-                                    (transforms.ToTensor()(cropped_pil_image[1]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(cropped_tensor[3],
-                                    (transforms.ToTensor()(cropped_pil_image[3]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(cropped_tensor[4],
-                                    (transforms.ToTensor()(cropped_pil_image[4]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(cropped_tensor[5],
-                                    (transforms.ToTensor()(cropped_pil_image[5]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(cropped_tensor[6],
-                                    (transforms.ToTensor()(cropped_pil_image[7]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(cropped_tensor[7],
-                                    (transforms.ToTensor()(cropped_pil_image[6]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(cropped_tensor[8],
-                                    (transforms.ToTensor()(cropped_pil_image[8]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(cropped_tensor[9],
-                                    (transforms.ToTensor()(cropped_pil_image[9]) * 255).to(torch.uint8)))
-        self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
-        # scriptable function test
-        cropped_script = script_ten_crop(img_tensor, [10, 10])
-        for cropped_script_img, cropped_tensor_img in zip(cropped_script, cropped_tensor):
-            self.assertTrue(torch.equal(cropped_script_img, cropped_tensor_img))
+        script_ten_crop = torch.jit.script(F.ten_crop)
+
+        img_tensor, pil_img = self._create_data(32, 34)
+
+        cropped_pil_images = F.ten_crop(pil_img, [10, 11])
+
+        cropped_tensors = F.ten_crop(img_tensor, [10, 11])
+        for i in range(10):
+            self.compareTensorToPIL(cropped_tensors[i], cropped_pil_images[i])
+
+        cropped_tensors = script_ten_crop(img_tensor, [10, 11])
+        for i in range(10):
+            self.compareTensorToPIL(cropped_tensors[i], cropped_pil_images[i])
 
     def test_pad(self):
         script_fn = torch.jit.script(F_t.pad)
@@ -311,32 +227,92 @@ class Tester(unittest.TestCase):
         with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
             F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
 
-    def test_adjust_gamma(self):
-        script_fn = torch.jit.script(F_t.adjust_gamma)
-        tensor, pil_img = self._create_data(26, 36)
+    def _test_adjust_fn(self, fn, fn_pil, fn_t, configs):
+        script_fn = torch.jit.script(fn)
 
-        for dt in [torch.float64, torch.float32, None]:
+        torch.manual_seed(15)
+
+        tensor, pil_img = self._create_data(26, 34)
+
+        for dt in [None, torch.float32, torch.float64]:
 
             if dt is not None:
                 tensor = F.convert_image_dtype(tensor, dt)
 
-            gammas = [0.8, 1.0, 1.2]
-            gains = [0.7, 1.0, 1.3]
-            for gamma, gain in zip(gammas, gains):
+            for config in configs:
 
-                adjusted_tensor = F_t.adjust_gamma(tensor, gamma, gain)
-                adjusted_pil = F_pil.adjust_gamma(pil_img, gamma, gain)
-                scripted_result = script_fn(tensor, gamma, gain)
-                self.assertEqual(adjusted_tensor.dtype, scripted_result.dtype)
-                self.assertEqual(adjusted_tensor.size()[1:], adjusted_pil.size[::-1])
+                adjusted_tensor = fn_t(tensor, **config)
+                adjusted_pil = fn_pil(pil_img, **config)
+                scripted_result = script_fn(tensor, **config)
+                msg = "{}, {}".format(dt, config)
+                self.assertEqual(adjusted_tensor.dtype, scripted_result.dtype, msg=msg)
+                self.assertEqual(adjusted_tensor.size()[1:], adjusted_pil.size[::-1], msg=msg)
 
                 rbg_tensor = adjusted_tensor
+
                 if adjusted_tensor.dtype != torch.uint8:
                     rbg_tensor = F.convert_image_dtype(adjusted_tensor, torch.uint8)
 
-                self.compareTensorToPIL(rbg_tensor, adjusted_pil)
+                # Check that max difference does not exceed 1 in [0, 255] range
+                # Exact matching is not possible due to incompatibility convert_image_dtype and PIL results
+                rbg_tensor = rbg_tensor.float()
+                adjusted_pil_tensor = torch.as_tensor(np.array(adjusted_pil).transpose((2, 0, 1))).to(rbg_tensor)
+                max_diff = torch.abs(rbg_tensor - adjusted_pil_tensor).max().item()
+                self.assertLessEqual(
+                    max_diff,
+                    1.0,
+                    msg="{}: tensor:\n{} \ndid not equal PIL tensor:\n{}".format(msg, rbg_tensor, adjusted_pil_tensor)
+                )
 
-                self.assertTrue(adjusted_tensor.equal(scripted_result))
+                self.assertTrue(adjusted_tensor.equal(scripted_result), msg=msg)
+
+    def test_adjust_brightness(self):
+        self._test_adjust_fn(
+            F.adjust_brightness,
+            F_pil.adjust_brightness,
+            F_t.adjust_brightness,
+            [{"brightness_factor": f} for f in [0.1, 0.5, 1.0, 1.34, 2.5]]
+        )
+
+    def test_adjust_contrast(self):
+        self._test_adjust_fn(
+            F.adjust_contrast,
+            F_pil.adjust_contrast,
+            F_t.adjust_contrast,
+            [{"contrast_factor": f} for f in [0.2, 0.5, 1.0, 1.5, 2.0]]
+        )
+
+    def test_adjust_saturation(self):
+        self._test_adjust_fn(
+            F.adjust_saturation,
+            F_pil.adjust_saturation,
+            F_t.adjust_saturation,
+            [{"saturation_factor": f} for f in [0.5, 0.75, 1.0, 1.25, 1.5]]
+        )
+
+    def test_adjust_hue(self):
+        self._test_adjust_fn(
+            F.adjust_hue,
+            F_pil.adjust_hue,
+            F_t.adjust_hue,
+            [{"hue_factor": f} for f in [-0.5, -0.25, 0.0, 0.25, 0.5]]
+        )
+
+    def test_class_interface(self):
+        tensor, _ = self._create_data(26, 34)
+        configs = [{"brightness": 0.1}, {"contrast": 0.2}, {"saturation": 0.5}, {"hue": 0.5}]
+        for config in configs:
+            f = transforms.ColorJitter(**config)
+            scripted_fn = torch.jit.script(f)
+            scripted_fn(tensor)
+
+    def test_adjust_gamma(self):
+        self._test_adjust_fn(
+            F.adjust_gamma,
+            F_pil.adjust_gamma,
+            F_t.adjust_gamma,
+            [{"gamma": g1, "gain": g2} for g1, g2 in zip([0.8, 1.0, 1.2], [0.7, 1.0, 1.3])]
+        )
 
     def test_resize(self):
         script_fn = torch.jit.script(F_t.resize)
