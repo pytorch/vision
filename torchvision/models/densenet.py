@@ -126,32 +126,45 @@ class _Transition(nn.Sequential):
 class DenseNet(nn.Module):
     r"""Densenet-BC model class, based on
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
-
     Args:
         growth_rate (int) - how many filters to add each layer (`k` in paper)
-        block_config (list of 4 ints) - how many layers in each pooling block
+        block_config (list 4 ints) - how many layers in each pooling block
         num_init_features (int) - the number of filters to learn in the first convolution layer
+        in_channels (int) - the number of channels of the input image
         bn_size (int) - multiplicative factor for number of bottle neck layers
           (i.e. bn_size * k features in the bottleneck layer)
         drop_rate (float) - dropout rate after each dense layer
         num_classes (int) - number of classification classes
+        stem_kernel_size (int) - size of the kernel in the first convolutional layer (stem)
+        stem_stride (int) - stride of the first convolutional layer (stem)
+        stem_padding (int) - padding in the first convolutional layer (stem)
+        stem_max_pool (bool) - if True, apply max-pooling after the first convolutional layer
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
 
-    def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16),
-                 num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
+    def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16), num_init_features=64,
+                 in_channels=3, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False,
+                 stem_kernel_size=7, stem_stride=2, stem_padding=2, stem_max_pool=True):
 
         super(DenseNet, self).__init__()
 
-        # First convolution
-        self.features = nn.Sequential(OrderedDict([
-            ('conv0', nn.Conv2d(3, num_init_features, kernel_size=7, stride=2,
-                                padding=3, bias=False)),
+        # generic stem: ImageNet uses larger kerne (kernel=7, stride=2) and max-pooling for downsampling of larger input images
+        # smaller images (Cifar10, ...) should use smaller kernels (kernel=3, stride=1) and no max-pooling
+        features = [
+            ('conv0', nn.Conv2d(in_channels, num_init_features, kernel_size=stem_kernel_size, stride=stem_stride,
+                                padding=stem_padding, bias=False)),
             ('norm0', nn.BatchNorm2d(num_init_features)),
             ('relu0', nn.ReLU(inplace=True)),
-            ('pool0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
-        ]))
+        ]
+
+        if stem_max_pool:
+            features.append(
+                ('pool0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
+            )
+
+        # First convolution
+        self.features = nn.Sequential(OrderedDict(features))
 
         # Each denseblock
         num_features = num_init_features
@@ -195,7 +208,6 @@ class DenseNet(nn.Module):
         out = torch.flatten(out, 1)
         out = self.classifier(out)
         return out
-
 
 def _load_state_dict(model, model_url, progress):
     # '.'s are no longer allowed in module names, but previous _DenseLayer

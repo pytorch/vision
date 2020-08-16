@@ -123,39 +123,59 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False,
+    def __init__(self, block, layers_per_block, num_classes=1000, zero_init_residual=False,
+                 in_channels=3, features_per_block=(64, 128, 256, 512), 
                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
-                 norm_layer=None):
+                 norm_layer=None, stem_kernel_size=7, stem_stride=2, stem_padding=3, 
+                 stem_max_pool=True):
+
         super(ResNet, self).__init__()
+
+        self.num_layers = len(layers_per_block)
+        if len(features_per_block) != self.num_layers:
+            raise ValueError("specifications for layers_per_block and corresponding features_per_block should "
+                             "match in length, got {} and {}".fomat(layers_per_block, features_per_block))
+
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer
 
-        self.inplanes = 64
+        self.inplanes = features_per_block[0]
         self.dilation = 1
+        self.first_max_pool = stem_max_pool
+
         if replace_stride_with_dilation is None:
             # each element in the tuple indicates if we should replace
             # the 2x2 stride with a dilated convolution instead
-            replace_stride_with_dilation = [False, False, False]
-        if len(replace_stride_with_dilation) != 3:
+            replace_stride_with_dilation = [False] * (self.num_layers - 1)
+
+        if len(replace_stride_with_dilation) != (self.num_layers - 1):
             raise ValueError("replace_stride_with_dilation should be None "
-                             "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
+                             "or a {}-element tuple, got {}".format(self.num_layers - 1, replace_stride_with_dilation))
+
         self.groups = groups
         self.base_width = width_per_group
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+
+        # generic stem: ImageNet uses larger kerne (kernel=7, stride=2) and max-pooling for downsampling of larger input images
+        # smaller images (Cifar10, ...) should use smaller kernels (kernel=3, stride=1) and no max-pooling
+        self.conv1 = nn.Conv2d(in_channels, self.inplanes, kernel_size=stem_kernel_size, stride=stem_stride, 
+                               padding=stem_padding, bias=False)
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2,
-                                       dilate=replace_stride_with_dilation[0])
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2,
-                                       dilate=replace_stride_with_dilation[1])
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2,
-                                       dilate=replace_stride_with_dilation[2])
+
+        # for allow custom specification of channels per layer and different feature map sizes (channel-wise)
+        # specify layers in a generic way, naming scheme allows backwards compatibility with pre-trained models
+        for n in range(self.num_layers):
+            if n == 0:
+                self.add_module("layer{}".format(n + 1), self._make_layer(block, features_per_block[n], layers_per_block[n], stride=1))
+            else:
+                self.add_module("layer{}".format(n + 1), self._make_layer(block, features_per_block[n], layers_per_block[n], stride=2,
+                                                                          dilate=replace_stride_with_dilation[n-1]))
+
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(512 * block.expansion, num_classes)
+        # due to custom feature map sizes: include flexibility in final linear layer
+        self.fc = nn.Linear(features_per_block[self.num_layers - 1] * block.expansion, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -203,12 +223,14 @@ class ResNet(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
-        x = self.maxpool(x)
 
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
+        # no max-pooling if not desired (e.g. for smaller input images)
+        if self.first_max_pool:
+            x = self.maxpool(x)
+
+        for n in range(self.num_layers):
+            layer = getattr(self, "layer{}".format(n + 1))
+            x = layer(x)
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
@@ -351,3 +373,23 @@ def wide_resnet101_2(pretrained=False, progress=True, **kwargs):
     kwargs['width_per_group'] = 64 * 2
     return _resnet('wide_resnet101_2', Bottleneck, [3, 4, 23, 3],
                    pretrained, progress, **kwargs)
+
+def cifar10_resnet(depth=20, num_classes=10, **kwargs):
+    r"""ResNet model for the Cifar10 dataset from 
+    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
+    The model is the ResNet implementation for smaller images e.g. from the Cifar10 dataset. 
+    It specifies a stack of 6n 3x3 convolutions with feature channels of 16, 32, 64 per block,
+    i.e. 2n convolutions for each feature map size. Overall, the network has 6n + 2 stacked
+    weighted layers, referred to as depth. num_layers in the implementation of ResNet
+    refers to blocks of convolution of one particular feature map size, i.e. num_layers corresponds to n. 
+
+    Args:
+        depth (int): total depth (total of stacked weighted layers)
+        num_classes (int): number of classes for final classification layer
+    
+    """
+
+    num_layers = int((depth - 2) / 6)
+    return ResNet(BasicBlock, layers_per_block=[num_layers, num_layers, num_layers], 
+                  features_per_block=[16, 32, 64], stem_kernel_size=3, stem_stride=1, stem_padding=1, 
+                  stem_max_pool=False, num_classes=num_classes, **kwargs)
