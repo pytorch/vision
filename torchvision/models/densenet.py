@@ -289,3 +289,21 @@ def densenet201(pretrained=False, progress=True, **kwargs):
     """
     return _densenet('densenet201', 32, (6, 12, 48, 32), 64, pretrained, progress,
                      **kwargs)
+
+def cifar10_densenet(growth_rate=12, depth=100, num_classes=10, **kwargs):
+    r"""Densenet model for the Cifar10 dataset from
+    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
+    As specified in the paper, the first feature map uses 2 * growth_rate channels 
+    and to match the paper's experiments, the model uses 3 blocks with (depth - 4) / 6 dense layers,
+    e.g. 3 blocks of 32 dense layers for depth=100.  
+    Args:
+        growth_reate (int): growth rate for DenseNet
+        depth (int): depth of network, i.e. total of stacked, weighted layers
+    """
+    num_init_features = 2 * growth_rate
+    block_config = (int((depth - 4) / 6), ) * 3
+
+    return DenseNet(growth_rate=growth_rate, num_init_features=num_init_features, 
+                    num_classes=num_classes, block_config=block_config, drop_rate=0.2, 
+                    stem_kernel_size=3, stem_stride=1, stem_padding=2, stem_max_pool=False,
+                    **kwargs)
