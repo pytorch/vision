@@ -128,7 +128,7 @@ class DenseNet(nn.Module):
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
     Args:
         growth_rate (int) - how many filters to add each layer (`k` in paper)
-        block_config (list 4 ints) - how many layers in each pooling block
+        block_config (list of ints) - how many layers in each pooling block
         num_init_features (int) - the number of filters to learn in the first convolution layer
         in_channels (int) - the number of channels of the input image
         bn_size (int) - multiplicative factor for number of bottle neck layers

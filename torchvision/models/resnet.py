@@ -123,24 +123,47 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers_per_block, num_classes=1000, zero_init_residual=False,
-                 in_channels=3, features_per_block=(64, 128, 256, 512), 
-                 groups=1, width_per_group=64, replace_stride_with_dilation=None,
+    def __init__(self, block, blocks_per_layer, features_per_layer=(64, 128, 256, 512),
+                 num_classes=1000, in_channels=3,
+                 zero_init_residual=False, replace_stride_with_dilation=None,
+                 groups=1, width_per_group=64, 
                  norm_layer=None, stem_kernel_size=7, stem_stride=2, stem_padding=3, 
                  stem_max_pool=True):
+        r"""ResNet model, based on
+        `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
+        The original implementation uses the confusing notion of 'layer' for its general architecture.
+        The ResNet used on ImageNet consists of a stem (first convolutional layer), 4 'layers' 
+        consisting of several stacked blocks (BasicBlock or Bottleneck) and the final classification head. 
+
+        Args:
+            block: basic building block of ResNet (BasicBlock or Bottleneck)
+            blocks_per_layer (list of ints): number of blocks used to build each layer
+            features_per_layer (list of ints): feature channels for each layer
+            num_classes (int): number of classification classes
+            in_channels (int): the number of channels of the input image
+            zero_init_residual (bool): 
+            groups (int): groups of group convolution, if used
+            with_per_group(int):
+            replace_stride_with_dilatation (bool):
+            norm_layer: norm layer to use in the basic building blocks (e.g. batchnorm)
+            stem_kernel_size (int) - size of the kernel in the first convolutional layer (stem)
+            stem_stride (int) - stride of the first convolutional layer (stem)
+            stem_padding (int) - padding in the first convolutional layer (stem)
+            stem_max_pool (bool) - if True, apply max-pooling after the first convolutional layer   
+        """
 
         super(ResNet, self).__init__()
 
-        self.num_layers = len(layers_per_block)
-        if len(features_per_block) != self.num_layers:
+        self.num_layers = len(blocks_per_layer)
+        if len(features_per_layer) != self.num_layers:
             raise ValueError("specifications for layers_per_block and corresponding features_per_block should "
-                             "match in length, got {} and {}".fomat(layers_per_block, features_per_block))
+                             "match in length, got {} and {}".format(blocks_per_layer, features_per_layer))
 
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer
 
-        self.inplanes = features_per_block[0]
+        self.inplanes = features_per_layer[0]
         self.dilation = 1
         self.first_max_pool = stem_max_pool
 
@@ -168,14 +191,14 @@ class ResNet(nn.Module):
         # specify layers in a generic way, naming scheme allows backwards compatibility with pre-trained models
         for n in range(self.num_layers):
             if n == 0:
-                self.add_module("layer{}".format(n + 1), self._make_layer(block, features_per_block[n], layers_per_block[n], stride=1))
+                self.add_module("layer{}".format(n + 1), self._make_layer(block, features_per_layer[n], blocks_per_layer[n], stride=1))
             else:
-                self.add_module("layer{}".format(n + 1), self._make_layer(block, features_per_block[n], layers_per_block[n], stride=2,
+                self.add_module("layer{}".format(n + 1), self._make_layer(block, features_per_layer[n], blocks_per_layer[n], stride=2,
                                                                           dilate=replace_stride_with_dilation[n-1]))
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         # due to custom feature map sizes: include flexibility in final linear layer
-        self.fc = nn.Linear(features_per_block[self.num_layers - 1] * block.expansion, num_classes)
+        self.fc = nn.Linear(features_per_layer[self.num_layers - 1] * block.expansion, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -390,6 +413,6 @@ def cifar10_resnet(depth=20, num_classes=10, **kwargs):
     """
 
     num_layers = int((depth - 2) / 6)
-    return ResNet(BasicBlock, layers_per_block=[num_layers, num_layers, num_layers], 
-                  features_per_block=[16, 32, 64], stem_kernel_size=3, stem_stride=1, stem_padding=1, 
+    return ResNet(BasicBlock, blocks_per_layer=[num_layers, num_layers, num_layers], 
+                  features_per_layer=[16, 32, 64], stem_kernel_size=3, stem_stride=1, stem_padding=1, 
                   stem_max_pool=False, num_classes=num_classes, **kwargs)
