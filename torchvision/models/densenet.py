@@ -4,10 +4,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from collections import OrderedDict
-from .utils import load_state_dict_from_url
 from torch import Tensor
 from torch.jit.annotations import List
-
+from .utils import load_state_dict_from_url
 
 __all__ = ['DenseNet', 'densenet121', 'densenet169', 'densenet201', 'densenet161']
 
@@ -22,16 +21,16 @@ model_urls = {
 class _DenseLayer(nn.Module):
     def __init__(self, num_input_features, growth_rate, bn_size, drop_rate, memory_efficient=False):
         super(_DenseLayer, self).__init__()
-        self.add_module('norm1', nn.BatchNorm2d(num_input_features)),
-        self.add_module('relu1', nn.ReLU(inplace=True)),
+        self.add_module('norm1', nn.BatchNorm2d(num_input_features))
+        self.add_module('relu1', nn.ReLU(inplace=True))
         self.add_module('conv1', nn.Conv2d(num_input_features, bn_size *
                                            growth_rate, kernel_size=1, stride=1,
-                                           bias=False)),
-        self.add_module('norm2', nn.BatchNorm2d(bn_size * growth_rate)),
-        self.add_module('relu2', nn.ReLU(inplace=True)),
+                                           bias=False))
+        self.add_module('norm2', nn.BatchNorm2d(bn_size * growth_rate))
+        self.add_module('relu2', nn.ReLU(inplace=True))
         self.add_module('conv2', nn.Conv2d(bn_size * growth_rate, growth_rate,
                                            kernel_size=3, stride=1, padding=1,
-                                           bias=False)),
+                                           bias=False))
         self.drop_rate = float(drop_rate)
         self.memory_efficient = memory_efficient
 
@@ -149,8 +148,8 @@ class DenseNet(nn.Module):
 
         super(DenseNet, self).__init__()
 
-        # generic stem: ImageNet uses larger kerne (kernel=7, stride=2) and max-pooling for downsampling of larger input images
-        # smaller images (Cifar10, ...) should use smaller kernels (kernel=3, stride=1) and no max-pooling
+        # ImageNet requires larger kernels (k=7, s=2) and max-pooling for downsampling of larger input images
+        # smaller images (cifar10, ...) should use smaller kernels (kernel=3, stride=1) and no max-pooling
         features = [
             ('conv0', nn.Conv2d(in_channels, num_init_features, kernel_size=stem_kernel_size, stride=stem_stride,
                                 padding=stem_padding, bias=False)),
@@ -208,6 +207,7 @@ class DenseNet(nn.Module):
         out = torch.flatten(out, 1)
         out = self.classifier(out)
         return out
+
 
 def _load_state_dict(model, model_url, progress):
     # '.'s are no longer allowed in module names, but previous _DenseLayer
@@ -290,20 +290,21 @@ def densenet201(pretrained=False, progress=True, **kwargs):
     return _densenet('densenet201', 32, (6, 12, 48, 32), 64, pretrained, progress,
                      **kwargs)
 
+
 def cifar10_densenet(growth_rate=12, depth=100, num_classes=10, **kwargs):
     r"""Densenet model for the Cifar10 dataset from
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
-    As specified in the paper, the first feature map uses 2 * growth_rate channels 
-    and to match the paper's experiments, the model uses 3 blocks with (depth - 4) / 6 dense layers,
-    e.g. 3 blocks of 32 dense layers for depth=100.  
+    As specified in the paper, the first feature map uses 2 * growth_rate channels
+    and the model uses 3 blocks with (depth - 4) / 6 dense layers.
     Args:
         growth_reate (int): growth rate for DenseNet
         depth (int): depth of network, i.e. total of stacked, weighted layers
     """
     num_init_features = 2 * growth_rate
-    block_config = (int((depth - 4) / 6), ) * 3
+    layers_per_block = int((depth - 4) / 6)
+    block_config = (layers_per_block, ) * 3
 
-    return DenseNet(growth_rate=growth_rate, num_init_features=num_init_features, 
-                    num_classes=num_classes, block_config=block_config, drop_rate=0.2, 
+    return DenseNet(growth_rate=growth_rate, num_init_features=num_init_features,
+                    num_classes=num_classes, block_config=block_config, drop_rate=0.2,
                     stem_kernel_size=3, stem_stride=1, stem_padding=2, stem_max_pool=False,
                     **kwargs)
