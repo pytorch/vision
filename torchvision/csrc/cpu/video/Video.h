@@ -13,7 +13,12 @@
 #include <torch/script.h>
 
 
-#include "../decoder/Stream.h"
+#include <exception>
+#include "sync_decoder.h"
+#include "memory_buffer.h"
+#include "defs.h"
+
+using namespace ffmpeg;
 
 
 
@@ -22,22 +27,23 @@ struct VideoMetadata{
     double videoDuration; // real world video duration in seconds (float)
     double videoStartTime; // video start time in seconds (float)
     // do we need a constructor here?
-}
+};
 
-class Video {
+struct Video : torch::CustomClassHolder {
     std::vector<VideoMetadata> Metadata;
-    std::vector<Stream> AvailStreams;  // TODO: add stream type
+    // std::vector<Stream> AvailStreams;  // TODO: add stream type
     public:
-        Video(std::string filename, std::string stream="video");
-        void Seek(double ts, std::string stream="", bool any_frame=False);
-        torch::List<torch::Tensor> Next(std::string stream="")
-        torch::List<torch::Tensor> Peak(std::string stream="")
-    protected:
+        Video(std::string videoPath, std::string stream, bool isReadFile, int64_t audioSamples, int64_t audioChannels);
+        // void Seek(double ts, std::string stream="", bool any_frame=False);
+        // torch::List<torch::Tensor> Next(std::string stream="")
+        // torch::List<torch::Tensor> Peak(std::string stream="")
+    // protected:
         // AV container type (check in decoder for exact type)
     private:
-        int64_t SecToStream(double ts); // TODO: add stream type
-        float StreamToSec(int64_t pts); // TODO: add stream type
-        void SetVideoStream(std::string stream="video:0")  // this needs to be improved
-} // class Video
+        DecoderParameters params;
+        // int64_t SecToStream(double ts); // TODO: add stream type
+        // float StreamToSec(int64_t pts); // TODO: add stream type
+        void _getDecoderParams(int64_t videoStartUs, int64_t getPtsOnly, int stream_id, double seekFrameMarginUs); // this needs to be improved
+}; // class Video
 
 #endif  // VIDEO_H_
