@@ -196,7 +196,7 @@ class ResNet(nn.Module):
 
         # for custom specification of channels per layer and different feature map sizes (channel-wise)
         # specify layers in a generic way, naming scheme allows compatibility with pre-trained models
-        # torchscript does not support getattr in forward        
+        # torchscript does not support getattr in forward
         # workaround to keep model scribtable: if less layers specified, fill up layers with identities
         self.layer1 = self._make_layer(block, features_per_layer[0], blocks_per_layer[0], stride=1)
 
