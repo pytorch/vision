@@ -214,7 +214,7 @@ class ResNet(nn.Module):
 
         if self.num_layers > 3:
             self.layer4 = self._make_layer(block, features_per_layer[3], blocks_per_layer[3], stride=2,
-                                           dilate=replace_stride_with_dilation[1])
+                                           dilate=replace_stride_with_dilation[2])
         else:
             self.layer4 = nn.Identity()
 
