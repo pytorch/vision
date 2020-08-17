@@ -57,9 +57,7 @@ class AnchorGenerator(nn.Module):
     ):
         super(AnchorGenerator, self).__init__()
 
-        if not isinstance(sizes[0], (list, tuple)):
-            # TODO change this
-            sizes = tuple((s,) for s in sizes)
+        sizes = tuple(map(lambda x: (x,) if not isinstance(x, (list, tuple)) else x, sizes))
         if not isinstance(aspect_ratios[0], (list, tuple)):
             aspect_ratios = (aspect_ratios,) * len(sizes)
 
@@ -165,7 +163,7 @@ class AnchorGenerator(nn.Module):
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
         anchors = torch.jit.annotate(List[List[torch.Tensor]], [])
-        for i, (image_height, image_width) in enumerate(image_list.image_sizes):
+        for _ in range(len(image_list.image_sizes)):
             anchors_in_image = []
             for anchors_per_feature_map in anchors_over_all_feature_maps:
                 anchors_in_image.append(anchors_per_feature_map)
