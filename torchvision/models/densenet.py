@@ -8,7 +8,7 @@ from torch import Tensor
 from torch.jit.annotations import List
 from .utils import load_state_dict_from_url
 
-__all__ = ['DenseNet', 'densenet121', 'densenet169', 'densenet201', 'densenet161']
+__all__ = ['DenseNet', 'densenet121', 'densenet169', 'densenet201', 'densenet161', 'cifar10_densenet']
 
 model_urls = {
     'densenet121': 'https://download.pytorch.org/models/densenet121-a639ec97.pth',

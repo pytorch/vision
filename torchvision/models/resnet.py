@@ -5,7 +5,7 @@ from .utils import load_state_dict_from_url
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
            'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
-           'wide_resnet50_2', 'wide_resnet101_2']
+           'wide_resnet50_2', 'wide_resnet101_2', 'cifar10_resnet']
 
 
 model_urls = {
@@ -199,24 +199,14 @@ class ResNet(nn.Module):
         # torchscript does not support getattr in forward
         # workaround to keep model scribtable: if less layers specified, fill up layers with identities
         self.layer1 = self._make_layer(block, features_per_layer[0], blocks_per_layer[0], stride=1)
+        self.layer2 = nn.Identity()
+        self.layer3 = nn.Identity()
+        self.layer4 = nn.Identity()
 
-        if self.num_layers > 1:
-            self.layer2 = self._make_layer(block, features_per_layer[1], blocks_per_layer[1], stride=2,
-                                           dilate=replace_stride_with_dilation[0])
-        else:
-            self.layer2 = nn.Identity()
-
-        if self.num_layers > 2:
-            self.layer3 = self._make_layer(block, features_per_layer[2], blocks_per_layer[2], stride=2,
-                                           dilate=replace_stride_with_dilation[1])
-        else:
-            self.layer3 = nn.Identity()
-
-        if self.num_layers > 3:
-            self.layer4 = self._make_layer(block, features_per_layer[3], blocks_per_layer[3], stride=2,
-                                           dilate=replace_stride_with_dilation[2])
-        else:
-            self.layer4 = nn.Identity()
+        for l in range(1, self.num_layers):
+            self.add_module('layer{}'.format(l + 1),
+                            self._make_layer(block, features_per_layer[l], blocks_per_layer[l], stride=2,
+                                             dilate=replace_stride_with_dilation[l - 1]))
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         # due to custom feature map sizes: include flexibility in final linear layer
