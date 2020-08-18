@@ -203,10 +203,10 @@ class ResNet(nn.Module):
         self.layer3 = nn.Identity()
         self.layer4 = nn.Identity()
 
-        for l in range(1, self.num_layers):
-            self.add_module('layer{}'.format(l + 1),
-                            self._make_layer(block, features_per_layer[l], blocks_per_layer[l], stride=2,
-                                             dilate=replace_stride_with_dilation[l - 1]))
+        for layer in range(1, self.num_layers):
+            self.add_module('layer{}'.format(layer + 1),
+                            self._make_layer(block, features_per_layer[layer], blocks_per_layer[layer], stride=2,
+                                             dilate=replace_stride_with_dilation[layer - 1]))
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         # due to custom feature map sizes: include flexibility in final linear layer
