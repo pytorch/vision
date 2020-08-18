@@ -33,11 +33,15 @@ class Tester(unittest.TestCase):
         _, targets = self._make_empty_sample()
         anchors = [torch.randint(-50, 50, (3, 4), dtype=torch.float32)]
 
-        anchor_sizes = ((32,), (64,), (128,), (256,), (512,))
-        aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
+        anchor_sizes = (32, 64, 128, 256, 512,)
+        aspect_ratios = (0.5, 1.0, 2.0)
         rpn_anchor_generator = AnchorGenerator(
             anchor_sizes, aspect_ratios
         )
+
+        self.assertEqual(rpn_anchor_generator.aspect_ratios, ((0.5, 1.0, 2.0),) * len(anchor_sizes))
+        self.assertEqual(rpn_anchor_generator.sizes, ((32,), (64,), (128,), (256,), (512,)))
+
         rpn_head = RPNHead(4, rpn_anchor_generator.num_anchors_per_location()[0])
 
         head = RegionProposalNetwork(

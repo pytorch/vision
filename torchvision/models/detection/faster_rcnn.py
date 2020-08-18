@@ -116,8 +116,8 @@ class FasterRCNN(GeneralizedRCNN):
         >>> # ratios. We have a Tuple[Tuple[int]] because each feature
         >>> # map could potentially have different sizes and
         >>> # aspect ratios
-        >>> anchor_generator = AnchorGenerator(sizes=((32, 64, 128, 256, 512),),
-        >>>                                    aspect_ratios=((0.5, 1.0, 2.0),))
+        >>> anchor_generator = AnchorGenerator(sizes=(32, 64, 128, 256, 512),
+        >>>                                    aspect_ratios=(0.5, 1.0, 2.0))
         >>>
         >>> # let's define what are the feature maps that we will
         >>> # use to perform the region of interest cropping, as well as
