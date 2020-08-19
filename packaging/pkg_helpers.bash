@@ -312,7 +312,7 @@ download_copy_ffmpeg() {
     conda install -yq wget
     wget -q https://anaconda.org/pytorch/ffmpeg/4.3/download/win-64/ffmpeg-4.3-ha925a31_0.tar.bz2
     tar -xjvf ffmpeg-4.3-ha925a31_0.tar.bz2
-    cp Library/bin/*.dll ..
+    cp Library/bin/*.dll ../torchvision
   else
     if [[ "$(uname)" == Darwin ]]; then
       conda install -yq ffmpeg -c pytorch
@@ -321,13 +321,13 @@ download_copy_ffmpeg() {
       tar -xjvf ffmpeg-4.3-h0a44026_0.tar.bz2
       for f in lib/*.dylib; do
         if [[ $f =~ ([a-z])+\.dylib ]]; then
-          cp $f ..
+          cp $f ../torchvision
         fi
       done
     else
       wget -q https://anaconda.org/pytorch/ffmpeg/4.3/download/linux-64/ffmpeg-4.3-hf484d3e_0.tar.bz2
       tar -xjvf ffmpeg-4.3-hf484d3e_0.tar.bz2
-      cp lib/*.so ..
+      cp lib/*.so ../torchvision
     fi
   fi
   cd ..
