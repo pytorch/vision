@@ -29,7 +29,6 @@ PyMODINIT_FUNC PyInit_video_reader(void) {
 #endif
 
 
-// namespace Video{
 const size_t decoderTimeoutMs = 600000;
 const AVPixelFormat defaultVideoPixelFormat = AV_PIX_FMT_RGB24;
 const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
@@ -43,6 +42,7 @@ void Video::_getDecoderParams(
         int64_t getPtsOnly,
         // how enum works, but stream type
         int stream_id=-1,
+        bool all_streams=false,
         double seekFrameMarginUs=10){
 
     params.headerOnly = getPtsOnly != 0;
@@ -51,6 +51,24 @@ void Video::_getDecoderParams(
     params.timeoutMs = decoderTimeoutMs;
     params.preventStaleness = false;  // not sure what this is about
 
+    if (all_streams == true){
+        MediaFormat audioFormat((long) -2);
+        audioFormat.type = TYPE_AUDIO;
+        audioFormat.format.audio.format = defaultAudioSampleFormat;
+        params.formats.insert(audioFormat);
+
+        MediaFormat videoFormat(0, (long) -2);
+        videoFormat.type = TYPE_VIDEO;
+        videoFormat.format.video.format = defaultVideoPixelFormat;
+        params.formats.insert(videoFormat);
+
+        // MediaFormat subtitleFormat("0", (long) -2);
+        // subtitleFormat.type = TYPE_SUBTITLE;
+        // MediaFormat ccFormat((double) 0, (long) -2);
+        // ccFormat.type = TYPE_CC;
+
+    }
+
     // define the stream using the correct parsing technique
 } // _get decoder params
 
@@ -58,22 +76,20 @@ void Video::_getDecoderParams(
 Video::Video(
     std::string videoPath, 
     std::string stream, 
-    bool isReadFile, 
-    int64_t audioSamples=0, 
-    int64_t audioChannels=1) {
+    bool isReadFile) {
 
 
     //parse stream information
 
     // set current stream
+    // note that in the initial version we want to get all streams
     DecoderParameters params;
     Video::_getDecoderParams(
-        0,   // video start
+        0,      // video start
         false,  //headerOnly
         // stream_type parsed from info above
-        // stream_id parsed from info above
-        audioSamples,
-        audioChannels
+        -2,     // stream_id parsed from info above
+        true    // read all streams
     );
 
     std::string logMessage, logType;
@@ -88,32 +104,55 @@ Video::Video(
     SyncDecoder decoder;
     bool succeeded;
 
-    VLOG(1) << "Video decoding from " << logType << " [" << logMessage
+    VLOG(1) << "Video decoding to gather metadata from " << logType << " [" << logMessage
           << "] has started";
-
-    DecoderMetadata audioMetadata, videoMetadata, dataMetadata;
+    
+    std::vector<StreamMetadata> videoStreams, audioStreams;
     std::vector<DecoderMetadata> metadata;
     if ((succeeded = decoder.init(params, std::move(callback), &metadata))) {
         for (const auto& header : metadata) {
             VLOG(1) << "Decoding stream of" << header.format.type ;
-        if (header.format.type == TYPE_VIDEO) {
-            videoMetadata = header;
-        } else if (header.format.type == TYPE_AUDIO) {
-            audioMetadata = header;
-        } else {
-            dataMetadata = header;
-        };
+        
+            // generate streamMetadata object
+            StreamMetadata streamInfo;
+            // parse stream timebase
+            torch::Tensor timeBase = torch::zeros({1}, torch::kFloat);
+            float * timeBaseData = timeBase.data_ptr<float>();
+            timeBaseData[0] = header.num / header.den;
+            streamInfo.timeBase = timeBase;
+            // parse stream duration
+            torch::Tensor duration = torch::zeros({1}, torch::kFloat);
+            float* durationData = duration.data_ptr<float>();
+            durationData[0] = (float) header.duration;
+            // to get duration in seconds multiply duration by timebase
+            streamInfo.duration = duration * streamInfo.timeBase;
+            
+            if (header.format.type == TYPE_VIDEO) {
+                // parse stream fps
+                torch::Tensor frameRate = torch::zeros({1}, torch::kFloat);
+                float* frameRateData = frameRate.data_ptr<float>();
+                frameRateData[0] = header.fps;
+                streamInfo.frameRate = frameRate;
+                videoStreams.push_back(streamInfo);
+            } else if (header.format.type == TYPE_AUDIO) {
+                const auto& format = header.format.format.audio;
+                // parse stream fps
+                torch::Tensor frameRate = torch::zeros({1}, torch::kFloat);
+                float* frameRateData = frameRate.data_ptr<float>();
+                frameRateData[0] = (float) format.samples;
+                streamInfo.frameRate = frameRate;
+                audioStreams.push_back(streamInfo);
+            };
         }
+        VideoMetadata.insert({"video", videoStreams});
+        VideoMetadata.insert({"autio", audioStreams});
     } 
 } //video
 
-// void Video::Seek(float time_s, std::string stream="", bool any_frame=False){
-// }
-
-// torch::List<torch::Tensor> Video::Next(){
-//     return
-// }
-
+// // std::map<std::string, std::vector<StreamMetadata>> Video::getMetadata(){
+int Video::getMetadata() {
+    // return VideoMetadata;
+    return 5;
+}
 
 
-// }; // namespace video
