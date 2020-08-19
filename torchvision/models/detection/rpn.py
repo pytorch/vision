@@ -164,7 +164,7 @@ class AnchorGenerator(nn.Module):
 
         # Clear the cache in case that memory leaks.
         self._cache.clear()
-        return [torch.cat(anchors_over_all_feature_maps), ] * len(image_list.image_sizes)
+        return [torch.cat(anchors_over_all_feature_maps) for _ in range(len(image_list.image_sizes))]
 
 
 class RPNHead(nn.Module):
