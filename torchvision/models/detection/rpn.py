@@ -159,14 +159,15 @@ class AnchorGenerator(nn.Module):
         image_size = image_list.tensors.shape[-2:]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         strides = [[torch.tensor(image_size[0] // g[0], dtype=torch.int64, device=device),
-                    torch.tensor(image_size[1] // g[1], dtype=torch.int64, device=device)]
-                   for g in grid_sizes]
+                    torch.tensor(image_size[1] // g[1], dtype=torch.int64, device=device)] for g in grid_sizes]
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
-
+        anchors = torch.jit.annotate(List[torch.Tensor],
+                                     [torch.cat(anchors_over_all_feature_maps)
+                                      for _ in range(len(image_list.image_sizes))])
         # Clear the cache in case that memory leaks.
         self._cache.clear()
-        return [torch.cat(anchors_over_all_feature_maps) for _ in range(len(image_list.image_sizes))]
+        return anchors
 
 
 class RPNHead(nn.Module):
