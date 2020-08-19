@@ -162,7 +162,8 @@ class AnchorGenerator(nn.Module):
                     torch.tensor(image_size[1] // g[1], dtype=torch.int64, device=device)] for g in grid_sizes]
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
-        anchors: List[torch.Tensor] = [torch.cat(anchors_over_all_feature_maps) for _ in range(len(image_list.image_sizes))]
+        anchors: List[torch.Tensor] = [torch.cat(anchors_over_all_feature_maps)
+                                       for _ in range(len(image_list.image_sizes))]
         # Clear the cache in case that memory leaks.
         self._cache.clear()
         return anchors
