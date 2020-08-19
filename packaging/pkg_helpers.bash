@@ -316,7 +316,7 @@ download_copy_ffmpeg() {
   else
     if [[ "$(uname)" == Darwin ]]; then
       conda install -yq ffmpeg -c pytorch
-      conda install wget
+      conda install -yq wget
       wget -q https://anaconda.org/pytorch/ffmpeg/4.3/download/osx-64/ffmpeg-4.3-h0a44026_0.tar.bz2
       tar -xjvf ffmpeg-4.3-h0a44026_0.tar.bz2
       for f in lib/*.dylib; do
