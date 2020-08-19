@@ -174,13 +174,13 @@ Video::Video(
             };
         }
         VideoMetadata.insert({"video", videoStreams});
-        VideoMetadata.insert({"autio", audioStreams});
+        VideoMetadata.insert({"audio", audioStreams});
     } 
 } //video
 
-// // std::map<std::string, std::vector<StreamMetadata>> Video::getMetadata(){
-int Video::getMetadata() {
-    // return VideoMetadata;
-    return 5;
+std::map<std::string, std::vector<StreamMetadata>> Video::getMetadata(){
+// int Video::getMetadata() {
+    return VideoMetadata;
+    // return 5;
 }
 

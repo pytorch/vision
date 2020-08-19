@@ -45,7 +45,7 @@ struct Video : torch::CustomClassHolder {
     
     public:
         Video(std::string videoPath, std::string stream, bool isReadFile);
-        int getMetadata();
+        std::map<std::string, std::vector<StreamMetadata>> getMetadata();
         // std::map<std::string, std::vector<StreamMetadata>> getMetadata();
         // void Seek(double ts, std::string stream="", bool any_frame=False);
         // torch::List<torch::Tensor> Next(std::string stream="")
