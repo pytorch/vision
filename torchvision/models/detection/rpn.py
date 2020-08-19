@@ -155,7 +155,7 @@ class AnchorGenerator(nn.Module):
 
     def forward(self, image_list, feature_maps):
         # type: (ImageList, List[Tensor]) -> List[Tensor]
-        grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
+        grid_sizes = list([feature_map.shape[-2:] for feature_map in feature_maps])
         image_size = image_list.tensors.shape[-2:]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         strides = [(image_size[0] // g[0], image_size[1] // g[1]) for g in grid_sizes]
