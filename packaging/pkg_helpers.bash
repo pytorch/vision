@@ -303,3 +303,30 @@ setup_junit_results_folder() {
     export CONDA_PYTORCH_BUILD_RESULTS_DIRECTORY="${SOURCE_ROOT_DIR}/build_results/results.xml"
   fi
 }
+
+
+download_copy_ffmpeg() {
+  mkdir ffmpeg_tmp
+  cd ffmpeg_tmp
+  if [[ "$OSTYPE" == "msys" ]]; then
+    wget -q https://anaconda.org/pytorch/ffmpeg/4.3/download/win-64/ffmpeg-4.3-ha925a31_0.tar.bz2
+    tar -xjvf ffmpeg-4.3-ha925a31_0.tar.bz2
+    cp Library/bin/*.dll ..
+  else
+    if [[ "$(uname)" == Darwin ]]; then
+      wget -q https://anaconda.org/pytorch/ffmpeg/4.3/download/osx-64/ffmpeg-4.3-h0a44026_0.tar.bz2
+      tar -xjvf ffmpeg-4.3-h0a44026_0.tar.bz2
+      for f in lib/*.dylib; do
+        if [[ $f =~ ([a-z])+\.dylib ]]; then
+          cp $f ..
+        fi
+      done
+    else
+      wget -q https://anaconda.org/pytorch/ffmpeg/4.3/download/linux-64/ffmpeg-4.3-hf484d3e_0.tar.bz2
+      tar -xjvf ffmpeg-4.3-hf484d3e_0.tar.bz2
+      cp lib/*.so ..
+    fi
+  fi
+  cd ..
+  rm -rf ffmpeg_tmp
+}

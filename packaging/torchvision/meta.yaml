@@ -10,6 +10,7 @@ requirements:
     - {{ compiler('c') }} # [win]
     - libpng
     - jpeg
+    - ffmpeg
 
   host:
     - python
@@ -21,6 +22,7 @@ requirements:
   run:
     - python
     - libpng
+    - ffmpeg
     - jpeg
     - pillow >=4.1.1
     - numpy >=1.11
