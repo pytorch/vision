@@ -328,6 +328,11 @@ download_copy_ffmpeg() {
       wget -q https://anaconda.org/pytorch/ffmpeg/4.3/download/linux-64/ffmpeg-4.3-hf484d3e_0.tar.bz2
       tar -xjvf ffmpeg-4.3-hf484d3e_0.tar.bz2
       cp lib/*.so ../torchvision
+      cp -r lib/* /usr/lib
+      cp -r bin/* /usr/bin
+      cp -r include/* /usr/include
+      ldconfig
+      which ffmpeg
     fi
   fi
   cd ..
