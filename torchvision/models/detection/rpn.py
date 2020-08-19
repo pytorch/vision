@@ -1,7 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
 from torch.nn import functional as F
-from torch import nn, Tensor, Size
+from torch import nn, Tensor
 
 import torchvision
 from torchvision.ops import boxes as box_ops
@@ -112,7 +112,7 @@ class AnchorGenerator(nn.Module):
     # For every combination of (a, (g, s), i) in (self.cell_anchors, zip(grid_sizes, strides), 0:2),
     # output g[i] anchors that are s[i] distance apart in direction i, with the same dimensions as a.
     def grid_anchors(self, grid_sizes, strides):
-        # type: (List[Size], List[Tuple[int]]) -> List[Tensor]
+        # type: (List, List[Tuple[int]]) -> List[Tensor]
         anchors = []
         cell_anchors = self.cell_anchors
         assert cell_anchors is not None
@@ -145,7 +145,7 @@ class AnchorGenerator(nn.Module):
         return anchors
 
     def cached_grid_anchors(self, grid_sizes, strides):
-        # type: (List[Size], List[Tuple[int]]) -> List[Tensor]
+        # type: (List, List[Tuple[int]]) -> List[Tensor]
         key = str(grid_sizes) + str(strides)
         if key in self._cache:
             return self._cache[key]
