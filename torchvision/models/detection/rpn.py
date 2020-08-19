@@ -112,7 +112,7 @@ class AnchorGenerator(nn.Module):
     # For every combination of (a, (g, s), i) in (self.cell_anchors, zip(grid_sizes, strides), 0:2),
     # output g[i] anchors that are s[i] distance apart in direction i, with the same dimensions as a.
     def grid_anchors(self, grid_sizes, strides):
-        # type: (Tuple[torch.Size], Tuple[Tuple[int]]) -> List[Tensor]
+        # type: (List[torch.Size], List[Tuple[int]]) -> List[Tensor]
         anchors = []
         cell_anchors = self.cell_anchors
         assert cell_anchors is not None
@@ -145,7 +145,7 @@ class AnchorGenerator(nn.Module):
         return anchors
 
     def cached_grid_anchors(self, grid_sizes, strides):
-        # type: (Tuple[torch.Size], Tuple[Tuple[int]]) -> List[Tensor]
+        # type: (List[torch.Size], List[Tuple[int]]) -> List[Tensor]
         key = str(grid_sizes) + str(strides)
         if key in self._cache:
             return self._cache[key]
@@ -155,10 +155,10 @@ class AnchorGenerator(nn.Module):
 
     def forward(self, image_list, feature_maps):
         # type: (ImageList, List[Tensor]) -> List[Tensor]
-        grid_sizes = tuple(feature_map.shape[-2:] for feature_map in feature_maps)
+        grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
         image_size = image_list.tensors.shape[-2:]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
-        strides = tuple((image_size[0] // g[0], image_size[1] // g[1]) for g in grid_sizes)
+        strides = [(image_size[0] // g[0], image_size[1] // g[1]) for g in grid_sizes]
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
 
