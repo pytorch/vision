@@ -112,7 +112,7 @@ class AnchorGenerator(nn.Module):
     # For every combination of (a, (g, s), i) in (self.cell_anchors, zip(grid_sizes, strides), 0:2),
     # output g[i] anchors that are s[i] distance apart in direction i, with the same dimensions as a.
     def grid_anchors(self, grid_sizes, strides):
-        # type: (List[List[int]], List[List[Tensor]]) -> List[Tensor]
+        # type: (Tuple[torch.Size], Tuple[Tuple[int]]) -> List[Tensor]
         anchors = []
         cell_anchors = self.cell_anchors
         assert cell_anchors is not None
@@ -145,7 +145,7 @@ class AnchorGenerator(nn.Module):
         return anchors
 
     def cached_grid_anchors(self, grid_sizes, strides):
-        # type: (List[List[int]], List[List[Tensor]]) -> List[Tensor]
+        # type: (Tuple[torch.Size], Tuple[Tuple[int]]) -> List[Tensor]
         key = str(grid_sizes) + str(strides)
         if key in self._cache:
             return self._cache[key]
@@ -155,23 +155,16 @@ class AnchorGenerator(nn.Module):
 
     def forward(self, image_list, feature_maps):
         # type: (ImageList, List[Tensor]) -> List[Tensor]
-        grid_sizes = list([feature_map.shape[-2:] for feature_map in feature_maps])
+        grid_sizes = tuple(feature_map.shape[-2:] for feature_map in feature_maps)
         image_size = image_list.tensors.shape[-2:]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
-        strides = [[torch.tensor(image_size[0] // g[0], dtype=torch.int64, device=device),
-                    torch.tensor(image_size[1] // g[1], dtype=torch.int64, device=device)] for g in grid_sizes]
+        strides = tuple((image_size[0] // g[0], image_size[1] // g[1]) for g in grid_sizes)
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
-        anchors = torch.jit.annotate(List[List[torch.Tensor]], [])
-        for _ in range(len(image_list.image_sizes)):
-            anchors_in_image = []
-            for anchors_per_feature_map in anchors_over_all_feature_maps:
-                anchors_in_image.append(anchors_per_feature_map)
-            anchors.append(anchors_in_image)
-        anchors = [torch.cat(anchors_per_image) for anchors_per_image in anchors]
+
         # Clear the cache in case that memory leaks.
         self._cache.clear()
-        return anchors
+        return [torch.cat(anchors_over_all_feature_maps), ] * len(image_list.image_sizes)
 
 
 class RPNHead(nn.Module):
