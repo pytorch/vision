@@ -309,8 +309,9 @@ download_copy_ffmpeg() {
   mkdir ffmpeg_tmp
   cd ffmpeg_tmp
   if [[ "$OSTYPE" == "msys" ]]; then
+    conda install -yq ffmpeg -c pytorch
     curl -L -q https://anaconda.org/pytorch/ffmpeg/4.3/download/win-64/ffmpeg-4.3-ha925a31_0.tar.bz2 --output ffmpeg-4.3-ha925a31_0.tar.bz2
-    tar -xjvf ffmpeg-4.3-ha925a31_0.tar.bz2
+    bzip2 --decompress --stdout ffmpeg-4.3-ha925a31_0.tar.bz2 | tar -x --file=-
     cp Library/bin/*.dll ../torchvision
   else
     if [[ "$(uname)" == Darwin ]]; then
