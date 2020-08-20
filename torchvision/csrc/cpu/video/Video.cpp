@@ -62,6 +62,7 @@ void Video::_getDecoderParams(
         videoFormat.format.video.format = defaultVideoPixelFormat;
         params.formats.insert(videoFormat);
 
+        // there is no clear way on how to use other formats- todo later
         // MediaFormat subtitleFormat("0", (long) -2);
         // subtitleFormat.type = TYPE_SUBTITLE;
         // MediaFormat ccFormat((double) 0, (long) -2);
@@ -69,7 +70,8 @@ void Video::_getDecoderParams(
 
     }
 
-    // define the stream using the correct parsing technique
+    // else use the stream using the correct parsing technique
+
 } // _get decoder params
 
 
@@ -139,7 +141,7 @@ Video::Video(
                 // parse stream fps
                 torch::Tensor frameRate = torch::zeros({1}, torch::kFloat);
                 float* frameRateData = frameRate.data_ptr<float>();
-                frameRateData[0] = (float) format.samples;
+                frameRateData[0] = (float) format.samples; // this is user defined? 
                 streamInfo.frameRate = frameRate;
                 audioStreams.push_back(streamInfo);
             };
@@ -150,9 +152,7 @@ Video::Video(
 } //video
 
 std::map<std::string, std::vector<StreamMetadata>> Video::getMetadata(){
-// int Video::getMetadata() {
     return VideoMetadata;
-    // return 5;
 }
 
 
