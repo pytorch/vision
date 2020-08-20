@@ -3,7 +3,7 @@
 #include "util.h"
 
 namespace ffmpeg {
-const AVRational timeBaseQ = AVRational {1, AV_TIME_BASE};
+const AVRational timeBaseQ = AVRational{1, AV_TIME_BASE};
 
 Stream::Stream(
     AVFormatContext* inputCtx,
