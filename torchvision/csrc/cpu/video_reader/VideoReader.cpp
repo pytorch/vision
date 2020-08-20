@@ -156,7 +156,10 @@ void offsetsToUs(
   videoEndUs = -1;
 
   if (readVideoStream) {
-    AVRational vr = AVRational {(int)videoTimeBaseNum, (int)videoTimeBaseDen};
+    AVRational vr;
+    vr.num = ((int)videoTimeBaseNum);
+    vr.den = ((int)videoTimeBaseDen);
+    // AVRational vr = AVRational {(int)videoTimeBaseNum, (int)videoTimeBaseDen};
     if (videoStartPts > 0) {
       videoStartUs = av_rescale_q(videoStartPts, vr, AV_TIME_BASE_Q);
     }
