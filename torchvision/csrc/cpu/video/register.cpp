@@ -3,11 +3,15 @@
 
 #include "Video.h"
 
+namespace {
 
-TORCH_LIBRARY(torchvision, m) {
+////////////////////////////////////////////////////////////////////////////////
+// typedefs.h
+////////////////////////////////////////////////////////////////////////////////
+static auto registerVideo =
+    torch::class_<Video>("torchvision", "Video")
+        .def(torch::init<std::string, std::string, bool>());
+        // .def("get_metadata", &Video::getMetadata);
 
-    m.class_<Video>("video")
-        .def(torch::init<std::string, std::string, bool>())
-        .def("get_metadata", &Video::getMetadata);
-}
+} //namespace
 #endif
