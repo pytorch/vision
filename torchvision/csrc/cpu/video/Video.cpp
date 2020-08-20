@@ -104,14 +104,14 @@ Video::Video(
     SyncDecoder decoder;
     bool succeeded;
 
-    VLOG(1) << "Video decoding to gather metadata from " << logType << " [" << logMessage
+    cout << "Video decoding to gather metadata from " << logType << " [" << logMessage
           << "] has started";
     
     std::vector<StreamMetadata> videoStreams, audioStreams;
     std::vector<DecoderMetadata> metadata;
     if ((succeeded = decoder.init(params, std::move(callback), &metadata))) {
         for (const auto& header : metadata) {
-            VLOG(1) << "Decoding stream of" << header.format.type ;
+            cout << "Decoding stream of" << header.format.type ;
         
             // generate streamMetadata object
             StreamMetadata streamInfo;
