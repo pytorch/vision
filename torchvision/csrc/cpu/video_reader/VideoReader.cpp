@@ -165,8 +165,7 @@ void offsetsToUs(
       // Add jitter to the end of the range to avoid conversion/rounding error.
       // Small value 100us won't be enough to select the next frame, but enough
       // to compensate rounding error due to the multiple conversions.
-      videoEndUs =
-          timeBaseJitterUs + av_rescale_q(videoEndPts, vr, timeBaseQ);
+      videoEndUs = timeBaseJitterUs + av_rescale_q(videoEndPts, vr, timeBaseQ);
     }
   } else if (readAudioStream) {
     AVRational ar = AVRational{(int)audioTimeBaseNum, (int)audioTimeBaseDen};
@@ -177,8 +176,7 @@ void offsetsToUs(
       // Add jitter to the end of the range to avoid conversion/rounding error.
       // Small value 100us won't be enough to select the next frame, but enough
       // to compensate rounding error due to the multiple conversions.
-      videoEndUs =
-          timeBaseJitterUs + av_rescale_q(audioEndPts, ar, timeBaseQ);
+      videoEndUs = timeBaseJitterUs + av_rescale_q(audioEndPts, ar, timeBaseQ);
     }
   }
 }
