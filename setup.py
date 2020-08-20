@@ -353,7 +353,7 @@ def get_extensions():
                     'swresample',
                     'swscale',
                 ],
-                extra_compile_args=["-std=c++14" if os.name != 'nt' else '/std:c++14'],
+                extra_compile_args=["-std=c++14"] if os.name != 'nt' else ['/std:c++14', '/MP'],
                 extra_link_args=["-std=c++14" if os.name != 'nt' else '/std:c++14'],
             )
         )
