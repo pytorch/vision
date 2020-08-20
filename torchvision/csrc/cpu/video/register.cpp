@@ -3,9 +3,12 @@
 
 #include "Video.h"
 
+namespace {
 
-    m.class_<Video>("video")
-        .def(torch::init<std::string, std::string, bool>())
-        .def("get_metadata", &Video::getMetadata);
-}
+static auto registerVideo =
+    torch::class_<Video>("torchvision", "Video")
+        .def(torch::init<std::string, std::string, bool>());
+        // .def("get_metadata", &Video::getMetadata);
+
+} //namespace
 #endif
