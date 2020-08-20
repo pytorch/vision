@@ -8,6 +8,7 @@ option(WITH_CUDA "Enable CUDA support" OFF)
 if(WITH_CUDA)
   enable_language(CUDA)
   add_definitions(-D__CUDA_NO_HALF_OPERATORS__)
+  add_definitions(-DWITH_CUDA)
 endif()
 
 find_package(Python3 COMPONENTS Development)
