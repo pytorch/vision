@@ -29,10 +29,7 @@ PyMODINIT_FUNC PyInit_video_reader(void) {
 #endif
 
 
-<<<<<<< HEAD
 
-=======
->>>>>>> FAIL metadata
 const size_t decoderTimeoutMs = 600000;
 const AVPixelFormat defaultVideoPixelFormat = AV_PIX_FMT_RGB24;
 const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
@@ -46,11 +43,8 @@ void Video::_getDecoderParams(
         int64_t getPtsOnly,
         // how enum works, but stream type
         int stream_id=-1,
-<<<<<<< HEAD
 
-=======
         bool all_streams=false,
->>>>>>> FAIL metadata
         double seekFrameMarginUs=10){
 
     params.headerOnly = getPtsOnly != 0;
@@ -59,8 +53,7 @@ void Video::_getDecoderParams(
     params.timeoutMs = decoderTimeoutMs;
     params.preventStaleness = false;  // not sure what this is about
 
-<<<<<<< HEAD
-=======
+
     if (all_streams == true){
         MediaFormat audioFormat((long) -2);
         audioFormat.type = TYPE_AUDIO;
@@ -72,6 +65,7 @@ void Video::_getDecoderParams(
         videoFormat.format.video.format = defaultVideoPixelFormat;
         params.formats.insert(videoFormat);
 
+        // there is no clear way on how to use other formats- todo later
         // MediaFormat subtitleFormat("0", (long) -2);
         // subtitleFormat.type = TYPE_SUBTITLE;
         // MediaFormat ccFormat((double) 0, (long) -2);
@@ -79,39 +73,22 @@ void Video::_getDecoderParams(
 
     }
 
-    // define the stream using the correct parsing technique
->>>>>>> FAIL metadata
+
+    // else use the stream using the correct parsing technique
+
 } // _get decoder params
 
 
 Video::Video(
     std::string videoPath, 
     std::string stream, 
-<<<<<<< HEAD
-
-    bool isReadFile, 
-    int64_t audioSamples=0, 
-    int64_t audioChannels=1) {
-=======
     bool isReadFile) {
->>>>>>> FAIL metadata
 
 
     //parse stream information
 
     // set current stream
-<<<<<<< HEAD
 
-    DecoderParameters params;
-    Video::_getDecoderParams(
-        0,      // video start
-        false,  //headerOnly
-        // stream_type parsed from info above
-        -2,     // stream_id parsed from info above
-        true    // read all streams
-=======
-    // note that in the initial version we want to get all streams
->>>>>>> FAIL metadata
     DecoderParameters params;
     Video::_getDecoderParams(
         0,      // video start
@@ -168,7 +145,7 @@ Video::Video(
                 // parse stream fps
                 torch::Tensor frameRate = torch::zeros({1}, torch::kFloat);
                 float* frameRateData = frameRate.data_ptr<float>();
-                frameRateData[0] = (float) format.samples;
+                frameRateData[0] = (float) format.samples; // this is user defined? 
                 streamInfo.frameRate = frameRate;
                 audioStreams.push_back(streamInfo);
             };
@@ -179,8 +156,6 @@ Video::Video(
 } //video
 
 std::map<std::string, std::vector<StreamMetadata>> Video::getMetadata(){
-// int Video::getMetadata() {
     return VideoMetadata;
-    // return 5;
 }
 
