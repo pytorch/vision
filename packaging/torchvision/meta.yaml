@@ -22,7 +22,7 @@ requirements:
   run:
     - python
     - libpng
-    - ffmpeg
+    - ffmpeg >=4.3
     - jpeg
     - pillow >=4.1.1
     - numpy >=1.11
