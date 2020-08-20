@@ -104,7 +104,7 @@ class LSUN(VisionDataset):
 
             classes = list(classes)
             msg_fmtstr_type = ("Expected type str for elements in argument classes, "
-                          "but got type {}.")
+                               "but got type {}.")
             for c in classes:
                 verify_str_arg(c, custom_msg=msg_fmtstr_type.format(type(c)))
                 c_short = c.split('_')
