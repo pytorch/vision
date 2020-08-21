@@ -149,12 +149,14 @@ class Tester(unittest.TestCase):
 
             self.assertLess(max_diff, 1e-5)
 
+
     def _test_adjust_fn(self, fn, fn_pil, fn_t, configs, device="cpu"):
         script_fn = torch.jit.script(fn)
 
         torch.manual_seed(15)
 
         tensor, pil_img = self._create_data(26, 34, device=device)
+
 
         for dt in [None, torch.float32, torch.float64]:
 
@@ -237,6 +239,15 @@ class Tester(unittest.TestCase):
         self._test_adjust_contrast("cuda")
         self._test_adjust_saturation("cuda")
         self._test_adjust_hue("cuda")
+
+
+
+    def test_adjustments(self):
+        self._test_adjustments("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_adjustments_cuda(self):
+        self._test_adjustments("cuda")
 
     def test_rgb_to_grayscale(self):
         script_rgb_to_grayscale = torch.jit.script(F_t.rgb_to_grayscale)

@@ -3,7 +3,7 @@ from typing import Optional, Dict, Tuple
 
 import torch
 from torch import Tensor
-from torch.nn.functional import affine_grid, grid_sample
+from torch.nn.functional import grid_sample
 from torch.jit.annotations import List, BroadcastingList2
 
 
@@ -240,7 +240,12 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
 
 def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
-    """Crop the Image Tensor and resize it to desired size.
+    """DEPRECATED. Crop the Image Tensor and resize it to desired size.
+
+    .. warning::
+
+        This method is deprecated and will be removed in future releases.
+        Please, use ``F.center_crop`` instead.
 
     Args:
         img (Tensor): Image to be cropped.
@@ -250,6 +255,11 @@ def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
     Returns:
             Tensor: Cropped image.
     """
+    warnings.warn(
+        "This method is deprecated and will be removed in future releases. "
+        "Please, use ``F.center_crop`` instead."
+    )
+
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
@@ -268,8 +278,15 @@ def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
 
 
 def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
-    """Crop the given Image Tensor into four corners and the central crop.
+    """DEPRECATED. Crop the given Image Tensor into four corners and the central crop.
+
+    .. warning::
+
+        This method is deprecated and will be removed in future releases.
+        Please, use ``F.five_crop`` instead.
+
     .. Note::
+
         This transform returns a List of Tensors and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
 
@@ -283,6 +300,11 @@ def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
        List: List (tl, tr, bl, br, center)
                 Corresponding top left, top right, bottom left, bottom right and center crop.
     """
+    warnings.warn(
+        "This method is deprecated and will be removed in future releases. "
+        "Please, use ``F.five_crop`` instead."
+    )
+
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
@@ -304,10 +326,16 @@ def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
 
 
 def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = False) -> List[Tensor]:
-    """Crop the given Image Tensor into four corners and the central crop plus the
+    """DEPRECATED. Crop the given Image Tensor into four corners and the central crop plus the
         flipped version of these (horizontal flipping is used by default).
 
+    .. warning::
+
+        This method is deprecated and will be removed in future releases.
+        Please, use ``F.ten_crop`` instead.
+
     .. Note::
+
         This transform returns a List of images and there may be a
         mismatch in the number of inputs and targets your ``Dataset`` returns.
 
@@ -323,6 +351,11 @@ def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = Fa
                 Corresponding top left, top right, bottom left, bottom right and center crop
                 and same for the flipped image's tensor.
     """
+    warnings.warn(
+        "This method is deprecated and will be removed in future releases. "
+        "Please, use ``F.ten_crop`` instead."
+    )
+
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
@@ -682,12 +715,13 @@ def _gen_affine_grid(
     # 2) we can normalize by other image size, such that it covers "extend" option like in PIL.Image.rotate
 
     d = 0.5
-    base_grid = torch.empty(1, oh, ow, 3)
+    base_grid = torch.empty(1, oh, ow, 3, dtype=theta.dtype, device=theta.device)
     base_grid[..., 0].copy_(torch.linspace(-ow * 0.5 + d, ow * 0.5 + d - 1, steps=ow))
     base_grid[..., 1].copy_(torch.linspace(-oh * 0.5 + d, oh * 0.5 + d - 1, steps=oh).unsqueeze_(-1))
     base_grid[..., 2].fill_(1)
 
-    output_grid = base_grid.view(1, oh * ow, 3).bmm(theta.transpose(1, 2) / torch.tensor([0.5 * w, 0.5 * h]))
+    rescaled_theta = theta.transpose(1, 2) / torch.tensor([0.5 * w, 0.5 * h], dtype=theta.dtype, device=theta.device)
+    output_grid = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta)
     return output_grid.view(1, oh, ow, 2)
 
 
@@ -714,14 +748,15 @@ def affine(
 
     _assert_grid_transform_inputs(img, matrix, resample, fillcolor, _interpolation_modes)
 
-    theta = torch.tensor(matrix, dtype=torch.float).reshape(1, 2, 3)
+    theta = torch.tensor(matrix, dtype=torch.float, device=img.device).reshape(1, 2, 3)
     shape = img.shape
+    # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
     mode = _interpolation_modes[resample]
     return _apply_grid_transform(img, grid, mode)
 
 
-def _compute_output_size(theta: Tensor, w: int, h: int) -> Tuple[int, int]:
+def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
 
     # Inspired of PIL implementation:
     # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
@@ -733,6 +768,7 @@ def _compute_output_size(theta: Tensor, w: int, h: int) -> Tuple[int, int]:
         [0.5 * w, 0.5 * h, 1.0],
         [0.5 * w, -0.5 * h, 1.0],
     ])
+    theta = torch.tensor(matrix, dtype=torch.float).reshape(1, 2, 3)
     new_pts = pts.view(1, 4, 3).bmm(theta.transpose(1, 2)).view(4, 2)
     min_vals, _ = new_pts.min(dim=0)
     max_vals, _ = new_pts.max(dim=0)
@@ -775,16 +811,17 @@ def rotate(
     }
 
     _assert_grid_transform_inputs(img, matrix, resample, fill, _interpolation_modes)
-    theta = torch.tensor(matrix).reshape(1, 2, 3)
     w, h = img.shape[-1], img.shape[-2]
-    ow, oh = _compute_output_size(theta, w, h) if expand else (w, h)
+    ow, oh = _compute_output_size(matrix, w, h) if expand else (w, h)
+    theta = torch.tensor(matrix, dtype=torch.float, device=img.device).reshape(1, 2, 3)
+    # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
     mode = _interpolation_modes[resample]
 
     return _apply_grid_transform(img, grid, mode)
 
 
-def _perspective_grid(coeffs: List[float], ow: int, oh: int):
+def _perspective_grid(coeffs: List[float], ow: int, oh: int, device: torch.device):
     # https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/
     # src/libImaging/Geometry.c#L394
 
@@ -796,19 +833,20 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int):
     theta1 = torch.tensor([[
         [coeffs[0], coeffs[1], coeffs[2]],
         [coeffs[3], coeffs[4], coeffs[5]]
-    ]])
+    ]], dtype=torch.float, device=device)
     theta2 = torch.tensor([[
         [coeffs[6], coeffs[7], 1.0],
         [coeffs[6], coeffs[7], 1.0]
-    ]])
+    ]], dtype=torch.float, device=device)
 
     d = 0.5
-    base_grid = torch.empty(1, oh, ow, 3)
+    base_grid = torch.empty(1, oh, ow, 3, dtype=torch.float, device=device)
     base_grid[..., 0].copy_(torch.linspace(d, ow * 1.0 + d - 1.0, steps=ow))
     base_grid[..., 1].copy_(torch.linspace(d, oh * 1.0 + d - 1.0, steps=oh).unsqueeze_(-1))
     base_grid[..., 2].fill_(1)
 
-    output_grid1 = base_grid.view(1, oh * ow, 3).bmm(theta1.transpose(1, 2) / torch.tensor([0.5 * ow, 0.5 * oh]))
+    rescaled_theta1 = theta1.transpose(1, 2) / torch.tensor([0.5 * ow, 0.5 * oh], dtype=torch.float, device=device)
+    output_grid1 = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta1)
     output_grid2 = base_grid.view(1, oh * ow, 3).bmm(theta2.transpose(1, 2))
 
     output_grid = output_grid1 / output_grid2 - 1.0
@@ -848,7 +886,7 @@ def perspective(
     )
 
     ow, oh = img.shape[-1], img.shape[-2]
-    grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh)
+    grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, device=img.device)
     mode = _interpolation_modes[interpolation]
 
     return _apply_grid_transform(img, grid, mode)

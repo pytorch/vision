@@ -8,6 +8,7 @@ option(WITH_CUDA "Enable CUDA support" OFF)
 if(WITH_CUDA)
   enable_language(CUDA)
   add_definitions(-D__CUDA_NO_HALF_OPERATORS__)
+  add_definitions(-DWITH_CUDA)
 endif()
 
 find_package(Python3 COMPONENTS Development)
@@ -33,10 +34,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} 
 # target_link_libraries(${PROJECT_NAME} PRIVATE ${PNG_LIBRARY} Python3::Python)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME TorchVision)
 
-target_include_directories(${PROJECT_NAME} INTERFACE
-  $<BUILD_INTERFACE:${HEADERS}:${PNG_INCLUDE_DIR}:${JPEG_INCLUDE_DIRS}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-
+include_directories(torchvision/csrc)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
