@@ -89,6 +89,23 @@ inline int GET_BLOCKS(const int N) {
   return std::min(kMaxGridNum, (N + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS);
 }
 
+inline void adjust_num_kernels_batch_size_(int & num_kernels, int & batch_size) {
+
+  if (num_kernels < kMaxGridNum * CUDA_NUM_THREADS)
+    return;
+
+  int seq_num_kernels = num_kernels / batch_size;
+  batch_size = kMaxGridNum * CUDA_NUM_THREADS / seq_num_kernels;
+  AT_ASSERTM(
+    batch_size > 0,
+    "Provided input size exceeds CUDA maximal possible values. num_kernels=",
+    num_kernels,
+    " max_kernels=",
+    kMaxGridNum * CUDA_NUM_THREADS
+  );
+  num_kernels = seq_num_kernels * batch_size;
+}
+
 template <typename scalar_t>
 __device__ scalar_t bilinear_interpolate(
     const scalar_t* in,
@@ -205,6 +222,7 @@ static void deformable_im2col(
     int deformable_group,
     at::Tensor data_col) {
   int num_kernels = n_in_channels * out_h * out_w * parallel_imgs;
+  adjust_num_kernels_batch_size_(num_kernels, parallel_imgs);
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "deformable_im2col_gpu", ([&] {
@@ -505,8 +523,12 @@ static void compute_grad_input(
       (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
   int out_w =
       (width + 2 * pad_w - (dilation_w * (weight_w - 1) + 1)) / stride_w + 1;
+
+  int batch_size = parallel_imgs;
   int num_kernels =
-      channels * weight_h * weight_w * out_h * out_w * parallel_imgs;
+      channels * weight_h * weight_w * out_h * out_w * batch_size;
+
+  adjust_num_kernels_batch_size_(num_kernels, batch_size);
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       columns.scalar_type(), "deformable_col2im_gpu", ([&] {
@@ -527,7 +549,7 @@ static void compute_grad_input(
             stride_w,
             dilation_h,
             dilation_w,
-            parallel_imgs,
+            batch_size,
             n_offset_grps,
             out_h,
             out_w,
@@ -669,8 +691,12 @@ static void compute_grad_offset(
       (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
   int out_w =
       (width + 2 * pad_w - (dilation_w * (weight_w - 1) + 1)) / stride_w + 1;
+
+  int batch_size = parallel_imgs;
   int num_kernels =
-      out_h * out_w * 2 * weight_h * weight_w * n_offset_grps * parallel_imgs;
+      out_h * out_w * 2 * weight_h * weight_w * n_offset_grps * batch_size;
+
+  adjust_num_kernels_batch_size_(num_kernels, batch_size);
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       columns.scalar_type(), "deformable_col2im_coord_gpu", ([&] {
@@ -692,7 +718,7 @@ static void compute_grad_offset(
             stride_w,
             dilation_h,
             dilation_w,
-            parallel_imgs,
+            batch_size,
             2 * weight_h * weight_w * n_offset_grps,
             n_offset_grps,
             out_h,
