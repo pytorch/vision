@@ -1,4 +1,5 @@
 channels:
+  - pytorch
   - defaults
 dependencies:
   - numpy
@@ -8,6 +9,7 @@ dependencies:
   - pip
   - libpng
   - jpeg
+  - ffmpeg
   - ca-certificates
   - pip:
     - future

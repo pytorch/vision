@@ -1,4 +1,5 @@
 channels:
+  - pytorch
   - defaults
 dependencies:
   - numpy
@@ -6,6 +7,7 @@ dependencies:
   - pytest-cov
   - codecov
   - pip
+  - ffmpeg
   - libpng
   - jpeg
   - ca-certificates
