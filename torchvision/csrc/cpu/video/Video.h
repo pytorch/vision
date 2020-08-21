@@ -6,6 +6,8 @@
 
 #include <string>
 #include <vector>
+#include <regex>
+#include <map>
 
 #include <ATen/ATen.h>
 #include <Python.h>
@@ -22,38 +24,35 @@
 using namespace ffmpeg;
 
 
-struct StreamMetadata{
-    torch::Tensor frameRate;  // average frame rate for the video (float)
-    torch::Tensor duration; // real world video duration in seconds (float)
-    // torch::Tensor startTime; // video start time in seconds (float)
-    torch::Tensor timeBase;
-    // do we need a constructor here?
-    explicit StreamMetadata(){
-        torch::Tensor frameRate = torch::zeros({0}, torch::kFloat);
-        torch::Tensor duration = torch::zeros({0}, torch::kFloat);
-        torch::Tensor timeBase = torch::zeros({0}, torch::kFloat); 
-    }
-};
-
 
 
 struct Video : torch::CustomClassHolder {
     // metadata is defined as a dictionary where every 
-    // type has a vector containing metadata for that stream
-    std::map<std::string, std::vector<StreamMetadata>> VideoMetadata;
-    
-    Video(std::string videoPath, std::string stream, bool isReadFile);
-    std::map<std::string, std::vector<StreamMetadata>> getMetadata();
+    // type value is a list of lists that contains tuple <char: "info", double: "value">
+    std::tuple<std::string, int64_t> current_stream;
+    std::map<std::string, std::vector<double>> streamMetadata;
+    public:
+        Video(std::string videoPath, std::string stream, bool isReadFile);
+        std::tuple<std::string, int64_t> getCurrentStream() const;
+        std::vector<double> getFPS(std::string stream) const;
+
+    private:
+        std::tuple<std::string, int64_t> _parseStream(const std::string& streamString);
+        void _getDecoderParams(int64_t videoStartUs, int64_t getPtsOnly, std::string stream, long stream_id, bool all_streams, double seekFrameMarginUs); // this needs to be improved
+
+    // std::map<std::string, std::vector<std::map<std::string, double>>> getMetadata() const;
         // std::map<std::string, std::vector<StreamMetadata>> getMetadata();
         // void Seek(double ts, std::string stream="", bool any_frame=False);
         // torch::List<torch::Tensor> Next(std::string stream="")
         // torch::List<torch::Tensor> Peak(std::string stream="")
-    // protected:
+    protected:
         // AV container type (check in decoder for exact type)
-    DecoderParameters params;
+        SyncDecoder decoder;
+        DecoderParameters params;
+
         // int64_t SecToStream(double ts); // TODO: add stream type
-        // float StreamToSec(int64_t pts); // TODO: add stream type
-    void _getDecoderParams(int64_t videoStartUs, int64_t getPtsOnly, int stream_id, bool all_streams, double seekFrameMarginUs); // this needs to be improved
+        // double StreamToSec(int64_t pts); // TODO: add stream type
+    
 }; // struct Video
 
 
