@@ -92,9 +92,10 @@ class SVHN(VisionDataset):
         """
         img, target = self.data[index], int(self.labels[index])
 
-        # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        img = Image.fromarray(np.transpose(img, (1, 2, 0)))
+        if self.get_image_backend() == 'PIL':
+            # doing this so that it is consistent with all other datasets
+            # to return a PIL Image
+            img = Image.fromarray(np.transpose(img, (1, 2, 0)))
 
         if self.transform is not None:
             img = self.transform(img)

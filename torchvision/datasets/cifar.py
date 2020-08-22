@@ -112,9 +112,10 @@ class CIFAR10(VisionDataset):
         """
         img, target = self.data[index], self.targets[index]
 
-        # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        img = Image.fromarray(img)
+        if self.get_image_backend() == 'PIL':
+            # doing this so that it is consistent with all other datasets
+            # to return a PIL Image
+            img = Image.fromarray(img)
 
         if self.transform is not None:
             img = self.transform(img)

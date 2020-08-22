@@ -57,6 +57,10 @@ class VisionDataset(data.Dataset):
     def extra_repr(self) -> str:
         return ""
 
+    def get_image_backend(self) -> str:
+        from torchvision import get_image_backend
+        return get_image_backend()
+
 
 class StandardTransform(object):
     def __init__(self, transform: Optional[Callable] = None, target_transform: Optional[Callable] = None) -> None:

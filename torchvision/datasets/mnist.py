@@ -96,9 +96,10 @@ class MNIST(VisionDataset):
         """
         img, target = self.data[index], int(self.targets[index])
 
-        # doing this so that it is consistent with all other datasets
-        # to return a PIL Image
-        img = Image.fromarray(img.numpy(), mode='L')
+        if self.get_image_backend() == 'PIL':
+            # doing this so that it is consistent with all other datasets
+            # to return a PIL Image
+            img = Image.fromarray(img.numpy(), mode='L')
 
         if self.transform is not None:
             img = self.transform(img)
@@ -418,7 +419,8 @@ class QMNIST(MNIST):
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         # redefined to handle the compat flag
         img, target = self.data[index], self.targets[index]
-        img = Image.fromarray(img.numpy(), mode='L')
+        if self.get_image_backend() == 'PIL':
+            img = Image.fromarray(img.numpy(), mode='L')
         if self.transform is not None:
             img = self.transform(img)
         if self.compat:
