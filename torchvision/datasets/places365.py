@@ -1,89 +1,121 @@
+import functools
+import os
+import shutil
 from os import path
-from typing import Any, Tuple
+from typing import Any, Tuple, Dict, List
 from urllib.parse import urljoin
 
 from .folder import ImageFolder
-from .utils import verify_str_arg
+from .utils import verify_str_arg, check_integrity, download_and_extract_archive
 
 
 class Places365(ImageFolder):
+    _SPLITS = ("train-standard", "train-challenge", "val", "test")
     _BASE_URL = "http://data.csail.mit.edu/places/places365/"
     # {variant: (archive, md5)}
     _DEVKIT_META = {
         "standard": ("filelist_places365-standard.tar", "35a0585fee1fa656440f3ab298f8479c"),
-        "challenge": ("filelist_places365-standard.tar", ""),
+        "challenge": ("filelist_places365-challenge.tar", ""),
     }
-    # {(split, high_res): (archive, md5)}
-    _IMAGE_ARCHIVE_META = {
-        ("train-standard", True): ("train_large_places365standard.tar", "67e186b496a84c929568076ed01a8aa1"),
-        ("train-challenge", True): ("train_large_places365challenge.tar", "605f18e68e510c82b958664ea134545f"),
-        ("val", True): ("val_large.tar", "9b71c4993ad89d2d8bcbdc4aef38042f"),
-        ("test", True): ("test_large.tar", "41a4b6b724b1d2cd862fb3871ed59913"),
-        ("train-standard", False): ("train_256_places365standard.tar", "53ca1c756c3d1e7809517cc47c5561c5"),
-        ("train-challenge", False): ("train_256_places365challenge.tar", "741915038a5e3471ec7332404dfb64ef"),
-        ("val", False): ("val_256.tar", "e27b17d8d44f4af9a78502beb927f808"),
-        ("test", False): ("test_256.tar", "f532f6ad7b582262a2ec8009075e186b"),
+    # (file, md5)
+    _CATEGORIES_META = ("categories_places365.txt", "06c963b85866bd0649f97cb43dd16673")
+    # {split: (file, md5)}
+    _FILE_LIST_META = {
+        "train-standard": ("places365_train_standard.txt", "30f37515461640559006b8329efbed1a"),
+        "train-challenge": ("places365_train_challenge.txt", ""),
+        "val": ("places365_val.txt", "e9f2fd57bfd9d07630173f4e8708e4b1"),
+        "test": ("places365_test.txt", "2fce8233fe493576d724142e45d93653"),
     }
-    _SPLITS = ("train-standard", "train-challenge", "val", "test")
+    # {(split, small): (file, md5)}
+    _IMAGES_META = {
+        ("train-standard", False): ("train_large_places365standard.tar", "67e186b496a84c929568076ed01a8aa1"),
+        ("train-challenge", False): ("train_large_places365challenge.tar", "605f18e68e510c82b958664ea134545f"),
+        ("val", False): ("val_large.tar", "9b71c4993ad89d2d8bcbdc4aef38042f"),
+        ("test", False): ("test_large.tar", "41a4b6b724b1d2cd862fb3871ed59913"),
+        ("train-standard", True): ("train_256_places365standard.tar", "53ca1c756c3d1e7809517cc47c5561c5"),
+        ("train-challenge", True): ("train_256_places365challenge.tar", "741915038a5e3471ec7332404dfb64ef"),
+        ("val", True): ("val_256.tar", "e27b17d8d44f4af9a78502beb927f808"),
+        ("test", True): ("test_256.tar", "f532f6ad7b582262a2ec8009075e186b"),
+    }
 
     def __init__(
-        self, root: str, split: str = "train-standard", high_res: bool = True, download: bool = False, **kwargs: Any
+        self, root: str, split: str = "train-standard", small: bool = False, download: bool = False, **kwargs: Any
     ) -> None:
         self.root = root = path.abspath(path.expanduser(root))
         self.split = self._verify_split(split)
-        self.high_res = high_res
+        self.small = small
+
+        self.classes, self.class_to_idx = self.load_categories(download)
 
         if download:
-            self.download()
+            self.download_and_process_images()
 
-        super().__init__(root, **kwargs)
+        super().__init__(self.split_dir, **kwargs)
         self.root = root
+
+    @functools.cached_property
+    def split_dir(self) -> str:
+        file, _ = self._IMAGES_META[(self.split, self.small)]
+        return path.join(self.root, path.splitext(file)[0])
+
+    def load_categories(self, download=True) -> Tuple[List[str], Dict[str, int]]:
+        file, md5 = self._CATEGORIES_META
+        if not self._check_integrity(file, md5, download):
+            self.download_and_extract_devkit()
+
+        with open(file, "r") as fh:
+            class_to_idx = dict(self._process_line(line) for line in fh)
+
+        return sorted(class_to_idx.keys()), class_to_idx
+
+    def download_and_extract_devkit(self):
+        variant = "challenge" if self.split == "train-challenge" else "standard"
+        file, md5 = self._DEVKIT_META[variant]
+        download_and_extract_archive(urljoin(self._BASE_URL, file), self.root, md5=md5)
+
+    def download_and_process_images(self):
+        file, md5 = self._IMAGES_META[(self.split, self.small)]
+        download_and_extract_archive(urljoin(self._BASE_URL, file), self.root, md5=md5)
+
+        if self.split in ("val", "test"):
+            self.restructure_val_or_test_folder()
+
+    def restructure_val_or_test_folder(self):
+        file, md5 = self._FILE_LIST_META[self.split]
+        self._check_integrity(file, md5, download=True)
+
+        idx_to_cls_dir = {idx: self._class_to_path(cls) for cls, idx in self.class_to_idx.items()}
+
+        for cls_dir in idx_to_cls_dir.values():
+            os.makedirs(path.join(self.split_dir, cls_dir))
+
+        with open(path.join(self.root, file), "r") as fh:
+            for line in fh:
+                image, idx = self._process_line(line)
+                shutil.move(path.join(self.split_dir, image), path.join(self.split_dir, idx_to_cls_dir[idx], image))
+
+    def extra_repr(self) -> str:
+        return "\n".join(("Split: {split}", "Small: {small}")).format(**self.__dict__)
 
     def _verify_split(self, split: str) -> str:
         return verify_str_arg(split, "split", self._SPLITS)
 
-    @property
-    def variant(self) -> str:
-        return 'challenge' if self.split == 'train_challenge' else 'standard'
+    def _check_integrity(self, file: str, md5: str, download: bool) -> bool:
+        integrity = check_integrity(path.join(self.root, file), md5=md5)
+        if not integrity and not download:
+            # TODO: add message
+            raise RuntimeError
+        return integrity
 
-    @property
-    def _archive_meta(self) -> Tuple[str, str]:
-        return self._IMAGE_ARCHIVE_META[(self.split, self.high_res)]
+    @staticmethod
+    def _process_line(line: str) -> Tuple[str, int]:
+        cls_or_file, idx = line.split()
+        return cls_or_file, int(idx)
 
-    @property
-    def archive(self) -> str:
-        return self._archive_meta[0]
+    @staticmethod
+    @functools.lru_cache(maxsize=365)
+    def _class_to_path(cls: str, sep="/") -> str:
+        if os.sep != sep:
+            cls = cls.replace(sep, os.sep)
 
-    @property
-    def md5(self) -> str:
-        return self._archive_meta[1]
-
-    @property
-    def url(self) -> str:
-        return urljoin(self._BASE_URL, self.archive)
-
-    @property
-    def split_dir(self) -> str:
-        return path.join(self.root, path.splitext(self.archive)[0])
-
-    @property
-    def meta_file(self) -> str:
-        return path.join(self.root, f"meta-{self.variant}.bin")
-
-    def download(self):
-        if not path.exists(self.meta_file):
-            self._parse_devkit()
-
-        # fail if split dir is already present
-
-        self._load_meta()
-
-    def _parse_devkit(self):
-        print("Downloading and parsing the devkit. This is only needed for the first run.")
-
-    def _load_meta(self):
-        # fail if not present
-        pass
-
-    def extra_repr(self) -> str:
-        return "\n".join(("Split: {split}", "High resolution: {high_res}", "Variant: {variant}")).format(**self.__dict__)
+        return cls[1:]
