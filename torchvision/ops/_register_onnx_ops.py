@@ -20,8 +20,8 @@ def _register_custom_op():
 
     @parse_args('v', 'v', 'f', 'i', 'i', 'i', 'i')
     def roi_align(g, input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned):
-        if(aligned):
-            raise RuntimeError('Unsupported: ONNX export of roi_align with aligned')
+        if aligned:
+            rois = g.op("Sub", rois, torch.tensor(0.5))
         batch_indices = _cast_Long(g, squeeze(g, select(g, rois, 1, g.op('Constant',
                                    value_t=torch.tensor([0], dtype=torch.long))), 1), False)
         rois = select(g, rois, 1, g.op('Constant', value_t=torch.tensor([1, 2, 3, 4], dtype=torch.long)))
