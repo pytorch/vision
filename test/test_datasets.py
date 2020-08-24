@@ -369,5 +369,6 @@ class Tester(unittest.TestCase):
             dataset = torchvision.datasets.Places365(root, download=True)
             self.assertIsInstance(repr(dataset), str)
 
+
 if __name__ == '__main__':
     unittest.main()
