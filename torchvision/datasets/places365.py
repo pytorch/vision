@@ -113,7 +113,7 @@ class Places365(VisionDataset):
             images = [process(line) for line in fh]
 
         _, targets = zip(*images)
-        return images, targets
+        return images, list(targets)
 
     def download_devkit(self) -> None:
         file, md5 = self._DEVKIT_META["challenge" if self.split == "train-challenge" else "standard"]
