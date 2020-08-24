@@ -169,8 +169,8 @@ class FashionMNIST(MNIST):
     """`Fashion-MNIST <https://github.com/zalandoresearch/fashion-mnist>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``Fashion-MNIST/processed/training.pt``
-            and  ``Fashion-MNIST/processed/test.pt`` exist.
+        root (string): Root directory of dataset where ``FashionMNIST/processed/training.pt``
+            and  ``FashionMNIST/processed/test.pt`` exist.
         train (bool, optional): If True, creates dataset from ``training.pt``,
             otherwise from ``test.pt``.
         download (bool, optional): If true, downloads the dataset from the internet and
