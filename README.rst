@@ -125,7 +125,7 @@ For an example setup, take a look at ``examples/cpp/hello_world``.
 
 Documentation
 =============
-You can find the API documentation on the pytorch website: http://pytorch.org/docs/master/torchvision/
+You can find the API documentation on the pytorch website: https://pytorch.org/docs/stable/torchvision/index.html
 
 Contributing
 ============
