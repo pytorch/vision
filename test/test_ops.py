@@ -553,6 +553,35 @@ class DeformConvTester(OpTester, unittest.TestCase):
         gradcheck(lambda z, off, wei, bi: script_func(z, off, wei, bi, stride, padding, dilation),
                   (x, offset, weight, bias), nondet_tol=1e-5)
 
+        # Test from https://github.com/pytorch/vision/issues/2598
+        # Run on CUDA only
+        if "cuda" in device.type:
+            # compare grads computed on CUDA with grads computed on CPU
+            true_cpu_grads = None
+
+            init_weight = torch.randn(9, 9, 3, 3, requires_grad=True)
+            img = torch.randn(8, 9, 1000, 110)
+            offset = torch.rand(8, 2 * 3 * 3, 1000, 110)
+
+            if not contiguous:
+                img = img.permute(0, 1, 3, 2).contiguous().permute(0, 1, 3, 2)
+                offset = offset.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
+                weight = init_weight.permute(3, 2, 0, 1).contiguous().permute(2, 3, 1, 0)
+            else:
+                weight = init_weight
+
+            for d in ["cpu", "cuda"]:
+
+                out = ops.deform_conv2d(img.to(d), offset.to(d), weight.to(d), padding=1)
+                out.mean().backward()
+                if true_cpu_grads is None:
+                    true_cpu_grads = init_weight.grad
+                    self.assertTrue(true_cpu_grads is not None)
+                else:
+                    self.assertTrue(init_weight.grad is not None)
+                    res_grads = init_weight.grad.to("cpu")
+                    self.assertTrue(true_cpu_grads.allclose(res_grads))
+
 
 class FrozenBNTester(unittest.TestCase):
     def test_frozenbatchnorm2d_repr(self):

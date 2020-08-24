@@ -80,12 +80,11 @@
 
 using namespace at;
 
-const int CUDA_NUM_THREADS = 1024;
-const int kMaxGridNum = 65535;
-
+const unsigned int CUDA_NUM_THREADS = 1024;
 const int kMaxParallelImgs = 32;
 
-inline int GET_BLOCKS(const int N) {
+inline unsigned int GET_BLOCKS(const unsigned int N) {
+  unsigned int kMaxGridNum = at::cuda::getCurrentDeviceProperties()->maxGridSize[0];
   return std::min(kMaxGridNum, (N + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS);
 }
 
