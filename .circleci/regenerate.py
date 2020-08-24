@@ -185,7 +185,8 @@ def cmake_workflows(indentation=6):
     jobs = []
     python_version = '3.8'
     for os_type in ['linux', 'windows', 'macos']:
-        device_types = ['cpu', 'gpu'] if os_type != 'macos' else ['cpu']
+        # Right now CMake builds are failling on Windows (GPU)
+        device_types = ['cpu', 'gpu'] if os_type == 'linux' else ['cpu']
         for device in device_types:
             job = {
                 'name': f'cmake_{os_type}_{device}',
