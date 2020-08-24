@@ -1,28 +1,27 @@
-import functools
 import os
-import shutil
 from os import path
-from typing import Any, Tuple, Dict, List
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from urllib.parse import urljoin
 
-from .folder import ImageFolder
+from .folder import default_loader
 from .utils import verify_str_arg, check_integrity, download_and_extract_archive
+from .vision import VisionDataset
 
 
-class Places365(ImageFolder):
+class Places365(VisionDataset):
     _SPLITS = ("train-standard", "train-challenge", "val", "test")
     _BASE_URL = "http://data.csail.mit.edu/places/places365/"
     # {variant: (archive, md5)}
     _DEVKIT_META = {
         "standard": ("filelist_places365-standard.tar", "35a0585fee1fa656440f3ab298f8479c"),
-        "challenge": ("filelist_places365-challenge.tar", ""),
+        "challenge": ("filelist_places365-challenge.tar", "70a8307e459c3de41690a7c76c931734"),
     }
     # (file, md5)
     _CATEGORIES_META = ("categories_places365.txt", "06c963b85866bd0649f97cb43dd16673")
     # {split: (file, md5)}
     _FILE_LIST_META = {
         "train-standard": ("places365_train_standard.txt", "30f37515461640559006b8329efbed1a"),
-        "train-challenge": ("places365_train_challenge.txt", ""),
+        "train-challenge": ("places365_train_challenge.txt", "b2931dc997b8c33c27e7329c073a6b57"),
         "val": ("places365_val.txt", "e9f2fd57bfd9d07630173f4e8708e4b1"),
         "test": ("places365_test.txt", "2fce8233fe493576d724142e45d93653"),
     }
@@ -39,60 +38,90 @@ class Places365(ImageFolder):
     }
 
     def __init__(
-        self, root: str, split: str = "train-standard", small: bool = False, download: bool = False, **kwargs: Any
+        self,
+        root: str,
+        split: str = "train-standard",
+        small: bool = False,
+        download: bool = False,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        loader: Callable[[str], Any] = default_loader,
     ) -> None:
-        self.root = root = path.abspath(path.expanduser(root))
+        super().__init__(root, transform=transform, target_transform=target_transform)
+
         self.split = self._verify_split(split)
         self.small = small
+        self.loader = loader
 
         self.classes, self.class_to_idx = self.load_categories(download)
+        self.imgs, self.targets = self.load_file_list(download)
 
         if download:
-            self.download_and_process_images()
+            self.download_images()
 
-        super().__init__(self.split_dir, **kwargs)
-        self.root = root
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
+        file, target = self.imgs[index]
+        image = self.loader(file)
+        if self.transforms is None:
+            return image, target
 
-    @functools.cached_property
-    def split_dir(self) -> str:
+        return self.transforms(image, target)
+
+    def __len__(self) -> int:
+        return len(self.imgs)
+
+    @property
+    def images_dir(self) -> str:
         file, _ = self._IMAGES_META[(self.split, self.small)]
         return path.join(self.root, path.splitext(file)[0])
 
-    def load_categories(self, download=True) -> Tuple[List[str], Dict[str, int]]:
+    def load_categories(self, download: bool = True) -> Tuple[List[str], Dict[str, int]]:
+        def process(line: str) -> Tuple[str, int]:
+            cls, idx = line.split()
+            return cls, int(idx)
+
         file, md5 = self._CATEGORIES_META
+        file = path.join(self.root, file)
         if not self._check_integrity(file, md5, download):
-            self.download_and_extract_devkit()
+            self.download_devkit()
 
         with open(file, "r") as fh:
-            class_to_idx = dict(self._process_line(line) for line in fh)
+            class_to_idx = dict(process(line) for line in fh)
 
         return sorted(class_to_idx.keys()), class_to_idx
 
-    def download_and_extract_devkit(self):
-        variant = "challenge" if self.split == "train-challenge" else "standard"
-        file, md5 = self._DEVKIT_META[variant]
-        download_and_extract_archive(urljoin(self._BASE_URL, file), self.root, md5=md5)
+    def load_file_list(self, download: bool = True) -> Tuple[List[Tuple[str, int]], List[int]]:
+        def fix_path(path: str) -> str:
+            if path[0] == "/":
+                path = path[1:]
 
-    def download_and_process_images(self):
-        file, md5 = self._IMAGES_META[(self.split, self.small)]
-        download_and_extract_archive(urljoin(self._BASE_URL, file), self.root, md5=md5)
+            if os.sep == "/":
+                return path
 
-        if self.split in ("val", "test"):
-            self.restructure_val_or_test_folder()
+            return path.replace("/", os.sep)
 
-    def restructure_val_or_test_folder(self):
+        def process(line: str) -> Tuple[str, int]:
+            image, idx = line.split()
+            return path.join(self.images_dir, fix_path(image)), int(idx)
+
         file, md5 = self._FILE_LIST_META[self.split]
-        self._check_integrity(file, md5, download=True)
+        file = path.join(self.root, file)
+        if not self._check_integrity(file, md5, download):
+            self.download_devkit()
 
-        idx_to_cls_dir = {idx: self._class_to_path(cls) for cls, idx in self.class_to_idx.items()}
+        with open(file, "r") as fh:
+            images = [process(line) for line in fh]
 
-        for cls_dir in idx_to_cls_dir.values():
-            os.makedirs(path.join(self.split_dir, cls_dir))
+        _, targets = zip(*images)
+        return images, targets
 
-        with open(path.join(self.root, file), "r") as fh:
-            for line in fh:
-                image, idx = self._process_line(line)
-                shutil.move(path.join(self.split_dir, image), path.join(self.split_dir, idx_to_cls_dir[idx], image))
+    def download_devkit(self) -> None:
+        file, md5 = self._DEVKIT_META["challenge" if self.split == "train-challenge" else "standard"]
+        download_and_extract_archive(urljoin(self._BASE_URL, file), self.root, md5=md5)
+
+    def download_images(self) -> None:
+        file, md5 = self._IMAGES_META[(self.split, self.small)]
+        download_and_extract_archive(urljoin(self._BASE_URL, file), self.root, extract_root=self.images_dir, md5=md5)
 
     def extra_repr(self) -> str:
         return "\n".join(("Split: {split}", "Small: {small}")).format(**self.__dict__)
@@ -103,19 +132,7 @@ class Places365(ImageFolder):
     def _check_integrity(self, file: str, md5: str, download: bool) -> bool:
         integrity = check_integrity(path.join(self.root, file), md5=md5)
         if not integrity and not download:
-            # TODO: add message
-            raise RuntimeError
+            raise RuntimeError(
+                f"The file {file} does not exist or is corrupted. You can set download=True to download it."
+            )
         return integrity
-
-    @staticmethod
-    def _process_line(line: str) -> Tuple[str, int]:
-        cls_or_file, idx = line.split()
-        return cls_or_file, int(idx)
-
-    @staticmethod
-    @functools.lru_cache(maxsize=365)
-    def _class_to_path(cls: str, sep="/") -> str:
-        if os.sep != sep:
-            cls = cls.replace(sep, os.sep)
-
-        return cls[1:]
