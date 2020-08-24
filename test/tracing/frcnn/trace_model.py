@@ -1,10 +1,14 @@
 
+import os.path as osp
+
 import torch
 import torchvision
 
-model = torchvision.models.detection.fasterrcnn_resnet50_fpn()
-input_imgs = torch.rand(2, 3, 256, 275).split(1)
-input_imgs = [x.squeeze() for x in input_imgs]
+HERE = osp.dirname(osp.abspath(__file__))
+ASSETS = osp.dirname(osp.dirname(HERE))
 
-traced_model = torch.jit.trace(model, input_imgs)
+model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+model.eval()
+
+traced_model = torch.jit.script(model)
 traced_model.save("fasterrcnn_resnet50_fpn.pt")
