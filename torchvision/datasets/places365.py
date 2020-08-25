@@ -32,6 +32,7 @@ class Places365(VisionDataset):
 
     Raises:
         RuntimeError: If ``download is False`` and the meta files, i. e. the devkit, are not present or corrupted.
+        RuntimeError: If ``download is True`` and the image archive is already extracted.
     """
     _SPLITS = ("train-standard", "train-challenge", "val", "test")
     _BASE_URL = "http://data.csail.mit.edu/places/places365/"
@@ -145,6 +146,12 @@ class Places365(VisionDataset):
         download_and_extract_archive(urljoin(self._BASE_URL, file), self.root, md5=md5)
 
     def download_images(self) -> None:
+        if path.exists(self.images_dir):
+            raise RuntimeError(
+                f"The directory {self.images_dir} already exists. If you want to re-download or re-extract the images, "
+                f"delete the directory."
+            )
+
         file, md5 = self._IMAGES_META[(self.split, self.small)]
         download_and_extract_archive(urljoin(self._BASE_URL, file), self.root, extract_root=self.images_dir, md5=md5)
 

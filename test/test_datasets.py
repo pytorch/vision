@@ -361,6 +361,18 @@ class Tester(unittest.TestCase):
 
                     assert all(os.path.exists(item[0]) for item in dataset.imgs)
 
+    def test_places365_images_download_preexisting(self):
+        split = "train-standard"
+        small = False
+        images_dir = "train_large_places365standard"
+
+        with places365_root(split=split, small=small) as places365:
+            root, data = places365
+            os.mkdir(os.path.join(root, images_dir))
+
+            with self.assertRaises(RuntimeError):
+                torchvision.datasets.Places365(root, split=split, small=small, download=True)
+
     def test_places365_repr_smoke(self):
         with places365_root(extract_images=False) as places365:
             root, data = places365
