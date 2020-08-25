@@ -9,6 +9,30 @@ from .vision import VisionDataset
 
 
 class Places365(VisionDataset):
+    r"""`Places365 <http://places2.csail.mit.edu/index.html>`_ classification dataset.
+
+    Args:
+        root (string): Root directory of the Places365 dataset.
+        split (string, optional): The dataset split. Can be one of ``train-standard`` (default), ``train-challendge``,
+            ``val``, and ``test``.
+        small (bool, optional):
+        download (bool, optional): If ``True``, downloads the dataset components and places them in ``root``. Already
+            downloaded archives are not downloaded again.
+        transform (callable, optional): A function/transform that  takes in an PIL image
+            and returns a transformed version. E.g, ``transforms.RandomCrop``
+        target_transform (callable, optional): A function/transform that takes in the
+            target and transforms it.
+        loader (callable, optional): A function to load an image given its path.
+
+     Attributes:
+        classes (list): List of the class names.
+        class_to_idx (dict): Dict with items (class_name, class_index).
+        imgs (list): List of (image path, class_index) tuples
+        targets (list): The class_index value for each image in the dataset
+
+    Raises:
+        RuntimeError: If ``download is False`` and the meta files, i. e. the devkit, are not present or corrupted.
+    """
     _SPLITS = ("train-standard", "train-challenge", "val", "test")
     _BASE_URL = "http://data.csail.mit.edu/places/places365/"
     # {variant: (archive, md5)}
