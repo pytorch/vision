@@ -11,7 +11,6 @@ from common_utils import get_tmp_dir
 from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
     cityscapes_root, svhn_root, voc_root, ucf101_root, places365_root
 import xml.etree.ElementTree as ET
-from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 import itertools
 
