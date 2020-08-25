@@ -166,6 +166,13 @@ PhotoTour
   :members: __getitem__
   :special-members:
 
+Places365
+~~~~~~~~~
+
+.. autoclass:: Places365
+  :members: __getitem__
+  :special-members:
+
 QMNIST
 ~~~~~~
 
