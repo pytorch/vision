@@ -492,29 +492,10 @@ def perspective(img, perspective_coeffs, interpolation=Image.BICUBIC, fill=None)
 
 @torch.jit.unused
 def to_grayscale(img, num_output_channels):
-    """DEPRECATED. Convert RGB image to grayscale version of image.
+    """Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.
 
     Args:
         img (PIL Image): Image to be converted to grayscale.
-        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
-
-    Returns:
-        PIL Image: Grayscale version of the image.
-            if num_output_channels = 1 : returned image is single channel
-
-            if num_output_channels = 3 : returned image is 3 channel with r = g = b
-    """
-    warnings.warn("The use of the F_pil.to_grayscale transform is deprecated, " +
-                  "please use F.rgb_to_grayscale instead.")
-    return rgb_to_grayscale(img, num_output_channels)
-
-
-@torch.jit.unused
-def rgb_to_grayscale(img, num_output_channels):
-    """Convert RGB image to grayscale version of image.
-
-    Args:
-        img (PIL Image): RGB Image to be converted to grayscale.
         num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
 
     Returns:

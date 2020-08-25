@@ -101,24 +101,14 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     if num_output_channels not in (1, 3):
         raise ValueError('num_output_channels should be either 1 or 3')
 
-    r = img[..., 0, :, :].float()
-    g = img[..., 1, :, :].float()
-    b = img[..., 2, :, :].float()
-    if not img.is_floating_point():
-        # According to PIL docs: PIL grayscale L mode is L = R * 299/1000 + G * 587/1000 + B * 114/1000
-        # but implementation is slightly different:
-        # https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/
-        # src/libImaging/Convert.c#L47
-        # ((rgb)[0]*19595 + (rgb)[1]*38470 + (rgb)[2]*7471 + 0x8000) >> 16
-        # l_img = ((19595 * r + 38470 * g + 7471 * b + 2 ** 15) / 2 ** 16).to(img.dtype)
-        l_img = torch.floor((19595 * r + 38470 * g + 7471 * b + 2 ** 15) / 2 ** 16).to(img.dtype)
-    else:
-        l_img = (0.299 * r + 0.587 * g + 0.114 * b).to(img.dtype)
+    r, g, b = img.unbind(dim=-3)
+    # This implementation closely follows the TF one:
+    # https://github.com/tensorflow/tensorflow/blob/v2.3.0/tensorflow/python/ops/image_ops_impl.py#L2105-L2138
+    l_img = (0.2989 * r + 0.587 * g + 0.114 * b).to(img.dtype)
+    l_img = l_img.unsqueeze(dim=-3)
 
     if num_output_channels == 3:
-        l_img = torch.stack([l_img, l_img, l_img], dim=-3)
-    else:
-        l_img = l_img.unsqueeze(dim=-3)
+        return l_img.expand(img.shape)
 
     return l_img
 

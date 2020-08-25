@@ -323,11 +323,11 @@ class Tester(unittest.TestCase):
 
     def test_to_grayscale(self):
 
-        fn_kwargs = meth_kwargs = {"num_output_channels": 1}
-        self._test_op("rgb_to_grayscale", "Grayscale", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs)
+        meth_kwargs = {"num_output_channels": 1}
+        self._test_class_op("Grayscale", meth_kwargs=meth_kwargs)
 
-        fn_kwargs = meth_kwargs = {"num_output_channels": 3}
-        self._test_op("rgb_to_grayscale", "Grayscale", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs)
+        meth_kwargs = {"num_output_channels": 3}
+        self._test_class_op("Grayscale", meth_kwargs=meth_kwargs)
 
         meth_kwargs = {}
         self._test_class_op("RandomGrayscale", meth_kwargs=meth_kwargs)

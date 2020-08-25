@@ -30,12 +30,15 @@ class Tester(unittest.TestCase):
             msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
         self.assertTrue(tensor.cpu().equal(pil_tensor), msg)
 
-    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None):
-        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1))).to(tensor)
-        mae = torch.abs(tensor - pil_tensor).mean().item()
+    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, method="mean"):
+        np_pil_image = np.array(pil_image)
+        if np_pil_image.ndim == 2:
+            np_pil_image = np_pil_image[:, :, None]
+        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
+        err = getattr(torch, method)(torch.abs(tensor - pil_tensor)).item()
         self.assertTrue(
-            mae < tol,
-            msg="{}: mae={}, tol={}: \n{}\nvs\n{}".format(msg, mae, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
+            err < tol,
+            msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
         )
 
     def _test_vflip(self, device):
@@ -216,10 +219,10 @@ class Tester(unittest.TestCase):
     def test_adjustments_cuda(self):
         self._test_adjustments("cuda")
 
-    def test_rgb_to_grayscale(self):
+    def _test_rgb_to_grayscale(self, device):
         script_rgb_to_grayscale = torch.jit.script(F.rgb_to_grayscale)
 
-        img_tensor, pil_img = self._create_data(32, 34)
+        img_tensor, pil_img = self._create_data(32, 34, device=device)
 
         for num_output_channels in (3, 1):
             gray_pil_image = F.rgb_to_grayscale(pil_img, num_output_channels=num_output_channels)
@@ -228,10 +231,17 @@ class Tester(unittest.TestCase):
             if num_output_channels == 1:
                 print(gray_tensor.shape)
 
-            self.compareTensorToPIL(gray_tensor, gray_pil_image)
+            self.approxEqualTensorToPIL(gray_tensor.float(), gray_pil_image, tol=1.0 + 1e-10, method="max")
 
             s_gray_tensor = script_rgb_to_grayscale(img_tensor, num_output_channels=num_output_channels)
             self.assertTrue(s_gray_tensor.equal(gray_tensor))
+
+    def test_rgb_to_grayscale(self):
+        self._test_rgb_to_grayscale("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_rgb_to_grayscale_cuda(self):
+        self._test_rgb_to_grayscale("cuda")
 
     def _test_center_crop(self, device):
         script_center_crop = torch.jit.script(F.center_crop)
