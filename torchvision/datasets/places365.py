@@ -15,7 +15,8 @@ class Places365(VisionDataset):
         root (string): Root directory of the Places365 dataset.
         split (string, optional): The dataset split. Can be one of ``train-standard`` (default), ``train-challendge``,
             ``val``, and ``test``.
-        small (bool, optional):
+        small (bool, optional): If ``True``, uses the small images, i. e. resized to 256 x 256 pixels, instead of the
+            high resolution ones.
         download (bool, optional): If ``True``, downloads the dataset components and places them in ``root``. Already
             downloaded archives are not downloaded again.
         transform (callable, optional): A function/transform that  takes in an PIL image
