@@ -119,8 +119,10 @@ class Places365(VisionDataset):
 
     def load_file_list(self, download: bool = True) -> Tuple[List[Tuple[str, int]], List[int]]:
         def fix_path(path: str) -> str:
-            if path[0] == "/":
-                path = path[1:]
+            if not path.startswith("/"):
+                return path
+
+            path = path[1:]
 
             if os.sep == "/":
                 return path
