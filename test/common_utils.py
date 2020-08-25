@@ -357,4 +357,3 @@ class TransformsTester(unittest.TestCase):
             err < tol,
             msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
         )
-
