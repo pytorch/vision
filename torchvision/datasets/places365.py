@@ -62,10 +62,11 @@ class Places365(VisionDataset):
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         file, target = self.imgs[index]
         image = self.loader(file)
-        if self.transforms is None:
-            return image, target
 
-        return self.transforms(image, target)
+        if self.transforms is not None:
+            image, target = self.transforms(image, target)
+
+        return image, target
 
     def __len__(self) -> int:
         return len(self.imgs)
