@@ -2,10 +2,8 @@ import unittest
 import colorsys
 import math
 
-from PIL import Image
-from PIL.Image import NEAREST, BILINEAR, BICUBIC
-
 import numpy as np
+from PIL.Image import NEAREST, BILINEAR, BICUBIC
 
 import torch
 import torchvision.transforms as transforms
@@ -13,33 +11,10 @@ import torchvision.transforms.functional_tensor as F_t
 import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional as F
 
+from common_utils import TransformsTester
 
-class Tester(unittest.TestCase):
 
-    def _create_data(self, height=3, width=3, channels=3, device="cpu"):
-        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8, device=device)
-        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
-        return tensor, pil_img
-
-    def compareTensorToPIL(self, tensor, pil_image, msg=None):
-        np_pil_image = np.array(pil_image)
-        if np_pil_image.ndim == 2:
-            np_pil_image = np_pil_image[:, :, None]
-        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
-        if msg is None:
-            msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
-        self.assertTrue(tensor.cpu().equal(pil_tensor), msg)
-
-    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, method="mean"):
-        np_pil_image = np.array(pil_image)
-        if np_pil_image.ndim == 2:
-            np_pil_image = np_pil_image[:, :, None]
-        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
-        err = getattr(torch, method)(torch.abs(tensor - pil_tensor)).item()
-        self.assertTrue(
-            err < tol,
-            msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
-        )
+class Tester(TransformsTester):
 
     def _test_vflip(self, device):
         script_vflip = torch.jit.script(F_t.vflip)
@@ -231,7 +206,7 @@ class Tester(unittest.TestCase):
             if num_output_channels == 1:
                 print(gray_tensor.shape)
 
-            self.approxEqualTensorToPIL(gray_tensor.float(), gray_pil_image, tol=1.0 + 1e-10, method="max")
+            self.approxEqualTensorToPIL(gray_tensor.float(), gray_pil_image, tol=1.0 + 1e-10, agg_method="max")
 
             s_gray_tensor = script_rgb_to_grayscale(img_tensor, num_output_channels=num_output_channels)
             self.assertTrue(s_gray_tensor.equal(gray_tensor))

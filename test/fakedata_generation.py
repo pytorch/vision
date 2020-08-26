@@ -10,6 +10,8 @@ import pickle
 import random
 from itertools import cycle
 from torchvision.io.video import write_video
+import unittest.mock
+import hashlib
 
 
 @contextlib.contextmanager
@@ -312,3 +314,105 @@ def ucf101_root():
         for f in file_handles:
             f.close()
         yield (video_dir, annotations)
+
+
+@contextlib.contextmanager
+def places365_root(split="train-standard", small=False, extract_images=True):
+    CATEGORIES = (("/a/airfield", 0), ("/a/apartment_building/outdoor", 8), ("/b/badlands", 30))
+    FILE_LIST = [(f"{idx}.png", idx) for idx in tuple(zip(*CATEGORIES))[1]]
+
+    def compute_md5(file):
+        with open(file, "rb") as fh:
+            return hashlib.md5(fh.read()).hexdigest()
+
+    def make_txt(root, name, cls_or_image_seq):
+        file = os.path.join(root, name)
+        with open(file, "w") as fh:
+            for cls_or_image, idx in cls_or_image_seq:
+                fh.write(f"{cls_or_image} {idx}\n")
+        return name, compute_md5(file)
+
+    def make_categories_txt(root, name):
+        return make_txt(root, name, CATEGORIES)
+
+    def make_file_list_txt(root, name):
+        return make_txt(root, name, FILE_LIST)
+
+    def make_image(root, name, size):
+        PIL.Image.fromarray(np.zeros((*size, 3), dtype=np.uint8)).save(os.path.join(root, name))
+
+    def make_tar(root, name, files, remove_files=True):
+        archive = os.path.join(root, name)
+        files = [os.path.join(root, file) for file in files]
+
+        with tarfile.open(archive, "w") as fh:
+            for file in files:
+                fh.add(file, os.path.basename(file))
+
+        if remove_files:
+            for file in files:
+                os.remove(file)
+
+        return name, compute_md5(archive)
+
+    def mock_target(attr, partial="torchvision.datasets.places365.Places365"):
+        return f"{partial}.{attr}"
+
+    def mock_class_attribute(stack, attr, new):
+        mock = unittest.mock.patch(mock_target(attr), new_callable=unittest.mock.PropertyMock, return_value=new)
+        stack.enter_context(mock)
+        return mock
+
+    def split_to_variant(split):
+        return "challenge" if split == "train-challenge" else "standard"
+
+    def make_devkit_archive(stack, root, split):
+        variant = split_to_variant(split)
+        archive = f"filelist_places365-{variant}.tar"
+        files = []
+
+        meta = make_categories_txt(root, "categories_places365.txt")
+        mock_class_attribute(stack, "_CATEGORIES_META", meta)
+        files.append(meta[0])
+
+        meta = {
+            split: make_file_list_txt(root, f"places365_{split.replace('-', '_')}.txt")
+            for split in (f"train-{variant}", "val", "test")
+        }
+        mock_class_attribute(stack, "_FILE_LIST_META", meta)
+        files.extend([item[0] for item in meta.values()])
+
+        meta = {variant: make_tar(root, archive, files)}
+        mock_class_attribute(stack, "_DEVKIT_META", meta)
+
+    def make_images_archive(stack, root, split, small):
+        if split.startswith("train"):
+            images_dir = f"train_{'256' if small else 'large'}_places365{split_to_variant(split)}"
+        else:
+            images_dir = f"{split}_{'256' if small else 'large'}"
+        archive = f"{images_dir}.tar"
+
+        size = (256, 256) if small else (512, random.randint(512, 1024))
+        imgs = [item[0] for item in FILE_LIST]
+        for img in imgs:
+            make_image(root, img, size)
+
+        meta = {(split, small): make_tar(root, archive, imgs)}
+        mock_class_attribute(stack, "_IMAGES_META", meta)
+
+        return images_dir
+
+    with contextlib.ExitStack() as stack:
+        with get_tmp_dir() as root:
+            make_devkit_archive(stack, root, split)
+            class_to_idx = dict(CATEGORIES)
+            classes = list(class_to_idx.keys())
+            data = {"class_to_idx": class_to_idx, "classes": classes}
+
+            if extract_images:
+                images_dir = make_images_archive(stack, root, split, small)
+                data["imgs"] = [(os.path.join(root, images_dir, file), idx) for file, idx in FILE_LIST]
+            else:
+                stack.enter_context(unittest.mock.patch(mock_target("download_images")))
+
+            yield root, data
