@@ -46,7 +46,7 @@ else
 
     if [[ "$(uname)" == Darwin ]]; then
         CONDA_PATH=$(dirname $(dirname $(which python)))
-        cp -r /usr/local/include/torchvision $CONDA_PATH/include
+        cp -r /usr/local/include/torchvision $CONDA_PATH/include/
     fi
 fi
 

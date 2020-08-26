@@ -567,7 +567,7 @@ jobs:
     <<: *binary_common
     docker:
       - image: "pytorch/manylinux-cuda102"
-    resource_class: gpu.small
+    resource_class: 2xlarge
     steps:
       - checkout_merge
       - run:
