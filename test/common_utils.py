@@ -14,6 +14,9 @@ from numbers import Number
 from torch._six import string_classes
 from collections import OrderedDict
 
+import numpy as np
+from PIL import Image
+
 
 @contextlib.contextmanager
 def get_tmp_dir(src=None, **kwargs):
@@ -329,3 +332,28 @@ def freeze_rng_state():
     if torch.cuda.is_available():
         torch.cuda.set_rng_state(cuda_rng_state)
     torch.set_rng_state(rng_state)
+
+
+class TransformsTester(unittest.TestCase):
+
+    def _create_data(self, height=3, width=3, channels=3, device="cpu"):
+        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8, device=device)
+        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
+        return tensor, pil_img
+
+    def compareTensorToPIL(self, tensor, pil_image, msg=None):
+        np_pil_image = np.array(pil_image)
+        if np_pil_image.ndim == 2:
+            np_pil_image = np_pil_image[:, :, None]
+        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
+        if msg is None:
+            msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
+        self.assertTrue(tensor.cpu().equal(pil_tensor), msg)
+
+    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, method="mean"):
+        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1))).to(tensor)
+        err = getattr(torch, method)(tensor - pil_tensor).item()
+        self.assertTrue(
+            err < tol,
+            msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
+        )
