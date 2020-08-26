@@ -32,11 +32,39 @@ else
 fi
 
 mkdir cpp_build
-cd cpp_build
+pushd cpp_build
+
+# Generate libtorchvision files
 cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch -DWITH_CUDA=$CMAKE_USE_CUDA
 
+# Compile and install libtorchvision
 if [[ "$OSTYPE" == "msys" ]]; then
     "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_cmake.bat"
 else
     make
+    make install
 fi
+
+popd
+
+# Install torchvision locally
+python setup.py develop
+
+# Trace, compile and run project that uses Faster-RCNN
+cd test/tracing/frcnn
+mkdir build
+
+# Trace model
+python trace_model.py
+cp fasterrcnn_resnet50_fpn.pt build
+
+cd build
+cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch -DWITH_CUDA=$CMAKE_USE_CUDA
+if [[ "$OSTYPE" == "msys" ]]; then
+
+else
+    make
+fi
+
+# Run traced program
+./test_frcnn_tracing
