@@ -40,6 +40,8 @@ cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch -DWITH_CUDA=$CMAKE_USE_CUDA
 # Compile and install libtorchvision
 if [[ "$OSTYPE" == "msys" ]]; then
     "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_cmake.bat"
+    CONDA_PATH=$(dirname $(which python))
+    cp -r "C:/Program Files (x86)/torchvision/include/torchvision" $CONDA_PATH/include
 else
     make
     make install
@@ -68,7 +70,9 @@ cp fasterrcnn_resnet50_fpn.pt build
 cd build
 cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch -DWITH_CUDA=$CMAKE_USE_CUDA
 if [[ "$OSTYPE" == "msys" ]]; then
-    echo "Windows"
+    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_frcnn.bat"
+    mv fasterrcnn_resnet50_fpn.pt Release
+    cd Release
 else
     make
 fi
