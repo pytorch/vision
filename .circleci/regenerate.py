@@ -193,7 +193,7 @@ def cmake_workflows(indentation=6):
                 'python_version': python_version
             }
 
-            job['cu_version'] = 'cu101' if device == 'gpu' else 'cpu'
+            job['cu_version'] = 'cu102' if device == 'gpu' else 'cpu'
             jobs.append({f'cmake_{os_type}_{device}': job})
     return indent(indentation, jobs)
 
