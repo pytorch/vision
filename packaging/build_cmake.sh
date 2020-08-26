@@ -1,6 +1,11 @@
 #!/bin/bash
 set -ex
 
+if [[ "$(uname)" != Darwin && "$OSTYPE" != "msys" ]]; then
+    eval "$(./conda/bin/conda shell.bash hook)"
+    conda activate ./env
+fi
+
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 . "$script_dir/pkg_helpers.bash"
 
