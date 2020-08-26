@@ -79,7 +79,7 @@ MediaType parse_type_to_mt(const std::string& stream_string) {
       "Expected one of [audio, video, subtitle, cc] ", stream_string);
 }
 
-std::tuple<std::string, int64_t> Video::_parseStream(const std::string& streamString){
+std::tuple<std::string, int64_t> _parseStream(const std::string& streamString){
     TORCH_CHECK(!streamString.empty(), "Stream string must not be empty");
     static const std::regex regex("([a-zA-Z_]+)(?::([1-9]\\d*|0))?");
     std::smatch match;
@@ -140,10 +140,46 @@ void Video::_getDecoderParams(
         ccFormat.type = TYPE_CC;
         params.formats.insert(ccFormat);
 
+    } else{
+        // TODO: reset params.formats
+        std::set<MediaFormat> formats;
+        params.formats = formats;
+        MediaType stream_type = parse_type_to_mt(stream);
+        // now here is a mindfuck 
+        // - there is no way to construct mediaformat by type so we actually
+        // need an endless if/then
+        switch(stream_type) {
+            case TYPE_VIDEO:
+            {
+                MediaFormat videoFormat(0, (long) stream_id);
+                videoFormat.type = TYPE_VIDEO;
+                videoFormat.format.video.format = defaultVideoPixelFormat;
+                params.formats.insert(videoFormat);
+                break;
+            }
+            case TYPE_AUDIO:
+            {        
+                MediaFormat audioFormat((long) stream_id);
+                audioFormat.type = TYPE_AUDIO;
+                audioFormat.format.audio.format = defaultAudioSampleFormat;
+                params.formats.insert(audioFormat);
+                break;
+            }
+            // case TYPE_CC:
+            //     MediaFormat subtitleFormat(char('0'), long(stream_id));
+            //     subtitleFormat.type = TYPE_SUBTITLE;
+            //     params.formats.insert(subtitleFormat);
+            //     break;
+            default:
+            {
+                MediaFormat videoFormat(0, (long) -1);
+                videoFormat.type = TYPE_VIDEO;
+                videoFormat.format.video.format = defaultVideoPixelFormat;
+                params.formats.insert(videoFormat);
+                break;
+            }
+        }
     }
-
-
-    // else use the stream using the correct parsing technique
 
 } // _get decoder params
 
@@ -164,7 +200,7 @@ Video::Video(
     );
 
     std::string logMessage, logType;
-    DecoderInCallback callback = nullptr;
+    
     // TODO: add read from memory option
     params.uri = videoPath;
     logType = "file";
@@ -177,42 +213,50 @@ Video::Video(
     cout << "Video decoding to gather metadata from " << logType << " [" << logMessage
           << "] has started";
     
-    std::vector<double> videoFPS, audioFPS, ccFPS, subtitleFPS;
 
-    std::vector<DecoderMetadata> metadata;
+    
+    std::vector<double> audioFPS, videoFPS, ccFPS, subsFPS;
+    std::vector<double> audioDuration, videoDuration, ccDuration, subsDuration;
+    std::vector<double> audioTB, videoTB, ccTB, subsTB;
+
+    // calback and metadata defined in struct
+    callback = nullptr;
     succeeded = decoder.init(params, std::move(callback), &metadata);
     if (succeeded) {
         for (const auto& header : metadata) {
-            cout << "Decoding stream of" << header.format.type ;
-        
-            // generate streamMetadata object
-            // std::map<std::string, double> streamInfo;
-            // parse stream timebase
-            // streamInfo.insert({"timeBase", (double) (header.num / header.den)});
-            // parse stream duration
-            // to get duration in seconds multiply duration by timebase
-            // streamInfo.insert({"duration", (double) header.duration * (double) (header.num / header.den)});
-                        
+            double fps = double(header.fps);
+            double timeBase = double(header.num) / double(header.den);
+            double duration = double(header.duration) * 1e-6; // * timeBase;
+
+
+            cout << "Decoding stream of" << header.format.type;
+            cout << "duration " << duration << " tb" << timeBase << " " << double(header.num) << " " <<double(header.num);
+
+
             if (header.format.type == TYPE_VIDEO) {
-                // parse stream fps
-                double fps = double(header.fps);
                 videoFPS.push_back(fps);
+                videoDuration.push_back(duration);
+                videoTB.push_back(timeBase);
             } else if (header.format.type == TYPE_AUDIO) {
-                // parse stream fps (user defined, doesn't seem cool)
-                double fps = double(0);
                 audioFPS.push_back(fps);
-            } else{
-                cout << "Got type" << header.format.type; 
+                audioDuration.push_back(duration);
+                audioTB.push_back(timeBase);
+            } else if (header.format.type == TYPE_CC){
+                ccFPS.push_back(fps);
+                ccDuration.push_back(duration);
+                ccTB.push_back(timeBase);
+            } else if (header.format.type == TYPE_SUBTITLE){
+                subsFPS.push_back(fps);
+                subsDuration.push_back(duration);
+                subsTB.push_back(timeBase);
             };
         }
 
-    } else{
-        audioFPS.push_back((-1.0));
-        videoFPS.push_back((-1.0));
-
     }
-    streamMetadata.insert({"video", videoFPS});
-    streamMetadata.insert({"audio", audioFPS});
+
+    streamFPS.insert({{"video", videoFPS}, {"audio", audioFPS}});
+    streamDuration.insert({{"video", videoDuration}, {"audio", audioDuration}});
+    streamTimeBase.insert({{"video", videoTB}, {"audio", audioTB}});
 } //video
 
 std::tuple<std::string, int64_t> Video::getCurrentStream() const {
@@ -221,8 +265,62 @@ std::tuple<std::string, int64_t> Video::getCurrentStream() const {
 
 std::vector<double> Video::getFPS(std::string stream) const{
     // add safety check
-    std::string stream_str = parse_type_to_string(stream);
-    return streamMetadata.at(stream_str);
+    if (stream.empty()){
+        stream = get<0>(current_stream);
+    }
+    auto stream_tpl = _parseStream(stream);
+    std::string stream_str = get<0>(stream_tpl);
+    // check if the stream exists
+    return streamFPS.at(stream_str);
 }
 
+std::vector<double> Video::getDuration(std::string stream) const{
+    // add safety check
+    if (stream.empty()){
+        stream = get<0>(current_stream);
+    }
+    auto stream_tpl = _parseStream(stream);
+    std::string stream_str = get<0>(stream_tpl);
+    // check if the stream exists
+    return streamDuration.at(stream_str);
+}
+
+int64_t Video::Seek(double ts, std::string stream="", bool any_frame=false){
+    if (stream.empty()){
+        stream = get<0>(current_stream);
+    }
+    auto stream_tpl = _parseStream(stream);
+    // check if the stream exists
+
+    // convert time to microseconds and cast to unsigned long int
+    int64_t ts_out = int64_t(ts * 1e6);
+
+    Video::_getDecoderParams(
+        ts_out,
+        0, // we're in full get frame mode
+        get<0>(stream_tpl),
+        get<1>(stream_tpl),
+        false);
+    
+    bool succeeded = decoder.init(params, std::move(callback), &metadata);
+    if (succeeded){
+        return 0;
+    }
+
+    return 1;
+
+}
+
+
+int64_t Video::Next(std::string stream=""){
+
+    DecoderOutputMessage out;
+    int64_t res = decoder.decode(&out, decoderTimeoutMs);
+
+    if (res == 0){
+        return 0;
+    }
+    
+    return 1;
+}
 
