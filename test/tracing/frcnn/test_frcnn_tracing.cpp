@@ -3,10 +3,6 @@
 #include <torchvision/nms.h>
 #include <ATen/ATen.h>
 
-// TODO: This should be removed once operators can be registered on include
-static auto registry = torch::RegisterOperators()
-                           .op("torchvision::nms", &nms);
-
 int main() {
     torch::DeviceType device_type;
     device_type = torch::kCPU;
