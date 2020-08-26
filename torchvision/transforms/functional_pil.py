@@ -1,5 +1,4 @@
 import numbers
-import warnings
 from typing import Any, List, Sequence
 
 import numpy as np
