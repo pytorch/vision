@@ -61,7 +61,7 @@ cp fasterrcnn_resnet50_fpn.pt build
 cd build
 cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch -DWITH_CUDA=$CMAKE_USE_CUDA
 if [[ "$OSTYPE" == "msys" ]]; then
-
+    echo "Windows"
 else
     make
 fi
