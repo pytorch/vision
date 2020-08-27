@@ -14,19 +14,19 @@ using namespace ffmpeg;
 
 // If we are in a Windows environment, we need to define
 // initialization functions for the _custom_ops extension
-#ifdef _WIN32
-#if PY_MAJOR_VERSION < 3
-PyMODINIT_FUNC init_video_reader(void) {
-  // No need to do anything.
-  return NULL;
-}
-#else
-PyMODINIT_FUNC PyInit_video_reader(void) {
-  // No need to do anything.
-  return NULL;
-}
-#endif
-#endif
+// #ifdef _WIN32
+// #if PY_MAJOR_VERSION < 3
+// PyMODINIT_FUNC init_video_reader(void) {
+//   // No need to do anything.
+//   return NULL;
+// }
+// #else
+// PyMODINIT_FUNC PyInit_video_reader(void) {
+//   // No need to do anything.
+//   return NULL;
+// }
+// #endif
+// #endif
 
 
 const size_t decoderTimeoutMs = 600000;
@@ -114,6 +114,7 @@ void Video::_getDecoderParams(
     params.headerOnly = getPtsOnly != 0;
     params.seekAccuracy = seekFrameMarginUs;
     params.startOffset = videoStartUs;
+    params.endOffset = std::numeric_limits<long>::infinity();
     params.timeoutMs = decoderTimeoutMs;
     params.preventStaleness = false;  // not sure what this is about
 
@@ -126,6 +127,10 @@ void Video::_getDecoderParams(
         MediaFormat videoFormat(0, (long) -2);
         videoFormat.type = TYPE_VIDEO;
         videoFormat.format.video.format = defaultVideoPixelFormat;
+        videoFormat.format.video.width = 0;
+        videoFormat.format.video.height = 0;
+        videoFormat.format.video.minDimension = 0;
+        videoFormat.format.video.maxDimension = 0;
         params.formats.insert(videoFormat);
 
         // there is no clear way on how to use other formats- todo later
@@ -207,11 +212,8 @@ Video::Video(
     logMessage = videoPath;
     
 
-    // get a decoder
-    bool succeeded;
-
     cout << "Video decoding to gather metadata from " << logType << " [" << logMessage
-          << "] has started";
+          << "] has started \n";
     
 
     
@@ -220,7 +222,6 @@ Video::Video(
     std::vector<double> audioTB, videoTB, ccTB, subsTB;
 
     // calback and metadata defined in struct
-    callback = nullptr;
     succeeded = decoder.init(params, std::move(callback), &metadata);
     if (succeeded) {
         for (const auto& header : metadata) {
@@ -320,6 +321,7 @@ int64_t Video::Next(std::string stream=""){
     if (res == 0){
         return 0;
     }
+    out.payload.reset();
     
     return 1;
 }
