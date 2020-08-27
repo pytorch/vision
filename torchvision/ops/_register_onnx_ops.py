@@ -1,5 +1,6 @@
 import sys
 import torch
+import warnings
 
 _onnx_opset_version = 11
 
@@ -20,11 +21,14 @@ def _register_custom_op():
 
     @parse_args('v', 'v', 'f', 'i', 'i', 'i', 'i')
     def roi_align(g, input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned):
-        if(aligned):
-            raise RuntimeError('Unsupported: ONNX export of roi_align with aligned')
         batch_indices = _cast_Long(g, squeeze(g, select(g, rois, 1, g.op('Constant',
                                    value_t=torch.tensor([0], dtype=torch.long))), 1), False)
         rois = select(g, rois, 1, g.op('Constant', value_t=torch.tensor([1, 2, 3, 4], dtype=torch.long)))
+        if aligned:
+            warnings.warn("ONNX export of ROIAlign with aligned=True does not match PyTorch when using malformed boxes,"
+                          " ONNX forces ROIs to be 1x1 or larger.")
+            scale = torch.tensor(0.5 / spatial_scale).to(dtype=torch.float)
+            rois = g.op("Sub", rois, scale)
         return g.op('RoiAlign', input, rois, batch_indices, spatial_scale_f=spatial_scale,
                     output_height_i=pooled_height, output_width_i=pooled_width, sampling_ratio_i=sampling_ratio)
 
