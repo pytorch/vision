@@ -1,23 +1,17 @@
 import torch
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
-from PIL import Image
+
 from PIL.Image import NEAREST, BILINEAR, BICUBIC
 
 import numpy as np
 
 import unittest
 
+from common_utils import TransformsTester
 
-class Tester(unittest.TestCase):
-    def _create_data(self, height=3, width=3, channels=3):
-        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8)
-        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().numpy())
-        return tensor, pil_img
 
-    def compareTensorToPIL(self, tensor, pil_image):
-        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1)))
-        self.assertTrue(tensor.equal(pil_tensor))
+class Tester(TransformsTester):
 
     def _test_functional_geom_op(self, func, fn_kwargs):
         if fn_kwargs is None:
