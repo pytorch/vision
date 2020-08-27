@@ -73,7 +73,7 @@ if [[ "$OSTYPE" == "msys" ]]; then
     "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_frcnn.bat"
     mv fasterrcnn_resnet50_fpn.pt Release
     cd Release
-    export PATH="$TORCH_PATH/lib:$PATH"
+    export PATH="$(cygpath $TORCH_PATH)/lib:$PATH"
 else
     make
 fi
