@@ -98,9 +98,17 @@ class Places365(VisionDataset):
         return len(self.imgs)
 
     @property
+    def variant(self) -> str:
+        return "challenge" if "challenge" in self.split else "standard"
+
+    @property
     def images_dir(self) -> str:
-        file, _ = self._IMAGES_META[(self.split, self.small)]
-        return path.join(self.root, path.splitext(file)[0])
+        size = "256" if self.small else "large"
+        if self.split.startswith("train"):
+            dir = f"data_{size}_{self.variant}"
+        else:
+            dir = f"{self.split}_{size}"
+        return path.join(self.root, dir)
 
     def load_categories(self, download: bool = True) -> Tuple[List[str], Dict[str, int]]:
         def process(line: str) -> Tuple[str, int]:
@@ -145,7 +153,7 @@ class Places365(VisionDataset):
         return images, list(targets)
 
     def download_devkit(self) -> None:
-        file, md5 = self._DEVKIT_META["challenge" if self.split == "train-challenge" else "standard"]
+        file, md5 = self._DEVKIT_META[self.variant]
         download_and_extract_archive(urljoin(self._BASE_URL, file), self.root, md5=md5)
 
     def download_images(self) -> None:
@@ -156,7 +164,10 @@ class Places365(VisionDataset):
             )
 
         file, md5 = self._IMAGES_META[(self.split, self.small)]
-        download_and_extract_archive(urljoin(self._BASE_URL, file), self.root, extract_root=self.images_dir, md5=md5)
+        download_and_extract_archive(urljoin(self._BASE_URL, file), self.root, md5=md5)
+
+        if self.split.startswith("train"):
+            os.rename(self.images_dir.rsplit("_", 1)[0], self.images_dir)
 
     def extra_repr(self) -> str:
         return "\n".join(("Split: {split}", "Small: {small}")).format(**self.__dict__)
