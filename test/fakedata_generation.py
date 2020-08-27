@@ -339,7 +339,7 @@ def places365_root(split="train-standard", small=False, extract_images=True):
     }
     # {(split, small): (archive, folder_default, folder_renamed)}
     IMAGES = {
-        ("train-standard", False) : ("train_large_places365standard.tar", "data_large", "data_large_standard"),
+        ("train-standard", False): ("train_large_places365standard.tar", "data_large", "data_large_standard"),
         ("train-challenge", False): ("train_large_places365challenge.tar", "data_large", "data_large_challenge"),
         ("val", False): ("val_large.tar", "val_large", "val_large"),
         ("train-standard", True): ("train_256_places365standard.tar", "data_256", "data_256_standard"),
@@ -409,9 +409,7 @@ def places365_root(split="train-standard", small=False, extract_images=True):
         mock_class_attribute(stack, "_CATEGORIES_META", meta)
         files.append(meta[0])
 
-        meta = {
-            split: make_file_list_txt(root, FILE_LISTS[split])
-        }
+        meta = {split: make_file_list_txt(root, FILE_LISTS[split])}
         mock_class_attribute(stack, "_FILE_LIST_META", meta)
         files.extend([item[0] for item in meta.values()])
 
