@@ -184,9 +184,22 @@ void Video::_getDecoderParams(
                 break;
             }
         }
+
     }
 
-} // _get decoder params
+
+
+        // there is no clear way on how to use other formats- todo later
+        // MediaFormat subtitleFormat("0", (long) -2);
+        // subtitleFormat.type = TYPE_SUBTITLE;
+        // MediaFormat ccFormat((double) 0, (long) -2);
+        // ccFormat.type = TYPE_CC;
+
+}
+
+    // else use the stream using the correct parsing technique
+
+// } // _get decoder params
 
 
 Video::Video(
@@ -198,9 +211,9 @@ Video::Video(
 
     Video::_getDecoderParams(
         0,      // video start
-        false,  //headerOnly
-        get<0>(current_stream),
-        long(-2),     // stream_id parsed from info above
+        0,  //headerOnly
+        get<0>(current_stream), // stream
+        long(-1),     // stream_id parsed from info above
         true    // read all streams
     );
 
