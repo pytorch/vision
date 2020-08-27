@@ -29,6 +29,7 @@ using namespace ffmpeg;
 
 struct Video : torch::CustomClassHolder {
     bool any_frame=false; // add this to input parameters
+    bool succeeded=false; // this is decoder init stuff
     std::tuple<std::string, int64_t> current_stream;
     std::map<std::string, std::vector<double>> streamFPS;
     std::map<std::string, std::vector<double>> streamDuration;
@@ -47,7 +48,7 @@ struct Video : torch::CustomClassHolder {
         SyncDecoder decoder;
         DecoderParameters params;
 
-        DecoderInCallback callback;
+        DecoderInCallback callback = nullptr;;
         std::vector<DecoderMetadata> metadata;
     // std::map<std::string, std::vector<std::map<std::string, double>>> getMetadata() const;
         // std::map<std::string, std::vector<StreamMetadata>> getMetadata();
