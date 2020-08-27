@@ -123,20 +123,9 @@ class Places365(VisionDataset):
         return sorted(class_to_idx.keys()), class_to_idx
 
     def load_file_list(self, download: bool = True) -> Tuple[List[Tuple[str, int]], List[int]]:
-        def fix_path(path: str) -> str:
-            if not path.startswith("/"):
-                return path
-
-            path = path[1:]
-
-            if os.sep == "/":
-                return path
-
-            return path.replace("/", os.sep)
-
-        def process(line: str) -> Tuple[str, int]:
+        def process(line: str, sep="/") -> Tuple[str, int]:
             image, idx = line.split()
-            return path.join(self.images_dir, fix_path(image)), int(idx)
+            return path.join(self.images_dir, image.lstrip(sep).replace(sep, os.sep)), int(idx)
 
         file, md5 = self._FILE_LIST_META[self.split]
         file = path.join(self.root, file)
