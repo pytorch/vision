@@ -19,11 +19,12 @@
 #include "sync_decoder.h"
 #include "memory_buffer.h"
 #include "defs.h"
-#include "util.h"
+
 
 using namespace ffmpeg;
 
 
+<<<<<<< HEAD
 
 
 struct Video : torch::CustomClassHolder {
@@ -61,6 +62,7 @@ struct Video : torch::CustomClassHolder {
         // int64_t SecToStream(double ts); // TODO: add stream type
         // double StreamToSec(int64_t pts); // TODO: add stream type
     
+
 }; // struct Video
 
 

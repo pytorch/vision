@@ -29,6 +29,7 @@ using namespace ffmpeg;
 // #endif
 
 
+
 const size_t decoderTimeoutMs = 600000;
 const AVPixelFormat defaultVideoPixelFormat = AV_PIX_FMT_RGB24;
 const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
@@ -108,6 +109,7 @@ void Video::_getDecoderParams(
         int64_t getPtsOnly,
         std::string stream,
         long stream_id=-1,
+
         bool all_streams=false,
         double seekFrameMarginUs=10){
 
@@ -115,6 +117,7 @@ void Video::_getDecoderParams(
     params.seekAccuracy = seekFrameMarginUs;
     params.startOffset = videoStartUs;
     params.endOffset = std::numeric_limits<long>::infinity();
+
     params.timeoutMs = decoderTimeoutMs;
     params.preventStaleness = false;  // not sure what this is about
 
@@ -184,6 +187,18 @@ void Video::_getDecoderParams(
 
     }
 
+
+
+        // there is no clear way on how to use other formats- todo later
+        // MediaFormat subtitleFormat("0", (long) -2);
+        // subtitleFormat.type = TYPE_SUBTITLE;
+        // MediaFormat ccFormat((double) 0, (long) -2);
+        // ccFormat.type = TYPE_CC;
+
+    }
+
+    // else use the stream using the correct parsing technique
+
 } // _get decoder params
 
 
@@ -200,12 +215,13 @@ Video::Video(
         0,      // video start
         false,  //headerOnly
         get<0>(current_stream),
-        long(-2),     // stream_id parsed from info above
+        long(-21,     // stream_id parsed from info above
         true    // read all streams
     );
 
     std::string logMessage, logType;
     
+
     // TODO: add read from memory option
     params.uri = videoPath;
     logType = "file";
@@ -325,7 +341,6 @@ int64_t Video::Next(std::string stream=""){
     
     return 1;
 }
-
 
 
 
