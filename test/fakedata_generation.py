@@ -12,6 +12,7 @@ from itertools import cycle
 from torchvision.io.video import write_video
 import unittest.mock
 import hashlib
+from distutils import dir_util
 
 
 @contextlib.contextmanager
@@ -319,7 +320,10 @@ def ucf101_root():
 @contextlib.contextmanager
 def places365_root(split="train-standard", small=False, extract_images=True):
     CATEGORIES = (("/a/airfield", 0), ("/a/apartment_building/outdoor", 8), ("/b/badlands", 30))
-    FILE_LIST = [(f"{idx}.png", idx) for idx in tuple(zip(*CATEGORIES))[1]]
+    FILE_LIST = (
+        ("Places365_val_00000001.png", 0),
+        *((f"{category}/Places365_train_00000001.png", idx) for category, idx in CATEGORIES),
+    )
 
     def compute_md5(file):
         with open(file, "rb") as fh:
@@ -338,20 +342,24 @@ def places365_root(split="train-standard", small=False, extract_images=True):
     def make_file_list_txt(root, name):
         return make_txt(root, name, FILE_LIST)
 
-    def make_image(root, name, size):
-        PIL.Image.fromarray(np.zeros((*size, 3), dtype=np.uint8)).save(os.path.join(root, name))
+    def make_image(file, size):
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        PIL.Image.fromarray(np.zeros((*size, 3), dtype=np.uint8)).save(file)
 
-    def make_tar(root, name, files, remove_files=True):
+    def make_tar(root, name, *files, remove_files=True):
+        name = f"{os.path.splitext(name)[0]}.tar"
         archive = os.path.join(root, name)
-        files = [os.path.join(root, file) for file in files]
 
         with tarfile.open(archive, "w") as fh:
             for file in files:
-                fh.add(file, os.path.basename(file))
+                fh.add(os.path.join(root, file), arcname=file)
 
         if remove_files:
-            for file in files:
-                os.remove(file)
+            for file in [os.path.join(root, file) for file in files]:
+                if os.path.isdir(file):
+                    dir_util.remove_tree(file)
+                else:
+                    os.remove(file)
 
         return name, compute_md5(archive)
 
@@ -382,37 +390,41 @@ def places365_root(split="train-standard", small=False, extract_images=True):
         mock_class_attribute(stack, "_FILE_LIST_META", meta)
         files.extend([item[0] for item in meta.values()])
 
-        meta = {variant: make_tar(root, archive, files)}
+        meta = {variant: make_tar(root, archive, *files)}
         mock_class_attribute(stack, "_DEVKIT_META", meta)
 
     def make_images_archive(stack, root, split, small):
+        size = "256" if small else "large"
         if split.startswith("train"):
-            images_dir = f"train_{'256' if small else 'large'}_places365{split_to_variant(split)}"
+            variant = split_to_variant(split)
+            archive = f"train_{size}_places365{variant}.tar"
+            images_dir = f"data_{size}"
+            images_variant_dir = f"{images_dir}_{variant}"
         else:
-            images_dir = f"{split}_{'256' if small else 'large'}"
-        archive = f"{images_dir}.tar"
+            images_dir = images_variant_dir = f"{split}_{size}"
+            archive = f"{images_dir}.tar"
 
-        size = (256, 256) if small else (512, random.randint(512, 1024))
-        imgs = [item[0] for item in FILE_LIST]
-        for img in imgs:
-            make_image(root, img, size)
+        image_size = (256, 256) if small else (512, random.randint(512, 1024))
+        files, idcs = zip(*FILE_LIST)
+        images = [file.lstrip("/").replace("/", os.sep) for file in files]
+        for image in images:
+            make_image(os.path.join(root, images_dir, image), image_size)
 
-        meta = {(split, small): make_tar(root, archive, imgs)}
+        meta = {(split, small): make_tar(root, archive, images_dir)}
         mock_class_attribute(stack, "_IMAGES_META", meta)
 
-        return images_dir
+        return [(os.path.join(root, images_variant_dir, image), idx) for image, idx in zip(images, idcs)]
 
-    with contextlib.ExitStack() as stack:
-        with get_tmp_dir() as root:
-            make_devkit_archive(stack, root, split)
-            class_to_idx = dict(CATEGORIES)
-            classes = list(class_to_idx.keys())
-            data = {"class_to_idx": class_to_idx, "classes": classes}
+    with contextlib.ExitStack() as stack, get_tmp_dir() as root:
+        make_devkit_archive(stack, root, split)
+        class_to_idx = dict(CATEGORIES)
+        classes = list(class_to_idx.keys())
+        data = {"class_to_idx": class_to_idx, "classes": classes}
 
-            if extract_images:
-                images_dir = make_images_archive(stack, root, split, small)
-                data["imgs"] = [(os.path.join(root, images_dir, file), idx) for file, idx in FILE_LIST]
-            else:
-                stack.enter_context(unittest.mock.patch(mock_target("download_images")))
+        if extract_images:
+            data["imgs"] = make_images_archive(stack, root, split, small)
+        else:
+            stack.enter_context(unittest.mock.patch(mock_target("download_images")))
+            data["imgs"] = None
 
-            yield root, data
+        yield root, data
