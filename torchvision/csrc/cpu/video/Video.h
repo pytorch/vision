@@ -24,8 +24,6 @@
 using namespace ffmpeg;
 
 
-<<<<<<< HEAD
-
 
 struct Video : torch::CustomClassHolder {
     bool any_frame=false; // add this to input parameters
@@ -56,8 +54,6 @@ struct Video : torch::CustomClassHolder {
         // torch::List<torch::Tensor> Peak(std::string stream="")
     protected:
         // AV container type (check in decoder for exact type)
-        
-        
 
         // int64_t SecToStream(double ts); // TODO: add stream type
         // double StreamToSec(int64_t pts); // TODO: add stream type

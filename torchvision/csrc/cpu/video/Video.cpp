@@ -195,11 +195,11 @@ void Video::_getDecoderParams(
         // MediaFormat ccFormat((double) 0, (long) -2);
         // ccFormat.type = TYPE_CC;
 
-    }
+}
 
     // else use the stream using the correct parsing technique
 
-} // _get decoder params
+// } // _get decoder params
 
 
 Video::Video(
@@ -213,9 +213,9 @@ Video::Video(
 
     Video::_getDecoderParams(
         0,      // video start
-        false,  //headerOnly
-        get<0>(current_stream),
-        long(-21,     // stream_id parsed from info above
+        0,  //headerOnly
+        get<0>(current_stream), // stream
+        long(-1),     // stream_id parsed from info above
         true    // read all streams
     );
 
