@@ -350,9 +350,12 @@ class TransformsTester(unittest.TestCase):
             msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
         self.assertTrue(tensor.cpu().equal(pil_tensor), msg)
 
-    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, method="mean"):
-        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1))).to(tensor)
-        err = getattr(torch, method)(tensor - pil_tensor).item()
+    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, agg_method="mean"):
+        np_pil_image = np.array(pil_image)
+        if np_pil_image.ndim == 2:
+            np_pil_image = np_pil_image[:, :, None]
+        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
+        err = getattr(torch, agg_method)(tensor - pil_tensor).item()
         self.assertTrue(
             err < tol,
             msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
