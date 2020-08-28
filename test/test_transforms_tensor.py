@@ -13,10 +13,13 @@ from common_utils import TransformsTester
 
 class Tester(TransformsTester):
 
+    def setUp(self):
+        self.device = "cpu"
+
     def _test_functional_op(self, func, fn_kwargs):
         if fn_kwargs is None:
             fn_kwargs = {}
-        tensor, pil_img = self._create_data(height=10, width=10)
+        tensor, pil_img = self._create_data(height=10, width=10, device=self.device)
         transformed_tensor = getattr(F, func)(tensor, **fn_kwargs)
         transformed_pil_img = getattr(F, func)(pil_img, **fn_kwargs)
         self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
@@ -25,7 +28,7 @@ class Tester(TransformsTester):
         if meth_kwargs is None:
             meth_kwargs = {}
 
-        tensor, pil_img = self._create_data(height=10, width=10)
+        tensor, pil_img = self._create_data(height=10, width=10, device=self.device)
         # test for class interface
         f = getattr(T, method)(**meth_kwargs)
         scripted_fn = torch.jit.script(f)
@@ -58,14 +61,14 @@ class Tester(TransformsTester):
         fns = ['adjust_brightness', 'adjust_contrast', 'adjust_saturation']
         for _ in range(20):
             factor = 3 * torch.rand(1).item()
-            tensor, _ = self._create_data()
+            tensor, _ = self._create_data(device=self.device)
             pil_img = T.ToPILImage()(tensor)
 
             for func in fns:
                 adjusted_tensor = getattr(F, func)(tensor, factor)
                 adjusted_pil_img = getattr(F, func)(pil_img, factor)
 
-                adjusted_pil_tensor = T.ToTensor()(adjusted_pil_img)
+                adjusted_pil_tensor = T.ToTensor()(adjusted_pil_img).to(self.device)
                 scripted_fn = torch.jit.script(getattr(F, func))
                 adjusted_tensor_script = scripted_fn(tensor, factor)
 
@@ -136,7 +139,7 @@ class Tester(TransformsTester):
         self._test_op(
             "center_crop", "CenterCrop", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
-        tensor = torch.randint(0, 255, (3, 10, 10), dtype=torch.uint8)
+        tensor = torch.randint(0, 255, (3, 10, 10), dtype=torch.uint8, device=self.device)
         # Test torchscript of transforms.CenterCrop with size as int
         f = T.CenterCrop(size=5)
         scripted_fn = torch.jit.script(f)
@@ -157,7 +160,7 @@ class Tester(TransformsTester):
             fn_kwargs = {}
         if meth_kwargs is None:
             meth_kwargs = {}
-        tensor, pil_img = self._create_data(height=20, width=20)
+        tensor, pil_img = self._create_data(height=20, width=20, device=self.device)
         transformed_t_list = getattr(F, func)(tensor, **fn_kwargs)
         transformed_p_list = getattr(F, func)(pil_img, **fn_kwargs)
         self.assertEqual(len(transformed_t_list), len(transformed_p_list))
@@ -216,7 +219,7 @@ class Tester(TransformsTester):
         )
 
     def test_resize(self):
-        tensor, _ = self._create_data(height=34, width=36)
+        tensor, _ = self._create_data(height=34, width=36, device=self.device)
         script_fn = torch.jit.script(F.resize)
 
         for dt in [None, torch.float32, torch.float64]:
@@ -243,7 +246,7 @@ class Tester(TransformsTester):
                     self.assertTrue(s_resized_tensor.equal(resized_tensor))
 
     def test_resized_crop(self):
-        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
+        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
 
         for scale in [(0.7, 1.2), [0.7, 1.2]]:
             for ratio in [(0.75, 1.333), [0.75, 1.333]]:
@@ -261,7 +264,7 @@ class Tester(TransformsTester):
                         self.assertTrue(out1.equal(out2))
 
     def test_random_affine(self):
-        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
+        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
 
         for shear in [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]]:
             for scale in [(0.7, 1.2), [0.7, 1.2]]:
@@ -281,7 +284,7 @@ class Tester(TransformsTester):
                             self.assertTrue(out1.equal(out2))
 
     def test_random_rotate(self):
-        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
+        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
 
         for center in [(0, 0), [10, 10], None, (56, 44)]:
             for expand in [True, False]:
@@ -299,7 +302,7 @@ class Tester(TransformsTester):
                         self.assertTrue(out1.equal(out2))
 
     def test_random_perspective(self):
-        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8)
+        tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
 
         for distortion_scale in np.linspace(0.1, 1.0, num=20):
             for interpolation in [NEAREST, BILINEAR]:
@@ -332,6 +335,13 @@ class Tester(TransformsTester):
         self._test_class_op(
             "RandomGrayscale", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
         )
+
+
+@unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+class CUDATester(Tester):
+
+    def setUp(self):
+        self.device = "cuda"
 
 
 if __name__ == '__main__':
