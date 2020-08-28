@@ -1,26 +1,17 @@
 import torch
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
-from PIL import Image
+
 from PIL.Image import NEAREST, BILINEAR, BICUBIC
 
 import numpy as np
 
 import unittest
 
+from common_utils import TransformsTester
 
-class Tester(unittest.TestCase):
-    def _create_data(self, height=3, width=3, channels=3):
-        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8)
-        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().numpy())
-        return tensor, pil_img
 
-    def compareTensorToPIL(self, tensor, pil_image):
-        pil_tensor = np.array(pil_image)
-        if pil_tensor.ndim == 2:
-            pil_tensor = pil_tensor[:, :, None]
-        pil_tensor = torch.as_tensor(pil_tensor.transpose((2, 0, 1)))
-        self.assertTrue(tensor.equal(pil_tensor))
+class Tester(TransformsTester):
 
     def _test_functional_op(self, func, fn_kwargs):
         if fn_kwargs is None:
@@ -30,7 +21,7 @@ class Tester(unittest.TestCase):
         transformed_pil_img = getattr(F, func)(pil_img, **fn_kwargs)
         self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
 
-    def _test_class_op(self, method, meth_kwargs=None):
+    def _test_class_op(self, method, meth_kwargs=None, test_exact_match=True, **match_kwargs):
         if meth_kwargs is None:
             meth_kwargs = {}
 
@@ -44,7 +35,10 @@ class Tester(unittest.TestCase):
         transformed_tensor = f(tensor)
         torch.manual_seed(12)
         transformed_pil_img = f(pil_img)
-        self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
+        if test_exact_match:
+            self.compareTensorToPIL(transformed_tensor, transformed_pil_img, **match_kwargs)
+        else:
+            self.approxEqualTensorToPIL(transformed_tensor.float(), transformed_pil_img, **match_kwargs)
 
         torch.manual_seed(12)
         transformed_tensor_script = scripted_fn(tensor)
@@ -323,14 +317,21 @@ class Tester(unittest.TestCase):
 
     def test_to_grayscale(self):
 
-        fn_kwargs = meth_kwargs = {"num_output_channels": 1}
-        self._test_op("rgb_to_grayscale", "Grayscale", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs)
+        meth_kwargs = {"num_output_channels": 1}
+        tol = 1.0 + 1e-10
+        self._test_class_op(
+            "Grayscale", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
+        )
 
-        fn_kwargs = meth_kwargs = {"num_output_channels": 3}
-        self._test_op("rgb_to_grayscale", "Grayscale", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs)
+        meth_kwargs = {"num_output_channels": 3}
+        self._test_class_op(
+            "Grayscale", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
+        )
 
         meth_kwargs = {}
-        self._test_class_op("RandomGrayscale", meth_kwargs=meth_kwargs)
+        self._test_class_op(
+            "RandomGrayscale", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
+        )
 
 
 if __name__ == '__main__':

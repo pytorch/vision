@@ -2,10 +2,8 @@ import unittest
 import colorsys
 import math
 
-from PIL import Image
-from PIL.Image import NEAREST, BILINEAR, BICUBIC
-
 import numpy as np
+from PIL.Image import NEAREST, BILINEAR, BICUBIC
 
 import torch
 import torchvision.transforms as transforms
@@ -13,33 +11,14 @@ import torchvision.transforms.functional_tensor as F_t
 import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional as F
 
+from common_utils import TransformsTester
 
-class Tester(unittest.TestCase):
 
-    def _create_data(self, height=3, width=3, channels=3):
-        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8)
-        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().numpy())
-        return tensor, pil_img
+class Tester(TransformsTester):
 
-    def compareTensorToPIL(self, tensor, pil_image, msg=None):
-        np_pil_image = np.array(pil_image)
-        if np_pil_image.ndim == 2:
-            np_pil_image = np_pil_image[:, :, None]
-        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
-        msg = "{}: tensor:\n{} \ndid not equal PIL tensor:\n{}".format(msg, tensor, pil_tensor)
-        self.assertTrue(tensor.equal(pil_tensor), msg)
-
-    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None):
-        pil_tensor = torch.as_tensor(np.array(pil_image).transpose((2, 0, 1))).to(tensor)
-        mae = torch.abs(tensor - pil_tensor).mean().item()
-        self.assertTrue(
-            mae < tol,
-            msg="{}: mae={}, tol={}: \n{}\nvs\n{}".format(msg, mae, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
-        )
-
-    def test_vflip(self):
+    def _test_vflip(self, device):
         script_vflip = torch.jit.script(F_t.vflip)
-        img_tensor = torch.randn(3, 16, 16)
+        img_tensor = torch.randn(3, 16, 16, device=device)
         img_tensor_clone = img_tensor.clone()
         vflipped_img = F_t.vflip(img_tensor)
         vflipped_img_again = F_t.vflip(vflipped_img)
@@ -50,9 +29,16 @@ class Tester(unittest.TestCase):
         vflipped_img_script = script_vflip(img_tensor)
         self.assertTrue(torch.equal(vflipped_img, vflipped_img_script))
 
-    def test_hflip(self):
+    def test_vflip_cpu(self):
+        self._test_vflip("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_vflip_cuda(self):
+        self._test_vflip("cuda")
+
+    def _test_hflip(self, device):
         script_hflip = torch.jit.script(F_t.hflip)
-        img_tensor = torch.randn(3, 16, 16)
+        img_tensor = torch.randn(3, 16, 16, device=device)
         img_tensor_clone = img_tensor.clone()
         hflipped_img = F_t.hflip(img_tensor)
         hflipped_img_again = F_t.hflip(hflipped_img)
@@ -63,10 +49,17 @@ class Tester(unittest.TestCase):
         hflipped_img_script = script_hflip(img_tensor)
         self.assertTrue(torch.equal(hflipped_img, hflipped_img_script))
 
-    def test_crop(self):
-        script_crop = torch.jit.script(F_t.crop)
+    def test_hflip_cpu(self):
+        self._test_hflip("cpu")
 
-        img_tensor, pil_img = self._create_data(16, 18)
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_hflip_cuda(self):
+        self._test_hflip("cuda")
+
+    def _test_crop(self, device):
+        script_crop = torch.jit.script(F.crop)
+
+        img_tensor, pil_img = self._create_data(16, 18, device=device)
 
         test_configs = [
             (1, 2, 4, 5),   # crop inside top-left corner
@@ -83,6 +76,13 @@ class Tester(unittest.TestCase):
 
             img_tensor_cropped = script_crop(img_tensor, top, left, height, width)
             self.compareTensorToPIL(img_tensor_cropped, pil_img_cropped)
+
+    def test_crop_cpu(self):
+        self._test_crop("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_crop_cuda(self):
+        self._test_crop("cuda")
 
     def test_hsv2rgb(self):
         shape = (3, 100, 150)
@@ -129,10 +129,10 @@ class Tester(unittest.TestCase):
 
             self.assertLess(max_diff, 1e-5)
 
-    def test_rgb_to_grayscale(self):
+    def _test_rgb_to_grayscale(self, device):
         script_rgb_to_grayscale = torch.jit.script(F.rgb_to_grayscale)
 
-        img_tensor, pil_img = self._create_data(32, 34)
+        img_tensor, pil_img = self._create_data(32, 34, device=device)
 
         for num_output_channels in (3, 1):
             gray_pil_image = F.rgb_to_grayscale(pil_img, num_output_channels=num_output_channels)
@@ -141,15 +141,26 @@ class Tester(unittest.TestCase):
             if num_output_channels == 1:
                 print(gray_tensor.shape)
 
-            self.compareTensorToPIL(gray_tensor, gray_pil_image)
+            self.approxEqualTensorToPIL(gray_tensor.float(), gray_pil_image, tol=1.0 + 1e-10, agg_method="max")
 
             s_gray_tensor = script_rgb_to_grayscale(img_tensor, num_output_channels=num_output_channels)
             self.assertTrue(s_gray_tensor.equal(gray_tensor))
 
-    def test_center_crop(self):
+    def test_rgb_to_grayscale(self):
+        self._test_rgb_to_grayscale("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_rgb_to_grayscale_cuda(self):
+        self._test_rgb_to_grayscale("cuda")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_rgb_to_grayscale_cuda(self):
+        self._test_rgb_to_grayscale("cuda")
+
+    def _test_center_crop(self, device):
         script_center_crop = torch.jit.script(F.center_crop)
 
-        img_tensor, pil_img = self._create_data(32, 34)
+        img_tensor, pil_img = self._create_data(32, 34, device=device)
 
         cropped_pil_image = F.center_crop(pil_img, [10, 11])
 
@@ -159,10 +170,17 @@ class Tester(unittest.TestCase):
         cropped_tensor = script_center_crop(img_tensor, [10, 11])
         self.compareTensorToPIL(cropped_tensor, cropped_pil_image)
 
-    def test_five_crop(self):
+    def test_center_crop(self):
+        self._test_center_crop("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_center_crop_cuda(self):
+        self._test_center_crop("cuda")
+
+    def _test_five_crop(self, device):
         script_five_crop = torch.jit.script(F.five_crop)
 
-        img_tensor, pil_img = self._create_data(32, 34)
+        img_tensor, pil_img = self._create_data(32, 34, device=device)
 
         cropped_pil_images = F.five_crop(pil_img, [10, 11])
 
@@ -174,10 +192,17 @@ class Tester(unittest.TestCase):
         for i in range(5):
             self.compareTensorToPIL(cropped_tensors[i], cropped_pil_images[i])
 
-    def test_ten_crop(self):
+    def test_five_crop(self):
+        self._test_five_crop("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_five_crop_cuda(self):
+        self._test_five_crop("cuda")
+
+    def _test_ten_crop(self, device):
         script_ten_crop = torch.jit.script(F.ten_crop)
 
-        img_tensor, pil_img = self._create_data(32, 34)
+        img_tensor, pil_img = self._create_data(32, 34, device=device)
 
         cropped_pil_images = F.ten_crop(pil_img, [10, 11])
 
@@ -189,9 +214,16 @@ class Tester(unittest.TestCase):
         for i in range(10):
             self.compareTensorToPIL(cropped_tensors[i], cropped_pil_images[i])
 
-    def test_pad(self):
+    def test_ten_crop(self):
+        self._test_ten_crop("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_ten_crop_cuda(self):
+        self._test_ten_crop("cuda")
+
+    def _test_pad(self, device):
         script_fn = torch.jit.script(F_t.pad)
-        tensor, pil_img = self._create_data(7, 8)
+        tensor, pil_img = self._create_data(7, 8, device=device)
 
         for dt in [None, torch.float32, torch.float64]:
             if dt is not None:
@@ -226,6 +258,13 @@ class Tester(unittest.TestCase):
 
         with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
             F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
+
+    def test_pad_cpu(self):
+        self._test_pad("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_pad_cuda(self):
+        self._test_pad("cuda")
 
     def _test_adjust_fn(self, fn, fn_pil, fn_t, configs):
         script_fn = torch.jit.script(fn)
@@ -290,7 +329,7 @@ class Tester(unittest.TestCase):
             [{"saturation_factor": f} for f in [0.5, 0.75, 1.0, 1.25, 1.5]]
         )
 
-    def test_adjust_gamma(self):
+    def _test_adjust_gamma(self, device):
         self._test_adjust_fn(
             F.adjust_gamma,
             F_pil.adjust_gamma,
@@ -298,9 +337,16 @@ class Tester(unittest.TestCase):
             [{"gamma": g1, "gain": g2} for g1, g2 in zip([0.8, 1.0, 1.2], [0.7, 1.0, 1.3])]
         )
 
-    def test_resize(self):
+    def test_adjust_gamma_cpu(self):
+        self._test_adjust_gamma("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_adjust_gamma_cuda(self):
+        self._test_adjust_gamma("cuda")
+
+    def _test_resize(self, device):
         script_fn = torch.jit.script(F_t.resize)
-        tensor, pil_img = self._create_data(26, 36)
+        tensor, pil_img = self._create_data(26, 36, device=device)
 
         for dt in [None, torch.float32, torch.float64]:
             if dt is not None:
@@ -336,16 +382,23 @@ class Tester(unittest.TestCase):
                     resize_result = script_fn(tensor, size=script_size, interpolation=interpolation)
                     self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
 
-    def test_resized_crop(self):
+    def test_resize_cpu(self):
+        self._test_resize("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_resize_cuda(self):
+        self._test_resize("cuda")
+
+    def _test_resized_crop(self, device):
         # test values of F.resized_crop in several cases:
         # 1) resize to the same size, crop to the same size => should be identity
-        tensor, _ = self._create_data(26, 36)
+        tensor, _ = self._create_data(26, 36, device=device)
         for i in [0, 2, 3]:
             out_tensor = F.resized_crop(tensor, top=0, left=0, height=26, width=36, size=[26, 36], interpolation=i)
             self.assertTrue(tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5]))
 
         # 2) resize by half and crop a TL corner
-        tensor, _ = self._create_data(26, 36)
+        tensor, _ = self._create_data(26, 36, device=device)
         out_tensor = F.resized_crop(tensor, top=0, left=0, height=20, width=30, size=[10, 15], interpolation=0)
         expected_out_tensor = tensor[:, :20:2, :30:2]
         self.assertTrue(
@@ -353,11 +406,18 @@ class Tester(unittest.TestCase):
             msg="{} vs {}".format(expected_out_tensor[0, :10, :10], out_tensor[0, :10, :10])
         )
 
-    def test_affine(self):
+    def test_resized_crop_cpu(self):
+        self._test_resized_crop("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_resized_crop_cuda(self):
+        self._test_resized_crop("cuda")
+
+    def _test_affine(self, device):
         # Tests on square and rectangular images
         scripted_affine = torch.jit.script(F.affine)
 
-        for tensor, pil_img in [self._create_data(26, 26), self._create_data(32, 26)]:
+        for tensor, pil_img in [self._create_data(26, 26, device=device), self._create_data(32, 26, device=device)]:
 
             # 1) identity map
             out_tensor = F.affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
@@ -381,8 +441,16 @@ class Tester(unittest.TestCase):
                     (180, torch.rot90(tensor, k=2, dims=(-1, -2))),
                 ]
                 for a, true_tensor in test_configs:
+
+                    out_pil_img = F.affine(
+                        pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                    )
+                    out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1))).to(device)
+
                     for fn in [F.affine, scripted_affine]:
-                        out_tensor = fn(tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
+                        out_tensor = fn(
+                            tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                        )
                         if true_tensor is not None:
                             self.assertTrue(
                                 true_tensor.equal(out_tensor),
@@ -390,11 +458,6 @@ class Tester(unittest.TestCase):
                             )
                         else:
                             true_tensor = out_tensor
-
-                        out_pil_img = F.affine(
-                            pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
-                        )
-                        out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
                         num_diff_pixels = (true_tensor != out_pil_tensor).sum().item() / 3.0
                         ratio_diff_pixels = num_diff_pixels / true_tensor.shape[-1] / true_tensor.shape[-2]
@@ -411,12 +474,16 @@ class Tester(unittest.TestCase):
                     90, 45, 15, -30, -60, -120
                 ]
                 for a in test_configs:
+
+                    out_pil_img = F.affine(
+                        pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                    )
+                    out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+
                     for fn in [F.affine, scripted_affine]:
-                        out_tensor = fn(tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
-                        out_pil_img = F.affine(
-                            pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
-                        )
-                        out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+                        out_tensor = fn(
+                            tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                        ).cpu()
 
                         num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
                         ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
@@ -434,9 +501,12 @@ class Tester(unittest.TestCase):
                 [10, 12], (-12, -13)
             ]
             for t in test_configs:
+
+                out_pil_img = F.affine(pil_img, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], resample=0)
+
                 for fn in [F.affine, scripted_affine]:
                     out_tensor = fn(tensor, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], resample=0)
-                    out_pil_img = F.affine(pil_img, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], resample=0)
+
                     self.compareTensorToPIL(out_tensor, out_pil_img)
 
             # 3) Test rotation + translation + scale + share
@@ -458,23 +528,31 @@ class Tester(unittest.TestCase):
                     out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
                     for fn in [F.affine, scripted_affine]:
-                        out_tensor = fn(tensor, angle=a, translate=t, scale=s, shear=sh, resample=r)
+                        out_tensor = fn(tensor, angle=a, translate=t, scale=s, shear=sh, resample=r).cpu()
                         num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
                         ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                        # Tolerance : less than 5% of different pixels
+                        # Tolerance : less than 5% (cpu), 6% (cuda) of different pixels
+                        tol = 0.06 if device == "cuda" else 0.05
                         self.assertLess(
                             ratio_diff_pixels,
-                            0.05,
+                            tol,
                             msg="{}: {}\n{} vs \n{}".format(
                                 (r, a, t, s, sh), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
                             )
                         )
 
-    def test_rotate(self):
+    def test_affine_cpu(self):
+        self._test_affine("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_affine_cuda(self):
+        self._test_affine("cuda")
+
+    def _test_rotate(self, device):
         # Tests on square image
         scripted_rotate = torch.jit.script(F.rotate)
 
-        for tensor, pil_img in [self._create_data(26, 26), self._create_data(32, 26)]:
+        for tensor, pil_img in [self._create_data(26, 26, device=device), self._create_data(32, 26, device=device)]:
 
             img_size = pil_img.size
             centers = [
@@ -491,7 +569,7 @@ class Tester(unittest.TestCase):
                             out_pil_img = F.rotate(pil_img, angle=a, resample=r, expand=e, center=c)
                             out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
                             for fn in [F.rotate, scripted_rotate]:
-                                out_tensor = fn(tensor, angle=a, resample=r, expand=e, center=c)
+                                out_tensor = fn(tensor, angle=a, resample=r, expand=e, center=c).cpu()
 
                                 self.assertEqual(
                                     out_tensor.shape,
@@ -514,11 +592,18 @@ class Tester(unittest.TestCase):
                                     )
                                 )
 
-    def test_perspective(self):
+    def test_rotate_cpu(self):
+        self._test_rotate("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_rotate_cuda(self):
+        self._test_rotate("cuda")
+
+    def _test_perspective(self, device):
 
         from torchvision.transforms import RandomPerspective
 
-        for tensor, pil_img in [self._create_data(26, 34), self._create_data(26, 26)]:
+        for tensor, pil_img in [self._create_data(26, 34, device=device), self._create_data(26, 26, device=device)]:
 
             scripted_tranform = torch.jit.script(F.perspective)
 
@@ -538,7 +623,7 @@ class Tester(unittest.TestCase):
                     out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
                     for fn in [F.perspective, scripted_tranform]:
-                        out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r)
+                        out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r).cpu()
 
                         num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
                         ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
@@ -553,6 +638,13 @@ class Tester(unittest.TestCase):
                                 out_pil_tensor[0, :7, :7]
                             )
                         )
+
+    def test_perspective_cpu(self):
+        self._test_perspective("cpu")
+
+    @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
+    def test_perspective_cuda(self):
+        self._test_perspective("cuda")
 
 
 if __name__ == '__main__':

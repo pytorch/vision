@@ -230,10 +230,10 @@ def to_pil_image(pic, mode=None):
             pic = np.expand_dims(pic, 2)
 
     npimg = pic
-    if isinstance(pic, torch.FloatTensor) and mode != 'F':
-        pic = pic.mul(255).byte()
     if isinstance(pic, torch.Tensor):
-        npimg = np.transpose(pic.numpy(), (1, 2, 0))
+        if pic.is_floating_point() and mode != 'F':
+            pic = pic.mul(255).byte()
+        npimg = np.transpose(pic.cpu().numpy(), (1, 2, 0))
 
     if not isinstance(npimg, np.ndarray):
         raise TypeError('Input pic must be a torch.Tensor or NumPy ndarray, ' +
@@ -958,37 +958,34 @@ def affine(
     return F_t.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 
 
-def to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
-    """DEPRECATED. Convert RGB image to grayscale version of image.
-    The image can be a PIL Image or a Tensor, in which case it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
-
-    .. warning::
-
-        This method is deprecated and will be removed in future releases.
-        Please, use ``F.rgb_to_grayscale`` instead.
-
+@torch.jit.unused
+def to_grayscale(img, num_output_channels=1):
+    """Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.
 
     Args:
-        img (PIL Image or Tensor): RGB Image to be converted to grayscale.
+        img (PIL Image): PIL Image to be converted to grayscale.
         num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
 
     Returns:
-        PIL Image or Tensor: Grayscale version of the image.
+        PIL Image: Grayscale version of the image.
             if num_output_channels = 1 : returned image is single channel
 
             if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
-    warnings.warn("The use of the F.to_grayscale transform is deprecated, " +
-                  "please use F.rgb_to_grayscale instead.")
+    if isinstance(img, Image.Image):
+        return F_pil.to_grayscale(img, num_output_channels)
 
-    return rgb_to_grayscale(img, num_output_channels)
+    raise TypeError("Input should be PIL Image")
 
 
 def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     """Convert RGB image to grayscale version of image.
     The image can be a PIL Image or a Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+
+    Note:
+        Please, note that this method supports only RGB images as input. For inputs in other color spaces,
+        please, consider using meth:`~torchvision.transforms.functional.to_grayscale` with PIL Image.
 
     Args:
         img (PIL Image or Tensor): RGB Image to be converted to grayscale.
@@ -1001,7 +998,7 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
             if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
     if not isinstance(img, torch.Tensor):
-        return F_pil.rgb_to_grayscale(img, num_output_channels)
+        return F_pil.to_grayscale(img, num_output_channels)
 
     return F_t.rgb_to_grayscale(img, num_output_channels)
 
