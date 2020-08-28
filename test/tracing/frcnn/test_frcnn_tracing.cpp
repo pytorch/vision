@@ -36,7 +36,7 @@ int main() {
     images.push_back(torch::rand({3, 256, 275}));
 
     inputs.push_back(images);
-    auto output = model.forward(inputs);
+    auto output = module.forward(inputs);
 
     std::cout << "ok\n";
     std::cout << "output" << output << "\n";
