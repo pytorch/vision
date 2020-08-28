@@ -31,7 +31,6 @@ using namespace ffmpeg;
 
 
 const size_t decoderTimeoutMs = 600000;
-const AVPixelFormat defaultVideoPixelFormat = AV_PIX_FMT_RGB24;
 const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
 // A jitter can be added to the end of the range to avoid conversion/rounding
 // error, small value 100us won't be enough to select the next frame, but enough
@@ -109,103 +108,64 @@ void Video::_getDecoderParams(
         int64_t getPtsOnly,
         std::string stream,
         long stream_id=-1,
-
         bool all_streams=false,
         double seekFrameMarginUs=10){
 
-    params.headerOnly = getPtsOnly != 0;
-    params.seekAccuracy = seekFrameMarginUs;
-    params.startOffset = videoStartUs;
-    params.endOffset = std::numeric_limits<long>::infinity();
-
+    
     params.timeoutMs = decoderTimeoutMs;
+    params.startOffset = videoStartUs;
+    params.seekAccuracy = 10;
+    params.headerOnly = false;
+
     params.preventStaleness = false;  // not sure what this is about
 
     if (all_streams == true){
-        MediaFormat audioFormat((long) -2);
-        audioFormat.type = TYPE_AUDIO;
-        audioFormat.format.audio.format = defaultAudioSampleFormat;
-        params.formats.insert(audioFormat);
+        MediaFormat format;
+        format.stream = -2;
+        format.type = TYPE_AUDIO;
+        params.formats.insert(format);
 
-        MediaFormat videoFormat(0, (long) -2);
-        videoFormat.type = TYPE_VIDEO;
-        videoFormat.format.video.format = defaultVideoPixelFormat;
-        videoFormat.format.video.width = 0;
-        videoFormat.format.video.height = 0;
-        videoFormat.format.video.minDimension = 0;
-        videoFormat.format.video.maxDimension = 0;
-        params.formats.insert(videoFormat);
+        format.type = TYPE_VIDEO;
+        format.stream = -2;
+        format.format.video.width = 0;
+        format.format.video.height = 0;
+        format.format.video.cropImage = 0;
+        params.formats.insert(format);
 
-        // there is no clear way on how to use other formats- todo later
-        MediaFormat subtitleFormat(char('0'), long(-2));
-        subtitleFormat.type = TYPE_SUBTITLE;
-        params.formats.insert(subtitleFormat);
+        format.type = TYPE_SUBTITLE;
+        format.stream = -2;
+        params.formats.insert(format);
 
-        MediaFormat ccFormat(double(0), long(-2));
-        ccFormat.type = TYPE_CC;
-        params.formats.insert(ccFormat);
-
+        format.type = TYPE_CC;
+        format.stream = -2;
+        params.formats.insert(format);
     } else{
+        // parse stream type
+        MediaType stream_type = parse_type_to_mt(stream);
+        
         // TODO: reset params.formats
         std::set<MediaFormat> formats;
         params.formats = formats;
-        MediaType stream_type = parse_type_to_mt(stream);
-        // now here is a mindfuck 
-        // - there is no way to construct mediaformat by type so we actually
-        // need an endless if/then
-        switch(stream_type) {
-            case TYPE_VIDEO:
-            {
-                MediaFormat videoFormat(0, (long) stream_id);
-                videoFormat.type = TYPE_VIDEO;
-                videoFormat.format.video.format = defaultVideoPixelFormat;
-                params.formats.insert(videoFormat);
-                break;
-            }
-            case TYPE_AUDIO:
-            {        
-                MediaFormat audioFormat((long) stream_id);
-                audioFormat.type = TYPE_AUDIO;
-                audioFormat.format.audio.format = defaultAudioSampleFormat;
-                params.formats.insert(audioFormat);
-                break;
-            }
-            // case TYPE_CC:
-            //     MediaFormat subtitleFormat(char('0'), long(stream_id));
-            //     subtitleFormat.type = TYPE_SUBTITLE;
-            //     params.formats.insert(subtitleFormat);
-            //     break;
-            default:
-            {
-                MediaFormat videoFormat(0, (long) -1);
-                videoFormat.type = TYPE_VIDEO;
-                videoFormat.format.video.format = defaultVideoPixelFormat;
-                params.formats.insert(videoFormat);
-                break;
-            }
+        // Define new format
+        MediaFormat format;
+        format.type = stream_type;
+        format.stream = stream_id;
+        if (stream_type == TYPE_VIDEO){
+            format.format.video.width = 0;
+            format.format.video.height = 0;
+            format.format.video.cropImage = 0;
         }
-
+        params.formats.insert(format);
     }
 
-
-
-        // there is no clear way on how to use other formats- todo later
-        // MediaFormat subtitleFormat("0", (long) -2);
-        // subtitleFormat.type = TYPE_SUBTITLE;
-        // MediaFormat ccFormat((double) 0, (long) -2);
-        // ccFormat.type = TYPE_CC;
-
-}
-
-    // else use the stream using the correct parsing technique
-
-// } // _get decoder params
+} // _get decoder params
 
 
 Video::Video(
     std::string videoPath, 
     std::string stream, 
     bool isReadFile) {
+
 
     //parse stream information
     current_stream = _parseStream(stream);
@@ -333,7 +293,6 @@ int64_t Video::Next(std::string stream=""){
 
     DecoderOutputMessage out;
     int64_t res = decoder.decode(&out, decoderTimeoutMs);
-
     if (res == 0){
         return 0;
     }

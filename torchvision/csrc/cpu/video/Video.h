@@ -48,8 +48,6 @@ struct Video : torch::CustomClassHolder {
 
         DecoderInCallback callback = nullptr;;
         std::vector<DecoderMetadata> metadata;
-    // std::map<std::string, std::vector<std::map<std::string, double>>> getMetadata() const;
-        // std::map<std::string, std::vector<StreamMetadata>> getMetadata();
         
         // torch::List<torch::Tensor> Peak(std::string stream="")
     protected:
