@@ -163,14 +163,14 @@ def draw_bounding_boxes(
             draw_labels = False
         else:  # BBoxes.__instancecheck__(Dict[str, Sequence[BBox]])
             draw_labels = True
-            
+
     if colors is None:
         # TODO: default to one of @pmeir's suggestions as a seq
         pass
-    
+
     from PIL import Image, ImageDraw
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
-    ndarr = tensor.mul(255).add_(0.5).clamp_(0, 255).permute(
+    ndarr = image.mul(255).add_(0.5).clamp_(0, 255).permute(
         1, 2, 0).to('cpu', torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     draw = ImageDraw.Draw(im)
@@ -179,12 +179,12 @@ def draw_bounding_boxes(
         if Sequence[Color].__instancecheck__(colors):
             # align the colors seq with the bbox classes
             colors = dict(zip(sorted(bboxes.keys()), colors))
-        
+
         for i, (bbox_class, bbox) in enumerate(bboxes.items()):
             draw.rectangle(bbox, outline=colors[bbox_class], width=width)
             if draw_labels:
                 # TODO: this will probably overlap with the bbox
-                # hard-code in a margin for the label? 
+                # hard-code in a margin for the label?
                 label_tl_x, label_tl_y, _, _ = bbox
                 draw.text((label_tl_x, label_tl_y), bbox_class)
     else:  # bboxes_is_seq
