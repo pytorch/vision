@@ -9,6 +9,11 @@ import torchvision.transforms.functional as F
 from PIL import Image
 
 
+def path_to_tensor(filepath):
+    from numpy import array as to_numpy_array
+    return torch.from_numpy(to_numpy_array(Image.open(filepath)))
+
+
 class Tester(unittest.TestCase):
 
     def test_make_grid_not_inplace(self):
@@ -60,11 +65,11 @@ class Tester(unittest.TestCase):
         inp_img_path = os.path.join(IMAGE_DIR, 'a4.png')
         out_img_path = os.path.join(IMAGE_DIR, 'b5.png')
 
-        inp_img_pil = torch.from_numpy(np.array(Image.open(inp_img_path)))
+        inp_img_pil = path_to_tensor(inp_img_path)
         bboxes = ((1, 2, 10, 18), (4, 8, 9, 11))
         # TODO: maybe write the rectangle programatically in this test instead of
         # statically loading output?
-        out_img_pil = torch.from_numpy(to_numpy_array(Image.open(out_img_path)))
+        out_img_pil = path_to_tensor(out_img_path)
 
         self.assertTrue(
             torch.equal(
