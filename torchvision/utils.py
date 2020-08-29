@@ -128,3 +128,64 @@ def save_image(
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
+
+
+BBox = Tuple[int, int, int, int]
+BBoxes = Sequence[BBox]
+Color = Tuple[int, int, int]
+DEFAULT_COLORS: Sequence[Color]
+
+
+def draw_bounding_boxes(
+    image: torch.Tensor,
+    bboxes: Union[BBoxes, Dict[str, Sequence[BBox]]],
+    colors: Optional[Dict[str, Color]] = None,
+    draw_labels: bool = None,
+    width: int = 1,
+) -> torch.Tensor:
+    # TODO: docstring
+
+    bboxes_is_seq = BBoxes.__instancecheck__(bboxes)
+    # bboxes_is_dict is Dict[str, Sequence[BBox]].__instancecheck__(bboxes)
+    bboxes_is_dict = not bboxes_is_seq
+
+    if bboxes_is_seq:
+        # TODO: raise better Errors
+        if colors is not None:
+            # can't pass custom colors if bboxes is a sequence
+            raise Error
+        if draw_labels is True:
+            # can't draw labels if bboxes is a sequence
+            raise Error
+
+    if draw_labels is None:
+        if bboxes_is_seq:
+            draw_labels = False
+        else:  # BBoxes.__instancecheck__(Dict[str, Sequence[BBox]])
+            draw_labels = True
+            
+    if colors is None:
+        # TODO: default to one of @pmeir's suggestions
+        pass
+    
+    from PIL import Image, ImageDraw
+    # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
+    ndarr = tensor.mul(255).add_(0.5).clamp_(0, 255).permute(
+        1, 2, 0).to('cpu', torch.uint8).numpy()
+    im = Image.fromarray(ndarr)
+    draw = ImageDraw.Draw(im)
+
+    if bboxes_is_dict:
+        for bbox_class, bbox in bboxes.items():
+            if draw_labels:
+                # TODO: this will probably overlap with the bbox
+                # hard-code in a margin for the label? 
+                label_tl_x, label_tl_y, _, _ = bbox
+                draw.text((label_tl_x, label_tl_y), bbox_class)
+            draw.rectangle(bbox, outline=color, width=width)
+    else:
+        for bbox, color in zip(bboxes, colors):
+            draw.rectangle(bbox, outline=color, width=width)
+
+    from numpy import array as to_numpy_array
+    return torch.from_numpy(to_numpy_array(im))
