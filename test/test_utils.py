@@ -53,6 +53,8 @@ class Tester(unittest.TestCase):
         # self.assertTrue(torch.equal(t, t_clone), 'draw_bounding_bboxes modified tensor in-place')
 
     def test_bboxes(self):
+        from numpy import array as to_numpy_array
+
         IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
         IMAGE_DIR = os.path.join(IMAGE_ROOT, "fakedata", "imagefolder")
         inp_img_path = os.path.join(IMAGE_DIR, 'a4.png')
@@ -62,7 +64,7 @@ class Tester(unittest.TestCase):
         bboxes = ((1, 2, 10, 18), (4, 8, 9, 11))
         # TODO: maybe write the rectangle programatically in this test instead of
         # statically loading output?
-        out_img_pil = torch.from_numpy(np.array(Image.open(out_img_path)))
+        out_img_pil = torch.from_numpy(to_numpy_array(Image.open(out_img_path)))
 
         self.assertTrue(
             torch.equal(
@@ -71,7 +73,6 @@ class Tester(unittest.TestCase):
             ),
             'draw_bounding_bboxes returned an incorrect result',
         )
-        
 
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_save_image(self):
