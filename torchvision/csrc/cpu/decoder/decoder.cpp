@@ -303,10 +303,13 @@ bool Decoder::init(
   inputCtx_->flags |= AVFMT_FLAG_NONBLOCK;
 
   AVDictionary* options = nullptr;
-  av_dict_set_int(&options, "analyzeduration", params_.timeoutMs * 1000, 0);
-  av_dict_set_int(&options, "stimeout", params_.timeoutMs * 1000, 0);
   if (params_.listen) {
     av_dict_set_int(&options, "listen", 1, 0);
+  }
+  if (params_.timeoutMs > 0) {
+    av_dict_set_int(&options, "analyzeduration", params_.timeoutMs * 1000, 0);
+    av_dict_set_int(&options, "stimeout", params_.timeoutMs * 1000, 0);
+    av_dict_set_int(&options, "rw_timeout", params_.timeoutMs * 1000, 0);
   }
 
   interrupted_ = false;
