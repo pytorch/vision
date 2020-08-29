@@ -40,6 +40,23 @@ class Tester(unittest.TestCase):
 
         self.assertTrue(torch.equal(norm_max, rounded_grid_max), 'Normalized max is not equal to 1')
         self.assertTrue(torch.equal(norm_min, rounded_grid_min), 'Normalized min is not equal to 0')
+        
+    def test_bboxes_not_inplace(self):
+        t = torch.rand(5, 3, 10, 10) * 255
+        t_clone = t.clone()
+
+        utils.draw_bounding_bboxes(t, draw_labels=False)
+        self.assertTrue(torch.equal(t, t_clone), 'draw_bounding_bboxes modified tensor in-place')
+
+        utils.draw_bounding_bboxes(t, draw_labels=True)
+        self.assertTrue(torch.equal(t, t_clone), 'draw_bounding_bboxes modified tensor in-place')
+    
+    def test_bboxes(self):
+        IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+        IMAGE_DIR = os.path.join(IMAGE_ROOT, "fakedata", "imagefolder")
+        img_path = os.path.join(IMAGE_DIR, 'a4.png')
+        img_pil = torch.from_numpy(np.array(Image.open(img_path)))
+        # TODO: implement this test
 
     @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_save_image(self):
