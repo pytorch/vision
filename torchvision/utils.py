@@ -164,9 +164,12 @@ def draw_bounding_boxes(
         else:  # BBoxes.__instancecheck__(Dict[str, Sequence[BBox]])
             draw_labels = True
 
+    # colors: Union[Sequence[Color], Dict[str, Color]]
     if colors is None:
         # TODO: default to one of @pmeir's suggestions as a seq
-        pass
+        colors_: Sequence[Color] = colors
+    else:
+        colors_: Dict[str, Color] = colors
 
     from PIL import Image, ImageDraw
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
@@ -176,12 +179,12 @@ def draw_bounding_boxes(
     draw = ImageDraw.Draw(im)
 
     if bboxes_is_dict:
-        if Sequence[Color].__instancecheck__(colors):
+        if Sequence[Color].__instancecheck__(colors_):
             # align the colors seq with the bbox classes
-            colors = dict(zip(sorted(bboxes.keys()), colors))
+            colors = dict(zip(sorted(bboxes.keys()), colors_))
 
-        for i, (bbox_class, bbox) in enumerate(bboxes.items()):
-            draw.rectangle(bbox, outline=colors[bbox_class], width=width)
+        for bbox_class, bbox in enumerate(bboxes.items()):
+            draw.rectangle(bbox, outline=colors_[bbox_class], width=width)
             if draw_labels:
                 # TODO: this will probably overlap with the bbox
                 # hard-code in a margin for the label?
@@ -189,7 +192,7 @@ def draw_bounding_boxes(
                 draw.text((label_tl_x, label_tl_y), bbox_class)
     else:  # bboxes_is_seq
         for i, bbox in enumerate(bboxes):
-            draw.rectangle(bbox, outline=colors[i], width=width)
+            draw.rectangle(bbox, outline=colors_[i], width=width)
 
     from numpy import array as to_numpy_array
     return torch.from_numpy(to_numpy_array(im))
