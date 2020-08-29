@@ -1,4 +1,4 @@
-from typing import Union, Optional, List, Tuple, Text, BinaryIO, Sequence
+from typing import Union, Optional, List, Tuple, Text, BinaryIO, Sequence, Dict
 import io
 import pathlib
 import torch
