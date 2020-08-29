@@ -165,7 +165,7 @@ def draw_bounding_boxes(
             draw_labels = True
             
     if colors is None:
-        # TODO: default to one of @pmeir's suggestions
+        # TODO: default to one of @pmeir's suggestions as a seq
         pass
     
     from PIL import Image, ImageDraw
@@ -176,16 +176,20 @@ def draw_bounding_boxes(
     draw = ImageDraw.Draw(im)
 
     if bboxes_is_dict:
-        for bbox_class, bbox in bboxes.items():
+        if Sequence[Color].__instancecheck__(colors):
+            # align the colors seq with the bbox classes
+            colors = dict(zip(sorted(bboxes.keys()), colors))
+        
+        for i, (bbox_class, bbox) in enumerate(bboxes.items()):
+            draw.rectangle(bbox, outline=colors[bbox_class], width=width)
             if draw_labels:
                 # TODO: this will probably overlap with the bbox
                 # hard-code in a margin for the label? 
                 label_tl_x, label_tl_y, _, _ = bbox
                 draw.text((label_tl_x, label_tl_y), bbox_class)
-            draw.rectangle(bbox, outline=color, width=width)
-    else:
-        for bbox, color in zip(bboxes, colors):
-            draw.rectangle(bbox, outline=color, width=width)
+    else:  # bboxes_is_seq
+        for i, bbox in enumerate(bboxes):
+            draw.rectangle(bbox, outline=colors[i], width=width)
 
     from numpy import array as to_numpy_array
     return torch.from_numpy(to_numpy_array(im))
