@@ -235,11 +235,11 @@ class Tester(TransformsTester):
                 if adjusted_tensor.dtype != torch.uint8:
                     rbg_tensor = F.convert_image_dtype(adjusted_tensor, torch.uint8)
 
-                # Check that max difference does not exceed 1 in [0, 255] range
+                # Check that max difference does not exceed 2 in [0, 255] range
                 # Exact matching is not possible due to incompatibility convert_image_dtype and PIL results
-                tol = 1.0 + 1e-10
+                tol = 2.0 + 1e-10
                 self.approxEqualTensorToPIL(rbg_tensor.float(), adjusted_pil, tol, msg=msg, agg_method="max")
-                self.assertTrue(adjusted_tensor.equal(scripted_result), msg=msg)
+                self.assertTrue(adjusted_tensor.allclose(scripted_result), msg=msg)
 
     def test_adjust_brightness(self):
         self._test_adjust_fn(
@@ -262,7 +262,7 @@ class Tester(TransformsTester):
             F.adjust_saturation,
             F_pil.adjust_saturation,
             F_t.adjust_saturation,
-            [{"saturation_factor": f} for f in [0.5, 0.75, 1.0, 1.25, 1.5]]
+            [{"saturation_factor": f} for f in [0.5, 0.75, 1.0, 1.5, 2.0]]
         )
 
     def test_adjust_gamma(self):
