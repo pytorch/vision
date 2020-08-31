@@ -71,6 +71,13 @@ size_t fillVideoTensor(
   return fillTensorList<uint8_t>(msgs, videoFrame, videoFramePts);
 }
 
+size_t fillAudioTensor(
+    DecoderOutputMessage& msgs,
+    torch::Tensor& audioFrame,
+    torch::Tensor& audioFramePts) {
+  return fillTensorList<float>(msgs, audioFrame, audioFramePts);
+}
+
 
 std::string parse_type_to_string(const std::string& stream_string) {
   static const std::array<std::pair<std::string, MediaType>, 4> types = {{
@@ -205,6 +212,8 @@ Video::Video(
 
     //parse stream information
 
+    current_stream = _parseStream(stream);
+    // note that in the initial call we want to get all streams
     Video::_getDecoderParams(
         0,      // video start
         0,  //headerOnly
@@ -220,11 +229,6 @@ Video::Video(
     logType = "file";
     logMessage = videoPath;
     
-
-    cout << "Video decoding to gather metadata from " << logType << " [" << logMessage
-          << "] has started \n";
-    
-
     
     std::vector<double> audioFPS, videoFPS, ccFPS, subsFPS;
     std::vector<double> audioDuration, videoDuration, ccDuration, subsDuration;
@@ -243,7 +247,6 @@ Video::Video(
             cout << "Decoding stream of" << header.format.type;
             cout << "duration " << duration << " tb" << timeBase << " " << double(header.num) << " " <<double(header.num);
 
-
             if (header.format.type == TYPE_VIDEO) {
                 videoMetadata = header;
                 videoFPS.push_back(fps);
@@ -261,9 +264,20 @@ Video::Video(
         }
 
     }
-
     streamFPS.insert({{"video", videoFPS}, {"audio", audioFPS}});
     streamDuration.insert({{"video", videoDuration}, {"audio", audioDuration}});
+
+
+    // set current stream again
+    Video::_getDecoderParams(
+        0,      // video start
+        0,  //headerOnly
+        get<0>(current_stream), // stream
+        long(-1),     // stream_id parsed from info above change to -2
+        false    // read all streams
+    );
+    // calback and metadata defined in Video.h
+    succeeded = decoder.init(params, std::move(callback), &metadata);
 } //video
 
 std::tuple<std::string, int64_t> Video::getCurrentStream() const {
@@ -340,12 +354,27 @@ torch::List<torch::Tensor> Video::Next(std::string stream=""){
         outFrame = torch::zeros({outHeight, outWidth, numChannels}, torch::kByte);
         expectedWrittenBytes = outHeight * outWidth * numChannels;
         std::cout << expectedWrittenBytes;
+    } else if (format.type == TYPE_AUDIO) {
+        int outAudioChannels = format.format.audio.channels;
+        int bytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(format.format.audio.format));
+        int frameSizeTotal = out.payload->length();
+        
+        CHECK_EQ(frameSizeTotal % (outAudioChannels * bytesPerSample), 0);
+        int numAudioSamples = frameSizeTotal / (outAudioChannels * bytesPerSample);
+
+        outFrame = torch::zeros({numAudioSamples, outAudioChannels}, torch::kFloat);
+
+        expectedWrittenBytes = numAudioSamples * outAudioChannels * sizeof(float);
     }
     
     // if not in seek mode or only looking at the keyframes, 
     // return the immediate next frame 
     if ((seekTS == -1) || (video_any_frame == false)) {            
-        auto numberWrittenBytes = fillVideoTensor(out, outFrame, framePTS);
+        if (format.type == TYPE_VIDEO) {
+            auto numberWrittenBytes = fillVideoTensor(out, outFrame, framePTS);
+        } else {
+            auto numberWrittenBytes = fillAudioTensor(out, outFrame, framePTS);
+        }
         out.payload.reset();
     }
 
