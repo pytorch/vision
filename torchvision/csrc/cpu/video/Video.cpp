@@ -38,6 +38,40 @@ const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
 const size_t timeBaseJitterUs = 100;
 
 
+// returns number of written bytes
+template <typename T>
+size_t fillTensorList(DecoderOutputMessage& msgs,
+                      torch::Tensor& frame,
+                      torch::Tensor& framePts) {
+    // if (!msg) {
+    //     return 0;
+    // }
+    // set up PTS data
+    const auto& msg = msgs;
+
+    float* framePtsData = framePts.data_ptr<float>();
+    
+    float pts_s = float(float(msg.header.pts) * 1e-6);
+    framePtsData[0] =  pts_s;
+    
+    T* frameData = frame.numel() > 0 ? frame.data_ptr<T>() : nullptr;
+
+    
+    if (frameData) {
+        auto sizeInBytes = msg.payload->length();
+        memcpy(frameData, msg.payload->data(), sizeInBytes);
+    }
+  return sizeof(T);
+}
+
+size_t fillVideoTensor(
+    DecoderOutputMessage& msgs,
+    torch::Tensor& videoFrame,
+    torch::Tensor& videoFramePts) {
+  return fillTensorList<uint8_t>(msgs, videoFrame, videoFramePts);
+}
+
+
 std::string parse_type_to_string(const std::string& stream_string) {
   static const std::array<std::pair<std::string, MediaType>, 4> types = {{
       {"video", TYPE_VIDEO},
@@ -196,6 +230,7 @@ Video::Video(
     std::vector<double> audioFPS, videoFPS, ccFPS, subsFPS;
     std::vector<double> audioDuration, videoDuration, ccDuration, subsDuration;
     std::vector<double> audioTB, videoTB, ccTB, subsTB;
+    
 
     // calback and metadata defined in struct
     succeeded = decoder.init(params, std::move(callback), &metadata);
@@ -211,21 +246,18 @@ Video::Video(
 
 
             if (header.format.type == TYPE_VIDEO) {
+                videoMetadata = header;
                 videoFPS.push_back(fps);
                 videoDuration.push_back(duration);
-                videoTB.push_back(timeBase);
             } else if (header.format.type == TYPE_AUDIO) {
                 audioFPS.push_back(fps);
                 audioDuration.push_back(duration);
-                audioTB.push_back(timeBase);
             } else if (header.format.type == TYPE_CC){
                 ccFPS.push_back(fps);
                 ccDuration.push_back(duration);
-                ccTB.push_back(timeBase);
             } else if (header.format.type == TYPE_SUBTITLE){
                 subsFPS.push_back(fps);
                 subsDuration.push_back(duration);
-                subsTB.push_back(timeBase);
             };
         }
 
@@ -233,7 +265,6 @@ Video::Video(
 
     streamFPS.insert({{"video", videoFPS}, {"audio", audioFPS}});
     streamDuration.insert({{"video", videoDuration}, {"audio", audioDuration}});
-    streamTimeBase.insert({{"video", videoTB}, {"audio", audioTB}});
 } //video
 
 std::tuple<std::string, int64_t> Video::getCurrentStream() const {
@@ -281,24 +312,41 @@ int64_t Video::Seek(double ts, std::string stream="", bool any_frame=false){
     
     bool succeeded = decoder.init(params, std::move(callback), &metadata);
     if (succeeded){
+        // initialize the class variables and retrurn
+        video_any_frame = any_frame;
+        seekTS = ts; 
         return 0;
     }
-
     return 1;
-
 }
 
+torch::List<torch::Tensor> Video::Next(std::string stream=""){
 
-int64_t Video::Next(std::string stream=""){
+    size_t expectedWrittenBytes = 0;
+    torch::Tensor videoFramePts = torch::zeros({1}, torch::kFloat);
+
+    const auto& format = videoMetadata.format.format.video;
+    int outHeight = format.height;
+    int outWidth = format.width;
+    int numChannels = 3;
+    
+    torch::Tensor videoFrame = torch::zeros({outHeight, outWidth, numChannels}, torch::kByte);
+    expectedWrittenBytes = outHeight * outWidth * numChannels;
+    std::cout << expectedWrittenBytes;
 
     DecoderOutputMessage out;
-    int64_t res = decoder.decode(&out, decoderTimeoutMs);
-    if (res == 0){
-        return 0;
+    // if not in seek mode or only looking at the keyframes, 
+    // return the immediate next frame 
+    if ((seekTS == -1) || (video_any_frame == false)) {
+        int64_t res = decoder.decode(&out, decoderTimeoutMs);
+        auto numberWrittenBytes = fillVideoTensor(out, videoFrame, videoFramePts);
+        out.payload.reset();
     }
-    out.payload.reset();
-    
-    return 1;
+
+    torch::List<torch::Tensor> result;
+    result.push_back(videoFrame);
+    result.push_back(videoFramePts);
+    return result;
 }
 
 
