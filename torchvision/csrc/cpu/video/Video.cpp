@@ -209,7 +209,7 @@ Video::Video(
         0,      // video start
         0,  //headerOnly
         get<0>(current_stream), // stream
-        long(-1),     // stream_id parsed from info above
+        long(-1),     // stream_id parsed from info above change to -2
         true    // read all streams
     );
 
@@ -321,30 +321,37 @@ int64_t Video::Seek(double ts, std::string stream="", bool any_frame=false){
 
 torch::List<torch::Tensor> Video::Next(std::string stream=""){
 
-    size_t expectedWrittenBytes = 0;
-    torch::Tensor videoFramePts = torch::zeros({1}, torch::kFloat);
 
-    const auto& format = videoMetadata.format.format.video;
-    int outHeight = format.height;
-    int outWidth = format.width;
-    int numChannels = 3;
-    
-    torch::Tensor videoFrame = torch::zeros({outHeight, outWidth, numChannels}, torch::kByte);
-    expectedWrittenBytes = outHeight * outWidth * numChannels;
-    std::cout << expectedWrittenBytes;
-
+    // first decode the frame
     DecoderOutputMessage out;
+    int64_t res = decoder.decode(&out, decoderTimeoutMs);
+    auto header = out.header;
+    const auto& format = header.format;
+
+    // then initialize the output variables based on type
+    size_t expectedWrittenBytes = 0;
+    torch::Tensor framePTS = torch::zeros({1}, torch::kFloat);
+
+    torch::Tensor outFrame = torch::zeros({0}, torch::kByte);
+    if (format.type == TYPE_VIDEO) {
+        int outHeight = format.format.video.height;
+        int outWidth = format.format.video.width;
+        int numChannels = 3;
+        outFrame = torch::zeros({outHeight, outWidth, numChannels}, torch::kByte);
+        expectedWrittenBytes = outHeight * outWidth * numChannels;
+        std::cout << expectedWrittenBytes;
+    }
+    
     // if not in seek mode or only looking at the keyframes, 
     // return the immediate next frame 
-    if ((seekTS == -1) || (video_any_frame == false)) {
-        int64_t res = decoder.decode(&out, decoderTimeoutMs);
-        auto numberWrittenBytes = fillVideoTensor(out, videoFrame, videoFramePts);
+    if ((seekTS == -1) || (video_any_frame == false)) {            
+        auto numberWrittenBytes = fillVideoTensor(out, outFrame, framePTS);
         out.payload.reset();
     }
 
     torch::List<torch::Tensor> result;
-    result.push_back(videoFrame);
-    result.push_back(videoFramePts);
+    result.push_back(outFrame);
+    result.push_back(framePTS);
     return result;
 }
 
