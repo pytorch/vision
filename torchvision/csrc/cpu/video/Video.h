@@ -26,18 +26,23 @@ using namespace ffmpeg;
 
 
 struct Video : torch::CustomClassHolder {
-    bool any_frame=false; // add this to input parameters
+    bool video_any_frame=false; // add this to input parameters
     bool succeeded=false; // this is decoder init stuff
+    // this acts as a flag - if it's not set, next function simply
+    // retruns the next frame. If it's set, we look at the global seek
+    // time in comination with any_frame settings
+    double seekTS=-1; 
     std::tuple<std::string, int64_t> current_stream;
     std::map<std::string, std::vector<double>> streamFPS;
     std::map<std::string, std::vector<double>> streamDuration;
+    DecoderMetadata videoMetadata;
     public:
         Video(std::string videoPath, std::string stream, bool isReadFile);
         std::tuple<std::string, int64_t> getCurrentStream() const;
         std::vector<double> getDuration(std::string stream="") const;
         std::vector<double> getFPS(std::string stream="") const;
         int64_t Seek(double ts, std::string stream, bool any_frame);
-        int64_t Next(std::string stream); //torch::List<torch::Tensor>
+        torch::List<torch::Tensor> Next(std::string stream); //
 
     private:
         void _getDecoderParams(int64_t videoStartUs, int64_t getPtsOnly, std::string stream, long stream_id, bool all_streams, double seekFrameMarginUs); // this needs to be improved
@@ -48,6 +53,7 @@ struct Video : torch::CustomClassHolder {
 
         DecoderInCallback callback = nullptr;;
         std::vector<DecoderMetadata> metadata;
+        
         
         // torch::List<torch::Tensor> Peak(std::string stream="")
     protected:
