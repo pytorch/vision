@@ -128,7 +128,7 @@ class Tester(TransformsTester):
             s_gray_tensor = script_rgb_to_grayscale(img_tensor, num_output_channels=num_output_channels)
             self.assertTrue(s_gray_tensor.equal(gray_tensor))
 
-    def _test_center_crop(self, device):
+    def test_center_crop(self):
         script_center_crop = torch.jit.script(F.center_crop)
 
         img_tensor, pil_img = self._create_data(32, 34, device=self.device)
