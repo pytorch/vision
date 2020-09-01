@@ -60,39 +60,34 @@ class Tester(TransformsTester):
     def test_color_jitter(self):
 
         tol = 1.0 + 1e-10
-        # TODO: add tuple/list confs
-        for f in [0.1, 0.5, 1.0, 1.34]:
+        for f in [0.1, 0.5, 1.0, 1.34, (0.3, 0.7), [0.4, 0.5]]:
             meth_kwargs = {"brightness": f}
             self._test_class_op(
                 "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
             )
 
-        # TODO: add tuple/list confs
-        for f in [0.2, 0.5, 1.0, 1.5]:
+        for f in [0.2, 0.5, 1.0, 1.5, (0.3, 0.7), [0.4, 0.5]]:
             meth_kwargs = {"contrast": f}
             self._test_class_op(
                 "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
             )
 
-        # TODO: add tuple/list confs
-        for f in [0.5, 0.75, 1.0, 1.25]:
+        for f in [0.5, 0.75, 1.0, 1.25, (0.3, 0.7), [0.3, 0.4]]:
             meth_kwargs = {"saturation": f}
             self._test_class_op(
                 "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
             )
 
-        # TODO: add tuple/list confs
-        for f in [0.2, 0.5]:
+        for f in [0.2, 0.5, (-0.2, 0.3), [-0.4, 0.5]]:
             meth_kwargs = {"hue": f}
             self._test_class_op(
-                "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
+                "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=0.1, agg_method="mean"
             )
 
         # All 4 parameters together
-        # TODO: add tuple/list confs
         meth_kwargs = {"brightness": 0.2, "contrast": 0.2, "saturation": 0.2, "hue": 0.2}
         self._test_class_op(
-            "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
+            "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=0.1, agg_method="mean"
         )
 
     def test_pad(self):

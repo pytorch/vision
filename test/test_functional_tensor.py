@@ -209,7 +209,7 @@ class Tester(TransformsTester):
         with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
             F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
 
-    def _test_adjust_fn(self, fn, fn_pil, fn_t, configs):
+    def _test_adjust_fn(self, fn, fn_pil, fn_t, configs, tol=2.0+1e-10, agg_method="max"):
         script_fn = torch.jit.script(fn)
 
         torch.manual_seed(15)
@@ -237,8 +237,7 @@ class Tester(TransformsTester):
 
                 # Check that max difference does not exceed 2 in [0, 255] range
                 # Exact matching is not possible due to incompatibility convert_image_dtype and PIL results
-                tol = 2.0 + 1e-10
-                self.approxEqualTensorToPIL(rbg_tensor.float(), adjusted_pil, tol, msg=msg, agg_method="max")
+                self.approxEqualTensorToPIL(rbg_tensor.float(), adjusted_pil, tol=tol, msg=msg, agg_method=agg_method)
                 self.assertTrue(adjusted_tensor.allclose(scripted_result), msg=msg)
 
     def test_adjust_brightness(self):
@@ -270,7 +269,9 @@ class Tester(TransformsTester):
             F.adjust_hue,
             F_pil.adjust_hue,
             F_t.adjust_hue,
-            [{"hue_factor": f} for f in [-0.5, -0.25, 0.0, 0.25, 0.5]]
+            [{"hue_factor": f} for f in [-0.5, -0.25, 0.0, 0.25, 0.5]],
+            tol=0.1,
+            agg_method="mean"
         )
 
     def test_adjust_gamma(self):

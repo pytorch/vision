@@ -408,6 +408,8 @@ def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
 def _rgb2hsv(img):
     r, g, b = img.unbind(0)
 
+    # Implementation is based on https://github.com/python-pillow/Pillow/blob/4174d4267616897df3746d315d5a2d0f82c656ee/
+    # src/libImaging/Convert.c#L330
     maxc = torch.max(img, dim=0).values
     minc = torch.min(img, dim=0).values
 
