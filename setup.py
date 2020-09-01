@@ -358,6 +358,7 @@ def get_extensions():
                     ffmpeg_include_dir,
                     extensions_dir,
                 ],
+                library_dirs=library_dirs,
                 libraries=[
                     'avcodec',
                     'avformat',
