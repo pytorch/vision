@@ -423,12 +423,13 @@ def _rgb2hsv(img):
 
     cr = maxc - minc
     # Since `eqc => cr = 0`, replacing denominator with 1 when `eqc` is fine.
-    s = cr / torch.where(eqc, maxc.new_ones(()), maxc)
+    ones = torch.ones_like(maxc)
+    s = cr / torch.where(eqc, ones, maxc)
     # Note that `eqc => maxc = minc = r = g = b`. So the following calculation
     # of `h` would reduce to `bc - gc + 2 + rc - bc + 4 + rc - bc = 6` so it
     # would not matter what values `rc`, `gc`, and `bc` have here, and thus
     # replacing denominator with 1 when `eqc` is fine.
-    cr_divisor = torch.where(eqc, maxc.new_ones(()), cr)
+    cr_divisor = torch.where(eqc, ones, cr)
     rc = (maxc - r) / cr_divisor
     gc = (maxc - g) / cr_divisor
     bc = (maxc - b) / cr_divisor
@@ -452,7 +453,7 @@ def _hsv2rgb(img):
     t = torch.clamp((v * (1.0 - s * (1.0 - f))), 0.0, 1.0)
     i = i % 6
 
-    mask = i == torch.arange(6)[:, None, None]
+    mask = i == torch.arange(6, device=i.device)[:, None, None]
 
     a1 = torch.stack((v, q, p, p, t, v))
     a2 = torch.stack((t, v, v, q, p, p))
