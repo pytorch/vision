@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef WITH_CUDA
+#if defined(WITH_CUDA) || defined(WITH_HIP)
 namespace autocast {
 
 inline bool is_eligible(const at::Tensor& arg) {
