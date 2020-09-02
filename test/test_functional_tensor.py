@@ -67,40 +67,46 @@ class Tester(TransformsTester):
             self.compareTensorToPIL(img_tensor_cropped, pil_img_cropped)
 
     def test_hsv2rgb(self):
+        scripted_fn = torch.jit.script(F_t._hsv2rgb)
         shape = (3, 100, 150)
-        for _ in range(20):
-            img = torch.rand(*shape, dtype=torch.float)
-            ft_img = F_t._hsv2rgb(img).permute(1, 2, 0).flatten(0, 1)
+        for _ in range(10):
+            hsv_img = torch.rand(*shape, dtype=torch.float, device=self.device)
+            rgb_img = F_t._hsv2rgb(hsv_img)
+            ft_img = rgb_img.permute(1, 2, 0).flatten(0, 1)
 
-            h, s, v, = img.unbind(0)
-            h = h.flatten().numpy()
-            s = s.flatten().numpy()
-            v = v.flatten().numpy()
+            h, s, v, = hsv_img.unbind(0)
+            h = h.flatten().cpu().numpy()
+            s = s.flatten().cpu().numpy()
+            v = v.flatten().cpu().numpy()
 
             rgb = []
             for h1, s1, v1 in zip(h, s, v):
                 rgb.append(colorsys.hsv_to_rgb(h1, s1, v1))
-
-            colorsys_img = torch.tensor(rgb, dtype=torch.float32)
+            colorsys_img = torch.tensor(rgb, dtype=torch.float32, device=self.device)
             max_diff = (ft_img - colorsys_img).abs().max()
             self.assertLess(max_diff, 1e-5)
 
-    def test_rgb2hsv(self):
-        shape = (3, 150, 100)
-        for _ in range(20):
-            img = torch.rand(*shape, dtype=torch.float)
-            ft_hsv_img = F_t._rgb2hsv(img).permute(1, 2, 0).flatten(0, 1)
+            s_rgb_img = scripted_fn(hsv_img)
+            self.assertTrue(rgb_img.allclose(s_rgb_img))
 
-            r, g, b, = img.unbind(0)
-            r = r.flatten().numpy()
-            g = g.flatten().numpy()
-            b = b.flatten().numpy()
+    def test_rgb2hsv(self):
+        scripted_fn = torch.jit.script(F_t._rgb2hsv)
+        shape = (3, 150, 100)
+        for _ in range(10):
+            rgb_img = torch.rand(*shape, dtype=torch.float, device=self.device)
+            hsv_img = F_t._rgb2hsv(rgb_img)
+            ft_hsv_img = hsv_img.permute(1, 2, 0).flatten(0, 1)
+
+            r, g, b, = rgb_img.unbind(0)
+            r = r.flatten().cpu().numpy()
+            g = g.flatten().cpu().numpy()
+            b = b.flatten().cpu().numpy()
 
             hsv = []
             for r1, g1, b1 in zip(r, g, b):
                 hsv.append(colorsys.rgb_to_hsv(r1, g1, b1))
 
-            colorsys_img = torch.tensor(hsv, dtype=torch.float32)
+            colorsys_img = torch.tensor(hsv, dtype=torch.float32, device=self.device)
 
             ft_hsv_img_h, ft_hsv_img_sv = torch.split(ft_hsv_img, [1, 2], dim=1)
             colorsys_img_h, colorsys_img_sv = torch.split(colorsys_img, [1, 2], dim=1)
@@ -108,8 +114,10 @@ class Tester(TransformsTester):
             max_diff_h = ((colorsys_img_h * 2 * math.pi).sin() - (ft_hsv_img_h * 2 * math.pi).sin()).abs().max()
             max_diff_sv = (colorsys_img_sv - ft_hsv_img_sv).abs().max()
             max_diff = max(max_diff_h, max_diff_sv)
-
             self.assertLess(max_diff, 1e-5)
+
+            s_hsv_img = scripted_fn(rgb_img)
+            self.assertTrue(hsv_img.allclose(s_hsv_img))
 
     def test_rgb_to_grayscale(self):
         script_rgb_to_grayscale = torch.jit.script(F.rgb_to_grayscale)
