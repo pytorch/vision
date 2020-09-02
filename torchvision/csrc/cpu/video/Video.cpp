@@ -145,7 +145,7 @@ std::tuple<std::string, int64_t> _parseStream(const std::string& streamString){
 
 
 void Video::_getDecoderParams(
-        int64_t videoStartUs,
+        int64_t videoStartS,
         int64_t getPtsOnly,
 
         std::string stream,
@@ -154,6 +154,8 @@ void Video::_getDecoderParams(
         double seekFrameMarginUs=10){
 
     
+    int64_t videoStartUs = int64_t(videoStartS * 1e6);
+
     params.timeoutMs = decoderTimeoutMs;
     params.startOffset = videoStartUs;
     params.seekAccuracy = 10;
@@ -217,7 +219,7 @@ Video::Video(
     Video::_getDecoderParams(
         0,      // video start
         0,  //headerOnly
-        get<0>(current_stream), // stream
+        get<0>(current_stream), // stream info - remove that
         long(-1),     // stream_id parsed from info above change to -2
         true    // read all streams
     );
@@ -243,10 +245,6 @@ Video::Video(
             double timeBase = double(header.num) / double(header.den);
             double duration = double(header.duration) * 1e-6; // * timeBase;
 
-
-            cout << "Decoding stream of" << header.format.type;
-            cout << "duration " << duration << " tb" << timeBase << " " << double(header.num) << " " <<double(header.num);
-
             if (header.format.type == TYPE_VIDEO) {
                 videoMetadata = header;
                 videoFPS.push_back(fps);
@@ -268,17 +266,40 @@ Video::Video(
     streamDuration.insert({{"video", videoDuration}, {"audio", audioDuration}});
 
 
-    // set current stream again
-    Video::_getDecoderParams(
-        0,      // video start
+    // // set current stream again
+    // Video::_getDecoderParams(
+    //     0,      // video start
+    //     0,  //headerOnly
+    //     get<0>(current_stream), // stream
+    //     long(get<1>(current_stream)),     // stream_id parsed from info above change to -2
+    //     false    // read all streams
+    // );
+
+    // succeeded = decoder.init(params, std::move(callback), &metadata);
+    succeeded = Video::_setCurrentStream(stream);
+    std::cout << "\nDecoder inited with: " << succeeded;
+} //video
+
+// why is this not woriking? 
+bool Video::_setCurrentStream(std::string stream){  
+    current_stream = _parseStream(stream);
+    double ts = 0;
+    if (seekTS > 0) {
+        ts = seekTS;
+    }
+
+    _getDecoderParams(
+        ts,  // video start
         0,  //headerOnly
         get<0>(current_stream), // stream
-        long(-1),     // stream_id parsed from info above change to -2
+        long(get<1>(current_stream)),     // stream_id parsed from info above change to -2
         false    // read all streams
     );
+
     // calback and metadata defined in Video.h
-    succeeded = decoder.init(params, std::move(callback), &metadata);
-} //video
+    return(decoder.init(params, std::move(callback), &metadata));
+
+}
 
 std::tuple<std::string, int64_t> Video::getCurrentStream() const {
     return current_stream;
@@ -307,27 +328,13 @@ std::vector<double> Video::getDuration(std::string stream) const{
 }
 
 int64_t Video::Seek(double ts, std::string stream="", bool any_frame=false){
-    if (stream.empty()){
-        stream = get<0>(current_stream);
-    }
-    auto stream_tpl = _parseStream(stream);
-    // check if the stream exists
 
-    // convert time to microseconds and cast to unsigned long int
-    int64_t ts_out = int64_t(ts * 1e6);
+    // initialize the class variables and retrurn
+    video_any_frame = any_frame;
+    seekTS = ts; 
 
-    Video::_getDecoderParams(
-        ts_out,
-        0, // we're in full get frame mode
-        get<0>(stream_tpl),
-        get<1>(stream_tpl),
-        false);
-    
-    bool succeeded = decoder.init(params, std::move(callback), &metadata);
+    succeeded = Video::_setCurrentStream(stream);
     if (succeeded){
-        // initialize the class variables and retrurn
-        video_any_frame = any_frame;
-        seekTS = ts; 
         return 0;
     }
     return 1;
