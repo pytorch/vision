@@ -45,7 +45,8 @@ struct Video : torch::CustomClassHolder {
         torch::List<torch::Tensor> Next(std::string stream); //
 
     private:
-        void _getDecoderParams(int64_t videoStartUs, int64_t getPtsOnly, std::string stream, long stream_id, bool all_streams, double seekFrameMarginUs); // this needs to be improved
+        void _getDecoderParams(int64_t videoStartS, int64_t getPtsOnly, std::string stream, long stream_id, bool all_streams, double seekFrameMarginUs); // this needs to be improved
+        bool _setCurrentStream(std::string stream="video");
         std::map<std::string, std::vector<double>> streamTimeBase;
 
         SyncDecoder decoder;
