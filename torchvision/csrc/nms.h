@@ -6,6 +6,7 @@
 #include "cuda/vision_cuda.h"
 #endif
 #ifdef WITH_HIP
+#include "autocast.h"
 #include "hip/vision_cuda.h"
 #endif
 
@@ -20,7 +21,7 @@ at::Tensor nms(
   return op.call(dets, scores, iou_threshold);
 }
 
-#ifdef WITH_CUDA
+#if defined(WITH_CUDA) || defined(WITH_HIP)
 at::Tensor nms_autocast(
     const at::Tensor& dets,
     const at::Tensor& scores,

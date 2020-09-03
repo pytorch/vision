@@ -157,7 +157,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     return _blend(img, mean, contrast_factor)
 
 
-def adjust_hue(img, hue_factor):
+def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     """Adjust hue of an image.
 
     The image hue is adjusted by converting the image to HSV and
@@ -185,8 +185,8 @@ def adjust_hue(img, hue_factor):
     if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
 
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+    if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
+        raise TypeError('img should be Tensor image. Got {}'.format(type(img)))
 
     orig_dtype = img.dtype
     if img.dtype == torch.uint8:
@@ -194,8 +194,7 @@ def adjust_hue(img, hue_factor):
 
     img = _rgb2hsv(img)
     h, s, v = img.unbind(0)
-    h += hue_factor
-    h = h % 1.0
+    h = (h + hue_factor) % 1.0
     img = torch.stack((h, s, v))
     img_hue_adj = _hsv2rgb(img)
 
@@ -408,6 +407,8 @@ def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
 def _rgb2hsv(img):
     r, g, b = img.unbind(0)
 
+    # Implementation is based on https://github.com/python-pillow/Pillow/blob/4174d4267616897df3746d315d5a2d0f82c656ee/
+    # src/libImaging/Convert.c#L330
     maxc = torch.max(img, dim=0).values
     minc = torch.min(img, dim=0).values
 
