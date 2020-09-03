@@ -164,6 +164,10 @@ class AnchorGenerator(nn.Module):
                     torch.tensor(image_size[1] // g[1], dtype=torch.int64, device=device)] for g in grid_sizes]
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
+
+        if len(anchors_over_all_feature_maps) != len(feature_maps):
+            raise RuntimeError('AnchorGenerator sizes and aspect_ratios must have the same number of elements as feature maps.  Expected {} feature maps, but got {}'.format(len(anchors_over_all_feature_maps), len(feature_maps))
+
         anchors = torch.jit.annotate(List[List[torch.Tensor]], [])
         for i, (image_height, image_width) in enumerate(image_list.image_sizes):
             anchors_in_image = []
