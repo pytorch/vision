@@ -119,7 +119,7 @@ MediaType parse_type_to_mt(const std::string& stream_string) {
       "Expected one of [audio, video, subtitle, cc] ", stream_string);
 }
 
-std::tuple<std::string, int64_t> _parseStream(const std::string& streamString){
+std::tuple<std::string, long> _parseStream(const std::string& streamString){
     TORCH_CHECK(!streamString.empty(), "Stream string must not be empty");
     static const std::regex regex("([a-zA-Z_]+)(?::([1-9]\\d*|0))?");
     std::smatch match;
@@ -130,7 +130,7 @@ std::tuple<std::string, int64_t> _parseStream(const std::string& streamString){
     
     std::string type_ = "video";
     type_ = parse_type_to_string(match[1].str());
-    int64_t index_ = -1;
+    long index_ = -1;
     if (match[2].matched) {
         try {
         index_ = c10::stoi(match[2].str());
@@ -265,19 +265,12 @@ Video::Video(
     streamFPS.insert({{"video", videoFPS}, {"audio", audioFPS}});
     streamDuration.insert({{"video", videoDuration}, {"audio", audioDuration}});
 
-
-    // // set current stream again
-    // Video::_getDecoderParams(
-    //     0,      // video start
-    //     0,  //headerOnly
-    //     get<0>(current_stream), // stream
-    //     long(get<1>(current_stream)),     // stream_id parsed from info above change to -2
-    //     false    // read all streams
-    // );
-
-    // succeeded = decoder.init(params, std::move(callback), &metadata);
     succeeded = Video::_setCurrentStream(stream);
-    std::cout << "\nDecoder inited with: " << succeeded;
+    LOG(INFO) << "\nDecoder inited with: " << succeeded << "\n";
+    if (long(get<1>(current_stream)) != -1) {
+        LOG(INFO) << "Stream index set to " << long(get<1>(current_stream) <<
+        ". If you encounter trouble, consider switching it to automatic stream discovery.\n";
+    }
 } //video
 
 // why is this not woriking? 
@@ -342,47 +335,71 @@ int64_t Video::Seek(double ts, std::string stream="", bool any_frame=false){
 
 torch::List<torch::Tensor> Video::Next(std::string stream=""){
 
+    bool switched = false;
+    if ((!stream.empty()) && (_parseStream(stream) != current_stream)){
+        succeeded = Video::_setCurrentStream(stream);
+        if (succeeded){
+            cout << "Switching the stream to new one in next ya'll \n";
+            switched = true;
+        }
+    }
+
+    // if failing to decode simply return 0 (note, maybe 
+    // raise an exeption otherwise)
+    torch::Tensor framePTS = torch::zeros({1}, torch::kFloat);
+    torch::Tensor outFrame = torch::zeros({0}, torch::kByte);
 
     // first decode the frame
     DecoderOutputMessage out;
     int64_t res = decoder.decode(&out, decoderTimeoutMs);
-    auto header = out.header;
-    const auto& format = header.format;
+    if (res == 0){
 
-    // then initialize the output variables based on type
-    size_t expectedWrittenBytes = 0;
-    torch::Tensor framePTS = torch::zeros({1}, torch::kFloat);
+        auto header = out.header;
+        const auto& format = header.format;
 
-    torch::Tensor outFrame = torch::zeros({0}, torch::kByte);
-    if (format.type == TYPE_VIDEO) {
-        int outHeight = format.format.video.height;
-        int outWidth = format.format.video.width;
-        int numChannels = 3;
-        outFrame = torch::zeros({outHeight, outWidth, numChannels}, torch::kByte);
-        expectedWrittenBytes = outHeight * outWidth * numChannels;
-        std::cout << expectedWrittenBytes;
-    } else if (format.type == TYPE_AUDIO) {
-        int outAudioChannels = format.format.audio.channels;
-        int bytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(format.format.audio.format));
-        int frameSizeTotal = out.payload->length();
-        
-        CHECK_EQ(frameSizeTotal % (outAudioChannels * bytesPerSample), 0);
-        int numAudioSamples = frameSizeTotal / (outAudioChannels * bytesPerSample);
-
-        outFrame = torch::zeros({numAudioSamples, outAudioChannels}, torch::kFloat);
-
-        expectedWrittenBytes = numAudioSamples * outAudioChannels * sizeof(float);
-    }
-    
-    // if not in seek mode or only looking at the keyframes, 
-    // return the immediate next frame 
-    if ((seekTS == -1) || (video_any_frame == false)) {            
-        if (format.type == TYPE_VIDEO) {
-            auto numberWrittenBytes = fillVideoTensor(out, outFrame, framePTS);
-        } else {
-            auto numberWrittenBytes = fillAudioTensor(out, outFrame, framePTS);
+        if (switched == true) {
+            cout << "now looking at " << format.type <<" \n";
         }
-        out.payload.reset();
+
+        // then initialize the output variables based on type
+        size_t expectedWrittenBytes = 0;
+
+        if (format.type == TYPE_VIDEO) {
+            int outHeight = format.format.video.height;
+            int outWidth = format.format.video.width;
+            int numChannels = 3;
+            outFrame = torch::zeros({outHeight, outWidth, numChannels}, torch::kByte);
+            expectedWrittenBytes = outHeight * outWidth * numChannels;
+            std::cout << expectedWrittenBytes;
+        } else if (format.type == TYPE_AUDIO) {
+            int outAudioChannels = format.format.audio.channels;
+            int bytesPerSample = av_get_bytes_per_sample(static_cast<AVSampleFormat>(format.format.audio.format));
+            int frameSizeTotal = out.payload->length();
+            
+            CHECK_EQ(frameSizeTotal % (outAudioChannels * bytesPerSample), 0);
+            int numAudioSamples = frameSizeTotal / (outAudioChannels * bytesPerSample);
+
+            outFrame = torch::zeros({numAudioSamples, outAudioChannels}, torch::kFloat);
+
+            expectedWrittenBytes = numAudioSamples * outAudioChannels * sizeof(float);
+        }
+        
+        std::cout << "Successfully allocated tensors to the dimension \n" ;
+        // if not in seek mode or only looking at the keyframes, 
+        // return the immediate next frame 
+        if ((seekTS == -1) || (video_any_frame == false)) {   
+
+            std::cout << "In non-seek mode stuff is happening \n";         
+            if (format.type == TYPE_VIDEO) {
+                auto numberWrittenBytes = fillVideoTensor(out, outFrame, framePTS);
+            } else {
+                auto numberWrittenBytes = fillAudioTensor(out, outFrame, framePTS);
+            }
+            out.payload.reset();
+        }
+    }
+    else {
+        LOG(ERROR) << "Decoder run into a last iteration or has failed";
     }
 
     torch::List<torch::Tensor> result;
