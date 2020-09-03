@@ -13,3 +13,7 @@ Random todo's:
     ✔ add check for the current stream @done(20-09-02 06:37)
     ☐ ensure warning if stream is out of bounds
     ✔ warning if stream is not auto selct @done(20-09-03 05:33)
+    ☐ can we make this an iterable?
+    ☐ destructors
+    ☐ adding tests to test.py
+    ☐ thorough checking for memory leaks
