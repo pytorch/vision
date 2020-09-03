@@ -1,15 +1,15 @@
-The new API:
-    ☐ the c++ extension is going to live in torchvision/csrc/cpu/video
-    ☐ modification of the build needs to go to setup.py
-    ☐ torchvision/io/_video something needs to happen somehow
+Documented edgecases that don't work:
+    ☐ seeking with anyframe=True
+    ✔ last frame segfaults - exit cleanly @started(20-09-02 10:44) @done(20-09-02 11:07) @lasted(23m1s)
+    ✔ switching modalities in the subsequent calls to next() @done(20-09-03 05:33)
+    ```
+    video.next("video:0")
+    video.next("video:0")
+    video.next("audio:0")
+    ```
 
-Tests changes:
-    ☐ test/test_io.py
-    ☐ test/test_video_reader.py (change to test video api)
 
-
-
-Implementation:
-    ☐ Datatype for strem
-    ☐ Datatype for container
-    ☐ Do I use tensor as a type in metadata 
+Random todo's:
+    ✔ add check for the current stream @done(20-09-02 06:37)
+    ☐ ensure warning if stream is out of bounds
+    ✔ warning if stream is not auto selct @done(20-09-03 05:33)
