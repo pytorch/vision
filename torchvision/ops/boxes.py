@@ -175,3 +175,44 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
 
     iou = inter / (area1[:, None] + area2 - inter)
     return iou
+
+# implementation from https://github.com/facebookresearch/detr/blob/master/util/box_ops.py
+def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
+    """
+    Return generalized intersection-over-union (Jaccard index) of boxes.
+
+    Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+
+    Arguments:
+        boxes1 (Tensor[N, 4])
+        boxes2 (Tensor[M, 4])
+    
+    Returns:
+    generalized_iou (Tensor[N, M]): the NxM matrix containing the pairwise
+            generalized_IoU values for every element in boxes1 and boxes2
+    """
+
+    # degenerate boxes gives inf / nan results
+    # so do an early check
+    assert (boxes1[:, 2:] >= boxes1[:, :2]).all()
+    assert (boxes2[:, 2:] >= boxes2[:, :2]).all()
+    
+    # iou = box_iou(boxes1, boxes2)
+    area1 = box_area(boxes1)
+    area2 = box_area(boxes2)
+
+    lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
+    rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
+
+    wh = (rb - lt).clamp(min=0)  # [N,M,2]
+    inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
+
+    union = area1[:, None] + area2 - inter
+
+    iou = inter / union
+
+    # Seems double computation
+    # area = wh[:, :, 0] * wh[:, :, 1]
+
+    # return iou - (area - union) / area
+    return iou - (inter - union) / inter
