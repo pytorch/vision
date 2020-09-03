@@ -3,7 +3,7 @@ from typing import Optional, Dict, Tuple
 
 import torch
 from torch import Tensor
-from torch.nn.functional import grid_sample
+from torch.nn.functional import grid_sample, conv2d
 from torch.jit.annotations import List, BroadcastingList2
 
 
@@ -462,6 +462,29 @@ def _hsv2rgb(img):
     return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=img.dtype), a4)
 
 
+def _compute_padding(kernel_size: List[int]) -> List[int]:
+    """Computes padding tuple."""
+    # 4 ints:  (padding_left, padding_top, padding_right, padding_bottom)
+
+    # This function is modified from kornia:
+    # https://github.com/kornia/kornia/blob/85661d982e6349ffac237051164cf38cc604454b/kornia/filters/filter.py#L11
+
+    assert len(kernel_size) >= 2, kernel_size
+    padding_tmp= [k // 2 for k in kernel_size]
+
+    # for even kernels we need to do asymetric padding :(
+
+    out_padding = [0, 0] * len(kernel_size)
+
+    for i, (ksize, pad_tmp) in enumerate(zip(kernel_size, padding_tmp)):
+        padding = pad_tmp if ksize % 2 else pad_tmp - 1
+
+        out_padding[i]   = padding
+        out_padding[i+2] = pad_tmp
+
+    return out_padding
+
+
 def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
     # padding is left, right, top, bottom
     in_sizes = img.size()
@@ -917,3 +940,70 @@ def perspective(
     mode = _interpolation_modes[interpolation]
 
     return _apply_grid_transform(img, grid, mode)
+
+
+def _get_kernel(radius: float, passes: int):
+    sigma2 = torch.Tensor([radius ** 2 / passes])
+
+    kernel_rad = (torch.sqrt(12. * sigma2 + 1.) - 1.) / 2.
+
+    kernel_rad_int = kernel_rad.long().item()
+
+    kernel_rad_float = (2 * kernel_rad_int + 1) * (kernel_rad_int * (kernel_rad_int + 1) - 3 * sigma2)
+    kernel_rad_float /= 6 * (sigma2 - (kernel_rad_int + 1) * (kernel_rad_int + 1))
+    kernel_rad_float = kernel_rad_float.item()
+
+    kernel_rad = kernel_rad_int + kernel_rad_float
+
+    ksize = 2 * kernel_rad_int + 1 + 2 * (kernel_rad_float > 0)
+    kernel1d = torch.ones(ksize) / (2 * kernel_rad + 1)
+
+    if kernel_rad_float > 0:
+        kernel1d[[0, -1]] = kernel_rad_float / (2 * kernel_rad + 1)
+
+    kernel2d = torch.mm(kernel1d[:, None], kernel1d[None, :])
+
+    return kernel2d
+
+
+def gaussian_blur(img: Tensor, radius: float) -> Tensor:
+    """Performs Gaussian blurring on the img by given kernel.
+
+    Args:
+        img (Tensor): Image to be blurred
+        radius (float): Blur radius
+
+    Returns:
+        Tensor: An image that is blurred using kernel of given radius
+    """
+    if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
+        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+    if not isinstance(radius, (float, int)):
+        raise TypeError('radius should be either float or int. Got {}'.format(type(radius)))
+
+    radius = float(radius)
+    passes = 3
+
+    ndim = img.ndim
+    if ndim == 2:
+        img = img.unsqueeze(0)
+    if ndim == 3:
+        img = img.unsqueeze(0)
+
+    kernel = _get_kernel(radius, passes)
+
+    padding = _compute_padding(kernel.shape[::-1])
+
+    kernel = kernel[None, None, :, :].repeat(img.size(-3), 1, 1, 1)
+
+    padded_img = pad(img, padding, padding_mode='edge')
+    blurred_img = conv2d(padded_img, kernel, groups=img.size(-3))
+    for n_iter in range(passes-1):
+        padded_img  = pad(blurred_img, padding, padding_mode='edge')
+        blurred_img = conv2d(padded_img, kernel, groups=img.size(-3))
+
+    if ndim == 2:
+        return blurred_img[0, 0]
+    if ndim == 3:
+        return blurred_img[0]
+    return blurred_img

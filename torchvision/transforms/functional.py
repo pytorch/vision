@@ -1026,3 +1026,19 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
 
     img[:, i:i + h, j:j + w] = v
     return img
+
+
+def gaussian_blur(img: Tensor, radius: float) -> Tensor:
+    """Performs Gaussian blurring on the img by given kernel.
+
+    Args:
+        img (PIL Image or Tensor): Image to be blurred
+        radius (float): Blur radius
+
+    Returns:
+        PIL Image or Tensor: Gaussian Blurred version of the image.
+    """
+    if not isinstance(img, torch.Tensor):
+        return F_pil.gaussian_blur(img, radius)
+
+    return F_t.gaussian_blur(img, radius)

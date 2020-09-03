@@ -3,7 +3,7 @@ from typing import Any, List, Sequence
 
 import numpy as np
 import torch
-from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
+from PIL import Image, ImageOps, ImageEnhance, ImageFilter, __version__ as PILLOW_VERSION
 
 try:
     import accimage
@@ -517,3 +517,22 @@ def to_grayscale(img, num_output_channels):
         raise ValueError('num_output_channels should be either 1 or 3')
 
     return img
+
+
+@torch.jit.unused
+def gaussian_blur(img: Image.Image, radius: float) -> Image.Image:
+    """Performs Gaussian blurring on the img by given kernel.
+
+    Args:
+        img (Tensor): Image to be blurred
+        radius (float): Blur radius
+
+    Returns:
+        Tensor: An image that is blurred using kernel of given radius
+    """
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    blurred_img = img.filter(ImageFilter.GaussianBlur(radius))
+
+    return blurred_img

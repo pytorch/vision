@@ -16,12 +16,11 @@ except ImportError:
 
 from . import functional as F
 
-
 __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize", "Resize", "Scale",
            "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
            "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
-           "RandomPerspective", "RandomErasing"]
+           "RandomPerspective", "RandomErasing", "GaussianBlur"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -1545,3 +1544,62 @@ class RandomErasing(torch.nn.Module):
             x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=value)
             return F.erase(img, x, y, h, w, v, self.inplace)
         return img
+
+
+class GaussianBlur(torch.nn.Module):
+    """Blurs image with randomly chosen Gaussian blur.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading
+    dimensions
+
+    Args:
+        rad_min (float): Minimum radius that can be chosen for blurring kernel.
+        rad_max (float): Maximum radius that can be chosen for blurring kernel.
+
+    Returns:
+        PIL Image or Tensor: Gaussian blurred version of the input image.
+
+    """
+
+    def __init__(self, rad_min=0.1, rad_max=2.0):
+        super().__init__()
+
+        if rad_min < 0:
+            raise ValueError("Random Gaussian Blur minimum radius should be between non-negative")
+        if rad_max < 0:
+            raise ValueError("Random Gaussian Blur maximum radius should be between non-negative")
+
+        if rad_min > rad_max:
+            warnings.warn("minimum radius should be <= maximum radius. For now, their values will be swapped.")
+            rad_min, rad_max = rad_max, rad_min
+
+        self.rad_min = rad_min
+        self.rad_max = rad_max
+
+    @staticmethod
+    def get_params(rad_min: float, rad_max: float):
+        """Choose radius for ``gaussian_blur`` for random gaussian blurring.
+
+        Args:
+            rad_min (float): Minimum radius that can be chosen for blurring kernel.
+            rad_max (float): Maximum radius that can be chosen for blurring kernel.
+
+        Returns:
+            float: radius be passed to ``gaussian_blur`` for gaussian blurring.
+        """
+        radius = torch.rand(1).item() * (rad_max - rad_min) + rad_min
+        return radius
+
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): image of size (C, H, W) to be blurred.
+
+        Returns:
+            PIL Image or Tensor: Gaussian blurred image
+        """
+        radius = self.get_params(self.rad_min, self.rad_max)
+        return F.gaussian_blur(img, radius)
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(rad_min={0}, rad_max={1})'.format(self.rad_min, self.rad_max)
