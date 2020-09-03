@@ -176,6 +176,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     iou = inter / (area1[:, None] + area2 - inter)
     return iou
 
+
 # implementation from https://github.com/facebookresearch/detr/blob/master/util/box_ops.py
 def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
@@ -186,7 +187,7 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     Arguments:
         boxes1 (Tensor[N, 4])
         boxes2 (Tensor[M, 4])
-    
+
     Returns:
     generalized_iou (Tensor[N, M]): the NxM matrix containing the pairwise
             generalized_IoU values for every element in boxes1 and boxes2
@@ -196,7 +197,7 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     # so do an early check
     assert (boxes1[:, 2:] >= boxes1[:, :2]).all()
     assert (boxes2[:, 2:] >= boxes2[:, :2]).all()
-    
+
     # iou = box_iou(boxes1, boxes2)
     area1 = box_area(boxes1)
     area2 = box_area(boxes2)
