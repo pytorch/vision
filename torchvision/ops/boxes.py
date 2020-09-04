@@ -161,8 +161,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
         boxes2 (Tensor[M, 4])
 
     Returns:
-        iou (Tensor[N, M]): the NxM matrix containing the pairwise
-            IoU values for every element in boxes1 and boxes2
+        iou (Tensor[N, M]): the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
     """
     area1 = box_area(boxes1)
     area2 = box_area(boxes2)
@@ -189,8 +188,7 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
         boxes2 (Tensor[M, 4])
 
     Returns:
-    generalized_iou (Tensor[N, M]): the NxM matrix containing the pairwise
-            generalized_IoU values for every element in boxes1 and boxes2
+        generalized_iou (Tensor[N, M]): the NxM matrix containing the pairwise generalized_IoU values for every element in boxes1 and boxes2
     """
 
     # degenerate boxes gives inf / nan results

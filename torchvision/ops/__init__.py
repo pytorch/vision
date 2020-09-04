@@ -1,4 +1,4 @@
-from .boxes import nms, box_iou
+from .boxes import nms, box_area, box_iou, generalized_box_iou
 from .new_empty_tensor import _new_empty_tensor
 from .deform_conv import deform_conv2d, DeformConv2d
 from .roi_align import roi_align, RoIAlign
