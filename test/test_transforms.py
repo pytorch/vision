@@ -1685,7 +1685,7 @@ class Tester(unittest.TestCase):
             img_re = random_erasing(img)
             self.assertTrue(torch.equal(img_re, img))
 
-    def test_compose(self):
+    def test_compose_non_scriptable(self):
         # T.Compose is now nn.Module, we should check BC with any exotic ops inside
         # like Lambda, custom function etc
         img_np = np.random.randint(0, 256, (34, 42, 3), np.uint8)
@@ -1706,7 +1706,7 @@ class Tester(unittest.TestCase):
         res = t(img_pil)
         self.assertTrue(isinstance(res, torch.Tensor))
 
-    def test_random_apply(self):
+    def test_random_apply_non_scriptable(self):
         # T.RandomApply is now nn.Module, we should check BC with any exotic ops inside
         # like Lambda, custom function etc
         img_np = np.random.randint(0, 256, (34, 42, 3), np.uint8)
@@ -1717,6 +1717,7 @@ class Tester(unittest.TestCase):
 
         t = transforms.RandomApply([
             transforms.RandomResizedCrop(15),
+            lambda x: x,
             transforms.Lambda(lambda x: x),
             custom_transform,
         ])
