@@ -104,7 +104,8 @@ def to_tensor(pic):
         return img
 
 
-def pil_to_tensor(pic):
+@torch.jit.unused
+def pil_to_tensor(pic: Image.Image) -> Tensor:
     """Convert a ``PIL Image`` to a tensor of the same type.
 
     See ``AsTensor`` for more details.
@@ -283,7 +284,7 @@ def to_pil_image(pic, mode=None):
     return Image.fromarray(npimg, mode=mode)
 
 
-def normalize(tensor, mean, std, inplace=False):
+def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool = False) -> Tensor:
     """Normalize a tensor image with mean and standard deviation.
 
     .. note::
@@ -300,10 +301,10 @@ def normalize(tensor, mean, std, inplace=False):
     Returns:
         Tensor: Normalized Tensor image.
     """
-    if not torch.is_tensor(tensor):
+    if not isinstance(tensor, torch.Tensor):
         raise TypeError('tensor should be a torch tensor. Got {}.'.format(type(tensor)))
 
-    if tensor.ndimension() != 3:
+    if tensor.ndim != 3:
         raise ValueError('Expected tensor to be a tensor image of size (C, H, W). Got tensor.size() = '
                          '{}.'.format(tensor.size()))
 

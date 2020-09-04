@@ -343,6 +343,74 @@ class Tester(TransformsTester):
             "RandomGrayscale", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
         )
 
+    def test_normalize(self):
+        tensor, _ = self._create_data(26, 34, device=self.device)
+        tensor = tensor.to(dtype=torch.float32) / 255.0
+        # test for class interface
+        f = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        scripted_fn = torch.jit.script(f)
+        torch.manual_seed(12)
+        transformed_tensor = f(tensor)
+        torch.manual_seed(12)
+        transformed_tensor_script = scripted_fn(tensor)
+        self.assertTrue(transformed_tensor.equal(transformed_tensor_script))
+
+    def test_compose(self):
+        tensor, _ = self._create_data(26, 34, device=self.device)
+        tensor = tensor.to(dtype=torch.float32) / 255.0
+
+        transforms = T.Compose([
+            T.CenterCrop(10),
+            T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ])
+
+        scripted_fn = torch.jit.script(transforms)
+        torch.manual_seed(12)
+        transformed_tensor = transforms(tensor)
+        torch.manual_seed(12)
+        transformed_tensor_script = scripted_fn(tensor)
+        self.assertTrue(transformed_tensor.equal(transformed_tensor_script), msg="{}".format(transforms))
+
+        t = T.Compose([
+            lambda x: x,
+        ])
+        self.assertTrue(t.transforms[0], T.Lambda)
+        with self.assertRaises(RuntimeError, msg=None):
+            torch.jit.script(t)
+
+    def test_random_apply(self):
+        tensor, _ = self._create_data(26, 34, device=self.device)
+        tensor = tensor.to(dtype=torch.float32) / 255.0
+
+        transforms_list = [
+            T.RandomApply([
+                T.RandomHorizontalFlip(),
+                T.RandomVerticalFlip(),
+            ], p=0.3),
+            T.Compose([
+                T.RandomResizedCrop(15),
+                T.RandomApply([
+                    T.RandomHorizontalFlip(),
+                    T.RandomVerticalFlip(),
+                ], p=0.3),
+                T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+            ]),
+        ]
+
+        for transforms in transforms_list:
+            scripted_fn = torch.jit.script(transforms)
+            torch.manual_seed(12)
+            transformed_tensor = transforms(tensor)
+            torch.manual_seed(12)
+            transformed_tensor_script = scripted_fn(tensor)
+            self.assertTrue(transformed_tensor.equal(transformed_tensor_script), msg="{}".format(transforms))
+
+        t = T.RandomApply([
+            lambda x: x,
+        ])
+        with self.assertRaises(RuntimeError, msg="Compose contains torch jit script unsupported transforms"):
+            torch.jit.script(t)
+
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):

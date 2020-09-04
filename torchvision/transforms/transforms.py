@@ -3,7 +3,7 @@ import numbers
 import random
 import warnings
 from collections.abc import Sequence
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Any
 
 import torch
 from PIL import Image
@@ -33,8 +33,12 @@ _pil_interpolation_to_str = {
 }
 
 
-class Compose(object):
+class Compose(torch.nn.Module):
     """Composes several transforms together.
+
+    .. warning::
+
+        !!! This is a BC  !!!
 
     Args:
         transforms (list of ``Transform`` objects): list of transforms to compose.
@@ -47,12 +51,29 @@ class Compose(object):
     """
 
     def __init__(self, transforms):
-        self.transforms = transforms
+        super().__init__()
 
-    def __call__(self, img):
+        try:
+            # Try to wrap the transforms that are not nn.Module into nn.Lambda
+            # register all transforms as nn.ModuleList <-> all transforms should be nn.Module
+            # if something fails we keep previous behaviour
+            new_transforms = []
+            for t in transforms:
+                if callable(t) and not isinstance(t, torch.nn.Module):
+                    t = Lambda(t)
+                new_transforms.append(t)
+
+            self.transforms = torch.nn.ModuleList(new_transforms)
+        except TypeError:
+            self.transforms = transforms
+
+    def _forward_impl(self, img: Tensor) -> Tensor:
         for t in self.transforms:
             img = t(img)
         return img
+
+    def forward(self, img: Tensor) -> Tensor:
+        return self._forward_impl(img)
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
@@ -63,7 +84,7 @@ class Compose(object):
         return format_string
 
 
-class ToTensor(object):
+class ToTensor(torch.nn.Module):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
 
     Converts a PIL Image or numpy.ndarray (H x W x C) in the range
@@ -80,7 +101,7 @@ class ToTensor(object):
     .. _references: https://github.com/pytorch/vision/tree/master/references/segmentation
     """
 
-    def __call__(self, pic):
+    def forward(self, pic: Any) -> Tensor:
         """
         Args:
             pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
@@ -94,13 +115,13 @@ class ToTensor(object):
         return self.__class__.__name__ + '()'
 
 
-class PILToTensor(object):
+class PILToTensor(torch.nn.Module):
     """Convert a ``PIL Image`` to a tensor of the same type.
 
     Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
     """
 
-    def __call__(self, pic):
+    def forward(self, pic: Image.Image) -> Tensor:
         """
         Args:
             pic (PIL Image): Image to be converted to tensor.
@@ -114,7 +135,7 @@ class PILToTensor(object):
         return self.__class__.__name__ + '()'
 
 
-class ConvertImageDtype(object):
+class ConvertImageDtype(torch.nn.Module):
     """Convert a tensor image to the given ``dtype`` and scale the values accordingly
 
     Args:
@@ -133,13 +154,14 @@ class ConvertImageDtype(object):
     """
 
     def __init__(self, dtype: torch.dtype) -> None:
+        super().__init__()
         self.dtype = dtype
 
-    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+    def forward(self, image: Tensor) -> Tensor:
         return F.convert_image_dtype(image, self.dtype)
 
 
-class ToPILImage(object):
+class ToPILImage(torch.nn.Module):
     """Convert a tensor or an ndarray to PIL Image.
 
     Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
@@ -157,6 +179,7 @@ class ToPILImage(object):
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
     def __init__(self, mode=None):
+        super().__init__()
         self.mode = mode
 
     def __call__(self, pic):
@@ -178,7 +201,7 @@ class ToPILImage(object):
         return format_string
 
 
-class Normalize(object):
+class Normalize(torch.nn.Module):
     """Normalize a tensor image with mean and standard deviation.
     Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``
     channels, this transform will normalize each channel of the input
@@ -196,11 +219,12 @@ class Normalize(object):
     """
 
     def __init__(self, mean, std, inplace=False):
+        super().__init__()
         self.mean = mean
         self.std = std
         self.inplace = inplace
 
-    def __call__(self, tensor):
+    def forward(self, tensor: Tensor) -> Tensor:
         """
         Args:
             tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
@@ -370,7 +394,7 @@ class Pad(torch.nn.Module):
             format(self.padding, self.fill, self.padding_mode)
 
 
-class Lambda(object):
+class Lambda(torch.nn.Module):
     """Apply a user-defined lambda as a transform.
 
     Args:
@@ -378,17 +402,18 @@ class Lambda(object):
     """
 
     def __init__(self, lambd):
+        super().__init__()
         assert callable(lambd), repr(type(lambd).__name__) + " object is not callable"
         self.lambd = lambd
 
-    def __call__(self, img):
+    def forward(self, img: Tensor) -> Tensor:
         return self.lambd(img)
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
 
 
-class RandomTransforms(object):
+class RandomTransforms(torch.nn.Module):
     """Base class for a list of transformations with randomness
 
     Args:
@@ -396,10 +421,11 @@ class RandomTransforms(object):
     """
 
     def __init__(self, transforms):
+        super().__init__()
         assert isinstance(transforms, (list, tuple))
         self.transforms = transforms
 
-    def __call__(self, *args, **kwargs):
+    def forward(self, *args, **kwargs):
         raise NotImplementedError()
 
     def __repr__(self):
@@ -411,7 +437,7 @@ class RandomTransforms(object):
         return format_string
 
 
-class RandomApply(RandomTransforms):
+class RandomApply(Compose):
     """Apply randomly a list of transformations with a given probability
 
     Args:
@@ -420,15 +446,13 @@ class RandomApply(RandomTransforms):
     """
 
     def __init__(self, transforms, p=0.5):
-        super(RandomApply, self).__init__(transforms)
+        super().__init__(transforms)
         self.p = p
 
-    def __call__(self, img):
-        if self.p < random.random():
+    def forward(self, img: Tensor) -> Tensor:
+        if self.p < torch.rand(1):
             return img
-        for t in self.transforms:
-            img = t(img)
-        return img
+        return self._forward_impl(img)
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '('
@@ -443,7 +467,7 @@ class RandomApply(RandomTransforms):
 class RandomOrder(RandomTransforms):
     """Apply a list of transformations in a random order
     """
-    def __call__(self, img):
+    def forward(self, img):
         order = list(range(len(self.transforms)))
         random.shuffle(order)
         for i in order:
@@ -937,7 +961,7 @@ class TenCrop(torch.nn.Module):
         return self.__class__.__name__ + '(size={0}, vertical_flip={1})'.format(self.size, self.vertical_flip)
 
 
-class LinearTransformation(object):
+class LinearTransformation(torch.nn.Module):
     """Transform a tensor image with a square transformation matrix and a mean_vector computed
     offline.
     Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
@@ -956,6 +980,7 @@ class LinearTransformation(object):
     """
 
     def __init__(self, transformation_matrix, mean_vector):
+        super().__init__()
         if transformation_matrix.size(0) != transformation_matrix.size(1):
             raise ValueError("transformation_matrix should be square. Got " +
                              "[{} x {}] rectangular matrix.".format(*transformation_matrix.size()))
@@ -968,7 +993,7 @@ class LinearTransformation(object):
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
-    def __call__(self, tensor):
+    def forward(self, tensor: Tensor) -> Tensor:
         """
         Args:
             tensor (Tensor): Tensor image of size (C, H, W) to be whitened.
