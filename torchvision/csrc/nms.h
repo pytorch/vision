@@ -28,8 +28,8 @@ at::Tensor nms_autocast(
     const double iou_threshold) {
   c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
   return nms(
-      autocast::_cast(at::kFloat, dets),
-      autocast::_cast(at::kFloat, scores),
+      at::autocast::cached_cast(at::kFloat, dets),
+      at::autocast::cached_cast(at::kFloat, scores),
       iou_threshold);
 }
 #endif
