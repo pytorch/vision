@@ -104,7 +104,7 @@ to::
     mean = torch.mean(torch.tensor(means))
     std = torch.mean(torch.tensor(stds))
 
-Unfortunately, the concret `subset` that was used is lost. For more
+Unfortunately, the concrete `subset` that was used is lost. For more
 information see `this discussion <https://github.com/pytorch/vision/issues/1439>`_
 or `these experiments <https://github.com/pytorch/vision/pull/1965>`_.
 
