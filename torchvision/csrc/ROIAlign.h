@@ -49,8 +49,8 @@ at::Tensor ROIAlign_autocast(
     const bool aligned) {
   c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
   return roi_align(
-             autocast::_cast(at::kFloat, input),
-             autocast::_cast(at::kFloat, rois),
+             at::autocast::cached_cast(at::kFloat, input),
+             at::autocast::cached_cast(at::kFloat, rois),
              spatial_scale,
              pooled_height,
              pooled_width,
