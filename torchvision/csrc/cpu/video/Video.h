@@ -28,25 +28,27 @@ using namespace ffmpeg;
 struct Video : torch::CustomClassHolder {
     bool video_any_frame=false; // add this to input parameters
     bool succeeded=false; // this is decoder init stuff
-    // this acts as a flag - if it's not set, next function simply
+    // seekTS acts as a flag - if it's not set, next function simply
     // retruns the next frame. If it's set, we look at the global seek
     // time in comination with any_frame settings
     double seekTS=-1; 
-    std::tuple<std::string, int64_t> current_stream;
+    bool doSeek=false;
+    std::tuple<std::string, long> current_stream;
     std::map<std::string, std::vector<double>> streamFPS;
     std::map<std::string, std::vector<double>> streamDuration;
     DecoderMetadata videoMetadata;
     public:
         Video(std::string videoPath, std::string stream, bool isReadFile);
+        ~Video();
         std::tuple<std::string, int64_t> getCurrentStream() const;
         std::vector<double> getDuration(std::string stream="") const;
         std::vector<double> getFPS(std::string stream="") const;
-        int64_t Seek(double ts, std::string stream, bool any_frame);
+        void Seek(double ts, bool any_frame);
         torch::List<torch::Tensor> Next(std::string stream); //
 
     private:
         void _getDecoderParams(int64_t videoStartS, int64_t getPtsOnly, std::string stream, long stream_id, bool all_streams, double seekFrameMarginUs); // this needs to be improved
-        bool _setCurrentStream(std::string stream="video");
+        bool _setCurrentStream();
         std::map<std::string, std::vector<double>> streamTimeBase;
 
         SyncDecoder decoder;
@@ -60,8 +62,6 @@ struct Video : torch::CustomClassHolder {
     protected:
         // AV container type (check in decoder for exact type)
 
-        // int64_t SecToStream(double ts); // TODO: add stream type
-        // double StreamToSec(int64_t pts); // TODO: add stream type
     
 }; // struct Video
 
