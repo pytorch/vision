@@ -10,8 +10,6 @@ torchvision.ops
 
 
 .. autofunction:: nms
-.. autofunction:: box_area
-.. autofunction:: box_iou
 .. autofunction:: generalized_box_iou
 .. autofunction:: roi_align
 .. autofunction:: ps_roi_align
