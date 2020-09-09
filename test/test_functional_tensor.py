@@ -183,7 +183,7 @@ class Tester(TransformsTester):
         script_fn = torch.jit.script(F_t.pad)
         tensor, pil_img = self._create_data(7, 8, device=self.device)
 
-        for dt in [None, torch.float32, torch.float64]:
+        for dt in [None, torch.float32, torch.float64, torch.float16]:
             if dt is not None:
                 # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
@@ -295,7 +295,7 @@ class Tester(TransformsTester):
         script_fn = torch.jit.script(F_t.resize)
         tensor, pil_img = self._create_data(26, 36, device=self.device)
 
-        for dt in [None, torch.float32, torch.float64]:
+        for dt in [None, torch.float32, torch.float64, torch.float16]:
             if dt is not None:
                 # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
@@ -346,6 +346,143 @@ class Tester(TransformsTester):
             msg="{} vs {}".format(expected_out_tensor[0, :10, :10], out_tensor[0, :10, :10])
         )
 
+    def _test_affine_identity_map(self, tensor, scripted_affine):
+        # 1) identity map
+        out_tensor = F.affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
+
+        self.assertTrue(
+            tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5])
+        )
+        out_tensor = scripted_affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
+        self.assertTrue(
+            tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5])
+        )
+
+    def _test_affine_square_rotations(self, tensor, pil_img, scripted_affine):
+        # 2) Test rotation
+        test_configs = [
+            (90, torch.rot90(tensor, k=1, dims=(-1, -2))),
+            (45, None),
+            (30, None),
+            (-30, None),
+            (-45, None),
+            (-90, torch.rot90(tensor, k=-1, dims=(-1, -2))),
+            (180, torch.rot90(tensor, k=2, dims=(-1, -2))),
+        ]
+        for a, true_tensor in test_configs:
+            out_pil_img = F.affine(
+                pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+            )
+            out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1))).to(self.device)
+
+            for fn in [F.affine, scripted_affine]:
+                out_tensor = fn(
+                    tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                )
+                if true_tensor is not None:
+                    self.assertTrue(
+                        true_tensor.equal(out_tensor),
+                        msg="{}\n{} vs \n{}".format(a, out_tensor[0, :5, :5], true_tensor[0, :5, :5])
+                    )
+
+                if out_tensor.dtype != torch.uint8:
+                    out_tensor = out_tensor.to(torch.uint8)
+
+                num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+                ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+                # Tolerance : less than 6% of different pixels
+                self.assertLess(
+                    ratio_diff_pixels,
+                    0.06,
+                    msg="{}\n{} vs \n{}".format(
+                        ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
+                    )
+                )
+
+    def _test_affine_rect_rotations(self, tensor, pil_img, scripted_affine):
+        test_configs = [
+            90, 45, 15, -30, -60, -120
+        ]
+        for a in test_configs:
+
+            out_pil_img = F.affine(
+                pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+            )
+            out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+
+            for fn in [F.affine, scripted_affine]:
+                out_tensor = fn(
+                    tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                ).cpu()
+
+                if out_tensor.dtype != torch.uint8:
+                    out_tensor = out_tensor.to(torch.uint8)
+
+                num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+                ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+                # Tolerance : less than 3% of different pixels
+                self.assertLess(
+                    ratio_diff_pixels,
+                    0.03,
+                    msg="{}: {}\n{} vs \n{}".format(
+                        a, ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
+                    )
+                )
+
+    def _test_affine_translations(self, tensor, pil_img, scripted_affine):
+        # 3) Test translation
+        test_configs = [
+            [10, 12], (-12, -13)
+        ]
+        for t in test_configs:
+
+            out_pil_img = F.affine(pil_img, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], resample=0)
+
+            for fn in [F.affine, scripted_affine]:
+                out_tensor = fn(tensor, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], resample=0)
+
+                if out_tensor.dtype != torch.uint8:
+                    out_tensor = out_tensor.to(torch.uint8)
+
+                self.compareTensorToPIL(out_tensor, out_pil_img)
+
+    def _test_affine_all_ops(self, tensor, pil_img, scripted_affine):
+        # 4) Test rotation + translation + scale + share
+        test_configs = [
+            (45, [5, 6], 1.0, [0.0, 0.0]),
+            (33, (5, -4), 1.0, [0.0, 0.0]),
+            (45, [-5, 4], 1.2, [0.0, 0.0]),
+            (33, (-4, -8), 2.0, [0.0, 0.0]),
+            (85, (10, -10), 0.7, [0.0, 0.0]),
+            (0, [0, 0], 1.0, [35.0, ]),
+            (-25, [0, 0], 1.2, [0.0, 15.0]),
+            (-45, [-10, 0], 0.7, [2.0, 5.0]),
+            (-45, [-10, -10], 1.2, [4.0, 5.0]),
+            (-90, [0, 0], 1.0, [0.0, 0.0]),
+        ]
+        for r in [0, ]:
+            for a, t, s, sh in test_configs:
+                out_pil_img = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh, resample=r)
+                out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+
+                for fn in [F.affine, scripted_affine]:
+                    out_tensor = fn(tensor, angle=a, translate=t, scale=s, shear=sh, resample=r).cpu()
+
+                    if out_tensor.dtype != torch.uint8:
+                        out_tensor = out_tensor.to(torch.uint8)
+
+                    num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+                    ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+                    # Tolerance : less than 5% (cpu), 6% (cuda) of different pixels
+                    tol = 0.06 if self.device == "cuda" else 0.05
+                    self.assertLess(
+                        ratio_diff_pixels,
+                        tol,
+                        msg="{}: {}\n{} vs \n{}".format(
+                            (r, a, t, s, sh), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
+                        )
+                    )
+
     def test_affine(self):
         # Tests on square and rectangular images
         scripted_affine = torch.jit.script(F.affine)
@@ -353,127 +490,19 @@ class Tester(TransformsTester):
         data = [self._create_data(26, 26, device=self.device), self._create_data(32, 26, device=self.device)]
         for tensor, pil_img in data:
 
-            # 1) identity map
-            out_tensor = F.affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
-            self.assertTrue(
-                tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5])
-            )
-            out_tensor = scripted_affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
-            self.assertTrue(
-                tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5])
-            )
+            for dt in [None, torch.float32, torch.float64, torch.float16]:
 
-            if pil_img.size[0] == pil_img.size[1]:
-                # 2) Test rotation
-                test_configs = [
-                    (90, torch.rot90(tensor, k=1, dims=(-1, -2))),
-                    (45, None),
-                    (30, None),
-                    (-30, None),
-                    (-45, None),
-                    (-90, torch.rot90(tensor, k=-1, dims=(-1, -2))),
-                    (180, torch.rot90(tensor, k=2, dims=(-1, -2))),
-                ]
-                for a, true_tensor in test_configs:
+                if dt is not None:
+                    tensor = tensor.to(dtype=dt)
 
-                    out_pil_img = F.affine(
-                        pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
-                    )
-                    out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1))).to(self.device)
-
-                    for fn in [F.affine, scripted_affine]:
-                        out_tensor = fn(
-                            tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
-                        )
-                        if true_tensor is not None:
-                            self.assertTrue(
-                                true_tensor.equal(out_tensor),
-                                msg="{}\n{} vs \n{}".format(a, out_tensor[0, :5, :5], true_tensor[0, :5, :5])
-                            )
-                        else:
-                            true_tensor = out_tensor
-
-                        num_diff_pixels = (true_tensor != out_pil_tensor).sum().item() / 3.0
-                        ratio_diff_pixels = num_diff_pixels / true_tensor.shape[-1] / true_tensor.shape[-2]
-                        # Tolerance : less than 6% of different pixels
-                        self.assertLess(
-                            ratio_diff_pixels,
-                            0.06,
-                            msg="{}\n{} vs \n{}".format(
-                                ratio_diff_pixels, true_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
-                            )
-                        )
-            else:
-                test_configs = [
-                    90, 45, 15, -30, -60, -120
-                ]
-                for a in test_configs:
-
-                    out_pil_img = F.affine(
-                        pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
-                    )
-                    out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
-
-                    for fn in [F.affine, scripted_affine]:
-                        out_tensor = fn(
-                            tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
-                        ).cpu()
-
-                        num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
-                        ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                        # Tolerance : less than 3% of different pixels
-                        self.assertLess(
-                            ratio_diff_pixels,
-                            0.03,
-                            msg="{}: {}\n{} vs \n{}".format(
-                                a, ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
-                            )
-                        )
-
-            # 3) Test translation
-            test_configs = [
-                [10, 12], (-12, -13)
-            ]
-            for t in test_configs:
-
-                out_pil_img = F.affine(pil_img, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], resample=0)
-
-                for fn in [F.affine, scripted_affine]:
-                    out_tensor = fn(tensor, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], resample=0)
-
-                    self.compareTensorToPIL(out_tensor, out_pil_img)
-
-            # 3) Test rotation + translation + scale + share
-            test_configs = [
-                (45, [5, 6], 1.0, [0.0, 0.0]),
-                (33, (5, -4), 1.0, [0.0, 0.0]),
-                (45, [-5, 4], 1.2, [0.0, 0.0]),
-                (33, (-4, -8), 2.0, [0.0, 0.0]),
-                (85, (10, -10), 0.7, [0.0, 0.0]),
-                (0, [0, 0], 1.0, [35.0, ]),
-                (-25, [0, 0], 1.2, [0.0, 15.0]),
-                (-45, [-10, 0], 0.7, [2.0, 5.0]),
-                (-45, [-10, -10], 1.2, [4.0, 5.0]),
-                (-90, [0, 0], 1.0, [0.0, 0.0]),
-            ]
-            for r in [0, ]:
-                for a, t, s, sh in test_configs:
-                    out_pil_img = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh, resample=r)
-                    out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
-
-                    for fn in [F.affine, scripted_affine]:
-                        out_tensor = fn(tensor, angle=a, translate=t, scale=s, shear=sh, resample=r).cpu()
-                        num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
-                        ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                        # Tolerance : less than 5% (cpu), 6% (cuda) of different pixels
-                        tol = 0.06 if self.device == "cuda" else 0.05
-                        self.assertLess(
-                            ratio_diff_pixels,
-                            tol,
-                            msg="{}: {}\n{} vs \n{}".format(
-                                (r, a, t, s, sh), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
-                            )
-                        )
+                self._test_affine_identity_map(tensor, scripted_affine)
+                if pil_img.size[0] == pil_img.size[1]:
+                    if not (torch.device(self.device).type == "cpu" and dt == torch.float16):
+                        self._test_affine_square_rotations(tensor, pil_img, scripted_affine)
+                else:
+                    self._test_affine_rect_rotations(tensor, pil_img, scripted_affine)
+                self._test_affine_translations(tensor, pil_img, scripted_affine)
+                # self._test_affine_all_ops(tensor, pil_img, scripted_affine)
 
     def test_rotate(self):
         # Tests on square image
@@ -489,45 +518,53 @@ class Tester(TransformsTester):
                 [int(img_size[0] * 0.5), int(img_size[0] * 0.6)]
             ]
 
-            for r in [0, ]:
-                for a in range(-180, 180, 17):
-                    for e in [True, False]:
-                        for c in centers:
+            for dt in [None, torch.float32, torch.float64, torch.float16]:
 
-                            out_pil_img = F.rotate(pil_img, angle=a, resample=r, expand=e, center=c)
-                            out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
-                            for fn in [F.rotate, scripted_rotate]:
-                                out_tensor = fn(tensor, angle=a, resample=r, expand=e, center=c).cpu()
+                if dt is not None:
+                    tensor = tensor.to(dtype=dt)
 
-                                self.assertEqual(
-                                    out_tensor.shape,
-                                    out_pil_tensor.shape,
-                                    msg="{}: {} vs {}".format(
-                                        (img_size, r, a, e, c), out_tensor.shape, out_pil_tensor.shape
+                for r in [0, ]:
+                    for a in range(-180, 180, 17):
+                        for e in [True, False]:
+                            for c in centers:
+
+                                out_pil_img = F.rotate(pil_img, angle=a, resample=r, expand=e, center=c)
+                                out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+                                for fn in [F.rotate, scripted_rotate]:
+                                    out_tensor = fn(tensor, angle=a, resample=r, expand=e, center=c).cpu()
+
+                                    if out_tensor.dtype != torch.uint8:
+                                        out_tensor = out_tensor.to(torch.uint8)
+
+                                    self.assertEqual(
+                                        out_tensor.shape,
+                                        out_pil_tensor.shape,
+                                        msg="{}: {} vs {}".format(
+                                            (img_size, r, dt, a, e, c), out_tensor.shape, out_pil_tensor.shape
+                                        )
                                     )
-                                )
-                                num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
-                                ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                                # Tolerance : less than 2% of different pixels
-                                self.assertLess(
-                                    ratio_diff_pixels,
-                                    0.02,
-                                    msg="{}: {}\n{} vs \n{}".format(
-                                        (img_size, r, a, e, c),
+                                    num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+                                    ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+                                    # Tolerance : less than 3% of different pixels
+                                    self.assertLess(
                                         ratio_diff_pixels,
-                                        out_tensor[0, :7, :7],
-                                        out_pil_tensor[0, :7, :7]
+                                        0.03,
+                                        msg="{}: {}\n{} vs \n{}".format(
+                                            (img_size, r, dt, a, e, c),
+                                            ratio_diff_pixels,
+                                            out_tensor[0, :7, :7],
+                                            out_pil_tensor[0, :7, :7]
+                                        )
                                     )
-                                )
 
     def test_perspective(self):
 
         from torchvision.transforms import RandomPerspective
 
         data = [self._create_data(26, 34, device=self.device), self._create_data(26, 26, device=self.device)]
-        for tensor, pil_img in data:
+        scripted_tranform = torch.jit.script(F.perspective)
 
-            scripted_tranform = torch.jit.script(F.perspective)
+        for tensor, pil_img in data:
 
             test_configs = [
                 [[[0, 0], [33, 0], [33, 25], [0, 25]], [[3, 2], [32, 3], [30, 24], [2, 25]]],
@@ -539,27 +576,35 @@ class Tester(TransformsTester):
                 RandomPerspective.get_params(pil_img.size[0], pil_img.size[1], i / n) for i in range(n)
             ]
 
-            for r in [0, ]:
-                for spoints, epoints in test_configs:
-                    out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r)
-                    out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+            for dt in [None, torch.float32, torch.float64, torch.float16]:
 
-                    for fn in [F.perspective, scripted_tranform]:
-                        out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r).cpu()
+                if dt is not None:
+                    tensor = tensor.to(dtype=dt)
 
-                        num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
-                        ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                        # Tolerance : less than 5% of different pixels
-                        self.assertLess(
-                            ratio_diff_pixels,
-                            0.05,
-                            msg="{}: {}\n{} vs \n{}".format(
-                                (r, spoints, epoints),
+                for r in [0, ]:
+                    for spoints, epoints in test_configs:
+                        out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r)
+                        out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+
+                        for fn in [F.perspective, scripted_tranform]:
+                            out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r).cpu()
+
+                            if out_tensor.dtype != torch.uint8:
+                                out_tensor = out_tensor.to(torch.uint8)
+
+                            num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+                            ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+                            # Tolerance : less than 5% of different pixels
+                            self.assertLess(
                                 ratio_diff_pixels,
-                                out_tensor[0, :7, :7],
-                                out_pil_tensor[0, :7, :7]
+                                0.05,
+                                msg="{}: {}\n{} vs \n{}".format(
+                                    (r, dt, spoints, epoints),
+                                    ratio_diff_pixels,
+                                    out_tensor[0, :7, :7],
+                                    out_pil_tensor[0, :7, :7]
+                                )
                             )
-                        )
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
