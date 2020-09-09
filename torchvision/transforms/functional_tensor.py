@@ -470,7 +470,7 @@ def _compute_padding(kernel_size: List[int]) -> List[int]:
     # https://github.com/kornia/kornia/blob/85661d982e6349ffac237051164cf38cc604454b/kornia/filters/filter.py#L11
 
     assert len(kernel_size) >= 2, kernel_size
-    padding_tmp= [k // 2 for k in kernel_size]
+    padding_tmp = [k // 2 for k in kernel_size]
 
     # for even kernels we need to do asymetric padding :(
 
@@ -479,8 +479,8 @@ def _compute_padding(kernel_size: List[int]) -> List[int]:
     for i, (ksize, pad_tmp) in enumerate(zip(kernel_size, padding_tmp)):
         padding = pad_tmp if ksize % 2 else pad_tmp - 1
 
-        out_padding[i]   = padding
-        out_padding[i+2] = pad_tmp
+        out_padding[i] = padding
+        out_padding[i + 2] = pad_tmp
 
     return out_padding
 
@@ -998,8 +998,8 @@ def gaussian_blur(img: Tensor, radius: float) -> Tensor:
 
     padded_img = pad(img, padding, padding_mode='edge')
     blurred_img = conv2d(padded_img, kernel, groups=img.size(-3))
-    for n_iter in range(passes-1):
-        padded_img  = pad(blurred_img, padding, padding_mode='edge')
+    for _ in range(passes - 1):
+        padded_img = pad(blurred_img, padding, padding_mode='edge')
         blurred_img = conv2d(padded_img, kernel, groups=img.size(-3))
 
     if ndim == 2:
