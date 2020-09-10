@@ -565,15 +565,19 @@ jobs:
 
   cmake_linux_gpu:
     <<: *binary_common
-    docker:
-      - image: "pytorch/manylinux-cuda102"
-    resource_class: 2xlarge
+    machine:
+      image: ubuntu-1604-cuda-10.1:201909-23
+    resource_class: gpu.small
+    environment:
+      image_name: "pytorch/manylinux-cuda102"
     steps:
       - checkout_merge
       - run:
           name: Setup conda
-          command: .circleci/unittest/linux/scripts/setup_env.sh
-      - run: packaging/build_cmake.sh
+          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/setup_env.sh
+      - run:
+          name: Build torchvision C++ distribution and test
+          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" packaging/build_cmake.sh
 
   cmake_macos_cpu:
     <<: *binary_common
