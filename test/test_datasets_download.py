@@ -49,7 +49,7 @@ class DownloadTester(unittest.TestCase):
                 DownloadTester.assert_response_ok(response, url)
                 fh.write(response.read())
 
-            assert check_integrity(file, md5=md5), f"The MD5 checksums mismatch"
+            assert check_integrity(file, md5=md5), "The MD5 checksums mismatch"
 
     def test_download(self):
         assert_fn = (
