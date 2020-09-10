@@ -1553,28 +1553,30 @@ class GaussianBlur(torch.nn.Module):
     dimensions
 
     Args:
-        rad_min (float): Minimum radius that can be chosen for blurring kernel.
-        rad_max (float): Maximum radius that can be chosen for blurring kernel.
+        radius (float or tuple of float (min, max)): Radius to be used for creating
+        kernel to perform blurring. If float, radius is fixed. If it is tuple of
+        float (min, max), kernel radius is chosen uniformly at random to lie in the
+        given range.
 
     Returns:
         PIL Image or Tensor: Gaussian blurred version of the input image.
 
     """
 
-    def __init__(self, rad_min=0.1, rad_max=2.0):
+    def __init__(self, radius=(0.1, 2.0)):
         super().__init__()
 
-        if rad_min < 0:
-            raise ValueError("Random Gaussian Blur minimum radius should be between non-negative")
-        if rad_max < 0:
-            raise ValueError("Random Gaussian Blur maximum radius should be between non-negative")
+        if isinstance(radius, numbers.Number):
+            if radius <= 0:
+                raise ValueError("If radius is a single number, it must be positive.")
+            radius = (radius, radius)
+        elif isinstance(radius, (tuple, list)) and len(radius) == 2:
+            if not 0. < radius[0] <= radius[1]:
+                raise ValueError("radius values should be positive and of the form (min, max)")
+        else:
+            raise TypeError("radius should be a single number or a list/tuple with length 2.")
 
-        if rad_min > rad_max:
-            warnings.warn("minimum radius should be <= maximum radius. For now, their values will be swapped.")
-            rad_min, rad_max = rad_max, rad_min
-
-        self.rad_min = rad_min
-        self.rad_max = rad_max
+        self.rad_min, self.rad_max = radius
 
     @staticmethod
     def get_params(rad_min: float, rad_max: float):
@@ -1587,7 +1589,7 @@ class GaussianBlur(torch.nn.Module):
         Returns:
             float: radius be passed to ``gaussian_blur`` for gaussian blurring.
         """
-        radius = torch.rand(1).item() * (rad_max - rad_min) + rad_min
+        radius = random.uniform(rad_min, rad_max)
         return radius
 
     def forward(self, img):
