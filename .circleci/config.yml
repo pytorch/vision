@@ -568,6 +568,11 @@ jobs:
     machine:
       image: ubuntu-1604-cuda-10.1:201909-23
     resource_class: gpu.small
+    environment:
+      PYTHON_VERSION: << parameters.python_version >>
+      PYTORCH_VERSION: << parameters.pytorch_version >>
+      UNICODE_ABI: << parameters.unicode_abi >>
+      CU_VERSION: << parameters.cu_version >>
     steps:
       - checkout_merge
       - run:
