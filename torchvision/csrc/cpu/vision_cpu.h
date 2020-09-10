@@ -11,7 +11,6 @@
 #define VISION_API
 #endif
 
-
 VISION_API std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(
     const at::Tensor& input,
     const at::Tensor& rois,
