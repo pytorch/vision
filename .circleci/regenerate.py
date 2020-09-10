@@ -27,7 +27,10 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
-            cu_versions = (["cpu", "cu92", "cu101", "cu102"] if os_type == "linux" or os_type == "win" else ["cpu"])
+            cu_versions_dict = {"linux": ["cpu", "cu92", "cu101", "cu102"],
+                                "win": ["cpu", "cu101", "cu102"],
+                                "macos": ["cpu"]}
+            cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
                 for cu_version in cu_versions:
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):

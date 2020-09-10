@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 project(torchvision)
 set(CMAKE_CXX_STANDARD 14)
-set(TORCHVISION_VERSION 0.6.0)
+set(TORCHVISION_VERSION 0.7.0)
 
 option(WITH_CUDA "Enable CUDA support" OFF)
 
@@ -31,7 +31,6 @@ file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.c
 
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES} ${IMAGE_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} ${JPEG_LIBRARIES} Python3::Python)
-# target_link_libraries(${PROJECT_NAME} PRIVATE ${PNG_LIBRARY} Python3::Python)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME TorchVision)
 
 include_directories(torchvision/csrc)

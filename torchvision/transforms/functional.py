@@ -32,6 +32,13 @@ def _get_image_size(img: Tensor) -> List[int]:
     return F_pil._get_image_size(img)
 
 
+def _get_image_num_channels(img: Tensor) -> int:
+    if isinstance(img, torch.Tensor):
+        return F_t._get_image_num_channels(img)
+
+    return F_pil._get_image_num_channels(img)
+
+
 @torch.jit.unused
 def _is_numpy(img: Any) -> bool:
     return isinstance(img, np.ndarray)
@@ -729,7 +736,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     .. _Hue: https://en.wikipedia.org/wiki/Hue
 
     Args:
-        img (PIL Image): PIL Image to be adjusted.
+        img (PIL Image or Tensor): Image to be adjusted.
         hue_factor (float):  How much to shift the hue channel. Should be in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
@@ -737,12 +744,12 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
             with complementary colors while 0 gives the original image.
 
     Returns:
-        PIL Image: Hue adjusted image.
+        PIL Image or Tensor: Hue adjusted image.
     """
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_hue(img, hue_factor)
 
-    raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return F_t.adjust_hue(img, hue_factor)
 
 
 def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
@@ -951,11 +958,13 @@ def affine(
     return F_t.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 
 
+@torch.jit.unused
 def to_grayscale(img, num_output_channels=1):
-    """Convert image to grayscale version of image.
+    """Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.
 
     Args:
-        img (PIL Image): Image to be converted to grayscale.
+        img (PIL Image): PIL Image to be converted to grayscale.
+        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
 
     Returns:
         PIL Image: Grayscale version of the image.
@@ -963,20 +972,35 @@ def to_grayscale(img, num_output_channels=1):
 
             if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
-    if not F_pil._is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if isinstance(img, Image.Image):
+        return F_pil.to_grayscale(img, num_output_channels)
 
-    if num_output_channels == 1:
-        img = img.convert('L')
-    elif num_output_channels == 3:
-        img = img.convert('L')
-        np_img = np.array(img, dtype=np.uint8)
-        np_img = np.dstack([np_img, np_img, np_img])
-        img = Image.fromarray(np_img, 'RGB')
-    else:
-        raise ValueError('num_output_channels should be either 1 or 3')
+    raise TypeError("Input should be PIL Image")
 
-    return img
+
+def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
+    """Convert RGB image to grayscale version of image.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+
+    Note:
+        Please, note that this method supports only RGB images as input. For inputs in other color spaces,
+        please, consider using meth:`~torchvision.transforms.functional.to_grayscale` with PIL Image.
+
+    Args:
+        img (PIL Image or Tensor): RGB Image to be converted to grayscale.
+        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
+
+    Returns:
+        PIL Image or Tensor: Grayscale version of the image.
+            if num_output_channels = 1 : returned image is single channel
+
+            if num_output_channels = 3 : returned image is 3 channel with r = g = b
+    """
+    if not isinstance(img, torch.Tensor):
+        return F_pil.to_grayscale(img, num_output_channels)
+
+    return F_t.rgb_to_grayscale(img, num_output_channels)
 
 
 def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool = False) -> Tensor:

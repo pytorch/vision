@@ -18,6 +18,15 @@ def _get_image_size(img: Tensor) -> List[int]:
     raise TypeError("Unexpected type {}".format(type(img)))
 
 
+def _get_image_num_channels(img: Tensor) -> int:
+    if img.ndim == 2:
+        return 1
+    elif img.ndim > 2:
+        return img.shape[-3]
+
+    raise TypeError("Unexpected type {}".format(type(img)))
+
+
 def vflip(img: Tensor) -> Tensor:
     """Vertically flip the given the Image Tensor.
 
@@ -67,22 +76,41 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     return img[..., top:top + height, left:left + width]
 
 
-def rgb_to_grayscale(img: Tensor) -> Tensor:
+def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     """Convert the given RGB Image Tensor to Grayscale.
     For RGB to Grayscale conversion, ITU-R 601-2 luma transform is performed which
     is L = R * 0.2989 + G * 0.5870 + B * 0.1140
 
     Args:
         img (Tensor): Image to be converted to Grayscale in the form [C, H, W].
+        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
 
     Returns:
-        Tensor: Grayscale image.
+        Tensor: Grayscale version of the image.
+            if num_output_channels = 1 : returned image is single channel
+
+            if num_output_channels = 3 : returned image is 3 channel with r = g = b
 
     """
-    if img.shape[0] != 3:
-        raise TypeError('Input Image does not contain 3 Channels')
+    if img.ndim < 3:
+        raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
+    c = img.shape[-3]
+    if c != 3:
+        raise TypeError("Input image tensor should 3 channels, but found {}".format(c))
 
-    return (0.2989 * img[0] + 0.5870 * img[1] + 0.1140 * img[2]).to(img.dtype)
+    if num_output_channels not in (1, 3):
+        raise ValueError('num_output_channels should be either 1 or 3')
+
+    r, g, b = img.unbind(dim=-3)
+    # This implementation closely follows the TF one:
+    # https://github.com/tensorflow/tensorflow/blob/v2.3.0/tensorflow/python/ops/image_ops_impl.py#L2105-L2138
+    l_img = (0.2989 * r + 0.587 * g + 0.114 * b).to(img.dtype)
+    l_img = l_img.unsqueeze(dim=-3)
+
+    if num_output_channels == 3:
+        return l_img.expand(img.shape)
+
+    return l_img
 
 
 def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
@@ -129,7 +157,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     return _blend(img, mean, contrast_factor)
 
 
-def adjust_hue(img, hue_factor):
+def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     """Adjust hue of an image.
 
     The image hue is adjusted by converting the image to HSV and
@@ -157,8 +185,8 @@ def adjust_hue(img, hue_factor):
     if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
 
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+    if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
+        raise TypeError('img should be Tensor image. Got {}'.format(type(img)))
 
     orig_dtype = img.dtype
     if img.dtype == torch.uint8:
@@ -166,8 +194,7 @@ def adjust_hue(img, hue_factor):
 
     img = _rgb2hsv(img)
     h, s, v = img.unbind(0)
-    h += hue_factor
-    h = h % 1.0
+    h = (h + hue_factor) % 1.0
     img = torch.stack((h, s, v))
     img_hue_adj = _hsv2rgb(img)
 
@@ -373,13 +400,15 @@ def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = Fa
 
 
 def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
-    bound = 1 if img1.dtype in [torch.half, torch.float32, torch.float64] else 255
-    return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
+    bound = 1.0 if img1.is_floating_point() else 255.0
+    return (ratio * img1 + (1.0 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
 
 def _rgb2hsv(img):
     r, g, b = img.unbind(0)
 
+    # Implementation is based on https://github.com/python-pillow/Pillow/blob/4174d4267616897df3746d315d5a2d0f82c656ee/
+    # src/libImaging/Convert.c#L330
     maxc = torch.max(img, dim=0).values
     minc = torch.min(img, dim=0).values
 
@@ -395,12 +424,13 @@ def _rgb2hsv(img):
 
     cr = maxc - minc
     # Since `eqc => cr = 0`, replacing denominator with 1 when `eqc` is fine.
-    s = cr / torch.where(eqc, maxc.new_ones(()), maxc)
+    ones = torch.ones_like(maxc)
+    s = cr / torch.where(eqc, ones, maxc)
     # Note that `eqc => maxc = minc = r = g = b`. So the following calculation
     # of `h` would reduce to `bc - gc + 2 + rc - bc + 4 + rc - bc = 6` so it
     # would not matter what values `rc`, `gc`, and `bc` have here, and thus
     # replacing denominator with 1 when `eqc` is fine.
-    cr_divisor = torch.where(eqc, maxc.new_ones(()), cr)
+    cr_divisor = torch.where(eqc, ones, cr)
     rc = (maxc - r) / cr_divisor
     gc = (maxc - g) / cr_divisor
     bc = (maxc - b) / cr_divisor
@@ -424,7 +454,7 @@ def _hsv2rgb(img):
     t = torch.clamp((v * (1.0 - s * (1.0 - f))), 0.0, 1.0)
     i = i % 6
 
-    mask = i == torch.arange(6)[:, None, None]
+    mask = i == torch.arange(6, device=i.device)[:, None, None]
 
     a1 = torch.stack((v, q, p, p, t, v))
     a2 = torch.stack((t, v, v, q, p, p))

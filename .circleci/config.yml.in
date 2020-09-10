@@ -212,7 +212,7 @@ jobs:
   binary_macos_wheel:
     <<: *binary_common
     macos:
-      xcode: "9.0"
+      xcode: "9.4.1"
     steps:
       - checkout_merge
       - run:
@@ -234,7 +234,7 @@ jobs:
   binary_macos_conda:
     <<: *binary_common
     macos:
-      xcode: "9.0"
+      xcode: "9.4.1"
     steps:
       - checkout_merge
       - run:

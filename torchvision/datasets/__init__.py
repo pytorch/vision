@@ -22,6 +22,7 @@ from .usps import USPS
 from .kinetics import Kinetics400
 from .hmdb51 import HMDB51
 from .ucf101 import UCF101
+from .places365 import Places365
 
 __all__ = ('LSUN', 'LSUNClass',
            'ImageFolder', 'DatasetFolder', 'FakeData',
@@ -31,4 +32,4 @@ __all__ = ('LSUN', 'LSUNClass',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
            'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNet',
            'Caltech101', 'Caltech256', 'CelebA', 'SBDataset', 'VisionDataset',
-           'USPS', 'Kinetics400', 'HMDB51', 'UCF101')
+           'USPS', 'Kinetics400', 'HMDB51', 'UCF101', 'Places365')

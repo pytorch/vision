@@ -72,7 +72,7 @@ TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
 #endif
 
 // Autocast only needs to wrap forward pass ops.
-#if defined(WITH_CUDA)
+#if defined(WITH_CUDA) || defined(WITH_HIP)
 TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
   m.impl("roi_align", ROIAlign_autocast);
   m.impl("nms", nms_autocast);
