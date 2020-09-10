@@ -2,13 +2,12 @@
 #include <torch/script.h>
 #include <torchvision/nms.h>
 #include <torchvision/ROIAlign.h>
+#include <torchvision/cpu/vision_cpu.h>
 #include <ATen/ATen.h>
 
 #ifdef _WIN32
 // This is necessary until operators are automatically registered on include
-static auto registry = torch::RegisterOperators()
-                           .op("torchvision::nms", &nms)
-                           .op("torchvision::roi_align", &roi_align);
+static auto _nms = &nms_cpu;
 #endif
 
 int main() {
