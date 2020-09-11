@@ -3,6 +3,7 @@ import itertools
 import unittest
 import unittest.mock
 from os import path
+from time import sleep
 from urllib.request import urlopen, Request
 
 from torchvision import datasets
@@ -27,6 +28,25 @@ class DownloadTester(unittest.TestCase):
                     url = args[0]
                     md5 = args[-1] if len(args) == 4 else kwargs.get("md5")
                     urls_and_md5s.add((url, md5))
+
+    @staticmethod
+    def retry(fn, times=1, wait=5.0):
+        msgs = []
+        for _ in range(times + 1):
+            try:
+                return fn()
+            except AssertionError as error:
+                msgs.append(str(error))
+                sleep(wait)
+        else:
+            raise AssertionError(
+                "\n".join(
+                    (
+                        f"Assertion failed {times + 1} times with {wait:.1f} seconds intermediate wait time.\n",
+                        *(f"{idx}: {error}" for idx, error in enumerate(msgs, 1)),
+                    )
+                )
+            )
 
     @staticmethod
     def assert_response_ok(response, url=None, ok=200):
@@ -59,7 +79,8 @@ class DownloadTester(unittest.TestCase):
         )
         for url, md5 in self.collect_urls_and_md5s():
             with self.subTest(url=url, md5=md5):
-                assert_fn(url, md5)
+                self.retry(lambda: assert_fn(url, md5))
+                sleep(2.0)
 
     def collect_urls_and_md5s(self):
         raise NotImplementedError
