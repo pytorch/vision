@@ -310,7 +310,7 @@ def _decode_video_timestamps(container: "av.container.Container") -> List[int]:
         return [x.pts for x in container.decode(video=0) if x.pts is not None]
 
 
-def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[int], int]:
+def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[int], Optional[float]]:
     """
     List the video frames timestamps.
 
@@ -328,7 +328,7 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[in
     pts : List[int] if pts_unit = 'pts'
         List[Fraction] if pts_unit = 'sec'
         presentation timestamps for each one of the frames in the video.
-    video_fps : int
+    video_fps : float, optional
         the frame rate for the video
 
     """
