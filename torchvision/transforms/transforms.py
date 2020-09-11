@@ -1354,8 +1354,11 @@ class RandomAffine(torch.nn.Module):
         return s.format(name=self.__class__.__name__, **d)
 
 
-class Grayscale(object):
+class Grayscale(torch.nn.Module):
     """Convert image to grayscale.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     Args:
         num_output_channels (int): (1 or 3) number of channels desired for output image
@@ -1368,30 +1371,34 @@ class Grayscale(object):
     """
 
     def __init__(self, num_output_channels=1):
+        super().__init__()
         self.num_output_channels = num_output_channels
 
-    def __call__(self, img):
+    def forward(self, img: Tensor) -> Tensor:
         """
         Args:
-            img (PIL Image): Image to be converted to grayscale.
+            img (PIL Image or Tensor): Image to be converted to grayscale.
 
         Returns:
-            PIL Image: Randomly grayscaled image.
+            PIL Image or Tensor: Grayscaled image.
         """
-        return F.to_grayscale(img, num_output_channels=self.num_output_channels)
+        return F.rgb_to_grayscale(img, num_output_channels=self.num_output_channels)
 
     def __repr__(self):
         return self.__class__.__name__ + '(num_output_channels={0})'.format(self.num_output_channels)
 
 
-class RandomGrayscale(object):
+class RandomGrayscale(torch.nn.Module):
     """Randomly convert image to grayscale with a probability of p (default 0.1).
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading
+    dimensions
 
     Args:
         p (float): probability that image should be converted to grayscale.
 
     Returns:
-        PIL Image: Grayscale version of the input image with probability p and unchanged
+        PIL Image or Tensor: Grayscale version of the input image with probability p and unchanged
         with probability (1-p).
         - If input image is 1 channel: grayscale version is 1 channel
         - If input image is 3 channel: grayscale version is 3 channel with r == g == b
@@ -1399,19 +1406,20 @@ class RandomGrayscale(object):
     """
 
     def __init__(self, p=0.1):
+        super().__init__()
         self.p = p
 
-    def __call__(self, img):
+    def forward(self, img: Tensor) -> Tensor:
         """
         Args:
-            img (PIL Image): Image to be converted to grayscale.
+            img (PIL Image or Tensor): Image to be converted to grayscale.
 
         Returns:
-            PIL Image: Randomly grayscaled image.
+            PIL Image or Tensor: Randomly grayscaled image.
         """
-        num_output_channels = 1 if img.mode == 'L' else 3
-        if random.random() < self.p:
-            return F.to_grayscale(img, num_output_channels=num_output_channels)
+        num_output_channels = F._get_image_num_channels(img)
+        if torch.rand(1) < self.p:
+            return F.rgb_to_grayscale(img, num_output_channels=num_output_channels)
         return img
 
     def __repr__(self):

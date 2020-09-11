@@ -6,7 +6,7 @@ from typing import Any, Callable, Optional, Tuple
 
 
 class CocoCaptions(VisionDataset):
-    """`MS Coco Captions <http://mscoco.org/dataset/#captions-challenge2015>`_ Dataset.
+    """`MS Coco Captions <https://cocodataset.org/#captions-2015>`_ Dataset.
 
     Args:
         root (string): Root directory where images are downloaded to.
@@ -87,7 +87,7 @@ class CocoCaptions(VisionDataset):
 
 
 class CocoDetection(VisionDataset):
-    """`MS Coco Detection <http://mscoco.org/dataset/#detections-challenge2016>`_ Dataset.
+    """`MS Coco Detection <https://cocodataset.org/#detection-2016>`_ Dataset.
 
     Args:
         root (string): Root directory where images are downloaded to.

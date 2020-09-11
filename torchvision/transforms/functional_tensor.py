@@ -3,7 +3,7 @@ from typing import Optional, Dict, Tuple
 
 import torch
 from torch import Tensor
-from torch.nn.functional import affine_grid, grid_sample
+from torch.nn.functional import grid_sample
 from torch.jit.annotations import List, BroadcastingList2
 
 
@@ -15,6 +15,15 @@ def _get_image_size(img: Tensor) -> List[int]:
     """Returns (w, h) of tensor image"""
     if _is_tensor_a_torch_image(img):
         return [img.shape[-1], img.shape[-2]]
+    raise TypeError("Unexpected type {}".format(type(img)))
+
+
+def _get_image_num_channels(img: Tensor) -> int:
+    if img.ndim == 2:
+        return 1
+    elif img.ndim > 2:
+        return img.shape[-3]
+
     raise TypeError("Unexpected type {}".format(type(img)))
 
 
@@ -67,22 +76,41 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     return img[..., top:top + height, left:left + width]
 
 
-def rgb_to_grayscale(img: Tensor) -> Tensor:
+def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     """Convert the given RGB Image Tensor to Grayscale.
     For RGB to Grayscale conversion, ITU-R 601-2 luma transform is performed which
     is L = R * 0.2989 + G * 0.5870 + B * 0.1140
 
     Args:
         img (Tensor): Image to be converted to Grayscale in the form [C, H, W].
+        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
 
     Returns:
-        Tensor: Grayscale image.
+        Tensor: Grayscale version of the image.
+            if num_output_channels = 1 : returned image is single channel
+
+            if num_output_channels = 3 : returned image is 3 channel with r = g = b
 
     """
-    if img.shape[0] != 3:
-        raise TypeError('Input Image does not contain 3 Channels')
+    if img.ndim < 3:
+        raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
+    c = img.shape[-3]
+    if c != 3:
+        raise TypeError("Input image tensor should 3 channels, but found {}".format(c))
 
-    return (0.2989 * img[0] + 0.5870 * img[1] + 0.1140 * img[2]).to(img.dtype)
+    if num_output_channels not in (1, 3):
+        raise ValueError('num_output_channels should be either 1 or 3')
+
+    r, g, b = img.unbind(dim=-3)
+    # This implementation closely follows the TF one:
+    # https://github.com/tensorflow/tensorflow/blob/v2.3.0/tensorflow/python/ops/image_ops_impl.py#L2105-L2138
+    l_img = (0.2989 * r + 0.587 * g + 0.114 * b).to(img.dtype)
+    l_img = l_img.unsqueeze(dim=-3)
+
+    if num_output_channels == 3:
+        return l_img.expand(img.shape)
+
+    return l_img
 
 
 def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
@@ -129,7 +157,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     return _blend(img, mean, contrast_factor)
 
 
-def adjust_hue(img, hue_factor):
+def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     """Adjust hue of an image.
 
     The image hue is adjusted by converting the image to HSV and
@@ -157,8 +185,8 @@ def adjust_hue(img, hue_factor):
     if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
 
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+    if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
+        raise TypeError('img should be Tensor image. Got {}'.format(type(img)))
 
     orig_dtype = img.dtype
     if img.dtype == torch.uint8:
@@ -166,8 +194,7 @@ def adjust_hue(img, hue_factor):
 
     img = _rgb2hsv(img)
     h, s, v = img.unbind(0)
-    h += hue_factor
-    h = h % 1.0
+    h = (h + hue_factor) % 1.0
     img = torch.stack((h, s, v))
     img_hue_adj = _hsv2rgb(img)
 
@@ -373,13 +400,15 @@ def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = Fa
 
 
 def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
-    bound = 1 if img1.dtype in [torch.half, torch.float32, torch.float64] else 255
-    return (ratio * img1 + (1 - ratio) * img2).clamp(0, bound).to(img1.dtype)
+    bound = 1.0 if img1.is_floating_point() else 255.0
+    return (ratio * img1 + (1.0 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
 
 def _rgb2hsv(img):
     r, g, b = img.unbind(0)
 
+    # Implementation is based on https://github.com/python-pillow/Pillow/blob/4174d4267616897df3746d315d5a2d0f82c656ee/
+    # src/libImaging/Convert.c#L330
     maxc = torch.max(img, dim=0).values
     minc = torch.min(img, dim=0).values
 
@@ -395,12 +424,13 @@ def _rgb2hsv(img):
 
     cr = maxc - minc
     # Since `eqc => cr = 0`, replacing denominator with 1 when `eqc` is fine.
-    s = cr / torch.where(eqc, maxc.new_ones(()), maxc)
+    ones = torch.ones_like(maxc)
+    s = cr / torch.where(eqc, ones, maxc)
     # Note that `eqc => maxc = minc = r = g = b`. So the following calculation
     # of `h` would reduce to `bc - gc + 2 + rc - bc + 4 + rc - bc = 6` so it
     # would not matter what values `rc`, `gc`, and `bc` have here, and thus
     # replacing denominator with 1 when `eqc` is fine.
-    cr_divisor = torch.where(eqc, maxc.new_ones(()), cr)
+    cr_divisor = torch.where(eqc, ones, cr)
     rc = (maxc - r) / cr_divisor
     gc = (maxc - g) / cr_divisor
     bc = (maxc - b) / cr_divisor
@@ -424,7 +454,7 @@ def _hsv2rgb(img):
     t = torch.clamp((v * (1.0 - s * (1.0 - f))), 0.0, 1.0)
     i = i % 6
 
-    mask = i == torch.arange(6)[:, None, None]
+    mask = i == torch.arange(6, device=i.device)[:, None, None]
 
     a1 = torch.stack((v, q, p, p, t, v))
     a2 = torch.stack((t, v, v, q, p, p))
@@ -692,6 +722,9 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
         need_cast = True
         img = img.to(torch.float32)
 
+    if img.shape[0] > 1:
+        # Apply same grid to a batch of images
+        grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
     img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
 
     if need_squeeze:
@@ -714,12 +747,13 @@ def _gen_affine_grid(
     # 2) we can normalize by other image size, such that it covers "extend" option like in PIL.Image.rotate
 
     d = 0.5
-    base_grid = torch.empty(1, oh, ow, 3)
+    base_grid = torch.empty(1, oh, ow, 3, dtype=theta.dtype, device=theta.device)
     base_grid[..., 0].copy_(torch.linspace(-ow * 0.5 + d, ow * 0.5 + d - 1, steps=ow))
     base_grid[..., 1].copy_(torch.linspace(-oh * 0.5 + d, oh * 0.5 + d - 1, steps=oh).unsqueeze_(-1))
     base_grid[..., 2].fill_(1)
 
-    output_grid = base_grid.view(1, oh * ow, 3).bmm(theta.transpose(1, 2) / torch.tensor([0.5 * w, 0.5 * h]))
+    rescaled_theta = theta.transpose(1, 2) / torch.tensor([0.5 * w, 0.5 * h], dtype=theta.dtype, device=theta.device)
+    output_grid = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta)
     return output_grid.view(1, oh, ow, 2)
 
 
@@ -746,14 +780,15 @@ def affine(
 
     _assert_grid_transform_inputs(img, matrix, resample, fillcolor, _interpolation_modes)
 
-    theta = torch.tensor(matrix, dtype=torch.float).reshape(1, 2, 3)
+    theta = torch.tensor(matrix, dtype=torch.float, device=img.device).reshape(1, 2, 3)
     shape = img.shape
+    # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
     mode = _interpolation_modes[resample]
     return _apply_grid_transform(img, grid, mode)
 
 
-def _compute_output_size(theta: Tensor, w: int, h: int) -> Tuple[int, int]:
+def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
 
     # Inspired of PIL implementation:
     # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
@@ -765,6 +800,7 @@ def _compute_output_size(theta: Tensor, w: int, h: int) -> Tuple[int, int]:
         [0.5 * w, 0.5 * h, 1.0],
         [0.5 * w, -0.5 * h, 1.0],
     ])
+    theta = torch.tensor(matrix, dtype=torch.float).reshape(1, 2, 3)
     new_pts = pts.view(1, 4, 3).bmm(theta.transpose(1, 2)).view(4, 2)
     min_vals, _ = new_pts.min(dim=0)
     max_vals, _ = new_pts.max(dim=0)
@@ -807,16 +843,17 @@ def rotate(
     }
 
     _assert_grid_transform_inputs(img, matrix, resample, fill, _interpolation_modes)
-    theta = torch.tensor(matrix).reshape(1, 2, 3)
     w, h = img.shape[-1], img.shape[-2]
-    ow, oh = _compute_output_size(theta, w, h) if expand else (w, h)
+    ow, oh = _compute_output_size(matrix, w, h) if expand else (w, h)
+    theta = torch.tensor(matrix, dtype=torch.float, device=img.device).reshape(1, 2, 3)
+    # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
     mode = _interpolation_modes[resample]
 
     return _apply_grid_transform(img, grid, mode)
 
 
-def _perspective_grid(coeffs: List[float], ow: int, oh: int):
+def _perspective_grid(coeffs: List[float], ow: int, oh: int, device: torch.device):
     # https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/
     # src/libImaging/Geometry.c#L394
 
@@ -828,19 +865,20 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int):
     theta1 = torch.tensor([[
         [coeffs[0], coeffs[1], coeffs[2]],
         [coeffs[3], coeffs[4], coeffs[5]]
-    ]])
+    ]], dtype=torch.float, device=device)
     theta2 = torch.tensor([[
         [coeffs[6], coeffs[7], 1.0],
         [coeffs[6], coeffs[7], 1.0]
-    ]])
+    ]], dtype=torch.float, device=device)
 
     d = 0.5
-    base_grid = torch.empty(1, oh, ow, 3)
+    base_grid = torch.empty(1, oh, ow, 3, dtype=torch.float, device=device)
     base_grid[..., 0].copy_(torch.linspace(d, ow * 1.0 + d - 1.0, steps=ow))
     base_grid[..., 1].copy_(torch.linspace(d, oh * 1.0 + d - 1.0, steps=oh).unsqueeze_(-1))
     base_grid[..., 2].fill_(1)
 
-    output_grid1 = base_grid.view(1, oh * ow, 3).bmm(theta1.transpose(1, 2) / torch.tensor([0.5 * ow, 0.5 * oh]))
+    rescaled_theta1 = theta1.transpose(1, 2) / torch.tensor([0.5 * ow, 0.5 * oh], dtype=torch.float, device=device)
+    output_grid1 = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta1)
     output_grid2 = base_grid.view(1, oh * ow, 3).bmm(theta2.transpose(1, 2))
 
     output_grid = output_grid1 / output_grid2 - 1.0
@@ -880,7 +918,7 @@ def perspective(
     )
 
     ow, oh = img.shape[-1], img.shape[-2]
-    grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh)
+    grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, device=img.device)
     mode = _interpolation_modes[interpolation]
 
     return _apply_grid_transform(img, grid, mode)
