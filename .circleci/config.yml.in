@@ -567,7 +567,7 @@ jobs:
     <<: *binary_common
     machine:
       image: ubuntu-1604-cuda-10.1:201909-23
-    resource_class: gpu.small
+    resource_class: gpu.medium
     environment:
       PYTHON_VERSION: << parameters.python_version >>
       PYTORCH_VERSION: << parameters.pytorch_version >>
