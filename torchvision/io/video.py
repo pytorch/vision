@@ -96,7 +96,7 @@ def write_video(
 
 def _read_from_stream(
     container: "av.container.Container",
-    start_offset: int,
+    start_offset: float,
     end_offset: float,
     pts_unit: str,
     stream: "av.stream.Stream",
