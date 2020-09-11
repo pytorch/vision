@@ -2,7 +2,7 @@ import gc
 import math
 import re
 import warnings
-from typing import Any, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
