@@ -1,5 +1,6 @@
 import warnings
 from collections import namedtuple
+from typing import Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -193,8 +194,7 @@ class GoogLeNet(nn.Module):
         return x, aux2, aux1
 
     @torch.jit.unused
-    def eager_outputs(self, x, aux2, aux1):
-        # type: (Tensor, Optional[Tensor], Optional[Tensor]) -> GoogLeNetOutputs
+    def eager_outputs(self, x: Tensor, aux2: Tensor, aux1: Optional[Tensor]) -> Union[GoogLeNetOutputs, Tensor]:
         if self.training and self.aux_logits:
             return _GoogLeNetOutputs(x, aux2, aux1)
         else:
