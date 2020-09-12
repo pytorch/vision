@@ -556,7 +556,7 @@ workflows:
 {%- if True %}
     jobs:
       - circleci_consistency
-      {{ build_workflows(windows_latest_only=True) }}
+      {{ build_workflows(windows_latest_only=False) }}
       - python_lint
       - python_type_check
       - clang_format
