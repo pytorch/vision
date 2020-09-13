@@ -3,7 +3,7 @@ import numbers
 import random
 import warnings
 from collections.abc import Sequence
-from typing import Tuple, List, Optional, Union
+from typing import Tuple, List, Optional
 
 import torch
 from PIL import Image
@@ -1018,7 +1018,6 @@ class ColorJitter(torch.nn.Module):
         self.hue = self._check_input(hue, 'hue', center=0, bound=(-0.5, 0.5),
                                      clip_first_on_zero=False)
 
-    @staticmethod
     @torch.jit.unused
     def _check_input(value, name, center=1, bound=(0, float('inf')), clip_first_on_zero=True):
         if isinstance(value, numbers.Number):
@@ -1053,26 +1052,18 @@ class ColorJitter(torch.nn.Module):
         transforms = []
 
         if brightness is not None:
-            if isinstance(brightness, float):
-                ColorJitter._check_input(brightness, 'brightness')
             brightness_factor = random.uniform(brightness[0], brightness[1])
             transforms.append(Lambda(lambda img: F.adjust_brightness(img, brightness_factor)))
 
         if contrast is not None:
-            if isinstance(contrast, float):
-                ColorJitter._check_input(contrast, 'contrast')
             contrast_factor = random.uniform(contrast[0], contrast[1])
             transforms.append(Lambda(lambda img: F.adjust_contrast(img, contrast_factor)))
 
         if saturation is not None:
-            if isinstance(saturation, float):
-                ColorJitter._check_input(saturation, 'saturation')
             saturation_factor = random.uniform(saturation[0], saturation[1])
             transforms.append(Lambda(lambda img: F.adjust_saturation(img, saturation_factor)))
 
         if hue is not None:
-            if isinstance(hue, float):
-                ColorJitter._check_input(hue, 'hue')
             hue_factor = random.uniform(hue[0], hue[1])
             transforms.append(Lambda(lambda img: F.adjust_hue(img, hue_factor)))
 
