@@ -247,10 +247,10 @@ class EMNIST(MNIST):
     md5 = "58c8d27c78d21e728a6bc7b3cc06412e"
     splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
     # Merged Classes assumes Same structure for both uppercase and lowercase version
-    _merged_classes = set(['C', 'I', 'J', 'K', 'L', 'M', 'O', 'P', 'S', 'U', 'V', 'W', 'X', 'Y', 'Z'])
+    _merged_classes = set(['c', 'i', 'j', 'k', 'l', 'm', 'o', 'p', 's', 'u', 'v', 'w', 'x', 'y', 'z'])
     _all_classes = set(list(string.digits + string.ascii_letters))
     classes_split_dict = {
-        'byclass': list(_all_classes),
+        'byclass': sorted(list(_all_classes)),
         'bymerge': sorted(list(_all_classes - _merged_classes)),
         'balanced': sorted(list(_all_classes - _merged_classes)),
         'letters': list(string.ascii_lowercase),
@@ -264,6 +264,9 @@ class EMNIST(MNIST):
         self.test_file = self._test_file(split)
         super(EMNIST, self).__init__(root, **kwargs)
         self.classes = self.classes_split_dict[self.split]
+
+        if self.target_transform is None and self.split == 'letters':
+            self.target_transform = lambda x: x+1
 
     @staticmethod
     def _training_file(split) -> str:
