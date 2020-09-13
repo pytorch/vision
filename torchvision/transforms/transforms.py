@@ -1019,7 +1019,7 @@ class ColorJitter(torch.nn.Module):
                                      clip_first_on_zero=False)
 
     @torch.jit.unused
-    def _check_input(value, name, center=1, bound=(0, float('inf')), clip_first_on_zero=True):
+    def _check_input(self, value, name, center=1, bound=(0, float('inf')), clip_first_on_zero=True):
         if isinstance(value, numbers.Number):
             if value < 0:
                 raise ValueError("If {} is a single number, it must be non negative.".format(name))
@@ -1040,7 +1040,7 @@ class ColorJitter(torch.nn.Module):
 
     @staticmethod
     @torch.jit.unused
-    def get_params(brightness: Union[float, tuple], contrast: Union[float, tuple], saturation: Union[float, tuple], hue: Union[float, tuple]):
+    def get_params(brightness, contrast, saturation, hue):
         """Get a randomized transform to be applied on image.
 
         Arguments are same as that of __init__.
