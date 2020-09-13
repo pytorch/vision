@@ -1041,7 +1041,8 @@ class ColorJitter(torch.nn.Module):
 
     @staticmethod
     @torch.jit.unused
-    def get_params(brightness: Union[float, tuple], contrast: Union[float, tuple], saturation: Union[float, tuple], hue: Union[float, tuple]):
+    def get_params(brightness: Union[float, tuple], contrast: Union[float, tuple],
+                   saturation: Union[float, tuple], hue: Union[float, tuple]):
         """Get a randomized transform to be applied on image.
 
         Arguments are same as that of __init__.
