@@ -266,7 +266,7 @@ class EMNIST(MNIST):
         self.classes = self.classes_split_dict[self.split]
 
         if self.target_transform is None and self.split == 'letters':
-            self.target_transform = lambda x: x-1
+            self.target_transform = lambda x: x - 1
 
     @staticmethod
     def _training_file(split) -> str:
