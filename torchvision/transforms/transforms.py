@@ -38,7 +38,10 @@ class Compose(torch.nn.Module):
 
     .. warning::
 
-        !!! This is a BC  !!!
+        Since v0.8.0 this class inherits from ``torch.nn.Module`` and defines its ``transforms`` as
+        ``torch.nn.ModuleList``. This breaks the backward compatibility such that we wrap with
+        :class:`~torchvision.transforms.Lambda` all input transforms that are not derived
+        from ``torch.nn.Module``.
 
     Args:
         transforms (list of ``Transform`` objects): list of transforms to compose.
@@ -53,19 +56,17 @@ class Compose(torch.nn.Module):
     def __init__(self, transforms):
         super().__init__()
 
-        try:
-            # Try to wrap the transforms that are not nn.Module into nn.Lambda
-            # register all transforms as nn.ModuleList <-> all transforms should be nn.Module
-            # if something fails we keep previous behaviour
-            new_transforms = []
-            for t in transforms:
-                if callable(t) and not isinstance(t, torch.nn.Module):
-                    t = Lambda(t)
-                new_transforms.append(t)
+        new_transforms = []
+        for t in transforms:
+            if not callable(t):
+                raise TypeError("Provided transform '{}' is not callable".format(t))
+            if not isinstance(t, torch.nn.Module):
+                # Wrap the transforms that are not nn.Module into nn.Lambda
+                # register all transforms as nn.ModuleList <-> all transforms should be nn.Module
+                t = Lambda(t)
+            new_transforms.append(t)
 
-            self.transforms = torch.nn.ModuleList(new_transforms)
-        except TypeError:
-            self.transforms = transforms
+        self.transforms = torch.nn.ModuleList(new_transforms)
 
     def _forward_impl(self, img: Tensor) -> Tensor:
         for t in self.transforms:
@@ -397,13 +398,21 @@ class Pad(torch.nn.Module):
 class Lambda(torch.nn.Module):
     """Apply a user-defined lambda as a transform.
 
+    .. Note::
+        This class exposes ``lambd`` attributes as its own attributes:
+
+        >>> # t.size = 10
+        >>> t_lambda = Lambda(t)
+        >>> assert t_lambda.size == t.size
+
     Args:
         lambd (function): Lambda/function to be used for transform.
     """
 
     def __init__(self, lambd):
         super().__init__()
-        assert callable(lambd), repr(type(lambd).__name__) + " object is not callable"
+        if not callable(lambd):
+            raise TypeError("Argument lambd should be callable, got {}".format(repr(type(lambd).__name__)))
         self.lambd = lambd
 
     def forward(self, img: Tensor) -> Tensor:
@@ -411,6 +420,17 @@ class Lambda(torch.nn.Module):
 
     def __repr__(self):
         return self.__class__.__name__ + '()'
+
+    def __getattr__(self, attr):
+        if hasattr(self.lambd, attr):
+            return getattr(self.lambd, attr)
+        return super().__getattr__(attr)
+
+    def __setattr__(self, attr, value):
+        if "lambd" in self.__dict__ and hasattr(self.lambd, attr):
+            setattr(self.lambd, attr, value)
+        else:
+            super().__setattr__(attr, value)
 
 
 class RandomTransforms(torch.nn.Module):

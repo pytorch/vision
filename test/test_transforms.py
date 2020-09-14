@@ -1698,8 +1698,12 @@ class Tester(unittest.TestCase):
             transforms.RandomResizedCrop(15),
             transforms.Lambda(lambda x: x),
             custom_transform,
-            transforms.ToTensor(),
-            lambda x: x ** 2,
+        ])
+
+        t.transforms.append(transforms.ToTensor())
+        t.transforms.append(lambda x: x + 2)  ,  # THIS DOES NOT WORK
+        t.transforms.extend([
+            lambda x: x ** 2,  # THIS DOES NOT WORK
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
 
@@ -1724,6 +1728,23 @@ class Tester(unittest.TestCase):
 
         res = t(img_pil)
         self.assertTrue(isinstance(res, Image.Image))
+
+    def test_lambda_attributes(self):
+
+        class MyTransform:
+
+            def __init__(self, s):
+                self.s = s
+
+            def __call__(self, x):
+                return x + self.s
+
+        t = MyTransform(10)
+        t_lambda = transforms.Lambda(t)
+        self.assertEqual(t_lambda.s, t.s)
+        t_lambda.s = 5
+        self.assertEqual(t_lambda.s, t.s)
+        self.assertEqual(t_lambda(10), t(10))
 
 
 if __name__ == '__main__':
