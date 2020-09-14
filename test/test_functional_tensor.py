@@ -184,6 +184,11 @@ class Tester(TransformsTester):
         tensor, pil_img = self._create_data(7, 8, device=self.device)
 
         for dt in [None, torch.float32, torch.float64, torch.float16]:
+
+            if dt == torch.float16 and torch.device(self.device).type == "cpu":
+                # skip float16 on CPU case
+                continue
+
             if dt is not None:
                 # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
@@ -296,6 +301,11 @@ class Tester(TransformsTester):
         tensor, pil_img = self._create_data(26, 36, device=self.device)
 
         for dt in [None, torch.float32, torch.float64, torch.float16]:
+
+            if dt == torch.float16 and torch.device(self.device).type == "cpu":
+                # skip float16 on CPU case
+                continue
+
             if dt is not None:
                 # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
@@ -492,13 +502,16 @@ class Tester(TransformsTester):
 
             for dt in [None, torch.float32, torch.float64, torch.float16]:
 
+                if dt == torch.float16 and torch.device(self.device).type == "cpu":
+                    # skip float16 on CPU case
+                    continue
+
                 if dt is not None:
                     tensor = tensor.to(dtype=dt)
 
                 self._test_affine_identity_map(tensor, scripted_affine)
                 if pil_img.size[0] == pil_img.size[1]:
-                    if not (torch.device(self.device).type == "cpu" and dt == torch.float16):
-                        self._test_affine_square_rotations(tensor, pil_img, scripted_affine)
+                    self._test_affine_square_rotations(tensor, pil_img, scripted_affine)
                 else:
                     self._test_affine_rect_rotations(tensor, pil_img, scripted_affine)
                 self._test_affine_translations(tensor, pil_img, scripted_affine)
@@ -519,6 +532,10 @@ class Tester(TransformsTester):
             ]
 
             for dt in [None, torch.float32, torch.float64, torch.float16]:
+
+                if dt == torch.float16 and torch.device(self.device).type == "cpu":
+                    # skip float16 on CPU case
+                    continue
 
                 if dt is not None:
                     tensor = tensor.to(dtype=dt)
@@ -577,6 +594,10 @@ class Tester(TransformsTester):
             ]
 
             for dt in [None, torch.float32, torch.float64, torch.float16]:
+
+                if dt == torch.float16 and torch.device(self.device).type == "cpu":
+                    # skip float16 on CPU case
+                    continue
 
                 if dt is not None:
                     tensor = tensor.to(dtype=dt)

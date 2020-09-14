@@ -777,7 +777,7 @@ def affine(
 
     _assert_grid_transform_inputs(img, matrix, resample, fillcolor, _interpolation_modes)
 
-    dtype = _get_compatible_dtype(img)
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     shape = img.shape
     # grid will be generated on the same device as theta and img
@@ -843,7 +843,7 @@ def rotate(
     _assert_grid_transform_inputs(img, matrix, resample, fill, _interpolation_modes)
     w, h = img.shape[-1], img.shape[-2]
     ow, oh = _compute_output_size(matrix, w, h) if expand else (w, h)
-    dtype = _get_compatible_dtype(img)
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
@@ -916,16 +916,8 @@ def perspective(
     )
 
     ow, oh = img.shape[-1], img.shape[-2]
-    dtype = _get_compatible_dtype(img)
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=img.device)
     mode = _interpolation_modes[interpolation]
 
     return _apply_grid_transform(img, grid, mode)
-
-
-def _get_compatible_dtype(img):
-    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    if img.device.type == "cpu" and dtype == torch.float16:
-        # Avoid not implemented for 'Half' errors from "baddbmm__mkl" and "grid_sampler_2d_cpu_kernel_impl"
-        dtype = torch.float32
-    return dtype
