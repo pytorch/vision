@@ -2,10 +2,6 @@ name: tests
 
 on:
   pull_request:
-    paths:
-      - "test/test_datasets_download.py"
-      - ".github/failed_schedule_issue_template.md"
-      - ".github/workflows/tests-schedule.yml"
 
   schedule:
     - cron: "0 4 * * *"
