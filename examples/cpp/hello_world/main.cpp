@@ -1,5 +1,4 @@
 #include <iostream>
-
 #include <torchvision/models/resnet.h>
 
 int main()
@@ -15,7 +14,7 @@ int main()
 
   if (torch::cuda::is_available()) {
     // Move model and inputs to GPU
-    model.to(torch::kCUDA);
+    model->to(torch::kCUDA);
     auto gpu_in = in.to(torch::kCUDA);
     auto gpu_out = model->forward(gpu_in);
 
