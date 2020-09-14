@@ -32,7 +32,7 @@ def vflip(img: Tensor) -> Tensor:
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
@@ -52,7 +52,7 @@ def hflip(img: Tensor) -> Tensor:
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
@@ -72,7 +72,7 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
@@ -96,7 +96,7 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     For RGB to Grayscale conversion, ITU-R 601-2 luma transform is performed which
@@ -139,7 +139,7 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
@@ -165,7 +165,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
@@ -193,7 +193,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     The image hue is adjusted by converting the image to HSV and
@@ -245,7 +245,7 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
@@ -271,7 +271,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     Also known as Power Law Transform. Intensities in RGB mode are adjusted
@@ -317,7 +317,7 @@ def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     .. warning::
@@ -360,7 +360,7 @@ def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     .. warning::
@@ -414,7 +414,7 @@ def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = Fa
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     .. warning::
@@ -553,7 +553,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
@@ -663,7 +663,7 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
@@ -832,7 +832,7 @@ def affine(
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
@@ -893,7 +893,7 @@ def rotate(
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
@@ -970,7 +970,7 @@ def perspective(
 
     .. warning::
 
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
