@@ -289,6 +289,39 @@ setup_conda_cudatoolkit_constraint() {
   fi
 }
 
+setup_conda_cudatoolkit_plain_constraint() {
+  export CONDA_CPUONLY_FEATURE=""
+  export CMAKE_USE_CUDA=1
+  if [[ "$(uname)" == Darwin ]]; then
+    export CONDA_CUDATOOLKIT_CONSTRAINT=""
+    export CMAKE_USE_CUDA=0
+  else
+    case "$CU_VERSION" in
+      cu102)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.2"
+        ;;
+      cu101)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.1"
+        ;;
+      cu100)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.0"
+        ;;
+      cu92)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=9.2"
+        ;;
+      cpu)
+        export CONDA_CUDATOOLKIT_CONSTRAINT=""
+        export CONDA_CPUONLY_FEATURE="cpuonly"
+        export CMAKE_USE_CUDA=0
+        ;;
+      *)
+        echo "Unrecognized CU_VERSION=$CU_VERSION"
+        exit 1
+        ;;
+    esac
+  fi
+}
+
 # Build the proper compiler package before building the final package
 setup_visual_studio_constraint() {
   if [[ "$OSTYPE" == "msys" ]]; then
