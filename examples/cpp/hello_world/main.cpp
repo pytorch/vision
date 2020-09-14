@@ -11,5 +11,5 @@ int main()
   auto in = torch::rand({1, 3, 10, 10});
   auto out = model->forward(in);
 
-  std::cout << out;
+  std::cout << out.sizes();
 }

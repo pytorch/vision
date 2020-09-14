@@ -61,7 +61,7 @@ popd
 python setup.py develop
 
 # Trace, compile and run project that uses Faster-RCNN
-cd test/tracing/frcnn
+pushd test/tracing/frcnn
 mkdir build
 
 # Trace model
@@ -81,3 +81,21 @@ fi
 
 # Run traced program
 ./test_frcnn_tracing
+
+# Compile and run the CPP example
+popd
+cd examples/cpp/hello_world
+
+mkdir build
+cd build
+cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch
+
+if [[ "$OSTYPE" == "msys" ]]; then
+    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_cpp_example.bat"
+    cd Release
+else
+    make
+fi
+
+# Run CPP example
+./hello-world
