@@ -1,7 +1,17 @@
 #pragma once
 #include <torch/extension.h>
 
-at::Tensor ROIAlign_forward_cuda(
+#ifdef _WIN32
+#if defined(torchvision_EXPORTS)
+#define VISION_API __declspec(dllexport)
+#else
+#define VISION_API __declspec(dllimport)
+#endif
+#else
+#define VISION_API
+#endif
+
+VISION_API at::Tensor ROIAlign_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,
     const double spatial_scale,
@@ -10,7 +20,7 @@ at::Tensor ROIAlign_forward_cuda(
     const int64_t sampling_ratio,
     const bool aligned);
 
-at::Tensor ROIAlign_backward_cuda(
+VISION_API at::Tensor ROIAlign_backward_cuda(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const double spatial_scale,
@@ -23,14 +33,14 @@ at::Tensor ROIAlign_backward_cuda(
     const int64_t sampling_ratio,
     const bool aligned);
 
-std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(
+VISION_API std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,
     const float spatial_scale,
     const int pooled_height,
     const int pooled_width);
 
-at::Tensor ROIPool_backward_cuda(
+VISION_API at::Tensor ROIPool_backward_cuda(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& argmax,
@@ -42,14 +52,14 @@ at::Tensor ROIPool_backward_cuda(
     const int height,
     const int width);
 
-std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cuda(
+VISION_API std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,
     const float spatial_scale,
     const int pooled_height,
     const int pooled_width);
 
-at::Tensor PSROIPool_backward_cuda(
+VISION_API at::Tensor PSROIPool_backward_cuda(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& mapping_channel,
@@ -61,7 +71,7 @@ at::Tensor PSROIPool_backward_cuda(
     const int height,
     const int width);
 
-std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cuda(
+VISION_API std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,
     const float spatial_scale,
@@ -69,7 +79,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cuda(
     const int pooled_width,
     const int sampling_ratio);
 
-at::Tensor PSROIAlign_backward_cuda(
+VISION_API at::Tensor PSROIAlign_backward_cuda(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& mapping_channel,
@@ -82,12 +92,12 @@ at::Tensor PSROIAlign_backward_cuda(
     const int height,
     const int width);
 
-at::Tensor nms_cuda(
+VISION_API at::Tensor nms_cuda(
     const at::Tensor& dets,
     const at::Tensor& scores,
     const double iou_threshold);
 
-at::Tensor DeformConv2d_forward_cuda(
+VISION_API at::Tensor DeformConv2d_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& weight,
     const at::Tensor& offset,
@@ -98,7 +108,7 @@ at::Tensor DeformConv2d_forward_cuda(
     int groups,
     int deformable_groups);
 
-std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
+VISION_API std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
 DeformConv2d_backward_cuda(
     const at::Tensor& grad_out,
     const at::Tensor& input,
