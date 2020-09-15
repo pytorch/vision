@@ -36,7 +36,7 @@ def vflip(img: Tensor) -> Tensor:
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
-        img (Tensor): Image Tensor to be flipped in the form [C, H, W].
+        img (Tensor): Image Tensor to be flipped in the form [..., C, H, W].
 
     Returns:
         Tensor:  Vertically flipped image Tensor.
@@ -56,7 +56,7 @@ def hflip(img: Tensor) -> Tensor:
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
-        img (Tensor): Image Tensor to be flipped in the form [C, H, W].
+        img (Tensor): Image Tensor to be flipped in the form [..., C, H, W].
 
     Returns:
         Tensor:  Horizontally flipped image Tensor.
