@@ -107,6 +107,9 @@ class Tester(TransformsTester):
             s_rgb_img = scripted_fn(hsv_img)
             self.assertTrue(rgb_img.allclose(s_rgb_img))
 
+        batch_tensors = self._create_data_batch(120, 100, num_samples=4, device=self.device).float()
+        self._test_fn_on_batch(batch_tensors, F_t._hsv2rgb)
+
     def test_rgb2hsv(self):
         scripted_fn = torch.jit.script(F_t._rgb2hsv)
         shape = (3, 150, 100)
@@ -115,7 +118,7 @@ class Tester(TransformsTester):
             hsv_img = F_t._rgb2hsv(rgb_img)
             ft_hsv_img = hsv_img.permute(1, 2, 0).flatten(0, 1)
 
-            r, g, b, = rgb_img.unbind(0)
+            r, g, b, = rgb_img.unbind(dim=-3)
             r = r.flatten().cpu().numpy()
             g = g.flatten().cpu().numpy()
             b = b.flatten().cpu().numpy()
@@ -137,6 +140,9 @@ class Tester(TransformsTester):
             s_hsv_img = scripted_fn(rgb_img)
             self.assertTrue(hsv_img.allclose(s_hsv_img))
 
+        batch_tensors = self._create_data_batch(120, 100, num_samples=4, device=self.device).float()
+        self._test_fn_on_batch(batch_tensors, F_t._rgb2hsv)
+
     def test_rgb_to_grayscale(self):
         script_rgb_to_grayscale = torch.jit.script(F.rgb_to_grayscale)
 
@@ -146,13 +152,13 @@ class Tester(TransformsTester):
             gray_pil_image = F.rgb_to_grayscale(pil_img, num_output_channels=num_output_channels)
             gray_tensor = F.rgb_to_grayscale(img_tensor, num_output_channels=num_output_channels)
 
-            if num_output_channels == 1:
-                print(gray_tensor.shape)
-
             self.approxEqualTensorToPIL(gray_tensor.float(), gray_pil_image, tol=1.0 + 1e-10, agg_method="max")
 
             s_gray_tensor = script_rgb_to_grayscale(img_tensor, num_output_channels=num_output_channels)
             self.assertTrue(s_gray_tensor.equal(gray_tensor))
+
+            batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
+            self._test_fn_on_batch(batch_tensors, F.rgb_to_grayscale, num_output_channels=num_output_channels)
 
     def test_center_crop(self):
         script_center_crop = torch.jit.script(F.center_crop)
@@ -286,11 +292,13 @@ class Tester(TransformsTester):
         script_fn = torch.jit.script(fn)
         torch.manual_seed(15)
         tensor, pil_img = self._create_data(26, 34, device=self.device)
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
 
         for dt in [None, torch.float32, torch.float64]:
 
             if dt is not None:
                 tensor = F.convert_image_dtype(tensor, dt)
+                batch_tensors = F.convert_image_dtype(batch_tensors, dt)
 
             for config in configs:
                 adjusted_tensor = fn_t(tensor, **config)
@@ -313,6 +321,8 @@ class Tester(TransformsTester):
                 if adjusted_tensor.dtype == torch.uint8 and "cuda" in torch.device(self.device).type:
                     atol = 1.0
                 self.assertTrue(adjusted_tensor.allclose(scripted_result, atol=atol), msg=msg)
+
+                self._test_fn_on_batch(batch_tensors, fn, **config)
 
     def test_adjust_brightness(self):
         self._test_adjust_fn(
