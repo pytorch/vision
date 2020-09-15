@@ -1,7 +1,7 @@
 #include <ATen/ATen.h>
 #include <torch/script.h>
 #include <torch/torch.h>
-#include <torchvision/ROIAlign.h>
+#include <torchvision/ROIPool.h>
 #include <torchvision/cpu/vision_cpu.h>
 #include <torchvision/nms.h>
 
