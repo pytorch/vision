@@ -218,6 +218,19 @@ class Tester(TransformsTester):
         output = scripted_fn(tensor)
         self.assertEqual(len(output), len(transformed_t_list_script))
 
+        # test on batch of tensors
+        batch_tensors = self._create_data_batch(height=23, width=34, channels=3, num_samples=4, device=self.device)
+        torch.manual_seed(12)
+        transformed_batch_list = fn(batch_tensors)
+
+        for i in range(len(batch_tensors)):
+            img_tensor = batch_tensors[i, ...]
+            torch.manual_seed(12)
+            transformed_img_list = fn(img_tensor)
+            for transformed_img, transformed_batch in zip(transformed_img_list, transformed_batch_list):
+                self.assertTrue(transformed_img.equal(transformed_batch[i, ...]),
+                                msg="{} vs {}".format(transformed_img, transformed_batch[i, ...]))
+
     def test_five_crop(self):
         fn_kwargs = meth_kwargs = {"size": (5,)}
         self._test_op_list_output(
