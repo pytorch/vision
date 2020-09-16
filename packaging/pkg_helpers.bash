@@ -49,6 +49,17 @@ setup_cuda() {
 
   # Now work out the CUDA settings
   case "$CU_VERSION" in
+    cu110)
+      if [[ "$OSTYPE" == "msys" ]]; then
+        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.0"
+      else
+        export CUDA_HOME=/usr/local/cuda-11.0/
+      fi
+      export FORCE_CUDA=1
+      # Hard-coding gencode flags is temporary situation until
+      # https://github.com/pytorch/pytorch/pull/23408 lands
+      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_50,code=compute_50"
+      ;;
     cu102)
       if [[ "$OSTYPE" == "msys" ]]; then
         export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v10.2"
@@ -265,6 +276,9 @@ setup_conda_cudatoolkit_constraint() {
     export CONDA_CUDATOOLKIT_CONSTRAINT=""
   else
     case "$CU_VERSION" in
+      cu110)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.0,<11.1 # [not osx]"
+        ;;
       cu102)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.2,<10.3 # [not osx]"
         ;;
@@ -280,6 +294,39 @@ setup_conda_cudatoolkit_constraint() {
       cpu)
         export CONDA_CUDATOOLKIT_CONSTRAINT=""
         export CONDA_CPUONLY_FEATURE="- cpuonly"
+        ;;
+      *)
+        echo "Unrecognized CU_VERSION=$CU_VERSION"
+        exit 1
+        ;;
+    esac
+  fi
+}
+
+setup_conda_cudatoolkit_plain_constraint() {
+  export CONDA_CPUONLY_FEATURE=""
+  export CMAKE_USE_CUDA=1
+  if [[ "$(uname)" == Darwin ]]; then
+    export CONDA_CUDATOOLKIT_CONSTRAINT=""
+    export CMAKE_USE_CUDA=0
+  else
+    case "$CU_VERSION" in
+      cu102)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.2"
+        ;;
+      cu101)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.1"
+        ;;
+      cu100)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.0"
+        ;;
+      cu92)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=9.2"
+        ;;
+      cpu)
+        export CONDA_CUDATOOLKIT_CONSTRAINT=""
+        export CONDA_CPUONLY_FEATURE="cpuonly"
+        export CMAKE_USE_CUDA=0
         ;;
       *)
         echo "Unrecognized CU_VERSION=$CU_VERSION"
