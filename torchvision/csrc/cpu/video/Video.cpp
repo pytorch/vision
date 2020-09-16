@@ -225,7 +225,6 @@ Video::Video(std::string videoPath, std::string stream, bool isReadFile) {
       double duration = double(header.duration) * 1e-6; // * timeBase;
 
       if (header.format.type == TYPE_VIDEO) {
-        videoMetadata = header;
         videoFPS.push_back(fps);
         videoDuration.push_back(duration);
       } else if (header.format.type == TYPE_AUDIO) {
@@ -305,8 +304,8 @@ void Video::Seek(double ts, bool any_frame = false) {
 }
 
 torch::List<torch::Tensor> Video::Next(std::string stream) {
-
-  bool newInit = false;
+  
+  bool newInit = false; // avoid unnecessary decoder initializations
   if ((!stream.empty()) && (_parseStream(stream) != current_stream)) {
       current_stream = _parseStream(stream);
       newInit = true;
@@ -321,32 +320,34 @@ torch::List<torch::Tensor> Video::Next(std::string stream) {
     succeeded = Video::_setCurrentStream();
     if (succeeded) {
       newInit = false;
-      // cout << "Reinitializing the decoder again \n";
     }
   }
 
-  // if failing to decode simply return 0 (note, maybe
-  // raise an exeption otherwise)
+  // if failing to decode simply return a null tensor (note, should we
+  // raise an exeption?)
   torch::Tensor framePTS = torch::zeros({1}, torch::kFloat);
   torch::Tensor outFrame = torch::zeros({0}, torch::kByte);
 
-  // first decode the frame
+  // decode single frame
   DecoderOutputMessage out;
   int64_t res = decoder.decode(&out, decoderTimeoutMs);
+  // if successfull
   if (res == 0) {
     auto header = out.header;
     const auto& format = header.format;
 
-    // then initialize the output variables based on type
+    // initialize the output variables based on type
     size_t expectedWrittenBytes = 0;
 
     if (format.type == TYPE_VIDEO) {
+      // note: this can potentially be optimized
+      // by having the global tensor that we fill at decode time
+      // (would avoid allocations)
       int outHeight = format.format.video.height;
       int outWidth = format.format.video.width;
       int numChannels = 3;
       outFrame = torch::zeros({outHeight, outWidth, numChannels}, torch::kByte);
       expectedWrittenBytes = outHeight * outWidth * numChannels;
-      // std::cout << expectedWrittenBytes;
     } else if (format.type == TYPE_AUDIO) {
       int outAudioChannels = format.format.audio.channels;
       int bytesPerSample = av_get_bytes_per_sample(
@@ -362,21 +363,17 @@ torch::List<torch::Tensor> Video::Next(std::string stream) {
 
       expectedWrittenBytes = numAudioSamples * outAudioChannels * sizeof(float);
     }
+    // currently not supporting other formats (will do soon)
 
-    // std::cout << "Successfully allocated tensors to the dimension \n";
-    // if not in seek mode or only looking at the keyframes,
-    // return the immediate next frame
-    if ((seekTS == -1) || (video_any_frame == false)) {
-      // std::cout << "In non-seek mode stuff is happening \n";
-      if (format.type == TYPE_VIDEO) {
-        auto numberWrittenBytes = fillVideoTensor(out, outFrame, framePTS);
-      } else {
-        auto numberWrittenBytes = fillAudioTensor(out, outFrame, framePTS);
-      }
-      out.payload.reset();
+    // note: this will need to be revised to support less-accurate seek. So far keep as is
+    if (format.type == TYPE_VIDEO) {
+      auto numberWrittenBytes = fillVideoTensor(out, outFrame, framePTS);
+    } else {
+      auto numberWrittenBytes = fillAudioTensor(out, outFrame, framePTS);
     }
-  } else {
-    LOG(ERROR) << "Decoder run into a last iteration or has failed";
+    out.payload.reset();
+  } else{
+    LOG(ERROR) << "Decoder failed ( or ran into last iteration)";
   }
 
   torch::List<torch::Tensor> result;
@@ -385,10 +382,11 @@ torch::List<torch::Tensor> Video::Next(std::string stream) {
   return result;
 }
 
-Video::~Video() {
+// Video::~Video() {
+  // destructor to be defined thoroughly later
 //   delete params; // does not have destructor
 //   delete metadata; // struct does not have destructor
 //   delete decoder; // should be fine
 //   delete streamFPS; // should be fine
 //   delete streamDuration; // should be fine
-}
+// }
