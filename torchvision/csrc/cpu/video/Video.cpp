@@ -188,6 +188,7 @@ void Video::_getDecoderParams(
       format.format.video.width = 0;
       format.format.video.height = 0;
       format.format.video.cropImage = 0;
+      format.format.video.format = defaultVideoPixelFormat;
     }
     params.formats.insert(format);
   }
