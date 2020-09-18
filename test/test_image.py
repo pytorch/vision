@@ -30,12 +30,14 @@ class ImageTester(unittest.TestCase):
     def test_read_jpeg(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
             img_pil = torch.load(img_path.replace('jpg', 'pth'))
+            img_pil = img_pil.permute(2, 0, 1)
             img_ljpeg = read_jpeg(img_path)
             self.assertTrue(img_ljpeg.equal(img_pil))
 
     def test_decode_jpeg(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
             img_pil = torch.load(img_path.replace('jpg', 'pth'))
+            img_pil = img_pil.permute(2, 0, 1)
             size = os.path.getsize(img_path)
             img_ljpeg = decode_jpeg(torch.from_file(img_path, dtype=torch.uint8, size=size))
             self.assertTrue(img_ljpeg.equal(img_pil))
@@ -68,12 +70,14 @@ class ImageTester(unittest.TestCase):
         # Check across .png
         for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
+            img_pil = img_pil.permute(2, 0, 1)
             img_lpng = read_png(img_path)
             self.assertTrue(img_lpng.equal(img_pil))
 
     def test_decode_png(self):
         for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
+            img_pil = img_pil.permute(2, 0, 1)
             size = os.path.getsize(img_path)
             img_lpng = decode_png(torch.from_file(img_path, dtype=torch.uint8, size=size))
             self.assertTrue(img_lpng.equal(img_pil))
