@@ -79,6 +79,6 @@ torch::Tensor decodePNG(const torch::Tensor& data) {
     ptr += bytes;
   }
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-  return tensor;
+  return tensor.permute({2, 0, 1});
 }
 #endif // PNG_FOUND

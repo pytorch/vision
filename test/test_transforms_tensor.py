@@ -19,20 +19,43 @@ class Tester(TransformsTester):
     def _test_functional_op(self, func, fn_kwargs):
         if fn_kwargs is None:
             fn_kwargs = {}
+
+        f = getattr(F, func)
         tensor, pil_img = self._create_data(height=10, width=10, device=self.device)
-        transformed_tensor = getattr(F, func)(tensor, **fn_kwargs)
-        transformed_pil_img = getattr(F, func)(pil_img, **fn_kwargs)
+        transformed_tensor = f(tensor, **fn_kwargs)
+        transformed_pil_img = f(pil_img, **fn_kwargs)
         self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
+
+    def _test_transform_vs_scripted(self, transform, s_transform, tensor):
+        torch.manual_seed(12)
+        out1 = transform(tensor)
+        torch.manual_seed(12)
+        out2 = s_transform(tensor)
+        self.assertTrue(out1.equal(out2))
+
+    def _test_transform_vs_scripted_on_batch(self, transform, s_transform, batch_tensors):
+        torch.manual_seed(12)
+        transformed_batch = transform(batch_tensors)
+
+        for i in range(len(batch_tensors)):
+            img_tensor = batch_tensors[i, ...]
+            torch.manual_seed(12)
+            transformed_img = transform(img_tensor)
+            self.assertTrue(transformed_img.equal(transformed_batch[i, ...]))
+
+        torch.manual_seed(12)
+        s_transformed_batch = s_transform(batch_tensors)
+        self.assertTrue(transformed_batch.equal(s_transformed_batch))
 
     def _test_class_op(self, method, meth_kwargs=None, test_exact_match=True, **match_kwargs):
         if meth_kwargs is None:
             meth_kwargs = {}
 
-        tensor, pil_img = self._create_data(26, 34, device=self.device)
         # test for class interface
         f = getattr(T, method)(**meth_kwargs)
         scripted_fn = torch.jit.script(f)
 
+        tensor, pil_img = self._create_data(26, 34, device=self.device)
         # set seed to reproduce the same transformation for tensor and PIL image
         torch.manual_seed(12)
         transformed_tensor = f(tensor)
@@ -46,6 +69,9 @@ class Tester(TransformsTester):
         torch.manual_seed(12)
         transformed_tensor_script = scripted_fn(tensor)
         self.assertTrue(transformed_tensor.equal(transformed_tensor_script))
+
+        batch_tensors = self._create_data_batch(height=23, width=34, channels=3, num_samples=4, device=self.device)
+        self._test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
 
     def _test_op(self, func, method, fn_kwargs=None, meth_kwargs=None):
         self._test_functional_op(func, fn_kwargs)
@@ -167,15 +193,18 @@ class Tester(TransformsTester):
             fn_kwargs = {}
         if meth_kwargs is None:
             meth_kwargs = {}
+
+        fn = getattr(F, func)
+        scripted_fn = torch.jit.script(fn)
+
         tensor, pil_img = self._create_data(height=20, width=20, device=self.device)
-        transformed_t_list = getattr(F, func)(tensor, **fn_kwargs)
-        transformed_p_list = getattr(F, func)(pil_img, **fn_kwargs)
+        transformed_t_list = fn(tensor, **fn_kwargs)
+        transformed_p_list = fn(pil_img, **fn_kwargs)
         self.assertEqual(len(transformed_t_list), len(transformed_p_list))
         self.assertEqual(len(transformed_t_list), out_length)
         for transformed_tensor, transformed_pil_img in zip(transformed_t_list, transformed_p_list):
             self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
 
-        scripted_fn = torch.jit.script(getattr(F, func))
         transformed_t_list_script = scripted_fn(tensor.detach().clone(), **fn_kwargs)
         self.assertEqual(len(transformed_t_list), len(transformed_t_list_script))
         self.assertEqual(len(transformed_t_list_script), out_length)
@@ -184,10 +213,23 @@ class Tester(TransformsTester):
                             msg="{} vs {}".format(transformed_tensor, transformed_tensor_script))
 
         # test for class interface
-        f = getattr(T, method)(**meth_kwargs)
-        scripted_fn = torch.jit.script(f)
+        fn = getattr(T, method)(**meth_kwargs)
+        scripted_fn = torch.jit.script(fn)
         output = scripted_fn(tensor)
         self.assertEqual(len(output), len(transformed_t_list_script))
+
+        # test on batch of tensors
+        batch_tensors = self._create_data_batch(height=23, width=34, channels=3, num_samples=4, device=self.device)
+        torch.manual_seed(12)
+        transformed_batch_list = fn(batch_tensors)
+
+        for i in range(len(batch_tensors)):
+            img_tensor = batch_tensors[i, ...]
+            torch.manual_seed(12)
+            transformed_img_list = fn(img_tensor)
+            for transformed_img, transformed_batch in zip(transformed_img_list, transformed_batch_list):
+                self.assertTrue(transformed_img.equal(transformed_batch[i, ...]),
+                                msg="{} vs {}".format(transformed_img, transformed_batch[i, ...]))
 
     def test_five_crop(self):
         fn_kwargs = meth_kwargs = {"size": (5,)}
@@ -227,6 +269,7 @@ class Tester(TransformsTester):
 
     def test_resize(self):
         tensor, _ = self._create_data(height=34, width=36, device=self.device)
+        batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
         script_fn = torch.jit.script(F.resize)
 
         for dt in [None, torch.float32, torch.float64]:
@@ -247,13 +290,13 @@ class Tester(TransformsTester):
                     self.assertTrue(s_resized_tensor.equal(resized_tensor))
 
                     transform = T.Resize(size=script_size, interpolation=interpolation)
-                    resized_tensor = transform(tensor)
-                    script_transform = torch.jit.script(transform)
-                    s_resized_tensor = script_transform(tensor)
-                    self.assertTrue(s_resized_tensor.equal(resized_tensor))
+                    s_transform = torch.jit.script(transform)
+                    self._test_transform_vs_scripted(transform, s_transform, tensor)
+                    self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
     def test_resized_crop(self):
         tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
+        batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
 
         for scale in [(0.7, 1.2), [0.7, 1.2]]:
             for ratio in [(0.75, 1.333), [0.75, 1.333]]:
@@ -263,15 +306,12 @@ class Tester(TransformsTester):
                             size=size, scale=scale, ratio=ratio, interpolation=interpolation
                         )
                         s_transform = torch.jit.script(transform)
-
-                        torch.manual_seed(12)
-                        out1 = transform(tensor)
-                        torch.manual_seed(12)
-                        out2 = s_transform(tensor)
-                        self.assertTrue(out1.equal(out2))
+                        self._test_transform_vs_scripted(transform, s_transform, tensor)
+                        self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
     def test_random_affine(self):
         tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
+        batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
 
         for shear in [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]]:
             for scale in [(0.7, 1.2), [0.7, 1.2]]:
@@ -284,14 +324,12 @@ class Tester(TransformsTester):
                             )
                             s_transform = torch.jit.script(transform)
 
-                            torch.manual_seed(12)
-                            out1 = transform(tensor)
-                            torch.manual_seed(12)
-                            out2 = s_transform(tensor)
-                            self.assertTrue(out1.equal(out2))
+                            self._test_transform_vs_scripted(transform, s_transform, tensor)
+                            self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
     def test_random_rotate(self):
         tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
+        batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
 
         for center in [(0, 0), [10, 10], None, (56, 44)]:
             for expand in [True, False]:
@@ -302,14 +340,12 @@ class Tester(TransformsTester):
                         )
                         s_transform = torch.jit.script(transform)
 
-                        torch.manual_seed(12)
-                        out1 = transform(tensor)
-                        torch.manual_seed(12)
-                        out2 = s_transform(tensor)
-                        self.assertTrue(out1.equal(out2))
+                        self._test_transform_vs_scripted(transform, s_transform, tensor)
+                        self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
     def test_random_perspective(self):
         tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
+        batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
 
         for distortion_scale in np.linspace(0.1, 1.0, num=20):
             for interpolation in [NEAREST, BILINEAR]:
@@ -319,11 +355,8 @@ class Tester(TransformsTester):
                 )
                 s_transform = torch.jit.script(transform)
 
-                torch.manual_seed(12)
-                out1 = transform(tensor)
-                torch.manual_seed(12)
-                out2 = s_transform(tensor)
-                self.assertTrue(out1.equal(out2))
+                self._test_transform_vs_scripted(transform, s_transform, tensor)
+                self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
     def test_to_grayscale(self):
 
