@@ -137,7 +137,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
 
   jpeg_finish_decompress(&cinfo);
   jpeg_destroy_decompress(&cinfo);
-  return tensor;
+  return tensor.permute({2, 0, 1});
 }
 
 #endif // JPEG_FOUND

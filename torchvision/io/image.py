@@ -1,9 +1,8 @@
 import torch
-from torch import nn, Tensor
 
 import os
 import os.path as osp
-import importlib
+import importlib.machinery
 
 _HAS_IMAGE_OPT = False
 
@@ -15,7 +14,7 @@ try:
         importlib.machinery.EXTENSION_SUFFIXES
     )
 
-    extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)
+    extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)  # type: ignore[arg-type]
     ext_specs = extfinder.find_spec("image")
     if ext_specs is not None:
         torch.ops.load_library(ext_specs.origin)
@@ -24,8 +23,7 @@ except (ImportError, OSError):
     pass
 
 
-def decode_png(input):
-    # type: (Tensor) -> Tensor
+def decode_png(input: torch.Tensor) -> torch.Tensor:
     """
     Decodes a PNG image into a 3 dimensional RGB Tensor.
     The values of the output tensor are uint8 between 0 and 255.
@@ -37,7 +35,7 @@ def decode_png(input):
     Returns:
         output (Tensor[image_width, image_height, 3])
     """
-    if not isinstance(input, torch.Tensor) or input.numel() == 0 or input.ndim != 1:
+    if not isinstance(input, torch.Tensor) or input.numel() == 0 or input.ndim != 1:  # type: ignore[attr-defined]
         raise ValueError("Expected a non empty 1-dimensional tensor.")
 
     if not input.dtype == torch.uint8:
@@ -46,8 +44,7 @@ def decode_png(input):
     return output
 
 
-def read_png(path):
-    # type: (str) -> Tensor
+def read_png(path: str) -> torch.Tensor:
     """
     Reads a PNG image into a 3 dimensional RGB Tensor.
     The values of the output tensor are uint8 between 0 and 255.
@@ -68,8 +65,7 @@ def read_png(path):
     return decode_png(data)
 
 
-def decode_jpeg(input):
-    # type: (Tensor) -> Tensor
+def decode_jpeg(input: torch.Tensor) -> torch.Tensor:
     """
     Decodes a JPEG image into a 3 dimensional RGB Tensor.
     The values of the output tensor are uint8 between 0 and 255.
@@ -79,7 +75,7 @@ def decode_jpeg(input):
     Returns:
         output (Tensor[image_width, image_height, 3])
     """
-    if not isinstance(input, torch.Tensor) or len(input) == 0 or input.ndim != 1:
+    if not isinstance(input, torch.Tensor) or len(input) == 0 or input.ndim != 1:  # type: ignore[attr-defined]
         raise ValueError("Expected a non empty 1-dimensional tensor.")
 
     if not input.dtype == torch.uint8:
@@ -89,8 +85,7 @@ def decode_jpeg(input):
     return output
 
 
-def read_jpeg(path):
-    # type: (str) -> Tensor
+def read_jpeg(path: str) -> torch.Tensor:
     """
     Reads a JPEG image into a 3 dimensional RGB Tensor.
     The values of the output tensor are uint8 between 0 and 255.

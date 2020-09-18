@@ -71,7 +71,7 @@ def to_tensor(pic):
         if pic.ndim == 2:
             pic = pic[:, :, None]
 
-        img = torch.from_numpy(pic.transpose((2, 0, 1)))
+        img = torch.from_numpy(pic.transpose((2, 0, 1))).contiguous()
         # backward compatibility
         if isinstance(img, torch.ByteTensor):
             return img.float().div(255)
@@ -736,7 +736,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     .. _Hue: https://en.wikipedia.org/wiki/Hue
 
     Args:
-        img (PIL Image): PIL Image to be adjusted.
+        img (PIL Image or Tensor): Image to be adjusted.
         hue_factor (float):  How much to shift the hue channel. Should be in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
@@ -744,12 +744,12 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
             with complementary colors while 0 gives the original image.
 
     Returns:
-        PIL Image: Hue adjusted image.
+        PIL Image or Tensor: Hue adjusted image.
     """
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_hue(img, hue_factor)
 
-    raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return F_t.adjust_hue(img, hue_factor)
 
 
 def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
