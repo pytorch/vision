@@ -107,7 +107,7 @@ def to_tensor(pic):
 def pil_to_tensor(pic):
     """Convert a ``PIL Image`` to a tensor of the same type.
 
-    See ``AsTensor`` for more details.
+    See :class:`~torchvision.transforms.PILToTensor` for more details.
 
     Args:
         pic (PIL Image): Image to be converted to tensor.
