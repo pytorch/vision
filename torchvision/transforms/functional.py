@@ -115,7 +115,7 @@ def pil_to_tensor(pic):
     Returns:
         Tensor: Converted image.
     """
-    if not(F_pil._is_pil_image(pic)):
+    if not F_pil._is_pil_image(pic):
         raise TypeError('pic should be PIL Image. Got {}'.format(type(pic)))
 
     if accimage is not None and isinstance(pic, accimage.Image):
@@ -335,7 +335,7 @@ def resize(img: Tensor, size: List[int], interpolation: int = Image.BILINEAR) ->
             the smaller edge of the image will be matched to this number maintaining
             the aspect ratio. i.e, if height > width, then image will be rescaled to
             :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
-            In torchscript mode padding as single int is not supported, use a tuple or
+            In torchscript mode size as single int is not supported, use a tuple or
             list of length 1: ``[size, ]``.
         interpolation (int, optional): Desired interpolation enum defined by `filters`_.
             Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
@@ -1028,17 +1028,40 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     return img
 
 
-def gaussian_blur(img: Tensor, radius: float) -> Tensor:
+def gaussian_blur(img: Tensor, kernel_size: int, sigma: float = None) -> Tensor:
     """Performs Gaussian blurring on the img by given kernel.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         img (PIL Image or Tensor): Image to be blurred
-        radius (float): Blur radius
+        kernel_size (sequence or int): Gaussian kernel size. Can be a sequence of integers
+            like ``(kx, ky)`` or a single integer for square kernels.
+            In torchscript mode kernel_size as single int is not supported, use a tuple or
+            list of length 1: ``[size, ]``.
+        sigma (sequence or float, optional): Gaussian kernel standard deviation. Can be a
+            sequence of floats like ``(sigma_x, sigma_y)`` or a single float to define the
+            same sigma in both X/Y directions. If None, then it is computed using
+            ``kernel_size`` as ``sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8``.
+            Default, None. In torchscript mode sigma as single float is
+            not supported, use a tuple or list of length 1: ``[sigma, ]``.
 
     Returns:
         PIL Image or Tensor: Gaussian Blurred version of the image.
     """
+    is_pil_image = False
+    t_img = img
     if not isinstance(img, torch.Tensor):
-        return F_pil.gaussian_blur(img, radius)
+        if not F_pil._is_pil_image(img):
+            raise TypeError('img should be PIL Image or Tensor. Got {}'.format(type(img)))
 
-    return F_t.gaussian_blur(img, radius)
+        is_pil_image = True
+        t_img = pil_to_tensor(img)
+
+    output = F_t.gaussian_blur(t_img, kernel_size, sigma)
+
+    if is_pil_image:
+        output = output.permute((1, 2, 0))
+        output = Image.fromarray(output.numpy())
+
+    return output
