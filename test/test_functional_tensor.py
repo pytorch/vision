@@ -6,7 +6,6 @@ import numpy as np
 from PIL.Image import NEAREST, BILINEAR, BICUBIC
 
 import torch
-import torchvision.transforms as transforms
 import torchvision.transforms.functional_tensor as F_t
 import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional as F
@@ -19,31 +18,47 @@ class Tester(TransformsTester):
     def setUp(self):
         self.device = "cpu"
 
+    def _test_fn_on_batch(self, batch_tensors, fn, **fn_kwargs):
+        transformed_batch = fn(batch_tensors, **fn_kwargs)
+        for i in range(len(batch_tensors)):
+            img_tensor = batch_tensors[i, ...]
+            transformed_img = fn(img_tensor, **fn_kwargs)
+            self.assertTrue(transformed_img.equal(transformed_batch[i, ...]))
+
+        scripted_fn = torch.jit.script(fn)
+        # scriptable function test
+        s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
+        self.assertTrue(transformed_batch.allclose(s_transformed_batch))
+
     def test_vflip(self):
-        script_vflip = torch.jit.script(F_t.vflip)
-        img_tensor = torch.randn(3, 16, 16, device=self.device)
-        img_tensor_clone = img_tensor.clone()
-        vflipped_img = F_t.vflip(img_tensor)
-        vflipped_img_again = F_t.vflip(vflipped_img)
-        self.assertEqual(vflipped_img.shape, img_tensor.shape)
-        self.assertTrue(torch.equal(img_tensor, vflipped_img_again))
-        self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
+        script_vflip = torch.jit.script(F.vflip)
+
+        img_tensor, pil_img = self._create_data(16, 18, device=self.device)
+        vflipped_img = F.vflip(img_tensor)
+        vflipped_pil_img = F.vflip(pil_img)
+        self.compareTensorToPIL(vflipped_img, vflipped_pil_img)
+
         # scriptable function test
         vflipped_img_script = script_vflip(img_tensor)
-        self.assertTrue(torch.equal(vflipped_img, vflipped_img_script))
+        self.assertTrue(vflipped_img.equal(vflipped_img_script))
+
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
+        self._test_fn_on_batch(batch_tensors, F.vflip)
 
     def test_hflip(self):
-        script_hflip = torch.jit.script(F_t.hflip)
-        img_tensor = torch.randn(3, 16, 16, device=self.device)
-        img_tensor_clone = img_tensor.clone()
-        hflipped_img = F_t.hflip(img_tensor)
-        hflipped_img_again = F_t.hflip(hflipped_img)
-        self.assertEqual(hflipped_img.shape, img_tensor.shape)
-        self.assertTrue(torch.equal(img_tensor, hflipped_img_again))
-        self.assertTrue(torch.equal(img_tensor, img_tensor_clone))
+        script_hflip = torch.jit.script(F.hflip)
+
+        img_tensor, pil_img = self._create_data(16, 18, device=self.device)
+        hflipped_img = F.hflip(img_tensor)
+        hflipped_pil_img = F.hflip(pil_img)
+        self.compareTensorToPIL(hflipped_img, hflipped_pil_img)
+
         # scriptable function test
         hflipped_img_script = script_hflip(img_tensor)
-        self.assertTrue(torch.equal(hflipped_img, hflipped_img_script))
+        self.assertTrue(hflipped_img.equal(hflipped_img_script))
+
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
+        self._test_fn_on_batch(batch_tensors, F.hflip)
 
     def test_crop(self):
         script_crop = torch.jit.script(F.crop)
@@ -65,6 +80,9 @@ class Tester(TransformsTester):
 
             img_tensor_cropped = script_crop(img_tensor, top, left, height, width)
             self.compareTensorToPIL(img_tensor_cropped, pil_img_cropped)
+
+            batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
+            self._test_fn_on_batch(batch_tensors, F.crop, top=top, left=left, height=height, width=width)
 
     def test_hsv2rgb(self):
         scripted_fn = torch.jit.script(F_t._hsv2rgb)
@@ -89,6 +107,9 @@ class Tester(TransformsTester):
             s_rgb_img = scripted_fn(hsv_img)
             self.assertTrue(rgb_img.allclose(s_rgb_img))
 
+        batch_tensors = self._create_data_batch(120, 100, num_samples=4, device=self.device).float()
+        self._test_fn_on_batch(batch_tensors, F_t._hsv2rgb)
+
     def test_rgb2hsv(self):
         scripted_fn = torch.jit.script(F_t._rgb2hsv)
         shape = (3, 150, 100)
@@ -97,7 +118,7 @@ class Tester(TransformsTester):
             hsv_img = F_t._rgb2hsv(rgb_img)
             ft_hsv_img = hsv_img.permute(1, 2, 0).flatten(0, 1)
 
-            r, g, b, = rgb_img.unbind(0)
+            r, g, b, = rgb_img.unbind(dim=-3)
             r = r.flatten().cpu().numpy()
             g = g.flatten().cpu().numpy()
             b = b.flatten().cpu().numpy()
@@ -119,6 +140,9 @@ class Tester(TransformsTester):
             s_hsv_img = scripted_fn(rgb_img)
             self.assertTrue(hsv_img.allclose(s_hsv_img))
 
+        batch_tensors = self._create_data_batch(120, 100, num_samples=4, device=self.device).float()
+        self._test_fn_on_batch(batch_tensors, F_t._rgb2hsv)
+
     def test_rgb_to_grayscale(self):
         script_rgb_to_grayscale = torch.jit.script(F.rgb_to_grayscale)
 
@@ -128,13 +152,13 @@ class Tester(TransformsTester):
             gray_pil_image = F.rgb_to_grayscale(pil_img, num_output_channels=num_output_channels)
             gray_tensor = F.rgb_to_grayscale(img_tensor, num_output_channels=num_output_channels)
 
-            if num_output_channels == 1:
-                print(gray_tensor.shape)
-
             self.approxEqualTensorToPIL(gray_tensor.float(), gray_pil_image, tol=1.0 + 1e-10, agg_method="max")
 
             s_gray_tensor = script_rgb_to_grayscale(img_tensor, num_output_channels=num_output_channels)
             self.assertTrue(s_gray_tensor.equal(gray_tensor))
+
+            batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
+            self._test_fn_on_batch(batch_tensors, F.rgb_to_grayscale, num_output_channels=num_output_channels)
 
     def test_center_crop(self):
         script_center_crop = torch.jit.script(F.center_crop)
@@ -148,6 +172,9 @@ class Tester(TransformsTester):
 
         cropped_tensor = script_center_crop(img_tensor, [10, 11])
         self.compareTensorToPIL(cropped_tensor, cropped_pil_image)
+
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
+        self._test_fn_on_batch(batch_tensors, F.center_crop, output_size=[10, 11])
 
     def test_five_crop(self):
         script_five_crop = torch.jit.script(F.five_crop)
@@ -164,6 +191,23 @@ class Tester(TransformsTester):
         for i in range(5):
             self.compareTensorToPIL(cropped_tensors[i], cropped_pil_images[i])
 
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
+        tuple_transformed_batches = F.five_crop(batch_tensors, [10, 11])
+        for i in range(len(batch_tensors)):
+            img_tensor = batch_tensors[i, ...]
+            tuple_transformed_imgs = F.five_crop(img_tensor, [10, 11])
+            self.assertEqual(len(tuple_transformed_imgs), len(tuple_transformed_batches))
+
+            for j in range(len(tuple_transformed_imgs)):
+                true_transformed_img = tuple_transformed_imgs[j]
+                transformed_img = tuple_transformed_batches[j][i, ...]
+                self.assertTrue(true_transformed_img.equal(transformed_img))
+
+        # scriptable function test
+        s_tuple_transformed_batches = script_five_crop(batch_tensors, [10, 11])
+        for transformed_batch, s_transformed_batch in zip(tuple_transformed_batches, s_tuple_transformed_batches):
+            self.assertTrue(transformed_batch.equal(s_transformed_batch))
+
     def test_ten_crop(self):
         script_ten_crop = torch.jit.script(F.ten_crop)
 
@@ -179,9 +223,27 @@ class Tester(TransformsTester):
         for i in range(10):
             self.compareTensorToPIL(cropped_tensors[i], cropped_pil_images[i])
 
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
+        tuple_transformed_batches = F.ten_crop(batch_tensors, [10, 11])
+        for i in range(len(batch_tensors)):
+            img_tensor = batch_tensors[i, ...]
+            tuple_transformed_imgs = F.ten_crop(img_tensor, [10, 11])
+            self.assertEqual(len(tuple_transformed_imgs), len(tuple_transformed_batches))
+
+            for j in range(len(tuple_transformed_imgs)):
+                true_transformed_img = tuple_transformed_imgs[j]
+                transformed_img = tuple_transformed_batches[j][i, ...]
+                self.assertTrue(true_transformed_img.equal(transformed_img))
+
+        # scriptable function test
+        s_tuple_transformed_batches = script_ten_crop(batch_tensors, [10, 11])
+        for transformed_batch, s_transformed_batch in zip(tuple_transformed_batches, s_tuple_transformed_batches):
+            self.assertTrue(transformed_batch.equal(s_transformed_batch))
+
     def test_pad(self):
-        script_fn = torch.jit.script(F_t.pad)
+        script_fn = torch.jit.script(F.pad)
         tensor, pil_img = self._create_data(7, 8, device=self.device)
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
 
         for dt in [None, torch.float32, torch.float64, torch.float16]:
 
@@ -192,6 +254,8 @@ class Tester(TransformsTester):
             if dt is not None:
                 # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
+                batch_tensors = batch_tensors.to(dt)
+
             for pad in [2, [3, ], [0, 3], (3, 3), [4, 2, 4, 3]]:
                 configs = [
                     {"padding_mode": "constant", "fill": 0},
@@ -219,6 +283,8 @@ class Tester(TransformsTester):
                     pad_tensor_script = script_fn(tensor, script_pad, **kwargs)
                     self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, kwargs))
 
+                    self._test_fn_on_batch(batch_tensors, F.pad, padding=script_pad, **kwargs)
+
         with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
             F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
 
@@ -226,11 +292,13 @@ class Tester(TransformsTester):
         script_fn = torch.jit.script(fn)
         torch.manual_seed(15)
         tensor, pil_img = self._create_data(26, 34, device=self.device)
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
 
         for dt in [None, torch.float32, torch.float64]:
 
             if dt is not None:
                 tensor = F.convert_image_dtype(tensor, dt)
+                batch_tensors = F.convert_image_dtype(batch_tensors, dt)
 
             for config in configs:
                 adjusted_tensor = fn_t(tensor, **config)
@@ -253,6 +321,8 @@ class Tester(TransformsTester):
                 if adjusted_tensor.dtype == torch.uint8 and "cuda" in torch.device(self.device).type:
                     atol = 1.0
                 self.assertTrue(adjusted_tensor.allclose(scripted_result, atol=atol), msg=msg)
+
+                self._test_fn_on_batch(batch_tensors, fn, **config)
 
     def test_adjust_brightness(self):
         self._test_adjust_fn(
@@ -299,6 +369,7 @@ class Tester(TransformsTester):
     def test_resize(self):
         script_fn = torch.jit.script(F_t.resize)
         tensor, pil_img = self._create_data(26, 36, device=self.device)
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
 
         for dt in [None, torch.float32, torch.float64, torch.float16]:
 
@@ -309,6 +380,8 @@ class Tester(TransformsTester):
             if dt is not None:
                 # This is a trivial cast to float of uint8 data to test all cases
                 tensor = tensor.to(dt)
+                batch_tensors = batch_tensors.to(dt)
+
             for size in [32, 26, [32, ], [32, 32], (32, 32), [26, 35]]:
                 for interpolation in [BILINEAR, BICUBIC, NEAREST]:
                     resized_tensor = F_t.resize(tensor, size=size, interpolation=interpolation)
@@ -339,6 +412,10 @@ class Tester(TransformsTester):
                     resize_result = script_fn(tensor, size=script_size, interpolation=interpolation)
                     self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
 
+                    self._test_fn_on_batch(
+                        batch_tensors, F.resize, size=script_size, interpolation=interpolation
+                    )
+
     def test_resized_crop(self):
         # test values of F.resized_crop in several cases:
         # 1) resize to the same size, crop to the same size => should be identity
@@ -354,6 +431,11 @@ class Tester(TransformsTester):
         self.assertTrue(
             expected_out_tensor.equal(out_tensor),
             msg="{} vs {}".format(expected_out_tensor[0, :10, :10], out_tensor[0, :10, :10])
+        )
+
+        batch_tensors = self._create_data_batch(26, 36, num_samples=4, device=self.device)
+        self._test_fn_on_batch(
+            batch_tensors, F.resized_crop, top=1, left=2, height=20, width=30, size=[10, 15], interpolation=0
         )
 
     def _test_affine_identity_map(self, tensor, scripted_affine):
@@ -515,7 +597,52 @@ class Tester(TransformsTester):
                 else:
                     self._test_affine_rect_rotations(tensor, pil_img, scripted_affine)
                 self._test_affine_translations(tensor, pil_img, scripted_affine)
-                # self._test_affine_all_ops(tensor, pil_img, scripted_affine)
+                self._test_affine_all_ops(tensor, pil_img, scripted_affine)
+
+                batch_tensors = self._create_data_batch(26, 36, num_samples=4, device=self.device)
+                if dt is not None:
+                    batch_tensors = batch_tensors.to(dtype=dt)
+
+                self._test_fn_on_batch(
+                    batch_tensors, F.affine, angle=-43, translate=[-3, 4], scale=1.2, shear=[4.0, 5.0]
+                )
+
+    def _test_rotate_all_options(self, tensor, pil_img, scripted_rotate, centers):
+        img_size = pil_img.size
+        dt = tensor.dtype
+        for r in [0, ]:
+            for a in range(-180, 180, 17):
+                for e in [True, False]:
+                    for c in centers:
+
+                        out_pil_img = F.rotate(pil_img, angle=a, resample=r, expand=e, center=c)
+                        out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+                        for fn in [F.rotate, scripted_rotate]:
+                            out_tensor = fn(tensor, angle=a, resample=r, expand=e, center=c).cpu()
+
+                            if out_tensor.dtype != torch.uint8:
+                                out_tensor = out_tensor.to(torch.uint8)
+
+                            self.assertEqual(
+                                out_tensor.shape,
+                                out_pil_tensor.shape,
+                                msg="{}: {} vs {}".format(
+                                    (img_size, r, dt, a, e, c), out_tensor.shape, out_pil_tensor.shape
+                                )
+                            )
+                            num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+                            ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+                            # Tolerance : less than 3% of different pixels
+                            self.assertLess(
+                                ratio_diff_pixels,
+                                0.03,
+                                msg="{}: {}\n{} vs \n{}".format(
+                                    (img_size, r, dt, a, e, c),
+                                    ratio_diff_pixels,
+                                    out_tensor[0, :7, :7],
+                                    out_pil_tensor[0, :7, :7]
+                                )
+                            )
 
     def test_rotate(self):
         # Tests on square image
@@ -540,39 +667,43 @@ class Tester(TransformsTester):
                 if dt is not None:
                     tensor = tensor.to(dtype=dt)
 
-                for r in [0, ]:
-                    for a in range(-180, 180, 17):
-                        for e in [True, False]:
-                            for c in centers:
+                self._test_rotate_all_options(tensor, pil_img, scripted_rotate, centers)
 
-                                out_pil_img = F.rotate(pil_img, angle=a, resample=r, expand=e, center=c)
-                                out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
-                                for fn in [F.rotate, scripted_rotate]:
-                                    out_tensor = fn(tensor, angle=a, resample=r, expand=e, center=c).cpu()
+                batch_tensors = self._create_data_batch(26, 36, num_samples=4, device=self.device)
+                if dt is not None:
+                    batch_tensors = batch_tensors.to(dtype=dt)
 
-                                    if out_tensor.dtype != torch.uint8:
-                                        out_tensor = out_tensor.to(torch.uint8)
+                center = (20, 22)
+                self._test_fn_on_batch(
+                    batch_tensors, F.rotate, angle=32, resample=0, expand=True, center=center
+                )
 
-                                    self.assertEqual(
-                                        out_tensor.shape,
-                                        out_pil_tensor.shape,
-                                        msg="{}: {} vs {}".format(
-                                            (img_size, r, dt, a, e, c), out_tensor.shape, out_pil_tensor.shape
-                                        )
-                                    )
-                                    num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
-                                    ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                                    # Tolerance : less than 3% of different pixels
-                                    self.assertLess(
-                                        ratio_diff_pixels,
-                                        0.03,
-                                        msg="{}: {}\n{} vs \n{}".format(
-                                            (img_size, r, dt, a, e, c),
-                                            ratio_diff_pixels,
-                                            out_tensor[0, :7, :7],
-                                            out_pil_tensor[0, :7, :7]
-                                        )
-                                    )
+    def _test_perspective(self, tensor, pil_img, scripted_tranform, test_configs):
+        dt = tensor.dtype
+        for r in [0, ]:
+            for spoints, epoints in test_configs:
+                out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r)
+                out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+
+                for fn in [F.perspective, scripted_tranform]:
+                    out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r).cpu()
+
+                    if out_tensor.dtype != torch.uint8:
+                        out_tensor = out_tensor.to(torch.uint8)
+
+                    num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+                    ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+                    # Tolerance : less than 5% of different pixels
+                    self.assertLess(
+                        ratio_diff_pixels,
+                        0.05,
+                        msg="{}: {}\n{} vs \n{}".format(
+                            (r, dt, spoints, epoints),
+                            ratio_diff_pixels,
+                            out_tensor[0, :7, :7],
+                            out_pil_tensor[0, :7, :7]
+                        )
+                    )
 
     def test_perspective(self):
 
@@ -602,30 +733,16 @@ class Tester(TransformsTester):
                 if dt is not None:
                     tensor = tensor.to(dtype=dt)
 
-                for r in [0, ]:
-                    for spoints, epoints in test_configs:
-                        out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r)
-                        out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+                self._test_perspective(tensor, pil_img, scripted_tranform, test_configs)
 
-                        for fn in [F.perspective, scripted_tranform]:
-                            out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r).cpu()
+                batch_tensors = self._create_data_batch(26, 36, num_samples=4, device=self.device)
+                if dt is not None:
+                    batch_tensors = batch_tensors.to(dtype=dt)
 
-                            if out_tensor.dtype != torch.uint8:
-                                out_tensor = out_tensor.to(torch.uint8)
-
-                            num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
-                            ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                            # Tolerance : less than 5% of different pixels
-                            self.assertLess(
-                                ratio_diff_pixels,
-                                0.05,
-                                msg="{}: {}\n{} vs \n{}".format(
-                                    (r, dt, spoints, epoints),
-                                    ratio_diff_pixels,
-                                    out_tensor[0, :7, :7],
-                                    out_pil_tensor[0, :7, :7]
-                                )
-                            )
+                for spoints, epoints in test_configs:
+                    self._test_fn_on_batch(
+                        batch_tensors, F.perspective, startpoints=spoints, endpoints=epoints, interpolation=0
+                    )
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
