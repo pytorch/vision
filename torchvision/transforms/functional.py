@@ -71,7 +71,7 @@ def to_tensor(pic):
         if pic.ndim == 2:
             pic = pic[:, :, None]
 
-        img = torch.from_numpy(pic.transpose((2, 0, 1)))
+        img = torch.from_numpy(pic.transpose((2, 0, 1))).contiguous()
         # backward compatibility
         if isinstance(img, torch.ByteTensor):
             return img.float().div(255)
