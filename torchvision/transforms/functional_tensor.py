@@ -36,7 +36,7 @@ def vflip(img: Tensor) -> Tensor:
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
-        img (Tensor): Image Tensor to be flipped in the form [C, H, W].
+        img (Tensor): Image Tensor to be flipped in the form [..., C, H, W].
 
     Returns:
         Tensor:  Vertically flipped image Tensor.
@@ -56,7 +56,7 @@ def hflip(img: Tensor) -> Tensor:
         Please, consider instead using methods from `transforms.functional` module.
 
     Args:
-        img (Tensor): Image Tensor to be flipped in the form [C, H, W].
+        img (Tensor): Image Tensor to be flipped in the form [..., C, H, W].
 
     Returns:
         Tensor:  Horizontally flipped image Tensor.
@@ -183,7 +183,8 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
-    mean = torch.mean(rgb_to_grayscale(img).to(torch.float))
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    mean = torch.mean(rgb_to_grayscale(img).to(dtype), dim=(-3, -2, -1), keepdim=True)
 
     return _blend(img, mean, contrast_factor)
 
@@ -229,9 +230,9 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
         img = img.to(dtype=torch.float32) / 255.0
 
     img = _rgb2hsv(img)
-    h, s, v = img.unbind(0)
+    h, s, v = img.unbind(dim=-3)
     h = (h + hue_factor) % 1.0
-    img = torch.stack((h, s, v))
+    img = torch.stack((h, s, v), dim=-3)
     img_hue_adj = _hsv2rgb(img)
 
     if orig_dtype == torch.uint8:
@@ -466,12 +467,12 @@ def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
 
 
 def _rgb2hsv(img):
-    r, g, b = img.unbind(0)
+    r, g, b = img.unbind(dim=-3)
 
     # Implementation is based on https://github.com/python-pillow/Pillow/blob/4174d4267616897df3746d315d5a2d0f82c656ee/
     # src/libImaging/Convert.c#L330
-    maxc = torch.max(img, dim=0).values
-    minc = torch.min(img, dim=0).values
+    maxc = torch.max(img, dim=-3).values
+    minc = torch.min(img, dim=-3).values
 
     # The algorithm erases S and H channel where `maxc = minc`. This avoids NaN
     # from happening in the results, because
@@ -501,11 +502,11 @@ def _rgb2hsv(img):
     hb = ((maxc != g) & (maxc != r)) * (4.0 + gc - rc)
     h = (hr + hg + hb)
     h = torch.fmod((h / 6.0 + 1.0), 1.0)
-    return torch.stack((h, s, maxc))
+    return torch.stack((h, s, maxc), dim=-3)
 
 
 def _hsv2rgb(img):
-    h, s, v = img.unbind(0)
+    h, s, v = img.unbind(dim=-3)
     i = torch.floor(h * 6.0)
     f = (h * 6.0) - i
     i = i.to(dtype=torch.int32)
@@ -515,14 +516,14 @@ def _hsv2rgb(img):
     t = torch.clamp((v * (1.0 - s * (1.0 - f))), 0.0, 1.0)
     i = i % 6
 
-    mask = i == torch.arange(6, device=i.device)[:, None, None]
+    mask = i.unsqueeze(dim=-3) == torch.arange(6, device=i.device).view(-1, 1, 1)
 
-    a1 = torch.stack((v, q, p, p, t, v))
-    a2 = torch.stack((t, v, v, q, p, p))
-    a3 = torch.stack((p, p, t, v, v, q))
-    a4 = torch.stack((a1, a2, a3))
+    a1 = torch.stack((v, q, p, p, t, v), dim=-3)
+    a2 = torch.stack((t, v, v, q, p, p), dim=-3)
+    a3 = torch.stack((p, p, t, v, v, q), dim=-3)
+    a4 = torch.stack((a1, a2, a3), dim=-4)
 
-    return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=img.dtype), a4)
+    return torch.einsum("...ijk, ...xijk -> ...xjk", mask.to(dtype=img.dtype), a4)
 
 
 def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
@@ -793,6 +794,9 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
         need_cast = True
         img = img.to(grid)
 
+    if img.shape[0] > 1:
+        # Apply same grid to a batch of images
+        grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
     img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
 
     if need_squeeze:
