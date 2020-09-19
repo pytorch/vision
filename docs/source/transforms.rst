@@ -9,6 +9,11 @@ Functional transforms give fine-grained control over the transformations.
 This is useful if you have to build a more complex transformation pipeline
 (e.g. in the case of segmentation tasks).
 
+All transformations accept PIL Image, Tensor Image or batch of Tensor Images as input. Tensor Image is a tensor with
+``(C, H, W)`` shape, where ``C`` is a number of channels, ``H`` and ``W`` are image height and width. Batch of
+Tensor Images is a tensor of ``(B, C, H, W)`` shape, where ``B`` is a number of images in the batch. Deterministic or
+random transformations applied on the batch of Tensor Images identically transform all the images of the batch.
+
 .. autoclass:: Compose
 
 Transforms on PIL Image
