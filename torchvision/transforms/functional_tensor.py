@@ -942,47 +942,63 @@ def perspective(
     return _apply_grid_transform(img, grid, mode)
 
 
-def _get_kernel(radius: float, passes: int):
-    sigma2 = torch.Tensor([radius ** 2 / passes])
+def _get_gaussian_kernel1d(kernel_size: int, sigma: float):
+    ksize_half = (kernel_size - 1) * 0.5
 
-    kernel_rad = (torch.sqrt(12. * sigma2 + 1.) - 1.) / 2.
+    x = torch.linspace(-ksize_half, ksize_half, steps=kernel_size)
+    pdf = torch.exp(-0.5 * (x / sigma).pow(2))
+    kernel1d = pdf / pdf.sum()
 
-    kernel_rad_int = kernel_rad.long().item()
+    return kernel1d
 
-    kernel_rad_float = (2 * kernel_rad_int + 1) * (kernel_rad_int * (kernel_rad_int + 1) - 3 * sigma2)
-    kernel_rad_float /= 6 * (sigma2 - (kernel_rad_int + 1) * (kernel_rad_int + 1))
-    kernel_rad_float = kernel_rad_float.item()
 
-    kernel_rad = kernel_rad_int + kernel_rad_float
+def _get_gaussian_kernel2d(kernel_size: List[int], sigma: List[float]):
+    ksize_x, ksize_y = kernel_size
+    sigma_x, sigma_y = sigma
 
-    ksize = 2 * kernel_rad_int + 1 + 2 * (kernel_rad_float > 0)
-    kernel1d = torch.ones(ksize) / (2 * kernel_rad + 1)
+    kernel1d_x = _get_gaussian_kernel1d(ksize_x, sigma_x)
+    kernel1d_y = _get_gaussian_kernel1d(ksize_y, sigma_y)
 
-    if kernel_rad_float > 0:
-        kernel1d[[0, -1]] = kernel_rad_float / (2 * kernel_rad + 1)
-
-    kernel2d = torch.mm(kernel1d[:, None], kernel1d[None, :])
+    kernel2d = torch.mm(kernel1d_y[:, None], kernel1d_x[None, :])
 
     return kernel2d
 
 
-def gaussian_blur(img: Tensor, radius: float) -> Tensor:
+def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Tensor:
     """Performs Gaussian blurring on the img by given kernel.
 
     Args:
         img (Tensor): Image to be blurred
-        radius (float): Blur radius
+        kernel_size (sequence of int or int): Kernel size of the Gaussian kernel
+        sigma (sequence of float or float or None): Standard deviation of the Gaussian kernel
 
     Returns:
-        Tensor: An image that is blurred using kernel of given radius
+        Tensor: An image that is blurred using gaussian kernel of given parameters
     """
-    if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
+    if not (isinstance(img, torch.Tensor) or _is_tensor_a_torch_image(img)):
         raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
-    if not isinstance(radius, (float, int)):
-        raise TypeError('radius should be either float or int. Got {}'.format(type(radius)))
+    if not isinstance(kernel_size, (int, list, tuple)):
+        raise TypeError('kernel_size should be int or a sequence of integers. Got {}'.format(type(kernel_size)))
+    if not isinstance(sigma, (float, int, list, tuple)) and sigma != None:
+        raise TypeError('sigma should be either float or int or its sequence. Got {}'.format(type(sigma)))
 
-    radius = float(radius)
-    passes = 3
+    if isinstance(kernel_size, int):
+        kernel_size = [kernel_size] * 2
+    if isinstance(sigma, (int, float, None)):
+        sigma = [sigma] * 2
+
+    if len(kernel_size) != 2:
+        raise ValueError('If kernel_size is a sequence its length should be 2. Got {}'.format(len(kernel_size)))
+    if len(sigma) != 2:
+        raise ValueError('If sigma is a sequence its length should be 2. Got {}'.format(len(sigma)))
+
+    if any([ksize % 2 == 0 or not isinstance(ksize, int) for ksize in kernel_size]):
+        raise ValueError('kernel_size should have odd and positive integers. Got {}'.format(kernel_size))
+
+    sigma =  [s if s != None else 0.3 * ((ksize - 1) * 0.5 - 1) + 0.8 for ksize, s in zip(kernel_size, sigma)]
+
+    if any([s <= 0. for s in sigma]):
+        raise ValueError('sigma should have positive values. Got {}'.format(sigma))
 
     ndim = img.ndim
     if ndim == 2:
@@ -990,17 +1006,14 @@ def gaussian_blur(img: Tensor, radius: float) -> Tensor:
     if ndim == 3:
         img = img.unsqueeze(0)
 
-    kernel = _get_kernel(radius, passes)
+    kernel = _get_gaussian_kernel2d(kernel_size, sigma)
 
-    padding = _compute_padding(kernel.shape[::-1])
+    padding = _compute_padding(kernel_size)
 
     kernel = kernel[None, None, :, :].repeat(img.size(-3), 1, 1, 1)
 
-    padded_img = pad(img, padding, padding_mode='edge')
+    padded_img = pad(img, padding, padding_mode='reflect')
     blurred_img = conv2d(padded_img, kernel, groups=img.size(-3))
-    for _ in range(passes - 1):
-        padded_img = pad(blurred_img, padding, padding_mode='edge')
-        blurred_img = conv2d(padded_img, kernel, groups=img.size(-3))
 
     if ndim == 2:
         return blurred_img[0, 0]

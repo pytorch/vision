@@ -1028,18 +1028,18 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     return img
 
 
-def gaussian_blur(img: Tensor, kernel_size: int, sigma: float = None) -> Tensor:
+def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Tensor:
     """Performs Gaussian blurring on the img by given kernel.
     The image can be a PIL Image or a Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         img (PIL Image or Tensor): Image to be blurred
-        kernel_size (sequence or int): Gaussian kernel size. Can be a sequence of integers
+        kernel_size (sequence of ints or int): Gaussian kernel size. Can be a sequence of integers
             like ``(kx, ky)`` or a single integer for square kernels.
             In torchscript mode kernel_size as single int is not supported, use a tuple or
             list of length 1: ``[size, ]``.
-        sigma (sequence or float, optional): Gaussian kernel standard deviation. Can be a
+        sigma (sequence of floats or float or None, optional): Gaussian kernel standard deviation. Can be a
             sequence of floats like ``(sigma_x, sigma_y)`` or a single float to define the
             same sigma in both X/Y directions. If None, then it is computed using
             ``kernel_size`` as ``sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8``.
@@ -1056,12 +1056,10 @@ def gaussian_blur(img: Tensor, kernel_size: int, sigma: float = None) -> Tensor:
             raise TypeError('img should be PIL Image or Tensor. Got {}'.format(type(img)))
 
         is_pil_image = True
-        t_img = pil_to_tensor(img)
+        t_img = to_tensor(img)
 
     output = F_t.gaussian_blur(t_img, kernel_size, sigma)
 
     if is_pil_image:
-        output = output.permute((1, 2, 0))
-        output = Image.fromarray(output.numpy())
-
+        output = to_pil_image(output)
     return output

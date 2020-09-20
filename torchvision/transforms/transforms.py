@@ -1553,9 +1553,10 @@ class GaussianBlur(torch.nn.Module):
     dimensions
 
     Args:
-        radius (float or tuple of float (min, max)): Radius to be used for creating
-        kernel to perform blurring. If float, radius is fixed. If it is tuple of
-        float (min, max), kernel radius is chosen uniformly at random to lie in the
+        ksize (int): Size of the Gaussian kernel.
+        sigma (float or tuple of float (min, max)): Standard deviation to be used for
+        creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
+        of float (min, max), sigma is chosen uniformly at random to lie in the
         given range.
 
     Returns:
@@ -1563,34 +1564,41 @@ class GaussianBlur(torch.nn.Module):
 
     """
 
-    def __init__(self, radius=(0.1, 2.0)):
+    def __init__(self, ksize, sigma=(0.1, 2.0)):
         super().__init__()
 
-        if isinstance(radius, numbers.Number):
-            if radius <= 0:
-                raise ValueError("If radius is a single number, it must be positive.")
-            radius = (radius, radius)
-        elif isinstance(radius, (tuple, list)) and len(radius) == 2:
-            if not 0. < radius[0] <= radius[1]:
-                raise ValueError("radius values should be positive and of the form (min, max)")
+        if isinstance(ksize, numbers.Number):
+            if ksize <= 0 or ksize % 2 == 0:
+                raise ValueError("ksize should be an odd and positive number.")
         else:
-            raise TypeError("radius should be a single number or a list/tuple with length 2.")
+            raise TypeError("ksize should be a single number.")
 
-        self.rad_min, self.rad_max = radius
+        if isinstance(sigma, numbers.Number):
+            if sigma <= 0:
+                raise ValueError("If sigma is a single number, it must be positive.")
+            sigma = (sigma, sigma)
+        elif isinstance(sigma, (tuple, list)) and len(sigma) == 2:
+            if not 0. < sigma[0] <= sigma[1]:
+                raise ValueError("sigma values should be positive and of the form (min, max).")
+        else:
+            raise TypeError("sigma should be a single number or a list/tuple with length 2.")
+
+        self.ksize = ksize
+        self.sigma_min, self.sigma_max = sigma
 
     @staticmethod
-    def get_params(rad_min: float, rad_max: float):
-        """Choose radius for ``gaussian_blur`` for random gaussian blurring.
+    def get_params(sigma_min: float, sigma_max: float):
+        """Choose sigma for ``gaussian_blur`` for random gaussian blurring.
 
         Args:
-            rad_min (float): Minimum radius that can be chosen for blurring kernel.
-            rad_max (float): Maximum radius that can be chosen for blurring kernel.
+            sigma_min (float): Minimum standard deviation that can be chosen for blurring kernel.
+            sigma_max (float): Maximum standard deviation that can be chosen for blurring kernel.
 
         Returns:
-            float: radius be passed to ``gaussian_blur`` for gaussian blurring.
+            float: Standard deviation to be passed to calculate kernel for gaussian blurring.
         """
-        radius = random.uniform(rad_min, rad_max)
-        return radius
+        sigma = random.uniform(sigma_min, sigma_max)
+        return sigma
 
     def forward(self, img):
         """
@@ -1600,8 +1608,10 @@ class GaussianBlur(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Gaussian blurred image
         """
-        radius = self.get_params(self.rad_min, self.rad_max)
-        return F.gaussian_blur(img, radius)
+        sigma = self.get_params(self.sigma_min, self.sigma_max)
+        return F.gaussian_blur(img, self.ksize, sigma)
 
     def __repr__(self):
-        return self.__class__.__name__ + '(rad_min={0}, rad_max={1})'.format(self.rad_min, self.rad_max)
+        s = 'kernel size={0}, '.format(self.ksize)
+        s += '(sigma_min={0}, sigma_max={1})'.format(self.sigma_min, self.sigma_max)
+        return self.__class__.__name__ + s
