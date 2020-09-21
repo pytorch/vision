@@ -523,16 +523,11 @@ class RandomCrop(torch.nn.Module):
 
     def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
         super().__init__()
-        if isinstance(size, numbers.Number):
-            self.size = (int(size), int(size))
-        elif isinstance(size, Sequence) and len(size) == 1:
-            self.size = (size[0], size[0])
-        else:
-            if len(size) != 2:
-                raise ValueError("Please provide only two dimensions (h, w) for size.")
 
-            # cast to tuple for torchscript
-            self.size = tuple(size)
+        self.size = tuple(_setup_size(
+            size, error_msg="Please provide only two dimensions (h, w) for size."
+        ))
+
         self.padding = padding
         self.pad_if_needed = pad_if_needed
         self.fill = fill
@@ -728,14 +723,7 @@ class RandomResizedCrop(torch.nn.Module):
 
     def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=Image.BILINEAR):
         super().__init__()
-        if isinstance(size, numbers.Number):
-            self.size = (int(size), int(size))
-        elif isinstance(size, Sequence) and len(size) == 1:
-            self.size = (size[0], size[0])
-        else:
-            if len(size) != 2:
-                raise ValueError("Please provide only two dimensions (h, w) for size.")
-            self.size = size
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
         if not isinstance(scale, Sequence):
             raise TypeError("Scale should be a sequence")
@@ -1545,3 +1533,16 @@ class RandomErasing(torch.nn.Module):
             x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=value)
             return F.erase(img, x, y, h, w, v, self.inplace)
         return img
+
+
+def _setup_size(size, error_msg):
+    if isinstance(size, numbers.Number):
+        return int(size), int(size)
+
+    if isinstance(size, Sequence) and len(size) == 1:
+        return size[0], size[0]
+
+    if len(size) != 2:
+        raise ValueError(error_msg)
+
+    return size
