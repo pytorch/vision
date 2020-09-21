@@ -1,4 +1,4 @@
-from .boxes import nms, box_iou
+from .boxes import nms, batched_nms, remove_small_boxes, clip_boxes_to_image, box_area, box_iou
 from .new_empty_tensor import _new_empty_tensor
 from .deform_conv import deform_conv2d, DeformConv2d
 from .roi_align import roi_align, RoIAlign
@@ -14,7 +14,8 @@ _register_custom_op()
 
 
 __all__ = [
-    'deform_conv2d', 'DeformConv2d', 'nms', 'roi_align', 'RoIAlign', 'roi_pool',
+    'deform_conv2d', 'DeformConv2d', 'nms', 'batched_nms', 'remove_small_boxes',
+    'clip_boxes_to_image', 'box_area', 'box_iou', 'roi_align', 'RoIAlign', 'roi_pool',
     'RoIPool', '_new_empty_tensor', 'ps_roi_align', 'PSRoIAlign', 'ps_roi_pool',
     'PSRoIPool', 'MultiScaleRoIAlign', 'FeaturePyramidNetwork'
 ]
