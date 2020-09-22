@@ -1,7 +1,9 @@
 
 #pragma once
 
+// clang-format off
 #include <cstddef>
+// clang-format on
 #include <jpeglib.h>
 #include <setjmp.h>
 #include <string>
