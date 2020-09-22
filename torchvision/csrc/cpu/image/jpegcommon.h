@@ -2,6 +2,7 @@
 #pragma once
 
 // clang-format off
+#include <cstdio>
 #include <cstddef>
 // clang-format on
 #include <jpeglib.h>
