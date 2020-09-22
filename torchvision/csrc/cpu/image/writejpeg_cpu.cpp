@@ -26,7 +26,7 @@ struct torch_jpeg_dst_mgr {
   JOCTET* buffer;
 };
 
-torch::Tensor encodeJPEG(const torch::Tensor& data, int quality) {
+torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
   // Define compression structures and error handling
   struct jpeg_compress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;
@@ -122,7 +122,7 @@ torch::Tensor encodeJPEG(const torch::Tensor& data, int quality) {
   return outTensor;
 }
 
-void writeJPEG(const torch::Tensor& data, const char* filename, int quality) {
+void writeJPEG(const torch::Tensor& data, const char* filename, int64_t quality) {
   auto jpegBuf = encodeJPEG(data, quality);
   auto fileBytes = jpegBuf.data_ptr<uint8_t>();
   FILE* outfile = fopen(filename, "wb");
