@@ -99,7 +99,6 @@ class ImageTester(unittest.TestCase):
                 basedir, 'jpeg_write', '{0}_pil.jpg'.format(filename))
 
             write_jpeg(img_pil, torch_jpeg, quality=75)
-            original_pil.save(pil_jpeg)
 
             with open(torch_jpeg, 'rb') as f:
                 torch_bytes = f.read()
