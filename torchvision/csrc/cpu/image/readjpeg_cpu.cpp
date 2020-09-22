@@ -13,7 +13,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
 
 #else
 #include <jpeglib.h>
-// #include "jpegcommon.h"
+#include "jpegcommon.h"
 
 struct torch_jpeg_mgr {
   struct jpeg_source_mgr pub;
