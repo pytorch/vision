@@ -27,13 +27,14 @@ jobs:
           pip install numpy
           pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
 
-      - name: Install dev requirements
+      - name: Install tests requirements
         run: pip install pytest pytest-subtests
 
       - name: Run tests
         run: pytest test/test_datasets_download.py
 
       - uses: JasonEtco/create-an-issue@v2.4.0
+        name: Create issue if download tests failed
         if: failure()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
