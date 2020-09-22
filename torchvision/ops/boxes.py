@@ -176,7 +176,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     return iou
 
 
-# implementation from https://github.com/facebookresearch/detr/blob/master/util/box_ops.py
+# Implementation adapted from https://github.com/facebookresearch/detr/blob/master/util/box_ops.py
 def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
     Return generalized intersection-over-union (Jaccard index) of boxes.
@@ -197,7 +197,6 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     assert (boxes1[:, 2:] >= boxes1[:, :2]).all()
     assert (boxes2[:, 2:] >= boxes2[:, :2]).all()
 
-    # iou = box_iou(boxes1, boxes2)
     area1 = box_area(boxes1)
     area2 = box_area(boxes2)
 
@@ -211,8 +210,4 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
 
     iou = inter / union
 
-    # Seems double computation
-    # area = wh[:, :, 0] * wh[:, :, 1]
-
-    # return iou - (area - union) / area
     return iou - (inter - union) / inter
