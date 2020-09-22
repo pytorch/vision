@@ -5,12 +5,15 @@
 
 #if !JPEG_FOUND
 
-torch::Tensor encodeJPEG(const torch::Tensor& data) {
+torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
   TORCH_CHECK(
       false, "encodeJPEG: torchvision not compiled with libjpeg support");
 }
 
-void writeJPEG(const torch::Tensor& data, const char* filename) {
+void writeJPEG(
+    const torch::Tensor& data,
+    std::string filename,
+    int64_t quality) {
   TORCH_CHECK(
       false, "writeJPEG: torchvision not compiled with libjpeg support");
 }
@@ -122,10 +125,14 @@ torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
   return outTensor;
 }
 
-void writeJPEG(const torch::Tensor& data, const char* filename, int64_t quality) {
+void writeJPEG(
+    const torch::Tensor& data,
+    std::string filename,
+    int64_t quality) {
   auto jpegBuf = encodeJPEG(data, quality);
   auto fileBytes = jpegBuf.data_ptr<uint8_t>();
-  FILE* outfile = fopen(filename, "wb");
+  auto fileCStr = filename.c_str();
+  FILE* outfile = fopen(fileCStr, "wb");
 
   TORCH_CHECK(outfile != NULL, "Error opening output jpeg file");
 
