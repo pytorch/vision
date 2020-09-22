@@ -7,7 +7,6 @@ dependencies:
   - pytest-cov
   - codecov
   - pip
-  - ffmpeg
   - libpng
   - jpeg
   - ca-certificates

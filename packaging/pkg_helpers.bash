@@ -356,24 +356,25 @@ download_copy_ffmpeg() {
   mkdir ffmpeg_tmp
   cd ffmpeg_tmp
   if [[ "$OSTYPE" == "msys" ]]; then
-    conda install -yq ffmpeg -c pytorch
-    curl -L -q https://anaconda.org/pytorch/ffmpeg/4.3/download/win-64/ffmpeg-4.3-ha925a31_0.tar.bz2 --output ffmpeg-4.3-ha925a31_0.tar.bz2
-    bzip2 --decompress --stdout ffmpeg-4.3-ha925a31_0.tar.bz2 | tar -x --file=-
-    cp Library/bin/*.dll ../torchvision
+    # conda install -yq ffmpeg -c pytorch
+    # curl -L -q https://anaconda.org/pytorch/ffmpeg/4.3/download/win-64/ffmpeg-4.3-ha925a31_0.tar.bz2 --output ffmpeg-4.3-ha925a31_0.tar.bz2
+    # bzip2 --decompress --stdout ffmpeg-4.3-ha925a31_0.tar.bz2 | tar -x --file=-
+    # cp Library/bin/*.dll ../torchvision
+    echo "FFmpeg is disabled currently on Windows"
   else
     if [[ "$(uname)" == Darwin ]]; then
       conda install -yq ffmpeg -c pytorch
       conda install -yq wget
-      wget -q https://anaconda.org/pytorch/ffmpeg/4.3/download/osx-64/ffmpeg-4.3-h0a44026_0.tar.bz2
-      tar -xjvf ffmpeg-4.3-h0a44026_0.tar.bz2
+      wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/osx-64/ffmpeg-4.2-h0a44026_0.tar.bz2
+      tar -xjvf ffmpeg-4.2-h0a44026_0.tar.bz2
       for f in lib/*.dylib; do
         if [[ $f =~ ([a-z])+\.dylib ]]; then
           cp $f ../torchvision
         fi
       done
     else
-      wget -q https://anaconda.org/pytorch/ffmpeg/4.3/download/linux-64/ffmpeg-4.3-hf484d3e_0.tar.bz2
-      tar -xjvf ffmpeg-4.3-hf484d3e_0.tar.bz2
+      wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/linux-64/ffmpeg-4.2-hf484d3e_0.tar.bz2
+      tar -xjvf ffmpeg-4.2-hf484d3e_0.tar.bz2
       cp lib/*.so ../torchvision
       cp -r lib/* /usr/lib
       cp -r bin/* /usr/bin

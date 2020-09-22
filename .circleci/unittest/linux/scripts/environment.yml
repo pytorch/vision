@@ -9,7 +9,7 @@ dependencies:
   - pip
   - libpng
   - jpeg
-  - ffmpeg
+  - ffmpeg=4.2
   - ca-certificates
   - pip:
     - future
