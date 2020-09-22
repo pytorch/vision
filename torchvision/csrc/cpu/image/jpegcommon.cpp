@@ -1,6 +1,6 @@
 
-#include <string>
 #include "jpegcommon.h"
+#include <string>
 
 void torch_jpeg_error_exit(j_common_ptr cinfo) {
   /* cinfo->err really points to a torch_jpeg_error_mgr struct, so coerce
