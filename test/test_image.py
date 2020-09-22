@@ -104,7 +104,7 @@ class ImageTester(unittest.TestCase):
             with open(pil_jpeg, 'rb') as f:
                 pil_bytes = f.read()
 
-            self.assertEquals(torch_bytes, pil_bytes)
+            self.assertEqual(torch_bytes, pil_bytes)
 
     def test_read_png(self):
         # Check across .png
