@@ -1685,67 +1685,6 @@ class Tester(unittest.TestCase):
             img_re = random_erasing(img)
             self.assertTrue(torch.equal(img_re, img))
 
-    def test_compose_non_scriptable(self):
-        # T.Compose is now nn.Module, we should check BC with any exotic ops inside
-        # like Lambda, custom function etc
-        img_np = np.random.randint(0, 256, (34, 42, 3), np.uint8)
-        img_pil = Image.fromarray(img_np, mode='RGB')
-
-        def custom_transform(img):
-            return Image.blend(img, img, alpha=0.5)
-
-        t = transforms.Compose([
-            transforms.RandomResizedCrop(15),
-            transforms.Lambda(lambda x: x),
-            custom_transform,
-        ])
-
-        t.transforms.append(transforms.ToTensor())
-        t.transforms.append(lambda x: x + 2)  # THIS DOES NOT WORK
-        t.transforms.extend([
-            lambda x: x ** 2,  # THIS DOES NOT WORK
-            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-        ])
-
-        res = t(img_pil)
-        self.assertTrue(isinstance(res, torch.Tensor))
-
-    def test_random_apply_non_scriptable(self):
-        # T.RandomApply is now nn.Module, we should check BC with any exotic ops inside
-        # like Lambda, custom function etc
-        img_np = np.random.randint(0, 256, (34, 42, 3), np.uint8)
-        img_pil = Image.fromarray(img_np, mode='RGB')
-
-        def custom_transform(img):
-            return Image.blend(img, img, alpha=0.5)
-
-        t = transforms.RandomApply([
-            transforms.RandomResizedCrop(15),
-            lambda x: x,
-            transforms.Lambda(lambda x: x),
-            custom_transform,
-        ])
-
-        res = t(img_pil)
-        self.assertTrue(isinstance(res, Image.Image))
-
-    def test_lambda_attributes(self):
-
-        class MyTransform:
-
-            def __init__(self, s):
-                self.s = s
-
-            def __call__(self, x):
-                return x + self.s
-
-        t = MyTransform(10)
-        t_lambda = transforms.Lambda(t)
-        self.assertEqual(t_lambda.s, t.s)
-        t_lambda.s = 5
-        self.assertEqual(t_lambda.s, t.s)
-        self.assertEqual(t_lambda(10), t(10))
-
 
 if __name__ == '__main__':
     unittest.main()
