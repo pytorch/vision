@@ -33,7 +33,7 @@ def decode_png(input: torch.Tensor) -> torch.Tensor:
     the raw bytes of the PNG image.
 
     Returns:
-        output (Tensor[image_width, image_height, 3])
+        output (Tensor[3, image_height, image_width])
     """
     if not isinstance(input, torch.Tensor) or input.numel() == 0 or input.ndim != 1:  # type: ignore[attr-defined]
         raise ValueError("Expected a non empty 1-dimensional tensor.")
@@ -53,7 +53,7 @@ def read_png(path: str) -> torch.Tensor:
         path (str): path of the PNG image.
 
     Returns:
-        output (Tensor[image_width, image_height, 3])
+        output (Tensor[3, image_height, image_width])
     """
     if not os.path.isfile(path):
         raise ValueError("Expected a valid file path.")
@@ -73,7 +73,7 @@ def decode_jpeg(input: torch.Tensor) -> torch.Tensor:
         input (Tensor[1]): a one dimensional int8 tensor containing
     the raw bytes of the JPEG image.
     Returns:
-        output (Tensor[image_width, image_height, 3])
+        output (Tensor[3, image_height, image_width])
     """
     if not isinstance(input, torch.Tensor) or len(input) == 0 or input.ndim != 1:  # type: ignore[attr-defined]
         raise ValueError("Expected a non empty 1-dimensional tensor.")
@@ -92,7 +92,7 @@ def read_jpeg(path: str) -> torch.Tensor:
     Arguments:
         path (str): path of the JPEG image.
     Returns:
-        output (Tensor[image_width, image_height, 3])
+        output (Tensor[3, image_height, image_width])
     """
     if not os.path.isfile(path):
         raise ValueError("Expected a valid file path.")

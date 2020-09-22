@@ -188,12 +188,11 @@ class Inception3(nn.Module):
         return x, aux
 
     @torch.jit.unused
-    def eager_outputs(self, x, aux):
-        # type: (Tensor, Optional[Tensor]) -> InceptionOutputs
+    def eager_outputs(self, x: torch.Tensor, aux: Optional[Tensor]) -> InceptionOutputs:
         if self.training and self.aux_logits:
             return InceptionOutputs(x, aux)
         else:
-            return x
+            return x  # type: ignore[return-value]
 
     def forward(self, x):
         x = self._transform_input(x)
