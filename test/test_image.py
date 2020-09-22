@@ -78,7 +78,7 @@ class ImageTester(unittest.TestCase):
             jpeg_bytes = encode_jpeg(img_pil, quality=75)
             with io.BytesIO() as output:
                 original_pil.save(output, format="JPEG")
-                pil_bytes = torch.as_tensor(output.getvalue(), dtype=torch.uint8)
+                pil_bytes = torch.as_tensor(list(output.getvalue()), dtype=torch.uint8)
 
             self.assertTrue(jpeg_bytes.equal(pil_bytes))
 
