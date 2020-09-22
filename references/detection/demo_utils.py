@@ -1,5 +1,5 @@
 #personal utils for pytorch demo
-import os.
+import os
 import numpy as np
 from PIL import ImageDraw, Image
 import torch
