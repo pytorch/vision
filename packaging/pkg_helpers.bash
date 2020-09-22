@@ -363,7 +363,7 @@ download_copy_ffmpeg() {
     echo "FFmpeg is disabled currently on Windows"
   else
     if [[ "$(uname)" == Darwin ]]; then
-      conda install -yq ffmpeg -c pytorch
+      conda install -yq ffmpeg=4.2 -c pytorch
       conda install -yq wget
       wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/osx-64/ffmpeg-4.2-h0a44026_0.tar.bz2
       tar -xjvf ffmpeg-4.2-h0a44026_0.tar.bz2
