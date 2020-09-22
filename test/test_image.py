@@ -1,4 +1,5 @@
 import os
+import io
 import glob
 import unittest
 import sys
@@ -6,7 +7,8 @@ import sys
 import torch
 import torchvision
 from PIL import Image
-from torchvision.io.image import read_png, decode_png, read_jpeg, decode_jpeg
+from torchvision.io.image import (
+    read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg)
 import numpy as np
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
@@ -65,6 +67,19 @@ class ImageTester(unittest.TestCase):
         for image_path in truncated_images:
             with self.assertRaises(RuntimeError):
                 read_jpeg(image_path)
+
+    def test_encode_jpeg(self):
+        for img_path in get_images(IMAGE_ROOT, ".jpg"):
+            original_pil = Image.open(img_path)
+            img_pil = torch.from_numpy(np.array(original_pil))
+            img_pil = img_pil.permute(2, 0, 1)
+
+            jpeg_bytes = encode_jpeg(img_pil)
+            with io.BytesIO() as output:
+                original_pil.save(output, format="JPEG")
+                pil_bytes = torch.as_tensor(output.getvalue(), dtype=torch.uint8)
+
+            self.assertTrue(jpeg_bytes.equal(pil_bytes))
 
     def test_read_png(self):
         # Check across .png
