@@ -673,7 +673,7 @@ class BoxIouTester(unittest.TestCase):
         assert torch.all(torch.eq(out, expected)).item() is True
 
 
-class GenBoxIouTester(unittest.Testcase):
+class GenBoxIouTester(unittest.TestCase):
     def test_gen_iou(self):
         # Test Generalized IoU
         boxes1 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
