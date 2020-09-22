@@ -74,12 +74,37 @@ class ImageTester(unittest.TestCase):
             img_pil = torch.from_numpy(np.array(original_pil))
             img_pil = img_pil.permute(2, 0, 1)
 
-            jpeg_bytes = encode_jpeg(img_pil)
+            # PIL sets jpeg quality to 75 by default
+            jpeg_bytes = encode_jpeg(img_pil, quality=75)
             with io.BytesIO() as output:
                 original_pil.save(output, format="JPEG")
                 pil_bytes = torch.as_tensor(output.getvalue(), dtype=torch.uint8)
 
             self.assertTrue(jpeg_bytes.equal(pil_bytes))
+
+    def test_write_jpeg(self):
+        for img_path in get_images(IMAGE_ROOT, ".jpg"):
+            original_pil = Image.open(img_path)
+            img_pil = torch.from_numpy(np.array(original_pil))
+            img_pil = img_pil.permute(2, 0, 1)
+
+            basedir = os.path.dirname(img_path)
+            filename, _ = os.path.splitext(os.path.basename(img_path))
+            torch_jpeg = os.path.join(
+                basedir, '{0}_torch.jpg'.format(filename))
+            pil_jpeg = os.path.join(
+                basedir, '{0}_pil.jpg'.format(filename))
+
+            write_jpeg(img_pil, torch_jpeg, quality=75)
+            original_pil.save(pil_jpeg)
+
+            with open(torch_jpeg, 'rb') as f:
+                torch_bytes = f.read()
+
+            with open(pil_jpeg, 'rb') as f:
+                pil_bytes = f.read()
+
+            self.assertEquals(torch_bytes, pil_bytes)
 
     def test_read_png(self):
         # Check across .png
