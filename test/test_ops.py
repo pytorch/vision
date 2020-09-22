@@ -684,7 +684,7 @@ class GenBoxIouTester(unittest.TestCase):
         expected = torch.tensor([[1.0, 3.25, float("Inf")], [3.25, 1.0, float("Inf")],
                                 [float("Inf"), float("Inf"), 1.0]])
 
-        out = ops.box_iou(boxes1, boxes2)
+        out = ops.generalized_box_iou(boxes1, boxes2)
 
         # Check if all elements of tensor are as expected.
         assert out.size() == torch.Size([3, 3])
