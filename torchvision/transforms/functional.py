@@ -71,7 +71,7 @@ def to_tensor(pic):
         if pic.ndim == 2:
             pic = pic[:, :, None]
 
-        img = torch.from_numpy(pic.transpose((2, 0, 1)))
+        img = torch.from_numpy(pic.transpose((2, 0, 1))).contiguous()
         # backward compatibility
         if isinstance(img, torch.ByteTensor):
             return img.float().div(255)
@@ -108,7 +108,7 @@ def to_tensor(pic):
 def pil_to_tensor(pic: Image.Image) -> Tensor:
     """Convert a ``PIL Image`` to a tensor of the same type.
 
-    See ``AsTensor`` for more details.
+    See :class:`~torchvision.transforms.PILToTensor` for more details.
 
     Args:
         pic (PIL Image): Image to be converted to tensor.
