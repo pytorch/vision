@@ -1,4 +1,5 @@
 
+#include <string>
 #include "jpegcommon.h"
 
 void torch_jpeg_error_exit(j_common_ptr cinfo) {
