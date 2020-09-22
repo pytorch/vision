@@ -5,8 +5,8 @@
 #include <setjmp.h>
 #include <string>
 
-extern const JOCTET EOI_BUFFER[1] = {JPEG_EOI};
-extern const size_t JPEG_BUF_SIZE = 16384;
+static const JOCTET EOI_BUFFER[1] = {JPEG_EOI};
+static const size_t JPEG_BUF_SIZE = 16384;
 
 struct torch_jpeg_error_mgr {
   struct jpeg_error_mgr pub; /* "public" fields */
@@ -15,4 +15,4 @@ struct torch_jpeg_error_mgr {
 };
 
 typedef struct torch_jpeg_error_mgr* torch_jpeg_error_ptr;
-extern void torch_jpeg_error_exit(j_common_ptr cinfo);
+void torch_jpeg_error_exit(j_common_ptr cinfo);
