@@ -75,21 +75,16 @@ class ImageTester(unittest.TestCase):
             write_folder = os.path.join(dirname, 'jpeg_write')
             expected_file = os.path.join(
                 write_folder, '{0}_pil.pth'.format(filename))
-
-            original_pil = Image.open(img_path)
-            img_pil = torch.from_numpy(np.array(original_pil))
-            img_pil = img_pil.permute(2, 0, 1)
+            img = read_jpeg(img_path)
 
             # PIL sets jpeg quality to 75 by default
-            jpeg_bytes = encode_jpeg(img_pil, quality=75)
+            jpeg_bytes = encode_jpeg(img, quality=75)
             pil_bytes = torch.load(expected_file)
             self.assertTrue(jpeg_bytes.equal(pil_bytes))
 
     def test_write_jpeg(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            original_pil = Image.open(img_path)
-            img_pil = torch.from_numpy(np.array(original_pil))
-            img_pil = img_pil.permute(2, 0, 1)
+            img = read_jpeg(img_path)
 
             basedir = os.path.dirname(img_path)
             filename, _ = os.path.splitext(os.path.basename(img_path))
@@ -98,7 +93,7 @@ class ImageTester(unittest.TestCase):
             pil_jpeg = os.path.join(
                 basedir, 'jpeg_write', '{0}_pil.jpg'.format(filename))
 
-            write_jpeg(img_pil, torch_jpeg, quality=75)
+            write_jpeg(img, torch_jpeg, quality=75)
 
             with open(torch_jpeg, 'rb') as f:
                 torch_bytes = f.read()
@@ -107,7 +102,6 @@ class ImageTester(unittest.TestCase):
                 pil_bytes = f.read()
 
             os.remove(torch_jpeg)
-            os.remove(pil_jpeg)
             self.assertEqual(torch_bytes, pil_bytes)
 
     def test_read_png(self):
