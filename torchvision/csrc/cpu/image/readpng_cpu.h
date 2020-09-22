@@ -4,4 +4,4 @@
 #include <torch/torch.h>
 #include <string>
 
-torch::Tensor decodePNG(const torch::Tensor& data);
+C10_API torch::Tensor decodePNG(const torch::Tensor& data);

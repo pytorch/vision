@@ -2,4 +2,4 @@
 
 #include <torch/torch.h>
 
-torch::Tensor decodeJPEG(const torch::Tensor& data);
+C10_API torch::Tensor decodeJPEG(const torch::Tensor& data);
