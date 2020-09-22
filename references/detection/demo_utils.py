@@ -34,6 +34,16 @@ def get_boxes(mask_array, use_height_width_format = False):
             boxes.append([xmin, ymin, xmax, ymax])
     return boxes
 
+def draw_prediction(img, prediction):
+    img_final = Image.fromarray(img.mul(255).permute(1, 2, 0).byte().numpy())
+    draw = ImageDraw.Draw(img_final)
+    boxes = prediction[0]['boxes'].cpu().numpy()
+    for i in range(boxes.shape[0]):
+      (xmin, ymin, xmax, ymax) = boxes[i]
+      draw.rectangle([(xmin, ymin), (xmax, ymax)], outline ="red")
+
+    return img_final
+
 def draw_bounding_boxes(mask_path, img_path):
     colors = ['red', 'blue', 'green', 'purple', 'pink']
     #Open Image
