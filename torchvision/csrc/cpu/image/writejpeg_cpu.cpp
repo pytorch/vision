@@ -21,7 +21,7 @@ void writeJPEG(
 #else
 
 #include <jpeglib.h>
-#include "jpegcommon.h"
+// #include "jpegcommon.h"
 
 struct torch_jpeg_dst_mgr {
   struct jpeg_destination_mgr pub;
