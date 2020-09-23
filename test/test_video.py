@@ -143,7 +143,7 @@ class TestVideo(unittest.TestCase):
                 t, p = reader.next("")
             
             tv_timestamps = [float(p) for p in tv_timestamps]
-            napi_pts = [float(p.item()) for p in pts]
+            napi_pts = [float(p) for p in pts]
             for i in range(len(napi_pts)):
                 self.assertAlmostEqual(napi_pts[i], tv_timestamps[i], delta=0.001)
 
