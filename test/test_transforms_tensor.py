@@ -376,6 +376,63 @@ class Tester(TransformsTester):
             "RandomGrayscale", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
         )
 
+    def test_normalize(self):
+        tensor, _ = self._create_data(26, 34, device=self.device)
+        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
+
+        tensor = tensor.to(dtype=torch.float32) / 255.0
+        # test for class interface
+        fn = T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        scripted_fn = torch.jit.script(fn)
+
+        self._test_transform_vs_scripted(fn, scripted_fn, tensor)
+        self._test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
+
+    def test_linear_transformation(self):
+        c, h, w = 3, 24, 32
+
+        tensor, _ = self._create_data(h, w, channels=c, device=self.device)
+
+        matrix = torch.rand(c * h * w, c * h * w, device=self.device)
+        mean_vector = torch.rand(c * h * w, device=self.device)
+
+        fn = T.LinearTransformation(matrix, mean_vector)
+        scripted_fn = torch.jit.script(fn)
+
+        self._test_transform_vs_scripted(fn, scripted_fn, tensor)
+
+        batch_tensors = torch.rand(4, c, h, w, device=self.device)
+        # We skip some tests from _test_transform_vs_scripted_on_batch as
+        # results for scripted and non-scripted transformations are not exactly the same
+        torch.manual_seed(12)
+        transformed_batch = fn(batch_tensors)
+        torch.manual_seed(12)
+        s_transformed_batch = scripted_fn(batch_tensors)
+        self.assertTrue(transformed_batch.equal(s_transformed_batch))
+
+    def test_compose(self):
+        tensor, _ = self._create_data(26, 34, device=self.device)
+        tensor = tensor.to(dtype=torch.float32) / 255.0
+
+        transforms = T.Compose([
+            T.CenterCrop(10),
+            T.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ])
+        s_transforms = torch.nn.Sequential(*transforms.transforms)
+
+        scripted_fn = torch.jit.script(s_transforms)
+        torch.manual_seed(12)
+        transformed_tensor = transforms(tensor)
+        torch.manual_seed(12)
+        transformed_tensor_script = scripted_fn(tensor)
+        self.assertTrue(transformed_tensor.equal(transformed_tensor_script), msg="{}".format(transforms))
+
+        t = T.Compose([
+            lambda x: x,
+        ])
+        with self.assertRaisesRegex(RuntimeError, r"Could not get name of python class object"):
+            torch.jit.script(t)
+
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):

@@ -3,7 +3,7 @@ import numbers
 import random
 import warnings
 from collections.abc import Sequence
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Any
 
 import torch
 from PIL import Image
@@ -33,7 +33,7 @@ _pil_interpolation_to_str = {
 }
 
 
-class Compose(object):
+class Compose:
     """Composes several transforms together.
 
     Args:
@@ -44,6 +44,19 @@ class Compose(object):
         >>>     transforms.CenterCrop(10),
         >>>     transforms.ToTensor(),
         >>> ])
+
+    .. note::
+        In order to script the transformations, please use ``torch.nn.Sequential`` as below.
+
+        >>> transforms = torch.nn.Sequential(
+        >>>     transforms.CenterCrop(10),
+        >>>     transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        >>> )
+        >>> scripted_transforms = torch.jit.script(transforms)
+
+        Make sure to use only scriptable transformations, i.e. that work with ``torch.Tensor``, does not require
+        `lambda` functions or ``PIL.Image``.
+
     """
 
     def __init__(self, transforms):
@@ -63,7 +76,7 @@ class Compose(object):
         return format_string
 
 
-class ToTensor(object):
+class ToTensor:
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
 
     Converts a PIL Image or numpy.ndarray (H x W x C) in the range
@@ -94,7 +107,7 @@ class ToTensor(object):
         return self.__class__.__name__ + '()'
 
 
-class PILToTensor(object):
+class PILToTensor:
     """Convert a ``PIL Image`` to a tensor of the same type.
 
     Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
@@ -114,7 +127,7 @@ class PILToTensor(object):
         return self.__class__.__name__ + '()'
 
 
-class ConvertImageDtype(object):
+class ConvertImageDtype:
     """Convert a tensor image to the given ``dtype`` and scale the values accordingly
 
     Args:
@@ -139,7 +152,7 @@ class ConvertImageDtype(object):
         return F.convert_image_dtype(image, self.dtype)
 
 
-class ToPILImage(object):
+class ToPILImage:
     """Convert a tensor or an ndarray to PIL Image.
 
     Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
@@ -178,7 +191,7 @@ class ToPILImage(object):
         return format_string
 
 
-class Normalize(object):
+class Normalize(torch.nn.Module):
     """Normalize a tensor image with mean and standard deviation.
     Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``
     channels, this transform will normalize each channel of the input
@@ -196,11 +209,12 @@ class Normalize(object):
     """
 
     def __init__(self, mean, std, inplace=False):
+        super().__init__()
         self.mean = mean
         self.std = std
         self.inplace = inplace
 
-    def __call__(self, tensor):
+    def forward(self, tensor: Tensor) -> Tensor:
         """
         Args:
             tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
@@ -358,7 +372,7 @@ class Pad(torch.nn.Module):
             format(self.padding, self.fill, self.padding_mode)
 
 
-class Lambda(object):
+class Lambda:
     """Apply a user-defined lambda as a transform.
 
     Args:
@@ -366,7 +380,8 @@ class Lambda(object):
     """
 
     def __init__(self, lambd):
-        assert callable(lambd), repr(type(lambd).__name__) + " object is not callable"
+        if not callable(lambd):
+            raise TypeError("Argument lambd should be callable, got {}".format(repr(type(lambd).__name__)))
         self.lambd = lambd
 
     def __call__(self, img):
@@ -376,7 +391,7 @@ class Lambda(object):
         return self.__class__.__name__ + '()'
 
 
-class RandomTransforms(object):
+class RandomTransforms:
     """Base class for a list of transformations with randomness
 
     Args:
@@ -408,7 +423,7 @@ class RandomApply(RandomTransforms):
     """
 
     def __init__(self, transforms, p=0.5):
-        super(RandomApply, self).__init__(transforms)
+        super().__init__(transforms)
         self.p = p
 
     def __call__(self, img):
@@ -897,7 +912,7 @@ class TenCrop(torch.nn.Module):
         return self.__class__.__name__ + '(size={0}, vertical_flip={1})'.format(self.size, self.vertical_flip)
 
 
-class LinearTransformation(object):
+class LinearTransformation(torch.nn.Module):
     """Transform a tensor image with a square transformation matrix and a mean_vector computed
     offline.
     Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
@@ -916,6 +931,7 @@ class LinearTransformation(object):
     """
 
     def __init__(self, transformation_matrix, mean_vector):
+        super().__init__()
         if transformation_matrix.size(0) != transformation_matrix.size(1):
             raise ValueError("transformation_matrix should be square. Got " +
                              "[{} x {}] rectangular matrix.".format(*transformation_matrix.size()))
@@ -925,10 +941,14 @@ class LinearTransformation(object):
                              " as any one of the dimensions of the transformation_matrix [{}]"
                              .format(tuple(transformation_matrix.size())))
 
+        if transformation_matrix.device != mean_vector.device:
+            raise ValueError("Input tensors should be on the same device. Got {} and {}"
+                             .format(transformation_matrix.device, mean_vector.device))
+
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
-    def __call__(self, tensor):
+    def forward(self, tensor: Tensor) -> Tensor:
         """
         Args:
             tensor (Tensor): Tensor image of size (C, H, W) to be whitened.
@@ -936,13 +956,20 @@ class LinearTransformation(object):
         Returns:
             Tensor: Transformed image.
         """
-        if tensor.size(0) * tensor.size(1) * tensor.size(2) != self.transformation_matrix.size(0):
-            raise ValueError("tensor and transformation matrix have incompatible shape." +
-                             "[{} x {} x {}] != ".format(*tensor.size()) +
-                             "{}".format(self.transformation_matrix.size(0)))
-        flat_tensor = tensor.view(1, -1) - self.mean_vector
+        shape = tensor.shape
+        n = shape[-3] * shape[-2] * shape[-1]
+        if n != self.transformation_matrix.shape[0]:
+            raise ValueError("Input tensor and transformation matrix have incompatible shape." +
+                             "[{} x {} x {}] != ".format(shape[-3], shape[-2], shape[-1]) +
+                             "{}".format(self.transformation_matrix.shape[0]))
+
+        if tensor.device.type != self.mean_vector.device.type:
+            raise ValueError("Input tensor should be on the same device as transformation matrix and mean vector. "
+                             "Got {} vs {}".format(tensor.device, self.mean_vector.device))
+
+        flat_tensor = tensor.view(-1, n) - self.mean_vector
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
-        tensor = transformed_tensor.view(tensor.size())
+        tensor = transformed_tensor.view(shape)
         return tensor
 
     def __repr__(self):
