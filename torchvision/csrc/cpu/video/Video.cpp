@@ -25,17 +25,13 @@ using namespace ffmpeg;
 // #endif
 // #endif
 
-
 const size_t decoderTimeoutMs = 600000;
 const AVPixelFormat defaultVideoPixelFormat = AV_PIX_FMT_RGB24;
 const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
 
 // returns number of written bytes
 template <typename T>
-size_t fillTensorList(
-    DecoderOutputMessage& msgs,
-    torch::Tensor& frame) {
-  
+size_t fillTensorList(DecoderOutputMessage& msgs, torch::Tensor& frame) {
   const auto& msg = msgs;
   T* frameData = frame.numel() > 0 ? frame.data_ptr<T>() : nullptr;
   if (frameData) {
@@ -45,19 +41,19 @@ size_t fillTensorList(
   return sizeof(T);
 }
 
-size_t fillVideoTensor(
-    DecoderOutputMessage& msgs,
-    torch::Tensor& videoFrame) {
+size_t fillVideoTensor(DecoderOutputMessage& msgs, torch::Tensor& videoFrame) {
   return fillTensorList<uint8_t>(msgs, videoFrame);
 }
 
-size_t fillAudioTensor(
-    DecoderOutputMessage& msgs,
-    torch::Tensor& audioFrame) {
+size_t fillAudioTensor(DecoderOutputMessage& msgs, torch::Tensor& audioFrame) {
   return fillTensorList<float>(msgs, audioFrame);
 }
 
-std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, ffmpeg::MediaType> const* _parse_type(const std::string& stream_string) {
+std::pair<
+    std::__cxx11::
+        basic_string<char, std::char_traits<char>, std::allocator<char>>,
+    ffmpeg::MediaType> const*
+_parse_type(const std::string& stream_string) {
   static const std::array<std::pair<std::string, MediaType>, 4> types = {{
       {"video", TYPE_VIDEO},
       {"audio", TYPE_AUDIO},
@@ -76,14 +72,14 @@ std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocato
   AT_ERROR("Expected one of [audio, video, subtitle, cc] ", stream_string);
 }
 
-std::string parse_type_to_string(const std::string& stream_string){
-    auto device = _parse_type(stream_string);
-    return device->first;
+std::string parse_type_to_string(const std::string& stream_string) {
+  auto device = _parse_type(stream_string);
+  return device->first;
 }
 
 MediaType parse_type_to_mt(const std::string& stream_string) {
-    auto device = _parse_type(stream_string);
-    return device->second;
+  auto device = _parse_type(stream_string);
+  return device->second;
 }
 
 std::tuple<std::string, long> _parseStream(const std::string& streamString) {
@@ -122,7 +118,6 @@ void Video::_getDecoderParams(
     long stream_id = -1,
     bool all_streams = false,
     double seekFrameMarginUs = 10) {
-  
   int64_t videoStartUs = int64_t(videoStartS * 1e6);
 
   params.timeoutMs = decoderTimeoutMs;
@@ -285,19 +280,18 @@ void Video::Seek(double ts, bool any_frame = false) {
 }
 
 std::tuple<torch::Tensor, double> Video::Next(std::string stream) {
-  
   bool newInit = false; // avoid unnecessary decoder initializations
   if ((!stream.empty()) && (_parseStream(stream) != current_stream)) {
-      current_stream = _parseStream(stream);
-      newInit = true;
+    current_stream = _parseStream(stream);
+    newInit = true;
   }
 
   if ((seekTS != -1) && (doSeek == true)) {
-      newInit = true;
-      doSeek = false;
+    newInit = true;
+    doSeek = false;
   }
 
-  if (newInit){
+  if (newInit) {
     succeeded = Video::_setCurrentStream();
     if (succeeded) {
       newInit = false;
@@ -314,9 +308,8 @@ std::tuple<torch::Tensor, double> Video::Next(std::string stream) {
   int64_t res = decoder.decode(&out, decoderTimeoutMs);
   // if successfull
   if (res == 0) {
-
     frame_pts_s = double(double(out.header.pts) * 1e-6);
-    
+
     auto header = out.header;
     const auto& format = header.format;
 
@@ -345,13 +338,13 @@ std::tuple<torch::Tensor, double> Video::Next(std::string stream) {
 
       outFrame =
           torch::zeros({numAudioSamples, outAudioChannels}, torch::kFloat);
-      
-      auto numberWrittenBytes = fillAudioTensor(out, outFrame); 
+
+      auto numberWrittenBytes = fillAudioTensor(out, outFrame);
     }
     // currently not supporting other formats (will do soon)
 
     out.payload.reset();
-  } else{
+  } else {
     LOG(ERROR) << "Decoder failed ( or ran into last iteration)";
   }
 
@@ -360,7 +353,7 @@ std::tuple<torch::Tensor, double> Video::Next(std::string stream) {
 }
 
 // Video::~Video() {
-  // destructor to be defined thoroughly later
+// destructor to be defined thoroughly later
 //   delete params; // does not have destructor
 //   delete metadata; // struct does not have destructor
 //   delete decoder; // should be fine

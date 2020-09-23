@@ -14,5 +14,5 @@ static auto registerVideo =
         .def("seek", &Video::Seek)
         .def("next", &Video::Next);
 
-} //namespace
+} // namespace
 #endif
