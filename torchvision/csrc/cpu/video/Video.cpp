@@ -25,6 +25,7 @@ using namespace ffmpeg;
 // #endif
 // #endif
 
+
 const size_t decoderTimeoutMs = 600000;
 const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
 // A jitter can be added to the end of the range to avoid conversion/rounding
@@ -69,7 +70,7 @@ size_t fillAudioTensor(
   return fillTensorList<float>(msgs, audioFrame, audioFramePts);
 }
 
-std::string parse_type_to_string(const std::string& stream_string) {
+std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, ffmpeg::MediaType> const* _parse_type(const std::string& stream_string) {
   static const std::array<std::pair<std::string, MediaType>, 4> types = {{
       {"video", TYPE_VIDEO},
       {"audio", TYPE_AUDIO},
@@ -83,28 +84,19 @@ std::string parse_type_to_string(const std::string& stream_string) {
         return p.first == stream_string;
       });
   if (device != types.end()) {
-    return device->first;
+    return device;
   }
   AT_ERROR("Expected one of [audio, video, subtitle, cc] ", stream_string);
 }
 
+std::string parse_type_to_string(const std::string& stream_string){
+    auto device = _parse_type(stream_string);
+    return device->first;
+}
+
 MediaType parse_type_to_mt(const std::string& stream_string) {
-  static const std::array<std::pair<std::string, MediaType>, 4> types = {{
-      {"video", TYPE_VIDEO},
-      {"audio", TYPE_AUDIO},
-      {"subtitle", TYPE_SUBTITLE},
-      {"cc", TYPE_CC},
-  }};
-  auto device = std::find_if(
-      types.begin(),
-      types.end(),
-      [stream_string](const std::pair<std::string, MediaType>& p) {
-        return p.first == stream_string;
-      });
-  if (device != types.end()) {
+    auto device = _parse_type(stream_string);
     return device->second;
-  }
-  AT_ERROR("Expected one of [audio, video, subtitle, cc] ", stream_string);
 }
 
 std::tuple<std::string, long> _parseStream(const std::string& streamString) {
