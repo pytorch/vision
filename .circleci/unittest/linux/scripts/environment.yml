@@ -15,4 +15,4 @@ dependencies:
     - future
     - pillow>=4.1.1
     - scipy
-    - av==8.0.0
+    - av==8.0.1
