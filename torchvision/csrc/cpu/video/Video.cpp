@@ -129,12 +129,13 @@ std::tuple<std::string, long> _parseStream(const std::string& streamString) {
 }
 
 void Video::_getDecoderParams(
-    int64_t videoStartS,
+    double videoStartS,
     int64_t getPtsOnly,
     std::string stream,
     long stream_id = -1,
     bool all_streams = false,
     double seekFrameMarginUs = 10) {
+  
   int64_t videoStartUs = int64_t(videoStartS * 1e6);
 
   params.timeoutMs = decoderTimeoutMs;

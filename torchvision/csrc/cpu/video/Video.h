@@ -50,7 +50,7 @@ struct Video : torch::CustomClassHolder {
         double seekTS=-1; 
         bool doSeek=false;
 
-        void _getDecoderParams(int64_t videoStartS, int64_t getPtsOnly, std::string stream, long stream_id, bool all_streams, double seekFrameMarginUs); // this needs to be improved
+        void _getDecoderParams(double videoStartS, int64_t getPtsOnly, std::string stream, long stream_id, bool all_streams, double seekFrameMarginUs); // this needs to be improved
         bool _setCurrentStream();
         std::map<std::string, std::vector<double>> streamTimeBase; // not used
 
