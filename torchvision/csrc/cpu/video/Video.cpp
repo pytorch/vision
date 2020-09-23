@@ -38,18 +38,10 @@ const size_t timeBaseJitterUs = 100;
 template <typename T>
 size_t fillTensorList(
     DecoderOutputMessage& msgs,
-    torch::Tensor& frame,
-    torch::Tensor& framePts) {
-  // set up PTS data
+    torch::Tensor& frame) {
+  
   const auto& msg = msgs;
-
-  float* framePtsData = framePts.data_ptr<float>();
-
-  float pts_s = float(float(msg.header.pts) * 1e-6);
-  framePtsData[0] = pts_s;
-
   T* frameData = frame.numel() > 0 ? frame.data_ptr<T>() : nullptr;
-
   if (frameData) {
     auto sizeInBytes = msg.payload->length();
     memcpy(frameData, msg.payload->data(), sizeInBytes);
@@ -59,16 +51,14 @@ size_t fillTensorList(
 
 size_t fillVideoTensor(
     DecoderOutputMessage& msgs,
-    torch::Tensor& videoFrame,
-    torch::Tensor& videoFramePts) {
-  return fillTensorList<uint8_t>(msgs, videoFrame, videoFramePts);
+    torch::Tensor& videoFrame) {
+  return fillTensorList<uint8_t>(msgs, videoFrame);
 }
 
 size_t fillAudioTensor(
     DecoderOutputMessage& msgs,
-    torch::Tensor& audioFrame,
-    torch::Tensor& audioFramePts) {
-  return fillTensorList<float>(msgs, audioFrame, audioFramePts);
+    torch::Tensor& audioFrame) {
+  return fillTensorList<float>(msgs, audioFrame);
 }
 
 std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, ffmpeg::MediaType> const* _parse_type(const std::string& stream_string) {
@@ -298,7 +288,7 @@ void Video::Seek(double ts, bool any_frame = false) {
   doSeek = true;
 }
 
-torch::List<torch::Tensor> Video::Next(std::string stream) {
+std::tuple<torch::Tensor, double> Video::Next(std::string stream) {
   
   bool newInit = false; // avoid unnecessary decoder initializations
   if ((!stream.empty()) && (_parseStream(stream) != current_stream)) {
@@ -320,7 +310,7 @@ torch::List<torch::Tensor> Video::Next(std::string stream) {
 
   // if failing to decode simply return a null tensor (note, should we
   // raise an exeption?)
-  torch::Tensor framePTS = torch::zeros({1}, torch::kFloat);
+  double frame_pts_s;
   torch::Tensor outFrame = torch::zeros({0}, torch::kByte);
 
   // decode single frame
@@ -328,6 +318,9 @@ torch::List<torch::Tensor> Video::Next(std::string stream) {
   int64_t res = decoder.decode(&out, decoderTimeoutMs);
   // if successfull
   if (res == 0) {
+
+    frame_pts_s = double(double(out.header.pts) * 1e-6);
+    
     auto header = out.header;
     const auto& format = header.format;
 
@@ -341,7 +334,7 @@ torch::List<torch::Tensor> Video::Next(std::string stream) {
       int outWidth = format.format.video.width;
       int numChannels = 3;
       outFrame = torch::zeros({outHeight, outWidth, numChannels}, torch::kByte);
-      auto numberWrittenBytes = fillVideoTensor(out, outFrame, framePTS);
+      auto numberWrittenBytes = fillVideoTensor(out, outFrame);
       outFrame = outFrame.permute({2, 0, 1});
 
     } else if (format.type == TYPE_AUDIO) {
@@ -357,7 +350,7 @@ torch::List<torch::Tensor> Video::Next(std::string stream) {
       outFrame =
           torch::zeros({numAudioSamples, outAudioChannels}, torch::kFloat);
       
-      auto numberWrittenBytes = fillAudioTensor(out, outFrame, framePTS); 
+      auto numberWrittenBytes = fillAudioTensor(out, outFrame); 
     }
     // currently not supporting other formats (will do soon)
 
@@ -366,9 +359,7 @@ torch::List<torch::Tensor> Video::Next(std::string stream) {
     LOG(ERROR) << "Decoder failed ( or ran into last iteration)";
   }
 
-  torch::List<torch::Tensor> result;
-  result.push_back(outFrame);
-  result.push_back(framePTS);
+  std::tuple<torch::Tensor, double> result = {outFrame, frame_pts_s};
   return result;
 }
 

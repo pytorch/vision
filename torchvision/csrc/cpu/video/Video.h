@@ -39,7 +39,7 @@ struct Video : torch::CustomClassHolder {
         std::vector<double> getDuration(std::string stream="") const;
         std::vector<double> getFPS(std::string stream="") const;
         void Seek(double ts, bool any_frame);
-        torch::List<torch::Tensor> Next(std::string stream);
+        std::tuple<torch::Tensor, double> Next(std::string stream);
 
     private:
         bool video_any_frame=false; // add this to input parameters?
