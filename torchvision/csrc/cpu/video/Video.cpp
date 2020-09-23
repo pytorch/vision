@@ -341,6 +341,9 @@ torch::List<torch::Tensor> Video::Next(std::string stream) {
       int outWidth = format.format.video.width;
       int numChannels = 3;
       outFrame = torch::zeros({outHeight, outWidth, numChannels}, torch::kByte);
+      auto numberWrittenBytes = fillVideoTensor(out, outFrame, framePTS);
+      outFrame = outFrame.permute({2, 0, 1});
+
     } else if (format.type == TYPE_AUDIO) {
       int outAudioChannels = format.format.audio.channels;
       int bytesPerSample = av_get_bytes_per_sample(
@@ -353,16 +356,11 @@ torch::List<torch::Tensor> Video::Next(std::string stream) {
 
       outFrame =
           torch::zeros({numAudioSamples, outAudioChannels}, torch::kFloat);
-
+      
+      auto numberWrittenBytes = fillAudioTensor(out, outFrame, framePTS); 
     }
     // currently not supporting other formats (will do soon)
 
-    // note: this will need to be revised to support less-accurate seek. So far keep as is
-    if (format.type == TYPE_VIDEO) {
-      auto numberWrittenBytes = fillVideoTensor(out, outFrame, framePTS);
-    } else {
-      auto numberWrittenBytes = fillAudioTensor(out, outFrame, framePTS);
-    }
     out.payload.reset();
   } else{
     LOG(ERROR) << "Decoder failed ( or ran into last iteration)";

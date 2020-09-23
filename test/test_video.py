@@ -112,6 +112,7 @@ class TestVideo(unittest.TestCase):
             full_path = os.path.join(VIDEO_DIR, test_video)
             # pass 1: decode all frames using existing TV decoder
             tv_result, _, _ = torchvision.io.read_video(full_path, pts_unit="sec")
+            tv_result = tv_result.permute(0, 3, 1, 2)
             # pass 2: decode all frames using new api
             reader = torch.classes.torchvision.Video(full_path, "video", True)
             frames = []
