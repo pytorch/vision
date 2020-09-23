@@ -140,7 +140,7 @@ void Video::_getDecoderParams(
 
   params.timeoutMs = decoderTimeoutMs;
   params.startOffset = videoStartUs;
-  params.seekAccuracy = 10;
+  params.seekAccuracy = seekFrameMarginUs;
   params.headerOnly = false;
 
   params.preventStaleness = false; // not sure what this is about
@@ -331,7 +331,6 @@ torch::List<torch::Tensor> Video::Next(std::string stream) {
     const auto& format = header.format;
 
     // initialize the output variables based on type
-    size_t expectedWrittenBytes = 0;
 
     if (format.type == TYPE_VIDEO) {
       // note: this can potentially be optimized
@@ -341,7 +340,6 @@ torch::List<torch::Tensor> Video::Next(std::string stream) {
       int outWidth = format.format.video.width;
       int numChannels = 3;
       outFrame = torch::zeros({outHeight, outWidth, numChannels}, torch::kByte);
-      expectedWrittenBytes = outHeight * outWidth * numChannels;
     } else if (format.type == TYPE_AUDIO) {
       int outAudioChannels = format.format.audio.channels;
       int bytesPerSample = av_get_bytes_per_sample(
@@ -355,7 +353,6 @@ torch::List<torch::Tensor> Video::Next(std::string stream) {
       outFrame =
           torch::zeros({numAudioSamples, outAudioChannels}, torch::kFloat);
 
-      expectedWrittenBytes = numAudioSamples * outAudioChannels * sizeof(float);
     }
     // currently not supporting other formats (will do soon)
 
