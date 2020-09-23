@@ -651,10 +651,11 @@ class BoxAreaTester(unittest.TestCase):
     def test_box_area(self):
         # A bounding box of area 10000 and a degenerate case
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
+        expected = torch.tensor([10000, 0])
         calc_area = ops.box_area(box_tensor)
         assert calc_area.size() == torch.Size([2])
         assert calc_area.dtype == box_tensor.dtype
-        assert calc_area == torch.tensor([10000, 0], dtype=torch.float)
+        assert torch.all(torch.eq(calc_area, expected)).item() is True
 
 
 class BoxIouTester(unittest.TestCase):
