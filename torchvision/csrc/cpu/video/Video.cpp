@@ -27,6 +27,7 @@ using namespace ffmpeg;
 
 
 const size_t decoderTimeoutMs = 600000;
+const AVPixelFormat defaultVideoPixelFormat = AV_PIX_FMT_RGB24;
 const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
 // A jitter can be added to the end of the range to avoid conversion/rounding
 // error, small value 100us won't be enough to select the next frame, but enough
@@ -180,7 +181,7 @@ void Video::_getDecoderParams(
       format.format.video.width = 0;
       format.format.video.height = 0;
       format.format.video.cropImage = 0;
-      // format.format.video.format = defaultVideoPixelFormat;
+      format.format.video.format = defaultVideoPixelFormat;
     }
     params.formats.insert(format);
   }
