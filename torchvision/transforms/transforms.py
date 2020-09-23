@@ -3,7 +3,7 @@ import numbers
 import random
 import warnings
 from collections.abc import Sequence
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Any
 
 import torch
 from PIL import Image
@@ -15,6 +15,7 @@ except ImportError:
     accimage = None
 
 from . import functional as F
+
 
 __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize", "Resize", "Scale",
            "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
@@ -32,7 +33,7 @@ _pil_interpolation_to_str = {
 }
 
 
-class Compose(object):
+class Compose:
     """Composes several transforms together.
 
     Args:
@@ -43,6 +44,19 @@ class Compose(object):
         >>>     transforms.CenterCrop(10),
         >>>     transforms.ToTensor(),
         >>> ])
+
+    .. note::
+        In order to script the transformations, please use ``torch.nn.Sequential`` as below.
+
+        >>> transforms = torch.nn.Sequential(
+        >>>     transforms.CenterCrop(10),
+        >>>     transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        >>> )
+        >>> scripted_transforms = torch.jit.script(transforms)
+
+        Make sure to use only scriptable transformations, i.e. that work with ``torch.Tensor``, does not require
+        `lambda` functions or ``PIL.Image``.
+
     """
 
     def __init__(self, transforms):
@@ -62,7 +76,7 @@ class Compose(object):
         return format_string
 
 
-class ToTensor(object):
+class ToTensor:
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
 
     Converts a PIL Image or numpy.ndarray (H x W x C) in the range
@@ -93,7 +107,7 @@ class ToTensor(object):
         return self.__class__.__name__ + '()'
 
 
-class PILToTensor(object):
+class PILToTensor:
     """Convert a ``PIL Image`` to a tensor of the same type.
 
     Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
@@ -113,7 +127,7 @@ class PILToTensor(object):
         return self.__class__.__name__ + '()'
 
 
-class ConvertImageDtype(object):
+class ConvertImageDtype:
     """Convert a tensor image to the given ``dtype`` and scale the values accordingly
 
     Args:
@@ -138,7 +152,7 @@ class ConvertImageDtype(object):
         return F.convert_image_dtype(image, self.dtype)
 
 
-class ToPILImage(object):
+class ToPILImage:
     """Convert a tensor or an ndarray to PIL Image.
 
     Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
@@ -177,7 +191,7 @@ class ToPILImage(object):
         return format_string
 
 
-class Normalize(object):
+class Normalize(torch.nn.Module):
     """Normalize a tensor image with mean and standard deviation.
     Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``
     channels, this transform will normalize each channel of the input
@@ -195,11 +209,12 @@ class Normalize(object):
     """
 
     def __init__(self, mean, std, inplace=False):
+        super().__init__()
         self.mean = mean
         self.std = std
         self.inplace = inplace
 
-    def __call__(self, tensor):
+    def forward(self, tensor: Tensor) -> Tensor:
         """
         Args:
             tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
@@ -233,11 +248,7 @@ class Resize(torch.nn.Module):
 
     def __init__(self, size, interpolation=Image.BILINEAR):
         super().__init__()
-        if not isinstance(size, (int, Sequence)):
-            raise TypeError("Size should be int or sequence. Got {}".format(type(size)))
-        if isinstance(size, Sequence) and len(size) not in (1, 2):
-            raise ValueError("If size is a sequence, it should have 1 or 2 values")
-        self.size = size
+        self.size = _setup_size(size, error_msg="If size is a sequence, it should have 2 values")
         self.interpolation = interpolation
 
     def forward(self, img):
@@ -278,15 +289,7 @@ class CenterCrop(torch.nn.Module):
 
     def __init__(self, size):
         super().__init__()
-        if isinstance(size, numbers.Number):
-            self.size = (int(size), int(size))
-        elif isinstance(size, Sequence) and len(size) == 1:
-            self.size = (size[0], size[0])
-        else:
-            if len(size) != 2:
-                raise ValueError("Please provide only two dimensions (h, w) for size.")
-
-            self.size = size
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def forward(self, img):
         """
@@ -369,7 +372,7 @@ class Pad(torch.nn.Module):
             format(self.padding, self.fill, self.padding_mode)
 
 
-class Lambda(object):
+class Lambda:
     """Apply a user-defined lambda as a transform.
 
     Args:
@@ -377,7 +380,8 @@ class Lambda(object):
     """
 
     def __init__(self, lambd):
-        assert callable(lambd), repr(type(lambd).__name__) + " object is not callable"
+        if not callable(lambd):
+            raise TypeError("Argument lambd should be callable, got {}".format(repr(type(lambd).__name__)))
         self.lambd = lambd
 
     def __call__(self, img):
@@ -387,7 +391,7 @@ class Lambda(object):
         return self.__class__.__name__ + '()'
 
 
-class RandomTransforms(object):
+class RandomTransforms:
     """Base class for a list of transformations with randomness
 
     Args:
@@ -419,7 +423,7 @@ class RandomApply(RandomTransforms):
     """
 
     def __init__(self, transforms, p=0.5):
-        super(RandomApply, self).__init__(transforms)
+        super().__init__(transforms)
         self.p = p
 
     def __call__(self, img):
@@ -522,16 +526,11 @@ class RandomCrop(torch.nn.Module):
 
     def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
         super().__init__()
-        if isinstance(size, numbers.Number):
-            self.size = (int(size), int(size))
-        elif isinstance(size, Sequence) and len(size) == 1:
-            self.size = (size[0], size[0])
-        else:
-            if len(size) != 2:
-                raise ValueError("Please provide only two dimensions (h, w) for size.")
 
-            # cast to tuple for torchscript
-            self.size = tuple(size)
+        self.size = tuple(_setup_size(
+            size, error_msg="Please provide only two dimensions (h, w) for size."
+        ))
+
         self.padding = padding
         self.pad_if_needed = pad_if_needed
         self.fill = fill
@@ -727,14 +726,7 @@ class RandomResizedCrop(torch.nn.Module):
 
     def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=Image.BILINEAR):
         super().__init__()
-        if isinstance(size, numbers.Number):
-            self.size = (int(size), int(size))
-        elif isinstance(size, Sequence) and len(size) == 1:
-            self.size = (size[0], size[0])
-        else:
-            if len(size) != 2:
-                raise ValueError("Please provide only two dimensions (h, w) for size.")
-            self.size = size
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
         if not isinstance(scale, Sequence):
             raise TypeError("Scale should be a sequence")
@@ -855,15 +847,7 @@ class FiveCrop(torch.nn.Module):
 
     def __init__(self, size):
         super().__init__()
-        if isinstance(size, numbers.Number):
-            self.size = (int(size), int(size))
-        elif isinstance(size, Sequence) and len(size) == 1:
-            self.size = (size[0], size[0])
-        else:
-            if len(size) != 2:
-                raise ValueError("Please provide only two dimensions (h, w) for size.")
-
-            self.size = size
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
     def forward(self, img):
         """
@@ -911,15 +895,7 @@ class TenCrop(torch.nn.Module):
 
     def __init__(self, size, vertical_flip=False):
         super().__init__()
-        if isinstance(size, numbers.Number):
-            self.size = (int(size), int(size))
-        elif isinstance(size, Sequence) and len(size) == 1:
-            self.size = (size[0], size[0])
-        else:
-            if len(size) != 2:
-                raise ValueError("Please provide only two dimensions (h, w) for size.")
-
-            self.size = size
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
 
     def forward(self, img):
@@ -936,7 +912,7 @@ class TenCrop(torch.nn.Module):
         return self.__class__.__name__ + '(size={0}, vertical_flip={1})'.format(self.size, self.vertical_flip)
 
 
-class LinearTransformation(object):
+class LinearTransformation(torch.nn.Module):
     """Transform a tensor image with a square transformation matrix and a mean_vector computed
     offline.
     Given transformation_matrix and mean_vector, will flatten the torch.*Tensor and
@@ -955,6 +931,7 @@ class LinearTransformation(object):
     """
 
     def __init__(self, transformation_matrix, mean_vector):
+        super().__init__()
         if transformation_matrix.size(0) != transformation_matrix.size(1):
             raise ValueError("transformation_matrix should be square. Got " +
                              "[{} x {}] rectangular matrix.".format(*transformation_matrix.size()))
@@ -964,10 +941,14 @@ class LinearTransformation(object):
                              " as any one of the dimensions of the transformation_matrix [{}]"
                              .format(tuple(transformation_matrix.size())))
 
+        if transformation_matrix.device != mean_vector.device:
+            raise ValueError("Input tensors should be on the same device. Got {} and {}"
+                             .format(transformation_matrix.device, mean_vector.device))
+
         self.transformation_matrix = transformation_matrix
         self.mean_vector = mean_vector
 
-    def __call__(self, tensor):
+    def forward(self, tensor: Tensor) -> Tensor:
         """
         Args:
             tensor (Tensor): Tensor image of size (C, H, W) to be whitened.
@@ -975,13 +956,20 @@ class LinearTransformation(object):
         Returns:
             Tensor: Transformed image.
         """
-        if tensor.size(0) * tensor.size(1) * tensor.size(2) != self.transformation_matrix.size(0):
-            raise ValueError("tensor and transformation matrix have incompatible shape." +
-                             "[{} x {} x {}] != ".format(*tensor.size()) +
-                             "{}".format(self.transformation_matrix.size(0)))
-        flat_tensor = tensor.view(1, -1) - self.mean_vector
+        shape = tensor.shape
+        n = shape[-3] * shape[-2] * shape[-1]
+        if n != self.transformation_matrix.shape[0]:
+            raise ValueError("Input tensor and transformation matrix have incompatible shape." +
+                             "[{} x {} x {}] != ".format(shape[-3], shape[-2], shape[-1]) +
+                             "{}".format(self.transformation_matrix.shape[0]))
+
+        if tensor.device.type != self.mean_vector.device.type:
+            raise ValueError("Input tensor should be on the same device as transformation matrix and mean vector. "
+                             "Got {} vs {}".format(tensor.device, self.mean_vector.device))
+
+        flat_tensor = tensor.view(-1, n) - self.mean_vector
         transformed_tensor = torch.mm(flat_tensor, self.transformation_matrix)
-        tensor = transformed_tensor.view(tensor.size())
+        tensor = transformed_tensor.view(shape)
         return tensor
 
     def __repr__(self):
@@ -1142,23 +1130,10 @@ class RandomRotation(torch.nn.Module):
 
     def __init__(self, degrees, resample=False, expand=False, center=None, fill=None):
         super().__init__()
-        if isinstance(degrees, numbers.Number):
-            if degrees < 0:
-                raise ValueError("If degrees is a single number, it must be positive.")
-            degrees = [-degrees, degrees]
-        else:
-            if not isinstance(degrees, Sequence):
-                raise TypeError("degrees should be a sequence of length 2.")
-            if len(degrees) != 2:
-                raise ValueError("If degrees is a sequence, it must be of len 2.")
-
-        self.degrees = [float(d) for d in degrees]
+        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 
         if center is not None:
-            if not isinstance(center, Sequence):
-                raise TypeError("center should be a sequence of length 2.")
-            if len(center) != 2:
-                raise ValueError("center should be a sequence of length 2.")
+            _check_sequence_input(center, "center", req_sizes=(2, ))
 
         self.center = center
 
@@ -1233,51 +1208,24 @@ class RandomAffine(torch.nn.Module):
 
     def __init__(self, degrees, translate=None, scale=None, shear=None, resample=0, fillcolor=0):
         super().__init__()
-        if isinstance(degrees, numbers.Number):
-            if degrees < 0:
-                raise ValueError("If degrees is a single number, it must be positive.")
-            degrees = [-degrees, degrees]
-        else:
-            if not isinstance(degrees, Sequence):
-                raise TypeError("degrees should be a sequence of length 2.")
-            if len(degrees) != 2:
-                raise ValueError("degrees should be sequence of length 2.")
-
-        self.degrees = [float(d) for d in degrees]
+        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 
         if translate is not None:
-            if not isinstance(translate, Sequence):
-                raise TypeError("translate should be a sequence of length 2.")
-            if len(translate) != 2:
-                raise ValueError("translate should be sequence of length 2.")
+            _check_sequence_input(translate, "translate", req_sizes=(2, ))
             for t in translate:
                 if not (0.0 <= t <= 1.0):
                     raise ValueError("translation values should be between 0 and 1")
         self.translate = translate
 
         if scale is not None:
-            if not isinstance(scale, Sequence):
-                raise TypeError("scale should be a sequence of length 2.")
-            if len(scale) != 2:
-                raise ValueError("scale should be sequence of length 2.")
-
+            _check_sequence_input(scale, "scale", req_sizes=(2, ))
             for s in scale:
                 if s <= 0:
                     raise ValueError("scale values should be positive")
         self.scale = scale
 
         if shear is not None:
-            if isinstance(shear, numbers.Number):
-                if shear < 0:
-                    raise ValueError("If shear is a single number, it must be positive.")
-                shear = [-shear, shear]
-            else:
-                if not isinstance(shear, Sequence):
-                    raise TypeError("shear should be a sequence of length 2 or 4.")
-                if len(shear) not in (2, 4):
-                    raise ValueError("shear should be sequence of length 2 or 4.")
-
-            self.shear = [float(s) for s in shear]
+            self.shear = _setup_angle(shear, name="shear", req_sizes=(2, 4))
         else:
             self.shear = shear
 
@@ -1566,12 +1514,10 @@ class GaussianBlur(torch.nn.Module):
 
     def __init__(self, ksize, sigma=(0.1, 2.0)):
         super().__init__()
-
-        if isinstance(ksize, numbers.Number):
-            if ksize <= 0 or ksize % 2 == 0:
-                raise ValueError("ksize should be an odd and positive number.")
-        else:
-            raise TypeError("ksize should be a single number.")
+        self.ksize = _setup_size(ksize, "Kernel size should be a tuple/list of two integers")
+        for ks in self.ksize:
+            if ks <= 0 or ks % 2 == 0:
+                raise ValueError("Kernel size value should be an odd and positive number.")
 
         if isinstance(sigma, numbers.Number):
             if sigma <= 0:
@@ -1615,3 +1561,35 @@ class GaussianBlur(torch.nn.Module):
         s = 'kernel size={0}, '.format(self.ksize)
         s += '(sigma_min={0}, sigma_max={1})'.format(self.sigma_min, self.sigma_max)
         return self.__class__.__name__ + s
+
+
+def _setup_size(size, error_msg):
+    if isinstance(size, numbers.Number):
+        return int(size), int(size)
+
+    if isinstance(size, Sequence) and len(size) == 1:
+        return size[0], size[0]
+
+    if len(size) != 2:
+        raise ValueError(error_msg)
+
+    return size
+
+
+def _check_sequence_input(x, name, req_sizes):
+    msg = req_sizes[0] if len(req_sizes) < 2 else " or ".join([str(s) for s in req_sizes])
+    if not isinstance(x, Sequence):
+        raise TypeError("{} should be a sequence of length {}.".format(name, msg))
+    if len(x) not in req_sizes:
+        raise ValueError("{} should be sequence of length {}.".format(name, msg))
+
+
+def _setup_angle(x, name, req_sizes=(2, )):
+    if isinstance(x, numbers.Number):
+        if x < 0:
+            raise ValueError("If {} is a single number, it must be positive.".format(name))
+        x = [-x, x]
+    else:
+        _check_sequence_input(x, name, req_sizes)
+
+    return [float(d) for d in x]

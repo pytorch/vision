@@ -341,6 +341,15 @@ class TransformsTester(unittest.TestCase):
         pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
         return tensor, pil_img
 
+    def _create_data_batch(self, height=3, width=3, channels=3, num_samples=4, device="cpu"):
+        batch_tensor = torch.randint(
+            0, 255,
+            (num_samples, channels, height, width),
+            dtype=torch.uint8,
+            device=device
+        )
+        return batch_tensor
+
     def compareTensorToPIL(self, tensor, pil_image, msg=None):
         np_pil_image = np.array(pil_image)
         if np_pil_image.ndim == 2:
