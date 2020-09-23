@@ -82,6 +82,27 @@ class ImageTester(unittest.TestCase):
             pil_bytes = torch.load(expected_file)
             self.assertTrue(jpeg_bytes.equal(pil_bytes))
 
+        with self.assertRaisesRegex(ValueError, "Expected a torch.uint8 tensor."):
+            encode_jpeg(torch.empty((100, 1), dtype=torch.float32))
+
+        with self.assertRaisesRegex(
+                ValueError, "Image quality should be a positive number "
+                "between 1 and 100"):
+            encode_jpeg(torch.empty((100, 1), dtype=torch.uint8), quality=-1)
+
+        with self.assertRaisesRegex(
+                ValueError, "Image quality should be a positive number "
+                "between 1 and 100"):
+            encode_jpeg(torch.empty((100, 1), dtype=torch.uint8), quality=101)
+
+        with self.assertRaisesRegex(
+                RuntimeError, "The number of channels should be 1 or 3, got: 5"):
+            encode_jpeg(torch.empty((5, 100, 100), dtype=torch.uint8))
+
+        with self.assertRaisesRegex(
+                RuntimeError, "Input data should be a 3-dimensional or a 2-dimensional tensor"):
+            encode_jpeg(torch.empty((1, 3, 100, 100), dtype=torch.uint8))
+
     def test_write_jpeg(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
             img = read_jpeg(img_path)
