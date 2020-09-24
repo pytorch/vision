@@ -37,6 +37,9 @@ jobs:
       - name: Run tests
         run: pytest test/test_datasets_download.py
 
+      - name: Fail workflow
+        run: exit 1
+
       - uses: JasonEtco/create-an-issue@v2.4.0
         name: Create issue if download tests failed
         if: failure()
