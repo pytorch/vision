@@ -21,16 +21,17 @@
 using namespace ffmpeg;
 
 struct Video : torch::CustomClassHolder {
-  std::tuple<std::string, long> current_stream; // streaam type, id
+  std::tuple<std::string, long> current_stream; // stream type, id
   // global video metadata
-  std::unordered_map<std::string, std::unordered_map<std::string, std::vector<double, std::allocator<double>>>> streamsMetadata;
+  c10::Dict<std::string, c10::Dict<std::string, std::vector<double, std::allocator<double>>>> streamsMetadata;
 
  public:
   Video(std::string videoPath, std::string stream, bool isReadFile);
   std::tuple<std::string, int64_t> getCurrentStream() const;
-  std::unordered_map<std::string, std::unordered_map<std::string, std::vector<double, std::allocator<double>>>> getStreamMetadata() const;
-  void Seek(double ts, bool any_frame);
-  std::tuple<torch::Tensor, double> Next(std::string stream);
+  c10::Dict<std::string, c10::Dict<std::string, std::vector<double, std::allocator<double>>>> getStreamMetadata() const;
+  void Seek(double ts);
+  bool setCurrentStream(std::string stream = "video");
+  std::tuple<torch::Tensor, double> Next();
 
  private:
   bool video_any_frame = false; // add this to input parameters?
@@ -48,7 +49,7 @@ struct Video : torch::CustomClassHolder {
       long stream_id,
       bool all_streams,
       double seekFrameMarginUs); // this needs to be improved
-  bool _setCurrentStream();
+
   std::map<std::string, std::vector<double>> streamTimeBase; // not used
 
   DecoderInCallback callback = nullptr;

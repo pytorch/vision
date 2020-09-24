@@ -192,8 +192,8 @@ Video::Video(std::string videoPath, std::string stream, bool isReadFile) {
   std::vector<double> audioFPS, videoFPS, ccFPS, subsFPS;
   std::vector<double> audioDuration, videoDuration, ccDuration, subsDuration;
   std::vector<double> audioTB, videoTB, ccTB, subsTB;
-  std::unordered_map<std::string, std::vector<double, std::allocator<double>>>  audioMetadata;
-  std::unordered_map<std::string, std::vector<double, std::allocator<double>>>  videoMetadata;
+  c10::Dict<std::string, std::vector<double, std::allocator<double>>>  audioMetadata;
+  c10::Dict<std::string, std::vector<double, std::allocator<double>>>  videoMetadata;
 
 
   // calback and metadata defined in struct
@@ -219,11 +219,14 @@ Video::Video(std::string videoPath, std::string stream, bool isReadFile) {
       };
     }
   }
-  audioMetadata.insert({{"duration", audioDuration}, {"framerate", audioFPS}});
-  videoMetadata.insert({{"duration", videoDuration}, {"fps", videoFPS}});
-  streamsMetadata.insert({{"video", videoMetadata}, {"audio", audioMetadata}});
+  audioMetadata.insert("duration", audioDuration);
+  audioMetadata.insert("framerate", audioFPS);
+  videoMetadata.insert("duration", videoDuration);
+  videoMetadata.insert("fps", videoFPS);
+  streamsMetadata.insert("video", videoMetadata);
+  streamsMetadata.insert("audio", audioMetadata);
 
-  succeeded = Video::_setCurrentStream();
+  succeeded = Video::setCurrentStream();
   LOG(INFO) << "\nDecoder inited with: " << succeeded << "\n";
   if (get<1>(current_stream) != -1) {
     LOG(INFO)
@@ -232,7 +235,12 @@ Video::Video(std::string videoPath, std::string stream, bool isReadFile) {
   }
 } // video
 
-bool Video::_setCurrentStream() {
+bool Video::setCurrentStream(std::string stream) {
+  
+  if ((!stream.empty()) && (_parseStream(stream) != current_stream)) {
+    current_stream = _parseStream(stream);
+  }
+
   double ts = 0;
   if (seekTS > 0) {
     ts = seekTS;
@@ -248,6 +256,7 @@ bool Video::_setCurrentStream() {
   );
 
   // calback and metadata defined in Video.h
+  cout << "Decoder init at setStream " << succeeded << "\n" ;
   return (decoder.init(params, std::move(callback), &metadata));
 }
 
@@ -255,35 +264,27 @@ std::tuple<std::string, int64_t> Video::getCurrentStream() const {
   return current_stream;
 }
 
-std::unordered_map<std::string, std::unordered_map<std::string, std::vector<double, std::allocator<double>>>> Video::getStreamMetadata() const {
+c10::Dict<std::string, c10::Dict<std::string, std::vector<double, std::allocator<double>>>> Video::getStreamMetadata() const {
   return streamsMetadata;
 }
 
-void Video::Seek(double ts, bool any_frame = false) {
+void Video::Seek(double ts) {
   // initialize the class variables used for seeking and retrurn
-  video_any_frame = any_frame;
-  seekTS = ts;
-  doSeek = true;
+  _getDecoderParams(
+      ts, // video start
+      0, // headerOnly
+      get<0>(current_stream), // stream
+      long(get<1>(
+          current_stream)), // stream_id parsed from info above change to -2
+      false // read all streams
+  );
+
+  // calback and metadata defined in Video.h
+  succeeded = decoder.init(params, std::move(callback), &metadata);
+  cout << "Decoder init at seek " << succeeded << "\n" ;
 }
 
-std::tuple<torch::Tensor, double> Video::Next(std::string stream) {
-  bool newInit = false; // avoid unnecessary decoder initializations
-  if ((!stream.empty()) && (_parseStream(stream) != current_stream)) {
-    current_stream = _parseStream(stream);
-    newInit = true;
-  }
-
-  if ((seekTS != -1) && (doSeek == true)) {
-    newInit = true;
-    doSeek = false;
-  }
-
-  if (newInit) {
-    succeeded = Video::_setCurrentStream();
-    if (succeeded) {
-      newInit = false;
-    }
-  }
+std::tuple<torch::Tensor, double> Video::Next() {
 
   // if failing to decode simply return a null tensor (note, should we
   // raise an exeption?)
