@@ -100,7 +100,7 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     """
     ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
     keep = (ws >= min_size) & (hs >= min_size)
-    keep = keep.nonzero().squeeze(1)
+    keep = torch.where(keep)[0]
     return keep
 
 
