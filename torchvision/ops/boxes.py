@@ -210,4 +210,10 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
 
     iou = inter / union
 
-    return iou - (inter - union) / inter
+    lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
+    rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
+
+    whi = (rbi - lti).clamp(min=0)  # [N,M,2]
+    areai = whi[:, :, 0] * whi[:, :, 1]
+
+    return iou - (areai - union) / areai

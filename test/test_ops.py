@@ -680,10 +680,9 @@ class GenBoxIouTester(unittest.TestCase):
         boxes1 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
         boxes2 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
 
-        # Expected IoU matrix for these boxes
-        # Expect infinity since intersection is 0 and we divide by it
-        expected = torch.tensor([[1.0, 3.25, float("Inf")], [3.25, 1.0, float("Inf")],
-                                [float("Inf"), float("Inf"), 1.0]])
+        # Expected gIoU matrix for these boxes
+        expected = torch.tensor([[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611],
+                                [-0.7778, -0.8611, 1.0]])
 
         out = ops.generalized_box_iou(boxes1, boxes2)
 
