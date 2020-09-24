@@ -31,6 +31,9 @@ jobs:
       - name: Install tests requirements
         run: pip install pytest pytest-subtests
 
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
       - name: Run tests
         run: pytest test/test_datasets_download.py
 
