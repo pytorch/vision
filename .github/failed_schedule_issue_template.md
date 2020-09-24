@@ -2,7 +2,7 @@
 title: Scheduled workflow {{ env.WORKFLOW }}/{{ env.JOB }} failed
 labels: 
     - bug
-    - "module: datasets"
+    - module: datasets
 ---
 
 Oh no, something went wrong in the scheduled workflow {{ env.WORKFLOW }}/{{ env.JOB }}. 

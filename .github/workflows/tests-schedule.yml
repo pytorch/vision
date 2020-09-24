@@ -15,27 +15,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.6
-
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-
-      - name: Install PyTorch from the nightlies
-        run: |
-          pip install numpy
-          pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-
-      - name: Install tests requirements
-        run: pip install pytest pytest-subtests
+#      - name: Set up python
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: 3.6
+#
+#      - name: Upgrade pip
+#        run: python -m pip install --upgrade pip
+#
+#      - name: Install PyTorch from the nightlies
+#        run: |
+#          pip install numpy
+#          pip install --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+#
+#      - name: Install tests requirements
+#        run: pip install pytest pytest-subtests
 
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Run tests
-        run: pytest test/test_datasets_download.py
+#      - name: Run tests
+#        run: pytest test/test_datasets_download.py
 
       - name: Fail workflow
         run: exit 1
