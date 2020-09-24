@@ -108,7 +108,6 @@ class TestVideo(unittest.TestCase):
         print("test read")
         torchvision.set_video_backend("video_reader")
         for test_video, config in test_videos.items():
-            print(test_video)
             full_path = os.path.join(VIDEO_DIR, test_video)
             # pass 1: decode all frames using existing TV decoder
             tv_result, _, _ = torchvision.io.read_video(full_path, pts_unit="sec")
@@ -154,8 +153,9 @@ class TestVideo(unittest.TestCase):
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
             reader = torch.classes.torchvision.Video(full_path, "video", True)
-            self.assertAlmostEqual(config.video_fps, reader.fps("")[0], delta=0.0001)
-            self.assertAlmostEqual(config.duration, reader.duration("")[0], delta=0.5)
+            reader_md = reader.get_metadata()
+            self.assertAlmostEqual(config.video_fps, reader_md["video"]["fps"][0], delta=0.0001)
+            self.assertAlmostEqual(config.duration, reader_md["video"]["duration"][0], delta=0.5)
       
 if __name__ == '__main__':
     unittest.main()

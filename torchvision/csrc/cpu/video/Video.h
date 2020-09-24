@@ -23,14 +23,12 @@ using namespace ffmpeg;
 struct Video : torch::CustomClassHolder {
   std::tuple<std::string, long> current_stream; // streaam type, id
   // global video metadata
-  std::map<std::string, std::vector<double>> streamFPS;
-  std::map<std::string, std::vector<double>> streamDuration;
+  std::unordered_map<std::string, std::unordered_map<std::string, std::vector<double, std::allocator<double>>>> streamsMetadata;
 
  public:
   Video(std::string videoPath, std::string stream, bool isReadFile);
   std::tuple<std::string, int64_t> getCurrentStream() const;
-  std::vector<double> getDuration(std::string stream = "") const;
-  std::vector<double> getFPS(std::string stream = "") const;
+  std::unordered_map<std::string, std::unordered_map<std::string, std::vector<double, std::allocator<double>>>> getStreamMetadata() const;
   void Seek(double ts, bool any_frame);
   std::tuple<torch::Tensor, double> Next(std::string stream);
 

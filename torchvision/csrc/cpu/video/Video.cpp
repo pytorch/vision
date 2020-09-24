@@ -188,9 +188,13 @@ Video::Video(std::string videoPath, std::string stream, bool isReadFile) {
   logType = "file";
   logMessage = videoPath;
 
+  // locals
   std::vector<double> audioFPS, videoFPS, ccFPS, subsFPS;
   std::vector<double> audioDuration, videoDuration, ccDuration, subsDuration;
   std::vector<double> audioTB, videoTB, ccTB, subsTB;
+  std::unordered_map<std::string, std::vector<double, std::allocator<double>>>  audioMetadata;
+  std::unordered_map<std::string, std::vector<double, std::allocator<double>>>  videoMetadata;
+
 
   // calback and metadata defined in struct
   succeeded = decoder.init(params, std::move(callback), &metadata);
@@ -215,8 +219,9 @@ Video::Video(std::string videoPath, std::string stream, bool isReadFile) {
       };
     }
   }
-  streamFPS.insert({{"video", videoFPS}, {"audio", audioFPS}});
-  streamDuration.insert({{"video", videoDuration}, {"audio", audioDuration}});
+  audioMetadata.insert({{"duration", audioDuration}, {"framerate", audioFPS}});
+  videoMetadata.insert({{"duration", videoDuration}, {"fps", videoFPS}});
+  streamsMetadata.insert({{"video", videoMetadata}, {"audio", audioMetadata}});
 
   succeeded = Video::_setCurrentStream();
   LOG(INFO) << "\nDecoder inited with: " << succeeded << "\n";
@@ -250,26 +255,8 @@ std::tuple<std::string, int64_t> Video::getCurrentStream() const {
   return current_stream;
 }
 
-std::vector<double> Video::getFPS(std::string stream) const {
-  // add safety check
-  if (stream.empty()) {
-    stream = get<0>(current_stream);
-  }
-  auto stream_tpl = _parseStream(stream);
-  std::string stream_str = get<0>(stream_tpl);
-  // check if the stream exists
-  return streamFPS.at(stream_str);
-}
-
-std::vector<double> Video::getDuration(std::string stream) const {
-  // add safety check
-  if (stream.empty()) {
-    stream = get<0>(current_stream);
-  }
-  auto stream_tpl = _parseStream(stream);
-  std::string stream_str = get<0>(stream_tpl);
-  // check if the stream exists
-  return streamDuration.at(stream_str);
+std::unordered_map<std::string, std::unordered_map<std::string, std::vector<double, std::allocator<double>>>> Video::getStreamMetadata() const {
+  return streamsMetadata;
 }
 
 void Video::Seek(double ts, bool any_frame = false) {
