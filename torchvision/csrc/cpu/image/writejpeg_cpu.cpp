@@ -23,11 +23,6 @@ void writeJPEG(
 #include <jpeglib.h>
 #include "jpegcommon.h"
 
-struct torch_jpeg_dst_mgr {
-  struct jpeg_destination_mgr pub;
-  uint8_t* out;
-  JOCTET* buffer;
-};
 
 torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
   // Define compression structures and error handling
@@ -54,26 +49,20 @@ torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
     TORCH_CHECK(false, (const char*)jerr.jpegLastErrorMsg);
   }
 
+  // Check that the input tensor is on CPU
+  TORCH_CHECK(data.device() == torch::kCPU, "Input tensor should be on CPU");
+
+  // Check that the input tensor dtype is uint8
+  TORCH_CHECK(data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
+
+  // Check that the input tensor is 3-dimensional
+  TORCH_CHECK(data.dim() == 3, "Input data should be a 3-dimensional tensor");
+
   // Get image info
-  int channels, height, width;
-
-  // Move tensor to CPU and cast it into uint8
-  torch::Tensor input = data.to(torch::kCPU).to(torch::kU8);
-
-  TORCH_CHECK(
-      data.dim() >= 2 && data.dim() <= 3,
-      "Input data should be a 3-dimensional or a 2-dimensional tensor");
-
-  if (data.dim() == 3) {
-    channels = data.size(0);
-    height = data.size(1);
-    width = data.size(2);
-    input = input.permute({1, 2, 0});
-  } else {
-    channels = 1;
-    height = data.size(1);
-    width = data.size(2);
-  }
+  int channels = data.size(0);
+  int height = data.size(1);
+  int width = data.size(2);
+  auto input = data.permute({1, 2, 0}).contiguous();
 
   std::ostringstream channelErrS;
   channelErrS << "The number of channels should be 1 or 3, got: " << channels;

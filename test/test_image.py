@@ -74,12 +74,14 @@ class ImageTester(unittest.TestCase):
             filename, _ = os.path.splitext(os.path.basename(img_path))
             write_folder = os.path.join(dirname, 'jpeg_write')
             expected_file = os.path.join(
-                write_folder, '{0}_pil.pth'.format(filename))
+                write_folder, '{0}_pil.jpg'.format(filename))
             img = read_jpeg(img_path)
 
             # PIL sets jpeg quality to 75 by default
             jpeg_bytes = encode_jpeg(img, quality=75)
-            pil_bytes = torch.load(expected_file)
+            with open(expected_file, 'rb') as f:
+                pil_bytes = f.read()
+                pil_bytes = torch.as_tensor(list(pil_bytes))
             self.assertTrue(jpeg_bytes.equal(pil_bytes))
 
         with self.assertRaisesRegex(ValueError, "Expected a torch.uint8 tensor."):
