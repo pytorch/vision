@@ -1,5 +1,5 @@
 ---
-title: Scheduled workflow {{ env.WORKFLOW }}/{{ env.JOB }} failed
+title: Scheduled workflow failed
 labels: bug
 assignees: pmeier
 ---
