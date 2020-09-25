@@ -63,7 +63,10 @@ torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
   int width = data.size(2);
   auto input = data.permute({1, 2, 0}).contiguous();
 
-  TORCH_CHECK(channels == 1 || channels == 3, "The number of channels should be 1 or 3, got: ", channels);
+  TORCH_CHECK(
+      channels == 1 || channels == 3,
+      "The number of channels should be 1 or 3, got: ",
+      channels);
 
   // Initialize JPEG structure
   jpeg_create_compress(&cinfo);
