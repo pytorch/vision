@@ -102,7 +102,7 @@ class ImageTester(unittest.TestCase):
             encode_jpeg(torch.empty((5, 100, 100), dtype=torch.uint8))
 
         with self.assertRaisesRegex(
-                RuntimeError, "Input data should be a 3-dimensional or a 2-dimensional tensor"):
+                RuntimeError, "Input data should be a 3-dimensional tensor"):
             encode_jpeg(torch.empty((1, 3, 100, 100), dtype=torch.uint8))
 
     def test_write_jpeg(self):
