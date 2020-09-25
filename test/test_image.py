@@ -86,18 +86,18 @@ class ImageTester(unittest.TestCase):
                 self.assertTrue(jpeg_bytes.equal(pil_bytes))
 
         with self.assertRaisesRegex(
-                RuntimeError, "Input data should be a 3-dimensional tensor"):
-            encode_jpeg(torch.empty((100, 1), dtype=torch.float32))
+                RuntimeError, "Input tensor dtype should be uint8"):
+            encode_jpeg(torch.empty((3, 100, 100), dtype=torch.float32))
 
         with self.assertRaisesRegex(
                 ValueError, "Image quality should be a positive number "
                 "between 1 and 100"):
-            encode_jpeg(torch.empty((100, 1), dtype=torch.uint8), quality=-1)
+            encode_jpeg(torch.empty((3, 100, 100), dtype=torch.uint8), quality=-1)
 
         with self.assertRaisesRegex(
                 ValueError, "Image quality should be a positive number "
                 "between 1 and 100"):
-            encode_jpeg(torch.empty((100, 1), dtype=torch.uint8), quality=101)
+            encode_jpeg(torch.empty((3, 100, 100), dtype=torch.uint8), quality=101)
 
         with self.assertRaisesRegex(
                 RuntimeError, "The number of channels should be 1 or 3, got: 5"):
@@ -106,6 +106,10 @@ class ImageTester(unittest.TestCase):
         with self.assertRaisesRegex(
                 RuntimeError, "Input data should be a 3-dimensional tensor"):
             encode_jpeg(torch.empty((1, 3, 100, 100), dtype=torch.uint8))
+
+        with self.assertRaisesRegex(
+                RuntimeError, "Input data should be a 3-dimensional tensor"):
+            encode_jpeg(torch.empty((100, 100), dtype=torch.uint8))
 
     def test_write_jpeg(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
