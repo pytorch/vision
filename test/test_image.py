@@ -85,7 +85,7 @@ class ImageTester(unittest.TestCase):
                 jpeg_bytes = encode_jpeg(src_img, quality=75)
                 self.assertTrue(jpeg_bytes.equal(pil_bytes))
 
-        with self.assertRaisesRegex(ValueError, "Expected a torch.uint8 tensor."):
+        with self.assertRaisesRegex(RuntimeError, "Expected a torch.uint8 tensor."):
             encode_jpeg(torch.empty((100, 1), dtype=torch.float32))
 
         with self.assertRaisesRegex(
