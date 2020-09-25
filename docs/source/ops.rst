@@ -15,6 +15,7 @@ torchvision.ops
 .. autofunction:: clip_boxes_to_image
 .. autofunction:: box_area
 .. autofunction:: box_iou
+.. autofunction:: generalized_box_iou
 .. autofunction:: roi_align
 .. autofunction:: ps_roi_align
 .. autofunction:: roi_pool
