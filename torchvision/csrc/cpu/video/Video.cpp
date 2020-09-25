@@ -256,7 +256,6 @@ bool Video::setCurrentStream(std::string stream) {
   );
 
   // calback and metadata defined in Video.h
-  cout << "Decoder init at setStream " << succeeded << "\n" ;
   return (decoder.init(params, std::move(callback), &metadata));
 }
 
@@ -281,7 +280,7 @@ void Video::Seek(double ts) {
 
   // calback and metadata defined in Video.h
   succeeded = decoder.init(params, std::move(callback), &metadata);
-  cout << "Decoder init at seek " << succeeded << "\n" ;
+  LOG(INFO) << "Decoder init at seek " << succeeded << "\n" ;
 }
 
 std::tuple<torch::Tensor, double> Video::Next() {
