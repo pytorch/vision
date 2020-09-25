@@ -121,9 +121,6 @@ def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
         raise ValueError('Image quality should be a positive number '
                          'between 1 and 100')
 
-    if not input.dtype == torch.uint8:
-        raise ValueError("Expected a torch.uint8 tensor.")
-
     output = torch.ops.image.encode_jpeg(input, quality)
     return output
 
@@ -142,8 +139,5 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
     if quality < 1 or quality > 100:
         raise ValueError('Image quality should be a positive number '
                          'between 1 and 100')
-
-    if not input.dtype == torch.uint8:
-        raise ValueError("Expected a torch.uint8 tensor.")
 
     torch.ops.image.write_jpeg(input, filename, quality)

@@ -1,4 +1,3 @@
-
 #pragma once
 
 // clang-format off
@@ -10,8 +9,6 @@
 #include <string>
 
 static const JOCTET EOI_BUFFER[1] = {JPEG_EOI};
-static const size_t JPEG_BUF_SIZE = 16384;
-
 struct torch_jpeg_error_mgr {
   struct jpeg_error_mgr pub; /* "public" fields */
   char jpegLastErrorMsg[JMSG_LENGTH_MAX]; /* error messages */

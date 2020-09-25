@@ -1,4 +1,3 @@
-
 #include "jpegcommon.h"
 #include <string>
 

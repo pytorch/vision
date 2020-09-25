@@ -63,12 +63,7 @@ torch::Tensor encodeJPEG(const torch::Tensor& data, int64_t quality) {
   int width = data.size(2);
   auto input = data.permute({1, 2, 0}).contiguous();
 
-  std::ostringstream channelErrS;
-  channelErrS << "The number of channels should be 1 or 3, got: " << channels;
-
-  const std::string& channelErrStr = channelErrS.str();
-  const char* channelErr = channelErrStr.c_str();
-  TORCH_CHECK(channels == 1 || channels == 3, channelErr);
+  TORCH_CHECK(channels == 1 || channels == 3, "The number of channels should be 1 or 3, got: ", channels);
 
   // Initialize JPEG structure
   jpeg_create_compress(&cinfo);
