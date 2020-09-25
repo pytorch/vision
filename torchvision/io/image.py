@@ -102,3 +102,42 @@ def read_jpeg(path: str) -> torch.Tensor:
         raise ValueError("Expected a non empty file.")
     data = torch.from_file(path, dtype=torch.uint8, size=size)
     return decode_jpeg(data)
+
+
+def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
+    """
+    Takes an input tensor in CHW layout (or HW in the case of grayscale images)
+    and returns a buffer with the contents of its corresponding JPEG file.
+    Arguments:
+        input (Tensor[channels, image_height, image_width]): int8 image tensor
+    of `c` channels, where `c` must be 1 or 3.
+        quality (int): Quality of the resulting JPEG file, it must be a number
+    between 1 and 100. Default: 75
+    Returns
+        output (Tensor[1]): A one dimensional int8 tensor that contains the raw
+    bytes of the JPEG file.
+    """
+    if quality < 1 or quality > 100:
+        raise ValueError('Image quality should be a positive number '
+                         'between 1 and 100')
+
+    output = torch.ops.image.encode_jpeg(input, quality)
+    return output
+
+
+def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
+    """
+    Takes an input tensor in CHW layout (or HW in the case of grayscale images)
+    and saves it in a JPEG file.
+    Arguments:
+        input (Tensor[channels, image_height, image_width]): int8 image tensor
+    of `c` channels, where `c` must be 1 or 3.
+        filename (str): Path to save the image.
+        quality (int): Quality of the resulting JPEG file, it must be a number
+    between 1 and 100. Default: 75
+    """
+    if quality < 1 or quality > 100:
+        raise ValueError('Image quality should be a positive number '
+                         'between 1 and 100')
+
+    torch.ops.image.write_jpeg(input, filename, quality)
