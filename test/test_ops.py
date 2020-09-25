@@ -647,5 +647,51 @@ class BoxConversionTester(unittest.TestCase):
                 self.assertTrue(torch.equal(ref_tensor, ops._utils.convert_boxes_to_roi_format(box_sequence)))
 
 
+class BoxAreaTester(unittest.TestCase):
+    def test_box_area(self):
+        # A bounding box of area 10000 and a degenerate case
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
+        expected = torch.tensor([10000, 0])
+        calc_area = ops.box_area(box_tensor)
+        assert calc_area.size() == torch.Size([2])
+        assert calc_area.dtype == box_tensor.dtype
+        assert torch.all(torch.eq(calc_area, expected)).item() is True
+
+
+class BoxIouTester(unittest.TestCase):
+    def test_iou(self):
+        # Boxes to test Iou
+        boxes1 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+        boxes2 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+
+        # Expected IoU matrix for these boxes
+        expected = torch.tensor([[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]])
+
+        out = ops.box_iou(boxes1, boxes2)
+
+        # Check if all elements of tensor are as expected.
+        assert out.size() == torch.Size([3, 3])
+        tolerance = 1e-4
+        assert ((out - expected).abs().max() < tolerance).item() is True
+
+
+class GenBoxIouTester(unittest.TestCase):
+    def test_gen_iou(self):
+        # Test Generalized IoU
+        boxes1 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+        boxes2 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+
+        # Expected gIoU matrix for these boxes
+        expected = torch.tensor([[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611],
+                                [-0.7778, -0.8611, 1.0]])
+
+        out = ops.generalized_box_iou(boxes1, boxes2)
+
+        # Check if all elements of tensor are as expected.
+        assert out.size() == torch.Size([3, 3])
+        tolerance = 1e-4
+        assert ((out - expected).abs().max() < tolerance).item() is True
+
+
 if __name__ == '__main__':
     unittest.main()
