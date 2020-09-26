@@ -133,6 +133,84 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     return clipped_boxes.reshape(boxes.shape)
 
 
+def box_cxcywh_to_xyxy(boxes: Tensor) -> Tensor:
+    """
+    Converts bounding boxes from (cx, cy, w, h) format to (x1, y1, x2, y2) format.
+
+    Arguments:
+        boxes (Tensor[N, 4]): boxes in (cx, cy, w, h) format which will be converted.
+
+    Returns:
+        boxes (Tensor(N, 4)): boxes in (x1, y1, x2, y2) format.
+    """
+    # We need to change all 4 of them so some temporary variable is needed.
+    x1 = boxes[:, 0] - (0.5 * boxes[:, 2])
+    y1 = boxes[:, 1] - (0.5 * boxes[:, 3])
+    x2 = boxes[:, 0] + (0.5 * boxes[:, 2])
+    y2 = boxes[:, 1] + (0.5 * boxes[:, 3])
+
+    boxes[:, 0] = x1
+    boxes[:, 1] = y1
+    boxes[:, 2] = x2
+    boxes[:, 3] = y2
+
+    return boxes
+
+
+def box_xyxy_to_cxcywh(boxes: Tensor) -> Tensor:
+    """
+    Converts bounding boxes from (x1, y1, x2, y2) format to (cx, cy, w, h) format.
+
+    Arguments:
+        boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) format which will be converted.
+
+    Returns:
+        boxes (Tensor(N, 4)): boxes in (cx, cy, w, h) format.
+    """
+
+    cx = (boxes[:, 0] + boxes[:, 2]) / 2
+    cy = (boxes[:, 1] + boxes[:, 3]) / 2
+    w = boxes[:, 2] - boxes[:, 0]
+    h = boxes[:, 3] - boxes[:, 1]
+
+    boxes[:, 0] = cx
+    boxes[:, 1] = cy
+    boxes[:, 2] = w
+    boxes[:, 3] = h
+
+    return boxes
+
+
+def box_xywh_to_xyxy(boxes: Tensor) -> Tensor:
+    """
+    Converts bounding boxes from (x, y, w, h) format to (x1, y1, x2, y2) format.
+
+    Arguments:
+        boxes (Tensor[N, 4]): boxes in (x, y, w, h) which will be converted.
+
+    Returns:
+        boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) format.
+    """
+    boxes[:, 2] = boxes[:, 0] + boxes[:, 2]  # x + w
+    boxes[:, 3] = boxes[:, 1] + boxes[:, 3]  # y + h
+    return boxes
+
+
+def box_xyxy_to_xywh(boxes: Tensor) -> Tensor:
+    """
+    Converts bounding boxes from (x1, y1, x2, y2) format to (x, y, w, h) format.
+
+    Arguments:
+        boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) which will be converted.
+
+    Returns:
+        boxes (Tensor[N, 4]): boxes in (x, y, w, h) format.
+    """
+    boxes[:, 2] = boxes[:, 2] - boxes[:, 0]  # x2 - x1
+    boxes[:, 3] = boxes[:, 3] - boxes[:, 1]  # y2 - y1
+    return boxes
+
+
 def box_area(boxes: Tensor) -> Tensor:
     """
     Computes the area of a set of bounding boxes, which are specified by its
