@@ -13,6 +13,10 @@ torchvision.ops
 .. autofunction:: batched_nms
 .. autofunction:: remove_small_boxes
 .. autofunction:: clip_boxes_to_image
+.. autofunction:: box_cxcywh_to_xyxy
+.. autofunction:: box_xyxy_to_cxcywh
+.. autofunction:: box_xywh_to_xyxy
+.. autofunction:: box_xyxy_to_xywh
 .. autofunction:: box_area
 .. autofunction:: box_iou
 .. autofunction:: generalized_box_iou
