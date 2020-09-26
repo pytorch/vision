@@ -647,6 +647,31 @@ class BoxConversionTester(unittest.TestCase):
                 self.assertTrue(torch.equal(ref_tensor, ops._utils.convert_boxes_to_roi_format(box_sequence)))
 
 
+class BoxTester(unittest.TestCase):
+    def test_bbox_xywh(self):
+        # Simple test convert boxes to xywh and back. Make sure they are same.
+        # box_tensor is in x1 y1 x2 y2 format.
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                  [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+        exp_xywh = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0], [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
+
+        box_xywh = ops.box_xyxy_to_xywh(box_tensor)
+        # print(box_xywh)
+        # print(box_xywh.shape)
+        assert(exp_xywh.size() == torch.Size([4, 4]))
+        assert(exp_xywh.dtype == box_tensor.dtype)
+        assert(torch.all(torch.eq(box_xywh, exp_xywh)).item() is True)
+
+        # Reverse conversion
+        box_xyxy = ops.box_xywh_to_xyxy(box_xywh)
+        assert(box_xyxy.size() == torch.Size([4, 4]))
+        assert(box_xyxy.dtype == box_tensor.dtype)
+        assert(torch.all(torch.eq(box_xyxy, box_tensor)).item() is True)
+
+    def test_bbox_cxcywh(self):
+        pass
+
+
 class BoxAreaTester(unittest.TestCase):
     def test_box_area(self):
         # A bounding box of area 10000 and a degenerate case
