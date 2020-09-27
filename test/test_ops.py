@@ -659,15 +659,15 @@ class BoxTester(unittest.TestCase):
         box_xywh = ops.box_xyxy_to_xywh(box_tensor)
         # print(box_xywh)
         # print(box_xywh.shape)
-        assert(exp_xywh.size() == torch.Size([4, 4]))
-        assert(exp_xywh.dtype == box_tensor.dtype)
-        assert(torch.all(torch.eq(box_xywh, exp_xywh)).item() is True)
+        assert exp_xywh.size() == torch.Size([4, 4])
+        assert exp_xywh.dtype == box_tensor.dtype
+        assert torch.all(torch.eq(box_xywh, exp_xywh)).item()
 
         # Reverse conversion
         box_xyxy = ops.box_xywh_to_xyxy(box_xywh)
-        assert(box_xyxy.size() == torch.Size([4, 4]))
-        assert(box_xyxy.dtype == box_tensor.dtype)
-        assert(torch.all(torch.eq(box_xyxy, box_tensor)).item() is True)
+        assert box_xyxy.size() == torch.Size([4, 4])
+        assert box_xyxy.dtype == box_tensor.dtype
+        assert torch.all(torch.eq(box_xyxy, box_tensor)).item()
 
     def test_bbox_cxcywh(self):
         # Simple test convert boxes to xywh and back. Make sure they are same.
@@ -678,15 +678,15 @@ class BoxTester(unittest.TestCase):
                                   [20, 25, 20, 20], [58, 65, 70, 60]], dtype=torch.float)
 
         box_cxcywh = ops.box_xyxy_to_cxcywh(box_tensor)
-        assert(exp_cxcywh.size() == torch.Size([4, 4]))
-        assert(exp_cxcywh.dtype == box_tensor.dtype)
-        assert(torch.all(torch.eq(box_cxcywh, exp_cxcywh)).item() is True)
+        assert exp_cxcywh.size() == torch.Size([4, 4])
+        assert exp_cxcywh.dtype == box_tensor.dtype
+        assert torch.all(torch.eq(box_cxcywh, exp_cxcywh)).item()
 
         # Reverse conversion
         box_xyxy = ops.box_cxcywh_to_xyxy(box_cxcywh)
-        assert(box_xyxy.size() == torch.Size([4, 4]))
-        assert(box_xyxy.dtype == box_tensor.dtype)
-        assert(torch.all(torch.eq(box_xyxy, box_tensor)).item() is True)
+        assert box_xyxy.size() == torch.Size([4, 4])
+        assert box_xyxy.dtype == box_tensor.dtype
+        assert torch.all(torch.eq(box_xyxy, box_tensor)).item()
 
 
 class BoxAreaTester(unittest.TestCase):
@@ -697,7 +697,7 @@ class BoxAreaTester(unittest.TestCase):
         calc_area = ops.box_area(box_tensor)
         assert calc_area.size() == torch.Size([2])
         assert calc_area.dtype == box_tensor.dtype
-        assert torch.all(torch.eq(calc_area, expected)).item() is True
+        assert torch.all(torch.eq(calc_area, expected)).item()
 
 
 class BoxIouTester(unittest.TestCase):
@@ -714,7 +714,7 @@ class BoxIouTester(unittest.TestCase):
         # Check if all elements of tensor are as expected.
         assert out.size() == torch.Size([3, 3])
         tolerance = 1e-4
-        assert ((out - expected).abs().max() < tolerance).item() is True
+        assert ((out - expected).abs().max() < tolerance).item()
 
 
 class GenBoxIouTester(unittest.TestCase):
@@ -732,7 +732,7 @@ class GenBoxIouTester(unittest.TestCase):
         # Check if all elements of tensor are as expected.
         assert out.size() == torch.Size([3, 3])
         tolerance = 1e-4
-        assert ((out - expected).abs().max() < tolerance).item() is True
+        assert ((out - expected).abs().max() < tolerance).item()
 
 
 if __name__ == '__main__':
