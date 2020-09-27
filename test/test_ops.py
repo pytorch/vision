@@ -653,7 +653,8 @@ class BoxTester(unittest.TestCase):
         # box_tensor is in x1 y1 x2 y2 format.
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
                                   [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
-        exp_xywh = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0], [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
+        exp_xywh = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
 
         box_xywh = ops.box_xyxy_to_xywh(box_tensor)
         # print(box_xywh)
@@ -669,7 +670,23 @@ class BoxTester(unittest.TestCase):
         assert(torch.all(torch.eq(box_xyxy, box_tensor)).item() is True)
 
     def test_bbox_cxcywh(self):
-        pass
+        # Simple test convert boxes to xywh and back. Make sure they are same.
+        # box_tensor is in x1 y1 x2 y2 format.
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                  [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+        exp_cxcywh = torch.tensor([[50, 50, 100, 100], [0, 0, 0, 0],
+                                  [20, 25, 20, 20], [58, 65, 70, 60]], dtype=torch.float)
+
+        box_cxcywh = ops.box_xyxy_to_cxcywh(box_tensor)
+        assert(exp_cxcywh.size() == torch.Size([4, 4]))
+        assert(exp_cxcywh.dtype == box_tensor.dtype)
+        assert(torch.all(torch.eq(box_cxcywh, exp_cxcywh)).item() is True)
+
+        # Reverse conversion
+        box_xyxy = ops.box_cxcywh_to_xyxy(box_cxcywh)
+        assert(box_xyxy.size() == torch.Size([4, 4]))
+        assert(box_xyxy.dtype == box_tensor.dtype)
+        assert(torch.all(torch.eq(box_xyxy, box_tensor)).item() is True)
 
 
 class BoxAreaTester(unittest.TestCase):
