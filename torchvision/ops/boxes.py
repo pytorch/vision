@@ -149,10 +149,12 @@ def box_cxcywh_to_xyxy(boxes: Tensor) -> Tensor:
     x2 = boxes[:, 0] + (0.5 * boxes[:, 2])
     y2 = boxes[:, 1] + (0.5 * boxes[:, 3])
 
-    boxes[:, 0] = x1
-    boxes[:, 1] = y1
-    boxes[:, 2] = x2
-    boxes[:, 3] = y2
+    # boxes[:, 0] = x1
+    # boxes[:, 1] = y1
+    # boxes[:, 2] = x2
+    # boxes[:, 3] = y2
+
+    boxes = torch.stack((x1, y1, x2, y2), dim=-1)
 
     return boxes
 
@@ -173,10 +175,12 @@ def box_xyxy_to_cxcywh(boxes: Tensor) -> Tensor:
     w = boxes[:, 2] - boxes[:, 0]
     h = boxes[:, 3] - boxes[:, 1]
 
-    boxes[:, 0] = cx
-    boxes[:, 1] = cy
-    boxes[:, 2] = w
-    boxes[:, 3] = h
+    # boxes[:, 0] = cx
+    # boxes[:, 1] = cy
+    # boxes[:, 2] = w
+    # boxes[:, 3] = h
+
+    boxes = torch.stack((cx, cy, w, h), dim=-1)
 
     return boxes
 
