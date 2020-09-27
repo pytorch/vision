@@ -657,8 +657,6 @@ class BoxTester(unittest.TestCase):
                                 [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
 
         box_xywh = ops.box_xyxy_to_xywh(box_tensor)
-        # print(box_xywh)
-        # print(box_xywh.shape)
         assert exp_xywh.size() == torch.Size([4, 4])
         assert exp_xywh.dtype == box_tensor.dtype
         assert torch.all(torch.eq(box_xywh, exp_xywh)).item()
