@@ -695,7 +695,7 @@ class BoxAreaTester(unittest.TestCase):
         calc_area = ops.box_area(box_tensor)
         assert calc_area.size() == torch.Size([2])
         assert calc_area.dtype == box_tensor.dtype
-        assert torch.all(torch.eq(calc_area, expected)).item()
+        assert torch.all(torch.eq(calc_area, expected)).item() is True
 
 
 class BoxIouTester(unittest.TestCase):
