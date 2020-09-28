@@ -167,5 +167,6 @@ class ImageTester(unittest.TestCase):
             img_lpng = decode_image(_read_file(img_path))
             self.assertTrue(img_lpng.equal(img_pil))
 
+
 if __name__ == '__main__':
     unittest.main()
