@@ -8,7 +8,7 @@ import torch
 import torchvision
 from PIL import Image
 from torchvision.io.image import (
-    read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg)
+    read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg, decode_image, _read_file)
 import numpy as np
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
@@ -44,10 +44,10 @@ class ImageTester(unittest.TestCase):
             img_ljpeg = decode_jpeg(torch.from_file(img_path, dtype=torch.uint8, size=size))
             self.assertTrue(img_ljpeg.equal(img_pil))
 
-        with self.assertRaisesRegex(ValueError, "Expected a non empty 1-dimensional tensor."):
+        with self.assertRaisesRegex(RuntimeError, "Expected a non empty 1-dimensional tensor"):
             decode_jpeg(torch.empty((100, 1), dtype=torch.uint8))
 
-        with self.assertRaisesRegex(ValueError, "Expected a torch.uint8 tensor."):
+        with self.assertRaisesRegex(RuntimeError, "Expected a torch.uint8 tensor"):
             decode_jpeg(torch.empty((100, ), dtype=torch.float16))
 
         with self.assertRaises(RuntimeError):
@@ -149,10 +149,23 @@ class ImageTester(unittest.TestCase):
             img_lpng = decode_png(torch.from_file(img_path, dtype=torch.uint8, size=size))
             self.assertTrue(img_lpng.equal(img_pil))
 
-            with self.assertRaises(ValueError):
+            with self.assertRaises(RuntimeError):
                 decode_png(torch.empty((), dtype=torch.uint8))
             with self.assertRaises(RuntimeError):
                 decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
+
+    def test_decode_image(self):
+        for img_path in get_images(IMAGE_ROOT, ".jpg"):
+            img_pil = torch.load(img_path.replace('jpg', 'pth'))
+            img_pil = img_pil.permute(2, 0, 1)
+            img_ljpeg = decode_image(_read_file(img_path))
+            self.assertTrue(img_ljpeg.equal(img_pil))
+
+        for img_path in get_images(IMAGE_DIR, ".png"):
+            img_pil = torch.from_numpy(np.array(Image.open(img_path)))
+            img_pil = img_pil.permute(2, 0, 1)
+            img_lpng = decode_image(_read_file(img_path))
+            self.assertTrue(img_lpng.equal(img_pil))
 
 
 if __name__ == '__main__':
