@@ -37,14 +37,14 @@ jobs:
       - name: Run tests
         run: pytest --durations=20 -ra test/test_datasets_download.py
 
-#      - uses: JasonEtco/create-an-issue@v2.4.0
-#        name: Create issue if download tests failed
-#        if: failure() && github.event_name == 'schedule'
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          REPO: ${{ github.repository }}
-#          WORKFLOW: ${{ github.workflow }}
-#          JOB: ${{ github.job }}
-#          ID: ${{ github.run_id }}
-#        with:
-#          filename: .github/failed_schedule_issue_template.md
+      - uses: JasonEtco/create-an-issue@v2.4.0
+        name: Create issue if download tests failed
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          WORKFLOW: ${{ github.workflow }}
+          JOB: ${{ github.job }}
+          ID: ${{ github.run_id }}
+        with:
+          filename: .github/failed_schedule_issue_template.md
