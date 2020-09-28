@@ -72,6 +72,13 @@ static void torch_jpeg_set_source_mgr(
 }
 
 torch::Tensor decodeJPEG(const torch::Tensor& data) {
+  // Check that the input tensor dtype is uint8
+  TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
+  // Check that the input tensor is 1-dimensional
+  TORCH_CHECK(
+      data.dim() == 1 && data.numel() > 0,
+      "Expected a non empty 1-dimensional tensor");
+
   struct jpeg_decompress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;
 

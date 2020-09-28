@@ -23,23 +23,29 @@ except (ImportError, OSError):
     pass
 
 
+def _read_file(path: str) -> torch.Tensor:
+    if not os.path.isfile(path):
+        raise ValueError("Expected a valid file path.")
+
+    size = os.path.getsize(path)
+    if size == 0:
+        raise ValueError("Expected a non empty file.")
+    data = torch.from_file(path, dtype=torch.uint8, size=size)
+    return data
+
+
 def decode_png(input: torch.Tensor) -> torch.Tensor:
     """
     Decodes a PNG image into a 3 dimensional RGB Tensor.
     The values of the output tensor are uint8 between 0 and 255.
 
     Arguments:
-        input (Tensor[1]): a one dimensional int8 tensor containing
+        input (Tensor[1]): a one dimensional uint8 tensor containing
     the raw bytes of the PNG image.
 
     Returns:
         output (Tensor[3, image_height, image_width])
     """
-    if not isinstance(input, torch.Tensor) or input.numel() == 0 or input.ndim != 1:  # type: ignore[attr-defined]
-        raise ValueError("Expected a non empty 1-dimensional tensor.")
-
-    if not input.dtype == torch.uint8:
-        raise ValueError("Expected a torch.uint8 tensor.")
     output = torch.ops.image.decode_png(input)
     return output
 
@@ -55,13 +61,7 @@ def read_png(path: str) -> torch.Tensor:
     Returns:
         output (Tensor[3, image_height, image_width])
     """
-    if not os.path.isfile(path):
-        raise ValueError("Expected a valid file path.")
-
-    size = os.path.getsize(path)
-    if size == 0:
-        raise ValueError("Expected a non empty file.")
-    data = torch.from_file(path, dtype=torch.uint8, size=size)
+    data = _read_file(path)
     return decode_png(data)
 
 
@@ -70,17 +70,11 @@ def decode_jpeg(input: torch.Tensor) -> torch.Tensor:
     Decodes a JPEG image into a 3 dimensional RGB Tensor.
     The values of the output tensor are uint8 between 0 and 255.
     Arguments:
-        input (Tensor[1]): a one dimensional int8 tensor containing
+        input (Tensor[1]): a one dimensional uint8 tensor containing
     the raw bytes of the JPEG image.
     Returns:
         output (Tensor[3, image_height, image_width])
     """
-    if not isinstance(input, torch.Tensor) or len(input) == 0 or input.ndim != 1:  # type: ignore[attr-defined]
-        raise ValueError("Expected a non empty 1-dimensional tensor.")
-
-    if not input.dtype == torch.uint8:
-        raise ValueError("Expected a torch.uint8 tensor.")
-
     output = torch.ops.image.decode_jpeg(input)
     return output
 
@@ -94,13 +88,7 @@ def read_jpeg(path: str) -> torch.Tensor:
     Returns:
         output (Tensor[3, image_height, image_width])
     """
-    if not os.path.isfile(path):
-        raise ValueError("Expected a valid file path.")
-
-    size = os.path.getsize(path)
-    if size == 0:
-        raise ValueError("Expected a non empty file.")
-    data = torch.from_file(path, dtype=torch.uint8, size=size)
+    data = _read_file(path)
     return decode_jpeg(data)
 
 
@@ -141,3 +129,33 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
                          'between 1 and 100')
 
     torch.ops.image.write_jpeg(input, filename, quality)
+
+
+def decode_image(input: torch.Tensor) -> torch.Tensor:
+    """
+    Detects whether an image is a JPEG or PNG and performs the appropriate
+    operation to decode the image into a 3 dimensional RGB Tensor.
+
+    The values of the output tensor are uint8 between 0 and 255.
+
+    Arguments:
+        input (Tensor): a one dimensional uint8 tensor containing
+        the raw bytes of the PNG or JPEG image.
+    Returns:
+        output (Tensor[3, image_height, image_width])
+    """
+    output = torch.ops.image.decode_image(input)
+    return output
+
+
+def read_image(path: str) -> torch.Tensor:
+    """
+    Reads a JPEG or PNG image into a 3 dimensional RGB Tensor.
+    The values of the output tensor are uint8 between 0 and 255.
+    Arguments:
+        path (str): path of the JPEG or PNG image.
+    Returns:
+        output (Tensor[3, image_height, image_width])
+    """
+    data = _read_file(path)
+    return decode_image(data)

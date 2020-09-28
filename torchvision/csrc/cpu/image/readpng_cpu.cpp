@@ -13,6 +13,13 @@ torch::Tensor decodePNG(const torch::Tensor& data) {
 #include <png.h>
 
 torch::Tensor decodePNG(const torch::Tensor& data) {
+  // Check that the input tensor dtype is uint8
+  TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
+  // Check that the input tensor is 1-dimensional
+  TORCH_CHECK(
+      data.dim() == 1 && data.numel() > 0,
+      "Expected a non empty 1-dimensional tensor");
+
   auto png_ptr =
       png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
   TORCH_CHECK(png_ptr, "libpng read structure allocation failed!")

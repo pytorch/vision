@@ -7,3 +7,4 @@
 #include "readjpeg_cpu.h"
 #include "readpng_cpu.h"
 #include "writejpeg_cpu.h"
+#include "read_image_cpu.h"
