@@ -433,6 +433,30 @@ class Tester(TransformsTester):
         with self.assertRaisesRegex(RuntimeError, r"Could not get name of python class object"):
             torch.jit.script(t)
 
+    def test_random_erasing(self):
+        img = torch.rand(3, 60, 60)
+
+        # Test Set 0: invalid value
+        random_erasing = T.RandomErasing(value=(0.1, 0.2, 0.3, 0.4), p=1.0)
+        with self.assertRaises(ValueError, msg="If value is a sequence, it should have either a single value or 3"):
+            random_erasing(img)
+
+        tensor, _ = self._create_data(24, 32, channels=3, device=self.device)
+        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
+
+        test_configs = [
+            {"value": 0.2},
+            {"value": "random"},
+            {"value": (0.2, 0.2, 0.2)},
+            {"value": "random", "ratio": (0.1, 0.2)},
+        ]
+
+        for config in test_configs:
+            fn = T.RandomErasing(**config)
+            scripted_fn = torch.jit.script(fn)
+            self._test_transform_vs_scripted(fn, scripted_fn, tensor)
+            self._test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
+
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):
