@@ -433,6 +433,24 @@ class Tester(TransformsTester):
         with self.assertRaisesRegex(RuntimeError, r"Could not get name of python class object"):
             torch.jit.script(t)
 
+    def test_gaussian_blur(self):
+
+        tol = 1.0 + 1e-10
+        self._test_class_op(
+            "GaussianBlur", meth_kwargs={"kernel_size": 3, "sigma": 0.75},
+            test_exact_match=False, agg_method="max", tol=tol
+        )
+
+        self._test_class_op(
+            "GaussianBlur", meth_kwargs={"kernel_size": 23, "sigma": [0.1, 2.0]},
+            test_exact_match=False, agg_method="max", tol=tol
+        )
+
+        self._test_class_op(
+            "GaussianBlur", meth_kwargs={"kernel_size": 23, "sigma": (0.1, 2.0)},
+            test_exact_match=False, agg_method="max", tol=tol
+        )
+
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):

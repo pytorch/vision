@@ -3,7 +3,7 @@ from typing import Optional, Dict, Tuple
 
 import torch
 from torch import Tensor
-from torch.nn.functional import grid_sample, conv2d
+from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
 from torch.jit.annotations import List, BroadcastingList2
 
 
@@ -526,29 +526,6 @@ def _hsv2rgb(img):
     return torch.einsum("...ijk, ...xijk -> ...xjk", mask.to(dtype=img.dtype), a4)
 
 
-def _compute_padding(kernel_size: List[int]) -> List[int]:
-    """Computes padding tuple."""
-    # 4 ints:  (padding_left, padding_top, padding_right, padding_bottom)
-
-    # This function is modified from kornia:
-    # https://github.com/kornia/kornia/blob/85661d982e6349ffac237051164cf38cc604454b/kornia/filters/filter.py#L11
-
-    assert len(kernel_size) >= 2, kernel_size
-    padding_tmp = [k // 2 for k in kernel_size]
-
-    # for even kernels we need to do asymetric padding :(
-
-    out_padding = [0, 0] * len(kernel_size)
-
-    for i, (ksize, pad_tmp) in enumerate(zip(kernel_size, padding_tmp)):
-        padding = pad_tmp if ksize % 2 else pad_tmp - 1
-
-        out_padding[i] = padding
-        out_padding[i + 2] = pad_tmp
-
-    return out_padding
-
-
 def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
     # padding is left, right, top, bottom
     in_sizes = img.size()
@@ -671,7 +648,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         need_cast = True
         img = img.to(torch.float32)
 
-    img = torch.nn.functional.pad(img, p, mode=padding_mode, value=float(fill))
+    img = torch_pad(img, p, mode=padding_mode, value=float(fill))
 
     if need_squeeze:
         img = img.squeeze(dim=0)
@@ -764,7 +741,7 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
     # Define align_corners to avoid warnings
     align_corners = False if mode in ["bilinear", "bicubic"] else None
 
-    img = torch.nn.functional.interpolate(img, size=(size_h, size_w), mode=mode, align_corners=align_corners)
+    img = interpolate(img, size=[size_h, size_w], mode=mode, align_corners=align_corners)
 
     if need_squeeze:
         img = img.squeeze(dim=0)
@@ -1036,7 +1013,7 @@ def perspective(
     return _apply_grid_transform(img, grid, mode)
 
 
-def _get_gaussian_kernel1d(kernel_size: int, sigma: float):
+def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> Tensor:
     ksize_half = (kernel_size - 1) * 0.5
 
     x = torch.linspace(-ksize_half, ksize_half, steps=kernel_size)
@@ -1046,71 +1023,60 @@ def _get_gaussian_kernel1d(kernel_size: int, sigma: float):
     return kernel1d
 
 
-def _get_gaussian_kernel2d(kernel_size: List[int], sigma: List[float]):
-    ksize_x, ksize_y = kernel_size
-    sigma_x, sigma_y = sigma
-
-    kernel1d_x = _get_gaussian_kernel1d(ksize_x, sigma_x)
-    kernel1d_y = _get_gaussian_kernel1d(ksize_y, sigma_y)
-
-    kernel2d = torch.mm(kernel1d_y[:, None], kernel1d_x[None, :])
-
+def _get_gaussian_kernel2d(
+        kernel_size: List[int], sigma: List[float], dtype: torch.dtype, device: torch.device
+) -> Tensor:
+    kernel1d_x = _get_gaussian_kernel1d(kernel_size[1], sigma[0]).to(device, dtype=dtype)
+    kernel1d_y = _get_gaussian_kernel1d(kernel_size[0], sigma[1]).to(device, dtype=dtype)
+    kernel2d = torch.mm(kernel1d_x[:, None], kernel1d_y[None, :])
     return kernel2d
 
 
-def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Tensor:
-    """Performs Gaussian blurring on the img by given kernel.
+def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Tensor:
+    """PRIVATE METHOD. Performs Gaussian blurring on the img by given kernel.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (Tensor): Image to be blurred
-        kernel_size (sequence of int or int): Kernel size of the Gaussian kernel
-        sigma (sequence of float or float or None): Standard deviation of the Gaussian kernel
+        kernel_size (sequence of int or int): Kernel size of the Gaussian kernel ``(kx, ky)``.
+        sigma (sequence of float or float, optional): Standard deviation of the Gaussian kernel ``(sx, sy)``.
 
     Returns:
         Tensor: An image that is blurred using gaussian kernel of given parameters
     """
     if not (isinstance(img, torch.Tensor) or _is_tensor_a_torch_image(img)):
         raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
-    if not isinstance(kernel_size, (int, list, tuple)):
-        raise TypeError('kernel_size should be int or a sequence of integers. Got {}'.format(type(kernel_size)))
-    if not isinstance(sigma, (float, int, list, tuple)) and sigma != None:
-        raise TypeError('sigma should be either float or int or its sequence. Got {}'.format(type(sigma)))
 
-    if isinstance(kernel_size, int):
-        kernel_size = [kernel_size] * 2
-    if isinstance(sigma, (int, float, None)):
-        sigma = [sigma] * 2
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=img.device)
+    kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
 
-    if len(kernel_size) != 2:
-        raise ValueError('If kernel_size is a sequence its length should be 2. Got {}'.format(len(kernel_size)))
-    if len(sigma) != 2:
-        raise ValueError('If sigma is a sequence its length should be 2. Got {}'.format(len(sigma)))
+    # make image NCHW
+    need_squeeze = False
+    if img.ndim < 4:
+        img = img.unsqueeze(dim=0)
+        need_squeeze = True
 
-    if any([ksize % 2 == 0 or not isinstance(ksize, int) for ksize in kernel_size]):
-        raise ValueError('kernel_size should have odd and positive integers. Got {}'.format(kernel_size))
+    out_dtype = img.dtype
+    need_cast = False
+    if out_dtype != kernel.dtype:
+        need_cast = True
+        img = img.to(kernel)
 
-    sigma =  [s if s != None else 0.3 * ((ksize - 1) * 0.5 - 1) + 0.8 for ksize, s in zip(kernel_size, sigma)]
+    # padding = (left, right, top, bottom)
+    padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
+    img = torch_pad(img, padding, mode="reflect")
+    img = conv2d(img, kernel, groups=img.shape[-3])
 
-    if any([s <= 0. for s in sigma]):
-        raise ValueError('sigma should have positive values. Got {}'.format(sigma))
+    if need_squeeze:
+        img = img.squeeze(dim=0)
 
-    ndim = img.ndim
-    if ndim == 2:
-        img = img.unsqueeze(0)
-    if ndim == 3:
-        img = img.unsqueeze(0)
+    if need_cast:
+        # it is better to round before cast
+        img = torch.round(img).to(out_dtype)
 
-    kernel = _get_gaussian_kernel2d(kernel_size, sigma)
-
-    padding = _compute_padding(kernel_size)
-
-    kernel = kernel[None, None, :, :].repeat(img.size(-3), 1, 1, 1)
-
-    padded_img = pad(img, padding, padding_mode='reflect')
-    blurred_img = conv2d(padded_img, kernel, groups=img.size(-3))
-
-    if ndim == 2:
-        return blurred_img[0, 0]
-    if ndim == 3:
-        return blurred_img[0]
-    return blurred_img
+    return img

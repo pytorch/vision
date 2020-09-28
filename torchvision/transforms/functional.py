@@ -1038,8 +1038,8 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
         kernel_size (sequence of ints or int): Gaussian kernel size. Can be a sequence of integers
             like ``(kx, ky)`` or a single integer for square kernels.
             In torchscript mode kernel_size as single int is not supported, use a tuple or
-            list of length 1: ``[size, ]``.
-        sigma (sequence of floats or float or None, optional): Gaussian kernel standard deviation. Can be a
+            list of length 1: ``[ksize, ]``.
+        sigma (sequence of floats or float, optional): Gaussian kernel standard deviation. Can be a
             sequence of floats like ``(sigma_x, sigma_y)`` or a single float to define the
             same sigma in both X/Y directions. If None, then it is computed using
             ``kernel_size`` as ``sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8``.
@@ -1049,17 +1049,40 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
     Returns:
         PIL Image or Tensor: Gaussian Blurred version of the image.
     """
-    is_pil_image = False
+    if not isinstance(kernel_size, (int, list, tuple)):
+        raise TypeError('kernel_size should be int or a sequence of integers. Got {}'.format(type(kernel_size)))
+    if isinstance(kernel_size, int):
+        kernel_size = [kernel_size, kernel_size]
+    if len(kernel_size) != 2:
+        raise ValueError('If kernel_size is a sequence its length should be 2. Got {}'.format(len(kernel_size)))
+    for ksize in kernel_size:
+        if ksize % 2 == 0 or ksize < 0:
+            raise ValueError('kernel_size should have odd and positive integers. Got {}'.format(kernel_size))
+
+    if sigma is None:
+        sigma = [ksize * 0.15 + 0.35 for ksize in kernel_size]
+
+    if sigma is not None and not isinstance(sigma, (float, list, tuple)):
+        raise TypeError('sigma should be either float or sequence of floats. Got {}'.format(type(sigma)))
+    if isinstance(sigma, float):
+        sigma = [sigma, sigma]
+    if isinstance(sigma, (list, tuple)) and len(sigma) == 1:
+        sigma = [sigma[0], sigma[0]]
+    if len(sigma) != 2:
+        raise ValueError('If sigma is a sequence, its length should be 2. Got {}'.format(len(sigma)))
+    for s in sigma:
+        if s <= 0.:
+            raise ValueError('sigma should have positive values. Got {}'.format(sigma))
+
     t_img = img
     if not isinstance(img, torch.Tensor):
         if not F_pil._is_pil_image(img):
             raise TypeError('img should be PIL Image or Tensor. Got {}'.format(type(img)))
 
-        is_pil_image = True
         t_img = to_tensor(img)
 
     output = F_t.gaussian_blur(t_img, kernel_size, sigma)
 
-    if is_pil_image:
+    if not isinstance(img, torch.Tensor):
         output = to_pil_image(output)
     return output
