@@ -79,6 +79,8 @@ Transforms on PIL Image
 
 .. autoclass:: TenCrop
 
+.. autoclass:: GaussianBlur
+
 Transforms on torch.\*Tensor
 ----------------------------
 
