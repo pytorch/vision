@@ -4,6 +4,8 @@
 #include <cstdio>
 #include <cstddef>
 // clang-format on
+
+#if JPEG_FOUND
 #include <jpeglib.h>
 #include <setjmp.h>
 #include <string>
@@ -17,3 +19,5 @@ struct torch_jpeg_error_mgr {
 
 typedef struct torch_jpeg_error_mgr* torch_jpeg_error_ptr;
 void torch_jpeg_error_exit(j_common_ptr cinfo);
+
+#endif
