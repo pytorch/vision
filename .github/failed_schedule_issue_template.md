@@ -1,9 +1,6 @@
 ---
 title: Scheduled workflow {{ env.WORKFLOW }}/{{ env.JOB }} failed
-labels:
- - bug
- - "module: datasets"
-assignees: pmeier, fmassa
+labels: bug, module: datasets
 ---
 
 Oh no, something went wrong in the scheduled workflow {{ env.WORKFLOW }}/{{ env.JOB }}. 
