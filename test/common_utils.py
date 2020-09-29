@@ -34,7 +34,7 @@ def _rmtree(name):
 
             try:
                 if path != name:
-                    resetperms(_os.path.dirname(path))
+                    resetperms(os.path.dirname(path))
                 resetperms(path)
 
                 try:
