@@ -121,7 +121,7 @@ torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
   png_write = png_create_write_struct(
       PNG_LIBPNG_VER_STRING, &err_ptr, torch_png_error, NULL);
 
-  png_infop info_ptr = png_create_info_struct(png_write);
+  info_ptr = png_create_info_struct(png_write);
 
   // Define custom buffer output
   png_set_write_fn(png_write, &buf_info, torch_png_write_data, NULL);
