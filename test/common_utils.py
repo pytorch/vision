@@ -1,4 +1,5 @@
 import os
+import stat
 import shutil
 import tempfile
 import contextlib
@@ -18,6 +19,13 @@ import numpy as np
 from PIL import Image
 
 
+# allows to remove readonly files on Windows
+# see https://bugs.python.org/issue26660
+def remove_readonly(func, path, _):
+    "Clear the readonly bit and reattempt the removal"
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
 @contextlib.contextmanager
 def get_tmp_dir(src=None, **kwargs):
     tmp_dir = tempfile.mkdtemp(**kwargs)
@@ -27,7 +35,7 @@ def get_tmp_dir(src=None, **kwargs):
     try:
         yield tmp_dir
     finally:
-        shutil.rmtree(tmp_dir)
+        shutil.rmtree(tmp_dir, onerror=remove_readonly)
 
 
 ACCEPT = os.getenv('EXPECTTEST_ACCEPT')
