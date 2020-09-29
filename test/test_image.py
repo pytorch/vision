@@ -186,6 +186,23 @@ class ImageTester(unittest.TestCase):
                 RuntimeError, "The number of channels should be 1 or 3, got: 5"):
             encode_png(torch.empty((5, 100, 100), dtype=torch.uint8))
 
+    def test_write_png(self):
+        for img_path in get_images(IMAGE_DIR, '.png'):
+            pil_image = Image.open(img_path)
+            img_pil = torch.from_numpy(np.array(pil_image))
+            img_pil = img_pil.permute(2, 0, 1)
+
+            basedir = os.path.dirname(img_path)
+            filename, _ = os.path.splitext(os.path.basename(img_path))
+            torch_png = os.path.join(basedir, '{0}_torch.png'.format(filename))
+            write_png(img_pil, torch_png, compression_level=6)
+
+            saved_image = Image.open(torch_png)
+            saved_image = torch.from_numpy(np.array(saved_image))
+            saved_image = saved_image.permute(2, 0, 1)
+
+            self.assertTrue(img_pil.equal(saved_image))
+
     def test_decode_image(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
             img_pil = torch.load(img_path.replace('jpg', 'pth'))
