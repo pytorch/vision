@@ -165,7 +165,7 @@ torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
   torch::TensorOptions options = torch::TensorOptions{torch::kU8};
   auto outTensor = torch::empty({(long)buf_info.size}, options);
 
-  // Copy memory from jpeg buffer, since torch cannot get ownership of it via
+  // Copy memory from png buffer, since torch cannot get ownership of it via
   // `from_blob`
   auto outPtr = outTensor.data_ptr<uint8_t>();
   std::memcpy(outPtr, buf_info.buffer, sizeof(uint8_t) * outTensor.numel());
