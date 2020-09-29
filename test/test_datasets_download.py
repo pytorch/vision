@@ -140,7 +140,7 @@ def caltech101():
     try:
         with log_download_attempts() as urls_and_md5s:
             datasets.Caltech101(".", download=True)
-    except:
+    except Exception:
         pass
 
     return make_download_configs(urls_and_md5s, "Caltech101")
@@ -150,7 +150,7 @@ def caltech256():
     try:
         with log_download_attempts() as urls_and_md5s:
             datasets.Caltech256(".", download=True)
-    except:
+    except Exception:
         pass
 
     return make_download_configs(urls_and_md5s, "Caltech256")
