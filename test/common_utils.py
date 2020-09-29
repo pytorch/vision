@@ -1,5 +1,4 @@
 import os
-import stat
 import shutil
 import tempfile
 import contextlib
@@ -21,10 +20,35 @@ from PIL import Image
 
 # allows to remove readonly files on Windows
 # see https://bugs.python.org/issue26660
-def remove_readonly(func, path, _):
-    "Clear the readonly bit and reattempt the removal"
-    os.chmod(path, stat.S_IWRITE)
-    func(path)
+# took the implementation from that has been added in Python master
+# in https://github.com/python/cpython/pull/10320
+def _rmtree(name):
+    def onerror(func, path, exc_info):
+        if issubclass(exc_info[0], PermissionError):
+            def resetperms(path):
+                try:
+                    os.chflags(path, 0)
+                except AttributeError:
+                    pass
+                os.chmod(path, 0o700)
+
+            try:
+                if path != name:
+                    resetperms(_os.path.dirname(path))
+                resetperms(path)
+
+                try:
+                    os.unlink(path)
+                # PermissionError is raised on FreeBSD for directories
+                except (IsADirectoryError, PermissionError):
+                    _rmtree(path)
+            except FileNotFoundError:
+                pass
+        elif issubclass(exc_info[0], FileNotFoundError):
+            pass
+        else:
+            raise
+    shutil.rmtree(name, onerror=onerror)
 
 
 @contextlib.contextmanager
@@ -36,7 +60,7 @@ def get_tmp_dir(src=None, **kwargs):
     try:
         yield tmp_dir
     finally:
-        shutil.rmtree(tmp_dir, onerror=remove_readonly)
+        _rmtree(tmp_dir)
 
 
 ACCEPT = os.getenv('EXPECTTEST_ACCEPT')
