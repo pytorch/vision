@@ -6,13 +6,15 @@ torch::Tensor read_file(std::string filename) {
   struct stat stat_buf;
   int rc = stat(filename.c_str(), &stat_buf);
   // errno is a variable defined in errno.h
-  TORCH_CHECK(rc == 0, "[Errno ", errno, "] ", strerror(errno), ": '", filename, "'");
+  TORCH_CHECK(
+      rc == 0, "[Errno ", errno, "] ", strerror(errno), ": '", filename, "'");
   
   int64_t size = stat_buf.st_size;
 
   TORCH_CHECK(size > 0, "Expected a non empty file");
 
-  auto data = torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8);
+  auto data =
+    torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8);
 
   return data;
 }
