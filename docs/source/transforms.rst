@@ -33,6 +33,8 @@ Make sure to use only scriptable transformations, i.e. that work with ``torch.Te
 
 For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
 
+Complete examples can be found `here <https://github.com/pytorch/vision/tree/master/examples/python/scriptable_transforms>`_.
+
 
 .. autoclass:: Compose
 
