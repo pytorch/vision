@@ -8,7 +8,8 @@ import torch
 import torchvision
 from PIL import Image
 from torchvision.io.image import (
-    read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg, decode_image, _read_file)
+    read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg, decode_image, _read_file,
+    encode_png, write_png)
 import numpy as np
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
@@ -153,6 +154,53 @@ class ImageTester(unittest.TestCase):
                 decode_png(torch.empty((), dtype=torch.uint8))
             with self.assertRaises(RuntimeError):
                 decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
+
+    def test_encode_png(self):
+        for img_path in get_images(IMAGE_DIR, '.png'):
+            pil_image = Image.open(img_path)
+            img_pil = torch.from_numpy(np.array(pil_image))
+            img_pil = img_pil.permute(2, 0, 1)
+            png_buf = encode_png(img_pil, compression_level=6)
+
+            rec_img = Image.open(io.BytesIO(bytes(png_buf.tolist())))
+            rec_img = torch.from_numpy(np.array(rec_img))
+            rec_img = rec_img.permute(2, 0, 1)
+
+            self.assertTrue(img_pil.equal(rec_img))
+
+        with self.assertRaisesRegex(
+                RuntimeError, "Input tensor dtype should be uint8"):
+            encode_png(torch.empty((3, 100, 100), dtype=torch.float32))
+
+        with self.assertRaisesRegex(
+                RuntimeError, "Compression level should be between 0 and 9"):
+            encode_png(torch.empty((3, 100, 100), dtype=torch.uint8),
+                       compression_level=-1)
+
+        with self.assertRaisesRegex(
+                RuntimeError, "Compression level should be between 0 and 9"):
+            encode_png(torch.empty((3, 100, 100), dtype=torch.uint8),
+                       compression_level=10)
+
+        with self.assertRaisesRegex(
+                RuntimeError, "The number of channels should be 1 or 3, got: 5"):
+            encode_png(torch.empty((5, 100, 100), dtype=torch.uint8))
+
+    def test_write_png(self):
+        for img_path in get_images(IMAGE_DIR, '.png'):
+            pil_image = Image.open(img_path)
+            img_pil = torch.from_numpy(np.array(pil_image))
+            img_pil = img_pil.permute(2, 0, 1)
+
+            basedir = os.path.dirname(img_path)
+            filename, _ = os.path.splitext(os.path.basename(img_path))
+            torch_png = os.path.join(basedir, '{0}_torch.png'.format(filename))
+            write_png(img_pil, torch_png, compression_level=6)
+            saved_image = torch.from_numpy(np.array(Image.open(torch_png)))
+            os.remove(torch_png)
+            saved_image = saved_image.permute(2, 0, 1)
+
+            self.assertTrue(img_pil.equal(saved_image))
 
     def test_decode_image(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
