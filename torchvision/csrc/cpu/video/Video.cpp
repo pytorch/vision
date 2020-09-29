@@ -49,11 +49,8 @@ size_t fillAudioTensor(DecoderOutputMessage& msgs, torch::Tensor& audioFrame) {
   return fillTensorList<float>(msgs, audioFrame);
 }
 
-std::pair<
-    std::__cxx11::
-        basic_string<char, std::char_traits<char>, std::allocator<char>>,
-    ffmpeg::MediaType> const*
-_parse_type(const std::string& stream_string) {
+std::pair<std::string, ffmpeg::MediaType> const* _parse_type(
+    const std::string& stream_string) {
   static const std::array<std::pair<std::string, MediaType>, 4> types = {{
       {"video", TYPE_VIDEO},
       {"audio", TYPE_AUDIO},
@@ -169,7 +166,7 @@ void Video::_getDecoderParams(
 
 } // _get decoder params
 
-Video::Video(std::string videoPath, std::string stream, bool isReadFile) {
+Video::Video(std::string videoPath, std::string stream) {
   // parse stream information
   current_stream = _parseStream(stream);
   // note that in the initial call we want to get all streams
@@ -192,16 +189,16 @@ Video::Video(std::string videoPath, std::string stream, bool isReadFile) {
   std::vector<double> audioFPS, videoFPS, ccFPS, subsFPS;
   std::vector<double> audioDuration, videoDuration, ccDuration, subsDuration;
   std::vector<double> audioTB, videoTB, ccTB, subsTB;
-  c10::Dict<std::string, std::vector<double, std::allocator<double>>>  audioMetadata;
-  c10::Dict<std::string, std::vector<double, std::allocator<double>>>  videoMetadata;
-
+  c10::Dict<std::string, std::vector<double, std::allocator<double>>>
+      audioMetadata;
+  c10::Dict<std::string, std::vector<double, std::allocator<double>>>
+      videoMetadata;
 
   // calback and metadata defined in struct
   succeeded = decoder.init(params, std::move(callback), &metadata);
   if (succeeded) {
     for (const auto& header : metadata) {
       double fps = double(header.fps);
-      double timeBase = double(header.num) / double(header.den);
       double duration = double(header.duration) * 1e-6; // * timeBase;
 
       if (header.format.type == TYPE_VIDEO) {
@@ -226,7 +223,7 @@ Video::Video(std::string videoPath, std::string stream, bool isReadFile) {
   streamsMetadata.insert("video", videoMetadata);
   streamsMetadata.insert("audio", audioMetadata);
 
-  succeeded = Video::setCurrentStream();
+  succeeded = Video::setCurrentStream(stream);
   LOG(INFO) << "\nDecoder inited with: " << succeeded << "\n";
   if (get<1>(current_stream) != -1) {
     LOG(INFO)
@@ -235,8 +232,7 @@ Video::Video(std::string videoPath, std::string stream, bool isReadFile) {
   }
 } // video
 
-bool Video::setCurrentStream(std::string stream) {
-  
+bool Video::setCurrentStream(std::string stream = "video") {
   if ((!stream.empty()) && (_parseStream(stream) != current_stream)) {
     current_stream = _parseStream(stream);
   }
@@ -263,7 +259,10 @@ std::tuple<std::string, int64_t> Video::getCurrentStream() const {
   return current_stream;
 }
 
-c10::Dict<std::string, c10::Dict<std::string, std::vector<double, std::allocator<double>>>> Video::getStreamMetadata() const {
+c10::Dict<
+    std::string,
+    c10::Dict<std::string, std::vector<double, std::allocator<double>>>>
+Video::getStreamMetadata() const {
   return streamsMetadata;
 }
 
@@ -280,11 +279,10 @@ void Video::Seek(double ts) {
 
   // calback and metadata defined in Video.h
   succeeded = decoder.init(params, std::move(callback), &metadata);
-  LOG(INFO) << "Decoder init at seek " << succeeded << "\n" ;
+  LOG(INFO) << "Decoder init at seek " << succeeded << "\n";
 }
 
 std::tuple<torch::Tensor, double> Video::Next() {
-
   // if failing to decode simply return a null tensor (note, should we
   // raise an exeption?)
   double frame_pts_s;

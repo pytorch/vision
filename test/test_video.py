@@ -12,7 +12,6 @@ import torchvision
 from torchvision.io import _HAS_VIDEO_OPT
 
 
-
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")
 
 CheckerConfig = [
@@ -70,35 +69,36 @@ test_videos = {
         check_aframes=True,
         check_aframe_pts=True,
     ),
-    ### Last three test segfault on video reader (see issues)
-    # "R6llTwEh07w.mp4": GroundTruth(
-    #     duration=10.0,
-    #     video_fps=30.0,
-    #     audio_sample_rate=44100,
-    #     # PyAv miss one audio frame at the beginning (pts=0)
-    #     check_aframes=False,
-    #     check_aframe_pts=False,
-    # ),
-    # "SOX5yA1l24A.mp4": GroundTruth(
-    #     duration=11.0,
-    #     video_fps=29.97,
-    #     audio_sample_rate=48000,
-    #     # PyAv miss one audio frame at the beginning (pts=0)
-    #     check_aframes=False,
-    #     check_aframe_pts=False,
-    # ),
-    # "WUzgd7C1pWA.mp4": GroundTruth(
-    #     duration=11.0,
-    #     video_fps=29.97,
-    #     audio_sample_rate=48000,
-    #     # PyAv miss one audio frame at the beginning (pts=0)
-    #     check_aframes=False,
-    #     check_aframe_pts=False,
-    # ),
+    # Last three test segfault on video reader (see issues)
+    "R6llTwEh07w.mp4": GroundTruth(
+        duration=10.0,
+        video_fps=30.0,
+        audio_sample_rate=44100,
+        # PyAv miss one audio frame at the beginning (pts=0)
+        check_aframes=False,
+        check_aframe_pts=False,
+    ),
+    "SOX5yA1l24A.mp4": GroundTruth(
+        duration=11.0,
+        video_fps=29.97,
+        audio_sample_rate=48000,
+        # PyAv miss one audio frame at the beginning (pts=0)
+        check_aframes=False,
+        check_aframe_pts=False,
+    ),
+    "WUzgd7C1pWA.mp4": GroundTruth(
+        duration=11.0,
+        video_fps=29.97,
+        audio_sample_rate=48000,
+        # PyAv miss one audio frame at the beginning (pts=0)
+        check_aframes=False,
+        check_aframe_pts=False,
+    ),
 }
 
+
 def _template_read_video(video_object, s=0, e=None):
-    
+
     if e is None:
         e = float("inf")
     if e < s:
@@ -131,6 +131,7 @@ def _template_read_video(video_object, s=0, e=None):
 
     return video_frames, audio_frames, video_object.get_metadata()
 
+
 @unittest.skipIf(_HAS_VIDEO_OPT is False, "Didn't compile with ffmpeg")
 class TestVideo(unittest.TestCase):
     def test_read_video_tensor(self):
@@ -145,7 +146,7 @@ class TestVideo(unittest.TestCase):
             tv_result, _, _ = torchvision.io.read_video(full_path, pts_unit="sec")
             tv_result = tv_result.permute(0, 3, 1, 2)
             # pass 2: decode all frames using new api
-            reader = torch.classes.torchvision.Video(full_path, "video", True)
+            reader = torch.classes.torchvision.Video(full_path, "video")
             frames = []
             t, _ = reader.next()
             while t.numel() > 0:
@@ -154,8 +155,7 @@ class TestVideo(unittest.TestCase):
             new_api = torch.stack(frames, 0)
             self.assertEqual(tv_result.size(), new_api.size())
             self.assertEqual(torch.equal(tv_result, new_api), True)
-    
-    @unittest.skipIf(not _HAS_VIDEO_OPT, "video_reader backend is not chosen")
+
     def test_pts(self):
         """Check if the frames have the same timestamps
         """
@@ -163,44 +163,41 @@ class TestVideo(unittest.TestCase):
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
-            tv_timestamps, _ =  torchvision.io.read_video_timestamps(full_path, pts_unit='sec')
+            tv_timestamps, _ = torchvision.io.read_video_timestamps(full_path, pts_unit='sec')
             # pass 2: decode all frames using new api
-            reader = torch.classes.torchvision.Video(full_path, "video", True)
+            reader = torch.classes.torchvision.Video(full_path, "video")
             pts = []
             t, p = reader.next()
             while t.numel() > 0:
                 pts.append(p)
                 t, p = reader.next()
-            
+
             tv_timestamps = [float(p) for p in tv_timestamps]
             napi_pts = [float(p) for p in pts]
             for i in range(len(napi_pts)):
                 self.assertAlmostEqual(napi_pts[i], tv_timestamps[i], delta=0.001)
 
-    @unittest.skipIf(not _HAS_VIDEO_OPT, "video_reader backend is not chosen")
     def test_metadata(self):
         torchvision.set_video_backend("video_reader")
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
-            reader = torch.classes.torchvision.Video(full_path, "video", True)
+            reader = torch.classes.torchvision.Video(full_path, "video")
             reader_md = reader.get_metadata()
             self.assertAlmostEqual(config.video_fps, reader_md["video"]["fps"][0], delta=0.0001)
             self.assertAlmostEqual(config.duration, reader_md["video"]["duration"][0], delta=0.5)
 
-    @unittest.skipIf(not _HAS_VIDEO_OPT, "video_reader backend is not chosen")
     def test_video_reading_fn(self):
         torchvision.set_video_backend("video_reader")
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
-            reader = torch.classes.torchvision.Video(full_path, "video", True)
+            reader = torch.classes.torchvision.Video(full_path, "video")
             video, audio, metadata = _template_read_video(reader)
             tv_video, tv_audio, info = torchvision.io.read_video(full_path, pts_unit="sec")
 
             self.assertEqual(torch.equal(tv_video.permute(0, 3, 1, 2), video), True)
             self.assertEqual(torch.equal(tv_audio, audio), True)
-    
-    @unittest.skipIf(not _HAS_VIDEO_OPT, "video_reader backend is not chosen")
+
     def test_partial_video_reading_fn(self):
         import random
         print("Test video reader")
@@ -215,10 +212,11 @@ class TestVideo(unittest.TestCase):
             s = min(r)
             e = max(r)
 
-            reader = torch.classes.torchvision.Video(full_path, "video", True)
+            reader = torch.classes.torchvision.Video(full_path, "video")
             video, audio, metadata = _template_read_video(reader, s, e)
             tv_video, tv_audio, info = torchvision.io.read_video(full_path, start_pts=s, end_pts=e, pts_unit="sec")
             self.assertAlmostEqual(tv_video.size(0), video.size(0), delta=2.0)
-      
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -13,7 +13,6 @@
 #include <c10/util/Logging.h>
 #include <torch/script.h>
 
-
 #include <exception>
 #include "defs.h"
 #include "memory_buffer.h"
@@ -24,14 +23,20 @@ using namespace ffmpeg;
 struct Video : torch::CustomClassHolder {
   std::tuple<std::string, long> current_stream; // stream type, id
   // global video metadata
-  c10::Dict<std::string, c10::Dict<std::string, std::vector<double, std::allocator<double>>>> streamsMetadata;
+  c10::Dict<
+      std::string,
+      c10::Dict<std::string, std::vector<double, std::allocator<double>>>>
+      streamsMetadata;
 
  public:
-  Video(std::string videoPath, std::string stream, bool isReadFile);
+  Video(std::string videoPath, std::string stream);
   std::tuple<std::string, int64_t> getCurrentStream() const;
-  c10::Dict<std::string, c10::Dict<std::string, std::vector<double, std::allocator<double>>>> getStreamMetadata() const;
+  c10::Dict<
+      std::string,
+      c10::Dict<std::string, std::vector<double, std::allocator<double>>>>
+  getStreamMetadata() const;
   void Seek(double ts);
-  bool setCurrentStream(std::string stream = "video");
+  bool setCurrentStream(std::string stream);
   std::tuple<torch::Tensor, double> Next();
 
  private:
@@ -54,7 +59,6 @@ struct Video : torch::CustomClassHolder {
   std::map<std::string, std::vector<double>> streamTimeBase; // not used
 
   DecoderInCallback callback = nullptr;
-  ;
   std::vector<DecoderMetadata> metadata;
 
  protected:

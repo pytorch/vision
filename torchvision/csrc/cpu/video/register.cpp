@@ -7,7 +7,7 @@ namespace {
 
 static auto registerVideo =
     torch::class_<Video>("torchvision", "Video")
-        .def(torch::init<std::string, std::string, bool>())
+        .def(torch::init<std::string, std::string>())
         .def("get_current_stream", &Video::getCurrentStream)
         .def("set_current_stream", &Video::setCurrentStream)
         .def("get_metadata", &Video::getStreamMetadata)
