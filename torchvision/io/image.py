@@ -93,7 +93,7 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
         compression_level (int): Compression factor for the resulting file, it
     must be a number between 0 and 9. Default: 6
     """
-    torch.ops.image.write_jpeg(input, filename, compression_level)
+    torch.ops.image.write_png(input, filename, compression_level)
 
 
 def decode_jpeg(input: torch.Tensor) -> torch.Tensor:
