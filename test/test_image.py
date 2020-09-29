@@ -162,7 +162,7 @@ class ImageTester(unittest.TestCase):
             img_pil = img_pil.permute(2, 0, 1)
             png_buf = encode_png(img_pil, compression_level=6)
 
-            rec_img = Image.open(io.BytesIO(list(png_buf.tolist())))
+            rec_img = Image.open(io.BytesIO(bytes(png_buf.tolist())))
             rec_img = torch.from_numpy(np.array(rec_img))
             rec_img = rec_img.permute(2, 0, 1)
             # with io.BytesIO() as buffer:
