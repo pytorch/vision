@@ -85,7 +85,7 @@ def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
 def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
     """
     Takes an input tensor in CHW layout (or HW in the case of grayscale images)
-    and saves it in a JPEG file.
+    and saves it in a PNG file.
     Arguments:
         input (Tensor[channels, image_height, image_width]): int8 image tensor
     of `c` channels, where `c` must be 1 or 3.
