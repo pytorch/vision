@@ -65,6 +65,37 @@ def read_png(path: str) -> torch.Tensor:
     return decode_png(data)
 
 
+def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
+    """
+    Takes an input tensor in CHW layout and returns a buffer with the contents
+    of its corresponding PNG file.
+    Arguments:
+        input (Tensor[channels, image_height, image_width]): int8 image tensor
+    of `c` channels, where `c` must 3 or 1.
+        compression_level (int): Compression factor for the resulting file, it
+    must be a number between 0 and 9. Default: 6
+    Returns
+        output (Tensor[1]): A one dimensional int8 tensor that contains the raw
+    bytes of the PNG file.
+    """
+    output = torch.ops.image.encode_png(input)
+    return output
+
+
+def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
+    """
+    Takes an input tensor in CHW layout (or HW in the case of grayscale images)
+    and saves it in a JPEG file.
+    Arguments:
+        input (Tensor[channels, image_height, image_width]): int8 image tensor
+    of `c` channels, where `c` must be 1 or 3.
+        filename (str): Path to save the image.
+        compression_level (int): Compression factor for the resulting file, it
+    must be a number between 0 and 9. Default: 6
+    """
+    torch.ops.image.write_jpeg(input, filename, compression_level)
+
+
 def decode_jpeg(input: torch.Tensor) -> torch.Tensor:
     """
     Decodes a JPEG image into a 3 dimensional RGB Tensor.
@@ -94,8 +125,8 @@ def read_jpeg(path: str) -> torch.Tensor:
 
 def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
     """
-    Takes an input tensor in CHW layout (or HW in the case of grayscale images)
-    and returns a buffer with the contents of its corresponding JPEG file.
+    Takes an input tensor in CHW layout and returns a buffer with the contents
+    of its corresponding JPEG file.
     Arguments:
         input (Tensor[channels, image_height, image_width]): int8 image tensor
     of `c` channels, where `c` must be 1 or 3.
@@ -115,8 +146,7 @@ def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
 
 def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
     """
-    Takes an input tensor in CHW layout (or HW in the case of grayscale images)
-    and saves it in a JPEG file.
+    Takes an input tensor in CHW layout and saves it in a JPEG file.
     Arguments:
         input (Tensor[channels, image_height, image_width]): int8 image tensor
     of `c` channels, where `c` must be 1 or 3.

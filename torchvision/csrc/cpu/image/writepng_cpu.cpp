@@ -99,6 +99,11 @@ torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
     TORCH_CHECK(false, err_ptr.pngLastErrorMsg);
   }
 
+  // Check that the compression level is between 0 and 9
+  TORCH_CHECK(
+      compression_level >= 0 && compression_level <= 9,
+      "Compression level should be between 0 and 9");
+
   // Check that the input tensor is on CPU
   TORCH_CHECK(data.device() == torch::kCPU, "Input tensor should be on CPU");
 
