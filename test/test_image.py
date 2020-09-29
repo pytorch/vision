@@ -162,12 +162,15 @@ class ImageTester(unittest.TestCase):
             img_pil = img_pil.permute(2, 0, 1)
             png_buf = encode_png(img_pil, compression_level=6)
 
-            with io.BytesIO() as buffer:
-                pil_image.save(buffer, format='PNG')
-                pil_buf = buffer.getvalue()
+            rec_img = Image.open(io.BytesIO(list(png_buf.tolist())))
+            rec_img = torch.from_numpy(np.array(rec_img))
+            rec_img = rec_img.permute(2, 0, 1)
+            # with io.BytesIO() as buffer:
+            #     pil_image.save(buffer, format='PNG')
+            #     pil_buf = buffer.getvalue()
 
-            pil_buf = torch.as_tensor(list(pil_buf), dtype=torch.uint8)
-            self.assertTrue(png_buf.equal(pil_buf))
+            # pil_buf = torch.as_tensor(list(pil_buf), dtype=torch.uint8)
+            self.assertTrue(png_buf.equal(rec_img))
 
     def test_decode_image(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
