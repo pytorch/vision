@@ -112,7 +112,6 @@ std::tuple<std::string, long> _parseStream(const std::string& streamString) {
 }
 
 void Video::_getDecoderParams(
-
     double videoStartS,
     int64_t getPtsOnly,
     std::string stream,
@@ -169,7 +168,6 @@ void Video::_getDecoderParams(
   }
 
 } // _get decoder params
-
 
 Video::Video(std::string videoPath, std::string stream, bool isReadFile) {
   // parse stream information
