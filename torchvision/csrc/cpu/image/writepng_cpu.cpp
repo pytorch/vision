@@ -76,6 +76,8 @@ torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
 
   // Define output buffer
   struct torch_mem_encode buf_info;
+  buf_info.buffer = NULL;
+  buf_info.size = 0;
 
   /* Establish the setjmp return context for my_error_exit to use. */
   if (setjmp(err_ptr.setjmp_buffer)) {
@@ -142,6 +144,9 @@ torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
   // Set image compression level
   png_set_compression_level(png_write, compression_level);
 
+  // Write file header
+  png_write_info(png_write, info_ptr);
+
   auto stride = width * channels;
   auto ptr = input.data_ptr<uint8_t>();
 
@@ -151,7 +156,10 @@ torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
     ptr += stride;
   }
 
-  png_write_png(png_write, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
+  // Write EOF
+  png_write_end(png_write, info_ptr);
+
+  // Destroy structures
   png_destroy_write_struct(&png_write, &info_ptr);
 
   torch::TensorOptions options = torch::TensorOptions{torch::kU8};
