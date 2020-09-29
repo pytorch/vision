@@ -26,6 +26,7 @@ def remove_readonly(func, path, _):
     os.chmod(path, stat.S_IWRITE)
     func(path)
 
+
 @contextlib.contextmanager
 def get_tmp_dir(src=None, **kwargs):
     tmp_dir = tempfile.mkdtemp(**kwargs)
