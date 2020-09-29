@@ -168,6 +168,24 @@ class ImageTester(unittest.TestCase):
 
             self.assertTrue(img_pil.equal(rec_img))
 
+        with self.assertRaisesRegex(
+                RuntimeError, "Input tensor dtype should be uint8"):
+            encode_png(torch.empty((3, 100, 100), dtype=torch.float32))
+
+        with self.assertRaisesRegex(
+                RuntimeError, "Compression level should be between 0 and 9"):
+            encode_png(torch.empty((3, 100, 100), dtype=torch.uint8),
+                       compression_level=-1)
+
+        with self.assertRaisesRegex(
+                RuntimeError, "Compression level should be between 0 and 9"):
+            encode_png(torch.empty((3, 100, 100), dtype=torch.uint8),
+                       compression_level=10)
+
+        with self.assertRaisesRegex(
+                RuntimeError, "The number of channels should be 1 or 3, got: 5"):
+            encode_png(torch.empty((5, 100, 100), dtype=torch.uint8))
+
     def test_decode_image(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
             img_pil = torch.load(img_path.replace('jpg', 'pth'))
