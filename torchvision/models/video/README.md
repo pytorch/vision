@@ -32,6 +32,22 @@ Input data augmentations at validation time (with optional parameters):
 2. Normalization (mean, std, see values above)
 3. Center Crop (112, 112)
 
+This translates in the following set of command-line arguments (please note that learning rate and batch size end up being scaled by the number of GPUs; all our models were trained on 8 nodes with 8 V100 GPUs each for a total of 64 GPUs):
+```
+# number of frames per clip
+--clip_len 16 \ 
+# allow for temporal jittering
+--clips_per_video 5 \
+--batch-size 24 \
+--epochs 45 \
+--lr 0.01 \
+# we use 10 epochs for linear warmup
+--lr-warmup-epochs 10 \
+# learning rate is decayed at 20, 30, and 40 epoch by a factor of 10
+--lr-milestones 20, 30, 40 \
+--lr-gamma 0.1 
+```
+
 ### Additional video modelling resources
 
 - [Video Model Zoo](https://github.com/facebookresearch/VMZ)
