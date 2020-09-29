@@ -1,6 +1,7 @@
 import os
 import io
 import glob
+import tempfile
 import unittest
 import sys
 
@@ -8,7 +9,7 @@ import torch
 import torchvision
 from PIL import Image
 from torchvision.io.image import (
-    read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg, decode_image, _read_file,
+    read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
     encode_png, write_png)
 import numpy as np
 
@@ -206,14 +207,25 @@ class ImageTester(unittest.TestCase):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
             img_pil = torch.load(img_path.replace('jpg', 'pth'))
             img_pil = img_pil.permute(2, 0, 1)
-            img_ljpeg = decode_image(_read_file(img_path))
+            img_ljpeg = decode_image(read_file(img_path))
             self.assertTrue(img_ljpeg.equal(img_pil))
 
         for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_pil = img_pil.permute(2, 0, 1)
-            img_lpng = decode_image(_read_file(img_path))
+            img_lpng = decode_image(read_file(img_path))
             self.assertTrue(img_lpng.equal(img_pil))
+
+    def test_read_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            fname, content = 'test1', b'TorchVision\211\n'
+            fpath = os.path.join(d, fname)
+            with open(fpath, 'wb') as f:
+                f.write(content)
+
+            data = read_file(fpath)
+            expected = torch.tensor(list(content), dtype=torch.uint8)
+            self.assertTrue(data.equal(expected))
 
 
 if __name__ == '__main__':
