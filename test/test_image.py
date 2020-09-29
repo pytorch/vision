@@ -226,6 +226,7 @@ class ImageTester(unittest.TestCase):
             data = read_file(fpath)
             expected = torch.tensor(list(content), dtype=torch.uint8)
             self.assertTrue(data.equal(expected))
+            os.remove(fpath)
 
         with self.assertRaisesRegex(
                 RuntimeError, "No such file or directory: 'tst'"):
