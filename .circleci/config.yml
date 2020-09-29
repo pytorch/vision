@@ -559,6 +559,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install wget
+          command: HOMEBREW_NO_AUTO_UPDATE=1 brew install wget
+          # Disable brew auto update which is very slow
+      - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
           command: echo "$(date +"%Y-%U")" > .circleci-weekly
