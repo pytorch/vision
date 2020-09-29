@@ -6,6 +6,7 @@
 #include "cuda/vision_cuda.h"
 #endif
 #ifdef WITH_HIP
+#include "autocast.h"
 #include "hip/vision_cuda.h"
 #endif
 
@@ -20,15 +21,15 @@ at::Tensor nms(
   return op.call(dets, scores, iou_threshold);
 }
 
-#ifdef WITH_CUDA
+#if defined(WITH_CUDA) || defined(WITH_HIP)
 at::Tensor nms_autocast(
     const at::Tensor& dets,
     const at::Tensor& scores,
     const double iou_threshold) {
   c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
   return nms(
-      autocast::_cast(at::kFloat, dets),
-      autocast::_cast(at::kFloat, scores),
+      at::autocast::cached_cast(at::kFloat, dets),
+      at::autocast::cached_cast(at::kFloat, scores),
       iou_threshold);
 }
 #endif

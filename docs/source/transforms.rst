@@ -9,6 +9,31 @@ Functional transforms give fine-grained control over the transformations.
 This is useful if you have to build a more complex transformation pipeline
 (e.g. in the case of segmentation tasks).
 
+All transformations accept PIL Image, Tensor Image or batch of Tensor Images as input. Tensor Image is a tensor with
+``(C, H, W)`` shape, where ``C`` is a number of channels, ``H`` and ``W`` are image height and width. Batch of
+Tensor Images is a tensor of ``(B, C, H, W)`` shape, where ``B`` is a number of images in the batch. Deterministic or
+random transformations applied on the batch of Tensor Images identically transform all the images of the batch.
+
+
+Scriptable transforms
+^^^^^^^^^^^^^^^^^^^^^
+
+In order to script the transformations, please use ``torch.nn.Sequential`` instead of :class:`Compose`.
+
+.. code:: python
+
+    transforms = torch.nn.Sequential(
+        transforms.CenterCrop(10),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+    )
+    scripted_transforms = torch.jit.script(transforms)
+
+Make sure to use only scriptable transformations, i.e. that work with ``torch.Tensor`` and does not require
+`lambda` functions or ``PIL.Image``.
+
+For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
+
+
 .. autoclass:: Compose
 
 Transforms on PIL Image

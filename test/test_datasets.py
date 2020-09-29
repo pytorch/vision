@@ -283,7 +283,7 @@ class Tester(unittest.TestCase):
                         self.assertEqual(label, 1)
 
     def test_places365(self):
-        for split, small in itertools.product(("train-standard", "train-challenge", "val", "test"), (False, True)):
+        for split, small in itertools.product(("train-standard", "train-challenge", "val"), (False, True)):
             with places365_root(split=split, small=small) as places365:
                 root, data = places365
 
@@ -311,22 +311,8 @@ class Tester(unittest.TestCase):
             self.assertEqual(actual_image, expected_image)
             self.assertEqual(actual_target, expected_target)
 
-    @mock.patch("torchvision.datasets.utils.download_url")
-    def test_places365_downloadable(self, download_url):
-        for split, small in itertools.product(("train-standard", "train-challenge", "val", "test"), (False, True)):
-            with places365_root(split=split, small=small) as places365:
-                root, data = places365
-
-                torchvision.datasets.Places365(root, split=split, small=small, download=True)
-
-        urls = {call_args[0][0] for call_args in download_url.call_args_list}
-        for url in urls:
-            with self.subTest(url=url):
-                response = urlopen(Request(url, method="HEAD"))
-                assert response.code == 200, f"Server returned status code {response.code} for {url}."
-
     def test_places365_devkit_download(self):
-        for split in ("train-standard", "train-challenge", "val", "test"):
+        for split in ("train-standard", "train-challenge", "val"):
             with self.subTest(split=split):
                 with places365_root(split=split) as places365:
                     root, data = places365
@@ -343,7 +329,7 @@ class Tester(unittest.TestCase):
                         self.assertSequenceEqual(dataset.imgs, data["imgs"])
 
     def test_places365_devkit_no_download(self):
-        for split in ("train-standard", "train-challenge", "val", "test"):
+        for split in ("train-standard", "train-challenge", "val"):
             with self.subTest(split=split):
                 with places365_root(split=split, extract_images=False) as places365:
                     root, data = places365
@@ -352,7 +338,7 @@ class Tester(unittest.TestCase):
                         torchvision.datasets.Places365(root, split=split, download=False)
 
     def test_places365_images_download(self):
-        for split, small in itertools.product(("train-standard", "train-challenge", "val", "test"), (False, True)):
+        for split, small in itertools.product(("train-standard", "train-challenge", "val"), (False, True)):
             with self.subTest(split=split, small=small):
                 with places365_root(split=split, small=small) as places365:
                     root, data = places365
@@ -364,7 +350,7 @@ class Tester(unittest.TestCase):
     def test_places365_images_download_preexisting(self):
         split = "train-standard"
         small = False
-        images_dir = "train_large_places365standard"
+        images_dir = "data_large_standard"
 
         with places365_root(split=split, small=small) as places365:
             root, data = places365
