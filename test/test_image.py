@@ -227,6 +227,10 @@ class ImageTester(unittest.TestCase):
             expected = torch.tensor(list(content), dtype=torch.uint8)
             self.assertTrue(data.equal(expected))
 
+        with self.assertRaisesRegex(
+                RuntimeError, "No such file or directory: 'tst'"):
+            read_file('tst')
+
 
 if __name__ == '__main__':
     unittest.main()
