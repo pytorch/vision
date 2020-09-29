@@ -196,9 +196,8 @@ class ImageTester(unittest.TestCase):
             filename, _ = os.path.splitext(os.path.basename(img_path))
             torch_png = os.path.join(basedir, '{0}_torch.png'.format(filename))
             write_png(img_pil, torch_png, compression_level=6)
-            saved_image = Image.open(torch_png)
+            saved_image = torch.from_numpy(np.array(Image.open(torch_png)))
             os.remove(torch_png)
-            saved_image = torch.from_numpy(np.array(saved_image))
             saved_image = saved_image.permute(2, 0, 1)
 
             self.assertTrue(img_pil.equal(saved_image))
