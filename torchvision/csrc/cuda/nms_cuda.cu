@@ -1,11 +1,6 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
-
-#if defined(WITH_CUDA)
 #include <c10/cuda/CUDAGuard.h>
-#elif defined(WITH_HIP)
-#include <c10/hip/HIPGuard.h>
-#endif
 
 #include "cuda_helpers.h"
 
@@ -98,10 +93,8 @@ at::Tensor nms_cuda(const at::Tensor& dets,
       " and ",
       scores.size(0))
 
-#if defined(WITH_CUDA)
+#if defined(WITH_CUDA) || defined(WITH_HIP)
   at::cuda::CUDAGuard device_guard(dets.device());
-#elif defined(WITH_HIP)
-  at::cuda::HIPGuard device_guard(dets.device());
 #else
   AT_ERROR("Not compiled with GPU support");
 #endif

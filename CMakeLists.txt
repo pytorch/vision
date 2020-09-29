@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.0)
 project(torchvision)
 set(CMAKE_CXX_STANDARD 14)
-set(TORCHVISION_VERSION 0.6.0)
+set(TORCHVISION_VERSION 0.7.0)
 
 option(WITH_CUDA "Enable CUDA support" OFF)
 
 if(WITH_CUDA)
   enable_language(CUDA)
   add_definitions(-D__CUDA_NO_HALF_OPERATORS__)
+  add_definitions(-DWITH_CUDA)
 endif()
 
 find_package(Python3 COMPONENTS Development)
@@ -30,13 +31,9 @@ file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.c
 
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES} ${IMAGE_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} ${JPEG_LIBRARIES} Python3::Python)
-# target_link_libraries(${PROJECT_NAME} PRIVATE ${PNG_LIBRARY} Python3::Python)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME TorchVision)
 
-target_include_directories(${PROJECT_NAME} INTERFACE
-  $<BUILD_INTERFACE:${HEADERS}:${PNG_INCLUDE_DIR}:${JPEG_INCLUDE_DIRS}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
-
+include_directories(torchvision/csrc ${JPEG_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS})
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 

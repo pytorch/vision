@@ -1,8 +1,6 @@
 import os
 import io
-import re
 import sys
-import csv
 from setuptools import setup, find_packages
 from pkg_resources import parse_version, get_distribution, DistributionNotFound
 import subprocess
@@ -208,6 +206,20 @@ def get_extensions():
         extra_compile_args.setdefault('cxx', [])
         extra_compile_args['cxx'].append('/MP')
 
+    debug_mode = os.getenv('DEBUG', '0') == '1'
+    if debug_mode:
+        print("Compile in debug mode")
+        extra_compile_args['cxx'].append("-g")
+        extra_compile_args['cxx'].append("-O0")
+        if "nvcc" in extra_compile_args:
+            # we have to remove "-OX" and "-g" flag if exists and append
+            nvcc_flags = extra_compile_args["nvcc"]
+            extra_compile_args["nvcc"] = [
+                f for f in nvcc_flags if not ("-O" in f or "-g" in f)
+            ]
+            extra_compile_args["nvcc"].append("-O0")
+            extra_compile_args["nvcc"].append("-g")
+
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs = [extensions_dir]
@@ -346,6 +358,7 @@ def get_extensions():
                     ffmpeg_include_dir,
                     extensions_dir,
                 ],
+                library_dirs=library_dirs,
                 libraries=[
                     'avcodec',
                     'avformat',
