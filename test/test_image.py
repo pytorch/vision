@@ -8,7 +8,8 @@ import torch
 import torchvision
 from PIL import Image
 from torchvision.io.image import (
-    read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg, decode_image, _read_file)
+    read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg, decode_image, _read_file,
+    encode_png, write_png)
 import numpy as np
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
@@ -153,6 +154,20 @@ class ImageTester(unittest.TestCase):
                 decode_png(torch.empty((), dtype=torch.uint8))
             with self.assertRaises(RuntimeError):
                 decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
+
+    def test_encode_png(self):
+        for img_path in get_images(IMAGE_DIR, '.png'):
+            pil_image = Image.open(img_path)
+            img_pil = torch.from_numpy(np.array(pil_image))
+            img_pil = img_pil.permute(2, 0, 1)
+            png_buf = encode_png(img_pil, compression_level=6)
+
+            with io.BytesIO() as buffer:
+                pil_image.save(buffer, format='PNG')
+                pil_buf = buffer.getvalue()
+
+            pil_buf = torch.as_tensor(list(pil_buf), dtype=torch.uint8)
+            self.assertTrue(png_buf.equal(pil_buf))
 
     def test_decode_image(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
