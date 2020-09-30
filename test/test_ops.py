@@ -648,7 +648,7 @@ class BoxConversionTester(unittest.TestCase):
 
 
 class BoxTester(unittest.TestCase):
-    def test_bbox_xywh(self):
+    def test_bbox_xyxy_xywh(self):
         # Simple test convert boxes to xywh and back. Make sure they are same.
         # box_tensor is in x1 y1 x2 y2 format.
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
@@ -656,18 +656,18 @@ class BoxTester(unittest.TestCase):
         exp_xywh = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
                                 [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
 
-        box_xywh = ops.box_xyxy_to_xywh(box_tensor)
+        box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
         self.assertEqual(exp_xywh.size(), torch.Size([4, 4]))
         self.assertEqual(exp_xywh.dtype, box_tensor.dtype)
         assert torch.all(torch.eq(box_xywh, exp_xywh)).item()
 
         # Reverse conversion
-        box_xyxy = ops.box_xywh_to_xyxy(box_xywh)
+        box_xyxy = ops.box_convert(box_xywh, in_fmt="xywh", out_fmt="xyxy")
         self.assertEqual(box_xyxy.size(), torch.Size([4, 4]))
         self.assertEqual(box_xyxy.dtype, box_tensor.dtype)
         assert torch.all(torch.eq(box_xyxy, box_tensor)).item()
 
-    def test_bbox_cxcywh(self):
+    def test_bbox_xyxy_cxcywh(self):
         # Simple test convert boxes to xywh and back. Make sure they are same.
         # box_tensor is in x1 y1 x2 y2 format.
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
@@ -675,16 +675,18 @@ class BoxTester(unittest.TestCase):
         exp_cxcywh = torch.tensor([[50, 50, 100, 100], [0, 0, 0, 0],
                                   [20, 25, 20, 20], [58, 65, 70, 60]], dtype=torch.float)
 
-        box_cxcywh = ops.box_xyxy_to_cxcywh(box_tensor)
+        box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
         self.assertEqual(exp_cxcywh.size(), torch.Size([4, 4]))
         self.assertEqual(exp_cxcywh.dtype, box_tensor.dtype)
         assert torch.all(torch.eq(box_cxcywh, exp_cxcywh)).item()
 
         # Reverse conversion
-        box_xyxy = ops.box_cxcywh_to_xyxy(box_cxcywh)
+        box_xyxy = ops.box_convert(box_cxcywh, in_fmt="cxcywh", out_fmt="xyxy")
         self.assertEqual(box_xyxy.size(), torch.Size([4, 4]))
         self.assertEqual(box_xyxy.dtype, box_tensor.dtype)
         assert torch.all(torch.eq(box_xyxy, box_tensor)).item()
+
+    # def test_bbox_xywh_cxcywh(self):
 
 
 class BoxAreaTester(unittest.TestCase):
