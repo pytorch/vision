@@ -1,4 +1,4 @@
-torchvision
+**Torchvision**
 ===========
 
 .. image:: https://travis-ci.org/pytorch/vision.svg?branch=master
@@ -72,7 +72,8 @@ By default, GPU support is built if CUDA is found and ``torch.cuda.is_available(
 It's possible to force building GPU support by setting ``FORCE_CUDA=1`` environment variable,
 which is useful when building a docker image.
 
-Image Backend
+
+**Image Backend**
 =============
 Torchvision currently supports the following image backends:
 
@@ -89,12 +90,12 @@ Torchvision currently supports the following image backends:
 **Notes:** ``libpng`` and ``libjpeg`` must be available at compilation time in order to be available. Make sure that it is available on the standard library locations,
 otherwise, add the include and library paths in the environment variables ``TORCHVISION_INCLUDE`` and ``TORCHVISION_LIBRARY``, respectively.
 
-.. _libpng : http://www.libpng.org/pub/png/libpng.html
-.. _Pillow : https://python-pillow.org/
-.. _Pillow-SIMD : https://github.com/uploadcare/pillow-simd
-.. _accimage: https://github.com/pytorch/accimage
-.. _libjpeg: http://ijg.org/
-.. _libjpeg-turbo: https://libjpeg-turbo.org/
+1.) _libpng : http://www.libpng.org/pub/png/libpng.html
+2.) _Pillow : https://python-pillow.org/
+3.) _Pillow-SIMD : https://github.com/uploadcare/pillow-simd
+4.) _accimage: https://github.com/pytorch/accimage
+5.) _libjpeg: http://ijg.org/
+6.) _libjpeg-turbo: https://libjpeg-turbo.org/
 
 C++ API
 =======
@@ -123,17 +124,17 @@ so make sure that it is also available to cmake via the ``CMAKE_PREFIX_PATH``.
 
 For an example setup, take a look at ``examples/cpp/hello_world``.
 
-Documentation
+**Documentation**
 =============
 You can find the API documentation on the pytorch website: https://pytorch.org/docs/stable/torchvision/index.html
 
-Contributing
+**Contributing**
 ============
 We appreciate all contributions. If you are planning to contribute back bug-fixes, please do so without any further discussion. If you plan to contribute new features, utility functions or extensions, please first open an issue and discuss the feature with us.
 
-Disclaimer on Datasets
+**Disclaimer on Datasets**
 ======================
 
-This is a utility library that downloads and prepares public datasets. We do not host or distribute these datasets, vouch for their quality or fairness, or claim that you have license to use the dataset. It is your responsibility to determine whether you have permission to use the dataset under the dataset's license.
+This is a utility library that downloads and prepares the  public datasets. We do not host or redistribute these datasets, vouch for their quality or fairness, or claim that you have license to use the dataset. It is your responsibility to determine whether you have permission to use the dataset under the dataset's license.
 
 If you're a dataset owner and wish to update any part of it (description, citation, etc.), or do not want your dataset to be included in this library, please get in touch through a GitHub issue. Thanks for your contribution to the ML community!
