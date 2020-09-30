@@ -52,8 +52,8 @@ class AnchorGenerator(nn.Module):
 
     def __init__(
         self,
-        sizes=(128, 256, 512),
-        aspect_ratios=(0.5, 1.0, 2.0),
+        sizes=((128, 256, 512),),
+        aspect_ratios=((0.5, 1.0, 2.0),),
     ):
         super(AnchorGenerator, self).__init__()
 
@@ -118,6 +118,7 @@ class AnchorGenerator(nn.Module):
         anchors = []
         cell_anchors = self.cell_anchors
         assert cell_anchors is not None
+        assert len(grid_sizes) == len(strides) == len(cell_anchors)
 
         for size, stride, base_anchors in zip(
             grid_sizes, strides, cell_anchors
