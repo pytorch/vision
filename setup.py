@@ -331,11 +331,13 @@ def get_extensions():
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
+    print("FFmpeg found: {}".format(has_ffmpeg))
 
     if has_ffmpeg:
         ffmpeg_bin = os.path.dirname(ffmpeg_exe)
         ffmpeg_root = os.path.dirname(ffmpeg_bin)
         ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
+        print("ffmpeg include path: {}".format(ffmpeg_include_dir))
 
         # TorchVision base decoder + video reader
         video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
