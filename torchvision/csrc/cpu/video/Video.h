@@ -23,17 +23,13 @@ using namespace ffmpeg;
 struct Video : torch::CustomClassHolder {
   std::tuple<std::string, long> current_stream; // stream type, id
   // global video metadata
-  c10::Dict<
-      std::string,
-      c10::Dict<std::string, std::vector<double>>>
+  c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>>
       streamsMetadata;
 
  public:
   Video(std::string videoPath, std::string stream);
   std::tuple<std::string, int64_t> getCurrentStream() const;
-  c10::Dict<
-      std::string,
-      c10::Dict<std::string, std::vector<double>>>
+  c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>>
   getStreamMetadata() const;
   void Seek(double ts);
   bool setCurrentStream(std::string stream);
