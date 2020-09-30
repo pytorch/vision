@@ -1,6 +1,7 @@
 import torch
 from torch.jit.annotations import Tuple
 from torch import Tensor
+from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
 import torchvision
 
 
@@ -133,83 +134,53 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     return clipped_boxes.reshape(boxes.shape)
 
 
-def box_cxcywh_to_xyxy(boxes: Tensor) -> Tensor:
+def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     """
-    Converts bounding boxes from (cx, cy, w, h) format to (x1, y1, x2, y2) format.
-    (cx, cy) refers to center of bounding box
-    (w, h) are width and height of bounding box
+    Converts boxes from given in_fmt to out_fmt.
+
     Arguments:
-        boxes (Tensor[N, 4]): boxes in (cx, cy, w, h) format which will be converted.
+        boxes (Tensor[N, 4]): boxes which will be converted.
+        in_fmt (str): Input format of given boxes.
+        out_fmt (str): Output format of given boxes.
 
     Returns:
-        boxes (Tensor(N, 4)): boxes in (x1, y1, x2, y2) format.
+        boxes (Tensor[N, 4]): Boxes into converted format.
     """
-    # We need to change all 4 of them so some temporary variable is needed.
-    cx, cy, w, h = boxes.unbind(-1)
-    x1 = cx - 0.5 * w
-    y1 = cy - 0.5 * h
-    x2 = cx + 0.5 * w
-    y2 = cy + 0.5 * h
+    allowed_fmts = ("xyxy", "xywh", "cxcywh")
+    assert in_fmt in allowed_fmts
+    assert out_fmt in allowed_fmts
 
-    boxes = torch.stack((x1, y1, x2, y2), dim=-1)
+    if in_fmt == out_fmt:
+        return boxes.clone()  # to ensure always returning a copy
 
-    return boxes
+    else:
+        if in_fmt != 'xyxy' and out_fmt != 'xyxy':
+            if(in_fmt == "xywh"):
+                boxes_xyxy = _box_xywh_to_xyxy(boxes)
+                if(out_fmt == "cxcywh"):
+                    boxes_converted = _box_xyxy_to_cxcywh(boxes_xyxy)
 
+            elif(in_fmt == "cxcywh"):
+                boxes_xyxy = _box_cxcywh_to_xyxy(boxes)
+                if(out_fmt == "xywh"):
+                    boxes_converted = _box_xyxy_to_xywh(boxes_xyxy)
 
-def box_xyxy_to_cxcywh(boxes: Tensor) -> Tensor:
-    """
-    Converts bounding boxes from (x1, y1, x2, y2) format to (cx, cy, w, h) format.
-    (x1, y1) refer to top left of bounding box
-    (x2, y2) refer to bottom right of bounding box
-    Arguments:
-        boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) format which will be converted.
+            # convert one to xyxy and change either in_fmt or out_fmt to xyxy
+        else:
+            if in_fmt == "xyxy":
+                if(out_fmt == "xywh"):
+                    boxes_converted = _box_xyxy_to_xywh(boxes)
 
-    Returns:
-        boxes (Tensor(N, 4)): boxes in (cx, cy, w, h) format.
-    """
-    x1, y1, x2, y2 = boxes.unbind(-1)
-    cx = (x1 + x2) / 2
-    cy = (y1 + y2) / 2
-    w = x2 - x1
-    h = y2 - y1
+                elif(out_fmt == "cxcywh"):
+                    boxes_converted = _box_xyxy_to_cxcywh(boxes)
 
-    boxes = torch.stack((cx, cy, w, h), dim=-1)
+            elif out_fmt == "xyxy":
+                if(in_fmt == "xywh"):
+                    boxes_converted = _box_xywh_to_xyxy(boxes)
 
-    return boxes
-
-
-def box_xywh_to_xyxy(boxes: Tensor) -> Tensor:
-    """
-    Converts bounding boxes from (x, y, w, h) format to (x1, y1, x2, y2) format.
-    (x, y) refers to top left of bouding box.
-    (w, h) refers to width and height of box.
-    Arguments:
-        boxes (Tensor[N, 4]): boxes in (x, y, w, h) which will be converted.
-
-    Returns:
-        boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) format.
-    """
-    x, y, w, h = boxes.unbind(-1)
-    return torch.stack([x, y, x + w, y + h], dim=-1)
-    return boxes
-
-
-def box_xyxy_to_xywh(boxes: Tensor) -> Tensor:
-    """
-    Converts bounding boxes from (x1, y1, x2, y2) format to (x, y, w, h) format.
-    (x1, y1) refer to top left of bounding box
-    (x2, y2) refer to bottom right of bounding box
-    Arguments:
-        boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) which will be converted.
-
-    Returns:
-        boxes (Tensor[N, 4]): boxes in (x, y, w, h) format.
-    """
-    x1, y1, x2, y2 = boxes.unbind(-1)
-    x2 = x2 - x1  # x2 - x1
-    y2 = y2 - y1  # y2 - y1
-    boxes = torch.stack((x1, y1, x2, y2), dim=-1)
-    return boxes
+                elif(in_fmt == "cxcywh"):
+                    boxes_converted = _box_cxcywh_to_xyxy(boxes)
+        return boxes_converted
 
 
 def box_area(boxes: Tensor) -> Tensor:
