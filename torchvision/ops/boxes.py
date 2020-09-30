@@ -151,34 +151,33 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     assert out_fmt in allowed_fmts
 
     if in_fmt == out_fmt:
-        return boxes.clone()  # to ensure always returning a copy
+        # return boxes.clone()  # to ensure always returning a copy
+        boxes_converted = boxes.clone()
+        return boxes_converted
 
     else:
         if in_fmt != 'xyxy' and out_fmt != 'xyxy':
-            if(in_fmt == "xywh"):
+            if in_fmt == "xywh":
                 boxes_xyxy = _box_xywh_to_xyxy(boxes)
-                if(out_fmt == "cxcywh"):
+                if out_fmt == "cxcywh":
                     boxes_converted = _box_xyxy_to_cxcywh(boxes_xyxy)
 
-            elif(in_fmt == "cxcywh"):
+            elif in_fmt == "cxcywh":
                 boxes_xyxy = _box_cxcywh_to_xyxy(boxes)
-                if(out_fmt == "xywh"):
+                if out_fmt == "xywh":
                     boxes_converted = _box_xyxy_to_xywh(boxes_xyxy)
 
             # convert one to xyxy and change either in_fmt or out_fmt to xyxy
         else:
             if in_fmt == "xyxy":
-                if(out_fmt == "xywh"):
+                if out_fmt == "xywh":
                     boxes_converted = _box_xyxy_to_xywh(boxes)
-
-                elif(out_fmt == "cxcywh"):
+                elif out_fmt == "cxcywh":
                     boxes_converted = _box_xyxy_to_cxcywh(boxes)
-
             elif out_fmt == "xyxy":
-                if(in_fmt == "xywh"):
+                if in_fmt == "xywh":
                     boxes_converted = _box_xywh_to_xyxy(boxes)
-
-                elif(in_fmt == "cxcywh"):
+                elif in_fmt == "cxcywh":
                     boxes_converted = _box_cxcywh_to_xyxy(boxes)
         return boxes_converted
 
