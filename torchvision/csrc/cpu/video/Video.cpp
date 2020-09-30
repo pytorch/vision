@@ -189,9 +189,9 @@ Video::Video(std::string videoPath, std::string stream) {
   std::vector<double> audioFPS, videoFPS, ccFPS, subsFPS;
   std::vector<double> audioDuration, videoDuration, ccDuration, subsDuration;
   std::vector<double> audioTB, videoTB, ccTB, subsTB;
-  c10::Dict<std::string, std::vector<double, std::allocator<double>>>
+  c10::Dict<std::string, std::vector<double>>
       audioMetadata;
-  c10::Dict<std::string, std::vector<double, std::allocator<double>>>
+  c10::Dict<std::string, std::vector<double>>
       videoMetadata;
 
   // calback and metadata defined in struct
@@ -261,7 +261,7 @@ std::tuple<std::string, int64_t> Video::getCurrentStream() const {
 
 c10::Dict<
     std::string,
-    c10::Dict<std::string, std::vector<double, std::allocator<double>>>>
+    c10::Dict<std::string, std::vector<double>>>
 Video::getStreamMetadata() const {
   return streamsMetadata;
 }

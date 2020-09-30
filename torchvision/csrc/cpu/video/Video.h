@@ -25,7 +25,7 @@ struct Video : torch::CustomClassHolder {
   // global video metadata
   c10::Dict<
       std::string,
-      c10::Dict<std::string, std::vector<double, std::allocator<double>>>>
+      c10::Dict<std::string, std::vector<double>>>
       streamsMetadata;
 
  public:
@@ -33,7 +33,7 @@ struct Video : torch::CustomClassHolder {
   std::tuple<std::string, int64_t> getCurrentStream() const;
   c10::Dict<
       std::string,
-      c10::Dict<std::string, std::vector<double, std::allocator<double>>>>
+      c10::Dict<std::string, std::vector<double>>>
   getStreamMetadata() const;
   void Seek(double ts);
   bool setCurrentStream(std::string stream);
