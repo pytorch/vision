@@ -264,7 +264,6 @@ def get_extensions():
     libpng = distutils.spawn.find_executable('libpng-config')
     pngfix = distutils.spawn.find_executable('pngfix')
     png_found = libpng is not None or pngfix is not None
-    image_macros += [('PNG_FOUND', str(int(png_found)))]
     print('PNG found: {0}'.format(png_found))
     if png_found:
         if libpng is not None:
@@ -307,6 +306,7 @@ def get_extensions():
      jpeg_include, jpeg_lib) = find_library('jpeglib', vision_include)
 
     print('JPEG found: {0}'.format(jpeg_found))
+    image_macros += [('PNG_FOUND', str(int(png_found)))]
     image_macros += [('JPEG_FOUND', str(int(jpeg_found)))]
     if jpeg_found:
         print('Building torchvision with JPEG image support')
