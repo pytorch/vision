@@ -727,20 +727,20 @@ class BoxTester(unittest.TestCase):
         self.assertEqual(box_xywh.dtype, box_tensor.dtype)
         assert torch.all(torch.eq(box_xywh, box_tensor)).item()
 
-    # def test_bbox_convert_jit(self):
-    #     box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
-    #                               [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+    def test_bbox_convert_jit(self):
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                  [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
 
-    #     scripted_fn = torch.jit.script(ops.box_convert)
-    #     TOLERANCE = 1e-3
+        scripted_fn = torch.jit.script(ops.box_convert)
+        TOLERANCE = 1e-3
 
-    #     box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
-    #     scripted_xywh = scripted_fn(box_tensor, 'xyxy', 'xywh')
-    #     self.assertTrue((scripted_xywh - box_xywh).abs().max() < TOLERANCE)
+        box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
+        scripted_xywh = scripted_fn(box_tensor, 'xyxy', 'xywh')
+        self.assertTrue((scripted_xywh - box_xywh).abs().max() < TOLERANCE)
 
-    #     box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
-    #     scripted_cxcywh = scripted_fn(box_tensor, 'xyxy', 'cxcywh')
-    #     self.assertTrue((scripted_cxcywh - box_cxcywh).abs().max() < TOLERANCE)
+        box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
+        scripted_cxcywh = scripted_fn(box_tensor, 'xyxy', 'cxcywh')
+        self.assertTrue((scripted_cxcywh - box_cxcywh).abs().max() < TOLERANCE)
 
 
 class BoxAreaTester(unittest.TestCase):
