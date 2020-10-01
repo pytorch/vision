@@ -768,7 +768,7 @@ class BoxIouTester(unittest.TestCase):
         # Check if all elements of tensor are as expected.
         assert out.size() == torch.Size([3, 3])
         tolerance = 1e-4
-        assert ((out - expected).abs().max() < tolerance).item()
+        assert ((out - expected).abs().max() < tolerance).item() is True
 
 
 class GenBoxIouTester(unittest.TestCase):
@@ -786,7 +786,7 @@ class GenBoxIouTester(unittest.TestCase):
         # Check if all elements of tensor are as expected.
         assert out.size() == torch.Size([3, 3])
         tolerance = 1e-4
-        assert ((out - expected).abs().max() < tolerance).item()
+        assert ((out - expected).abs().max() < tolerance).item() is True
 
 
 if __name__ == '__main__':
