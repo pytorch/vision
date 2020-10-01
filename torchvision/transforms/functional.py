@@ -32,6 +32,13 @@ def _get_image_size(img: Tensor) -> List[int]:
     return F_pil._get_image_size(img)
 
 
+def _get_image_num_channels(img: Tensor) -> int:
+    if isinstance(img, torch.Tensor):
+        return F_t._get_image_num_channels(img)
+
+    return F_pil._get_image_num_channels(img)
+
+
 @torch.jit.unused
 def _is_numpy(img: Any) -> bool:
     return isinstance(img, np.ndarray)
@@ -64,7 +71,7 @@ def to_tensor(pic):
         if pic.ndim == 2:
             pic = pic[:, :, None]
 
-        img = torch.from_numpy(pic.transpose((2, 0, 1)))
+        img = torch.from_numpy(pic.transpose((2, 0, 1))).contiguous()
         # backward compatibility
         if isinstance(img, torch.ByteTensor):
             return img.float().div(255)
@@ -100,7 +107,7 @@ def to_tensor(pic):
 def pil_to_tensor(pic):
     """Convert a ``PIL Image`` to a tensor of the same type.
 
-    See ``AsTensor`` for more details.
+    See :class:`~torchvision.transforms.PILToTensor` for more details.
 
     Args:
         pic (PIL Image): Image to be converted to tensor.
@@ -164,10 +171,10 @@ def to_pil_image(pic, mode=None):
             pic = np.expand_dims(pic, 2)
 
     npimg = pic
-    if isinstance(pic, torch.FloatTensor) and mode != 'F':
-        pic = pic.mul(255).byte()
     if isinstance(pic, torch.Tensor):
-        npimg = np.transpose(pic.numpy(), (1, 2, 0))
+        if pic.is_floating_point() and mode != 'F':
+            pic = pic.mul(255).byte()
+        npimg = np.transpose(pic.cpu().numpy(), (1, 2, 0))
 
     if not isinstance(npimg, np.ndarray):
         raise TypeError('Input pic must be a torch.Tensor or NumPy ndarray, ' +
@@ -217,7 +224,7 @@ def to_pil_image(pic, mode=None):
     return Image.fromarray(npimg, mode=mode)
 
 
-def normalize(tensor, mean, std, inplace=False):
+def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool = False) -> Tensor:
     """Normalize a tensor image with mean and standard deviation.
 
     .. note::
@@ -226,7 +233,7 @@ def normalize(tensor, mean, std, inplace=False):
     See :class:`~torchvision.transforms.Normalize` for more details.
 
     Args:
-        tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
+        tensor (Tensor): Tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
         inplace(bool,optional): Bool to make this operation inplace.
@@ -234,11 +241,11 @@ def normalize(tensor, mean, std, inplace=False):
     Returns:
         Tensor: Normalized Tensor image.
     """
-    if not torch.is_tensor(tensor):
-        raise TypeError('tensor should be a torch tensor. Got {}.'.format(type(tensor)))
+    if not isinstance(tensor, torch.Tensor):
+        raise TypeError('Input tensor should be a torch tensor. Got {}.'.format(type(tensor)))
 
-    if tensor.ndimension() != 3:
-        raise ValueError('Expected tensor to be a tensor image of size (C, H, W). Got tensor.size() = '
+    if tensor.ndim < 3:
+        raise ValueError('Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = '
                          '{}.'.format(tensor.size()))
 
     if not inplace:
@@ -250,9 +257,9 @@ def normalize(tensor, mean, std, inplace=False):
     if (std == 0).any():
         raise ValueError('std evaluated to zero after conversion to {}, leading to division by zero.'.format(dtype))
     if mean.ndim == 1:
-        mean = mean[:, None, None]
+        mean = mean.view(-1, 1, 1)
     if std.ndim == 1:
-        std = std[:, None, None]
+        std = std.view(-1, 1, 1)
     tensor.sub_(mean).div_(std)
     return tensor
 
@@ -432,53 +439,70 @@ def hflip(img: Tensor) -> Tensor:
     return F_t.hflip(img)
 
 
-def _get_perspective_coeffs(startpoints, endpoints):
+def _get_perspective_coeffs(
+        startpoints: List[List[int]], endpoints: List[List[int]]
+) -> List[float]:
     """Helper function to get the coefficients (a, b, c, d, e, f, g, h) for the perspective transforms.
 
     In Perspective Transform each pixel (x, y) in the original image gets transformed as,
      (x, y) -> ( (ax + by + c) / (gx + hy + 1), (dx + ey + f) / (gx + hy + 1) )
 
     Args:
-        List containing [top-left, top-right, bottom-right, bottom-left] of the original image,
-        List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image
+        startpoints (list of list of ints): List containing four lists of two integers corresponding to four corners
+            ``[top-left, top-right, bottom-right, bottom-left]`` of the original image.
+        endpoints (list of list of ints): List containing four lists of two integers corresponding to four corners
+            ``[top-left, top-right, bottom-right, bottom-left]`` of the transformed image.
+
     Returns:
         octuple (a, b, c, d, e, f, g, h) for transforming each pixel.
     """
-    matrix = []
+    a_matrix = torch.zeros(2 * len(startpoints), 8, dtype=torch.float)
 
-    for p1, p2 in zip(endpoints, startpoints):
-        matrix.append([p1[0], p1[1], 1, 0, 0, 0, -p2[0] * p1[0], -p2[0] * p1[1]])
-        matrix.append([0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]])
+    for i, (p1, p2) in enumerate(zip(endpoints, startpoints)):
+        a_matrix[2 * i, :] = torch.tensor([p1[0], p1[1], 1, 0, 0, 0, -p2[0] * p1[0], -p2[0] * p1[1]])
+        a_matrix[2 * i + 1, :] = torch.tensor([0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]])
 
-    A = torch.tensor(matrix, dtype=torch.float)
-    B = torch.tensor(startpoints, dtype=torch.float).view(8)
-    res = torch.lstsq(B, A)[0]
-    return res.squeeze_(1).tolist()
+    b_matrix = torch.tensor(startpoints, dtype=torch.float).view(8)
+    res = torch.lstsq(b_matrix, a_matrix)[0]
+
+    output: List[float] = res.squeeze(1).tolist()
+    return output
 
 
-def perspective(img, startpoints, endpoints, interpolation=Image.BICUBIC, fill=None):
-    """Perform perspective transform of the given PIL Image.
+def perspective(
+        img: Tensor,
+        startpoints: List[List[int]],
+        endpoints: List[List[int]],
+        interpolation: int = 2,
+        fill: Optional[int] = None
+) -> Tensor:
+    """Perform perspective transform of the given image.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        img (PIL Image): Image to be transformed.
-        startpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the original image
-        endpoints: List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image
-        interpolation: Default- Image.BICUBIC
+        img (PIL Image or Tensor): Image to be transformed.
+        startpoints (list of list of ints): List containing four lists of two integers corresponding to four corners
+            ``[top-left, top-right, bottom-right, bottom-left]`` of the original image.
+        endpoints (list of list of ints): List containing four lists of two integers corresponding to four corners
+            ``[top-left, top-right, bottom-right, bottom-left]`` of the transformed image.
+        interpolation (int): Interpolation type. If input is Tensor, only ``PIL.Image.NEAREST`` and
+            ``PIL.Image.BILINEAR`` are supported. Default, ``PIL.Image.BILINEAR`` for PIL images and Tensors.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
-            This option is only available for ``pillow>=5.0.0``.
+            This option is only available for ``pillow>=5.0.0``. This option is not supported for Tensor
+            input. Fill value for the area outside the transform in the output image is always 0.
 
     Returns:
-        PIL Image:  Perspectively transformed Image.
+        PIL Image or Tensor: transformed Image.
     """
 
-    if not F_pil._is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-
-    opts = _parse_fill(fill, img, '5.0.0')
-
     coeffs = _get_perspective_coeffs(startpoints, endpoints)
-    return img.transform(img.size, Image.PERSPECTIVE, coeffs, interpolation, **opts)
+
+    if not isinstance(img, torch.Tensor):
+        return F_pil.perspective(img, coeffs, interpolation=interpolation, fill=fill)
+
+    return F_t.perspective(img, coeffs, interpolation=interpolation, fill=fill)
 
 
 def vflip(img: Tensor) -> Tensor:
@@ -653,7 +677,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     .. _Hue: https://en.wikipedia.org/wiki/Hue
 
     Args:
-        img (PIL Image): PIL Image to be adjusted.
+        img (PIL Image or Tensor): Image to be adjusted.
         hue_factor (float):  How much to shift the hue channel. Should be in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
@@ -661,12 +685,12 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
             with complementary colors while 0 gives the original image.
 
     Returns:
-        PIL Image: Hue adjusted image.
+        PIL Image or Tensor: Hue adjusted image.
     """
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_hue(img, hue_factor)
 
-    raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return F_t.adjust_hue(img, hue_factor)
 
 
 def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
@@ -697,40 +721,8 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     return F_t.adjust_gamma(img, gamma, gain)
 
 
-def rotate(img, angle, resample=False, expand=False, center=None, fill=None):
-    """Rotate the image by angle.
-
-
-    Args:
-        img (PIL Image): PIL Image to be rotated.
-        angle (float or int): In degrees degrees counter clockwise order.
-        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
-            An optional resampling filter. See `filters`_ for more information.
-            If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
-        expand (bool, optional): Optional expansion flag.
-            If true, expands the output image to make it large enough to hold the entire rotated image.
-            If false or omitted, make the output image the same size as the input image.
-            Note that the expand flag assumes rotation around the center and no translation.
-        center (2-tuple, optional): Optional center of rotation.
-            Origin is the upper left corner.
-            Default is the center of the image.
-        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
-            image. If int or float, the value is used for all bands respectively.
-            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
-
-    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
-
-    """
-    if not F_pil._is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
-
-    opts = _parse_fill(fill, img, '5.2.0')
-
-    return img.rotate(angle, resample, expand, center, **opts)
-
-
 def _get_inverse_affine_matrix(
-        center: List[int], angle: float, translate: List[float], scale: float, shear: List[float]
+        center: List[float], angle: float, translate: List[float], scale: float, shear: List[float]
 ) -> List[float]:
     # Helper method to compute inverse matrix for affine transformation
 
@@ -779,6 +771,59 @@ def _get_inverse_affine_matrix(
     return matrix
 
 
+def rotate(
+        img: Tensor, angle: float, resample: int = 0, expand: bool = False,
+        center: Optional[List[int]] = None, fill: Optional[int] = None
+) -> Tensor:
+    """Rotate the image by angle.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+
+    Args:
+        img (PIL Image or Tensor): image to be rotated.
+        angle (float or int): rotation angle value in degrees, counter-clockwise.
+        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
+            An optional resampling filter. See `filters`_ for more information.
+            If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
+        expand (bool, optional): Optional expansion flag.
+            If true, expands the output image to make it large enough to hold the entire rotated image.
+            If false or omitted, make the output image the same size as the input image.
+            Note that the expand flag assumes rotation around the center and no translation.
+        center (list or tuple, optional): Optional center of rotation. Origin is the upper left corner.
+            Default is the center of the image.
+        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+            image. If int or float, the value is used for all bands respectively.
+            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
+            This option is not supported for Tensor input. Fill value for the area outside the transform in the output
+            image is always 0.
+
+    Returns:
+        PIL Image or Tensor: Rotated image.
+
+    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
+
+    """
+    if not isinstance(angle, (int, float)):
+        raise TypeError("Argument angle should be int or float")
+
+    if center is not None and not isinstance(center, (list, tuple)):
+        raise TypeError("Argument center should be a sequence")
+
+    if not isinstance(img, torch.Tensor):
+        return F_pil.rotate(img, angle=angle, resample=resample, expand=expand, center=center, fill=fill)
+
+    center_f = [0.0, 0.0]
+    if center is not None:
+        img_size = _get_image_size(img)
+        # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
+        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
+
+    # due to current incoherence of rotation angle direction between affine and rotate implementations
+    # we need to set -angle.
+    matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
+    return F_t.rotate(img, matrix=matrix, resample=resample, expand=expand, fill=fill)
+
+
 def affine(
         img: Tensor, angle: float, translate: List[int], scale: float, shear: List[float],
         resample: int = 0, fillcolor: Optional[int] = None
@@ -788,7 +833,7 @@ def affine(
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        img (PIL Image or Tensor): image to be rotated.
+        img (PIL Image or Tensor): image to transform.
         angle (float or int): rotation angle in degrees between -180 and 180, clockwise direction.
         translate (list or tuple of integers): horizontal and vertical translations (post-rotation translation)
         scale (float): overall scale
@@ -799,7 +844,9 @@ def affine(
             An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image is PIL Image and has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
             If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
-        fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
+        fillcolor (int): Optional fill color for the area outside the transform in the output image (Pillow>=5.0.0).
+            This option is not supported for Tensor input. Fill value for the area outside the transform in the output
+            image is always 0.
 
     Returns:
         PIL Image or Tensor: Transformed image.
@@ -847,18 +894,18 @@ def affine(
 
         return F_pil.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 
-    # we need to rescale translate by image size / 2 as its values can be between -1 and 1
-    translate = [2.0 * t / s for s, t in zip(img_size, translate)]
-
-    matrix = _get_inverse_affine_matrix([0, 0], angle, translate, scale, shear)
+    translate_f = [1.0 * t for t in translate]
+    matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, translate_f, scale, shear)
     return F_t.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
 
 
+@torch.jit.unused
 def to_grayscale(img, num_output_channels=1):
-    """Convert image to grayscale version of image.
+    """Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.
 
     Args:
-        img (PIL Image): Image to be converted to grayscale.
+        img (PIL Image): PIL Image to be converted to grayscale.
+        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
 
     Returns:
         PIL Image: Grayscale version of the image.
@@ -866,20 +913,35 @@ def to_grayscale(img, num_output_channels=1):
 
             if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
-    if not F_pil._is_pil_image(img):
-        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    if isinstance(img, Image.Image):
+        return F_pil.to_grayscale(img, num_output_channels)
 
-    if num_output_channels == 1:
-        img = img.convert('L')
-    elif num_output_channels == 3:
-        img = img.convert('L')
-        np_img = np.array(img, dtype=np.uint8)
-        np_img = np.dstack([np_img, np_img, np_img])
-        img = Image.fromarray(np_img, 'RGB')
-    else:
-        raise ValueError('num_output_channels should be either 1 or 3')
+    raise TypeError("Input should be PIL Image")
 
-    return img
+
+def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
+    """Convert RGB image to grayscale version of image.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+
+    Note:
+        Please, note that this method supports only RGB images as input. For inputs in other color spaces,
+        please, consider using meth:`~torchvision.transforms.functional.to_grayscale` with PIL Image.
+
+    Args:
+        img (PIL Image or Tensor): RGB Image to be converted to grayscale.
+        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
+
+    Returns:
+        PIL Image or Tensor: Grayscale version of the image.
+            if num_output_channels = 1 : returned image is single channel
+
+            if num_output_channels = 3 : returned image is 3 channel with r = g = b
+    """
+    if not isinstance(img, torch.Tensor):
+        return F_pil.to_grayscale(img, num_output_channels)
+
+    return F_t.rgb_to_grayscale(img, num_output_channels)
 
 
 def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool = False) -> Tensor:
@@ -903,5 +965,5 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     if not inplace:
         img = img.clone()
 
-    img[:, i:i + h, j:j + w] = v
+    img[..., i:i + h, j:j + w] = v
     return img

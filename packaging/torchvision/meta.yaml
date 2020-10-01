@@ -29,7 +29,7 @@ requirements:
 
 build:
   string: py{{py}}_{{ environ['CU_VERSION'] }}
-  script: python setup.py install --single-version-externally-managed --record=record.txt # [not win]
+  script: python setup.py install --single-version-externally-managed --record=record.txt
   script_env:
     - CUDA_HOME
     - FORCE_CUDA

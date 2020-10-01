@@ -1,8 +1,6 @@
 import os
 import io
-import re
 import sys
-import csv
 from setuptools import setup, find_packages
 from pkg_resources import parse_version, get_distribution, DistributionNotFound
 import subprocess
@@ -208,6 +206,20 @@ def get_extensions():
         extra_compile_args.setdefault('cxx', [])
         extra_compile_args['cxx'].append('/MP')
 
+    debug_mode = os.getenv('DEBUG', '0') == '1'
+    if debug_mode:
+        print("Compile in debug mode")
+        extra_compile_args['cxx'].append("-g")
+        extra_compile_args['cxx'].append("-O0")
+        if "nvcc" in extra_compile_args:
+            # we have to remove "-OX" and "-g" flag if exists and append
+            nvcc_flags = extra_compile_args["nvcc"]
+            extra_compile_args["nvcc"] = [
+                f for f in nvcc_flags if not ("-O" in f or "-g" in f)
+            ]
+            extra_compile_args["nvcc"].append("-O0")
+            extra_compile_args["nvcc"].append("-g")
+
     sources = [os.path.join(extensions_dir, s) for s in sources]
 
     include_dirs = [extensions_dir]
@@ -252,7 +264,6 @@ def get_extensions():
     libpng = distutils.spawn.find_executable('libpng-config')
     pngfix = distutils.spawn.find_executable('pngfix')
     png_found = libpng is not None or pngfix is not None
-    image_macros += [('PNG_FOUND', str(int(png_found)))]
     print('PNG found: {0}'.format(png_found))
     if png_found:
         if libpng is not None:
@@ -295,6 +306,7 @@ def get_extensions():
      jpeg_include, jpeg_lib) = find_library('jpeglib', vision_include)
 
     print('JPEG found: {0}'.format(jpeg_found))
+    image_macros += [('PNG_FOUND', str(int(png_found)))]
     image_macros += [('JPEG_FOUND', str(int(jpeg_found)))]
     if jpeg_found:
         print('Building torchvision with JPEG image support')
@@ -346,6 +358,7 @@ def get_extensions():
                     ffmpeg_include_dir,
                     extensions_dir,
                 ],
+                library_dirs=library_dirs,
                 libraries=[
                     'avcodec',
                     'avformat',

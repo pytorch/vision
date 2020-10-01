@@ -391,6 +391,14 @@ class Tester(unittest.TestCase):
         with self.assertRaises(ValueError):
             transforms.Pad((1, 2, 3, 4, 5))
 
+    def test_pad_with_mode_F_images(self):
+        pad = 2
+        transform = transforms.Pad(pad)
+
+        img = Image.new("F", (10, 10))
+        padded_img = transform(img)
+        self.assertSequenceEqual(padded_img.size, [edge_size + 2 * pad for edge_size in img.size])
+
     def test_lambda(self):
         trans = transforms.Lambda(lambda x: x.add(10))
         x = torch.randn(10)
@@ -1263,7 +1271,7 @@ class Tester(unittest.TestCase):
         x = np.zeros((100, 100, 3), dtype=np.uint8)
         x[40, 40] = [255, 255, 255]
 
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, r"img should be PIL Image"):
             F.rotate(x, 10)
 
         img = F.to_pil_image(x)
@@ -1620,67 +1628,6 @@ class Tester(unittest.TestCase):
 
         # Checking if RandomGrayscale can be printed as string
         trans3.__repr__()
-
-    def test_random_erasing(self):
-        """Unit tests for random erasing transform"""
-        for is_scripted in [False, True]:
-            torch.manual_seed(12)
-            img = torch.rand(3, 60, 60)
-
-            # Test Set 0: invalid value
-            random_erasing = transforms.RandomErasing(value=(0.1, 0.2, 0.3, 0.4), p=1.0)
-            with self.assertRaises(ValueError, msg="If value is a sequence, it should have either a single value or 3"):
-                img_re = random_erasing(img)
-
-            # Test Set 1: Erasing with int value
-            random_erasing = transforms.RandomErasing(value=0.2)
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
-
-            i, j, h, w, v = transforms.RandomErasing.get_params(
-                img, scale=random_erasing.scale, ratio=random_erasing.ratio, value=[random_erasing.value, ]
-            )
-            img_output = F.erase(img, i, j, h, w, v)
-            self.assertEqual(img_output.size(0), 3)
-
-            # Test Set 2: Check if the unerased region is preserved
-            true_output = img.clone()
-            true_output[:, i:i + h, j:j + w] = random_erasing.value
-            self.assertTrue(torch.equal(true_output, img_output))
-
-            # Test Set 3: Erasing with random value
-            random_erasing = transforms.RandomErasing(value="random")
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
-            img_re = random_erasing(img)
-
-            self.assertEqual(img_re.size(0), 3)
-
-            # Test Set 4: Erasing with tuple value
-            random_erasing = transforms.RandomErasing(value=(0.2, 0.2, 0.2))
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
-            img_re = random_erasing(img)
-            self.assertEqual(img_re.size(0), 3)
-            true_output = img.clone()
-            true_output[:, i:i + h, j:j + w] = torch.tensor(random_erasing.value)[:, None, None]
-            self.assertTrue(torch.equal(true_output, img_output))
-
-            # Test Set 5: Testing the inplace behaviour
-            random_erasing = transforms.RandomErasing(value=(0.2,), inplace=True)
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
-
-            img_re = random_erasing(img)
-            self.assertTrue(torch.equal(img_re, img))
-
-            # Test Set 6: Checking when no erased region is selected
-            img = torch.rand([3, 300, 1])
-            random_erasing = transforms.RandomErasing(ratio=(0.1, 0.2), value="random")
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
-            img_re = random_erasing(img)
-            self.assertTrue(torch.equal(img_re, img))
 
 
 if __name__ == '__main__':

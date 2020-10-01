@@ -52,8 +52,8 @@ class AnchorGenerator(nn.Module):
 
     def __init__(
         self,
-        sizes=(128, 256, 512),
-        aspect_ratios=(0.5, 1.0, 2.0),
+        sizes=((128, 256, 512),),
+        aspect_ratios=((0.5, 1.0, 2.0),),
     ):
         super(AnchorGenerator, self).__init__()
 
@@ -118,6 +118,7 @@ class AnchorGenerator(nn.Module):
         anchors = []
         cell_anchors = self.cell_anchors
         assert cell_anchors is not None
+        assert len(grid_sizes) == len(strides) == len(cell_anchors)
 
         for size, stride, base_anchors in zip(
             grid_sizes, strides, cell_anchors
@@ -430,8 +431,8 @@ class RegionProposalNetwork(torch.nn.Module):
         """
 
         sampled_pos_inds, sampled_neg_inds = self.fg_bg_sampler(labels)
-        sampled_pos_inds = torch.nonzero(torch.cat(sampled_pos_inds, dim=0)).squeeze(1)
-        sampled_neg_inds = torch.nonzero(torch.cat(sampled_neg_inds, dim=0)).squeeze(1)
+        sampled_pos_inds = torch.where(torch.cat(sampled_pos_inds, dim=0))[0]
+        sampled_neg_inds = torch.where(torch.cat(sampled_neg_inds, dim=0))[0]
 
         sampled_inds = torch.cat([sampled_pos_inds, sampled_neg_inds], dim=0)
 

@@ -7,6 +7,7 @@
 #include "cuda/vision_cuda.h"
 #endif
 #ifdef WITH_HIP
+#include "autocast.h"
 #include "hip/vision_cuda.h"
 #endif
 
@@ -37,7 +38,7 @@ at::Tensor roi_align(
       aligned);
 }
 
-#ifdef WITH_CUDA
+#if defined(WITH_CUDA) || defined(WITH_HIP)
 at::Tensor ROIAlign_autocast(
     const at::Tensor& input,
     const at::Tensor& rois,
@@ -48,8 +49,8 @@ at::Tensor ROIAlign_autocast(
     const bool aligned) {
   c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
   return roi_align(
-             autocast::_cast(at::kFloat, input),
-             autocast::_cast(at::kFloat, rois),
+             at::autocast::cached_cast(at::kFloat, input),
+             at::autocast::cached_cast(at::kFloat, rois),
              spatial_scale,
              pooled_height,
              pooled_width,
