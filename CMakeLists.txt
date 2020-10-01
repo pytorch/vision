@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 project(torchvision)
 set(CMAKE_CXX_STANDARD 14)
 set(TORCHVISION_VERSION 0.7.0)
