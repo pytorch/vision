@@ -160,6 +160,7 @@ def _decode_frames_by_av_module(
             frames are read
     """
     import av
+
     if video_end_pts is None:
         video_end_pts = float("inf")
     if audio_end_pts is None:
@@ -291,13 +292,15 @@ class TestVideo(unittest.TestCase):
 
     def test_pts(self):
         """
-        Check if every frame read from 
+        Check if every frame read from
         """
         torchvision.set_video_backend("video_reader")
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
-            tv_timestamps, _ = torchvision.io.read_video_timestamps(full_path, pts_unit='sec')
+            tv_timestamps, _ = torchvision.io.read_video_timestamps(
+                full_path, pts_unit="sec"
+            )
             # pass 2: decode all frames using new api
             reader = torch.classes.torchvision.Video(full_path, "video")
             pts = []
@@ -310,7 +313,7 @@ class TestVideo(unittest.TestCase):
             napi_pts = [float(p) for p in pts]
             for i in range(len(napi_pts)):
                 self.assertAlmostEqual(napi_pts[i], tv_timestamps[i], delta=0.001)
-         # check if pts of video frames are sorted in ascending order
+        # check if pts of video frames are sorted in ascending order
         for i in range(len(napi_pts) - 1):
             self.assertEqual(napi_pts[i] < napi_pts[i + 1], True)
 
@@ -324,8 +327,12 @@ class TestVideo(unittest.TestCase):
             full_path = os.path.join(VIDEO_DIR, test_video)
             reader = torch.classes.torchvision.Video(full_path, "video")
             reader_md = reader.get_metadata()
-            self.assertAlmostEqual(config.video_fps, reader_md["video"]["fps"][0], delta=0.0001)
-            self.assertAlmostEqual(config.duration, reader_md["video"]["duration"][0], delta=0.5)
+            self.assertAlmostEqual(
+                config.video_fps, reader_md["video"]["fps"][0], delta=0.0001
+            )
+            self.assertAlmostEqual(
+                config.duration, reader_md["video"]["duration"][0], delta=0.5
+            )
 
     def test_video_reading_fn(self):
         """
@@ -344,7 +351,9 @@ class TestVideo(unittest.TestCase):
             # make a direct comparison not feasible)
             if newapi_result.vframes.numel() > 0 and ref_result.vframes.numel() > 0:
                 mean_delta = torch.mean(
-                    torch.abs(newapi_result.vframes.float() - ref_result.vframes.float())
+                    torch.abs(
+                        newapi_result.vframes.float() - ref_result.vframes.float()
+                    )
                 )
             self.assertAlmostEqual(mean_delta, 0, delta=8.0)
 
@@ -359,9 +368,11 @@ class TestVideo(unittest.TestCase):
             ):
                 """Audio stream is available and audio frame is required to return
                 from decoder"""
-                is_same = torch.all(torch.eq(newapi_result.aframes, ref_result.aframes)).item()
+                is_same = torch.all(
+                    torch.eq(newapi_result.aframes, ref_result.aframes)
+                ).item()
                 self.assertEqual(is_same, True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
