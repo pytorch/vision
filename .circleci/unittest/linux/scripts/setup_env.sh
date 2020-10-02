@@ -41,4 +41,5 @@ conda env update --file "${this_dir}/environment.yml" --prune
 
 conda list
 #conda install av=6.2.0 -c conda-forge -y
-#conda list
+conda install ffmpeg=4.2.2 -c conda-forge -y
+conda list
