@@ -264,7 +264,6 @@ def get_extensions():
     libpng = distutils.spawn.find_executable('libpng-config')
     pngfix = distutils.spawn.find_executable('pngfix')
     png_found = libpng is not None or pngfix is not None
-    image_macros += [('PNG_FOUND', str(int(png_found)))]
     print('PNG found: {0}'.format(png_found))
     if png_found:
         if libpng is not None:
@@ -307,6 +306,7 @@ def get_extensions():
      jpeg_include, jpeg_lib) = find_library('jpeglib', vision_include)
 
     print('JPEG found: {0}'.format(jpeg_found))
+    image_macros += [('PNG_FOUND', str(int(png_found)))]
     image_macros += [('JPEG_FOUND', str(int(jpeg_found)))]
     if jpeg_found:
         print('Building torchvision with JPEG image support')
@@ -331,11 +331,13 @@ def get_extensions():
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
+    print("FFmpeg found: {}".format(has_ffmpeg))
 
     if has_ffmpeg:
         ffmpeg_bin = os.path.dirname(ffmpeg_exe)
         ffmpeg_root = os.path.dirname(ffmpeg_bin)
         ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
+        print("ffmpeg include path: {}".format(ffmpeg_include_dir))
 
         # TorchVision base decoder + video reader
         video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
