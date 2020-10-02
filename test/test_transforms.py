@@ -380,6 +380,16 @@ class Tester(unittest.TestCase):
         self.assertTrue(np.all(symmetric_middle_slice == np.asarray([0, 1, 200, 200, 1, 0])))
         self.assertEqual(transforms.ToTensor()(symmetric_padded_img).size(), (3, 32, 34))
 
+        # Check negative padding explicitly for symmetric case, since it is not
+        # implemented for tensor case to compare to
+        # Crop 1 to left, pad 2 to top, pad 3 to right, crop 3 to bottom
+        symmetric_padded_img_neg = F.pad(img, (-1, 2, 3, -3), padding_mode='symmetric')
+        symmetric_neg_middle_left = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][:3]
+        symmetric_neg_middle_right = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][-4:]
+        self.assertTrue(np.all(symmetric_neg_middle_left == np.asarray([1, 0, 0])))
+        self.assertTrue(np.all(symmetric_neg_middle_right == np.asarray([200, 200, 0, 0])))
+        self.assertEqual(transforms.ToTensor()(symmetric_padded_img_neg).size(), (3, 28, 31))
+
     def test_pad_raises_with_invalid_pad_sequence_len(self):
         with self.assertRaises(ValueError):
             transforms.Pad(())
@@ -397,6 +407,25 @@ class Tester(unittest.TestCase):
         img = Image.new("F", (10, 10))
         padded_img = transform(img)
         self.assertSequenceEqual(padded_img.size, [edge_size + 2 * pad for edge_size in img.size])
+
+    def test_pad_negative(self):
+        # Check that negative padding is consistent for PIL and tensor
+        x = torch.randint(0, 256, size=(3, 35, 32), dtype=torch.uint8)
+        x_pil = F.to_pil_image(x)
+
+        padding_examples = [-4,
+                            (2, -3),
+                            (-1, 2, -3, 4),
+                            (1, 2, -3, -4),
+                            (1, 2, 3, -4)]
+
+        for m in ["constant", "edge", "reflect"]:
+            for p in padding_examples:
+                y = F.pad(x, p, padding_mode=m)
+                y_pil = F.pad(x_pil, p, padding_mode=m)
+                y_pil_np = np.array(y_pil).transpose(2, 0, 1)
+
+                self.assertTrue(np.all(y_pil_np == np.array(y)))
 
     def test_lambda(self):
         trans = transforms.Lambda(lambda x: x.add(10))
