@@ -41,7 +41,8 @@ def _rmtree(name):
                     os.unlink(path)
                 # PermissionError is raised on FreeBSD for directories
                 except (IsADirectoryError, PermissionError):
-                    _rmtree(path)
+                    #_rmtree(path)
+                    pass
             except FileNotFoundError:
                 pass
         elif issubclass(exc_info[0], FileNotFoundError):
