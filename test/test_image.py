@@ -218,7 +218,7 @@ class ImageTester(unittest.TestCase):
     def test_read_file(self):
         # TODO Improve workaround solution for tempfile on Windows
         d = IMAGE_ROOT
-        fname, content = 'test1', b'TorchVision\211\n'
+        fname, content = 'test1.bin', b'TorchVision\211\n'
         fpath = os.path.join(d, fname)
         with open(fpath, 'wb') as f:
             f.write(content)
