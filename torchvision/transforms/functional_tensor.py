@@ -27,7 +27,7 @@ def _get_image_num_channels(img: Tensor) -> int:
     raise TypeError("Input ndim should be 2 or more. Got {}".format(img.ndim))
 
 
-def _max_value(dtype: int) -> float:
+def _max_value(dtype: torch.dtype) -> float:
     # TODO: replace this method with torch.iinfo when it gets torchscript support.
     # https://github.com/pytorch/pytorch/issues/41492
 
