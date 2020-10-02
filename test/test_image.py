@@ -1,6 +1,7 @@
 import os
 import io
 import glob
+import tempfile
 import unittest
 import sys
 
@@ -218,15 +219,14 @@ class ImageTester(unittest.TestCase):
             self.assertTrue(img_lpng.equal(img_pil))
 
     def test_read_file(self):
-        with get_tmp_dir() as d:
-            fname, content = 'test1', b'TorchVision\211\n'
-            fpath = os.path.join(d, fname)
-            with open(fpath, 'wb') as f:
-                f.write(content)
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            content = b'TorchVision\211\n'
+            f.write(content)
 
-            data = read_file(fpath)
-            expected = torch.tensor(list(content), dtype=torch.uint8)
-            self.assertTrue(data.equal(expected))
+        data = read_file(f.name)
+        expected = torch.tensor(list(content), dtype=torch.uint8)
+        self.assertTrue(data.equal(expected))
+        os.remove(f.name)
 
         with self.assertRaisesRegex(
                 RuntimeError, "No such file or directory: 'tst'"):
