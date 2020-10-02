@@ -332,25 +332,6 @@ class Tester(unittest.TestCase):
         self.assertRaises(ValueError, transforms.Pad(padding, fill=(1, 2)),
                           transforms.ToPILImage()(img))
 
-        # Check that padding is consistent for PIL and tensor, including
-        # for the negative padding case
-        x = torch.randint(0, 256, size=(3, 35, 32), dtype=torch.uint8)
-        x_pil = F.to_pil_image(x)
-
-        padding_examples = [-4, 5, (3, 4), (2, -3),
-                            (1, 2, 3, 4),
-                            (-1, 2, -3, 4),
-                            (1, 2, -3, -4),
-                            (1, 2, 3, -4)]
-
-        for m in ["constant", "edge", "reflect"]:
-            for p in padding_examples:
-                y = F.pad(x, p, padding_mode=m)
-                y_pil = F.pad(x_pil, p, padding_mode=m)
-                y_pil_np = np.array(y_pil).transpose(2, 0, 1)
-
-                self.assertTrue(np.all(y_pil_np == np.array(y)))
-
     def test_pad_with_tuple_of_pad_values(self):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
