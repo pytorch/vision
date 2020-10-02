@@ -37,7 +37,3 @@ conda activate "${env_dir}"
 # 3. Install Conda dependencies
 printf "* Installing dependencies (except PyTorch)\n"
 conda env update --file "${this_dir}/environment.yml" --prune
-
-# install pyav and ffmpeg (Hacky)
-conda install -y -c conda-forge ffmpeg=4.2
-conda install av -c conda-forge -y
