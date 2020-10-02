@@ -131,7 +131,7 @@ def pil_to_tensor(pic):
     return img
 
 
-def convert_image_dtype(image: torch.Tensor, dtype: int = torch.float) -> torch.Tensor:
+def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
     """Convert a tensor image to the given ``dtype`` and scale the values accordingly
 
     Args:

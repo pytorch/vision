@@ -45,7 +45,7 @@ def _max_value(dtype: int) -> float:
     return max_value.item()
 
 
-def convert_image_dtype(image: torch.Tensor, dtype: int = torch.float) -> torch.Tensor:
+def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
     """PRIVATE METHOD. Convert a tensor image to the given ``dtype`` and scale the values accordingly
 
     .. warning::
