@@ -1,7 +1,6 @@
 import os
 import io
 import glob
-import tempfile
 import unittest
 import sys
 
@@ -12,8 +11,6 @@ from torchvision.io.image import (
     read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
     encode_png, write_png)
 import numpy as np
-
-from common_utils import get_tmp_dir
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 IMAGE_DIR = os.path.join(IMAGE_ROOT, "fakedata", "imagefolder")
@@ -219,14 +216,17 @@ class ImageTester(unittest.TestCase):
             self.assertTrue(img_lpng.equal(img_pil))
 
     def test_read_file(self):
-        with tempfile.NamedTemporaryFile(delete=False) as f:
-            content = b'TorchVision\211\n'
+        # TODO Improve workaround solution for tempfile on Windows
+        d = IMAGE_ROOT
+        fname, content = 'test1', b'TorchVision\211\n'
+        fpath = os.path.join(d, fname)
+        with open(fpath, 'wb') as f:
             f.write(content)
 
-        data = read_file(f.name)
+        data = read_file(fpath)
         expected = torch.tensor(list(content), dtype=torch.uint8)
         self.assertTrue(data.equal(expected))
-        os.remove(f.name)
+        os.unlink(fpath)
 
         with self.assertRaisesRegex(
                 RuntimeError, "No such file or directory: 'tst'"):
