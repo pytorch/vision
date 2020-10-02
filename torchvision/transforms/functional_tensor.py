@@ -27,14 +27,15 @@ def _get_image_num_channels(img: Tensor) -> int:
     raise TypeError("Input ndim should be 2 or more. Got {}".format(img.ndim))
 
 
-# torch.iinfo isn't scriptable so using this helper function
-# https://github.com/pytorch/pytorch/issues/41492
-def _max_value(dtype: int) -> int:
+def _max_value(dtype: int) -> float:
+    # TODO: replace this method with torch.iinfo when it gets torchscript support.
+    # https://github.com/pytorch/pytorch/issues/41492
+
     a = torch.tensor(2, dtype=dtype)
     signed = 1 if torch.tensor(0, dtype=dtype).is_signed() else 0
     bits = 1
     max_value = torch.tensor(-signed, dtype=torch.long)
-    while(True):
+    while True:
         next_value = a.pow(bits - signed).sub(1)
         if next_value > max_value:
             max_value = next_value
@@ -45,7 +46,12 @@ def _max_value(dtype: int) -> int:
 
 
 def convert_image_dtype(image: torch.Tensor, dtype: int = torch.float) -> torch.Tensor:
-    """Convert a tensor image to the given ``dtype`` and scale the values accordingly
+    """PRIVATE METHOD. Convert a tensor image to the given ``dtype`` and scale the values accordingly
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         image (torch.Tensor): Image to be converted
@@ -68,8 +74,10 @@ def convert_image_dtype(image: torch.Tensor, dtype: int = torch.float) -> torch.
     if image.dtype == dtype:
         return image
 
+    # TODO: replace with image.dtype.is_floating_point when torchscript supports it
     if torch.empty(0, dtype=image.dtype).is_floating_point():
-        # float to float
+
+        # TODO: replace with dtype.is_floating_point when torchscript supports it
         if torch.tensor(0, dtype=dtype).is_floating_point():
             return image.to(dtype)
 
@@ -94,13 +102,16 @@ def convert_image_dtype(image: torch.Tensor, dtype: int = torch.float) -> torch.
         output_max = _max_value(dtype)
 
         # int to float
+        # TODO: replace with dtype.is_floating_point when torchscript supports it
         if torch.tensor(0, dtype=dtype).is_floating_point():
             image = image.to(dtype)
             return image / input_max
 
         # int to int
         if input_max > output_max:
-            factor = (input_max + 1) // (output_max + 1)
+            # factor should be forced to int for torch jit script
+            # otherwise factor is a float and image // factor can produce different results
+            factor = int((input_max + 1) // (output_max + 1))
             image = image // factor
             return image.to(dtype)
         else:

@@ -539,13 +539,22 @@ class Tester(unittest.TestCase):
         for dtype in int_dtypes():
             self.assertEqual(F_t._max_value(dtype), torch.iinfo(dtype).max)
 
+        for dtype in float_dtypes():
+            self.assertGreater(F_t._max_value(dtype), torch.finfo(dtype).max)
+
     def test_convert_image_dtype_float_to_float(self):
         for input_dtype, output_dtypes in cycle_over(float_dtypes()):
             input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
             for output_dtype in output_dtypes:
                 with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
                     transform = transforms.ConvertImageDtype(output_dtype)
+                    transform_script = torch.jit.script(F.convert_image_dtype)
+
                     output_image = transform(input_image)
+                    output_image_script = transform_script(input_image, output_dtype)
+
+                    script_diff = output_image_script - output_image
+                    self.assertLess(script_diff.abs().max(), 1e-6)
 
                     actual_min, actual_max = output_image.tolist()
                     desired_min, desired_max = 0.0, 1.0
@@ -559,6 +568,7 @@ class Tester(unittest.TestCase):
             for output_dtype in int_dtypes():
                 with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
                     transform = transforms.ConvertImageDtype(output_dtype)
+                    transform_script = torch.jit.script(F.convert_image_dtype)
 
                     if (input_dtype == torch.float32 and output_dtype in (torch.int32, torch.int64)) or (
                             input_dtype == torch.float64 and output_dtype == torch.int64
@@ -567,6 +577,10 @@ class Tester(unittest.TestCase):
                             transform(input_image)
                     else:
                         output_image = transform(input_image)
+                        output_image_script = transform_script(input_image, output_dtype)
+
+                        script_diff = output_image_script - output_image
+                        self.assertLess(script_diff.abs().max(), 1e-6)
 
                         actual_min, actual_max = output_image.tolist()
                         desired_min, desired_max = 0, torch.iinfo(output_dtype).max
@@ -580,7 +594,13 @@ class Tester(unittest.TestCase):
             for output_dtype in float_dtypes():
                 with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
                     transform = transforms.ConvertImageDtype(output_dtype)
+                    transform_script = torch.jit.script(F.convert_image_dtype)
+
                     output_image = transform(input_image)
+                    output_image_script = transform_script(input_image, output_dtype)
+
+                    script_diff = output_image_script - output_image
+                    self.assertLess(script_diff.abs().max(), 1e-6)
 
                     actual_min, actual_max = output_image.tolist()
                     desired_min, desired_max = 0.0, 1.0
@@ -599,7 +619,15 @@ class Tester(unittest.TestCase):
 
                 with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
                     transform = transforms.ConvertImageDtype(output_dtype)
+                    transform_script = torch.jit.script(F.convert_image_dtype)
+
                     output_image = transform(input_image)
+                    output_image_script = transform_script(input_image, output_dtype)
+
+                    script_diff = output_image_script.float() - output_image.float()
+                    self.assertLess(
+                        script_diff.abs().max(), 1e-6, msg="{} vs {}".format(output_image_script, output_image)
+                    )
 
                     actual_min, actual_max = output_image.tolist()
                     desired_min, desired_max = 0, output_max

@@ -131,10 +131,31 @@ def pil_to_tensor(pic):
     return img
 
 
-# import to main namespace
-# this is temporary until we merge the implementation of
-# F_t inside functional.py
-convert_image_dtype = F_t.convert_image_dtype
+def convert_image_dtype(image: torch.Tensor, dtype: int = torch.float) -> torch.Tensor:
+    """Convert a tensor image to the given ``dtype`` and scale the values accordingly
+
+    Args:
+        image (torch.Tensor): Image to be converted
+        dtype (torch.dtype): Desired data type of the output
+
+    Returns:
+        (torch.Tensor): Converted image
+
+    .. note::
+
+        When converting from a smaller to a larger integer ``dtype`` the maximum values are **not** mapped exactly.
+        If converted back and forth, this mismatch has no effect.
+
+    Raises:
+        RuntimeError: When trying to cast :class:`torch.float32` to :class:`torch.int32` or :class:`torch.int64` as
+            well as for trying to cast :class:`torch.float64` to :class:`torch.int64`. These conversions might lead to
+            overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
+            of the integer ``dtype``.
+    """
+    if not isinstance(image, torch.Tensor):
+        raise TypeError('Input img should be Tensor Image')
+
+    return F_t.convert_image_dtype(image, dtype)
 
 
 def to_pil_image(pic, mode=None):

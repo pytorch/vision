@@ -127,7 +127,7 @@ class PILToTensor:
         return self.__class__.__name__ + '()'
 
 
-class ConvertImageDtype:
+class ConvertImageDtype(torch.nn.Module):
     """Convert a tensor image to the given ``dtype`` and scale the values accordingly
 
     Args:
@@ -146,9 +146,10 @@ class ConvertImageDtype:
     """
 
     def __init__(self, dtype: torch.dtype) -> None:
+        super().__init__()
         self.dtype = dtype
 
-    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+    def forward(self, image: torch.Tensor) -> torch.Tensor:
         return F_t.convert_image_dtype(image, self.dtype)
 
 
