@@ -96,6 +96,125 @@ test_videos = {
     ),
 }
 
+DecoderResult = collections.namedtuple(
+    "DecoderResult", "vframes vframe_pts vtimebase aframes aframe_pts atimebase"
+)
+
+def _read_from_stream(
+    container, start_pts, end_pts, stream, stream_name, buffer_size=4
+):
+    """
+    Args:
+        container: pyav container
+        start_pts/end_pts: the starting/ending Presentation TimeStamp where
+            frames are read
+        stream: pyav stream
+        stream_name: a dictionary of streams. For example, {"video": 0} means
+            video stream at stream index 0
+        buffer_size: pts of frames decoded by PyAv is not guaranteed to be in
+            ascending order. We need to decode more frames even when we meet end
+            pts
+    """
+    # seeking in the stream is imprecise. Thus, seek to an ealier PTS by a margin
+    margin = 1
+    seek_offset = max(start_pts - margin, 0)
+
+    container.seek(seek_offset, any_frame=False, backward=True, stream=stream)
+    frames = {}
+    buffer_count = 0
+    for frame in container.decode(**stream_name):
+        if frame.pts < start_pts:
+            continue
+        if frame.pts <= end_pts:
+            frames[frame.pts] = frame
+        else:
+            buffer_count += 1
+            if buffer_count >= buffer_size:
+                break
+    result = [frames[pts] for pts in sorted(frames)]
+
+    return result
+
+def _fraction_to_tensor(fraction):
+    ret = torch.zeros([2], dtype=torch.int32)
+    ret[0] = fraction.numerator
+    ret[1] = fraction.denominator
+    return ret
+
+def _decode_frames_by_av_module(
+    full_path,
+    video_start_pts=0,
+    video_end_pts=None,
+    audio_start_pts=0,
+    audio_end_pts=None,
+):
+    """
+    Use PyAv to decode video frames. This provides a reference for our decoder
+    to compare the decoding results.
+    Input arguments:
+        full_path: video file path
+        video_start_pts/video_end_pts: the starting/ending Presentation TimeStamp where
+            frames are read
+    """
+    import av
+    if video_end_pts is None:
+        video_end_pts = float("inf")
+    if audio_end_pts is None:
+        audio_end_pts = float("inf")
+    container = av.open(full_path)
+
+    video_frames = []
+    vtimebase = torch.zeros([0], dtype=torch.int32)
+    if container.streams.video:
+        video_frames = _read_from_stream(
+            container,
+            video_start_pts,
+            video_end_pts,
+            container.streams.video[0],
+            {"video": 0},
+        )
+        # container.streams.video[0].average_rate is not a reliable estimator of
+        # frame rate. It can be wrong for certain codec, such as VP80
+        # So we do not return video fps here
+        vtimebase = _fraction_to_tensor(container.streams.video[0].time_base)
+
+    audio_frames = []
+    atimebase = torch.zeros([0], dtype=torch.int32)
+    if container.streams.audio:
+        audio_frames = _read_from_stream(
+            container,
+            audio_start_pts,
+            audio_end_pts,
+            container.streams.audio[0],
+            {"audio": 0},
+        )
+        atimebase = _fraction_to_tensor(container.streams.audio[0].time_base)
+
+    container.close()
+    vframes = [frame.to_rgb().to_ndarray() for frame in video_frames]
+    vframes = torch.as_tensor(np.stack(vframes))
+
+    vframe_pts = torch.tensor([frame.pts for frame in video_frames], dtype=torch.int64)
+
+    aframes = [frame.to_ndarray() for frame in audio_frames]
+    if aframes:
+        aframes = np.transpose(np.concatenate(aframes, axis=1))
+        aframes = torch.as_tensor(aframes)
+    else:
+        aframes = torch.empty((1, 0), dtype=torch.float32)
+
+    aframe_pts = torch.tensor(
+        [audio_frame.pts for audio_frame in audio_frames], dtype=torch.int64
+    )
+
+    return DecoderResult(
+        vframes=vframes.permute(0, 3, 1, 2),
+        vframe_pts=vframe_pts,
+        vtimebase=vtimebase,
+        aframes=aframes,
+        aframe_pts=aframe_pts,
+        atimebase=atimebase,
+    )
 
 def _template_read_video(video_object, s=0, e=None):
 
@@ -106,14 +225,15 @@ def _template_read_video(video_object, s=0, e=None):
             "end time should be larger than start time, got "
             "start time={} and end time={}".format(s, e)
         )
-
     video_object.set_current_stream("video")
     video_object.seek(s)
     video_frames = torch.empty(0)
     frames = []
+    video_pts = []
     t, pts = video_object.next()
     while t.numel() > 0 and (pts >= s and pts <= e):
         frames.append(t)
+        video_pts.append(pts)
         t, pts = video_object.next()
     if len(frames) > 0:
         video_frames = torch.stack(frames, 0)
@@ -122,13 +242,23 @@ def _template_read_video(video_object, s=0, e=None):
     video_object.seek(s)
     audio_frames = torch.empty(0)
     frames = []
+    audio_pts = []
     t, pts = video_object.next()
     while t.numel() > 0 and (pts > s and pts <= e):
         frames.append(t)
+        audio_pts.append(pts)
         t, pts = video_object.next()
     if len(frames) > 0:
         audio_frames = torch.stack(frames, 0)
 
+    return DecoderResult(
+        vframes=video_frames,
+        vframe_pts=video_pts,
+        vtimebase=None,
+        aframes=audio_frames,
+        aframe_pts=audio_pts,
+        atimebase=None,
+    )
     return video_frames, audio_frames, video_object.get_metadata()
 
 
@@ -137,9 +267,9 @@ class TestVideo(unittest.TestCase):
     def test_read_video_tensor(self):
         """
         Check if reading the video using the `next` based API yields the
-        same sized and equal tensors as video_reader.
+        same sized tensors as the pyav alternative.
         """
-        torchvision.set_video_backend("video_reader")
+        torchvision.set_video_backend("pyav")
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
             # pass 1: decode all frames using existing TV decoder
@@ -154,10 +284,10 @@ class TestVideo(unittest.TestCase):
                 t, _ = reader.next()
             new_api = torch.stack(frames, 0)
             self.assertEqual(tv_result.size(), new_api.size())
-            self.assertEqual(torch.equal(tv_result, new_api), True)
 
     def test_pts(self):
-        """Check if the frames have the same timestamps
+        """
+        Check if every frame read from 
         """
         torchvision.set_video_backend("video_reader")
         for test_video, config in test_videos.items():
@@ -176,9 +306,17 @@ class TestVideo(unittest.TestCase):
             napi_pts = [float(p) for p in pts]
             for i in range(len(napi_pts)):
                 self.assertAlmostEqual(napi_pts[i], tv_timestamps[i], delta=0.001)
+         # check if pts of video frames are sorted in ascending order
+        for i in range(len(napi_pts) - 1):
+            self.assertEqual(napi_pts[i] < napi_pts[i + 1], True)
+
 
     def test_metadata(self):
-        torchvision.set_video_backend("video_reader")
+        """
+        Test that the metadata returned via pyav corresponds to the one returned
+        by the new video decoder API
+        """
+        torchvision.set_video_backend("pyav")
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
             reader = torch.classes.torchvision.Video(full_path, "video")
@@ -186,36 +324,43 @@ class TestVideo(unittest.TestCase):
             self.assertAlmostEqual(config.video_fps, reader_md["video"]["fps"][0], delta=0.0001)
             self.assertAlmostEqual(config.duration, reader_md["video"]["duration"][0], delta=0.5)
 
+    
     def test_video_reading_fn(self):
-        torchvision.set_video_backend("video_reader")
+        """
+        Test that the outputs of the pyav and ffmpeg outputs are mostly the same
+        """        
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
-            reader = torch.classes.torchvision.Video(full_path, "video")
-            video, audio, metadata = _template_read_video(reader)
-            tv_video, tv_audio, info = torchvision.io.read_video(full_path, pts_unit="sec")
-
-            self.assertEqual(torch.equal(tv_video.permute(0, 3, 1, 2), video), True)
-            self.assertEqual(torch.equal(tv_audio, audio), True)
-
-    def test_partial_video_reading_fn(self):
-        import random
-        print("Test video reader")
-        torchvision.set_video_backend("video_reader")
-        for test_video, config in test_videos.items():
-            full_path = os.path.join(VIDEO_DIR, test_video)
-
-            # select two random points between 0 and duration
-            r = []
-            r.append(random.uniform(0, config.duration))
-            r.append(random.uniform(0, config.duration))
-            s = min(r)
-            e = max(r)
+            ref_result = _decode_frames_by_av_module(full_path)
 
             reader = torch.classes.torchvision.Video(full_path, "video")
-            video, audio, metadata = _template_read_video(reader, s, e)
-            tv_video, tv_audio, info = torchvision.io.read_video(full_path, start_pts=s, end_pts=e, pts_unit="sec")
-            self.assertAlmostEqual(tv_video.size(0), video.size(0), delta=2.0)
+            newapi_result = _template_read_video(reader)
+            
+            
+            # First we check if the frames are approximately the same
+            # (note that every codec context has signature artefacts which
+            # make a direct comparison not feasible)
+            if newapi_result.vframes.numel() > 0 and ref_result.vframes.numel() > 0:
+                mean_delta = torch.mean(
+                torch.abs(newapi_result.vframes.float() - ref_result.vframes.float())
+            )
+            self.assertAlmostEqual(mean_delta, 0, delta=8.0)
+
+            # Just a sanity check: are the two of the correct size? 
+            self.assertEqual(newapi_result.vframes.size(), ref_result.vframes.size())
+
+
+            # Lastly, we compare the resulting audio streams
+            if (
+                config.check_aframes
+                and newapi_result.aframes.numel() > 0
+                and ref_result.aframes.numel() > 0
+            ):
+                """Audio stream is available and audio frame is required to return
+                from decoder"""
+                is_same = torch.all(torch.eq(newapi_result.aframes, ref_result.aframes)).item()
+                self.assertEqual(is_same, True)
 
 
 if __name__ == '__main__':
