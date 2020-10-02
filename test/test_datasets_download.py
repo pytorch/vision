@@ -125,6 +125,16 @@ def make_download_configs(urls_and_md5s, name=None):
     ]
 
 
+def collect_download_configs(dataset_loader, name):
+    try:
+        with log_download_attempts() as urls_and_md5s:
+            dataset_loader()
+    except Exception:
+        pass
+
+    return make_download_configs(urls_and_md5s, name)
+
+
 def places365():
     with log_download_attempts(patch=False) as urls_and_md5s:
         for split, small in itertools.product(("train-standard", "train-challenge", "val"), (False, True)):
@@ -137,23 +147,19 @@ def places365():
 
 
 def caltech101():
-    try:
-        with log_download_attempts() as urls_and_md5s:
-            datasets.Caltech101(".", download=True)
-    except Exception:
-        pass
-
-    return make_download_configs(urls_and_md5s, "Caltech101")
+    return collect_download_configs(lambda: datasets.Caltech101(".", download=True), "Caltech101")
 
 
 def caltech256():
-    try:
-        with log_download_attempts() as urls_and_md5s:
-            datasets.Caltech256(".", download=True)
-    except Exception:
-        pass
+    return collect_download_configs(lambda: datasets.Caltech256(".", download=True), "Caltech256")
 
-    return make_download_configs(urls_and_md5s, "Caltech256")
+
+def cifar10():
+    return collect_download_configs(lambda: datasets.CIFAR10(".", download=True), "CIFAR10")
+
+
+def cifar100():
+    return collect_download_configs(lambda: datasets.CIFAR10(".", download=True), "CIFAR100")
 
 
 def make_parametrize_kwargs(download_configs):
@@ -166,7 +172,9 @@ def make_parametrize_kwargs(download_configs):
     return dict(argnames=("url", "md5"), argvalues=argvalues, ids=ids)
 
 
-@pytest.mark.parametrize(**make_parametrize_kwargs(itertools.chain(places365(), caltech101(), caltech256())))
+@pytest.mark.parametrize(
+    **make_parametrize_kwargs(itertools.chain(places365(), caltech101(), caltech256(), cifar10(), cifar100()))
+)
 def test_url_is_accessible(url, md5):
     retry(lambda: assert_url_is_accessible(url))
 
