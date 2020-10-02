@@ -18,8 +18,10 @@ def read(*names, **kwargs):
     with io.open(
         os.path.join(os.path.dirname(__file__), *names),
         encoding=kwargs.get("encoding", "utf8")
-    ) as fp:
+    ) 
+    as fp:
         return fp.read()
+    
 
 
 def get_dist(pkgname):
@@ -42,9 +44,10 @@ except Exception:
 
 if os.getenv('BUILD_VERSION'):
     version = os.getenv('BUILD_VERSION')
+    
 elif sha != 'Unknown':
     version += '+' + sha[:7]
-print("Building wheel {}-{}".format(package_name, version))
+   print("Building wheel {}-{}".format(package_name, version))
 
 
 def write_version_file():
@@ -87,6 +90,7 @@ def find_library(name, vision_include):
     library_header = '{0}.h'.format(name)
 
     # Lookup in TORCHVISION_INCLUDE or in the package file
+    
     package_path = [os.path.join(this_dir, 'torchvision')]
     for folder in vision_include + package_path:
         candidate_path = os.path.join(folder, library_header)
@@ -96,6 +100,7 @@ def find_library(name, vision_include):
 
     if not library_found:
         print('Running build on conda-build: {0}'.format(is_conda_build))
+        
         if is_conda_build:
             # Add conda headers/libraries
             if os.name == 'nt':
@@ -106,8 +111,9 @@ def find_library(name, vision_include):
                 include_folder, library_header)
             library_found = os.path.isfile(library_header_path)
             conda_installed = library_found
+            
         else:
-            # Check if using Anaconda to produce wheels
+              # Check if using Anaconda to produce wheels
             conda = distutils.spawn.find_executable('conda')
             is_conda = conda is not None
             print('Running build on conda: {0}'.format(is_conda))
@@ -159,6 +165,7 @@ def get_extensions():
         # Copy over additional files
         shutil.copy("torchvision/csrc/cuda/cuda_helpers.h", "torchvision/csrc/hip/cuda_helpers.h")
         shutil.copy("torchvision/csrc/cuda/vision_cuda.h", "torchvision/csrc/hip/vision_cuda.h")
+        
 
     else:
         source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
@@ -167,6 +174,7 @@ def get_extensions():
     extension = CppExtension
 
     compile_cpp_tests = os.getenv('WITH_CPP_MODELS_TEST', '0') == '1'
+    
     if compile_cpp_tests:
         test_dir = os.path.join(this_dir, 'test')
         models_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'models')
@@ -181,21 +189,25 @@ def get_extensions():
     define_macros = []
 
     extra_compile_args = {}
-    if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) \
+    if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) 
             or os.getenv('FORCE_CUDA', '0') == '1':
-        extension = CUDAExtension
-        sources += source_cuda
-        if not is_rocm_pytorch:
-            define_macros += [('WITH_CUDA', None)]
-            nvcc_flags = os.getenv('NVCC_FLAGS', '')
-            if nvcc_flags == '':
-                nvcc_flags = []
-            else:
-                nvcc_flags = nvcc_flags.split(' ')
-        else:
+            extension = CUDAExtension
+            sources += source_cuda 
+            
+if not is_rocm_pytorch:
+    define_macros += [('WITH_CUDA', None)]
+    nvcc_flags = os.getenv('NVCC_FLAGS', '')
+    if nvcc_flags == '':
+        nvcc_flags = []
+            
+  else:
+    nvcc_flags = nvcc_flags.split(' ')
+    
+     else:
             define_macros += [('WITH_HIP', None)]
             nvcc_flags = []
-        extra_compile_args = {
+            
+            extra_compile_args = {
             'cxx': [],
             'nvcc': nvcc_flags,
         }
@@ -207,7 +219,8 @@ def get_extensions():
         extra_compile_args['cxx'].append('/MP')
 
     debug_mode = os.getenv('DEBUG', '0') == '1'
-    if debug_mode:
+    
+  if debug_mode:
         print("Compile in debug mode")
         extra_compile_args['cxx'].append("-g")
         extra_compile_args['cxx'].append("-O0")
@@ -233,7 +246,8 @@ def get_extensions():
             extra_compile_args=extra_compile_args,
         )
     ]
-    if compile_cpp_tests:
+   
+  if compile_cpp_tests:
         ext_modules.append(
             extension(
                 'torchvision._C_tests',
