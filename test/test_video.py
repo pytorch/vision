@@ -100,6 +100,7 @@ DecoderResult = collections.namedtuple(
     "DecoderResult", "vframes vframe_pts vtimebase aframes aframe_pts atimebase"
 )
 
+
 def _read_from_stream(
     container, start_pts, end_pts, stream, stream_name, buffer_size=4
 ):
@@ -135,11 +136,13 @@ def _read_from_stream(
 
     return result
 
+
 def _fraction_to_tensor(fraction):
     ret = torch.zeros([2], dtype=torch.int32)
     ret[0] = fraction.numerator
     ret[1] = fraction.denominator
     return ret
+
 
 def _decode_frames_by_av_module(
     full_path,
@@ -215,6 +218,7 @@ def _decode_frames_by_av_module(
         aframe_pts=aframe_pts,
         atimebase=atimebase,
     )
+
 
 def _template_read_video(video_object, s=0, e=None):
 
@@ -310,7 +314,6 @@ class TestVideo(unittest.TestCase):
         for i in range(len(napi_pts) - 1):
             self.assertEqual(napi_pts[i] < napi_pts[i + 1], True)
 
-
     def test_metadata(self):
         """
         Test that the metadata returned via pyav corresponds to the one returned
@@ -324,11 +327,10 @@ class TestVideo(unittest.TestCase):
             self.assertAlmostEqual(config.video_fps, reader_md["video"]["fps"][0], delta=0.0001)
             self.assertAlmostEqual(config.duration, reader_md["video"]["duration"][0], delta=0.5)
 
-    
     def test_video_reading_fn(self):
         """
         Test that the outputs of the pyav and ffmpeg outputs are mostly the same
-        """        
+        """
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
@@ -336,20 +338,18 @@ class TestVideo(unittest.TestCase):
 
             reader = torch.classes.torchvision.Video(full_path, "video")
             newapi_result = _template_read_video(reader)
-            
-            
+
             # First we check if the frames are approximately the same
             # (note that every codec context has signature artefacts which
             # make a direct comparison not feasible)
             if newapi_result.vframes.numel() > 0 and ref_result.vframes.numel() > 0:
                 mean_delta = torch.mean(
-                torch.abs(newapi_result.vframes.float() - ref_result.vframes.float())
-            )
+                    torch.abs(newapi_result.vframes.float() - ref_result.vframes.float())
+                )
             self.assertAlmostEqual(mean_delta, 0, delta=8.0)
 
-            # Just a sanity check: are the two of the correct size? 
+            # Just a sanity check: are the two of the correct size?
             self.assertEqual(newapi_result.vframes.size(), ref_result.vframes.size())
-
 
             # Lastly, we compare the resulting audio streams
             if (

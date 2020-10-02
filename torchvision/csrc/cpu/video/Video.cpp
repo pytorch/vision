@@ -135,6 +135,7 @@ void Video::_getDecoderParams(
     format.format.video.width = 0;
     format.format.video.height = 0;
     format.format.video.cropImage = 0;
+    format.format.video.format = defaultVideoPixelFormat;
     params.formats.insert(format);
 
     format.type = TYPE_SUBTITLE;
@@ -325,19 +326,12 @@ std::tuple<torch::Tensor, double> Video::Next() {
     // currently not supporting other formats (will do soon)
 
     out.payload.reset();
+  } else if (res == 61) {
+    LOG(INFO) << "Decoder ran out of frames (error 61)\n";
   } else {
-    LOG(ERROR) << "Decoder failed ( or ran into last iteration)";
+    LOG(ERROR) << "Decoder failed with ERROR_CODE " << res;
   }
 
   std::tuple<torch::Tensor, double> result = {outFrame, frame_pts_s};
   return result;
 }
-
-// Video::~Video() {
-// destructor to be defined thoroughly later
-//   delete params; // does not have destructor
-//   delete metadata; // struct does not have destructor
-//   delete decoder; // should be fine
-//   delete streamFPS; // should be fine
-//   delete streamDuration; // should be fine
-// }
