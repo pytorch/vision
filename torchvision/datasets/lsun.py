@@ -7,7 +7,7 @@ import string
 from collections.abc import Iterable
 import pickle
 from typing import Any, Callable, cast, List, Optional, Tuple, Union
-from .utils import verify_str_arg, iterable_to_str
+from .utils import verify_str_arg, iterable_to_str, download_url, extract_archive
 
 
 class LSUNClass(VisionDataset):
@@ -82,6 +82,7 @@ class LSUN(VisionDataset):
         # for each class, create an LSUNClassDataset
         self.dbs = []
         for c in self.classes:
+            self._download(c)
             self.dbs.append(LSUNClass(
                 root=root + '/' + c + '_lmdb',
                 transform=transform))
@@ -93,6 +94,16 @@ class LSUN(VisionDataset):
             self.indices.append(count)
 
         self.length = count
+        
+    def _download(self, c):
+        url = 'http://dl.yf.io/lsun/scenes/{}'.format(c + '_lmdb.zip')
+        file_name = c + '_lmdb.zip'
+        file_path = os.path.join(self.root, file_name)
+        if not(os.path.isfile(os.path.join(self.root, file_name))):
+            download_url(url, self.root, file_name)
+        print("Extracting File")
+        extract_archive(file_path, self.root, True)
+        print("Done!!!")
 
     def _verify_classes(self, classes: Union[str, List[str]]) -> List[str]:
         categories = ['bedroom', 'bridge', 'church_outdoor', 'classroom',
