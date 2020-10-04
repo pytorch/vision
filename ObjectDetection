@@ -1,0 +1,98 @@
+import cv2
+import numpy as np
+
+cap = cv2.VideoCapture(0)
+
+def nothing(x):
+    pass
+
+cv2.namedWindow("Tracking")
+cv2.resizeWindow("Tracking", 340, 340)
+cv2.createTrackbar("LH", "Tracking", 0, 255, nothing)
+cv2.createTrackbar("LS", "Tracking", 0, 255, nothing)
+cv2.createTrackbar("LV", "Tracking", 0, 255, nothing)
+cv2.createTrackbar("UH", "Tracking", 255, 255, nothing)
+cv2.createTrackbar("US", "Tracking", 255, 255, nothing)
+cv2.createTrackbar("UV", "Tracking", 255, 255, nothing)
+
+while True:
+    ret, frame = cap.read()
+    # frame = cv2.imread("tiger.jpg")
+    hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
+    lh = cv2.getTrackbarPos("LH", "Tracking")
+    ls = cv2.getTrackbarPos("LS", "Tracking")
+    lv = cv2.getTrackbarPos("LV", "Tracking")
+    uh = cv2.getTrackbarPos("UH", "Tracking")
+    us = cv2.getTrackbarPos("US", "Tracking")
+    uv = cv2.getTrackbarPos("UV", "Tracking")
+    print(lh, ls, lv)
+    print(uh, us, uv)
+    range1 = np.array([lh, ls, lv])
+    range2 = np.array([uh, us, uv])
+    # range1 = np.array([110, 50, 50])
+    # range2 = np.array([130, 255, 255])
+    mask = cv2.inRange(hsv, range1, range2)
+    res = cv2.bitwise_and(frame, frame, mask=mask)
+    res = cv2.flip(res, 1)
+    mask = cv2.flip(mask, 1)
+    frame = cv2.flip(frame, 1)
+    cv2.imshow("Result", res)
+    cv2.imshow("MAsk", mask)
+    cv2.imshow("Frame", frame)
+    cv2.resizeWindow("Result", 440, 440)
+    cv2.resizeWindow("MAsk", 440, 440)
+    cv2.resizeWindow("Frame", 440, 440)
+    k = cv2.waitKey(3)
+    if k == 13:
+        break
+cap.release()
+cv2.destroyAllWindows()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# # TO track object of more than one color
+# import cv2
+# import numpy as np
+#
+# cap = cv2.VideoCapture(0)
+#
+# def nothing(x):
+#     pass
+#
+# cv2.namedWindow("Tracking")
+#
+# while True:
+#     ret, frame = cap.read()
+#     hsv = cv2.cvtColor(frame, cv2.COLOR_RGB2HSV)
+#     range1 = np.array([110, 50, 50])
+#     range2 = np.array([130, 255, 255])
+#     range3 = np.array([0, 138, 0])
+#     range4 = np.array([65, 255, 91])
+#     mask1 = cv2.inRange(hsv, range1, range2)
+#     res1 = cv2.bitwise_and(frame, frame, mask=mask1)
+#     mask2 = cv2.inRange(hsv, range3, range4)
+#     res2 = cv2.bitwise_and(frame, frame, mask=mask2)
+#     cv2.imshow("Result1", res1)
+#     cv2.imshow("Result2", res2)
+#
+#     res3 = cv2.bitwise_or(res1, res2)
+#     cv2.imshow("combo", res3)
+#
+#     # cv2.imshow("MAsk", mask)
+#     # cv2.imshow("Frame", frame)
+#     k = cv2.waitKey(3)
+#     if k == 13:
+#         break
+# cap.release()
+# cv2.destroyAllWindows()
