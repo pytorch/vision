@@ -16,7 +16,6 @@ except ImportError:
 
 from . import functional as F
 
-
 __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize", "Resize", "Scale",
            "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
@@ -127,7 +126,7 @@ class PILToTensor:
         return self.__class__.__name__ + '()'
 
 
-class ConvertImageDtype:
+class ConvertImageDtype(torch.nn.Module):
     """Convert a tensor image to the given ``dtype`` and scale the values accordingly
 
     Args:
@@ -146,9 +145,10 @@ class ConvertImageDtype:
     """
 
     def __init__(self, dtype: torch.dtype) -> None:
+        super().__init__()
         self.dtype = dtype
 
-    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+    def forward(self, image: torch.Tensor) -> torch.Tensor:
         return F.convert_image_dtype(image, self.dtype)
 
 
@@ -161,11 +161,11 @@ class ToPILImage:
     Args:
         mode (`PIL.Image mode`_): color space and pixel depth of input data (optional).
             If ``mode`` is ``None`` (default) there are some assumptions made about the input data:
-             - If the input has 4 channels, the ``mode`` is assumed to be ``RGBA``.
-             - If the input has 3 channels, the ``mode`` is assumed to be ``RGB``.
-             - If the input has 2 channels, the ``mode`` is assumed to be ``LA``.
-             - If the input has 1 channel, the ``mode`` is determined by the data type (i.e ``int``, ``float``,
-               ``short``).
+            - If the input has 4 channels, the ``mode`` is assumed to be ``RGBA``.
+            - If the input has 3 channels, the ``mode`` is assumed to be ``RGB``.
+            - If the input has 2 channels, the ``mode`` is assumed to be ``LA``.
+            - If the input has 1 channel, the ``mode`` is determined by the data type (i.e ``int``, ``float``,
+            ``short``).
 
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
