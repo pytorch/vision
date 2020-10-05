@@ -377,8 +377,8 @@ def cycle_over(objs):
 
 
 def int_dtypes():
-    return [torch.uint8, torch.int8, torch.int16, torch.short, torch.int32, torch.int, torch.int64, torch.long]
+    return torch.testing.integral_types()
 
 
 def float_dtypes():
-    return [torch.float32, torch.float, torch.float64, torch.double]
+    return torch.testing.floating_types()
