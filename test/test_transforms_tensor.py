@@ -121,26 +121,30 @@ class Tester(TransformsTester):
         )
 
     def test_pad(self):
-
-        # Test functional.pad (PIL and Tensor) with padding as single int
-        self._test_functional_op(
-            "pad", fn_kwargs={"padding": 2, "fill": 0, "padding_mode": "constant"}
-        )
-        # Test functional.pad and transforms.Pad with padding as [int, ]
-        fn_kwargs = meth_kwargs = {"padding": [2, ], "fill": 0, "padding_mode": "constant"}
-        self._test_op(
-            "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
-        )
-        # Test functional.pad and transforms.Pad with padding as list
-        fn_kwargs = meth_kwargs = {"padding": [4, 4], "fill": 0, "padding_mode": "constant"}
-        self._test_op(
-            "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
-        )
-        # Test functional.pad and transforms.Pad with padding as tuple
-        fn_kwargs = meth_kwargs = {"padding": (2, 2, 2, 2), "fill": 127, "padding_mode": "constant"}
-        self._test_op(
-            "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
-        )
+        for m in ["constant", "edge", "reflect", "symmetric"]:
+            fill = 127 if m == "constant" else 0
+            # Negative pad currently unsupported for Tensor and symmetric
+            multipliers = [1] if m == "symmetric" else [1, -1]
+            for mul in multipliers:
+                # Test functional.pad (PIL and Tensor) with padding as single int
+                self._test_functional_op(
+                    "pad", fn_kwargs={"padding": mul * 2, "fill": fill, "padding_mode": m}
+                )
+                # Test functional.pad and transforms.Pad with padding as [int, ]
+                fn_kwargs = meth_kwargs = {"padding": [mul * 2, ], "fill": fill, "padding_mode": m}
+                self._test_op(
+                    "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+                )
+                # Test functional.pad and transforms.Pad with padding as list
+                fn_kwargs = meth_kwargs = {"padding": [mul * 4, 4], "fill": fill, "padding_mode": m}
+                self._test_op(
+                    "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+                )
+                # Test functional.pad and transforms.Pad with padding as tuple
+                fn_kwargs = meth_kwargs = {"padding": (mul * 2, 2, 2, mul * 2), "fill": fill, "padding_mode": m}
+                self._test_op(
+                    "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+                )
 
     def test_crop(self):
         fn_kwargs = {"top": 2, "left": 3, "height": 4, "width": 5}
@@ -463,6 +467,30 @@ class Tester(TransformsTester):
         ])
         with self.assertRaisesRegex(RuntimeError, r"Could not get name of python class object"):
             torch.jit.script(t)
+
+    def test_random_erasing(self):
+        img = torch.rand(3, 60, 60)
+
+        # Test Set 0: invalid value
+        random_erasing = T.RandomErasing(value=(0.1, 0.2, 0.3, 0.4), p=1.0)
+        with self.assertRaises(ValueError, msg="If value is a sequence, it should have either a single value or 3"):
+            random_erasing(img)
+
+        tensor, _ = self._create_data(24, 32, channels=3, device=self.device)
+        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
+
+        test_configs = [
+            {"value": 0.2},
+            {"value": "random"},
+            {"value": (0.2, 0.2, 0.2)},
+            {"value": "random", "ratio": (0.1, 0.2)},
+        ]
+
+        for config in test_configs:
+            fn = T.RandomErasing(**config)
+            scripted_fn = torch.jit.script(fn)
+            self._test_transform_vs_scripted(fn, scripted_fn, tensor)
+            self._test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
