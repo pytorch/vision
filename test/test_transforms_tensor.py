@@ -491,12 +491,12 @@ class Tester(TransformsTester):
         )
 
         self._test_class_op(
-            "GaussianBlur", fn_kwargs={"kernel_size": (3, 3), "sigma": (0.1, 2.0)},
+            "GaussianBlur", meth_kwargs={"kernel_size": (3, 3), "sigma": (0.1, 2.0)},
             test_exact_match=False, agg_method="max", tol=tol
         )
 
         self._test_class_op(
-            "GaussianBlur", fn_kwargs={"kernel_size": [23], "sigma": 0.75},
+            "GaussianBlur", meth_kwargs={"kernel_size": [23], "sigma": 0.75},
             test_exact_match=False, agg_method="max", tol=tol
         )
 

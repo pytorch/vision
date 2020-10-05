@@ -1708,7 +1708,7 @@ class Tester(unittest.TestCase):
             with self.assertRaises(ValueError):
                 F.gaussian_blur(img, [-3, -3])
             with self.assertRaises(ValueError):
-                F.gaussian_blur(img, 3, [1,1,1])
+                F.gaussian_blur(img, 3, [1, 1, 1])
             with self.assertRaises(ValueError):
                 F.gaussian_blur(img, 3, -1)
 
@@ -1718,7 +1718,6 @@ class Tester(unittest.TestCase):
                 F.gaussian_blur(img, 3, 'sigma_string')
             with self.assrtRaises(TypeError):
                 F.gaussian_blur(np_img, 3, 1)
-
 
 
 if __name__ == '__main__':
