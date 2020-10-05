@@ -744,6 +744,10 @@ class Tester(TransformsTester):
                         batch_tensors, F.perspective, startpoints=spoints, endpoints=epoints, interpolation=0
                     )
 
+    def test_convert_image_dtype(self):
+        # TODO: add tests of CPU/CUDA on tensor and batch
+        pass
+
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):
