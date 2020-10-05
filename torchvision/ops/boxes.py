@@ -154,9 +154,6 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     Returns:
         boxes (Tensor[N, 4]): Boxes into converted format.
     """
-    # allowed_fmts = ("xyxy", "xywh", "cxcywh")
-    # assert in_fmt in allowed_fmts
-    # assert out_fmt in allowed_fmts
 
     if in_fmt == out_fmt:
         boxes_converted = boxes.clone()

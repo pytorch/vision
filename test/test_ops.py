@@ -727,6 +727,16 @@ class BoxTester(unittest.TestCase):
         self.assertEqual(box_xywh.dtype, box_tensor.dtype)
         assert torch.all(torch.eq(box_xywh, box_tensor)).item()
 
+    def test_bbox_invalid(self):
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                  [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
+
+        invalid_infmts = ["xwyh", "cxwyh"]
+        invalid_outfmts = ["xwcx", "xhwcy"]
+        for inv_infmt in invalid_infmts:
+            for inv_outfmt in invalid_outfmts:
+                self.assertRaises(ValueError, ops.box_convert, box_tensor, inv_infmt, inv_outfmt)
+
     def test_bbox_convert_jit(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
                                   [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
