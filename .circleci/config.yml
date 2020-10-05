@@ -1145,6 +1145,10 @@ workflows:
           cu_version: cpu
           name: cmake_windows_cpu
           python_version: '3.8'
+      - cmake_windows_gpu:
+          cu_version: cu101
+          name: cmake_windows_gpu
+          python_version: '3.8'
       - cmake_macos_cpu:
           cu_version: cpu
           name: cmake_macos_cpu
