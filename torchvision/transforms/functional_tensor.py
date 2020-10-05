@@ -115,7 +115,9 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
             image = image // factor
             return image.to(dtype)
         else:
-            factor = (output_max + 1) // (input_max + 1)
+            # factor should be forced to int for torch jit script
+            # otherwise factor is a float and image * factor can produce different results
+            factor = int((output_max + 1) // (input_max + 1))
             image = image.to(dtype)
             return image * factor
 
