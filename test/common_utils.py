@@ -369,3 +369,16 @@ class TransformsTester(unittest.TestCase):
             err < tol,
             msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
         )
+
+
+def cycle_over(objs):
+    for idx, obj in enumerate(objs):
+        yield obj, objs[:idx] + objs[idx + 1:]
+
+
+def int_dtypes():
+    return [torch.uint8, torch.int8, torch.int16, torch.short, torch.int32, torch.int, torch.int64, torch.long]
+
+
+def float_dtypes():
+    return [torch.float32, torch.float, torch.float64, torch.double]
