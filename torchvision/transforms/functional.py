@@ -1024,7 +1024,7 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     if not inplace:
         img = img.clone()
 
-    img[:, i:i + h, j:j + w] = v
+    img[..., i:i + h, j:j + w] = v
     return img
 
 

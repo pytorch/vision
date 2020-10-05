@@ -15,7 +15,7 @@ def _get_image_size(img: Tensor) -> List[int]:
     """Returns (w, h) of tensor image"""
     if _is_tensor_a_torch_image(img):
         return [img.shape[-1], img.shape[-2]]
-    raise TypeError("Unexpected type {}".format(type(img)))
+    raise TypeError("Unexpected input type")
 
 
 def _get_image_num_channels(img: Tensor) -> int:
@@ -24,7 +24,7 @@ def _get_image_num_channels(img: Tensor) -> int:
     elif img.ndim > 2:
         return img.shape[-3]
 
-    raise TypeError("Unexpected type {}".format(type(img)))
+    raise TypeError("Input ndim should be 2 or more. Got {}".format(img.ndim))
 
 
 def vflip(img: Tensor) -> Tensor:
@@ -223,7 +223,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
         raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
 
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
-        raise TypeError('img should be Tensor image. Got {}'.format(type(img)))
+        raise TypeError('Input img should be Tensor image')
 
     orig_dtype = img.dtype
     if img.dtype == torch.uint8:
@@ -294,7 +294,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     """
 
     if not isinstance(img, torch.Tensor):
-        raise TypeError('img should be a Tensor. Got {}'.format(type(img)))
+        raise TypeError('Input img should be a Tensor.')
 
     if gamma < 0:
         raise ValueError('Gamma should be a non-negative real number')
@@ -763,10 +763,10 @@ def _assert_grid_transform_inputs(
         coeffs: Optional[List[float]] = None,
 ):
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
-        raise TypeError("img should be Tensor Image. Got {}".format(type(img)))
+        raise TypeError("Input img should be Tensor Image")
 
     if matrix is not None and not isinstance(matrix, list):
-        raise TypeError("Argument matrix should be a list. Got {}".format(type(matrix)))
+        raise TypeError("Argument matrix should be a list")
 
     if matrix is not None and len(matrix) != 6:
         raise ValueError("Argument matrix should have 6 float values")
@@ -989,7 +989,7 @@ def perspective(
         Tensor: transformed image.
     """
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
-        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+        raise TypeError('Input img should be Tensor Image')
 
     _interpolation_modes = {
         0: "nearest",
