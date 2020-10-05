@@ -123,9 +123,7 @@ class Tester(TransformsTester):
     def test_pad(self):
         for m in ["constant", "edge", "reflect", "symmetric"]:
             fill = 127 if m == "constant" else 0
-            # Negative pad currently unsupported for Tensor and symmetric
-            multipliers = [1] if m == "symmetric" else [1, -1]
-            for mul in multipliers:
+            for mul in [1, -1]:
                 # Test functional.pad (PIL and Tensor) with padding as single int
                 self._test_functional_op(
                     "pad", fn_kwargs={"padding": mul * 2, "fill": fill, "padding_mode": m}
