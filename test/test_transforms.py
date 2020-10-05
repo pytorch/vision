@@ -1685,6 +1685,31 @@ class Tester(unittest.TestCase):
             img_re = random_erasing(img)
             self.assertTrue(torch.equal(img_re, img))
 
+        def test_gaussian_blur(self):
+            np_img = np.ones((100, 100, 3), dtype=np.uint8) * 255
+            img = F.to_pil_image(np_img, "RGB")
+
+            with self.assertRaises(ValueError):
+                F.gaussian_blur(img, [3])
+            with self.assertRaises(ValueError):
+                F.gaussian_blur(img, [3, 3, 3])
+            with self.assertRaises(ValueError):
+                F.gaussian_blur(img, [4, 4])
+            with self.assertRaises(ValueError):
+                F.gaussian_blur(img, [-3, -3])
+            with self.assertRaises(ValueError):
+                F.gaussian_blur(img, 3, [1,1,1])
+            with self.assertRaises(ValueError):
+                F.gaussian_blur(img, 3, -1)
+
+            with self.assrtRaises(TypeError):
+                F.gaussian_blur(img, 'kernel_size_string')
+            with self.assrtRaises(TypeError):
+                F.gaussian_blur(img, 3, 'sigma_string')
+            with self.assrtRaises(TypeError):
+                F.gaussian_blur(np_img, 3, 1)
+
+
 
 if __name__ == '__main__':
     unittest.main()

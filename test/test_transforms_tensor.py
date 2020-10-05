@@ -451,6 +451,22 @@ class Tester(TransformsTester):
             test_exact_match=False, agg_method="max", tol=tol
         )
 
+        self._test_class_op(
+            "GaussianBlur", meth_kwargs={"kernel_size": [3, 3], "sigma": (1.0, 1.0)},
+            test_exact_match=False, agg_method="max", tol=tol
+        )
+
+        self._test_class_op(
+            "GaussianBlur", fn_kwargs={"kernel_size": (3, 3), "sigma": (0.1, 2.0)},
+            test_exact_match=False, agg_method="max", tol=tol
+        )
+
+        self._test_class_op(
+            "GaussianBlur", fn_kwargs={"kernel_size": [23], "sigma": 0.75},
+            test_exact_match=False, agg_method="max", tol=tol
+        )
+
+        self.assert
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):
