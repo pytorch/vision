@@ -167,12 +167,17 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
             boxes_xyxy = _box_xywh_to_xyxy(boxes)
             if out_fmt == "cxcywh":
                 boxes_converted = _box_xyxy_to_cxcywh(boxes_xyxy)
+            else:
+                raise ValueError("Unsupported Boundig Box Conversions for given in_fmt and out_fmt")
 
         elif in_fmt == "cxcywh":
             boxes_xyxy = _box_cxcywh_to_xyxy(boxes)
             if out_fmt == "xywh":
                 boxes_converted = _box_xyxy_to_xywh(boxes_xyxy)
-
+            else:
+                raise ValueError("Unsupported Boundig Box Conversions for given in_fmt and out_fmt")
+        else:
+            raise ValueError("Unsupported Boundig Box Conversions for given in_fmt and out_fmt")
         # convert one to xyxy and change either in_fmt or out_fmt to xyxy
     else:
         if in_fmt == "xyxy":
@@ -180,12 +185,17 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
                 boxes_converted = _box_xyxy_to_xywh(boxes)
             elif out_fmt == "cxcywh":
                 boxes_converted = _box_xyxy_to_cxcywh(boxes)
+            else:
+                raise ValueError("Unsupported Boundig Box Conversions for given in_fmt and out_fmt")
         elif out_fmt == "xyxy":
             if in_fmt == "xywh":
                 boxes_converted = _box_xywh_to_xyxy(boxes)
             elif in_fmt == "cxcywh":
                 boxes_converted = _box_cxcywh_to_xyxy(boxes)
-
+            else:
+                raise ValueError("Unsupported Boundig Box Conversions for given in_fmt and out_fmt")
+        else:
+            raise ValueError("Unsupported Boundig Box Conversions for given in_fmt and out_fmt")
     return boxes_converted
 
 
