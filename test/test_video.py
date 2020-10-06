@@ -363,6 +363,7 @@ class TestVideo(unittest.TestCase):
                 config.duration, reader_md["video"]["duration"][0], delta=0.5
             )
 
+    @unittest.skipIf(av is None, "PyAV unavailable")
     def test_video_reading_fn(self):
         """
         Test that the outputs of the pyav and ffmpeg outputs are mostly the same
