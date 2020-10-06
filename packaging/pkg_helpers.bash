@@ -49,6 +49,17 @@ setup_cuda() {
 
   # Now work out the CUDA settings
   case "$CU_VERSION" in
+    cu110)
+      if [[ "$OSTYPE" == "msys" ]]; then
+        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.0"
+      else
+        export CUDA_HOME=/usr/local/cuda-11.0/
+      fi
+      export FORCE_CUDA=1
+      # Hard-coding gencode flags is temporary situation until
+      # https://github.com/pytorch/pytorch/pull/23408 lands
+      export NVCC_FLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_60,code=sm_60 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_80,code=sm_80 -gencode=arch=compute_50,code=compute_50"
+      ;;
     cu102)
       if [[ "$OSTYPE" == "msys" ]]; then
         export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v10.2"
@@ -229,7 +240,7 @@ setup_pip_pytorch_version() {
 # You MUST have populated PYTORCH_VERSION_SUFFIX before hand.
 setup_conda_pytorch_constraint() {
   if [[ -z "$PYTORCH_VERSION" ]]; then
-    export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
+    export CONDA_CHANNEL_FLAGS="-c pytorch-nightly -c pytorch"
     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
                               python -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
                                cuver_1 = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
@@ -265,6 +276,9 @@ setup_conda_cudatoolkit_constraint() {
     export CONDA_CUDATOOLKIT_CONSTRAINT=""
   else
     case "$CU_VERSION" in
+      cu110)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.0,<11.1 # [not osx]"
+        ;;
       cu102)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.2,<10.3 # [not osx]"
         ;;
@@ -289,6 +303,39 @@ setup_conda_cudatoolkit_constraint() {
   fi
 }
 
+setup_conda_cudatoolkit_plain_constraint() {
+  export CONDA_CPUONLY_FEATURE=""
+  export CMAKE_USE_CUDA=1
+  if [[ "$(uname)" == Darwin ]]; then
+    export CONDA_CUDATOOLKIT_CONSTRAINT=""
+    export CMAKE_USE_CUDA=0
+  else
+    case "$CU_VERSION" in
+      cu102)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.2"
+        ;;
+      cu101)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.1"
+        ;;
+      cu100)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=10.0"
+        ;;
+      cu92)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=9.2"
+        ;;
+      cpu)
+        export CONDA_CUDATOOLKIT_CONSTRAINT=""
+        export CONDA_CPUONLY_FEATURE="cpuonly"
+        export CMAKE_USE_CUDA=0
+        ;;
+      *)
+        echo "Unrecognized CU_VERSION=$CU_VERSION"
+        exit 1
+        ;;
+    esac
+  fi
+}
+
 # Build the proper compiler package before building the final package
 setup_visual_studio_constraint() {
   if [[ "$OSTYPE" == "msys" ]]; then
@@ -302,4 +349,40 @@ setup_junit_results_folder() {
   if [[ "$CI" == "true" ]]; then
     export CONDA_PYTORCH_BUILD_RESULTS_DIRECTORY="${SOURCE_ROOT_DIR}/build_results/results.xml"
   fi
+}
+
+
+download_copy_ffmpeg() {
+  mkdir ffmpeg_tmp
+  cd ffmpeg_tmp
+  if [[ "$OSTYPE" == "msys" ]]; then
+    # conda install -yq ffmpeg -c pytorch
+    # curl -L -q https://anaconda.org/pytorch/ffmpeg/4.3/download/win-64/ffmpeg-4.3-ha925a31_0.tar.bz2 --output ffmpeg-4.3-ha925a31_0.tar.bz2
+    # bzip2 --decompress --stdout ffmpeg-4.3-ha925a31_0.tar.bz2 | tar -x --file=-
+    # cp Library/bin/*.dll ../torchvision
+    echo "FFmpeg is disabled currently on Windows"
+  else
+    if [[ "$(uname)" == Darwin ]]; then
+      conda install -yq ffmpeg=4.2 -c pytorch
+      conda install -yq wget
+      wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/osx-64/ffmpeg-4.2-h0a44026_0.tar.bz2
+      tar -xjvf ffmpeg-4.2-h0a44026_0.tar.bz2
+      for f in lib/*.dylib; do
+        if [[ $f =~ ([a-z])+\.dylib ]]; then
+          cp $f ../torchvision
+        fi
+      done
+    else
+      wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/linux-64/ffmpeg-4.2-hf484d3e_0.tar.bz2
+      tar -xjvf ffmpeg-4.2-hf484d3e_0.tar.bz2
+      cp lib/*.so ../torchvision
+      cp -r lib/* /usr/lib
+      cp -r bin/* /usr/bin
+      cp -r include/* /usr/include
+      ldconfig
+      which ffmpeg
+    fi
+  fi
+  cd ..
+  rm -rf ffmpeg_tmp
 }

@@ -551,6 +551,118 @@ jobs:
       - store_test_results:
           path: test-results
 
+  unittest_macos_cpu:
+    <<: *binary_common
+    macos:
+      xcode: "9.4.1"
+    resource_class: large
+    steps:
+      - checkout
+      - run:
+          name: Install wget
+          command: HOMEBREW_NO_AUTO_UPDATE=1 brew install wget
+          # Disable brew auto update which is very slow
+      - run:
+          name: Generate cache key
+          # This will refresh cache on Sundays, nightly build should generate new cache.
+          command: echo "$(date +"%Y-%U")" > .circleci-weekly
+      - restore_cache:
+          {% raw %}
+          keys:
+            - env-v3-macos-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+      - run:
+          name: Setup
+          command: .circleci/unittest/linux/scripts/setup_env.sh
+      - save_cache:
+          {% raw %}
+          key: env-v3-macos-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
+          {% endraw %}
+          paths:
+            - conda
+            - env
+      - run:
+          name: Install torchvision
+          command: .circleci/unittest/linux/scripts/install.sh
+      - run:
+          name: Run tests
+          command: .circleci/unittest/linux/scripts/run_test.sh
+      - run:
+          name: Post process
+          command: .circleci/unittest/linux/scripts/post_process.sh
+      - store_test_results:
+          path: test-results
+
+  cmake_linux_cpu:
+    <<: *binary_common
+    docker:
+      - image: "pytorch/manylinux-cuda102"
+    resource_class: 2xlarge+
+    steps:
+      - checkout_merge
+      - run:
+          name: Setup conda
+          command: .circleci/unittest/linux/scripts/setup_env.sh
+      - run: packaging/build_cmake.sh
+
+  cmake_linux_gpu:
+    <<: *binary_common
+    machine:
+      image: ubuntu-1604-cuda-10.1:201909-23
+    resource_class: gpu.small
+    environment:
+      PYTHON_VERSION: << parameters.python_version >>
+      PYTORCH_VERSION: << parameters.pytorch_version >>
+      UNICODE_ABI: << parameters.unicode_abi >>
+      CU_VERSION: << parameters.cu_version >>
+    steps:
+      - checkout_merge
+      - run:
+          name: Setup conda
+          command: docker run -e CU_VERSION -e PYTHON_VERSION -e UNICODE_ABI -e PYTORCH_VERSION -t --gpus all -v $PWD:$PWD -w $PWD << parameters.wheel_docker_image >> .circleci/unittest/linux/scripts/setup_env.sh
+      - run:
+          name: Build torchvision C++ distribution and test
+          command: docker run -e CU_VERSION -e PYTHON_VERSION -e UNICODE_ABI -e PYTORCH_VERSION -t --gpus all -v $PWD:$PWD -w $PWD << parameters.wheel_docker_image >> packaging/build_cmake.sh
+
+  cmake_macos_cpu:
+    <<: *binary_common
+    macos:
+      xcode: "9.0"
+    steps:
+      - checkout_merge
+      - run:
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            conda install -yq conda-build cmake
+            packaging/build_cmake.sh
+
+  cmake_windows_cpu:
+    <<: *binary_common
+    executor:
+      name: windows-cpu
+    steps:
+      - checkout_merge
+      - run:
+          command: |
+            set -ex
+            source packaging/windows/internal/vc_install_helper.sh
+            packaging/build_cmake.sh
+
+  cmake_windows_gpu:
+    <<: *binary_common
+    executor:
+      name: windows-gpu
+    steps:
+      - checkout_merge
+      - run:
+          command: |
+            set -ex
+            source packaging/windows/internal/vc_install_helper.sh
+            packaging/windows/internal/cuda_install.bat
+            packaging/build_cmake.sh
+
 workflows:
   build:
 {%- if True %}
@@ -564,6 +676,11 @@ workflows:
   unittest:
     jobs:
       {{ unittest_workflows() }}
+
+  cmake:
+    jobs:
+      {{ cmake_workflows() }}
+
   nightly:
 {%- endif %}
     jobs:

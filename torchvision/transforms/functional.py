@@ -71,7 +71,7 @@ def to_tensor(pic):
         if pic.ndim == 2:
             pic = pic[:, :, None]
 
-        img = torch.from_numpy(pic.transpose((2, 0, 1)))
+        img = torch.from_numpy(pic.transpose((2, 0, 1))).contiguous()
         # backward compatibility
         if isinstance(img, torch.ByteTensor):
             return img.float().div(255)
@@ -107,7 +107,7 @@ def to_tensor(pic):
 def pil_to_tensor(pic):
     """Convert a ``PIL Image`` to a tensor of the same type.
 
-    See ``AsTensor`` for more details.
+    See :class:`~torchvision.transforms.PILToTensor` for more details.
 
     Args:
         pic (PIL Image): Image to be converted to tensor.
@@ -152,48 +152,10 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
             overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
             of the integer ``dtype``.
     """
-    if image.dtype == dtype:
-        return image
+    if not isinstance(image, torch.Tensor):
+        raise TypeError('Input img should be Tensor Image')
 
-    if image.dtype.is_floating_point:
-        # float to float
-        if dtype.is_floating_point:
-            return image.to(dtype)
-
-        # float to int
-        if (image.dtype == torch.float32 and dtype in (torch.int32, torch.int64)) or (
-            image.dtype == torch.float64 and dtype == torch.int64
-        ):
-            msg = f"The cast from {image.dtype} to {dtype} cannot be performed safely."
-            raise RuntimeError(msg)
-
-        # https://github.com/pytorch/vision/pull/2078#issuecomment-612045321
-        # For data in the range 0-1, (float * 255).to(uint) is only 255
-        # when float is exactly 1.0.
-        # `max + 1 - epsilon` provides more evenly distributed mapping of
-        # ranges of floats to ints.
-        eps = 1e-3
-        result = image.mul(torch.iinfo(dtype).max + 1 - eps)
-        return result.to(dtype)
-    else:
-        # int to float
-        if dtype.is_floating_point:
-            max = torch.iinfo(image.dtype).max
-            image = image.to(dtype)
-            return image / max
-
-        # int to int
-        input_max = torch.iinfo(image.dtype).max
-        output_max = torch.iinfo(dtype).max
-
-        if input_max > output_max:
-            factor = (input_max + 1) // (output_max + 1)
-            image = image // factor
-            return image.to(dtype)
-        else:
-            factor = (output_max + 1) // (input_max + 1)
-            image = image.to(dtype)
-            return image * factor
+    return F_t.convert_image_dtype(image, dtype)
 
 
 def to_pil_image(pic, mode=None):
@@ -283,7 +245,7 @@ def to_pil_image(pic, mode=None):
     return Image.fromarray(npimg, mode=mode)
 
 
-def normalize(tensor, mean, std, inplace=False):
+def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool = False) -> Tensor:
     """Normalize a tensor image with mean and standard deviation.
 
     .. note::
@@ -292,7 +254,7 @@ def normalize(tensor, mean, std, inplace=False):
     See :class:`~torchvision.transforms.Normalize` for more details.
 
     Args:
-        tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
+        tensor (Tensor): Tensor image of size (C, H, W) or (B, C, H, W) to be normalized.
         mean (sequence): Sequence of means for each channel.
         std (sequence): Sequence of standard deviations for each channel.
         inplace(bool,optional): Bool to make this operation inplace.
@@ -300,11 +262,11 @@ def normalize(tensor, mean, std, inplace=False):
     Returns:
         Tensor: Normalized Tensor image.
     """
-    if not torch.is_tensor(tensor):
-        raise TypeError('tensor should be a torch tensor. Got {}.'.format(type(tensor)))
+    if not isinstance(tensor, torch.Tensor):
+        raise TypeError('Input tensor should be a torch tensor. Got {}.'.format(type(tensor)))
 
-    if tensor.ndimension() != 3:
-        raise ValueError('Expected tensor to be a tensor image of size (C, H, W). Got tensor.size() = '
+    if tensor.ndim < 3:
+        raise ValueError('Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = '
                          '{}.'.format(tensor.size()))
 
     if not inplace:
@@ -316,9 +278,9 @@ def normalize(tensor, mean, std, inplace=False):
     if (std == 0).any():
         raise ValueError('std evaluated to zero after conversion to {}, leading to division by zero.'.format(dtype))
     if mean.ndim == 1:
-        mean = mean[:, None, None]
+        mean = mean.view(-1, 1, 1)
     if std.ndim == 1:
-        std = std[:, None, None]
+        std = std.view(-1, 1, 1)
     tensor.sub_(mean).div_(std)
     return tensor
 
@@ -1024,5 +986,5 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     if not inplace:
         img = img.clone()
 
-    img[:, i:i + h, j:j + w] = v
+    img[..., i:i + h, j:j + w] = v
     return img
