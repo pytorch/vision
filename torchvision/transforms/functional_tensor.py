@@ -15,7 +15,7 @@ def _get_image_size(img: Tensor) -> List[int]:
     """Returns (w, h) of tensor image"""
     if _is_tensor_a_torch_image(img):
         return [img.shape[-1], img.shape[-2]]
-    raise TypeError("Unexpected type {}".format(type(img)))
+    raise TypeError("Unexpected input type")
 
 
 def _get_image_num_channels(img: Tensor) -> int:
@@ -24,7 +24,102 @@ def _get_image_num_channels(img: Tensor) -> int:
     elif img.ndim > 2:
         return img.shape[-3]
 
-    raise TypeError("Unexpected type {}".format(type(img)))
+    raise TypeError("Input ndim should be 2 or more. Got {}".format(img.ndim))
+
+
+def _max_value(dtype: torch.dtype) -> float:
+    # TODO: replace this method with torch.iinfo when it gets torchscript support.
+    # https://github.com/pytorch/pytorch/issues/41492
+
+    a = torch.tensor(2, dtype=dtype)
+    signed = 1 if torch.tensor(0, dtype=dtype).is_signed() else 0
+    bits = 1
+    max_value = torch.tensor(-signed, dtype=torch.long)
+    while True:
+        next_value = a.pow(bits - signed).sub(1)
+        if next_value > max_value:
+            max_value = next_value
+            bits *= 2
+        else:
+            return max_value.item()
+    return max_value.item()
+
+
+def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
+    """PRIVATE METHOD. Convert a tensor image to the given ``dtype`` and scale the values accordingly
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
+
+    Args:
+        image (torch.Tensor): Image to be converted
+        dtype (torch.dtype): Desired data type of the output
+
+    Returns:
+        (torch.Tensor): Converted image
+
+    .. note::
+
+        When converting from a smaller to a larger integer ``dtype`` the maximum values are **not** mapped exactly.
+        If converted back and forth, this mismatch has no effect.
+
+    Raises:
+        RuntimeError: When trying to cast :class:`torch.float32` to :class:`torch.int32` or :class:`torch.int64` as
+            well as for trying to cast :class:`torch.float64` to :class:`torch.int64`. These conversions might lead to
+            overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
+            of the integer ``dtype``.
+    """
+    if image.dtype == dtype:
+        return image
+
+    # TODO: replace with image.dtype.is_floating_point when torchscript supports it
+    if torch.empty(0, dtype=image.dtype).is_floating_point():
+
+        # TODO: replace with dtype.is_floating_point when torchscript supports it
+        if torch.tensor(0, dtype=dtype).is_floating_point():
+            return image.to(dtype)
+
+        # float to int
+        if (image.dtype == torch.float32 and dtype in (torch.int32, torch.int64)) or (
+            image.dtype == torch.float64 and dtype == torch.int64
+        ):
+            msg = f"The cast from {image.dtype} to {dtype} cannot be performed safely."
+            raise RuntimeError(msg)
+
+        # https://github.com/pytorch/vision/pull/2078#issuecomment-612045321
+        # For data in the range 0-1, (float * 255).to(uint) is only 255
+        # when float is exactly 1.0.
+        # `max + 1 - epsilon` provides more evenly distributed mapping of
+        # ranges of floats to ints.
+        eps = 1e-3
+        max_val = _max_value(dtype)
+        result = image.mul(max_val + 1.0 - eps)
+        return result.to(dtype)
+    else:
+        input_max = _max_value(image.dtype)
+        output_max = _max_value(dtype)
+
+        # int to float
+        # TODO: replace with dtype.is_floating_point when torchscript supports it
+        if torch.tensor(0, dtype=dtype).is_floating_point():
+            image = image.to(dtype)
+            return image / input_max
+
+        # int to int
+        if input_max > output_max:
+            # factor should be forced to int for torch jit script
+            # otherwise factor is a float and image // factor can produce different results
+            factor = int((input_max + 1) // (output_max + 1))
+            image = image // factor
+            return image.to(dtype)
+        else:
+            # factor should be forced to int for torch jit script
+            # otherwise factor is a float and image * factor can produce different results
+            factor = int((output_max + 1) // (input_max + 1))
+            image = image.to(dtype)
+            return image * factor
 
 
 def vflip(img: Tensor) -> Tensor:
@@ -223,7 +318,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
         raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
 
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
-        raise TypeError('img should be Tensor image. Got {}'.format(type(img)))
+        raise TypeError('Input img should be Tensor image')
 
     orig_dtype = img.dtype
     if img.dtype == torch.uint8:
@@ -294,7 +389,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     """
 
     if not isinstance(img, torch.Tensor):
-        raise TypeError('img should be a Tensor. Got {}'.format(type(img)))
+        raise TypeError('Input img should be a Tensor.')
 
     if gamma < 0:
         raise ValueError('Gamma should be a non-negative real number')
@@ -302,13 +397,11 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     result = img
     dtype = img.dtype
     if not torch.is_floating_point(img):
-        result = result / 255.0
+        result = convert_image_dtype(result, torch.float32)
 
     result = (gain * result ** gamma).clamp(0, 1)
 
-    if result.dtype != dtype:
-        eps = 1e-3
-        result = (255 + 1.0 - eps) * result
+    result = convert_image_dtype(result, dtype)
     result = result.to(dtype)
     return result
 
@@ -528,6 +621,13 @@ def _hsv2rgb(img):
 
 def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
     # padding is left, right, top, bottom
+
+    # crop if needed
+    if padding[0] < 0 or padding[1] < 0 or padding[2] < 0 or padding[3] < 0:
+        crop_left, crop_right, crop_top, crop_bottom = [-min(x, 0) for x in padding]
+        img = img[..., crop_top:img.shape[-2] - crop_bottom, crop_left:img.shape[-1] - crop_right]
+        padding = [max(x, 0) for x in padding]
+
     in_sizes = img.size()
 
     x_indices = [i for i in range(in_sizes[-1])]  # [0, 1, 2, 3, ...]
@@ -630,8 +730,6 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         padding_mode = "replicate"
     elif padding_mode == "symmetric":
         # route to another implementation
-        if p[0] < 0 or p[1] < 0 or p[2] < 0 or p[3] < 0:  # no any support for torch script
-            raise ValueError("Padding can not be negative for symmetric padding_mode")
         return _pad_symmetric(img, p)
 
     need_squeeze = False
@@ -763,10 +861,10 @@ def _assert_grid_transform_inputs(
         coeffs: Optional[List[float]] = None,
 ):
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
-        raise TypeError("img should be Tensor Image. Got {}".format(type(img)))
+        raise TypeError("Input img should be Tensor Image")
 
     if matrix is not None and not isinstance(matrix, list):
-        raise TypeError("Argument matrix should be a list. Got {}".format(type(matrix)))
+        raise TypeError("Argument matrix should be a list")
 
     if matrix is not None and len(matrix) != 6:
         raise ValueError("Argument matrix should have 6 float values")
@@ -989,7 +1087,7 @@ def perspective(
         Tensor: transformed image.
     """
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
-        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+        raise TypeError('Input img should be Tensor Image')
 
     _interpolation_modes = {
         0: "nearest",

@@ -1,3 +1,4 @@
+import os
 import torch
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
@@ -8,7 +9,7 @@ import numpy as np
 
 import unittest
 
-from common_utils import TransformsTester
+from common_utils import TransformsTester, get_tmp_dir, int_dtypes, float_dtypes
 
 
 class Tester(TransformsTester):
@@ -26,14 +27,14 @@ class Tester(TransformsTester):
         transformed_pil_img = f(pil_img, **fn_kwargs)
         self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
 
-    def _test_transform_vs_scripted(self, transform, s_transform, tensor):
+    def _test_transform_vs_scripted(self, transform, s_transform, tensor, msg=None):
         torch.manual_seed(12)
         out1 = transform(tensor)
         torch.manual_seed(12)
         out2 = s_transform(tensor)
-        self.assertTrue(out1.equal(out2))
+        self.assertTrue(out1.equal(out2), msg=msg)
 
-    def _test_transform_vs_scripted_on_batch(self, transform, s_transform, batch_tensors):
+    def _test_transform_vs_scripted_on_batch(self, transform, s_transform, batch_tensors, msg=None):
         torch.manual_seed(12)
         transformed_batch = transform(batch_tensors)
 
@@ -41,11 +42,11 @@ class Tester(TransformsTester):
             img_tensor = batch_tensors[i, ...]
             torch.manual_seed(12)
             transformed_img = transform(img_tensor)
-            self.assertTrue(transformed_img.equal(transformed_batch[i, ...]))
+            self.assertTrue(transformed_img.equal(transformed_batch[i, ...]), msg=msg)
 
         torch.manual_seed(12)
         s_transformed_batch = s_transform(batch_tensors)
-        self.assertTrue(transformed_batch.equal(s_transformed_batch))
+        self.assertTrue(transformed_batch.equal(s_transformed_batch), msg=msg)
 
     def _test_class_op(self, method, meth_kwargs=None, test_exact_match=True, **match_kwargs):
         if meth_kwargs is None:
@@ -72,6 +73,9 @@ class Tester(TransformsTester):
 
         batch_tensors = self._create_data_batch(height=23, width=34, channels=3, num_samples=4, device=self.device)
         self._test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
+
+        with get_tmp_dir() as tmp_dir:
+            scripted_fn.save(os.path.join(tmp_dir, "t_{}.pt".format(method)))
 
     def _test_op(self, func, method, fn_kwargs=None, meth_kwargs=None):
         self._test_functional_op(func, fn_kwargs)
@@ -117,26 +121,28 @@ class Tester(TransformsTester):
         )
 
     def test_pad(self):
-
-        # Test functional.pad (PIL and Tensor) with padding as single int
-        self._test_functional_op(
-            "pad", fn_kwargs={"padding": 2, "fill": 0, "padding_mode": "constant"}
-        )
-        # Test functional.pad and transforms.Pad with padding as [int, ]
-        fn_kwargs = meth_kwargs = {"padding": [2, ], "fill": 0, "padding_mode": "constant"}
-        self._test_op(
-            "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
-        )
-        # Test functional.pad and transforms.Pad with padding as list
-        fn_kwargs = meth_kwargs = {"padding": [4, 4], "fill": 0, "padding_mode": "constant"}
-        self._test_op(
-            "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
-        )
-        # Test functional.pad and transforms.Pad with padding as tuple
-        fn_kwargs = meth_kwargs = {"padding": (2, 2, 2, 2), "fill": 127, "padding_mode": "constant"}
-        self._test_op(
-            "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
-        )
+        for m in ["constant", "edge", "reflect", "symmetric"]:
+            fill = 127 if m == "constant" else 0
+            for mul in [1, -1]:
+                # Test functional.pad (PIL and Tensor) with padding as single int
+                self._test_functional_op(
+                    "pad", fn_kwargs={"padding": mul * 2, "fill": fill, "padding_mode": m}
+                )
+                # Test functional.pad and transforms.Pad with padding as [int, ]
+                fn_kwargs = meth_kwargs = {"padding": [mul * 2, ], "fill": fill, "padding_mode": m}
+                self._test_op(
+                    "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+                )
+                # Test functional.pad and transforms.Pad with padding as list
+                fn_kwargs = meth_kwargs = {"padding": [mul * 4, 4], "fill": fill, "padding_mode": m}
+                self._test_op(
+                    "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+                )
+                # Test functional.pad and transforms.Pad with padding as tuple
+                fn_kwargs = meth_kwargs = {"padding": (mul * 2, 2, 2, mul * 2), "fill": fill, "padding_mode": m}
+                self._test_op(
+                    "pad", "Pad", fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+                )
 
     def test_crop(self):
         fn_kwargs = {"top": 2, "left": 3, "height": 4, "width": 5}
@@ -188,6 +194,9 @@ class Tester(TransformsTester):
         scripted_fn = torch.jit.script(f)
         scripted_fn(tensor)
 
+        with get_tmp_dir() as tmp_dir:
+            scripted_fn.save(os.path.join(tmp_dir, "t_center_crop.pt"))
+
     def _test_op_list_output(self, func, method, out_length, fn_kwargs=None, meth_kwargs=None):
         if fn_kwargs is None:
             fn_kwargs = {}
@@ -230,6 +239,9 @@ class Tester(TransformsTester):
             for transformed_img, transformed_batch in zip(transformed_img_list, transformed_batch_list):
                 self.assertTrue(transformed_img.equal(transformed_batch[i, ...]),
                                 msg="{} vs {}".format(transformed_img, transformed_batch[i, ...]))
+
+        with get_tmp_dir() as tmp_dir:
+            scripted_fn.save(os.path.join(tmp_dir, "t_op_list_{}.pt".format(method)))
 
     def test_five_crop(self):
         fn_kwargs = meth_kwargs = {"size": (5,)}
@@ -294,6 +306,9 @@ class Tester(TransformsTester):
                     self._test_transform_vs_scripted(transform, s_transform, tensor)
                     self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
+        with get_tmp_dir() as tmp_dir:
+            script_fn.save(os.path.join(tmp_dir, "t_resize.pt"))
+
     def test_resized_crop(self):
         tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
         batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
@@ -308,6 +323,9 @@ class Tester(TransformsTester):
                         s_transform = torch.jit.script(transform)
                         self._test_transform_vs_scripted(transform, s_transform, tensor)
                         self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+        with get_tmp_dir() as tmp_dir:
+            s_transform.save(os.path.join(tmp_dir, "t_resized_crop.pt"))
 
     def test_random_affine(self):
         tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
@@ -327,6 +345,9 @@ class Tester(TransformsTester):
                             self._test_transform_vs_scripted(transform, s_transform, tensor)
                             self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
+        with get_tmp_dir() as tmp_dir:
+            s_transform.save(os.path.join(tmp_dir, "t_random_affine.pt"))
+
     def test_random_rotate(self):
         tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
         batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
@@ -343,6 +364,9 @@ class Tester(TransformsTester):
                         self._test_transform_vs_scripted(transform, s_transform, tensor)
                         self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
+        with get_tmp_dir() as tmp_dir:
+            s_transform.save(os.path.join(tmp_dir, "t_random_rotate.pt"))
+
     def test_random_perspective(self):
         tensor = torch.randint(0, 255, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
         batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
@@ -357,6 +381,9 @@ class Tester(TransformsTester):
 
                 self._test_transform_vs_scripted(transform, s_transform, tensor)
                 self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+        with get_tmp_dir() as tmp_dir:
+            s_transform.save(os.path.join(tmp_dir, "t_perspective.pt"))
 
     def test_to_grayscale(self):
 
@@ -388,6 +415,9 @@ class Tester(TransformsTester):
         self._test_transform_vs_scripted(fn, scripted_fn, tensor)
         self._test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
 
+        with get_tmp_dir() as tmp_dir:
+            scripted_fn.save(os.path.join(tmp_dir, "t_norm.pt"))
+
     def test_linear_transformation(self):
         c, h, w = 3, 24, 32
 
@@ -409,6 +439,9 @@ class Tester(TransformsTester):
         torch.manual_seed(12)
         s_transformed_batch = scripted_fn(batch_tensors)
         self.assertTrue(transformed_batch.equal(s_transformed_batch))
+
+        with get_tmp_dir() as tmp_dir:
+            scripted_fn.save(os.path.join(tmp_dir, "t_norm.pt"))
 
     def test_compose(self):
         tensor, _ = self._create_data(26, 34, device=self.device)
@@ -432,6 +465,56 @@ class Tester(TransformsTester):
         ])
         with self.assertRaisesRegex(RuntimeError, r"Could not get name of python class object"):
             torch.jit.script(t)
+
+    def test_random_erasing(self):
+        img = torch.rand(3, 60, 60)
+
+        # Test Set 0: invalid value
+        random_erasing = T.RandomErasing(value=(0.1, 0.2, 0.3, 0.4), p=1.0)
+        with self.assertRaises(ValueError, msg="If value is a sequence, it should have either a single value or 3"):
+            random_erasing(img)
+
+        tensor, _ = self._create_data(24, 32, channels=3, device=self.device)
+        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
+
+        test_configs = [
+            {"value": 0.2},
+            {"value": "random"},
+            {"value": (0.2, 0.2, 0.2)},
+            {"value": "random", "ratio": (0.1, 0.2)},
+        ]
+
+        for config in test_configs:
+            fn = T.RandomErasing(**config)
+            scripted_fn = torch.jit.script(fn)
+            self._test_transform_vs_scripted(fn, scripted_fn, tensor)
+            self._test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
+
+    def test_convert_image_dtype(self):
+        tensor, _ = self._create_data(26, 34, device=self.device)
+        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
+
+        for in_dtype in int_dtypes() + float_dtypes():
+            in_tensor = tensor.to(in_dtype)
+            in_batch_tensors = batch_tensors.to(in_dtype)
+            for out_dtype in int_dtypes() + float_dtypes():
+
+                fn = T.ConvertImageDtype(dtype=out_dtype)
+                scripted_fn = torch.jit.script(fn)
+
+                if (in_dtype == torch.float32 and out_dtype in (torch.int32, torch.int64)) or \
+                        (in_dtype == torch.float64 and out_dtype == torch.int64):
+                    with self.assertRaisesRegex(RuntimeError, r"cannot be performed safely"):
+                        self._test_transform_vs_scripted(fn, scripted_fn, in_tensor)
+                    with self.assertRaisesRegex(RuntimeError, r"cannot be performed safely"):
+                        self._test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
+                    continue
+
+                self._test_transform_vs_scripted(fn, scripted_fn, in_tensor)
+                self._test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
+
+        with get_tmp_dir() as tmp_dir:
+            scripted_fn.save(os.path.join(tmp_dir, "t_convert_dtype.pt"))
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")

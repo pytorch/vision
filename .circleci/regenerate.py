@@ -165,8 +165,10 @@ def indent(indentation, data_list):
 
 def unittest_workflows(indentation=6):
     jobs = []
-    for os_type in ["linux", "windows"]:
+    for os_type in ["linux", "windows", "macos"]:
         for device_type in ["cpu", "gpu"]:
+            if os_type == "macos" and device_type == "gpu":
+                continue
             for i, python_version in enumerate(PYTHON_VERSIONS):
                 job = {
                     "name": f"unittest_{os_type}_{device_type}_py{python_version}",
@@ -189,8 +191,8 @@ def cmake_workflows(indentation=6):
     jobs = []
     python_version = '3.8'
     for os_type in ['linux', 'windows', 'macos']:
-        # Right now CMake builds are failling on Windows (GPU)
-        device_types = ['cpu', 'gpu'] if os_type == 'linux' else ['cpu']
+        # Skip OSX CUDA
+        device_types = ['cpu', 'gpu'] if os_type != 'macos' else ['cpu']
         for device in device_types:
             job = {
                 'name': f'cmake_{os_type}_{device}',
@@ -198,7 +200,7 @@ def cmake_workflows(indentation=6):
             }
 
             job['cu_version'] = 'cu101' if device == 'gpu' else 'cpu'
-            if device == 'gpu':
+            if device == 'gpu' and os_type == 'linux':
                 job['wheel_docker_image'] = 'pytorch/manylinux-cuda101'
             jobs.append({f'cmake_{os_type}_{device}': job})
     return indent(indentation, jobs)

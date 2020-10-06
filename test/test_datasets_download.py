@@ -4,6 +4,7 @@ import time
 import unittest.mock
 from datetime import datetime
 from os import path
+from urllib.error import HTTPError
 from urllib.parse import urlparse
 from urllib.request import urlopen, Request
 
@@ -45,13 +46,23 @@ urlopen = limit_requests_per_time()(urlopen)
 
 
 @contextlib.contextmanager
-def log_download_attempts(patch=True):
-    urls_and_md5s = set()
-    with unittest.mock.patch("torchvision.datasets.utils.download_url", wraps=None if patch else download_url) as mock:
+def log_download_attempts(urls_and_md5s=None, patch=True, patch_auxiliaries=None):
+    if urls_and_md5s is None:
+        urls_and_md5s = set()
+    if patch_auxiliaries is None:
+        patch_auxiliaries = patch
+
+    with contextlib.ExitStack() as stack:
+        download_url_mock = stack.enter_context(
+            unittest.mock.patch("torchvision.datasets.utils.download_url", wraps=None if patch else download_url)
+        )
+        if patch_auxiliaries:
+            # download_and_extract_archive
+            stack.enter_context(unittest.mock.patch("torchvision.datasets.utils.extract_archive"))
         try:
             yield urls_and_md5s
         finally:
-            for args, kwargs in mock.call_args_list:
+            for args, kwargs in download_url_mock.call_args_list:
                 url = args[0]
                 md5 = args[-1] if len(args) == 4 else kwargs.get("md5")
                 urls_and_md5s.add((url, md5))
@@ -76,25 +87,26 @@ def retry(fn, times=1, wait=5.0):
         )
 
 
-def assert_server_response_ok(response, url=None):
-    msg = f"The server returned status code {response.code}"
-    if url is not None:
-        msg += f"for the the URL {url}"
-    assert 200 <= response.code < 300, msg
+@contextlib.contextmanager
+def assert_server_response_ok():
+    try:
+        yield
+    except HTTPError as error:
+        raise AssertionError(f"The server returned {error.code}: {error.reason}.") from error
 
 
 def assert_url_is_accessible(url):
     request = Request(url, headers=dict(method="HEAD"))
-    response = urlopen(request)
-    assert_server_response_ok(response, url)
+    with assert_server_response_ok():
+        urlopen(request)
 
 
 def assert_file_downloads_correctly(url, md5):
     with get_tmp_dir() as root:
         file = path.join(root, path.basename(url))
-        with urlopen(url) as response, open(file, "wb") as fh:
-            assert_server_response_ok(response, url)
-            fh.write(response.read())
+        with assert_server_response_ok():
+            with urlopen(url) as response, open(file, "wb") as fh:
+                fh.write(response.read())
 
         assert check_integrity(file, md5=md5), "The MD5 checksums mismatch"
 
@@ -105,15 +117,24 @@ class DownloadConfig:
         self.md5 = md5
         self.id = id or url
 
+    def __repr__(self):
+        return self.id
 
-def make_parametrize_kwargs(download_configs):
-    argvalues = []
-    ids = []
-    for config in download_configs:
-        argvalues.append((config.url, config.md5))
-        ids.append(config.id)
 
-    return dict(argnames="url, md5", argvalues=argvalues, ids=ids)
+def make_download_configs(urls_and_md5s, name=None):
+    return [
+        DownloadConfig(url, md5=md5, id=f"{name}, {url}" if name is not None else None) for url, md5 in urls_and_md5s
+    ]
+
+
+def collect_download_configs(dataset_loader, name):
+    try:
+        with log_download_attempts() as urls_and_md5s:
+            dataset_loader()
+    except Exception:
+        pass
+
+    return make_download_configs(urls_and_md5s, name)
 
 
 def places365():
@@ -124,10 +145,38 @@ def places365():
 
                 datasets.Places365(root, split=split, small=small, download=True)
 
-    return [DownloadConfig(url, md5=md5, id=f"Places365, {url}") for url, md5 in urls_and_md5s]
+    return make_download_configs(urls_and_md5s, "Places365")
 
 
-@pytest.mark.parametrize(**make_parametrize_kwargs(itertools.chain(places365(),)))
+def caltech101():
+    return collect_download_configs(lambda: datasets.Caltech101(".", download=True), "Caltech101")
+
+
+def caltech256():
+    return collect_download_configs(lambda: datasets.Caltech256(".", download=True), "Caltech256")
+
+
+def cifar10():
+    return collect_download_configs(lambda: datasets.CIFAR10(".", download=True), "CIFAR10")
+
+
+def cifar100():
+    return collect_download_configs(lambda: datasets.CIFAR10(".", download=True), "CIFAR100")
+
+
+def make_parametrize_kwargs(download_configs):
+    argvalues = []
+    ids = []
+    for config in download_configs:
+        argvalues.append((config.url, config.md5))
+        ids.append(config.id)
+
+    return dict(argnames=("url", "md5"), argvalues=argvalues, ids=ids)
+
+
+@pytest.mark.parametrize(
+    **make_parametrize_kwargs(itertools.chain(places365(), caltech101(), caltech256(), cifar10(), cifar100()))
+)
 def test_url_is_accessible(url, md5):
     retry(lambda: assert_url_is_accessible(url))
 
