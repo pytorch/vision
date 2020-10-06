@@ -11,6 +11,14 @@ import torch
 import torchvision
 from torchvision.io import _HAS_VIDEO_OPT
 
+try:
+    import av
+
+    # Do a version test too
+    io.video._check_av_available()
+except ImportError:
+    av = None
+
 
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")
 
@@ -159,8 +167,6 @@ def _decode_frames_by_av_module(
         video_start_pts/video_end_pts: the starting/ending Presentation TimeStamp where
             frames are read
     """
-    import av
-
     if video_end_pts is None:
         video_end_pts = float("inf")
     if audio_end_pts is None:
@@ -269,6 +275,7 @@ def _template_read_video(video_object, s=0, e=None):
 
 @unittest.skipIf(_HAS_VIDEO_OPT is False, "Didn't compile with ffmpeg")
 class TestVideo(unittest.TestCase):
+    @unittest.skipIf(av is None, "PyAV unavailable")
     def test_read_video_tensor(self):
         """
         Check if reading the video using the `next` based API yields the
@@ -289,6 +296,29 @@ class TestVideo(unittest.TestCase):
                 t, _ = reader.next()
             new_api = torch.stack(frames, 0)
             self.assertEqual(tv_result.size(), new_api.size())
+
+    def test_partial_video_reading_fn(self):
+        import random
+
+        torchvision.set_video_backend("video_reader")
+        for test_video, config in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
+
+            # select two random points between 0 and duration
+            r = []
+            r.append(random.uniform(0, config.duration))
+            r.append(random.uniform(0, config.duration))
+            s = min(r)
+            e = max(r)
+
+            reader = torch.classes.torchvision.Video(full_path, "video", True)
+            results = _template_read_video(reader, s, e)
+            tv_video, tv_audio, info = torchvision.io.read_video(
+                full_path, start_pts=s, end_pts=e, pts_unit="sec"
+            )
+            self.assertAlmostEqual(
+                tv_video.size(0), results.svframes.ssize(0), delta=2.0
+            )
 
     def test_pts(self):
         """
@@ -317,6 +347,7 @@ class TestVideo(unittest.TestCase):
         for i in range(len(napi_pts) - 1):
             self.assertEqual(napi_pts[i] < napi_pts[i + 1], True)
 
+    @unittest.skipIf(av is None, "PyAV unavailable")
     def test_metadata(self):
         """
         Test that the metadata returned via pyav corresponds to the one returned
@@ -372,6 +403,10 @@ class TestVideo(unittest.TestCase):
                     torch.eq(newapi_result.aframes, ref_result.aframes)
                 ).item()
                 self.assertEqual(is_same, True)
+
+    def test_partial_reads(self):
+        for test_video, config in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
 
 
 if __name__ == "__main__":
