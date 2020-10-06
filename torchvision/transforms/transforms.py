@@ -33,7 +33,8 @@ _pil_interpolation_to_str = {
 
 
 class Compose:
-    """Composes several transforms together.
+    """Composes several transforms together. This transform can not be used with torch jit script.
+    Please, see the note below.
 
     Args:
         transforms (list of ``Transform`` objects): list of transforms to compose.
@@ -76,7 +77,7 @@ class Compose:
 
 
 class ToTensor:
-    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
+    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor. This transform can not be used with torch jit script.
 
     Converts a PIL Image or numpy.ndarray (H x W x C) in the range
     [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
@@ -107,7 +108,7 @@ class ToTensor:
 
 
 class PILToTensor:
-    """Convert a ``PIL Image`` to a tensor of the same type.
+    """Convert a ``PIL Image`` to a tensor of the same type. This transform can not be used with torch jit script.
 
     Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
     """
@@ -153,7 +154,7 @@ class ConvertImageDtype(torch.nn.Module):
 
 
 class ToPILImage:
-    """Convert a tensor or an ndarray to PIL Image.
+    """Convert a tensor or an ndarray to PIL Image. This transform can not be used with torch jit script.
 
     Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
     H x W x C to a PIL Image while preserving the value range.
@@ -373,7 +374,7 @@ class Pad(torch.nn.Module):
 
 
 class Lambda:
-    """Apply a user-defined lambda as a transform.
+    """Apply a user-defined lambda as a transform. This transform can not be used with torch jit script.
 
     Args:
         lambd (function): Lambda/function to be used for transform.
@@ -415,7 +416,8 @@ class RandomTransforms:
 
 
 class RandomApply(RandomTransforms):
-    """Apply randomly a list of transformations with a given probability
+    """Apply randomly a list of transformations with a given probability.
+    This transform can not be used with torch jit script.
 
     Args:
         transforms (list or tuple): list of transformations
@@ -444,7 +446,7 @@ class RandomApply(RandomTransforms):
 
 
 class RandomOrder(RandomTransforms):
-    """Apply a list of transformations in a random order
+    """Apply a list of transformations in a random order. This transform can not be used with torch jit script.
     """
     def __call__(self, img):
         order = list(range(len(self.transforms)))
@@ -455,7 +457,7 @@ class RandomOrder(RandomTransforms):
 
 
 class RandomChoice(RandomTransforms):
-    """Apply single transformation randomly picked from a list
+    """Apply single transformation randomly picked from a list. This transform can not be used with torch jit script.
     """
     def __call__(self, img):
         t = random.choice(self.transforms)
