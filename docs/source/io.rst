@@ -14,3 +14,19 @@ Video
 .. autofunction:: read_video_timestamps
 
 .. autofunction:: write_video
+
+
+Image
+-----
+
+.. autofunction:: read_image
+
+.. autofunction:: decode_image
+
+.. autofunction:: encode_jpeg
+
+.. autofunction:: write_jpeg
+
+.. autofunction:: encode_png
+
+.. autofunction:: write_png
