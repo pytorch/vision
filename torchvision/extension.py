@@ -27,7 +27,8 @@ def _register_extensions():
 try:
     _register_extensions()
     _HAS_OPS = True
-    def _has_ops():
+
+    def _has_ops():  # noqa: F811
         return True
 except (ImportError, OSError):
     pass
