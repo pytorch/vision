@@ -402,10 +402,6 @@ class TestVideo(unittest.TestCase):
                 ).item()
                 self.assertEqual(is_same, True)
 
-    def test_partial_reads(self):
-        for test_video, config in test_videos.items():
-            full_path = os.path.join(VIDEO_DIR, test_video)
-
 
 if __name__ == "__main__":
     unittest.main()
