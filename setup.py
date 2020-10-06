@@ -338,10 +338,9 @@ def get_extensions():
         ffmpeg_root = os.path.dirname(ffmpeg_bin)
         ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
         ffmpeg_library_dir = os.path.join(ffmpeg_root, 'lib')
-        
         print("ffmpeg include path: {}".format(ffmpeg_include_dir))
         print("ffmpeg library_dir: {}".format(ffmpeg_library_dir))
-        
+
         # TorchVision base decoder + video reader
         video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
         video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
