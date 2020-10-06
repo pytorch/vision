@@ -14,6 +14,15 @@ from .video import (
     read_video_timestamps,
     write_video,
 )
+from .image import (
+    read_image,
+    decode_image,
+    encode_jpeg,
+    write_jpeg,
+    encode_png,
+    write_png
+)
+
 
 __all__ = [
     "write_video",
@@ -29,5 +38,11 @@ __all__ = [
     "_read_video_clip_from_memory",
     "_read_video_meta_data",
     "VideoMetaData",
-    "Timebase"
+    "Timebase",
+    'read_image',
+    'decode_image',
+    'encode_jpeg',
+    'write_jpeg',
+    'encode_png',
+    'write_png',
 ]
