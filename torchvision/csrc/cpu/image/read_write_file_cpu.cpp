@@ -19,9 +19,7 @@ torch::Tensor read_file(std::string filename) {
   return data;
 }
 
-void write_file(
-    std::string filename,
-    torch::Tensor& data) {
+void write_file(std::string filename, torch::Tensor& data) {
   // Check that the input tensor is on CPU
   TORCH_CHECK(data.device() == torch::kCPU, "Input tensor should be on CPU");
 
