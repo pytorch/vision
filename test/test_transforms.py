@@ -1654,90 +1654,47 @@ class Tester(unittest.TestCase):
         # Checking if RandomGrayscale can be printed as string
         trans3.__repr__()
 
-    def test_random_erasing(self):
-        """Unit tests for random erasing transform"""
-        for is_scripted in [False, True]:
-            torch.manual_seed(12)
-            img = torch.rand(3, 60, 60)
+    def test_gaussian_blur_asserts(self):
+        np_img = np.ones((100, 100, 3), dtype=np.uint8) * 255
+        img = F.to_pil_image(np_img, "RGB")
 
-            # Test Set 0: invalid value
-            random_erasing = transforms.RandomErasing(value=(0.1, 0.2, 0.3, 0.4), p=1.0)
-            with self.assertRaises(ValueError, msg="If value is a sequence, it should have either a single value or 3"):
-                img_re = random_erasing(img)
+        with self.assertRaisesRegex(ValueError, r"If kernel_size is a sequence its length should be 2"):
+            F.gaussian_blur(img, [3])
 
-            # Test Set 1: Erasing with int value
-            random_erasing = transforms.RandomErasing(value=0.2)
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
+        with self.assertRaisesRegex(ValueError, r"If kernel_size is a sequence its length should be 2"):
+            F.gaussian_blur(img, [3, 3, 3])
+        with self.assertRaisesRegex(ValueError, r"Kernel size should be a tuple/list of two integers"):
+            transforms.GaussianBlur([3, 3, 3])
 
-            i, j, h, w, v = transforms.RandomErasing.get_params(
-                img, scale=random_erasing.scale, ratio=random_erasing.ratio, value=[random_erasing.value, ]
-            )
-            img_output = F.erase(img, i, j, h, w, v)
-            self.assertEqual(img_output.size(0), 3)
+        with self.assertRaisesRegex(ValueError, r"kernel_size should have odd and positive integers"):
+            F.gaussian_blur(img, [4, 4])
+        with self.assertRaisesRegex(ValueError, r"Kernel size value should be an odd and positive number"):
+            transforms.GaussianBlur([4, 4])
 
-            # Test Set 2: Check if the unerased region is preserved
-            true_output = img.clone()
-            true_output[:, i:i + h, j:j + w] = random_erasing.value
-            self.assertTrue(torch.equal(true_output, img_output))
+        with self.assertRaisesRegex(ValueError, r"kernel_size should have odd and positive integers"):
+            F.gaussian_blur(img, [-3, -3])
+        with self.assertRaisesRegex(ValueError, r"Kernel size value should be an odd and positive number"):
+            transforms.GaussianBlur([-3, -3])
 
-            # Test Set 3: Erasing with random value
-            random_erasing = transforms.RandomErasing(value="random")
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
-            img_re = random_erasing(img)
+        with self.assertRaisesRegex(ValueError, r"If sigma is a sequence, its length should be 2"):
+            F.gaussian_blur(img, 3, [1, 1, 1])
+        with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
+            transforms.GaussianBlur(3, [1, 1, 1])
 
-            self.assertEqual(img_re.size(0), 3)
+        with self.assertRaisesRegex(ValueError, r"sigma should have positive values"):
+            F.gaussian_blur(img, 3, -1.0)
+        with self.assertRaisesRegex(ValueError, r"If sigma is a single number, it must be positive"):
+            transforms.GaussianBlur(3, -1.0)
 
-            # Test Set 4: Erasing with tuple value
-            random_erasing = transforms.RandomErasing(value=(0.2, 0.2, 0.2))
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
-            img_re = random_erasing(img)
-            self.assertEqual(img_re.size(0), 3)
-            true_output = img.clone()
-            true_output[:, i:i + h, j:j + w] = torch.tensor(random_erasing.value)[:, None, None]
-            self.assertTrue(torch.equal(true_output, img_output))
+        with self.assertRaisesRegex(TypeError, r"kernel_size should be int or a sequence of integers"):
+            F.gaussian_blur(img, "kernel_size_string")
+        with self.assertRaisesRegex(ValueError, r"Kernel size should be a tuple/list of two integers"):
+            transforms.GaussianBlur("kernel_size_string")
 
-            # Test Set 5: Testing the inplace behaviour
-            random_erasing = transforms.RandomErasing(value=(0.2,), inplace=True)
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
-
-            img_re = random_erasing(img)
-            self.assertTrue(torch.equal(img_re, img))
-
-            # Test Set 6: Checking when no erased region is selected
-            img = torch.rand([3, 300, 1])
-            random_erasing = transforms.RandomErasing(ratio=(0.1, 0.2), value="random")
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
-            img_re = random_erasing(img)
-            self.assertTrue(torch.equal(img_re, img))
-
-        def test_gaussian_blur(self):
-            np_img = np.ones((100, 100, 3), dtype=np.uint8) * 255
-            img = F.to_pil_image(np_img, "RGB")
-
-            with self.assertRaises(ValueError):
-                F.gaussian_blur(img, [3])
-            with self.assertRaises(ValueError):
-                F.gaussian_blur(img, [3, 3, 3])
-            with self.assertRaises(ValueError):
-                F.gaussian_blur(img, [4, 4])
-            with self.assertRaises(ValueError):
-                F.gaussian_blur(img, [-3, -3])
-            with self.assertRaises(ValueError):
-                F.gaussian_blur(img, 3, [1, 1, 1])
-            with self.assertRaises(ValueError):
-                F.gaussian_blur(img, 3, -1)
-
-            with self.assrtRaises(TypeError):
-                F.gaussian_blur(img, 'kernel_size_string')
-            with self.assrtRaises(TypeError):
-                F.gaussian_blur(img, 3, 'sigma_string')
-            with self.assrtRaises(TypeError):
-                F.gaussian_blur(np_img, 3, 1)
+        with self.assertRaisesRegex(TypeError, r"sigma should be either float or sequence of floats"):
+            F.gaussian_blur(img, 3, "sigma_string")
+        with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
+            transforms.GaussianBlur(3, "sigma_string")
 
 
 if __name__ == '__main__':

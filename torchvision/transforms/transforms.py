@@ -1527,7 +1527,7 @@ class GaussianBlur(torch.nn.Module):
             if not 0. < sigma[0] <= sigma[1]:
                 raise ValueError("sigma values should be positive and of the form (min, max).")
         else:
-            raise TypeError("sigma should be a single number or a list/tuple with length 2.")
+            raise ValueError("sigma should be a single number or a list/tuple with length 2.")
 
         self.sigma = sigma
 
@@ -1556,7 +1556,7 @@ class GaussianBlur(torch.nn.Module):
         return F.gaussian_blur(img, self.kernel_size, [sigma, sigma])
 
     def __repr__(self):
-        s = '(kernel size={}, '.format(self.ksize)
+        s = '(kernel_size={}, '.format(self.kernel_size)
         s += 'sigma={})'.format(self.sigma)
         return self.__class__.__name__ + s
 

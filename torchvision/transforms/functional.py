@@ -1024,10 +1024,10 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
     if sigma is None:
         sigma = [ksize * 0.15 + 0.35 for ksize in kernel_size]
 
-    if sigma is not None and not isinstance(sigma, (float, list, tuple)):
+    if sigma is not None and not isinstance(sigma, (int, float, list, tuple)):
         raise TypeError('sigma should be either float or sequence of floats. Got {}'.format(type(sigma)))
-    if isinstance(sigma, float):
-        sigma = [sigma, sigma]
+    if isinstance(sigma, (int, float)):
+        sigma = [float(sigma), float(sigma)]
     if isinstance(sigma, (list, tuple)) and len(sigma) == 1:
         sigma = [sigma[0], sigma[0]]
     if len(sigma) != 2:

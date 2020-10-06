@@ -879,24 +879,22 @@ def _assert_grid_transform_inputs(
         raise ValueError("Resampling mode '{}' is unsupported with Tensor input".format(resample))
 
 
-def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
-    # make image NCHW
+def _cast_squeeze_in(img: Tensor, req_dtype: torch.dtype) -> Tuple[Tensor, bool, bool, torch.dtype]:
     need_squeeze = False
+    # make image NCHW
     if img.ndim < 4:
         img = img.unsqueeze(dim=0)
         need_squeeze = True
 
     out_dtype = img.dtype
     need_cast = False
-    if out_dtype != grid.dtype:
+    if out_dtype != req_dtype:
         need_cast = True
-        img = img.to(grid)
+        img = img.to(req_dtype)
+    return img, need_cast, need_squeeze, out_dtype
 
-    if img.shape[0] > 1:
-        # Apply same grid to a batch of images
-        grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
-    img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
 
+def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtype: torch.dtype):
     if need_squeeze:
         img = img.squeeze(dim=0)
 
@@ -904,6 +902,19 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
         # it is better to round before cast
         img = torch.round(img).to(out_dtype)
 
+    return img
+
+
+def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
+
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, grid.dtype)
+
+    if img.shape[0] > 1:
+        # Apply same grid to a batch of images
+        grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
+    img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
+
+    img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
 
 
@@ -1126,7 +1137,7 @@ def _get_gaussian_kernel2d(
 ) -> Tensor:
     kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0]).to(device, dtype=dtype)
     kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1]).to(device, dtype=dtype)
-    kernel2d = torch.mm(kernel1d_x[:, None], kernel1d_y[None, :])
+    kernel2d = torch.mm(kernel1d_y[:, None], kernel1d_x[None, :])
     return kernel2d
 
 
@@ -1153,28 +1164,12 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
     kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=img.device)
     kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
 
-    # make image NCHW
-    need_squeeze = False
-    if img.ndim < 4:
-        img = img.unsqueeze(dim=0)
-        need_squeeze = True
-
-    out_dtype = img.dtype
-    need_cast = False
-    if out_dtype != kernel.dtype:
-        need_cast = True
-        img = img.to(kernel)
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, kernel.dtype)
 
     # padding = (left, right, top, bottom)
     padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
     img = torch_pad(img, padding, mode="reflect")
     img = conv2d(img, kernel, groups=img.shape[-3])
 
-    if need_squeeze:
-        img = img.squeeze(dim=0)
-
-    if need_cast:
-        # it is better to round before cast
-        img = torch.round(img).to(out_dtype)
-
+    img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
