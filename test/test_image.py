@@ -8,9 +8,12 @@ import torch
 import torchvision
 from PIL import Image
 from torchvision.io.image import (
-    read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg, decode_image, _read_file,
+    read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
     encode_png, write_png)
 import numpy as np
+
+from common_utils import get_tmp_dir
+
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 IMAGE_DIR = os.path.join(IMAGE_ROOT, "fakedata", "imagefolder")
@@ -206,14 +209,34 @@ class ImageTester(unittest.TestCase):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
             img_pil = torch.load(img_path.replace('jpg', 'pth'))
             img_pil = img_pil.permute(2, 0, 1)
-            img_ljpeg = decode_image(_read_file(img_path))
+            img_ljpeg = decode_image(read_file(img_path))
             self.assertTrue(img_ljpeg.equal(img_pil))
 
         for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_pil = img_pil.permute(2, 0, 1)
-            img_lpng = decode_image(_read_file(img_path))
+            img_lpng = decode_image(read_file(img_path))
             self.assertTrue(img_lpng.equal(img_pil))
+
+    def test_read_file(self):
+        with get_tmp_dir() as d:
+            fname, content = 'test1.bin', b'TorchVision\211\n'
+            fpath = os.path.join(d, fname)
+            with open(fpath, 'wb') as f:
+                f.write(content)
+
+            data = read_file(fpath)
+            expected = torch.tensor(list(content), dtype=torch.uint8)
+            self.assertTrue(data.equal(expected))
+            # Windows holds into the file until the tensor is alive
+            # so need to del the tensor before deleting the file see
+            # https://github.com/pytorch/vision/issues/2743#issuecomment-703817293
+            del data
+            os.unlink(fpath)
+
+        with self.assertRaisesRegex(
+                RuntimeError, "No such file or directory: 'tst'"):
+            read_file('tst')
 
 
 if __name__ == '__main__':

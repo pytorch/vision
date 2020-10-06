@@ -9,7 +9,7 @@ import numpy as np
 
 import unittest
 
-from common_utils import TransformsTester, get_tmp_dir
+from common_utils import TransformsTester, get_tmp_dir, int_dtypes, float_dtypes
 
 
 class Tester(TransformsTester):
@@ -27,14 +27,14 @@ class Tester(TransformsTester):
         transformed_pil_img = f(pil_img, **fn_kwargs)
         self.compareTensorToPIL(transformed_tensor, transformed_pil_img)
 
-    def _test_transform_vs_scripted(self, transform, s_transform, tensor):
+    def _test_transform_vs_scripted(self, transform, s_transform, tensor, msg=None):
         torch.manual_seed(12)
         out1 = transform(tensor)
         torch.manual_seed(12)
         out2 = s_transform(tensor)
-        self.assertTrue(out1.equal(out2))
+        self.assertTrue(out1.equal(out2), msg=msg)
 
-    def _test_transform_vs_scripted_on_batch(self, transform, s_transform, batch_tensors):
+    def _test_transform_vs_scripted_on_batch(self, transform, s_transform, batch_tensors, msg=None):
         torch.manual_seed(12)
         transformed_batch = transform(batch_tensors)
 
@@ -42,11 +42,11 @@ class Tester(TransformsTester):
             img_tensor = batch_tensors[i, ...]
             torch.manual_seed(12)
             transformed_img = transform(img_tensor)
-            self.assertTrue(transformed_img.equal(transformed_batch[i, ...]))
+            self.assertTrue(transformed_img.equal(transformed_batch[i, ...]), msg=msg)
 
         torch.manual_seed(12)
         s_transformed_batch = s_transform(batch_tensors)
-        self.assertTrue(transformed_batch.equal(s_transformed_batch))
+        self.assertTrue(transformed_batch.equal(s_transformed_batch), msg=msg)
 
     def _test_class_op(self, method, meth_kwargs=None, test_exact_match=True, **match_kwargs):
         if meth_kwargs is None:
@@ -123,9 +123,7 @@ class Tester(TransformsTester):
     def test_pad(self):
         for m in ["constant", "edge", "reflect", "symmetric"]:
             fill = 127 if m == "constant" else 0
-            # Negative pad currently unsupported for Tensor and symmetric
-            multipliers = [1] if m == "symmetric" else [1, -1]
-            for mul in multipliers:
+            for mul in [1, -1]:
                 # Test functional.pad (PIL and Tensor) with padding as single int
                 self._test_functional_op(
                     "pad", fn_kwargs={"padding": mul * 2, "fill": fill, "padding_mode": m}
@@ -491,6 +489,32 @@ class Tester(TransformsTester):
             scripted_fn = torch.jit.script(fn)
             self._test_transform_vs_scripted(fn, scripted_fn, tensor)
             self._test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
+
+    def test_convert_image_dtype(self):
+        tensor, _ = self._create_data(26, 34, device=self.device)
+        batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
+
+        for in_dtype in int_dtypes() + float_dtypes():
+            in_tensor = tensor.to(in_dtype)
+            in_batch_tensors = batch_tensors.to(in_dtype)
+            for out_dtype in int_dtypes() + float_dtypes():
+
+                fn = T.ConvertImageDtype(dtype=out_dtype)
+                scripted_fn = torch.jit.script(fn)
+
+                if (in_dtype == torch.float32 and out_dtype in (torch.int32, torch.int64)) or \
+                        (in_dtype == torch.float64 and out_dtype == torch.int64):
+                    with self.assertRaisesRegex(RuntimeError, r"cannot be performed safely"):
+                        self._test_transform_vs_scripted(fn, scripted_fn, in_tensor)
+                    with self.assertRaisesRegex(RuntimeError, r"cannot be performed safely"):
+                        self._test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
+                    continue
+
+                self._test_transform_vs_scripted(fn, scripted_fn, in_tensor)
+                self._test_transform_vs_scripted_on_batch(fn, scripted_fn, in_batch_tensors)
+
+        with get_tmp_dir() as tmp_dir:
+            scripted_fn.save(os.path.join(tmp_dir, "t_convert_dtype.pt"))
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")

@@ -23,14 +23,18 @@ except (ImportError, OSError):
     pass
 
 
-def _read_file(path: str) -> torch.Tensor:
-    if not os.path.isfile(path):
-        raise ValueError("Expected a valid file path.")
+def read_file(path: str) -> torch.Tensor:
+    """
+    Reads and outputs the bytes contents of a file as a uint8 Tensor
+    with one dimension.
 
-    size = os.path.getsize(path)
-    if size == 0:
-        raise ValueError("Expected a non empty file.")
-    data = torch.from_file(path, dtype=torch.uint8, size=size)
+    Arguments:
+        path (str): the path to the file to be read
+
+    Returns:
+        data (Tensor)
+    """
+    data = torch.ops.image.read_file(path)
     return data
 
 
@@ -61,7 +65,7 @@ def read_png(path: str) -> torch.Tensor:
     Returns:
         output (Tensor[3, image_height, image_width])
     """
-    data = _read_file(path)
+    data = read_file(path)
     return decode_png(data)
 
 
@@ -119,7 +123,7 @@ def read_jpeg(path: str) -> torch.Tensor:
     Returns:
         output (Tensor[3, image_height, image_width])
     """
-    data = _read_file(path)
+    data = read_file(path)
     return decode_jpeg(data)
 
 
@@ -187,5 +191,5 @@ def read_image(path: str) -> torch.Tensor:
     Returns:
         output (Tensor[3, image_height, image_width])
     """
-    data = _read_file(path)
+    data = read_file(path)
     return decode_image(data)
