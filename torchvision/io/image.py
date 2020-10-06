@@ -38,6 +38,18 @@ def read_file(path: str) -> torch.Tensor:
     return data
 
 
+def write_file(filename: str, data: torch.Tensor) -> None:
+    """
+    Writes the contents of a uint8 tensor with one dimension to a
+    file.
+
+    Arguments:
+        filename (str): the path to the file to be written
+        data (Tensor): the contents to be written to the output file
+    """
+    torch.ops.image.write_file(filename, data)
+
+
 def decode_png(input: torch.Tensor) -> torch.Tensor:
     """
     Decodes a PNG image into a 3 dimensional RGB Tensor.
