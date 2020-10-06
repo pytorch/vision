@@ -3,6 +3,7 @@ import collections
 import contextlib
 import tempfile
 import unittest
+import random
 
 
 import numpy as np
@@ -298,8 +299,6 @@ class TestVideo(unittest.TestCase):
             self.assertEqual(tv_result.size(), new_api.size())
 
     def test_partial_video_reading_fn(self):
-        import random
-
         torchvision.set_video_backend("video_reader")
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
