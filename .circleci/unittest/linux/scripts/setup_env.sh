@@ -34,8 +34,12 @@ if [ ! -d "${env_dir}" ]; then
 fi
 conda activate "${env_dir}"
 
+conda list
 # 3. Install Conda dependencies
 printf "* Installing dependencies (except PyTorch)\n"
 conda env update --file "${this_dir}/environment.yml" --prune
 
-conda install ffmpeg=4.2.2 -c conda-forge -y
+#conda install av=6.2.0 -c conda-forge -y
+# conda install av ffmpeg=4.0.2 -c conda-forge -y
+conda install ffmpeg=4.2 -c conda-forge -y
+conda list
