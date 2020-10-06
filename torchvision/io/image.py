@@ -66,21 +66,6 @@ def decode_png(input: torch.Tensor) -> torch.Tensor:
     return output
 
 
-def read_png(path: str) -> torch.Tensor:
-    """
-    Reads a PNG image into a 3 dimensional RGB Tensor.
-    The values of the output tensor are uint8 between 0 and 255.
-
-    Arguments:
-        path (str): path of the PNG image.
-
-    Returns:
-        output (Tensor[3, image_height, image_width])
-    """
-    data = read_file(path)
-    return decode_png(data)
-
-
 def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
     """
     Takes an input tensor in CHW layout and returns a buffer with the contents
@@ -134,19 +119,6 @@ def decode_jpeg(input: torch.Tensor) -> torch.Tensor:
     """
     output = torch.ops.image.decode_jpeg(input)
     return output
-
-
-def read_jpeg(path: str) -> torch.Tensor:
-    """
-    Reads a JPEG image into a 3 dimensional RGB Tensor.
-    The values of the output tensor are uint8 between 0 and 255.
-    Arguments:
-        path (str): path of the JPEG image.
-    Returns:
-        output (Tensor[3, image_height, image_width])
-    """
-    data = read_file(path)
-    return decode_jpeg(data)
 
 
 def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
