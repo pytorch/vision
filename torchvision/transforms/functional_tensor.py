@@ -621,6 +621,13 @@ def _hsv2rgb(img):
 
 def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
     # padding is left, right, top, bottom
+
+    # crop if needed
+    if padding[0] < 0 or padding[1] < 0 or padding[2] < 0 or padding[3] < 0:
+        crop_left, crop_right, crop_top, crop_bottom = [-min(x, 0) for x in padding]
+        img = img[..., crop_top:img.shape[-2] - crop_bottom, crop_left:img.shape[-1] - crop_right]
+        padding = [max(x, 0) for x in padding]
+
     in_sizes = img.size()
 
     x_indices = [i for i in range(in_sizes[-1])]  # [0, 1, 2, 3, ...]
@@ -723,8 +730,6 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         padding_mode = "replicate"
     elif padding_mode == "symmetric":
         # route to another implementation
-        if p[0] < 0 or p[1] < 0 or p[2] < 0 or p[3] < 0:  # no any support for torch script
-            raise ValueError("Padding can not be negative for symmetric padding_mode")
         return _pad_symmetric(img, p)
 
     need_squeeze = False

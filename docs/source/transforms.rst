@@ -16,7 +16,7 @@ random transformations applied on the batch of Tensor Images identically transfo
 
 
 Scriptable transforms
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 In order to script the transformations, please use ``torch.nn.Sequential`` instead of :class:`Compose`.
 
@@ -33,6 +33,8 @@ Make sure to use only scriptable transformations, i.e. that work with ``torch.Te
 
 For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
 
+Compositions of transforms
+--------------------------
 
 .. autoclass:: Compose
 
