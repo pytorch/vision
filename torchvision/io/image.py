@@ -69,14 +69,20 @@ def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
     """
     Takes an input tensor in CHW layout and returns a buffer with the contents
     of its corresponding PNG file.
-    Arguments:
-        input (Tensor[channels, image_height, image_width]): int8 image tensor
-    of `c` channels, where `c` must 3 or 1.
-        compression_level (int): Compression factor for the resulting file, it
-    must be a number between 0 and 9. Default: 6
+
+    Parameters
+    ----------
+    input: Tensor[channels, image_height, image_width]
+        int8 image tensor of `c` channels, where `c` must 3 or 1.
+    compression_level: int
+        Compression factor for the resulting file, it must be a number
+        between 0 and 9. Default: 6
+
     Returns
-        output (Tensor[1]): A one dimensional int8 tensor that contains the raw
-    bytes of the PNG file.
+    -------
+    output: Tensor[1]
+        A one dimensional int8 tensor that contains the raw bytes of the
+        PNG file.
     """
     output = torch.ops.image.encode_png(input, compression_level)
     return output
