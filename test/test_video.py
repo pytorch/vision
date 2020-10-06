@@ -298,51 +298,51 @@ class TestVideo(unittest.TestCase):
             new_api = torch.stack(frames, 0)
             self.assertEqual(tv_result.size(), new_api.size())
 
-    def test_partial_video_reading_fn(self):
-        torchvision.set_video_backend("video_reader")
-        for test_video, config in test_videos.items():
-            full_path = os.path.join(VIDEO_DIR, test_video)
+    # def test_partial_video_reading_fn(self):
+    #     torchvision.set_video_backend("video_reader")
+    #     for test_video, config in test_videos.items():
+    #         full_path = os.path.join(VIDEO_DIR, test_video)
 
-            # select two random points between 0 and duration
-            r = []
-            r.append(random.uniform(0, config.duration))
-            r.append(random.uniform(0, config.duration))
-            s = min(r)
-            e = max(r)
+    #         # select two random points between 0 and duration
+    #         r = []
+    #         r.append(random.uniform(0, config.duration))
+    #         r.append(random.uniform(0, config.duration))
+    #         s = min(r)
+    #         e = max(r)
 
-            reader = torch.classes.torchvision.Video(full_path, "video")
-            results = _template_read_video(reader, s, e)
-            tv_video, tv_audio, info = torchvision.io.read_video(
-                full_path, start_pts=s, end_pts=e, pts_unit="sec"
-            )
-            self.assertAlmostEqual(tv_video.size(0), results.vframes.size(0), delta=2.0)
+    #         reader = torch.classes.torchvision.Video(full_path, "video")
+    #         results = _template_read_video(reader, s, e)
+    #         tv_video, tv_audio, info = torchvision.io.read_video(
+    #             full_path, start_pts=s, end_pts=e, pts_unit="sec"
+    #         )
+    #         self.assertAlmostEqual(tv_video.size(0), results.vframes.size(0), delta=2.0)
 
-    def test_pts(self):
-        """
-        Check if every frame read from
-        """
-        torchvision.set_video_backend("video_reader")
-        for test_video, config in test_videos.items():
-            full_path = os.path.join(VIDEO_DIR, test_video)
+    # def test_pts(self):
+    #     """
+    #     Check if every frame read from
+    #     """
+    #     torchvision.set_video_backend("video_reader")
+    #     for test_video, config in test_videos.items():
+    #         full_path = os.path.join(VIDEO_DIR, test_video)
 
-            tv_timestamps, _ = torchvision.io.read_video_timestamps(
-                full_path, pts_unit="sec"
-            )
-            # pass 2: decode all frames using new api
-            reader = torch.classes.torchvision.Video(full_path, "video")
-            pts = []
-            t, p = reader.next()
-            while t.numel() > 0:
-                pts.append(p)
-                t, p = reader.next()
+    #         tv_timestamps, _ = torchvision.io.read_video_timestamps(
+    #             full_path, pts_unit="sec"
+    #         )
+    #         # pass 2: decode all frames using new api
+    #         reader = torch.classes.torchvision.Video(full_path, "video")
+    #         pts = []
+    #         t, p = reader.next()
+    #         while t.numel() > 0:
+    #             pts.append(p)
+    #             t, p = reader.next()
 
-            tv_timestamps = [float(p) for p in tv_timestamps]
-            napi_pts = [float(p) for p in pts]
-            for i in range(len(napi_pts)):
-                self.assertAlmostEqual(napi_pts[i], tv_timestamps[i], delta=0.001)
-        # check if pts of video frames are sorted in ascending order
-        for i in range(len(napi_pts) - 1):
-            self.assertEqual(napi_pts[i] < napi_pts[i + 1], True)
+    #         tv_timestamps = [float(p) for p in tv_timestamps]
+    #         napi_pts = [float(p) for p in pts]
+    #         for i in range(len(napi_pts)):
+    #             self.assertAlmostEqual(napi_pts[i], tv_timestamps[i], delta=0.001)
+    #     # check if pts of video frames are sorted in ascending order
+    #     for i in range(len(napi_pts) - 1):
+    #         self.assertEqual(napi_pts[i] < napi_pts[i + 1], True)
 
     @unittest.skipIf(av is None, "PyAV unavailable")
     def test_metadata(self):
