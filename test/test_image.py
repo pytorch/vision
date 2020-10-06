@@ -12,6 +12,9 @@ from torchvision.io.image import (
     encode_png, write_png)
 import numpy as np
 
+from common_utils import get_tmp_dir
+
+
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 IMAGE_DIR = os.path.join(IMAGE_ROOT, "fakedata", "imagefolder")
 DAMAGED_JPEG = os.path.join(IMAGE_ROOT, 'damaged_jpeg')
@@ -216,18 +219,20 @@ class ImageTester(unittest.TestCase):
             self.assertTrue(img_lpng.equal(img_pil))
 
     def test_read_file(self):
-        # TODO Improve workaround solution for tempfile on Windows
-        d = IMAGE_ROOT
-        fname, content = 'test1.bin', b'TorchVision\211\n'
-        fpath = os.path.join(d, fname)
-        with open(fpath, 'wb') as f:
-            f.write(content)
+        with get_tmp_dir() as d:
+            fname, content = 'test1.bin', b'TorchVision\211\n'
+            fpath = os.path.join(d, fname)
+            with open(fpath, 'wb') as f:
+                f.write(content)
 
-        data = read_file(fpath)
-        expected = torch.tensor(list(content), dtype=torch.uint8)
-        self.assertTrue(data.equal(expected))
-        del data
-        os.unlink(fpath)
+            data = read_file(fpath)
+            expected = torch.tensor(list(content), dtype=torch.uint8)
+            self.assertTrue(data.equal(expected))
+            # Windows holds into the file until the tensor is alive
+            # so need to del the tensor before deleting the file see
+            # https://github.com/pytorch/vision/issues/2743#issuecomment-703817293
+            del data
+            os.unlink(fpath)
 
         with self.assertRaisesRegex(
                 RuntimeError, "No such file or directory: 'tst'"):
