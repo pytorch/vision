@@ -12,6 +12,7 @@ dependencies:
   - ffmpeg=4.2
   - ca-certificates
   - pip:
-      - future
-      - pillow>=4.1.1
-      - scipy
+    - future
+    - pillow>=4.1.1
+    - scipy
+    - av
