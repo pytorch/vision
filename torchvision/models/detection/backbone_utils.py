@@ -42,9 +42,6 @@ class BackboneWithFPN(nn.Module):
 
 
 def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.FrozenBatchNorm2d, trainable_layers=3):
-    backbone = resnet.__dict__[backbone_name](
-        pretrained=pretrained,
-        norm_layer=norm_layer)
     """
     Constructs a specified ResNet backbone with FPN on top. Freezes the specified number of layers in the backbone.
 
@@ -73,6 +70,10 @@ def resnet_fpn_backbone(backbone_name, pretrained, norm_layer=misc_nn_ops.Frozen
         trainable_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
+    backbone = resnet.__dict__[backbone_name](
+        pretrained=pretrained,
+        norm_layer=norm_layer)
+
     # select layers that wont be frozen
     assert trainable_layers <= 5 and trainable_layers >= 0
     layers_to_train = ['layer4', 'layer3', 'layer2', 'layer1', 'conv1'][:trainable_layers]

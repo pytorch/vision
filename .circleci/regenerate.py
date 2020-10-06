@@ -27,7 +27,10 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
-            cu_versions = (["cpu", "cu92", "cu101", "cu102"] if os_type == "linux" or os_type == "win" else ["cpu"])
+            cu_versions_dict = {"linux": ["cpu", "cu92", "cu101", "cu102", "cu110"],
+                                "win": ["cpu", "cu101", "cu102", "cu110"],
+                                "macos": ["cpu"]}
+            cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
                 for cu_version in cu_versions:
                     for unicode in ([False, True] if btype == "wheel" and python_version == "2.7" else [False]):
@@ -55,6 +58,9 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=''
 
     if upload:
         w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, filter_branch=filter_branch))
+        if filter_branch == 'nightly' and os_type in ['linux', 'win']:
+            pydistro = 'pip' if btype == 'wheel' else 'conda'
+            w.append(generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, python_version, os_type))
 
     return w
 
@@ -63,6 +69,7 @@ manylinux_images = {
     "cu92": "pytorch/manylinux-cuda92",
     "cu101": "pytorch/manylinux-cuda101",
     "cu102": "pytorch/manylinux-cuda102",
+    "cu110": "pytorch/manylinux-cuda110",
 }
 
 
@@ -133,6 +140,24 @@ def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, 
     return {f"binary_{btype}_upload": d}
 
 
+def generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, python_version, os_type):
+
+    required_build_suffix = "_upload"
+    required_build_name = base_workflow_name + required_build_suffix
+
+    smoke_suffix = f"smoke_test_{pydistro}"
+    d = {
+        "name": f"{base_workflow_name}_{smoke_suffix}",
+        "requires": [required_build_name],
+        "python_version": python_version,
+    }
+
+    if filter_branch:
+        d["filters"] = gen_filter_branch_tree(filter_branch)
+
+    return {"smoke_test_{os_type}_{pydistro}".format(os_type=os_type, pydistro=pydistro): d}
+
+
 def indent(indentation, data_list):
     return ("\n" + " " * indentation).join(
         yaml.dump(data_list, default_flow_style=False).splitlines())
@@ -140,8 +165,10 @@ def indent(indentation, data_list):
 
 def unittest_workflows(indentation=6):
     jobs = []
-    for os_type in ["linux", "windows"]:
+    for os_type in ["linux", "windows", "macos"]:
         for device_type in ["cpu", "gpu"]:
+            if os_type == "macos" and device_type == "gpu":
+                continue
             for i, python_version in enumerate(PYTHON_VERSIONS):
                 job = {
                     "name": f"unittest_{os_type}_{device_type}_py{python_version}",
@@ -160,6 +187,25 @@ def unittest_workflows(indentation=6):
     return indent(indentation, jobs)
 
 
+def cmake_workflows(indentation=6):
+    jobs = []
+    python_version = '3.8'
+    for os_type in ['linux', 'windows', 'macos']:
+        # Skip OSX CUDA
+        device_types = ['cpu', 'gpu'] if os_type != 'macos' else ['cpu']
+        for device in device_types:
+            job = {
+                'name': f'cmake_{os_type}_{device}',
+                'python_version': python_version
+            }
+
+            job['cu_version'] = 'cu101' if device == 'gpu' else 'cpu'
+            if device == 'gpu' and os_type == 'linux':
+                job['wheel_docker_image'] = 'pytorch/manylinux-cuda101'
+            jobs.append({f'cmake_{os_type}_{device}': job})
+    return indent(indentation, jobs)
+
+
 if __name__ == "__main__":
     d = os.path.dirname(__file__)
     env = jinja2.Environment(
@@ -172,4 +218,5 @@ if __name__ == "__main__":
         f.write(env.get_template('config.yml.in').render(
             build_workflows=build_workflows,
             unittest_workflows=unittest_workflows,
+            cmake_workflows=cmake_workflows,
         ))

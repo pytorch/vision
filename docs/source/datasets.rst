@@ -24,36 +24,31 @@ All the datasets have almost similar API. They all have two common arguments:
 
 .. currentmodule:: torchvision.datasets
 
+CelebA
+~~~~~~
 
-MNIST
+.. autoclass:: CelebA
+  :members: __getitem__
+  :special-members:
+
+CIFAR
 ~~~~~
 
-.. autoclass:: MNIST
+.. autoclass:: CIFAR10
+  :members: __getitem__
+  :special-members:
 
-Fashion-MNIST
-~~~~~~~~~~~~~
+.. autoclass:: CIFAR100
 
-.. autoclass:: FashionMNIST
+Cityscapes
+~~~~~~~~~~
 
-KMNIST
-~~~~~~~~~~~~~
+.. note ::
+    Requires Cityscape to be downloaded.
 
-.. autoclass:: KMNIST
-
-EMNIST
-~~~~~~
-
-.. autoclass:: EMNIST
-
-QMNIST
-~~~~~~
-
-.. autoclass:: QMNIST
-
-FakeData
-~~~~~~~~
-
-.. autoclass:: FakeData
+.. autoclass:: Cityscapes
+  :members: __getitem__
+  :special-members:
 
 COCO
 ~~~~
@@ -79,10 +74,44 @@ Detection
   :members: __getitem__
   :special-members:
 
-LSUN
-~~~~
+DatasetFolder
+~~~~~~~~~~~~~
 
-.. autoclass:: LSUN
+.. autoclass:: DatasetFolder
+  :members: __getitem__
+  :special-members:
+
+
+EMNIST
+~~~~~~
+
+.. autoclass:: EMNIST
+
+FakeData
+~~~~~~~~
+
+.. autoclass:: FakeData
+
+Fashion-MNIST
+~~~~~~~~~~~~~
+
+.. autoclass:: FashionMNIST
+
+Flickr
+~~~~~~
+
+.. autoclass:: Flickr8k
+  :members: __getitem__
+  :special-members:
+
+.. autoclass:: Flickr30k
+  :members: __getitem__
+  :special-members:
+
+HMDB51
+~~~~~~~
+
+.. autoclass:: HMDB51
   :members: __getitem__
   :special-members:
 
@@ -93,15 +122,6 @@ ImageFolder
   :members: __getitem__
   :special-members:
 
-DatasetFolder
-~~~~~~~~~~~~~
-
-.. autoclass:: DatasetFolder
-  :members: __getitem__
-  :special-members:
-
-
-
 ImageNet
 ~~~~~~~~~~~
 
@@ -110,19 +130,70 @@ ImageNet
 .. note ::
     This requires `scipy` to be installed
 
+Kinetics-400
+~~~~~~~~~~~~
 
-CIFAR
-~~~~~
-
-.. autoclass:: CIFAR10
+.. autoclass:: Kinetics400
   :members: __getitem__
   :special-members:
 
-.. autoclass:: CIFAR100
+KMNIST
+~~~~~~~~~~~~~
+
+.. autoclass:: KMNIST
+
+LSUN
+~~~~
+
+.. autoclass:: LSUN
+  :members: __getitem__
+  :special-members:
+
+MNIST
+~~~~~
+
+.. autoclass:: MNIST
+
+Omniglot
+~~~~~~
+
+.. autoclass:: Omniglot
+
+PhotoTour
+~~~~~~~~~
+
+.. autoclass:: PhotoTour
+  :members: __getitem__
+  :special-members:
+
+Places365
+~~~~~~~~~
+
+.. autoclass:: Places365
+  :members: __getitem__
+  :special-members:
+
+QMNIST
+~~~~~~
+
+.. autoclass:: QMNIST
+
+SBD
+~~~~~~
+
+.. autoclass:: SBDataset
+  :members: __getitem__
+  :special-members:
+
+SBU
+~~~
+
+.. autoclass:: SBU
+  :members: __getitem__
+  :special-members:
 
 STL10
 ~~~~~
-
 
 .. autoclass:: STL10
   :members: __getitem__
@@ -131,66 +202,14 @@ STL10
 SVHN
 ~~~~~
 
-
 .. autoclass:: SVHN
   :members: __getitem__
   :special-members:
 
-PhotoTour
-~~~~~~~~~
+UCF101
+~~~~~~~
 
-
-.. autoclass:: PhotoTour
-  :members: __getitem__
-  :special-members:
-
-SBU
-~~~
-
-
-.. autoclass:: SBU
-  :members: __getitem__
-  :special-members:
-
-Flickr
-~~~~~~
-
-
-.. autoclass:: Flickr8k
-  :members: __getitem__
-  :special-members:
-
-.. autoclass:: Flickr30k
-  :members: __getitem__
-  :special-members:
-
-VOC
-~~~~~~
-
-
-.. autoclass:: VOCSegmentation
-  :members: __getitem__
-  :special-members:
-
-.. autoclass:: VOCDetection
-  :members: __getitem__
-  :special-members:
-
-Cityscapes
-~~~~~~~~~~
-
-.. note ::
-    Requires Cityscape to be downloaded.
-
-.. autoclass:: Cityscapes
-  :members: __getitem__
-  :special-members:
-
-SBD
-~~~~~~
-
-
-.. autoclass:: SBDataset
+.. autoclass:: UCF101
   :members: __getitem__
   :special-members:
 
@@ -201,33 +220,14 @@ USPS
   :members: __getitem__
   :special-members:
 
-
-Kinetics-400
-~~~~~~~~~~~~
-
-.. autoclass:: Kinetics400
-  :members: __getitem__
-  :special-members:
-
-
-HMDB51
-~~~~~~~
-
-.. autoclass:: HMDB51
-  :members: __getitem__
-  :special-members:
-
-
-UCF101
-~~~~~~~
-
-.. autoclass:: UCF101
-  :members: __getitem__
-  :special-members:
-
-CelebA
+VOC
 ~~~~~~
 
-.. autoclass:: CelebA
+.. autoclass:: VOCSegmentation
   :members: __getitem__
   :special-members:
+
+.. autoclass:: VOCDetection
+  :members: __getitem__
+  :special-members:
+

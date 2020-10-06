@@ -1,4 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
+from typing import Union
+
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
@@ -22,7 +24,7 @@ def _onnx_merge_levels(levels: Tensor, unmerged_results: List[Tensor]) -> Tensor
                        first_result.size(2), first_result.size(3)),
                       dtype=dtype, device=device)
     for level in range(len(unmerged_results)):
-        index = (levels == level).nonzero().view(-1, 1, 1, 1)
+        index = torch.where(levels == level)[0].view(-1, 1, 1, 1)
         index = index.expand(index.size(0),
                              unmerged_results[level].size(1),
                              unmerged_results[level].size(2),
@@ -119,7 +121,7 @@ class MultiScaleRoIAlign(nn.Module):
     def __init__(
         self,
         featmap_names: List[str],
-        output_size: List[int],
+        output_size: Union[int, Tuple[int], List[int]],
         sampling_ratio: int,
     ):
         super(MultiScaleRoIAlign, self).__init__()
@@ -232,7 +234,7 @@ class MultiScaleRoIAlign(nn.Module):
 
         tracing_results = []
         for level, (per_level_feature, scale) in enumerate(zip(x_filtered, scales)):
-            idx_in_level = torch.nonzero(levels == level).squeeze(1)
+            idx_in_level = torch.where(levels == level)[0]
             rois_per_level = rois[idx_in_level]
 
             result_idx_in_level = roi_align(

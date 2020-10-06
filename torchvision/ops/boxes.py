@@ -1,6 +1,7 @@
 import torch
 from torch.jit.annotations import Tuple
 from torch import Tensor
+from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
 import torchvision
 from torchvision.extension import _assert_has_ops
 
@@ -102,7 +103,7 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     """
     ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
     keep = (ws >= min_size) & (hs >= min_size)
-    keep = keep.nonzero().squeeze(1)
+    keep = torch.where(keep)[0]
     return keep
 
 
@@ -135,6 +136,61 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     return clipped_boxes.reshape(boxes.shape)
 
 
+def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
+    """
+    Converts boxes from given in_fmt to out_fmt.
+    Supported in_fmt and out_fmt are:
+
+    'xyxy': boxes are represented via corners, x1, y1 being top left and x2, y2 being bottom right.
+
+    'xywh' : boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.
+
+    'cxcywh' : boxes are represented via centre, width and height, cx, cy being center of box, w, h
+    being width and height.
+
+    Arguments:
+        boxes (Tensor[N, 4]): boxes which will be converted.
+        in_fmt (str): Input format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh'].
+        out_fmt (str): Output format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh']
+
+    Returns:
+        boxes (Tensor[N, 4]): Boxes into converted format.
+    """
+    allowed_fmts = ("xyxy", "xywh", "cxcywh")
+    assert in_fmt in allowed_fmts
+    assert out_fmt in allowed_fmts
+
+    if in_fmt == out_fmt:
+        boxes_converted = boxes.clone()
+        return boxes_converted
+
+    if in_fmt != 'xyxy' and out_fmt != 'xyxy':
+        if in_fmt == "xywh":
+            boxes_xyxy = _box_xywh_to_xyxy(boxes)
+            if out_fmt == "cxcywh":
+                boxes_converted = _box_xyxy_to_cxcywh(boxes_xyxy)
+
+        elif in_fmt == "cxcywh":
+            boxes_xyxy = _box_cxcywh_to_xyxy(boxes)
+            if out_fmt == "xywh":
+                boxes_converted = _box_xyxy_to_xywh(boxes_xyxy)
+
+        # convert one to xyxy and change either in_fmt or out_fmt to xyxy
+    else:
+        if in_fmt == "xyxy":
+            if out_fmt == "xywh":
+                boxes_converted = _box_xyxy_to_xywh(boxes)
+            elif out_fmt == "cxcywh":
+                boxes_converted = _box_xyxy_to_cxcywh(boxes)
+        elif out_fmt == "xyxy":
+            if in_fmt == "xywh":
+                boxes_converted = _box_xywh_to_xyxy(boxes)
+            elif in_fmt == "cxcywh":
+                boxes_converted = _box_cxcywh_to_xyxy(boxes)
+
+    return boxes_converted
+
+
 def box_area(boxes: Tensor) -> Tensor:
     """
     Computes the area of a set of bounding boxes, which are specified by its
@@ -163,8 +219,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
         boxes2 (Tensor[M, 4])
 
     Returns:
-        iou (Tensor[N, M]): the NxM matrix containing the pairwise
-            IoU values for every element in boxes1 and boxes2
+        iou (Tensor[N, M]): the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
     """
     area1 = box_area(boxes1)
     area2 = box_area(boxes2)
@@ -177,3 +232,46 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
 
     iou = inter / (area1[:, None] + area2 - inter)
     return iou
+
+
+# Implementation adapted from https://github.com/facebookresearch/detr/blob/master/util/box_ops.py
+def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
+    """
+    Return generalized intersection-over-union (Jaccard index) of boxes.
+
+    Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
+
+    Arguments:
+        boxes1 (Tensor[N, 4])
+        boxes2 (Tensor[M, 4])
+
+    Returns:
+        generalized_iou (Tensor[N, M]): the NxM matrix containing the pairwise generalized_IoU values
+        for every element in boxes1 and boxes2
+    """
+
+    # degenerate boxes gives inf / nan results
+    # so do an early check
+    assert (boxes1[:, 2:] >= boxes1[:, :2]).all()
+    assert (boxes2[:, 2:] >= boxes2[:, :2]).all()
+
+    area1 = box_area(boxes1)
+    area2 = box_area(boxes2)
+
+    lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
+    rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
+
+    wh = (rb - lt).clamp(min=0)  # [N,M,2]
+    inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
+
+    union = area1[:, None] + area2 - inter
+
+    iou = inter / union
+
+    lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
+    rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
+
+    whi = (rbi - lti).clamp(min=0)  # [N,M,2]
+    areai = whi[:, :, 0] * whi[:, :, 1]
+
+    return iou - (areai - union) / areai

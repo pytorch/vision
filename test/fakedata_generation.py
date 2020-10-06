@@ -7,6 +7,12 @@ import PIL
 import torch
 from common_utils import get_tmp_dir
 import pickle
+import random
+from itertools import cycle
+from torchvision.io.video import write_video
+import unittest.mock
+import hashlib
+from distutils import dir_util
 
 
 @contextlib.contextmanager
@@ -265,3 +271,175 @@ def voc_root():
             f.write('test')
 
         yield tmp_dir
+
+
+@contextlib.contextmanager
+def ucf101_root():
+    with get_tmp_dir() as tmp_dir:
+        ucf_dir = os.path.join(tmp_dir, 'UCF-101')
+        video_dir = os.path.join(ucf_dir, 'video')
+        annotations = os.path.join(ucf_dir, 'annotations')
+
+        os.makedirs(ucf_dir)
+        os.makedirs(video_dir)
+        os.makedirs(annotations)
+
+        fold_files = []
+        for split in {'train', 'test'}:
+            for fold in range(1, 4):
+                fold_file = '{:s}list{:02d}.txt'.format(split, fold)
+                fold_files.append(os.path.join(annotations, fold_file))
+
+        file_handles = [open(x, 'w') for x in fold_files]
+        file_iter = cycle(file_handles)
+
+        for i in range(0, 2):
+            current_class = 'class_{0}'.format(i + 1)
+            class_dir = os.path.join(video_dir, current_class)
+            os.makedirs(class_dir)
+            for group in range(0, 3):
+                for clip in range(0, 4):
+                    # Save sample file
+                    clip_name = 'v_{0}_g{1}_c{2}.avi'.format(
+                        current_class, group, clip)
+                    clip_path = os.path.join(class_dir, clip_name)
+                    length = random.randrange(10, 21)
+                    this_clip = torch.randint(
+                        0, 256, (length * 25, 320, 240, 3), dtype=torch.uint8)
+                    write_video(clip_path, this_clip, 25)
+                    # Add to annotations
+                    ann_file = next(file_iter)
+                    ann_file.write('{0}\n'.format(
+                        os.path.join(current_class, clip_name)))
+        # Close all file descriptors
+        for f in file_handles:
+            f.close()
+        yield (video_dir, annotations)
+
+
+@contextlib.contextmanager
+def places365_root(split="train-standard", small=False, extract_images=True):
+    VARIANTS = {
+        "train-standard": "standard",
+        "train-challenge": "challenge",
+        "val": "standard",
+    }
+    # {split: file}
+    DEVKITS = {
+        "train-standard": "filelist_places365-standard.tar",
+        "train-challenge": "filelist_places365-challenge.tar",
+        "val": "filelist_places365-standard.tar",
+    }
+    CATEGORIES = "categories_places365.txt"
+    # {split: file}
+    FILE_LISTS = {
+        "train-standard": "places365_train_standard.txt",
+        "train-challenge": "places365_train_challenge.txt",
+        "val": "places365_train_standard.txt",
+    }
+    # {(split, small): (archive, folder_default, folder_renamed)}
+    IMAGES = {
+        ("train-standard", False): ("train_large_places365standard.tar", "data_large", "data_large_standard"),
+        ("train-challenge", False): ("train_large_places365challenge.tar", "data_large", "data_large_challenge"),
+        ("val", False): ("val_large.tar", "val_large", "val_large"),
+        ("train-standard", True): ("train_256_places365standard.tar", "data_256", "data_256_standard"),
+        ("train-challenge", True): ("train_256_places365challenge.tar", "data_256", "data_256_challenge"),
+        ("val", True): ("val_256.tar", "val_256", "val_256"),
+    }
+
+    # (class, idx)
+    CATEGORIES_CONTENT = (("/a/airfield", 0), ("/a/apartment_building/outdoor", 8), ("/b/badlands", 30))
+    # (file, idx)
+    FILE_LIST_CONTENT = (
+        ("Places365_val_00000001.png", 0),
+        *((f"{category}/Places365_train_00000001.png", idx) for category, idx in CATEGORIES_CONTENT),
+    )
+
+    def mock_target(attr, partial="torchvision.datasets.places365.Places365"):
+        return f"{partial}.{attr}"
+
+    def mock_class_attribute(stack, attr, new):
+        mock = unittest.mock.patch(mock_target(attr), new_callable=unittest.mock.PropertyMock, return_value=new)
+        stack.enter_context(mock)
+        return mock
+
+    def compute_md5(file):
+        with open(file, "rb") as fh:
+            return hashlib.md5(fh.read()).hexdigest()
+
+    def make_txt(root, name, seq):
+        file = os.path.join(root, name)
+        with open(file, "w") as fh:
+            for string, idx in seq:
+                fh.write(f"{string} {idx}\n")
+        return name, compute_md5(file)
+
+    def make_categories_txt(root, name):
+        return make_txt(root, name, CATEGORIES_CONTENT)
+
+    def make_file_list_txt(root, name):
+        return make_txt(root, name, FILE_LIST_CONTENT)
+
+    def make_image(file, size):
+        os.makedirs(os.path.dirname(file), exist_ok=True)
+        PIL.Image.fromarray(np.zeros((*size, 3), dtype=np.uint8)).save(file)
+
+    def make_tar(root, name, *files, remove_files=True):
+        name = f"{os.path.splitext(name)[0]}.tar"
+        archive = os.path.join(root, name)
+
+        with tarfile.open(archive, "w") as fh:
+            for file in files:
+                fh.add(os.path.join(root, file), arcname=file)
+
+        if remove_files:
+            for file in [os.path.join(root, file) for file in files]:
+                if os.path.isdir(file):
+                    dir_util.remove_tree(file)
+                else:
+                    os.remove(file)
+
+        return name, compute_md5(archive)
+
+    def make_devkit_archive(stack, root, split):
+        archive = DEVKITS[split]
+        files = []
+
+        meta = make_categories_txt(root, CATEGORIES)
+        mock_class_attribute(stack, "_CATEGORIES_META", meta)
+        files.append(meta[0])
+
+        meta = {split: make_file_list_txt(root, FILE_LISTS[split])}
+        mock_class_attribute(stack, "_FILE_LIST_META", meta)
+        files.extend([item[0] for item in meta.values()])
+
+        meta = {VARIANTS[split]: make_tar(root, archive, *files)}
+        mock_class_attribute(stack, "_DEVKIT_META", meta)
+
+    def make_images_archive(stack, root, split, small):
+        archive, folder_default, folder_renamed = IMAGES[(split, small)]
+
+        image_size = (256, 256) if small else (512, random.randint(512, 1024))
+        files, idcs = zip(*FILE_LIST_CONTENT)
+        images = [file.lstrip("/").replace("/", os.sep) for file in files]
+        for image in images:
+            make_image(os.path.join(root, folder_default, image), image_size)
+
+        meta = {(split, small): make_tar(root, archive, folder_default)}
+        mock_class_attribute(stack, "_IMAGES_META", meta)
+
+        return [(os.path.join(root, folder_renamed, image), idx) for image, idx in zip(images, idcs)]
+
+    with contextlib.ExitStack() as stack, get_tmp_dir() as root:
+        make_devkit_archive(stack, root, split)
+        class_to_idx = dict(CATEGORIES_CONTENT)
+        classes = list(class_to_idx.keys())
+        data = {"class_to_idx": class_to_idx, "classes": classes}
+
+        if extract_images:
+            data["imgs"] = make_images_archive(stack, root, split, small)
+        else:
+            stack.enter_context(unittest.mock.patch(mock_target("download_images")))
+            data["imgs"] = None
+
+        yield root, data
