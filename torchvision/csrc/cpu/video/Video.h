@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef VIDEO_H_
-#define VIDEO_H_
-
 #include <map>
 #include <regex>
 #include <string>
@@ -62,5 +59,3 @@ struct Video : torch::CustomClassHolder {
   DecoderParameters params;
 
 }; // struct Video
-
-#endif // VIDEO_H_
