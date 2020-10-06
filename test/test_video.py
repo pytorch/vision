@@ -15,7 +15,7 @@ try:
     import av
 
     # Do a version test too
-    io.video._check_av_available()
+    torchvision.io.video._check_av_available()
 except ImportError:
     av = None
 
@@ -311,14 +311,12 @@ class TestVideo(unittest.TestCase):
             s = min(r)
             e = max(r)
 
-            reader = torch.classes.torchvision.Video(full_path, "video", True)
+            reader = torch.classes.torchvision.Video(full_path, "video")
             results = _template_read_video(reader, s, e)
             tv_video, tv_audio, info = torchvision.io.read_video(
                 full_path, start_pts=s, end_pts=e, pts_unit="sec"
             )
-            self.assertAlmostEqual(
-                tv_video.size(0), results.svframes.ssize(0), delta=2.0
-            )
+            self.assertAlmostEqual(tv_video.size(0), results.vframes.size(0), delta=2.0)
 
     def test_pts(self):
         """
