@@ -239,5 +239,17 @@ class ImageTester(unittest.TestCase):
             read_file('tst')
 
 
+    def test_read_file_tmp(self):
+        import numpy as np
+        with get_tmp_dir() as d:
+            fname, content = 'test1.bin', b'TorchVision\211\n'
+            fpath = os.path.join(d, fname)
+            with open(fpath, 'wb') as f:
+                f.write(content)
+
+            data = np.fromfile(fpath, dtype=np.uint8)
+
+            os.unlink(fpath)
+
 if __name__ == '__main__':
     unittest.main()
