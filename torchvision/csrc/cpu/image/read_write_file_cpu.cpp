@@ -18,3 +18,25 @@ torch::Tensor read_file(std::string filename) {
 
   return data;
 }
+
+void write_file(
+    std::string filename,
+    torch::Tensor& data) {
+  // Check that the input tensor is on CPU
+  TORCH_CHECK(data.device() == torch::kCPU, "Input tensor should be on CPU");
+
+  // Check that the input tensor dtype is uint8
+  TORCH_CHECK(data.dtype() == torch::kU8, "Input tensor dtype should be uint8");
+
+  // Check that the input tensor is 3-dimensional
+  TORCH_CHECK(data.dim() == 1, "Input data should be a 1-dimensional tensor");
+
+  auto fileBytes = data.data_ptr<uint8_t>();
+  auto fileCStr = filename.c_str();
+  FILE* outfile = fopen(fileCStr, "wb");
+
+  TORCH_CHECK(outfile != NULL, "Error opening output file");
+
+  fwrite(fileBytes, sizeof(uint8_t), data.numel(), outfile);
+  fclose(outfile);
+}

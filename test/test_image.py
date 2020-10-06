@@ -9,7 +9,7 @@ import torchvision
 from PIL import Image
 from torchvision.io.image import (
     read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
-    encode_png, write_png)
+    encode_png, write_png, write_file)
 import numpy as np
 
 from common_utils import get_tmp_dir
@@ -237,6 +237,18 @@ class ImageTester(unittest.TestCase):
         with self.assertRaisesRegex(
                 RuntimeError, "No such file or directory: 'tst'"):
             read_file('tst')
+
+    def test_write_file(self):
+        with get_tmp_dir() as d:
+            fname, content = 'test1.bin', b'TorchVision\211\n'
+            fpath = os.path.join(d, fname)
+            content_tensor = torch.tensor(list(content), dtype=torch.uint8)
+            write_file(fpath, content_tensor)
+
+            with open(fpath, 'rb') as f:
+                saved_content = f.read()
+            self.assertEqual(content, saved_content)
+            os.unlink(fpath)
 
 
 if __name__ == '__main__':
