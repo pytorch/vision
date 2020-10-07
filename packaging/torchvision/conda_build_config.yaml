@@ -1,3 +1,5 @@
+channel_sources:
+  - pytorch-nightly,pytorch,defaults
 blas_impl:
   - mkl                        # [x86_64]
 c_compiler:

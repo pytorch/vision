@@ -88,7 +88,7 @@ def _validate_pts(pts_range):
         assert (
             pts_range[0] <= pts_range[1]
         ), """Start pts should not be smaller than end pts, got
-            start pts: %d and end pts: %d""" % (
+            start pts: {0:d} and end pts: {1:d}""".format(
             pts_range[0],
             pts_range[1],
         )
