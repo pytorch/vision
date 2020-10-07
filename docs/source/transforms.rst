@@ -14,9 +14,27 @@ All transformations accept PIL Image, Tensor Image or batch of Tensor Images as 
 Tensor Images is a tensor of ``(B, C, H, W)`` shape, where ``B`` is a number of images in the batch. Deterministic or
 random transformations applied on the batch of Tensor Images identically transform all the images of the batch.
 
+.. warning::
+
+    Since v0.8.0 all random transformations are using torch default random generator to sample random parameters.
+    It is a backward compatibility breaking change and user should set the random state as following:
+
+    .. code:: python
+
+        # Previous versions
+        # import random
+        # random.seed(12)
+
+        # Now
+        import torch
+        torch.manual_seed(17)
+
+    Please, keep in mind that the same seed for torch random generator and Python random generator will not
+    produce the same results.
+
 
 Scriptable transforms
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 
 In order to script the transformations, please use ``torch.nn.Sequential`` instead of :class:`Compose`.
 
@@ -33,6 +51,9 @@ Make sure to use only scriptable transformations, i.e. that work with ``torch.Te
 
 For any custom transformations to be used with ``torch.jit.script``, they should be derived from ``torch.nn.Module``.
 
+
+Compositions of transforms
+--------------------------
 
 .. autoclass:: Compose
 
@@ -78,6 +99,8 @@ Transforms on PIL Image
 .. autoclass:: Scale
 
 .. autoclass:: TenCrop
+
+.. autoclass:: GaussianBlur
 
 Transforms on torch.\*Tensor
 ----------------------------

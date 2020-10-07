@@ -3,6 +3,7 @@
 #include "util.h"
 
 namespace ffmpeg {
+const AVRational timeBaseQ = AVRational{1, AV_TIME_BASE};
 
 Stream::Stream(
     AVFormatContext* inputCtx,
@@ -85,7 +86,7 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
     header.num = steam->time_base.num;
     header.den = steam->time_base.den;
     header.duration =
-        av_rescale_q(steam->duration, steam->time_base, AV_TIME_BASE_Q);
+        av_rescale_q(steam->duration, steam->time_base, timeBaseQ);
     metadata->push_back(header);
   }
 
@@ -238,7 +239,7 @@ void Stream::setFramePts(DecoderHeader* header, bool flush) {
       header->pts = av_rescale_q(
           header->pts,
           inputCtx_->streams[format_.stream]->time_base,
-          AV_TIME_BASE_Q);
+          timeBaseQ);
     }
 
     switch (format_.type) {

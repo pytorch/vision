@@ -3,7 +3,7 @@ from typing import Any, List, Sequence
 
 import numpy as np
 import torch
-from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
+from PIL import Image, ImageOps, ImageEnhance, ImageFilter, __version__ as PILLOW_VERSION
 
 try:
     import accimage
@@ -329,6 +329,15 @@ def pad(img, padding, fill=0, padding_mode="constant"):
             pad_top = padding[1]
             pad_right = padding[2]
             pad_bottom = padding[3]
+
+        p = [pad_left, pad_top, pad_right, pad_bottom]
+        cropping = -np.minimum(p, 0)
+
+        if cropping.any():
+            crop_left, crop_top, crop_right, crop_bottom = cropping
+            img = img.crop((crop_left, crop_top, img.width - crop_right, img.height - crop_bottom))
+
+        pad_left, pad_top, pad_right, pad_bottom = np.maximum(p, 0)
 
         if img.mode == 'P':
             palette = img.getpalette()

@@ -1,3 +1,4 @@
+import os
 import unittest
 import colorsys
 import math
@@ -284,9 +285,6 @@ class Tester(TransformsTester):
                     self.assertTrue(pad_tensor.equal(pad_tensor_script), msg="{}, {}".format(pad, kwargs))
 
                     self._test_fn_on_batch(batch_tensors, F.pad, padding=script_pad, **kwargs)
-
-        with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
-            F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
 
     def _test_adjust_fn(self, fn, fn_pil, fn_t, configs, tol=2.0 + 1e-10, agg_method="max"):
         script_fn = torch.jit.script(fn)
@@ -678,14 +676,14 @@ class Tester(TransformsTester):
                     batch_tensors, F.rotate, angle=32, resample=0, expand=True, center=center
                 )
 
-    def _test_perspective(self, tensor, pil_img, scripted_tranform, test_configs):
+    def _test_perspective(self, tensor, pil_img, scripted_transform, test_configs):
         dt = tensor.dtype
         for r in [0, ]:
             for spoints, epoints in test_configs:
                 out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r)
                 out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
-                for fn in [F.perspective, scripted_tranform]:
+                for fn in [F.perspective, scripted_transform]:
                     out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r).cpu()
 
                     if out_tensor.dtype != torch.uint8:
@@ -710,7 +708,7 @@ class Tester(TransformsTester):
         from torchvision.transforms import RandomPerspective
 
         data = [self._create_data(26, 34, device=self.device), self._create_data(26, 26, device=self.device)]
-        scripted_tranform = torch.jit.script(F.perspective)
+        scripted_transform = torch.jit.script(F.perspective)
 
         for tensor, pil_img in data:
 
@@ -733,7 +731,7 @@ class Tester(TransformsTester):
                 if dt is not None:
                     tensor = tensor.to(dtype=dt)
 
-                self._test_perspective(tensor, pil_img, scripted_tranform, test_configs)
+                self._test_perspective(tensor, pil_img, scripted_transform, test_configs)
 
                 batch_tensors = self._create_data_batch(26, 36, num_samples=4, device=self.device)
                 if dt is not None:
@@ -743,6 +741,70 @@ class Tester(TransformsTester):
                     self._test_fn_on_batch(
                         batch_tensors, F.perspective, startpoints=spoints, endpoints=epoints, interpolation=0
                     )
+
+    def test_gaussian_blur(self):
+        small_image_tensor = torch.from_numpy(
+            np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))
+        ).permute(2, 0, 1).to(self.device)
+
+        large_image_tensor = torch.from_numpy(
+            np.arange(26 * 28, dtype="uint8").reshape((1, 26, 28))
+        ).to(self.device)
+
+        scripted_transform = torch.jit.script(F.gaussian_blur)
+
+        # true_cv2_results = {
+        #     # np_img = np.arange(3 * 10 * 12, dtype="uint8").reshape((10, 12, 3))
+        #     # cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.8)
+        #     "3_3_0.8": ...
+        #     # cv2.GaussianBlur(np_img, ksize=(3, 3), sigmaX=0.5)
+        #     "3_3_0.5": ...
+        #     # cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.8)
+        #     "3_5_0.8": ...
+        #     # cv2.GaussianBlur(np_img, ksize=(3, 5), sigmaX=0.5)
+        #     "3_5_0.5": ...
+        #     # np_img2 = np.arange(26 * 28, dtype="uint8").reshape((26, 28))
+        #     # cv2.GaussianBlur(np_img2, ksize=(23, 23), sigmaX=1.7)
+        #     "23_23_1.7": ...
+        # }
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'gaussian_blur_opencv_results.pt')
+        true_cv2_results = torch.load(p)
+
+        for tensor in [small_image_tensor, large_image_tensor]:
+
+            for dt in [None, torch.float32, torch.float64, torch.float16]:
+                if dt == torch.float16 and torch.device(self.device).type == "cpu":
+                    # skip float16 on CPU case
+                    continue
+
+                if dt is not None:
+                    tensor = tensor.to(dtype=dt)
+
+                for ksize in [(3, 3), [3, 5], (23, 23)]:
+                    for sigma in [[0.5, 0.5], (0.5, 0.5), (0.8, 0.8), (1.7, 1.7)]:
+
+                        _ksize = (ksize, ksize) if isinstance(ksize, int) else ksize
+                        _sigma = sigma[0] if sigma is not None else None
+                        shape = tensor.shape
+                        gt_key = "{}_{}_{}__{}_{}_{}".format(
+                            shape[-2], shape[-1], shape[-3],
+                            _ksize[0], _ksize[1], _sigma
+                        )
+                        if gt_key not in true_cv2_results:
+                            continue
+
+                        true_out = torch.tensor(
+                            true_cv2_results[gt_key]
+                        ).reshape(shape[-2], shape[-1], shape[-3]).permute(2, 0, 1).to(tensor)
+
+                        for fn in [F.gaussian_blur, scripted_transform]:
+                            out = fn(tensor, kernel_size=ksize, sigma=sigma)
+                            self.assertEqual(true_out.shape, out.shape, msg="{}, {}".format(ksize, sigma))
+                            self.assertLessEqual(
+                                torch.max(true_out.float() - out.float()),
+                                1.0,
+                                msg="{}, {}".format(ksize, sigma)
+                            )
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")

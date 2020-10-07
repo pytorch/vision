@@ -8,9 +8,12 @@ import torch
 import torchvision
 from PIL import Image
 from torchvision.io.image import (
-    read_png, decode_png, read_jpeg, decode_jpeg, encode_jpeg, write_jpeg, decode_image, _read_file,
-    encode_png, write_png)
+    decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
+    encode_png, write_png, write_file)
 import numpy as np
+
+from common_utils import get_tmp_dir
+
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 IMAGE_DIR = os.path.join(IMAGE_ROOT, "fakedata", "imagefolder")
@@ -30,19 +33,12 @@ def get_images(directory, img_ext):
 
 
 class ImageTester(unittest.TestCase):
-    def test_read_jpeg(self):
-        for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            img_pil = torch.load(img_path.replace('jpg', 'pth'))
-            img_pil = img_pil.permute(2, 0, 1)
-            img_ljpeg = read_jpeg(img_path)
-            self.assertTrue(img_ljpeg.equal(img_pil))
-
     def test_decode_jpeg(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
             img_pil = torch.load(img_path.replace('jpg', 'pth'))
             img_pil = img_pil.permute(2, 0, 1)
-            size = os.path.getsize(img_path)
-            img_ljpeg = decode_jpeg(torch.from_file(img_path, dtype=torch.uint8, size=size))
+            data = read_file(img_path)
+            img_ljpeg = decode_jpeg(data)
             self.assertTrue(img_ljpeg.equal(img_pil))
 
         with self.assertRaisesRegex(RuntimeError, "Expected a non empty 1-dimensional tensor"):
@@ -56,9 +52,9 @@ class ImageTester(unittest.TestCase):
 
     def test_damaged_images(self):
         # Test image with bad Huffman encoding (should not raise)
-        bad_huff = os.path.join(DAMAGED_JPEG, 'bad_huffman.jpg')
+        bad_huff = read_file(os.path.join(DAMAGED_JPEG, 'bad_huffman.jpg'))
         try:
-            _ = read_jpeg(bad_huff)
+            _ = decode_jpeg(bad_huff)
         except RuntimeError:
             self.assertTrue(False)
 
@@ -66,8 +62,9 @@ class ImageTester(unittest.TestCase):
         truncated_images = glob.glob(
             os.path.join(DAMAGED_JPEG, 'corrupt*.jpg'))
         for image_path in truncated_images:
+            data = read_file(image_path)
             with self.assertRaises(RuntimeError):
-                read_jpeg(image_path)
+                decode_jpeg(data)
 
     def test_encode_jpeg(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
@@ -76,7 +73,7 @@ class ImageTester(unittest.TestCase):
             write_folder = os.path.join(dirname, 'jpeg_write')
             expected_file = os.path.join(
                 write_folder, '{0}_pil.jpg'.format(filename))
-            img = read_jpeg(img_path)
+            img = decode_jpeg(read_file(img_path))
 
             with open(expected_file, 'rb') as f:
                 pil_bytes = f.read()
@@ -114,7 +111,8 @@ class ImageTester(unittest.TestCase):
 
     def test_write_jpeg(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            img = read_jpeg(img_path)
+            data = read_file(img_path)
+            img = decode_jpeg(data)
 
             basedir = os.path.dirname(img_path)
             filename, _ = os.path.splitext(os.path.basename(img_path))
@@ -134,20 +132,12 @@ class ImageTester(unittest.TestCase):
             os.remove(torch_jpeg)
             self.assertEqual(torch_bytes, pil_bytes)
 
-    def test_read_png(self):
-        # Check across .png
-        for img_path in get_images(IMAGE_DIR, ".png"):
-            img_pil = torch.from_numpy(np.array(Image.open(img_path)))
-            img_pil = img_pil.permute(2, 0, 1)
-            img_lpng = read_png(img_path)
-            self.assertTrue(img_lpng.equal(img_pil))
-
     def test_decode_png(self):
         for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_pil = img_pil.permute(2, 0, 1)
-            size = os.path.getsize(img_path)
-            img_lpng = decode_png(torch.from_file(img_path, dtype=torch.uint8, size=size))
+            data = read_file(img_path)
+            img_lpng = decode_png(data)
             self.assertTrue(img_lpng.equal(img_pil))
 
             with self.assertRaises(RuntimeError):
@@ -206,14 +196,42 @@ class ImageTester(unittest.TestCase):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
             img_pil = torch.load(img_path.replace('jpg', 'pth'))
             img_pil = img_pil.permute(2, 0, 1)
-            img_ljpeg = decode_image(_read_file(img_path))
+            img_ljpeg = decode_image(read_file(img_path))
             self.assertTrue(img_ljpeg.equal(img_pil))
 
         for img_path in get_images(IMAGE_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             img_pil = img_pil.permute(2, 0, 1)
-            img_lpng = decode_image(_read_file(img_path))
+            img_lpng = decode_image(read_file(img_path))
             self.assertTrue(img_lpng.equal(img_pil))
+
+    def test_read_file(self):
+        with get_tmp_dir() as d:
+            fname, content = 'test1.bin', b'TorchVision\211\n'
+            fpath = os.path.join(d, fname)
+            with open(fpath, 'wb') as f:
+                f.write(content)
+
+            data = read_file(fpath)
+            expected = torch.tensor(list(content), dtype=torch.uint8)
+            self.assertTrue(data.equal(expected))
+            os.unlink(fpath)
+
+        with self.assertRaisesRegex(
+                RuntimeError, "No such file or directory: 'tst'"):
+            read_file('tst')
+
+    def test_write_file(self):
+        with get_tmp_dir() as d:
+            fname, content = 'test1.bin', b'TorchVision\211\n'
+            fpath = os.path.join(d, fname)
+            content_tensor = torch.tensor(list(content), dtype=torch.uint8)
+            write_file(fpath, content_tensor)
+
+            with open(fpath, 'rb') as f:
+                saved_content = f.read()
+            self.assertEqual(content, saved_content)
+            os.unlink(fpath)
 
 
 if __name__ == '__main__':

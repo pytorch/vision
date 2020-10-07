@@ -3,7 +3,7 @@ import numbers
 import random
 import warnings
 from collections.abc import Sequence
-from typing import Tuple, List, Optional, Any
+from typing import Tuple, List, Optional
 
 import torch
 from PIL import Image
@@ -16,12 +16,11 @@ except ImportError:
 
 from . import functional as F
 
-
 __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize", "Resize", "Scale",
            "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
            "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
-           "RandomPerspective", "RandomErasing"]
+           "RandomPerspective", "RandomErasing", "GaussianBlur"]
 
 _pil_interpolation_to_str = {
     Image.NEAREST: 'PIL.Image.NEAREST',
@@ -34,7 +33,8 @@ _pil_interpolation_to_str = {
 
 
 class Compose:
-    """Composes several transforms together.
+    """Composes several transforms together. This transform does not support torchscript.
+    Please, see the note below.
 
     Args:
         transforms (list of ``Transform`` objects): list of transforms to compose.
@@ -77,7 +77,7 @@ class Compose:
 
 
 class ToTensor:
-    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
+    """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor. This transform does not support torchscript.
 
     Converts a PIL Image or numpy.ndarray (H x W x C) in the range
     [0, 255] to a torch.FloatTensor of shape (C x H x W) in the range [0.0, 1.0]
@@ -108,7 +108,7 @@ class ToTensor:
 
 
 class PILToTensor:
-    """Convert a ``PIL Image`` to a tensor of the same type.
+    """Convert a ``PIL Image`` to a tensor of the same type. This transform does not support torchscript.
 
     Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
     """
@@ -127,7 +127,7 @@ class PILToTensor:
         return self.__class__.__name__ + '()'
 
 
-class ConvertImageDtype:
+class ConvertImageDtype(torch.nn.Module):
     """Convert a tensor image to the given ``dtype`` and scale the values accordingly
 
     Args:
@@ -146,14 +146,15 @@ class ConvertImageDtype:
     """
 
     def __init__(self, dtype: torch.dtype) -> None:
+        super().__init__()
         self.dtype = dtype
 
-    def __call__(self, image: torch.Tensor) -> torch.Tensor:
+    def forward(self, image: torch.Tensor) -> torch.Tensor:
         return F.convert_image_dtype(image, self.dtype)
 
 
 class ToPILImage:
-    """Convert a tensor or an ndarray to PIL Image.
+    """Convert a tensor or an ndarray to PIL Image. This transform does not support torchscript.
 
     Converts a torch.*Tensor of shape C x H x W or a numpy ndarray of shape
     H x W x C to a PIL Image while preserving the value range.
@@ -161,11 +162,11 @@ class ToPILImage:
     Args:
         mode (`PIL.Image mode`_): color space and pixel depth of input data (optional).
             If ``mode`` is ``None`` (default) there are some assumptions made about the input data:
-             - If the input has 4 channels, the ``mode`` is assumed to be ``RGBA``.
-             - If the input has 3 channels, the ``mode`` is assumed to be ``RGB``.
-             - If the input has 2 channels, the ``mode`` is assumed to be ``LA``.
-             - If the input has 1 channel, the ``mode`` is determined by the data type (i.e ``int``, ``float``,
-               ``short``).
+            - If the input has 4 channels, the ``mode`` is assumed to be ``RGBA``.
+            - If the input has 3 channels, the ``mode`` is assumed to be ``RGB``.
+            - If the input has 2 channels, the ``mode`` is assumed to be ``LA``.
+            - If the input has 1 channel, the ``mode`` is determined by the data type (i.e ``int``, ``float``,
+            ``short``).
 
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
@@ -373,7 +374,7 @@ class Pad(torch.nn.Module):
 
 
 class Lambda:
-    """Apply a user-defined lambda as a transform.
+    """Apply a user-defined lambda as a transform. This transform does not support torchscript.
 
     Args:
         lambd (function): Lambda/function to be used for transform.
@@ -399,7 +400,8 @@ class RandomTransforms:
     """
 
     def __init__(self, transforms):
-        assert isinstance(transforms, (list, tuple))
+        if not isinstance(transforms, Sequence):
+            raise TypeError("Argument transforms should be a sequence")
         self.transforms = transforms
 
     def __call__(self, *args, **kwargs):
@@ -414,20 +416,33 @@ class RandomTransforms:
         return format_string
 
 
-class RandomApply(RandomTransforms):
-    """Apply randomly a list of transformations with a given probability
+class RandomApply(torch.nn.Module):
+    """Apply randomly a list of transformations with a given probability.
+
+    .. note::
+        In order to script the transformation, please use ``torch.nn.ModuleList`` as input instead of list/tuple of
+        transforms as shown below:
+
+        >>> transforms = transforms.RandomApply(torch.nn.ModuleList([
+        >>>     transforms.ColorJitter(),
+        >>> ]), p=0.3)
+        >>> scripted_transforms = torch.jit.script(transforms)
+
+        Make sure to use only scriptable transformations, i.e. that work with ``torch.Tensor``, does not require
+        `lambda` functions or ``PIL.Image``.
 
     Args:
-        transforms (list or tuple): list of transformations
+        transforms (list or tuple or torch.nn.Module): list of transformations
         p (float): probability
     """
 
     def __init__(self, transforms, p=0.5):
-        super().__init__(transforms)
+        super().__init__()
+        self.transforms = transforms
         self.p = p
 
-    def __call__(self, img):
-        if self.p < random.random():
+    def forward(self, img):
+        if self.p < torch.rand(1):
             return img
         for t in self.transforms:
             img = t(img)
@@ -444,7 +459,7 @@ class RandomApply(RandomTransforms):
 
 
 class RandomOrder(RandomTransforms):
-    """Apply a list of transformations in a random order
+    """Apply a list of transformations in a random order. This transform does not support torchscript.
     """
     def __call__(self, img):
         order = list(range(len(self.transforms)))
@@ -455,7 +470,7 @@ class RandomOrder(RandomTransforms):
 
 
 class RandomChoice(RandomTransforms):
-    """Apply single transformation randomly picked from a list
+    """Apply single transformation randomly picked from a list. This transform does not support torchscript.
     """
     def __call__(self, img):
         t = random.choice(self.transforms)
@@ -1492,6 +1507,73 @@ class RandomErasing(torch.nn.Module):
             x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=value)
             return F.erase(img, x, y, h, w, v, self.inplace)
         return img
+
+
+class GaussianBlur(torch.nn.Module):
+    """Blurs image with randomly chosen Gaussian blur.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading
+    dimensions
+
+    Args:
+        kernel_size (int or sequence): Size of the Gaussian kernel.
+        sigma (float or tuple of float (min, max)): Standard deviation to be used for
+            creating kernel to perform blurring. If float, sigma is fixed. If it is tuple
+            of float (min, max), sigma is chosen uniformly at random to lie in the
+            given range.
+
+    Returns:
+        PIL Image or Tensor: Gaussian blurred version of the input image.
+
+    """
+
+    def __init__(self, kernel_size, sigma=(0.1, 2.0)):
+        super().__init__()
+        self.kernel_size = _setup_size(kernel_size, "Kernel size should be a tuple/list of two integers")
+        for ks in self.kernel_size:
+            if ks <= 0 or ks % 2 == 0:
+                raise ValueError("Kernel size value should be an odd and positive number.")
+
+        if isinstance(sigma, numbers.Number):
+            if sigma <= 0:
+                raise ValueError("If sigma is a single number, it must be positive.")
+            sigma = (sigma, sigma)
+        elif isinstance(sigma, Sequence) and len(sigma) == 2:
+            if not 0. < sigma[0] <= sigma[1]:
+                raise ValueError("sigma values should be positive and of the form (min, max).")
+        else:
+            raise ValueError("sigma should be a single number or a list/tuple with length 2.")
+
+        self.sigma = sigma
+
+    @staticmethod
+    def get_params(sigma_min: float, sigma_max: float) -> float:
+        """Choose sigma for ``gaussian_blur`` for random gaussian blurring.
+
+        Args:
+            sigma_min (float): Minimum standard deviation that can be chosen for blurring kernel.
+            sigma_max (float): Maximum standard deviation that can be chosen for blurring kernel.
+
+        Returns:
+            float: Standard deviation to be passed to calculate kernel for gaussian blurring.
+        """
+        return torch.empty(1).uniform_(sigma_min, sigma_max).item()
+
+    def forward(self, img: Tensor) -> Tensor:
+        """
+        Args:
+            img (PIL Image or Tensor): image of size (C, H, W) to be blurred.
+
+        Returns:
+            PIL Image or Tensor: Gaussian blurred image
+        """
+        sigma = self.get_params(self.sigma[0], self.sigma[1])
+        return F.gaussian_blur(img, self.kernel_size, [sigma, sigma])
+
+    def __repr__(self):
+        s = '(kernel_size={}, '.format(self.kernel_size)
+        s += 'sigma={})'.format(self.sigma)
+        return self.__class__.__name__ + s
 
 
 def _setup_size(size, error_msg):
