@@ -21,12 +21,8 @@ torch::Tensor read_file(std::string filename) {
   TORCH_CHECK(size > 0, "Expected a non empty file");
 
 #ifdef _WIN32
-  torch::Tensor data;
-  {
-    auto data_orig =
-        torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8);
-    data = std::move(data_orig.detach().clone());
-  }
+  auto data =
+      torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8).clone();
 #else
   auto data =
       torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8);
