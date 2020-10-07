@@ -32,6 +32,8 @@ else
     cp "/usr/lib64/libjpeg.so" torchvision
 fi
 
+download_copy_ffmpeg
+
 if [[ "$OSTYPE" == "msys" ]]; then
     IS_WHEEL=1 "$script_dir/windows/internal/vc_env_helper.bat" python setup.py bdist_wheel
 else

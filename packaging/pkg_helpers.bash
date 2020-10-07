@@ -240,7 +240,7 @@ setup_pip_pytorch_version() {
 # You MUST have populated PYTORCH_VERSION_SUFFIX before hand.
 setup_conda_pytorch_constraint() {
   if [[ -z "$PYTORCH_VERSION" ]]; then
-    export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
+    export CONDA_CHANNEL_FLAGS="-c pytorch-nightly -c pytorch"
     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
                               python -c "import os, sys, json, re; cuver = os.environ.get('CU_VERSION'); \
                                cuver_1 = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \
@@ -349,4 +349,40 @@ setup_junit_results_folder() {
   if [[ "$CI" == "true" ]]; then
     export CONDA_PYTORCH_BUILD_RESULTS_DIRECTORY="${SOURCE_ROOT_DIR}/build_results/results.xml"
   fi
+}
+
+
+download_copy_ffmpeg() {
+  mkdir ffmpeg_tmp
+  cd ffmpeg_tmp
+  if [[ "$OSTYPE" == "msys" ]]; then
+    # conda install -yq ffmpeg -c pytorch
+    # curl -L -q https://anaconda.org/pytorch/ffmpeg/4.3/download/win-64/ffmpeg-4.3-ha925a31_0.tar.bz2 --output ffmpeg-4.3-ha925a31_0.tar.bz2
+    # bzip2 --decompress --stdout ffmpeg-4.3-ha925a31_0.tar.bz2 | tar -x --file=-
+    # cp Library/bin/*.dll ../torchvision
+    echo "FFmpeg is disabled currently on Windows"
+  else
+    if [[ "$(uname)" == Darwin ]]; then
+      conda install -yq ffmpeg=4.2 -c pytorch
+      conda install -yq wget
+      wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/osx-64/ffmpeg-4.2-h0a44026_0.tar.bz2
+      tar -xjvf ffmpeg-4.2-h0a44026_0.tar.bz2
+      for f in lib/*.dylib; do
+        if [[ $f =~ ([a-z])+\.dylib ]]; then
+          cp $f ../torchvision
+        fi
+      done
+    else
+      wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/linux-64/ffmpeg-4.2-hf484d3e_0.tar.bz2
+      tar -xjvf ffmpeg-4.2-hf484d3e_0.tar.bz2
+      cp lib/*.so ../torchvision
+      cp -r lib/* /usr/lib
+      cp -r bin/* /usr/bin
+      cp -r include/* /usr/include
+      ldconfig
+      which ffmpeg
+    fi
+  fi
+  cd ..
+  rm -rf ffmpeg_tmp
 }
