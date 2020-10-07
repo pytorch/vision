@@ -2,9 +2,9 @@
 
 // According to
 // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/stat-functions?view=vs-2019,
-// we should use _stati64 for 64-bit file size on Windows.
+// we should use _stat64 for 64-bit file size on Windows.
 #ifdef _WIN32
-#define VISION_STAT _stati64
+#define VISION_STAT _stat64
 #else
 #define VISION_STAT stat
 #endif
