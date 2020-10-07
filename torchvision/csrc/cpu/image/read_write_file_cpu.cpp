@@ -22,7 +22,8 @@ torch::Tensor read_file(std::string filename) {
 
 #ifdef _WIN32
   auto data =
-      torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8).clone();
+      torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8)
+          .clone();
 #else
   auto data =
       torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8);
