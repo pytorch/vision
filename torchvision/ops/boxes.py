@@ -155,45 +155,32 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
         boxes (Tensor[N, 4]): Boxes into converted format.
     """
 
+    allowed_fmts = ("xyxy", "xywh", "cxcywh")
+    if in_fmt not in allowed_fmts or out_fmt not in allowed_fmts:
+        raise ValueError("Unsupported Bounding Box Conversions for given in_fmt and out_fmt")
+
     if in_fmt == out_fmt:
-        boxes_converted = boxes.clone()
-        return boxes_converted
+        return boxes.clone()
 
     if in_fmt != 'xyxy' and out_fmt != 'xyxy':
+        # convert to xyxy and change in_fmt xyxy
         if in_fmt == "xywh":
-            boxes_xyxy = _box_xywh_to_xyxy(boxes)
-            if out_fmt == "cxcywh":
-                boxes_converted = _box_xyxy_to_cxcywh(boxes_xyxy)
-            else:
-                raise ValueError("Unsupported Bounding Box Conversions for given in_fmt and out_fmt")
-
+            boxes = _box_xywh_to_xyxy(boxes)
         elif in_fmt == "cxcywh":
-            boxes_xyxy = _box_cxcywh_to_xyxy(boxes)
-            if out_fmt == "xywh":
-                boxes_converted = _box_xyxy_to_xywh(boxes_xyxy)
-            else:
-                raise ValueError("Unsupported Bounding Box Conversions for given in_fmt and out_fmt")
-        else:
-            raise ValueError("Unsupported Bounding Box Conversions for given in_fmt and out_fmt")
-        # convert one to xyxy and change either in_fmt or out_fmt to xyxy
-    else:
-        if in_fmt == "xyxy":
-            if out_fmt == "xywh":
-                boxes_converted = _box_xyxy_to_xywh(boxes)
-            elif out_fmt == "cxcywh":
-                boxes_converted = _box_xyxy_to_cxcywh(boxes)
-            else:
-                raise ValueError("Unsupported Bounding Box Conversions for given in_fmt and out_fmt")
-        elif out_fmt == "xyxy":
-            if in_fmt == "xywh":
-                boxes_converted = _box_xywh_to_xyxy(boxes)
-            elif in_fmt == "cxcywh":
-                boxes_converted = _box_cxcywh_to_xyxy(boxes)
-            else:
-                raise ValueError("Unsupported Bounding Box Conversions for given in_fmt and out_fmt")
-        else:
-            raise ValueError("Unsupported Bounding Box Conversions for given in_fmt and out_fmt")
-    return boxes_converted
+            boxes = _box_cxcywh_to_xyxy(boxes)
+        in_fmt = 'xyxy'
+
+    if in_fmt == "xyxy":
+        if out_fmt == "xywh":
+            boxes = _box_xyxy_to_xywh(boxes)
+        elif out_fmt == "cxcywh":
+            boxes = _box_xyxy_to_cxcywh(boxes)
+    elif out_fmt == "xyxy":
+        if in_fmt == "xywh":
+            boxes = _box_xywh_to_xyxy(boxes)
+        elif in_fmt == "cxcywh":
+            boxes = _box_cxcywh_to_xyxy(boxes)
+    return boxes
 
 
 def box_area(boxes: Tensor) -> Tensor:
