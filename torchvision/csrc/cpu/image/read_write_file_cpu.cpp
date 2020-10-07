@@ -1,11 +1,12 @@
 #include "read_write_file_cpu.h"
 
-// According to https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/stat-functions?view=vs-2019,
+// According to
+// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/stat-functions?view=vs-2019,
 // we should use _stati64 for 64-bit file size on Windows.
 #ifdef _WIN32
-# define VISION_STAT _stati64
+#define VISION_STAT _stati64
 #else
-# define VISION_STAT stat
+#define VISION_STAT stat
 #endif
 
 torch::Tensor read_file(std::string filename) {
