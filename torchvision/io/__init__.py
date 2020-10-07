@@ -23,6 +23,8 @@ from .image import (
     write_png
 )
 
+import torch
+Video = torch.classes.torchvision.Video
 
 __all__ = [
     "write_video",
@@ -45,4 +47,5 @@ __all__ = [
     'write_jpeg',
     'encode_png',
     'write_png',
+    'Video'
 ]
