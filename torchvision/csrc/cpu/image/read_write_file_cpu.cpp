@@ -1,10 +1,17 @@
 #include "read_write_file_cpu.h"
 
+// According to
+// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/stat-functions?view=vs-2019,
+// we should use _stat64 for 64-bit file size on Windows.
+#ifdef _WIN32
+#define VISION_STAT _stat64
+#else
+#define VISION_STAT stat
+#endif
+
 torch::Tensor read_file(std::string filename) {
-  // CHECK if this only works on Windows for files smaller than 2GB
-  // https://stackoverflow.com/questions/5840148/how-can-i-get-a-files-size-in-c
-  struct stat stat_buf;
-  int rc = stat(filename.c_str(), &stat_buf);
+  struct VISION_STAT stat_buf;
+  int rc = VISION_STAT(filename.c_str(), &stat_buf);
   // errno is a variable defined in errno.h
   TORCH_CHECK(
       rc == 0, "[Errno ", errno, "] ", strerror(errno), ": '", filename, "'");
@@ -13,8 +20,14 @@ torch::Tensor read_file(std::string filename) {
 
   TORCH_CHECK(size > 0, "Expected a non empty file");
 
+#ifdef _WIN32
+  auto data =
+      torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8)
+          .clone();
+#else
   auto data =
       torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8);
+#endif
 
   return data;
 }
