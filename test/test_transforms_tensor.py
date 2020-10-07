@@ -490,6 +490,9 @@ class Tester(TransformsTester):
             self._test_transform_vs_scripted(fn, scripted_fn, tensor)
             self._test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
 
+        with get_tmp_dir() as tmp_dir:
+            scripted_fn.save(os.path.join(tmp_dir, "t_random_erasing.pt"))
+
     def test_convert_image_dtype(self):
         tensor, _ = self._create_data(26, 34, device=self.device)
         batch_tensors = torch.rand(4, 3, 44, 56, device=self.device)
