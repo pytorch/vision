@@ -9,12 +9,6 @@ torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
   TORCH_CHECK(false, "encodePNG: torchvision not compiled with libpng support");
 }
 
-void writePNG(
-    const torch::Tensor& data,
-    std::string filename,
-    int64_t compression_level) {
-  TORCH_CHECK(false, "writePNG: torchvision not compiled with libpng support");
-}
 #else
 
 #include <png.h>
@@ -177,21 +171,6 @@ torch::Tensor encodePNG(const torch::Tensor& data, int64_t compression_level) {
   free(buf_info.buffer);
 
   return outTensor;
-}
-
-void writePNG(
-    const torch::Tensor& data,
-    std::string filename,
-    int64_t compression_level) {
-  auto pngBuf = encodePNG(data, compression_level);
-  auto fileBytes = pngBuf.data_ptr<uint8_t>();
-  auto fileCStr = filename.c_str();
-  FILE* outfile = fopen(fileCStr, "wb");
-
-  TORCH_CHECK(outfile != NULL, "Error opening output png file");
-
-  fwrite(fileBytes, sizeof(uint8_t), pngBuf.numel(), outfile);
-  fclose(outfile);
 }
 
 #endif
