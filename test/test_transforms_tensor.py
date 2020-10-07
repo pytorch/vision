@@ -123,9 +123,7 @@ class Tester(TransformsTester):
     def test_pad(self):
         for m in ["constant", "edge", "reflect", "symmetric"]:
             fill = 127 if m == "constant" else 0
-            # Negative pad currently unsupported for Tensor and symmetric
-            multipliers = [1] if m == "symmetric" else [1, -1]
-            for mul in multipliers:
+            for mul in [1, -1]:
                 # Test functional.pad (PIL and Tensor) with padding as single int
                 self._test_functional_op(
                     "pad", fn_kwargs={"padding": mul * 2, "fill": fill, "padding_mode": m}
@@ -491,6 +489,9 @@ class Tester(TransformsTester):
             scripted_fn = torch.jit.script(fn)
             self._test_transform_vs_scripted(fn, scripted_fn, tensor)
             self._test_transform_vs_scripted_on_batch(fn, scripted_fn, batch_tensors)
+
+        with get_tmp_dir() as tmp_dir:
+            scripted_fn.save(os.path.join(tmp_dir, "t_random_erasing.pt"))
 
     def test_convert_image_dtype(self):
         tensor, _ = self._create_data(26, 34, device=self.device)

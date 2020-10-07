@@ -77,7 +77,7 @@ def _box_xyxy_to_xywh(boxes: Tensor) -> Tensor:
         boxes (Tensor[N, 4]): boxes in (x, y, w, h) format.
     """
     x1, y1, x2, y2 = boxes.unbind(-1)
-    x2 = x2 - x1  # x2 - x1
-    y2 = y2 - y1  # y2 - y1
-    boxes = torch.stack((x1, y1, x2, y2), dim=-1)
+    w = x2 - x1  # x2 - x1
+    h = y2 - y1  # y2 - y1
+    boxes = torch.stack((x1, y1, w, h), dim=-1)
     return boxes

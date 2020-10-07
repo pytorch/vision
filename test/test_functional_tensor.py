@@ -285,9 +285,6 @@ class Tester(TransformsTester):
 
                     self._test_fn_on_batch(batch_tensors, F.pad, padding=script_pad, **kwargs)
 
-        with self.assertRaises(ValueError, msg="Padding can not be negative for symmetric padding_mode"):
-            F_t.pad(tensor, (-2, -3), padding_mode="symmetric")
-
     def _test_adjust_fn(self, fn, fn_pil, fn_t, configs, tol=2.0 + 1e-10, agg_method="max"):
         script_fn = torch.jit.script(fn)
         torch.manual_seed(15)
@@ -743,10 +740,6 @@ class Tester(TransformsTester):
                     self._test_fn_on_batch(
                         batch_tensors, F.perspective, startpoints=spoints, endpoints=epoints, interpolation=0
                     )
-
-    def test_convert_image_dtype(self):
-        # TODO: add tests of CPU/CUDA on tensor and batch
-        pass
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
