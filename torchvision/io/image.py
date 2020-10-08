@@ -104,7 +104,8 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
         Compression factor for the resulting file, it must be a number
         between 0 and 9. Default: 6
     """
-    torch.ops.image.write_png(input, filename, compression_level)
+    output = encode_png(input, compression_level)
+    write_file(filename, output)
 
 
 def decode_jpeg(input: torch.Tensor) -> torch.Tensor:
@@ -162,11 +163,8 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
         Quality of the resulting JPEG file, it must be a number
         between 1 and 100. Default: 75
     """
-    if quality < 1 or quality > 100:
-        raise ValueError('Image quality should be a positive number '
-                         'between 1 and 100')
-
-    torch.ops.image.write_jpeg(input, filename, quality)
+    output = encode_jpeg(input, quality)
+    write_file(filename, output)
 
 
 def decode_image(input: torch.Tensor) -> torch.Tensor:
