@@ -466,6 +466,35 @@ class Tester(TransformsTester):
         with self.assertRaisesRegex(RuntimeError, r"Could not get name of python class object"):
             torch.jit.script(t)
 
+    def test_random_apply(self):
+        tensor, _ = self._create_data(26, 34, device=self.device)
+        tensor = tensor.to(dtype=torch.float32) / 255.0
+
+        transforms = T.RandomApply([
+            T.RandomHorizontalFlip(),
+            T.ColorJitter(),
+        ], p=0.4)
+        s_transforms = T.RandomApply(torch.nn.ModuleList([
+            T.RandomHorizontalFlip(),
+            T.ColorJitter(),
+        ]), p=0.4)
+
+        scripted_fn = torch.jit.script(s_transforms)
+        torch.manual_seed(12)
+        transformed_tensor = transforms(tensor)
+        torch.manual_seed(12)
+        transformed_tensor_script = scripted_fn(tensor)
+        self.assertTrue(transformed_tensor.equal(transformed_tensor_script), msg="{}".format(transforms))
+
+        if torch.device(self.device).type == "cpu":
+            # Can't check this twice, otherwise
+            # "Can't redefine method: forward on class: __torch__.torchvision.transforms.transforms.RandomApply"
+            transforms = T.RandomApply([
+                T.ColorJitter(),
+            ], p=0.3)
+            with self.assertRaisesRegex(RuntimeError, r"Module 'RandomApply' has no attribute 'transforms'"):
+                torch.jit.script(transforms)
+
     def test_gaussian_blur(self):
         tol = 1.0 + 1e-10
         self._test_class_op(
