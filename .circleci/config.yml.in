@@ -131,6 +131,19 @@ jobs:
             sudo apt-get install -y clang-format
             ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
 
+
+
+  check_import_linux:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            python test/test_import.py
+
+
   binary_linux_wheel:
     <<: *binary_common
     docker:
@@ -668,18 +681,13 @@ workflows:
 {%- if True %}
     jobs:
       - circleci_consistency
-      {{ build_workflows(windows_latest_only=True) }}
       - python_lint
       - python_type_check
       - clang_format
 
   unittest:
     jobs:
-      {{ unittest_workflows() }}
-
-  cmake:
-    jobs:
-      {{ cmake_workflows() }}
+      - check_import_linux
 
   nightly:
 {%- endif %}
