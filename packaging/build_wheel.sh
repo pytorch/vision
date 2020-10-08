@@ -24,12 +24,13 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
         cp "$bin_path/Library/bin/libjpeg.dll" torchvision
     fi
 else
-    # Install patchelf to relocate the required binaries
-    yum install -y patchelf
-    # Include LibPNG
-    cp "/usr/lib64/libpng.so" torchvision
-    # Include LibJPEG
-    cp "/usr/lib64/libjpeg.so" torchvision
+    # Install auditwheel to get some inspection utilities
+    pip_install auditwheel
+
+    # Point to custom libraries
+    export LD_LIBRARY_PATH=$(pwd)/ext_libraries/lib:$LD_LIBRARY_PATH
+    export TORCHVISION_INCLUDE=$(pwd)/ext_libraries/include
+    export TORCHVISION_LIBRARY=$(pwd)/ext_libraries/lib
 fi
 
 download_copy_ffmpeg
