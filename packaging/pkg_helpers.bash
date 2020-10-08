@@ -244,6 +244,11 @@ setup_wheel_python() {
     tar -xjvf libiconv-1.15-h63c8f33_5.tar.bz2
     rm -rf libiconv-1.15-h63c8f33_5.tar.bz2
 
+    # --------------- BZip2 -------------------------
+    wget https://anaconda.org/anaconda/bzip2/1.0.8/download/linux-64/bzip2-1.0.8-h7b6447c_0.tar.bz2
+    tar -xvjf bzip2-1.0.8-h7b6447c_0.tar.bz2
+    rm -rf bzip2-1.0.8-h7b6447c_0.tar.bz2
+
     # --------------- gnutls ------------------------
     wget https://anaconda.org/anaconda/gnutls/3.6.5/download/linux-64/gnutls-3.6.5-h71b1129_1002.tar.bz2
     tar -xvjf gnutls-3.6.5-h71b1129_1002.tar.bz2
@@ -415,14 +420,9 @@ download_copy_ffmpeg() {
       wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/linux-64/ffmpeg-4.2-hf484d3e_0.tar.bz2
       tar -xjvf ffmpeg-4.2-hf484d3e_0.tar.bz2
       rm -rf ffmpeg-4.2-hf484d3e_0.tar.bz2
-      # cp lib/*.so ../torchvision
-      # cp -r lib/* /usr/lib
-      # cp -r bin/* /usr/bin
-      # cp -r include/* /usr/include
       ldconfig
       which ffmpeg
+      popd
     fi
   fi
-  cd ..
-  rm -rf ffmpeg_tmp
 }
