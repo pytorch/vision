@@ -367,11 +367,11 @@ download_copy_ffmpeg() {
       conda install -yq wget
       wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/osx-64/ffmpeg-4.2-h0a44026_0.tar.bz2
       tar -xjvf ffmpeg-4.2-h0a44026_0.tar.bz2
-      for f in lib/*.dylib; do
-        if [[ $f =~ ([a-z])+\.dylib ]]; then
-          cp $f ../torchvision
-        fi
-      done
+      # for f in lib/*.dylib; do
+      #   if [[ $f =~ ([a-z])+\.dylib ]]; then
+      #     cp $f ../torchvision
+      #   fi
+      # done
     else
       wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/linux-64/ffmpeg-4.2-hf484d3e_0.tar.bz2
       tar -xjvf ffmpeg-4.2-hf484d3e_0.tar.bz2
