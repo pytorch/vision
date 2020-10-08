@@ -25,7 +25,7 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     fi
 else
     # Install patchelf to relocate the required binaries
-    conda install patchelf
+    yum install -y patchelf
     # Include LibPNG
     cp "/usr/lib64/libpng.so" torchvision
     # Include LibJPEG
