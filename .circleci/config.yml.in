@@ -143,6 +143,19 @@ jobs:
             pip install --user --progress-bar off --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             python test/test_import.py
 
+  check_import_osx:
+    macos
+      xcode: "9.4.1"
+    steps:
+      - checkout
+      - run:
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            conda install pip
+            pip install --user --progress-bar off --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            python test/test_import.py
 
   binary_linux_wheel:
     <<: *binary_common
@@ -224,7 +237,7 @@ jobs:
 
   binary_macos_wheel:
     <<: *binary_common
-    macos:
+    macos
       xcode: "9.4.1"
     steps:
       - checkout_merge
@@ -688,6 +701,7 @@ workflows:
   unittest:
     jobs:
       - check_import_linux
+      - check_import_osx
 
   nightly:
 {%- endif %}
