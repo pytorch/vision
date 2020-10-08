@@ -22,7 +22,7 @@ Low-level video API
 In addition to the :mod:`read_video` function, we provide a high-performance 
 low-level API for more fine-grained control compared to the old API.
 We expose it to users using TORCHBIND C++ registration, and allow users
-to access it via :mod:`torch.classes` import. For example
+to access it via :mod:`torch.classes` import or via :mod:`torchvision.io`. For example
 
 .. code:: python
 
@@ -32,7 +32,10 @@ to access it via :mod:`torch.classes` import. For example
     # Constructor allocates memory and a threaded decoder
     # instance per video. At the momet it takes two arguments:
     # path to the video file, and a wanted stream.
+    
     reader = torch.classes.torchvision.Video(video_path, "video")
+    # equivalently, on could call
+    reader = torchvision.io.Video(video_path, "video")
 
     # The information about the video can be retrieved using the 
     # `get_metadata()` method. It returns a dictionary for every stream, with
