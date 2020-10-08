@@ -17,16 +17,15 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     bin_path=$(dirname $python_exec)
     env_path=$(dirname $bin_path)
     if [[ "$(uname)" == Darwin ]]; then
-        echo "Debugging"
-        # Include LibPNG
-        cp "$env_path/lib/libpng16.dylib" torchvision
-        # Include LibJPEG
-        cp "$env_path/lib/libjpeg.dylib" torchvision
+        # Install delocate to relocate the required binaries
+        pip_install delocate
     else
         cp "$bin_path/Library/bin/libpng16.dll" torchvision
         cp "$bin_path/Library/bin/libjpeg.dll" torchvision
     fi
 else
+    # Install patchelf to relocate the required binaries
+    conda install patchelf
     # Include LibPNG
     cp "/usr/lib64/libpng.so" torchvision
     # Include LibJPEG
@@ -39,4 +38,15 @@ if [[ "$OSTYPE" == "msys" ]]; then
     IS_WHEEL=1 "$script_dir/windows/internal/vc_env_helper.bat" python setup.py bdist_wheel
 else
     IS_WHEEL=1 python setup.py bdist_wheel
+fi
+
+
+if [[ "$(uname)" == Darwin ]]; then
+    pushd dist/
+    python_exec="$(which python)"
+    bin_path=$(dirname $python_exec)
+    env_path=$(dirname $bin_path)
+    for whl in *.whl; do
+        DYLD_LIBRARY_PATH="$env_path/lib/:$DYLD_LIBRARY_PATH" delocate-wheel -v $whl
+    done
 fi
