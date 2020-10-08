@@ -156,6 +156,22 @@ jobs:
             pip install --user --progress-bar off --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             python test/test_import.py
 
+
+  check_import_win:
+    executor: windows-cpu
+    steps:
+      - checkout_merge
+      - run:
+          name: Build conda packages
+          command: |
+            set -ex
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
+            conda activate base
+            #conda install -yq conda-build "conda-package-handling!=1.5.0"
+            conda install pip
+            pip install --user --progress-bar off --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            python test/test_import.py
+
   binary_linux_wheel:
     <<: *binary_common
     docker:
@@ -701,6 +717,7 @@ workflows:
     jobs:
       - check_import_linux
       - check_import_osx
+      - check_import_win
 
   nightly:
 {%- endif %}
