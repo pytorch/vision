@@ -4,7 +4,8 @@ torchvision.io
 .. currentmodule:: torchvision.io
 
 The :mod:`torchvision.io` package provides functions for performing IO
-operations. They are currently specific to reading and writing video.
+operations. They are currently specific to reading and writing video and
+images.
 
 Video
 -----
@@ -48,3 +49,18 @@ to access it via :mod:`torch.classes` import or via :mod:`torchvision.io`. For e
     # following would print out the list of frame rates for every present video stream
     print(reader_md["video"]["fps"])
 
+
+Image
+-----
+
+.. autofunction:: read_image
+
+.. autofunction:: decode_image
+
+.. autofunction:: encode_jpeg
+
+.. autofunction:: write_jpeg
+
+.. autofunction:: encode_png
+
+.. autofunction:: write_png

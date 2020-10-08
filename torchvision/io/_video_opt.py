@@ -26,7 +26,9 @@ try:
         torch.ops.load_library(ext_specs.origin)
         _HAS_VIDEO_OPT = True
 except (ImportError, OSError):
-    pass
+    warnings.warn("Could not import video_reader bakcend."
+                  + " Make sure ffmpeg is installed properly"
+                  + " and rebuild torchvision.")
 
 
 default_timebase = Fraction(0, 1)
@@ -88,7 +90,7 @@ def _validate_pts(pts_range):
         assert (
             pts_range[0] <= pts_range[1]
         ), """Start pts should not be smaller than end pts, got
-            start pts: %d and end pts: %d""" % (
+            start pts: {0:d} and end pts: {1:d}""".format(
             pts_range[0],
             pts_range[1],
         )

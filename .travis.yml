@@ -38,7 +38,6 @@ before_install:
     fi
   - conda install av -c conda-forge
 
-
 install:
   # Using pip instead of setup.py ensures we install a non-compressed version of the package
   # (as opposed to an egg), which is necessary to collect coverage.
@@ -55,7 +54,7 @@ install:
     cd -
 
 script:
-  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH -k 'not TestVideoReader and not TestVideoTransforms and not TestIO' test --ignore=test/test_datasets_download.py
+  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH -k 'not TestVideo and not TestVideoReader and not TestVideoTransforms and not TestIO' test --ignore=test/test_datasets_download.py
   - pytest test/test_hub.py
 
 after_success:

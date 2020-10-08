@@ -1,6 +1,7 @@
 import torch
 from torch.jit.annotations import Tuple
 from torch import Tensor
+from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
 import torchvision
 
 
@@ -131,6 +132,55 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
 
     clipped_boxes = torch.stack((boxes_x, boxes_y), dim=dim)
     return clipped_boxes.reshape(boxes.shape)
+
+
+def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
+    """
+    Converts boxes from given in_fmt to out_fmt.
+    Supported in_fmt and out_fmt are:
+
+    'xyxy': boxes are represented via corners, x1, y1 being top left and x2, y2 being bottom right.
+
+    'xywh' : boxes are represented via corner, width and height, x1, y2 being top left, w, h being width and height.
+
+    'cxcywh' : boxes are represented via centre, width and height, cx, cy being center of box, w, h
+    being width and height.
+
+    Arguments:
+        boxes (Tensor[N, 4]): boxes which will be converted.
+        in_fmt (str): Input format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh'].
+        out_fmt (str): Output format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh']
+
+    Returns:
+        boxes (Tensor[N, 4]): Boxes into converted format.
+    """
+
+    allowed_fmts = ("xyxy", "xywh", "cxcywh")
+    if in_fmt not in allowed_fmts or out_fmt not in allowed_fmts:
+        raise ValueError("Unsupported Bounding Box Conversions for given in_fmt and out_fmt")
+
+    if in_fmt == out_fmt:
+        return boxes.clone()
+
+    if in_fmt != 'xyxy' and out_fmt != 'xyxy':
+        # convert to xyxy and change in_fmt xyxy
+        if in_fmt == "xywh":
+            boxes = _box_xywh_to_xyxy(boxes)
+        elif in_fmt == "cxcywh":
+            boxes = _box_cxcywh_to_xyxy(boxes)
+        in_fmt = 'xyxy'
+
+    if in_fmt == "xyxy":
+        if out_fmt == "xywh":
+            boxes = _box_xyxy_to_xywh(boxes)
+        elif out_fmt == "cxcywh":
+            boxes = _box_xyxy_to_cxcywh(boxes)
+    elif out_fmt == "xyxy":
+        if in_fmt == "xywh":
+            boxes = _box_xywh_to_xyxy(boxes)
+        elif in_fmt == "cxcywh":
+            boxes = _box_cxcywh_to_xyxy(boxes)
+    return boxes
 
 
 def box_area(boxes: Tensor) -> Tensor:
