@@ -215,10 +215,6 @@ class ImageTester(unittest.TestCase):
             data = read_file(fpath)
             expected = torch.tensor(list(content), dtype=torch.uint8)
             self.assertTrue(data.equal(expected))
-            # Windows holds into the file until the tensor is alive
-            # so need to del the tensor before deleting the file see
-            # https://github.com/pytorch/vision/issues/2743#issuecomment-703817293
-            del data
             os.unlink(fpath)
 
         with self.assertRaisesRegex(

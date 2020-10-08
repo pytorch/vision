@@ -3,7 +3,7 @@ from typing import Optional, Dict, Tuple
 
 import torch
 from torch import Tensor
-from torch.nn.functional import grid_sample
+from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
 from torch.jit.annotations import List, BroadcastingList2
 
 
@@ -746,7 +746,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         need_cast = True
         img = img.to(torch.float32)
 
-    img = torch.nn.functional.pad(img, p, mode=padding_mode, value=float(fill))
+    img = torch_pad(img, p, mode=padding_mode, value=float(fill))
 
     if need_squeeze:
         img = img.squeeze(dim=0)
@@ -839,7 +839,7 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
     # Define align_corners to avoid warnings
     align_corners = False if mode in ["bilinear", "bicubic"] else None
 
-    img = torch.nn.functional.interpolate(img, size=(size_h, size_w), mode=mode, align_corners=align_corners)
+    img = interpolate(img, size=[size_h, size_w], mode=mode, align_corners=align_corners)
 
     if need_squeeze:
         img = img.squeeze(dim=0)
@@ -879,24 +879,22 @@ def _assert_grid_transform_inputs(
         raise ValueError("Resampling mode '{}' is unsupported with Tensor input".format(resample))
 
 
-def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
-    # make image NCHW
+def _cast_squeeze_in(img: Tensor, req_dtype: torch.dtype) -> Tuple[Tensor, bool, bool, torch.dtype]:
     need_squeeze = False
+    # make image NCHW
     if img.ndim < 4:
         img = img.unsqueeze(dim=0)
         need_squeeze = True
 
     out_dtype = img.dtype
     need_cast = False
-    if out_dtype != grid.dtype:
+    if out_dtype != req_dtype:
         need_cast = True
-        img = img.to(grid)
+        img = img.to(req_dtype)
+    return img, need_cast, need_squeeze, out_dtype
 
-    if img.shape[0] > 1:
-        # Apply same grid to a batch of images
-        grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
-    img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
 
+def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtype: torch.dtype):
     if need_squeeze:
         img = img.squeeze(dim=0)
 
@@ -904,6 +902,19 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
         # it is better to round before cast
         img = torch.round(img).to(out_dtype)
 
+    return img
+
+
+def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
+
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, grid.dtype)
+
+    if img.shape[0] > 1:
+        # Apply same grid to a batch of images
+        grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
+    img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
+
+    img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
 
 
@@ -1109,3 +1120,56 @@ def perspective(
     mode = _interpolation_modes[interpolation]
 
     return _apply_grid_transform(img, grid, mode)
+
+
+def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> Tensor:
+    ksize_half = (kernel_size - 1) * 0.5
+
+    x = torch.linspace(-ksize_half, ksize_half, steps=kernel_size)
+    pdf = torch.exp(-0.5 * (x / sigma).pow(2))
+    kernel1d = pdf / pdf.sum()
+
+    return kernel1d
+
+
+def _get_gaussian_kernel2d(
+        kernel_size: List[int], sigma: List[float], dtype: torch.dtype, device: torch.device
+) -> Tensor:
+    kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0]).to(device, dtype=dtype)
+    kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1]).to(device, dtype=dtype)
+    kernel2d = torch.mm(kernel1d_y[:, None], kernel1d_x[None, :])
+    return kernel2d
+
+
+def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Tensor:
+    """PRIVATE METHOD. Performs Gaussian blurring on the img by given kernel.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
+
+    Args:
+        img (Tensor): Image to be blurred
+        kernel_size (sequence of int or int): Kernel size of the Gaussian kernel ``(kx, ky)``.
+        sigma (sequence of float or float, optional): Standard deviation of the Gaussian kernel ``(sx, sy)``.
+
+    Returns:
+        Tensor: An image that is blurred using gaussian kernel of given parameters
+    """
+    if not (isinstance(img, torch.Tensor) or _is_tensor_a_torch_image(img)):
+        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=img.device)
+    kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
+
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, kernel.dtype)
+
+    # padding = (left, right, top, bottom)
+    padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
+    img = torch_pad(img, padding, mode="reflect")
+    img = conv2d(img, kernel, groups=img.shape[-3])
+
+    img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
+    return img

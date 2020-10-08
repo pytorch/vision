@@ -1654,6 +1654,48 @@ class Tester(unittest.TestCase):
         # Checking if RandomGrayscale can be printed as string
         trans3.__repr__()
 
+    def test_gaussian_blur_asserts(self):
+        np_img = np.ones((100, 100, 3), dtype=np.uint8) * 255
+        img = F.to_pil_image(np_img, "RGB")
+
+        with self.assertRaisesRegex(ValueError, r"If kernel_size is a sequence its length should be 2"):
+            F.gaussian_blur(img, [3])
+
+        with self.assertRaisesRegex(ValueError, r"If kernel_size is a sequence its length should be 2"):
+            F.gaussian_blur(img, [3, 3, 3])
+        with self.assertRaisesRegex(ValueError, r"Kernel size should be a tuple/list of two integers"):
+            transforms.GaussianBlur([3, 3, 3])
+
+        with self.assertRaisesRegex(ValueError, r"kernel_size should have odd and positive integers"):
+            F.gaussian_blur(img, [4, 4])
+        with self.assertRaisesRegex(ValueError, r"Kernel size value should be an odd and positive number"):
+            transforms.GaussianBlur([4, 4])
+
+        with self.assertRaisesRegex(ValueError, r"kernel_size should have odd and positive integers"):
+            F.gaussian_blur(img, [-3, -3])
+        with self.assertRaisesRegex(ValueError, r"Kernel size value should be an odd and positive number"):
+            transforms.GaussianBlur([-3, -3])
+
+        with self.assertRaisesRegex(ValueError, r"If sigma is a sequence, its length should be 2"):
+            F.gaussian_blur(img, 3, [1, 1, 1])
+        with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
+            transforms.GaussianBlur(3, [1, 1, 1])
+
+        with self.assertRaisesRegex(ValueError, r"sigma should have positive values"):
+            F.gaussian_blur(img, 3, -1.0)
+        with self.assertRaisesRegex(ValueError, r"If sigma is a single number, it must be positive"):
+            transforms.GaussianBlur(3, -1.0)
+
+        with self.assertRaisesRegex(TypeError, r"kernel_size should be int or a sequence of integers"):
+            F.gaussian_blur(img, "kernel_size_string")
+        with self.assertRaisesRegex(ValueError, r"Kernel size should be a tuple/list of two integers"):
+            transforms.GaussianBlur("kernel_size_string")
+
+        with self.assertRaisesRegex(TypeError, r"sigma should be either float or sequence of floats"):
+            F.gaussian_blur(img, 3, "sigma_string")
+        with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
+            transforms.GaussianBlur(3, "sigma_string")
+
 
 if __name__ == '__main__':
     unittest.main()
