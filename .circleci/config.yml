@@ -144,7 +144,7 @@ jobs:
             python test/test_import.py
 
   check_import_osx:
-    macos
+    macos:
       xcode: "9.4.1"
     steps:
       - checkout
@@ -237,7 +237,7 @@ jobs:
 
   binary_macos_wheel:
     <<: *binary_common
-    macos
+    macos:
       xcode: "9.4.1"
     steps:
       - checkout_merge
