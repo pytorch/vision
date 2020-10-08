@@ -17,6 +17,7 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     bin_path=$(dirname $python_exec)
     env_path=$(dirname $bin_path)
     if [[ "$(uname)" == Darwin ]]; then
+        echo "Debugging"
         # Include LibPNG
         cp "$env_path/lib/libpng16.dylib" torchvision
         # Include LibJPEG
