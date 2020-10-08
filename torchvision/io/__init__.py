@@ -27,10 +27,9 @@ from .image import (
 )
 
 if _HAS_VIDEO_OPT:
-    try:
-        Video = torch.classes.torchvision.Video
-    except (ImportError, OSError):
-        warnings.warn("Couldn't load Video extension")
+    Video = torch.classes.torchvision.Video
+else:
+    Video = None
 
 
 __all__ = [
