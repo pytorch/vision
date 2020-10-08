@@ -1,3 +1,6 @@
+import torch
+import warnings
+
 from ._video_opt import (
     Timebase,
     VideoMetaData,
@@ -20,11 +23,15 @@ from .image import (
     encode_jpeg,
     write_jpeg,
     encode_png,
-    write_png
+    write_png,
 )
 
-import torch
-Video = torch.classes.torchvision.Video
+if _HAS_VIDEO_OPT:
+    try:
+        Video = torch.classes.torchvision.Video
+    except (ImportError, OSError):
+        warnings.warn("Couldn't load Video extension")
+
 
 __all__ = [
     "write_video",
@@ -41,11 +48,11 @@ __all__ = [
     "_read_video_meta_data",
     "VideoMetaData",
     "Timebase",
-    'read_image',
-    'decode_image',
-    'encode_jpeg',
-    'write_jpeg',
-    'encode_png',
-    'write_png',
-    'Video'
+    "read_image",
+    "decode_image",
+    "encode_jpeg",
+    "write_jpeg",
+    "encode_png",
+    "write_png",
+    "Video",
 ]
