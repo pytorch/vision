@@ -25,6 +25,12 @@ low-level API for more fine-grained control compared to the old API.
 We expose it to users using TORCHBIND C++ registration, and allow users
 to access it via :mod:`torch.classes` import or via :mod:`torchvision.io`. For example
 
+.. autoclass:: Video
+    :members: next, get_metadata, set_current_stream, seek
+
+
+Example of usage:
+
 .. code:: python
 
     import torch

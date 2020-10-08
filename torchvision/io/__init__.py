@@ -26,8 +26,68 @@ from .image import (
     write_png,
 )
 
+
 if _HAS_VIDEO_OPT:
-    Video = torch.classes.torchvision.Video
+
+    class Video:
+        """
+        Low level video-reading API.
+
+        Args:
+
+            path (string): Path to the video file in supported format
+
+            stream (string, optional): descriptor of the required stream. Defaults to "video:0"
+                Currently available options include :mod:`['video', 'audio', 'cc', 'sub']`
+        """
+
+        def __init__(self, path, stream="video"):
+            self._c = torch.classes.torchvision.Video(path, stream)
+
+        def next(self):
+            """Iterator that decodes the next frame of the current stream
+
+            Returns:
+                ([torch.Tensor, float]): list containing decoded frame and corresponding timestamp
+
+            """
+            return self._c.next()
+
+        def seek(self, time_s):
+            """Seek within current stream.
+
+            Args:
+                time_s (float): seek time in seconds
+
+            .. note::
+                Current implementation is the so-called precise seek. This
+                means following seek, call to :mod:`next()` will return the
+                frame with the exact timestamp if it exists or
+                the first frame with timestamp larger than time_s.
+            """
+            self._c.seek(time_s)
+
+        def get_metadata(self):
+            """Returns video metadata
+
+            Returns:
+                (dict): dictionary containing duration and frame rate for every stream
+            """
+            return self._c.get_metadata()
+
+        def set_current_stream(self, stream):
+            """Set current straem
+
+            Args:
+                stream (string): descriptor of the required stream. Defaults to "video:0"
+                    Currently available options include :mod:`['video', 'audio', 'cc', 'sub']`
+
+            Returns:
+                (bool): True on succes, False otherwise
+            """
+            return self._c.set_current_stream(stream)
+
+
 else:
     Video = None
 
