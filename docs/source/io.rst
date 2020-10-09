@@ -21,7 +21,7 @@ Low-level video API
 -------------------
 
 In addition to the :mod:`read_video` function, we provide a high-performance 
-low-level API for more fine-grained control compared to the old API.
+low-level API for more fine-grained control compared to the `read_video` function.
 We expose it to users using TORCHBIND C++ registration, and allow users
 to access it via :mod:`torch.classes` import or via :mod:`torchvision.io`. For example
 

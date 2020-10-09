@@ -53,7 +53,7 @@ if _HAS_VIDEO_OPT:
             """
             return self._c.next()
 
-        def seek(self, time_s):
+        def seek(self, time_s: float):
             """Seek within current stream.
 
             Args:
