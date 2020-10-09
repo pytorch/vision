@@ -75,7 +75,7 @@ if _HAS_VIDEO_OPT:
             """
             return self._c.get_metadata()
 
-        def set_current_stream(self, stream):
+        def set_current_stream(self, stream: str):
             """Set current straem
 
             Args:
