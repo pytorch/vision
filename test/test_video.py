@@ -10,7 +10,7 @@ import numpy as np
 
 import torch
 import torchvision
-from torchvision.io import _HAS_VIDEO_OPT
+from torchvision.io import _HAS_VIDEO_OPT, Video
 
 try:
     import av
@@ -289,7 +289,7 @@ class TestVideo(unittest.TestCase):
             tv_result, _, _ = torchvision.io.read_video(full_path, pts_unit="sec")
             tv_result = tv_result.permute(0, 3, 1, 2)
             # pass 2: decode all frames using new api
-            reader = torch.classes.torchvision.Video(full_path, "video")
+            reader = Video(full_path, "video")
             frames = []
             t, _ = reader.next()
             while t.numel() > 0:
@@ -310,7 +310,7 @@ class TestVideo(unittest.TestCase):
     #         s = min(r)
     #         e = max(r)
 
-    #         reader = torch.classes.torchvision.Video(full_path, "video")
+    #         reader = Video(full_path, "video")
     #         results = _template_read_video(reader, s, e)
     #         tv_video, tv_audio, info = torchvision.io.read_video(
     #             full_path, start_pts=s, end_pts=e, pts_unit="sec"
@@ -329,7 +329,7 @@ class TestVideo(unittest.TestCase):
     #             full_path, pts_unit="sec"
     #         )
     #         # pass 2: decode all frames using new api
-    #         reader = torch.classes.torchvision.Video(full_path, "video")
+    #         reader = Video(full_path, "video")
     #         pts = []
     #         t, p = reader.next()
     #         while t.numel() > 0:
@@ -353,7 +353,7 @@ class TestVideo(unittest.TestCase):
         torchvision.set_video_backend("pyav")
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
-            reader = torch.classes.torchvision.Video(full_path, "video")
+            reader = Video(full_path, "video")
             reader_md = reader.get_metadata()
             self.assertAlmostEqual(
                 config.video_fps, reader_md["video"]["fps"][0], delta=0.0001
@@ -372,7 +372,7 @@ class TestVideo(unittest.TestCase):
 
             ref_result = _decode_frames_by_av_module(full_path)
 
-            reader = torch.classes.torchvision.Video(full_path, "video")
+            reader = Video(full_path, "video")
             newapi_result = _template_read_video(reader)
 
             # First we check if the frames are approximately the same
