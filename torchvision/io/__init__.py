@@ -1,5 +1,4 @@
 import torch
-import warnings
 
 from ._video_opt import (
     Timebase,
