@@ -65,7 +65,7 @@ if _HAS_VIDEO_OPT:
             """
             return self._c.next()
 
-        def seek(self, time_s):
+        def seek(self, time_s: float):
             """Seek within current stream.
 
             Args:
@@ -87,7 +87,7 @@ if _HAS_VIDEO_OPT:
             """
             return self._c.get_metadata()
 
-        def set_current_stream(self, stream):
+        def set_current_stream(self, stream: str):
             """Set current stream.
             Explicitly define the stream we are operating on.
 
