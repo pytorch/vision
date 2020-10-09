@@ -6,6 +6,7 @@ from torch.nn import init
 from torch.nn.parameter import Parameter
 from torch.nn.modules.utils import _pair
 from torch.jit.annotations import Optional, Tuple
+from torchvision.extension import _assert_has_ops
 
 
 def deform_conv2d(
@@ -51,6 +52,7 @@ def deform_conv2d(
         >>>  torch.Size([4, 5, 8, 8])
     """
 
+    _assert_has_ops()
     out_channels = weight.shape[0]
     if bias is None:
         bias = torch.zeros(out_channels, device=input.device, dtype=input.dtype)
