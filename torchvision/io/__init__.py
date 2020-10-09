@@ -31,7 +31,9 @@ if _HAS_VIDEO_OPT:
 
     class Video:
         """
-        Low level video-reading API.
+        Fine-grained video-reading API.
+        Supports frame-by-frame reading of various streams from a single video
+        container.
 
         Args:
 
@@ -39,6 +41,16 @@ if _HAS_VIDEO_OPT:
 
             stream (string, optional): descriptor of the required stream. Defaults to "video:0"
                 Currently available options include :mod:`['video', 'audio', 'cc', 'sub']`
+
+        Example:
+            The following examples creates :mod:`Video` object, seeks into 2s
+            point, and returns a single frame::
+                    import torchvision
+                    video_path = "path_to_a_test_video"
+
+                    reader = torchvision.io.Video(video_path, "video")
+                    reader.seek(2.0)
+                    frame, timestamp = reader.next()
         """
 
         def __init__(self, path, stream="video"):
@@ -76,11 +88,18 @@ if _HAS_VIDEO_OPT:
             return self._c.get_metadata()
 
         def set_current_stream(self, stream):
-            """Set current straem
+            """Set current stream.
+            Explicitly define the stream we are operating on.
 
             Args:
                 stream (string): descriptor of the required stream. Defaults to "video:0"
-                    Currently available options include :mod:`['video', 'audio', 'cc', 'sub']`
+                    Currently available stream types include :mod:`['video', 'audio', 'cc', 'sub']`.
+                    Each descriptor consists of two parts: stream type (e.g. 'video') and
+                    a unique stream id (which are determined by video encoding).
+                    In this way, if the video contaner contains multiple
+                    streams of the same type, users can acces the one they want.
+                    If only stream type is passed, the decoder auto-detects first stream
+                    of that type and returns it.
 
             Returns:
                 (bool): True on succes, False otherwise
