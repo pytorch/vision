@@ -24,7 +24,7 @@ In addition to the :mod:`read_video` function, we provide a high-performance
 lower-level API for more fine-grained control compared to the :mod:`read_video` function.
 It does all this whilst fully supporting torchscript.
 
-.. autoclass:: Video
+.. autoclass:: VideoReader
     :members: next, get_metadata, set_current_stream, seek
 
 
@@ -37,7 +37,7 @@ Example of usage:
     # Constructor allocates memory and a threaded decoder
     # instance per video. At the momet it takes two arguments:
     # path to the video file, and a wanted stream.
-    reader = torchvision.io.Video(video_path, "video")
+    reader = torchvision.io.VideoReader(video_path, "video")
 
     # The information about the video can be retrieved using the 
     # `get_metadata()` method. It returns a dictionary for every stream, with
