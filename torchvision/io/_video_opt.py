@@ -26,9 +26,7 @@ try:
         torch.ops.load_library(ext_specs.origin)
         _HAS_VIDEO_OPT = True
 except (ImportError, OSError):
-    warnings.warn("Could not import video_reader bakcend."
-                  + " Make sure ffmpeg is installed properly"
-                  + " and rebuild torchvision.")
+    pass
 
 
 default_timebase = Fraction(0, 1)
