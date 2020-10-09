@@ -1,3 +1,4 @@
+
 import importlib
 import math
 import os
@@ -16,7 +17,7 @@ try:
 
     loader_details = (
         importlib.machinery.ExtensionFileLoader,
-        importlib.machinery.EXTENSION_SUFFIXES,
+        importlib.machinery.EXTENSION_SUFFIXES
     )
 
     extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)
@@ -25,7 +26,9 @@ try:
         torch.ops.load_library(ext_specs.origin)
         _HAS_VIDEO_OPT = True
 except (ImportError, OSError):
-    pass
+    warnings.warn("Could not import video_reader bakcend."
+                  + " Make sure ffmpeg is installed properly"
+                  + " and rebuild torchvision.")
 
 
 default_timebase = Fraction(0, 1)
@@ -240,18 +243,10 @@ def _read_video_from_file(
         audio_timebase.numerator,
         audio_timebase.denominator,
     )
-    (
-        vframes,
-        _vframe_pts,
-        vtimebase,
-        vfps,
-        vduration,
-        aframes,
-        aframe_pts,
-        atimebase,
-        asample_rate,
-        aduration,
-    ) = result
+    vframes, _vframe_pts, vtimebase, vfps, vduration, \
+        aframes, aframe_pts, atimebase, asample_rate, aduration = (
+            result
+        )
     info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
     if aframes.numel() > 0:
         # when audio stream is found
@@ -286,18 +281,8 @@ def _read_video_timestamps_from_file(filename):
         0,  # audio_timebase_num
         1,  # audio_timebase_den
     )
-    (
-        _vframes,
-        vframe_pts,
-        vtimebase,
-        vfps,
-        vduration,
-        _aframes,
-        aframe_pts,
-        atimebase,
-        asample_rate,
-        aduration,
-    ) = result
+    _vframes, vframe_pts, vtimebase, vfps, vduration, \
+        _aframes, aframe_pts, atimebase, asample_rate, aduration = (result)
     info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
 
     vframe_pts = vframe_pts.numpy().tolist()
@@ -421,18 +406,10 @@ def _read_video_from_memory(
         audio_timebase_denominator,
     )
 
-    (
-        vframes,
-        _vframe_pts,
-        vtimebase,
-        vfps,
-        vduration,
-        aframes,
-        aframe_pts,
-        atimebase,
-        asample_rate,
-        aduration,
-    ) = result
+    vframes, _vframe_pts, vtimebase, vfps, vduration, \
+        aframes, aframe_pts, atimebase, asample_rate, aduration = (
+            result
+        )
 
     if aframes.numel() > 0:
         # when audio stream is found
@@ -470,18 +447,10 @@ def _read_video_timestamps_from_memory(video_data):
         0,  # audio_timebase_num
         1,  # audio_timebase_den
     )
-    (
-        _vframes,
-        vframe_pts,
-        vtimebase,
-        vfps,
-        vduration,
-        _aframes,
-        aframe_pts,
-        atimebase,
-        asample_rate,
-        aduration,
-    ) = result
+    _vframes, vframe_pts, vtimebase, vfps, vduration, \
+        _aframes, aframe_pts, atimebase, asample_rate, aduration = (
+            result
+        )
     info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
 
     vframe_pts = vframe_pts.numpy().tolist()
