@@ -52,9 +52,6 @@ def resnet_fpn_backbone(
     trainable_layers=3,
     extra_blocks=None
 ):
-    backbone = resnet.__dict__[backbone_name](
-        pretrained=pretrained,
-        norm_layer=norm_layer)
     """
     Constructs a specified ResNet backbone with FPN on top. Freezes the specified number of layers in the backbone.
 
