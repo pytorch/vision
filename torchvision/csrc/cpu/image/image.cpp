@@ -19,4 +19,5 @@ static auto registry = torch::RegisterOperators()
                            .op("image::encode_jpeg", &encodeJPEG)
                            .op("image::read_file", &read_file)
                            .op("image::write_file", &write_file)
-                           .op("image::decode_image", &decode_image);
+                           .op("image::decode_image", &decode_image)
+                           .op("image::decode_jpeg_cuda", &decodeJPEG_cuda);

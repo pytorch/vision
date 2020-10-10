@@ -50,6 +50,20 @@ class ImageTester(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             decode_jpeg(torch.empty((100), dtype=torch.uint8))
 
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_decode_jpeg_cuda(self):
+        for img_path in get_images(IMAGE_ROOT, ".jpg"):
+            img_pil = torch.load(img_path.replace('jpg', 'pth'))
+            img_pil = img_pil.permute(2, 0, 1)
+            data = read_file(img_path)
+            img_nvjpeg = torch.ops.image.decode_jpeg_cuda(data)
+            self.assertTrue(img_nvjpeg.is_cuda)
+
+            # Image.fromarray(img_nvjpeg.permute(1,2,0).cpu().numpy()).save('/tmp/im.png')
+            # Image.fromarray(img_pil.permute(1,2,0).cpu().numpy()).save('/tmp/impil.png')
+
+            self.assertTrue((img_pil.float() - img_nvjpeg.cpu().float()).abs().mean() < 1.5)
+
     def test_damaged_images(self):
         # Test image with bad Huffman encoding (should not raise)
         bad_huff = read_file(os.path.join(DAMAGED_JPEG, 'bad_huffman.jpg'))
