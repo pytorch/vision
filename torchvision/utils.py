@@ -1,8 +1,12 @@
-from typing import Union, Optional, List, Tuple, Text, BinaryIO
+from typing import Union, Optional, List, Tuple, Text, BinaryIO, Dict
 import io
 import pathlib
 import torch
 import math
+from PIL import Image, ImageDraw
+
+__all__ = ["make_grid", "save_image", "draw_bounding_boxes"]
+
 irange = range
 
 
@@ -121,10 +125,42 @@ def save_image(
             If a file object was used instead of a filename, this parameter should always be used.
         **kwargs: Other arguments are documented in ``make_grid``.
     """
-    from PIL import Image
+    # from PIL import Image
     grid = make_grid(tensor, nrow=nrow, padding=padding, pad_value=pad_value,
                      normalize=normalize, range=range, scale_each=scale_each)
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
+
+
+def draw_bounding_boxes(
+    image: torch.Tensor,
+    bboxes: torch.Tensor,
+    labels: torch.Tensor,
+    colors: Dict[int, str] = None,
+    draw_labels: bool = False,
+    width: int = 1
+) -> torch.Tensor:
+
+    """
+    Draws bounding boxes on given image.
+
+    Args:
+        image (tensor): Tensor of shape (C x H x W)
+        bboxes (tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format.
+        labels (tensor): Tensor of size (N) Labels for each bounding boxes.
+        colors (dict): Dict with key as label id and value as color name.
+        draw_labels (bool): If True draws label names on bounding boxes.
+        width (int): Width of bounding box.
+    """
+
+    # Code co-contributed by sumanthratna
+    # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
+    ndarr = image.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
+    im = Image.fromarray(ndarr)
+    draw = ImageDraw.Draw(im)
+    
+    return True
+
+

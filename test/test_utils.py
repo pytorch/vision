@@ -6,7 +6,7 @@ import torchvision.utils as utils
 import unittest
 from io import BytesIO
 import torchvision.transforms.functional as F
-from PIL import Image
+from PIL import Image, ImageDraw
 
 
 class Tester(unittest.TestCase):
@@ -79,6 +79,14 @@ class Tester(unittest.TestCase):
             self.assertTrue(torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)),
                             'Pixel Image not stored in file object')
 
+    def test_draw_boxes(self):
+        img = torch.rand(3, 226, 226)
+        boxes = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                             [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+        labels = torch.tensor([2, 1, 3, 5])
+        utils.draw_bounding_boxes(img, boxes, labels)
+
+        return True
 
 if __name__ == '__main__':
     unittest.main()
