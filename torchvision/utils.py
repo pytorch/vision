@@ -141,7 +141,7 @@ def draw_bounding_boxes(
     labels: torch.Tensor,
     label_names: List[int] = None,
     colors: Dict[int, str] = None,
-    draw_labels: bool = False,
+    draw_labels: bool = True,
     width: int = 1
 ) -> torch.Tensor:
 
@@ -183,7 +183,10 @@ def draw_bounding_boxes(
     draw = ImageDraw.Draw(img_to_draw)
 
     for bbox, label in zip(boxes, labels):
-        draw.rectangle(bbox, width=width)
+        if colors is None:
+            draw.rectangle(bbox, width=width)
+        else:
+            draw.rectangle(bbox, width=width, outline=colors[label])
 
         if label_names is None:
             draw.text((bbox[0], bbox[1]), str(label))
