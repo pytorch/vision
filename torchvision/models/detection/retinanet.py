@@ -507,11 +507,6 @@ class RetinaNet(nn.Module):
         # TODO: Do we want a list or a dict?
         features = list(features.values())
 
-        # TODO: Is there a better way to check for [P3, P4, P5, P6, P7]?
-        if len(features) == 6:
-            # skip P2 because it generates too many anchors (according to their paper)
-            features = features[1:]
-
         # compute the retinanet heads outputs using the features
         head_outputs = self.head(features)
 
@@ -585,7 +580,9 @@ def retinanet_resnet50_fpn(pretrained=False, progress=True,
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
-    backbone = resnet_fpn_backbone('resnet50', pretrained_backbone, extra_blocks=LastLevelP6P7(256, 256))
+    # skip P2 because it generates too many anchors (according to their paper)
+    backbone = resnet_fpn_backbone('resnet50', pretrained_backbone,
+                                   returned_layers=[2, 3, 4], extra_blocks=LastLevelP6P7(256, 256))
     model = RetinaNet(backbone, num_classes, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls['retinanet_resnet50_fpn_coco'],
