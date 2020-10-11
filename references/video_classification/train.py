@@ -7,12 +7,13 @@ from torch.utils.data.dataloader import default_collate
 from torch import nn
 import torchvision
 import torchvision.datasets.video_utils
-from torchvision import transforms
+# from torchvision import transforms as T
 from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
 
 import utils
 
 from scheduler import WarmupMultiStepLR
+# from transforms import ToFloatTensorInZeroOne
 import transforms as T
 
 try:
