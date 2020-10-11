@@ -343,6 +343,9 @@ at::Tensor DeformConv2d_forward_cuda(
       out_w);
 
   auto out = at::zeros({batch_sz, out_channels, out_h, out_w}, input.options());
+  if (batch_sz == 0) {
+    return out;
+  }
 
   // Separate batches into blocks
   out = out.view({batch_sz / n_parallel_imgs,
@@ -743,6 +746,9 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv_backward_input_cuda(
 
   auto grad_input = at::zeros_like(input);
   auto grad_offset = at::zeros_like(offset);
+  if (batch_sz == 0) {
+    return std::make_tuple(grad_input, grad_offset);
+  }
   auto columns = at::empty(
       {n_in_channels * weight_w * weight_h, n_parallel_imgs * out_h * out_w},
       input.options());
@@ -869,6 +875,9 @@ static at::Tensor deform_conv_backward_parameters_cuda(
   long out_w = grad_out.size(3);
 
   auto grad_weight = at::zeros_like(weight);
+  if (batch_sz == 0) {
+    return grad_weight;
+  }
 
   at::Tensor grad_out_buf = grad_out.reshape(
       {batch_sz / n_parallel_imgs,
