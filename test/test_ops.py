@@ -478,8 +478,7 @@ class DeformConvTester(OpTester, unittest.TestCase):
         out += bias.view(1, n_out_channels, 1, 1)
         return out
 
-    def get_fn_args(self, device, contiguous):
-        batch_sz = 33
+    def get_fn_args(self, device, contiguous, batch_sz):
         n_in_channels = 6
         n_out_channels = 2
         n_weight_grps = 2
@@ -516,7 +515,11 @@ class DeformConvTester(OpTester, unittest.TestCase):
         return x, weight, offset, bias, stride, pad, dilation
 
     def _test_forward(self, device, contiguous):
-        x, _, offset, _, stride, padding, dilation = self.get_fn_args(device, contiguous)
+        for batch_sz in [0, 33]:
+            self._test_forward_with_batchsize(device, contiguous, batch_sz)
+
+    def _test_forward_with_batchsize(self, device, contiguous, batch_sz):
+        x, _, offset, _, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz)
         in_channels = 6
         out_channels = 2
         kernel_size = (3, 2)
@@ -538,7 +541,11 @@ class DeformConvTester(OpTester, unittest.TestCase):
             res = layer(x, wrong_offset)
 
     def _test_backward(self, device, contiguous):
-        x, weight, offset, bias, stride, padding, dilation = self.get_fn_args(device, contiguous)
+        for batch_sz in [0, 33]:
+            self._test_backward_with_batchsize(device, contiguous, batch_sz)
+
+    def _test_backward_with_batchsize(self, device, contiguous, batch_sz):
+        x, weight, offset, bias, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz)
 
         def func(x_, offset_, weight_, bias_):
             return ops.deform_conv2d(x_, offset_, weight_, bias_, stride=stride, padding=padding, dilation=dilation)
@@ -727,20 +734,30 @@ class BoxTester(unittest.TestCase):
         self.assertEqual(box_xywh.dtype, box_tensor.dtype)
         assert torch.all(torch.eq(box_xywh, box_tensor)).item()
 
-    # def test_bbox_convert_jit(self):
-    #     box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
-    #                               [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+    def test_bbox_invalid(self):
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                  [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
 
-    #     scripted_fn = torch.jit.script(ops.box_convert)
-    #     TOLERANCE = 1e-3
+        invalid_infmts = ["xwyh", "cxwyh"]
+        invalid_outfmts = ["xwcx", "xhwcy"]
+        for inv_infmt in invalid_infmts:
+            for inv_outfmt in invalid_outfmts:
+                self.assertRaises(ValueError, ops.box_convert, box_tensor, inv_infmt, inv_outfmt)
 
-    #     box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
-    #     scripted_xywh = scripted_fn(box_tensor, 'xyxy', 'xywh')
-    #     self.assertTrue((scripted_xywh - box_xywh).abs().max() < TOLERANCE)
+    def test_bbox_convert_jit(self):
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                  [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
 
-    #     box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
-    #     scripted_cxcywh = scripted_fn(box_tensor, 'xyxy', 'cxcywh')
-    #     self.assertTrue((scripted_cxcywh - box_cxcywh).abs().max() < TOLERANCE)
+        scripted_fn = torch.jit.script(ops.box_convert)
+        TOLERANCE = 1e-3
+
+        box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
+        scripted_xywh = scripted_fn(box_tensor, 'xyxy', 'xywh')
+        self.assertTrue((scripted_xywh - box_xywh).abs().max() < TOLERANCE)
+
+        box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
+        scripted_cxcywh = scripted_fn(box_tensor, 'xyxy', 'cxcywh')
+        self.assertTrue((scripted_cxcywh - box_cxcywh).abs().max() < TOLERANCE)
 
 
 class BoxAreaTester(unittest.TestCase):
