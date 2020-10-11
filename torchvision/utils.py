@@ -3,6 +3,7 @@ import io
 import pathlib
 import torch
 import math
+import numpy as np
 from PIL import Image, ImageDraw
 
 __all__ = ["make_grid", "save_image", "draw_bounding_boxes"]
@@ -136,7 +137,7 @@ def save_image(
 
 def draw_bounding_boxes(
     image: torch.Tensor,
-    bboxes: torch.Tensor,
+    boxes: torch.Tensor,
     labels: torch.Tensor,
     colors: Dict[int, str] = None,
     draw_labels: bool = False,
@@ -156,11 +157,26 @@ def draw_bounding_boxes(
     """
 
     # Code co-contributed by sumanthratna
-    # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
-    ndarr = image.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
-    im = Image.fromarray(ndarr)
-    draw = ImageDraw.Draw(im)
 
-    return True
+    # Currently works for (C x H x W) images, but I think we should extend.
+    # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
+    if not (torch.is_tensor(image)):
+        raise TypeError('tensor expected, got {}'.format(type(image)))
+
+    ndarr = image.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
+
+    # Neceassary check since FRCNN returns boxes which have grad enabled.
+    if(boxes.requires_grad):
+        boxes = boxes.detach()
+
+    boxes = boxes.to('cpu').numpy().astype('int').tolist()
+
+    img_to_draw = Image.fromarray(ndarr)
+    draw = ImageDraw.Draw(img_to_draw)
+
+    for i, bbox in enumerate(boxes):
+        draw.rectangle(bbox, width=width)
+
+    return torch.from_numpy(np.array(img_to_draw))
 
 
