@@ -147,9 +147,9 @@ def draw_bounding_boxes(
     Draws bounding boxes on given image.
 
     Args:
-        image (tensor): Tensor of shape (C x H x W)
-        bboxes (tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format.
-        labels (tensor): Tensor of size (N) Labels for each bounding boxes.
+        image (Tensor): Tensor of shape (C x H x W)
+        bboxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format.
+        labels (Tensor): Tensor of size (N) Labels for each bounding boxes.
         colors (dict): Dict with key as label id and value as color name.
         draw_labels (bool): If True draws label names on bounding boxes.
         width (int): Width of bounding box.
