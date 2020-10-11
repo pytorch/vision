@@ -95,11 +95,12 @@ def resnet_fpn_backbone(
     if extra_blocks is None:
         extra_blocks = LastLevelMaxPool()
 
-    return_layers = {'layer1': '0', 'layer2': '1', 'layer3': '2', 'layer4': '3'}
+    #return_layers = {'layer1': '0', 'layer2': '1', 'layer3': '2', 'layer4': '3'}
+    return_layers = {'layer2': '0', 'layer3': '1', 'layer4': '2'}
 
     in_channels_stage2 = backbone.inplanes // 8
     in_channels_list = [
-        in_channels_stage2,
+        #in_channels_stage2,
         in_channels_stage2 * 2,
         in_channels_stage2 * 4,
         in_channels_stage2 * 8,
