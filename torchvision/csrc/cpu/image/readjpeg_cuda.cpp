@@ -14,6 +14,8 @@ torch::Tensor decodeJPEG_cuda(const torch::Tensor& data) {
 
 #include <nvjpeg.h>
 
+static nvjpegHandle_t nvjpeg_handle = nullptr;
+
 void init_nvjpegImage(nvjpegImage_t& img) {
   for (int c = 0; c < NVJPEG_MAX_COMPONENT; c++) {
     img.channel[c] = NULL;
@@ -31,14 +33,15 @@ torch::Tensor decodeJPEG_cuda(const torch::Tensor& data) {
 
   auto datap = data.data_ptr<uint8_t>();
 
-  // Create nvJPEG handle (TODO: only initialise the library once)
-  nvjpegHandle_t nvjpeg_handle;
-  nvjpegStatus_t create_status = nvjpegCreateSimple(&nvjpeg_handle);
+  // Create nvJPEG handle
+  if (nvjpeg_handle == nullptr) {
+    nvjpegStatus_t create_status = nvjpegCreateSimple(&nvjpeg_handle);
 
-  TORCH_CHECK(
-      create_status == NVJPEG_STATUS_SUCCESS,
-      "nvjpegCreateSimple failed: ",
-      create_status);
+    TORCH_CHECK(
+        create_status == NVJPEG_STATUS_SUCCESS,
+        "nvjpegCreateSimple failed: ",
+        create_status);
+  }
 
   // Create nvJPEG state (should this be persistent or not?)
   nvjpegJpegState_t nvjpeg_state;
@@ -108,9 +111,8 @@ torch::Tensor decodeJPEG_cuda(const torch::Tensor& data) {
       "nvjpegDecode failed: ",
       decode_status);
 
-  // Destroy the state and (for now) library handle
+  // Destroy the state
   nvjpegJpegStateDestroy(nvjpeg_state);
-  nvjpegDestroy(nvjpeg_handle);
 
   return tensor;
 }
