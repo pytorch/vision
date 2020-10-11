@@ -139,6 +139,7 @@ def draw_bounding_boxes(
     image: torch.Tensor,
     boxes: torch.Tensor,
     labels: torch.Tensor,
+    label_names: List[int] = None,
     colors: Dict[int, str] = None,
     draw_labels: bool = False,
     width: int = 1
@@ -151,6 +152,7 @@ def draw_bounding_boxes(
         image (Tensor): Tensor of shape (C x H x W)
         bboxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format.
         labels (Tensor): Tensor of size (N) Labels for each bounding boxes.
+        label_names (List): List containing labels excluding background.
         colors (dict): Dict with key as label id and value as color name.
         draw_labels (bool): If True draws label names on bounding boxes.
         width (int): Width of bounding box.
@@ -160,8 +162,13 @@ def draw_bounding_boxes(
 
     # Currently works for (C x H x W) images, but I think we should extend.
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
+
     if not (torch.is_tensor(image)):
         raise TypeError('tensor expected, got {}'.format(type(image)))
+
+    if label_names is not None:
+        # Since for our detection models class 0 is background
+        label_names.insert(0, "__background__")
 
     ndarr = image.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
 
@@ -170,13 +177,18 @@ def draw_bounding_boxes(
         boxes = boxes.detach()
 
     boxes = boxes.to('cpu').numpy().astype('int').tolist()
+    labels = labels.to('cpu').numpy().astype('int').tolist()
 
     img_to_draw = Image.fromarray(ndarr)
     draw = ImageDraw.Draw(img_to_draw)
 
-    for i, bbox in enumerate(boxes):
+    for bbox, label in zip(boxes, labels):
         draw.rectangle(bbox, width=width)
 
+        if label_names is None:
+            draw.text((bbox[0], bbox[1]), str(label))
+        else:
+            if draw_labels is True:
+                draw.text((bbox[0], bbox[1]), label_names[int(label)])
+
     return torch.from_numpy(np.array(img_to_draw))
-
-
