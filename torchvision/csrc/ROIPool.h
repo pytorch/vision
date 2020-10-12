@@ -15,6 +15,9 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward(
     const double spatial_scale,
     const int64_t pooled_height,
     const int64_t pooled_width) {
+
+  TORCH_CHECK(rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
+
   if (input.is_cuda()) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
     return ROIPool_forward_cuda(
