@@ -406,10 +406,11 @@ setup_junit_results_folder() {
 
 download_copy_ffmpeg() {
   if [[ "$OSTYPE" == "msys" ]]; then
-    conda install -yq ffmpeg=4.2 -c pytorch
+    # conda install -yq ffmpeg=4.2 -c pytorch
     # curl -L -q https://anaconda.org/pytorch/ffmpeg/4.3/download/win-64/ffmpeg-4.3-ha925a31_0.tar.bz2 --output ffmpeg-4.3-ha925a31_0.tar.bz2
     # bzip2 --decompress --stdout ffmpeg-4.3-ha925a31_0.tar.bz2 | tar -x --file=-
     # cp Library/bin/*.dll ../torchvision
+    echo "FFmpeg is disabled currently on Windows"
   else
     if [[ "$(uname)" == Darwin ]]; then
       conda install -yq ffmpeg=4.2 -c pytorch
