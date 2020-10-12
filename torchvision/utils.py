@@ -159,14 +159,14 @@ def draw_bounding_boxes(
 
     # Code co-contributed by sumanthratna
 
+    if not (torch.is_tensor(image)):
+        raise TypeError(f'tensor expected, got {type(image)}')
+
     if(image.dim() == 4):
         if(image.shape[0] == 1):
             image = image.squeeze(0)
         else:
             raise ValueError("Batch size > 1 is not supported. Pass images with batch size 1 only")
-
-    if not (torch.is_tensor(image)):
-        raise TypeError(f'tensor expected, got {type(image)}')
 
     if label_names is not None:
         # Since for our detection models class 0 is background
