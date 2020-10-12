@@ -18,8 +18,8 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward(
     const int pooled_height,
     const int pooled_width,
     const int sampling_ratio) {
-
-  TORCH_CHECK(rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
+  TORCH_CHECK(
+      rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
 
   if (input.is_cuda()) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
