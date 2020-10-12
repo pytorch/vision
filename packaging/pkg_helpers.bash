@@ -254,8 +254,8 @@ setup_wheel_python() {
     tar -xvjf gnutls-3.6.5-h71b1129_1002.tar.bz2
     rm -rf gnutls-3.6.5-h71b1129_1002.tar.bz2
 
-    export PATH="/opt/python/$python_abi/bin:$(pwd)/bin:$PATH"
     popd
+    export PATH="/opt/python/$python_abi/bin:$(pwd)/ext_libraries/bin:$PATH"
   fi
 }
 
@@ -406,11 +406,10 @@ setup_junit_results_folder() {
 
 download_copy_ffmpeg() {
   if [[ "$OSTYPE" == "msys" ]]; then
-    # conda install -yq ffmpeg -c pytorch
+    conda install -yq ffmpeg=4.2 -c pytorch
     # curl -L -q https://anaconda.org/pytorch/ffmpeg/4.3/download/win-64/ffmpeg-4.3-ha925a31_0.tar.bz2 --output ffmpeg-4.3-ha925a31_0.tar.bz2
     # bzip2 --decompress --stdout ffmpeg-4.3-ha925a31_0.tar.bz2 | tar -x --file=-
     # cp Library/bin/*.dll ../torchvision
-    echo "FFmpeg is disabled currently on Windows"
   else
     if [[ "$(uname)" == Darwin ]]; then
       conda install -yq ffmpeg=4.2 -c pytorch
