@@ -3,7 +3,6 @@
 #include <torch/torch.h>
 #include <torchvision/ROIAlign.h>
 #include <torchvision/cpu/vision_cpu.h>
-#include <torchvision/cuda/vision_cuda.h>
 #include <torchvision/nms.h>
 
 #ifdef _WIN32
