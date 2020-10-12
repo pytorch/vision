@@ -126,7 +126,6 @@ def save_image(
             If a file object was used instead of a filename, this parameter should always be used.
         **kwargs: Other arguments are documented in ``make_grid``.
     """
-    # from PIL import Image
     grid = make_grid(tensor, nrow=nrow, padding=padding, pad_value=pad_value,
                      normalize=normalize, range=range, scale_each=scale_each)
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
@@ -139,7 +138,7 @@ def draw_bounding_boxes(
     image: torch.Tensor,
     boxes: torch.Tensor,
     labels: torch.Tensor,
-    label_names: List[int] = None,
+    label_names: List[str] = None,
     colors: Dict[int, str] = None,
     draw_labels: bool = True,
     width: int = 1
@@ -154,13 +153,11 @@ def draw_bounding_boxes(
         labels (Tensor): Tensor of size (N) Labels for each bounding boxes.
         label_names (List): List containing labels excluding background.
         colors (dict): Dict with key as label id and value as color name.
-        draw_labels (bool): If True draws label names on bounding boxes.
+        draw_labels (bool): If True (default) draws label names on bounding boxes.
         width (int): Width of bounding box.
     """
 
     # Code co-contributed by sumanthratna
-
-    # Currently works for (C x H x W) images, but I think we should extend.
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
 
     if not (torch.is_tensor(image)):
@@ -172,7 +169,7 @@ def draw_bounding_boxes(
 
     ndarr = image.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
 
-    # Neceassary check since FRCNN returns boxes which have grad enabled.
+    # Neceassary check to remove grad if present
     if(boxes.requires_grad):
         boxes = boxes.detach()
 
@@ -190,8 +187,7 @@ def draw_bounding_boxes(
 
         if label_names is None:
             draw.text((bbox[0], bbox[1]), str(label))
-        else:
-            if draw_labels is True:
-                draw.text((bbox[0], bbox[1]), label_names[int(label)])
+        elif draw_labels is True:
+            draw.text((bbox[0], bbox[1]), label_names[int(label)])
 
     return torch.from_numpy(np.array(img_to_draw))
