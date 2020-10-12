@@ -208,52 +208,6 @@ setup_wheel_python() {
 
     mkdir -p ext_libraries
     pushd ext_libraries
-
-    # --------------- ZLib ------------------------
-    wget https://anaconda.org/anaconda/zlib/1.2.11/download/linux-64/zlib-1.2.11-h7b6447c_3.tar.bz2
-    tar -xjvf zlib-1.2.11-h7b6447c_3.tar.bz2
-    rm -rf zlib-1.2.11-h7b6447c_3.tar.bz2
-
-    # --------------- LibPNG ------------------------
-    wget https://anaconda.org/anaconda/libpng/1.6.32/download/linux-64/libpng-1.6.32-hbd3595f_4.tar.bz2
-    tar -xjvf libpng-1.6.32-hbd3595f_4.tar.bz2
-    rm -rf libpng-1.6.32-hbd3595f_4.tar.bz2
-
-    # --------------- OpenH264 ----------------------
-    wget https://anaconda.org/anaconda/openh264/2.1.0/download/linux-64/openh264-2.1.0-hd408876_0.tar.bz2
-    tar -xjvf openh264-2.1.0-hd408876_0.tar.bz2
-    rm -rf openh264-2.1.0-hd408876_0.tar.bz2
-
-    # --------------- LAME --------------------------
-    wget https://anaconda.org/anaconda/lame/3.100/download/linux-64/lame-3.100-h7b6447c_0.tar.bz2
-    tar -xjvf lame-3.100-h7b6447c_0.tar.bz2
-    rm -rf lame-3.100-h7b6447c_0.tar.bz2
-
-    # --------------- Nettle ------------------------
-    wget https://anaconda.org/anaconda/nettle/3.4.1/download/linux-64/nettle-3.4.1-hbb512f6_0.tar.bz2
-    tar -xjvf nettle-3.4.1-hbb512f6_0.tar.bz2
-    rm -rf nettle-3.4.1-hbb512f6_0.tar.bz2
-
-    # --------------- GMP ---------------------------
-    wget https://anaconda.org/anaconda/gmp/6.1.2/download/linux-64/gmp-6.1.2-h6c8ec71_1.tar.bz2
-    tar -xjvf gmp-6.1.2-h6c8ec71_1.tar.bz2
-    rm -rf gmp-6.1.2-h6c8ec71_1.tar.bz2
-
-    # --------------- libiconv ----------------------
-    wget https://anaconda.org/anaconda/libiconv/1.15/download/linux-64/libiconv-1.15-h63c8f33_5.tar.bz2
-    tar -xjvf libiconv-1.15-h63c8f33_5.tar.bz2
-    rm -rf libiconv-1.15-h63c8f33_5.tar.bz2
-
-    # --------------- BZip2 -------------------------
-    wget https://anaconda.org/anaconda/bzip2/1.0.8/download/linux-64/bzip2-1.0.8-h7b6447c_0.tar.bz2
-    tar -xvjf bzip2-1.0.8-h7b6447c_0.tar.bz2
-    rm -rf bzip2-1.0.8-h7b6447c_0.tar.bz2
-
-    # --------------- gnutls ------------------------
-    wget https://anaconda.org/anaconda/gnutls/3.6.5/download/linux-64/gnutls-3.6.5-h71b1129_1002.tar.bz2
-    tar -xvjf gnutls-3.6.5-h71b1129_1002.tar.bz2
-    rm -rf gnutls-3.6.5-h71b1129_1002.tar.bz2
-
     popd
     export PATH="/opt/python/$python_abi/bin:$(pwd)/ext_libraries/bin:$PATH"
   fi
