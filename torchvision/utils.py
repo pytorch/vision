@@ -148,7 +148,7 @@ def draw_bounding_boxes(
     Draws bounding boxes on given image.
 
     Args:
-        image (Tensor): Tensor of shape (C x H x W)
+        image (Tensor): Tensor of shape (C x H x W) or (1 x C x H x W)
         bboxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format.
         labels (Tensor): Tensor of size (N) Labels for each bounding boxes.
         label_names (List): List containing labels excluding background.
@@ -158,15 +158,21 @@ def draw_bounding_boxes(
     """
 
     # Code co-contributed by sumanthratna
-    # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
+
+    if(image.dim() == 4):
+        if(image.shape[0] == 1):
+            image = image.squeeze(0)
+        else:
+            raise ValueError("Batch size > 1 is not supported. Pass images with batch size 1 only")
 
     if not (torch.is_tensor(image)):
-        raise TypeError('tensor expected, got {}'.format(type(image)))
+        raise TypeError(f'tensor expected, got {type(image)}')
 
     if label_names is not None:
         # Since for our detection models class 0 is background
         label_names.insert(0, "__background__")
 
+    # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
     ndarr = image.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
 
     # Neceassary check to remove grad if present
