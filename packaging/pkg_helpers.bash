@@ -370,13 +370,14 @@ download_copy_ffmpeg() {
       conda install -yq ffmpeg=4.2 -c pytorch
       conda install -yq wget
     else
-      pushd ext_libraries
-      wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/linux-64/ffmpeg-4.2-hf484d3e_0.tar.bz2
-      tar -xjvf ffmpeg-4.2-hf484d3e_0.tar.bz2
-      rm -rf ffmpeg-4.2-hf484d3e_0.tar.bz2
-      ldconfig
-      which ffmpeg
-      popd
+      # pushd ext_libraries
+      # wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/linux-64/ffmpeg-4.2-hf484d3e_0.tar.bz2
+      # tar -xjvf ffmpeg-4.2-hf484d3e_0.tar.bz2
+      # rm -rf ffmpeg-4.2-hf484d3e_0.tar.bz2
+      # ldconfig
+      # which ffmpeg
+      # popd
+      echo "FFmpeg is disabled currently on Linux"
     fi
   fi
 }
