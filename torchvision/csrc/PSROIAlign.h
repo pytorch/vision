@@ -18,9 +18,6 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward(
     const int pooled_height,
     const int pooled_width,
     const int sampling_ratio) {
-  TORCH_CHECK(
-      rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
-
   if (input.is_cuda()) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
     return PSROIAlign_forward_cuda(
@@ -31,7 +28,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward(
         pooled_width,
         sampling_ratio);
 #else
-    AT_ERROR("Not compiled with GPU support");
+    TORCH_CHECK(false, "Not compiled with GPU support");
 #endif
   }
   return PSROIAlign_forward_cpu(
@@ -65,7 +62,7 @@ at::Tensor PSROIAlign_backward(
         height,
         width);
 #else
-    AT_ERROR("Not compiled with GPU support");
+    TORCH_CHECK(false, "Not compiled with GPU support");
 #endif
   }
   return PSROIAlign_backward_cpu(

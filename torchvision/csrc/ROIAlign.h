@@ -25,9 +25,6 @@ at::Tensor roi_align(
     const bool aligned) // The flag for pixel shift
 // along each axis.
 {
-  TORCH_CHECK(
-      rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
-
   static auto op = c10::Dispatcher::singleton()
                        .findSchemaOrThrow("torchvision::roi_align", "")
                        .typed<decltype(roi_align)>();
