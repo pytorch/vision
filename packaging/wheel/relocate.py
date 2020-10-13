@@ -265,7 +265,8 @@ def patch_linux():
                 relocate_library(patchelf, output_dir, output_library, binary)
 
         print('Update RECORD file in wheel')
-        record_file = glob.glob(osp.join(output_dir, '*.dist-info'))[0]
+        dist_info = glob.glob(osp.join(output_dir, '*.dist-info'))[0]
+        record_file = osp.join(dist_info, 'RECORD')
 
         with open(record_file, 'w') as f:
             for root, _, files in os.walk(output_dir):
@@ -279,9 +280,10 @@ def patch_linux():
                         f.write('{0},{1},{2}\n'.format(rel_file, digest, size))
 
         print('Compressing wheel')
-        shutil.make_archive(wheel_name, 'zip', output_dir)
+        base_wheel_name = osp.join(wheel_dir, wheel_name)
+        shutil.make_archive(base_wheel_name, 'zip', output_dir)
         os.remove(wheel)
-        shutil.move('{0}.zip'.format(osp.join(wheel_dir, wheel_name)), wheel)
+        shutil.move('{0}.zip'.format(base_wheel_name), wheel)
         shutil.rmtree(output_dir)
 
 
