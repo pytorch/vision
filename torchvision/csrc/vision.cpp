@@ -83,3 +83,12 @@ TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
   m.impl("roi_align", ROIAlign_autograd);
   m.impl("_roi_align_backward", ROIAlign_backward_autograd);
 }
+
+namespace vision {
+    // This function is needed to reference the static variable created by the
+    // TORCH_LIBRARY macro so that it is not optimized away.
+    TORCH_API int RegisterOps() noexcept {
+      (void) TORCH_LIBRARY_static_init_torchvision;
+      return 0;
+    }
+}
