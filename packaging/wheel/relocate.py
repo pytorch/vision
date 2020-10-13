@@ -16,7 +16,8 @@ import os.path as osp
 from base64 import urlsafe_b64encode
 
 # Third party imports
-from auditwheel.lddtree import lddtree
+if sys.platform == 'linux':
+    from auditwheel.lddtree import lddtree
 from wheel.bdist_wheel import get_abi_tag
 
 
@@ -117,6 +118,7 @@ def relocate_library(patchelf, output_dir, output_library, binary):
     Given a shared library, find the transitive closure of its dependencies,
     rename and copy them into the wheel while updating their respective rpaths.
     """
+
     print('Relocating {0}'.format(binary))
     binary_path = osp.join(output_library, binary)
 
