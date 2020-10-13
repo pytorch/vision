@@ -23,7 +23,7 @@ __all__ = [
 ]
 
 
-def _sum(x : List[Tensor]) -> Tensor:
+def _sum(x: List[Tensor]) -> Tensor:
     res = x[0]
     for i in x[1:]:
         res = res + i
