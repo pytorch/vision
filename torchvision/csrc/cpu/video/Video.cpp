@@ -64,7 +64,7 @@ std::pair<std::string, ffmpeg::MediaType> const* _parse_type(
         return p.first == stream_string;
       });
   if (device != types.end()) {
-    return device;
+    return *device;
   }
   AT_ERROR("Expected one of [audio, video, subtitle, cc] ", stream_string);
 }
