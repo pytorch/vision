@@ -49,7 +49,7 @@ size_t fillAudioTensor(DecoderOutputMessage& msgs, torch::Tensor& audioFrame) {
   return fillTensorList<float>(msgs, audioFrame);
 }
 
-std::pair<std::string, ffmpeg::MediaType> const* _parse_type(
+std::array<std::pair<std::string, ffmpeg::MediaType>, 4>::const_iterator _parse_type(
     const std::string& stream_string) {
   static const std::array<std::pair<std::string, MediaType>, 4> types = {{
       {"video", TYPE_VIDEO},
@@ -64,7 +64,7 @@ std::pair<std::string, ffmpeg::MediaType> const* _parse_type(
         return p.first == stream_string;
       });
   if (device != types.end()) {
-    return *device;
+    return device;
   }
   TORCH_CHECK(
       false, "Expected one of [audio, video, subtitle, cc] ", stream_string);
