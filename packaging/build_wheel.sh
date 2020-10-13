@@ -55,5 +55,5 @@ else
         "$script_dir/windows/internal/vc_env_helper.bat" python $script_dir/wheel/relocate.py
     else
         LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH" python $script_dir/wheel/relocate.py
-    done
+    fi
 fi
