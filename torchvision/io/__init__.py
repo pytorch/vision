@@ -41,7 +41,7 @@ class VideoReader:
     container.
 
     Example:
-        The following examples creates :mod:`Video` object, seeks into 2s
+        The following examples creates a :mod:`VideoReader` object, seeks into 2s
         point, and returns a single frame::
                 import torchvision
                 video_path = "path_to_a_test_video"
@@ -49,18 +49,40 @@ class VideoReader:
                 reader = torchvision.io.VideoReader(video_path, "video")
                 reader.seek(2.0)
                 frame = next(reader)
-        
-        Furthermore, we can utilize :mod:`itertools` to make the reading
-        process more pythonic::
-            for frame in itertools.takewhile(lambda x: x['pts'] <= 5, video):
+
+        :mod:`VideoReader` implements the iterable API, which makes it suitable to
+        using it in conjunction with :mod:`itertools` for more advanced reading.
+        As such, we can use a :mod:`VideoReader` instance inside for loops::
+            reader.seek(2)
+            for frame in reader:
                 frames.append(frame['data'])
+            # additionally, `seek` implements a fluent API, so we can do
+            for frame in reader.seek(2):
+                frames.append(frame['data'])
+        With :mod:`itertools`, we can read all frames between 2 and 5 seconds with the
+        following code::
+            for frame in itertools.takewhile(lambda x: x['pts'] <= 5, reader.seek(2)):
+                frames.append(frame['data'])
+        and similarly, reading 10 frames after the 2s timestamp can be achieved
+        as follows::
+            for frame in itertools.islice(reader.seek(2), 10):
+                frames.append(frame['data'])
+
+    .. note::
+
+        Each stream descriptor consists of two parts: stream type (e.g. 'video') and
+        a unique stream id (which are determined by the video encoding).
+        In this way, if the video contaner contains multiple
+        streams of the same type, users can acces the one they want.
+        If only stream type is passed, the decoder auto-detects first stream of that type.
 
     Args:
 
         path (string): Path to the video file in supported format
 
-        stream (string, optional): descriptor of the required stream. Defaults to "video:0"
-            Currently available options include :mod:`['video', 'audio', 'cc', 'sub']`
+        stream (string, optional): descriptor of the required stream, followed by the stream id,
+            in the format ``{stream_type}:{stream_id}``. Defaults to ``"video:0"``.
+            Currently available options include ``['video', 'audio']``
     """
 
     def __init__(self, path, stream="video"):
@@ -72,7 +94,8 @@ class VideoReader:
         """Decodes and returns the next frame of the current stream
 
         Returns:
-            ([torch.Tensor, float]): list containing decoded frame and corresponding timestamp
+            (dict): a dictionary with fields ``data`` and ``pts``
+            containing decoded frame and corresponding timestamp
 
         """
         frame, pts = self._c.next()
@@ -93,7 +116,7 @@ class VideoReader:
             Current implementation is the so-called precise seek. This
             means following seek, call to :mod:`next()` will return the
             frame with the exact timestamp if it exists or
-            the first frame with timestamp larger than time_s.
+            the first frame with timestamp larger than ``time_s``.
         """
         self._c.seek(time_s)
         return self
@@ -111,8 +134,8 @@ class VideoReader:
         Explicitly define the stream we are operating on.
 
         Args:
-            stream (string): descriptor of the required stream. Defaults to "video:0"
-                Currently available stream types include :mod:`['video', 'audio', 'cc', 'sub']`.
+            stream (string): descriptor of the required stream. Defaults to ``"video:0"``
+                Currently available stream types include ``['video', 'audio']``.
                 Each descriptor consists of two parts: stream type (e.g. 'video') and
                 a unique stream id (which are determined by video encoding).
                 In this way, if the video contaner contains multiple

@@ -25,7 +25,7 @@ lower-level API for more fine-grained control compared to the :mod:`read_video` 
 It does all this whilst fully supporting torchscript.
 
 .. autoclass:: VideoReader
-    :members: next, get_metadata, set_current_stream, seek
+    :members: __next__, get_metadata, set_current_stream, seek
 
 
 Example of inspecting a video:
@@ -54,39 +54,6 @@ Example of inspecting a video:
     # the constructor we select a default video stream, but
     # in practice, we can set whichever stream we would like 
     video.set_current_stream("video:0")
-
-A note on streams:
-Each stream descriptor consists of two parts: stream type (e.g. 'video') and
-a unique stream id (which are determined by the video encoding).
-In this way, if the video contaner contains multiple
-streams of the same type, users can acces the one they want.
-If only stream type is passed, the decoder auto-detects first stream of that type.
-
-
-
-More examples - video reading:
-
-.. code:: python
-    # if we want to simply read all frames, the reader
-    # object behaves like an iterator, returning a dictionary
-    # at each iteration. For example if we wanted to read all the frames:
-    frames = []
-    for frame in reader:
-        frames.append(frame['data'])
-
-    # this also means we can utilize :mod:`itertools` for 
-    # more specific operations. Let's say we wanted to read
-    # 10 frames after second second. This could easily be done by
-    import itertools
-    frames = []
-    for frame in itertools.islice(reader.seek(2), 10):
-        frames.append(frame['data'])
-
-    # or if we wanted to read video from 2nd to 5th second
-    frames = []
-    for frame in itertools.takewhile(lambda x: x['pts'] <= 5, reader.seek(2)):
-        frames.append(frame['data'])
-
 
 
 Image
