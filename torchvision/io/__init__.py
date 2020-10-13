@@ -48,7 +48,12 @@ class VideoReader:
 
                 reader = torchvision.io.VideoReader(video_path, "video")
                 reader.seek(2.0)
-                frame, timestamp = next(reader)
+                frame = next(reader)
+        
+        Furthermore, we can utilize :mod:`itertools` to make the reading
+        process more pythonic::
+            for frame in itertools.takewhile(lambda x: x['pts'] <= 5, video):
+                frames.append(frame['data'])
 
     Args:
 
