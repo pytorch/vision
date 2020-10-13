@@ -111,6 +111,12 @@ def patch_new_path(library_path, new_dir):
 
 
 def relocate_library(patchelf, output_dir, output_library, binary):
+    """
+    Relocate a shared library to be packaged on a wheel.
+
+    Given a shared library, find the transitive closure of its dependencies,
+    rename and copy them into the wheel while updating their respective rpaths.
+    """
     print('Relocating {0}'.format(binary))
     binary_path = osp.join(output_library, binary)
 
@@ -197,7 +203,7 @@ def relocate_library(patchelf, output_dir, output_library, binary):
                 ],
                 cwd=new_libraries_path)
 
-    print("Update main library dependencies")
+    print("Update library dependencies")
     library_dependencies = binary_dependencies[binary]
     for dep in library_dependencies:
         new_dep = osp.basename(new_names[dep])
@@ -212,7 +218,7 @@ def relocate_library(patchelf, output_dir, output_library, binary):
             ],
             cwd=output_library)
 
-    print('Update main library rpath')
+    print('Update library rpath')
     subprocess.check_output(
         [
             patchelf,
