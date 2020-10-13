@@ -178,7 +178,7 @@ def get_extensions():
         tests = test_file + source_models
         tests_include_dirs = [test_dir, models_dir]
 
-    define_macros = []
+    define_macros = [('VISION_BUILD_LIB', None)]
 
     extra_compile_args = {}
     if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) \
