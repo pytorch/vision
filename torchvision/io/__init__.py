@@ -27,87 +27,98 @@ from .image import (
 
 
 if _HAS_VIDEO_OPT:
+    def _has_video_opt():
+        return True
+else:
+    def _has_video_opt():
+        return False
 
-    class Video:
+
+class VideoReader:
+    """
+    Fine-grained video-reading API.
+    Supports frame-by-frame reading of various streams from a single video
+    container.
+
+    Example:
+        The following examples creates :mod:`Video` object, seeks into 2s
+        point, and returns a single frame::
+                import torchvision
+                video_path = "path_to_a_test_video"
+
+                reader = torchvision.io.VideoReader(video_path, "video")
+                reader.seek(2.0)
+                frame, timestamp = next(reader)
+
+    Args:
+
+        path (string): Path to the video file in supported format
+
+        stream (string, optional): descriptor of the required stream. Defaults to "video:0"
+            Currently available options include :mod:`['video', 'audio', 'cc', 'sub']`
+    """
+
+    def __init__(self, path, stream="video"):
+        if not _has_video_opt():
+            raise RuntimeError("Not compiled with video_reader support")
+        self._c = torch.classes.torchvision.Video(path, stream)
+
+    def __next__(self):
+        """Decodes and returns the next frame of the current stream
+
+        Returns:
+            ([torch.Tensor, float]): list containing decoded frame and corresponding timestamp
+
         """
-        Fine-grained video-reading API.
-        Supports frame-by-frame reading of various streams from a single video
-        container.
+        frame, pts = self._c.next()
+        if frame.numel() == 0:
+            raise StopIteration
+        return frame, pts
+
+    def __iter__(self):
+        return self
+
+    def seek(self, time_s: float):
+        """Seek within current stream.
 
         Args:
+            time_s (float): seek time in seconds
 
-            path (string): Path to the video file in supported format
-
-            stream (string, optional): descriptor of the required stream. Defaults to "video:0"
-                Currently available options include :mod:`['video', 'audio', 'cc', 'sub']`
-
-        Example:
-            The following examples creates :mod:`Video` object, seeks into 2s
-            point, and returns a single frame::
-                    import torchvision
-                    video_path = "path_to_a_test_video"
-
-                    reader = torchvision.io.Video(video_path, "video")
-                    reader.seek(2.0)
-                    frame, timestamp = reader.next()
+        .. note::
+            Current implementation is the so-called precise seek. This
+            means following seek, call to :mod:`next()` will return the
+            frame with the exact timestamp if it exists or
+            the first frame with timestamp larger than time_s.
         """
+        self._c.seek(time_s)
+        return self
 
-        def __init__(self, path, stream="video"):
-            self._c = torch.classes.torchvision.Video(path, stream)
+    def get_metadata(self):
+        """Returns video metadata
 
-        def next(self):
-            """Iterator that decodes the next frame of the current stream
+        Returns:
+            (dict): dictionary containing duration and frame rate for every stream
+        """
+        return self._c.get_metadata()
 
-            Returns:
-                ([torch.Tensor, float]): list containing decoded frame and corresponding timestamp
+    def set_current_stream(self, stream: str):
+        """Set current stream.
+        Explicitly define the stream we are operating on.
 
-            """
-            return self._c.next()
+        Args:
+            stream (string): descriptor of the required stream. Defaults to "video:0"
+                Currently available stream types include :mod:`['video', 'audio', 'cc', 'sub']`.
+                Each descriptor consists of two parts: stream type (e.g. 'video') and
+                a unique stream id (which are determined by video encoding).
+                In this way, if the video contaner contains multiple
+                streams of the same type, users can acces the one they want.
+                If only stream type is passed, the decoder auto-detects first stream
+                of that type and returns it.
 
-        def seek(self, time_s: float):
-            """Seek within current stream.
-
-            Args:
-                time_s (float): seek time in seconds
-
-            .. note::
-                Current implementation is the so-called precise seek. This
-                means following seek, call to :mod:`next()` will return the
-                frame with the exact timestamp if it exists or
-                the first frame with timestamp larger than time_s.
-            """
-            self._c.seek(time_s)
-
-        def get_metadata(self):
-            """Returns video metadata
-
-            Returns:
-                (dict): dictionary containing duration and frame rate for every stream
-            """
-            return self._c.get_metadata()
-
-        def set_current_stream(self, stream: str):
-            """Set current stream.
-            Explicitly define the stream we are operating on.
-
-            Args:
-                stream (string): descriptor of the required stream. Defaults to "video:0"
-                    Currently available stream types include :mod:`['video', 'audio', 'cc', 'sub']`.
-                    Each descriptor consists of two parts: stream type (e.g. 'video') and
-                    a unique stream id (which are determined by video encoding).
-                    In this way, if the video contaner contains multiple
-                    streams of the same type, users can acces the one they want.
-                    If only stream type is passed, the decoder auto-detects first stream
-                    of that type and returns it.
-
-            Returns:
-                (bool): True on succes, False otherwise
-            """
-            return self._c.set_current_stream(stream)
-
-
-else:
-    Video = None
+        Returns:
+            (bool): True on succes, False otherwise
+        """
+        return self._c.set_current_stream(stream)
 
 
 __all__ = [
