@@ -123,6 +123,11 @@ so make sure that it is also available to cmake via the ``CMAKE_PREFIX_PATH``.
 
 For an example setup, take a look at ``examples/cpp/hello_world``.
 
+TorchVision Operators
+---------------------
+In order to get the torchvision operators registered with torch (eg. for the JIT), all you need to do is to ensure that you
+:code:`#include <torchvision/vision.h>` in your project.
+
 Documentation
 =============
 You can find the API documentation on the pytorch website: https://pytorch.org/docs/stable/torchvision/index.html
