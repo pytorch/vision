@@ -308,8 +308,10 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
     const int pooled_width,
     const int sampling_ratio) {
   // Check if input tensors are CPU tensors
-  AT_ASSERTM(input.device().is_cpu(), "input must be a CPU tensor");
-  AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
+  TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
+  TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
+  TORCH_CHECK(
+      rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -321,7 +323,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
   int height = input.size(2);
   int width = input.size(3);
 
-  AT_ASSERTM(
+  TORCH_CHECK(
       channels % (pooled_height * pooled_width) == 0,
       "input channels must be a multiple of pooling height * pooling width");
   int channels_out = channels / (pooled_height * pooled_width);
@@ -370,9 +372,9 @@ at::Tensor PSROIAlign_backward_cpu(
     const int height,
     const int width) {
   // Check if input tensors are CPU tensors
-  AT_ASSERTM(grad.device().is_cpu(), "grad must be a CPU tensor");
-  AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
-  AT_ASSERTM(
+  TORCH_CHECK(grad.device().is_cpu(), "grad must be a CPU tensor");
+  TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
+  TORCH_CHECK(
       channel_mapping.device().is_cpu(),
       "channel_mapping must be a CPU tensor");
 

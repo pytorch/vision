@@ -126,8 +126,8 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(
     const float spatial_scale,
     const int pooled_height,
     const int pooled_width) {
-  AT_ASSERTM(input.device().is_cpu(), "input must be a CPU tensor");
-  AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
+  TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
+  TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -180,9 +180,11 @@ at::Tensor ROIPool_backward_cpu(
     const int height,
     const int width) {
   // Check if input tensors are CPU tensors
-  AT_ASSERTM(grad.device().is_cpu(), "grad must be a CPU tensor");
-  AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
-  AT_ASSERTM(argmax.device().is_cpu(), "argmax must be a CPU tensor");
+  TORCH_CHECK(grad.device().is_cpu(), "grad must be a CPU tensor");
+  TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
+  TORCH_CHECK(argmax.device().is_cpu(), "argmax must be a CPU tensor");
+  TORCH_CHECK(
+      rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2};
 

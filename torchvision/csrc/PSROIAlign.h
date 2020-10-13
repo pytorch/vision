@@ -28,7 +28,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward(
         pooled_width,
         sampling_ratio);
 #else
-    AT_ERROR("Not compiled with GPU support");
+    TORCH_CHECK(false, "Not compiled with GPU support");
 #endif
   }
   return PSROIAlign_forward_cpu(
@@ -62,7 +62,7 @@ at::Tensor PSROIAlign_backward(
         height,
         width);
 #else
-    AT_ERROR("Not compiled with GPU support");
+    TORCH_CHECK(false, "Not compiled with GPU support");
 #endif
   }
   return PSROIAlign_backward_cpu(
