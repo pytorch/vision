@@ -100,7 +100,8 @@ class RetinaNetClassificationHead(nn.Module):
             foreground_idxs_per_image = matched_idxs_per_image >= 0
             num_foreground = foreground_idxs_per_image.sum()
             # no matched_idxs means there were no annotations in this image
-            if False:#matched_idxs_per_image.numel() == 0:
+            # TODO: enable support for images without annotations that works on distributed
+            if False:  # matched_idxs_per_image.numel() == 0:
                 gt_classes_target = torch.zeros_like(cls_logits_per_image)
                 valid_idxs_per_image = torch.arange(cls_logits_per_image.shape[0])
             else:
@@ -183,8 +184,9 @@ class RetinaNetRegressionHead(nn.Module):
         for targets_per_image, bbox_regression_per_image, anchors_per_image, matched_idxs_per_image in \
                 zip(targets, bbox_regression, anchors, matched_idxs):
             # no matched_idxs means there were no annotations in this image
-            #if matched_idxs_per_image.numel() == 0:
-            #    continue
+            # TODO enable support for images without annotations with distributed support
+            # if matched_idxs_per_image.numel() == 0:
+            #     continue
 
             # get the targets corresponding GT for each proposal
             # NB: need to clamp the indices because we can have a single
