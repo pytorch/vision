@@ -31,6 +31,18 @@ WHITELIST = {
     'libglib-2.0.so.0', 'ld-linux-x86-64.so.2', 'ld-2.17.so'
 }
 
+WINDOWS_WHITELIST = {
+    'MSVCP140.dll', 'KERNEL32.dll',
+    'VCRUNTIME140_1.dll', 'VCRUNTIME140.dll',
+    'api-ms-win-crt-heap-l1-1-0.dll',
+    'api-ms-win-crt-runtime-l1-1-0.dll',
+    'api-ms-win-crt-stdio-l1-1-0.dll',
+    'api-ms-win-crt-filesystem-l1-1-0.dll',
+    'api-ms-win-crt-string-l1-1-0.dll',
+    'api-ms-win-crt-environment-l1-1-0.dll',
+}
+
+
 HERE = osp.dirname(osp.abspath(__file__))
 PACKAGE_ROOT = osp.dirname(osp.dirname(HERE))
 PLATFORM_ARCH = platform.machine()
