@@ -61,7 +61,6 @@ endif()
 
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES} ${IMAGE_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} ${JPEG_LIBRARIES} Python3::Python)
-target_compile_definitions(${PROJECT_NAME} PRIVATE VISION_BUILD_LIB)
 set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME TorchVision)
 
 include_directories(torchvision/csrc ${JPEG_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS})

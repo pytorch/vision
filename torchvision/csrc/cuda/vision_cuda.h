@@ -1,15 +1,6 @@
 #pragma once
 #include <torch/extension.h>
-
-#ifdef _WIN32
-#if defined(torchvision_EXPORTS)
-#define VISION_API __declspec(dllexport)
-#else
-#define VISION_API __declspec(dllimport)
-#endif
-#else
-#define VISION_API
-#endif
+#include "../macros.h"
 
 VISION_API at::Tensor ROIAlign_forward_cuda(
     const at::Tensor& input,
