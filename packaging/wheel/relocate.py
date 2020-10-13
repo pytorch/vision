@@ -40,6 +40,8 @@ WINDOWS_WHITELIST = {
     'api-ms-win-crt-filesystem-l1-1-0.dll',
     'api-ms-win-crt-string-l1-1-0.dll',
     'api-ms-win-crt-environment-l1-1-0.dll',
+    'api-ms-win-crt-math-l1-1-0.dll',
+    'api-ms-win-crt-convert-l1-1-0.dll'
 }
 
 
@@ -105,7 +107,7 @@ def find_program(basename):
     names = [basename]
     if os.name == 'nt':
         # Windows platforms
-        extensions = ('.exe', '.bat', '.cmd')
+        extensions = ('.exe', '.bat', '.cmd', '.dll')
         if not basename.endswith(extensions):
             names = [basename + ext for ext in extensions] + [basename]
     for name in names:
@@ -127,7 +129,12 @@ def find_dll_dependencies(dumpbin, binary):
     out = subprocess.run([dumpbin, "/dependents", binary],
                          stdout=subprocess.PIPE)
     out = out.stdout.strip().decode('utf-8')
-    print(out)
+    start_index = out.find('dependencies:') + len('dependencies:')
+    end_index = out.find('Summary')
+    dlls = out[start_index:end_index].strip()
+    dlls = dlls.split(os.linesep)
+    dlls = [dll.strip() for dll in dlls]
+    return dlls
 
 
 def relocate_elf_library(patchelf, output_dir, output_library, binary):
@@ -252,7 +259,73 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
 
 
 def relocate_dll_library(dumpbin, output_dir, output_library, binary):
-    pass
+    print('Relocating {0}'.format(binary))
+    binary_path = osp.join(output_library, binary)
+
+    library_dlls = find_dll_dependencies(dumpbin, binary_path)
+    binary_queue = [(dll, binary) for dll in library_dlls]
+    binary_paths = {binary: binary_path}
+    binary_dependencies = {}
+
+    while binary_queue != []:
+        library, parent = binary_queue.pop(0)
+        if library in WINDOWS_WHITELIST or library.startswith('api-ms-win'):
+            print('Omitting {0}'.format(library))
+            continue
+
+        library_path = find_program(library)
+        if library_path is None:
+            print('{0} not found'.format(library))
+            continue
+
+        if osp.basename(osp.dirname(library_path)) == 'system32':
+            continue
+
+        print('{0}: {1}'.format(library, library_path))
+        parent_dependencies = binary_dependencies.get(parent, [])
+        parent_dependencies.append(library)
+        binary_dependencies[parent] = parent_dependencies
+
+        if library in binary_paths:
+            continue
+
+        binary_paths[library] = library_path
+        downstream_dlls = find_dll_dependencies(dumpbin, library_path)
+        binary_queue += [(n, library) for n in downstream_dlls]
+
+    print('Copying dependencies to wheel directory')
+    package_dir = osp.join(output_dir, 'torchvision')
+    for library in binary_paths:
+        if library != binary:
+            library_path = binary_paths[library]
+            new_library_path = osp.join(package_dir, library)
+            print('{0} -> {1}'.format(library, new_library_path))
+            shutil.copyfile(library_path, new_library_path)
+
+
+def compress_wheel(output_dir, wheel, wheel_dir, wheel_name):
+    """Create RECORD file and compress wheel distribution."""
+    print('Update RECORD file in wheel')
+    dist_info = glob.glob(osp.join(output_dir, '*.dist-info'))[0]
+    record_file = osp.join(dist_info, 'RECORD')
+
+    with open(record_file, 'w') as f:
+        for root, _, files in os.walk(output_dir):
+            for this_file in files:
+                full_file = osp.join(root, this_file)
+                rel_file = osp.relpath(full_file, output_dir)
+                if full_file == record_file:
+                    f.write('{0},,\n'.format(rel_file))
+                else:
+                    digest, size = rehash(full_file)
+                    f.write('{0},{1},{2}\n'.format(rel_file, digest, size))
+
+    print('Compressing wheel')
+    base_wheel_name = osp.join(wheel_dir, wheel_name)
+    shutil.make_archive(base_wheel_name, 'zip', output_dir)
+    os.remove(wheel)
+    shutil.move('{0}.zip'.format(base_wheel_name), wheel)
+    shutil.rmtree(output_dir)
 
 
 def patch_linux():
@@ -290,27 +363,7 @@ def patch_linux():
                 relocate_elf_library(
                     patchelf, output_dir, output_library, binary)
 
-        print('Update RECORD file in wheel')
-        dist_info = glob.glob(osp.join(output_dir, '*.dist-info'))[0]
-        record_file = osp.join(dist_info, 'RECORD')
-
-        with open(record_file, 'w') as f:
-            for root, _, files in os.walk(output_dir):
-                for this_file in files:
-                    full_file = osp.join(root, this_file)
-                    rel_file = osp.relpath(full_file, output_dir)
-                    if full_file == record_file:
-                        f.write('{0},,\n'.format(rel_file))
-                    else:
-                        digest, size = rehash(full_file)
-                        f.write('{0},{1},{2}\n'.format(rel_file, digest, size))
-
-        print('Compressing wheel')
-        base_wheel_name = osp.join(wheel_dir, wheel_name)
-        shutil.make_archive(base_wheel_name, 'zip', output_dir)
-        os.remove(wheel)
-        shutil.move('{0}.zip'.format(base_wheel_name), wheel)
-        shutil.rmtree(output_dir)
+        compress_wheel(output_dir, wheel, wheel_dir, wheel_name)
 
 
 def patch_win():
@@ -336,7 +389,7 @@ def patch_win():
 
         print('Unzipping wheel...')
         wheel_file = osp.basename(wheel)
-        # wheel_dir = osp.dirname(wheel)
+        wheel_dir = osp.dirname(wheel)
         print('{0}'.format(wheel_file))
         wheel_name, _ = osp.splitext(wheel_file)
         unzip_file(wheel, output_dir)
@@ -347,6 +400,8 @@ def patch_win():
             if osp.exists(osp.join(output_library, binary)):
                 relocate_dll_library(
                     dumpbin, output_dir, output_library, binary)
+
+        compress_wheel(output_dir, wheel, wheel_dir, wheel_name)
 
 
 if __name__ == '__main__':
