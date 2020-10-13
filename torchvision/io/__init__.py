@@ -73,7 +73,7 @@ class VideoReader:
         frame, pts = self._c.next()
         if frame.numel() == 0:
             raise StopIteration
-        return frame, pts
+        return {"data": frame, "pts": pts}
 
     def __iter__(self):
         return self
