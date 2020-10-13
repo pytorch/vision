@@ -107,7 +107,7 @@ class MaskRCNN(FasterRCNN):
         >>> import torch
         >>> import torchvision
         >>> from torchvision.models.detection import MaskRCNN
-        >>> from torchvision.models.detection.rpn import AnchorGenerator
+        >>> from torchvision.models.detection.anchor_utils import AnchorGenerator
         >>>
         >>> # load a pre-trained model for classification and return
         >>> # only the features
