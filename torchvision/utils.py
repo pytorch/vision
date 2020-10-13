@@ -140,7 +140,6 @@ def draw_bounding_boxes(
     labels: torch.Tensor,
     label_names: List[str] = None,
     colors: Dict[int, str] = None,
-    draw_labels: bool = True,
     width: int = 1
 ) -> torch.Tensor:
 
@@ -153,34 +152,31 @@ def draw_bounding_boxes(
         labels (Tensor): Tensor of size (N) Labels for each bounding boxes.
         label_names (List): List containing labels excluding background.
         colors (dict): Dict with key as label id and value as color name.
-        draw_labels (bool): If True (default) draws label names on bounding boxes.
         width (int): Width of bounding box.
     """
 
-    # Code co-contributed by sumanthratna
-
-    if not (torch.is_tensor(image)):
+    if not isinstance(image, torch.Tensor):
         raise TypeError(f'tensor expected, got {type(image)}')
 
-    if(image.dim() == 4):
-        if(image.shape[0] == 1):
+    if image.dim() == 4:
+        if image.shape[0] == 1:
             image = image.squeeze(0)
         else:
             raise ValueError("Batch size > 1 is not supported. Pass images with batch size 1 only")
 
-    if label_names is not None:
-        # Since for our detection models class 0 is background
-        label_names.insert(0, "__background__")
+    # if label_names is not None:
+    #     # Since for our detection models class 0 is background
+    #     label_names.insert(0, "__background__")
 
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
     ndarr = image.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
 
     # Neceassary check to remove grad if present
-    if(boxes.requires_grad):
+    if boxes.requires_grad:
         boxes = boxes.detach()
 
-    boxes = boxes.to('cpu').numpy().astype('int').tolist()
-    labels = labels.to('cpu').numpy().astype('int').tolist()
+    boxes = boxes.to(torch.int64).tolist()
+    labels = labels.to(torch.int64).tolist()
 
     img_to_draw = Image.fromarray(ndarr)
     draw = ImageDraw.Draw(img_to_draw)
@@ -193,7 +189,7 @@ def draw_bounding_boxes(
 
         if label_names is None:
             draw.text((bbox[0], bbox[1]), str(label))
-        elif draw_labels is True:
+        else:
             draw.text((bbox[0], bbox[1]), label_names[int(label)])
 
     return torch.from_numpy(np.array(img_to_draw))
