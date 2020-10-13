@@ -184,8 +184,8 @@ setup_wheel_python() {
     # Install libpng from Anaconda (defaults)
     conda install libpng jpeg -y
   else
-    # Install native CentOS libJPEG
-    yum install -y libjpeg-turbo-devel
+    # Install native CentOS libJPEG, LAME, freetype and GnuTLS
+    yum install -y libjpeg-turbo-devel lame freetype gnutls
     case "$PYTHON_VERSION" in
       2.7)
         if [[ -n "$UNICODE_ABI" ]]; then

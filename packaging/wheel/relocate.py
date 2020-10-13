@@ -123,9 +123,16 @@ def patch_new_path(library_path, new_dir):
     return osp.join(new_dir, new_name)
 
 
-def relocate_library(patchelf, output_dir, output_library, binary):
+def find_dll_dependencies(dumpbin, binary):
+    out = subprocess.run([dumpbin, "/dependents", binary],
+                         stdout=subprocess.PIPE)
+    out = out.stdout.strip().decode('utf-8')
+    print(out)
+
+
+def relocate_elf_library(patchelf, output_dir, output_library, binary):
     """
-    Relocate a shared library to be packaged on a wheel.
+    Relocate an ELF shared library to be packaged on a wheel.
 
     Given a shared library, find the transitive closure of its dependencies,
     rename and copy them into the wheel while updating their respective rpaths.
@@ -244,6 +251,10 @@ def relocate_library(patchelf, output_dir, output_library, binary):
     )
 
 
+def relocate_dll_library(dumpbin, output_dir, output_library, binary):
+    pass
+
+
 def patch_linux():
     # Get patchelf location
     patchelf = find_program('patchelf')
@@ -256,15 +267,15 @@ def patch_linux():
     wheels = glob.glob(osp.join(PACKAGE_ROOT, 'dist', '*.whl'))
     output_dir = osp.join(PACKAGE_ROOT, 'dist', '.wheel-process')
 
-    if osp.exists(output_dir):
-        shutil.rmtree(output_dir)
-
-    os.makedirs(output_dir)
-
     image_binary = 'image.so'
     video_binary = 'video_reader.so'
     torchvision_binaries = [image_binary, video_binary]
     for wheel in wheels:
+        if osp.exists(output_dir):
+            shutil.rmtree(output_dir)
+
+        os.makedirs(output_dir)
+
         print('Unzipping wheel...')
         wheel_file = osp.basename(wheel)
         wheel_dir = osp.dirname(wheel)
@@ -276,7 +287,8 @@ def patch_linux():
         output_library = osp.join(output_dir, 'torchvision')
         for binary in torchvision_binaries:
             if osp.exists(osp.join(output_library, binary)):
-                relocate_library(patchelf, output_dir, output_library, binary)
+                relocate_elf_library(
+                    patchelf, output_dir, output_library, binary)
 
         print('Update RECORD file in wheel')
         dist_info = glob.glob(osp.join(output_dir, '*.dist-info'))[0]
@@ -301,6 +313,44 @@ def patch_linux():
         shutil.rmtree(output_dir)
 
 
+def patch_win():
+    # Get dumpbin location
+    dumpbin = find_program('dumpbin')
+    if dumpbin is None:
+        raise FileNotFoundError('Dumpbin was not found in the system, please'
+                                ' make sure that is available on the PATH.')
+
+    # Find wheel
+    print('Finding wheels...')
+    wheels = glob.glob(osp.join(PACKAGE_ROOT, 'dist', '*.whl'))
+    output_dir = osp.join(PACKAGE_ROOT, 'dist', '.wheel-process')
+
+    image_binary = 'image.pyd'
+    video_binary = 'video_reader.pyd'
+    torchvision_binaries = [image_binary, video_binary]
+    for wheel in wheels:
+        if osp.exists(output_dir):
+            shutil.rmtree(output_dir)
+
+        os.makedirs(output_dir)
+
+        print('Unzipping wheel...')
+        wheel_file = osp.basename(wheel)
+        # wheel_dir = osp.dirname(wheel)
+        print('{0}'.format(wheel_file))
+        wheel_name, _ = osp.splitext(wheel_file)
+        unzip_file(wheel, output_dir)
+
+        print('Finding DLL/PE dependencies...')
+        output_library = osp.join(output_dir, 'torchvision')
+        for binary in torchvision_binaries:
+            if osp.exists(osp.join(output_library, binary)):
+                relocate_dll_library(
+                    dumpbin, output_dir, output_library, binary)
+
+
 if __name__ == '__main__':
     if sys.platform == 'linux':
         patch_linux()
+    elif sys.platform == 'win32':
+        patch_win()
