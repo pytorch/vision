@@ -571,7 +571,7 @@ class RetinaNet(nn.Module):
 
 model_urls = {
     'retinanet_resnet50_fpn_coco':
-        '#TODO',
+        'https://download.pytorch.org/models/retinanet_resnet50_fpn_coco-eeacb38b.pth',
 }
 
 
