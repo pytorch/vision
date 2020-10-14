@@ -40,7 +40,7 @@ try:
             if res is None:
                 err = ctypes.WinError(ctypes.get_last_error())
                 err.strerror += (f' Error loading "{ext_specs.origin}" or any or '
-                                'its dependencies.')
+                                 'its dependencies.')
                 raise err
 
         kernel32.SetErrorMode(prev_error_mode)
