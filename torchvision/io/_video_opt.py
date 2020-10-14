@@ -35,12 +35,13 @@ try:
         if with_load_library_flags:
             kernel32.LoadLibraryExW.restype = ctypes.c_void_p
 
-        res = kernel32.LoadLibraryExW(ext_specs.origin, None, 0x00001100)
-        if res is None:
-            err = ctypes.WinError(ctypes.get_last_error())
-            err.strerror += (f' Error loading "{ext_specs.origin}" or any or '
-                             'its dependencies.')
-            raise err
+        if ext_specs is not None:
+            res = kernel32.LoadLibraryExW(ext_specs.origin, None, 0x00001100)
+            if res is None:
+                err = ctypes.WinError(ctypes.get_last_error())
+                err.strerror += (f' Error loading "{ext_specs.origin}" or any or '
+                                'its dependencies.')
+                raise err
 
         kernel32.SetErrorMode(prev_error_mode)
 
