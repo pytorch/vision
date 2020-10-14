@@ -13,12 +13,7 @@ import torch
 _HAS_VIDEO_OPT = False
 
 try:
-    lib_dir = os.path.join(os.path.dirname(__file__), "..")
-
-    if os.name == 'nt':
-        # This is required to load the wheel external binaries
-        os.environ['PATH'] = os.pathsep.join(
-            [os.path.abspath(lib_dir)] + [os.environ['PATH']])
+    lib_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
     loader_details = (
         importlib.machinery.ExtensionFileLoader,
