@@ -37,11 +37,13 @@ def _register_extensions():
                                  ' when calling SetDefaultDllDirectories.')
                 raise err
 
-            res = kernel32.AddDllDirectory(lib_dir)
-            if res is None:
-                err = ctypes.WinError(ctypes.get_last_error())
-                err.strerror += f' Error adding "{lib_dir}" to the DLL directories.'
-                raise err
+            dll_dirs = os.environ['PATH'].split(os.pathsep) + [lib_dir]
+            for dll_dir in dll_dirs:
+                res = kernel32.AddDllDirectory(dll_dir)
+                if res is None:
+                    err = ctypes.WinError(ctypes.get_last_error())
+                    err.strerror += f' Error adding "{dll_dir}" to the DLL directories.'
+                    raise err
 
         kernel32.SetErrorMode(prev_error_mode)
 
