@@ -30,20 +30,18 @@ def _register_extensions():
         if sys.version_info >= (3, 8):
             os.add_dll_directory(lib_dir)
         elif with_load_library_flags:
-            res = kernel32.SetDefaultDllDirectories(0x00001000)
-            if not res:
-                err = ctypes.WinError(ctypes.get_last_error())
-                err.strerror += (' Error setting LOAD_LIBRARY_SEARCH_DEFAULT_DIRS'
-                                 ' when calling SetDefaultDllDirectories.')
-                raise err
+            # res = kernel32.SetDefaultDllDirectories(0x00001000)
+            # if not res:
+            #     err = ctypes.WinError(ctypes.get_last_error())
+            #     err.strerror += (' Error setting LOAD_LIBRARY_SEARCH_DEFAULT_DIRS'
+            #                      ' when calling SetDefaultDllDirectories.')
+            #     raise err
 
-            dll_dirs = os.environ['PATH'].split(os.pathsep) + [lib_dir]
-            for dll_dir in dll_dirs:
-                res = kernel32.AddDllDirectory(dll_dir)
-                if res is None:
-                    err = ctypes.WinError(ctypes.get_last_error())
-                    err.strerror += f' Error adding "{dll_dir}" to the DLL directories.'
-                    raise err
+            res = kernel32.AddDllDirectory(lib_dir)
+            if res is None:
+                err = ctypes.WinError(ctypes.get_last_error())
+                err.strerror += f' Error adding "{lib_dir}" to the DLL directories.'
+                raise err
 
         kernel32.SetErrorMode(prev_error_mode)
 
