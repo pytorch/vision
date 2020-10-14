@@ -320,8 +320,10 @@ at::Tensor ROIAlign_forward_cuda(
     const int64_t pooled_width,
     const int64_t sampling_ratio,
     const bool aligned) {
-  AT_ASSERTM(input.is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
+  TORCH_CHECK(input.is_cuda(), "input must be a CUDA tensor");
+  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
+  TORCH_CHECK(
+      rois.size(1) == 5, "rois must have shape as Tensor[K, 5]");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -385,8 +387,8 @@ at::Tensor ROIAlign_backward_cuda(
     const int64_t width,
     const int64_t sampling_ratio,
     const bool aligned) {
-  AT_ASSERTM(grad.is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
+  TORCH_CHECK(grad.is_cuda(), "grad must be a CUDA tensor");
+  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2};
 

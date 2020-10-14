@@ -4,6 +4,7 @@ from torch import nn, Tensor
 from torch.nn.modules.utils import _pair
 from torch.jit.annotations import List, Tuple
 
+from torchvision.extension import _assert_has_ops
 from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
@@ -32,6 +33,7 @@ def ps_roi_pool(
     Returns:
         output (Tensor[K, C, output_size[0], output_size[1]])
     """
+    _assert_has_ops()
     check_roi_boxes_shape(boxes)
     rois = boxes
     output_size = _pair(output_size)
