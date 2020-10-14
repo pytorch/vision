@@ -144,7 +144,10 @@ class ModelTester(TestCase):
 
     def _test_detection_model(self, name, dev):
         set_rng_seed(0)
-        model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
+        kwargs = {}
+        if 'retinanet' in name:
+            kwargs['score_thresh'] = 0.013
+        model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False, **kwargs)
         model.eval().to(device=dev)
         input_shape = (3, 300, 300)
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
