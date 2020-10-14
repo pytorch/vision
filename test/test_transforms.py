@@ -298,6 +298,11 @@ class Tester(unittest.TestCase):
         self.assertEqual(result.size(1), height + 1)
         self.assertEqual(result.size(2), width + 1)
 
+        t = transforms.RandomCrop(48)
+        img = torch.ones(3, 32, 32)
+        with self.assertRaisesRegex(ValueError, r"Required crop size .+ is larger then input image size .+"):
+            t(img)
+
     def test_pad(self):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
