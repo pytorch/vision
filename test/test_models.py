@@ -330,7 +330,7 @@ class ModelTester(TestCase):
         kwargs['transform_input'] = True
         kwargs['aux_logits'] = True
         kwargs['init_weights'] = False
-        model = models.GoogLeNet()
+        model = models.GoogLeNet(**kwargs)
         model.aux_logits = False
         model.aux1 = None
         model.aux2 = None
