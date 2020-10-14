@@ -151,10 +151,8 @@ class TestCase(unittest.TestCase):
 
         if ACCEPT:
             try:
-                equal = self.assertEqual(output, expected, prec=prec)
+                self.assertEqual(output, expected, prec=prec)
             except Exception:
-                equal = False
-            if not equal:
                 return accept_output("updated output")
         else:
             self.assertEqual(output, expected, prec=prec)
