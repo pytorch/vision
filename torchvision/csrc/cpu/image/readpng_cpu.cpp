@@ -7,7 +7,7 @@
 
 #if !PNG_FOUND
 torch::Tensor decodePNG(const torch::Tensor& data) {
-  AT_ERROR("decodePNG: torchvision not compiled with libPNG support");
+  TORCH_CHECK(false, "decodePNG: torchvision not compiled with libPNG support");
 }
 #else
 #include <png.h>
