@@ -9,6 +9,11 @@ _HAS_IMAGE_OPT = False
 try:
     lib_dir = osp.join(osp.dirname(__file__), "..")
 
+    if os.name == 'nt':
+        # This is required to load the wheel external binaries
+        os.environ['PATH'] = os.pathsep.join(
+            [osp.abspath(lib_dir)] + [os.environ['PATH']])
+
     loader_details = (
         importlib.machinery.ExtensionFileLoader,
         importlib.machinery.EXTENSION_SUFFIXES
