@@ -10,6 +10,7 @@ dependencies:
   - libpng
   - jpeg
   - ca-certificates
+  - ffmpeg=4.2
   - pip:
     - future
     - pillow>=4.1.1
