@@ -312,8 +312,8 @@ class RetinaNet(nn.Module):
         >>> # map could potentially have different sizes and
         >>> # aspect ratios
         >>> anchor_generator = AnchorGenerator(
-        >>>     sizes=tuple((x, int(x * 2 ** (1.0 / 3)), int(x * 2 ** (2.0 / 3))) for x in [32, 64, 128, 256, 512]),
-        >>>     aspect_ratios=((0.5, 1.0, 2.0),) * 5
+        >>>     sizes=((32, 64, 128, 256, 512),),
+        >>>     aspect_ratios=((0.5, 1.0, 2.0),)
         >>> )
         >>>
         >>> # put the pieces together inside a RetinaNet model
