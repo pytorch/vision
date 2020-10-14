@@ -49,7 +49,6 @@ class Tester(unittest.TestCase):
                 pretrained=False, trainable_backbone_layers=0)
         self.assertEqual(ret, 5)
 
-
     def test_transform_copy_targets(self):
         transform = GeneralizedRCNNTransform(300, 500, torch.zeros(3), torch.ones(3))
         image = [torch.rand(3, 200, 300), torch.rand(3, 200, 200)]
