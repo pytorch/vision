@@ -317,7 +317,7 @@ def maskrcnn_resnet50_fpn(pretrained=False, progress=True,
     """
     # check default parameters and by default set it to 3 if possible
     trainable_backbone_layers = _validate_resnet_trainable_layers(
-        pretrained, pretrained_backbone, trainable_backbone_layers)
+        pretrained or pretrained_backbone, trainable_backbone_layers)
 
     if pretrained:
         # no need to download the backbone if pretrained is set

@@ -35,11 +35,20 @@ class Tester(unittest.TestCase):
             self.assertTrue(all(is_frozen[:exp_froz_params]))
 
     def test_validate_resnet_inputs_detection(self):
-        # for pretrained in [True, False]:
-        #     for pretrained_backbone in [True, False]:
-        #         for trainable_layers
-        # backbone_utils._validate_resnet_trainable_layers(pretrained, pretrained_backbone, trainable_layers)
-        pass
+        # default number of backbone layers to train
+        ret = backbone_utils._validate_resnet_trainable_layers(
+            pretrained=True, trainable_backbone_layers=None)
+        self.assertEqual(ret, 3)
+        # can't go beyond 5
+        with self.assertRaises(AssertionError):
+            ret = backbone_utils._validate_resnet_trainable_layers(
+                pretrained=True, trainable_backbone_layers=6)
+        # if not pretrained, should use all trainable layers and warn
+        with self.assertWarns(UserWarning):
+            ret = backbone_utils._validate_resnet_trainable_layers(
+                pretrained=False, trainable_backbone_layers=0)
+        self.assertEqual(ret, 5)
+
 
     def test_transform_copy_targets(self):
         transform = GeneralizedRCNNTransform(300, 500, torch.zeros(3), torch.ones(3))
