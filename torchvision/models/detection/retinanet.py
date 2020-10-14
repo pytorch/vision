@@ -565,7 +565,7 @@ class RetinaNet(nn.Module):
             if not self._has_warned:
                 warnings.warn("RetinaNet always returns a (Losses, Detections) tuple in scripting")
                 self._has_warned = True
-            return (losses, detections)
+            return losses, detections
         return self.eager_outputs(losses, detections)
 
 

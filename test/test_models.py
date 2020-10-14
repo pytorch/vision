@@ -71,6 +71,9 @@ script_test_models = {
     "keypointrcnn_resnet50_fpn": {
         'unwrapper': lambda x: x[1]
     },
+    "retinanet_resnet50_fpn": {
+        'unwrapper': lambda x: x[1]
+    }
 }
 
 
