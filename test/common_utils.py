@@ -150,7 +150,6 @@ class TestCase(unittest.TestCase):
                      "python {} {} --accept").format(munged_id, subname_output, output, __main__.__file__, munged_id))
 
         if ACCEPT:
-            equal = False
             try:
                 equal = self.assertEqual(output, expected, prec=prec)
             except Exception:
