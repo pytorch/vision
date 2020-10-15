@@ -259,6 +259,12 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
 
 
 def relocate_dll_library(dumpbin, output_dir, output_library, binary):
+    """
+    Relocate a DLL/PE shared library to be packaged on a wheel.
+
+    Given a shared library, find the transitive closure of its dependencies,
+    rename and copy them into the wheel.
+    """
     print('Relocating {0}'.format(binary))
     binary_path = osp.join(output_library, binary)
 
