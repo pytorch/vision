@@ -91,11 +91,15 @@ class VideoReader:
         self._c = torch.classes.torchvision.Video(path, stream)
 
     def __next__(self):
-        """Decodes and returns the next frame of the current stream
+        """Decodes and returns the next frame of the current stream.
+        At the moment, frames are encoded as a dict with mandatory
+        data and pts fields, where data is a tensor, and pts is a
+        presentation timestamp of the frame expressed in seconds
+        as a float.
 
         Returns:
             (dict): a dictionary with fields ``data`` and ``pts``
-            containing decoded frame and corresponding timestamp
+                containing decoded frame and corresponding timestamp
 
         """
         frame, pts = self._c.next()
