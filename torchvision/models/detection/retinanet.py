@@ -441,13 +441,13 @@ class RetinaNet(nn.Module):
 
             # prefilter step: drop all boxes that dont pass the threshold in any class and keep only relevant classes
             candidates = torch.nonzero(scores_per_image > self.score_thresh)
-            inds, class_ids = torch.unique(candidates[:, 0]), torch.unique(candidates[:, 1]),
+            inds = torch.unique(candidates[:, 0])
+            class_ids = [int(i) for i in torch.unique(candidates[:, 1])]
             boxes_per_image, scores_per_image, labels_per_image = \
                 boxes_per_image[inds], scores_per_image[inds], labels_per_image[inds]
             other_outputs_per_image = [(k, v[inds]) for k, v in other_outputs_per_image]
 
-            for id in class_ids:
-                class_index = int(id.item())
+            for class_index in class_ids:
                 # remove low scoring boxes
                 inds = torch.gt(scores_per_image[:, class_index], self.score_thresh)
                 boxes_per_class, scores_per_class, labels_per_class = \
@@ -478,13 +478,12 @@ class RetinaNet(nn.Module):
                         image_other_outputs[k] = []
                     image_other_outputs[k].append(v)
 
+            is_nonempty = len(image_boxes) > 0
             detections.append({
-                'boxes': torch.cat(image_boxes, dim=0) if len(image_boxes) else torch.empty(size=(0, 4), device=device),
-                'scores': torch.cat(image_scores, dim=0) if len(image_scores) else torch.empty(size=(0, ),
-                                                                                               device=device),
-                'labels': torch.cat(image_labels, dim=0) if len(image_labels) else torch.empty(size=(0, ),
-                                                                                               dtype=torch.int64,
-                                                                                               device=device),
+                'boxes': torch.cat(image_boxes, dim=0) if is_nonempty else torch.empty(size=(0, 4), device=device),
+                'scores': torch.cat(image_scores, dim=0) if is_nonempty else torch.empty(size=(0, ), device=device),
+                'labels': torch.cat(image_labels, dim=0) if is_nonempty else torch.empty(size=(0, ), dtype=torch.int64,
+                                                                                         device=device),
             })
 
             for k, v in image_other_outputs.items():
