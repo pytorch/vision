@@ -442,7 +442,7 @@ class RetinaNet(nn.Module):
             # prefilter step: drop all boxes that dont pass the threshold in any class and keep only relevant classes
             candidates = torch.nonzero(scores_per_image > self.score_thresh)
             inds = torch.unique(candidates[:, 0])
-            class_ids = [int(i) for i in torch.unique(candidates[:, 1])]
+            class_ids: List[int] = torch.unique(candidates[:, 1]).tolist()
             boxes_per_image, scores_per_image, labels_per_image = \
                 boxes_per_image[inds], scores_per_image[inds], labels_per_image[inds]
             other_outputs_per_image = [(k, v[inds]) for k, v in other_outputs_per_image]
