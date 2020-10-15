@@ -34,13 +34,15 @@ PyMODINIT_FUNC PyInit__C(void) {
 #endif
 #endif
 
-int64_t _cuda_version() {
+namespace vision {
+int64_t cuda_version() noexcept {
 #ifdef WITH_CUDA
   return CUDA_VERSION;
 #else
   return -1;
 #endif
 }
+} // namespace vision
 
 TORCH_LIBRARY(torchvision, m) {
   m.def("nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor");
@@ -53,7 +55,7 @@ TORCH_LIBRARY(torchvision, m) {
   m.def("ps_roi_align", &ps_roi_align);
   m.def("ps_roi_pool", &ps_roi_pool);
   m.def("deform_conv2d", &deform_conv2d);
-  m.def("_cuda_version", &_cuda_version);
+  m.def("_cuda_version", &vision::cuda_version);
 }
 
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
@@ -83,12 +85,3 @@ TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
   m.impl("roi_align", ROIAlign_autograd);
   m.impl("_roi_align_backward", ROIAlign_backward_autograd);
 }
-
-namespace vision {
-// This function is needed to reference the static variable created by the
-// TORCH_LIBRARY macro so that it is not optimized away.
-int RegisterOps() noexcept {
-  (void)TORCH_LIBRARY_static_init_torchvision;
-  return 0;
-}
-} // namespace vision
