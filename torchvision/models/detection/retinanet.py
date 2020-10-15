@@ -439,7 +439,13 @@ class RetinaNet(nn.Module):
             image_labels = []
             image_other_outputs = torch.jit.annotate(Dict[str, List[Tensor]], {})
 
-            for class_index in range(num_classes):
+            # prefilter step: drop all boxes that dont pass the threshold in any class and keep only relevant classes
+            inds, class_ids = (t.unique() for t in (scores_per_image > self.score_thresh).nonzero(as_tuple=True))
+            boxes_per_image, scores_per_image, labels_per_image = \
+                boxes_per_image[inds], scores_per_image[inds], labels_per_image[inds]
+            other_outputs_per_image = [(k, v[inds]) for k, v in other_outputs_per_image]
+
+            for class_index in class_ids.tolist():
                 # remove low scoring boxes
                 inds = torch.gt(scores_per_image[:, class_index], self.score_thresh)
                 boxes_per_class, scores_per_class, labels_per_class = \
