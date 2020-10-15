@@ -27,9 +27,13 @@ from .image import (
 
 
 if _HAS_VIDEO_OPT:
+
     def _has_video_opt():
         return True
+
+
 else:
+
     def _has_video_opt():
         return False
 
