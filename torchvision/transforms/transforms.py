@@ -149,7 +149,7 @@ class ConvertImageDtype(torch.nn.Module):
         super().__init__()
         self.dtype = dtype
 
-    def forward(self, image: torch.Tensor) -> torch.Tensor:
+    def forward(self, image):
         return F.convert_image_dtype(image, self.dtype)
 
 
@@ -218,7 +218,7 @@ class Normalize(torch.nn.Module):
     def forward(self, tensor: Tensor) -> Tensor:
         """
         Args:
-            tensor (Tensor): Tensor image of size (C, H, W) to be normalized.
+            tensor (Tensor): Tensor image to be normalized.
 
         Returns:
             Tensor: Normalized Tensor image.
@@ -972,7 +972,7 @@ class LinearTransformation(torch.nn.Module):
     def forward(self, tensor: Tensor) -> Tensor:
         """
         Args:
-            tensor (Tensor): Tensor image of size (C, H, W) to be whitened.
+            tensor (Tensor): Tensor image to be whitened.
 
         Returns:
             Tensor: Transformed image.
@@ -1342,7 +1342,7 @@ class Grayscale(torch.nn.Module):
         super().__init__()
         self.num_output_channels = num_output_channels
 
-    def forward(self, img: Tensor) -> Tensor:
+    def forward(self, img):
         """
         Args:
             img (PIL Image or Tensor): Image to be converted to grayscale.
@@ -1377,7 +1377,7 @@ class RandomGrayscale(torch.nn.Module):
         super().__init__()
         self.p = p
 
-    def forward(self, img: Tensor) -> Tensor:
+    def forward(self, img):
         """
         Args:
             img (PIL Image or Tensor): Image to be converted to grayscale.
@@ -1411,7 +1411,7 @@ class RandomErasing(torch.nn.Module):
     Returns:
         Erased Image.
 
-    # Examples:
+    Example:
         >>> transform = transforms.Compose([
         >>>   transforms.RandomHorizontalFlip(),
         >>>   transforms.ToTensor(),
@@ -1450,7 +1450,7 @@ class RandomErasing(torch.nn.Module):
         """Get parameters for ``erase`` for a random erasing.
 
         Args:
-            img (Tensor): Tensor image of size (C, H, W) to be erased.
+            img (Tensor): Tensor image to be erased.
             scale (tuple or list): range of proportion of erased area against input image.
             ratio (tuple or list): range of aspect ratio of erased area.
             value (list, optional): erasing value. If None, it is interpreted as "random"
@@ -1487,7 +1487,7 @@ class RandomErasing(torch.nn.Module):
     def forward(self, img):
         """
         Args:
-            img (Tensor): Tensor image of size (C, H, W) to be erased.
+            img (Tensor): Tensor image to be erased.
 
         Returns:
             img (Tensor): Erased Tensor image.
@@ -1518,7 +1518,7 @@ class RandomErasing(torch.nn.Module):
 class GaussianBlur(torch.nn.Module):
     """Blurs image with randomly chosen Gaussian blur.
     The image can be a PIL Image or a Tensor, in which case it is expected
-    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading
+    to have [..., C, H, W] shape, where ... means an arbitrary number of leading
     dimensions
 
     Args:
@@ -1554,7 +1554,7 @@ class GaussianBlur(torch.nn.Module):
 
     @staticmethod
     def get_params(sigma_min: float, sigma_max: float) -> float:
-        """Choose sigma for ``gaussian_blur`` for random gaussian blurring.
+        """Choose sigma for random gaussian blurring.
 
         Args:
             sigma_min (float): Minimum standard deviation that can be chosen for blurring kernel.
@@ -1568,7 +1568,7 @@ class GaussianBlur(torch.nn.Module):
     def forward(self, img: Tensor) -> Tensor:
         """
         Args:
-            img (PIL Image or Tensor): image of size (C, H, W) to be blurred.
+            img (PIL Image or Tensor): image to be blurred.
 
         Returns:
             PIL Image or Tensor: Gaussian blurred image
