@@ -410,74 +410,48 @@ class RetinaNet(nn.Module):
     def postprocess_detections(self, head_outputs, anchors, image_shapes):
         # type: (Dict[str, Tensor], List[Tensor], List[Tuple[int, int]]) -> List[Dict[str, Tensor]]
         # TODO: Merge this with roi_heads.RoIHeads.postprocess_detections ?
-
         class_logits = head_outputs.pop('cls_logits')
         box_regression = head_outputs.pop('bbox_regression')
         other_outputs = head_outputs
 
-        device = class_logits.device
         num_classes = class_logits.shape[-1]
 
         scores = torch.sigmoid(class_logits)
 
-        # create labels for each score
-        labels = torch.arange(num_classes, device=device)
-        labels = labels.view(1, -1).expand_as(scores)
-
         detections = torch.jit.annotate(List[Dict[str, Tensor]], [])
 
-        for index, (box_regression_per_image, scores_per_image, labels_per_image, anchors_per_image, image_shape) in \
-                enumerate(zip(box_regression, scores, labels, anchors, image_shapes)):
+        for index, (box_regression_per_image, scores_per_image, anchors_per_image, image_shape) in \
+                enumerate(zip(box_regression, scores, anchors, image_shapes)):
+            # remove low scoring boxes
+            scores_per_image = scores_per_image.flatten()
+            keep_idxs = scores_per_image > self.score_thresh
+            scores_per_image = scores_per_image[keep_idxs]
+            topk_idxs = torch.where(keep_idxs)[0]
 
-            boxes_per_image = self.box_coder.decode_single(box_regression_per_image, anchors_per_image)
+            # keep only topk scoring predictions
+            num_topk = min(self.detections_per_img, topk_idxs.size(0))
+            scores_per_image, idxs = scores_per_image.topk(num_topk)
+            topk_idxs = topk_idxs[idxs]
+
+            anchor_idxs = topk_idxs // num_classes
+            labels_per_image = topk_idxs % num_classes
+
+            boxes_per_image = self.box_coder.decode_single(box_regression_per_image[anchor_idxs],
+                                                           anchors_per_image[anchor_idxs])
             boxes_per_image = box_ops.clip_boxes_to_image(boxes_per_image, image_shape)
 
-            other_outputs_per_image = [(k, v[index]) for k, v in other_outputs.items()]
+            # non-maximum suppression
+            keep = box_ops.batched_nms(boxes_per_image, scores_per_image, labels_per_image, self.nms_thresh)
 
-            image_boxes = []
-            image_scores = []
-            image_labels = []
-            image_other_outputs = torch.jit.annotate(Dict[str, List[Tensor]], {})
+            det = {
+                'boxes': boxes_per_image[keep],
+                'scores': scores_per_image[keep],
+                'labels': labels_per_image[keep],
+            }
+            for k, v in other_outputs.items():
+                det[k] = v[index][keep]
 
-            for class_index in range(num_classes):
-                # remove low scoring boxes
-                inds = torch.gt(scores_per_image[:, class_index], self.score_thresh)
-                boxes_per_class, scores_per_class, labels_per_class = \
-                    boxes_per_image[inds], scores_per_image[inds, class_index], labels_per_image[inds, class_index]
-                other_outputs_per_class = [(k, v[inds]) for k, v in other_outputs_per_image]
-
-                # remove empty boxes
-                keep = box_ops.remove_small_boxes(boxes_per_class, min_size=1e-2)
-                boxes_per_class, scores_per_class, labels_per_class = \
-                    boxes_per_class[keep], scores_per_class[keep], labels_per_class[keep]
-                other_outputs_per_class = [(k, v[keep]) for k, v in other_outputs_per_class]
-
-                # non-maximum suppression, independently done per class
-                keep = box_ops.nms(boxes_per_class, scores_per_class, self.nms_thresh)
-
-                # keep only topk scoring predictions
-                keep = keep[:self.detections_per_img]
-                boxes_per_class, scores_per_class, labels_per_class = \
-                    boxes_per_class[keep], scores_per_class[keep], labels_per_class[keep]
-                other_outputs_per_class = [(k, v[keep]) for k, v in other_outputs_per_class]
-
-                image_boxes.append(boxes_per_class)
-                image_scores.append(scores_per_class)
-                image_labels.append(labels_per_class)
-
-                for k, v in other_outputs_per_class:
-                    if k not in image_other_outputs:
-                        image_other_outputs[k] = []
-                    image_other_outputs[k].append(v)
-
-            detections.append({
-                'boxes': torch.cat(image_boxes, dim=0),
-                'scores': torch.cat(image_scores, dim=0),
-                'labels': torch.cat(image_labels, dim=0),
-            })
-
-            for k, v in image_other_outputs.items():
-                detections[-1].update({k: torch.cat(v, dim=0)})
+            detections.append(det)
 
         return detections
 
