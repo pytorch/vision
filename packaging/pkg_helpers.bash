@@ -234,9 +234,9 @@ setup_pip_pytorch_version() {
     fi
   else
     pip_install "torch==$PYTORCH_VERSION$PYTORCH_VERSION_SUFFIX" \
-      -f https://download.pytorch.org/whl/torch_stable.html \
-      -f https://download.pytorch.org/whl/test/torch_test.html \
-      -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+      -f "https://download.pytorch.org/whl/${CU_VERSION}/torch_stable.html" \
+      -f "https://download.pytorch.org/whl/test/${CU_VERSION}/torch_test.html" \
+      -f "https://download.pytorch.org/whl/nightly/${CU_VERSION}/torch_nightly.html"
   fi
 }
 
