@@ -83,10 +83,22 @@ jobs:
         PY3.8_101:
           DESIRED_PYTHON: 3.8
           CUDA_VERSION: 101
+        PY3.5_102:
+          DESIRED_PYTHON: 3.5
+          CUDA_VERSION: 102
+        PY3.6_102:
+          DESIRED_PYTHON: 3.6
+          CUDA_VERSION: 102
+        PY3.7_102:
+          DESIRED_PYTHON: 3.7
+          CUDA_VERSION: 102
+        PY3.8_102:
+          DESIRED_PYTHON: 3.8
+          CUDA_VERSION: 102
 
   pool:
     ${{ if eq(parameters.msagent, 'true') }}:
-      vmImage: 'win1803'
+      vmImage: 'vs2017-win2016'
     ${{ if eq(parameters.msagent, 'false') }}:
       name: 'release'
 

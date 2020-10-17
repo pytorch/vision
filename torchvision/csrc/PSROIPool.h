@@ -5,6 +5,9 @@
 #ifdef WITH_CUDA
 #include "cuda/vision_cuda.h"
 #endif
+#ifdef WITH_HIP
+#include "hip/vision_cuda.h"
+#endif
 
 std::tuple<at::Tensor, at::Tensor> PSROIPool_forward(
     const at::Tensor& input,
@@ -12,12 +15,12 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward(
     const float spatial_scale,
     const int pooled_height,
     const int pooled_width) {
-  if (input.type().is_cuda()) {
-#ifdef WITH_CUDA
+  if (input.is_cuda()) {
+#if defined(WITH_CUDA) || defined(WITH_HIP)
     return PSROIPool_forward_cuda(
         input, rois, spatial_scale, pooled_height, pooled_width);
 #else
-    AT_ERROR("Not compiled with GPU support");
+    TORCH_CHECK(false, "Not compiled with GPU support");
 #endif
   }
   return PSROIPool_forward_cpu(
@@ -35,8 +38,8 @@ at::Tensor PSROIPool_backward(
     const int channels,
     const int height,
     const int width) {
-  if (grad.type().is_cuda()) {
-#ifdef WITH_CUDA
+  if (grad.is_cuda()) {
+#if defined(WITH_CUDA) || defined(WITH_HIP)
     return PSROIPool_backward_cuda(
         grad,
         rois,
@@ -49,7 +52,7 @@ at::Tensor PSROIPool_backward(
         height,
         width);
 #else
-    AT_ERROR("Not compiled with GPU support");
+    TORCH_CHECK(false, "Not compiled with GPU support");
 #endif
   }
   return PSROIPool_backward_cpu(
@@ -65,18 +68,12 @@ at::Tensor PSROIPool_backward(
       width);
 }
 
-using namespace at;
-using torch::Tensor;
-using torch::autograd::AutogradContext;
-using torch::autograd::Variable;
-using torch::autograd::variable_list;
-
 class PSROIPoolFunction : public torch::autograd::Function<PSROIPoolFunction> {
  public:
-  static variable_list forward(
-      AutogradContext* ctx,
-      Variable input,
-      Variable rois,
+  static torch::autograd::variable_list forward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::Variable input,
+      torch::autograd::Variable rois,
       const double spatial_scale,
       const int64_t pooled_height,
       const int64_t pooled_width) {
@@ -93,9 +90,9 @@ class PSROIPoolFunction : public torch::autograd::Function<PSROIPoolFunction> {
     return {output, channel_mapping};
   }
 
-  static variable_list backward(
-      AutogradContext* ctx,
-      variable_list grad_output) {
+  static torch::autograd::variable_list backward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::variable_list grad_output) {
     // Use data saved in forward
     auto saved = ctx->get_saved_variables();
     auto rois = saved[0];
@@ -112,17 +109,21 @@ class PSROIPoolFunction : public torch::autograd::Function<PSROIPoolFunction> {
         input_shape[1],
         input_shape[2],
         input_shape[3]);
-    return {grad_in, Variable(), Variable(), Variable(), Variable()};
+    return {grad_in,
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable()};
   }
 };
 
-std::tuple<Tensor, Tensor> ps_roi_pool(
-    const Tensor& input,
-    const Tensor& rois,
+std::tuple<at::Tensor, at::Tensor> ps_roi_pool(
+    const at::Tensor& input,
+    const at::Tensor& rois,
     const double spatial_scale,
     const int64_t pooled_height,
     const int64_t pooled_width) {
   auto result = PSROIPoolFunction::apply(
       input, rois, spatial_scale, pooled_height, pooled_width);
-  return std::tuple<Tensor, Tensor>(result[0], result[1]);
+  return std::tuple<at::Tensor, at::Tensor>(result[0], result[1]);
 }

@@ -2,25 +2,19 @@ from .vision import VisionDataset
 from PIL import Image
 import os
 import os.path
-import six
+import io
 import string
-import sys
-
-if sys.version_info < (3, 3):
-    from collections import Iterable
-else:
-    from collections.abc import Iterable
-
-if sys.version_info[0] == 2:
-    import cPickle as pickle
-else:
-    import pickle
-
+from collections.abc import Iterable
+import pickle
+from typing import Any, Callable, cast, List, Optional, Tuple, Union
 from .utils import verify_str_arg, iterable_to_str
 
 
 class LSUNClass(VisionDataset):
-    def __init__(self, root, transform=None, target_transform=None):
+    def __init__(
+            self, root: str, transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None
+    ) -> None:
         import lmdb
         super(LSUNClass, self).__init__(root, transform=transform,
                                         target_transform=target_transform)
@@ -34,16 +28,16 @@ class LSUNClass(VisionDataset):
             self.keys = pickle.load(open(cache_file, "rb"))
         else:
             with self.env.begin(write=False) as txn:
-                self.keys = [key for key, _ in txn.cursor()]
+                self.keys = [key for key in txn.cursor().iternext(keys=True, values=False)]
             pickle.dump(self.keys, open(cache_file, "wb"))
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
         img, target = None, None
         env = self.env
         with env.begin(write=False) as txn:
             imgbuf = txn.get(self.keys[index])
 
-        buf = six.BytesIO()
+        buf = io.BytesIO()
         buf.write(imgbuf)
         buf.seek(0)
         img = Image.open(buf).convert('RGB')
@@ -56,7 +50,7 @@ class LSUNClass(VisionDataset):
 
         return img, target
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.length
 
 
@@ -74,7 +68,13 @@ class LSUN(VisionDataset):
             target and transforms it.
     """
 
-    def __init__(self, root, classes='train', transform=None, target_transform=None):
+    def __init__(
+            self,
+            root: str,
+            classes: Union[str, List[str]] = "train",
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
+    ) -> None:
         super(LSUN, self).__init__(root, transform=transform,
                                    target_transform=target_transform)
         self.classes = self._verify_classes(classes)
@@ -94,13 +94,14 @@ class LSUN(VisionDataset):
 
         self.length = count
 
-    def _verify_classes(self, classes):
+    def _verify_classes(self, classes: Union[str, List[str]]) -> List[str]:
         categories = ['bedroom', 'bridge', 'church_outdoor', 'classroom',
                       'conference_room', 'dining_room', 'kitchen',
                       'living_room', 'restaurant', 'tower']
         dset_opts = ['train', 'val', 'test']
 
         try:
+            classes = cast(str, classes)
             verify_str_arg(classes, "classes", dset_opts)
             if classes == 'test':
                 classes = [classes]
@@ -113,10 +114,10 @@ class LSUN(VisionDataset):
                 raise ValueError(msg.format(type(classes)))
 
             classes = list(classes)
-            msg_fmtstr = ("Expected type str for elements in argument classes, "
-                          "but got type {}.")
+            msg_fmtstr_type = ("Expected type str for elements in argument classes, "
+                               "but got type {}.")
             for c in classes:
-                verify_str_arg(c, custom_msg=msg_fmtstr.format(type(c)))
+                verify_str_arg(c, custom_msg=msg_fmtstr_type.format(type(c)))
                 c_short = c.split('_')
                 category, dset_opt = '_'.join(c_short[:-1]), c_short[-1]
 
@@ -130,7 +131,7 @@ class LSUN(VisionDataset):
 
         return classes
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -155,8 +156,8 @@ class LSUN(VisionDataset):
         img, _ = db[index]
         return img, target
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.length
 
-    def extra_repr(self):
+    def extra_repr(self) -> str:
         return "Classes: {classes}".format(**self.__dict__)

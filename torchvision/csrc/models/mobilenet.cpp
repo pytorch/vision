@@ -134,11 +134,11 @@ MobileNetV2Impl::MobileNetV2Impl(
 
   for (auto& module : modules(/*include_self=*/false)) {
     if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get())) {
-      torch::nn::init::kaiming_normal_(
-          M->weight, 0, torch::kFanOut);
+      torch::nn::init::kaiming_normal_(M->weight, 0, torch::kFanOut);
       if (M->options.bias())
         torch::nn::init::zeros_(M->bias);
-    } else if (auto M = dynamic_cast<torch::nn::BatchNorm2dImpl*>(module.get())) {
+    } else if (
+        auto M = dynamic_cast<torch::nn::BatchNorm2dImpl*>(module.get())) {
       torch::nn::init::ones_(M->weight);
       torch::nn::init::zeros_(M->bias);
     } else if (auto M = dynamic_cast<torch::nn::LinearImpl*>(module.get())) {

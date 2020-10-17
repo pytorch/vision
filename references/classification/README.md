@@ -4,7 +4,31 @@ This folder contains reference training scripts for image classification.
 They serve as a log of how to train specific models, as provide baseline
 training and evaluation scripts to quickly bootstrap research.
 
-Except otherwise noted, all models have been trained on 8x V100 GPUs.
+Except otherwise noted, all models have been trained on 8x V100 GPUs with 
+the following parameters:
+
+| Parameter                | value  |
+| ------------------------ | ------ |
+| `--batch_size`           | `32`   |
+| `--epochs`               | `90`   |
+| `--lr`                   | `0.1`  |
+| `--momentum`             | `0.9`  |
+| `--wd`, `--weight-decay` | `1e-4` |
+| `--lr-step-size`         | `30`   |
+| `--lr-gamma`             | `0.1`  |
+
+### AlexNet and VGG
+
+Since `AlexNet` and the original `VGG` architectures do not include batch 
+normalization, the default initial learning rate `--lr 0.1` is to high.
+
+```
+python main.py --model $MODEL --lr 1e-2
+```
+
+Here `$MODEL` is one of `alexnet`, `vgg11`, `vgg13`, `vgg16` or `vgg19`. Note
+that `vgg11_bn`, `vgg13_bn`, `vgg16_bn`, and `vgg19_bn` include batch
+normalization and thus are trained with the default parameters.
 
 ### ResNext-50 32x4d
 ```
@@ -59,7 +83,7 @@ We provide pre-trained quantized weights for the following models:
 |     ResNet 18     | 69.494 | 88.882 |
 |     ResNet 50     | 75.920 | 92.814 |
 | ResNext 101 32x8d | 78.986 | 94.480 |
-|    Inception V3   | 77.084 | 93.398 |
+|    Inception V3   | 77.176 | 93.354 |
 |     GoogleNet     | 69.826 | 89.404 |
 
 ### Parameters used for generating quantized models:

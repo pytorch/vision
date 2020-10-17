@@ -1,15 +1,10 @@
 import os
-import sys
 import tarfile
 import collections
 from .vision import VisionDataset
-
-if sys.version_info[0] == 2:
-    import xml.etree.cElementTree as ET
-else:
-    import xml.etree.ElementTree as ET
-
+import xml.etree.ElementTree as ET
 from PIL import Image
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from .utils import download_url, check_integrity, verify_str_arg
 
 DATASET_YEAR_DICT = {
@@ -48,6 +43,12 @@ DATASET_YEAR_DICT = {
         'filename': 'VOCtrainval_06-Nov-2007.tar',
         'md5': 'c52e279531787c972589f7e41ab4ae64',
         'base_dir': os.path.join('VOCdevkit', 'VOC2007')
+    },
+    '2007-test': {
+        'url': 'http://host.robots.ox.ac.uk/pascal/VOC/voc2007/VOCtest_06-Nov-2007.tar',
+        'filename': 'VOCtest_06-Nov-2007.tar',
+        'md5': 'b6e924de25625d8de591ea690078ad9f',
+        'base_dir': os.path.join('VOCdevkit', 'VOC2007')
     }
 }
 
@@ -70,21 +71,25 @@ class VOCSegmentation(VisionDataset):
             and returns a transformed version.
     """
 
-    def __init__(self,
-                 root,
-                 year='2012',
-                 image_set='train',
-                 download=False,
-                 transform=None,
-                 target_transform=None,
-                 transforms=None):
+    def __init__(
+            self,
+            root: str,
+            year: str = "2012",
+            image_set: str = "train",
+            download: bool = False,
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
+            transforms: Optional[Callable] = None,
+    ):
         super(VOCSegmentation, self).__init__(root, transforms, transform, target_transform)
         self.year = year
+        if year == "2007" and image_set == "test":
+            year = "2007-test"
         self.url = DATASET_YEAR_DICT[year]['url']
         self.filename = DATASET_YEAR_DICT[year]['filename']
         self.md5 = DATASET_YEAR_DICT[year]['md5']
         valid_sets = ["train", "trainval", "val"]
-        if year == "2007":
+        if year == "2007-test":
             valid_sets.append("test")
         self.image_set = verify_str_arg(image_set, "image_set", valid_sets)
         base_dir = DATASET_YEAR_DICT[year]['base_dir']
@@ -110,7 +115,7 @@ class VOCSegmentation(VisionDataset):
         self.masks = [os.path.join(mask_dir, x + ".png") for x in file_names]
         assert (len(self.images) == len(self.masks))
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -126,7 +131,7 @@ class VOCSegmentation(VisionDataset):
 
         return img, target
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.images)
 
 
@@ -149,21 +154,25 @@ class VOCDetection(VisionDataset):
             and returns a transformed version.
     """
 
-    def __init__(self,
-                 root,
-                 year='2012',
-                 image_set='train',
-                 download=False,
-                 transform=None,
-                 target_transform=None,
-                 transforms=None):
+    def __init__(
+            self,
+            root: str,
+            year: str = "2012",
+            image_set: str = "train",
+            download: bool = False,
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
+            transforms: Optional[Callable] = None,
+    ):
         super(VOCDetection, self).__init__(root, transforms, transform, target_transform)
         self.year = year
+        if year == "2007" and image_set == "test":
+            year = "2007-test"
         self.url = DATASET_YEAR_DICT[year]['url']
         self.filename = DATASET_YEAR_DICT[year]['filename']
         self.md5 = DATASET_YEAR_DICT[year]['md5']
         valid_sets = ["train", "trainval", "val"]
-        if year == "2007":
+        if year == "2007-test":
             valid_sets.append("test")
         self.image_set = verify_str_arg(image_set, "image_set", valid_sets)
 
@@ -190,7 +199,7 @@ class VOCDetection(VisionDataset):
         self.annotations = [os.path.join(annotation_dir, x + ".xml") for x in file_names]
         assert (len(self.images) == len(self.annotations))
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -207,14 +216,14 @@ class VOCDetection(VisionDataset):
 
         return img, target
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.images)
 
-    def parse_voc_xml(self, node):
-        voc_dict = {}
+    def parse_voc_xml(self, node: ET.Element) -> Dict[str, Any]:
+        voc_dict: Dict[str, Any] = {}
         children = list(node)
         if children:
-            def_dic = collections.defaultdict(list)
+            def_dic: Dict[str, Any] = collections.defaultdict(list)
             for dc in map(self.parse_voc_xml, children):
                 for ind, v in dc.items():
                     def_dic[ind].append(v)
@@ -232,7 +241,7 @@ class VOCDetection(VisionDataset):
         return voc_dict
 
 
-def download_extract(url, root, filename, md5):
+def download_extract(url: str, root: str, filename: str, md5: str) -> None:
     download_url(url, root, filename, md5)
     with tarfile.open(os.path.join(root, filename), "r") as tar:
         tar.extractall(path=root)

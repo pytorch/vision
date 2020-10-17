@@ -141,9 +141,13 @@ void ROIAlignForward(
     T roi_end_w = offset_rois[3] * spatial_scale - offset;
     T roi_end_h = offset_rois[4] * spatial_scale - offset;
 
-    // Force malformed ROIs to be 1x1
-    T roi_width = std::max(roi_end_w - roi_start_w, (T)1.);
-    T roi_height = std::max(roi_end_h - roi_start_h, (T)1.);
+    T roi_width = roi_end_w - roi_start_w;
+    T roi_height = roi_end_h - roi_start_h;
+    if (!aligned) {
+      // Force malformed ROIs to be 1x1
+      roi_width = std::max(roi_width, (T)1.);
+      roi_height = std::max(roi_height, (T)1.);
+    }
 
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
@@ -309,9 +313,13 @@ void ROIAlignBackward(
     T roi_end_w = offset_rois[3] * spatial_scale - offset;
     T roi_end_h = offset_rois[4] * spatial_scale - offset;
 
-    // Force malformed ROIs to be 1x1
-    T roi_width = std::max(roi_end_w - roi_start_w, (T)1.);
-    T roi_height = std::max(roi_end_h - roi_start_h, (T)1.);
+    T roi_width = roi_end_w - roi_start_w;
+    T roi_height = roi_end_h - roi_start_h;
+    if (!aligned) {
+      // Force malformed ROIs to be 1x1
+      roi_width = std::max(roi_width, (T)1.);
+      roi_height = std::max(roi_height, (T)1.);
+    }
 
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
@@ -381,13 +389,14 @@ void ROIAlignBackward(
 at::Tensor ROIAlign_forward_cpu(
     const at::Tensor& input,
     const at::Tensor& rois,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width,
-    const int sampling_ratio,
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width,
+    const int64_t sampling_ratio,
     const bool aligned) {
-  AT_ASSERTM(input.device().is_cpu(), "input must be a CPU tensor");
-  AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
+  TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
+  TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
+  TORCH_CHECK(rois.size(1) == 5, "rois must have shape as Tensor[K, 5]");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -407,38 +416,40 @@ at::Tensor ROIAlign_forward_cpu(
   if (output.numel() == 0)
     return output;
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.type(), "ROIAlign_forward", [&] {
-    ROIAlignForward<scalar_t>(
-        output_size,
-        input.contiguous().data_ptr<scalar_t>(),
-        spatial_scale,
-        channels,
-        height,
-        width,
-        pooled_height,
-        pooled_width,
-        sampling_ratio,
-        aligned,
-        rois.contiguous().data_ptr<scalar_t>(),
-        output.data_ptr<scalar_t>());
-  });
+  auto input_ = input.contiguous(), rois_ = rois.contiguous();
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      input.scalar_type(), "ROIAlign_forward", [&] {
+        ROIAlignForward<scalar_t>(
+            output_size,
+            input_.data_ptr<scalar_t>(),
+            spatial_scale,
+            channels,
+            height,
+            width,
+            pooled_height,
+            pooled_width,
+            sampling_ratio,
+            aligned,
+            rois_.data_ptr<scalar_t>(),
+            output.data_ptr<scalar_t>());
+      });
   return output;
 }
 
 at::Tensor ROIAlign_backward_cpu(
     const at::Tensor& grad,
     const at::Tensor& rois,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width,
-    const int batch_size,
-    const int channels,
-    const int height,
-    const int width,
-    const int sampling_ratio,
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width,
+    const int64_t batch_size,
+    const int64_t channels,
+    const int64_t height,
+    const int64_t width,
+    const int64_t sampling_ratio,
     const bool aligned) {
-  AT_ASSERTM(grad.device().is_cpu(), "grad must be a CPU tensor");
-  AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
+  TORCH_CHECK(grad.device().is_cpu(), "grad must be a CPU tensor");
+  TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2};
 
@@ -459,24 +470,26 @@ at::Tensor ROIAlign_backward_cpu(
   int h_stride = grad.stride(2);
   int w_stride = grad.stride(3);
 
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.type(), "ROIAlign_forward", [&] {
-    ROIAlignBackward<scalar_t>(
-        grad.numel(),
-        grad.data_ptr<scalar_t>(),
-        spatial_scale,
-        channels,
-        height,
-        width,
-        pooled_height,
-        pooled_width,
-        sampling_ratio,
-        aligned,
-        grad_input.data_ptr<scalar_t>(),
-        rois.contiguous().data_ptr<scalar_t>(),
-        n_stride,
-        c_stride,
-        h_stride,
-        w_stride);
-  });
+  auto rois_ = rois.contiguous();
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      grad.scalar_type(), "ROIAlign_forward", [&] {
+        ROIAlignBackward<scalar_t>(
+            grad.numel(),
+            grad.data_ptr<scalar_t>(),
+            spatial_scale,
+            channels,
+            height,
+            width,
+            pooled_height,
+            pooled_width,
+            sampling_ratio,
+            aligned,
+            grad_input.data_ptr<scalar_t>(),
+            rois_.data_ptr<scalar_t>(),
+            n_stride,
+            c_stride,
+            h_stride,
+            w_stride);
+      });
   return grad_input;
 }

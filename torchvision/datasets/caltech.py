@@ -1,14 +1,18 @@
-from __future__ import print_function
 from PIL import Image
 import os
 import os.path
+from typing import Any, Callable, List, Optional, Union, Tuple
 
 from .vision import VisionDataset
-from .utils import download_and_extract_archive, makedir_exist_ok, verify_str_arg
+from .utils import download_and_extract_archive, verify_str_arg
 
 
 class Caltech101(VisionDataset):
     """`Caltech 101 <http://www.vision.caltech.edu/Image_Datasets/Caltech101/>`_ Dataset.
+
+    .. warning::
+
+        This class needs `scipy <https://docs.scipy.org/doc/>`_ to load target files from `.mat` format.
 
     Args:
         root (string): Root directory of dataset where directory
@@ -26,12 +30,18 @@ class Caltech101(VisionDataset):
             downloaded again.
     """
 
-    def __init__(self, root, target_type="category", transform=None,
-                 target_transform=None, download=False):
+    def __init__(
+            self,
+            root: str,
+            target_type: Union[List[str], str] = "category",
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
+            download: bool = False,
+    ) -> None:
         super(Caltech101, self).__init__(os.path.join(root, 'caltech101'),
                                          transform=transform,
                                          target_transform=target_transform)
-        makedir_exist_ok(self.root)
+        os.makedirs(self.root, exist_ok=True)
         if not isinstance(target_type, list):
             target_type = [target_type]
         self.target_type = [verify_str_arg(t, "target_type", ("category", "annotation"))
@@ -56,14 +66,14 @@ class Caltech101(VisionDataset):
                     "airplanes": "Airplanes_Side_2"}
         self.annotation_categories = list(map(lambda x: name_map[x] if x in name_map else x, self.categories))
 
-        self.index = []
+        self.index: List[int] = []
         self.y = []
         for (i, c) in enumerate(self.categories):
             n = len(os.listdir(os.path.join(self.root, "101_ObjectCategories", c)))
             self.index.extend(range(1, n + 1))
             self.y.extend(n * [i])
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -78,7 +88,7 @@ class Caltech101(VisionDataset):
                                       self.categories[self.y[index]],
                                       "image_{:04d}.jpg".format(self.index[index])))
 
-        target = []
+        target: Any = []
         for t in self.target_type:
             if t == "category":
                 target.append(self.y[index])
@@ -98,14 +108,14 @@ class Caltech101(VisionDataset):
 
         return img, target
 
-    def _check_integrity(self):
+    def _check_integrity(self) -> bool:
         # can be more robust and check hash of files
         return os.path.exists(os.path.join(self.root, "101_ObjectCategories"))
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.index)
 
-    def download(self):
+    def download(self) -> None:
         if self._check_integrity():
             print('Files already downloaded and verified')
             return
@@ -121,7 +131,7 @@ class Caltech101(VisionDataset):
             filename="101_Annotations.tar",
             md5="6f83eeb1f24d99cab4eb377263132c91")
 
-    def extra_repr(self):
+    def extra_repr(self) -> str:
         return "Target type: {target_type}".format(**self.__dict__)
 
 
@@ -140,11 +150,17 @@ class Caltech256(VisionDataset):
             downloaded again.
     """
 
-    def __init__(self, root, transform=None, target_transform=None, download=False):
+    def __init__(
+            self,
+            root: str,
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
+            download: bool = False,
+    ) -> None:
         super(Caltech256, self).__init__(os.path.join(root, 'caltech256'),
                                          transform=transform,
                                          target_transform=target_transform)
-        makedir_exist_ok(self.root)
+        os.makedirs(self.root, exist_ok=True)
 
         if download:
             self.download()
@@ -154,14 +170,14 @@ class Caltech256(VisionDataset):
                                ' You can use download=True to download it')
 
         self.categories = sorted(os.listdir(os.path.join(self.root, "256_ObjectCategories")))
-        self.index = []
+        self.index: List[int] = []
         self.y = []
         for (i, c) in enumerate(self.categories):
             n = len(os.listdir(os.path.join(self.root, "256_ObjectCategories", c)))
             self.index.extend(range(1, n + 1))
             self.y.extend(n * [i])
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
         Args:
             index (int): Index
@@ -184,14 +200,14 @@ class Caltech256(VisionDataset):
 
         return img, target
 
-    def _check_integrity(self):
+    def _check_integrity(self) -> bool:
         # can be more robust and check hash of files
         return os.path.exists(os.path.join(self.root, "256_ObjectCategories"))
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.index)
 
-    def download(self):
+    def download(self) -> None:
         if self._check_integrity():
             print('Files already downloaded and verified')
             return

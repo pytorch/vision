@@ -1,5 +1,5 @@
 
-import imp
+import importlib
 import math
 import os
 import warnings
@@ -13,10 +13,41 @@ import torch
 _HAS_VIDEO_OPT = False
 
 try:
-    lib_dir = os.path.join(os.path.dirname(__file__), "..")
-    _, path, description = imp.find_module("video_reader", [lib_dir])
-    torch.ops.load_library(path)
-    _HAS_VIDEO_OPT = True
+    lib_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+    loader_details = (
+        importlib.machinery.ExtensionFileLoader,
+        importlib.machinery.EXTENSION_SUFFIXES
+    )
+
+    extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)
+    ext_specs = extfinder.find_spec("video_reader")
+
+    if os.name == 'nt':
+        # Load the video_reader extension using LoadLibraryExW
+        import ctypes
+        import sys
+
+        kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
+        with_load_library_flags = hasattr(kernel32, 'AddDllDirectory')
+        prev_error_mode = kernel32.SetErrorMode(0x0001)
+
+        if with_load_library_flags:
+            kernel32.LoadLibraryExW.restype = ctypes.c_void_p
+
+        if ext_specs is not None:
+            res = kernel32.LoadLibraryExW(ext_specs.origin, None, 0x00001100)
+            if res is None:
+                err = ctypes.WinError(ctypes.get_last_error())
+                err.strerror += (f' Error loading "{ext_specs.origin}" or any or '
+                                 'its dependencies.')
+                raise err
+
+        kernel32.SetErrorMode(prev_error_mode)
+
+    if ext_specs is not None:
+        torch.ops.load_library(ext_specs.origin)
+        _HAS_VIDEO_OPT = True
 except (ImportError, OSError):
     pass
 
@@ -26,7 +57,6 @@ default_timebase = Fraction(0, 1)
 
 # simple class for torch scripting
 # the complex Fraction class from fractions module is not scriptable
-@torch.jit.script
 class Timebase(object):
     __annotations__ = {"numerator": int, "denominator": int}
     __slots__ = ["numerator", "denominator"]
@@ -41,7 +71,6 @@ class Timebase(object):
         self.denominator = denominator
 
 
-@torch.jit.script
 class VideoMetaData(object):
     __annotations__ = {
         "has_video": bool,
@@ -76,12 +105,13 @@ class VideoMetaData(object):
 
 
 def _validate_pts(pts_range):
-    # type: (List[int])
+    # type: (List[int]) -> None
+
     if pts_range[1] > 0:
         assert (
             pts_range[0] <= pts_range[1]
         ), """Start pts should not be smaller than end pts, got
-            start pts: %d and end pts: %d""" % (
+            start pts: {0:d} and end pts: {1:d}""".format(
             pts_range[0],
             pts_range[1],
         )
@@ -138,6 +168,7 @@ def _read_video_from_file(
     video_width=0,
     video_height=0,
     video_min_dimension=0,
+    video_max_dimension=0,
     video_pts_range=(0, -1),
     video_timebase=default_timebase,
     read_audio_stream=True,
@@ -155,21 +186,34 @@ def _read_video_from_file(
     filename : str
         path to the video file
     seek_frame_margin: double, optional
-        seeking frame in the stream is imprecise. Thus, when video_start_pts is specified,
-        we seek the pts earlier by seek_frame_margin seconds
+        seeking frame in the stream is imprecise. Thus, when video_start_pts
+        is specified, we seek the pts earlier by seek_frame_margin seconds
     read_video_stream: int, optional
         whether read video stream. If yes, set to 1. Otherwise, 0
-    video_width/video_height/video_min_dimension: int
+    video_width/video_height/video_min_dimension/video_max_dimension: int
         together decide the size of decoded frames
-        - when video_width = 0, video_height = 0, and video_min_dimension = 0, keep the orignal frame resolution
-        - when video_width = 0, video_height = 0, and video_min_dimension != 0, keep the aspect ratio and resize
-            the frame so that shorter edge size is video_min_dimension
-        - When video_width = 0, and video_height != 0, keep the aspect ratio and resize the frame
-            so that frame video_height is $video_height
-        - When video_width != 0, and video_height == 0, keep the aspect ratio and resize the frame
-            so that frame video_height is $video_width
-        - When video_width != 0, and video_height != 0, resize the frame so that frame video_width and video_height
-            are set to $video_width and $video_height, respectively
+        - When video_width = 0, video_height = 0, video_min_dimension = 0,
+            and video_max_dimension = 0, keep the orignal frame resolution
+        - When video_width = 0, video_height = 0, video_min_dimension != 0,
+            and video_max_dimension = 0, keep the aspect ratio and resize the
+            frame so that shorter edge size is video_min_dimension
+        - When video_width = 0, video_height = 0, video_min_dimension = 0,
+            and video_max_dimension != 0, keep the aspect ratio and resize
+            the frame so that longer edge size is video_max_dimension
+        - When video_width = 0, video_height = 0, video_min_dimension != 0,
+            and video_max_dimension != 0, resize the frame so that shorter
+            edge size is video_min_dimension, and longer edge size is
+            video_max_dimension. The aspect ratio may not be preserved
+        - When video_width = 0, video_height != 0, video_min_dimension = 0,
+            and video_max_dimension = 0, keep the aspect ratio and resize
+            the frame so that frame video_height is $video_height
+        - When video_width != 0, video_height == 0, video_min_dimension = 0,
+            and video_max_dimension = 0, keep the aspect ratio and resize
+            the frame so that frame video_width is $video_width
+        - When video_width != 0, video_height != 0, video_min_dimension = 0,
+            and video_max_dimension = 0, resize the frame so that frame
+            video_width and  video_height are set to $video_width and
+            $video_height, respectively
     video_pts_range : list(int), optional
         the start and end presentation timestamp of video stream
     video_timebase: Fraction, optional
@@ -207,6 +251,7 @@ def _read_video_from_file(
         video_width,
         video_height,
         video_min_dimension,
+        video_max_dimension,
         video_pts_range[0],
         video_pts_range[1],
         video_timebase.numerator,
@@ -244,6 +289,7 @@ def _read_video_timestamps_from_file(filename):
         0,  # video_width
         0,  # video_height
         0,  # video_min_dimension
+        0,  # video_max_dimension
         0,  # video_start_pts
         -1,  # video_end_pts
         0,  # video_timebase_num
@@ -282,6 +328,7 @@ def _read_video_from_memory(
     video_width=0,  # type: int
     video_height=0,  # type: int
     video_min_dimension=0,  # type: int
+    video_max_dimension=0,  # type: int
     video_pts_range=(0, -1),  # type: List[int]
     video_timebase_numerator=0,  # type: int
     video_timebase_denominator=1,  # type: int
@@ -307,17 +354,30 @@ def _read_video_from_memory(
         we seek the pts earlier by seek_frame_margin seconds
     read_video_stream: int, optional
         whether read video stream. If yes, set to 1. Otherwise, 0
-    video_width/video_height/video_min_dimension: int
+    video_width/video_height/video_min_dimension/video_max_dimension: int
         together decide the size of decoded frames
-        - when video_width = 0, video_height = 0, and video_min_dimension = 0, keep the orignal frame resolution
-        - when video_width = 0, video_height = 0, and video_min_dimension != 0, keep the aspect ratio and resize
-            the frame so that shorter edge size is video_min_dimension
-        - When video_width = 0, and video_height != 0, keep the aspect ratio and resize the frame
-            so that frame video_height is $video_height
-        - When video_width != 0, and video_height == 0, keep the aspect ratio and resize the frame
-            so that frame video_height is $video_width
-        - When video_width != 0, and video_height != 0, resize the frame so that frame video_width and video_height
-            are set to $video_width and $video_height, respectively
+        - When video_width = 0, video_height = 0, video_min_dimension = 0,
+            and video_max_dimension = 0, keep the orignal frame resolution
+        - When video_width = 0, video_height = 0, video_min_dimension != 0,
+            and video_max_dimension = 0, keep the aspect ratio and resize the
+            frame so that shorter edge size is video_min_dimension
+        - When video_width = 0, video_height = 0, video_min_dimension = 0,
+            and video_max_dimension != 0, keep the aspect ratio and resize
+            the frame so that longer edge size is video_max_dimension
+        - When video_width = 0, video_height = 0, video_min_dimension != 0,
+            and video_max_dimension != 0, resize the frame so that shorter
+            edge size is video_min_dimension, and longer edge size is
+            video_max_dimension. The aspect ratio may not be preserved
+        - When video_width = 0, video_height != 0, video_min_dimension = 0,
+            and video_max_dimension = 0, keep the aspect ratio and resize
+            the frame so that frame video_height is $video_height
+        - When video_width != 0, video_height == 0, video_min_dimension = 0,
+            and video_max_dimension = 0, keep the aspect ratio and resize
+            the frame so that frame video_width is $video_width
+        - When video_width != 0, video_height != 0, video_min_dimension = 0,
+            and video_max_dimension = 0, resize the frame so that frame
+            video_width and  video_height are set to $video_width and
+            $video_height, respectively
     video_pts_range : list(int), optional
         the start and end presentation timestamp of video stream
     video_timebase_numerator / video_timebase_denominator: optional
@@ -353,6 +413,7 @@ def _read_video_from_memory(
         video_width,
         video_height,
         video_min_dimension,
+        video_max_dimension,
         video_pts_range[0],
         video_pts_range[1],
         video_timebase_numerator,
@@ -394,6 +455,7 @@ def _read_video_timestamps_from_memory(video_data):
         0,  # video_width
         0,  # video_height
         0,  # video_min_dimension
+        0,  # video_max_dimension
         0,  # video_start_pts
         -1,  # video_end_pts
         0,  # video_timebase_num

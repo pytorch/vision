@@ -5,6 +5,9 @@
 #ifdef WITH_CUDA
 #include "cuda/vision_cuda.h"
 #endif
+#ifdef WITH_HIP
+#include "hip/vision_cuda.h"
+#endif
 
 at::Tensor DeformConv2d_forward(
     const at::Tensor& input,
@@ -16,8 +19,8 @@ at::Tensor DeformConv2d_forward(
     const std::pair<int, int>& dilation,
     const int groups,
     const int offset_groups) {
-  if (input.type().is_cuda()) {
-#ifdef WITH_CUDA
+  if (input.is_cuda()) {
+#if defined(WITH_CUDA) || defined(WITH_HIP)
     return DeformConv2d_forward_cuda(
         input.contiguous(),
         weight.contiguous(),
@@ -29,7 +32,7 @@ at::Tensor DeformConv2d_forward(
         groups,
         offset_groups);
 #else
-    AT_ERROR("Not compiled with GPU support");
+    TORCH_CHECK(false, "Not compiled with GPU support");
 #endif
   }
   return DeformConv2d_forward_cpu(
@@ -55,8 +58,8 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor> DeformConv2d_backward
     const std::pair<int, int>& dilation,
     const int groups,
     const int offset_groups) {
-  if (grad.type().is_cuda()) {
-#ifdef WITH_CUDA
+  if (grad.is_cuda()) {
+#if defined(WITH_CUDA) || defined(WITH_HIP)
     return DeformConv2d_backward_cuda(
         grad.contiguous(),
         input.contiguous(),
@@ -69,7 +72,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor> DeformConv2d_backward
         groups,
         offset_groups);
 #else
-    AT_ERROR("Not compiled with GPU support");
+    TORCH_CHECK(false, "Not compiled with GPU support");
 #endif
   }
   return DeformConv2d_backward_cpu(
@@ -85,21 +88,15 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor> DeformConv2d_backward
       offset_groups);
 }
 
-using namespace at;
-using torch::Tensor;
-using torch::autograd::AutogradContext;
-using torch::autograd::Variable;
-using torch::autograd::variable_list;
-
 class DeformConv2dFunction
     : public torch::autograd::Function<DeformConv2dFunction> {
  public:
-  static variable_list forward(
-      AutogradContext* ctx,
-      Variable input,
-      Variable weight,
-      Variable offset,
-      Variable bias,
+  static torch::autograd::variable_list forward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::Variable input,
+      torch::autograd::Variable weight,
+      torch::autograd::Variable offset,
+      torch::autograd::Variable bias,
       int64_t stride_h,
       int64_t stride_w,
       int64_t pad_h,
@@ -134,9 +131,9 @@ class DeformConv2dFunction
     };
   }
 
-  static variable_list backward(
-      AutogradContext* ctx,
-      variable_list grad_output) {
+  static torch::autograd::variable_list backward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::variable_list grad_output) {
     auto saved = ctx->get_saved_variables();
     auto input = saved[0];
     auto weight = saved[1];
@@ -173,14 +170,14 @@ class DeformConv2dFunction
         grad_weight,
         grad_offset,
         grad_bias,
-        Variable(),
-        Variable(),
-        Variable(),
-        Variable(),
-        Variable(),
-        Variable(),
-        Variable(),
-        Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
+        torch::autograd::Variable(),
     };
   }
 };

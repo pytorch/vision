@@ -6,9 +6,9 @@ if [ "$#" -ne 1 ]; then
     echo "CUDA version should be cu92, cu100 or cpu"
     exit 1
 fi
-export CUVER="$1" # cu92 cu100 cpu
+export CUVER="$1" # cu[0-9]* cpu
 
-if [[ "$CUVER" == "cu101" ]]; then
+if [[ "$CUVER" == "cu102" ]]; then
   cu_suffix=""
 else
   cu_suffix="+$CUVER"

@@ -2,13 +2,18 @@ import torch
 from torch import nn, Tensor
 
 from torch.nn.modules.utils import _pair
-from torch.jit.annotations import List
+from torch.jit.annotations import List, Tuple
 
-from ._utils import convert_boxes_to_roi_format
+from torchvision.extension import _assert_has_ops
+from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
-def ps_roi_pool(input, boxes, output_size, spatial_scale=1.0):
-    # type: (Tensor, Tensor, int, float) -> Tensor
+def ps_roi_pool(
+    input: Tensor,
+    boxes: Tensor,
+    output_size: int,
+    spatial_scale: float = 1.0,
+) -> Tensor:
     """
     Performs Position-Sensitive Region of Interest (RoI) Pool operator
     described in R-FCN
@@ -28,6 +33,8 @@ def ps_roi_pool(input, boxes, output_size, spatial_scale=1.0):
     Returns:
         output (Tensor[K, C, output_size[0], output_size[1]])
     """
+    _assert_has_ops()
+    check_roi_boxes_shape(boxes)
     rois = boxes
     output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):
@@ -42,15 +49,15 @@ class PSRoIPool(nn.Module):
     """
     See ps_roi_pool
     """
-    def __init__(self, output_size, spatial_scale):
+    def __init__(self, output_size: int, spatial_scale: float):
         super(PSRoIPool, self).__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale
 
-    def forward(self, input, rois):
+    def forward(self, input: Tensor, rois: Tensor) -> Tensor:
         return ps_roi_pool(input, rois, self.output_size, self.spatial_scale)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         tmpstr = self.__class__.__name__ + '('
         tmpstr += 'output_size=' + str(self.output_size)
         tmpstr += ', spatial_scale=' + str(self.spatial_scale)

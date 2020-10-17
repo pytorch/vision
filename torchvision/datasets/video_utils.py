@@ -1,6 +1,7 @@
 import bisect
 import math
 from fractions import Fraction
+from typing import List
 
 import torch
 from torchvision.io import (
@@ -45,20 +46,23 @@ def unfold(tensor, size, step, dilation=1):
     return torch.as_strided(tensor, new_size, new_stride)
 
 
-class _DummyDataset(object):
+class _VideoTimestampsDataset(object):
     """
-    Dummy dataset used for DataLoader in VideoClips.
-    Defined at top level so it can be pickled when forking.
+    Dataset used to parallelize the reading of the timestamps
+    of a list of videos, given their paths in the filesystem.
+
+    Used in VideoClips and defined at top level so it can be
+    pickled when forking.
     """
 
-    def __init__(self, x):
-        self.x = x
+    def __init__(self, video_paths: List[str]):
+        self.video_paths = video_paths
 
     def __len__(self):
-        return len(self.x)
+        return len(self.video_paths)
 
     def __getitem__(self, idx):
-        return read_video_timestamps(self.x[idx])
+        return read_video_timestamps(self.video_paths[idx])
 
 
 class VideoClips(object):
@@ -98,6 +102,7 @@ class VideoClips(object):
         _video_width=0,
         _video_height=0,
         _video_min_dimension=0,
+        _video_max_dimension=0,
         _audio_samples=0,
         _audio_channels=0,
     ):
@@ -109,6 +114,7 @@ class VideoClips(object):
         self._video_width = _video_width
         self._video_height = _video_height
         self._video_min_dimension = _video_min_dimension
+        self._video_max_dimension = _video_max_dimension
         self._audio_samples = _audio_samples
         self._audio_channels = _audio_channels
 
@@ -130,7 +136,7 @@ class VideoClips(object):
         import torch.utils.data
 
         dl = torch.utils.data.DataLoader(
-            _DummyDataset(self.video_paths),
+            _VideoTimestampsDataset(self.video_paths),
             batch_size=16,
             num_workers=self.num_workers,
             collate_fn=self._collate_fn,
@@ -179,6 +185,7 @@ class VideoClips(object):
             _video_width=self._video_width,
             _video_height=self._video_height,
             _video_min_dimension=self._video_min_dimension,
+            _video_max_dimension=self._video_max_dimension,
             _audio_samples=self._audio_samples,
             _audio_channels=self._audio_channels,
         )
@@ -299,6 +306,10 @@ class VideoClips(object):
                 raise ValueError(
                     "pyav backend doesn't support _video_min_dimension != 0"
                 )
+            if self._video_max_dimension != 0:
+                raise ValueError(
+                    "pyav backend doesn't support _video_max_dimension != 0"
+                )
             if self._audio_samples != 0:
                 raise ValueError("pyav backend doesn't support _audio_samples != 0")
 
@@ -335,6 +346,7 @@ class VideoClips(object):
                 video_width=self._video_width,
                 video_height=self._video_height,
                 video_min_dimension=self._video_min_dimension,
+                video_max_dimension=self._video_max_dimension,
                 video_pts_range=(video_start_pts, video_end_pts),
                 video_timebase=video_timebase,
                 audio_samples=self._audio_samples,

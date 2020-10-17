@@ -308,8 +308,10 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
     const int pooled_width,
     const int sampling_ratio) {
   // Check if input tensors are CPU tensors
-  AT_ASSERTM(input.device().is_cpu(), "input must be a CPU tensor");
-  AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
+  TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
+  TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
+  TORCH_CHECK(
+      rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -321,7 +323,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
   int height = input.size(2);
   int width = input.size(3);
 
-  AT_ASSERTM(
+  TORCH_CHECK(
       channels % (pooled_height * pooled_width) == 0,
       "input channels must be a multiple of pooling height * pooling width");
   int channels_out = channels / (pooled_height * pooled_width);
@@ -336,11 +338,12 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
     return std::make_tuple(output, channel_mapping);
   }
 
+  auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "PSROIAlign_forward", [&] {
         PSROIAlignForwardCPU<scalar_t>(
             output_size,
-            input.contiguous().data<scalar_t>(),
+            input_.data_ptr<scalar_t>(),
             spatial_scale,
             channels,
             height,
@@ -348,10 +351,10 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
             pooled_height,
             pooled_width,
             sampling_ratio,
-            rois.contiguous().data<scalar_t>(),
+            rois_.data_ptr<scalar_t>(),
             channels_out,
-            output.data<scalar_t>(),
-            channel_mapping.data<int>());
+            output.data_ptr<scalar_t>(),
+            channel_mapping.data_ptr<int>());
       });
   return std::make_tuple(output, channel_mapping);
 }
@@ -369,9 +372,9 @@ at::Tensor PSROIAlign_backward_cpu(
     const int height,
     const int width) {
   // Check if input tensors are CPU tensors
-  AT_ASSERTM(grad.device().is_cpu(), "grad must be a CPU tensor");
-  AT_ASSERTM(rois.device().is_cpu(), "rois must be a CPU tensor");
-  AT_ASSERTM(
+  TORCH_CHECK(grad.device().is_cpu(), "grad must be a CPU tensor");
+  TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
+  TORCH_CHECK(
       channel_mapping.device().is_cpu(),
       "channel_mapping must be a CPU tensor");
 
@@ -392,12 +395,13 @@ at::Tensor PSROIAlign_backward_cpu(
 
   int channels_out = channels / (pooled_height * pooled_width);
 
+  auto grad_ = grad.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       grad.scalar_type(), "PSROIAlign_backward", [&] {
         PSROIAlignBackwardCPU<scalar_t>(
             grad.numel(),
-            grad.contiguous().data<scalar_t>(),
-            channel_mapping.data<int>(),
+            grad_.data_ptr<scalar_t>(),
+            channel_mapping.data_ptr<int>(),
             num_rois,
             spatial_scale,
             channels,
@@ -407,8 +411,8 @@ at::Tensor PSROIAlign_backward_cpu(
             pooled_width,
             sampling_ratio,
             channels_out,
-            grad_input.data<scalar_t>(),
-            rois.contiguous().data<scalar_t>());
+            grad_input.data_ptr<scalar_t>(),
+            rois_.data_ptr<scalar_t>());
       });
   return grad_input;
 }

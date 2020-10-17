@@ -2,7 +2,7 @@ import gc
 import math
 import re
 import warnings
-from typing import Tuple, List
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -35,12 +35,12 @@ install PyAV on your system.
     )
 
 
-def _check_av_available():
+def _check_av_available() -> None:
     if isinstance(av, Exception):
         raise av
 
 
-def _av_available():
+def _av_available() -> bool:
     return not isinstance(av, Exception)
 
 
@@ -49,7 +49,13 @@ _CALLED_TIMES = 0
 _GC_COLLECTION_INTERVAL = 10
 
 
-def write_video(filename, video_array, fps, video_codec="libx264", options=None):
+def write_video(
+    filename: str,
+    video_array: torch.Tensor,
+    fps: float,
+    video_codec: str = "libx264",
+    options: Optional[Dict[str, Any]] = None,
+) -> None:
     """
     Writes a 4d tensor in [T, H, W, C] format in a video file
 
@@ -65,31 +71,37 @@ def write_video(filename, video_array, fps, video_codec="libx264", options=None)
     _check_av_available()
     video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy()
 
-    container = av.open(filename, mode="w")
+    # PyAV does not support floating point numbers with decimal point
+    # and will throw OverflowException in case this is not the case
+    if isinstance(fps, float):
+        fps = np.round(fps)
 
-    stream = container.add_stream(video_codec, rate=fps)
-    stream.width = video_array.shape[2]
-    stream.height = video_array.shape[1]
-    stream.pix_fmt = "yuv420p" if video_codec != "libx264rgb" else "rgb24"
-    stream.options = options or {}
+    with av.open(filename, mode="w") as container:
+        stream = container.add_stream(video_codec, rate=fps)
+        stream.width = video_array.shape[2]
+        stream.height = video_array.shape[1]
+        stream.pix_fmt = "yuv420p" if video_codec != "libx264rgb" else "rgb24"
+        stream.options = options or {}
 
-    for img in video_array:
-        frame = av.VideoFrame.from_ndarray(img, format="rgb24")
-        frame.pict_type = "NONE"
-        for packet in stream.encode(frame):
+        for img in video_array:
+            frame = av.VideoFrame.from_ndarray(img, format="rgb24")
+            frame.pict_type = "NONE"
+            for packet in stream.encode(frame):
+                container.mux(packet)
+
+        # Flush stream
+        for packet in stream.encode():
             container.mux(packet)
-
-    # Flush stream
-    for packet in stream.encode():
-        container.mux(packet)
-
-    # Close the file
-    container.close()
 
 
 def _read_from_stream(
-    container, start_offset, end_offset, pts_unit, stream, stream_name
-):
+    container: "av.container.Container",
+    start_offset: float,
+    end_offset: float,
+    pts_unit: str,
+    stream: "av.stream.Stream",
+    stream_name: Dict[str, Optional[Union[int, Tuple[int, ...], List[int]]]],
+) -> List["av.frame.Frame"]:
     global _CALLED_TIMES, _GC_COLLECTION_INTERVAL
     _CALLED_TIMES += 1
     if _CALLED_TIMES % _GC_COLLECTION_INTERVAL == _GC_COLLECTION_INTERVAL - 1:
@@ -106,7 +118,7 @@ def _read_from_stream(
         )
 
     frames = {}
-    should_buffer = False
+    should_buffer = True
     max_buffer_size = 5
     if stream.type == "video":
         # DivX-style packed B-frames can have out-of-order pts (2 frames in a single pkt)
@@ -165,7 +177,9 @@ def _read_from_stream(
     return result
 
 
-def _align_audio_frames(aframes, audio_frames, ref_start, ref_end):
+def _align_audio_frames(
+    aframes: torch.Tensor, audio_frames: List["av.frame.Frame"], ref_start: int, ref_end: float
+) -> torch.Tensor:
     start, end = audio_frames[0].pts, audio_frames[-1].pts
     total_aframes = aframes.shape[1]
     step_per_aframe = (end - start + 1) / total_aframes
@@ -178,7 +192,9 @@ def _align_audio_frames(aframes, audio_frames, ref_start, ref_end):
     return aframes[:, s_idx:e_idx]
 
 
-def read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
+def read_video(
+    filename: str, start_pts: int = 0, end_pts: Optional[float] = None, pts_unit: str = "pts"
+) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
     """
     Reads a video from a file, returning both the video frames as well as
     the audio frames
@@ -229,48 +245,46 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
     audio_frames = []
 
     try:
-        container = av.open(filename, metadata_errors="ignore")
+        with av.open(filename, metadata_errors="ignore") as container:
+            if container.streams.video:
+                video_frames = _read_from_stream(
+                    container,
+                    start_pts,
+                    end_pts,
+                    pts_unit,
+                    container.streams.video[0],
+                    {"video": 0},
+                )
+                video_fps = container.streams.video[0].average_rate
+                # guard against potentially corrupted files
+                if video_fps is not None:
+                    info["video_fps"] = float(video_fps)
+
+            if container.streams.audio:
+                audio_frames = _read_from_stream(
+                    container,
+                    start_pts,
+                    end_pts,
+                    pts_unit,
+                    container.streams.audio[0],
+                    {"audio": 0},
+                )
+                info["audio_fps"] = container.streams.audio[0].rate
+
     except av.AVError:
         # TODO raise a warning?
         pass
-    else:
-        if container.streams.video:
-            video_frames = _read_from_stream(
-                container,
-                start_pts,
-                end_pts,
-                pts_unit,
-                container.streams.video[0],
-                {"video": 0},
-            )
-            video_fps = container.streams.video[0].average_rate
-            # guard against potentially corrupted files
-            if video_fps is not None:
-                info["video_fps"] = float(video_fps)
 
-        if container.streams.audio:
-            audio_frames = _read_from_stream(
-                container,
-                start_pts,
-                end_pts,
-                pts_unit,
-                container.streams.audio[0],
-                {"audio": 0},
-            )
-            info["audio_fps"] = container.streams.audio[0].rate
+    vframes_list = [frame.to_rgb().to_ndarray() for frame in video_frames]
+    aframes_list = [frame.to_ndarray() for frame in audio_frames]
 
-        container.close()
-
-    vframes = [frame.to_rgb().to_ndarray() for frame in video_frames]
-    aframes = [frame.to_ndarray() for frame in audio_frames]
-
-    if vframes:
-        vframes = torch.as_tensor(np.stack(vframes))
+    if vframes_list:
+        vframes = torch.as_tensor(np.stack(vframes_list))
     else:
         vframes = torch.empty((0, 1, 1, 3), dtype=torch.uint8)
 
-    if aframes:
-        aframes = np.concatenate(aframes, 1)
+    if aframes_list:
+        aframes = np.concatenate(aframes_list, 1)
         aframes = torch.as_tensor(aframes)
         aframes = _align_audio_frames(aframes, audio_frames, start_pts, end_pts)
     else:
@@ -279,7 +293,7 @@ def read_video(filename, start_pts=0, end_pts=None, pts_unit="pts"):
     return vframes, aframes, info
 
 
-def _can_read_timestamps_from_packets(container):
+def _can_read_timestamps_from_packets(container: "av.container.Container") -> bool:
     extradata = container.streams[0].codec_context.extradata
     if extradata is None:
         return False
@@ -288,7 +302,15 @@ def _can_read_timestamps_from_packets(container):
     return False
 
 
-def read_video_timestamps(filename, pts_unit="pts"):
+def _decode_video_timestamps(container: "av.container.Container") -> List[int]:
+    if _can_read_timestamps_from_packets(container):
+        # fast path
+        return [x.pts for x in container.demux(video=0) if x.pts is not None]
+    else:
+        return [x.pts for x in container.decode(video=0) if x.pts is not None]
+
+
+def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[int], Optional[float]]:
     """
     List the video frames timestamps.
 
@@ -306,7 +328,7 @@ def read_video_timestamps(filename, pts_unit="pts"):
     pts : List[int] if pts_unit = 'pts'
         List[Fraction] if pts_unit = 'sec'
         presentation timestamps for each one of the frames in the video.
-    video_fps : int
+    video_fps : float, optional
         the frame rate for the video
 
     """
@@ -317,75 +339,26 @@ def read_video_timestamps(filename, pts_unit="pts"):
 
     _check_av_available()
 
-    video_frames = []
     video_fps = None
+    pts = []
 
     try:
-        container = av.open(filename, metadata_errors="ignore")
+        with av.open(filename, metadata_errors="ignore") as container:
+            if container.streams.video:
+                video_stream = container.streams.video[0]
+                video_time_base = video_stream.time_base
+                try:
+                    pts = _decode_video_timestamps(container)
+                except av.AVError:
+                    warnings.warn(f"Failed decoding frames for file {filename}")
+                video_fps = float(video_stream.average_rate)
     except av.AVError:
         # TODO add a warning
         pass
-    else:
-        if container.streams.video:
-            video_stream = container.streams.video[0]
-            video_time_base = video_stream.time_base
-            if _can_read_timestamps_from_packets(container):
-                # fast path
-                video_frames = [
-                    x for x in container.demux(video=0) if x.pts is not None
-                ]
-            else:
-                video_frames = _read_from_stream(
-                    container, 0, float("inf"), pts_unit, video_stream, {"video": 0}
-                )
-            video_fps = float(video_stream.average_rate)
-        container.close()
 
-    pts = [x.pts for x in video_frames]
+    pts.sort()
 
     if pts_unit == "sec":
         pts = [x * video_time_base for x in pts]
 
     return pts, video_fps
-
-
-def read_video_meta_data_from_memory(video_data):
-    # type: (torch.Tensor) -> VideoMetaData
-    return _video_opt._probe_video_from_memory(video_data)
-
-
-def read_video_from_memory(
-    video_data,  # type: torch.Tensor
-    seek_frame_margin=0.25,  # type: float
-    read_video_stream=1,  # type: int
-    video_width=0,  # type: int
-    video_height=0,  # type: int
-    video_min_dimension=0,  # type: int
-    video_pts_range=(0, -1),  # type: List[int]
-    video_timebase_numerator=0,  # type: int
-    video_timebase_denominator=1,  # type: int
-    read_audio_stream=1,  # type: int
-    audio_samples=0,  # type: int
-    audio_channels=0,  # type: int
-    audio_pts_range=(0, -1),  # type: List[int]
-    audio_timebase_numerator=0,  # type: int
-    audio_timebase_denominator=1,  # type: int
-):
-    # type: (...) -> Tuple[torch.Tensor, torch.Tensor]
-    return _video_opt._read_video_from_memory(
-        video_data,
-        seek_frame_margin,
-        read_audio_stream,
-        video_width,
-        video_height,
-        video_min_dimension,
-        video_pts_range,
-        video_timebase_numerator,
-        video_timebase_denominator,
-        read_audio_stream,
-        audio_samples,
-        audio_channels,
-        audio_pts_range,
-        audio_timebase_numerator,
-        audio_timebase_denominator,
-    )

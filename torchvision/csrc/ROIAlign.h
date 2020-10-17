@@ -3,11 +3,18 @@
 #include "cpu/vision_cpu.h"
 
 #ifdef WITH_CUDA
+#include "autocast.h"
 #include "cuda/vision_cuda.h"
 #endif
+#ifdef WITH_HIP
+#include "autocast.h"
+#include "hip/vision_cuda.h"
+#endif
 
-// Interface for Python
-at::Tensor ROIAlign_forward(
+// TODO: put this stuff in torchvision namespace
+
+// roi_align dispatch nexus
+at::Tensor roi_align(
     const at::Tensor& input, // Input feature map.
     const at::Tensor& rois, // List of ROIs to pool over.
     const double spatial_scale, // The scale of the image features. ROIs will be
@@ -18,55 +25,58 @@ at::Tensor ROIAlign_forward(
     const bool aligned) // The flag for pixel shift
 // along each axis.
 {
-  if (input.type().is_cuda()) {
-#ifdef WITH_CUDA
-    return ROIAlign_forward_cuda(
-        input,
-        rois,
-        spatial_scale,
-        pooled_height,
-        pooled_width,
-        sampling_ratio,
-        aligned);
-#else
-    AT_ERROR("Not compiled with GPU support");
-#endif
-  }
-  return ROIAlign_forward_cpu(
-      input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio, aligned);
+  static auto op = c10::Dispatcher::singleton()
+                       .findSchemaOrThrow("torchvision::roi_align", "")
+                       .typed<decltype(roi_align)>();
+  return op.call(
+      input,
+      rois,
+      spatial_scale,
+      pooled_height,
+      pooled_width,
+      sampling_ratio,
+      aligned);
 }
 
-at::Tensor ROIAlign_backward(
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+at::Tensor ROIAlign_autocast(
+    const at::Tensor& input,
+    const at::Tensor& rois,
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width,
+    const int64_t sampling_ratio,
+    const bool aligned) {
+  c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
+  return roi_align(
+             at::autocast::cached_cast(at::kFloat, input),
+             at::autocast::cached_cast(at::kFloat, rois),
+             spatial_scale,
+             pooled_height,
+             pooled_width,
+             sampling_ratio,
+             aligned)
+      .to(input.scalar_type());
+}
+#endif
+
+at::Tensor _roi_align_backward(
     const at::Tensor& grad,
     const at::Tensor& rois,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width,
-    const int batch_size,
-    const int channels,
-    const int height,
-    const int width,
-    const int sampling_ratio,
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width,
+    const int64_t batch_size,
+    const int64_t channels,
+    const int64_t height,
+    const int64_t width,
+    const int64_t sampling_ratio,
     const bool aligned) {
-  if (grad.type().is_cuda()) {
-#ifdef WITH_CUDA
-    return ROIAlign_backward_cuda(
-        grad,
-        rois,
-        spatial_scale,
-        pooled_height,
-        pooled_width,
-        batch_size,
-        channels,
-        height,
-        width,
-        sampling_ratio,
-        aligned);
-#else
-    AT_ERROR("Not compiled with GPU support");
-#endif
-  }
-  return ROIAlign_backward_cpu(
+  static auto op =
+      c10::Dispatcher::singleton()
+          .findSchemaOrThrow("torchvision::_roi_align_backward", "")
+          .typed<decltype(_roi_align_backward)>();
+  return op.call(
       grad,
       rois,
       spatial_scale,
@@ -80,18 +90,12 @@ at::Tensor ROIAlign_backward(
       aligned);
 }
 
-using namespace at;
-using torch::Tensor;
-using torch::autograd::AutogradContext;
-using torch::autograd::Variable;
-using torch::autograd::variable_list;
-
 class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
  public:
-  static variable_list forward(
-      AutogradContext* ctx,
-      Variable input,
-      Variable rois,
+  static torch::autograd::variable_list forward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::Variable input,
+      torch::autograd::Variable rois,
       const double spatial_scale,
       const int64_t pooled_height,
       const int64_t pooled_width,
@@ -104,7 +108,8 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
     ctx->saved_data["aligned"] = aligned;
     ctx->saved_data["input_shape"] = input.sizes();
     ctx->save_for_backward({rois});
-    auto result = ROIAlign_forward(
+    at::AutoNonVariableTypeMode g;
+    auto result = roi_align(
         input,
         rois,
         spatial_scale,
@@ -115,14 +120,14 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
     return {result};
   }
 
-  static variable_list backward(
-      AutogradContext* ctx,
-      variable_list grad_output) {
+  static torch::autograd::variable_list backward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::variable_list grad_output) {
     // Use data saved in forward
     auto saved = ctx->get_saved_variables();
     auto rois = saved[0];
     auto input_shape = ctx->saved_data["input_shape"].toIntList();
-    auto grad_in = ROIAlign_backward(
+    auto grad_in = _roi_align_backward(
         grad_output[0],
         rois,
         ctx->saved_data["spatial_scale"].toDouble(),
@@ -134,14 +139,59 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
         input_shape[3],
         ctx->saved_data["sampling_ratio"].toInt(),
         ctx->saved_data["aligned"].toBool());
-    return {
-        grad_in, Variable(), Variable(), Variable(), Variable(), Variable(), Variable()};
+    return {grad_in,
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable(),
+            torch::autograd::Variable()};
   }
 };
 
-Tensor roi_align(
-    const Tensor& input,
-    const Tensor& rois,
+// TODO: There should be an easier way to do this
+class ROIAlignBackwardFunction
+    : public torch::autograd::Function<ROIAlignBackwardFunction> {
+ public:
+  static torch::autograd::variable_list forward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::Variable grad,
+      torch::autograd::Variable rois,
+      const double spatial_scale,
+      const int64_t pooled_height,
+      const int64_t pooled_width,
+      const int64_t batch_size,
+      const int64_t channels,
+      const int64_t height,
+      const int64_t width,
+      const int64_t sampling_ratio,
+      const bool aligned) {
+    at::AutoNonVariableTypeMode g;
+    auto result = _roi_align_backward(
+        grad,
+        rois,
+        spatial_scale,
+        pooled_height,
+        pooled_width,
+        batch_size,
+        channels,
+        height,
+        width,
+        sampling_ratio,
+        aligned);
+    return {result};
+  }
+
+  static torch::autograd::variable_list backward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::variable_list grad_output) {
+    TORCH_CHECK(0, "double backwards on roi_align not supported");
+  }
+};
+
+at::Tensor ROIAlign_autograd(
+    const at::Tensor& input,
+    const at::Tensor& rois,
     const double spatial_scale,
     const int64_t pooled_height,
     const int64_t pooled_width,
@@ -153,6 +203,32 @@ Tensor roi_align(
       spatial_scale,
       pooled_height,
       pooled_width,
+      sampling_ratio,
+      aligned)[0];
+}
+
+at::Tensor ROIAlign_backward_autograd(
+    const at::Tensor& grad,
+    const at::Tensor& rois,
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width,
+    const int64_t batch_size,
+    const int64_t channels,
+    const int64_t height,
+    const int64_t width,
+    const int64_t sampling_ratio,
+    const bool aligned) {
+  return ROIAlignBackwardFunction::apply(
+      grad,
+      rois,
+      spatial_scale,
+      pooled_height,
+      pooled_width,
+      batch_size,
+      channels,
+      height,
+      width,
       sampling_ratio,
       aligned)[0];
 }

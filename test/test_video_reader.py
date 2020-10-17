@@ -1,7 +1,6 @@
 import collections
 import math
 import os
-import sys
 import time
 import unittest
 from fractions import Fraction
@@ -22,10 +21,7 @@ except ImportError:
     av = None
 
 
-if sys.version_info < (3,):
-    from urllib2 import URLError
-else:
-    from urllib.error import URLError
+from urllib.error import URLError
 
 
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")
@@ -395,7 +391,7 @@ class TestVideoReader(unittest.TestCase):
     def test_stress_test_read_video_from_file(self):
         num_iter = 10000
         # video related
-        width, height, min_dimension = 0, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -416,6 +412,7 @@ class TestVideoReader(unittest.TestCase):
                     width,
                     height,
                     min_dimension,
+                    max_dimension,
                     video_start_pts,
                     video_end_pts,
                     video_timebase_num,
@@ -434,7 +431,7 @@ class TestVideoReader(unittest.TestCase):
         Test the case when decoder starts with a video file to decode frames.
         """
         # video related
-        width, height, min_dimension = 0, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -454,6 +451,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -479,7 +477,7 @@ class TestVideoReader(unittest.TestCase):
         only reads video stream and ignores audio stream
         """
         # video related
-        width, height, min_dimension = 0, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -499,6 +497,7 @@ class TestVideoReader(unittest.TestCase):
                     width,
                     height,
                     min_dimension,
+                    max_dimension,
                     video_start_pts,
                     video_end_pts,
                     video_timebase_num,
@@ -536,7 +535,7 @@ class TestVideoReader(unittest.TestCase):
         video min dimension between height and width is set.
         """
         # video related
-        width, height, min_dimension = 0, 0, 128
+        width, height, min_dimension, max_dimension = 0, 0, 128, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -555,6 +554,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -571,13 +571,13 @@ class TestVideoReader(unittest.TestCase):
                 min_dimension, min(tv_result[0].size(1), tv_result[0].size(2))
             )
 
-    def test_read_video_from_file_rescale_width(self):
+    def test_read_video_from_file_rescale_max_dimension(self):
         """
         Test the case when decoder starts with a video file to decode frames, and
-        video width is set.
+        video min dimension between height and width is set.
         """
         # video related
-        width, height, min_dimension = 256, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 85
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -596,6 +596,94 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
+                video_start_pts,
+                video_end_pts,
+                video_timebase_num,
+                video_timebase_den,
+                1,  # readAudioStream
+                samples,
+                channels,
+                audio_start_pts,
+                audio_end_pts,
+                audio_timebase_num,
+                audio_timebase_den,
+            )
+            self.assertEqual(
+                max_dimension, max(tv_result[0].size(1), tv_result[0].size(2))
+            )
+
+    def test_read_video_from_file_rescale_both_min_max_dimension(self):
+        """
+        Test the case when decoder starts with a video file to decode frames, and
+        video min dimension between height and width is set.
+        """
+        # video related
+        width, height, min_dimension, max_dimension = 0, 0, 64, 85
+        video_start_pts, video_end_pts = 0, -1
+        video_timebase_num, video_timebase_den = 0, 1
+        # audio related
+        samples, channels = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
+        audio_timebase_num, audio_timebase_den = 0, 1
+
+        for test_video, _config in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
+
+            tv_result = torch.ops.video_reader.read_video_from_file(
+                full_path,
+                seek_frame_margin,
+                0,  # getPtsOnly
+                1,  # readVideoStream
+                width,
+                height,
+                min_dimension,
+                max_dimension,
+                video_start_pts,
+                video_end_pts,
+                video_timebase_num,
+                video_timebase_den,
+                1,  # readAudioStream
+                samples,
+                channels,
+                audio_start_pts,
+                audio_end_pts,
+                audio_timebase_num,
+                audio_timebase_den,
+            )
+            self.assertEqual(
+                min_dimension, min(tv_result[0].size(1), tv_result[0].size(2))
+            )
+            self.assertEqual(
+                max_dimension, max(tv_result[0].size(1), tv_result[0].size(2))
+            )
+
+    def test_read_video_from_file_rescale_width(self):
+        """
+        Test the case when decoder starts with a video file to decode frames, and
+        video width is set.
+        """
+        # video related
+        width, height, min_dimension, max_dimension = 256, 0, 0, 0
+        video_start_pts, video_end_pts = 0, -1
+        video_timebase_num, video_timebase_den = 0, 1
+        # audio related
+        samples, channels = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
+        audio_timebase_num, audio_timebase_den = 0, 1
+
+        for test_video, _config in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
+
+            tv_result = torch.ops.video_reader.read_video_from_file(
+                full_path,
+                seek_frame_margin,
+                0,  # getPtsOnly
+                1,  # readVideoStream
+                width,
+                height,
+                min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -616,7 +704,7 @@ class TestVideoReader(unittest.TestCase):
         video height is set.
         """
         # video related
-        width, height, min_dimension = 0, 224, 0
+        width, height, min_dimension, max_dimension = 0, 224, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -635,6 +723,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -655,7 +744,7 @@ class TestVideoReader(unittest.TestCase):
         both video height and width are set.
         """
         # video related
-        width, height, min_dimension = 320, 240, 0
+        width, height, min_dimension, max_dimension = 320, 240, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -674,6 +763,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -697,7 +787,7 @@ class TestVideoReader(unittest.TestCase):
 
         for samples in [9600, 96000]:  # downsampling  # upsampling
             # video related
-            width, height, min_dimension = 0, 0, 0
+            width, height, min_dimension, max_dimension = 0, 0, 0, 0
             video_start_pts, video_end_pts = 0, -1
             video_timebase_num, video_timebase_den = 0, 1
             # audio related
@@ -716,6 +806,7 @@ class TestVideoReader(unittest.TestCase):
                     width,
                     height,
                     min_dimension,
+                    max_dimension,
                     video_start_pts,
                     video_end_pts,
                     video_timebase_num,
@@ -752,7 +843,7 @@ class TestVideoReader(unittest.TestCase):
         Test the case when video is already in memory, and decoder reads data in memory
         """
         # video related
-        width, height, min_dimension = 0, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -772,6 +863,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -794,6 +886,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -816,7 +909,7 @@ class TestVideoReader(unittest.TestCase):
         Test the case when video is already in memory, and decoder reads data in memory
         """
         # video related
-        width, height, min_dimension = 0, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -836,6 +929,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -861,7 +955,7 @@ class TestVideoReader(unittest.TestCase):
         for both pts and frame data
         """
         # video related
-        width, height, min_dimension = 0, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -881,6 +975,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -904,6 +999,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -930,7 +1026,7 @@ class TestVideoReader(unittest.TestCase):
         for test_video, config in test_videos.items():
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
             # video related
-            width, height, min_dimension = 0, 0, 0
+            width, height, min_dimension, max_dimension = 0, 0, 0, 0
             video_start_pts, video_end_pts = 0, -1
             video_timebase_num, video_timebase_den = 0, 1
             # audio related
@@ -946,6 +1042,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -1000,6 +1097,7 @@ class TestVideoReader(unittest.TestCase):
                     width,
                     height,
                     min_dimension,
+                    max_dimension,
                     video_start_pts,
                     video_end_pts,
                     video_timebase_num,
@@ -1085,8 +1183,8 @@ class TestVideoReader(unittest.TestCase):
             probe_result = torch.ops.video_reader.probe_video_from_memory(video_tensor)
             self.check_probe_result(probe_result, config)
 
-    def test_read_video_meta_data_from_memory_script(self):
-        scripted_fun = torch.jit.script(io.read_video_meta_data_from_memory)
+    def test_probe_video_from_memory_script(self):
+        scripted_fun = torch.jit.script(io._probe_video_from_memory)
         self.assertIsNotNone(scripted_fun)
 
         for test_video, config in test_videos.items():
@@ -1099,7 +1197,7 @@ class TestVideoReader(unittest.TestCase):
         Test the case when video is already in memory, and decoder reads data in memory
         """
         # video related
-        width, height, min_dimension = 0, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -1107,7 +1205,7 @@ class TestVideoReader(unittest.TestCase):
         audio_start_pts, audio_end_pts = 0, -1
         audio_timebase_num, audio_timebase_den = 0, 1
 
-        scripted_fun = torch.jit.script(io.read_video_from_memory)
+        scripted_fun = torch.jit.script(io._read_video_from_memory)
         self.assertIsNotNone(scripted_fun)
 
         for test_video, _config in test_videos.items():
@@ -1121,6 +1219,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 [video_start_pts, video_end_pts],
                 video_timebase_num,
                 video_timebase_den,

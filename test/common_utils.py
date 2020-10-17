@@ -11,8 +11,11 @@ import errno
 import __main__
 
 from numbers import Number
-from torch._six import string_classes, inf
+from torch._six import string_classes
 from collections import OrderedDict
+
+import numpy as np
+from PIL import Image
 
 
 @contextlib.contextmanager
@@ -85,7 +88,7 @@ def is_iterable(obj):
 class TestCase(unittest.TestCase):
     precision = 1e-5
 
-    def assertExpected(self, output, subname=None, prec=None):
+    def assertExpected(self, output, subname=None, prec=None, strip_suffix=None):
         r"""
         Test that a python value matches the recorded contents of a file
         derived from the name of this test and subname.  The value must be
@@ -96,16 +99,24 @@ class TestCase(unittest.TestCase):
 
         If you call this multiple times in a single function, you must
         give a unique subname each time.
+
+        strip_suffix allows different tests that expect similar numerics, e.g.
+        "test_xyz_cuda" and "test_xyz_cpu", to use the same pickled data.
+        test_xyz_cuda would pass strip_suffix="_cuda", test_xyz_cpu would pass
+        strip_suffix="_cpu", and they would both use a data file name based on
+        "test_xyz".
         """
-        def remove_prefix(text, prefix):
+        def remove_prefix_suffix(text, prefix, suffix):
             if text.startswith(prefix):
-                return text[len(prefix):]
+                text = text[len(prefix):]
+            if suffix is not None and text.endswith(suffix):
+                text = text[:len(text) - len(suffix)]
             return text
         # NB: we take __file__ from the module that defined the test
         # class, so we place the expect directory where the test script
         # lives, NOT where test/common_utils.py lives.
         module_id = self.__class__.__module__
-        munged_id = remove_prefix(self.id(), module_id + ".")
+        munged_id = remove_prefix_suffix(self.id(), module_id + ".", strip_suffix)
         test_file = os.path.realpath(sys.modules[module_id].__file__)
         expected_file = os.path.join(os.path.dirname(test_file),
                                      "expect",
@@ -116,7 +127,6 @@ class TestCase(unittest.TestCase):
             expected_file += "_" + subname
             subname_output = " ({})".format(subname)
         expected_file += "_expect.pkl"
-        expected = None
 
         def accept_output(update_type):
             print("Accepting {} for {}{}:\n\n{}".format(update_type, munged_id, subname_output, output))
@@ -131,7 +141,8 @@ class TestCase(unittest.TestCase):
             if e.errno != errno.ENOENT:
                 raise
             elif ACCEPT:
-                return accept_output("output")
+                accept_output("output")
+                return
             else:
                 raise RuntimeError(
                     ("I got this output for {}{}:\n\n{}\n\n"
@@ -139,13 +150,10 @@ class TestCase(unittest.TestCase):
                      "python {} {} --accept").format(munged_id, subname_output, output, __main__.__file__, munged_id))
 
         if ACCEPT:
-            equal = False
             try:
-                equal = self.assertEqual(output, expected, prec=prec)
+                self.assertEqual(output, expected, prec=prec)
             except Exception:
-                equal = False
-            if not equal:
-                return accept_output("updated output")
+                accept_output("updated output")
         else:
             self.assertEqual(output, expected, prec=prec)
 
@@ -255,6 +263,7 @@ class TestCase(unittest.TestCase):
         elif isinstance(x, bool) and isinstance(y, bool):
             super(TestCase, self).assertEqual(x, y, message)
         elif isinstance(x, Number) and isinstance(y, Number):
+            inf = float("inf")
             if abs(x) == inf or abs(y) == inf:
                 if allow_inf:
                     super(TestCase, self).assertEqual(x, y, message)
@@ -320,3 +329,53 @@ def freeze_rng_state():
     if torch.cuda.is_available():
         torch.cuda.set_rng_state(cuda_rng_state)
     torch.set_rng_state(rng_state)
+
+
+class TransformsTester(unittest.TestCase):
+
+    def _create_data(self, height=3, width=3, channels=3, device="cpu"):
+        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8, device=device)
+        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
+        return tensor, pil_img
+
+    def _create_data_batch(self, height=3, width=3, channels=3, num_samples=4, device="cpu"):
+        batch_tensor = torch.randint(
+            0, 255,
+            (num_samples, channels, height, width),
+            dtype=torch.uint8,
+            device=device
+        )
+        return batch_tensor
+
+    def compareTensorToPIL(self, tensor, pil_image, msg=None):
+        np_pil_image = np.array(pil_image)
+        if np_pil_image.ndim == 2:
+            np_pil_image = np_pil_image[:, :, None]
+        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
+        if msg is None:
+            msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
+        self.assertTrue(tensor.cpu().equal(pil_tensor), msg)
+
+    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, agg_method="mean"):
+        np_pil_image = np.array(pil_image)
+        if np_pil_image.ndim == 2:
+            np_pil_image = np_pil_image[:, :, None]
+        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
+        err = getattr(torch, agg_method)(tensor - pil_tensor).item()
+        self.assertTrue(
+            err < tol,
+            msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
+        )
+
+
+def cycle_over(objs):
+    for idx, obj in enumerate(objs):
+        yield obj, objs[:idx] + objs[idx + 1:]
+
+
+def int_dtypes():
+    return torch.testing.integral_types()
+
+
+def float_dtypes():
+    return torch.testing.floating_types()

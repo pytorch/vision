@@ -1,5 +1,3 @@
-from __future__ import division
-
 import warnings
 from collections import namedtuple
 import torch
@@ -64,11 +62,16 @@ def googlenet(pretrained=False, progress=True, **kwargs):
 class GoogLeNet(nn.Module):
     __constants__ = ['aux_logits', 'transform_input']
 
-    def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, init_weights=True,
+    def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, init_weights=None,
                  blocks=None):
         super(GoogLeNet, self).__init__()
         if blocks is None:
             blocks = [BasicConv2d, Inception, InceptionAux]
+        if init_weights is None:
+            warnings.warn('The default weight initialization of GoogleNet will be changed in future releases of '
+                          'torchvision. If you wish to keep the old behavior (which leads to long initialization times'
+                          ' due to scipy/scipy#11299), please set init_weights=True.', FutureWarning)
+            init_weights = True
         assert len(blocks) == 3
         conv_block = blocks[0]
         inception_block = blocks[1]
@@ -103,7 +106,7 @@ class GoogLeNet(nn.Module):
         else:
             self.aux1 = None
             self.aux2 = None
-            
+
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.dropout = nn.Dropout(0.2)
         self.fc = nn.Linear(1024, num_classes)
@@ -190,12 +193,11 @@ class GoogLeNet(nn.Module):
         return x, aux2, aux1
 
     @torch.jit.unused
-    def eager_outputs(self, x, aux2, aux1):
-        # type: (Tensor, Optional[Tensor], Optional[Tensor]) -> GoogLeNetOutputs
+    def eager_outputs(self, x: Tensor, aux2: Tensor, aux1: Optional[Tensor]) -> GoogLeNetOutputs:
         if self.training and self.aux_logits:
             return _GoogLeNetOutputs(x, aux2, aux1)
         else:
-            return x
+            return x   # type: ignore[return-value]
 
     def forward(self, x):
         # type: (Tensor) -> GoogLeNetOutputs

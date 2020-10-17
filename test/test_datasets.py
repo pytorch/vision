@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 import unittest
-import mock
+from unittest import mock
 import numpy as np
 import PIL
 from PIL import Image
@@ -11,8 +11,10 @@ from torch._utils_internal import get_file_path_2
 import torchvision
 from common_utils import get_tmp_dir
 from fakedata_generation import mnist_root, cifar_root, imagenet_root, \
-    cityscapes_root, svhn_root, voc_root
+    cityscapes_root, svhn_root, voc_root, ucf101_root, places365_root
 import xml.etree.ElementTree as ET
+from urllib.request import Request, urlopen
+import itertools
 
 
 try:
@@ -20,6 +22,12 @@ try:
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
+
+try:
+    import av
+    HAS_PYAV = True
+except ImportError:
+    HAS_PYAV = False
 
 
 class Tester(unittest.TestCase):
@@ -85,6 +93,16 @@ class Tester(unittest.TestCase):
 
             outputs = sorted([dataset[i] for i in range(len(dataset))])
             self.assertEqual(imgs, outputs)
+
+    def test_imagefolder_empty(self):
+        with get_tmp_dir() as root:
+            with self.assertRaises(RuntimeError):
+                torchvision.datasets.ImageFolder(root, loader=lambda x: x)
+
+            with self.assertRaises(RuntimeError):
+                torchvision.datasets.ImageFolder(
+                    root, loader=lambda x: x, is_valid_file=lambda x: False
+                )
 
     @mock.patch('torchvision.datasets.mnist.download_and_extract_archive')
     def test_mnist(self, mock_download_extract):
@@ -271,6 +289,110 @@ class Tester(unittest.TestCase):
                                      'name': 'dog'
                                  }]
                              }})
+
+    @unittest.skipIf(not HAS_PYAV, "PyAV unavailable")
+    def test_ucf101(self):
+        with ucf101_root() as (root, ann_root):
+            for split in {True, False}:
+                for fold in range(1, 4):
+                    for length in {10, 15, 20}:
+                        dataset = torchvision.datasets.UCF101(
+                            root, ann_root, length, fold=fold, train=split)
+                        self.assertGreater(len(dataset), 0)
+
+                        video, audio, label = dataset[0]
+                        self.assertEqual(video.size(), (length, 320, 240, 3))
+                        self.assertEqual(audio.numel(), 0)
+                        self.assertEqual(label, 0)
+
+                        video, audio, label = dataset[len(dataset) - 1]
+                        self.assertEqual(video.size(), (length, 320, 240, 3))
+                        self.assertEqual(audio.numel(), 0)
+                        self.assertEqual(label, 1)
+
+    def test_places365(self):
+        for split, small in itertools.product(("train-standard", "train-challenge", "val"), (False, True)):
+            with places365_root(split=split, small=small) as places365:
+                root, data = places365
+
+                dataset = torchvision.datasets.Places365(root, split=split, small=small, download=True)
+                self.generic_classification_dataset_test(dataset, num_images=len(data["imgs"]))
+
+    def test_places365_transforms(self):
+        expected_image = "image"
+        expected_target = "target"
+
+        def transform(image):
+            return expected_image
+
+        def target_transform(target):
+            return expected_target
+
+        with places365_root() as places365:
+            root, data = places365
+
+            dataset = torchvision.datasets.Places365(
+                root, transform=transform, target_transform=target_transform, download=True
+            )
+            actual_image, actual_target = dataset[0]
+
+            self.assertEqual(actual_image, expected_image)
+            self.assertEqual(actual_target, expected_target)
+
+    def test_places365_devkit_download(self):
+        for split in ("train-standard", "train-challenge", "val"):
+            with self.subTest(split=split):
+                with places365_root(split=split) as places365:
+                    root, data = places365
+
+                    dataset = torchvision.datasets.Places365(root, split=split, download=True)
+
+                    with self.subTest("classes"):
+                        self.assertSequenceEqual(dataset.classes, data["classes"])
+
+                    with self.subTest("class_to_idx"):
+                        self.assertDictEqual(dataset.class_to_idx, data["class_to_idx"])
+
+                    with self.subTest("imgs"):
+                        self.assertSequenceEqual(dataset.imgs, data["imgs"])
+
+    def test_places365_devkit_no_download(self):
+        for split in ("train-standard", "train-challenge", "val"):
+            with self.subTest(split=split):
+                with places365_root(split=split, extract_images=False) as places365:
+                    root, data = places365
+
+                    with self.assertRaises(RuntimeError):
+                        torchvision.datasets.Places365(root, split=split, download=False)
+
+    def test_places365_images_download(self):
+        for split, small in itertools.product(("train-standard", "train-challenge", "val"), (False, True)):
+            with self.subTest(split=split, small=small):
+                with places365_root(split=split, small=small) as places365:
+                    root, data = places365
+
+                    dataset = torchvision.datasets.Places365(root, split=split, small=small, download=True)
+
+                    assert all(os.path.exists(item[0]) for item in dataset.imgs)
+
+    def test_places365_images_download_preexisting(self):
+        split = "train-standard"
+        small = False
+        images_dir = "data_large_standard"
+
+        with places365_root(split=split, small=small) as places365:
+            root, data = places365
+            os.mkdir(os.path.join(root, images_dir))
+
+            with self.assertRaises(RuntimeError):
+                torchvision.datasets.Places365(root, split=split, small=small, download=True)
+
+    def test_places365_repr_smoke(self):
+        with places365_root(extract_images=False) as places365:
+            root, data = places365
+
+            dataset = torchvision.datasets.Places365(root, download=True)
+            self.assertIsInstance(repr(dataset), str)
 
 
 if __name__ == '__main__':

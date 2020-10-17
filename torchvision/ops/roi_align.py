@@ -4,11 +4,18 @@ from torch import nn, Tensor
 from torch.nn.modules.utils import _pair
 from torch.jit.annotations import List, BroadcastingList2
 
-from ._utils import convert_boxes_to_roi_format
+from torchvision.extension import _assert_has_ops
+from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
 
 
-def roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1, aligned=False):
-    # type: (Tensor, Tensor, BroadcastingList2[int], float, int, bool) -> Tensor
+def roi_align(
+    input: Tensor,
+    boxes: Tensor,
+    output_size: BroadcastingList2[int],
+    spatial_scale: float = 1.0,
+    sampling_ratio: int = -1,
+    aligned: bool = False,
+) -> Tensor:
     """
     Performs Region of Interest (RoI) Align operator described in Mask R-CNN
 
@@ -35,6 +42,8 @@ def roi_align(input, boxes, output_size, spatial_scale=1.0, sampling_ratio=-1, a
     Returns:
         output (Tensor[K, C, output_size[0], output_size[1]])
     """
+    _assert_has_ops()
+    check_roi_boxes_shape(boxes)
     rois = boxes
     output_size = _pair(output_size)
     if not isinstance(rois, torch.Tensor):
@@ -48,17 +57,23 @@ class RoIAlign(nn.Module):
     """
     See roi_align
     """
-    def __init__(self, output_size, spatial_scale, sampling_ratio, aligned=False):
+    def __init__(
+        self,
+        output_size: BroadcastingList2[int],
+        spatial_scale: float,
+        sampling_ratio: int,
+        aligned: bool = False,
+    ):
         super(RoIAlign, self).__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale
         self.sampling_ratio = sampling_ratio
         self.aligned = aligned
 
-    def forward(self, input, rois):
+    def forward(self, input: Tensor, rois: Tensor) -> Tensor:
         return roi_align(input, rois, self.output_size, self.spatial_scale, self.sampling_ratio, self.aligned)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         tmpstr = self.__class__.__name__ + '('
         tmpstr += 'output_size=' + str(self.output_size)
         tmpstr += ', spatial_scale=' + str(self.spatial_scale)

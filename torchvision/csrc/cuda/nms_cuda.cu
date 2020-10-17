@@ -1,7 +1,6 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
-#include <ATen/cuda/CUDAApplyUtils.cuh>
 
 #include "cuda_helpers.h"
 
@@ -18,7 +17,7 @@ __device__ inline bool devIoU(T const* const a, T const* const b, const float th
   T interS = width * height;
   T Sa = (a[2] - a[0]) * (a[3] - a[1]);
   T Sb = (b[2] - b[0]) * (b[3] - b[1]);
-  return interS > threshold * (Sa + Sb - interS);
+  return (interS / (Sa + Sb - interS)) > threshold;
 }
 
 template <typename T>
@@ -64,24 +63,52 @@ __global__ void nms_kernel(
         t |= 1ULL << i;
       }
     }
-    const int col_blocks = at::cuda::ATenCeilDiv(n_boxes, threadsPerBlock);
+    const int col_blocks = ceil_div(n_boxes, threadsPerBlock);
     dev_mask[cur_box_idx * col_blocks + col_start] = t;
   }
 }
 
 at::Tensor nms_cuda(const at::Tensor& dets,
     const at::Tensor& scores,
-    float iou_threshold) {
-  AT_ASSERTM(dets.type().is_cuda(), "dets must be a CUDA tensor");
-  AT_ASSERTM(scores.type().is_cuda(), "scores must be a CUDA tensor");
+    const double iou_threshold) {
+  TORCH_CHECK(dets.is_cuda(), "dets must be a CUDA tensor");
+  TORCH_CHECK(scores.is_cuda(), "scores must be a CUDA tensor");
+
+  TORCH_CHECK(
+      dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
+  TORCH_CHECK(
+      dets.size(1) == 4,
+      "boxes should have 4 elements in dimension 1, got ",
+      dets.size(1));
+  TORCH_CHECK(
+      scores.dim() == 1,
+      "scores should be a 1d tensor, got ",
+      scores.dim(),
+      "D");
+  TORCH_CHECK(
+      dets.size(0) == scores.size(0),
+      "boxes and scores should have same number of elements in ",
+      "dimension 0, got ",
+      dets.size(0),
+      " and ",
+      scores.size(0))
+
+#if defined(WITH_CUDA) || defined(WITH_HIP)
   at::cuda::CUDAGuard device_guard(dets.device());
+#else
+  TORCH_CHECK(false, "Not compiled with GPU support");
+#endif
+
+  if (dets.numel() == 0) {
+    return at::empty({0}, dets.options().dtype(at::kLong));
+  }
 
   auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
-  auto dets_sorted = dets.index_select(0, order_t);
+  auto dets_sorted = dets.index_select(0, order_t).contiguous();
 
   int dets_num = dets.size(0);
 
-  const int col_blocks = at::cuda::ATenCeilDiv(dets_num, threadsPerBlock);
+  const int col_blocks = ceil_div(dets_num, threadsPerBlock);
 
   at::Tensor mask =
       at::empty({dets_num * col_blocks}, dets.options().dtype(at::kLong));
@@ -91,7 +118,7 @@ at::Tensor nms_cuda(const at::Tensor& dets,
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      dets_sorted.type(), "nms_kernel_cuda", [&] {
+      dets_sorted.scalar_type(), "nms_kernel_cuda", [&] {
         nms_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
             dets_num,
             iou_threshold,
