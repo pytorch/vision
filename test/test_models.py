@@ -94,6 +94,7 @@ autocast_flaky_numerics = (
     "resnet101",
     "resnet152",
     "wide_resnet101_2",
+    "retinanet_resnet50_fpn",
 )
 
 
@@ -182,9 +183,6 @@ class ModelTester(TestCase):
                 test_value = map_nested_tensor_object(out, tensor_map_fn=compute_mean_std)
                 # mean values are small, use large prec
                 self.assertExpected(test_value, prec=.01, strip_suffix="_" + dev)
-            elif name == "retinanet_resnet50_fpn" and dev == "cuda":
-                # retinanet_resnet50_fpn is numerically unstable on GPU, so disable for now
-                pass
             else:
                 self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor),
                                     prec=0.01,
