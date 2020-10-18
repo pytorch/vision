@@ -409,10 +409,9 @@ class RetinaNet(nn.Module):
 
     def postprocess_detections(self, head_outputs, anchors, image_shapes):
         # type: (Dict[str, Tensor], List[Tensor], List[Tuple[int, int]]) -> List[Dict[str, Tensor]]
-        # TODO: Merge this with roi_heads.RoIHeads.postprocess_detections ?
-        class_logits = head_outputs.pop('cls_logits')
-        box_regression = head_outputs.pop('bbox_regression')
-        other_outputs = head_outputs
+        # TODO: confirm that RetinaNet can't have other outputs like masks
+        class_logits = head_outputs['cls_logits']
+        box_regression = head_outputs['bbox_regression']
 
         num_classes = class_logits.shape[-1]
 
@@ -443,15 +442,11 @@ class RetinaNet(nn.Module):
             # non-maximum suppression
             keep = box_ops.batched_nms(boxes_per_image, scores_per_image, labels_per_image, self.nms_thresh)
 
-            det = {
+            detections.append({
                 'boxes': boxes_per_image[keep],
                 'scores': scores_per_image[keep],
                 'labels': labels_per_image[keep],
-            }
-            for k, v in other_outputs.items():
-                det[k] = v[index][keep]
-
-            detections.append(det)
+            })
 
         return detections
 
