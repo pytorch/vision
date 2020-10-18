@@ -447,17 +447,21 @@ class RetinaNet(nn.Module):
                                                                anchors_per_level[anchor_idxs])
                 boxes_per_level = box_ops.clip_boxes_to_image(boxes_per_level, image_shape)
 
-                # non-maximum suppression
-                keep = box_ops.batched_nms(boxes_per_level, scores_per_level, labels_per_level, self.nms_thresh)
+                image_boxes.append(boxes_per_level)
+                image_scores.append(scores_per_level)
+                image_labels.append(labels_per_level)
 
-                image_boxes.append(boxes_per_level[keep])
-                image_scores.append(scores_per_level[keep])
-                image_labels.append(labels_per_level[keep])
+            image_boxes = torch.cat(image_boxes, dim=0)
+            image_scores = torch.cat(image_scores, dim=0)
+            image_labels = torch.cat(image_labels, dim=0)
+
+            # non-maximum suppression
+            keep = box_ops.batched_nms(image_boxes, image_scores, image_labels, self.nms_thresh)
 
             detections.append({
-                'boxes': torch.cat(image_boxes, dim=0),
-                'scores': torch.cat(image_scores, dim=0),
-                'labels': torch.cat(image_labels, dim=0),
+                'boxes': image_boxes[keep],
+                'scores': image_scores[keep],
+                'labels': image_labels[keep],
             })
 
         return detections
