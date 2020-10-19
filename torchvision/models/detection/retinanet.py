@@ -291,6 +291,7 @@ class RetinaNet(nn.Module):
             considered as positive during training.
         bg_iou_thresh (float): maximum IoU between the anchor and the GT box so that they can be
             considered as negative during training.
+        topk_candidates (int): Number of best detections to keep before NMS.
 
     Example:
 
@@ -338,8 +339,9 @@ class RetinaNet(nn.Module):
                  proposal_matcher=None,
                  score_thresh=0.05,
                  nms_thresh=0.5,
-                 detections_per_img=300,
-                 fg_iou_thresh=0.5, bg_iou_thresh=0.4):
+                 detections_per_img=100,
+                 fg_iou_thresh=0.5, bg_iou_thresh=0.4,
+                 topk_candidates=1000):
         super().__init__()
 
         if not hasattr(backbone, "out_channels"):
@@ -382,6 +384,7 @@ class RetinaNet(nn.Module):
         self.score_thresh = score_thresh
         self.nms_thresh = nms_thresh
         self.detections_per_img = detections_per_img
+        self.topk_candidates = topk_candidates
 
         # used only on torchscript mode
         self._has_warned = False
@@ -436,7 +439,7 @@ class RetinaNet(nn.Module):
                 topk_idxs = torch.where(keep_idxs)[0]
 
                 # keep only topk scoring predictions
-                num_topk = min(self.detections_per_img, topk_idxs.size(0))
+                num_topk = min(self.topk_candidates, topk_idxs.size(0))
                 scores_per_level, idxs = scores_per_level.topk(num_topk)
                 topk_idxs = topk_idxs[idxs]
 
@@ -457,6 +460,7 @@ class RetinaNet(nn.Module):
 
             # non-maximum suppression
             keep = box_ops.batched_nms(image_boxes, image_scores, image_labels, self.nms_thresh)
+            keep = keep[:self.detections_per_img]
 
             detections.append({
                 'boxes': image_boxes[keep],
