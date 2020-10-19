@@ -51,6 +51,7 @@ def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optio
         root (str): Directory to place downloaded file in
         filename (str, optional): Name to save the file under. If None, use the basename of the URL
         md5 (str, optional): MD5 checksum of the download. If None, do not check
+        verbose (bool): If true, print message if file has been previously downloaded and verified
     """
     import urllib
 
@@ -132,6 +133,7 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
         root (str): Directory to place downloaded file in
         filename (str, optional): Name to save the file under. If None, use the id of the file.
         md5 (str, optional): MD5 checksum of the download. If None, do not check
+        verbose (bool): If true, print message if file has been previously downloaded and verified
     """
     # Based on https://stackoverflow.com/questions/38511444/python-download-files-from-google-drive-using-url
     import requests
