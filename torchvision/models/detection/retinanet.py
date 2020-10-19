@@ -339,7 +339,7 @@ class RetinaNet(nn.Module):
                  proposal_matcher=None,
                  score_thresh=0.05,
                  nms_thresh=0.5,
-                 detections_per_img=100,
+                 detections_per_img=300,
                  fg_iou_thresh=0.5, bg_iou_thresh=0.4,
                  topk_candidates=1000):
         super().__init__()
