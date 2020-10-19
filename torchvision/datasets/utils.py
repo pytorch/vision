@@ -43,7 +43,7 @@ def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
     return check_md5(fpath, md5)
 
 
-def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None) -> None:
+def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None, verbose: bool = True) -> None:
     """Download a file from a url and place it in root.
 
     Args:
@@ -63,7 +63,8 @@ def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optio
 
     # check if file is already present locally
     if check_integrity(fpath, md5):
-        print('Using downloaded and verified file: ' + fpath)
+        if verbose:
+            print('Using downloaded and verified file: ' + fpath)
     else:   # download the file
         try:
             print('Downloading ' + url + ' to ' + fpath)
@@ -123,7 +124,7 @@ def _quota_exceeded(response: "requests.models.Response") -> bool:  # type: igno
     return "Google Drive - Quota exceeded" in response.text
 
 
-def download_file_from_google_drive(file_id: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None):
+def download_file_from_google_drive(file_id: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None, verbose: bool = True) -> None:
     """Download a Google Drive file from  and place it in root.
 
     Args:
@@ -144,7 +145,8 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
     os.makedirs(root, exist_ok=True)
 
     if os.path.isfile(fpath) and check_integrity(fpath, md5):
-        print('Using downloaded and verified file: ' + fpath)
+        if verbose:
+            print('Using downloaded and verified file: ' + fpath)
     else:
         session = requests.Session()
 
