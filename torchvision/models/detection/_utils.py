@@ -351,11 +351,10 @@ def smooth_l1_loss(input, target, beta: float = 1. / 9, size_average: bool = Tru
     return loss.sum()
 
 
-########################   AVERAGE PRECISION COMPUTATION ########################
-# adapted from Matterport Mask R-CNN implementation                             #
-# https://github.com/matterport/Mask_RCNN                                       #
-# inputs are predicted masks>threshold (0.5)                                    #
-#################################################################################
+# AVERAGE PRECISION COMPUTATION 
+# adapted from Matterport Mask R-CNN implementation                             
+# https://github.com/matterport/Mask_RCNN                                       
+# inputs are predicted masks>threshold (0.5)                                    
 def compute_overlaps_masks(masks1, masks2):
     # masks1: (HxWxnum_pred)
     # masks2: (HxWxnum_gts)
