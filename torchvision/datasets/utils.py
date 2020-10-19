@@ -43,7 +43,13 @@ def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
     return check_md5(fpath, md5)
 
 
-def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None, verbose: bool = True) -> None:
+def download_url(
+    url: str,
+    root: str,
+    filename: Optional[str] = None,
+    md5: Optional[str] = None,
+    verbose: bool = True,
+) -> None:
     """Download a file from a url and place it in root.
 
     Args:
@@ -125,7 +131,13 @@ def _quota_exceeded(response: "requests.models.Response") -> bool:  # type: igno
     return "Google Drive - Quota exceeded" in response.text
 
 
-def download_file_from_google_drive(file_id: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None, verbose: bool = True) -> None:
+def download_file_from_google_drive(
+    file_id: str,
+    root: str,
+    filename: Optional[str] = None,
+    md5: Optional[str] = None,
+    verbose: bool = True,
+) -> None:
     """Download a Google Drive file from  and place it in root.
 
     Args:
