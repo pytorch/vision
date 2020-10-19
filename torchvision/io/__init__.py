@@ -91,7 +91,12 @@ class VideoReader:
 
     def __init__(self, path, stream="video"):
         if not _has_video_opt():
-            raise RuntimeError("Not compiled with video_reader support")
+            raise RuntimeError(
+                "Not compiled with video_reader support, "
+                + "to enable video_reader support, please install "
+                + "ffmpeg (version 4.2 is currently supported) and"
+                + "build torchvision from source."
+            )
         self._c = torch.classes.torchvision.Video(path, stream)
 
     def __next__(self):
