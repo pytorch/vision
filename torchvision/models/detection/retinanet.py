@@ -547,19 +547,19 @@ class RetinaNet(nn.Module):
             losses = self.compute_loss(targets, head_outputs, anchors)
         else:
             # recover level sizes
-            feature_sizes_per_level = [x.size(2) * x.size(3) for x in features]
+            num_anchors_per_level = [x.size(2) * x.size(3) for x in features]
             HW = 0
-            for v in feature_sizes_per_level:
+            for v in num_anchors_per_level:
                 HW += v
             HWA = head_outputs['cls_logits'].size(1)
             A = HWA // HW
-            feature_sizes_per_level = [hw * A for hw in feature_sizes_per_level]
+            num_anchors_per_level = [hw * A for hw in num_anchors_per_level]
 
             # split outputs per level
             split_head_outputs: Dict[str, List[Tensor]] = {}
             for k in head_outputs:
-                split_head_outputs[k] = list(head_outputs[k].split(feature_sizes_per_level, dim=1))
-            split_anchors = [list(a.split(feature_sizes_per_level)) for a in anchors]
+                split_head_outputs[k] = list(head_outputs[k].split(num_anchors_per_level, dim=1))
+            split_anchors = [list(a.split(num_anchors_per_level)) for a in anchors]
 
             # compute the detections
             detections = self.postprocess_detections(split_head_outputs, split_anchors, images.image_sizes)
