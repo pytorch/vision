@@ -806,5 +806,17 @@ class GenBoxIouTester(unittest.TestCase):
         assert ((out - expected).abs().max() < tolerance).item() is True
 
 
+class FPNTester(unittest.TestCase):
+    def test_featurepyramidnetwork_repr(self):
+        in_chans = [32, 64]
+        out_chan = 32
+        # Pass mock number of channels
+        t = ops.feature_pyramid_network.FeaturePyramidNetwork(in_chans, out_chan)
+
+        # Check integrity of object __repr__ attribute
+        expected_string = f"FeaturePyramidNetwork(in_channels_list={in_chans}, out_channels={out_chan})"
+        self.assertEqual(t.__repr__(), expected_string)
+
+
 if __name__ == '__main__':
     unittest.main()
