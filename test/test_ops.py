@@ -357,6 +357,18 @@ class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
         self._helper_boxes_shape(ops.ps_roi_align)
 
 
+class MultiScaleRoIAlignTester(unittest.TestCase):
+    def test_msroialign_repr(self):
+        output_size = (7, 7)
+        sampling_ratio = 2
+        # Pass mock feature map names
+        t = ops.poolers.MultiScaleRoIAlign(['0'], output_size, sampling_ratio)
+
+        # Check integrity of object __repr__ attribute
+        expected_string = f"MultiScaleRoIAlign(output_size={output_size}, sampling_ratio={sampling_ratio})"
+        self.assertEqual(t.__repr__(), expected_string)
+
+
 class NMSTester(unittest.TestCase):
     def reference_nms(self, boxes, scores, iou_threshold):
         """
