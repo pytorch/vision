@@ -359,13 +359,15 @@ class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
 
 class MultiScaleRoIAlignTester(unittest.TestCase):
     def test_msroialign_repr(self):
+        fmap_names = ['0']
         output_size = (7, 7)
         sampling_ratio = 2
         # Pass mock feature map names
-        t = ops.poolers.MultiScaleRoIAlign(['0'], output_size, sampling_ratio)
+        t = ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
 
         # Check integrity of object __repr__ attribute
-        expected_string = f"MultiScaleRoIAlign(output_size={output_size}, sampling_ratio={sampling_ratio})"
+        expected_string = (f"MultiScaleRoIAlign(featmap_names={fmap_names}, output_size={output_size}, "
+                           f"sampling_ratio={sampling_ratio})")
         self.assertEqual(t.__repr__(), expected_string)
 
 
