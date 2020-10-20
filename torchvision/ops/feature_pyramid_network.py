@@ -165,6 +165,9 @@ class FeaturePyramidNetwork(nn.Module):
 
         return out
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(in_channels_list={self.in_channels_list}, out_channels={self.out_channels})"
+
 
 class LastLevelMaxPool(ExtraFPNBlock):
     """
