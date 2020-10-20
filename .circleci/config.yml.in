@@ -134,6 +134,7 @@ jobs:
     resource_class: 2xlarge+
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run: packaging/build_wheel.sh
       - store_artifacts:
           path: dist
@@ -149,6 +150,7 @@ jobs:
     resource_class: 2xlarge+
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run: packaging/build_conda.sh
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
@@ -164,6 +166,7 @@ jobs:
     executor: windows-cpu
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           name: Build conda packages
           command: |
@@ -189,6 +192,7 @@ jobs:
     executor: windows-cpu
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           name: Build wheel packages
           command: |
@@ -211,6 +215,7 @@ jobs:
       xcode: "9.4.1"
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           # Cannot easily deduplicate this as source'ing activate
           # will set environment variables which we need to propagate
@@ -233,6 +238,7 @@ jobs:
       xcode: "9.4.1"
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           command: |
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
