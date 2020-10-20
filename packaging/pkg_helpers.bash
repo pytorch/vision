@@ -184,8 +184,8 @@ setup_wheel_python() {
     # Install libpng from Anaconda (defaults)
     conda install libpng jpeg -y
   else
-    # Install native CentOS libPNG
-    yum install -y libpng-devel libjpeg-turbo-devel
+    # Install native CentOS libJPEG, LAME, freetype and GnuTLS
+    yum install -y libjpeg-turbo-devel lame freetype gnutls
     case "$PYTHON_VERSION" in
       2.7)
         if [[ -n "$UNICODE_ABI" ]]; then
@@ -203,7 +203,13 @@ setup_wheel_python() {
         exit 1
         ;;
     esac
-    export PATH="/opt/python/$python_abi/bin:$PATH"
+    # Download all the dependencies required to compile image and video_reader
+    # extensions
+
+    mkdir -p ext_libraries
+    pushd ext_libraries
+    popd
+    export PATH="/opt/python/$python_abi/bin:$(pwd)/ext_libraries/bin:$PATH"
   fi
 }
 
@@ -228,9 +234,9 @@ setup_pip_pytorch_version() {
     fi
   else
     pip_install "torch==$PYTORCH_VERSION$PYTORCH_VERSION_SUFFIX" \
-      -f https://download.pytorch.org/whl/torch_stable.html \
-      -f https://download.pytorch.org/whl/test/torch_test.html \
-      -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+      -f "https://download.pytorch.org/whl/${CU_VERSION}/torch_stable.html" \
+      -f "https://download.pytorch.org/whl/test/${CU_VERSION}/torch_test.html" \
+      -f "https://download.pytorch.org/whl/nightly/${CU_VERSION}/torch_nightly.html"
   fi
 }
 
@@ -353,10 +359,8 @@ setup_junit_results_folder() {
 
 
 download_copy_ffmpeg() {
-  mkdir ffmpeg_tmp
-  cd ffmpeg_tmp
   if [[ "$OSTYPE" == "msys" ]]; then
-    # conda install -yq ffmpeg -c pytorch
+    # conda install -yq ffmpeg=4.2 -c pytorch
     # curl -L -q https://anaconda.org/pytorch/ffmpeg/4.3/download/win-64/ffmpeg-4.3-ha925a31_0.tar.bz2 --output ffmpeg-4.3-ha925a31_0.tar.bz2
     # bzip2 --decompress --stdout ffmpeg-4.3-ha925a31_0.tar.bz2 | tar -x --file=-
     # cp Library/bin/*.dll ../torchvision
@@ -365,24 +369,15 @@ download_copy_ffmpeg() {
     if [[ "$(uname)" == Darwin ]]; then
       conda install -yq ffmpeg=4.2 -c pytorch
       conda install -yq wget
-      wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/osx-64/ffmpeg-4.2-h0a44026_0.tar.bz2
-      tar -xjvf ffmpeg-4.2-h0a44026_0.tar.bz2
-      for f in lib/*.dylib; do
-        if [[ $f =~ ([a-z])+\.dylib ]]; then
-          cp $f ../torchvision
-        fi
-      done
     else
-      wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/linux-64/ffmpeg-4.2-hf484d3e_0.tar.bz2
-      tar -xjvf ffmpeg-4.2-hf484d3e_0.tar.bz2
-      cp lib/*.so ../torchvision
-      cp -r lib/* /usr/lib
-      cp -r bin/* /usr/bin
-      cp -r include/* /usr/include
-      ldconfig
-      which ffmpeg
+      # pushd ext_libraries
+      # wget -q https://anaconda.org/pytorch/ffmpeg/4.2/download/linux-64/ffmpeg-4.2-hf484d3e_0.tar.bz2
+      # tar -xjvf ffmpeg-4.2-hf484d3e_0.tar.bz2
+      # rm -rf ffmpeg-4.2-hf484d3e_0.tar.bz2
+      # ldconfig
+      # which ffmpeg
+      # popd
+      echo "FFmpeg is disabled currently on Linux"
     fi
   fi
-  cd ..
-  rm -rf ffmpeg_tmp
 }
