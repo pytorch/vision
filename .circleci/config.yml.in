@@ -468,7 +468,7 @@ jobs:
             - env
       - run:
           name: Install torchvision
-          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/install.sh
+          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e UPLOAD_CHANNEL "${image_name}" .circleci/unittest/linux/scripts/install.sh
       - run:
           name: Run tests
           command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
