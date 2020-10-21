@@ -2,7 +2,7 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 from .utils import load_state_dict_from_url
-from typing import Callable, Any
+from typing import Type, Any
 from torch.jit.annotations import List, Optional
 
 
@@ -47,7 +47,7 @@ class BasicBlock(nn.Module):
         groups: int = 1,
         base_width: int = 64,
         dilation: int = 1,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+        norm_layer: Optional[Type[nn.Module]] = None
     ):
         super(BasicBlock, self).__init__()
         if norm_layer is None:
@@ -102,7 +102,7 @@ class Bottleneck(nn.Module):
         groups: int = 1,
         base_width: int = 64,
         dilation: int = 1,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+        norm_layer: Optional[Type[nn.Module]] = None
     ):
         super(Bottleneck, self).__init__()
         if norm_layer is None:
@@ -146,14 +146,14 @@ class ResNet(nn.Module):
 
     def __init__(
         self,
-        block: Callable[..., nn.Module],
+        block: Type[nn.Module],
         layers: List[int],
         num_classes: int = 1000,
         zero_init_residual: bool = False,
         groups: int = 1,
         width_per_group: int = 64,
         replace_stride_with_dilation: Optional[List[bool]] = None,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+        norm_layer: Optional[Type[nn.Module]] = None
     ):
         super(ResNet, self).__init__()
         if norm_layer is None:
@@ -203,7 +203,7 @@ class ResNet(nn.Module):
                 elif isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block: Callable[..., nn.Module], planes: int, blocks: int,
+    def _make_layer(self, block: Type[nn.Module], planes: int, blocks: int,
                     stride: int = 1, dilate: bool = False) -> nn.Sequential:
         norm_layer = self._norm_layer
         downsample = None
@@ -250,7 +250,7 @@ class ResNet(nn.Module):
         return self._forward_impl(x)
 
 
-def _resnet(arch: str, block: Callable[..., nn.Module], layers: List[int], pretrained: bool, progress: bool,
+def _resnet(arch: str, block: Type[nn.Module], layers: List[int], pretrained: bool, progress: bool,
             **kwargs: Any) -> ResNet:
     model = ResNet(block, layers, **kwargs)
     if pretrained:
