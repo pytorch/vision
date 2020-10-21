@@ -35,8 +35,12 @@ def conv1x1(in_planes: int, out_planes: int, stride: int = 1) -> nn.Conv2d:
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 
-class BasicBlock(nn.Module):
-    expansion = 1
+class ResBlock(nn.Module):
+    expansion: int = 1
+
+
+class BasicBlock(ResBlock):
+    expansion: int = 1
 
     def __init__(
         self,
@@ -84,14 +88,14 @@ class BasicBlock(nn.Module):
         return out
 
 
-class Bottleneck(nn.Module):
+class Bottleneck(ResBlock):
     # Bottleneck in torchvision places the stride for downsampling at 3x3 convolution(self.conv2)
     # while original implementation places the stride at the first 1x1 convolution(self.conv1)
     # according to "Deep residual learning for image recognition"https://arxiv.org/abs/1512.03385.
     # This variant is also known as ResNet V1.5 and improves accuracy according to
     # https://ngc.nvidia.com/catalog/model-scripts/nvidia:resnet_50_v1_5_for_pytorch.
 
-    expansion = 4
+    expansion: int = 4
 
     def __init__(
         self,
@@ -146,7 +150,7 @@ class ResNet(nn.Module):
 
     def __init__(
         self,
-        block: Type[nn.Module],
+        block: Type[ResBlock],
         layers: List[int],
         num_classes: int = 1000,
         zero_init_residual: bool = False,
@@ -203,7 +207,7 @@ class ResNet(nn.Module):
                 elif isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block: Type[nn.Module], planes: int, blocks: int,
+    def _make_layer(self, block: Type[ResBlock], planes: int, blocks: int,
                     stride: int = 1, dilate: bool = False) -> nn.Sequential:
         norm_layer = self._norm_layer
         downsample = None
@@ -250,7 +254,7 @@ class ResNet(nn.Module):
         return self._forward_impl(x)
 
 
-def _resnet(arch: str, block: Type[nn.Module], layers: List[int], pretrained: bool, progress: bool,
+def _resnet(arch: str, block: Type[ResBlock], layers: List[int], pretrained: bool, progress: bool,
             **kwargs: Any) -> ResNet:
     model = ResNet(block, layers, **kwargs)
     if pretrained:
