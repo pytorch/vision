@@ -357,6 +357,20 @@ class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
         self._helper_boxes_shape(ops.ps_roi_align)
 
 
+class MultiScaleRoIAlignTester(unittest.TestCase):
+    def test_msroialign_repr(self):
+        fmap_names = ['0']
+        output_size = (7, 7)
+        sampling_ratio = 2
+        # Pass mock feature map names
+        t = ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
+
+        # Check integrity of object __repr__ attribute
+        expected_string = (f"MultiScaleRoIAlign(featmap_names={fmap_names}, output_size={output_size}, "
+                           f"sampling_ratio={sampling_ratio})")
+        self.assertEqual(t.__repr__(), expected_string)
+
+
 class NMSTester(unittest.TestCase):
     def reference_nms(self, boxes, scores, iou_threshold):
         """
@@ -593,10 +607,11 @@ class DeformConvTester(OpTester, unittest.TestCase):
 class FrozenBNTester(unittest.TestCase):
     def test_frozenbatchnorm2d_repr(self):
         num_features = 32
-        t = ops.misc.FrozenBatchNorm2d(num_features)
+        eps = 1e-5
+        t = ops.misc.FrozenBatchNorm2d(num_features, eps=eps)
 
         # Check integrity of object __repr__ attribute
-        expected_string = f"FrozenBatchNorm2d({num_features})"
+        expected_string = f"FrozenBatchNorm2d({num_features}, eps={eps})"
         self.assertEqual(t.__repr__(), expected_string)
 
     def test_frozenbatchnorm2d_eps(self):
