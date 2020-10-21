@@ -607,10 +607,11 @@ class DeformConvTester(OpTester, unittest.TestCase):
 class FrozenBNTester(unittest.TestCase):
     def test_frozenbatchnorm2d_repr(self):
         num_features = 32
-        t = ops.misc.FrozenBatchNorm2d(num_features)
+        eps = 1e-5
+        t = ops.misc.FrozenBatchNorm2d(num_features, eps=eps)
 
         # Check integrity of object __repr__ attribute
-        expected_string = f"FrozenBatchNorm2d({num_features})"
+        expected_string = f"FrozenBatchNorm2d({num_features}, eps={eps})"
         self.assertEqual(t.__repr__(), expected_string)
 
     def test_frozenbatchnorm2d_eps(self):
