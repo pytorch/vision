@@ -75,8 +75,8 @@ class GoogLeNet(nn.Module):
             self.aux1 = inception_aux_block(512, num_classes)
             self.aux2 = inception_aux_block(528, num_classes)
         else:
-            self.aux1 = None
-            self.aux2 = None
+            self.aux1 = None  # type: ignore[assignment]
+            self.aux2 = None  # type: ignore[assignment]
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.dropout = nn.Dropout(0.2)
@@ -310,8 +310,8 @@ def googlenet(pretrained: bool = False, progress: bool = True, **kwargs: Any) ->
         model.load_state_dict(state_dict)
         if not original_aux_logits:
             model.aux_logits = False
-            model.aux1 = None
-            model.aux2 = None
+            model.aux1 = None  # type: ignore[assignment]
+            model.aux2 = None  # type: ignore[assignment]
         return model
 
     return GoogLeNet(**kwargs)
