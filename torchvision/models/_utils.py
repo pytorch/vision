@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 import torch
+from torch import Tensor
 from torch import nn
 from torch.jit.annotations import Dict
 
@@ -41,7 +42,7 @@ class IntermediateLayerGetter(nn.ModuleDict):
         "return_layers": Dict[str, str],
     }
 
-    def __init__(self, model, return_layers):
+    def __init__(self, model: nn.Module, return_layers: Dict[str, str]):
         if not set(return_layers).issubset([name for name, _ in model.named_children()]):
             raise ValueError("return_layers are not present in model")
         orig_return_layers = return_layers
@@ -57,7 +58,7 @@ class IntermediateLayerGetter(nn.ModuleDict):
         super(IntermediateLayerGetter, self).__init__(layers)
         self.return_layers = orig_return_layers
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         out = OrderedDict()
         for name, module in self.items():
             x = module(x)
