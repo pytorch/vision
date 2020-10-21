@@ -1,5 +1,8 @@
 from torch import nn
+from torch import Tensor
 from .utils import load_state_dict_from_url
+from torch.jit.annotations import Optional, List
+from typing import Callable, Any
 
 
 __all__ = ['MobileNetV2', 'mobilenet_v2']
@@ -10,7 +13,7 @@ model_urls = {
 }
 
 
-def _make_divisible(v, divisor, min_value=None):
+def _make_divisible(v: float, divisor: int, min_value: Optional[int] = None) -> int:
     """
     This function is taken from the original tf repo.
     It ensures that all layers have a channel number that is divisible by 8
@@ -31,7 +34,15 @@ def _make_divisible(v, divisor, min_value=None):
 
 
 class ConvBNReLU(nn.Sequential):
-    def __init__(self, in_planes, out_planes, kernel_size=3, stride=1, groups=1, norm_layer=None):
+    def __init__(
+        self,
+        in_planes: int,
+        out_planes: int,
+        kernel_size: int = 3,
+        stride: int = 1,
+        groups: int = 1,
+        norm_layer: Optional[Callable[..., nn.Module]] = None
+    ):
         padding = (kernel_size - 1) // 2
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -43,7 +54,14 @@ class ConvBNReLU(nn.Sequential):
 
 
 class InvertedResidual(nn.Module):
-    def __init__(self, inp, oup, stride, expand_ratio, norm_layer=None):
+    def __init__(
+        self,
+        inp: int,
+        oup: int,
+        stride: int,
+        expand_ratio: int,
+        norm_layer: Optional[Callable[..., nn.Module]] = None
+    ):
         super(InvertedResidual, self).__init__()
         self.stride = stride
         assert stride in [1, 2]
@@ -67,7 +85,7 @@ class InvertedResidual(nn.Module):
         ])
         self.conv = nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         if self.use_res_connect:
             return x + self.conv(x)
         else:
@@ -75,13 +93,15 @@ class InvertedResidual(nn.Module):
 
 
 class MobileNetV2(nn.Module):
-    def __init__(self,
-                 num_classes=1000,
-                 width_mult=1.0,
-                 inverted_residual_setting=None,
-                 round_nearest=8,
-                 block=None,
-                 norm_layer=None):
+    def __init__(
+        self,
+        num_classes: int = 1000,
+        width_mult: float = 1.0,
+        inverted_residual_setting: Optional[List[List[int]]] = None,
+        round_nearest: int = 8,
+        block: Optional[Callable[..., nn.Module]] = None,
+        norm_layer: Optional[Callable[..., nn.Module]] = None
+    ):
         """
         MobileNet V2 main class
 
@@ -158,7 +178,7 @@ class MobileNetV2(nn.Module):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.zeros_(m.bias)
 
-    def _forward_impl(self, x):
+    def _forward_impl(self, x: Tensor) -> Tensor:
         # This exists since TorchScript doesn't support inheritance, so the superclass method
         # (this one) needs to have a name other than `forward` that can be accessed in a subclass
         x = self.features(x)
@@ -167,11 +187,11 @@ class MobileNetV2(nn.Module):
         x = self.classifier(x)
         return x
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         return self._forward_impl(x)
 
 
-def mobilenet_v2(pretrained=False, progress=True, **kwargs):
+def mobilenet_v2(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MobileNetV2:
     """
     Constructs a MobileNetV2 architecture from
     `"MobileNetV2: Inverted Residuals and Linear Bottlenecks" <https://arxiv.org/abs/1801.04381>`_.
