@@ -2,7 +2,7 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 from .utils import load_state_dict_from_url
-from typing import Type, Any
+from typing import Type, Any, Callable, Union
 from torch.jit.annotations import List, Optional
 
 
@@ -35,11 +35,7 @@ def conv1x1(in_planes: int, out_planes: int, stride: int = 1) -> nn.Conv2d:
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 
-class ResBlock(nn.Module):
-    expansion: int = 1
-
-
-class BasicBlock(ResBlock):
+class BasicBlock(nn.Module):
     expansion: int = 1
 
     def __init__(
@@ -51,7 +47,7 @@ class BasicBlock(ResBlock):
         groups: int = 1,
         base_width: int = 64,
         dilation: int = 1,
-        norm_layer: Optional[Type[nn.Module]] = None
+        norm_layer: Optional[Callable[..., nn.Module]] = None
     ):
         super(BasicBlock, self).__init__()
         if norm_layer is None:
@@ -88,7 +84,7 @@ class BasicBlock(ResBlock):
         return out
 
 
-class Bottleneck(ResBlock):
+class Bottleneck(nn.Module):
     # Bottleneck in torchvision places the stride for downsampling at 3x3 convolution(self.conv2)
     # while original implementation places the stride at the first 1x1 convolution(self.conv1)
     # according to "Deep residual learning for image recognition"https://arxiv.org/abs/1512.03385.
@@ -106,7 +102,7 @@ class Bottleneck(ResBlock):
         groups: int = 1,
         base_width: int = 64,
         dilation: int = 1,
-        norm_layer: Optional[Type[nn.Module]] = None
+        norm_layer: Optional[Callable[..., nn.Module]] = None
     ):
         super(Bottleneck, self).__init__()
         if norm_layer is None:
@@ -150,14 +146,14 @@ class ResNet(nn.Module):
 
     def __init__(
         self,
-        block: Type[ResBlock],
+        block: Type[Union[BasicBlock, Bottleneck]],
         layers: List[int],
         num_classes: int = 1000,
         zero_init_residual: bool = False,
         groups: int = 1,
         width_per_group: int = 64,
         replace_stride_with_dilation: Optional[List[bool]] = None,
-        norm_layer: Optional[Type[nn.Module]] = None
+        norm_layer: Optional[Callable[..., nn.Module]] = None
     ):
         super(ResNet, self).__init__()
         if norm_layer is None:
@@ -207,7 +203,7 @@ class ResNet(nn.Module):
                 elif isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
 
-    def _make_layer(self, block: Type[ResBlock], planes: int, blocks: int,
+    def _make_layer(self, block: Type[Union[BasicBlock, Bottleneck]], planes: int, blocks: int,
                     stride: int = 1, dilate: bool = False) -> nn.Sequential:
         norm_layer = self._norm_layer
         downsample = None
@@ -254,7 +250,7 @@ class ResNet(nn.Module):
         return self._forward_impl(x)
 
 
-def _resnet(arch: str, block: Type[ResBlock], layers: List[int], pretrained: bool, progress: bool,
+def _resnet(arch: str, block: Type[Union[BasicBlock, Bottleneck]], layers: List[int], pretrained: bool, progress: bool,
             **kwargs: Any) -> ResNet:
     model = ResNet(block, layers, **kwargs)
     if pretrained:
