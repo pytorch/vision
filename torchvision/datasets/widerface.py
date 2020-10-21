@@ -134,34 +134,34 @@ class WIDERFace(VisionDataset):
         # with zipfile.ZipFile(os.path.join(self.root, self.base_folder, "img_align_celeba.zip"), "r") as f:
         #     f.extractall(os.path.join(self.root, self.base_folder))
     
-    def download_mnist(self) -> None:
-        """Download the MNIST data if it doesn't exist in processed_folder already."""
+    # def download_mnist(self) -> None:
+    #     """Download the MNIST data if it doesn't exist in processed_folder already."""
 
-        if self._check_exists():
-            return
+    #     if self._check_exists():
+    #         return
 
-        os.makedirs(self.raw_folder, exist_ok=True)
-        os.makedirs(self.processed_folder, exist_ok=True)
+    #     os.makedirs(self.raw_folder, exist_ok=True)
+    #     os.makedirs(self.processed_folder, exist_ok=True)
 
-        # download files
-        for url, md5 in self.resources:
-            filename = url.rpartition('/')[2]
-            download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
+    #     # download files
+    #     for url, md5 in self.resources:
+    #         filename = url.rpartition('/')[2]
+    #         download_and_extract_archive(url, download_root=self.raw_folder, filename=filename, md5=md5)
 
-        # process and save as torch files
-        print('Processing...')
+    #     # process and save as torch files
+    #     print('Processing...')
 
-        training_set = (
-            read_image_file(os.path.join(self.raw_folder, 'train-images-idx3-ubyte')),
-            read_label_file(os.path.join(self.raw_folder, 'train-labels-idx1-ubyte'))
-        )
-        test_set = (
-            read_image_file(os.path.join(self.raw_folder, 't10k-images-idx3-ubyte')),
-            read_label_file(os.path.join(self.raw_folder, 't10k-labels-idx1-ubyte'))
-        )
-        with open(os.path.join(self.processed_folder, self.training_file), 'wb') as f:
-            torch.save(training_set, f)
-        with open(os.path.join(self.processed_folder, self.test_file), 'wb') as f:
-            torch.save(test_set, f)
+    #     training_set = (
+    #         read_image_file(os.path.join(self.raw_folder, 'train-images-idx3-ubyte')),
+    #         read_label_file(os.path.join(self.raw_folder, 'train-labels-idx1-ubyte'))
+    #     )
+    #     test_set = (
+    #         read_image_file(os.path.join(self.raw_folder, 't10k-images-idx3-ubyte')),
+    #         read_label_file(os.path.join(self.raw_folder, 't10k-labels-idx1-ubyte'))
+    #     )
+    #     with open(os.path.join(self.processed_folder, self.training_file), 'wb') as f:
+    #         torch.save(training_set, f)
+    #     with open(os.path.join(self.processed_folder, self.test_file), 'wb') as f:
+    #         torch.save(test_set, f)
 
-        print('Done!')
+    #     print('Done!')
