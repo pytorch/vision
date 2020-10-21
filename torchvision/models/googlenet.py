@@ -135,7 +135,6 @@ class GoogLeNet(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def _transform_input(self, x: Tensor) -> Tensor:
-        # type: (Tensor) -> Tensor
         if self.transform_input:
             x_ch0 = torch.unsqueeze(x[:, 0], 1) * (0.229 / 0.5) + (0.485 - 0.5) / 0.5
             x_ch1 = torch.unsqueeze(x[:, 1], 1) * (0.224 / 0.5) + (0.456 - 0.5) / 0.5
@@ -144,7 +143,6 @@ class GoogLeNet(nn.Module):
         return x
 
     def _forward(self, x: Tensor) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
-        # type: (Tensor) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]
         # N x 3 x 224 x 224
         x = self.conv1(x)
         # N x 64 x 112 x 112
@@ -207,7 +205,6 @@ class GoogLeNet(nn.Module):
             return x   # type: ignore[return-value]
 
     def forward(self, x: Tensor) -> GoogLeNetOutputs:
-        # type: (Tensor) -> GoogLeNetOutputs
         x = self._transform_input(x)
         x, aux1, aux2 = self._forward(x)
         aux_defined = self.training and self.aux_logits
