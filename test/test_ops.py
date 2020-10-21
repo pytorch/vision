@@ -623,12 +623,13 @@ class FrozenBNTester(unittest.TestCase):
                           running_var=torch.rand(sample_size[1]),
                           num_batches_tracked=torch.tensor(100))
 
-        # Check that default eps is the same as BN
+        # Check that default eps is zero for backward-compatibility
         fbn = ops.misc.FrozenBatchNorm2d(sample_size[1])
         fbn.load_state_dict(state_dict, strict=False)
-        bn = torch.nn.BatchNorm2d(sample_size[1])
+        bn = torch.nn.BatchNorm2d(sample_size[1], eps=0).eval()
         bn.load_state_dict(state_dict)
-        self.assertEqual(fbn.eps, bn.eps)
+        # Difference is expected to fall in an acceptable range
+        self.assertTrue(torch.allclose(fbn(x), bn(x), atol=1e-6))
 
         # Check computation for eps > 0
         fbn = ops.misc.FrozenBatchNorm2d(sample_size[1], eps=1e-5)
