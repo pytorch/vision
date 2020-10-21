@@ -3,9 +3,10 @@ from collections import namedtuple
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.jit.annotations import Optional, Tuple
+from torch.jit.annotations import Optional, Tuple, List
 from torch import Tensor
 from .utils import load_state_dict_from_url
+from typing import Callable, Any
 
 __all__ = ['GoogLeNet', 'googlenet', "GoogLeNetOutputs", "_GoogLeNetOutputs"]
 
@@ -23,7 +24,7 @@ GoogLeNetOutputs.__annotations__ = {'logits': Tensor, 'aux_logits2': Optional[Te
 _GoogLeNetOutputs = GoogLeNetOutputs
 
 
-def googlenet(pretrained=False, progress=True, **kwargs):
+def googlenet(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> GoogLeNet:
     r"""GoogLeNet (Inception v1) model architecture from
     `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
 
@@ -62,8 +63,14 @@ def googlenet(pretrained=False, progress=True, **kwargs):
 class GoogLeNet(nn.Module):
     __constants__ = ['aux_logits', 'transform_input']
 
-    def __init__(self, num_classes=1000, aux_logits=True, transform_input=False, init_weights=None,
-                 blocks=None):
+    def __init__(
+        self,
+        num_classes: int = 1000,
+        aux_logits: bool = True,
+        transform_input: bool = False,
+        init_weights: Optional[bool] = None,
+        blocks: Optional[List[Callable[..., nn.Module]]] = None
+    ):
         super(GoogLeNet, self).__init__()
         if blocks is None:
             blocks = [BasicConv2d, Inception, InceptionAux]
@@ -114,7 +121,7 @@ class GoogLeNet(nn.Module):
         if init_weights:
             self._initialize_weights()
 
-    def _initialize_weights(self):
+    def _initialize_weights(self) -> None:
         for m in self.modules():
             if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
                 import scipy.stats as stats
@@ -127,7 +134,7 @@ class GoogLeNet(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-    def _transform_input(self, x):
+    def _transform_input(self, x: Tensor) -> Tensor:
         # type: (Tensor) -> Tensor
         if self.transform_input:
             x_ch0 = torch.unsqueeze(x[:, 0], 1) * (0.229 / 0.5) + (0.485 - 0.5) / 0.5
@@ -136,7 +143,7 @@ class GoogLeNet(nn.Module):
             x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
         return x
 
-    def _forward(self, x):
+    def _forward(self, x: Tensor) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]:
         # type: (Tensor) -> Tuple[Tensor, Optional[Tensor], Optional[Tensor]]
         # N x 3 x 224 x 224
         x = self.conv1(x)
@@ -199,7 +206,7 @@ class GoogLeNet(nn.Module):
         else:
             return x   # type: ignore[return-value]
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> GoogLeNetOutputs:
         # type: (Tensor) -> GoogLeNetOutputs
         x = self._transform_input(x)
         x, aux1, aux2 = self._forward(x)
@@ -214,8 +221,17 @@ class GoogLeNet(nn.Module):
 
 class Inception(nn.Module):
 
-    def __init__(self, in_channels, ch1x1, ch3x3red, ch3x3, ch5x5red, ch5x5, pool_proj,
-                 conv_block=None):
+    def __init__(
+        self,
+        in_channels: int,
+        ch1x1: int,
+        ch3x3red: int,
+        ch3x3: int,
+        ch5x5red: int,
+        ch5x5: int,
+        pool_proj: int,
+        conv_block: Optional[Callable[..., nn.Module]] = None
+    ):
         super(Inception, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -238,7 +254,7 @@ class Inception(nn.Module):
             conv_block(in_channels, pool_proj, kernel_size=1)
         )
 
-    def _forward(self, x):
+    def _forward(self, x: Tensor) -> List[Tensor]:
         branch1 = self.branch1(x)
         branch2 = self.branch2(x)
         branch3 = self.branch3(x)
@@ -247,14 +263,19 @@ class Inception(nn.Module):
         outputs = [branch1, branch2, branch3, branch4]
         return outputs
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         outputs = self._forward(x)
         return torch.cat(outputs, 1)
 
 
 class InceptionAux(nn.Module):
 
-    def __init__(self, in_channels, num_classes, conv_block=None):
+    def __init__(
+        self,
+        in_channels: int,
+        num_classes: int,
+        conv_block: Optional[Callable[..., nn.Module]] = None
+    ):
         super(InceptionAux, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -263,7 +284,7 @@ class InceptionAux(nn.Module):
         self.fc1 = nn.Linear(2048, 1024)
         self.fc2 = nn.Linear(1024, num_classes)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         # aux1: N x 512 x 14 x 14, aux2: N x 528 x 14 x 14
         x = F.adaptive_avg_pool2d(x, (4, 4))
         # aux1: N x 512 x 4 x 4, aux2: N x 528 x 4 x 4
@@ -283,12 +304,17 @@ class InceptionAux(nn.Module):
 
 class BasicConv2d(nn.Module):
 
-    def __init__(self, in_channels, out_channels, **kwargs):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        **kwargs
+    ):
         super(BasicConv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.conv(x)
         x = self.bn(x)
         return F.relu(x, inplace=True)
