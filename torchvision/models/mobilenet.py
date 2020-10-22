@@ -1,8 +1,7 @@
 from torch import nn
 from torch import Tensor
 from .utils import load_state_dict_from_url
-from torch.jit.annotations import Optional, List
-from typing import Callable, Any
+from typing import Callable, Any, Optional, List
 
 
 __all__ = ['MobileNetV2', 'mobilenet_v2']
