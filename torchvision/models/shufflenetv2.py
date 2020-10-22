@@ -40,7 +40,7 @@ class InvertedResidual(nn.Module):
         inp: int,
         oup: int,
         stride: int
-    ):
+    ) -> None:
         super(InvertedResidual, self).__init__()
 
         if not (1 <= stride <= 3):
@@ -97,7 +97,7 @@ class ShuffleNetV2(nn.Module):
         stages_out_channels: List[int],
         num_classes: int = 1000,
         inverted_residual: Callable[..., nn.Module] = InvertedResidual
-    ):
+    ) -> None:
         super(ShuffleNetV2, self).__init__()
 
         if len(stages_repeats) != 3:
