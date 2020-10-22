@@ -120,11 +120,11 @@ def list_files(root: str, suffix: str, prefix: bool = False) -> List[str]:
 
 
 def _quota_exceeded(response: "requests.models.Response") -> bool:  # type: ignore[name-defined]
-    return "Google Drive - Quota exceeded" in response.text
+    return (response.status_code == 403) and ("Google Drive - Quota exceeded" in response.text)
 
 
 def download_file_from_google_drive(file_id: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None):
-    """Download a Google Drive file from  and place it in root.
+    """Download a Google Drive file and place it in root.
 
     Args:
         file_id (str): id of file to be downloaded
@@ -147,7 +147,6 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
         print('Using downloaded and verified file: ' + fpath)
     else:
         session = requests.Session()
-
         response = session.get(url, params={'id': file_id}, stream=True)
         token = _get_confirm_token(response)
 
@@ -162,7 +161,6 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
                 f"and can only be overcome by trying again later."
             )
             raise RuntimeError(msg)
-
         _save_response_content(response, fpath)
 
 
