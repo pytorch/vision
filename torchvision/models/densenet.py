@@ -6,8 +6,7 @@ import torch.utils.checkpoint as cp
 from collections import OrderedDict
 from .utils import load_state_dict_from_url
 from torch import Tensor
-from torch.jit.annotations import List, Tuple
-from typing import Any
+from typing import Any, List, Tuple
 
 
 __all__ = ['DenseNet', 'densenet121', 'densenet169', 'densenet201', 'densenet161']
