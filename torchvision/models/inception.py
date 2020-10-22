@@ -404,7 +404,7 @@ class InceptionAux(nn.Module):
         self.conv1 = conv_block(128, 768, kernel_size=5)
         self.conv1.stddev = 0.01  # type: ignore[assignment]
         self.fc = nn.Linear(768, num_classes)
-        self.fc.stddev =  0.001  # type: ignore[assignment]
+        self.fc.stddev = 0.001  # type: ignore[assignment]
 
     def forward(self, x: Tensor) -> Tensor:
         # N x 768 x 17 x 17
