@@ -27,7 +27,7 @@ class _DenseLayer(nn.Module):
         bn_size: int,
         drop_rate: float,
         memory_efficient: bool = False
-    ):
+    ) -> None:
         super(_DenseLayer, self).__init__()
         self.add_module('norm1', nn.BatchNorm2d(num_input_features)),
         self.add_module('relu1', nn.ReLU(inplace=True)),
@@ -103,7 +103,7 @@ class _DenseBlock(nn.ModuleDict):
         growth_rate: int,
         drop_rate: float,
         memory_efficient: bool = False
-    ):
+    ) -> None:
         super(_DenseBlock, self).__init__()
         for i in range(num_layers):
             layer = _DenseLayer(
@@ -158,7 +158,7 @@ class DenseNet(nn.Module):
         drop_rate: float = 0,
         num_classes: int = 1000,
         memory_efficient: bool = False
-    ):
+    ) -> None:
 
         super(DenseNet, self).__init__()
 
