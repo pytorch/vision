@@ -32,7 +32,7 @@ class _InvertedResidual(nn.Module):
         stride: int,
         expansion_factor: int,
         bn_momentum: float = 0.1
-    ):
+    ) -> None:
         super(_InvertedResidual, self).__init__()
         assert stride in [1, 2]
         assert kernel_size in [3, 5]
@@ -109,7 +109,7 @@ class MNASNet(torch.nn.Module):
         alpha: float,
         num_classes: int = 1000,
         dropout: float = 0.2
-    ):
+    ) -> None:
         super(MNASNet, self).__init__()
         assert alpha > 0.0
         self.alpha = alpha
