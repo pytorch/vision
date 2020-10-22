@@ -20,7 +20,7 @@ class Fire(nn.Module):
         squeeze_planes: int,
         expand1x1_planes: int,
         expand3x3_planes: int
-    ):
+    ) -> None:
         super(Fire, self).__init__()
         self.inplanes = inplanes
         self.squeeze = nn.Conv2d(inplanes, squeeze_planes, kernel_size=1)
@@ -46,7 +46,7 @@ class SqueezeNet(nn.Module):
         self,
         version: str = '1_0',
         num_classes: int = 1000
-    ):
+    ) -> None:
         super(SqueezeNet, self).__init__()
         self.num_classes = num_classes
         if version == '1_0':
