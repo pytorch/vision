@@ -84,6 +84,7 @@ class WIDERFace(VisionDataset):
             self.target_type = target_type
         else:
             self.target_type = [target_type]
+        
         if not (all(x in ["raw","bbox","attr",""] for x in self.target_type)):
             raise ValueError("target_type \"{}\" is not recognized.".format(self.target_type))
         if not self.target_type and self.target_transform is not None:
@@ -164,12 +165,12 @@ class WIDERFace(VisionDataset):
             tuple: (image, target) where target=None for the test split.
         """
 
-        # stay consistent with all other datasets and return a PIL Image
+        # stay consistent with other datasets and return a PIL Image
         img = Image.open(self.imgs_path[index])
 
         if self.transform is not None:
             img = self.transform(img)
-        
+
         if self.split == "test":
             return img, None
 
@@ -191,14 +192,14 @@ class WIDERFace(VisionDataset):
             target = tuple(target) if len(target) > 1 else target[0]
             if self.target_transform is not None:
                 target = self.target_transform(target)
-        
+
         return img, target
 
 
     def __len__(self) -> int:
         return len(self.imgs_path)
 
-    # TODO - checking integrity of the annotations_file is not working
+
     def _check_integrity(self) -> bool:
         all_files = self.file_list.copy()
         all_files.append(self.annotations_file)
@@ -208,7 +209,6 @@ class WIDERFace(VisionDataset):
             _, ext = os.path.splitext(filename)
             # Allow original archive to be deleted (zip and 7z)
             # Only need the extracted images
-            print("filename: " + fpath)
             if ext not in [".zip", ".7z"] and not check_integrity(fpath, md5):
                 return False
 
@@ -218,9 +218,9 @@ class WIDERFace(VisionDataset):
     def download(self) -> None:
         import zipfile
 
-        # if self._check_integrity():
-        #     print('Files already downloaded and verified')
-        #     return
+        if self._check_integrity():
+            print('Files already downloaded and verified')
+            return
 
         # download data
         for (file_id, md5, filename) in self.file_list:
@@ -231,7 +231,7 @@ class WIDERFace(VisionDataset):
             with zipfile.ZipFile(os.path.join(self.root, self.base_folder, filename), "r") as f:
                 f.extractall(os.path.join(self.root, self.base_folder))
 
-        # download and extract annotations files
+        # download and extract annotation files
         download_and_extract_archive(url=self.annotations_file[0],
                                      download_root=os.path.join(self.root, self.base_folder),
                                      extract_root=os.path.join(self.root, self.base_folder),
