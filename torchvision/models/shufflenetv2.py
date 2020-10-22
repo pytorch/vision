@@ -74,8 +74,14 @@ class InvertedResidual(nn.Module):
         )
 
     @staticmethod
-    def depthwise_conv(i: int, o: int, kernel_size: int, stride: int = 1, padding: int = 0,
-                       bias: bool = False) -> nn.Conv2d:
+    def depthwise_conv(
+        i: int,
+        o: int,
+        kernel_size: int,
+        stride: int = 1,
+        padding: int = 0,
+        bias: bool = False
+    ) -> nn.Conv2d:
         return nn.Conv2d(i, o, kernel_size, stride, padding, bias=bias, groups=i)
 
     def forward(self, x: Tensor) -> Tensor:
