@@ -33,7 +33,7 @@ class GoogLeNet(nn.Module):
         transform_input: bool = False,
         init_weights: Optional[bool] = None,
         blocks: Optional[List[Callable[..., nn.Module]]] = None
-    ):
+    ) -> None:
         super(GoogLeNet, self).__init__()
         if blocks is None:
             blocks = [BasicConv2d, Inception, InceptionAux]
@@ -191,7 +191,7 @@ class Inception(nn.Module):
         ch5x5: int,
         pool_proj: int,
         conv_block: Optional[Callable[..., nn.Module]] = None
-    ):
+    ) -> None:
         super(Inception, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -235,7 +235,7 @@ class InceptionAux(nn.Module):
         in_channels: int,
         num_classes: int,
         conv_block: Optional[Callable[..., nn.Module]] = None
-    ):
+    ) -> None:
         super(InceptionAux, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -268,8 +268,8 @@ class BasicConv2d(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
-        **kwargs
-    ):
+        **kwargs: Any
+    ) -> None:
         super(BasicConv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
