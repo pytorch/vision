@@ -127,9 +127,10 @@ jobs:
       - checkout
       - run:
           command: |
-            sudo apt-get update -y
-            sudo apt-get install -y clang-format
-            ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
+            curl https://oss-clang-format.s3.us-east-2.amazonaws.com/mac/clang-format-mojave -o clang-format
+            chmod +x clang-format
+            sudo mv clang-format /opt/clang-format
+            ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
 
   binary_linux_wheel:
     <<: *binary_common
