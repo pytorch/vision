@@ -127,7 +127,7 @@ jobs:
       - checkout
       - run:
           command: |
-            curl https://oss-clang-format.s3.us-east-2.amazonaws.com/mac/clang-format-mojave -o clang-format
+            curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o clang-format
             chmod +x clang-format
             sudo mv clang-format /opt/clang-format
             ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
