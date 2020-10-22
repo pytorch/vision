@@ -41,7 +41,7 @@ class ConvBNReLU(nn.Sequential):
         stride: int = 1,
         groups: int = 1,
         norm_layer: Optional[Callable[..., nn.Module]] = None
-    ):
+    ) -> None:
         padding = (kernel_size - 1) // 2
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -60,7 +60,7 @@ class InvertedResidual(nn.Module):
         stride: int,
         expand_ratio: int,
         norm_layer: Optional[Callable[..., nn.Module]] = None
-    ):
+    ) -> None:
         super(InvertedResidual, self).__init__()
         self.stride = stride
         assert stride in [1, 2]
@@ -100,7 +100,7 @@ class MobileNetV2(nn.Module):
         round_nearest: int = 8,
         block: Optional[Callable[..., nn.Module]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None
-    ):
+    ) -> None:
         """
         MobileNet V2 main class
 
