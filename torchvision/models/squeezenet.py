@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 from .utils import load_state_dict_from_url
+from typing import Any
 
 __all__ = ['SqueezeNet', 'squeezenet1_0', 'squeezenet1_1']
 
@@ -111,7 +112,7 @@ class SqueezeNet(nn.Module):
         return torch.flatten(x, 1)
 
 
-def _squeezenet(version: str, pretrained: bool, progress: bool, **kwargs) -> SqueezeNet:
+def _squeezenet(version: str, pretrained: bool, progress: bool, **kwargs: Any) -> SqueezeNet:
     model = SqueezeNet(version, **kwargs)
     if pretrained:
         arch = 'squeezenet' + version
@@ -121,7 +122,7 @@ def _squeezenet(version: str, pretrained: bool, progress: bool, **kwargs) -> Squ
     return model
 
 
-def squeezenet1_0(pretrained: bool = False, progress: bool = True, **kwargs) -> SqueezeNet:
+def squeezenet1_0(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> SqueezeNet:
     r"""SqueezeNet model architecture from the `"SqueezeNet: AlexNet-level
     accuracy with 50x fewer parameters and <0.5MB model size"
     <https://arxiv.org/abs/1602.07360>`_ paper.
@@ -133,7 +134,7 @@ def squeezenet1_0(pretrained: bool = False, progress: bool = True, **kwargs) -> 
     return _squeezenet('1_0', pretrained, progress, **kwargs)
 
 
-def squeezenet1_1(pretrained: bool = False, progress: bool = True, **kwargs) -> SqueezeNet:
+def squeezenet1_1(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> SqueezeNet:
     r"""SqueezeNet 1.1 model from the `official SqueezeNet repo
     <https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1>`_.
     SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters
