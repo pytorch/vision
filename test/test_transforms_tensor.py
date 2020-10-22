@@ -280,6 +280,17 @@ class Tester(TransformsTester):
         )
 
     def test_resize(self):
+
+        # TODO: Minimal check for bug-fix, improve this later
+        x = torch.rand(3, 32, 46)
+        t = T.Resize(size=38)
+        y = t(x)
+        # If size is an int, smaller edge of the image will be matched to this number.
+        # i.e, if height > width, then image will be rescaled to (size * height / width, size).
+        self.assertTrue(isinstance(y, torch.Tensor))
+        self.assertEqual(y.shape[1], 38)
+        self.assertEqual(y.shape[2], int(38 * 46 / 32))
+
         tensor, _ = self._create_data(height=34, width=36, device=self.device)
         batch_tensors = torch.randint(0, 255, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
         script_fn = torch.jit.script(F.resize)
