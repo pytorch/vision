@@ -219,6 +219,11 @@ class Tester(unittest.TestCase):
         width = random.randint(24, 32) * 2
         osize = random.randint(5, 12) * 2
 
+        # TODO: Check output size check for bug-fix, improve this later
+        t = transforms.Resize(osize)
+        self.assertTrue(isinstance(t.size, int))
+        self.assertEqual(t.size, osize)
+
         img = torch.ones(3, height, width)
         result = transforms.Compose([
             transforms.ToPILImage(),
