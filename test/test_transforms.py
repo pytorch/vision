@@ -215,48 +215,64 @@ class Tester(unittest.TestCase):
                     F.perspective(img_conv, startpoints, endpoints, fill=tuple([fill] * wrong_num_bands))
 
     def test_resize(self):
-        height = random.randint(24, 32) * 2
-        width = random.randint(24, 32) * 2
-        osize = random.randint(5, 12) * 2
 
-        img = torch.ones(3, height, width)
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize(osize),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertIn(osize, result.size())
-        if height < width:
-            self.assertLessEqual(result.size(1), result.size(2))
-        elif width < height:
-            self.assertGreaterEqual(result.size(1), result.size(2))
+        input_sizes = [
+            # height, width
+            # square image
+            (28, 28),
+            (27, 27),
+            # rectangular image: h < w
+            (28, 34),
+            (29, 35),
+            # rectangular image: h > w
+            (34, 28),
+            (35, 29),
+        ]
+        test_output_sizes_1 = [
+            # single integer
+            22, 27, 28, 36,
+            # single integer in tuple/list
+            [22, ], (27, ),
+        ]
+        test_output_sizes_2 = [
+            # two integers
+            [22, 22], [22, 28], [22, 36],
+            [27, 22], [36, 22], [28, 28],
+            [28, 37], [37, 27], [37, 37]
+        ]
 
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize([osize, osize]),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertIn(osize, result.size())
-        self.assertEqual(result.size(1), osize)
-        self.assertEqual(result.size(2), osize)
+        for height, width in input_sizes:
+            img = Image.new("RGB", size=(width, height), color=127)
 
-        oheight = random.randint(5, 12) * 2
-        owidth = random.randint(5, 12) * 2
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize((oheight, owidth)),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertEqual(result.size(1), oheight)
-        self.assertEqual(result.size(2), owidth)
+            for osize in test_output_sizes_1:
 
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize([oheight, owidth]),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertEqual(result.size(1), oheight)
-        self.assertEqual(result.size(2), owidth)
+                t = transforms.Resize(osize)
+                result = t(img)
+
+                msg = "{}, {} - {}".format(height, width, osize)
+                osize = osize[0] if isinstance(osize, (list, tuple)) else osize
+                # If size is an int, smaller edge of the image will be matched to this number.
+                # i.e, if height > width, then image will be rescaled to (size * height / width, size).
+                if height < width:
+                    expected_size = (int(osize * width / height), osize)  # (w, h)
+                    self.assertEqual(result.size, expected_size, msg=msg)
+                elif width < height:
+                    expected_size = (osize, int(osize * height / width))  # (w, h)
+                    self.assertEqual(result.size, expected_size, msg=msg)
+                else:
+                    expected_size = (osize, osize)  # (w, h)
+                    self.assertEqual(result.size, expected_size, msg=msg)
+
+        for height, width in input_sizes:
+            img = Image.new("RGB", size=(width, height), color=127)
+
+            for osize in test_output_sizes_2:
+                oheight, owidth = osize
+
+                t = transforms.Resize(osize)
+                result = t(img)
+
+                self.assertEqual((owidth, oheight), result.size)
 
     def test_random_crop(self):
         height = random.randint(10, 32) * 2

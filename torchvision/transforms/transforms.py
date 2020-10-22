@@ -249,7 +249,11 @@ class Resize(torch.nn.Module):
 
     def __init__(self, size, interpolation=Image.BILINEAR):
         super().__init__()
-        self.size = _setup_size(size, error_msg="If size is a sequence, it should have 2 values")
+        if not isinstance(size, (int, Sequence)):
+            raise TypeError("Size should be int or sequence. Got {}".format(type(size)))
+        if isinstance(size, Sequence) and len(size) not in (1, 2):
+            raise ValueError("If size is a sequence, it should have 1 or 2 values")
+        self.size = size
         self.interpolation = interpolation
 
     def forward(self, img):
