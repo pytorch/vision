@@ -742,8 +742,8 @@ class RandomResizedCrop(torch.nn.Module):
         size (int or sequence): expected output size of each edge. If size is an
             int instead of sequence like (h, w), a square output size ``(size, size)`` is
             made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
-        scale (tuple of float): range of size of the origin size cropped
-        ratio (tuple of float): range of aspect ratio of the origin aspect ratio cropped.
+        scale (tuple of float): scale range of the cropped image before resizing, relatively to the origin image.
+        ratio (tuple of float): aspect ratio range of the cropped image before resizing.
         interpolation (int): Desired interpolation enum defined by `filters`_.
             Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
             and ``PIL.Image.BICUBIC`` are supported.
