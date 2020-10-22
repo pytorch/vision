@@ -29,7 +29,7 @@ class VGG(nn.Module):
         features: nn.Module,
         num_classes: int = 1000,
         init_weights: bool = True
-    ):
+    ) -> None:
         super(VGG, self).__init__()
         self.features = features
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
@@ -71,7 +71,7 @@ def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False) -> nn.Sequ
     in_channels = 3
     for v in cfg:
         if isinstance(v, int):
-            conv2d = nn.Conv2d(in_channels, int(v), kernel_size=3, padding=1)
+            conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
             if batch_norm:
                 layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
             else:
