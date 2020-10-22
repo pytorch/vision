@@ -2,8 +2,7 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 from .utils import load_state_dict_from_url
-from typing import Callable, Any
-from torch.jit.annotations import List
+from typing import Callable, Any, List
 
 
 __all__ = [
