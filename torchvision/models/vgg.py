@@ -1,8 +1,7 @@
 import torch
 import torch.nn as nn
 from .utils import load_state_dict_from_url
-from typing import Union
-from torch.jit.annotations import List, Dict
+from typing import Union, List, Dict
 
 
 __all__ = [
