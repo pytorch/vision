@@ -430,7 +430,7 @@ class BasicConv2d(nn.Module):
         self,
         in_channels: int,
         out_channels: int,
-        **kwargs
+        **kwargs: Any
     ) -> None:
         super(BasicConv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
