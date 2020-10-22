@@ -33,7 +33,7 @@ class Inception3(nn.Module):
         transform_input: bool = False,
         inception_blocks: Optional[List[Callable[..., nn.Module]]] = None,
         init_weights: Optional[bool] = None
-    ):
+    ) -> None:
         super(Inception3, self).__init__()
         if inception_blocks is None:
             inception_blocks = [
@@ -182,7 +182,7 @@ class InceptionA(nn.Module):
         in_channels: int,
         pool_features: int,
         conv_block: Optional[Callable[..., nn.Module]] = None
-    ):
+    ) -> None:
         super(InceptionA, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -224,7 +224,7 @@ class InceptionB(nn.Module):
         self,
         in_channels: int,
         conv_block: Optional[Callable[..., nn.Module]] = None
-    ):
+    ) -> None:
         super(InceptionB, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -258,7 +258,7 @@ class InceptionC(nn.Module):
         in_channels: int,
         channels_7x7: int,
         conv_block: Optional[Callable[..., nn.Module]] = None
-    ):
+    ) -> None:
         super(InceptionC, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -307,7 +307,7 @@ class InceptionD(nn.Module):
         self,
         in_channels: int,
         conv_block: Optional[Callable[..., nn.Module]] = None
-    ):
+    ) -> None:
         super(InceptionD, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -343,7 +343,7 @@ class InceptionE(nn.Module):
         self,
         in_channels: int,
         conv_block: Optional[Callable[..., nn.Module]] = None
-    ):
+    ) -> None:
         super(InceptionE, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -396,15 +396,15 @@ class InceptionAux(nn.Module):
         in_channels: int,
         num_classes: int,
         conv_block: Optional[Callable[..., nn.Module]] = None
-    ):
+    ) -> None:
         super(InceptionAux, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.conv0 = conv_block(in_channels, 128, kernel_size=1)
         self.conv1 = conv_block(128, 768, kernel_size=5)
-        setattr(self.conv1, 'stddev', 0.01)
+        self.conv1.stddev = 0.01  # type: ignore[assignment]
         self.fc = nn.Linear(768, num_classes)
-        setattr(self.fc, 'stddev', 0.001)
+        self.fc.stddev =  0.001  # type: ignore[assignment]
 
     def forward(self, x: Tensor) -> Tensor:
         # N x 768 x 17 x 17
@@ -431,7 +431,7 @@ class BasicConv2d(nn.Module):
         in_channels: int,
         out_channels: int,
         **kwargs
-    ):
+    ) -> None:
         super(BasicConv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
