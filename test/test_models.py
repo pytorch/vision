@@ -53,7 +53,9 @@ script_test_models = {
         'unwrapper': lambda x: x.logits
     },
     'densenet121': {},
+    'cifar10_densenet': {},
     'resnet18': {},
+    'cifar10_resnet': {},
     'alexnet': {},
     'shufflenet_v2_x1_0': {},
     'squeezenet1_0': {},

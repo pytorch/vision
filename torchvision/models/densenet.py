@@ -4,12 +4,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from collections import OrderedDict
-from .utils import load_state_dict_from_url
 from torch import Tensor
 from torch.jit.annotations import List
+from .utils import load_state_dict_from_url
 
-
-__all__ = ['DenseNet', 'densenet121', 'densenet169', 'densenet201', 'densenet161']
+__all__ = ['DenseNet', 'densenet121', 'densenet169', 'densenet201', 'densenet161', 'cifar10_densenet']
 
 model_urls = {
     'densenet121': 'https://download.pytorch.org/models/densenet121-a639ec97.pth',
@@ -22,16 +21,16 @@ model_urls = {
 class _DenseLayer(nn.Module):
     def __init__(self, num_input_features, growth_rate, bn_size, drop_rate, memory_efficient=False):
         super(_DenseLayer, self).__init__()
-        self.add_module('norm1', nn.BatchNorm2d(num_input_features)),
-        self.add_module('relu1', nn.ReLU(inplace=True)),
+        self.add_module('norm1', nn.BatchNorm2d(num_input_features))
+        self.add_module('relu1', nn.ReLU(inplace=True))
         self.add_module('conv1', nn.Conv2d(num_input_features, bn_size *
                                            growth_rate, kernel_size=1, stride=1,
-                                           bias=False)),
-        self.add_module('norm2', nn.BatchNorm2d(bn_size * growth_rate)),
-        self.add_module('relu2', nn.ReLU(inplace=True)),
+                                           bias=False))
+        self.add_module('norm2', nn.BatchNorm2d(bn_size * growth_rate))
+        self.add_module('relu2', nn.ReLU(inplace=True))
         self.add_module('conv2', nn.Conv2d(bn_size * growth_rate, growth_rate,
                                            kernel_size=3, stride=1, padding=1,
-                                           bias=False)),
+                                           bias=False))
         self.drop_rate = float(drop_rate)
         self.memory_efficient = memory_efficient
 
@@ -126,32 +125,45 @@ class _Transition(nn.Sequential):
 class DenseNet(nn.Module):
     r"""Densenet-BC model class, based on
     `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
-
     Args:
         growth_rate (int) - how many filters to add each layer (`k` in paper)
-        block_config (list of 4 ints) - how many layers in each pooling block
+        block_config (list of ints) - how many layers in each pooling block
         num_init_features (int) - the number of filters to learn in the first convolution layer
+        in_channels (int) - the number of channels of the input image
         bn_size (int) - multiplicative factor for number of bottle neck layers
           (i.e. bn_size * k features in the bottleneck layer)
         drop_rate (float) - dropout rate after each dense layer
         num_classes (int) - number of classification classes
+        stem_kernel_size (int) - size of the kernel in the first convolutional layer (stem)
+        stem_stride (int) - stride of the first convolutional layer (stem)
+        stem_padding (int) - padding in the first convolutional layer (stem)
+        stem_max_pool (bool) - if True, apply max-pooling after the first convolutional layer
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
     """
 
-    def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16),
-                 num_init_features=64, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False):
+    def __init__(self, growth_rate=32, block_config=(6, 12, 24, 16), num_init_features=64,
+                 in_channels=3, bn_size=4, drop_rate=0, num_classes=1000, memory_efficient=False,
+                 stem_kernel_size=7, stem_stride=2, stem_padding=2, stem_max_pool=True):
 
         super(DenseNet, self).__init__()
 
-        # First convolution
-        self.features = nn.Sequential(OrderedDict([
-            ('conv0', nn.Conv2d(3, num_init_features, kernel_size=7, stride=2,
-                                padding=3, bias=False)),
+        # ImageNet requires larger kernels (k=7, s=2) and max-pooling for downsampling of larger input images
+        # smaller images (cifar10, ...) should use smaller kernels (kernel=3, stride=1) and no max-pooling
+        features = [
+            ('conv0', nn.Conv2d(in_channels, num_init_features, kernel_size=stem_kernel_size, stride=stem_stride,
+                                padding=stem_padding, bias=False)),
             ('norm0', nn.BatchNorm2d(num_init_features)),
             ('relu0', nn.ReLU(inplace=True)),
-            ('pool0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
-        ]))
+        ]
+
+        if stem_max_pool:
+            features.append(
+                ('pool0', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
+            )
+
+        # First convolution
+        self.features = nn.Sequential(OrderedDict(features))
 
         # Each denseblock
         num_features = num_init_features
@@ -277,3 +289,22 @@ def densenet201(pretrained=False, progress=True, **kwargs):
     """
     return _densenet('densenet201', 32, (6, 12, 48, 32), 64, pretrained, progress,
                      **kwargs)
+
+
+def cifar10_densenet(growth_rate=12, depth=100, num_classes=10, **kwargs):
+    r"""Densenet model for the Cifar10 dataset from
+    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
+    As specified in the paper, the first feature map uses 2 * growth_rate channels
+    and the model uses 3 blocks with (depth - 4) / 6 dense layers.
+    Args:
+        growth_reate (int): growth rate for DenseNet
+        depth (int): depth of network, i.e. total of stacked, weighted layers
+    """
+    num_init_features = 2 * growth_rate
+    layers_per_block = int((depth - 4) / 6)
+    block_config = (layers_per_block, ) * 3
+
+    return DenseNet(growth_rate=growth_rate, num_init_features=num_init_features,
+                    num_classes=num_classes, block_config=block_config, drop_rate=0.2,
+                    stem_kernel_size=3, stem_stride=1, stem_padding=2, stem_max_pool=False,
+                    **kwargs)

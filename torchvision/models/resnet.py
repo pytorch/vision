@@ -5,7 +5,7 @@ from .utils import load_state_dict_from_url
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
            'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
-           'wide_resnet50_2', 'wide_resnet101_2']
+           'wide_resnet50_2', 'wide_resnet101_2', 'cifar10_resnet']
 
 
 model_urls = {
@@ -123,39 +123,94 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000, zero_init_residual=False,
-                 groups=1, width_per_group=64, replace_stride_with_dilation=None,
-                 norm_layer=None):
+    def __init__(self, block, blocks_per_layer, features_per_layer=(64, 128, 256, 512),
+                 num_classes=1000, in_channels=3,
+                 zero_init_residual=False, replace_stride_with_dilation=None,
+                 groups=1, width_per_group=64,
+                 norm_layer=None, stem_kernel_size=7, stem_stride=2, stem_padding=3,
+                 stem_max_pool=True):
+        r"""ResNet model, based on
+        `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
+        The original implementation uses the confusing notion of 'layer' for its general
+        architecture.The ResNet trained on ImageNet consists of a stem (first convolutional layer),
+        4 'layers' consisting of several stacked blocks (BasicBlock or Bottleneck) and the final
+        classification head.
+
+        Args:
+            block: basic building block of ResNet (BasicBlock or Bottleneck)
+            blocks_per_layer (list of ints): number of blocks used to build each layer
+            features_per_layer (list of ints): feature channels for each layer
+            num_classes (int): number of classification classes
+            in_channels (int): the number of channels of the input image
+            zero_init_residual (bool):
+            groups (int): groups of group convolution, if used
+            with_per_group(int):
+            replace_stride_with_dilatation (bool):
+            norm_layer: norm layer to use in the basic building blocks (e.g. batchnorm)
+            stem_kernel_size (int) - size of the kernel in the first convolutional layer (stem)
+            stem_stride (int) - stride of the first convolutional layer (stem)
+            stem_padding (int) - padding in the first convolutional layer (stem)
+            stem_max_pool (bool) - if True, apply max-pooling after the first convolutional layer
+        """
+
         super(ResNet, self).__init__()
+
+        self.num_layers = len(blocks_per_layer)
+        if len(features_per_layer) != self.num_layers:
+            raise ValueError("specifications for layers_per_block and features_per_block should"
+                             "match in length, got {} and {}".format(blocks_per_layer,
+                                                                     features_per_layer))
+
+        if self.num_layers > 4 or self.num_layers <= 1:
+            raise ValueError("currently, ResNet only support at least 1 and at most 4 layers"
+                             ", given {} layers".format(self.num_layers))
+
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer
 
-        self.inplanes = 64
+        self.inplanes = features_per_layer[0]
         self.dilation = 1
+        self.first_max_pool = stem_max_pool
+
         if replace_stride_with_dilation is None:
             # each element in the tuple indicates if we should replace
             # the 2x2 stride with a dilated convolution instead
-            replace_stride_with_dilation = [False, False, False]
-        if len(replace_stride_with_dilation) != 3:
+            replace_stride_with_dilation = [False] * (self.num_layers - 1)
+
+        if len(replace_stride_with_dilation) != (self.num_layers - 1):
             raise ValueError("replace_stride_with_dilation should be None "
-                             "or a 3-element tuple, got {}".format(replace_stride_with_dilation))
+                             "or a {}-element tuple, got {}".format(self.num_layers - 1,
+                                                                    replace_stride_with_dilation))
+
         self.groups = groups
         self.base_width = width_per_group
-        self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3,
-                               bias=False)
+
+        # ImageNet requires larger kernels (k=7, s=2) and max-pooling for downsampling of larger input images
+        # smaller images (cifar10, ...) should use smaller kernels (kernel=3, stride=1) and no max-pooling
+        self.conv1 = nn.Conv2d(in_channels, self.inplanes, kernel_size=stem_kernel_size,
+                               stride=stem_stride, padding=stem_padding, bias=False)
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2,
-                                       dilate=replace_stride_with_dilation[0])
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2,
-                                       dilate=replace_stride_with_dilation[1])
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2,
-                                       dilate=replace_stride_with_dilation[2])
+
+        # for custom specification of channels per layer and different feature map sizes (channel-wise)
+        # specify layers in a generic way, naming scheme allows compatibility with pre-trained models
+        # torchscript does not support getattr in forward
+        # workaround to keep model scribtable: if less layers specified, fill up layers with identities
+        self.layer1 = self._make_layer(block, features_per_layer[0], blocks_per_layer[0], stride=1)
+        self.layer2 = nn.Identity()
+        self.layer3 = nn.Identity()
+        self.layer4 = nn.Identity()
+
+        for layer in range(1, self.num_layers):
+            self.add_module('layer{}'.format(layer + 1),
+                            self._make_layer(block, features_per_layer[layer], blocks_per_layer[layer], stride=2,
+                                             dilate=replace_stride_with_dilation[layer - 1]))
+
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(512 * block.expansion, num_classes)
+        # due to custom feature map sizes: include flexibility in final linear layer
+        self.fc = nn.Linear(features_per_layer[self.num_layers - 1] * block.expansion, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -203,7 +258,10 @@ class ResNet(nn.Module):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
-        x = self.maxpool(x)
+
+        # no max-pooling if not desired (e.g. for smaller input images)
+        if self.first_max_pool:
+            x = self.maxpool(x)
 
         x = self.layer1(x)
         x = self.layer2(x)
@@ -351,3 +409,25 @@ def wide_resnet101_2(pretrained=False, progress=True, **kwargs):
     kwargs['width_per_group'] = 64 * 2
     return _resnet('wide_resnet101_2', Bottleneck, [3, 4, 23, 3],
                    pretrained, progress, **kwargs)
+
+
+def cifar10_resnet(depth=20, num_classes=10, **kwargs):
+    r"""ResNet model for the Cifar10 dataset from
+    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
+    The model is the ResNet implementation for smaller images e.g. from the Cifar10 dataset.
+    It specifies a stack of 6n 3x3 convolutions with feature channels of 16, 32, 64 per block,
+    i.e. 2n convolutions for each feature map size. Overall, the network has 6n + 2 stacked
+    weighted layers, referred to as depth. num_layers in the implementation of ResNet
+    refers to blocks of convolution of one particular size, i.e. num_layers corresponds to n.
+
+    Args:
+        depth (int): total depth (total of stacked weighted layers)
+        num_classes (int): number of classes for final classification layer
+    """
+
+    num_layers = int((depth - 2) / 6)
+    blocks_per_layer = (num_layers, ) * 3
+    return ResNet(BasicBlock, blocks_per_layer=blocks_per_layer,
+                  features_per_layer=(16, 32, 64),
+                  stem_kernel_size=3, stem_stride=1, stem_padding=1,
+                  stem_max_pool=False, num_classes=num_classes, **kwargs)
