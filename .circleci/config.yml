@@ -138,6 +138,7 @@ jobs:
     resource_class: 2xlarge+
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run: packaging/build_wheel.sh
       - store_artifacts:
           path: dist
@@ -153,6 +154,7 @@ jobs:
     resource_class: 2xlarge+
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run: packaging/build_conda.sh
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
@@ -168,6 +170,7 @@ jobs:
     executor: windows-cpu
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           name: Build conda packages
           command: |
@@ -193,6 +196,7 @@ jobs:
     executor: windows-cpu
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           name: Build wheel packages
           command: |
@@ -215,6 +219,7 @@ jobs:
       xcode: "9.4.1"
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           # Cannot easily deduplicate this as source'ing activate
           # will set environment variables which we need to propagate
@@ -237,6 +242,7 @@ jobs:
       xcode: "9.4.1"
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           command: |
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
@@ -299,6 +305,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/workspace
+      - designate_upload_channel
       - run:
           name: install binaries
           command: |
@@ -317,6 +324,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/workspace
+      - designate_upload_channel
       - run:
           name: install binaries
           command: |
@@ -337,6 +345,7 @@ jobs:
       image_name: torchvision/smoke_test
     steps:
       - checkout
+      - designate_upload_channel
       - run:
           name: Build and push Docker image
           no_output_timeout: "1h"
@@ -356,6 +365,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/workspace
+      - designate_upload_channel
       - run:
           name: install binaries
           command: |
@@ -381,6 +391,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/workspace
+      - designate_upload_channel
       - run:
           name: install binaries
           command: |
@@ -404,6 +415,7 @@ jobs:
     resource_class: 2xlarge+
     steps:
       - checkout
+      - designate_upload_channel
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -444,6 +456,7 @@ jobs:
       image_name: "pytorch/manylinux-cuda101"
     steps:
       - checkout
+      - designate_upload_channel
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -465,7 +478,7 @@ jobs:
             - env
       - run:
           name: Install torchvision
-          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/install.sh
+          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e UPLOAD_CHANNEL "${image_name}" .circleci/unittest/linux/scripts/install.sh
       - run:
           name: Run tests
           command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
@@ -481,6 +494,7 @@ jobs:
       name: windows-cpu
     steps:
       - checkout
+      - designate_upload_channel
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -520,6 +534,7 @@ jobs:
       CUDA_VERSION: "10.1"
     steps:
       - checkout
+      - designate_upload_channel
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -558,6 +573,7 @@ jobs:
     resource_class: large
     steps:
       - checkout
+      - designate_upload_channel
       - run:
           name: Install wget
           command: HOMEBREW_NO_AUTO_UPDATE=1 brew install wget
@@ -600,6 +616,7 @@ jobs:
     resource_class: 2xlarge+
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           name: Setup conda
           command: .circleci/unittest/linux/scripts/setup_env.sh
@@ -617,12 +634,13 @@ jobs:
       CU_VERSION: << parameters.cu_version >>
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           name: Setup conda
           command: docker run -e CU_VERSION -e PYTHON_VERSION -e UNICODE_ABI -e PYTORCH_VERSION -t --gpus all -v $PWD:$PWD -w $PWD << parameters.wheel_docker_image >> .circleci/unittest/linux/scripts/setup_env.sh
       - run:
           name: Build torchvision C++ distribution and test
-          command: docker run -e CU_VERSION -e PYTHON_VERSION -e UNICODE_ABI -e PYTORCH_VERSION -t --gpus all -v $PWD:$PWD -w $PWD << parameters.wheel_docker_image >> packaging/build_cmake.sh
+          command: docker run -e CU_VERSION -e PYTHON_VERSION -e UNICODE_ABI -e PYTORCH_VERSION -e UPLOAD_CHANNEL -t --gpus all -v $PWD:$PWD -w $PWD << parameters.wheel_docker_image >> packaging/build_cmake.sh
 
   cmake_macos_cpu:
     <<: *binary_common
@@ -630,6 +648,7 @@ jobs:
       xcode: "9.0"
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           command: |
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
@@ -644,6 +663,7 @@ jobs:
       name: windows-cpu
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           command: |
             set -ex
@@ -656,6 +676,7 @@ jobs:
       name: windows-gpu
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           command: |
             set -ex
