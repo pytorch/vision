@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from .utils import load_state_dict_from_url
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Any
 
 
 __all__ = [
@@ -90,7 +90,7 @@ cfgs: Dict[str, List[Union[str, int]]] = {
 }
 
 
-def _vgg(arch: str, cfg: str, batch_norm: bool, pretrained: bool, progress: bool, **kwargs) -> VGG:
+def _vgg(arch: str, cfg: str, batch_norm: bool, pretrained: bool, progress: bool, **kwargs: Any) -> VGG:
     if pretrained:
         kwargs['init_weights'] = False
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
@@ -101,7 +101,7 @@ def _vgg(arch: str, cfg: str, batch_norm: bool, pretrained: bool, progress: bool
     return model
 
 
-def vgg11(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
+def vgg11(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 11-layer model (configuration "A") from
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_
 
@@ -112,7 +112,7 @@ def vgg11(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
     return _vgg('vgg11', 'A', False, pretrained, progress, **kwargs)
 
 
-def vgg11_bn(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
+def vgg11_bn(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 11-layer model (configuration "A") with batch normalization
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_
 
@@ -123,7 +123,7 @@ def vgg11_bn(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
     return _vgg('vgg11_bn', 'A', True, pretrained, progress, **kwargs)
 
 
-def vgg13(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
+def vgg13(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 13-layer model (configuration "B")
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_
 
@@ -134,7 +134,7 @@ def vgg13(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
     return _vgg('vgg13', 'B', False, pretrained, progress, **kwargs)
 
 
-def vgg13_bn(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
+def vgg13_bn(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 13-layer model (configuration "B") with batch normalization
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_
 
@@ -145,7 +145,7 @@ def vgg13_bn(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
     return _vgg('vgg13_bn', 'B', True, pretrained, progress, **kwargs)
 
 
-def vgg16(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
+def vgg16(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 16-layer model (configuration "D")
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_
 
@@ -156,7 +156,7 @@ def vgg16(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
     return _vgg('vgg16', 'D', False, pretrained, progress, **kwargs)
 
 
-def vgg16_bn(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
+def vgg16_bn(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 16-layer model (configuration "D") with batch normalization
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_
 
@@ -167,7 +167,7 @@ def vgg16_bn(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
     return _vgg('vgg16_bn', 'D', True, pretrained, progress, **kwargs)
 
 
-def vgg19(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
+def vgg19(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 19-layer model (configuration "E")
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_
 
@@ -178,7 +178,7 @@ def vgg19(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
     return _vgg('vgg19', 'E', False, pretrained, progress, **kwargs)
 
 
-def vgg19_bn(pretrained: bool = False, progress: bool = True, **kwargs) -> VGG:
+def vgg19_bn(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VGG:
     r"""VGG 19-layer model (configuration 'E') with batch normalization
     `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_
 
