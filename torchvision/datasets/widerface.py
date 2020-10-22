@@ -16,16 +16,7 @@ from .utils import download_file_from_google_drive, download_and_extract_archive
 class WIDERFace(VisionDataset):
     """`WIDERFace <http://shuoyang1213.me/WIDERFACE/>`_ Dataset.
 
-    WIDER FACE dataset is a face detection benchmark dataset, of which images are 
-    selected from the publicly available WIDER dataset. We choose 32,203 images and 
-    label 393,703 faces with a high degree of variability in scale, pose and 
-    occlusion as depicted in the sample images. WIDER FACE dataset is organized 
-    based on 61 event classes. For each event class, we randomly select 40%/10%/50% 
-    data as training, validation and testing sets. We adopt the same evaluation 
-    metric employed in the PASCAL VOC dataset. Similar to MALF and Caltech datasets,
-    we do not release bounding box ground truth for the test images. Users are 
-    required to submit final prediction files, which we shall proceed to evaluate.
-
+    Citation:
     @inproceedings{yang2016wider,
 	    Author = {Yang, Shuo and Luo, Ping and Loy, Chen Change and Tang, Xiaoou},
 	    Booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
@@ -33,20 +24,24 @@ class WIDERFace(VisionDataset):
 	    Year = {2016}}
 
     Args:
-        root (string): Root directory of dataset where ``widerface/WIDER_train.zip widerface/WIDER_val.zip``
-            and  ``widerface/WIDER_test.zip widerface/wider_face_split.zip`` exist.
-        split (string): One of {'train', 'valid', 'test', 'all'}.
-            The specified dataset is selected.
-            Defaults to ``train``.
-        target_type (string or list, optional): Type of target to use, ``attr``, ``identity``, ``bbox``,
-            or ``landmarks``. Can also be a list to output a tuple with all specified target types.
+        root (string): Root directory of the WIDERFace Dataset.
+            Expects the following structure:
+                .
+                └── widerface
+                    ├── wider_face_split.zip
+                    ├── WIDER_test.zip
+                    ├── WIDER_train.zip
+                    └── WIDER_val.zip
+        split (string): One of {``train``, ``val``, ``test``}.
+            The dataset split to use. Defaults to ``train``.
+        target_type (string): The type of target to use, can be one of {``raw``, ``bbox``, ``attr``.``""``}
+            Can also be a list to output a tuple with all specified target types.
             The targets represent:
-                ``attr`` (np.array shape=(40,) dtype=int): binary (0, 1) labels for attributes
-                ``identity`` (int): label for each person (data points with the same identity are the same person)
-                ``bbox`` (np.array shape=(4,) dtype=int): bounding box (x, y, width, height)
-                ``landmarks`` (np.array shape=(10,) dtype=int): landmark points (lefteye_x, lefteye_y, righteye_x,
-                    righteye_y, nose_x, nose_y, leftmouth_x, leftmouth_y, rightmouth_x, rightmouth_y)
-            Defaults to ``attr``. If empty, ``None`` will be returned as target.
+                ``raw`` (torch.tensor shape=(10,) dtype=int): all annotations combined (bbox + attr)
+                ``bbox`` (torch.tensor shape=(4,) dtype=int): bounding box (x, y, width, height)
+                ``attr`` (torch.tensor shape=(6,) dtype=int): label values for attributes
+                    that represent (blur, expression, illumination, occlusion, pose, invalid)
+            Defaults to ``raw``. If empty, ``None`` will be returned as target.
         transform (callable, optional): A function/transform that  takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
@@ -71,24 +66,32 @@ class WIDERFace(VisionDataset):
             self,
             root: str,
             split: str = "train",
-            target_type: Union[List[str], str] = "attr",
+            target_type: Union[List[str], str] = "raw",
             transform: Optional[Callable] = None,
             target_transform: Optional[Callable] = None,
             download: bool = False,
     ) -> None:
         super(WIDERFace, self).__init__(root, transform=transform,
-                                    target_transform=target_transform)
+                                        target_transform=target_transform)
         print("root dir: " + self.root)
-        self.imgs_path = []
-        self.words = []
+        
+        # check arguments
+        if split not in ("train","val","test"):
+            raise ValueError("split \"{}\" is not recognized.".format(split))
         self.split = split
 
         if isinstance(target_type, list):
             self.target_type = target_type
         else:
             self.target_type = [target_type]
+        if not (all(x in ["raw","bbox","attr",""] for x in self.target_type)):
+            raise ValueError("target_type \"{}\" is not recognized.".format(self.target_type))
         if not self.target_type and self.target_transform is not None:
             raise RuntimeError('target_transform is specified but target_type is empty')
+
+        # prepare dataset
+        self.imgs_path = []
+        self.raw_annotations = []
 
         if download:
             self.download()
@@ -96,94 +99,101 @@ class WIDERFace(VisionDataset):
         if not self._check_integrity():
             raise RuntimeError("Dataset not found or corrupted. " +
                                "You can use download=True to download it")
+        
+        # process dataset
+        if self.split in ("train","val"):
+            self.parse_train_val_annotations_file()
+        elif self.split == "test":
+            self.parse_test_annotations_file()
+        else:
+            raise ValueError("split \"{}\" is not recognized.".format(self.split))
 
-        print("Finished initializing WIDERFace")
+    def parse_train_val_annotations_file(self):
+        filename = "wider_face_train_bbx_gt.txt" if self.split == "train" else "wider_face_val_bbx_gt.txt"
+        filepath = os.path.join(self.root, self.base_folder, "wider_face_split", filename)
 
-        ann_file = os.path.expanduser(os.path.join(self.root, self.base_folder, "wider_face_split", "wider_face_train_bbx_gt.txt"))
-        print("ann_file: " + ann_file)
-        f = open(ann_file, "r")
+        f = open(filepath, "r")
         lines = f.readlines()
 
-        isFile = True
-        isNumBoxes, isBoxAnnotation = False, False
-        num_boxes = 0
-        box_counter = 0
+        file_name_line, num_boxes_line, box_annotation_line = True, False, False
+        num_boxes, box_counter = 0, 0
         labels = []
         for line in lines:
             line = line.rstrip()
-            if isFile:
+            if file_name_line:
                 # print(line)
-                self.imgs_path.append(line)
-                isFile = False
-                isNumBoxes = True
-            elif isNumBoxes:
+                abs_path = os.path.join(self.root, self.base_folder, "WIDER_"+self.split, "images", line)
+                self.imgs_path.append(abs_path)
+                file_name_line = False
+                num_boxes_line = True
+            elif num_boxes_line:
                 num_boxes = int(line)
-                isNumBoxes = False
-                isBoxAnnotation = True
-            elif isBoxAnnotation:
+                num_boxes_line = False
+                box_annotation_line = True
+            elif box_annotation_line:
                 box_counter += 1
-                # line = line.split(" ")
-                # line = [int(x) for x in line]
-                # labels.append(line)
-                if box_counter == num_boxes:
-                    isBoxAnnotation = False
-                    isFile = True
-                    # print("read {} bounding boxes".format(box_counter))
-                    # self.words.append(labels.copy())
+                line = line.split(" ")
+                line = [int(x) for x in line]
+                labels.append(line)
+                if box_counter >= num_boxes:
+                    box_annotation_line = False
+                    file_name_line = True
+                    self.raw_annotations.append(torch.tensor(labels))
                     box_counter = 0
-                    # labels.clear()
+                    labels.clear()
             else:
-                print("ERROR parsing annotations file")
-
-        # isFirst = True
-        # labels = []
-        # for line in lines:
-        #     line = line.rstrip()
-        #     if line.startswith("#"):
-        #         if isFirst is True:
-        #             isFirst = False
-        #         else:
-        #             labels_copy = labels.copy()
-        #             self.words.append(labels_copy)
-        #             labels.clear()
-        #         path = line[2:]
-        #         path = ann_file.replace("label.txt","images/") + path
-        #         self.imgs_path.append(path)
-        #     else:
-        #         line = line.split(" ")
-        #         label = [float(x) for x in line]
-        #         labels.append(label)
-        # self.words.append(labels)
-
-
-        # if self.train:
-        #     data_file = self.training_file
-        # else:
-        #     data_file = self.test_file
-        # self.data, self.targets = torch.load(os.path.join(self.processed_folder, data_file))
+                raise RuntimeError("ERROR parsing annotations file {}".format(filepath))
+        f.close()
     
+    def parse_test_annotations_file(self):
+        filepath = os.path.join(self.root, self.base_folder, "wider_face_split", "wider_face_test_filelist.txt")
+        f = open(filepath, "r")
+        lines = f.readlines()
+        for line in lines:
+            line = line.rstrip()
+            abs_path = os.path.join(self.root, self.base_folder, "WIDER_test", "images", line)
+            self.imgs_path.append(abs_path)
+        f.close()
+
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
         Args:
             index (int): Index
 
         Returns:
-            tuple: (image, target) where target is index of the target class.
+            tuple: (image, target) where target=None for the test split.
         """
-        # img, target = self.data[index], int(self.targets[index])
 
-        # # doing this so that it is consistent with all other datasets
-        # # to return a PIL Image
-        # img = Image.fromarray(img.numpy(), mode='L')
+        # stay consistent with all other datasets and return a PIL Image
+        img = Image.open(self.imgs_path[index])
 
-        # if self.transform is not None:
-        #     img = self.transform(img)
+        if self.transform is not None:
+            img = self.transform(img)
+        
+        if self.split == "test":
+            return img, None
 
-        # if self.target_transform is not None:
-        #     target = self.target_transform(target)
+        # prepare target in the train/val split
+        target: Any = []
+        for t in self.target_type:
+            if t == "raw":
+                target.append( self.raw_annotations[index] )
+            elif t == "bbox":
+                target.append( self.raw_annotations[index][:,:4] )
+            elif t == "attr":
+                target.append( self.raw_annotations[index][:,4:] )
+            elif t == "":
+                target = None
+                break
+            else:
+                raise ValueError("Target type \"{}\" is not recognized.".format(t))
+        if target:
+            target = tuple(target) if len(target) > 1 else target[0]
+            if self.target_transform is not None:
+                target = self.target_transform(target)
+        
+        return img, target
 
-        # return img, target
-        return 0, 1
 
     def __len__(self) -> int:
         return len(self.imgs_path)
@@ -227,3 +237,7 @@ class WIDERFace(VisionDataset):
                                      extract_root=os.path.join(self.root, self.base_folder),
                                      filename=self.annotations_file[2],
                                      md5=self.annotations_file[1])
+
+    def extra_repr(self) -> str:
+        lines = ["Target type: {target_type}", "Split: {split}"]
+        return '\n'.join(lines).format(**self.__dict__)
