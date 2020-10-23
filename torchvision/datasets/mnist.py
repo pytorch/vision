@@ -7,6 +7,8 @@ import numpy as np
 import torch
 import codecs
 import string
+import gzip
+import lzma
 from typing import Any, Callable, Dict, IO, List, Optional, Tuple, Union
 from .utils import download_url, download_and_extract_archive, extract_archive, \
     verify_str_arg
@@ -435,17 +437,15 @@ def get_int(b: bytes) -> int:
     return int(codecs.encode(b, 'hex'), 16)
 
 
-def open_maybe_compressed_file(path: Union[str, IO]) -> IO:
+def open_maybe_compressed_file(path: Union[str, IO]) -> Union[IO, gzip.GzipFile]:
     """Return a file object that possibly decompresses 'path' on the fly.
        Decompression occurs when argument `path` is a string and ends with '.gz' or '.xz'.
     """
     if not isinstance(path, torch._six.string_classes):
         return path
     if path.endswith('.gz'):
-        import gzip
         return gzip.open(path, 'rb')
     if path.endswith('.xz'):
-        import lzma
         return lzma.open(path, 'rb')
     return open(path, 'rb')
 

@@ -3,7 +3,7 @@ from typing import Optional, Dict, Tuple
 
 import torch
 from torch import Tensor
-from torch.nn.functional import grid_sample
+from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
 from torch.jit.annotations import List, BroadcastingList2
 
 
@@ -15,7 +15,7 @@ def _get_image_size(img: Tensor) -> List[int]:
     """Returns (w, h) of tensor image"""
     if _is_tensor_a_torch_image(img):
         return [img.shape[-1], img.shape[-2]]
-    raise TypeError("Unexpected type {}".format(type(img)))
+    raise TypeError("Unexpected input type")
 
 
 def _get_image_num_channels(img: Tensor) -> int:
@@ -24,14 +24,114 @@ def _get_image_num_channels(img: Tensor) -> int:
     elif img.ndim > 2:
         return img.shape[-3]
 
-    raise TypeError("Unexpected type {}".format(type(img)))
+    raise TypeError("Input ndim should be 2 or more. Got {}".format(img.ndim))
+
+
+def _max_value(dtype: torch.dtype) -> float:
+    # TODO: replace this method with torch.iinfo when it gets torchscript support.
+    # https://github.com/pytorch/pytorch/issues/41492
+
+    a = torch.tensor(2, dtype=dtype)
+    signed = 1 if torch.tensor(0, dtype=dtype).is_signed() else 0
+    bits = 1
+    max_value = torch.tensor(-signed, dtype=torch.long)
+    while True:
+        next_value = a.pow(bits - signed).sub(1)
+        if next_value > max_value:
+            max_value = next_value
+            bits *= 2
+        else:
+            return max_value.item()
+    return max_value.item()
+
+
+def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
+    """PRIVATE METHOD. Convert a tensor image to the given ``dtype`` and scale the values accordingly
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
+
+    Args:
+        image (torch.Tensor): Image to be converted
+        dtype (torch.dtype): Desired data type of the output
+
+    Returns:
+        (torch.Tensor): Converted image
+
+    .. note::
+
+        When converting from a smaller to a larger integer ``dtype`` the maximum values are **not** mapped exactly.
+        If converted back and forth, this mismatch has no effect.
+
+    Raises:
+        RuntimeError: When trying to cast :class:`torch.float32` to :class:`torch.int32` or :class:`torch.int64` as
+            well as for trying to cast :class:`torch.float64` to :class:`torch.int64`. These conversions might lead to
+            overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
+            of the integer ``dtype``.
+    """
+    if image.dtype == dtype:
+        return image
+
+    # TODO: replace with image.dtype.is_floating_point when torchscript supports it
+    if torch.empty(0, dtype=image.dtype).is_floating_point():
+
+        # TODO: replace with dtype.is_floating_point when torchscript supports it
+        if torch.tensor(0, dtype=dtype).is_floating_point():
+            return image.to(dtype)
+
+        # float to int
+        if (image.dtype == torch.float32 and dtype in (torch.int32, torch.int64)) or (
+            image.dtype == torch.float64 and dtype == torch.int64
+        ):
+            msg = f"The cast from {image.dtype} to {dtype} cannot be performed safely."
+            raise RuntimeError(msg)
+
+        # https://github.com/pytorch/vision/pull/2078#issuecomment-612045321
+        # For data in the range 0-1, (float * 255).to(uint) is only 255
+        # when float is exactly 1.0.
+        # `max + 1 - epsilon` provides more evenly distributed mapping of
+        # ranges of floats to ints.
+        eps = 1e-3
+        max_val = _max_value(dtype)
+        result = image.mul(max_val + 1.0 - eps)
+        return result.to(dtype)
+    else:
+        input_max = _max_value(image.dtype)
+        output_max = _max_value(dtype)
+
+        # int to float
+        # TODO: replace with dtype.is_floating_point when torchscript supports it
+        if torch.tensor(0, dtype=dtype).is_floating_point():
+            image = image.to(dtype)
+            return image / input_max
+
+        # int to int
+        if input_max > output_max:
+            # factor should be forced to int for torch jit script
+            # otherwise factor is a float and image // factor can produce different results
+            factor = int((input_max + 1) // (output_max + 1))
+            image = image // factor
+            return image.to(dtype)
+        else:
+            # factor should be forced to int for torch jit script
+            # otherwise factor is a float and image * factor can produce different results
+            factor = int((output_max + 1) // (input_max + 1))
+            image = image.to(dtype)
+            return image * factor
 
 
 def vflip(img: Tensor) -> Tensor:
-    """Vertically flip the given the Image Tensor.
+    """PRIVATE METHOD. Vertically flip the given the Image Tensor.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
-        img (Tensor): Image Tensor to be flipped in the form [C, H, W].
+        img (Tensor): Image Tensor to be flipped in the form [..., C, H, W].
 
     Returns:
         Tensor:  Vertically flipped image Tensor.
@@ -43,10 +143,15 @@ def vflip(img: Tensor) -> Tensor:
 
 
 def hflip(img: Tensor) -> Tensor:
-    """Horizontally flip the given the Image Tensor.
+    """PRIVATE METHOD. Horizontally flip the given the Image Tensor.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
-        img (Tensor): Image Tensor to be flipped in the form [C, H, W].
+        img (Tensor): Image Tensor to be flipped in the form [..., C, H, W].
 
     Returns:
         Tensor:  Horizontally flipped image Tensor.
@@ -58,7 +163,12 @@ def hflip(img: Tensor) -> Tensor:
 
 
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
-    """Crop the given Image Tensor.
+    """PRIVATE METHOD. Crop the given Image Tensor.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (Tensor): Image to be cropped in the form [..., H, W]. (0,0) denotes the top left corner of the image.
@@ -77,7 +187,13 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
 
 
 def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
-    """Convert the given RGB Image Tensor to Grayscale.
+    """PRIVATE METHOD. Convert the given RGB Image Tensor to Grayscale.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
+
     For RGB to Grayscale conversion, ITU-R 601-2 luma transform is performed which
     is L = R * 0.2989 + G * 0.5870 + B * 0.1140
 
@@ -114,7 +230,12 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
 
 
 def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
-    """Adjust brightness of an RGB image.
+    """PRIVATE METHOD. Adjust brightness of an RGB image.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (Tensor): Image to be adjusted.
@@ -135,7 +256,12 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
 
 
 def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
-    """Adjust contrast of an RGB image.
+    """PRIVATE METHOD. Adjust contrast of an RGB image.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (Tensor): Image to be adjusted.
@@ -152,13 +278,19 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
-    mean = torch.mean(rgb_to_grayscale(img).to(torch.float))
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    mean = torch.mean(rgb_to_grayscale(img).to(dtype), dim=(-3, -2, -1), keepdim=True)
 
     return _blend(img, mean, contrast_factor)
 
 
 def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
-    """Adjust hue of an image.
+    """PRIVATE METHOD. Adjust hue of an image.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     The image hue is adjusted by converting the image to HSV and
     cyclically shifting the intensities in the hue channel (H).
@@ -186,16 +318,16 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
         raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
 
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
-        raise TypeError('img should be Tensor image. Got {}'.format(type(img)))
+        raise TypeError('Input img should be Tensor image')
 
     orig_dtype = img.dtype
     if img.dtype == torch.uint8:
         img = img.to(dtype=torch.float32) / 255.0
 
     img = _rgb2hsv(img)
-    h, s, v = img.unbind(0)
+    h, s, v = img.unbind(dim=-3)
     h = (h + hue_factor) % 1.0
-    img = torch.stack((h, s, v))
+    img = torch.stack((h, s, v), dim=-3)
     img_hue_adj = _hsv2rgb(img)
 
     if orig_dtype == torch.uint8:
@@ -205,7 +337,12 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
 
 
 def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
-    """Adjust color saturation of an RGB image.
+    """PRIVATE METHOD. Adjust color saturation of an RGB image.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (Tensor): Image to be adjusted.
@@ -226,7 +363,12 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
 
 
 def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
-    r"""Adjust gamma of an RGB image.
+    r"""PRIVATE METHOD. Adjust gamma of an RGB image.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Also known as Power Law Transform. Intensities in RGB mode are adjusted
     based on the following equation:
@@ -247,7 +389,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     """
 
     if not isinstance(img, torch.Tensor):
-        raise TypeError('img should be a Tensor. Got {}'.format(type(img)))
+        raise TypeError('Input img should be a Tensor.')
 
     if gamma < 0:
         raise ValueError('Gamma should be a non-negative real number')
@@ -255,19 +397,22 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     result = img
     dtype = img.dtype
     if not torch.is_floating_point(img):
-        result = result / 255.0
+        result = convert_image_dtype(result, torch.float32)
 
     result = (gain * result ** gamma).clamp(0, 1)
 
-    if result.dtype != dtype:
-        eps = 1e-3
-        result = (255 + 1.0 - eps) * result
+    result = convert_image_dtype(result, dtype)
     result = result.to(dtype)
     return result
 
 
 def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
     """DEPRECATED. Crop the Image Tensor and resize it to desired size.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     .. warning::
 
@@ -306,6 +451,11 @@ def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
 
 def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
     """DEPRECATED. Crop the given Image Tensor into four corners and the central crop.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     .. warning::
 
@@ -358,6 +508,11 @@ def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = Fa
 
     .. warning::
 
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
+
+    .. warning::
+
         This method is deprecated and will be removed in future releases.
         Please, use ``F.ten_crop`` instead.
 
@@ -405,12 +560,12 @@ def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
 
 
 def _rgb2hsv(img):
-    r, g, b = img.unbind(0)
+    r, g, b = img.unbind(dim=-3)
 
     # Implementation is based on https://github.com/python-pillow/Pillow/blob/4174d4267616897df3746d315d5a2d0f82c656ee/
     # src/libImaging/Convert.c#L330
-    maxc = torch.max(img, dim=0).values
-    minc = torch.min(img, dim=0).values
+    maxc = torch.max(img, dim=-3).values
+    minc = torch.min(img, dim=-3).values
 
     # The algorithm erases S and H channel where `maxc = minc`. This avoids NaN
     # from happening in the results, because
@@ -440,11 +595,11 @@ def _rgb2hsv(img):
     hb = ((maxc != g) & (maxc != r)) * (4.0 + gc - rc)
     h = (hr + hg + hb)
     h = torch.fmod((h / 6.0 + 1.0), 1.0)
-    return torch.stack((h, s, maxc))
+    return torch.stack((h, s, maxc), dim=-3)
 
 
 def _hsv2rgb(img):
-    h, s, v = img.unbind(0)
+    h, s, v = img.unbind(dim=-3)
     i = torch.floor(h * 6.0)
     f = (h * 6.0) - i
     i = i.to(dtype=torch.int32)
@@ -454,18 +609,25 @@ def _hsv2rgb(img):
     t = torch.clamp((v * (1.0 - s * (1.0 - f))), 0.0, 1.0)
     i = i % 6
 
-    mask = i == torch.arange(6, device=i.device)[:, None, None]
+    mask = i.unsqueeze(dim=-3) == torch.arange(6, device=i.device).view(-1, 1, 1)
 
-    a1 = torch.stack((v, q, p, p, t, v))
-    a2 = torch.stack((t, v, v, q, p, p))
-    a3 = torch.stack((p, p, t, v, v, q))
-    a4 = torch.stack((a1, a2, a3))
+    a1 = torch.stack((v, q, p, p, t, v), dim=-3)
+    a2 = torch.stack((t, v, v, q, p, p), dim=-3)
+    a3 = torch.stack((p, p, t, v, v, q), dim=-3)
+    a4 = torch.stack((a1, a2, a3), dim=-4)
 
-    return torch.einsum("ijk, xijk -> xjk", mask.to(dtype=img.dtype), a4)
+    return torch.einsum("...ijk, ...xijk -> ...xjk", mask.to(dtype=img.dtype), a4)
 
 
 def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
     # padding is left, right, top, bottom
+
+    # crop if needed
+    if padding[0] < 0 or padding[1] < 0 or padding[2] < 0 or padding[3] < 0:
+        crop_left, crop_right, crop_top, crop_bottom = [-min(x, 0) for x in padding]
+        img = img[..., crop_top:img.shape[-2] - crop_bottom, crop_left:img.shape[-1] - crop_right]
+        padding = [max(x, 0) for x in padding]
+
     in_sizes = img.size()
 
     x_indices = [i for i in range(in_sizes[-1])]  # [0, 1, 2, 3, ...]
@@ -488,7 +650,12 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
 
 
 def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
-    r"""Pad the given Tensor Image on all sides with specified padding mode and fill value.
+    r"""PRIVATE METHOD. Pad the given Tensor Image on all sides with specified padding mode and fill value.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (Tensor): Image to be padded.
@@ -563,8 +730,6 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         padding_mode = "replicate"
     elif padding_mode == "symmetric":
         # route to another implementation
-        if p[0] < 0 or p[1] < 0 or p[2] < 0 or p[3] < 0:  # no any support for torch script
-            raise ValueError("Padding can not be negative for symmetric padding_mode")
         return _pad_symmetric(img, p)
 
     need_squeeze = False
@@ -581,7 +746,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         need_cast = True
         img = img.to(torch.float32)
 
-    img = torch.nn.functional.pad(img, p, mode=padding_mode, value=float(fill))
+    img = torch_pad(img, p, mode=padding_mode, value=float(fill))
 
     if need_squeeze:
         img = img.squeeze(dim=0)
@@ -593,7 +758,12 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 
 
 def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
-    r"""Resize the input Tensor to the given size.
+    r"""PRIVATE METHOD. Resize the input Tensor to the given size.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (Tensor): Image to be resized.
@@ -669,7 +839,7 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
     # Define align_corners to avoid warnings
     align_corners = False if mode in ["bilinear", "bicubic"] else None
 
-    img = torch.nn.functional.interpolate(img, size=(size_h, size_w), mode=mode, align_corners=align_corners)
+    img = interpolate(img, size=[size_h, size_w], mode=mode, align_corners=align_corners)
 
     if need_squeeze:
         img = img.squeeze(dim=0)
@@ -691,10 +861,10 @@ def _assert_grid_transform_inputs(
         coeffs: Optional[List[float]] = None,
 ):
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
-        raise TypeError("img should be Tensor Image. Got {}".format(type(img)))
+        raise TypeError("Input img should be Tensor Image")
 
     if matrix is not None and not isinstance(matrix, list):
-        raise TypeError("Argument matrix should be a list. Got {}".format(type(matrix)))
+        raise TypeError("Argument matrix should be a list")
 
     if matrix is not None and len(matrix) != 6:
         raise ValueError("Argument matrix should have 6 float values")
@@ -709,21 +879,22 @@ def _assert_grid_transform_inputs(
         raise ValueError("Resampling mode '{}' is unsupported with Tensor input".format(resample))
 
 
-def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
-    # make image NCHW
+def _cast_squeeze_in(img: Tensor, req_dtype: torch.dtype) -> Tuple[Tensor, bool, bool, torch.dtype]:
     need_squeeze = False
+    # make image NCHW
     if img.ndim < 4:
         img = img.unsqueeze(dim=0)
         need_squeeze = True
 
     out_dtype = img.dtype
     need_cast = False
-    if img.dtype not in (torch.float32, torch.float64):
+    if out_dtype != req_dtype:
         need_cast = True
-        img = img.to(torch.float32)
+        img = img.to(req_dtype)
+    return img, need_cast, need_squeeze, out_dtype
 
-    img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
 
+def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtype: torch.dtype):
     if need_squeeze:
         img = img.squeeze(dim=0)
 
@@ -731,6 +902,19 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
         # it is better to round before cast
         img = torch.round(img).to(out_dtype)
 
+    return img
+
+
+def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
+
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, grid.dtype)
+
+    if img.shape[0] > 1:
+        # Apply same grid to a batch of images
+        grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
+    img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
+
+    img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
 
 
@@ -745,8 +929,10 @@ def _gen_affine_grid(
 
     d = 0.5
     base_grid = torch.empty(1, oh, ow, 3, dtype=theta.dtype, device=theta.device)
-    base_grid[..., 0].copy_(torch.linspace(-ow * 0.5 + d, ow * 0.5 + d - 1, steps=ow))
-    base_grid[..., 1].copy_(torch.linspace(-oh * 0.5 + d, oh * 0.5 + d - 1, steps=oh).unsqueeze_(-1))
+    x_grid = torch.linspace(-ow * 0.5 + d, ow * 0.5 + d - 1, steps=ow, device=theta.device)
+    base_grid[..., 0].copy_(x_grid)
+    y_grid = torch.linspace(-oh * 0.5 + d, oh * 0.5 + d - 1, steps=oh, device=theta.device).unsqueeze_(-1)
+    base_grid[..., 1].copy_(y_grid)
     base_grid[..., 2].fill_(1)
 
     rescaled_theta = theta.transpose(1, 2) / torch.tensor([0.5 * w, 0.5 * h], dtype=theta.dtype, device=theta.device)
@@ -757,7 +943,12 @@ def _gen_affine_grid(
 def affine(
         img: Tensor, matrix: List[float], resample: int = 0, fillcolor: Optional[int] = None
 ) -> Tensor:
-    """Apply affine transformation on the Tensor image keeping image center invariant.
+    """PRIVATE METHOD. Apply affine transformation on the Tensor image keeping image center invariant.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (Tensor): image to be rotated.
@@ -777,7 +968,8 @@ def affine(
 
     _assert_grid_transform_inputs(img, matrix, resample, fillcolor, _interpolation_modes)
 
-    theta = torch.tensor(matrix, dtype=torch.float, device=img.device).reshape(1, 2, 3)
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     shape = img.shape
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
@@ -813,7 +1005,12 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
 def rotate(
         img: Tensor, matrix: List[float], resample: int = 0, expand: bool = False, fill: Optional[int] = None
 ) -> Tensor:
-    """Rotate the Tensor image by angle.
+    """PRIVATE METHOD. Rotate the Tensor image by angle.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (Tensor): image to be rotated.
@@ -842,7 +1039,8 @@ def rotate(
     _assert_grid_transform_inputs(img, matrix, resample, fill, _interpolation_modes)
     w, h = img.shape[-1], img.shape[-2]
     ow, oh = _compute_output_size(matrix, w, h) if expand else (w, h)
-    theta = torch.tensor(matrix, dtype=torch.float, device=img.device).reshape(1, 2, 3)
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
     mode = _interpolation_modes[resample]
@@ -850,7 +1048,7 @@ def rotate(
     return _apply_grid_transform(img, grid, mode)
 
 
-def _perspective_grid(coeffs: List[float], ow: int, oh: int, device: torch.device):
+def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype, device: torch.device):
     # https://github.com/python-pillow/Pillow/blob/4634eafe3c695a014267eefdce830b4a825beed7/
     # src/libImaging/Geometry.c#L394
 
@@ -858,23 +1056,24 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, device: torch.devic
     # x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
     # y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
     #
-
     theta1 = torch.tensor([[
         [coeffs[0], coeffs[1], coeffs[2]],
         [coeffs[3], coeffs[4], coeffs[5]]
-    ]], dtype=torch.float, device=device)
+    ]], dtype=dtype, device=device)
     theta2 = torch.tensor([[
         [coeffs[6], coeffs[7], 1.0],
         [coeffs[6], coeffs[7], 1.0]
-    ]], dtype=torch.float, device=device)
+    ]], dtype=dtype, device=device)
 
     d = 0.5
-    base_grid = torch.empty(1, oh, ow, 3, dtype=torch.float, device=device)
-    base_grid[..., 0].copy_(torch.linspace(d, ow * 1.0 + d - 1.0, steps=ow))
-    base_grid[..., 1].copy_(torch.linspace(d, oh * 1.0 + d - 1.0, steps=oh).unsqueeze_(-1))
+    base_grid = torch.empty(1, oh, ow, 3, dtype=dtype, device=device)
+    x_grid = torch.linspace(d, ow * 1.0 + d - 1.0, steps=ow, device=device)
+    base_grid[..., 0].copy_(x_grid)
+    y_grid = torch.linspace(d, oh * 1.0 + d - 1.0, steps=oh, device=device).unsqueeze_(-1)
+    base_grid[..., 1].copy_(y_grid)
     base_grid[..., 2].fill_(1)
 
-    rescaled_theta1 = theta1.transpose(1, 2) / torch.tensor([0.5 * ow, 0.5 * oh], dtype=torch.float, device=device)
+    rescaled_theta1 = theta1.transpose(1, 2) / torch.tensor([0.5 * ow, 0.5 * oh], dtype=dtype, device=device)
     output_grid1 = base_grid.view(1, oh * ow, 3).bmm(rescaled_theta1)
     output_grid2 = base_grid.view(1, oh * ow, 3).bmm(theta2.transpose(1, 2))
 
@@ -885,7 +1084,12 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, device: torch.devic
 def perspective(
         img: Tensor, perspective_coeffs: List[float], interpolation: int = 2, fill: Optional[int] = None
 ) -> Tensor:
-    """Perform perspective transform of the given Tensor image.
+    """PRIVATE METHOD. Perform perspective transform of the given Tensor image.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (Tensor): Image to be transformed.
@@ -898,7 +1102,7 @@ def perspective(
         Tensor: transformed image.
     """
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
-        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+        raise TypeError('Input img should be Tensor Image')
 
     _interpolation_modes = {
         0: "nearest",
@@ -915,7 +1119,61 @@ def perspective(
     )
 
     ow, oh = img.shape[-1], img.shape[-2]
-    grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, device=img.device)
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=img.device)
     mode = _interpolation_modes[interpolation]
 
     return _apply_grid_transform(img, grid, mode)
+
+
+def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> Tensor:
+    ksize_half = (kernel_size - 1) * 0.5
+
+    x = torch.linspace(-ksize_half, ksize_half, steps=kernel_size)
+    pdf = torch.exp(-0.5 * (x / sigma).pow(2))
+    kernel1d = pdf / pdf.sum()
+
+    return kernel1d
+
+
+def _get_gaussian_kernel2d(
+        kernel_size: List[int], sigma: List[float], dtype: torch.dtype, device: torch.device
+) -> Tensor:
+    kernel1d_x = _get_gaussian_kernel1d(kernel_size[0], sigma[0]).to(device, dtype=dtype)
+    kernel1d_y = _get_gaussian_kernel1d(kernel_size[1], sigma[1]).to(device, dtype=dtype)
+    kernel2d = torch.mm(kernel1d_y[:, None], kernel1d_x[None, :])
+    return kernel2d
+
+
+def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Tensor:
+    """PRIVATE METHOD. Performs Gaussian blurring on the img by given kernel.
+
+    .. warning::
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
+
+    Args:
+        img (Tensor): Image to be blurred
+        kernel_size (sequence of int or int): Kernel size of the Gaussian kernel ``(kx, ky)``.
+        sigma (sequence of float or float, optional): Standard deviation of the Gaussian kernel ``(sx, sy)``.
+
+    Returns:
+        Tensor: An image that is blurred using gaussian kernel of given parameters
+    """
+    if not (isinstance(img, torch.Tensor) or _is_tensor_a_torch_image(img)):
+        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=img.device)
+    kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
+
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, kernel.dtype)
+
+    # padding = (left, right, top, bottom)
+    padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
+    img = torch_pad(img, padding, mode="reflect")
+    img = conv2d(img, kernel, groups=img.shape[-3])
+
+    img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
+    return img

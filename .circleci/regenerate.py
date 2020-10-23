@@ -27,8 +27,8 @@ def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, 
     for btype in ["wheel", "conda"]:
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
-            cu_versions_dict = {"linux": ["cpu", "cu92", "cu101", "cu102"],
-                                "win": ["cpu", "cu101", "cu102"],
+            cu_versions_dict = {"linux": ["cpu", "cu92", "cu101", "cu102", "cu110"],
+                                "win": ["cpu", "cu101", "cu102", "cu110"],
                                 "macos": ["cpu"]}
             cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
@@ -69,6 +69,7 @@ manylinux_images = {
     "cu92": "pytorch/manylinux-cuda92",
     "cu101": "pytorch/manylinux-cuda101",
     "cu102": "pytorch/manylinux-cuda102",
+    "cu110": "pytorch/manylinux-cuda110",
 }
 
 
@@ -164,8 +165,10 @@ def indent(indentation, data_list):
 
 def unittest_workflows(indentation=6):
     jobs = []
-    for os_type in ["linux", "windows"]:
+    for os_type in ["linux", "windows", "macos"]:
         for device_type in ["cpu", "gpu"]:
+            if os_type == "macos" and device_type == "gpu":
+                continue
             for i, python_version in enumerate(PYTHON_VERSIONS):
                 job = {
                     "name": f"unittest_{os_type}_{device_type}_py{python_version}",
@@ -184,6 +187,25 @@ def unittest_workflows(indentation=6):
     return indent(indentation, jobs)
 
 
+def cmake_workflows(indentation=6):
+    jobs = []
+    python_version = '3.8'
+    for os_type in ['linux', 'windows', 'macos']:
+        # Skip OSX CUDA
+        device_types = ['cpu', 'gpu'] if os_type != 'macos' else ['cpu']
+        for device in device_types:
+            job = {
+                'name': f'cmake_{os_type}_{device}',
+                'python_version': python_version
+            }
+
+            job['cu_version'] = 'cu101' if device == 'gpu' else 'cpu'
+            if device == 'gpu' and os_type == 'linux':
+                job['wheel_docker_image'] = 'pytorch/manylinux-cuda101'
+            jobs.append({f'cmake_{os_type}_{device}': job})
+    return indent(indentation, jobs)
+
+
 if __name__ == "__main__":
     d = os.path.dirname(__file__)
     env = jinja2.Environment(
@@ -196,4 +218,5 @@ if __name__ == "__main__":
         f.write(env.get_template('config.yml.in').render(
             build_workflows=build_workflows,
             unittest_workflows=unittest_workflows,
+            cmake_workflows=cmake_workflows,
         ))

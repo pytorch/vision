@@ -2,6 +2,7 @@ import os
 import torch
 import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
+import torchvision.transforms.functional_tensor as F_t
 from torch._utils_internal import get_file_path_2
 from numpy.testing import assert_array_almost_equal
 import unittest
@@ -19,24 +20,11 @@ try:
 except ImportError:
     stats = None
 
+from common_utils import cycle_over, int_dtypes, float_dtypes
+
+
 GRACE_HOPPER = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
-
-
-def cycle_over(objs):
-    objs = list(objs)
-    for idx, obj in enumerate(objs):
-        yield obj, objs[:idx] + objs[idx + 1:]
-
-
-def int_dtypes():
-    yield from iter(
-        (torch.uint8, torch.int8, torch.int16, torch.short, torch.int32, torch.int, torch.int64, torch.long,)
-    )
-
-
-def float_dtypes():
-    yield from iter((torch.float32, torch.float, torch.float64, torch.double))
 
 
 class Tester(unittest.TestCase):
@@ -231,6 +219,11 @@ class Tester(unittest.TestCase):
         width = random.randint(24, 32) * 2
         osize = random.randint(5, 12) * 2
 
+        # TODO: Check output size check for bug-fix, improve this later
+        t = transforms.Resize(osize)
+        self.assertTrue(isinstance(t.size, int))
+        self.assertEqual(t.size, osize)
+
         img = torch.ones(3, height, width)
         result = transforms.Compose([
             transforms.ToPILImage(),
@@ -310,6 +303,11 @@ class Tester(unittest.TestCase):
         self.assertEqual(result.size(1), height + 1)
         self.assertEqual(result.size(2), width + 1)
 
+        t = transforms.RandomCrop(48)
+        img = torch.ones(3, 32, 32)
+        with self.assertRaisesRegex(ValueError, r"Required crop size .+ is larger then input image size .+"):
+            t(img)
+
     def test_pad(self):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
@@ -379,6 +377,16 @@ class Tester(unittest.TestCase):
         symmetric_middle_slice = np.asarray(symmetric_padded_img).transpose(2, 0, 1)[0][17][:6]
         self.assertTrue(np.all(symmetric_middle_slice == np.asarray([0, 1, 200, 200, 1, 0])))
         self.assertEqual(transforms.ToTensor()(symmetric_padded_img).size(), (3, 32, 34))
+
+        # Check negative padding explicitly for symmetric case, since it is not
+        # implemented for tensor case to compare to
+        # Crop 1 to left, pad 2 to top, pad 3 to right, crop 3 to bottom
+        symmetric_padded_img_neg = F.pad(img, (-1, 2, 3, -3), padding_mode='symmetric')
+        symmetric_neg_middle_left = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][:3]
+        symmetric_neg_middle_right = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][-4:]
+        self.assertTrue(np.all(symmetric_neg_middle_left == np.asarray([1, 0, 0])))
+        self.assertTrue(np.all(symmetric_neg_middle_right == np.asarray([200, 200, 0, 0])))
+        self.assertEqual(transforms.ToTensor()(symmetric_padded_img_neg).size(), (3, 28, 31))
 
     def test_pad_raises_with_invalid_pad_sequence_len(self):
         with self.assertRaises(ValueError):
@@ -534,13 +542,26 @@ class Tester(unittest.TestCase):
         output = trans(img)
         self.assertTrue(np.allclose(input_data.numpy(), output.numpy()))
 
+    def test_max_value(self):
+        for dtype in int_dtypes():
+            self.assertEqual(F_t._max_value(dtype), torch.iinfo(dtype).max)
+
+        for dtype in float_dtypes():
+            self.assertGreater(F_t._max_value(dtype), torch.finfo(dtype).max)
+
     def test_convert_image_dtype_float_to_float(self):
         for input_dtype, output_dtypes in cycle_over(float_dtypes()):
             input_image = torch.tensor((0.0, 1.0), dtype=input_dtype)
             for output_dtype in output_dtypes:
                 with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
                     transform = transforms.ConvertImageDtype(output_dtype)
+                    transform_script = torch.jit.script(F.convert_image_dtype)
+
                     output_image = transform(input_image)
+                    output_image_script = transform_script(input_image, output_dtype)
+
+                    script_diff = output_image_script - output_image
+                    self.assertLess(script_diff.abs().max(), 1e-6)
 
                     actual_min, actual_max = output_image.tolist()
                     desired_min, desired_max = 0.0, 1.0
@@ -554,6 +575,7 @@ class Tester(unittest.TestCase):
             for output_dtype in int_dtypes():
                 with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
                     transform = transforms.ConvertImageDtype(output_dtype)
+                    transform_script = torch.jit.script(F.convert_image_dtype)
 
                     if (input_dtype == torch.float32 and output_dtype in (torch.int32, torch.int64)) or (
                             input_dtype == torch.float64 and output_dtype == torch.int64
@@ -562,6 +584,10 @@ class Tester(unittest.TestCase):
                             transform(input_image)
                     else:
                         output_image = transform(input_image)
+                        output_image_script = transform_script(input_image, output_dtype)
+
+                        script_diff = output_image_script - output_image
+                        self.assertLess(script_diff.abs().max(), 1e-6)
 
                         actual_min, actual_max = output_image.tolist()
                         desired_min, desired_max = 0, torch.iinfo(output_dtype).max
@@ -575,7 +601,13 @@ class Tester(unittest.TestCase):
             for output_dtype in float_dtypes():
                 with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
                     transform = transforms.ConvertImageDtype(output_dtype)
+                    transform_script = torch.jit.script(F.convert_image_dtype)
+
                     output_image = transform(input_image)
+                    output_image_script = transform_script(input_image, output_dtype)
+
+                    script_diff = output_image_script - output_image
+                    self.assertLess(script_diff.abs().max(), 1e-6)
 
                     actual_min, actual_max = output_image.tolist()
                     desired_min, desired_max = 0.0, 1.0
@@ -594,7 +626,15 @@ class Tester(unittest.TestCase):
 
                 with self.subTest(input_dtype=input_dtype, output_dtype=output_dtype):
                     transform = transforms.ConvertImageDtype(output_dtype)
+                    transform_script = torch.jit.script(F.convert_image_dtype)
+
                     output_image = transform(input_image)
+                    output_image_script = transform_script(input_image, output_dtype)
+
+                    script_diff = output_image_script.float() - output_image.float()
+                    self.assertLess(
+                        script_diff.abs().max(), 1e-6, msg="{} vs {}".format(output_image_script, output_image)
+                    )
 
                     actual_min, actual_max = output_image.tolist()
                     desired_min, desired_max = 0, output_max
@@ -1624,66 +1664,47 @@ class Tester(unittest.TestCase):
         # Checking if RandomGrayscale can be printed as string
         trans3.__repr__()
 
-    def test_random_erasing(self):
-        """Unit tests for random erasing transform"""
-        for is_scripted in [False, True]:
-            torch.manual_seed(12)
-            img = torch.rand(3, 60, 60)
+    def test_gaussian_blur_asserts(self):
+        np_img = np.ones((100, 100, 3), dtype=np.uint8) * 255
+        img = F.to_pil_image(np_img, "RGB")
 
-            # Test Set 0: invalid value
-            random_erasing = transforms.RandomErasing(value=(0.1, 0.2, 0.3, 0.4), p=1.0)
-            with self.assertRaises(ValueError, msg="If value is a sequence, it should have either a single value or 3"):
-                img_re = random_erasing(img)
+        with self.assertRaisesRegex(ValueError, r"If kernel_size is a sequence its length should be 2"):
+            F.gaussian_blur(img, [3])
 
-            # Test Set 1: Erasing with int value
-            random_erasing = transforms.RandomErasing(value=0.2)
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
+        with self.assertRaisesRegex(ValueError, r"If kernel_size is a sequence its length should be 2"):
+            F.gaussian_blur(img, [3, 3, 3])
+        with self.assertRaisesRegex(ValueError, r"Kernel size should be a tuple/list of two integers"):
+            transforms.GaussianBlur([3, 3, 3])
 
-            i, j, h, w, v = transforms.RandomErasing.get_params(
-                img, scale=random_erasing.scale, ratio=random_erasing.ratio, value=[random_erasing.value, ]
-            )
-            img_output = F.erase(img, i, j, h, w, v)
-            self.assertEqual(img_output.size(0), 3)
+        with self.assertRaisesRegex(ValueError, r"kernel_size should have odd and positive integers"):
+            F.gaussian_blur(img, [4, 4])
+        with self.assertRaisesRegex(ValueError, r"Kernel size value should be an odd and positive number"):
+            transforms.GaussianBlur([4, 4])
 
-            # Test Set 2: Check if the unerased region is preserved
-            true_output = img.clone()
-            true_output[:, i:i + h, j:j + w] = random_erasing.value
-            self.assertTrue(torch.equal(true_output, img_output))
+        with self.assertRaisesRegex(ValueError, r"kernel_size should have odd and positive integers"):
+            F.gaussian_blur(img, [-3, -3])
+        with self.assertRaisesRegex(ValueError, r"Kernel size value should be an odd and positive number"):
+            transforms.GaussianBlur([-3, -3])
 
-            # Test Set 3: Erasing with random value
-            random_erasing = transforms.RandomErasing(value="random")
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
-            img_re = random_erasing(img)
+        with self.assertRaisesRegex(ValueError, r"If sigma is a sequence, its length should be 2"):
+            F.gaussian_blur(img, 3, [1, 1, 1])
+        with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
+            transforms.GaussianBlur(3, [1, 1, 1])
 
-            self.assertEqual(img_re.size(0), 3)
+        with self.assertRaisesRegex(ValueError, r"sigma should have positive values"):
+            F.gaussian_blur(img, 3, -1.0)
+        with self.assertRaisesRegex(ValueError, r"If sigma is a single number, it must be positive"):
+            transforms.GaussianBlur(3, -1.0)
 
-            # Test Set 4: Erasing with tuple value
-            random_erasing = transforms.RandomErasing(value=(0.2, 0.2, 0.2))
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
-            img_re = random_erasing(img)
-            self.assertEqual(img_re.size(0), 3)
-            true_output = img.clone()
-            true_output[:, i:i + h, j:j + w] = torch.tensor(random_erasing.value)[:, None, None]
-            self.assertTrue(torch.equal(true_output, img_output))
+        with self.assertRaisesRegex(TypeError, r"kernel_size should be int or a sequence of integers"):
+            F.gaussian_blur(img, "kernel_size_string")
+        with self.assertRaisesRegex(ValueError, r"Kernel size should be a tuple/list of two integers"):
+            transforms.GaussianBlur("kernel_size_string")
 
-            # Test Set 5: Testing the inplace behaviour
-            random_erasing = transforms.RandomErasing(value=(0.2,), inplace=True)
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
-
-            img_re = random_erasing(img)
-            self.assertTrue(torch.equal(img_re, img))
-
-            # Test Set 6: Checking when no erased region is selected
-            img = torch.rand([3, 300, 1])
-            random_erasing = transforms.RandomErasing(ratio=(0.1, 0.2), value="random")
-            if is_scripted:
-                random_erasing = torch.jit.script(random_erasing)
-            img_re = random_erasing(img)
-            self.assertTrue(torch.equal(img_re, img))
+        with self.assertRaisesRegex(TypeError, r"sigma should be either float or sequence of floats"):
+            F.gaussian_blur(img, 3, "sigma_string")
+        with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
+            transforms.GaussianBlur(3, "sigma_string")
 
 
 if __name__ == '__main__':

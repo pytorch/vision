@@ -3,7 +3,7 @@ from typing import Any, List, Sequence
 
 import numpy as np
 import torch
-from PIL import Image, ImageOps, ImageEnhance, __version__ as PILLOW_VERSION
+from PIL import Image, ImageOps, ImageEnhance, ImageFilter, __version__ as PILLOW_VERSION
 
 try:
     import accimage
@@ -35,7 +35,12 @@ def _get_image_num_channels(img: Any) -> int:
 
 @torch.jit.unused
 def hflip(img):
-    """Horizontally flip the given PIL Image.
+    """PRIVATE METHOD. Horizontally flip the given PIL Image.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (PIL Image): Image to be flipped.
@@ -51,7 +56,12 @@ def hflip(img):
 
 @torch.jit.unused
 def vflip(img):
-    """Vertically flip the given PIL Image.
+    """PRIVATE METHOD. Vertically flip the given PIL Image.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (PIL Image): Image to be flipped.
@@ -67,7 +77,12 @@ def vflip(img):
 
 @torch.jit.unused
 def adjust_brightness(img, brightness_factor):
-    """Adjust brightness of an RGB image.
+    """PRIVATE METHOD. Adjust brightness of an RGB image.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (PIL Image): Image to be adjusted.
@@ -88,7 +103,13 @@ def adjust_brightness(img, brightness_factor):
 
 @torch.jit.unused
 def adjust_contrast(img, contrast_factor):
-    """Adjust contrast of an Image.
+    """PRIVATE METHOD. Adjust contrast of an Image.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
+
     Args:
         img (PIL Image): PIL Image to be adjusted.
         contrast_factor (float): How much to adjust the contrast. Can be any
@@ -107,7 +128,13 @@ def adjust_contrast(img, contrast_factor):
 
 @torch.jit.unused
 def adjust_saturation(img, saturation_factor):
-    """Adjust color saturation of an image.
+    """PRIVATE METHOD. Adjust color saturation of an image.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
+
     Args:
         img (PIL Image): PIL Image to be adjusted.
         saturation_factor (float):  How much to adjust the saturation. 0 will
@@ -126,7 +153,12 @@ def adjust_saturation(img, saturation_factor):
 
 @torch.jit.unused
 def adjust_hue(img, hue_factor):
-    """Adjust hue of an image.
+    """PRIVATE METHOD. Adjust hue of an image.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     The image hue is adjusted by converting the image to HSV and
     cyclically shifting the intensities in the hue channel (H).
@@ -174,7 +206,12 @@ def adjust_hue(img, hue_factor):
 
 @torch.jit.unused
 def adjust_gamma(img, gamma, gain=1):
-    r"""Perform gamma correction on an image.
+    r"""PRIVATE METHOD. Perform gamma correction on an image.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Also known as Power Law Transform. Intensities in RGB mode are adjusted
     based on the following equation:
@@ -210,7 +247,12 @@ def adjust_gamma(img, gamma, gain=1):
 
 @torch.jit.unused
 def pad(img, padding, fill=0, padding_mode="constant"):
-    r"""Pad the given PIL.Image on all sides with the given "pad" value.
+    r"""PRIVATE METHOD. Pad the given PIL.Image on all sides with the given "pad" value.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (PIL Image): Image to be padded.
@@ -288,6 +330,15 @@ def pad(img, padding, fill=0, padding_mode="constant"):
             pad_right = padding[2]
             pad_bottom = padding[3]
 
+        p = [pad_left, pad_top, pad_right, pad_bottom]
+        cropping = -np.minimum(p, 0)
+
+        if cropping.any():
+            crop_left, crop_top, crop_right, crop_bottom = cropping
+            img = img.crop((crop_left, crop_top, img.width - crop_right, img.height - crop_bottom))
+
+        pad_left, pad_top, pad_right, pad_bottom = np.maximum(p, 0)
+
         if img.mode == 'P':
             palette = img.getpalette()
             img = np.asarray(img)
@@ -309,7 +360,12 @@ def pad(img, padding, fill=0, padding_mode="constant"):
 
 @torch.jit.unused
 def crop(img: Image.Image, top: int, left: int, height: int, width: int) -> Image.Image:
-    """Crop the given PIL Image.
+    """PRIVATE METHOD. Crop the given PIL Image.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (PIL Image): Image to be cropped. (0,0) denotes the top left corner of the image.
@@ -329,7 +385,12 @@ def crop(img: Image.Image, top: int, left: int, height: int, width: int) -> Imag
 
 @torch.jit.unused
 def resize(img, size, interpolation=Image.BILINEAR):
-    r"""Resize the input PIL Image to the given size.
+    r"""PRIVATE METHOD. Resize the input PIL Image to the given size.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (PIL Image): Image to be resized.
@@ -370,7 +431,12 @@ def resize(img, size, interpolation=Image.BILINEAR):
 
 @torch.jit.unused
 def _parse_fill(fill, img, min_pil_version, name="fillcolor"):
-    """Helper function to get the fill color for rotate, perspective transforms, and pad.
+    """PRIVATE METHOD. Helper function to get the fill color for rotate, perspective transforms, and pad.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         fill (n-tuple or int or float): Pixel fill value for area outside the transformed
@@ -409,7 +475,12 @@ def _parse_fill(fill, img, min_pil_version, name="fillcolor"):
 
 @torch.jit.unused
 def affine(img, matrix, resample=0, fillcolor=None):
-    """Apply affine transformation on the PIL Image keeping image center invariant.
+    """PRIVATE METHOD. Apply affine transformation on the PIL Image keeping image center invariant.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (PIL Image): image to be rotated.
@@ -433,7 +504,12 @@ def affine(img, matrix, resample=0, fillcolor=None):
 
 @torch.jit.unused
 def rotate(img, angle, resample=0, expand=False, center=None, fill=None):
-    """Rotate PIL image by angle.
+    """PRIVATE METHOD. Rotate PIL image by angle.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (PIL Image): image to be rotated.
@@ -467,7 +543,12 @@ def rotate(img, angle, resample=0, expand=False, center=None, fill=None):
 
 @torch.jit.unused
 def perspective(img, perspective_coeffs, interpolation=Image.BICUBIC, fill=None):
-    """Perform perspective transform of the given PIL Image.
+    """PRIVATE METHOD. Perform perspective transform of the given PIL Image.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (PIL Image): Image to be transformed.
@@ -491,7 +572,12 @@ def perspective(img, perspective_coeffs, interpolation=Image.BICUBIC, fill=None)
 
 @torch.jit.unused
 def to_grayscale(img, num_output_channels):
-    """Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.
+    """PRIVATE METHOD. Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.
+
+    .. warning::
+
+        Module ``transforms.functional_pil`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
 
     Args:
         img (PIL Image): Image to be converted to grayscale.

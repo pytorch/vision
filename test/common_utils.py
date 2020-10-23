@@ -127,7 +127,6 @@ class TestCase(unittest.TestCase):
             expected_file += "_" + subname
             subname_output = " ({})".format(subname)
         expected_file += "_expect.pkl"
-        expected = None
 
         def accept_output(update_type):
             print("Accepting {} for {}{}:\n\n{}".format(update_type, munged_id, subname_output, output))
@@ -142,7 +141,8 @@ class TestCase(unittest.TestCase):
             if e.errno != errno.ENOENT:
                 raise
             elif ACCEPT:
-                return accept_output("output")
+                accept_output("output")
+                return
             else:
                 raise RuntimeError(
                     ("I got this output for {}{}:\n\n{}\n\n"
@@ -150,13 +150,10 @@ class TestCase(unittest.TestCase):
                      "python {} {} --accept").format(munged_id, subname_output, output, __main__.__file__, munged_id))
 
         if ACCEPT:
-            equal = False
             try:
-                equal = self.assertEqual(output, expected, prec=prec)
+                self.assertEqual(output, expected, prec=prec)
             except Exception:
-                equal = False
-            if not equal:
-                return accept_output("updated output")
+                accept_output("updated output")
         else:
             self.assertEqual(output, expected, prec=prec)
 
@@ -341,6 +338,15 @@ class TransformsTester(unittest.TestCase):
         pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
         return tensor, pil_img
 
+    def _create_data_batch(self, height=3, width=3, channels=3, num_samples=4, device="cpu"):
+        batch_tensor = torch.randint(
+            0, 255,
+            (num_samples, channels, height, width),
+            dtype=torch.uint8,
+            device=device
+        )
+        return batch_tensor
+
     def compareTensorToPIL(self, tensor, pil_image, msg=None):
         np_pil_image = np.array(pil_image)
         if np_pil_image.ndim == 2:
@@ -360,3 +366,16 @@ class TransformsTester(unittest.TestCase):
             err < tol,
             msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
         )
+
+
+def cycle_over(objs):
+    for idx, obj in enumerate(objs):
+        yield obj, objs[:idx] + objs[idx + 1:]
+
+
+def int_dtypes():
+    return torch.testing.integral_types()
+
+
+def float_dtypes():
+    return torch.testing.floating_types()

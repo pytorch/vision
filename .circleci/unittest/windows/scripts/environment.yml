@@ -1,4 +1,5 @@
 channels:
+  - pytorch
   - defaults
 dependencies:
   - numpy

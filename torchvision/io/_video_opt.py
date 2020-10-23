@@ -13,7 +13,7 @@ import torch
 _HAS_VIDEO_OPT = False
 
 try:
-    lib_dir = os.path.join(os.path.dirname(__file__), "..")
+    lib_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
     loader_details = (
         importlib.machinery.ExtensionFileLoader,
@@ -22,6 +22,29 @@ try:
 
     extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)
     ext_specs = extfinder.find_spec("video_reader")
+
+    if os.name == 'nt':
+        # Load the video_reader extension using LoadLibraryExW
+        import ctypes
+        import sys
+
+        kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
+        with_load_library_flags = hasattr(kernel32, 'AddDllDirectory')
+        prev_error_mode = kernel32.SetErrorMode(0x0001)
+
+        if with_load_library_flags:
+            kernel32.LoadLibraryExW.restype = ctypes.c_void_p
+
+        if ext_specs is not None:
+            res = kernel32.LoadLibraryExW(ext_specs.origin, None, 0x00001100)
+            if res is None:
+                err = ctypes.WinError(ctypes.get_last_error())
+                err.strerror += (f' Error loading "{ext_specs.origin}" or any or '
+                                 'its dependencies.')
+                raise err
+
+        kernel32.SetErrorMode(prev_error_mode)
+
     if ext_specs is not None:
         torch.ops.load_library(ext_specs.origin)
         _HAS_VIDEO_OPT = True
@@ -88,7 +111,7 @@ def _validate_pts(pts_range):
         assert (
             pts_range[0] <= pts_range[1]
         ), """Start pts should not be smaller than end pts, got
-            start pts: %d and end pts: %d""" % (
+            start pts: {0:d} and end pts: {1:d}""".format(
             pts_range[0],
             pts_range[1],
         )

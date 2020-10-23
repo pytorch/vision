@@ -264,7 +264,6 @@ def get_extensions():
     libpng = distutils.spawn.find_executable('libpng-config')
     pngfix = distutils.spawn.find_executable('pngfix')
     png_found = libpng is not None or pngfix is not None
-    image_macros += [('PNG_FOUND', str(int(png_found)))]
     print('PNG found: {0}'.format(png_found))
     if png_found:
         if libpng is not None:
@@ -307,6 +306,7 @@ def get_extensions():
      jpeg_include, jpeg_lib) = find_library('jpeglib', vision_include)
 
     print('JPEG found: {0}'.format(jpeg_found))
+    image_macros += [('PNG_FOUND', str(int(png_found)))]
     image_macros += [('JPEG_FOUND', str(int(jpeg_found)))]
     if jpeg_found:
         print('Building torchvision with JPEG image support')
@@ -331,11 +331,15 @@ def get_extensions():
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
     has_ffmpeg = ffmpeg_exe is not None
+    print("FFmpeg found: {}".format(has_ffmpeg))
 
     if has_ffmpeg:
         ffmpeg_bin = os.path.dirname(ffmpeg_exe)
         ffmpeg_root = os.path.dirname(ffmpeg_bin)
         ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
+        ffmpeg_library_dir = os.path.join(ffmpeg_root, 'lib')
+        print("ffmpeg include path: {}".format(ffmpeg_include_dir))
+        print("ffmpeg library_dir: {}".format(ffmpeg_library_dir))
 
         # TorchVision base decoder + video reader
         video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
@@ -343,10 +347,13 @@ def get_extensions():
         base_decoder_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'decoder')
         base_decoder_src = glob.glob(
             os.path.join(base_decoder_src_dir, "*.cpp"))
+        # Torchvision video API
+        videoapi_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video')
+        videoapi_src = glob.glob(os.path.join(videoapi_src_dir, "*.cpp"))
         # exclude tests
         base_decoder_src = [x for x in base_decoder_src if '_test.cpp' not in x]
 
-        combined_src = video_reader_src + base_decoder_src
+        combined_src = video_reader_src + base_decoder_src + videoapi_src
 
         ext_modules.append(
             CppExtension(
@@ -355,10 +362,11 @@ def get_extensions():
                 include_dirs=[
                     base_decoder_src_dir,
                     video_reader_src_dir,
+                    videoapi_src_dir,
                     ffmpeg_include_dir,
                     extensions_dir,
                 ],
-                library_dirs=library_dirs,
+                library_dirs=[ffmpeg_library_dir] + library_dirs,
                 libraries=[
                     'avcodec',
                     'avformat',
@@ -366,8 +374,8 @@ def get_extensions():
                     'swresample',
                     'swscale',
                 ],
-                extra_compile_args=["-std=c++14"],
-                extra_link_args=["-std=c++14"],
+                extra_compile_args=["-std=c++14"] if os.name != 'nt' else ['/std:c++14', '/MP'],
+                extra_link_args=["-std=c++14" if os.name != 'nt' else '/std:c++14'],
             )
         )
 

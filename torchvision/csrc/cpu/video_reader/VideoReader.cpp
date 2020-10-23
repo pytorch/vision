@@ -29,6 +29,7 @@ namespace video_reader {
 
 const AVPixelFormat defaultVideoPixelFormat = AV_PIX_FMT_RGB24;
 const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
+const AVRational timeBaseQ = AVRational{1, AV_TIME_BASE};
 const size_t decoderTimeoutMs = 600000;
 // A jitter can be added to the end of the range to avoid conversion/rounding
 // error, small value 100us won't be enough to select the next frame, but enough
@@ -99,8 +100,8 @@ size_t fillTensor(
   for (size_t i = 0; i < msgs.size(); ++i) {
     const auto& msg = msgs[i];
     // convert pts into original time_base
-    AVRational avr = {(int)num, (int)den};
-    framePtsData[i] = av_rescale_q(msg.header.pts, AV_TIME_BASE_Q, avr);
+    AVRational avr = AVRational{(int)num, (int)den};
+    framePtsData[i] = av_rescale_q(msg.header.pts, timeBaseQ, avr);
     VLOG(2) << "PTS type: " << sizeof(T) << ", us: " << msg.header.pts
             << ", original: " << framePtsData[i];
 
@@ -156,28 +157,26 @@ void offsetsToUs(
   videoEndUs = -1;
 
   if (readVideoStream) {
-    AVRational vr = {(int)videoTimeBaseNum, (int)videoTimeBaseDen};
+    AVRational vr = AVRational{(int)videoTimeBaseNum, (int)videoTimeBaseDen};
     if (videoStartPts > 0) {
-      videoStartUs = av_rescale_q(videoStartPts, vr, AV_TIME_BASE_Q);
+      videoStartUs = av_rescale_q(videoStartPts, vr, timeBaseQ);
     }
     if (videoEndPts > 0) {
       // Add jitter to the end of the range to avoid conversion/rounding error.
       // Small value 100us won't be enough to select the next frame, but enough
       // to compensate rounding error due to the multiple conversions.
-      videoEndUs =
-          timeBaseJitterUs + av_rescale_q(videoEndPts, vr, AV_TIME_BASE_Q);
+      videoEndUs = timeBaseJitterUs + av_rescale_q(videoEndPts, vr, timeBaseQ);
     }
   } else if (readAudioStream) {
-    AVRational ar = {(int)audioTimeBaseNum, (int)audioTimeBaseDen};
+    AVRational ar = AVRational{(int)audioTimeBaseNum, (int)audioTimeBaseDen};
     if (audioStartPts > 0) {
-      videoStartUs = av_rescale_q(audioStartPts, ar, AV_TIME_BASE_Q);
+      videoStartUs = av_rescale_q(audioStartPts, ar, timeBaseQ);
     }
     if (audioEndPts > 0) {
       // Add jitter to the end of the range to avoid conversion/rounding error.
       // Small value 100us won't be enough to select the next frame, but enough
       // to compensate rounding error due to the multiple conversions.
-      videoEndUs =
-          timeBaseJitterUs + av_rescale_q(audioEndPts, ar, AV_TIME_BASE_Q);
+      videoEndUs = timeBaseJitterUs + av_rescale_q(audioEndPts, ar, timeBaseQ);
     }
   }
 }
@@ -336,8 +335,8 @@ torch::List<torch::Tensor> readVideo(
 
       videoDuration = torch::zeros({1}, torch::kLong);
       int64_t* videoDurationData = videoDuration.data_ptr<int64_t>();
-      AVRational vr = {(int)header.num, (int)header.den};
-      videoDurationData[0] = av_rescale_q(header.duration, AV_TIME_BASE_Q, vr);
+      AVRational vr = AVRational{(int)header.num, (int)header.den};
+      videoDurationData[0] = av_rescale_q(header.duration, timeBaseQ, vr);
       VLOG(1) << "Video decoding from " << logType << " [" << logMessage
               << "] filled video tensors";
     } else {
@@ -398,8 +397,8 @@ torch::List<torch::Tensor> readVideo(
 
       audioDuration = torch::zeros({1}, torch::kLong);
       int64_t* audioDurationData = audioDuration.data_ptr<int64_t>();
-      AVRational ar = {(int)header.num, (int)header.den};
-      audioDurationData[0] = av_rescale_q(header.duration, AV_TIME_BASE_Q, ar);
+      AVRational ar = AVRational{(int)header.num, (int)header.den};
+      audioDurationData[0] = av_rescale_q(header.duration, timeBaseQ, ar);
       VLOG(1) << "Video decoding from " << logType << " [" << logMessage
               << "] filled audio tensors";
     } else {
@@ -598,8 +597,8 @@ torch::List<torch::Tensor> probeVideo(
 
     videoDuration = torch::zeros({1}, torch::kLong);
     int64_t* videoDurationData = videoDuration.data_ptr<int64_t>();
-    AVRational avr = {(int)header.num, (int)header.den};
-    videoDurationData[0] = av_rescale_q(header.duration, AV_TIME_BASE_Q, avr);
+    AVRational avr = AVRational{(int)header.num, (int)header.den};
+    videoDurationData[0] = av_rescale_q(header.duration, timeBaseQ, avr);
 
     VLOG(2) << "Prob fps: " << header.fps << ", duration: " << header.duration
             << ", num: " << header.num << ", den: " << header.den;
@@ -631,8 +630,8 @@ torch::List<torch::Tensor> probeVideo(
 
     audioDuration = torch::zeros({1}, torch::kLong);
     int64_t* audioDurationData = audioDuration.data_ptr<int64_t>();
-    AVRational avr = {(int)header.num, (int)header.den};
-    audioDurationData[0] = av_rescale_q(header.duration, AV_TIME_BASE_Q, avr);
+    AVRational avr = AVRational{(int)header.num, (int)header.den};
+    audioDurationData[0] = av_rescale_q(header.duration, timeBaseQ, avr);
 
     VLOG(2) << "Prob sample rate: " << format.samples
             << ", duration: " << header.duration << ", num: " << header.num

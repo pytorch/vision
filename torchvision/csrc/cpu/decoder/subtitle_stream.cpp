@@ -4,6 +4,7 @@
 #include "util.h"
 
 namespace ffmpeg {
+const AVRational timeBaseQ = AVRational{1, AV_TIME_BASE};
 
 SubtitleStream::SubtitleStream(
     AVFormatContext* inputCtx,
@@ -65,7 +66,7 @@ int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
   // set proper pts in us
   if (gotFramePtr) {
     sub_.pts = av_rescale_q(
-        pkt.pts, inputCtx_->streams[format_.stream]->time_base, AV_TIME_BASE_Q);
+        pkt.pts, inputCtx_->streams[format_.stream]->time_base, timeBaseQ);
   }
 
   return result;

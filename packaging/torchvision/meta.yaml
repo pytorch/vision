@@ -10,6 +10,7 @@ requirements:
     - {{ compiler('c') }} # [win]
     - libpng
     - jpeg
+    - ffmpeg =4.2  # [not win]
 
   host:
     - python
@@ -21,6 +22,7 @@ requirements:
   run:
     - python
     - libpng
+    - ffmpeg =4.2  # [not win]
     - jpeg
     - pillow >=4.1.1
     - numpy >=1.11
@@ -29,7 +31,7 @@ requirements:
 
 build:
   string: py{{py}}_{{ environ['CU_VERSION'] }}
-  script: python setup.py install --single-version-externally-managed --record=record.txt # [not win]
+  script: python setup.py install --single-version-externally-managed --record=record.txt
   script_env:
     - CUDA_HOME
     - FORCE_CUDA
@@ -48,7 +50,7 @@ test:
   requires:
     - pytest
     - scipy
-    - av
+    - av =8.0.1
     - ca-certificates
     {{ environ.get('CONDA_TYPING_CONSTRAINT') }}
 

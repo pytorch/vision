@@ -7,36 +7,13 @@
 #if !JPEG_FOUND
 
 torch::Tensor decodeJPEG(const torch::Tensor& data) {
-  AT_ERROR("decodeJPEG: torchvision not compiled with libjpeg support");
+  TORCH_CHECK(
+      false, "decodeJPEG: torchvision not compiled with libjpeg support");
 }
 
 #else
 #include <jpeglib.h>
-
-const static JOCTET EOI_BUFFER[1] = {JPEG_EOI};
-char jpegLastErrorMsg[JMSG_LENGTH_MAX];
-
-struct torch_jpeg_error_mgr {
-  struct jpeg_error_mgr pub; /* "public" fields */
-  jmp_buf setjmp_buffer; /* for return to caller */
-};
-
-typedef struct torch_jpeg_error_mgr* torch_jpeg_error_ptr;
-
-void torch_jpeg_error_exit(j_common_ptr cinfo) {
-  /* cinfo->err really points to a torch_jpeg_error_mgr struct, so coerce
-   * pointer */
-  torch_jpeg_error_ptr myerr = (torch_jpeg_error_ptr)cinfo->err;
-
-  /* Always display the message. */
-  /* We could postpone this until after returning, if we chose. */
-  // (*cinfo->err->output_message)(cinfo);
-  /* Create the message */
-  (*(cinfo->err->format_message))(cinfo, jpegLastErrorMsg);
-
-  /* Return control to the setjmp point */
-  longjmp(myerr->setjmp_buffer, 1);
-}
+#include "jpegcommon.h"
 
 struct torch_jpeg_mgr {
   struct jpeg_source_mgr pub;
@@ -50,7 +27,7 @@ static boolean torch_jpeg_fill_input_buffer(j_decompress_ptr cinfo) {
   torch_jpeg_mgr* src = (torch_jpeg_mgr*)cinfo->src;
   // No more data.  Probably an incomplete image;  Raise exception.
   torch_jpeg_error_ptr myerr = (torch_jpeg_error_ptr)cinfo->err;
-  strcpy(jpegLastErrorMsg, "Image is incomplete or truncated");
+  strcpy(myerr->jpegLastErrorMsg, "Image is incomplete or truncated");
   longjmp(myerr->setjmp_buffer, 1);
   src->pub.next_input_byte = EOI_BUFFER;
   src->pub.bytes_in_buffer = 1;
@@ -95,6 +72,13 @@ static void torch_jpeg_set_source_mgr(
 }
 
 torch::Tensor decodeJPEG(const torch::Tensor& data) {
+  // Check that the input tensor dtype is uint8
+  TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
+  // Check that the input tensor is 1-dimensional
+  TORCH_CHECK(
+      data.dim() == 1 && data.numel() > 0,
+      "Expected a non empty 1-dimensional tensor");
+
   struct jpeg_decompress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;
 
@@ -108,7 +92,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
      * We need to clean up the JPEG object.
      */
     jpeg_destroy_decompress(&cinfo);
-    AT_ERROR(jpegLastErrorMsg);
+    TORCH_CHECK(false, jerr.jpegLastErrorMsg);
   }
 
   jpeg_create_decompress(&cinfo);
@@ -137,7 +121,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
 
   jpeg_finish_decompress(&cinfo);
   jpeg_destroy_decompress(&cinfo);
-  return tensor;
+  return tensor.permute({2, 0, 1});
 }
 
 #endif // JPEG_FOUND

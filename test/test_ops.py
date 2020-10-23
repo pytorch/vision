@@ -357,6 +357,20 @@ class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
         self._helper_boxes_shape(ops.ps_roi_align)
 
 
+class MultiScaleRoIAlignTester(unittest.TestCase):
+    def test_msroialign_repr(self):
+        fmap_names = ['0']
+        output_size = (7, 7)
+        sampling_ratio = 2
+        # Pass mock feature map names
+        t = ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
+
+        # Check integrity of object __repr__ attribute
+        expected_string = (f"MultiScaleRoIAlign(featmap_names={fmap_names}, output_size={output_size}, "
+                           f"sampling_ratio={sampling_ratio})")
+        self.assertEqual(t.__repr__(), expected_string)
+
+
 class NMSTester(unittest.TestCase):
     def reference_nms(self, boxes, scores, iou_threshold):
         """
@@ -478,8 +492,7 @@ class DeformConvTester(OpTester, unittest.TestCase):
         out += bias.view(1, n_out_channels, 1, 1)
         return out
 
-    def get_fn_args(self, device, contiguous):
-        batch_sz = 33
+    def get_fn_args(self, device, contiguous, batch_sz):
         n_in_channels = 6
         n_out_channels = 2
         n_weight_grps = 2
@@ -516,7 +529,11 @@ class DeformConvTester(OpTester, unittest.TestCase):
         return x, weight, offset, bias, stride, pad, dilation
 
     def _test_forward(self, device, contiguous):
-        x, _, offset, _, stride, padding, dilation = self.get_fn_args(device, contiguous)
+        for batch_sz in [0, 33]:
+            self._test_forward_with_batchsize(device, contiguous, batch_sz)
+
+    def _test_forward_with_batchsize(self, device, contiguous, batch_sz):
+        x, _, offset, _, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz)
         in_channels = 6
         out_channels = 2
         kernel_size = (3, 2)
@@ -538,7 +555,11 @@ class DeformConvTester(OpTester, unittest.TestCase):
             res = layer(x, wrong_offset)
 
     def _test_backward(self, device, contiguous):
-        x, weight, offset, bias, stride, padding, dilation = self.get_fn_args(device, contiguous)
+        for batch_sz in [0, 33]:
+            self._test_backward_with_batchsize(device, contiguous, batch_sz)
+
+    def _test_backward_with_batchsize(self, device, contiguous, batch_sz):
+        x, weight, offset, bias, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz)
 
         def func(x_, offset_, weight_, bias_):
             return ops.deform_conv2d(x_, offset_, weight_, bias_, stride=stride, padding=padding, dilation=dilation)
@@ -586,10 +607,11 @@ class DeformConvTester(OpTester, unittest.TestCase):
 class FrozenBNTester(unittest.TestCase):
     def test_frozenbatchnorm2d_repr(self):
         num_features = 32
-        t = ops.misc.FrozenBatchNorm2d(num_features)
+        eps = 1e-5
+        t = ops.misc.FrozenBatchNorm2d(num_features, eps=eps)
 
         # Check integrity of object __repr__ attribute
-        expected_string = f"FrozenBatchNorm2d({num_features})"
+        expected_string = f"FrozenBatchNorm2d({num_features}, eps={eps})"
         self.assertEqual(t.__repr__(), expected_string)
 
     def test_frozenbatchnorm2d_eps(self):
@@ -645,6 +667,158 @@ class BoxConversionTester(unittest.TestCase):
                 ref_tensor = box_sequence
             else:
                 self.assertTrue(torch.equal(ref_tensor, ops._utils.convert_boxes_to_roi_format(box_sequence)))
+
+
+class BoxTester(unittest.TestCase):
+    def test_bbox_same(self):
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                  [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+
+        exp_xyxy = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+
+        box_same = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xyxy")
+        self.assertEqual(exp_xyxy.size(), torch.Size([4, 4]))
+        self.assertEqual(exp_xyxy.dtype, box_tensor.dtype)
+        assert torch.all(torch.eq(box_same, exp_xyxy)).item()
+
+        box_same = ops.box_convert(box_tensor, in_fmt="xywh", out_fmt="xywh")
+        self.assertEqual(exp_xyxy.size(), torch.Size([4, 4]))
+        self.assertEqual(exp_xyxy.dtype, box_tensor.dtype)
+        assert torch.all(torch.eq(box_same, exp_xyxy)).item()
+
+        box_same = ops.box_convert(box_tensor, in_fmt="cxcywh", out_fmt="cxcywh")
+        self.assertEqual(exp_xyxy.size(), torch.Size([4, 4]))
+        self.assertEqual(exp_xyxy.dtype, box_tensor.dtype)
+        assert torch.all(torch.eq(box_same, exp_xyxy)).item()
+
+    def test_bbox_xyxy_xywh(self):
+        # Simple test convert boxes to xywh and back. Make sure they are same.
+        # box_tensor is in x1 y1 x2 y2 format.
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                  [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+        exp_xywh = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
+
+        box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
+        self.assertEqual(exp_xywh.size(), torch.Size([4, 4]))
+        self.assertEqual(exp_xywh.dtype, box_tensor.dtype)
+        assert torch.all(torch.eq(box_xywh, exp_xywh)).item()
+
+        # Reverse conversion
+        box_xyxy = ops.box_convert(box_xywh, in_fmt="xywh", out_fmt="xyxy")
+        self.assertEqual(box_xyxy.size(), torch.Size([4, 4]))
+        self.assertEqual(box_xyxy.dtype, box_tensor.dtype)
+        assert torch.all(torch.eq(box_xyxy, box_tensor)).item()
+
+    def test_bbox_xyxy_cxcywh(self):
+        # Simple test convert boxes to xywh and back. Make sure they are same.
+        # box_tensor is in x1 y1 x2 y2 format.
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                  [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+        exp_cxcywh = torch.tensor([[50, 50, 100, 100], [0, 0, 0, 0],
+                                  [20, 25, 20, 20], [58, 65, 70, 60]], dtype=torch.float)
+
+        box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
+        self.assertEqual(exp_cxcywh.size(), torch.Size([4, 4]))
+        self.assertEqual(exp_cxcywh.dtype, box_tensor.dtype)
+        assert torch.all(torch.eq(box_cxcywh, exp_cxcywh)).item()
+
+        # Reverse conversion
+        box_xyxy = ops.box_convert(box_cxcywh, in_fmt="cxcywh", out_fmt="xyxy")
+        self.assertEqual(box_xyxy.size(), torch.Size([4, 4]))
+        self.assertEqual(box_xyxy.dtype, box_tensor.dtype)
+        assert torch.all(torch.eq(box_xyxy, box_tensor)).item()
+
+    def test_bbox_xywh_cxcywh(self):
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                  [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
+
+        # This is wrong
+        exp_cxcywh = torch.tensor([[50, 50, 100, 100], [0, 0, 0, 0],
+                                  [20, 25, 20, 20], [58, 65, 70, 60]], dtype=torch.float)
+
+        box_cxcywh = ops.box_convert(box_tensor, in_fmt="xywh", out_fmt="cxcywh")
+        self.assertEqual(exp_cxcywh.size(), torch.Size([4, 4]))
+        self.assertEqual(exp_cxcywh.dtype, box_tensor.dtype)
+        assert torch.all(torch.eq(box_cxcywh, exp_cxcywh)).item()
+
+        # Reverse conversion
+        box_xywh = ops.box_convert(box_cxcywh, in_fmt="cxcywh", out_fmt="xywh")
+        self.assertEqual(box_xywh.size(), torch.Size([4, 4]))
+        self.assertEqual(box_xywh.dtype, box_tensor.dtype)
+        assert torch.all(torch.eq(box_xywh, box_tensor)).item()
+
+    def test_bbox_invalid(self):
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                  [10, 15, 20, 20], [23, 35, 70, 60]], dtype=torch.float)
+
+        invalid_infmts = ["xwyh", "cxwyh"]
+        invalid_outfmts = ["xwcx", "xhwcy"]
+        for inv_infmt in invalid_infmts:
+            for inv_outfmt in invalid_outfmts:
+                self.assertRaises(ValueError, ops.box_convert, box_tensor, inv_infmt, inv_outfmt)
+
+    def test_bbox_convert_jit(self):
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
+                                  [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+
+        scripted_fn = torch.jit.script(ops.box_convert)
+        TOLERANCE = 1e-3
+
+        box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
+        scripted_xywh = scripted_fn(box_tensor, 'xyxy', 'xywh')
+        self.assertTrue((scripted_xywh - box_xywh).abs().max() < TOLERANCE)
+
+        box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
+        scripted_cxcywh = scripted_fn(box_tensor, 'xyxy', 'cxcywh')
+        self.assertTrue((scripted_cxcywh - box_cxcywh).abs().max() < TOLERANCE)
+
+
+class BoxAreaTester(unittest.TestCase):
+    def test_box_area(self):
+        # A bounding box of area 10000 and a degenerate case
+        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
+        expected = torch.tensor([10000, 0])
+        calc_area = ops.box_area(box_tensor)
+        assert calc_area.size() == torch.Size([2])
+        assert calc_area.dtype == box_tensor.dtype
+        assert torch.all(torch.eq(calc_area, expected)).item() is True
+
+
+class BoxIouTester(unittest.TestCase):
+    def test_iou(self):
+        # Boxes to test Iou
+        boxes1 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+        boxes2 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+
+        # Expected IoU matrix for these boxes
+        expected = torch.tensor([[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]])
+
+        out = ops.box_iou(boxes1, boxes2)
+
+        # Check if all elements of tensor are as expected.
+        assert out.size() == torch.Size([3, 3])
+        tolerance = 1e-4
+        assert ((out - expected).abs().max() < tolerance).item() is True
+
+
+class GenBoxIouTester(unittest.TestCase):
+    def test_gen_iou(self):
+        # Test Generalized IoU
+        boxes1 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+        boxes2 = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
+
+        # Expected gIoU matrix for these boxes
+        expected = torch.tensor([[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611],
+                                [-0.7778, -0.8611, 1.0]])
+
+        out = ops.generalized_box_iou(boxes1, boxes2)
+
+        # Check if all elements of tensor are as expected.
+        assert out.size() == torch.Size([3, 3])
+        tolerance = 1e-4
+        assert ((out - expected).abs().max() < tolerance).item() is True
 
 
 if __name__ == '__main__':
