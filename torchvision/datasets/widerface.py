@@ -18,7 +18,7 @@ class WIDERFace(VisionDataset):
 
     Args:
         root (string): Root directory of the WIDERFace Dataset.
-            Expects the following structure:
+            Expects the following folder structure if download=False:
                 .
                 └── widerface
                     ├── wider_face_split.zip
