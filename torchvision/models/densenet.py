@@ -152,7 +152,7 @@ class DenseNet(nn.Module):
     def __init__(
         self,
         growth_rate: int = 32,
-        block_config: Tuple[int] = (6, 12, 24, 16),
+        block_config: Tuple[int, int, int, int] = (6, 12, 24, 16),
         num_init_features: int = 64,
         bn_size: int = 4,
         drop_rate: float = 0,
@@ -233,7 +233,7 @@ def _load_state_dict(model: nn.Module, model_url: str, progress: bool) -> None:
     model.load_state_dict(state_dict)
 
 
-def _densenet(arch: str, growth_rate: int, block_config: Tuple[int], num_init_features: int,
+def _densenet(arch: str, growth_rate: int, block_config: Tuple[int, int, int, int], num_init_features: int,
               pretrained: bool, progress: bool, **kwargs: Any) -> DenseNet:
     model = DenseNet(growth_rate, block_config, num_init_features, **kwargs)
     if pretrained:
