@@ -1,16 +1,9 @@
-from .vision import VisionDataset
-import warnings
 from PIL import Image
 import os
-import os.path
-import numpy as np
 import torch
-import codecs
-import string
-import gzip
-import lzma
-from typing import Any, Callable, Dict, IO, List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 from .utils import download_file_from_google_drive, download_and_extract_archive, check_integrity
+from .vision import VisionDataset
 
 
 class WIDERFace(VisionDataset):
@@ -73,8 +66,6 @@ class WIDERFace(VisionDataset):
     ) -> None:
         super(WIDERFace, self).__init__(root, transform=transform,
                                         target_transform=target_transform)
-        print("root dir: " + self.root)
-        
         # check arguments
         if split not in ("train","val","test"):
             raise ValueError("split \"{}\" is not recognized.".format(split))
@@ -100,7 +91,7 @@ class WIDERFace(VisionDataset):
         if not self._check_integrity():
             raise RuntimeError("Dataset not found or corrupted. " +
                                "You can use download=True to download it")
-        
+
         # process dataset
         if self.split in ("train","val"):
             self.parse_train_val_annotations_file()
@@ -155,7 +146,7 @@ class WIDERFace(VisionDataset):
         lines = ["Target type: {target_type}", "Split: {split}"]
         return '\n'.join(lines).format(**self.__dict__)
 
-    def parse_train_val_annotations_file(self):
+    def parse_train_val_annotations_file(self) -> None:
         filename = "wider_face_train_bbx_gt.txt" if self.split == "train" else "wider_face_val_bbx_gt.txt"
         filepath = os.path.join(self.root, self.base_folder, "wider_face_split", filename)
 
@@ -190,8 +181,8 @@ class WIDERFace(VisionDataset):
             else:
                 raise RuntimeError("Error parsing annotation file {}".format(filepath))
         f.close()
-    
-    def parse_test_annotations_file(self):
+
+    def parse_test_annotations_file(self) -> None:
         filepath = os.path.join(self.root, self.base_folder, "wider_face_split", "wider_face_test_filelist.txt")
         f = open(filepath, "r")
         lines = f.readlines()
@@ -225,7 +216,9 @@ class WIDERFace(VisionDataset):
 
         # download data
         for (file_id, md5, filename) in self.file_list:
-            download_file_from_google_drive(file_id, os.path.join(self.root, self.base_folder), filename, md5)
+            download_file_from_google_drive(file_id,
+                                            os.path.join(self.root, self.base_folder),
+                                            filename, md5)
 
         # extract data if it doesn't exist
         for (file_id, md5, filename) in self.file_list:
