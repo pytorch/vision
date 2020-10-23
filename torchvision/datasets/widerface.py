@@ -227,8 +227,8 @@ class WIDERFace(VisionDataset):
             if not os.path.isdir(extracted_dir):
                 zip_file = os.path.join(self.root, self.base_folder, filename)
                 with zipfile.ZipFile(zip_file, "r") as f:
-                    new_extracted_dir = os.path.join(self.root, self.base_folder)
-                    f.extractall(new_extracted_dir)
+                    extracted_dir = os.path.join(self.root, self.base_folder)
+                    f.extractall(extracted_dir)
 
         # download and extract annotation files
         download_and_extract_archive(url=self.annotations_file[0],
