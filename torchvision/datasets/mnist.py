@@ -253,7 +253,7 @@ class EMNIST(MNIST):
         'byclass': sorted(list(_all_classes)),
         'bymerge': sorted(list(_all_classes - _merged_classes)),
         'balanced': sorted(list(_all_classes - _merged_classes)),
-        'letters': list(string.ascii_lowercase),
+        'letters': ['N/A'] + list(string.ascii_lowercase),
         'digits': list(string.digits),
         'mnist': list(string.digits),
     }
@@ -264,9 +264,6 @@ class EMNIST(MNIST):
         self.test_file = self._test_file(split)
         super(EMNIST, self).__init__(root, **kwargs)
         self.classes = self.classes_split_dict[self.split]
-
-        if self.target_transform is None and self.split == 'letters':
-            self.target_transform = lambda x: x - 1
 
     @staticmethod
     def _training_file(split) -> str:
