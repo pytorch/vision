@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from .utils import load_state_dict_from_url
-from typing import Union, List, Dict, Any
+from typing import Union, List, Dict, Any, cast
 
 
 __all__ = [
@@ -73,7 +73,7 @@ def make_layers(cfg: List[Union[str, int]], batch_norm: bool = False) -> nn.Sequ
         if v == 'M':
             layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
         else:
-            v = int(v)
+            v = cast(int, v)
             conv2d = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)
             if batch_norm:
                 layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
