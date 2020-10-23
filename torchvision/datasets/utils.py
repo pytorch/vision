@@ -147,6 +147,7 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
         print('Using downloaded and verified file: ' + fpath)
     else:
         session = requests.Session()
+
         response = session.get(url, params={'id': file_id}, stream=True)
         token = _get_confirm_token(response)
 
@@ -161,6 +162,7 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
                 f"and can only be overcome by trying again later."
             )
             raise RuntimeError(msg)
+
         _save_response_content(response, fpath)
 
 
