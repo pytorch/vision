@@ -1,5 +1,7 @@
 #include "densenet.h"
 
+#include <utility>
+
 #include "modelsimpl.h"
 
 namespace vision {
@@ -76,7 +78,7 @@ struct _TransitionImpl : torch::nn::SequentialImpl {
         torch::nn::Conv2d(Options(num_input_features, num_output_features, 1)
                               .stride(1)
                               .bias(false)));
-    push_back("pool", torch::nn::Functional([](torch::Tensor input) {
+    push_back("pool", torch::nn::Functional([](const torch::Tensor& input) {
                 return torch::avg_pool2d(input, 2, 2, 0, false, true);
               }));
   }
@@ -164,7 +166,7 @@ DenseNet121Impl::DenseNet121Impl(
     : DenseNetImpl(
           num_classes,
           growth_rate,
-          block_config,
+          std::move(block_config),
           num_init_features,
           bn_size,
           drop_rate) {}
@@ -179,7 +181,7 @@ DenseNet169Impl::DenseNet169Impl(
     : DenseNetImpl(
           num_classes,
           growth_rate,
-          block_config,
+          std::move(block_config),
           num_init_features,
           bn_size,
           drop_rate) {}
@@ -194,7 +196,7 @@ DenseNet201Impl::DenseNet201Impl(
     : DenseNetImpl(
           num_classes,
           growth_rate,
-          block_config,
+          std::move(block_config),
           num_init_features,
           bn_size,
           drop_rate) {}
@@ -209,7 +211,7 @@ DenseNet161Impl::DenseNet161Impl(
     : DenseNetImpl(
           num_classes,
           growth_rate,
-          block_config,
+          std::move(block_config),
           num_init_features,
           bn_size,
           drop_rate) {}

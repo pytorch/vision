@@ -1,6 +1,7 @@
 #include "vgg.h"
 
 #include <unordered_map>
+#include <utility>
 #include "modelsimpl.h"
 
 namespace vision {
@@ -62,7 +63,7 @@ VGGImpl::VGGImpl(
       torch::nn::Dropout(),
       torch::nn::Linear(4096, num_classes));
 
-  this->features = features;
+  this->features = std::move(features);
 
   register_module("features", this->features);
   register_module("classifier", classifier);
