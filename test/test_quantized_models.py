@@ -83,7 +83,10 @@ for model_name in get_available_quantizable_models():
             input_shape = (1, 3, 299, 299)
         self._test_classification_model(model_name, input_shape)
 
-    setattr(ModelTester, "test_" + model_name, do_test)
+    # inception_v3 was causing timeouts on circleci
+    # See https://github.com/pytorch/vision/issues/1857
+    if model_name not in ['inception_v3']:
+        setattr(ModelTester, "test_" + model_name, do_test)
 
 
 if __name__ == '__main__':

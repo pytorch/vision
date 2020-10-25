@@ -88,10 +88,10 @@ class UCF101(VisionDataset):
         with open(f, "r") as fid:
             data = fid.readlines()
             data = [x.strip().split(" ") for x in data]
-            data = [x[0] for x in data]
+            data = [os.path.join(self.root, x[0]) for x in data]
             selected_files.extend(data)
         selected_files = set(selected_files)
-        indices = [i for i in range(len(video_list)) if video_list[i][len(self.root) + 1:] in selected_files]
+        indices = [i for i in range(len(video_list)) if video_list[i] in selected_files]
         return indices
 
     def __len__(self):

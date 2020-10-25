@@ -16,10 +16,37 @@ torchvision
 
 The torchvision package consists of popular datasets, model architectures, and common image transformations for computer vision.
 
+
 Installation
 ============
 
-TorchVision requires PyTorch 1.2 or newer.
+We recommend Anaconda as Python package management system. Please refer to `pytorch.org <https://pytorch.org/>`_
+for the detail of PyTorch (``torch``) installation. The following is the corresponding ``torchvision`` versions and
+supported Python versions.
+
++--------------------------+--------------------------+---------------------------------+
+| ``torch``                | ``torchvision``          | ``python``                      |
++==========================+==========================+=================================+
+| ``master`` / ``nightly`` | ``master`` / ``nightly`` | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
+| ``1.6.0``                | ``0.7.0``                | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
+| ``1.5.1``                | ``0.6.1``                | ``>=3.5``                       |
++--------------------------+--------------------------+---------------------------------+
+| ``1.5.0``                | ``0.6.0``                | ``>=3.5``                       |
++--------------------------+--------------------------+---------------------------------+
+| ``1.4.0``                | ``0.5.0``                | ``==2.7``, ``>=3.5``, ``<=3.8`` |
++--------------------------+--------------------------+---------------------------------+
+| ``1.3.1``                | ``0.4.2``                | ``==2.7``, ``>=3.5``, ``<=3.7`` |
++--------------------------+--------------------------+---------------------------------+
+| ``1.3.0``                | ``0.4.1``                | ``==2.7``, ``>=3.5``, ``<=3.7`` |
++--------------------------+--------------------------+---------------------------------+
+| ``1.2.0``                | ``0.4.0``                | ``==2.7``, ``>=3.5``, ``<=3.7`` |
++--------------------------+--------------------------+---------------------------------+
+| ``1.1.0``                | ``0.3.0``                | ``==2.7``, ``>=3.5``, ``<=3.7`` |
++--------------------------+--------------------------+---------------------------------+
+| ``<=1.0.1``              | ``0.2.2``                | ``==2.7``, ``>=3.5``, ``<=3.7`` |
++--------------------------+--------------------------+---------------------------------+
 
 Anaconda:
 
@@ -55,13 +82,23 @@ Torchvision currently supports the following image backends:
 
 * `accimage`_ - if installed can be activated by calling :code:`torchvision.set_image_backend('accimage')`
 
+* `libpng`_ - can be installed via conda :code:`conda install libpng` or any of the package managers for debian-based and RHEL-based Linux distributions.
+
+* `libjpeg`_ - can be installed via conda :code:`conda install jpeg` or any of the package managers for debian-based and RHEL-based Linux distributions. `libjpeg-turbo`_ can be used as well.
+
+**Notes:** ``libpng`` and ``libjpeg`` must be available at compilation time in order to be available. Make sure that it is available on the standard library locations,
+otherwise, add the include and library paths in the environment variables ``TORCHVISION_INCLUDE`` and ``TORCHVISION_LIBRARY``, respectively.
+
+.. _libpng : http://www.libpng.org/pub/png/libpng.html
 .. _Pillow : https://python-pillow.org/
 .. _Pillow-SIMD : https://github.com/uploadcare/pillow-simd
 .. _accimage: https://github.com/pytorch/accimage
+.. _libjpeg: http://ijg.org/
+.. _libjpeg-turbo: https://libjpeg-turbo.org/
 
 C++ API
 =======
-TorchVision also offers a C++ API that contains C++ equivalent of python models. 
+TorchVision also offers a C++ API that contains C++ equivalent of python models.
 
 Installation From source:
 
@@ -69,13 +106,31 @@ Installation From source:
 
     mkdir build
     cd build
+    # Add -DWITH_CUDA=on support for the CUDA if needed
     cmake ..
-    make 
+    make
     make install
+
+Once installed, the library can be accessed in cmake (after properly configuring ``CMAKE_PREFIX_PATH``) via the :code:`TorchVision::TorchVision` target:
+
+.. code:: rest
+
+	find_package(TorchVision REQUIRED)
+	target_link_libraries(my-target PUBLIC TorchVision::TorchVision)
+
+The ``TorchVision`` package will also automatically look for the ``Torch`` package and add it as a dependency to ``my-target``,
+so make sure that it is also available to cmake via the ``CMAKE_PREFIX_PATH``.
+
+For an example setup, take a look at ``examples/cpp/hello_world``.
+
+TorchVision Operators
+---------------------
+In order to get the torchvision operators registered with torch (eg. for the JIT), all you need to do is to ensure that you
+:code:`#include <torchvision/vision.h>` in your project.
 
 Documentation
 =============
-You can find the API documentation on the pytorch website: http://pytorch.org/docs/master/torchvision/
+You can find the API documentation on the pytorch website: https://pytorch.org/docs/stable/torchvision/index.html
 
 Contributing
 ============

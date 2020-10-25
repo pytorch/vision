@@ -122,7 +122,8 @@ class ShuffleNetV2(nn.Module):
 
         self.fc = nn.Linear(output_channels, num_classes)
 
-    def _forward(self, x):
+    def _forward_impl(self, x):
+        # See note [TorchScript super()]
         x = self.conv1(x)
         x = self.maxpool(x)
         x = self.stage2(x)
@@ -133,7 +134,8 @@ class ShuffleNetV2(nn.Module):
         x = self.fc(x)
         return x
 
-    forward = _forward
+    def forward(self, x):
+        return self._forward_impl(x)
 
 
 def _shufflenetv2(arch, pretrained, progress, *args, **kwargs):

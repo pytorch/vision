@@ -1,5 +1,3 @@
-from __future__ import division
-
 import math
 
 import torch
@@ -8,23 +6,13 @@ from torch import Tensor
 import torchvision
 
 
-# TODO: https://github.com/pytorch/pytorch/issues/26727
-def zeros_like(tensor, dtype):
-    # type: (Tensor, int) -> Tensor
-    if tensor.dtype == dtype:
-        return tensor.detach().clone()
-    else:
-        return tensor.to(dtype)
-
-
-@torch.jit.script
 class BalancedPositiveNegativeSampler(object):
     """
     This class samples batches, ensuring that they contain a fixed proportion of positives
     """
 
     def __init__(self, batch_size_per_image, positive_fraction):
-        # type: (int, float)
+        # type: (int, float) -> None
         """
         Arguments:
             batch_size_per_image (int): number of elements to be selected per image
@@ -34,7 +22,7 @@ class BalancedPositiveNegativeSampler(object):
         self.positive_fraction = positive_fraction
 
     def __call__(self, matched_idxs):
-        # type: (List[Tensor])
+        # type: (List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
         """
         Arguments:
             matched idxs: list of tensors containing -1, 0 or positive values.
@@ -53,8 +41,8 @@ class BalancedPositiveNegativeSampler(object):
         pos_idx = []
         neg_idx = []
         for matched_idxs_per_image in matched_idxs:
-            positive = torch.nonzero(matched_idxs_per_image >= 1).squeeze(1)
-            negative = torch.nonzero(matched_idxs_per_image == 0).squeeze(1)
+            positive = torch.where(matched_idxs_per_image >= 1)[0]
+            negative = torch.where(matched_idxs_per_image == 0)[0]
 
             num_pos = int(self.batch_size_per_image * self.positive_fraction)
             # protect against not enough positive examples
@@ -71,15 +59,15 @@ class BalancedPositiveNegativeSampler(object):
             neg_idx_per_image = negative[perm2]
 
             # create binary mask from indices
-            pos_idx_per_image_mask = zeros_like(
+            pos_idx_per_image_mask = torch.zeros_like(
                 matched_idxs_per_image, dtype=torch.uint8
             )
-            neg_idx_per_image_mask = zeros_like(
+            neg_idx_per_image_mask = torch.zeros_like(
                 matched_idxs_per_image, dtype=torch.uint8
             )
 
-            pos_idx_per_image_mask[pos_idx_per_image] = torch.tensor(1)
-            neg_idx_per_image_mask[neg_idx_per_image] = torch.tensor(1)
+            pos_idx_per_image_mask[pos_idx_per_image] = 1
+            neg_idx_per_image_mask[neg_idx_per_image] = 1
 
             pos_idx.append(pos_idx_per_image_mask)
             neg_idx.append(neg_idx_per_image_mask)
@@ -87,7 +75,7 @@ class BalancedPositiveNegativeSampler(object):
         return pos_idx, neg_idx
 
 
-@torch.jit.script
+@torch.jit._script_if_tracing
 def encode_boxes(reference_boxes, proposals, weights):
     # type: (torch.Tensor, torch.Tensor, torch.Tensor) -> torch.Tensor
     """
@@ -135,7 +123,6 @@ def encode_boxes(reference_boxes, proposals, weights):
     return targets
 
 
-@torch.jit.script
 class BoxCoder(object):
     """
     This class encodes and decodes a set of bounding boxes into
@@ -143,7 +130,7 @@ class BoxCoder(object):
     """
 
     def __init__(self, weights, bbox_xform_clip=math.log(1000. / 16)):
-        # type: (Tuple[float, float, float, float], float)
+        # type: (Tuple[float, float, float, float], float) -> None
         """
         Arguments:
             weights (4-element tuple)
@@ -153,7 +140,7 @@ class BoxCoder(object):
         self.bbox_xform_clip = bbox_xform_clip
 
     def encode(self, reference_boxes, proposals):
-        # type: (List[Tensor], List[Tensor])
+        # type: (List[Tensor], List[Tensor]) -> List[Tensor]
         boxes_per_image = [len(b) for b in reference_boxes]
         reference_boxes = torch.cat(reference_boxes, dim=0)
         proposals = torch.cat(proposals, dim=0)
@@ -177,7 +164,7 @@ class BoxCoder(object):
         return targets
 
     def decode(self, rel_codes, boxes):
-        # type: (Tensor, List[Tensor])
+        # type: (Tensor, List[Tensor]) -> Tensor
         assert isinstance(boxes, (list, tuple))
         assert isinstance(rel_codes, torch.Tensor)
         boxes_per_image = [b.size(0) for b in boxes]
@@ -222,15 +209,14 @@ class BoxCoder(object):
         pred_w = torch.exp(dw) * widths[:, None]
         pred_h = torch.exp(dh) * heights[:, None]
 
-        pred_boxes1 = pred_ctr_x - torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w
-        pred_boxes2 = pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h
-        pred_boxes3 = pred_ctr_x + torch.tensor(0.5, dtype=pred_ctr_x.dtype) * pred_w
-        pred_boxes4 = pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_y.dtype) * pred_h
+        pred_boxes1 = pred_ctr_x - torch.tensor(0.5, dtype=pred_ctr_x.dtype, device=pred_w.device) * pred_w
+        pred_boxes2 = pred_ctr_y - torch.tensor(0.5, dtype=pred_ctr_y.dtype, device=pred_h.device) * pred_h
+        pred_boxes3 = pred_ctr_x + torch.tensor(0.5, dtype=pred_ctr_x.dtype, device=pred_w.device) * pred_w
+        pred_boxes4 = pred_ctr_y + torch.tensor(0.5, dtype=pred_ctr_y.dtype, device=pred_h.device) * pred_h
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=2).flatten(1)
         return pred_boxes
 
 
-@torch.jit.script
 class Matcher(object):
     """
     This class assigns to each predicted "element" (e.g., a box) a ground-truth
@@ -255,7 +241,7 @@ class Matcher(object):
     }
 
     def __init__(self, high_threshold, low_threshold, allow_low_quality_matches=False):
-        # type: (float, float, bool)
+        # type: (float, float, bool) -> None
         """
         Args:
             high_threshold (float): quality values greater than or equal to
@@ -311,8 +297,8 @@ class Matcher(object):
         between_thresholds = (matched_vals >= self.low_threshold) & (
             matched_vals < self.high_threshold
         )
-        matches[below_low_threshold] = torch.tensor(self.BELOW_LOW_THRESHOLD)
-        matches[between_thresholds] = torch.tensor(self.BETWEEN_THRESHOLDS)
+        matches[below_low_threshold] = self.BELOW_LOW_THRESHOLD
+        matches[between_thresholds] = self.BETWEEN_THRESHOLDS
 
         if self.allow_low_quality_matches:
             assert all_matches is not None
@@ -331,7 +317,7 @@ class Matcher(object):
         # For each gt, find the prediction with which it has highest quality
         highest_quality_foreach_gt, _ = match_quality_matrix.max(dim=1)
         # Find highest quality match available, even if it is low, including ties
-        gt_pred_pairs_of_highest_quality = torch.nonzero(
+        gt_pred_pairs_of_highest_quality = torch.where(
             match_quality_matrix == highest_quality_foreach_gt[:, None]
         )
         # Example gt_pred_pairs_of_highest_quality:
@@ -348,5 +334,18 @@ class Matcher(object):
         # Each row is a (gt index, prediction index)
         # Note how gt items 1, 2, 3, and 5 each have two ties
 
-        pred_inds_to_update = gt_pred_pairs_of_highest_quality[:, 1]
+        pred_inds_to_update = gt_pred_pairs_of_highest_quality[1]
         matches[pred_inds_to_update] = all_matches[pred_inds_to_update]
+
+
+def smooth_l1_loss(input, target, beta: float = 1. / 9, size_average: bool = True):
+    """
+    very similar to the smooth_l1_loss from pytorch, but with
+    the extra beta parameter
+    """
+    n = torch.abs(input - target)
+    cond = n < beta
+    loss = torch.where(cond, 0.5 * n ** 2 / beta, n - 0.5 * beta)
+    if size_average:
+        return loss.mean()
+    return loss.sum()

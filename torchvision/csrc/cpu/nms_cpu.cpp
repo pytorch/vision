@@ -1,14 +1,15 @@
-#include "cpu/vision_cpu.h"
+#include "vision_cpu.h"
 
 template <typename scalar_t>
 at::Tensor nms_cpu_kernel(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const float iou_threshold) {
-  AT_ASSERTM(!dets.type().is_cuda(), "dets must be a CPU tensor");
-  AT_ASSERTM(!scores.type().is_cuda(), "scores must be a CPU tensor");
-  AT_ASSERTM(
-      dets.type() == scores.type(), "dets should have the same type as scores");
+    const double iou_threshold) {
+  TORCH_CHECK(!dets.is_cuda(), "dets must be a CPU tensor");
+  TORCH_CHECK(!scores.is_cuda(), "scores must be a CPU tensor");
+  TORCH_CHECK(
+      dets.scalar_type() == scores.scalar_type(),
+      "dets should have the same type as scores");
 
   if (dets.numel() == 0)
     return at::empty({0}, dets.options().dtype(at::kLong));
@@ -71,10 +72,29 @@ at::Tensor nms_cpu_kernel(
 at::Tensor nms_cpu(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const float iou_threshold) {
+    const double iou_threshold) {
+  TORCH_CHECK(
+      dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
+  TORCH_CHECK(
+      dets.size(1) == 4,
+      "boxes should have 4 elements in dimension 1, got ",
+      dets.size(1));
+  TORCH_CHECK(
+      scores.dim() == 1,
+      "scores should be a 1d tensor, got ",
+      scores.dim(),
+      "D");
+  TORCH_CHECK(
+      dets.size(0) == scores.size(0),
+      "boxes and scores should have same number of elements in ",
+      "dimension 0, got ",
+      dets.size(0),
+      " and ",
+      scores.size(0));
+
   auto result = at::empty({0}, dets.options());
 
-  AT_DISPATCH_FLOATING_TYPES(dets.type(), "nms", [&] {
+  AT_DISPATCH_FLOATING_TYPES(dets.scalar_type(), "nms", [&] {
     result = nms_cpu_kernel<scalar_t>(dets, scores, iou_threshold);
   });
   return result;
