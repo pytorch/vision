@@ -1,7 +1,6 @@
 #include "vgg.h"
 
 #include <unordered_map>
-#include <utility>
 #include "modelsimpl.h"
 
 namespace vision {
@@ -51,7 +50,7 @@ void VGGImpl::_initialize_weights() {
 }
 
 VGGImpl::VGGImpl(
-    torch::nn::Sequential features,
+    const torch::nn::Sequential& features,
     int64_t num_classes,
     bool initialize_weights) {
   classifier = torch::nn::Sequential(
@@ -63,7 +62,7 @@ VGGImpl::VGGImpl(
       torch::nn::Dropout(),
       torch::nn::Linear(4096, num_classes));
 
-  this->features = std::move(features);
+  this->features = features;
 
   register_module("features", this->features);
   register_module("classifier", classifier);

@@ -1,7 +1,5 @@
 #include "densenet.h"
 
-#include <utility>
-
 #include "modelsimpl.h"
 
 namespace vision {
@@ -93,7 +91,7 @@ TORCH_MODULE(_Transition);
 DenseNetImpl::DenseNetImpl(
     int64_t num_classes,
     int64_t growth_rate,
-    std::vector<int64_t> block_config,
+    const std::vector<int64_t>& block_config,
     int64_t num_init_features,
     int64_t bn_size,
     double drop_rate) {
@@ -159,14 +157,14 @@ torch::Tensor DenseNetImpl::forward(torch::Tensor x) {
 DenseNet121Impl::DenseNet121Impl(
     int64_t num_classes,
     int64_t growth_rate,
-    std::vector<int64_t> block_config,
+    const std::vector<int64_t>& block_config,
     int64_t num_init_features,
     int64_t bn_size,
     double drop_rate)
     : DenseNetImpl(
           num_classes,
           growth_rate,
-          std::move(block_config),
+          block_config,
           num_init_features,
           bn_size,
           drop_rate) {}
@@ -174,14 +172,14 @@ DenseNet121Impl::DenseNet121Impl(
 DenseNet169Impl::DenseNet169Impl(
     int64_t num_classes,
     int64_t growth_rate,
-    std::vector<int64_t> block_config,
+    const std::vector<int64_t>& block_config,
     int64_t num_init_features,
     int64_t bn_size,
     double drop_rate)
     : DenseNetImpl(
           num_classes,
           growth_rate,
-          std::move(block_config),
+          block_config,
           num_init_features,
           bn_size,
           drop_rate) {}
@@ -189,14 +187,14 @@ DenseNet169Impl::DenseNet169Impl(
 DenseNet201Impl::DenseNet201Impl(
     int64_t num_classes,
     int64_t growth_rate,
-    std::vector<int64_t> block_config,
+    const std::vector<int64_t>& block_config,
     int64_t num_init_features,
     int64_t bn_size,
     double drop_rate)
     : DenseNetImpl(
           num_classes,
           growth_rate,
-          std::move(block_config),
+          block_config,
           num_init_features,
           bn_size,
           drop_rate) {}
@@ -204,14 +202,14 @@ DenseNet201Impl::DenseNet201Impl(
 DenseNet161Impl::DenseNet161Impl(
     int64_t num_classes,
     int64_t growth_rate,
-    std::vector<int64_t> block_config,
+    const std::vector<int64_t>& block_config,
     int64_t num_init_features,
     int64_t bn_size,
     double drop_rate)
     : DenseNetImpl(
           num_classes,
           growth_rate,
-          std::move(block_config),
+          block_config,
           num_init_features,
           bn_size,
           drop_rate) {}
