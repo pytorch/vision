@@ -74,8 +74,6 @@
 #include <iostream>
 #include <tuple>
 
-using namespace at;
-
 const int kMaxParallelImgs = 32;
 
 template <typename scalar_t>

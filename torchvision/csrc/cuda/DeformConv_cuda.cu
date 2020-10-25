@@ -78,8 +78,6 @@
 #include <iostream>
 #include <tuple>
 
-using namespace at;
-
 const unsigned int CUDA_NUM_THREADS = 1024;
 const int kMaxParallelImgs = 32;
 
