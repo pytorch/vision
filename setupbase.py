@@ -157,7 +157,7 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, library):
     while binary_queue != []:
         dep_library, parent = binary_queue.pop(0)
         library_info = tree_libs[dep_library]
-        log.info(library)
+        log.info(dep_library)
 
         if library_info['path'] is None:
             log.info('Omitting {0}'.format(dep_library))
@@ -212,7 +212,7 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, library):
                         new_dep,
                         new_library_name
                     ],
-                    cwd=new_libraries_path)
+                    cwd=base_lib_dir)
 
             log.info('Updating library rpath')
             run(
@@ -222,7 +222,7 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, library):
                     "$ORIGIN",
                     new_library_name
                 ],
-                cwd=new_libraries_path)
+                cwd=base_lib_dir)
 
             run(
                 [
@@ -230,7 +230,7 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, library):
                     '--print-rpath',
                     new_library_name
                 ],
-                cwd=new_libraries_path)
+                cwd=base_lib_dir)
 
     log.info("Update library dependencies")
     library_dependencies = binary_dependencies[library]
