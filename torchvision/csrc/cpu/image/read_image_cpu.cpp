@@ -1,5 +1,5 @@
 #include "read_image_cpu.h"
-#include <string.h>
+#include <cstring>
 
 torch::Tensor decode_image(const torch::Tensor& data) {
   // Check that the input tensor dtype is uint8

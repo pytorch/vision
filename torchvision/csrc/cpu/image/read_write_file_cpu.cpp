@@ -46,7 +46,7 @@ void write_file(std::string filename, torch::Tensor& data) {
   auto fileCStr = filename.c_str();
   FILE* outfile = fopen(fileCStr, "wb");
 
-  TORCH_CHECK(outfile != NULL, "Error opening output file");
+  TORCH_CHECK(outfile != nullptr, "Error opening output file");
 
   fwrite(fileBytes, sizeof(uint8_t), data.numel(), outfile);
   fclose(outfile);
