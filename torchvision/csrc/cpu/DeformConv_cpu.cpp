@@ -74,8 +74,6 @@
 #include <iostream>
 #include <tuple>
 
-using namespace at;
-
 const int kMaxParallelImgs = 32;
 
 template <typename scalar_t>
@@ -597,7 +595,7 @@ static void deformable_col2im_coord_kernel(
             out_w;
 
     const int offset_c = c - offset_grp * 2 * weight_h * weight_w;
-    const int is_y_direction = offset_c % 2 == 0;
+    const bool is_y_direction = offset_c % 2 == 0;
 
     const int c_bound = c_per_offset_grp * weight_h * weight_w;
     for (int col_c = (offset_c / 2); col_c < c_bound; col_c += col_step) {
@@ -812,9 +810,9 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv2d_backward_input_cpu(
 
 static at::Tensor deform_conv2d_backward_parameters_cpu(
     at::Tensor input,
-    at::Tensor weight,
+    const at::Tensor& weight,
     at::Tensor offset,
-    at::Tensor grad_out,
+    const at::Tensor& grad_out,
     std::pair<int, int> stride,
     std::pair<int, int> pad,
     std::pair<int, int> dilation,
