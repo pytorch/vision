@@ -11,9 +11,6 @@ requirements:
     - libpng
     - jpeg
     - ffmpeg =4.2
-    - patchelf  # [linux]
-    - wheel   # [linux]
-    - pbr   # [linux]
 
   host:
     - python
@@ -24,6 +21,9 @@ requirements:
 
   run:
     - python
+    - libpng
+    - ffmpeg =4.2
+    - jpeg
     - pillow >=4.1.1
     - numpy >=1.11
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
