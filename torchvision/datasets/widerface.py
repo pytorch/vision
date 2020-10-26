@@ -11,10 +11,10 @@ class WIDERFace(VisionDataset):
 
     Citation:
     @inproceedings{yang2016wider,
-	    Author = {Yang, Shuo and Luo, Ping and Loy, Chen Change and Tang, Xiaoou},
-	    Booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
-	    Title = {WIDER FACE: A Face Detection Benchmark},
-	    Year = {2016}}
+        Author = {Yang, Shuo and Luo, Ping and Loy, Chen Change and Tang, Xiaoou},
+        Booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+        Title = {WIDER FACE: A Face Detection Benchmark},
+        Year = {2016}}
 
     Args:
         root (string): Root directory of the WIDERFace Dataset.
@@ -67,7 +67,7 @@ class WIDERFace(VisionDataset):
         super(WIDERFace, self).__init__(root, transform=transform,
                                         target_transform=target_transform)
         # check arguments
-        if split not in ("train","val","test"):
+        if split not in ("train", "val", "test"):
             raise ValueError("split \"{}\" is not recognized.".format(split))
         self.split = split
 
@@ -75,8 +75,8 @@ class WIDERFace(VisionDataset):
             self.target_type = target_type
         else:
             self.target_type = [target_type]
-        
-        if not (all(x in ["raw","bbox","attr",""] for x in self.target_type)):
+
+        if not (all(x in ["raw", "bbox", "attr", ""] for x in self.target_type)):
             raise ValueError("target_type \"{}\" is not recognized.".format(self.target_type))
         if not self.target_type and self.target_transform is not None:
             raise RuntimeError('target_transform is specified but target_type is empty')
@@ -87,13 +87,13 @@ class WIDERFace(VisionDataset):
 
         if download:
             self.download()
-        
+
         if not self._check_integrity():
             raise RuntimeError("Dataset not found or corrupted. " +
                                "You can use download=True to download it")
 
         # process dataset
-        if self.split in ("train","val"):
+        if self.split in ("train", "val"):
             self.parse_train_val_annotations_file()
         elif self.split == "test":
             self.parse_test_annotations_file()
@@ -122,11 +122,11 @@ class WIDERFace(VisionDataset):
         target: Any = []
         for t in self.target_type:
             if t == "raw":
-                target.append( self.raw_annotations[index] )
+                target.append(self.raw_annotations[index])
             elif t == "bbox":
-                target.append( self.raw_annotations[index][:,:4] )
+                target.append(self.raw_annotations[index][:, :4])
             elif t == "attr":
-                target.append( self.raw_annotations[index][:,4:] )
+                target.append(self.raw_annotations[index][:, 4:])
             elif t == "":
                 target = None
                 break
@@ -159,7 +159,7 @@ class WIDERFace(VisionDataset):
         for line in lines:
             line = line.rstrip()
             if file_name_line:
-                abs_path = os.path.join(self.root, self.base_folder, "WIDER_"+self.split, "images", line)
+                abs_path = os.path.join(self.root, self.base_folder, "WIDER_" + self.split, "images", line)
                 self.imgs_path.append(abs_path)
                 file_name_line = False
                 num_boxes_line = True
