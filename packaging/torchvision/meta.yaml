@@ -11,9 +11,6 @@ requirements:
     - libpng
     - jpeg
     - ffmpeg =4.2
-    # - patchelf  # [linux]
-    # - wheel  # [linux]
-    - pbr  # [linux]
 
   host:
     - python
@@ -34,7 +31,7 @@ requirements:
 
 build:
   string: py{{py}}_{{ environ['CU_VERSION'] }}
-  script: python setup.py install --single-version-externally-managed --record=record.txt
+  script: python setup.py install --single-version-externally-managed --record=record.txt  # [win]
   script_env:
     - CUDA_HOME
     - FORCE_CUDA
