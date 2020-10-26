@@ -82,8 +82,8 @@ class WIDERFace(VisionDataset):
             raise RuntimeError('target_transform is specified but target_type is empty')
 
         # prepare dataset
-        self.imgs_path = []
-        self.raw_annotations = []
+        self.imgs_path: List[str] = []
+        self.raw_annotations: List[torch.Tensor] = []
 
         if download:
             self.download()
