@@ -36,7 +36,7 @@ struct VISION_API BasicBlock : torch::nn::Module {
       int64_t inplanes,
       int64_t planes,
       int64_t stride = 1,
-      torch::nn::Sequential downsample = nullptr,
+      const torch::nn::Sequential& downsample = nullptr,
       int64_t groups = 1,
       int64_t base_width = 64);
 
@@ -59,7 +59,7 @@ struct VISION_API Bottleneck : torch::nn::Module {
       int64_t inplanes,
       int64_t planes,
       int64_t stride = 1,
-      torch::nn::Sequential downsample = nullptr,
+      const torch::nn::Sequential& downsample = nullptr,
       int64_t groups = 1,
       int64_t base_width = 64);
 
