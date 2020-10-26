@@ -18,6 +18,7 @@ from .caltech import Caltech101, Caltech256
 from .celeba import CelebA
 from .sbd import SBDataset
 from .vision import VisionDataset
+from .vggface2 import VGGFace2
 from .usps import USPS
 from .kinetics import Kinetics400
 from .hmdb51 import HMDB51
@@ -32,4 +33,4 @@ __all__ = ('LSUN', 'LSUNClass',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
            'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNet',
            'Caltech101', 'Caltech256', 'CelebA', 'SBDataset', 'VisionDataset',
-           'USPS', 'Kinetics400', 'HMDB51', 'UCF101', 'Places365')
+           'VGGFace2', 'USPS', 'Kinetics400', 'HMDB51', 'UCF101', 'Places365')
