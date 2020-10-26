@@ -78,8 +78,6 @@
 #include <iostream>
 #include <tuple>
 
-using namespace at;
-
 const unsigned int CUDA_NUM_THREADS = 1024;
 const int kMaxParallelImgs = 32;
 
@@ -618,7 +616,7 @@ __global__ void deformable_col2im_coord_gpu_kernel(
         out_h * out_w;
 
     const int offset_c = c - offset_grp * 2 * weight_h * weight_w;
-    const int is_y_direction = offset_c % 2 == 0;
+    const bool is_y_direction = offset_c % 2 == 0;
 
     const int c_bound = c_per_offset_grp * weight_h * weight_w;
     for (int col_c = (offset_c / 2); col_c < c_bound; col_c += col_step) {
@@ -840,9 +838,9 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv_backward_input_cuda(
 
 static at::Tensor deform_conv_backward_parameters_cuda(
     at::Tensor input,
-    at::Tensor weight,
+    const at::Tensor& weight,
     at::Tensor offset,
-    at::Tensor grad_out,
+    const at::Tensor& grad_out,
     std::pair<int, int> stride,
     std::pair<int, int> pad,
     std::pair<int, int> dilation,

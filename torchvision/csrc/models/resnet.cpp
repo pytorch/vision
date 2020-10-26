@@ -28,7 +28,7 @@ BasicBlock::BasicBlock(
     int64_t inplanes,
     int64_t planes,
     int64_t stride,
-    torch::nn::Sequential downsample,
+    const torch::nn::Sequential& downsample,
     int64_t groups,
     int64_t base_width)
     : stride(stride), downsample(downsample) {
@@ -57,7 +57,7 @@ Bottleneck::Bottleneck(
     int64_t inplanes,
     int64_t planes,
     int64_t stride,
-    torch::nn::Sequential downsample,
+    const torch::nn::Sequential& downsample,
     int64_t groups,
     int64_t base_width)
     : stride(stride), downsample(downsample) {
