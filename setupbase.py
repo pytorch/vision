@@ -2,15 +2,16 @@
 
 """General setup rules to relocate torchvision binary dependencies."""
 
+import hashlib
 import os
 import os.path as osp
 import pipes
 import pkg_resources
-import shutil
 import sys
 
 from distutils import log
-from subprocess import check_call
+import subprocess
+import shutil
 from torch.utils.cpp_extension import BuildExtension
 
 if sys.platform == 'win32':
@@ -23,12 +24,31 @@ else:
 HERE = os.path.abspath(os.path.dirname(__file__))
 repo_root = os.path.dirname(os.path.abspath(__file__))
 
+LINUX_WHITELIST = {
+    'libgcc_s.so.1', 'libstdc++.so.6', 'libm.so.6',
+    'libdl.so.2', 'librt.so.1', 'libc.so.6',
+    'libnsl.so.1', 'libutil.so.1', 'libpthread.so.0',
+    'libresolv.so.2', 'libX11.so.6', 'libXext.so.6',
+    'libXrender.so.1', 'libICE.so.6', 'libSM.so.6',
+    'libGL.so.1', 'libgobject-2.0.so.0', 'libgthread-2.0.so.0',
+    'libglib-2.0.so.0', 'ld-linux-x86-64.so.2', 'ld-2.17.so'
+}
+
 
 def run(cmd, *args, **kwargs):
     """Echo a command before running it"""
     log.info('> ' + list2cmdline(cmd))
     kwargs['shell'] = (sys.platform == 'win32')
-    return check_call(cmd, *args, **kwargs)
+    return subprocess.check_output(cmd, *args, **kwargs)
+
+
+def patch_new_path(library_path, new_dir):
+    library = osp.basename(library_path)
+    name, *rest = library.split('.')
+    rest = '.'.join(rest)
+    hash_id = hashlib.sha256(library_path.encode('utf-8')).hexdigest()[:8]
+    new_name = '.'.join([name, hash_id, rest])
+    return osp.join(new_dir, new_name)
 
 
 def is_program_installed(basename):
@@ -105,7 +125,7 @@ def find_relocate_tool():
                      'found on the PATH')
     else:
         bin_patch_name = 'patchelf'
-        bin_patch_util = find_program(bin_patch_util)
+        bin_patch_util = find_program(bin_patch_name)
         if bin_patch_util is None:
             valid = False
             log.info(f'Not relocating binaries since {bin_patch_name} was not'
@@ -125,6 +145,128 @@ def find_relocate_tool():
     return valid, bin_patch_util, dep_find_util
 
 
+def relocate_elf_library(lddtree, patchelf, base_lib_dir, library):
+    library_path = osp.join(base_lib_dir, library)
+    ld_tree = lddtree(library_path)
+    tree_libs = ld_tree['libs']
+
+    binary_queue = [(n, library) for n in ld_tree['needed']]
+    binary_paths = {library: library_path}
+    binary_dependencies = {}
+
+    while binary_queue != []:
+        dep_library, parent = binary_queue.pop(0)
+        library_info = tree_libs[dep_library]
+        log.info(library)
+
+        if library_info['path'] is None:
+            log.info('Omitting {0}'.format(dep_library))
+            continue
+
+        if dep_library in LINUX_WHITELIST:
+            # Omit glibc/gcc/system libraries
+            log.info('Omitting {0}'.format(dep_library))
+            continue
+
+        parent_dependencies = binary_dependencies.get(parent, [])
+        parent_dependencies.append(dep_library)
+        binary_dependencies[parent] = parent_dependencies
+
+        if dep_library in binary_paths:
+            continue
+
+        binary_paths[dep_library] = library_info['path']
+        binary_queue += [(n, dep_library) for n in library_info['needed']]
+
+    log.info('Copying dependencies to new directory')
+    new_libraries_path = osp.join(base_lib_dir, '.libs')
+    if osp.exists(new_libraries_path):
+        shutil.rmtree(new_libraries_path)
+    os.makedirs(new_libraries_path)
+
+    new_names = {library: library_path}
+
+    for dep_library in binary_paths:
+        if dep_library != library:
+            library_path = binary_paths[dep_library]
+            new_library_path = patch_new_path(library_path, new_libraries_path)
+            print('{0} -> {1}'.format(dep_library, new_library_path))
+            shutil.copyfile(library_path, new_library_path)
+            new_names[dep_library] = new_library_path
+
+    log.info('Updating dependency names by new files')
+    for dep_library in binary_paths:
+        if dep_library != library:
+            if dep_library not in binary_dependencies:
+                continue
+            library_dependencies = binary_dependencies[dep_library]
+            new_library_name = new_names[dep_library]
+            for dep in library_dependencies:
+                new_dep = osp.basename(new_names[dep])
+                log.info('{0}: {1} -> {2}'.format(dep_library, dep, new_dep))
+                run(
+                    [
+                        patchelf,
+                        '--replace-needed',
+                        dep,
+                        new_dep,
+                        new_library_name
+                    ],
+                    cwd=new_libraries_path)
+
+            log.info('Updating library rpath')
+            run(
+                [
+                    patchelf,
+                    '--set-rpath',
+                    "$ORIGIN",
+                    new_library_name
+                ],
+                cwd=new_libraries_path)
+
+            run(
+                [
+                    patchelf,
+                    '--print-rpath',
+                    new_library_name
+                ],
+                cwd=new_libraries_path)
+
+    log.info("Update library dependencies")
+    library_dependencies = binary_dependencies[library]
+    for dep in library_dependencies:
+        new_dep = osp.basename(new_names[dep])
+        print('{0}: {1} -> {2}'.format(library, dep, new_dep))
+        subprocess.check_output(
+            [
+                patchelf,
+                '--replace-needed',
+                dep,
+                new_dep,
+                library
+            ],
+            cwd=base_lib_dir)
+
+    print('Update library rpath')
+    subprocess.check_output(
+        [
+            patchelf,
+            '--set-rpath',
+            "$ORIGIN:$ORIGIN/.libs",
+            library
+        ],
+        cwd=base_lib_dir
+    )
+
+
+def relocate_macho_library(otool, install_name_tool, base_lib_dir, library):
+    pass
+
+
+def relocate_dll_library(dumpbin, _mangler, base_lib_dir, library):
+    pass
+
+
 class BuildExtRelocate(BuildExtension):
     def run(self):
         BuildExtension.run(self)
@@ -132,10 +274,26 @@ class BuildExtRelocate(BuildExtension):
         if not relocate:
             return
 
+        relocation_funcs = {
+            'linux': relocate_elf_library,
+            'darwin': relocate_macho_library,
+            'win32': relocate_dll_library
+        }
         build_py = self.get_finalized_command('build_py')
         for ext in self.extensions:
+            fullname = self.get_ext_fullname(ext.name)
             if fullname == 'torchvision._C':
                 continue
-            fullname = self.get_ext_fullname(ext.name)
             filename = self.get_ext_filename(fullname)
             log.info(f'Extension: ({fullname}) {filename}')
+
+            # build_library = osp.join(self.build_lib, filename)
+            library_name = osp.basename(filename)
+            base_library_dir = osp.join(self.build_lib, 'torchvision')
+
+            if self.inplace:
+                base_library_dir = build_py.get_package_dir('torchvision')
+
+            relocate = relocation_funcs[sys.platform]
+            relocate(
+                dep_find_util, bin_patch_util, base_library_dir, library_name)
