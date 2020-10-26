@@ -124,6 +124,7 @@ def find_relocate_tool():
             log.info(f'Not relocating binaries since {dep_find_name} was not'
                      'found on the PATH')
     else:
+        valid = True
         bin_patch_name = 'patchelf'
         bin_patch_util = find_program(bin_patch_name)
         if bin_patch_util is None:
