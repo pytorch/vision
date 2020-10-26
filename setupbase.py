@@ -287,7 +287,8 @@ class BuildExtRelocate(BuildExtension):
 
         if osp.exists(library_path) and library_path != base_library_dir:
             shutil.rmtree(library_path)
-            os.makedirs(library_path)
+
+        os.makedirs(library_path)
 
         for ext in self.extensions:
             fullname = self.get_ext_fullname(ext.name)
