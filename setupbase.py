@@ -132,15 +132,8 @@ def find_relocate_tool():
                      'found on the PATH')
 
         dep_find_name = 'auditwheel'
-        try:
-            pkg_resources.get_distribution(dep_find_name)
-            from auditwheel.lddtree import lddtree
-            dep_find_util = lddtree
-            valid = True
-        except pkg_resources.DistributionNotFound:
-            log.info(f'Not relocating binaries since {dep_find_name} was not '
-                     'found on Python site-packages')
-            valid = False
+        from lddtree import lddtree
+        dep_find_util = lddtree
 
     return valid, bin_patch_util, dep_find_util
 
