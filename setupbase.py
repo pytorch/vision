@@ -145,7 +145,8 @@ def find_relocate_tool():
     return valid, bin_patch_util, dep_find_util
 
 
-def relocate_elf_library(lddtree, patchelf, base_lib_dir, library):
+def relocate_elf_library(lddtree, patchelf, base_lib_dir, new_libraries_path,
+                         library):
     library_path = osp.join(base_lib_dir, library)
     ld_tree = lddtree(library_path)
     tree_libs = ld_tree['libs']
@@ -179,11 +180,6 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, library):
         binary_queue += [(n, dep_library) for n in library_info['needed']]
 
     log.info('Copying dependencies to new directory')
-    new_libraries_path = osp.join(base_lib_dir, '.libs')
-    if osp.exists(new_libraries_path):
-        shutil.rmtree(new_libraries_path)
-    os.makedirs(new_libraries_path)
-
     new_names = {library: library_path}
 
     for dep_library in binary_paths:
@@ -212,7 +208,7 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, library):
                         new_dep,
                         new_library_name
                     ],
-                    cwd=base_lib_dir)
+                    cwd=repo_root)
 
             log.info('Updating library rpath')
             run(
@@ -222,7 +218,7 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, library):
                     "$ORIGIN",
                     new_library_name
                 ],
-                cwd=base_lib_dir)
+                cwd=repo_root)
 
             run(
                 [
@@ -230,7 +226,7 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, library):
                     '--print-rpath',
                     new_library_name
                 ],
-                cwd=base_lib_dir)
+                cwd=repo_root)
 
     log.info("Update library dependencies")
     library_dependencies = binary_dependencies[library]
@@ -259,11 +255,13 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, library):
     )
 
 
-def relocate_macho_library(otool, install_name_tool, base_lib_dir, library):
+def relocate_macho_library(otool, install_name_tool, base_lib_dir, new_libraries_path,
+                           library):
     pass
 
 
-def relocate_dll_library(dumpbin, _mangler, base_lib_dir, library):
+def relocate_dll_library(dumpbin, _mangler, base_lib_dir, new_libraries_path,
+                         library):
     pass
 
 
@@ -274,26 +272,30 @@ class BuildExtRelocate(BuildExtension):
         if not relocate:
             return
 
-        relocation_funcs = {
-            'linux': relocate_elf_library,
-            'darwin': relocate_macho_library,
-            'win32': relocate_dll_library
-        }
         build_py = self.get_finalized_command('build_py')
+        base_library_dir = osp.join(self.build_lib, 'torchvision')
+        if self.inplace:
+            base_library_dir = build_py.get_package_dir('torchvision')
+
+        posix_dir = osp.join(base_library_dir, '.libs')
+        relocation_funcs = {
+            'linux': (relocate_elf_library, posix_dir),
+            'darwin': (relocate_macho_library, posix_dir),
+            'win32': (relocate_dll_library, base_library_dir)
+        }
+        relocate, library_path = relocation_funcs[sys.platform]
+
+        if osp.exists(library_path):
+            shutil.rmtree(library_path)
+            os.makedirs(library_path)
+
         for ext in self.extensions:
             fullname = self.get_ext_fullname(ext.name)
             if fullname == 'torchvision._C':
                 continue
             filename = self.get_ext_filename(fullname)
-            log.info(f'Extension: ({fullname}) {filename}')
-
-            # build_library = osp.join(self.build_lib, filename)
             library_name = osp.basename(filename)
-            base_library_dir = osp.join(self.build_lib, 'torchvision')
 
-            if self.inplace:
-                base_library_dir = build_py.get_package_dir('torchvision')
-
-            relocate = relocation_funcs[sys.platform]
-            relocate(
-                dep_find_util, bin_patch_util, base_library_dir, library_name)
+            log.info(f'Extension: ({fullname}) {filename}')
+            relocate(dep_find_util, bin_patch_util, base_library_dir,
+                     library_name, library_path)
