@@ -13,6 +13,8 @@ import torch
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
 from torch.utils.hipify import hipify_python
 
+from setupbase import BuildExtRelocate
+
 
 def read(*names, **kwargs):
     with io.open(
@@ -420,7 +422,7 @@ setup(
     },
     ext_modules=get_extensions(),
     cmdclass={
-        'build_ext': BuildExtension.with_options(no_python_abi_suffix=True),
+        'build_ext': BuildExtRelocate.with_options(no_python_abi_suffix=True),
         'clean': clean,
     }
 )
