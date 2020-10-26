@@ -186,7 +186,7 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, new_libraries_path,
         if dep_library != library:
             library_path = binary_paths[dep_library]
             new_library_path = patch_new_path(library_path, new_libraries_path)
-            print('{0} -> {1}'.format(dep_library, new_library_path))
+            log.info('{0} -> {1}'.format(dep_library, new_library_path))
             shutil.copyfile(library_path, new_library_path)
             new_names[dep_library] = new_library_path
 
@@ -243,7 +243,7 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, new_libraries_path,
             ],
             cwd=base_lib_dir)
 
-    print('Update library rpath')
+    log.info('Update library rpath')
     subprocess.check_output(
         [
             patchelf,
@@ -298,4 +298,4 @@ class BuildExtRelocate(BuildExtension):
 
             log.info(f'Extension: ({fullname}) {filename}')
             relocate(dep_find_util, bin_patch_util, base_library_dir,
-                     library_name, library_path)
+                     library_path, library_name)
