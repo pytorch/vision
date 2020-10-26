@@ -169,9 +169,9 @@ class WIDERFace(VisionDataset):
                 box_annotation_line = True
             elif box_annotation_line:
                 box_counter += 1
-                line = line.split(" ")
-                line = [int(x) for x in line]
-                labels.append(line)
+                line_split = line.split(" ")
+                line_values = [int(x) for x in line_split]
+                labels.append(line_values)
                 if box_counter >= num_boxes:
                     box_annotation_line = False
                     file_name_line = True
