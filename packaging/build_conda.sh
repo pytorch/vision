@@ -11,4 +11,22 @@ setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_constraint
 setup_visual_studio_constraint
 setup_junit_results_folder
+
+if [[ $(uname) == "Linux" ]]; then
+    mkdir -p ext_deps
+    pushd ext_deps
+
+    # PyELFtools tarball (Not found in Anaconda defaults)
+    wget https://github.com/eliben/pyelftools/archive/v0.26.tar.gz
+    tar -xvzf v0.26.tar.gz
+    rm -rf v0.26.tar.gz
+
+    # auditwheel tarball (Not found in Anaconda defaults)
+    wget https://github.com/pypa/auditwheel/archive/3.2.0.tar.gz
+    tar -xvzf 3.2.0.tar.gz
+    rm -rf 3.2.0.tar.gz
+
+    popd
+fi
+
 conda build $CONDA_CHANNEL_FLAGS -c defaults -c conda-forge --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
