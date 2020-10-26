@@ -11,8 +11,8 @@ requirements:
     - libpng
     - jpeg
     - ffmpeg =4.2
-    - patchelf  # [linux]
-    # - wheel  # [linux]
+    # - patchelf  # [linux]
+    - wheel  # [linux]
     - pbr  # [linux]
 
   host:
