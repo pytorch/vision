@@ -3,6 +3,7 @@ from PIL import Image
 import torch
 from torchvision.datasets import VisionDataset
 
+
 class VGGFace2(VisionDataset):
 
     def __init__(self, root, split="train", transform=None, target_transform=None):
@@ -33,12 +34,12 @@ class VGGFace2(VisionDataset):
         """
         super(VGGFace2, self).__init__(root, transform=transform, target_transform=target_transform)
         # check arguments
-        if split not in ('train','test'):
+        if split not in ('train', 'test'):
             raise ValueError('split \"{}\" is not recognized.'.format(split))
         self.split = split
         self.img_info = []
 
-        image_list_file = 'train_list.txt' if self.split=='train' else 'test_list.txt'
+        image_list_file = 'train_list.txt' if self.split == 'train' else 'test_list.txt'
         self.image_list_file = os.path.join(self.root, image_list_file)
 
         with open(self.image_list_file, 'r') as f:
