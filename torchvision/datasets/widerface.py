@@ -64,7 +64,8 @@ class WIDERFace(VisionDataset):
             target_transform: Optional[Callable] = None,
             download: bool = False,
     ) -> None:
-        super(WIDERFace, self).__init__(root, transform=transform,
+        super(WIDERFace, self).__init__(root=os.path.join(root, self.base_folder),
+                                        transform=transform,
                                         target_transform=target_transform)
         # check arguments
         if split not in ("train", "val", "test"):
@@ -148,7 +149,7 @@ class WIDERFace(VisionDataset):
 
     def parse_train_val_annotations_file(self) -> None:
         filename = "wider_face_train_bbx_gt.txt" if self.split == "train" else "wider_face_val_bbx_gt.txt"
-        filepath = os.path.join(self.root, self.base_folder, "wider_face_split", filename)
+        filepath = os.path.join(self.root, "wider_face_split", filename)
 
         f = open(filepath, "r")
         lines = f.readlines()
@@ -159,7 +160,7 @@ class WIDERFace(VisionDataset):
         for line in lines:
             line = line.rstrip()
             if file_name_line:
-                abs_path = os.path.join(self.root, self.base_folder, "WIDER_" + self.split, "images", line)
+                abs_path = os.path.join(self.root, "WIDER_" + self.split, "images", line)
                 self.imgs_path.append(abs_path)
                 file_name_line = False
                 num_boxes_line = True
@@ -183,12 +184,12 @@ class WIDERFace(VisionDataset):
         f.close()
 
     def parse_test_annotations_file(self) -> None:
-        filepath = os.path.join(self.root, self.base_folder, "wider_face_split", "wider_face_test_filelist.txt")
+        filepath = os.path.join(self.root, "wider_face_split", "wider_face_test_filelist.txt")
         f = open(filepath, "r")
         lines = f.readlines()
         for line in lines:
             line = line.rstrip()
-            abs_path = os.path.join(self.root, self.base_folder, "WIDER_test", "images", line)
+            abs_path = os.path.join(self.root, "WIDER_test", "images", line)
             self.imgs_path.append(abs_path)
         f.close()
 
@@ -196,11 +197,11 @@ class WIDERFace(VisionDataset):
         all_files = self.file_list.copy()
         all_files.append(self.annotations_file)
         for (_, md5, filename) in all_files:
-            fpath = os.path.join(self.root, self.base_folder, filename)
+            fpath = os.path.join(self.root, filename)
             file, ext = os.path.splitext(filename)
             # Allow original archive to be deleted (zip). Only need the extracted images
             # Should check a hash of the images
-            extracted_dir = os.path.join(self.root, self.base_folder, file)
+            extracted_dir = os.path.join(self.root, file)
             if ext != ".zip" and not check_integrity(fpath, md5):
                 return False
             if not os.path.isdir(extracted_dir):
@@ -217,22 +218,21 @@ class WIDERFace(VisionDataset):
         # download data
         for (file_id, md5, filename) in self.file_list:
             download_file_from_google_drive(file_id,
-                                            os.path.join(self.root, self.base_folder),
+                                            self.root,
                                             filename, md5)
 
         # extract data if it doesn't exist
         for (file_id, md5, filename) in self.file_list:
             file, _ = os.path.splitext(filename)
-            extracted_dir = os.path.join(self.root, self.base_folder, file)
+            extracted_dir = os.path.join(self.root, file)
             if not os.path.isdir(extracted_dir):
-                zip_file = os.path.join(self.root, self.base_folder, filename)
+                zip_file = os.path.join(self.root, filename)
                 with zipfile.ZipFile(zip_file, "r") as f:
-                    extracted_dir = os.path.join(self.root, self.base_folder)
-                    f.extractall(extracted_dir)
+                    f.extractall(self.root)
 
         # download and extract annotation files
         download_and_extract_archive(url=self.annotations_file[0],
-                                     download_root=os.path.join(self.root, self.base_folder),
-                                     extract_root=os.path.join(self.root, self.base_folder),
+                                     download_root=self.root,
+                                     extract_root=self.root,
                                      filename=self.annotations_file[2],
                                      md5=self.annotations_file[1])
