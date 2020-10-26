@@ -45,11 +45,11 @@ int64_t cuda_version() noexcept {
 } // namespace vision
 
 TORCH_LIBRARY(torchvision, m) {
-  m.def("nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor");
+  m.def("nms(Tensor dets, Tensor scores, double iou_threshold) -> Tensor");
   m.def(
-      "roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio, bool aligned) -> Tensor");
+      "roi_align(Tensor input, Tensor rois, double spatial_scale, int pooled_height, int pooled_width, int sampling_ratio, bool aligned) -> Tensor");
   m.def(
-      "_roi_align_backward(Tensor grad, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int batch_size, int channels, int height, int width, int sampling_ratio, bool aligned) -> Tensor");
+      "_roi_align_backward(Tensor grad, Tensor rois, double spatial_scale, int pooled_height, int pooled_width, int batch_size, int channels, int height, int width, int sampling_ratio, bool aligned) -> Tensor");
   m.def("roi_pool", &roi_pool);
   m.def("_new_empty_tensor_op", &new_empty_tensor);
   m.def("ps_roi_align", &ps_roi_align);
