@@ -3,10 +3,10 @@ set -ex
 if [[ $(uname) == "Linux" ]]; then
     pushd ext_deps
     pushd pyelftools-0.26
-    python setup.py install --record files.txt
+    python setup.py install --single-version-externally-managed --record files.txt
     popd
     pushd auditwheel-3.2.0
-    python setup.py install --record files.txt
+    python setup.py install --single-version-externally-managed --record files.txt
     popd
     popd
 fi
