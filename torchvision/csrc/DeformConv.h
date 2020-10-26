@@ -14,14 +14,14 @@ at::Tensor DeformConv2d_forward(
     const at::Tensor& weight,
     const at::Tensor& offset,
     const at::Tensor& bias,
-    const int stride_h,
-    const int stride_w,
-    const int pad_h,
-    const int pad_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int groups,
-    const int offset_groups) {
+    const int64_t stride_h,
+    const int64_t stride_w,
+    const int64_t pad_h,
+    const int64_t pad_w,
+    const int64_t dilation_h,
+    const int64_t dilation_w,
+    const int64_t groups,
+    const int64_t offset_groups) {
   if (input.is_cuda()) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
     return DeformConv2d_forward_cuda(
@@ -62,14 +62,14 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor> DeformConv2d_backward
     const at::Tensor& weight,
     const at::Tensor& offset,
     const at::Tensor& bias,
-    const int stride_h,
-    const int stride_w,
-    const int pad_h,
-    const int pad_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int groups,
-    const int offset_groups) {
+    const int64_t stride_h,
+    const int64_t stride_w,
+    const int64_t pad_h,
+    const int64_t pad_w,
+    const int64_t dilation_h,
+    const int64_t dilation_w,
+    const int64_t groups,
+    const int64_t offset_groups) {
   if (grad.is_cuda()) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
     return DeformConv2d_backward_cuda(

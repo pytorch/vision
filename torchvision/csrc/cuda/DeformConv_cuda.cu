@@ -249,14 +249,14 @@ at::Tensor DeformConv2d_forward_cuda(
     const at::Tensor& weight_param,
     const at::Tensor& offset_param,
     const at::Tensor& bias,
-    int stride_h,
-    int stride_w,
-    int pad_h,
-    int pad_w,
-    int dil_h,
-    int dil_w,
-    int n_weight_grps,
-    int n_offset_grps) {
+    int64_t stride_h,
+    int64_t stride_w,
+    int64_t pad_h,
+    int64_t pad_w,
+    int64_t dil_h,
+    int64_t dil_w,
+    int64_t n_weight_grps,
+    int64_t n_offset_grps) {
   at::Tensor input = input_param;
   at::Tensor weight = weight_param;
   at::Tensor offset = offset_param;
@@ -933,14 +933,14 @@ DeformConv2d_backward_cuda(
     const at::Tensor& weight,
     const at::Tensor& offset,
     const at::Tensor& bias,
-    int stride_h,
-    int stride_w,
-    int pad_h,
-    int pad_w,
-    int dil_h,
-    int dil_w,
-    int n_weight_grps,
-    int n_offset_grps) {
+    int64_t stride_h,
+    int64_t stride_w,
+    int64_t pad_h,
+    int64_t pad_w,
+    int64_t dil_h,
+    int64_t dil_w,
+    int64_t n_weight_grps,
+    int64_t n_offset_grps) {
   const int batch_sz = input.size(0);
   const int n_parallel_imgs =
       get_greatest_divisor_below_bound(batch_sz, kMaxParallelImgs);

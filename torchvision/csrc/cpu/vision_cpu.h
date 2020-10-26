@@ -93,14 +93,14 @@ VISION_API at::Tensor DeformConv2d_forward_cpu(
     const at::Tensor& weight,
     const at::Tensor& offset,
     const at::Tensor& bias,
-    int stride_h,
-    int stride_w,
-    int pad_h,
-    int pad_w,
-    int dilation_h,
-    int dilation_w,
-    int groups,
-    int deformable_groups);
+    int64_t stride_h,
+    int64_t stride_w,
+    int64_t pad_h,
+    int64_t pad_w,
+    int64_t dilation_h,
+    int64_t dilation_w,
+    int64_t groups,
+    int64_t deformable_groups);
 
 VISION_API std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
 DeformConv2d_backward_cpu(
@@ -109,11 +109,11 @@ DeformConv2d_backward_cpu(
     const at::Tensor& weight,
     const at::Tensor& offset,
     const at::Tensor& bias,
-    int stride_h,
-    int stride_w,
-    int pad_h,
-    int pad_w,
-    int dilation_h,
-    int dilation_w,
-    int groups,
-    int deformable_groups);
+    int64_t stride_h,
+    int64_t stride_w,
+    int64_t pad_h,
+    int64_t pad_w,
+    int64_t dilation_h,
+    int64_t dilation_w,
+    int64_t groups,
+    int64_t deformable_groups);
