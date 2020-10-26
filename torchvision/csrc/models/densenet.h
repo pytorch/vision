@@ -23,7 +23,7 @@ struct VISION_API DenseNetImpl : torch::nn::Module {
   torch::nn::Sequential features{nullptr};
   torch::nn::Linear classifier{nullptr};
 
-  explicit DenseNetImpl(
+  DenseNetImpl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
       const std::vector<int64_t>& block_config = {6, 12, 24, 16},
@@ -35,7 +35,7 @@ struct VISION_API DenseNetImpl : torch::nn::Module {
 };
 
 struct VISION_API DenseNet121Impl : DenseNetImpl {
-  explicit DenseNet121Impl(
+  DenseNet121Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
       const std::vector<int64_t>& block_config = {6, 12, 24, 16},
@@ -45,7 +45,7 @@ struct VISION_API DenseNet121Impl : DenseNetImpl {
 };
 
 struct VISION_API DenseNet169Impl : DenseNetImpl {
-  explicit DenseNet169Impl(
+  DenseNet169Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
       const std::vector<int64_t>& block_config = {6, 12, 32, 32},
@@ -55,7 +55,7 @@ struct VISION_API DenseNet169Impl : DenseNetImpl {
 };
 
 struct VISION_API DenseNet201Impl : DenseNetImpl {
-  explicit DenseNet201Impl(
+  DenseNet201Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
       const std::vector<int64_t>& block_config = {6, 12, 48, 32},
@@ -65,7 +65,7 @@ struct VISION_API DenseNet201Impl : DenseNetImpl {
 };
 
 struct VISION_API DenseNet161Impl : DenseNetImpl {
-  explicit DenseNet161Impl(
+  DenseNet161Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 48,
       const std::vector<int64_t>& block_config = {6, 12, 36, 24},
