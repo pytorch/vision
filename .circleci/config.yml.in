@@ -646,7 +646,7 @@ jobs:
   cmake_macos_cpu:
     <<: *binary_common
     macos:
-      xcode: "9.0"
+      xcode: "9.4.1"
     steps:
       - checkout_merge
       - designate_upload_channel
