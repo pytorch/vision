@@ -1,15 +1,6 @@
 #pragma once
 #include <torch/extension.h>
-
-#ifdef _WIN32
-#if defined(torchvision_EXPORTS)
-#define VISION_API __declspec(dllexport)
-#else
-#define VISION_API __declspec(dllimport)
-#endif
-#else
-#define VISION_API
-#endif
+#include "../macros.h"
 
 VISION_API std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(
     const at::Tensor& input,

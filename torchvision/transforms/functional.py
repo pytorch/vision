@@ -139,7 +139,7 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         dtype (torch.dtype): Desired data type of the output
 
     Returns:
-        (torch.Tensor): Converted image
+        Tensor: Converted image
 
     .. note::
 
