@@ -233,9 +233,12 @@ at::Tensor DeformConv2d_forward_cpu(
     const at::Tensor& weight_param,
     const at::Tensor& offset_param,
     const at::Tensor& bias,
-    std::pair<int, int> stride,
-    std::pair<int, int> pad,
-    std::pair<int, int> dilation,
+    int stride_h,
+    int stride_w,
+    int pad_h,
+    int pad_w,
+    int dil_h,
+    int dil_w,
     int n_weight_grps,
     int n_offset_grps) {
   at::Tensor input = input_param;
@@ -262,15 +265,6 @@ at::Tensor DeformConv2d_forward_cpu(
   int out_channels = weight.size(0);
   int weight_h = weight.size(2);
   int weight_w = weight.size(3);
-
-  int stride_h = stride.first;
-  int stride_w = stride.second;
-
-  int pad_h = pad.first;
-  int pad_w = pad.second;
-
-  int dil_h = dilation.first;
-  int dil_w = dilation.second;
 
   int ker_h = dil_h * (weight_h - 1) + 1;
   int ker_w = dil_w * (weight_w - 1) + 1;
@@ -683,9 +677,12 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv2d_backward_input_cpu(
     at::Tensor weight,
     at::Tensor offset,
     at::Tensor grad_out,
-    std::pair<int, int> stride,
-    std::pair<int, int> pad,
-    std::pair<int, int> dilation,
+    int stride_h,
+    int stride_w,
+    int pad_h,
+    int pad_w,
+    int dil_h,
+    int dil_w,
     int n_weight_grps,
     int n_offset_grps,
     int n_parallel_imgs) {
@@ -699,15 +696,6 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv2d_backward_input_cpu(
   long n_out_channels = weight.size(0);
   int weight_h = weight.size(2);
   int weight_w = weight.size(3);
-
-  int stride_h = stride.first;
-  int stride_w = stride.second;
-
-  int pad_h = pad.first;
-  int pad_w = pad.second;
-
-  int dil_h = dilation.first;
-  int dil_w = dilation.second;
 
   long out_h = (in_h + 2 * pad_h - (dil_h * (weight_h - 1) + 1)) / stride_h + 1;
   long out_w = (in_w + 2 * pad_w - (dil_w * (weight_w - 1) + 1)) / stride_w + 1;
@@ -813,9 +801,12 @@ static at::Tensor deform_conv2d_backward_parameters_cpu(
     const at::Tensor& weight,
     at::Tensor offset,
     const at::Tensor& grad_out,
-    std::pair<int, int> stride,
-    std::pair<int, int> pad,
-    std::pair<int, int> dilation,
+    int stride_h,
+    int stride_w,
+    int pad_h,
+    int pad_w,
+    int dil_h,
+    int dil_w,
     int n_weight_grps,
     int n_offset_grps,
     int n_parallel_imgs) {
@@ -829,15 +820,6 @@ static at::Tensor deform_conv2d_backward_parameters_cpu(
   long n_out_channels = weight.size(0);
   int weight_h = weight.size(2);
   int weight_w = weight.size(3);
-
-  int stride_h = stride.first;
-  int stride_w = stride.second;
-
-  int pad_h = pad.first;
-  int pad_w = pad.second;
-
-  int dil_h = dilation.first;
-  int dil_w = dilation.second;
 
   long out_h = grad_out.size(2);
   long out_w = grad_out.size(3);
@@ -922,9 +904,12 @@ DeformConv2d_backward_cpu(
     const at::Tensor& weight,
     const at::Tensor& offset,
     const at::Tensor& bias,
-    std::pair<int, int> stride,
-    std::pair<int, int> pad,
-    std::pair<int, int> dilation,
+    int stride_h,
+    int stride_w,
+    int pad_h,
+    int pad_w,
+    int dil_h,
+    int dil_w,
     int n_weight_grps,
     int n_offset_grps) {
   const int batch_sz = input.size(0);
@@ -936,9 +921,12 @@ DeformConv2d_backward_cpu(
       weight,
       offset,
       grad_out,
-      stride,
-      pad,
-      dilation,
+      stride_h,
+      stride_w,
+      pad_h,
+      pad_w,
+      dil_h,
+      dil_w,
       n_weight_grps,
       n_offset_grps,
       n_parallel_imgs);
@@ -951,9 +939,12 @@ DeformConv2d_backward_cpu(
       weight,
       offset,
       grad_out,
-      stride,
-      pad,
-      dilation,
+      stride_h,
+      stride_w,
+      pad_h,
+      pad_w,
+      dil_h,
+      dil_w,
       n_weight_grps,
       n_offset_grps,
       n_parallel_imgs);
