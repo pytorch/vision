@@ -385,9 +385,9 @@ def relocate_macho_library(otool, install_name_tool, base_lib_dir,
     log.info("Update library dependencies")
     library_dependencies = binary_dependencies[library]
     for dep_rpath, dep in library_dependencies:
-        new_dep_rpath = osp.basename(new_rpath[dep])
+        dep_library_path, _, new_dep_rpath = new_rpath[dep]
         print('{0}: {1} -> {2}'.format(library, dep_rpath, new_dep_rpath))
-        subprocess.check_output(
+        run(
             [
                 install_name_tool,
                 '-change',
