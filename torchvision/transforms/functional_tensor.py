@@ -872,8 +872,8 @@ def _assert_grid_transform_inputs(
     if coeffs is not None and len(coeffs) != 8:
         raise ValueError("Argument coeffs should have 8 float values")
 
-    if fillcolor is not None:
-        warnings.warn("Argument fill/fillcolor is not supported for Tensor input. Fill value is zero")
+    if fillcolor is not None and not isinstance(fillcolor, int):
+        warnings.warn("Argument fill/fillcolor should be an integer")
 
     if resample not in _interpolation_modes:
         raise ValueError("Resampling mode '{}' is unsupported with Tensor input".format(resample))
@@ -905,14 +905,31 @@ def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtyp
     return img
 
 
-def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
+def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[int]) -> Tensor:
 
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, grid.dtype)
 
     if img.shape[0] > 1:
         # Apply same grid to a batch of images
         grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
+
+    if fill is None:
+        fill = 0
+
+    # Append a dummy mask for customized fill colors, should be faster than grid_sample() twice
+    need_mask = False
+    if fill != 0:
+        need_mask = True
+        dummy = torch.ones((img.shape[0], 1, img.shape[2], img.shape[3]), dtype=img.dtype, device=img.device)
+        img = torch.cat((img, dummy), dim=1)
+
     img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
+
+    # Fill with required color
+    if need_mask:
+        mask = img[:, -1, :, :] < 0.5  # Safer, but linear interpolations should not create numbers other than 0/1
+        img = img[:, :-1, :, :]
+        img[mask.expand_as(img)] = fill
 
     img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
@@ -974,7 +991,7 @@ def affine(
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
     mode = _interpolation_modes[resample]
-    return _apply_grid_transform(img, grid, mode)
+    return _apply_grid_transform(img, grid, mode, fill=fillcolor)
 
 
 def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
@@ -1045,7 +1062,7 @@ def rotate(
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
     mode = _interpolation_modes[resample]
 
-    return _apply_grid_transform(img, grid, mode)
+    return _apply_grid_transform(img, grid, mode, fill=fill)
 
 
 def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype, device: torch.device):
@@ -1123,7 +1140,7 @@ def perspective(
     grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=img.device)
     mode = _interpolation_modes[interpolation]
 
-    return _apply_grid_transform(img, grid, mode)
+    return _apply_grid_transform(img, grid, mode, fill=fill)
 
 
 def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> Tensor:
