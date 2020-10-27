@@ -11,13 +11,13 @@ class WIDERFace(VisionDataset):
 
     Citation:
     @inproceedings{yang2016wider,
-        Author = {Yang, Shuo and Luo, Ping and Loy, Chen Change and Tang, Xiaoou},
-        Booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
-        Title = {WIDER FACE: A Face Detection Benchmark},
-        Year = {2016}}
+        author    = "Yang, Shuo and Luo, Ping and Loy, Chen Change and Tang, Xiaoou",
+        booktitle = "IEEE Conference on Computer Vision and Pattern Recognition (CVPR)",
+        title     = "WIDER FACE: A Face Detection Benchmark",
+        year      = "2016"}
 
     Args:
-        root (string): Root directory of the WIDERFace Dataset.
+        root (string): Root directory where images and annotations are downloaded to.
             Expects the following folder structure if download=False:
                 .
                 └── widerface
@@ -25,10 +25,11 @@ class WIDERFace(VisionDataset):
                     ├── WIDER_test.zip
                     ├── WIDER_train.zip
                     └── WIDER_val.zip
-        split (string): One of {``train``, ``val``, ``test``}.
-            The dataset split to use. Defaults to ``train``.
-        target_type (string): The type of target to use, can be one of {``raw``, ``bbox``, ``attr``.``""``}
-            Can also be a list to output a tuple with all specified target types.
+        split (string): The dataset split to use. One of {``train``, ``val``, ``test``}.
+            Defaults to ``train``.
+        target_type (string): The type of target to use, can be one
+            of {``raw``, ``bbox``, ``attr``.``""``}. Can also be a list to
+            output a tuple with all specified target types.
             The targets represent:
                 ``raw`` (torch.tensor shape=(10,) dtype=int): all annotations combined (bbox + attr)
                 ``bbox`` (torch.tensor shape=(4,) dtype=int): bounding box (x, y, width, height)
