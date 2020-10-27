@@ -108,7 +108,7 @@ class VideoReader:
 
         Returns:
             (dict): a dictionary and containing decoded frame (``data``)
-                and corresponding timestamp (``pts``) in seconds
+            and corresponding timestamp (``pts``) in seconds
 
         """
         frame, pts = self._c.next()
