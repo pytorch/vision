@@ -21,11 +21,6 @@ if [[ $(uname) == "Linux" ]]; then
     tar -xvzf v0.26.tar.gz
     rm -rf v0.26.tar.gz
 
-    # auditwheel tarball (Not found in Anaconda defaults)
-    wget https://github.com/pypa/auditwheel/archive/3.2.0.tar.gz
-    tar -xvzf 3.2.0.tar.gz
-    rm -rf 3.2.0.tar.gz
-
     popd
 fi
 

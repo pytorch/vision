@@ -7,6 +7,7 @@ import os
 import os.path as osp
 import pipes
 import pkg_resources
+import re
 import sys
 
 from distutils import log
@@ -20,9 +21,11 @@ else:
     def list2cmdline(cmd_list):
         return ' '.join(map(pipes.quote, cmd_list))
 
+MAC_REGEX = re.compile(r'(.*[.](so|dylib)) [(]compatibility version .*, current version .*[)]')
 
 HERE = os.path.abspath(os.path.dirname(__file__))
 repo_root = os.path.dirname(os.path.abspath(__file__))
+
 
 LINUX_WHITELIST = {
     'libgcc_s.so.1', 'libstdc++.so.6', 'libm.so.6',
@@ -49,6 +52,44 @@ def patch_new_path(library_path, new_dir):
     hash_id = hashlib.sha256(library_path.encode('utf-8')).hexdigest()[:8]
     new_name = '.'.join([name, hash_id, rest])
     return osp.join(new_dir, new_name)
+
+
+def find_dll_dependencies(dumpbin, binary):
+    out = subprocess.run([dumpbin, "/dependents", binary],
+                         stdout=subprocess.PIPE)
+    out = out.stdout.strip().decode('utf-8')
+    start_index = out.find('dependencies:') + len('dependencies:')
+    end_index = out.find('Summary')
+    dlls = out[start_index:end_index].strip()
+    dlls = dlls.split(os.linesep)
+    dlls = [dll.strip() for dll in dlls]
+    return dlls
+
+
+def find_macho_dependencies(otool, binary):
+    out = subprocess.run([otool, "-L", binary], stdout=subprocess.PIPE)
+    out = out.stdout.strip().decode('utf-8')
+    start_index = out.find(binary) + len(binary)
+    dylibs = out[start_index + 1:].strip()
+    dylibs = dylibs.split(os.linesep)
+    dylib_info = []
+    for dylib in dylibs:
+        dylib = dylib.strip()
+        dylib_parse = MAC_REGEX.match(dylib)
+        if dylib_parse is not None:
+            dylib_name = dylib_parse.group(1)
+            dylib_file = osp.basename(dylib_name)
+            dylib_info.append((dylib_name, dylib_file))
+    return dylib_info
+
+
+def look_for_dylib(dylib, search_paths):
+    path = None
+    for search_path in search_paths:
+        path = osp.join(search_path, dylib)
+        if osp.isfile(path):
+            break
+    return path
 
 
 def is_program_installed(basename):
@@ -110,6 +151,7 @@ def find_relocate_tool():
             log.info(f'Not relocating binaries since {dep_find_util} was not '
                      'found on the PATH')
     elif sys.platform == 'darwin':
+        valid = True
         bin_patch_name = 'install_name_tool'
         bin_patch_util = find_program(bin_patch_name)
         if bin_patch_util is None:
@@ -132,9 +174,14 @@ def find_relocate_tool():
             log.info(f'Not relocating binaries since {bin_patch_name} was not'
                      'found on the PATH')
 
-        dep_find_name = 'auditwheel'
-        from lddtree import lddtree
-        dep_find_util = lddtree
+        try:
+            bin_patch_util = pkg_resources.get_distribution('pyelftools')
+            from lddtree import lddtree
+            dep_find_util = lddtree
+        except pkg_resources.DistributionNotFound:
+            log.info('Not relocating binaries since pyelftools was not '
+                     'found on Python site-packages')
+            valid = False
 
     return valid, bin_patch_util, dep_find_util
 
@@ -249,9 +296,93 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, new_libraries_path,
     )
 
 
-def relocate_macho_library(otool, install_name_tool, base_lib_dir, new_libraries_path,
-                           library):
-    pass
+def relocate_macho_library(otool, install_name_tool, base_lib_dir,
+                           new_libraries_path, library):
+    library_path = osp.join(base_lib_dir, library)
+    library_deps = find_macho_dependencies(otool, library_path)
+
+    conda = find_program('conda')
+    dyld_library_path = os.environ.get('DYLD_LIBRARY_PATH', [])
+    if dyld_library_path is not None:
+        dyld_library_path = dyld_library_path.split(os.pathsep)
+
+    if conda:
+        conda_lib = [osp.join(osp.dirname(osp.dirname(sys.executable)), 'lib')]
+        dyld_library_path += conda_lib
+
+    binary_queue = [(dylib, library) for dylib in library_deps]
+    binary_paths = {library: library_path}
+    binary_dependencies = {}
+
+    while binary_queue != []:
+        (dep_path, dep_library), parent = binary_queue.pop(0)
+        if dep_path.startswith('/usr'):
+            log.info('Omitting {0}'.format(dep_library))
+            continue
+
+        full_dep_path = look_for_dylib(dep_library)
+        if full_dep_path is None:
+            log.info('{0} not found'.format(dep_library))
+            continue
+
+        log.info('{0}: {1}'.format(dep_library, full_dep_path))
+        parent_dependencies = binary_dependencies.get(parent, [])
+        parent_dependencies.append((dep_path, dep_library))
+        binary_dependencies[parent] = parent_dependencies
+
+        if dep_library in binary_paths:
+            continue
+
+        binary_paths[dep_library] = full_dep_path
+        downstream_dlls = find_macho_dependencies(otool, full_dep_path)
+        binary_queue += [(n, dep_library) for n in downstream_dlls]
+
+    log.info('Copying dependencies to new directory')
+    new_rpath = {}
+    for dep_library in binary_paths:
+        if dep_library != library:
+            library_path = binary_paths[dep_library]
+            new_library_path = osp.join(new_libraries_path, library)
+            print('{0} -> {1}'.format(dep_library, new_library_path))
+            shutil.copyfile(library_path, new_library_path)
+            new_rpath[dep_library] = (new_library_path, osp.join(
+                '@loader_path', '.libs', dep_library))
+
+    log.info('Updating dependency names by new files')
+    for dep_library in binary_paths:
+        if dep_library != library:
+            if dep_library not in binary_dependencies:
+                continue
+            library_dependencies = binary_dependencies[dep_library]
+            new_library_name, _ = new_rpath[dep_library]
+            for dep_rpath, dep in library_dependencies:
+                _, new_dep_rpath = osp.basename(new_rpath[dep])
+                log.info('{0}: {1} -> {2}'.format(
+                    dep_library, dep_rpath, new_dep_rpath))
+                run(
+                    [
+                        install_name_tool,
+                        '-change',
+                        dep_rpath,
+                        new_dep_rpath,
+                        dep_library
+                    ],
+                    cwd=base_lib_dir)
+
+    log.info("Update library dependencies")
+    library_dependencies = binary_dependencies[library]
+    for dep_rpath, dep in library_dependencies:
+        new_dep_rpath = osp.basename(new_rpath[dep])
+        print('{0}: {1} -> {2}'.format(library, dep_rpath, new_dep_rpath))
+        subprocess.check_output(
+            [
+                install_name_tool,
+                '-change',
+                dep_rpath,
+                new_dep_rpath,
+                library
+            ],
+            cwd=base_lib_dir)
 
 
 def relocate_dll_library(dumpbin, _mangler, base_lib_dir, new_libraries_path,
