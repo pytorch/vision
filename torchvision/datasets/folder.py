@@ -38,37 +38,15 @@ def make_dataset(
     extensions: Optional[Tuple[str, ...]] = None,
     is_valid_file: Optional[Callable[[str], bool]] = None,
 ) -> List[Tuple[str, int]]:
-    """Generates a list of samples of a form (path_to_sample, class).
-
-    Args:
-        directory (str): root dataset directory
-        class_to_idx (Dict[str, int]): dictionary mapping class name to class index
-        extensions (Optional[Tuple[str, ...]], optional): A list of allowed extensions.
-            Both extensions and is_valid_file should not be passed. Defaults to None.
-        is_valid_file (Optional[Callable[[str], bool]], optional): A function that takes path of a file
-            and check if the file is a valid file
-            (used to check of corrupt files) both extensions and
-            is_valid_file should not be passed. Defaults to None.
-
-    Raises:
-        ValueError: In case ``extensions`` and ``is_valid_file`` is None.
-
-    Returns:
-        List[Tuple[str, int]]: samples of a form (path_to_sample, class)
-    """
     instances = []
     directory = os.path.expanduser(directory)
     both_none = extensions is None and is_valid_file is None
     both_something = extensions is not None and is_valid_file is not None
     if both_none or both_something:
-        raise ValueError(
-            "Both extensions and is_valid_file cannot be None or not None at the same time"
-        )
+        raise ValueError("Both extensions and is_valid_file cannot be None or not None at the same time")
     if extensions is not None:
-
         def is_valid_file(x: str) -> bool:
             return has_file_allowed_extension(x, cast(Tuple[str, ...], extensions))
-
     is_valid_file = cast(Callable[[str], bool], is_valid_file)
     for target_class in sorted(class_to_idx.keys()):
         class_index = class_to_idx[target_class]
@@ -117,17 +95,16 @@ class DatasetFolder(VisionDataset):
     """
 
     def __init__(
-        self,
-        root: str,
-        loader: Callable[[str], Any],
-        extensions: Optional[Tuple[str, ...]] = None,
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
-        is_valid_file: Optional[Callable[[str], bool]] = None,
+            self,
+            root: str,
+            loader: Callable[[str], Any],
+            extensions: Optional[Tuple[str, ...]] = None,
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
+            is_valid_file: Optional[Callable[[str], bool]] = None,
     ) -> None:
-        super(DatasetFolder, self).__init__(
-            root, transform=transform, target_transform=target_transform
-        )
+        super(DatasetFolder, self).__init__(root, transform=transform,
+                                            target_transform=target_transform)
         classes, class_to_idx = self._find_classes(self.root)
         samples = make_dataset(self.root, class_to_idx, extensions, is_valid_file)
         if len(samples) == 0:
@@ -183,30 +160,19 @@ class DatasetFolder(VisionDataset):
         return len(self.samples)
 
 
-IMG_EXTENSIONS = (
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".ppm",
-    ".bmp",
-    ".pgm",
-    ".tif",
-    ".tiff",
-    ".webp",
-)
+IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
 
 
 def pil_loader(path: str) -> Image.Image:
     # open path as file to avoid ResourceWarning (https://github.com/python-pillow/Pillow/issues/835)
-    with open(path, "rb") as f:
+    with open(path, 'rb') as f:
         img = Image.open(f)
-        return img.convert("RGB")
+        return img.convert('RGB')
 
 
 # TODO: specify the return type
 def accimage_loader(path: str) -> Any:
     import accimage
-
     try:
         return accimage.Image(path)
     except IOError:
@@ -216,8 +182,7 @@ def accimage_loader(path: str) -> Any:
 
 def default_loader(path: str) -> Any:
     from torchvision import get_image_backend
-
-    if get_image_backend() == "accimage":
+    if get_image_backend() == 'accimage':
         return accimage_loader(path)
     else:
         return pil_loader(path)
@@ -251,19 +216,15 @@ class ImageFolder(DatasetFolder):
     """
 
     def __init__(
-        self,
-        root: str,
-        transform: Optional[Callable] = None,
-        target_transform: Optional[Callable] = None,
-        loader: Callable[[str], Any] = default_loader,
-        is_valid_file: Optional[Callable[[str], bool]] = None,
+            self,
+            root: str,
+            transform: Optional[Callable] = None,
+            target_transform: Optional[Callable] = None,
+            loader: Callable[[str], Any] = default_loader,
+            is_valid_file: Optional[Callable[[str], bool]] = None,
     ):
-        super(ImageFolder, self).__init__(
-            root,
-            loader,
-            IMG_EXTENSIONS if is_valid_file is None else None,
-            transform=transform,
-            target_transform=target_transform,
-            is_valid_file=is_valid_file,
-        )
+        super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS if is_valid_file is None else None,
+                                          transform=transform,
+                                          target_transform=target_transform,
+                                          is_valid_file=is_valid_file)
         self.imgs = self.samples
