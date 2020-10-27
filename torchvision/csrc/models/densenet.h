@@ -26,7 +26,7 @@ struct VISION_API DenseNetImpl : torch::nn::Module {
   DenseNetImpl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
-      std::vector<int64_t> block_config = {6, 12, 24, 16},
+      const std::vector<int64_t>& block_config = {6, 12, 24, 16},
       int64_t num_init_features = 64,
       int64_t bn_size = 4,
       double drop_rate = 0);
@@ -38,7 +38,7 @@ struct VISION_API DenseNet121Impl : DenseNetImpl {
   DenseNet121Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
-      std::vector<int64_t> block_config = {6, 12, 24, 16},
+      const std::vector<int64_t>& block_config = {6, 12, 24, 16},
       int64_t num_init_features = 64,
       int64_t bn_size = 4,
       double drop_rate = 0);
@@ -48,7 +48,7 @@ struct VISION_API DenseNet169Impl : DenseNetImpl {
   DenseNet169Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
-      std::vector<int64_t> block_config = {6, 12, 32, 32},
+      const std::vector<int64_t>& block_config = {6, 12, 32, 32},
       int64_t num_init_features = 64,
       int64_t bn_size = 4,
       double drop_rate = 0);
@@ -58,7 +58,7 @@ struct VISION_API DenseNet201Impl : DenseNetImpl {
   DenseNet201Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 32,
-      std::vector<int64_t> block_config = {6, 12, 48, 32},
+      const std::vector<int64_t>& block_config = {6, 12, 48, 32},
       int64_t num_init_features = 64,
       int64_t bn_size = 4,
       double drop_rate = 0);
@@ -68,7 +68,7 @@ struct VISION_API DenseNet161Impl : DenseNetImpl {
   DenseNet161Impl(
       int64_t num_classes = 1000,
       int64_t growth_rate = 48,
-      std::vector<int64_t> block_config = {6, 12, 36, 24},
+      const std::vector<int64_t>& block_config = {6, 12, 36, 24},
       int64_t num_init_features = 96,
       int64_t bn_size = 4,
       double drop_rate = 0);
