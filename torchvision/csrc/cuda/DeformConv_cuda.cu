@@ -257,10 +257,10 @@ at::Tensor DeformConv2d_forward_cuda(
     int64_t dil_w,
     int64_t n_weight_grps,
     int64_t n_offset_grps) {
-  at::Tensor&& input = input_param.contiguous();
-  at::Tensor&& offset = offset_param.contiguous();
-  at::Tensor&& weight = weight_param.contiguous();
-  at::Tensor&& bias = bias_param.contiguous();
+  at::Tensor input = input_param.contiguous();
+  at::Tensor offset = offset_param.contiguous();
+  at::Tensor weight = weight_param.contiguous();
+  at::Tensor bias = bias_param.contiguous();
 
   TORCH_CHECK(input.ndimension() == 4);
   TORCH_CHECK(offset.ndimension() == 4);
@@ -939,11 +939,11 @@ DeformConv2d_backward_cuda(
     int64_t dil_w,
     int64_t n_weight_grps,
     int64_t n_offset_grps) {
-  at::Tensor&& grad_out = grad_out_param.contiguous();
-  at::Tensor&& input = input_param.contiguous();
-  at::Tensor&& weight = weight_param.contiguous();
-  at::Tensor&& offset = offset_param.contiguous();
-  at::Tensor&& bias = bias_param.contiguous();
+  at::Tensor grad_out = grad_out_param.contiguous();
+  at::Tensor input = input_param.contiguous();
+  at::Tensor weight = weight_param.contiguous();
+  at::Tensor offset = offset_param.contiguous();
+  at::Tensor bias = bias_param.contiguous();
 
   const int batch_sz = input.size(0);
   const int n_parallel_imgs =
