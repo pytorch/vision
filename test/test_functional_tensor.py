@@ -682,7 +682,8 @@ class Tester(TransformsTester):
         for f in [None, 0, 7, 255]:
             for r in [0, ]:
                 for spoints, epoints in test_configs:
-                    out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r, fill=f)
+                    out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r,
+                                                fill=f)
                     out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
                     for fn in [F.perspective, scripted_transform]:
