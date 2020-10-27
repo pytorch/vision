@@ -118,9 +118,9 @@ __global__ void RoIPoolBackward(
 std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width) {
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width) {
   TORCH_CHECK(input.is_cuda(), "input must be a CUDA tensor");
   TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
   TORCH_CHECK(
@@ -182,13 +182,13 @@ at::Tensor ROIPool_backward_cuda(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& argmax,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width,
-    const int batch_size,
-    const int channels,
-    const int height,
-    const int width) {
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width,
+    const int64_t batch_size,
+    const int64_t channels,
+    const int64_t height,
+    const int64_t width) {
   // Check if input tensors are CUDA tensors
   TORCH_CHECK(grad.is_cuda(), "grad must be a CUDA tensor");
   TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
