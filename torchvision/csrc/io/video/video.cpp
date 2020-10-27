@@ -172,11 +172,13 @@ Video::Video(std::string videoPath, std::string stream) {
   logMessage = videoPath;
 
   // locals
-  std::vector<double> audioFPS, videoFPS, ccFPS, subsFPS;
+  std::vector<double> audioFPS, videoFPS;
   std::vector<double> audioDuration, videoDuration, ccDuration, subsDuration;
   std::vector<double> audioTB, videoTB, ccTB, subsTB;
   c10::Dict<std::string, std::vector<double>> audioMetadata;
   c10::Dict<std::string, std::vector<double>> videoMetadata;
+  c10::Dict<std::string, std::vector<double>> ccMetadata;
+  c10::Dict<std::string, std::vector<double>> subsMetadata;
 
   // calback and metadata defined in struct
   succeeded = decoder.init(params, std::move(callback), &metadata);
@@ -192,20 +194,27 @@ Video::Video(std::string videoPath, std::string stream) {
         audioFPS.push_back(fps);
         audioDuration.push_back(duration);
       } else if (header.format.type == TYPE_CC) {
-        ccFPS.push_back(fps);
         ccDuration.push_back(duration);
       } else if (header.format.type == TYPE_SUBTITLE) {
-        subsFPS.push_back(fps);
         subsDuration.push_back(duration);
       };
     }
   }
+  // audio
   audioMetadata.insert("duration", audioDuration);
   audioMetadata.insert("framerate", audioFPS);
+  // video
   videoMetadata.insert("duration", videoDuration);
   videoMetadata.insert("fps", videoFPS);
+  // subs
+  subsMetadata.insert("duration", subsDuration);
+  // cc
+  ccMetadata.insert("duration", ccDuration);
+  // put all to a data
   streamsMetadata.insert("video", videoMetadata);
   streamsMetadata.insert("audio", audioMetadata);
+  streamsMetadata.insert("subtitles", subsMetadata);
+  streamsMetadata.insert("cc", ccMetadata);
 
   succeeded = Video::setCurrentStream(stream);
   LOG(INFO) << "\nDecoder inited with: " << succeeded << "\n";
