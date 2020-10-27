@@ -22,8 +22,8 @@ __device__ inline bool devIoU(T const* const a, T const* const b, const float th
 
 template <typename T>
 __global__ void nms_kernel(
-    const int n_boxes,
-    const float iou_threshold,
+    int n_boxes,
+    double iou_threshold,
     const T* dev_boxes,
     unsigned long long* dev_mask) {
   const int row_start = blockIdx.y;
@@ -70,7 +70,7 @@ __global__ void nms_kernel(
 
 at::Tensor nms_cuda(const at::Tensor& dets,
     const at::Tensor& scores,
-    const double iou_threshold) {
+    double iou_threshold) {
   TORCH_CHECK(dets.is_cuda(), "dets must be a CUDA tensor");
   TORCH_CHECK(scores.is_cuda(), "scores must be a CUDA tensor");
 
