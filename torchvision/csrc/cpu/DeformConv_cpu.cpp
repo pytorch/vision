@@ -232,7 +232,7 @@ at::Tensor DeformConv2d_forward_cpu(
     const at::Tensor& input_param,
     const at::Tensor& weight_param,
     const at::Tensor& offset_param,
-    const at::Tensor& bias,
+    const at::Tensor& bias_param,
     int64_t stride_h,
     int64_t stride_w,
     int64_t pad_h,
@@ -241,16 +241,14 @@ at::Tensor DeformConv2d_forward_cpu(
     int64_t dil_w,
     int64_t n_weight_grps,
     int64_t n_offset_grps) {
-  at::Tensor input = input_param;
-  at::Tensor offset = offset_param;
-  at::Tensor weight = weight_param;
+  at::Tensor&& input = input_param.contiguous();
+  at::Tensor&& offset = offset_param.contiguous();
+  at::Tensor&& weight = weight_param.contiguous();
+  at::Tensor&& bias = bias_param.contiguous();
 
   TORCH_CHECK(input.ndimension() == 4);
   TORCH_CHECK(offset.ndimension() == 4);
   TORCH_CHECK(weight.ndimension() == 4);
-  TORCH_CHECK(input.is_contiguous());
-  TORCH_CHECK(offset.is_contiguous());
-  TORCH_CHECK(weight.is_contiguous());
   TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
 
   int batch_sz = input.size(0);
@@ -899,11 +897,11 @@ static at::Tensor deform_conv2d_backward_parameters_cpu(
 
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
 DeformConv2d_backward_cpu(
-    const at::Tensor& grad_out,
-    const at::Tensor& input,
-    const at::Tensor& weight,
-    const at::Tensor& offset,
-    const at::Tensor& bias,
+    const at::Tensor& grad_out_param,
+    const at::Tensor& input_param,
+    const at::Tensor& weight_param,
+    const at::Tensor& offset_param,
+    const at::Tensor& bias_param,
     int64_t stride_h,
     int64_t stride_w,
     int64_t pad_h,
@@ -912,6 +910,12 @@ DeformConv2d_backward_cpu(
     int64_t dil_w,
     int64_t n_weight_grps,
     int64_t n_offset_grps) {
+  at::Tensor&& grad_out = grad_out_param.contiguous();
+  at::Tensor&& input = input_param.contiguous();
+  at::Tensor&& weight = weight_param.contiguous();
+  at::Tensor&& offset = offset_param.contiguous();
+  at::Tensor&& bias = bias_param.contiguous();
+
   const int batch_sz = input.size(0);
   const int n_parallel_imgs =
       get_greatest_divisor_below_bound(batch_sz, kMaxParallelImgs);

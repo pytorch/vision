@@ -23,10 +23,10 @@ at::Tensor deform_conv2d(
                        .findSchemaOrThrow("torchvision::deform_conv2d", "")
                        .typed<decltype(deform_conv2d)>();
   return op.call(
-      input.contiguous(),
-      weight.contiguous(),
-      offset.contiguous(),
-      bias.contiguous(),
+      input,
+      weight,
+      offset,
+      bias,
       stride_h,
       stride_w,
       pad_h,
@@ -89,11 +89,11 @@ _deform_conv2d_backward(
           .findSchemaOrThrow("torchvision::_deform_conv2d_backward", "")
           .typed<decltype(_deform_conv2d_backward)>();
   return op.call(
-      grad.contiguous(),
-      input.contiguous(),
-      weight.contiguous(),
-      offset.contiguous(),
-      bias.contiguous(),
+      grad,
+      input,
+      weight,
+      offset,
+      bias,
       stride_h,
       stride_w,
       pad_h,
