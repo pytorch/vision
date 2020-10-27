@@ -1,15 +1,12 @@
 #pragma once
 
-#include "cpu/vision_cpu.h"
-
-#ifdef WITH_CUDA
-#include "cuda/vision_cuda.h"
-#endif
-#ifdef WITH_HIP
-#include "hip/vision_cuda.h"
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+#include "autocast.h"
 #endif
 
-at::Tensor DeformConv2d_forward(
+// TODO: put this stuff in torchvision namespace
+
+at::Tensor deform_conv2d(
     const at::Tensor& input,
     const at::Tensor& weight,
     const at::Tensor& offset,
@@ -22,26 +19,10 @@ at::Tensor DeformConv2d_forward(
     const int64_t dilation_w,
     const int64_t groups,
     const int64_t offset_groups) {
-  if (input.is_cuda()) {
-#if defined(WITH_CUDA) || defined(WITH_HIP)
-    return DeformConv2d_forward_cuda(
-        input.contiguous(),
-        weight.contiguous(),
-        offset.contiguous(),
-        bias.contiguous(),
-        stride_h,
-        stride_w,
-        pad_h,
-        pad_w,
-        dilation_h,
-        dilation_w,
-        groups,
-        offset_groups);
-#else
-    TORCH_CHECK(false, "Not compiled with GPU support");
-#endif
-  }
-  return DeformConv2d_forward_cpu(
+  static auto op = c10::Dispatcher::singleton()
+                       .findSchemaOrThrow("torchvision::deform_conv2d", "")
+                       .typed<decltype(deform_conv2d)>();
+  return op.call(
       input.contiguous(),
       weight.contiguous(),
       offset.contiguous(),
@@ -56,7 +37,40 @@ at::Tensor DeformConv2d_forward(
       offset_groups);
 }
 
-std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor> DeformConv2d_backward(
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+at::Tensor DeformConv2d_autocast(
+    const at::Tensor& input,
+    const at::Tensor& weight,
+    const at::Tensor& offset,
+    const at::Tensor& bias,
+    const int64_t stride_h,
+    const int64_t stride_w,
+    const int64_t pad_h,
+    const int64_t pad_w,
+    const int64_t dilation_h,
+    const int64_t dilation_w,
+    const int64_t groups,
+    const int64_t offset_groups) {
+  c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
+  return deform_conv2d(
+             at::autocast::cached_cast(at::kFloat, input),
+             at::autocast::cached_cast(at::kFloat, weight),
+             at::autocast::cached_cast(at::kFloat, offset),
+             at::autocast::cached_cast(at::kFloat, bias),
+             stride_h,
+             stride_w,
+             pad_h,
+             pad_w,
+             dilation_h,
+             dilation_w,
+             groups,
+             offset_groups)
+      .to(input.scalar_type());
+}
+#endif
+
+std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
+_deform_conv2d_backward(
     const at::Tensor& grad,
     const at::Tensor& input,
     const at::Tensor& weight,
@@ -70,27 +84,11 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor> DeformConv2d_backward
     const int64_t dilation_w,
     const int64_t groups,
     const int64_t offset_groups) {
-  if (grad.is_cuda()) {
-#if defined(WITH_CUDA) || defined(WITH_HIP)
-    return DeformConv2d_backward_cuda(
-        grad.contiguous(),
-        input.contiguous(),
-        weight.contiguous(),
-        offset.contiguous(),
-        bias.contiguous(),
-        stride_h,
-        stride_w,
-        pad_h,
-        pad_w,
-        dilation_h,
-        dilation_w,
-        groups,
-        offset_groups);
-#else
-    TORCH_CHECK(false, "Not compiled with GPU support");
-#endif
-  }
-  return DeformConv2d_backward_cpu(
+  static auto op =
+      c10::Dispatcher::singleton()
+          .findSchemaOrThrow("torchvision::_deform_conv2d_backward", "")
+          .typed<decltype(_deform_conv2d_backward)>();
+  return op.call(
       grad.contiguous(),
       input.contiguous(),
       weight.contiguous(),
@@ -123,7 +121,8 @@ class DeformConv2dFunction
       int64_t dilation_w,
       int64_t groups,
       int64_t offset_groups) {
-    auto output = DeformConv2d_forward(
+    at::AutoNonVariableTypeMode g; // TODO: check if necessary
+    auto output = deform_conv2d(
         input,
         weight,
         offset,
@@ -170,7 +169,7 @@ class DeformConv2dFunction
     auto groups = ctx->saved_data["groups"].toInt();
     auto offset_groups = ctx->saved_data["offset_groups"].toInt();
 
-    auto grads = DeformConv2d_backward(
+    auto grads = _deform_conv2d_backward(
         grad_output[0],
         input,
         weight,
@@ -205,32 +204,3 @@ class DeformConv2dFunction
     };
   }
 };
-
-at::Tensor deform_conv2d(
-    const at::Tensor& input,
-    const at::Tensor& weight,
-    const at::Tensor& offset,
-    const at::Tensor& bias,
-    int64_t stride_h,
-    int64_t stride_w,
-    int64_t pad_h,
-    int64_t pad_w,
-    int64_t dilation_h,
-    int64_t dilation_w,
-    int64_t groups,
-    int64_t offset_groups) {
-  auto result = DeformConv2dFunction::apply(
-      input,
-      weight,
-      offset,
-      bias,
-      stride_h,
-      stride_w,
-      pad_h,
-      pad_w,
-      dilation_h,
-      dilation_w,
-      groups,
-      offset_groups);
-  return result[0];
-}
