@@ -320,7 +320,7 @@ def relocate_macho_library(otool, install_name_tool, base_lib_dir,
             log.info('Omitting {0}'.format(dep_library))
             continue
 
-        full_dep_path = look_for_dylib(dep_library)
+        full_dep_path = look_for_dylib(dep_library, dyld_library_path)
         if full_dep_path is None:
             log.info('{0} not found'.format(dep_library))
             continue
