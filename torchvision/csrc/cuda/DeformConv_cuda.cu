@@ -89,8 +89,8 @@ inline unsigned int GET_BLOCKS(const unsigned int N) {
 template <typename scalar_t>
 __device__ scalar_t bilinear_interpolate(
     const scalar_t* in,
-    const int height,
-    const int width,
+    int height,
+    int width,
     scalar_t h,
     scalar_t w) {
   if (h <= -1 || height <= h || w <= -1 || width <= w) {
@@ -126,25 +126,25 @@ __device__ scalar_t bilinear_interpolate(
 }
 
 template <typename scalar_t>
-__global__ void deformable_im2col_gpu_kernel(
-    const int n,
+__global__ void deformable_im2col_kernel(
+    int n,
     const scalar_t* input_ptr,
     const scalar_t* offset_ptr,
-    const int height,
-    const int width,
-    const int weight_h,
-    const int weight_w,
-    const int pad_h,
-    const int pad_w,
-    const int stride_h,
-    const int stride_w,
-    const int dil_h,
-    const int dil_w,
-    const int batch_sz,
-    const int n_in_channels,
-    const int n_offset_grps,
-    const int out_h,
-    const int out_w,
+    int height,
+    int width,
+    int weight_h,
+    int weight_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dil_h,
+    int dil_w,
+    int batch_sz,
+    int n_in_channels,
+    int n_offset_grps,
+    int out_h,
+    int out_w,
     scalar_t* columns_ptr) {
   CUDA_1D_KERNEL_LOOP(index, n) {
     const int out_x = index % out_w;
@@ -183,8 +183,8 @@ __global__ void deformable_im2col_gpu_kernel(
 }
 
 static void deformable_im2col(
-    const at::Tensor input,
-    const at::Tensor data_offset,
+    const at::Tensor& input,
+    const at::Tensor& data_offset,
     int n_in_channels,
     int height,
     int width,
@@ -205,7 +205,7 @@ static void deformable_im2col(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "deformable_im2col_gpu", ([&] {
-        deformable_im2col_gpu_kernel<<<
+        deformable_im2col_kernel<<<
             GET_BLOCKS(num_kernels),
             CUDA_NUM_THREADS>>>(
             num_kernels,
@@ -419,25 +419,25 @@ at::Tensor DeformConv2d_forward_cuda(
 }
 
 template <typename scalar_t>
-__global__ void deformable_col2im_gpu_kernel(
-    const int n,
+__global__ void deformable_col2im_kernel(
+    int n,
     const scalar_t* col,
     const scalar_t* offset_ptr,
-    const int channels,
-    const int height,
-    const int width,
-    const int kernel_h,
-    const int kernel_w,
-    const int pad_h,
-    const int pad_w,
-    const int stride_h,
-    const int stride_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int batch_sz,
-    const int n_offset_grps,
-    const int out_h,
-    const int out_w,
+    int channels,
+    int height,
+    int width,
+    int kernel_h,
+    int kernel_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dilation_h,
+    int dilation_w,
+    int batch_sz,
+    int n_offset_grps,
+    int out_h,
+    int out_w,
     scalar_t* grad_im) {
   CUDA_1D_KERNEL_LOOP(index, n) {
     const int out_x = index % out_w;
@@ -477,21 +477,21 @@ __global__ void deformable_col2im_gpu_kernel(
 }
 
 static void compute_grad_input(
-    const at::Tensor columns,
-    const at::Tensor offset,
-    const int channels,
-    const int height,
-    const int width,
-    const int weight_h,
-    const int weight_w,
-    const int pad_h,
-    const int pad_w,
-    const int stride_h,
-    const int stride_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int parallel_imgs,
-    const int n_offset_grps,
+    const at::Tensor& columns,
+    const at::Tensor& offset,
+    int channels,
+    int height,
+    int width,
+    int weight_h,
+    int weight_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dilation_h,
+    int dilation_w,
+    int parallel_imgs,
+    int n_offset_grps,
     at::Tensor grad_im) {
   int out_h =
       (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
@@ -502,7 +502,7 @@ static void compute_grad_input(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       columns.scalar_type(), "deformable_col2im_gpu", ([&] {
-        deformable_col2im_gpu_kernel<<<
+        deformable_col2im_kernel<<<
             GET_BLOCKS(num_kernels),
             CUDA_NUM_THREADS>>>(
             num_kernels,
@@ -535,8 +535,8 @@ static void compute_grad_input(
 template <typename scalar_t>
 __device__ scalar_t get_coordinate_weight(
     const scalar_t* im_data,
-    const int height,
-    const int width,
+    int height,
+    int width,
     scalar_t y,
     scalar_t x,
     bool is_y_direction) {
@@ -566,27 +566,27 @@ __device__ scalar_t get_coordinate_weight(
 }
 
 template <typename scalar_t>
-__global__ void deformable_col2im_coord_gpu_kernel(
-    const int n,
+__global__ void deformable_col2im_coord_kernel(
+    int n,
     const scalar_t* col_ptr,
     const scalar_t* im_ptr,
     const scalar_t* offset_ptr,
-    const int channels,
-    const int height,
-    const int width,
-    const int weight_h,
-    const int weight_w,
-    const int pad_h,
-    const int pad_w,
-    const int stride_h,
-    const int stride_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int batch_sz,
-    const int offset_channels,
-    const int n_offset_grps,
-    const int out_h,
-    const int out_w,
+    int channels,
+    int height,
+    int width,
+    int weight_h,
+    int weight_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dilation_h,
+    int dilation_w,
+    int batch_sz,
+    int offset_channels,
+    int n_offset_grps,
+    int out_h,
+    int out_w,
     scalar_t* grad_offset) {
   CUDA_1D_KERNEL_LOOP(index, n) {
     scalar_t val = 0;
@@ -640,22 +640,22 @@ __global__ void deformable_col2im_coord_gpu_kernel(
 }
 
 static void compute_grad_offset(
-    const at::Tensor columns,
-    const at::Tensor input,
-    const at::Tensor offset,
-    const int channels,
-    const int height,
-    const int width,
-    const int weight_h,
-    const int weight_w,
-    const int pad_h,
-    const int pad_w,
-    const int stride_h,
-    const int stride_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int parallel_imgs,
-    const int n_offset_grps,
+    const at::Tensor& columns,
+    const at::Tensor& input,
+    const at::Tensor& offset,
+    int channels,
+    int height,
+    int width,
+    int weight_h,
+    int weight_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dilation_h,
+    int dilation_w,
+    int parallel_imgs,
+    int n_offset_grps,
     at::Tensor grad_offset) {
   int out_h =
       (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
@@ -666,7 +666,7 @@ static void compute_grad_offset(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       columns.scalar_type(), "deformable_col2im_coord_gpu", ([&] {
-        deformable_col2im_coord_gpu_kernel<<<
+        deformable_col2im_coord_kernel<<<
             GET_BLOCKS(num_kernels),
             CUDA_NUM_THREADS>>>(
             num_kernels,
@@ -698,7 +698,7 @@ static void compute_grad_offset(
   }
 }
 
-static std::tuple<at::Tensor, at::Tensor> deform_conv_backward_input_cuda(
+static std::tuple<at::Tensor, at::Tensor> deform_conv2d_backward_input_cuda(
     at::Tensor input,
     at::Tensor weight,
     at::Tensor offset,
@@ -822,7 +822,7 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv_backward_input_cuda(
   return std::make_tuple(grad_input, grad_offset);
 }
 
-static at::Tensor deform_conv_backward_parameters_cuda(
+static at::Tensor deform_conv2d_backward_parameters_cuda(
     at::Tensor input,
     const at::Tensor& weight,
     at::Tensor offset,
@@ -949,7 +949,7 @@ DeformConv2d_backward_cuda(
   const int n_parallel_imgs =
       get_greatest_divisor_below_bound(batch_sz, kMaxParallelImgs);
 
-  auto grad_input_and_offset = deform_conv_backward_input_cuda(
+  auto grad_input_and_offset = deform_conv2d_backward_input_cuda(
       input,
       weight,
       offset,
@@ -967,7 +967,7 @@ DeformConv2d_backward_cuda(
   auto grad_input = std::get<0>(grad_input_and_offset);
   auto grad_offset = std::get<1>(grad_input_and_offset);
 
-  auto grad_weight = deform_conv_backward_parameters_cuda(
+  auto grad_weight = deform_conv2d_backward_parameters_cuda(
       input,
       weight,
       offset,
