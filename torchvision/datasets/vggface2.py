@@ -10,6 +10,13 @@ from .vision import VisionDataset
 class VGGFace2(VisionDataset):
     """ VGGFace2 <http://zeus.robots.ox.ac.uk/vgg_face2/>`_ Dataset.
 
+        Citation:
+        @inproceedings{Cao18,
+            author    = "Cao, Q. and Shen, L. and Xie, W. and Parkhi, O. M. and Zisserman, A.",
+            title     = "VGGFace2: A dataset for recognising faces across pose and age",
+            booktitle = "International Conference on Automatic Face and Gesture Recognition",
+            year      = "2018"}
+
         Args:
             root (string): Root directory of the VGGFace2 Dataset.
             Expects the following folder structure if download=False:
@@ -37,6 +44,9 @@ class VGGFace2(VisionDataset):
                 and returns a transformed version. E.g, ``transforms.RandomCrop``
             target_transform (callable, optional): A function/transform that takes in the
                 target and transforms it.
+            download (bool, optional): If true, downloads the dataset from the internet and
+                puts it in root directory. If dataset is already downloaded, it is not
+                downloaded again.
         """
 
     base_folder = "vggface2"
