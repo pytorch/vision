@@ -27,8 +27,8 @@ class VGGFace2(VisionDataset):
                     ├── train_list.txt
                     ├── test_list.txt
                     └── bb_landmark.tar.gz (or 'bb_landmark' if uncompressed)
-            split (string): One of {``train``, ``test``}.
-                The dataset split to use. Defaults to ``train``.
+            split (string): The dataset split to use. One of {``train``, ``test``}.
+                Defaults to ``train``.
             target_type (string): The type of target to use. One of
                 {``class_id``, ``image_id``, ``face_id``, ``bbox``, ``landmarks``.``""``}
                 Can also be a list to output a tuple with all specified target types.
