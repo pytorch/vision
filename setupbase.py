@@ -303,7 +303,7 @@ def relocate_macho_library(otool, install_name_tool, base_lib_dir,
 
     conda = find_program('conda')
     dyld_library_path = os.environ.get('DYLD_LIBRARY_PATH', [])
-    if dyld_library_path is not None:
+    if dyld_library_path != []:
         dyld_library_path = dyld_library_path.split(os.pathsep)
 
     if conda:
