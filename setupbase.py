@@ -37,6 +37,11 @@ LINUX_WHITELIST = {
     'libglib-2.0.so.0', 'ld-linux-x86-64.so.2', 'ld-2.17.so'
 }
 
+MAC_WHITELIST = {
+    'libtorch.dylib', 'libtorch_cpu.dylib', 'libtorch_python.dylib',
+    'libc10.dylib'
+}
+
 
 def run(cmd, *args, **kwargs):
     """Echo a command before running it"""
@@ -323,6 +328,11 @@ def relocate_macho_library(otool, install_name_tool, base_lib_dir,
         full_dep_path = look_for_dylib(dep_library, dyld_library_path)
         if full_dep_path is None:
             log.info('{0} not found'.format(dep_library))
+            continue
+
+        if dep_library in MAC_WHITELIST:
+            # Omit PyTorch libraries
+            log.info('Omitting {0}'.format(dep_library))
             continue
 
         log.info('{0}: {1}'.format(dep_library, full_dep_path))
