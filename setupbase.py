@@ -356,7 +356,7 @@ def relocate_macho_library(otool, install_name_tool, base_lib_dir,
             print('{0} -> {1}'.format(dep_library, new_library_path))
             shutil.copyfile(library_path, new_library_path)
             new_rpath[dep_library] = (new_library_path, osp.join(
-                '@loader_path', '.libs', dep_library))
+                '@loader_path', dep_library))
 
     log.info('Updating dependency names by new files')
     for dep_library in binary_paths:
@@ -366,8 +366,7 @@ def relocate_macho_library(otool, install_name_tool, base_lib_dir,
             library_dependencies = binary_dependencies[dep_library]
             new_library_name, _ = new_rpath[dep_library]
             for dep_rpath, dep in library_dependencies:
-                _, new_dep_rpath = new_rpath[dep]
-                new_dep_rpath = osp.basename(new_dep_rpath)
+                dep_library_path, new_dep_rpath = new_rpath[dep]
                 log.info('{0}: {1} -> {2}'.format(
                     dep_library, dep_rpath, new_dep_rpath))
                 run(
@@ -376,9 +375,9 @@ def relocate_macho_library(otool, install_name_tool, base_lib_dir,
                         '-change',
                         dep_rpath,
                         new_dep_rpath,
-                        dep_library
+                        dep_library_path
                     ],
-                    cwd=base_lib_dir)
+                    cwd=repo_root)
 
     log.info("Update library dependencies")
     library_dependencies = binary_dependencies[library]
