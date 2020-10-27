@@ -1,7 +1,6 @@
 set -ex
 
 if [[ $(uname) == "Linux" ]]; then
-
     # Install PyELFtools manually since it is not available on conda
     pushd ext_deps
     pushd pyelftools-0.26
