@@ -180,7 +180,7 @@ def find_relocate_tool():
                      'found on the PATH')
 
         try:
-            bin_patch_util = pkg_resources.get_distribution('pyelftools')
+            pkg_resources.get_distribution('pyelftools')
             from lddtree import lddtree
             dep_find_util = lddtree
         except pkg_resources.DistributionNotFound:
