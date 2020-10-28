@@ -29,7 +29,7 @@ def get_dist(pkgname):
         return None
 
 
-version = '0.8.0a0'
+version = '0.9.0a0'
 sha = 'Unknown'
 package_name = 'torchvision'
 
