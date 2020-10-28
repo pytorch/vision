@@ -663,8 +663,8 @@ class RandomPerspective(torch.nn.Module):
             ``PIL.Image.BILINEAR`` are supported. Default, ``PIL.Image.BILINEAR`` for PIL images and Tensors.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively. Default is 0.
-            This option is only available for ``pillow>=5.0.0``. This option is not supported for Tensor
-            input. Fill value for the area outside the transform in the output image is always 0.
+            This option is only available for ``pillow>=5.0.0``.
+            Fillcolor is supported as int, float or tuple for PIL and int, float for Tensor.
 
     """
 
@@ -673,6 +673,10 @@ class RandomPerspective(torch.nn.Module):
         self.p = p
         self.interpolation = interpolation
         self.distortion_scale = distortion_scale
+
+        if isinstance(fill, int):
+            fill = float(fill)
+
         self.fill = fill
 
     def forward(self, img):
@@ -1146,8 +1150,7 @@ class RandomRotation(torch.nn.Module):
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
             Defaults to 0 for all bands. This option is only available for Pillow>=5.2.0.
-            This option is not supported for Tensor input. Fill value for the area outside the transform in the output
-            image is always 0.
+            Fillcolor is supported as int, float or tuple for PIL and int, float for Tensor.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -1164,6 +1167,10 @@ class RandomRotation(torch.nn.Module):
 
         self.resample = resample
         self.expand = expand
+
+        if isinstance(fill, int):
+            fill = float(fill)
+
         self.fill = fill
 
     @staticmethod
@@ -1223,9 +1230,9 @@ class RandomAffine(torch.nn.Module):
         resample (int, optional): An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
             If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
-        fillcolor (tuple or int): Optional fill color (Tuple for RGB Image and int for grayscale) for the area
-            outside the transform in the output image (Pillow>=5.0.0). This option is not supported for Tensor
-            input. Fill value for the area outside the transform in the output image is always 0.
+        fillcolor (n-tuple or int or float): Optional fill color (Tuple for RGB Image and int for grayscale) for
+            the area outside the transform in the output image (Pillow>=5.0.0).
+            Fillcolor is supported as int, float or tuple for PIL and int, float for Tensor.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -1255,6 +1262,10 @@ class RandomAffine(torch.nn.Module):
             self.shear = shear
 
         self.resample = resample
+
+        if isinstance(fillcolor, int):
+            fillcolor = float(fillcolor)
+
         self.fillcolor = fillcolor
 
     @staticmethod
