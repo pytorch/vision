@@ -301,10 +301,10 @@ void PSROIAlignBackwardCPU(
 std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
     const at::Tensor& input,
     const at::Tensor& rois,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width,
-    const int sampling_ratio) {
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width,
+    const int64_t sampling_ratio) {
   // Check if input tensors are CPU tensors
   TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
   TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
@@ -361,14 +361,14 @@ at::Tensor PSROIAlign_backward_cpu(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& channel_mapping,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width,
-    const int sampling_ratio,
-    const int batch_size,
-    const int channels,
-    const int height,
-    const int width) {
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width,
+    const int64_t sampling_ratio,
+    const int64_t batch_size,
+    const int64_t channels,
+    const int64_t height,
+    const int64_t width) {
   // Check if input tensors are CPU tensors
   TORCH_CHECK(grad.device().is_cpu(), "grad must be a CPU tensor");
   TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
