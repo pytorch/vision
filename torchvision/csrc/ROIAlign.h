@@ -1,5 +1,7 @@
 #pragma once
 
+#include "cpu/vision_cpu.h"
+
 #if defined(WITH_CUDA) || defined(WITH_HIP)
 #include "autocast.h"
 #endif
