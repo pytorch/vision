@@ -52,7 +52,16 @@ WINDOWS_WHITELIST = {
     'api-ms-win-crt-string-l1-1-0.dll',
     'api-ms-win-crt-environment-l1-1-0.dll',
     'api-ms-win-crt-math-l1-1-0.dll',
-    'api-ms-win-crt-convert-l1-1-0.dll'
+    'api-ms-win-crt-convert-l1-1-0.dll',
+    'msvcrt.dll'
+}
+
+WINDOWS_RENAME = {
+    'avcodec-58.dll',
+    'avformat-58.dll',
+    'avutil-56.dll',
+    'swresample-3.dll',
+    'swscale-5.dll'
 }
 
 
@@ -436,7 +445,7 @@ def relocate_dll_library(dumpbin, _mangler, base_lib_dir, new_libraries_path,
             log.info('{0} not found'.format(dep_library))
             continue
 
-        if osp.basename(osp.dirname(dep_library_path)) == 'system32':
+        if osp.basename(osp.dirname(dep_library_path)).lower() == 'system32':
             continue
 
         log.info('{0}: {1}'.format(dep_library, dep_library_path))
@@ -456,8 +465,11 @@ def relocate_dll_library(dumpbin, _mangler, base_lib_dir, new_libraries_path,
     for dep_library in binary_paths:
         if dep_library != library:
             dep_library_path = binary_paths[dep_library]
-            new_library_path = patch_new_path(
-                dep_library_path, new_libraries_path, sep='-')
+            if dep_library in WINDOWS_RENAME:
+                new_library_path = patch_new_path(
+                    dep_library_path, new_libraries_path, sep='.')
+            else:
+                new_library_path = osp.join(new_libraries_path, dep_library)
             log.info('{0} -> {1}'.format(dep_library, new_library_path))
             new_names[dep_library] = osp.basename(new_library_path)
             shutil.copyfile(dep_library_path, new_library_path)
@@ -466,6 +478,8 @@ def relocate_dll_library(dumpbin, _mangler, base_lib_dir, new_libraries_path,
     for dep_library in binary_paths:
         if dep_library != library:
             if dep_library not in binary_dependencies:
+                continue
+            if dep_library not in WINDOWS_RENAME:
                 continue
             library_dependencies = binary_dependencies[dep_library]
             new_library_name = new_names[dep_library]
@@ -512,7 +526,7 @@ class BuildExtRelocate(BuildExtension):
         if osp.exists(library_path) and library_path != base_library_dir:
             shutil.rmtree(library_path)
 
-        os.makedirs(library_path)
+        os.makedirs(library_path, exist_ok=True)
 
         for ext in self.extensions:
             fullname = self.get_ext_fullname(ext.name)

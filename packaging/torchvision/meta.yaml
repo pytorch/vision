@@ -11,10 +11,12 @@ requirements:
     - libpng
     - jpeg
     - ffmpeg =4.2
+    - attrs # [win]
 
   host:
     - python
     - setuptools
+    - attrs # [win]
     {{ environ.get('CONDA_PYTORCH_BUILD_CONSTRAINT') }}
     {{ environ.get('CONDA_CUDATOOLKIT_CONSTRAINT') }}
     {{ environ.get('CONDA_CPUONLY_FEATURE') }}
