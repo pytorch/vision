@@ -307,11 +307,15 @@ def relocate_macho_library(otool, install_name_tool, base_lib_dir,
     library_deps = find_macho_dependencies(otool, library_path)
 
     conda = find_program('conda')
+    build_prefix = os.environ.get('BUILD_PREFIX', None)
+    is_conda_build = build_prefix is not None
     dyld_library_path = os.environ.get('DYLD_LIBRARY_PATH', [])
     if dyld_library_path != []:
         dyld_library_path = dyld_library_path.split(os.pathsep)
 
-    if conda:
+    if is_conda_build:
+        dyld_library_path += [osp.join(build_prefix, 'lib')]
+    elif conda:
         conda_lib = [osp.join(osp.dirname(osp.dirname(sys.executable)), 'lib')]
         dyld_library_path += conda_lib
 
