@@ -42,20 +42,33 @@ MAC_WHITELIST = {
     'libc10.dylib'
 }
 
+WINDOWS_WHITELIST = {
+    'MSVCP140.dll', 'KERNEL32.dll',
+    'VCRUNTIME140_1.dll', 'VCRUNTIME140.dll',
+    'api-ms-win-crt-heap-l1-1-0.dll',
+    'api-ms-win-crt-runtime-l1-1-0.dll',
+    'api-ms-win-crt-stdio-l1-1-0.dll',
+    'api-ms-win-crt-filesystem-l1-1-0.dll',
+    'api-ms-win-crt-string-l1-1-0.dll',
+    'api-ms-win-crt-environment-l1-1-0.dll',
+    'api-ms-win-crt-math-l1-1-0.dll',
+    'api-ms-win-crt-convert-l1-1-0.dll'
+}
+
 
 def run(cmd, *args, **kwargs):
     """Echo a command before running it"""
     log.info('> ' + list2cmdline(cmd))
-    kwargs['shell'] = (sys.platform == 'win32')
+    # kwargs['shell'] = (sys.platform == 'win32')
     return subprocess.check_output(cmd, *args, **kwargs)
 
 
-def patch_new_path(library_path, new_dir):
+def patch_new_path(library_path, new_dir, sep='.'):
     library = osp.basename(library_path)
-    name, *rest = library.split('.')
-    rest = '.'.join(rest)
+    name, *rest = library.split(sep)
+    rest = sep.join(rest)
     hash_id = hashlib.sha256(library_path.encode('utf-8')).hexdigest()[:8]
-    new_name = '.'.join([name, hash_id, rest])
+    new_name = sep.join([name, hash_id, rest])
     return osp.join(new_dir, new_name)
 
 
@@ -279,7 +292,7 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, new_libraries_path,
     for dep in library_dependencies:
         new_dep = osp.basename(new_names[dep])
         print('{0}: {1} -> {2}'.format(library, dep, new_dep))
-        subprocess.check_output(
+        run(
             [
                 patchelf,
                 '--replace-needed',
@@ -287,10 +300,11 @@ def relocate_elf_library(lddtree, patchelf, base_lib_dir, new_libraries_path,
                 new_dep,
                 library
             ],
-            cwd=base_lib_dir)
+            cwd=base_lib_dir
+        )
 
     log.info('Update library rpath')
-    subprocess.check_output(
+    run(
         [
             patchelf,
             '--set-rpath',
@@ -404,7 +418,75 @@ def relocate_macho_library(otool, install_name_tool, base_lib_dir,
 
 def relocate_dll_library(dumpbin, _mangler, base_lib_dir, new_libraries_path,
                          library):
-    pass
+    library_path = osp.join(base_lib_dir, library)
+    library_dlls = find_dll_dependencies(dumpbin, library_path)
+    binary_queue = [(dll, library) for dll in library_dlls]
+    binary_paths = {library: library_path}
+    binary_dependencies = {}
+
+    while binary_queue != []:
+        dep_library, parent = binary_queue.pop(0)
+        if (dep_library in WINDOWS_WHITELIST or
+                dep_library.startswith('api-ms-win')):
+            log.info('Omitting {0}'.format(dep_library))
+            continue
+
+        dep_library_path = find_program(dep_library)
+        if dep_library_path is None:
+            log.info('{0} not found'.format(dep_library))
+            continue
+
+        if osp.basename(osp.dirname(dep_library_path)) == 'system32':
+            continue
+
+        log.info('{0}: {1}'.format(dep_library, dep_library_path))
+        parent_dependencies = binary_dependencies.get(parent, [])
+        parent_dependencies.append(dep_library)
+        binary_dependencies[parent] = parent_dependencies
+
+        if dep_library in binary_paths:
+            continue
+
+        binary_paths[dep_library] = dep_library_path
+        downstream_dlls = find_dll_dependencies(dumpbin, dep_library_path)
+        binary_queue += [(n, dep_library) for n in downstream_dlls]
+
+    log.info('Copying dependencies to wheel directory')
+    new_names = {}
+    for dep_library in binary_paths:
+        if dep_library != library:
+            dep_library_path = binary_paths[dep_library]
+            new_library_path = patch_new_path(
+                dep_library_path, new_libraries_path, sep='-')
+            log.info('{0} -> {1}'.format(dep_library, new_library_path))
+            new_names[dep_library] = osp.basename(new_library_path)
+            shutil.copyfile(dep_library_path, new_library_path)
+
+    log.info('Updating dependency names by new files')
+    for dep_library in binary_paths:
+        if dep_library != library:
+            if dep_library not in binary_dependencies:
+                continue
+            library_dependencies = binary_dependencies[dep_library]
+            new_library_name = new_names[dep_library]
+            args = [new_library_name, new_library_name]
+            for dep in library_dependencies:
+                new_dep_name = new_names[dep]
+                log.info('{0}: {1} -> {2}'.format(
+                    dep_library, dep, new_dep_name))
+                args += [dep, new_dep_name]
+            args = [sys.executable, '-m', 'machomachomangler.cmd.redll'] + args
+            run(args, cwd=base_lib_dir)
+
+    log.info("Update library dependencies")
+    library_dependencies = binary_dependencies[library]
+    args = [library, library]
+    for dep in library_dependencies:
+        new_dep = osp.basename(new_names[dep])
+        print('{0}: {1} -> {2}'.format(library, dep, new_dep))
+        args += [dep, new_dep]
+    args = [sys.executable, '-m', 'machomachomangler.cmd.redll'] + args
+    run(args, cwd=base_lib_dir)
 
 
 class BuildExtRelocate(BuildExtension):

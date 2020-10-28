@@ -24,4 +24,16 @@ if [[ $(uname) == "Linux" ]]; then
     popd
 fi
 
+if [[ "$OSTYPE" == "msys" ]]; then
+    mkdir -p ext_deps
+    pushd ext_deps
+
+    # machomachomangler (Not available in Anaconda)
+    curl -L -q https://github.com/njsmith/machomachomangler/archive/master.tar.gz --output machomachomangler.tar.gz
+    gzip --decompress --stdout machomachomangler.tar.gz | tar -x --file=-
+    rm -rf machomachomangler.tar.gz
+
+    popd
+fi
+
 conda build $CONDA_CHANNEL_FLAGS -c defaults -c conda-forge --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
