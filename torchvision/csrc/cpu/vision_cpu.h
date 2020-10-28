@@ -73,7 +73,7 @@ VISION_API std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
 VISION_API at::Tensor PSROIAlign_backward_cpu(
     const at::Tensor& grad,
     const at::Tensor& rois,
-    const at::Tensor& mapping_channel,
+    const at::Tensor& channel_mapping,
     const double spatial_scale,
     const int64_t pooled_height,
     const int64_t pooled_width,

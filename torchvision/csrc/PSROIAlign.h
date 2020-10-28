@@ -2,43 +2,55 @@
 
 #include "cpu/vision_cpu.h"
 
-#ifdef WITH_CUDA
-#include "cuda/vision_cuda.h"
-#endif
-#ifdef WITH_HIP
-#include "hip/vision_cuda.h"
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+#include "autocast.h"
 #endif
 
 #include <iostream>
 
-std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward(
+// TODO: put this stuff in torchvision namespace
+
+std::tuple<at::Tensor, at::Tensor> ps_roi_align(
     const at::Tensor& input,
     const at::Tensor& rois,
     const double spatial_scale,
     const int64_t pooled_height,
     const int64_t pooled_width,
     const int64_t sampling_ratio) {
-  if (input.is_cuda()) {
-#if defined(WITH_CUDA) || defined(WITH_HIP)
-    return PSROIAlign_forward_cuda(
-        input,
-        rois,
-        spatial_scale,
-        pooled_height,
-        pooled_width,
-        sampling_ratio);
-#else
-    TORCH_CHECK(false, "Not compiled with GPU support");
-#endif
-  }
-  return PSROIAlign_forward_cpu(
+  static auto op = c10::Dispatcher::singleton()
+                       .findSchemaOrThrow("torchvision::ps_roi_align", "")
+                       .typed<decltype(ps_roi_align)>();
+  return op.call(
       input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio);
 }
 
-at::Tensor PSROIAlign_backward(
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+std::tuple<at::Tensor, at::Tensor> PSROIAlign_autocast(
+    const at::Tensor& input,
+    const at::Tensor& rois,
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width,
+    const int64_t sampling_ratio) {
+  c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
+  auto result = ps_roi_align(
+      at::autocast::cached_cast(at::kFloat, input),
+      at::autocast::cached_cast(at::kFloat, rois),
+      spatial_scale,
+      pooled_height,
+      pooled_width,
+      sampling_ratio);
+
+  return std::make_tuple(
+      std::get<0>(result).to(input.scalar_type()),
+      std::get<1>(result).to(input.scalar_type()));
+}
+#endif
+
+at::Tensor _ps_roi_align_backward(
     const at::Tensor& grad,
     const at::Tensor& rois,
-    const at::Tensor& mapping_channel,
+    const at::Tensor& channel_mapping,
     const double spatial_scale,
     const int64_t pooled_height,
     const int64_t pooled_width,
@@ -47,28 +59,14 @@ at::Tensor PSROIAlign_backward(
     const int64_t channels,
     const int64_t height,
     const int64_t width) {
-  if (grad.is_cuda()) {
-#if defined(WITH_CUDA) || defined(WITH_HIP)
-    return PSROIAlign_backward_cuda(
-        grad,
-        rois,
-        mapping_channel,
-        spatial_scale,
-        pooled_height,
-        pooled_width,
-        sampling_ratio,
-        batch_size,
-        channels,
-        height,
-        width);
-#else
-    TORCH_CHECK(false, "Not compiled with GPU support");
-#endif
-  }
-  return PSROIAlign_backward_cpu(
+  static auto op =
+      c10::Dispatcher::singleton()
+          .findSchemaOrThrow("torchvision::_ps_roi_align_backward", "")
+          .typed<decltype(_ps_roi_align_backward)>();
+  return op.call(
       grad,
       rois,
-      mapping_channel,
+      channel_mapping,
       spatial_scale,
       pooled_height,
       pooled_width,
@@ -95,7 +93,8 @@ class PSROIAlignFunction
     ctx->saved_data["pooled_width"] = pooled_width;
     ctx->saved_data["sampling_ratio"] = sampling_ratio;
     ctx->saved_data["input_shape"] = input.sizes();
-    auto result = PSROIAlign_forward(
+    at::AutoNonVariableTypeMode g;
+    auto result = ps_roi_align(
         input,
         rois,
         spatial_scale,
@@ -117,7 +116,7 @@ class PSROIAlignFunction
     auto rois = saved[0];
     auto channel_mapping = saved[1];
     auto input_shape = ctx->saved_data["input_shape"].toIntList();
-    auto grad_in = PSROIAlign_backward(
+    auto grad_in = _ps_roi_align_backward(
         grad_output[0],
         rois,
         channel_mapping,
@@ -137,15 +136,3 @@ class PSROIAlignFunction
             torch::autograd::Variable()};
   }
 };
-
-std::tuple<at::Tensor, at::Tensor> ps_roi_align(
-    const at::Tensor& input,
-    const at::Tensor& rois,
-    const double spatial_scale,
-    const int64_t pooled_height,
-    const int64_t pooled_width,
-    const int64_t sampling_ratio) {
-  auto result = PSROIAlignFunction::apply(
-      input, rois, spatial_scale, pooled_height, pooled_width, sampling_ratio);
-  return std::tuple<at::Tensor, at::Tensor>(result[0], result[1]);
-}
