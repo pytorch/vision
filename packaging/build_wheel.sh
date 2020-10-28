@@ -21,6 +21,7 @@ if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
         pip_install delocate
         export BUILD_PREFIX=$env_path
     else
+        pip_install machomachomangler
         cp "$bin_path/Library/bin/libpng16.dll" torchvision
         cp "$bin_path/Library/bin/libjpeg.dll" torchvision
     fi
