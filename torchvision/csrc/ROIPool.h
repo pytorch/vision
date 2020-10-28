@@ -115,3 +115,82 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
             torch::autograd::Variable()};
   }
 };
+
+// TODO: There should be an easier way to do this
+class ROIPoolBackwardFunction
+    : public torch::autograd::Function<ROIPoolBackwardFunction> {
+ public:
+  static torch::autograd::variable_list forward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::Variable grad,
+      torch::autograd::Variable rois,
+      torch::autograd::Variable argmax,
+      const double spatial_scale,
+      const int64_t pooled_height,
+      const int64_t pooled_width,
+      const int64_t batch_size,
+      const int64_t channels,
+      const int64_t height,
+      const int64_t width) {
+    at::AutoNonVariableTypeMode g;
+    auto grad_in = _roi_pool_backward(
+        grad,
+        rois,
+        argmax,
+        spatial_scale,
+        pooled_height,
+        pooled_width,
+        batch_size,
+        channels,
+        height,
+        width);
+
+    return {grad_in};
+  }
+
+  static torch::autograd::variable_list backward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::variable_list grad_output) {
+    TORCH_CHECK(0, "double backwards on roi_pool not supported");
+  }
+};
+
+std::tuple<at::Tensor, at::Tensor> ROIPool_autograd(
+    const at::Tensor& input,
+    const at::Tensor& rois,
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width) {
+  auto result = ROIPoolFunction::apply(
+      input,
+      rois,
+      spatial_scale,
+      pooled_height,
+      pooled_width);
+
+  return std::make_tuple(result[0], result[1]);
+}
+
+at::Tensor ROIPool_backward_autograd(
+    const at::Tensor& grad,
+    const at::Tensor& rois,
+    const at::Tensor& argmax,
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width,
+    const int64_t batch_size,
+    const int64_t channels,
+    const int64_t height,
+    const int64_t width) {
+  return ROIPoolBackwardFunction::apply(
+      grad,
+      rois,
+      argmax,
+      spatial_scale,
+      pooled_height,
+      pooled_width,
+      batch_size,
+      channels,
+      height,
+      width)[0];
+}
