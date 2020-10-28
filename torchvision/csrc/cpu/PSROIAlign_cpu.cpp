@@ -57,7 +57,7 @@ T bilinear_interpolate(
 }
 
 template <typename T>
-void PSROIAlignForward(
+void PSROIAlignForwardCPU(
     int nthreads,
     const T* input,
     const T spatial_scale,
@@ -202,7 +202,7 @@ inline void add(T* address, const T& val) {
 }
 
 template <typename T>
-void PSROIAlignBackward(
+void PSROIAlignBackwardCPU(
     int nthreads,
     const T* grad_output,
     const int* channel_mapping,
@@ -339,7 +339,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
   auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "PSROIAlign_forward", [&] {
-        PSROIAlignForward<scalar_t>(
+        PSROIAlignForwardCPU<scalar_t>(
             output_size,
             input_.data_ptr<scalar_t>(),
             spatial_scale,
@@ -396,7 +396,7 @@ at::Tensor PSROIAlign_backward_cpu(
   auto grad_ = grad.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       grad.scalar_type(), "PSROIAlign_backward", [&] {
-        PSROIAlignBackward<scalar_t>(
+        PSROIAlignBackwardCPU<scalar_t>(
             grad.numel(),
             grad_.data_ptr<scalar_t>(),
             channel_mapping.data_ptr<int>(),
