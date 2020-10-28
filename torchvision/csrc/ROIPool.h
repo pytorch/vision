@@ -2,32 +2,43 @@
 
 #include "cpu/vision_cpu.h"
 
-#ifdef WITH_CUDA
-#include "cuda/vision_cuda.h"
-#endif
-#ifdef WITH_HIP
-#include "hip/vision_cuda.h"
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+#include "autocast.h"
 #endif
 
-std::tuple<at::Tensor, at::Tensor> ROIPool_forward(
+// TODO: put this stuff in torchvision namespace
+
+std::tuple<at::Tensor, at::Tensor> roi_pool(
     const at::Tensor& input,
     const at::Tensor& rois,
     const double spatial_scale,
     const int64_t pooled_height,
     const int64_t pooled_width) {
-  if (input.is_cuda()) {
-#if defined(WITH_CUDA) || defined(WITH_HIP)
-    return ROIPool_forward_cuda(
-        input, rois, spatial_scale, pooled_height, pooled_width);
-#else
-    TORCH_CHECK(false, "Not compiled with GPU support");
-#endif
-  }
-  return ROIPool_forward_cpu(
-      input, rois, spatial_scale, pooled_height, pooled_width);
+  static auto op = c10::Dispatcher::singleton()
+                       .findSchemaOrThrow("torchvision::roi_pool", "")
+                       .typed<decltype(roi_pool)>();
+  return op.call(input, rois, spatial_scale, pooled_height, pooled_width);
 }
 
-at::Tensor ROIPool_backward(
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+std::tuple<at::Tensor, at::Tensor> ROIPool_autocast(
+    const at::Tensor& input,
+    const at::Tensor& rois,
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width) {
+  c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
+  return roi_pool(
+             at::autocast::cached_cast(at::kFloat, input),
+             at::autocast::cached_cast(at::kFloat, rois),
+             spatial_scale,
+             pooled_height,
+             pooled_width)
+      .to(input.scalar_type());
+}
+#endif
+
+at::Tensor _roi_pool_backward(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& argmax,
@@ -38,24 +49,11 @@ at::Tensor ROIPool_backward(
     const int64_t channels,
     const int64_t height,
     const int64_t width) {
-  if (grad.is_cuda()) {
-#if defined(WITH_CUDA) || defined(WITH_HIP)
-    return ROIPool_backward_cuda(
-        grad,
-        rois,
-        argmax,
-        spatial_scale,
-        pooled_height,
-        pooled_width,
-        batch_size,
-        channels,
-        height,
-        width);
-#else
-    TORCH_CHECK(false, "Not compiled with GPU support");
-#endif
-  }
-  return ROIPool_backward_cpu(
+  static auto op =
+      c10::Dispatcher::singleton()
+          .findSchemaOrThrow("torchvision::_roi_pool_backward", "")
+          .typed<decltype(_roi_pool_backward)>();
+  return op.call(
       grad,
       rois,
       argmax,
@@ -81,7 +79,8 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
     ctx->saved_data["pooled_height"] = pooled_height;
     ctx->saved_data["pooled_width"] = pooled_width;
     ctx->saved_data["input_shape"] = input.sizes();
-    auto result = ROIPool_forward(
+    at::AutoNonVariableTypeMode g;
+    auto result = roi_pool(
         input, rois, spatial_scale, pooled_height, pooled_width);
     auto output = std::get<0>(result);
     auto argmax = std::get<1>(result);
@@ -98,7 +97,7 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
     auto rois = saved[0];
     auto argmax = saved[1];
     auto input_shape = ctx->saved_data["input_shape"].toIntList();
-    auto grad_in = ROIPool_backward(
+    auto grad_in = _roi_pool_backward(
         grad_output[0],
         rois,
         argmax,
@@ -116,14 +115,3 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
             torch::autograd::Variable()};
   }
 };
-
-std::tuple<at::Tensor, at::Tensor> roi_pool(
-    const at::Tensor& input,
-    const at::Tensor& rois,
-    const double spatial_scale,
-    const int64_t pooled_height,
-    const int64_t pooled_width) {
-  auto result = ROIPoolFunction::apply(
-      input, rois, spatial_scale, pooled_height, pooled_width);
-  return std::tuple<at::Tensor, at::Tensor>(result[0], result[1]);
-}
