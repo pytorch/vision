@@ -102,4 +102,6 @@ TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
   m.impl("_roi_align_backward", ROIAlign_backward_autograd);
   m.impl("deform_conv2d", DeformConv2d_autograd);
   m.impl("_deform_conv2d_backward", DeformConv2d_backward_autograd);
+  m.impl("ps_roi_pool", PSROIPool_autograd);
+  m.impl("_ps_roi_pool_backward", PSROIPool_backward_autograd);
 }

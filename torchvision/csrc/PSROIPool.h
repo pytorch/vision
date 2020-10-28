@@ -118,3 +118,77 @@ class PSROIPoolFunction : public torch::autograd::Function<PSROIPoolFunction> {
   }
 };
 
+// TODO: There should be an easier way to do this
+class PSROIPoolBackwardFunction
+    : public torch::autograd::Function<PSROIPoolBackwardFunction> {
+ public:
+  static torch::autograd::variable_list forward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::Variable grad,
+      torch::autograd::Variable rois,
+      torch::autograd::Variable mapping_channel,
+      const double spatial_scale,
+      const int64_t pooled_height,
+      const int64_t pooled_width,
+      const int64_t batch_size,
+      const int64_t channels,
+      const int64_t height,
+      const int64_t width) {
+    at::AutoNonVariableTypeMode g;
+    auto grad_in = _ps_roi_pool_backward(
+        grad,
+        rois,
+        mapping_channel,
+        spatial_scale,
+        pooled_height,
+        pooled_width,
+        batch_size,
+        channels,
+        height,
+        width);
+
+    return {grad_in};
+  }
+
+  static torch::autograd::variable_list backward(
+      torch::autograd::AutogradContext* ctx,
+      torch::autograd::variable_list grad_output) {
+    TORCH_CHECK(0, "double backwards on ps_roi_pool not supported");
+  }
+};
+
+std::tuple<at::Tensor, at::Tensor> PSROIPool_autograd(
+    const at::Tensor& input,
+    const at::Tensor& rois,
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width) {
+  auto result = PSROIPoolFunction::apply(
+      input, rois, spatial_scale, pooled_height, pooled_width);
+
+  return std::make_tuple(result[0], result[1]);
+}
+
+at::Tensor PSROIPool_backward_autograd(
+    const at::Tensor& grad,
+    const at::Tensor& rois,
+    const at::Tensor& mapping_channel,
+    const double spatial_scale,
+    const int64_t pooled_height,
+    const int64_t pooled_width,
+    const int64_t batch_size,
+    const int64_t channels,
+    const int64_t height,
+    const int64_t width) {
+  return PSROIPoolBackwardFunction::apply(
+      grad,
+      rois,
+      mapping_channel,
+      spatial_scale,
+      pooled_height,
+      pooled_width,
+      batch_size,
+      channels,
+      height,
+      width)[0];
+}
