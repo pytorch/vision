@@ -192,8 +192,6 @@ __device__ void bilinear_interpolate_gradient(
   // T val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
 
   w1 = hy * hx, w2 = hy * lx, w3 = ly * hx, w4 = ly * lx;
-
-  return;
 }
 
 template <typename T>
@@ -302,8 +300,10 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cuda(
     const int pooled_width,
     const int sampling_ratio) {
   // Check if input tensors are CUDA tensors
-  AT_ASSERTM(input.is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
+  TORCH_CHECK(input.is_cuda(), "input must be a CUDA tensor");
+  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
+  TORCH_CHECK(
+      rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -318,7 +318,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cuda(
   auto height = input.size(2);
   auto width = input.size(3);
 
-  AT_ASSERTM(
+  TORCH_CHECK(
       channels % (pooled_height * pooled_width) == 0,
       "input channels must be a multiple of pooling height * pooling width");
   int channels_out = channels / (pooled_height * pooled_width);
@@ -378,9 +378,9 @@ at::Tensor PSROIAlign_backward_cuda(
     const int height,
     const int width) {
   // Check if input tensors are CUDA tensors
-  AT_ASSERTM(grad.is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
-  AT_ASSERTM(
+  TORCH_CHECK(grad.is_cuda(), "grad must be a CUDA tensor");
+  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
+  TORCH_CHECK(
       channel_mapping.is_cuda(),
       "channel_mapping must be a CUDA tensor");
 

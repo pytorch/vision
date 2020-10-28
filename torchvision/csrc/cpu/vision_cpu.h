@@ -1,15 +1,6 @@
 #pragma once
 #include <torch/extension.h>
-
-#ifdef _WIN32
-#if defined(torchvision_EXPORTS)
-#define VISION_API __declspec(dllexport)
-#else
-#define VISION_API __declspec(dllimport)
-#endif
-#else
-#define VISION_API
-#endif
+#include "../macros.h"
 
 VISION_API std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(
     const at::Tensor& input,
@@ -102,11 +93,14 @@ VISION_API at::Tensor DeformConv2d_forward_cpu(
     const at::Tensor& weight,
     const at::Tensor& offset,
     const at::Tensor& bias,
-    std::pair<int, int> stride,
-    std::pair<int, int> pad,
-    std::pair<int, int> dilation,
-    int groups,
-    int deformable_groups);
+    int64_t stride_h,
+    int64_t stride_w,
+    int64_t pad_h,
+    int64_t pad_w,
+    int64_t dilation_h,
+    int64_t dilation_w,
+    int64_t groups,
+    int64_t deformable_groups);
 
 VISION_API std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
 DeformConv2d_backward_cpu(
@@ -115,8 +109,11 @@ DeformConv2d_backward_cpu(
     const at::Tensor& weight,
     const at::Tensor& offset,
     const at::Tensor& bias,
-    std::pair<int, int> stride,
-    std::pair<int, int> pad,
-    std::pair<int, int> dilation,
-    int groups,
-    int deformable_groups);
+    int64_t stride_h,
+    int64_t stride_w,
+    int64_t pad_h,
+    int64_t pad_w,
+    int64_t dilation_h,
+    int64_t dilation_w,
+    int64_t groups,
+    int64_t deformable_groups);

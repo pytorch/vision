@@ -49,8 +49,8 @@ size_t fillAudioTensor(DecoderOutputMessage& msgs, torch::Tensor& audioFrame) {
   return fillTensorList<float>(msgs, audioFrame);
 }
 
-std::pair<std::string, ffmpeg::MediaType> const* _parse_type(
-    const std::string& stream_string) {
+std::array<std::pair<std::string, ffmpeg::MediaType>, 4>::const_iterator
+_parse_type(const std::string& stream_string) {
   static const std::array<std::pair<std::string, MediaType>, 4> types = {{
       {"video", TYPE_VIDEO},
       {"audio", TYPE_AUDIO},
@@ -66,7 +66,8 @@ std::pair<std::string, ffmpeg::MediaType> const* _parse_type(
   if (device != types.end()) {
     return device;
   }
-  AT_ERROR("Expected one of [audio, video, subtitle, cc] ", stream_string);
+  TORCH_CHECK(
+      false, "Expected one of [audio, video, subtitle, cc] ", stream_string);
 }
 
 std::string parse_type_to_string(const std::string& stream_string) {
@@ -97,7 +98,8 @@ std::tuple<std::string, long> _parseStream(const std::string& streamString) {
     try {
       index_ = c10::stoi(match[2].str());
     } catch (const std::exception&) {
-      AT_ERROR(
+      TORCH_CHECK(
+          false,
           "Could not parse device index '",
           match[2].str(),
           "' in device string '",

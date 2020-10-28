@@ -9,8 +9,9 @@ from torchvision.ops import MultiScaleRoIAlign
 
 from ..utils import load_state_dict_from_url
 
+from .anchor_utils import AnchorGenerator
 from .generalized_rcnn import GeneralizedRCNN
-from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
+from .rpn import RPNHead, RegionProposalNetwork
 from .roi_heads import RoIHeads
 from .transform import GeneralizedRCNNTransform
 from .backbone_utils import resnet_fpn_backbone

@@ -78,8 +78,6 @@
 #include <iostream>
 #include <tuple>
 
-using namespace at;
-
 const unsigned int CUDA_NUM_THREADS = 1024;
 const int kMaxParallelImgs = 32;
 
@@ -250,22 +248,23 @@ at::Tensor DeformConv2d_forward_cuda(
     const at::Tensor& input_param,
     const at::Tensor& weight_param,
     const at::Tensor& offset_param,
-    const at::Tensor& bias,
-    std::pair<int, int> stride,
-    std::pair<int, int> pad,
-    std::pair<int, int> dilation,
-    int n_weight_grps,
-    int n_offset_grps) {
-  at::Tensor input = input_param;
-  at::Tensor weight = weight_param;
-  at::Tensor offset = offset_param;
+    const at::Tensor& bias_param,
+    int64_t stride_h,
+    int64_t stride_w,
+    int64_t pad_h,
+    int64_t pad_w,
+    int64_t dil_h,
+    int64_t dil_w,
+    int64_t n_weight_grps,
+    int64_t n_offset_grps) {
+  at::Tensor input = input_param.contiguous();
+  at::Tensor offset = offset_param.contiguous();
+  at::Tensor weight = weight_param.contiguous();
+  at::Tensor bias = bias_param.contiguous();
 
   TORCH_CHECK(input.ndimension() == 4);
   TORCH_CHECK(offset.ndimension() == 4);
   TORCH_CHECK(weight.ndimension() == 4);
-  TORCH_CHECK(input.is_contiguous());
-  TORCH_CHECK(offset.is_contiguous());
-  TORCH_CHECK(weight.is_contiguous());
   TORCH_CHECK(input.is_cuda(), "input must be a CUDA tensor");
 
   at::DeviceGuard guard(input.device());
@@ -281,15 +280,6 @@ at::Tensor DeformConv2d_forward_cuda(
   int out_channels = weight.size(0);
   int weight_h = weight.size(2);
   int weight_w = weight.size(3);
-
-  int stride_h = stride.first;
-  int stride_w = stride.second;
-
-  int pad_h = pad.first;
-  int pad_w = pad.second;
-
-  int dil_h = dilation.first;
-  int dil_w = dilation.second;
 
   int ker_h = dil_h * (weight_h - 1) + 1;
   int ker_w = dil_w * (weight_w - 1) + 1;
@@ -618,7 +608,7 @@ __global__ void deformable_col2im_coord_gpu_kernel(
         out_h * out_w;
 
     const int offset_c = c - offset_grp * 2 * weight_h * weight_w;
-    const int is_y_direction = offset_c % 2 == 0;
+    const bool is_y_direction = offset_c % 2 == 0;
 
     const int c_bound = c_per_offset_grp * weight_h * weight_w;
     for (int col_c = (offset_c / 2); col_c < c_bound; col_c += col_step) {
@@ -713,9 +703,12 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv_backward_input_cuda(
     at::Tensor weight,
     at::Tensor offset,
     at::Tensor grad_out,
-    std::pair<int, int> stride,
-    std::pair<int, int> pad,
-    std::pair<int, int> dilation,
+    int stride_h,
+    int stride_w,
+    int pad_h,
+    int pad_w,
+    int dil_h,
+    int dil_w,
     int n_weight_grps,
     int n_offset_grps,
     int n_parallel_imgs) {
@@ -731,15 +724,6 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv_backward_input_cuda(
   long n_out_channels = weight.size(0);
   int weight_h = weight.size(2);
   int weight_w = weight.size(3);
-
-  int stride_h = stride.first;
-  int stride_w = stride.second;
-
-  int pad_h = pad.first;
-  int pad_w = pad.second;
-
-  int dil_h = dilation.first;
-  int dil_w = dilation.second;
 
   long out_w = (in_w + 2 * pad_w - (dil_w * (weight_w - 1) + 1)) / stride_w + 1;
   long out_h = (in_h + 2 * pad_h - (dil_h * (weight_h - 1) + 1)) / stride_h + 1;
@@ -840,12 +824,15 @@ static std::tuple<at::Tensor, at::Tensor> deform_conv_backward_input_cuda(
 
 static at::Tensor deform_conv_backward_parameters_cuda(
     at::Tensor input,
-    at::Tensor weight,
+    const at::Tensor& weight,
     at::Tensor offset,
-    at::Tensor grad_out,
-    std::pair<int, int> stride,
-    std::pair<int, int> pad,
-    std::pair<int, int> dilation,
+    const at::Tensor& grad_out,
+    int stride_h,
+    int stride_w,
+    int pad_h,
+    int pad_w,
+    int dil_h,
+    int dil_w,
     int n_weight_grps,
     int n_offset_grps,
     int n_parallel_imgs) {
@@ -861,15 +848,6 @@ static at::Tensor deform_conv_backward_parameters_cuda(
   long n_out_channels = weight.size(0);
   int weight_h = weight.size(2);
   int weight_w = weight.size(3);
-
-  int stride_h = stride.first;
-  int stride_w = stride.second;
-
-  int pad_h = pad.first;
-  int pad_w = pad.second;
-
-  int dil_h = dilation.first;
-  int dil_w = dilation.second;
 
   long out_h = grad_out.size(2);
   long out_w = grad_out.size(3);
@@ -948,16 +926,25 @@ static at::Tensor deform_conv_backward_parameters_cuda(
 
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor>
 DeformConv2d_backward_cuda(
-    const at::Tensor& grad_out,
-    const at::Tensor& input,
-    const at::Tensor& weight,
-    const at::Tensor& offset,
-    const at::Tensor& bias,
-    std::pair<int, int> stride,
-    std::pair<int, int> pad,
-    std::pair<int, int> dilation,
-    int n_weight_grps,
-    int n_offset_grps) {
+    const at::Tensor& grad_out_param,
+    const at::Tensor& input_param,
+    const at::Tensor& weight_param,
+    const at::Tensor& offset_param,
+    const at::Tensor& bias_param,
+    int64_t stride_h,
+    int64_t stride_w,
+    int64_t pad_h,
+    int64_t pad_w,
+    int64_t dil_h,
+    int64_t dil_w,
+    int64_t n_weight_grps,
+    int64_t n_offset_grps) {
+  at::Tensor grad_out = grad_out_param.contiguous();
+  at::Tensor input = input_param.contiguous();
+  at::Tensor weight = weight_param.contiguous();
+  at::Tensor offset = offset_param.contiguous();
+  at::Tensor bias = bias_param.contiguous();
+
   const int batch_sz = input.size(0);
   const int n_parallel_imgs =
       get_greatest_divisor_below_bound(batch_sz, kMaxParallelImgs);
@@ -967,9 +954,12 @@ DeformConv2d_backward_cuda(
       weight,
       offset,
       grad_out,
-      stride,
-      pad,
-      dilation,
+      stride_h,
+      stride_w,
+      pad_h,
+      pad_w,
+      dil_h,
+      dil_w,
       n_weight_grps,
       n_offset_grps,
       n_parallel_imgs);
@@ -982,9 +972,12 @@ DeformConv2d_backward_cuda(
       weight,
       offset,
       grad_out,
-      stride,
-      pad,
-      dilation,
+      stride_h,
+      stride_w,
+      pad_h,
+      pad_w,
+      dil_h,
+      dil_w,
       n_weight_grps,
       n_offset_grps,
       n_parallel_imgs);

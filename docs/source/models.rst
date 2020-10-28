@@ -350,6 +350,7 @@ the instances set of COCO train2017 and evaluated on COCO val2017.
 Network                           box AP   mask AP   keypoint AP
 ================================  =======  ========  ===========
 Faster R-CNN ResNet-50 FPN        37.0     -         -
+RetinaNet ResNet-50 FPN           36.4     -         -
 Mask R-CNN ResNet-50 FPN          37.9     34.6      -
 ================================  =======  ========  ===========
 
@@ -405,6 +406,7 @@ precision-recall.
 Network                         train time (s / it)  test time (s / it)  memory (GB)
 ==============================  ===================  ==================  ===========
 Faster R-CNN ResNet-50 FPN      0.2288               0.0590              5.2
+RetinaNet ResNet-50 FPN         0.2514               0.0939              4.1
 Mask R-CNN ResNet-50 FPN        0.2728               0.0903              5.4
 Keypoint R-CNN ResNet-50 FPN    0.3789               0.1242              6.8
 ==============================  ===================  ==================  ===========
@@ -414,6 +416,12 @@ Faster R-CNN
 ------------
 
 .. autofunction:: torchvision.models.detection.fasterrcnn_resnet50_fpn
+
+
+RetinaNet
+------------
+
+.. autofunction:: torchvision.models.detection.retinanet_resnet50_fpn
 
 
 Mask R-CNN

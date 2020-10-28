@@ -24,7 +24,7 @@ struct VISION_API InceptionAImpl : torch::nn::Module {
 
   InceptionAImpl(int64_t in_channels, int64_t pool_features);
 
-  torch::Tensor forward(torch::Tensor x);
+  torch::Tensor forward(const torch::Tensor& x);
 };
 
 struct VISION_API InceptionBImpl : torch::nn::Module {
@@ -32,7 +32,7 @@ struct VISION_API InceptionBImpl : torch::nn::Module {
 
   InceptionBImpl(int64_t in_channels);
 
-  torch::Tensor forward(torch::Tensor x);
+  torch::Tensor forward(const torch::Tensor& x);
 };
 
 struct VISION_API InceptionCImpl : torch::nn::Module {
@@ -43,7 +43,7 @@ struct VISION_API InceptionCImpl : torch::nn::Module {
 
   InceptionCImpl(int64_t in_channels, int64_t channels_7x7);
 
-  torch::Tensor forward(torch::Tensor x);
+  torch::Tensor forward(const torch::Tensor& x);
 };
 
 struct VISION_API InceptionDImpl : torch::nn::Module {
@@ -52,7 +52,7 @@ struct VISION_API InceptionDImpl : torch::nn::Module {
 
   InceptionDImpl(int64_t in_channels);
 
-  torch::Tensor forward(torch::Tensor x);
+  torch::Tensor forward(const torch::Tensor& x);
 };
 
 struct VISION_API InceptionEImpl : torch::nn::Module {
@@ -62,7 +62,7 @@ struct VISION_API InceptionEImpl : torch::nn::Module {
 
   InceptionEImpl(int64_t in_channels);
 
-  torch::Tensor forward(torch::Tensor x);
+  torch::Tensor forward(const torch::Tensor& x);
 };
 
 struct VISION_API InceptionAuxImpl : torch::nn::Module {

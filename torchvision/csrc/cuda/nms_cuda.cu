@@ -71,8 +71,8 @@ __global__ void nms_kernel(
 at::Tensor nms_cuda(const at::Tensor& dets,
     const at::Tensor& scores,
     const double iou_threshold) {
-  AT_ASSERTM(dets.is_cuda(), "dets must be a CUDA tensor");
-  AT_ASSERTM(scores.is_cuda(), "scores must be a CUDA tensor");
+  TORCH_CHECK(dets.is_cuda(), "dets must be a CUDA tensor");
+  TORCH_CHECK(scores.is_cuda(), "scores must be a CUDA tensor");
 
   TORCH_CHECK(
       dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
@@ -96,7 +96,7 @@ at::Tensor nms_cuda(const at::Tensor& dets,
 #if defined(WITH_CUDA) || defined(WITH_HIP)
   at::cuda::CUDAGuard device_guard(dets.device());
 #else
-  AT_ERROR("Not compiled with GPU support");
+  TORCH_CHECK(false, "Not compiled with GPU support");
 #endif
 
   if (dets.numel() == 0) {

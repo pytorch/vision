@@ -25,10 +25,10 @@ lower-level API for more fine-grained control compared to the :mod:`read_video` 
 It does all this whilst fully supporting torchscript.
 
 .. autoclass:: VideoReader
-    :members: next, get_metadata, set_current_stream, seek
+    :members: __next__, get_metadata, set_current_stream, seek
 
 
-Example of usage:
+Example of inspecting a video:
 
 .. code:: python
 
@@ -49,6 +49,11 @@ Example of usage:
     #
     # following would print out the list of frame rates for every present video stream
     print(reader_md["video"]["fps"])
+
+    # we explicitly select the stream we would like to operate on. In
+    # the constructor we select a default video stream, but
+    # in practice, we can set whichever stream we would like 
+    video.set_current_stream("video:0")
 
 
 Image

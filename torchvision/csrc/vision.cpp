@@ -34,13 +34,15 @@ PyMODINIT_FUNC PyInit__C(void) {
 #endif
 #endif
 
-int64_t _cuda_version() {
+namespace vision {
+int64_t cuda_version() noexcept {
 #ifdef WITH_CUDA
   return CUDA_VERSION;
 #else
   return -1;
 #endif
 }
+} // namespace vision
 
 TORCH_LIBRARY(torchvision, m) {
   m.def("nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor");
@@ -52,13 +54,18 @@ TORCH_LIBRARY(torchvision, m) {
   m.def("_new_empty_tensor_op", &new_empty_tensor);
   m.def("ps_roi_align", &ps_roi_align);
   m.def("ps_roi_pool", &ps_roi_pool);
-  m.def("deform_conv2d", &deform_conv2d);
-  m.def("_cuda_version", &_cuda_version);
+  m.def(
+      "deform_conv2d(Tensor input, Tensor weight, Tensor offset, Tensor bias, int stride_h, int stride_w, int pad_h, int pad_w, int dilation_h, int dilation_w, int groups, int offset_groups) -> Tensor");
+  m.def(
+      "_deform_conv2d_backward(Tensor grad, Tensor input, Tensor weight, Tensor offset, Tensor bias, int stride_h, int stride_w, int pad_h, int pad_w, int dilation_h, int dilation_w, int groups, int offset_groups) -> (Tensor, Tensor, Tensor, Tensor)");
+  m.def("_cuda_version", &vision::cuda_version);
 }
 
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
   m.impl("roi_align", ROIAlign_forward_cpu);
   m.impl("_roi_align_backward", ROIAlign_backward_cpu);
+  m.impl("deform_conv2d", DeformConv2d_forward_cpu);
+  m.impl("_deform_conv2d_backward", DeformConv2d_backward_cpu);
   m.impl("nms", nms_cpu);
 }
 
@@ -67,6 +74,8 @@ TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
 TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
   m.impl("roi_align", ROIAlign_forward_cuda);
   m.impl("_roi_align_backward", ROIAlign_backward_cuda);
+  m.impl("deform_conv2d", DeformConv2d_forward_cuda);
+  m.impl("_deform_conv2d_backward", DeformConv2d_backward_cuda);
   m.impl("nms", nms_cuda);
 }
 #endif
@@ -75,6 +84,7 @@ TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
 #if defined(WITH_CUDA) || defined(WITH_HIP)
 TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
   m.impl("roi_align", ROIAlign_autocast);
+  m.impl("deform_conv2d", DeformConv2d_autocast);
   m.impl("nms", nms_autocast);
 }
 #endif
@@ -82,4 +92,6 @@ TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
 TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
   m.impl("roi_align", ROIAlign_autograd);
   m.impl("_roi_align_backward", ROIAlign_backward_autograd);
+  m.impl("deform_conv2d", DeformConv2d_autograd);
+  m.impl("_deform_conv2d_backward", DeformConv2d_backward_autograd);
 }
