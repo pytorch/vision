@@ -55,7 +55,7 @@ TORCH_LIBRARY(torchvision, m) {
   m.def(
       "ps_roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio) -> (Tensor, Tensor)");
   m.def(
-      "_ps_roi_align_backward(Tensor grad, Tensor rois, Tensor mapping_channel, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio, int batch_size, int channels, int height, int width) -> Tensor");
+      "_ps_roi_align_backward(Tensor grad, Tensor rois, Tensor channel_mapping, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio, int batch_size, int channels, int height, int width) -> Tensor");
   m.def("ps_roi_pool", &ps_roi_pool);
   m.def(
       "deform_conv2d(Tensor input, Tensor weight, Tensor offset, Tensor bias, int stride_h, int stride_w, int pad_h, int pad_w, int dilation_h, int dilation_w, int groups, int offset_groups) -> Tensor");
@@ -102,4 +102,6 @@ TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
   m.impl("_roi_align_backward", ROIAlign_backward_autograd);
   m.impl("deform_conv2d", DeformConv2d_autograd);
   m.impl("_deform_conv2d_backward", DeformConv2d_backward_autograd);
+  m.impl("ps_roi_align", PSROIAlign_autograd);
+  m.impl("_ps_roi_align_backward", PSROIAlign_backward_autograd);
 }
