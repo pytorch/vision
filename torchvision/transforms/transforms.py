@@ -673,10 +673,6 @@ class RandomPerspective(torch.nn.Module):
         self.p = p
         self.interpolation = interpolation
         self.distortion_scale = distortion_scale
-
-        if isinstance(fill, int):
-            fill = float(fill)
-
         self.fill = fill
 
     def forward(self, img):
@@ -687,10 +683,15 @@ class RandomPerspective(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly transformed image.
         """
+
+        fill = self.fill
+        if isinstance(img, Tensor) and isinstance(self.fill, int):
+            fill = float(fill)
+
         if torch.rand(1) < self.p:
             width, height = F._get_image_size(img)
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
-            return F.perspective(img, startpoints, endpoints, self.interpolation, self.fill)
+            return F.perspective(img, startpoints, endpoints, self.interpolation, fill)
         return img
 
     @staticmethod
@@ -1167,10 +1168,6 @@ class RandomRotation(torch.nn.Module):
 
         self.resample = resample
         self.expand = expand
-
-        if isinstance(fill, int):
-            fill = float(fill)
-
         self.fill = fill
 
     @staticmethod
@@ -1191,6 +1188,9 @@ class RandomRotation(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Rotated image.
         """
+        fill = self.fill
+        if isinstance(img, Tensor) and isinstance(self.fill, int):
+            fill = float(fill)
         angle = self.get_params(self.degrees)
         return F.rotate(img, angle, self.resample, self.expand, self.center, self.fill)
 
@@ -1262,10 +1262,6 @@ class RandomAffine(torch.nn.Module):
             self.shear = shear
 
         self.resample = resample
-
-        if isinstance(fillcolor, int):
-            fillcolor = float(fillcolor)
-
         self.fillcolor = fillcolor
 
     @staticmethod
@@ -1313,11 +1309,13 @@ class RandomAffine(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Affine transformed image.
         """
-
+        fill = self.fillcolor
+        if isinstance(img, Tensor) and isinstance(self.fillcolor, int):
+            fill = float(fill)
         img_size = F._get_image_size(img)
 
         ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img_size)
-        return F.affine(img, *ret, resample=self.resample, fillcolor=self.fillcolor)
+        return F.affine(img, *ret, resample=self.resample, fillcolor=fill)
 
     def __repr__(self):
         s = '{name}(degrees={degrees}'
