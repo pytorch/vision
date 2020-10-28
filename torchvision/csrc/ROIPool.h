@@ -28,13 +28,16 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_autocast(
     const int64_t pooled_height,
     const int64_t pooled_width) {
   c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
-  return roi_pool(
-             at::autocast::cached_cast(at::kFloat, input),
-             at::autocast::cached_cast(at::kFloat, rois),
-             spatial_scale,
-             pooled_height,
-             pooled_width)
-      .to(input.scalar_type());
+  auto result = roi_pool(
+      at::autocast::cached_cast(at::kFloat, input),
+      at::autocast::cached_cast(at::kFloat, rois),
+      spatial_scale,
+      pooled_height,
+      pooled_width);
+
+  return std::make_tuple(
+      std::get<0>(result).to(input.scalar_type()),
+      std::get<1>(result).to(input.scalar_type()));
 }
 #endif
 
