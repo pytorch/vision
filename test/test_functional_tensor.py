@@ -543,7 +543,7 @@ class Tester(TransformsTester):
             (33, (5, -4), 1.0, [0.0, 0.0], 0),
             (45, [-5, 4], 1.2, [0.0, 0.0], 7),
             (33, (-4, -8), 2.0, [0.0, 0.0], 255),
-            (85, (10, -10), 0.7, [0.0, 0.0], 0),
+            (85, (10, -10), 0.7, [0.0, 0.0], 7.0),
             (0, [0, 0], 1.0, [35.0, ], 0),
             (-25, [0, 0], 1.2, [0.0, 15.0], 0),
             (-45, [-10, 0], 0.7, [2.0, 5.0], 0),
@@ -552,7 +552,11 @@ class Tester(TransformsTester):
         ]
         for r in [0, ]:
             for a, t, s, sh, f in test_configs:
-                out_pil_img = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh, resample=r, fillcolor=f)
+                pil_f = f
+                if f is not None and type(f) != int:
+                    pil_f = int(f)
+
+                out_pil_img = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh, resample=r, fillcolor=pil_f)
                 out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
                 for fn in [F.affine, scripted_affine]:

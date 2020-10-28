@@ -856,7 +856,7 @@ def _assert_grid_transform_inputs(
         img: Tensor,
         matrix: Optional[List[float]],
         resample: int,
-        fillcolor: Optional[int],
+        fillcolor: Optional[float],
         _interpolation_modes: Dict[int, str],
         coeffs: Optional[List[float]] = None,
 ):
@@ -872,8 +872,8 @@ def _assert_grid_transform_inputs(
     if coeffs is not None and len(coeffs) != 8:
         raise ValueError("Argument coeffs should have 8 float values")
 
-    if fillcolor is not None and not isinstance(fillcolor, int):
-        warnings.warn("Argument fill/fillcolor should be an integer")
+    if fillcolor is not None and not isinstance(fillcolor, (int, float)):
+        warnings.warn("Argument fill/fillcolor should be an integer or float")
 
     if resample not in _interpolation_modes:
         raise ValueError("Resampling mode '{}' is unsupported with Tensor input".format(resample))
@@ -905,7 +905,7 @@ def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtyp
     return img
 
 
-def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[int]) -> Tensor:
+def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fillcolor: Optional[float]) -> Tensor:
 
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, grid.dtype)
 
@@ -913,23 +913,18 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[i
         # Apply same grid to a batch of images
         grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
 
-    if fill is None:
-        fill = 0
-
     # Append a dummy mask for customized fill colors, should be faster than grid_sample() twice
-    need_mask = False
-    if fill != 0:
-        need_mask = True
+    if fillcolor is not None and fillcolor != 0:
         dummy = torch.ones((img.shape[0], 1, img.shape[2], img.shape[3]), dtype=img.dtype, device=img.device)
         img = torch.cat((img, dummy), dim=1)
 
     img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
 
     # Fill with required color
-    if need_mask:
-        mask = img[:, -1, :, :] < 0.5  # Safer, but linear interpolations should not create numbers other than 0/1
+    if fillcolor is not None and fillcolor != 0:
+        mask = img[:, -1, :, :] < 0.5  # Maybe we need mask * img + (1 - mask) * fillcolor
         img = img[:, :-1, :, :]
-        img[mask.expand_as(img)] = fill
+        img[mask.expand_as(img)] = fillcolor
 
     img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
@@ -958,7 +953,7 @@ def _gen_affine_grid(
 
 
 def affine(
-        img: Tensor, matrix: List[float], resample: int = 0, fillcolor: Optional[int] = None
+        img: Tensor, matrix: List[float], resample: int = 0, fillcolor: Optional[float] = None
 ) -> Tensor:
     """PRIVATE METHOD. Apply affine transformation on the Tensor image keeping image center invariant.
 
@@ -972,8 +967,7 @@ def affine(
         matrix (list of floats): list of 6 float values representing inverse matrix for affine transformation.
         resample (int, optional): An optional resampling filter. Default is nearest (=0). Other supported values:
             bilinear(=2).
-        fillcolor (int, optional): this option is not supported for Tensor input. Fill value for the area outside the
-            transform in the output image is always 0.
+        fillcolor (n-tuple, int, float): This option does not support n-tuple for tensor input.
 
     Returns:
         Tensor: Transformed image.
@@ -991,7 +985,7 @@ def affine(
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
     mode = _interpolation_modes[resample]
-    return _apply_grid_transform(img, grid, mode, fill=fillcolor)
+    return _apply_grid_transform(img, grid, mode, fillcolor=fillcolor)
 
 
 def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
@@ -1020,7 +1014,7 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
 
 
 def rotate(
-        img: Tensor, matrix: List[float], resample: int = 0, expand: bool = False, fill: Optional[int] = None
+        img: Tensor, matrix: List[float], resample: int = 0, expand: bool = False, fill: Optional[float] = None
 ) -> Tensor:
     """PRIVATE METHOD. Rotate the Tensor image by angle.
 
@@ -1039,8 +1033,7 @@ def rotate(
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
             Note that the expand flag assumes rotation around the center and no translation.
-        fill (n-tuple or int or float): this option is not supported for Tensor input.
-            Fill value for the area outside the transform in the output image is always 0.
+        fill (n-tuple or int or float): this option does not support n-tuple for tensor input.
 
     Returns:
         Tensor: Rotated image.
@@ -1062,7 +1055,7 @@ def rotate(
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
     mode = _interpolation_modes[resample]
 
-    return _apply_grid_transform(img, grid, mode, fill=fill)
+    return _apply_grid_transform(img, grid, mode, fillcolor=fill)
 
 
 def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype, device: torch.device):
@@ -1099,7 +1092,7 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
 
 
 def perspective(
-        img: Tensor, perspective_coeffs: List[float], interpolation: int = 2, fill: Optional[int] = None
+        img: Tensor, perspective_coeffs: List[float], interpolation: int = 2, fill: Optional[float] = None
 ) -> Tensor:
     """PRIVATE METHOD. Perform perspective transform of the given Tensor image.
 
@@ -1112,8 +1105,7 @@ def perspective(
         img (Tensor): Image to be transformed.
         perspective_coeffs (list of float): perspective transformation coefficients.
         interpolation (int): Interpolation type. Default, ``PIL.Image.BILINEAR``.
-        fill (n-tuple or int or float): this option is not supported for Tensor input. Fill value for the area
-            outside the transform in the output image is always 0.
+        fill (n-tuple or int or float): This option does not support n-tuple for tensor input.
 
     Returns:
         Tensor: transformed image.
@@ -1140,7 +1132,7 @@ def perspective(
     grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=img.device)
     mode = _interpolation_modes[interpolation]
 
-    return _apply_grid_transform(img, grid, mode, fill=fill)
+    return _apply_grid_transform(img, grid, mode, fillcolor=fill)
 
 
 def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> Tensor:
