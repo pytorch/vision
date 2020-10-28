@@ -65,23 +65,23 @@ VISION_API at::Tensor PSROIPool_backward_cpu(
 VISION_API std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
     const at::Tensor& input,
     const at::Tensor& rois,
-    const double spatial_scale,
-    const int64_t pooled_height,
-    const int64_t pooled_width,
-    const int64_t sampling_ratio);
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t sampling_ratio);
 
 VISION_API at::Tensor PSROIAlign_backward_cpu(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& channel_mapping,
-    const double spatial_scale,
-    const int64_t pooled_height,
-    const int64_t pooled_width,
-    const int64_t sampling_ratio,
-    const int64_t batch_size,
-    const int64_t channels,
-    const int64_t height,
-    const int64_t width);
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t sampling_ratio,
+    int64_t batch_size,
+    int64_t channels,
+    int64_t height,
+    int64_t width);
 
 VISION_API at::Tensor nms_cpu(
     const at::Tensor& dets,
