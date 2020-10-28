@@ -43,18 +43,18 @@ else
 fi
 
 
-if [[ "$(uname)" == Darwin ]]; then
-    pushd dist/
-    python_exec="$(which python)"
-    bin_path=$(dirname $python_exec)
-    env_path=$(dirname $bin_path)
-    # for whl in *.whl; do
-    #     DYLD_LIBRARY_PATH="$env_path/lib/:$DYLD_LIBRARY_PATH" delocate-wheel -v $whl
-    # done
-else
-    if [[ "$OSTYPE" == "msys" ]]; then
-        "$script_dir/windows/internal/vc_env_helper.bat" python $script_dir/wheel/relocate.py
-    # else
-    #     LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH" python $script_dir/wheel/relocate.py
-    fi
-fi
+# if [[ "$(uname)" == Darwin ]]; then
+#     pushd dist/
+#     python_exec="$(which python)"
+#     bin_path=$(dirname $python_exec)
+#     env_path=$(dirname $bin_path)
+#     # for whl in *.whl; do
+#     #     DYLD_LIBRARY_PATH="$env_path/lib/:$DYLD_LIBRARY_PATH" delocate-wheel -v $whl
+#     # done
+# else
+#     if [[ "$OSTYPE" == "msys" ]]; then
+#         "$script_dir/windows/internal/vc_env_helper.bat" python $script_dir/wheel/relocate.py
+#     # else
+#     #     LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH" python $script_dir/wheel/relocate.py
+#     fi
+# fi
