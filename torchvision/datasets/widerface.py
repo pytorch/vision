@@ -31,7 +31,7 @@ class WIDERFace(VisionDataset):
             of {``raw``, ``bbox``, ``attr``.``""``}. Can also be a list to
             output a tuple with all specified target types.
             The targets represent:
-                ``raw`` (torch.tensor shape=(10,) dtype=int): all annotations combined (bbox + attr)
+                ``raw``  (torch.tensor shape=(10,) dtype=int): all annotations combined (bbox + attr)
                 ``bbox`` (torch.tensor shape=(4,) dtype=int): bounding box (x, y, width, height)
                 ``attr`` (torch.tensor shape=(6,) dtype=int): label values for attributes
                     that represent (blur, expression, illumination, occlusion, pose, invalid)
