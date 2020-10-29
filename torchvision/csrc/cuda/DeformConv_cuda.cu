@@ -126,7 +126,7 @@ __device__ scalar_t bilinear_interpolate(
 }
 
 template <typename scalar_t>
-__global__ void deformable_im2col_kernel(
+__global__ void deformable_im2col_gpu_kernel(
     int n,
     const scalar_t* input_ptr,
     const scalar_t* offset_ptr,
@@ -205,7 +205,7 @@ static void deformable_im2col(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "deformable_im2col_gpu", ([&] {
-        deformable_im2col_kernel<<<
+        deformable_im2col_gpu_kernel<<<
             GET_BLOCKS(num_kernels),
             CUDA_NUM_THREADS>>>(
             num_kernels,
@@ -419,7 +419,7 @@ at::Tensor DeformConv2d_forward_cuda(
 }
 
 template <typename scalar_t>
-__global__ void deformable_col2im_kernel(
+__global__ void deformable_col2im_gpu_kernel(
     int n,
     const scalar_t* col,
     const scalar_t* offset_ptr,
@@ -502,7 +502,7 @@ static void compute_grad_input(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       columns.scalar_type(), "deformable_col2im_gpu", ([&] {
-        deformable_col2im_kernel<<<
+        deformable_col2im_gpu_kernel<<<
             GET_BLOCKS(num_kernels),
             CUDA_NUM_THREADS>>>(
             num_kernels,
@@ -566,7 +566,7 @@ __device__ scalar_t get_coordinate_weight(
 }
 
 template <typename scalar_t>
-__global__ void deformable_col2im_coord_kernel(
+__global__ void deformable_col2im_coord_gpu_kernel(
     int n,
     const scalar_t* col_ptr,
     const scalar_t* im_ptr,
@@ -666,7 +666,7 @@ static void compute_grad_offset(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       columns.scalar_type(), "deformable_col2im_coord_gpu", ([&] {
-        deformable_col2im_coord_kernel<<<
+        deformable_col2im_coord_gpu_kernel<<<
             GET_BLOCKS(num_kernels),
             CUDA_NUM_THREADS>>>(
             num_kernels,
