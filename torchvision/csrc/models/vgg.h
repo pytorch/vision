@@ -12,7 +12,7 @@ struct VISION_API VGGImpl : torch::nn::Module {
   void _initialize_weights();
 
   VGGImpl(
-      torch::nn::Sequential features,
+      const torch::nn::Sequential& features,
       int64_t num_classes = 1000,
       bool initialize_weights = true);
 
