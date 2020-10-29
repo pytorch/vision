@@ -2,7 +2,7 @@ from PIL import Image
 import os
 import torch
 from typing import Any, Callable, List, Optional, Tuple, Union
-from .utils import download_file_from_google_drive, download_and_extract_archive, check_integrity, download_url, extract_archive
+from .utils import download_file_from_google_drive, check_integrity, download_url, extract_archive
 from .vision import VisionDataset
 
 
@@ -69,7 +69,6 @@ class WIDERFace(VisionDataset):
                                         transform=transform,
                                         target_transform=target_transform)
         # check arguments
-        print("ROOT: " + self.root)
         if split not in ("train", "val", "test"):
             raise ValueError("split \"{}\" is not recognized.".format(split))
         self.split = split
@@ -86,8 +85,6 @@ class WIDERFace(VisionDataset):
 
         if download:
             self.download()
-
-        # self._extract_dataset()
 
         if not self._check_integrity():
             raise RuntimeError("Dataset not found or corrupted. " +
@@ -197,41 +194,19 @@ class WIDERFace(VisionDataset):
             self.imgs_path.append(abs_path)
         f.close()
 
-    # def _extract_dataset(self) -> None:
-    #     print("EXTRACT_DATASET")
-    #     all_files = self.file_list.copy()
-    #     all_files.append(self.annotations_file)
-    #     for (_, md5, filename) in all_files:
-    #         fpath = os.path.join(self.root, filename)
-    #         file, ext = os.path.splitext(filename)
-    #         # Allow original archive to be deleted (zip). Only need the extracted images
-    #         extracted_dir = os.path.join(self.root, file)
-    #         print("extracted_dir: " + extracted_dir)
-    #         print("fpath: " + fpath)
-    #         print("root: " + self.root)
-    #         if not os.path.isdir(extracted_dir):
-    #             zip_file = os.path.join(self.root, filename)
-    #             extract_archive(zip_file)
-
     def _check_integrity(self) -> bool:
-        print("CHECK_INTEGRITY")
+        # Allow original archive to be deleted (zip). Only need the extracted images
         all_files = self.file_list.copy()
         all_files.append(self.annotations_file)
         for (_, md5, filename) in all_files:
-            fpath = os.path.join(self.root, filename)
             file, ext = os.path.splitext(filename)
-            if os.path.exists(fpath) and not check_integrity(fpath, md5):
-                return False
-            # Allow original archive to be deleted (zip). Only need the extracted images
-            # TODO problem case when !directory.exist and file.exists()
             extracted_dir = os.path.join(self.root, file)
-            print("extracted_dir: " + extracted_dir)
-            print("fpath: " + fpath)
-            print("root: " + self.root)
-            if os.path.exists(fpath) and not os.path.isdir(extracted_dir):
-                print("extracting file {}".format(filename))
-                zip_file = os.path.join(self.root, filename)
-                extract_archive(zip_file)
+            if os.path.exists(extracted_dir):
+                continue
+            filepath = os.path.join(self.root, filename)
+            if not check_integrity(filepath, md5):
+                return False
+            extract_archive(filepath)
         return True
 
     def download(self) -> None:
@@ -243,21 +218,11 @@ class WIDERFace(VisionDataset):
         for (file_id, md5, filename) in self.file_list:
             file, _ = os.path.splitext(filename)
             extracted_dir = os.path.join(self.root, file)
-            if not os.path.isdir(extracted_dir):
-                download_file_from_google_drive(file_id, self.root, filename, md5)
+            if os.path.isdir(extracted_dir):
+                continue
+            download_file_from_google_drive(file_id, self.root, filename, md5)
+
         # download annotation files
         extracted_dir, _ = os.path.splitext(self.annotations_file[2])
         if not os.path.isdir(extracted_dir):
             download_url(url=self.annotations_file[0], root=self.root, md5=self.annotations_file[1])
-
-        # # extract data if necessary
-        # all_files = self.file_list.copy()
-        # all_files.append(self.annotations_file)
-        # for (_, md5, filename) in all_files:
-        #     file, ext = os.path.splitext(filename)
-        #     # Allow original archive to be deleted (zip). Only need the extracted images
-        #     extracted_dir = os.path.join(self.root, file)
-        #     print("download - extracted_dir: " + extracted_dir)
-        #     if not os.path.isdir(extracted_dir):
-        #         zip_file = os.path.join(self.root, filename)
-        #         extract_archive(zip_file)
