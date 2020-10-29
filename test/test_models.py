@@ -148,7 +148,20 @@ class ModelTester(TestCase):
         kwargs = {}
         if "retinanet" in name:
             kwargs["score_thresh"] = 0.013
-        model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False, **kwargs)
+
+        # Workaround for flaky tests
+        from torchvision.ops.misc import FrozenBatchNorm2d
+
+        class OverwriteEPS:
+            def __enter__(self):
+                self.default = FrozenBatchNorm2d._DEFAULT_EPS
+                FrozenBatchNorm2d._DEFAULT_EPS = 0.0
+
+            def __exit__(self, type, value, traceback):  # noqa: F811
+                FrozenBatchNorm2d._DEFAULT_EPS = self.default
+
+        with OverwriteEPS():
+            model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False, **kwargs)
         model.eval().to(device=dev)
         input_shape = (3, 300, 300)
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests

@@ -47,13 +47,18 @@ class FrozenBatchNorm2d(torch.nn.Module):
     BatchNorm2d where the batch statistics and the affine parameters
     are fixed
     """
+    _DEFAULT_EPS = 1e-5
 
     def __init__(
         self,
         num_features: int,
-        eps: float = 1e-5,
+        eps: float = None,
         n: Optional[int] = None,
     ):
+        # eps=None for unit-test stability
+        if eps is None:
+            eps = FrozenBatchNorm2d._DEFAULT_EPS
+
         # n=None for backward-compatibility
         if n is not None:
             warnings.warn("`n` argument is deprecated and has been renamed `num_features`",
