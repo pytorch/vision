@@ -161,8 +161,8 @@ class WIDERFace(VisionDataset):
         for line in lines:
             line = line.rstrip()
             if file_name_line:
-                abs_path = os.path.join(self.root, "WIDER_" + self.split, "images", line)
-                self.imgs_path.append(abs_path)
+                img_path = os.path.join(self.root, "WIDER_" + self.split, "images", line)
+                self.imgs_path.append(img_path)
                 file_name_line = False
                 num_boxes_line = True
             elif num_boxes_line:
@@ -190,8 +190,8 @@ class WIDERFace(VisionDataset):
         lines = f.readlines()
         for line in lines:
             line = line.rstrip()
-            abs_path = os.path.join(self.root, "WIDER_test", "images", line)
-            self.imgs_path.append(abs_path)
+            img_path = os.path.join(self.root, "WIDER_test", "images", line)
+            self.imgs_path.append(img_path)
         f.close()
 
     def _check_integrity(self) -> bool:
