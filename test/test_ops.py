@@ -425,7 +425,8 @@ class NMSTester(unittest.TestCase):
         self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 4), torch.rand(4), 0.5)
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_nms_cuda(self):
+    def test_nms_cuda(self, dtype=torch.float64):
+        tol = 1e-3 if dtype is torch.half else 1e-5
         err_msg = 'NMS incompatible between CPU and CUDA for IoU={}'
 
         for iou in [0.2, 0.5, 0.8]:
@@ -437,9 +438,14 @@ class NMSTester(unittest.TestCase):
             if not is_eq:
                 # if the indices are not the same, ensure that it's because the scores
                 # are duplicate
-                is_eq = torch.allclose(scores[r_cpu], scores[r_cuda.cpu()])
+                is_eq = torch.allclose(scores[r_cpu], scores[r_cuda.cpu()], rtol=tol, atol=tol)
             self.assertTrue(is_eq, err_msg.format(iou))
 
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_autocast(self):
+        for dtype in (torch.float, torch.half):
+            with torch.cuda.amp.autocast():
+                self.test_nms_cuda(dtype=dtype)
 
 class NewEmptyTensorTester(unittest.TestCase):
     def test_new_empty_tensor(self):
