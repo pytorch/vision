@@ -47,6 +47,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
     BatchNorm2d where the batch statistics and the affine parameters
     are fixed
     """
+
     def __init__(
         self,
         num_features: int,
