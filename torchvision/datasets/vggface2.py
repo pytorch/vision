@@ -116,8 +116,8 @@ class VGGFace2(VisionDataset):
         with open(self.image_list_file, 'r') as f:
             for i, img_file in enumerate(f):
                 img_file = img_file.strip()
-                img_filename, ext = os.path.splitext(img_file)  #   e.g. ["n004332/0317_01", "jpg"]
-                class_id, image_face_id = img_filename.split("/") # e.g. ["n004332", "0317_01"]
+                img_filename, ext = os.path.splitext(img_file)  # e.g. ["n004332/0317_01", "jpg"]
+                class_id, image_face_id = img_filename.split("/")  # e.g. ["n004332", "0317_01"]
                 class_id = class_id[1:]
                 image_id, face_id = image_face_id.split("_")
                 img_filepath = os.path.join(self.root, self.split, img_file)
