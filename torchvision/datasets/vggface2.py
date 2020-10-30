@@ -22,21 +22,21 @@ class VGGFace2(VisionDataset):
             Expects the following folder structure if download=False:
                 .
                 └── vggface2
+                    ├── bb_landmark.tar.gz (or 'bb_landmark' if uncompressed)
                     ├── vggface2_train.tar.gz (or 'train' if uncompressed)
                     ├── vggface2_test.tar.gz (or 'test' if uncompressed)
                     ├── train_list.txt
-                    ├── test_list.txt
-                    └── bb_landmark.tar.gz (or 'bb_landmark' if uncompressed)
+                    └── test_list.txt
             split (string): The dataset split to use. One of {``train``, ``test``}.
                 Defaults to ``train``.
             target_type (string): The type of target to use. One of
                 {``class_id``, ``image_id``, ``face_id``, ``bbox``, ``landmarks``.``""``}
                 Can also be a list to output a tuple with all specified target types.
                 The targets represent:
-                    ``class_id`` (string)
-                    ``image_id`` (string)
-                    ``face_id`` (string)
-                    ``bbox`` (torch.tensor shape=(4,) dtype=int): bounding box (x, y, width, height)
+                    ``class_id``  (string)
+                    ``image_id``  (string)
+                    ``face_id``   (string)
+                    ``bbox``      (torch.tensor shape=(4,) dtype=int): bounding box (x, y, width, height)
                     ``landmarks`` (torch.tensor shape=(10,) dtype=float): values that
                         represent five points (P1X, P1Y, P2X, P2Y, P3X, P3Y, P4X, P4Y, P5X, P5Y)
                 Defaults to ``bbox``. If empty, ``None`` will be returned as target.
@@ -116,8 +116,9 @@ class VGGFace2(VisionDataset):
         with open(self.image_list_file, 'r') as f:
             for i, img_file in enumerate(f):
                 img_file = img_file.strip()
-                img_filename, ext = os.path.splitext(img_file)  # e.g. ["n004332/0317_01", "jpg"]
-                class_id, image_face_id = img_filename.split("/")
+                img_filename, ext = os.path.splitext(img_file)  #   e.g. ["n004332/0317_01", "jpg"]
+                class_id, image_face_id = img_filename.split("/") # e.g. ["n004332", "0317_01"]
+                class_id = class_id[1:]
                 image_id, face_id = image_face_id.split("_")
                 img_filepath = os.path.join(self.root, self.split, img_file)
                 self.img_info.append({
