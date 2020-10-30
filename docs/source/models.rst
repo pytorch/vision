@@ -349,8 +349,8 @@ the instances set of COCO train2017 and evaluated on COCO val2017.
 ================================  =======  ========  ===========
 Network                           box AP   mask AP   keypoint AP
 ================================  =======  ========  ===========
-Faster R-CNN ResNet-50 FPN        37.0     -         -
-RetinaNet ResNet-50 FPN           36.4     -         -
+Faster R-CNN ResNet-50 FPN        36.9     -         -
+RetinaNet ResNet-50 FPN           36.3     -         -
 Mask R-CNN ResNet-50 FPN          37.9     34.6      -
 ================================  =======  ========  ===========
 
@@ -360,7 +360,7 @@ models are as follows
 ================================  =======  ========  ===========
 Network                           box AP   mask AP   keypoint AP
 ================================  =======  ========  ===========
-Keypoint R-CNN ResNet-50 FPN      54.6     -         65.0
+Keypoint R-CNN ResNet-50 FPN      54.6     -         65.1
 ================================  =======  ========  ===========
 
 For person keypoint detection, the pre-trained model return the
