@@ -4,6 +4,8 @@ import torch
 from torch import nn
 from typing import Dict
 
+from ..ops.misc import FrozenBatchNorm2d
+
 
 class IntermediateLayerGetter(nn.ModuleDict):
     """
@@ -65,3 +67,9 @@ class IntermediateLayerGetter(nn.ModuleDict):
                 out_name = self.return_layers[name]
                 out[out_name] = x
         return out
+
+
+def overwrite_eps(model, eps):
+    for module in model.modules():
+        if isinstance(module, FrozenBatchNorm2d):
+            module.eps = eps
