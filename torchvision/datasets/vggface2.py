@@ -114,7 +114,7 @@ class VGGFace2(VisionDataset):
         self.landmarks = pandas.concat(landmark_frames)
 
         with open(self.image_list_file, 'r') as f:
-            for i, img_file in enumerate(f):
+            for img_file in f:
                 img_file = img_file.strip()
                 img_filename, ext = os.path.splitext(img_file)  # e.g. ["n004332/0317_01", "jpg"]
                 class_id, image_face_id = img_filename.split("/")  # e.g. ["n004332", "0317_01"]
