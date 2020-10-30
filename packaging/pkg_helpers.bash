@@ -132,7 +132,7 @@ setup_build_version() {
   # Set build version based on tag if on tag
   if [[ -n "${CIRCLE_TAG}" ]]; then
     # Strip tag
-    export BUILD_VERSION="$(echo "${CIRCLE_TAG}" | sed -e 's/^v//' -e 's/-.*$//')"
+    export BUILD_VERSION="$(echo "${CIRCLE_TAG}" | sed -e 's/^v//' -e 's/-.*$//')${VERSION_SUFFIX}"
   fi
 }
 
