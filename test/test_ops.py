@@ -120,6 +120,13 @@ class RoIOpTester(OpTester):
     def expected_fn(*args, **kwargs):
         pass
 
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_autocast(self):
+        for x_dtype in (torch.float, torch.half):
+            for rois_dtype in (torch.float, torch.half):
+                with torch.cuda.amp.autocast():
+                    self._test_forward(torch.device("cuda"), contiguous=False, x_dtype=x_dtype, rois_dtype=rois_dtype)
+
 
 class RoIPoolTester(RoIOpTester, unittest.TestCase):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
@@ -294,13 +301,6 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
 
     def _test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
-
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_roi_align_autocast(self):
-        for x_dtype in (torch.float, torch.half):
-            for rois_dtype in (torch.float, torch.half):
-                with torch.cuda.amp.autocast():
-                    self._test_forward(torch.device("cuda"), contiguous=False, x_dtype=x_dtype, rois_dtype=rois_dtype)
 
 
 class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
