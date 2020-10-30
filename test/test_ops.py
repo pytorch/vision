@@ -447,6 +447,7 @@ class NMSTester(unittest.TestCase):
             with torch.cuda.amp.autocast():
                 self.test_nms_cuda(dtype=dtype)
 
+
 class NewEmptyTensorTester(unittest.TestCase):
     def test_new_empty_tensor(self):
         input = torch.tensor([2., 2.], requires_grad=True)
