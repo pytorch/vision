@@ -86,7 +86,7 @@ VISION_API at::Tensor PSROIAlign_backward_cpu(
 VISION_API at::Tensor nms_cpu(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const double iou_threshold);
+    double iou_threshold);
 
 VISION_API at::Tensor DeformConv2d_forward_cpu(
     const at::Tensor& input,
