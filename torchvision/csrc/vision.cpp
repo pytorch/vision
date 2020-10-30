@@ -52,7 +52,10 @@ TORCH_LIBRARY(torchvision, m) {
       "_roi_align_backward(Tensor grad, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int batch_size, int channels, int height, int width, int sampling_ratio, bool aligned) -> Tensor");
   m.def("roi_pool", &roi_pool);
   m.def("_new_empty_tensor_op", &new_empty_tensor);
-  m.def("ps_roi_align", &ps_roi_align);
+  m.def(
+      "ps_roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio) -> (Tensor, Tensor)");
+  m.def(
+      "_ps_roi_align_backward(Tensor grad, Tensor rois, Tensor channel_mapping, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio, int batch_size, int channels, int height, int width) -> Tensor");
   m.def("ps_roi_pool", &ps_roi_pool);
   m.def(
       "deform_conv2d(Tensor input, Tensor weight, Tensor offset, Tensor bias, int stride_h, int stride_w, int pad_h, int pad_w, int dilation_h, int dilation_w, int groups, int offset_groups) -> Tensor");
@@ -67,6 +70,8 @@ TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
   m.impl("deform_conv2d", DeformConv2d_forward_cpu);
   m.impl("_deform_conv2d_backward", DeformConv2d_backward_cpu);
   m.impl("nms", nms_cpu);
+  m.impl("ps_roi_align", PSROIAlign_forward_cpu);
+  m.impl("_ps_roi_align_backward", PSROIAlign_backward_cpu);
 }
 
 // TODO: Place this in a hypothetical separate torchvision_cuda library
@@ -77,6 +82,8 @@ TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
   m.impl("deform_conv2d", DeformConv2d_forward_cuda);
   m.impl("_deform_conv2d_backward", DeformConv2d_backward_cuda);
   m.impl("nms", nms_cuda);
+  m.impl("ps_roi_align", PSROIAlign_forward_cuda);
+  m.impl("_ps_roi_align_backward", PSROIAlign_backward_cuda);
 }
 #endif
 
@@ -86,6 +93,7 @@ TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
   m.impl("roi_align", ROIAlign_autocast);
   m.impl("deform_conv2d", DeformConv2d_autocast);
   m.impl("nms", nms_autocast);
+  m.impl("ps_roi_align", PSROIAlign_autocast);
 }
 #endif
 
@@ -94,4 +102,6 @@ TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
   m.impl("_roi_align_backward", ROIAlign_backward_autograd);
   m.impl("deform_conv2d", DeformConv2d_autograd);
   m.impl("_deform_conv2d_backward", DeformConv2d_backward_autograd);
+  m.impl("ps_roi_align", PSROIAlign_autograd);
+  m.impl("_ps_roi_align_backward", PSROIAlign_backward_autograd);
 }

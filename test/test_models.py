@@ -6,8 +6,9 @@ import torch.nn as nn
 import numpy as np
 from torchvision import models
 import unittest
-import traceback
 import random
+
+from torchvision.ops.misc import FrozenBatchNorm2d
 
 
 def set_rng_seed(seed):
@@ -149,6 +150,10 @@ class ModelTester(TestCase):
         if "retinanet" in name:
             kwargs["score_thresh"] = 0.013
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False, **kwargs)
+        if "keypointrcnn" in name or "retinanet" in name:
+            for module in model.modules():
+                if isinstance(module, FrozenBatchNorm2d):
+                    module.eps = 0
         model.eval().to(device=dev)
         input_shape = (3, 300, 300)
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
