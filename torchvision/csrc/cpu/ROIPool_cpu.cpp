@@ -12,13 +12,13 @@ template <typename T>
 void RoIPoolForward(
     const T* input,
     const T spatial_scale,
-    const int channels,
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
     const T* rois,
-    const int num_rois,
+    int num_rois,
     T* output,
     int* argmax_data) {
   for (int n = 0; n < num_rois; ++n) {
@@ -81,18 +81,18 @@ template <typename T>
 void RoIPoolBackward(
     const T* grad_output,
     const int* argmax_data,
-    const int num_rois,
-    const int channels,
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
+    int num_rois,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
     T* grad_input,
     const T* rois,
-    const int n_stride,
-    const int c_stride,
-    const int h_stride,
-    const int w_stride) {
+    int n_stride,
+    int c_stride,
+    int h_stride,
+    int w_stride) {
   for (int n = 0; n < num_rois; ++n) {
     const T* offset_rois = rois + n * 5;
     int roi_batch_ind = offset_rois[0];
@@ -123,9 +123,9 @@ void RoIPoolBackward(
 std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(
     const at::Tensor& input,
     const at::Tensor& rois,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width) {
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width) {
   TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
   TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
 
@@ -172,13 +172,13 @@ at::Tensor ROIPool_backward_cpu(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& argmax,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width,
-    const int batch_size,
-    const int channels,
-    const int height,
-    const int width) {
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t batch_size,
+    int64_t channels,
+    int64_t height,
+    int64_t width) {
   // Check if input tensors are CPU tensors
   TORCH_CHECK(grad.device().is_cpu(), "grad must be a CPU tensor");
   TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
