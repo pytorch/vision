@@ -11,7 +11,10 @@ struct VISION_API MNASNetImpl : torch::nn::Module {
 
   void _initialize_weights();
 
-  explicit MNASNetImpl(double alpha, int64_t num_classes = 1000, double dropout = .2);
+  explicit MNASNetImpl(
+      double alpha,
+      int64_t num_classes = 1000,
+      double dropout = .2);
 
   torch::Tensor forward(torch::Tensor x);
 };

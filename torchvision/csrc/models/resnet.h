@@ -186,23 +186,33 @@ torch::Tensor ResNetImpl<Block>::forward(torch::Tensor x) {
 }
 
 struct VISION_API ResNet18Impl : ResNetImpl<_resnetimpl::BasicBlock> {
-  explicit ResNet18Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
+  explicit ResNet18Impl(
+      int64_t num_classes = 1000,
+      bool zero_init_residual = false);
 };
 
 struct VISION_API ResNet34Impl : ResNetImpl<_resnetimpl::BasicBlock> {
-  explicit ResNet34Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
+  explicit ResNet34Impl(
+      int64_t num_classes = 1000,
+      bool zero_init_residual = false);
 };
 
 struct VISION_API ResNet50Impl : ResNetImpl<_resnetimpl::Bottleneck> {
-  explicit ResNet50Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
+  explicit ResNet50Impl(
+      int64_t num_classes = 1000,
+      bool zero_init_residual = false);
 };
 
 struct VISION_API ResNet101Impl : ResNetImpl<_resnetimpl::Bottleneck> {
-  explicit ResNet101Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
+  explicit ResNet101Impl(
+      int64_t num_classes = 1000,
+      bool zero_init_residual = false);
 };
 
 struct VISION_API ResNet152Impl : ResNetImpl<_resnetimpl::Bottleneck> {
-  explicit ResNet152Impl(int64_t num_classes = 1000, bool zero_init_residual = false);
+  explicit ResNet152Impl(
+      int64_t num_classes = 1000,
+      bool zero_init_residual = false);
 };
 
 struct VISION_API ResNext50_32x4dImpl : ResNetImpl<_resnetimpl::Bottleneck> {
