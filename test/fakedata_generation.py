@@ -173,6 +173,18 @@ def imagenet_root():
 
 @contextlib.contextmanager
 def vggface2_root():
+    """
+    Generates a dataset with the following folder structure and returns the path root:
+    <root>
+    └── vggface2
+        ├── bb_landmark.tar.gz ('bb_landmark' when uncompressed)
+        ├── vggface2_train.tar.gz ('train' when uncompressed)
+        ├── vggface2_test.tar.gz ('test' when uncompressed)
+        ├── train_list.txt
+        └── test_list.txt
+
+    The dataset consist of 1 image in the train set and 1 image in the test set.
+    """
 
     class_id = 'n000001'
     image_id = '0001'
