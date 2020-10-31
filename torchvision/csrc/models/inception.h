@@ -11,7 +11,7 @@ struct VISION_API BasicConv2dImpl : torch::nn::Module {
   torch::nn::Conv2d conv{nullptr};
   torch::nn::BatchNorm2d bn{nullptr};
 
-  BasicConv2dImpl(torch::nn::Conv2dOptions options, double std_dev = 0.1);
+  explicit BasicConv2dImpl(torch::nn::Conv2dOptions options, double std_dev = 0.1);
 
   torch::Tensor forward(torch::Tensor x);
 };
@@ -30,7 +30,7 @@ struct VISION_API InceptionAImpl : torch::nn::Module {
 struct VISION_API InceptionBImpl : torch::nn::Module {
   BasicConv2d branch3x3, branch3x3dbl_1, branch3x3dbl_2, branch3x3dbl_3;
 
-  InceptionBImpl(int64_t in_channels);
+  explicit InceptionBImpl(int64_t in_channels);
 
   torch::Tensor forward(const torch::Tensor& x);
 };
@@ -50,7 +50,7 @@ struct VISION_API InceptionDImpl : torch::nn::Module {
   BasicConv2d branch3x3_1, branch3x3_2, branch7x7x3_1, branch7x7x3_2,
       branch7x7x3_3, branch7x7x3_4;
 
-  InceptionDImpl(int64_t in_channels);
+  explicit InceptionDImpl(int64_t in_channels);
 
   torch::Tensor forward(const torch::Tensor& x);
 };
@@ -60,7 +60,7 @@ struct VISION_API InceptionEImpl : torch::nn::Module {
       branch3x3dbl_1, branch3x3dbl_2, branch3x3dbl_3a, branch3x3dbl_3b,
       branch_pool;
 
-  InceptionEImpl(int64_t in_channels);
+  explicit InceptionEImpl(int64_t in_channels);
 
   torch::Tensor forward(const torch::Tensor& x);
 };
@@ -110,7 +110,7 @@ struct VISION_API InceptionV3Impl : torch::nn::Module {
 
   _inceptionimpl::InceptionAux AuxLogits{nullptr};
 
-  InceptionV3Impl(
+  explicit InceptionV3Impl(
       int64_t num_classes = 1000,
       bool aux_logits = true,
       bool transform_input = false);
