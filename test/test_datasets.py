@@ -16,6 +16,12 @@ import itertools
 
 
 try:
+    import pandas
+    HAS_PANDAS = True
+except ImportError:
+    HAS_PANDAS = False
+
+try:
     import scipy
     HAS_SCIPY = True
 except ImportError:
@@ -139,6 +145,7 @@ class Tester(unittest.TestCase):
             dataset = torchvision.datasets.ImageNet(root, split='val')
             self.generic_classification_dataset_test(dataset)
 
+    @unittest.skipIf(not HAS_PANDAS, "pandas unavailable")
     def test_vggface2(self):
         with vggface2_root() as root:
             dataset = torchvision.datasets.VGGFace2(root, split='train')
