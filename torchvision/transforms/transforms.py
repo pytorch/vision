@@ -16,8 +16,8 @@ except ImportError:
 
 from . import functional as F
 
-__all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize", "Resize", "Scale",
-           "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
+__all__ = ["FillTransform", "Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize",
+           "Resize", "Scale", "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
            "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
            "RandomPerspective", "RandomErasing", "GaussianBlur"]
@@ -30,6 +30,36 @@ _pil_interpolation_to_str = {
     Image.HAMMING: 'PIL.Image.HAMMING',
     Image.BOX: 'PIL.Image.BOX',
 }
+
+
+class FillTransform(torch.nn.Module):
+    """
+        A temporary tolerance for torch script, where Union/Any type is not supported as of torch 1.7.0,
+        by casting to the most inclusive type. In this case, int and float -> float.
+        No need to change None as Optional is supported by torch script.
+    """
+
+    def __init__(self, fillcolor):
+        super().__init__()
+        self.fillcolor = fillcolor
+
+    def _cast_fillcolor(self, img):
+        if isinstance(img, Tensor) and self.fillcolor is not None:  # Do nothing for images other than tensor image
+            if isinstance(self.fillcolor, (int, float)):
+                return float(self.fillcolor)
+            else:
+                raise ValueError('Fill color for tensor images should be int or float.')
+
+            # For future n-tuple supports, cast to List[float]
+            # if isinstance(self.fillcolor, (int, float)):
+            #     return [float(self.fillcolor)] * F._get_image_num_channels(img)
+            # elif isinstance(self.fillcolor, tuple):
+            #     return [float(x) for x in self.fillcolor]
+            # else:
+            #     raise ValueError('Fill color for tensor images should be int, float or n-tuple.')
+
+        else:
+            return self.fillcolor
 
 
 class Compose:
@@ -650,7 +680,7 @@ class RandomVerticalFlip(torch.nn.Module):
         return self.__class__.__name__ + '(p={})'.format(self.p)
 
 
-class RandomPerspective(torch.nn.Module):
+class RandomPerspective(FillTransform):
     """Performs a random perspective transformation of the given image with a given probability.
     The image can be a PIL Image or a Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
@@ -669,11 +699,11 @@ class RandomPerspective(torch.nn.Module):
     """
 
     def __init__(self, distortion_scale=0.5, p=0.5, interpolation=Image.BILINEAR, fill=0):
-        super().__init__()
+        super().__init__(fill)
         self.p = p
         self.interpolation = interpolation
         self.distortion_scale = distortion_scale
-        self.fill = fill
+        # self.fill = fill
 
     def forward(self, img):
         """
@@ -684,14 +714,12 @@ class RandomPerspective(torch.nn.Module):
             PIL Image or Tensor: Randomly transformed image.
         """
 
-        fill = self.fill
-        if isinstance(img, Tensor) and isinstance(self.fill, int):
-            fill = float(fill)
+        fillcolor = self._cast_fillcolor(img)
 
         if torch.rand(1) < self.p:
             width, height = F._get_image_size(img)
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
-            return F.perspective(img, startpoints, endpoints, self.interpolation, fill)
+            return F.perspective(img, startpoints, endpoints, self.interpolation, fillcolor)
         return img
 
     @staticmethod
@@ -1130,7 +1158,7 @@ class ColorJitter(torch.nn.Module):
         return format_string
 
 
-class RandomRotation(torch.nn.Module):
+class RandomRotation(FillTransform):
     """Rotate the image by angle.
     The image can be a PIL Image or a Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
@@ -1158,7 +1186,7 @@ class RandomRotation(torch.nn.Module):
     """
 
     def __init__(self, degrees, resample=False, expand=False, center=None, fill=None):
-        super().__init__()
+        super().__init__(fill)
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 
         if center is not None:
@@ -1168,7 +1196,7 @@ class RandomRotation(torch.nn.Module):
 
         self.resample = resample
         self.expand = expand
-        self.fill = fill
+        # self.fill = fill
 
     @staticmethod
     def get_params(degrees: List[float]) -> float:
@@ -1188,11 +1216,9 @@ class RandomRotation(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Rotated image.
         """
-        fill = self.fill
-        if isinstance(img, Tensor) and isinstance(self.fill, int):
-            fill = float(fill)
+        fillcolor = self._cast_fillcolor(img)
         angle = self.get_params(self.degrees)
-        return F.rotate(img, angle, self.resample, self.expand, self.center, self.fill)
+        return F.rotate(img, angle, self.resample, self.expand, self.center, fillcolor)
 
     def __repr__(self):
         format_string = self.__class__.__name__ + '(degrees={0}'.format(self.degrees)
@@ -1200,13 +1226,13 @@ class RandomRotation(torch.nn.Module):
         format_string += ', expand={0}'.format(self.expand)
         if self.center is not None:
             format_string += ', center={0}'.format(self.center)
-        if self.fill is not None:
-            format_string += ', fill={0}'.format(self.fill)
+        if self.fillcolor is not None:
+            format_string += ', fillcolor={0}'.format(self.fillcolor)
         format_string += ')'
         return format_string
 
 
-class RandomAffine(torch.nn.Module):
+class RandomAffine(FillTransform):
     """Random affine transformation of the image keeping center invariant.
     The image can be a PIL Image or a Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
@@ -1239,7 +1265,7 @@ class RandomAffine(torch.nn.Module):
     """
 
     def __init__(self, degrees, translate=None, scale=None, shear=None, resample=0, fillcolor=0):
-        super().__init__()
+        super().__init__(fillcolor)
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 
         if translate is not None:
@@ -1262,7 +1288,7 @@ class RandomAffine(torch.nn.Module):
             self.shear = shear
 
         self.resample = resample
-        self.fillcolor = fillcolor
+        # self.fillcolor = fillcolor
 
     @staticmethod
     def get_params(
@@ -1309,13 +1335,11 @@ class RandomAffine(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Affine transformed image.
         """
-        fill = self.fillcolor
-        if isinstance(img, Tensor) and isinstance(self.fillcolor, int):
-            fill = float(fill)
+        fillcolor = self._cast_fillcolor(img)
         img_size = F._get_image_size(img)
 
         ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img_size)
-        return F.affine(img, *ret, resample=self.resample, fillcolor=fill)
+        return F.affine(img, *ret, resample=self.resample, fillcolor=fillcolor)
 
     def __repr__(self):
         s = '{name}(degrees={degrees}'

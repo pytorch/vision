@@ -539,7 +539,7 @@ class Tester(TransformsTester):
     def _test_affine_all_ops(self, tensor, pil_img, scripted_affine):
         # 4) Test rotation + translation + scale + share
         test_configs = [
-            (45, [5, 6], 1.0, [0.0, 0.0], None),
+            (45.5, [5, 6], 1.0, [0.0, 0.0], None),
             (33, (5, -4), 1.0, [0.0, 0.0], 0),
             (45, [-5, 4], 1.2, [0.0, 0.0], 7),
             (33, (-4, -8), 2.0, [0.0, 0.0], 255),
