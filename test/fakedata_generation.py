@@ -172,6 +172,102 @@ def imagenet_root():
 
 
 @contextlib.contextmanager
+def vggface2_root():
+
+    class_id = 'n000001'
+    image_id = '0001'
+    face_id = '01'
+    basefolder = 'vggface2'
+
+    def _make_image(file):
+        PIL.Image.fromarray(np.zeros((32, 32, 3), dtype=np.uint8)).save(file)
+
+    def _make_tar(archive, content, arcname=None, compress=False):
+        mode = 'w:gz' if compress else 'w'
+        if arcname is None:
+            arcname = os.path.basename(content)
+        with tarfile.open(archive, mode) as fh:
+            fh.add(content, arcname=arcname)
+
+    def _make_image_list_files(root):
+        image_list_contents = os.path.join(class_id, image_id + '_' + face_id + '.jpg')  # e.g. n000001/0001_01.jpg
+        # train image list
+        image_list_file = os.path.join(root, "train_list.txt")
+        with open(image_list_file, "w") as txt_file:
+            txt_file.write(image_list_contents)
+        # test image list
+        image_list_file = os.path.join(root, "test_list.txt")
+        with open(image_list_file, "w") as txt_file:
+            txt_file.write(image_list_contents)
+
+    def _make_train_archive(root):
+        with get_tmp_dir() as tmp:
+            extracted_dir = os.path.join(tmp, 'train', class_id)
+            os.makedirs(extracted_dir)
+            print("EXTRACTED_DIR: " + extracted_dir)
+            _make_image(os.path.join(extracted_dir, image_id + '_' + face_id + '.jpg'))
+            train_archive = os.path.join(root, 'vggface2_train.tar.gz')
+            top_level_dir = os.path.join(tmp, 'train')
+            _make_tar(train_archive, top_level_dir, arcname='train', compress=True)
+
+    def _make_test_archive(root):
+        with get_tmp_dir() as tmp:
+            extracted_dir = os.path.join(tmp, 'test', class_id)
+            os.makedirs(extracted_dir)
+            _make_image(os.path.join(extracted_dir, image_id + '_' + face_id + '.jpg'))
+            test_archive = os.path.join(root, 'vggface2_test.tar.gz')
+            top_level_dir = os.path.join(tmp, 'test')
+            _make_tar(test_archive, top_level_dir, arcname='test', compress=True)
+
+    def _make_bb_landmark_archive(root):
+        train_bb_contents = 'NAME_ID,X,Y,W,H\n"n000001/0001_01",161,140,224,324'
+        test_bb_contents = 'NAME_ID,X,Y,W,H\n"n000001/0001_01",161,140,224,324'
+        train_landmark_contents = ('NAME_ID,P1X,P1Y,P2X,P2Y,P3X,P3Y,P4X,P4Y,P5X,P5Y\n'
+                                   '"n000001/0001_01",75.81253,110.2077,103.1778,104.6074,'
+                                   '90.06353,133.3624,85.39182,149.4176,114.9009,144.9259')
+        test_landmark_contents = ('NAME_ID,P1X,P1Y,P2X,P2Y,P3X,P3Y,P4X,P4Y,P5X,P5Y\n'
+                                  '"n000001/0001_01",75.81253,110.2077,103.1778,104.6074,'
+                                  '90.06353,133.3624,85.39182,149.4176,114.9009,144.9259')
+
+        with get_tmp_dir() as tmp:
+            extracted_dir = os.path.join(tmp, 'bb_landmark')
+            os.makedirs(extracted_dir)
+
+            # bbox training file
+            bbox_file = os.path.join(extracted_dir, "loose_bb_train.csv")
+            with open(bbox_file, "w") as csv_file:
+                csv_file.write(train_bb_contents)
+
+            # bbox testing file
+            bbox_file = os.path.join(extracted_dir, "loose_bb_test.csv")
+            with open(bbox_file, "w") as csv_file:
+                csv_file.write(test_bb_contents)
+
+            # landmark training file
+            landmark_file = os.path.join(extracted_dir, "loose_landmark_train.csv")
+            with open(landmark_file, "w") as csv_file:
+                csv_file.write(train_landmark_contents)
+
+            # landmark testing file
+            landmark_file = os.path.join(extracted_dir, "loose_landmark_test.csv")
+            with open(landmark_file, "w") as csv_file:
+                csv_file.write(test_landmark_contents)
+
+            archive = os.path.join(root, 'bb_landmark.tar.gz')
+            _make_tar(archive, extracted_dir, compress=True)
+
+    with get_tmp_dir() as root:
+        root_base = os.path.join(root, basefolder)
+        os.makedirs(root_base)
+        _make_train_archive(root_base)
+        _make_test_archive(root_base)
+        _make_image_list_files(root_base)
+        _make_bb_landmark_archive(root_base)
+
+        yield root
+
+
+@contextlib.contextmanager
 def cityscapes_root():
 
     def _make_image(file):
