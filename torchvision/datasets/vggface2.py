@@ -79,7 +79,7 @@ class VGGFace2(VisionDataset):
             raise RuntimeError(msg)
 
         # check arguments
-        if split not in ('train', 'test'):
+        if split not in ("train", "test"):
             raise ValueError('split \"{}\" is not recognized.'.format(split))
         self.split = split
         self.img_info: List[Dict[str, object]] = []
@@ -92,9 +92,9 @@ class VGGFace2(VisionDataset):
         if not (all(x in ["class_id", "image_id", "face_id", "bbox", "landmarks", ""] for x in self.target_type)):
             raise ValueError("target_type \"{}\" is not recognized.".format(self.target_type))
         if not self.target_type and self.target_transform is not None:
-            raise RuntimeError('target_transform is specified but target_type is empty')
+            raise RuntimeError("target_transform is specified but target_type is empty")
 
-        image_list_file = 'train_list.txt' if self.split == 'train' else 'test_list.txt'
+        image_list_file = "train_list.txt" if self.split == "train" else "test_list.txt"
         self.image_list_file = os.path.join(self.root, image_list_file)
 
         # prepare dataset
@@ -122,12 +122,12 @@ class VGGFace2(VisionDataset):
                 image_id, face_id = image_face_id.split("_")
                 img_filepath = os.path.join(self.root, self.split, img_file)
                 self.img_info.append({
-                    'img_path': img_filepath,
-                    'class_id': class_id,
-                    'image_id': image_id,
-                    'face_id': face_id,
-                    'bbox': torch.tensor(self.bbox.loc[img_filename].values),
-                    'landmarks': torch.tensor(self.landmarks.loc[img_filename].values),
+                    "img_path": img_filepath,
+                    "class_id": class_id,
+                    "image_id": image_id,
+                    "face_id": face_id,
+                    "bbox": torch.tensor(self.bbox.loc[img_filename].values),
+                    "landmarks": torch.tensor(self.landmarks.loc[img_filename].values),
                 })
 
     def __len__(self) -> int:
@@ -137,7 +137,7 @@ class VGGFace2(VisionDataset):
         img_info = self.img_info[index]
 
         # prepare image
-        img = Image.open(img_info['img_path'])
+        img = Image.open(img_info["img_path"])
         if self.transform:
             img = self.transform(img)
 
@@ -157,4 +157,4 @@ class VGGFace2(VisionDataset):
 
     def extra_repr(self) -> str:
         lines = ["Target type: {target_type}", "Split: {split}"]
-        return '\n'.join(lines).format(**self.__dict__)
+        return "\n".join(lines).format(**self.__dict__)
