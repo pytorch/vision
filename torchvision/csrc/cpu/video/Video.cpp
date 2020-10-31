@@ -334,6 +334,5 @@ std::tuple<torch::Tensor, double> Video::Next() {
     LOG(ERROR) << "Decoder failed with ERROR_CODE " << res;
   }
 
-  std::tuple<torch::Tensor, double> result = {outFrame, frame_pts_s};
-  return result;
+  return std::make_tuple(outFrame, frame_pts_s);
 }
