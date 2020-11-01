@@ -20,13 +20,13 @@ class VGGFace2(VisionDataset):
         Args:
             root (string): Root directory of the VGGFace2 Dataset.
             Expects the following folder structure if download=False:
-                .
-                └── vggface2
-                    ├── bb_landmark.tar.gz (or 'bb_landmark' if uncompressed)
-                    ├── vggface2_train.tar.gz (or 'train' if uncompressed)
-                    ├── vggface2_test.tar.gz (or 'test' if uncompressed)
-                    ├── train_list.txt
-                    └── test_list.txt
+                <root>
+                    └── vggface2
+                        ├── bb_landmark.tar.gz (or 'bb_landmark' if uncompressed)
+                        ├── vggface2_train.tar.gz (or 'train' if uncompressed)
+                        ├── vggface2_test.tar.gz (or 'test' if uncompressed)
+                        ├── train_list.txt
+                        └── test_list.txt
             split (string): The dataset split to use. One of {``train``, ``test``}.
                 Defaults to ``train``.
             target_type (string): The type of target to use. One of
