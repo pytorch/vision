@@ -22,9 +22,9 @@ class WIDERFace(VisionDataset):
                 .
                 └── widerface
                     ├── wider_face_split.zip
-                    ├── WIDER_test.zip
                     ├── WIDER_train.zip
-                    └── WIDER_val.zip
+                    ├── WIDER_val.zip
+                    └── WIDER_test.zip
         split (string): The dataset split to use. One of {``train``, ``val``, ``test``}.
             Defaults to ``train``.
         target_type (string): The type of target to use, can be one
