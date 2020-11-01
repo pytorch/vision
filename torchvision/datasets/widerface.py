@@ -94,7 +94,8 @@ class WIDERFace(VisionDataset):
                                "You can use download=True to download it")
 
         # process dataset
-        self.img_info: List[Dict[str, object]] = []
+        # dataset will be stored as a list of dict objects (img_info)
+        self.img_info: Any = []
         if self.split in ("train", "val"):
             self.parse_train_val_annotations_file()
         else:
