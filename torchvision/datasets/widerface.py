@@ -1,7 +1,8 @@
 from PIL import Image
 import os
+from os.path import abspath, expanduser
 import torch
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from .utils import download_file_from_google_drive, check_integrity, download_url, extract_archive
 from .vision import VisionDataset
 
@@ -73,6 +74,8 @@ class WIDERFace(VisionDataset):
             raise ValueError("split \"{}\" is not recognized.".format(split))
         self.split = split
 
+        if self.split == "test":
+            target_type = ""
         if isinstance(target_type, list):
             self.target_type = target_type
         else:
@@ -90,11 +93,8 @@ class WIDERFace(VisionDataset):
             raise RuntimeError("Dataset not found or corrupted. " +
                                "You can use download=True to download it")
 
-        # prepare dataset
-        self.imgs_path: List[str] = []
-        self.raw_annotations: List[torch.Tensor] = []
-
         # process dataset
+        self.img_info: List[Dict[str, object]] = []
         if self.split in ("train", "val"):
             self.parse_train_val_annotations_file()
         elif self.split == "test":
@@ -112,23 +112,22 @@ class WIDERFace(VisionDataset):
         """
 
         # stay consistent with other datasets and return a PIL Image
-        img = Image.open(self.imgs_path[index])
+        img = Image.open(self.img_info[index]["img_path"])
 
         if self.transform is not None:
             img = self.transform(img)
 
-        if self.split == "test":
-            return img, None
-
-        # prepare target in the train/val split
+        # prepare target
         target: Any = []
         for t in self.target_type:
             if t == "raw":
-                target.append(self.raw_annotations[index])
+                target.append(self.img_info[index][t])
             elif t == "bbox":
-                target.append(self.raw_annotations[index][:, :4])
+                # bbox coordinates are the first 4 values in the raw annotation
+                target.append(self.img_info[index]["raw"][:, :4])
             elif t == "attr":
-                target.append(self.raw_annotations[index][:, 4:])
+                # attributes are defined after the bbox coordinates
+                target.append(self.img_info[index]["raw"][:, 4:])
             elif t == "":
                 target = None
                 break
@@ -142,7 +141,7 @@ class WIDERFace(VisionDataset):
         return img, target
 
     def __len__(self) -> int:
-        return len(self.imgs_path)
+        return len(self.img_info)
 
     def extra_repr(self) -> str:
         lines = ["Target type: {target_type}", "Split: {split}"]
@@ -162,7 +161,7 @@ class WIDERFace(VisionDataset):
             line = line.rstrip()
             if file_name_line:
                 img_path = os.path.join(self.root, "WIDER_" + self.split, "images", line)
-                self.imgs_path.append(img_path)
+                img_path = abspath(expanduser(img_path))
                 file_name_line = False
                 num_boxes_line = True
             elif num_boxes_line:
@@ -177,7 +176,10 @@ class WIDERFace(VisionDataset):
                 if box_counter >= num_boxes:
                     box_annotation_line = False
                     file_name_line = True
-                    self.raw_annotations.append(torch.tensor(labels))
+                    self.img_info.append({
+                        "img_path": img_path,
+                        "raw": torch.tensor(labels),
+                    })
                     box_counter = 0
                     labels.clear()
             else:
@@ -186,12 +188,14 @@ class WIDERFace(VisionDataset):
 
     def parse_test_annotations_file(self) -> None:
         filepath = os.path.join(self.root, "wider_face_split", "wider_face_test_filelist.txt")
+        filepath = abspath(expanduser(filepath))
         f = open(filepath, "r")
         lines = f.readlines()
         for line in lines:
             line = line.rstrip()
             img_path = os.path.join(self.root, "WIDER_test", "images", line)
-            self.imgs_path.append(img_path)
+            img_path = abspath(expanduser(img_path))
+            self.img_info.append({"img_path": img_path})
         f.close()
 
     def _check_integrity(self) -> bool:
