@@ -172,6 +172,86 @@ def imagenet_root():
 
 
 @contextlib.contextmanager
+def widerface_root():
+    """
+    <root>
+    └── widerface
+        ├── wider_face_split.zip ('wider_face_split' when uncompressed)
+        ├── WIDER_train.zip ('WIDER_train' when uncompressed)
+        ├── WIDER_val.zip ('WIDER_val' when uncompressed)
+        └── WIDER_test.zip ('WIDER_test' when uncompressed)
+
+    The dataset consist of
+      1 image for each dataset split (train, val, test)
+      annotation files for each split
+    """
+    import shutil
+
+    def _make_image(file):
+        PIL.Image.fromarray(np.zeros((32, 32, 3), dtype=np.uint8)).save(file)
+
+    def _make_train_archive(root):
+        with get_tmp_dir() as tmp:
+            extracted_dir = os.path.join(tmp, 'WIDER_train', 'images', '0--Parade')
+            os.makedirs(extracted_dir)
+            _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_1.jpg'))
+            zipped_file = os.path.join(root, 'WIDER_train')
+            shutil.make_archive(zipped_file, 'zip', root_dir=tmp)
+
+    def _make_val_archive(root):
+        with get_tmp_dir() as tmp:
+            extracted_dir = os.path.join(tmp, 'WIDER_val', 'images', '0--Parade')
+            os.makedirs(extracted_dir)
+            _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_2.jpg'))
+            zipped_file = os.path.join(root, 'WIDER_val')
+            shutil.make_archive(zipped_file, 'zip', root_dir=tmp)
+
+    def _make_test_archive(root):
+        with get_tmp_dir() as tmp:
+            extracted_dir = os.path.join(tmp, 'WIDER_test', 'images', '0--Parade')
+            os.makedirs(extracted_dir)
+            _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_3.jpg'))
+            zipped_file = os.path.join(root, 'WIDER_test')
+            shutil.make_archive(zipped_file, 'zip', root_dir=tmp)
+
+    def _make_annotations_archive(root):
+        train_bbox_contents = '0--Parade/0_Parade_marchingband_1_1.jpg\n1\n449 330 122 149 0 0 0 0 0 0\n'
+        val_bbox_contents = '0--Parade/0_Parade_marchingband_1_2.jpg\n1\n501 160 285 443 0 0 0 0 0 0\n'
+        test_filelist_contents = '0--Parade/0_Parade_marchingband_1_3.jpg\n'
+
+        with get_tmp_dir() as tmp:
+            extracted_dir = os.path.join(tmp, 'wider_face_split')
+            os.makedirs(extracted_dir)
+
+            # bbox training file
+            bbox_file = os.path.join(extracted_dir, "wider_face_train_bbx_gt.txt")
+            with open(bbox_file, "w") as txt_file:
+                txt_file.write(train_bbox_contents)
+
+            # bbox validation file
+            bbox_file = os.path.join(extracted_dir, "wider_face_val_bbx_gt.txt")
+            with open(bbox_file, "w") as txt_file:
+                txt_file.write(val_bbox_contents)
+
+            # test filelist file
+            filelist_file = os.path.join(extracted_dir, "wider_face_test_filelist.txt")
+            with open(filelist_file, "w") as txt_file:
+                txt_file.write(test_filelist_contents)
+
+            # zip up all annotation files
+            zipped_file = os.path.join(root, 'wider_face_split')
+            shutil.make_archive(zipped_file, 'zip', root_dir=tmp)
+
+    with get_tmp_dir() as root:
+        _make_train_archive(root)
+        _make_val_archive(root)
+        _make_test_archive(root)
+        _make_annotations_archive(root)
+
+        yield root
+
+
+@contextlib.contextmanager
 def cityscapes_root():
 
     def _make_image(file):
