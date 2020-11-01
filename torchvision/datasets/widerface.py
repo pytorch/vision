@@ -97,10 +97,8 @@ class WIDERFace(VisionDataset):
         self.img_info: List[Dict[str, object]] = []
         if self.split in ("train", "val"):
             self.parse_train_val_annotations_file()
-        elif self.split == "test":
-            self.parse_test_annotations_file()
         else:
-            raise ValueError("split \"{}\" is not recognized.".format(self.split))
+            self.parse_test_annotations_file()
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
