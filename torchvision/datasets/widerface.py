@@ -20,12 +20,12 @@ class WIDERFace(VisionDataset):
     Args:
         root (string): Root directory where images and annotations are downloaded to.
             Expects the following folder structure if download=False:
-                .
-                └── widerface
-                    ├── wider_face_split.zip
-                    ├── WIDER_train.zip
-                    ├── WIDER_val.zip
-                    └── WIDER_test.zip
+                <root>
+                    └── widerface
+                        ├── wider_face_split.zip
+                        ├── WIDER_train.zip
+                        ├── WIDER_val.zip
+                        └── WIDER_test.zip
         split (string): The dataset split to use. One of {``train``, ``val``, ``test``}.
             Defaults to ``train``.
         target_type (string): The type of target to use, can be one
