@@ -31,9 +31,13 @@ from .image import (
 
 
 if _HAS_VIDEO_OPT:
+
     def _has_video_opt():
         return True
+
+
 else:
+
     def _has_video_opt():
         return False
 
@@ -91,15 +95,24 @@ class VideoReader:
 
     def __init__(self, path, stream="video"):
         if not _has_video_opt():
-            raise RuntimeError("Not compiled with video_reader support")
+            raise RuntimeError(
+                "Not compiled with video_reader support, "
+                + "to enable video_reader support, please install "
+                + "ffmpeg (version 4.2 is currently supported) and"
+                + "build torchvision from source."
+            )
         self._c = torch.classes.torchvision.Video(path, stream)
 
     def __next__(self):
-        """Decodes and returns the next frame of the current stream
+        """Decodes and returns the next frame of the current stream.
+        Frames are encoded as a dict with mandatory
+        data and pts fields, where data is a tensor, and pts is a
+        presentation timestamp of the frame expressed in seconds
+        as a float.
 
         Returns:
-            (dict): a dictionary with fields ``data`` and ``pts``
-            containing decoded frame and corresponding timestamp
+            (dict): a dictionary and containing decoded frame (``data``)
+            and corresponding timestamp (``pts``) in seconds
 
         """
         frame, pts = self._c.next()
