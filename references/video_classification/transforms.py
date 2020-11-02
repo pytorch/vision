@@ -1,10 +1,18 @@
-def bhwc_to_bchw(vid):
+import torch
+import torch.nn as nn
+
+
+class ConvertBHWCtoBCHW(nn.Module):
     """Convert tensor from (B, H, W, C) to (B, C, H, W)
     """
-    return vid.permute(0, 3, 1, 2)
+
+    def forward(self, vid: torch.Tensor) -> torch.Tensor:
+        return vid.permute(0, 3, 1, 2)
 
 
-def bchw_to_cbhw(vid):
+class ConvertBCHWtoCBHW(nn.Module):
     """Convert tensor from (B, C, H, W) to (C, B, H, W)
     """
-    return vid.permute(1, 0, 2, 3)
+
+    def forward(self, vid: torch.Tensor) -> torch.Tensor:
+        return vid.permute(1, 0, 2, 3)

@@ -13,7 +13,7 @@ from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler
 import utils
 
 from scheduler import WarmupMultiStepLR
-from transforms import bhwc_to_bchw, bchw_to_cbhw
+from transforms import ConvertBHWCtoBCHW, ConvertBCHWtoCBHW
 
 try:
     from apex import amp
@@ -119,13 +119,13 @@ def main(args):
     st = time.time()
     cache_path = _get_cache_path(traindir)
     transform_train = torchvision.transforms.Compose([
-        bhwc_to_bchw,
+        ConvertBHWCtoBCHW(),
         T.ConvertImageDtype(torch.float32),
         T.Resize((128, 171)),
         T.RandomHorizontalFlip(),
         normalize,
         T.RandomCrop((112, 112)),
-        bchw_to_cbhw
+        ConvertBCHWtoCBHW()
     ])
 
     if args.cache_dataset and os.path.exists(cache_path):
@@ -155,12 +155,12 @@ def main(args):
     cache_path = _get_cache_path(valdir)
 
     transform_test = torchvision.transforms.Compose([
-        bhwc_to_bchw,
+        ConvertBHWCtoBCHW(),
         T.ConvertImageDtype(torch.float32),
         T.Resize((128, 171)),
         normalize,
         T.CenterCrop((112, 112)),
-        bchw_to_cbhw
+        ConvertBCHWtoCBHW()
     ])
 
     if args.cache_dataset and os.path.exists(cache_path):

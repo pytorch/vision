@@ -21,6 +21,8 @@ Run the training on a single node with 8 GPUs:
 python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py --data-path=/data/kinectics400 --train-dir=train --val-dir=val --batch-size=16 --cache-dataset --sync-bn --apex
 ```
 
+
+
 ### Single GPU 
 
 **Note:** training on a single gpu can be extremely slow. 
