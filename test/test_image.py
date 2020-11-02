@@ -237,6 +237,19 @@ class ImageTester(unittest.TestCase):
                 RuntimeError, "No such file or directory: '日本語'"):
             read_file('日本語')
 
+    def test_read_file_non_ascii_test(self):
+        with get_tmp_dir() as d:
+            fname, content = '日本語(Japanese).bin', b'TorchVision\211\n'
+            fpath = os.path.join(d, fname)
+            with open(fpath, 'wb') as f:
+                f.write(content)
+
+            size = os.path.getsize(fpath)
+            data = torch.from_file(fpath, dtype=torch.uint8, size=size)
+            expected = torch.tensor(list(content), dtype=torch.uint8)
+            self.assertTrue(data.equal(expected))
+            os.unlink(fpath)
+
     def test_write_file(self):
         with get_tmp_dir() as d:
             fname, content = 'test1.bin', b'TorchVision\211\n'
