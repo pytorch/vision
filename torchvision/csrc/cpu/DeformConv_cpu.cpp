@@ -79,8 +79,8 @@ const int kMaxParallelImgs = 32;
 template <typename scalar_t>
 static scalar_t bilinear_interpolate(
     const scalar_t* in,
-    const int height,
-    const int width,
+    int height,
+    int width,
     scalar_t h,
     scalar_t w) {
   if (h <= -1 || height <= h || w <= -1 || width <= w) {
@@ -117,24 +117,24 @@ static scalar_t bilinear_interpolate(
 
 template <typename scalar_t>
 static void deformable_im2col_kernel(
-    const int n,
+    int n,
     const scalar_t* input,
     const scalar_t* offset,
-    const int height,
-    const int width,
-    const int weight_h,
-    const int weight_w,
-    const int pad_h,
-    const int pad_w,
-    const int stride_h,
-    const int stride_w,
-    const int dil_h,
-    const int dil_w,
-    const int batch_sz,
-    const int n_in_channels,
-    const int n_offset_grps,
-    const int out_h,
-    const int out_w,
+    int height,
+    int width,
+    int weight_h,
+    int weight_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dil_h,
+    int dil_w,
+    int batch_sz,
+    int n_in_channels,
+    int n_offset_grps,
+    int out_h,
+    int out_w,
     scalar_t* columns) {
   for (int index = 0; index != n; ++index) {
     const int out_x = index % out_w;
@@ -174,8 +174,8 @@ static void deformable_im2col_kernel(
 }
 
 static void deformable_im2col(
-    const at::Tensor input,
-    const at::Tensor data_offset,
+    const at::Tensor& input,
+    const at::Tensor& data_offset,
     int n_in_channels,
     int height,
     int width,
@@ -403,24 +403,24 @@ at::Tensor DeformConv2d_forward_cpu(
 
 template <typename scalar_t>
 static void deformable_col2im_kernel(
-    const int n,
+    int n,
     const scalar_t* col,
     const scalar_t* offset,
-    const int channels,
-    const int height,
-    const int width,
-    const int kernel_h,
-    const int kernel_w,
-    const int pad_h,
-    const int pad_w,
-    const int stride_h,
-    const int stride_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int batch_sz,
-    const int n_offset_grps,
-    const int out_h,
-    const int out_w,
+    int channels,
+    int height,
+    int width,
+    int kernel_h,
+    int kernel_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dilation_h,
+    int dilation_w,
+    int batch_sz,
+    int n_offset_grps,
+    int out_h,
+    int out_w,
     scalar_t* grad_im) {
   for (int index = 0; index != n; ++index) {
     const int out_x = index % out_w;
@@ -461,21 +461,21 @@ static void deformable_col2im_kernel(
 }
 
 static void compute_grad_input(
-    const at::Tensor columns,
-    const at::Tensor offset,
-    const int channels,
-    const int height,
-    const int width,
-    const int weight_h,
-    const int weight_w,
-    const int pad_h,
-    const int pad_w,
-    const int stride_h,
-    const int stride_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int parallel_imgs,
-    const int n_offset_grps,
+    const at::Tensor& columns,
+    const at::Tensor& offset,
+    int channels,
+    int height,
+    int width,
+    int weight_h,
+    int weight_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dilation_h,
+    int dilation_w,
+    int parallel_imgs,
+    int n_offset_grps,
     at::Tensor grad_im) {
   int out_h =
       (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
@@ -512,8 +512,8 @@ static void compute_grad_input(
 template <typename scalar_t>
 static scalar_t get_coordinate_weight(
     const scalar_t* im_data,
-    const int height,
-    const int width,
+    int height,
+    int width,
     scalar_t y,
     scalar_t x,
     bool is_y_direction) {
@@ -544,26 +544,26 @@ static scalar_t get_coordinate_weight(
 
 template <typename scalar_t>
 static void deformable_col2im_coord_kernel(
-    const int n,
+    int n,
     const scalar_t* col,
     const scalar_t* im,
     const scalar_t* offset,
-    const int channels,
-    const int height,
-    const int width,
-    const int weight_h,
-    const int weight_w,
-    const int pad_h,
-    const int pad_w,
-    const int stride_h,
-    const int stride_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int batch_sz,
-    const int offset_channels,
-    const int n_offset_grps,
-    const int out_h,
-    const int out_w,
+    int channels,
+    int height,
+    int width,
+    int weight_h,
+    int weight_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dilation_h,
+    int dilation_w,
+    int batch_sz,
+    int offset_channels,
+    int n_offset_grps,
+    int out_h,
+    int out_w,
     scalar_t* grad_offset) {
   for (int index = 0; index != n; ++index) {
     scalar_t val = 0;
@@ -619,22 +619,22 @@ static void deformable_col2im_coord_kernel(
 }
 
 static void compute_grad_offset(
-    const at::Tensor columns,
-    const at::Tensor input,
-    const at::Tensor offset,
-    const int channels,
-    const int height,
-    const int width,
-    const int weight_h,
-    const int weight_w,
-    const int pad_h,
-    const int pad_w,
-    const int stride_h,
-    const int stride_w,
-    const int dilation_h,
-    const int dilation_w,
-    const int parallel_imgs,
-    const int n_offset_grps,
+    const at::Tensor& columns,
+    const at::Tensor& input,
+    const at::Tensor& offset,
+    int channels,
+    int height,
+    int width,
+    int weight_h,
+    int weight_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dilation_h,
+    int dilation_w,
+    int parallel_imgs,
+    int n_offset_grps,
     at::Tensor grad_offset) {
   int out_h =
       (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
