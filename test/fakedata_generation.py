@@ -176,12 +176,12 @@ def vggface2_root():
     """
     Generates a dataset with the following folder structure and returns the path root:
     <root>
-    └── vggface2
-        ├── bb_landmark.tar.gz ('bb_landmark' when uncompressed)
-        ├── vggface2_train.tar.gz ('train' when uncompressed)
-        ├── vggface2_test.tar.gz ('test' when uncompressed)
-        ├── train_list.txt
-        └── test_list.txt
+        └── vggface2
+            ├── bb_landmark.tar.gz ('bb_landmark' when uncompressed)
+            ├── vggface2_train.tar.gz ('train' when uncompressed)
+            ├── vggface2_test.tar.gz ('test' when uncompressed)
+            ├── train_list.txt
+            └── test_list.txt
 
     The dataset consist of 1 image in the train set and 1 image in the test set.
     """
@@ -232,8 +232,8 @@ def vggface2_root():
             _make_tar(test_archive, top_level_dir, arcname='test', compress=True)
 
     def _make_bb_landmark_archive(root):
-        train_bb_contents = 'NAME_ID,X,Y,W,H\n"n000001/0001_01",161,140,224,324'
-        test_bb_contents = 'NAME_ID,X,Y,W,H\n"n000001/0001_01",161,140,224,324'
+        train_bbox_contents = 'NAME_ID,X,Y,W,H\n"n000001/0001_01",161,140,224,324'
+        test_bbox_contents = 'NAME_ID,X,Y,W,H\n"n000001/0001_01",161,140,224,324'
         train_landmark_contents = ('NAME_ID,P1X,P1Y,P2X,P2Y,P3X,P3Y,P4X,P4Y,P5X,P5Y\n'
                                    '"n000001/0001_01",75.81253,110.2077,103.1778,104.6074,'
                                    '90.06353,133.3624,85.39182,149.4176,114.9009,144.9259')
@@ -248,12 +248,12 @@ def vggface2_root():
             # bbox training file
             bbox_file = os.path.join(extracted_dir, "loose_bb_train.csv")
             with open(bbox_file, "w") as csv_file:
-                csv_file.write(train_bb_contents)
+                csv_file.write(train_bbox_contents)
 
             # bbox testing file
             bbox_file = os.path.join(extracted_dir, "loose_bb_test.csv")
             with open(bbox_file, "w") as csv_file:
-                csv_file.write(test_bb_contents)
+                csv_file.write(test_bbox_contents)
 
             # landmark training file
             landmark_file = os.path.join(extracted_dir, "loose_landmark_train.csv")

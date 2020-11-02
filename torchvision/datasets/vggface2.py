@@ -95,7 +95,7 @@ class VGGFace2(VisionDataset):
             raise RuntimeError("target_transform is specified but target_type is empty")
 
         image_list_file = "train_list.txt" if self.split == "train" else "test_list.txt"
-        self.image_list_file = os.path.join(self.root, image_list_file)
+        image_list_file = os.path.join(self.root, image_list_file)
 
         # prepare dataset
         for (filename, _, extracted_dir) in self.file_list:
@@ -113,7 +113,7 @@ class VGGFace2(VisionDataset):
                            pandas.read_csv(fn("loose_landmark_test.csv"), index_col=0)]
         self.landmarks = pandas.concat(landmark_frames)
 
-        with open(self.image_list_file, 'r') as f:
+        with open(image_list_file, 'r') as f:
             for img_file in f:
                 img_file = img_file.strip()
                 img_filename, ext = os.path.splitext(img_file)  # e.g. ["n004332/0317_01", "jpg"]
