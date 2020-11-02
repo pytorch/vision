@@ -17,7 +17,7 @@ struct torch_jpeg_error_mgr {
   jmp_buf setjmp_buffer; /* for return to caller */
 };
 
-typedef struct torch_jpeg_error_mgr* torch_jpeg_error_ptr;
+using torch_jpeg_error_ptr = struct torch_jpeg_error_mgr*;
 void torch_jpeg_error_exit(j_common_ptr cinfo);
 
 #endif
