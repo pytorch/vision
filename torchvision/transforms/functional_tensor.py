@@ -922,9 +922,13 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fillcolor: Optio
 
     # Fill with required color
     if fillcolor is not None and fillcolor != 0:
-        mask = img[:, -1, :, :] < 0.5  # Maybe we need mask * img + (1 - mask) * fillcolor
-        img = img[:, :-1, :, :]
-        img[mask.expand_as(img)] = fillcolor
+        mask = img[:, -1, :, :]  # N * 1 * H * W
+        img = img[:, :-1, :, :]  # N * C * H * W
+        mask = mask.expand_as(img)
+        if mode == 'nearest':
+            img[mask < 1e-3] = fillcolor  # Leave some room for error
+        else:  # 'bilinear'
+            img = img * mask + (1.0 - mask) * fillcolor
 
     img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
