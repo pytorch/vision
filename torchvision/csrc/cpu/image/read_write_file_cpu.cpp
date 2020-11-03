@@ -52,11 +52,12 @@ torch::Tensor read_file(const std::string& filename) {
 
   TORCH_CHECK(infile != nullptr, "Error opening input file");
 
-  auto data = torch::empty({size}, torch::kU8);
-  auto dataBytes = data.data_ptr<uint8_t>();
+  std::unique_ptr<uint8_t> dataBytes(new uint8_t[size]);
 
   fread(dataBytes, sizeof(uint8_t), size, infile);
   fclose(infile);
+
+  auto data = torch::from_blob(dataBytes.get(), {size}, torch::kU8).clone();
 #else
   auto data =
       torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8);
