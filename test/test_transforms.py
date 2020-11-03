@@ -1489,6 +1489,11 @@ class Tester(unittest.TestCase):
         # Checking if RandomRotation can be printed as string
         t.__repr__()
 
+        # assert deprecation warning and non-BC
+        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
+            t = transforms.RandomRotation((-10, 10), resample=2)
+            self.assertEqual(t.interpolation, 2)
+
     def test_random_affine(self):
 
         with self.assertRaises(ValueError):
@@ -1531,6 +1536,15 @@ class Tester(unittest.TestCase):
 
         t = transforms.RandomAffine(10, interpolation=Image.BILINEAR)
         self.assertIn("Image.BILINEAR", t.__repr__())
+
+        # assert deprecation warning and non-BC
+        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
+            t = transforms.RandomAffine(10, resample=2)
+            self.assertEqual(t.interpolation, 2)
+
+        with self.assertWarnsRegex(UserWarning, r"Argument fillcolor is deprecated and will be removed"):
+            t = transforms.RandomAffine(10, fillcolor=10)
+            self.assertEqual(t.fill, 10)
 
     def test_to_grayscale(self):
         """Unit tests for grayscale transform"""

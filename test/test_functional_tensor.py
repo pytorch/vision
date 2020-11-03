@@ -605,6 +605,18 @@ class Tester(TransformsTester):
                     batch_tensors, F.affine, angle=-43, translate=[-3, 4], scale=1.2, shear=[4.0, 5.0]
                 )
 
+        tensor, pil_img = data[0]
+        # assert deprecation warning and non-BC
+        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
+            res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=2)
+            res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=2)
+            self.assertTrue(res1.equal(res2))
+
+        with self.assertWarnsRegex(UserWarning, r"Argument fillcolor is deprecated and will be removed"):
+            res1 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fillcolor=10)
+            res2 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fill=10)
+            self.assertEqual(res1, res2)
+
     def _test_rotate_all_options(self, tensor, pil_img, scripted_rotate, centers):
         img_size = pil_img.size
         dt = tensor.dtype
@@ -675,6 +687,12 @@ class Tester(TransformsTester):
                 self._test_fn_on_batch(
                     batch_tensors, F.rotate, angle=32, interpolation=0, expand=True, center=center
                 )
+        tensor, pil_img = data[0]
+        # assert deprecation warning and non-BC
+        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
+            res1 = F.rotate(tensor, 45, resample=2)
+            res2 = F.rotate(tensor, 45, interpolation=2)
+            self.assertTrue(res1.equal(res2))
 
     def _test_perspective(self, tensor, pil_img, scripted_transform, test_configs):
         dt = tensor.dtype
