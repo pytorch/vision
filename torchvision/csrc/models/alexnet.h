@@ -11,7 +11,7 @@ namespace models {
 struct VISION_API AlexNetImpl : torch::nn::Module {
   torch::nn::Sequential features{nullptr}, classifier{nullptr};
 
-  AlexNetImpl(int64_t num_classes = 1000);
+  explicit AlexNetImpl(int64_t num_classes = 1000);
 
   torch::Tensor forward(torch::Tensor x);
 };
