@@ -1148,7 +1148,8 @@ class RandomRotation(torch.nn.Module):
             Defaults to 0 for all bands. This option is only available for Pillow>=5.2.0.
             This option is not supported for Tensor input. Fill value for the area outside the transform in the output
             image is always 0.
-        resample (int, optional): deprecated argument, please use `arg`:interpolation: instead.
+        resample (int, optional): deprecated argument and will be removed since v0.10.0.
+            Please use `arg`:interpolation: instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -1157,7 +1158,10 @@ class RandomRotation(torch.nn.Module):
     def __init__(self, degrees, interpolation=0, expand=False, center=None, fill=None, resample=None):
         super().__init__()
         if resample is not None:
-            warnings.warn("Argument resample is deprecated. Please, use interpolation instead")
+            warnings.warn(
+                "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+            )
+            interpolation = resample
 
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 
@@ -1231,8 +1235,10 @@ class RandomAffine(torch.nn.Module):
         fill (tuple or int): Optional fill color (Tuple for RGB Image and int for grayscale) for the area
             outside the transform in the output image (Pillow>=5.0.0). This option is not supported for Tensor
             input. Fill value for the area outside the transform in the output image is always 0.
-        fillcolor (tuple or int, optional): deprecated argument, please use `arg`:fill: instead.
-        resample (int, optional): deprecated argument, please use `arg`:interpolation: instead.
+        fillcolor (tuple or int, optional): deprecated argument and will be removed since v0.10.0.
+            Please use `arg`:fill: instead.
+        resample (int, optional): deprecated argument and will be removed since v0.10.0.
+            Please use `arg`:interpolation: instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -1243,10 +1249,16 @@ class RandomAffine(torch.nn.Module):
     ):
         super().__init__()
         if resample is not None:
-            warnings.warn("Argument resample is deprecated. Please, use interpolation instead")
+            warnings.warn(
+                "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+            )
+            interpolation = resample
 
         if fillcolor is not None:
-            warnings.warn("Argument fillcolor is deprecated. Please, use fill instead")
+            warnings.warn(
+                "Argument fillcolor is deprecated and will be removed since v0.10.0. Please, use fill instead"
+            )
+            fill = fillcolor
 
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 

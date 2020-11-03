@@ -817,7 +817,8 @@ def rotate(
             Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
             This option is not supported for Tensor input. Fill value for the area outside the transform in the output
             image is always 0.
-        resample (int, optional): deprecated argument, please use `arg`:interpolation: instead.
+        resample (int, optional): deprecated argument and will be removed since v0.10.0.
+            Please use `arg`:interpolation: instead.
 
     Returns:
         PIL Image or Tensor: Rotated image.
@@ -826,7 +827,10 @@ def rotate(
 
     """
     if resample is not None:
-        warnings.warn("Argument resample is deprecated. Please, use interpolation instead")
+        warnings.warn(
+            "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+        )
+        interpolation = resample
 
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")
@@ -873,17 +877,25 @@ def affine(
         fill (int): Optional fill color for the area outside the transform in the output image (Pillow>=5.0.0).
             This option is not supported for Tensor input. Fill value for the area outside the transform in the output
             image is always 0.
-        fillcolor (tuple or int, optional): deprecated argument, please use `arg`:fill: instead.
-        resample (int, optional): deprecated argument, please use `arg`:interpolation: instead.
+        fillcolor (tuple or int, optional): deprecated argument and will be removed since v0.10.0.
+            Please use `arg`:fill: instead.
+        resample (int, optional): deprecated argument and will be removed since v0.10.0.
+            Please use `arg`:interpolation: instead.
 
     Returns:
         PIL Image or Tensor: Transformed image.
     """
     if resample is not None:
-        warnings.warn("Argument resample is deprecated. Please, use interpolation instead")
+        warnings.warn(
+            "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+        )
+        interpolation = resample
 
     if fillcolor is not None:
-        warnings.warn("Argument fillcolor is deprecated. Please, use fill instead")
+        warnings.warn(
+            "Argument fillcolor is deprecated and will be removed since v0.10.0. Please, use fill instead"
+        )
+        fill = fillcolor
 
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")
