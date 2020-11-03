@@ -5,12 +5,17 @@ std::wstring utf8_decode(const std::string& str) {
   if (str.empty()) {
     return std::wstring();
   }
-  int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), NULL, 0);
-  TORCH_CHECK(
-      size_needed > 0, "Error converting the content to Unicode");
+  int size_needed = MultiByteToWideChar(
+      CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), NULL, 0);
+  TORCH_CHECK(size_needed > 0, "Error converting the content to Unicode");
   std::wstring wstrTo(size_needed, 0);
-  MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), &wstrTo[0], size_needed);
-  return wstrTo;
+  MultiByteToWideChar(
+      CP_UTF8,
+      0,
+      str.c_str(),
+      static_cast<int>(str.size()),
+      &wstrTo[0],
+      size_needed);
 }
 #endif
 
@@ -38,8 +43,8 @@ torch::Tensor read_file(const std::string& filename) {
   // TODO: Once torch::from_file handles UTF-8 paths correctly, we should move
   // back to use the following implementation since it uses file mapping.
   //   auto data =
-  //       torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8)
-  //           .clone();
+  //       torch::from_file(filename, /*shared=*/false, /*size=*/size,
+  //       torch::kU8)
   FILE* infile = _wfopen(fileW.c_str(), L"rb");
 
   TORCH_CHECK(infile != nullptr, "Error opening input file");
