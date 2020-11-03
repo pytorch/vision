@@ -17,12 +17,12 @@
 at::Tensor roi_align(
     const at::Tensor& input, // Input feature map.
     const at::Tensor& rois, // List of ROIs to pool over.
-    const double spatial_scale, // The scale of the image features. ROIs will be
+    double spatial_scale, // The scale of the image features. ROIs will be
     // scaled to this.
-    const int64_t pooled_height, // The height of the pooled feature map.
-    const int64_t pooled_width, // The width of the pooled feature
-    const int64_t sampling_ratio, // The number of points to sample in each bin
-    const bool aligned) // The flag for pixel shift
+    int64_t pooled_height, // The height of the pooled feature map.
+    int64_t pooled_width, // The width of the pooled feature
+    int64_t sampling_ratio, // The number of points to sample in each bin
+    bool aligned) // The flag for pixel shift
 // along each axis.
 {
   static auto op = c10::Dispatcher::singleton()
@@ -42,11 +42,11 @@ at::Tensor roi_align(
 at::Tensor ROIAlign_autocast(
     const at::Tensor& input,
     const at::Tensor& rois,
-    const double spatial_scale,
-    const int64_t pooled_height,
-    const int64_t pooled_width,
-    const int64_t sampling_ratio,
-    const bool aligned) {
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t sampling_ratio,
+    bool aligned) {
   c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
   return roi_align(
              at::autocast::cached_cast(at::kFloat, input),
@@ -63,15 +63,15 @@ at::Tensor ROIAlign_autocast(
 at::Tensor _roi_align_backward(
     const at::Tensor& grad,
     const at::Tensor& rois,
-    const double spatial_scale,
-    const int64_t pooled_height,
-    const int64_t pooled_width,
-    const int64_t batch_size,
-    const int64_t channels,
-    const int64_t height,
-    const int64_t width,
-    const int64_t sampling_ratio,
-    const bool aligned) {
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t batch_size,
+    int64_t channels,
+    int64_t height,
+    int64_t width,
+    int64_t sampling_ratio,
+    bool aligned) {
   static auto op =
       c10::Dispatcher::singleton()
           .findSchemaOrThrow("torchvision::_roi_align_backward", "")
@@ -94,13 +94,13 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
  public:
   static torch::autograd::variable_list forward(
       torch::autograd::AutogradContext* ctx,
-      torch::autograd::Variable input,
-      torch::autograd::Variable rois,
-      const double spatial_scale,
-      const int64_t pooled_height,
-      const int64_t pooled_width,
-      const int64_t sampling_ratio,
-      const bool aligned) {
+      const torch::autograd::Variable& input,
+      const torch::autograd::Variable& rois,
+      double spatial_scale,
+      int64_t pooled_height,
+      int64_t pooled_width,
+      int64_t sampling_ratio,
+      bool aligned) {
     ctx->saved_data["spatial_scale"] = spatial_scale;
     ctx->saved_data["pooled_height"] = pooled_height;
     ctx->saved_data["pooled_width"] = pooled_width;
@@ -122,7 +122,7 @@ class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
 
   static torch::autograd::variable_list backward(
       torch::autograd::AutogradContext* ctx,
-      torch::autograd::variable_list grad_output) {
+      const torch::autograd::variable_list& grad_output) {
     // Use data saved in forward
     auto saved = ctx->get_saved_variables();
     auto rois = saved[0];
@@ -155,17 +155,17 @@ class ROIAlignBackwardFunction
  public:
   static torch::autograd::variable_list forward(
       torch::autograd::AutogradContext* ctx,
-      torch::autograd::Variable grad,
-      torch::autograd::Variable rois,
-      const double spatial_scale,
-      const int64_t pooled_height,
-      const int64_t pooled_width,
-      const int64_t batch_size,
-      const int64_t channels,
-      const int64_t height,
-      const int64_t width,
-      const int64_t sampling_ratio,
-      const bool aligned) {
+      const torch::autograd::Variable& grad,
+      const torch::autograd::Variable& rois,
+      double spatial_scale,
+      int64_t pooled_height,
+      int64_t pooled_width,
+      int64_t batch_size,
+      int64_t channels,
+      int64_t height,
+      int64_t width,
+      int64_t sampling_ratio,
+      bool aligned) {
     at::AutoNonVariableTypeMode g;
     auto result = _roi_align_backward(
         grad,
@@ -184,7 +184,7 @@ class ROIAlignBackwardFunction
 
   static torch::autograd::variable_list backward(
       torch::autograd::AutogradContext* ctx,
-      torch::autograd::variable_list grad_output) {
+      const torch::autograd::variable_list& grad_output) {
     TORCH_CHECK(0, "double backwards on roi_align not supported");
   }
 };
@@ -192,11 +192,11 @@ class ROIAlignBackwardFunction
 at::Tensor ROIAlign_autograd(
     const at::Tensor& input,
     const at::Tensor& rois,
-    const double spatial_scale,
-    const int64_t pooled_height,
-    const int64_t pooled_width,
-    const int64_t sampling_ratio,
-    const bool aligned) {
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t sampling_ratio,
+    bool aligned) {
   return ROIAlignFunction::apply(
       input,
       rois,
@@ -210,15 +210,15 @@ at::Tensor ROIAlign_autograd(
 at::Tensor ROIAlign_backward_autograd(
     const at::Tensor& grad,
     const at::Tensor& rois,
-    const double spatial_scale,
-    const int64_t pooled_height,
-    const int64_t pooled_width,
-    const int64_t batch_size,
-    const int64_t channels,
-    const int64_t height,
-    const int64_t width,
-    const int64_t sampling_ratio,
-    const bool aligned) {
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t batch_size,
+    int64_t channels,
+    int64_t height,
+    int64_t width,
+    int64_t sampling_ratio,
+    bool aligned) {
   return ROIAlignBackwardFunction::apply(
       grad,
       rois,

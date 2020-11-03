@@ -4,7 +4,7 @@ template <typename scalar_t>
 at::Tensor nms_cpu_kernel(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const double iou_threshold) {
+    double iou_threshold) {
   TORCH_CHECK(!dets.is_cuda(), "dets must be a CPU tensor");
   TORCH_CHECK(!scores.is_cuda(), "scores must be a CPU tensor");
   TORCH_CHECK(
@@ -72,7 +72,7 @@ at::Tensor nms_cpu_kernel(
 at::Tensor nms_cpu(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const double iou_threshold) {
+    double iou_threshold) {
   TORCH_CHECK(
       dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
   TORCH_CHECK(
