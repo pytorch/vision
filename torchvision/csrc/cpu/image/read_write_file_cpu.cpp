@@ -6,14 +6,11 @@
 #ifdef _WIN32
 #ifdef UNICODE
 #define VISION_STAT _wstat64
-#define VISION_STRING std::wstring
 #else
 #define VISION_STAT _stat64
-#define VISION_STRING std::string
 #endif
 #else
 #define VISION_STAT stat
-#define VISION_STRING std::string
 #endif
 
 torch::Tensor read_file(VISION_STRING filename) {
