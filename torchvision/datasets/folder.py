@@ -43,10 +43,10 @@ def make_dataset(
     Args:
         directory (str): root dataset directory
         class_to_idx (Dict[str, int]): dictionary mapping class name to class index
-        extensions (Optional[Tuple[str, ...]], optional): A list of allowed extensions.
+        extensions (optional): A list of allowed extensions.
             Either extensions or is_valid_file should be passed. Defaults to None.
-        is_valid_file (Optional[Callable[[str], bool]], optional): A function that takes path of a file
-            and check if the file is a valid file
+        is_valid_file (optional): A function that takes path of a file
+            and checks if the file is a valid file
             (used to check of corrupt files) both extensions and
             is_valid_file should not be passed. Defaults to None.
 
