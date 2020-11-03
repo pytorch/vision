@@ -7,7 +7,7 @@ import torch.nn as nn
 from torch import Tensor
 from torch.jit.annotations import Dict, List, Tuple
 
-from .._utils import overwrite_eps
+from ._utils import overwrite_eps
 from ..utils import load_state_dict_from_url
 
 from . import _utils as det_utils

@@ -8,7 +8,7 @@ from torchvision import models
 import unittest
 import random
 
-from torchvision.models._utils import overwrite_eps
+from torchvision.models.detection._utils import overwrite_eps
 
 
 def set_rng_seed(seed):
