@@ -1,57 +1,63 @@
 #include "read_write_file_cpu.h"
 
-// According to
-// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/stat-functions?view=vs-2019,
-// we should use _stat64 for 64-bit file size on Windows.
 #ifdef _WIN32
-#ifdef _UNICODE
-#define VISION_STAT _wstat64
-#else
-#define VISION_STAT _stat64
-#endif
-#else
-#define VISION_STAT stat
-#endif
-
-torch::Tensor read_file(VISION_STRING filename) {
-  struct VISION_STAT stat_buf;
-  int rc = VISION_STAT(filename.c_str(), &stat_buf);
-
-#if defined(_WIN32) && defined(UNICODE)
-  // The codepath in PyTorch doesn't support Unicode strings.
-  // So we will need to convert `filename` to ASCII string here.
-  size_t size = wcslen(filename) + 1;
-  std::unique_ptr<char> filename_ascii_raw(new char[size]);
-  size_t converted_size = std::wcstombs(filename_ascii_raw.get(), filename, size);
-
-  TORCH_CHECK(converted_size != size_t(-1), "Unicode path is not supported currently");
-
-  std::string filename_ascii(filename_ascii_raw.get());
-#else
-  std::string& filename_ascii = filename;
+std::wstring utf8_decode(const std::string& str) {
+  if (str.empty()) {
+    return std::wstring();
+  }
+  int size_needed = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), NULL, 0);
+  TORCH_CHECK(
+      size_needed > 0, "Error converting the content to Unicode");
+  std::wstring wstrTo(size_needed, 0);
+  MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), &wstrTo[0], size_needed);
+  return wstrTo;
+}
 #endif
 
+torch::Tensor read_file(const std::string& filename) {
+#ifdef _WIN32
+  // According to
+  // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/stat-functions?view=vs-2019,
+  // we should use struct __stat64 and _wstat64 for 64-bit file size on Windows.
+  struct __stat64 stat_buf;
+  auto fileW = utf8_decode(filename);
+  int rc = _wstat64(fileW.c_str(), &stat_buf);
+#else
+  struct stat stat_buf;
+  int rc = stat(filename.c_str(), &stat_buf);
+#endif
   // errno is a variable defined in errno.h
   TORCH_CHECK(
-      rc == 0, "[Errno ", errno, "] ", strerror(errno), ": '", filename_ascii, "'");
+      rc == 0, "[Errno ", errno, "] ", strerror(errno), ": '", filename, "'");
 
   int64_t size = stat_buf.st_size;
 
   TORCH_CHECK(size > 0, "Expected a non empty file");
 
 #ifdef _WIN32
-  auto data =
-      torch::from_file(filename_ascii, /*shared=*/false, /*size=*/size, torch::kU8)
-          .clone();
+  // TODO: Once torch::from_file handles UTF-8 paths correctly, we should move
+  // back to use the following implementation since it uses file mapping.
+  //   auto data =
+  //       torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8)
+  //           .clone();
+  FILE* infile = _wfopen(fileW.c_str(), L"rb");
+
+  TORCH_CHECK(infile != nullptr, "Error opening input file");
+
+  auto data = torch::empty({size}, torch::kU8);
+  auto dataBytes = data.data_ptr<uint8_t>();
+
+  fread(dataBytes, sizeof(uint8_t), size, infile);
+  fclose(infile);
 #else
   auto data =
-      torch::from_file(filename_ascii, /*shared=*/false, /*size=*/size, torch::kU8);
+      torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8);
 #endif
 
   return data;
 }
 
-void write_file(VISION_STRING filename, torch::Tensor& data) {
+void write_file(const std::string& filename, torch::Tensor& data) {
   // Check that the input tensor is on CPU
   TORCH_CHECK(data.device() == torch::kCPU, "Input tensor should be on CPU");
 
@@ -63,8 +69,9 @@ void write_file(VISION_STRING filename, torch::Tensor& data) {
 
   auto fileBytes = data.data_ptr<uint8_t>();
   auto fileCStr = filename.c_str();
-#if defined(_WIN32) && defined(UNICODE)
-  FILE* outfile = _wfopen(fileCStr, L"wb");
+#ifdef _WIN32
+  auto fileW = utf8_decode(filename);
+  FILE* outfile = _wfopen(fileW.c_str(), L"wb");
 #else
   FILE* outfile = fopen(fileCStr, "wb");
 #endif
