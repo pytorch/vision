@@ -4,12 +4,19 @@
 // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/stat-functions?view=vs-2019,
 // we should use _stat64 for 64-bit file size on Windows.
 #ifdef _WIN32
+#ifdef UNICODE
+#define VISION_STAT _wstat64
+#define VISION_STRING std::wstring
+#else
 #define VISION_STAT _stat64
+#define VISION_STRING std::string
+#endif
 #else
 #define VISION_STAT stat
+#define VISION_STRING std::string
 #endif
 
-torch::Tensor read_file(std::string filename) {
+torch::Tensor read_file(VISION_STRING filename) {
   struct VISION_STAT stat_buf;
   int rc = VISION_STAT(filename.c_str(), &stat_buf);
   // errno is a variable defined in errno.h
@@ -21,6 +28,7 @@ torch::Tensor read_file(std::string filename) {
   TORCH_CHECK(size > 0, "Expected a non empty file");
 
 #ifdef _WIN32
+  // Expected error for Unicode variant here
   auto data =
       torch::from_file(filename, /*shared=*/false, /*size=*/size, torch::kU8)
           .clone();
