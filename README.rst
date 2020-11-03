@@ -29,6 +29,8 @@ supported Python versions.
 +==========================+==========================+=================================+
 | ``master`` / ``nightly`` | ``master`` / ``nightly`` | ``>=3.6``                       |
 +--------------------------+--------------------------+---------------------------------+
+| ``1.7.0``                | ``0.8.0``                | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
 | ``1.6.0``                | ``0.7.0``                | ``>=3.6``                       |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.5.1``                | ``0.6.1``                | ``>=3.5``                       |
@@ -122,6 +124,11 @@ The ``TorchVision`` package will also automatically look for the ``Torch`` packa
 so make sure that it is also available to cmake via the ``CMAKE_PREFIX_PATH``.
 
 For an example setup, take a look at ``examples/cpp/hello_world``.
+
+TorchVision Operators
+---------------------
+In order to get the torchvision operators registered with torch (eg. for the JIT), all you need to do is to ensure that you
+:code:`#include <torchvision/vision.h>` in your project.
 
 Documentation
 =============

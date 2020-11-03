@@ -59,13 +59,16 @@ if(MSVC)
   endif()
 endif()
 
-add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES} ${IMAGE_SOURCES})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} ${JPEG_LIBRARIES} Python3::Python)
-set_target_properties(${PROJECT_NAME} PROPERTIES EXPORT_NAME TorchVision)
-
-include_directories(torchvision/csrc ${JPEG_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS})
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
+
+add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES} ${IMAGE_SOURCES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} ${JPEG_LIBRARIES} Python3::Python)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+  EXPORT_NAME TorchVision
+  INSTALL_RPATH ${TORCH_INSTALL_PREFIX}/lib)
+
+include_directories(torchvision/csrc ${JPEG_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS})
 
 set(TORCHVISION_CMAKECONFIG_INSTALL_DIR "share/cmake/TorchVision" CACHE STRING "install path for TorchVisionConfig.cmake")
 

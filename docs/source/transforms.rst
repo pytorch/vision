@@ -57,77 +57,103 @@ Compositions of transforms
 
 .. autoclass:: Compose
 
-Transforms on PIL Image
------------------------
+Transforms on PIL Image and torch.\*Tensor
+------------------------------------------
 
 .. autoclass:: CenterCrop
+    :members:
 
 .. autoclass:: ColorJitter
+    :members:
 
 .. autoclass:: FiveCrop
+    :members:
 
 .. autoclass:: Grayscale
+    :members:
 
 .. autoclass:: Pad
+    :members:
 
 .. autoclass:: RandomAffine
+    :members:
 
 .. autoclass:: RandomApply
 
-.. autoclass:: RandomChoice
-
 .. autoclass:: RandomCrop
+    :members:
 
 .. autoclass:: RandomGrayscale
+    :members:
 
 .. autoclass:: RandomHorizontalFlip
+    :members:
+
+.. autoclass:: RandomPerspective
+    :members:
+
+.. autoclass:: RandomResizedCrop
+    :members:
+
+.. autoclass:: RandomRotation
+    :members:
+
+.. autoclass:: RandomSizedCrop
+    :members:
+
+.. autoclass:: RandomVerticalFlip
+    :members:
+
+.. autoclass:: Resize
+    :members:
+
+.. autoclass:: Scale
+    :members:
+
+.. autoclass:: TenCrop
+    :members:
+
+.. autoclass:: GaussianBlur
+    :members:
+
+Transforms on PIL Image only
+----------------------------
+
+.. autoclass:: RandomChoice
 
 .. autoclass:: RandomOrder
 
-.. autoclass:: RandomPerspective
 
-.. autoclass:: RandomResizedCrop
-
-.. autoclass:: RandomRotation
-
-.. autoclass:: RandomSizedCrop
-
-.. autoclass:: RandomVerticalFlip
-
-.. autoclass:: Resize
-
-.. autoclass:: Scale
-
-.. autoclass:: TenCrop
-
-.. autoclass:: GaussianBlur
-
-Transforms on torch.\*Tensor
-----------------------------
+Transforms on torch.\*Tensor only
+---------------------------------
 
 .. autoclass:: LinearTransformation
+    :members:
 
 .. autoclass:: Normalize
-	:members: __call__
-	:special-members:
+    :members:
 
 .. autoclass:: RandomErasing
+    :members:
+
+.. autoclass:: ConvertImageDtype
+
 
 Conversion Transforms
 ---------------------
 
 .. autoclass:: ToPILImage
-	:members: __call__
-	:special-members:
+    :members:
 
 .. autoclass:: ToTensor
-	:members: __call__
-	:special-members:
+    :members:
+
 
 Generic Transforms
 ------------------
 
 .. autoclass:: Lambda
+    :members:
 
 
 Functional Transforms

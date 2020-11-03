@@ -5,11 +5,11 @@
 template <typename T>
 T bilinear_interpolate(
     const T* input,
-    const int height,
-    const int width,
+    int height,
+    int width,
     T y,
     T x,
-    const int index /* index for debug only*/) {
+    int index /* index for debug only*/) {
   // deal with cases that inverse elements are out of feature map boundary
   if (y < -1.0 || y > height || x < -1.0 || x > width) {
     // empty
@@ -58,17 +58,17 @@ T bilinear_interpolate(
 
 template <typename T>
 void PSROIAlignForwardCPU(
-    const int nthreads,
+    int nthreads,
     const T* input,
     const T spatial_scale,
-    const int channels,
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
-    const int sampling_ratio,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
+    int sampling_ratio,
     const T* rois,
-    const int channels_out,
+    int channels_out,
     T* output,
     int* channel_mapping) {
   int num_rois = nthreads / channels_out / pooled_width / pooled_height;
@@ -139,8 +139,8 @@ void PSROIAlignForwardCPU(
 
 template <typename T>
 void bilinear_interpolate_gradient(
-    const int height,
-    const int width,
+    int height,
+    int width,
     T y,
     T x,
     T& w1,
@@ -151,7 +151,7 @@ void bilinear_interpolate_gradient(
     int& x_high,
     int& y_low,
     int& y_high,
-    const int index /* index for debug only*/) {
+    int index /* index for debug only*/) {
   // deal with cases that inverse elements are out of feature map boundary
   if (y < -1.0 || y > height || x < -1.0 || x > width) {
     // empty
@@ -194,8 +194,6 @@ void bilinear_interpolate_gradient(
   // T val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
 
   w1 = hy * hx, w2 = hy * lx, w3 = ly * hx, w4 = ly * lx;
-
-  return;
 }
 
 template <class T>
@@ -205,18 +203,18 @@ inline void add(T* address, const T& val) {
 
 template <typename T>
 void PSROIAlignBackwardCPU(
-    const int nthreads,
+    int nthreads,
     const T* grad_output,
     const int* channel_mapping,
-    const int num_rois,
+    int num_rois,
     const T spatial_scale,
-    const int channels,
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
-    const int sampling_ratio,
-    const int channels_out,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
+    int sampling_ratio,
+    int channels_out,
     T* grad_input,
     const T* rois) {
   for (int index = 0; index < nthreads; index++) {
@@ -303,10 +301,10 @@ void PSROIAlignBackwardCPU(
 std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
     const at::Tensor& input,
     const at::Tensor& rois,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width,
-    const int sampling_ratio) {
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t sampling_ratio) {
   // Check if input tensors are CPU tensors
   TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
   TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
@@ -363,14 +361,14 @@ at::Tensor PSROIAlign_backward_cpu(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& channel_mapping,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width,
-    const int sampling_ratio,
-    const int batch_size,
-    const int channels,
-    const int height,
-    const int width) {
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t sampling_ratio,
+    int64_t batch_size,
+    int64_t channels,
+    int64_t height,
+    int64_t width) {
   // Check if input tensors are CPU tensors
   TORCH_CHECK(grad.device().is_cpu(), "grad must be a CPU tensor");
   TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");

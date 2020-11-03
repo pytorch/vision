@@ -258,3 +258,7 @@ class MultiScaleRoIAlign(nn.Module):
             result = _onnx_merge_levels(levels, tracing_results)
 
         return result
+
+    def __repr__(self) -> str:
+        return (f"{self.__class__.__name__}(featmap_names={self.featmap_names}, "
+                f"output_size={self.output_size}, sampling_ratio={self.sampling_ratio})")

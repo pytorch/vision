@@ -16,12 +16,12 @@ struct PreCalc {
 
 template <typename T>
 void pre_calc_for_bilinear_interpolate(
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
-    const int iy_upper,
-    const int ix_upper,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
+    int iy_upper,
+    int ix_upper,
     T roi_start_h,
     T roi_start_w,
     T bin_size_h,
@@ -112,16 +112,16 @@ void pre_calc_for_bilinear_interpolate(
 
 template <typename T>
 void ROIAlignForward(
-    const int nthreads,
+    int nthreads,
     const T* input,
     const T& spatial_scale,
-    const int channels,
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
-    const int sampling_ratio,
-    const bool aligned,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
+    int sampling_ratio,
+    bool aligned,
     const T* rois,
     T* output) {
   int n_rois = nthreads / channels / pooled_width / pooled_height;
@@ -214,8 +214,8 @@ void ROIAlignForward(
 
 template <typename T>
 void bilinear_interpolate_gradient(
-    const int height,
-    const int width,
+    int height,
+    int width,
     T y,
     T x,
     T& w1,
@@ -226,7 +226,7 @@ void bilinear_interpolate_gradient(
     int& x_high,
     int& y_low,
     int& y_high,
-    const int index /* index for debug only*/) {
+    int index /* index for debug only*/) {
   // deal with cases that inverse elements are out of feature map boundary
   if (y < -1.0 || y > height || x < -1.0 || x > width) {
     // empty
@@ -269,8 +269,6 @@ void bilinear_interpolate_gradient(
   // T val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
 
   w1 = hy * hx, w2 = hy * lx, w3 = ly * hx, w4 = ly * lx;
-
-  return;
 }
 
 template <class T>
@@ -280,22 +278,22 @@ inline void add(T* address, const T& val) {
 
 template <typename T>
 void ROIAlignBackward(
-    const int nthreads,
+    int nthreads,
     const T* grad_output,
     const T& spatial_scale,
-    const int channels,
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
-    const int sampling_ratio,
-    const bool aligned,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
+    int sampling_ratio,
+    bool aligned,
     T* grad_input,
     const T* rois,
-    const int n_stride,
-    const int c_stride,
-    const int h_stride,
-    const int w_stride) {
+    int n_stride,
+    int c_stride,
+    int h_stride,
+    int w_stride) {
   for (int index = 0; index < nthreads; index++) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
@@ -389,11 +387,11 @@ void ROIAlignBackward(
 at::Tensor ROIAlign_forward_cpu(
     const at::Tensor& input,
     const at::Tensor& rois,
-    const double spatial_scale,
-    const int64_t pooled_height,
-    const int64_t pooled_width,
-    const int64_t sampling_ratio,
-    const bool aligned) {
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t sampling_ratio,
+    bool aligned) {
   TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
   TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
   TORCH_CHECK(rois.size(1) == 5, "rois must have shape as Tensor[K, 5]");
@@ -439,15 +437,15 @@ at::Tensor ROIAlign_forward_cpu(
 at::Tensor ROIAlign_backward_cpu(
     const at::Tensor& grad,
     const at::Tensor& rois,
-    const double spatial_scale,
-    const int64_t pooled_height,
-    const int64_t pooled_width,
-    const int64_t batch_size,
-    const int64_t channels,
-    const int64_t height,
-    const int64_t width,
-    const int64_t sampling_ratio,
-    const bool aligned) {
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t batch_size,
+    int64_t channels,
+    int64_t height,
+    int64_t width,
+    int64_t sampling_ratio,
+    bool aligned) {
   TORCH_CHECK(grad.device().is_cpu(), "grad must be a CPU tensor");
   TORCH_CHECK(rois.device().is_cpu(), "rois must be a CPU tensor");
 
