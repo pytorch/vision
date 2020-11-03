@@ -438,12 +438,12 @@ class Tester(TransformsTester):
 
     def _test_affine_identity_map(self, tensor, scripted_affine):
         # 1) identity map
-        out_tensor = F.affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
+        out_tensor = F.affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=0)
 
         self.assertTrue(
             tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5])
         )
-        out_tensor = scripted_affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0)
+        out_tensor = scripted_affine(tensor, angle=0, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=0)
         self.assertTrue(
             tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5])
         )
@@ -461,13 +461,13 @@ class Tester(TransformsTester):
         ]
         for a, true_tensor in test_configs:
             out_pil_img = F.affine(
-                pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=0
             )
             out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1))).to(self.device)
 
             for fn in [F.affine, scripted_affine]:
                 out_tensor = fn(
-                    tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                    tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=0
                 )
                 if true_tensor is not None:
                     self.assertTrue(
@@ -496,13 +496,13 @@ class Tester(TransformsTester):
         for a in test_configs:
 
             out_pil_img = F.affine(
-                pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                pil_img, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=0
             )
             out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
             for fn in [F.affine, scripted_affine]:
                 out_tensor = fn(
-                    tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=0
+                    tensor, angle=a, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=0
                 ).cpu()
 
                 if out_tensor.dtype != torch.uint8:
@@ -526,10 +526,10 @@ class Tester(TransformsTester):
         ]
         for t in test_configs:
 
-            out_pil_img = F.affine(pil_img, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], resample=0)
+            out_pil_img = F.affine(pil_img, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], interpolation=0)
 
             for fn in [F.affine, scripted_affine]:
-                out_tensor = fn(tensor, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], resample=0)
+                out_tensor = fn(tensor, angle=0, translate=t, scale=1.0, shear=[0.0, 0.0], interpolation=0)
 
                 if out_tensor.dtype != torch.uint8:
                     out_tensor = out_tensor.to(torch.uint8)
@@ -552,11 +552,11 @@ class Tester(TransformsTester):
         ]
         for r in [0, ]:
             for a, t, s, sh in test_configs:
-                out_pil_img = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh, resample=r)
+                out_pil_img = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh, interpolation=r)
                 out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
                 for fn in [F.affine, scripted_affine]:
-                    out_tensor = fn(tensor, angle=a, translate=t, scale=s, shear=sh, resample=r).cpu()
+                    out_tensor = fn(tensor, angle=a, translate=t, scale=s, shear=sh, interpolation=r).cpu()
 
                     if out_tensor.dtype != torch.uint8:
                         out_tensor = out_tensor.to(torch.uint8)
@@ -613,10 +613,10 @@ class Tester(TransformsTester):
                 for e in [True, False]:
                     for c in centers:
 
-                        out_pil_img = F.rotate(pil_img, angle=a, resample=r, expand=e, center=c)
+                        out_pil_img = F.rotate(pil_img, angle=a, interpolation=r, expand=e, center=c)
                         out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
                         for fn in [F.rotate, scripted_rotate]:
-                            out_tensor = fn(tensor, angle=a, resample=r, expand=e, center=c).cpu()
+                            out_tensor = fn(tensor, angle=a, interpolation=r, expand=e, center=c).cpu()
 
                             if out_tensor.dtype != torch.uint8:
                                 out_tensor = out_tensor.to(torch.uint8)
@@ -673,7 +673,7 @@ class Tester(TransformsTester):
 
                 center = (20, 22)
                 self._test_fn_on_batch(
-                    batch_tensors, F.rotate, angle=32, resample=0, expand=True, center=center
+                    batch_tensors, F.rotate, angle=32, interpolation=0, expand=True, center=center
                 )
 
     def _test_perspective(self, tensor, pil_img, scripted_transform, test_configs):

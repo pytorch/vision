@@ -855,8 +855,8 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
 def _assert_grid_transform_inputs(
         img: Tensor,
         matrix: Optional[List[float]],
-        resample: int,
-        fillcolor: Optional[int],
+        interpolation: int,
+        fill: Optional[int],
         _interpolation_modes: Dict[int, str],
         coeffs: Optional[List[float]] = None,
 ):
@@ -872,11 +872,11 @@ def _assert_grid_transform_inputs(
     if coeffs is not None and len(coeffs) != 8:
         raise ValueError("Argument coeffs should have 8 float values")
 
-    if fillcolor is not None:
-        warnings.warn("Argument fill/fillcolor is not supported for Tensor input. Fill value is zero")
+    if fill is not None:
+        warnings.warn("Argument fill is not supported for Tensor input. Fill value is zero")
 
-    if resample not in _interpolation_modes:
-        raise ValueError("Resampling mode '{}' is unsupported with Tensor input".format(resample))
+    if interpolation not in _interpolation_modes:
+        raise ValueError("Interpolation mode '{}' is unsupported with Tensor input".format(interpolation))
 
 
 def _cast_squeeze_in(img: Tensor, req_dtype: torch.dtype) -> Tuple[Tensor, bool, bool, torch.dtype]:
@@ -941,7 +941,7 @@ def _gen_affine_grid(
 
 
 def affine(
-        img: Tensor, matrix: List[float], resample: int = 0, fillcolor: Optional[int] = None
+        img: Tensor, matrix: List[float], interpolation: int = 0, fill: Optional[int] = None
 ) -> Tensor:
     """PRIVATE METHOD. Apply affine transformation on the Tensor image keeping image center invariant.
 
@@ -953,9 +953,9 @@ def affine(
     Args:
         img (Tensor): image to be rotated.
         matrix (list of floats): list of 6 float values representing inverse matrix for affine transformation.
-        resample (int, optional): An optional resampling filter. Default is nearest (=0). Other supported values:
+        interpolation (int, optional): An optional resampling filter. Default is nearest (=0). Other supported values:
             bilinear(=2).
-        fillcolor (int, optional): this option is not supported for Tensor input. Fill value for the area outside the
+        fill (int, optional): this option is not supported for Tensor input. Fill value for the area outside the
             transform in the output image is always 0.
 
     Returns:
@@ -966,14 +966,14 @@ def affine(
         2: "bilinear",
     }
 
-    _assert_grid_transform_inputs(img, matrix, resample, fillcolor, _interpolation_modes)
+    _assert_grid_transform_inputs(img, matrix, interpolation, fill, _interpolation_modes)
 
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     shape = img.shape
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
-    mode = _interpolation_modes[resample]
+    mode = _interpolation_modes[interpolation]
     return _apply_grid_transform(img, grid, mode)
 
 
@@ -1003,7 +1003,7 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
 
 
 def rotate(
-        img: Tensor, matrix: List[float], resample: int = 0, expand: bool = False, fill: Optional[int] = None
+        img: Tensor, matrix: List[float], interpolation: int = 0, expand: bool = False, fill: Optional[int] = None
 ) -> Tensor:
     """PRIVATE METHOD. Rotate the Tensor image by angle.
 
@@ -1016,7 +1016,7 @@ def rotate(
         img (Tensor): image to be rotated.
         matrix (list of floats): list of 6 float values representing inverse matrix for rotation transformation.
             Translation part (``matrix[2]`` and ``matrix[5]``) should be in pixel coordinates.
-        resample (int, optional): An optional resampling filter. Default is nearest (=0). Other supported values:
+        interpolation (int, optional): An optional resampling filter. Default is nearest (=0). Other supported values:
             bilinear(=2).
         expand (bool, optional): Optional expansion flag.
             If true, expands the output image to make it large enough to hold the entire rotated image.
@@ -1036,14 +1036,14 @@ def rotate(
         2: "bilinear",
     }
 
-    _assert_grid_transform_inputs(img, matrix, resample, fill, _interpolation_modes)
+    _assert_grid_transform_inputs(img, matrix, interpolation, fill, _interpolation_modes)
     w, h = img.shape[-1], img.shape[-2]
     ow, oh = _compute_output_size(matrix, w, h) if expand else (w, h)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
-    mode = _interpolation_modes[resample]
+    mode = _interpolation_modes[interpolation]
 
     return _apply_grid_transform(img, grid, mode)
 
@@ -1112,8 +1112,8 @@ def perspective(
     _assert_grid_transform_inputs(
         img,
         matrix=None,
-        resample=interpolation,
-        fillcolor=fill,
+        interpolation=interpolation,
+        fill=fill,
         _interpolation_modes=_interpolation_modes,
         coeffs=perspective_coeffs
     )

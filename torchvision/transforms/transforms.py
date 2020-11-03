@@ -242,7 +242,7 @@ class Resize(torch.nn.Module):
             (size * height / width, size).
             In torchscript mode padding as single int is not supported, use a tuple or
             list of length 1: ``[size, ]``.
-        interpolation (int, optional): Desired interpolation enum defined by `filters`_.
+        interpolation (int): Interpolation type defined by `filters`_.
             Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
             and ``PIL.Image.BICUBIC`` are supported.
     """
@@ -744,7 +744,7 @@ class RandomResizedCrop(torch.nn.Module):
             made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
         scale (tuple of float): scale range of the cropped image before resizing, relatively to the origin image.
         ratio (tuple of float): aspect ratio range of the cropped image before resizing.
-        interpolation (int): Desired interpolation enum defined by `filters`_.
+        interpolation (int): Interpolation type defined by `filters`_.
             Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
             and ``PIL.Image.BICUBIC`` are supported.
     """
@@ -1134,7 +1134,7 @@ class RandomRotation(torch.nn.Module):
         degrees (sequence or float or int): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
             will be (-degrees, +degrees).
-        resample (int, optional): An optional resampling filter. See `filters`_ for more information.
+        interpolation (int): Interpolation type defined by `filters`_.
             If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
             If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
         expand (bool, optional): Optional expansion flag.
@@ -1148,13 +1148,17 @@ class RandomRotation(torch.nn.Module):
             Defaults to 0 for all bands. This option is only available for Pillow>=5.2.0.
             This option is not supported for Tensor input. Fill value for the area outside the transform in the output
             image is always 0.
+        resample (int, optional): deprecated argument, please use `arg`:interpolation: instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
 
-    def __init__(self, degrees, resample=False, expand=False, center=None, fill=None):
+    def __init__(self, degrees, interpolation=0, expand=False, center=None, fill=None, resample=None):
         super().__init__()
+        if resample is not None:
+            warnings.warn("Argument resample is deprecated. Please, use interpolation instead")
+
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 
         if center is not None:
@@ -1162,7 +1166,7 @@ class RandomRotation(torch.nn.Module):
 
         self.center = center
 
-        self.resample = resample
+        self.resample = self.interpolation = interpolation
         self.expand = expand
         self.fill = fill
 
@@ -1185,11 +1189,12 @@ class RandomRotation(torch.nn.Module):
             PIL Image or Tensor: Rotated image.
         """
         angle = self.get_params(self.degrees)
-        return F.rotate(img, angle, self.resample, self.expand, self.center, self.fill)
+        return F.rotate(img, angle, self.interpolation, self.expand, self.center, self.fill)
 
     def __repr__(self):
+        interpolate_str = _pil_interpolation_to_str[self.interpolation]
         format_string = self.__class__.__name__ + '(degrees={0}'.format(self.degrees)
-        format_string += ', resample={0}'.format(self.resample)
+        format_string += ', interpolation={0}'.format(interpolate_str)
         format_string += ', expand={0}'.format(self.expand)
         if self.center is not None:
             format_string += ', center={0}'.format(self.center)
@@ -1220,19 +1225,29 @@ class RandomAffine(torch.nn.Module):
             range (shear[0], shear[1]) will be applied. Else if shear is a tuple or list of 4 values,
             a x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
             Will not apply shear by default.
-        resample (int, optional): An optional resampling filter. See `filters`_ for more information.
+        interpolation (int): Interpolation type defined by `filters`_.
             If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
             If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
-        fillcolor (tuple or int): Optional fill color (Tuple for RGB Image and int for grayscale) for the area
+        fill (tuple or int): Optional fill color (Tuple for RGB Image and int for grayscale) for the area
             outside the transform in the output image (Pillow>=5.0.0). This option is not supported for Tensor
             input. Fill value for the area outside the transform in the output image is always 0.
+        fillcolor (tuple or int, optional): deprecated argument, please use `arg`:fill: instead.
+        resample (int, optional): deprecated argument, please use `arg`:interpolation: instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
 
-    def __init__(self, degrees, translate=None, scale=None, shear=None, resample=0, fillcolor=0):
+    def __init__(
+        self, degrees, translate=None, scale=None, shear=None, interpolation=0, fill=0, fillcolor=None, resample=None
+    ):
         super().__init__()
+        if resample is not None:
+            warnings.warn("Argument resample is deprecated. Please, use interpolation instead")
+
+        if fillcolor is not None:
+            warnings.warn("Argument fillcolor is deprecated. Please, use fill instead")
+
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 
         if translate is not None:
@@ -1254,8 +1269,8 @@ class RandomAffine(torch.nn.Module):
         else:
             self.shear = shear
 
-        self.resample = resample
-        self.fillcolor = fillcolor
+        self.resample = self.interpolation = interpolation
+        self.fillcolor = self.fill = fill
 
     @staticmethod
     def get_params(
@@ -1306,7 +1321,7 @@ class RandomAffine(torch.nn.Module):
         img_size = F._get_image_size(img)
 
         ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img_size)
-        return F.affine(img, *ret, resample=self.resample, fillcolor=self.fillcolor)
+        return F.affine(img, *ret, interpolation=self.interpolation, fill=self.fill)
 
     def __repr__(self):
         s = '{name}(degrees={degrees}'
@@ -1316,13 +1331,13 @@ class RandomAffine(torch.nn.Module):
             s += ', scale={scale}'
         if self.shear is not None:
             s += ', shear={shear}'
-        if self.resample > 0:
-            s += ', resample={resample}'
-        if self.fillcolor != 0:
-            s += ', fillcolor={fillcolor}'
+        if self.interpolation > 0:
+            s += ', interpolation={interpolation}'
+        if self.fill != 0:
+            s += ', fill={fill}'
         s += ')'
         d = dict(self.__dict__)
-        d['resample'] = _pil_interpolation_to_str[d['resample']]
+        d['interpolation'] = _pil_interpolation_to_str[d['interpolation']]
         return s.format(name=self.__class__.__name__, **d)
 
 

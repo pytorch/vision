@@ -1529,7 +1529,7 @@ class Tester(unittest.TestCase):
         # Checking if RandomAffine can be printed as string
         t.__repr__()
 
-        t = transforms.RandomAffine(10, resample=Image.BILINEAR)
+        t = transforms.RandomAffine(10, interpolation=Image.BILINEAR)
         self.assertIn("Image.BILINEAR", t.__repr__())
 
     def test_to_grayscale(self):

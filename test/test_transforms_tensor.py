@@ -349,7 +349,7 @@ class Tester(TransformsTester):
                         for interpolation in [NEAREST, BILINEAR]:
                             transform = T.RandomAffine(
                                 degrees=degrees, translate=translate,
-                                scale=scale, shear=shear, resample=interpolation
+                                scale=scale, shear=shear, interpolation=interpolation
                             )
                             s_transform = torch.jit.script(transform)
 
@@ -368,7 +368,7 @@ class Tester(TransformsTester):
                 for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
                     for interpolation in [NEAREST, BILINEAR]:
                         transform = T.RandomRotation(
-                            degrees=degrees, resample=interpolation, expand=expand, center=center
+                            degrees=degrees, interpolation=interpolation, expand=expand, center=center
                         )
                         s_transform = torch.jit.script(transform)
 

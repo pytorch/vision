@@ -793,8 +793,8 @@ def _get_inverse_affine_matrix(
 
 
 def rotate(
-        img: Tensor, angle: float, resample: int = 0, expand: bool = False,
-        center: Optional[List[int]] = None, fill: Optional[int] = None
+        img: Tensor, angle: float, interpolation: int = 0, expand: bool = False,
+        center: Optional[List[int]] = None, fill: Optional[int] = None, resample: Optional[int] = None
 ) -> Tensor:
     """Rotate the image by angle.
     The image can be a PIL Image or a Tensor, in which case it is expected
@@ -803,7 +803,7 @@ def rotate(
     Args:
         img (PIL Image or Tensor): image to be rotated.
         angle (float or int): rotation angle value in degrees, counter-clockwise.
-        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
+        interpolation (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
             An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
         expand (bool, optional): Optional expansion flag.
@@ -817,6 +817,7 @@ def rotate(
             Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
             This option is not supported for Tensor input. Fill value for the area outside the transform in the output
             image is always 0.
+        resample (int, optional): deprecated argument, please use `arg`:interpolation: instead.
 
     Returns:
         PIL Image or Tensor: Rotated image.
@@ -824,6 +825,9 @@ def rotate(
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
+    if resample is not None:
+        warnings.warn("Argument resample is deprecated. Please, use interpolation instead")
+
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")
 
@@ -831,7 +835,7 @@ def rotate(
         raise TypeError("Argument center should be a sequence")
 
     if not isinstance(img, torch.Tensor):
-        return F_pil.rotate(img, angle=angle, resample=resample, expand=expand, center=center, fill=fill)
+        return F_pil.rotate(img, angle=angle, interpolation=interpolation, expand=expand, center=center, fill=fill)
 
     center_f = [0.0, 0.0]
     if center is not None:
@@ -842,12 +846,13 @@ def rotate(
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
     matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
-    return F_t.rotate(img, matrix=matrix, resample=resample, expand=expand, fill=fill)
+    return F_t.rotate(img, matrix=matrix, interpolation=interpolation, expand=expand, fill=fill)
 
 
 def affine(
         img: Tensor, angle: float, translate: List[int], scale: float, shear: List[float],
-        resample: int = 0, fillcolor: Optional[int] = None
+        interpolation: int = 0, fill: Optional[int] = None, resample: Optional[int] = None,
+        fillcolor: Optional[int] = None
 ) -> Tensor:
     """Apply affine transformation on the image keeping image center invariant.
     The image can be a PIL Image or a Tensor, in which case it is expected
@@ -861,17 +866,25 @@ def affine(
         shear (float or tuple or list): shear angle value in degrees between -180 to 180, clockwise direction.
             If a tuple of list is specified, the first value corresponds to a shear parallel to the x axis, while
             the second value corresponds to a shear parallel to the y axis.
-        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
+        interpolation (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
             An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image is PIL Image and has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
             If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
-        fillcolor (int): Optional fill color for the area outside the transform in the output image (Pillow>=5.0.0).
+        fill (int): Optional fill color for the area outside the transform in the output image (Pillow>=5.0.0).
             This option is not supported for Tensor input. Fill value for the area outside the transform in the output
             image is always 0.
+        fillcolor (tuple or int, optional): deprecated argument, please use `arg`:fill: instead.
+        resample (int, optional): deprecated argument, please use `arg`:interpolation: instead.
 
     Returns:
         PIL Image or Tensor: Transformed image.
     """
+    if resample is not None:
+        warnings.warn("Argument resample is deprecated. Please, use interpolation instead")
+
+    if fillcolor is not None:
+        warnings.warn("Argument fillcolor is deprecated. Please, use fill instead")
+
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")
 
@@ -913,11 +926,11 @@ def affine(
         center = [img_size[0] * 0.5, img_size[1] * 0.5]
         matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
 
-        return F_pil.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
+        return F_pil.affine(img, matrix=matrix, interpolation=interpolation, fill=fill)
 
     translate_f = [1.0 * t for t in translate]
     matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, translate_f, scale, shear)
-    return F_t.affine(img, matrix=matrix, resample=resample, fillcolor=fillcolor)
+    return F_t.affine(img, matrix=matrix, interpolation=interpolation, fill=fill)
 
 
 @torch.jit.unused
