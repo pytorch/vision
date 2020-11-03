@@ -1,6 +1,9 @@
 #include "read_write_file_cpu.h"
 
 #ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
 std::wstring utf8_decode(const std::string& str) {
   if (str.empty()) {
     return std::wstring();
