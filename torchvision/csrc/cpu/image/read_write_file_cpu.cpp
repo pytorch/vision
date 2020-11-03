@@ -20,7 +20,10 @@ torch::Tensor read_file(VISION_STRING filename) {
 #if defined(_WIN32) && defined(UNICODE)
   size_t size = wcslen(filename) + 1;
   std::unique_ptr<char> filename_ascii_raw(new char[size]);
-  std::wcstombs(filename_ascii_raw.get(), filename, size);
+  size_t converted_size = std::wcstombs(filename_ascii_raw.get(), filename, size);
+
+  TORCH_CHECK(converted_size != size_t(-1), "Unicode path is not supported currently");
+
   std::string filename_ascii(filename_ascii_raw.get());
 #else
   std::string& filename_ascii = filename;  
