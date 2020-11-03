@@ -16,8 +16,10 @@
 torch::Tensor read_file(VISION_STRING filename) {
   struct VISION_STAT stat_buf;
   int rc = VISION_STAT(filename.c_str(), &stat_buf);
-  // errno is a variable defined in errno.h
+
 #if defined(_WIN32) && defined(UNICODE)
+  // The codepath in PyTorch doesn't support Unicode strings.
+  // So we will need to convert `filename` to ASCII string here.
   size_t size = wcslen(filename) + 1;
   std::unique_ptr<char> filename_ascii_raw(new char[size]);
   size_t converted_size = std::wcstombs(filename_ascii_raw.get(), filename, size);
@@ -26,9 +28,10 @@ torch::Tensor read_file(VISION_STRING filename) {
 
   std::string filename_ascii(filename_ascii_raw.get());
 #else
-  std::string& filename_ascii = filename;  
+  std::string& filename_ascii = filename;
 #endif
 
+  // errno is a variable defined in errno.h
   TORCH_CHECK(
       rc == 0, "[Errno ", errno, "] ", strerror(errno), ": '", filename_ascii, "'");
 
@@ -37,7 +40,6 @@ torch::Tensor read_file(VISION_STRING filename) {
   TORCH_CHECK(size > 0, "Expected a non empty file");
 
 #ifdef _WIN32
-  // Expected error for Unicode variant here
   auto data =
       torch::from_file(filename_ascii, /*shared=*/false, /*size=*/size, torch::kU8)
           .clone();
