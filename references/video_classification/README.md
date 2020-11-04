@@ -2,8 +2,6 @@
 
 We present a simple training script that can be used for replicating the result of [resenet-based video models](https://research.fb.com/wp-content/uploads/2018/04/a-closer-look-at-spatiotemporal-convolutions-for-action-recognition.pdf). All models are trained on [Kinetics400 dataset](https://deepmind.com/research/open-source/kinetics), a benchmark dataset for human-action recognition. The accuracy is reported on the traditional validation split.
 
-TODO: Add some info about the context, dataset we use etc
-
 ## Data preparation
 
 If you already have downloaded [Kinetics400 dataset](https://deepmind.com/research/open-source/kinetics), 
