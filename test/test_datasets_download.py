@@ -194,7 +194,8 @@ def make_parametrize_kwargs(download_configs):
             caltech256(),
             cifar10(),
             cifar100(),
-            voc(),
+            # The VOC download server is unstable. See https://github.com/pytorch/vision/issues/2953 for details.
+            # voc(),
         )
     )
 )
