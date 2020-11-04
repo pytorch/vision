@@ -54,7 +54,7 @@ torch::Tensor read_file(const std::string& filename) {
 
   std::unique_ptr<uint8_t> dataBytes(new uint8_t[size]);
 
-  fread(dataBytes, sizeof(uint8_t), size, infile);
+  fread(reinterpret_cast<void*>(dataBytes.get()), sizeof(uint8_t), size, infile);
   fclose(infile);
 
   auto data = torch::from_blob(dataBytes.get(), {size}, torch::kU8).clone();
