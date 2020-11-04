@@ -47,14 +47,15 @@ torch::Tensor read_file(const std::string& filename) {
   // back to use the following implementation since it uses file mapping.
   //   auto data =
   //       torch::from_file(filename, /*shared=*/false, /*size=*/size,
-  //       torch::kU8)
+  //       torch::kU8).clone()
   FILE* infile = _wfopen(fileW.c_str(), L"rb");
 
   TORCH_CHECK(infile != nullptr, "Error opening input file");
 
   std::unique_ptr<uint8_t> dataBytes(new uint8_t[size]);
 
-  fread(reinterpret_cast<void*>(dataBytes.get()), sizeof(uint8_t), size, infile);
+  fread(
+      reinterpret_cast<void*>(dataBytes.get()), sizeof(uint8_t), size, infile);
   fclose(infile);
 
   auto data = torch::from_blob(dataBytes.get(), {size}, torch::kU8).clone();
