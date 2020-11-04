@@ -19,6 +19,7 @@ std::wstring utf8_decode(const std::string& str) {
       static_cast<int>(str.size()),
       &wstrTo[0],
       size_needed);
+  return wstrTo;
 }
 #endif
 
