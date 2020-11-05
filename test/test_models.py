@@ -9,6 +9,7 @@ import numpy as np
 from torchvision import models
 import unittest
 import random
+import warnings
 
 
 def set_rng_seed(seed):
@@ -148,6 +149,7 @@ class ModelTester(TestCase):
         set_rng_seed(0)
         kwargs = {}
         if "retinanet" in name:
+            # Reduce the default threshold to ensure the returned boxes are not empty.
             kwargs["score_thresh"] = 0.01
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False, **kwargs)
         model.eval().to(device=dev)
@@ -206,6 +208,12 @@ class ModelTester(TestCase):
                 # and then using the Hungarian algorithm as in DETR to find the
                 # best match between output and expected boxes and eliminate some
                 # of the flakiness. Worth exploring.
+                warnings.warn(
+                    "The complete output in {} did not match exactly. "
+                    "This is likely due to test flakiness, but you may "
+                    "want to  check manually if you introduce significant "
+                    "changes to the codebase.".format(self._testMethodName),
+                    RuntimeWarning)
 
         check_out(out)
 
