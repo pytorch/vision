@@ -105,10 +105,8 @@ class TestCase(unittest.TestCase):
                                      "expect",
                                      munged_id)
 
-        subname_output = ""
         if subname:
             expected_file += "_" + subname
-            subname_output = " ({})".format(subname)
         expected_file += "_expect.pkl"
 
         if not ACCEPT and not os.path.exists(expected_file):
