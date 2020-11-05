@@ -130,7 +130,7 @@ class _DenseBlock(nn.ModuleDict):
 
 
 class _Transition(nn.Sequential):
-    def __init__(self, num_input_features: int, num_output_features: int):
+    def __init__(self, num_input_features: int, num_output_features: int) -> None:
         super(_Transition, self).__init__()
         self.add_module('norm', nn.BatchNorm2d(num_input_features))
         self.add_module('relu', nn.ReLU(inplace=True))
@@ -239,8 +239,15 @@ def _load_state_dict(model: nn.Module, model_url: str, progress: bool) -> None:
     model.load_state_dict(state_dict)
 
 
-def _densenet(arch: str, growth_rate: int, block_config: Tuple[int, int, int, int], num_init_features: int,
-              pretrained: bool, progress: bool, **kwargs: Any) -> DenseNet:
+def _densenet(
+    arch: str,
+    growth_rate: int,
+    block_config: Tuple[int, int, int, int],
+    num_init_features: int,
+    pretrained: bool,
+    progress: bool,
+    **kwargs: Any
+) -> DenseNet:
     model = DenseNet(growth_rate, block_config, num_init_features, **kwargs)
     if pretrained:
         _load_state_dict(model, model_urls[arch], progress)
