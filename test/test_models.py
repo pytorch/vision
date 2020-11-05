@@ -230,10 +230,10 @@ class ModelTester(TestCase):
                     full_validation &= check_out(out)
 
         if not full_validation:
-            msg = "The complete output in {} did not match exactly. " \
-                  "This is likely due to test flakiness, but you may " \
-                  "want to  check manually if you introduce significant " \
-                  "changes to the codebase.".format(self._testMethodName)
+            msg = "The output of {} could only be partially validated. " \
+                  "This is likely due to unit-test flakiness, but you may " \
+                  "want to do additional manual checks if you made " \
+                  "significant changes to the codebase.".format(self._testMethodName)
             warnings.warn(msg, RuntimeWarning)
             raise unittest.SkipTest(msg)
 
