@@ -204,14 +204,11 @@ class ModelTester(TestCase):
                 # and then using the Hungarian algorithm as in DETR to find the
                 # best match between output and expected boxes and eliminate some
                 # of the flakiness. Worth exploring.
-                msg = "The complete output in {} did not match exactly. " \
-                    "This is likely due to test flakiness, but you may " \
-                    "want to  check manually if you introduce significant " \
-                    "changes to the codebase.".format(self._testMethodName)
-                warnings.warn(msg, RuntimeWarning)
-                raise unittest.SkipTest(msg)
+                return False  # Partial validation performed
 
-        check_out(out)
+            return True  # Full validation performed
+
+        full_validation = check_out(out)
 
         scripted_model = torch.jit.script(model)
         scripted_model.eval()
@@ -230,7 +227,15 @@ class ModelTester(TestCase):
                 out = model(model_input)
                 # See autocast_flaky_numerics comment at top of file.
                 if name not in autocast_flaky_numerics:
-                    check_out(out)
+                    full_validation &= check_out(out)
+
+        if not full_validation:
+            msg = "The complete output in {} did not match exactly. " \
+                  "This is likely due to test flakiness, but you may " \
+                  "want to  check manually if you introduce significant " \
+                  "changes to the codebase.".format(self._testMethodName)
+            warnings.warn(msg, RuntimeWarning)
+            raise unittest.SkipTest(msg)
 
     def _test_detection_model_validation(self, name):
         set_rng_seed(0)
