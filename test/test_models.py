@@ -147,10 +147,10 @@ class ModelTester(TestCase):
     def _test_detection_model(self, name, dev):
         set_rng_seed(0)
         kwargs = {}
-        if "retinanet" in name:
+        if "retinanet" in name:  # TODO: consider removing
             kwargs["score_thresh"] = 0.013
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False, **kwargs)
-        if "keypointrcnn" in name or "retinanet" in name:
+        if "keypointrcnn" in name or "retinanet" in name:  # TODO: consider removing
             overwrite_eps(model, 0.0)
         model.eval().to(device=dev)
         input_shape = (3, 300, 300)
@@ -164,14 +164,13 @@ class ModelTester(TestCase):
             self.assertEqual(len(out), 1)
 
             def subsample_tensor(tensor):
-                num_elems = tensor.numel()
+                num_elems = tensor.size(0)
                 num_samples = 20
                 if num_elems <= num_samples:
                     return tensor
 
-                flat_tensor = tensor.flatten()
                 ith_index = num_elems // num_samples
-                return flat_tensor[ith_index - 1::ith_index]
+                return tensor[ith_index - 1::ith_index]
 
             def compute_mean_std(tensor):
                 # can't compute mean of integral tensor
@@ -180,14 +179,15 @@ class ModelTester(TestCase):
                 std = torch.std(tensor)
                 return {"mean": mean, "std": std}
 
-            if name == "maskrcnn_resnet50_fpn":
+            if name == "maskrcnn_resnet50_fpn":  # TODO: consider removing
                 # maskrcnn_resnet_50_fpn numerically unstable across platforms, so for now
                 # compare results with mean and std
                 test_value = map_nested_tensor_object(out, tensor_map_fn=compute_mean_std)
                 # mean values are small, use large prec
                 self.assertExpected(test_value, prec=.01, strip_suffix="_" + dev)
             else:
-                self.assertExpected(map_nested_tensor_object(out, tensor_map_fn=subsample_tensor),
+                test_sample = map_nested_tensor_object(out, tensor_map_fn=subsample_tensor)
+                self.assertExpected(test_sample,
                                     prec=0.01,
                                     strip_suffix="_" + dev)
 
@@ -200,9 +200,6 @@ class ModelTester(TestCase):
         self.assertEqual(scripted_out[0]["scores"], out[0]["scores"])
         # labels currently float in script: need to investigate (though same result)
         self.assertEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
-        self.assertTrue("boxes" in out[0])
-        self.assertTrue("scores" in out[0])
-        self.assertTrue("labels" in out[0])
         # don't check script because we are compiling it here:
         # TODO: refactor tests
         # self.check_script(model, name)
