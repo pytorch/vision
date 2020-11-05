@@ -361,7 +361,8 @@ class TransformsTester(unittest.TestCase):
         if np_pil_image.ndim == 2:
             np_pil_image = np_pil_image[:, :, None]
         pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
-        err = getattr(torch, agg_method)(tensor - pil_tensor).item()
+        # error value can be mean absolute error, max abs error
+        err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
         self.assertTrue(
             err < tol,
             msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])

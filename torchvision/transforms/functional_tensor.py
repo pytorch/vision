@@ -822,32 +822,19 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
         if (w <= h and w == size_w) or (h <= w and h == size_h):
             return img
 
-    # make image NCHW
-    need_squeeze = False
-    if img.ndim < 4:
-        img = img.unsqueeze(dim=0)
-        need_squeeze = True
-
     mode = _interpolation_modes[interpolation]
 
-    out_dtype = img.dtype
-    need_cast = False
-    if img.dtype not in (torch.float32, torch.float64):
-        need_cast = True
-        img = img.to(torch.float32)
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [torch.float32, torch.float64])
 
     # Define align_corners to avoid warnings
     align_corners = False if mode in ["bilinear", "bicubic"] else None
 
     img = interpolate(img, size=[size_h, size_w], mode=mode, align_corners=align_corners)
 
-    if need_squeeze:
-        img = img.squeeze(dim=0)
+    if mode == "bicubic" and out_dtype == torch.uint8:
+        img = img.clamp(min=0, max=255)
 
-    if need_cast:
-        if mode == "bicubic":
-            img = img.clamp(min=0, max=255)
-        img = img.to(out_dtype)
+    img = _cast_squeeze_out(img, need_cast=need_cast, need_squeeze=need_squeeze, out_dtype=out_dtype)
 
     return img
 
@@ -879,7 +866,7 @@ def _assert_grid_transform_inputs(
         raise ValueError("Resampling mode '{}' is unsupported with Tensor input".format(resample))
 
 
-def _cast_squeeze_in(img: Tensor, req_dtype: torch.dtype) -> Tuple[Tensor, bool, bool, torch.dtype]:
+def _cast_squeeze_in(img: Tensor, req_dtypes: List[torch.dtype]) -> Tuple[Tensor, bool, bool, torch.dtype]:
     need_squeeze = False
     # make image NCHW
     if img.ndim < 4:
@@ -888,8 +875,9 @@ def _cast_squeeze_in(img: Tensor, req_dtype: torch.dtype) -> Tuple[Tensor, bool,
 
     out_dtype = img.dtype
     need_cast = False
-    if out_dtype != req_dtype:
+    if out_dtype not in req_dtypes:
         need_cast = True
+        req_dtype = req_dtypes[0]
         img = img.to(req_dtype)
     return img, need_cast, need_squeeze, out_dtype
 
@@ -899,15 +887,17 @@ def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtyp
         img = img.squeeze(dim=0)
 
     if need_cast:
-        # it is better to round before cast
-        img = torch.round(img).to(out_dtype)
+        if out_dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
+            # it is better to round before cast
+            img = torch.round(img)
+        img = img.to(out_dtype)
 
     return img
 
 
 def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str) -> Tensor:
 
-    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, grid.dtype)
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [grid.dtype, ])
 
     if img.shape[0] > 1:
         # Apply same grid to a batch of images
@@ -1168,7 +1158,7 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
     kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=img.device)
     kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
 
-    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, kernel.dtype)
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [kernel.dtype, ])
 
     # padding = (left, right, top, bottom)
     padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]
