@@ -89,14 +89,10 @@ script_test_models = {
 # trying autocast. However, they still try an autocasted forward pass, so they still ensure
 # autocast coverage suffices to prevent dtype errors in each model.
 autocast_flaky_numerics = (
-    "fasterrcnn_resnet50_fpn",
     "inception_v3",
-    "keypointrcnn_resnet50_fpn",
-    "maskrcnn_resnet50_fpn",
     "resnet101",
     "resnet152",
     "wide_resnet101_2",
-    "retinanet_resnet50_fpn",
 )
 
 
@@ -208,12 +204,12 @@ class ModelTester(TestCase):
                 # and then using the Hungarian algorithm as in DETR to find the
                 # best match between output and expected boxes and eliminate some
                 # of the flakiness. Worth exploring.
-                warnings.warn(
-                    "The complete output in {} did not match exactly. "
-                    "This is likely due to test flakiness, but you may "
-                    "want to  check manually if you introduce significant "
-                    "changes to the codebase.".format(self._testMethodName),
-                    RuntimeWarning)
+                msg = "The complete output in {} did not match exactly. " \
+                    "This is likely due to test flakiness, but you may " \
+                    "want to  check manually if you introduce significant " \
+                    "changes to the codebase.".format(self._testMethodName)
+                warnings.warn(msg, RuntimeWarning)
+                raise unittest.SkipTest(msg)
 
         check_out(out)
 
