@@ -856,7 +856,7 @@ def _assert_grid_transform_inputs(
         img: Tensor,
         matrix: Optional[List[float]],
         resample: int,
-        fillcolor: Optional[float],
+        fillcolor: Optional[List[float]],
         _interpolation_modes: Dict[int, str],
         coeffs: Optional[List[float]] = None,
 ):
@@ -872,8 +872,8 @@ def _assert_grid_transform_inputs(
     if coeffs is not None and len(coeffs) != 8:
         raise ValueError("Argument coeffs should have 8 float values")
 
-    if fillcolor is not None and not isinstance(fillcolor, (int, float)):
-        warnings.warn("Argument fill/fillcolor should be an integer or float")
+    if fillcolor is not None and not isinstance(fillcolor, list):
+        warnings.warn("Argument fill/fillcolor should be a list")
 
     if resample not in _interpolation_modes:
         raise ValueError("Resampling mode '{}' is unsupported with Tensor input".format(resample))
@@ -905,7 +905,7 @@ def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtyp
     return img
 
 
-def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fillcolor: Optional[float]) -> Tensor:
+def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fillcolor: Optional[List[float]]) -> Tensor:
 
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, grid.dtype)
 
@@ -914,21 +914,23 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fillcolor: Optio
         grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
 
     # Append a dummy mask for customized fill colors, should be faster than grid_sample() twice
-    if fillcolor is not None and fillcolor != 0:
+    if fillcolor is not None:
         dummy = torch.ones((img.shape[0], 1, img.shape[2], img.shape[3]), dtype=img.dtype, device=img.device)
         img = torch.cat((img, dummy), dim=1)
 
     img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
 
     # Fill with required color
-    if fillcolor is not None and fillcolor != 0:
-        mask = img[:, -1, :, :]  # N * 1 * H * W
+    if fillcolor is not None:
+        mask = img[:, -1:, :, :]  # N * 1 * H * W
         img = img[:, :-1, :, :]  # N * C * H * W
         mask = mask.expand_as(img)
+        fill = torch.tensor(fillcolor, dtype=img.dtype, device=img.device).unsqueeze(0).unsqueeze(-1).unsqueeze(-1) \
+            .expand_as(img)
         if mode == 'nearest':
-            img[mask < 1e-3] = fillcolor  # Leave some room for error
+            img[mask < 1e-3] = fill[mask < 1e-3]  # Leave some room for error
         else:  # 'bilinear'
-            img = img * mask + (1.0 - mask) * fillcolor
+            img = img * mask + (1.0 - mask) * fill
 
     img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
@@ -957,7 +959,7 @@ def _gen_affine_grid(
 
 
 def affine(
-        img: Tensor, matrix: List[float], resample: int = 0, fillcolor: Optional[float] = None
+        img: Tensor, matrix: List[float], resample: int = 0, fillcolor: Optional[List[float]] = None
 ) -> Tensor:
     """PRIVATE METHOD. Apply affine transformation on the Tensor image keeping image center invariant.
 
@@ -971,7 +973,8 @@ def affine(
         matrix (list of floats): list of 6 float values representing inverse matrix for affine transformation.
         resample (int, optional): An optional resampling filter. Default is nearest (=0). Other supported values:
             bilinear(=2).
-        fillcolor (n-tuple, int, float): This option does not support n-tuple for tensor input.
+        fill (sequence or int or float, optional): Optional fill value, default None.
+            If None, fill with 0.
 
     Returns:
         Tensor: Transformed image.
@@ -1018,7 +1021,7 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
 
 
 def rotate(
-        img: Tensor, matrix: List[float], resample: int = 0, expand: bool = False, fill: Optional[float] = None
+        img: Tensor, matrix: List[float], resample: int = 0, expand: bool = False, fill: Optional[List[float]] = None
 ) -> Tensor:
     """PRIVATE METHOD. Rotate the Tensor image by angle.
 
@@ -1037,7 +1040,8 @@ def rotate(
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
             Note that the expand flag assumes rotation around the center and no translation.
-        fill (n-tuple or int or float): this option does not support n-tuple for tensor input.
+        fill (sequence or int or float, optional): Optional fill value, default None.
+            If None, fill with 0.
 
     Returns:
         Tensor: Rotated image.
@@ -1096,7 +1100,7 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
 
 
 def perspective(
-        img: Tensor, perspective_coeffs: List[float], interpolation: int = 2, fill: Optional[float] = None
+        img: Tensor, perspective_coeffs: List[float], interpolation: int = 2, fill: Optional[List[float]] = None
 ) -> Tensor:
     """PRIVATE METHOD. Perform perspective transform of the given Tensor image.
 
@@ -1109,7 +1113,8 @@ def perspective(
         img (Tensor): Image to be transformed.
         perspective_coeffs (list of float): perspective transformation coefficients.
         interpolation (int): Interpolation type. Default, ``PIL.Image.BILINEAR``.
-        fill (n-tuple or int or float): This option does not support n-tuple for tensor input.
+        fill (sequence or int or float, optional): Optional fill value, default None.
+            If None, fill with 0.
 
     Returns:
         Tensor: transformed image.

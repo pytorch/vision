@@ -495,7 +495,7 @@ def perspective(
         startpoints: List[List[int]],
         endpoints: List[List[int]],
         interpolation: int = 2,
-        fill: Optional[float] = None
+        fill: Optional[List[float]] = None
 ) -> Tensor:
     """Perform perspective transform of the given image.
     The image can be a PIL Image or a Tensor, in which case it is expected
@@ -509,10 +509,9 @@ def perspective(
             ``[top-left, top-right, bottom-right, bottom-left]`` of the transformed image.
         interpolation (int): Interpolation type. If input is Tensor, only ``PIL.Image.NEAREST`` and
             ``PIL.Image.BILINEAR`` are supported. Default, ``PIL.Image.BILINEAR`` for PIL images and Tensors.
-        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+        fill (sequence or int or float, optional): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
             This option is only available for ``pillow>=5.0.0``.
-            This option does not support n-tuple for tensor input.
 
     Returns:
         PIL Image or Tensor: transformed Image.
@@ -794,7 +793,7 @@ def _get_inverse_affine_matrix(
 
 def rotate(
         img: Tensor, angle: float, resample: int = 0, expand: bool = False,
-        center: Optional[List[int]] = None, fill: Optional[float] = None
+        center: Optional[List[int]] = None, fill: Optional[List[float]] = None
 ) -> Tensor:
     """Rotate the image by angle.
     The image can be a PIL Image or a Tensor, in which case it is expected
@@ -812,10 +811,9 @@ def rotate(
             Note that the expand flag assumes rotation around the center and no translation.
         center (list or tuple, optional): Optional center of rotation. Origin is the upper left corner.
             Default is the center of the image.
-        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+        fill (sequence or int or float, optional): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
             Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
-            This option does not support n-tuple for tensor input.
 
     Returns:
         PIL Image or Tensor: Rotated image.
@@ -846,7 +844,7 @@ def rotate(
 
 def affine(
         img: Tensor, angle: float, translate: List[int], scale: float, shear: List[float],
-        resample: int = 0, fillcolor: Optional[float] = None
+        resample: int = 0, fillcolor: Optional[List[float]] = None
 ) -> Tensor:
     """Apply affine transformation on the image keeping image center invariant.
     The image can be a PIL Image or a Tensor, in which case it is expected
@@ -864,9 +862,8 @@ def affine(
             An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image is PIL Image and has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
             If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
-        fillcolor (n-tuple, int, float): Optional fill color for the area outside the transform
+        fillcolor (sequence, int, float): Optional fill color for the area outside the transform
             in the output image (Pillow>=5.0.0).
-            This option does not support n-tuple for tensor input.
 
     Returns:
         PIL Image or Tensor: Transformed image.
