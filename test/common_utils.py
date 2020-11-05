@@ -128,32 +128,23 @@ class TestCase(unittest.TestCase):
             subname_output = " ({})".format(subname)
         expected_file += "_expect.pkl"
 
-        def accept_output(update_type):
-            print("Accepting {} for {}{}:\n\n{}".format(update_type, munged_id, subname_output, output))
-            torch.save(output, expected_file)
-            MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
-            binary_size = os.path.getsize(expected_file)
-            self.assertTrue(binary_size <= MAX_PICKLE_SIZE)
-
         try:
             expected = torch.load(expected_file)
         except IOError as e:
             if e.errno != errno.ENOENT:
                 raise
-            elif ACCEPT:
-                accept_output("output")
-                return
-            else:
+            elif not ACCEPT:
                 raise RuntimeError(
                     ("I got this output for {}{}:\n\n{}\n\n"
                      "No expect file exists; to accept the current output, run:\n"
                      "python {} {} --accept").format(munged_id, subname_output, output, __main__.__file__, munged_id))
 
         if ACCEPT:
-            try:
-                self.assertEqual(output, expected, prec=prec)
-            except Exception:
-                accept_output("updated output")
+            print("Accepting updated output for {}{}:\n\n{}".format(munged_id, subname_output, output))
+            torch.save(output, expected_file)
+            MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
+            binary_size = os.path.getsize(expected_file)
+            self.assertTrue(binary_size <= MAX_PICKLE_SIZE)
         else:
             self.assertEqual(output, expected, prec=prec)
 
