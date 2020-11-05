@@ -113,8 +113,8 @@ class TestCase(unittest.TestCase):
 
         if not ACCEPT and not os.path.exists(expected_file):
             raise RuntimeError(
-                ("No expect file exists for {}{}; to accept the current output, run:\n"
-                 "python {} {} --accept").format(munged_id, subname_output, __main__.__file__, munged_id))
+                ("No expect file exists for {}; to accept the current output, run:\n"
+                 "python {} {} --accept").format(os.path.basename(expected_file), __main__.__file__, munged_id))
 
         return expected_file
 
@@ -139,11 +139,13 @@ class TestCase(unittest.TestCase):
         expected_file = self._get_expected_file(subname, strip_suffix)
 
         if ACCEPT:
-            print("Accepting updated output for {}:\n\n{}".format(os.path.basename(expected_file), output))
+            filename = {os.path.basename(expected_file)}
+            print("Accepting updated output for {}:\n\n{}".format(filename, output))
             torch.save(output, expected_file)
             MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
             binary_size = os.path.getsize(expected_file)
-            self.assertTrue(binary_size <= MAX_PICKLE_SIZE)
+            if binary_size > MAX_PICKLE_SIZE:
+                raise RuntimeError("The output for {}, is larger than 50kb".format(filename))
         else:
             expected = torch.load(expected_file)
             self.assertEqual(output, expected, prec=prec)

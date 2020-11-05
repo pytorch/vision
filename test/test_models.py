@@ -1,14 +1,14 @@
 from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state
 from collections import OrderedDict
 from itertools import product
+import functools
+import operator
 import torch
 import torch.nn as nn
 import numpy as np
 from torchvision import models
 import unittest
 import random
-
-from torchvision.models.detection._utils import overwrite_eps
 
 
 def set_rng_seed(seed):
@@ -147,11 +147,9 @@ class ModelTester(TestCase):
     def _test_detection_model(self, name, dev):
         set_rng_seed(0)
         kwargs = {}
-        if "retinanet" in name:  # TODO: consider removing
-            kwargs["score_thresh"] = 0.013
+        if "retinanet" in name:
+            kwargs["score_thresh"] = 0.01
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False, **kwargs)
-        if "keypointrcnn" in name or "retinanet" in name:  # TODO: consider removing
-            overwrite_eps(model, 0.0)
         model.eval().to(device=dev)
         input_shape = (3, 300, 300)
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
@@ -162,6 +160,14 @@ class ModelTester(TestCase):
 
         def check_out(out):
             self.assertEqual(len(out), 1)
+
+            def compact(tensor):
+                size = tensor.size()
+                elements_per_sample = functools.reduce(operator.mul, size[1:], 1)
+                if elements_per_sample > 30:
+                    return compute_mean_std(tensor)
+                else:
+                    return subsample_tensor(tensor)
 
             def subsample_tensor(tensor):
                 num_elems = tensor.size(0)
@@ -179,34 +185,27 @@ class ModelTester(TestCase):
                 std = torch.std(tensor)
                 return {"mean": mean, "std": std}
 
-            if name == "maskrcnn_resnet50_fpn":  # TODO: consider removing
-                # maskrcnn_resnet_50_fpn numerically unstable across platforms, so for now
-                # compare results with mean and std
-                test_value = map_nested_tensor_object(out, tensor_map_fn=compute_mean_std)
-                # mean values are small, use large prec
-                self.assertExpected(test_value, prec=.01, strip_suffix="_" + dev)
-            else:
-                test_sample = map_nested_tensor_object(out, tensor_map_fn=subsample_tensor)
-                prec = 0.01
-                strip_suffix = "_" + dev
-                try:
-                    # We first try to assert the entire output if possible. This is not
-                    # only the best way to assert results but also handles the cases
-                    # where we need to create a new expected result.
-                    self.assertExpected(test_sample, prec=prec,strip_suffix=strip_suffix)
-                except AssertionError:
-                    # Unfortunately detection models are flaky due to the unstable sort
-                    # in NMS. If matching across all outputs fails, use the same approach
-                    # as in NMSTester.test_nms_cuda to see if this is caused by duplicate
-                    # scores.
-                    expected_file = self._get_expected_file(strip_suffix=strip_suffix)
-                    expected = torch.load(expected_file)
-                    self.assertEqual(test_sample[0]["scores"], expected[0]["scores"], prec=prec)
+            output = map_nested_tensor_object(out, tensor_map_fn=compact)
+            prec = 0.01
+            strip_suffix = "_" + dev
+            try:
+                # We first try to assert the entire output if possible. This is not
+                # only the best way to assert results but also handles the cases
+                # where we need to create a new expected result.
+                self.assertExpected(output, prec=prec, strip_suffix=strip_suffix)
+            except AssertionError:
+                # Unfortunately detection models are flaky due to the unstable sort
+                # in NMS. If matching across all outputs fails, use the same approach
+                # as in NMSTester.test_nms_cuda to see if this is caused by duplicate
+                # scores.
+                expected_file = self._get_expected_file(strip_suffix=strip_suffix)
+                expected = torch.load(expected_file)
+                self.assertEqual(output[0]["scores"], expected[0]["scores"], prec=prec)
 
-                    # Note: Fmassa proposed turning off NMS by adapting the threshold
-                    # and then using the Hungarian algorithm as in DETR to find the
-                    # best match between output and expected boxes and eliminate some
-                    # of the flakiness. Worth exploring.
+                # Note: Fmassa proposed turning off NMS by adapting the threshold
+                # and then using the Hungarian algorithm as in DETR to find the
+                # best match between output and expected boxes and eliminate some
+                # of the flakiness. Worth exploring.
 
         check_out(out)
 
