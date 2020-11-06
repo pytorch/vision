@@ -123,6 +123,10 @@ class ShuffleNetV2(nn.Module):
 
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
+        # Static annotations for mypy
+        self.stage2: nn.Sequential
+        self.stage3: nn.Sequential
+        self.stage4: nn.Sequential
         stage_names = ['stage{}'.format(i) for i in [2, 3, 4]]
         for name, repeats, output_channels in zip(
                 stage_names, stages_repeats, self._stage_out_channels[1:]):
