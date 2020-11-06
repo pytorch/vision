@@ -352,8 +352,8 @@ class Tester(TransformsTester):
             F_pil.adjust_hue,
             F_t.adjust_hue,
             [{"hue_factor": f} for f in [-0.45, -0.25, 0.0, 0.25, 0.45]],
-            tol=0.1,
-            agg_method="mean"
+            tol=16.1,
+            agg_method="max"
         )
 
     def test_adjust_gamma(self):
