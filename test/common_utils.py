@@ -88,6 +88,34 @@ def is_iterable(obj):
 class TestCase(unittest.TestCase):
     precision = 1e-5
 
+    def _get_expected_file(self, subname=None, strip_suffix=None):
+        def remove_prefix_suffix(text, prefix, suffix):
+            if text.startswith(prefix):
+                text = text[len(prefix):]
+            if suffix is not None and text.endswith(suffix):
+                text = text[:len(text) - len(suffix)]
+            return text
+        # NB: we take __file__ from the module that defined the test
+        # class, so we place the expect directory where the test script
+        # lives, NOT where test/common_utils.py lives.
+        module_id = self.__class__.__module__
+        munged_id = remove_prefix_suffix(self.id(), module_id + ".", strip_suffix)
+        test_file = os.path.realpath(sys.modules[module_id].__file__)
+        expected_file = os.path.join(os.path.dirname(test_file),
+                                     "expect",
+                                     munged_id)
+
+        if subname:
+            expected_file += "_" + subname
+        expected_file += "_expect.pkl"
+
+        if not ACCEPT and not os.path.exists(expected_file):
+            raise RuntimeError(
+                ("No expect file exists for {}; to accept the current output, run:\n"
+                 "python {} {} --accept").format(os.path.basename(expected_file), __main__.__file__, munged_id))
+
+        return expected_file
+
     def assertExpected(self, output, subname=None, prec=None, strip_suffix=None):
         r"""
         Test that a python value matches the recorded contents of a file
@@ -106,55 +134,18 @@ class TestCase(unittest.TestCase):
         strip_suffix="_cpu", and they would both use a data file name based on
         "test_xyz".
         """
-        def remove_prefix_suffix(text, prefix, suffix):
-            if text.startswith(prefix):
-                text = text[len(prefix):]
-            if suffix is not None and text.endswith(suffix):
-                text = text[:len(text) - len(suffix)]
-            return text
-        # NB: we take __file__ from the module that defined the test
-        # class, so we place the expect directory where the test script
-        # lives, NOT where test/common_utils.py lives.
-        module_id = self.__class__.__module__
-        munged_id = remove_prefix_suffix(self.id(), module_id + ".", strip_suffix)
-        test_file = os.path.realpath(sys.modules[module_id].__file__)
-        expected_file = os.path.join(os.path.dirname(test_file),
-                                     "expect",
-                                     munged_id)
+        expected_file = self._get_expected_file(subname, strip_suffix)
 
-        subname_output = ""
-        if subname:
-            expected_file += "_" + subname
-            subname_output = " ({})".format(subname)
-        expected_file += "_expect.pkl"
-
-        def accept_output(update_type):
-            print("Accepting {} for {}{}:\n\n{}".format(update_type, munged_id, subname_output, output))
+        if ACCEPT:
+            filename = {os.path.basename(expected_file)}
+            print("Accepting updated output for {}:\n\n{}".format(filename, output))
             torch.save(output, expected_file)
             MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
             binary_size = os.path.getsize(expected_file)
-            self.assertTrue(binary_size <= MAX_PICKLE_SIZE)
-
-        try:
-            expected = torch.load(expected_file)
-        except IOError as e:
-            if e.errno != errno.ENOENT:
-                raise
-            elif ACCEPT:
-                accept_output("output")
-                return
-            else:
-                raise RuntimeError(
-                    ("I got this output for {}{}:\n\n{}\n\n"
-                     "No expect file exists; to accept the current output, run:\n"
-                     "python {} {} --accept").format(munged_id, subname_output, output, __main__.__file__, munged_id))
-
-        if ACCEPT:
-            try:
-                self.assertEqual(output, expected, prec=prec)
-            except Exception:
-                accept_output("updated output")
+            if binary_size > MAX_PICKLE_SIZE:
+                raise RuntimeError("The output for {}, is larger than 50kb".format(filename))
         else:
+            expected = torch.load(expected_file)
             self.assertEqual(output, expected, prec=prec)
 
     def assertEqual(self, x, y, prec=None, message='', allow_inf=False):
@@ -361,7 +352,8 @@ class TransformsTester(unittest.TestCase):
         if np_pil_image.ndim == 2:
             np_pil_image = np_pil_image[:, :, None]
         pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
-        err = getattr(torch, agg_method)(tensor - pil_tensor).item()
+        # error value can be mean absolute error, max abs error
+        err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
         self.assertTrue(
             err < tol,
             msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
