@@ -79,7 +79,7 @@ at::Tensor DeformConv2d_autocast(
              dilation_w,
              groups,
              offset_groups,
-	     use_mask)
+             use_mask)
       .to(input.scalar_type());
 }
 #endif
@@ -263,7 +263,7 @@ class DeformConv2dBackwardFunction
         input,
         weight,
         offset,
-	mask,
+        mask,
         bias,
         stride_h,
         stride_w,
@@ -273,7 +273,7 @@ class DeformConv2dBackwardFunction
         dilation_w,
         groups,
         offset_groups,
-	use_mask);
+        use_mask);
 
     auto grad_input = std::get<0>(result);
     auto grad_weight = std::get<1>(result);
@@ -285,7 +285,7 @@ class DeformConv2dBackwardFunction
         grad_input,
         grad_weight,
         grad_offset,
-	grad_mask,
+        grad_mask,
         grad_bias,
     };
   }

@@ -589,7 +589,8 @@ class DeformConvTester(OpTester, unittest.TestCase):
             self._test_backward_with_batchsize(device, contiguous, batch_sz)
 
     def _test_backward_with_batchsize(self, device, contiguous, batch_sz):
-        x, weight, offset, mask, bias, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz, self.dtype)
+        x, weight, offset, mask, bias, stride, padding, dilation = self.get_fn_args(device, contiguous,
+                                                                                    batch_sz, self.dtype)
 
         def func(x_, offset_, mask_, weight_, bias_):
             return ops.deform_conv2d(x_, offset_, weight_, bias_, stride=stride,
