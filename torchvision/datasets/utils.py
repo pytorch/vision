@@ -124,7 +124,7 @@ def _quota_exceeded(response: "requests.models.Response") -> bool:  # type: igno
 
 
 def download_file_from_google_drive(file_id: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None):
-    """Download a Google Drive file and place it in root.
+    """Download a Google Drive file from  and place it in root.
 
     Args:
         file_id (str): id of file to be downloaded
