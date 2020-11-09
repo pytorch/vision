@@ -55,7 +55,7 @@ def inception_v3(pretrained: bool = False, progress: bool = True, **kwargs: Any)
         model.load_state_dict(state_dict)
         if not original_aux_logits:
             model.aux_logits = False
-            del model.AuxLogits
+            model.AuxLogits = None
         return model
 
     return Inception3(**kwargs)
@@ -108,6 +108,7 @@ class Inception3(nn.Module):
         self.Mixed_6c = inception_c(768, channels_7x7=160)
         self.Mixed_6d = inception_c(768, channels_7x7=160)
         self.Mixed_6e = inception_c(768, channels_7x7=192)
+        self.AuxLogits: Optional[nn.Module] = None
         if aux_logits:
             self.AuxLogits = inception_aux(768, num_classes)
         self.Mixed_7a = inception_d(768)
@@ -170,11 +171,10 @@ class Inception3(nn.Module):
         # N x 768 x 17 x 17
         x = self.Mixed_6e(x)
         # N x 768 x 17 x 17
-        aux_defined = self.training and self.aux_logits
-        if aux_defined:
-            aux = self.AuxLogits(x)
-        else:
-            aux = None
+        aux = torch.jit.annotate(Optional[Tensor], None)
+        if self.AuxLogits is not None:
+            if self.training:
+                aux = self.AuxLogits(x)
         # N x 768 x 17 x 17
         x = self.Mixed_7a(x)
         # N x 1280 x 8 x 8
