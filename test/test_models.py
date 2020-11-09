@@ -354,7 +354,16 @@ class ModelTester(TestCase):
         self.assertTrue("labels" in out[0])
 
     def test_googlenet_eval(self):
-        m = torch.jit.script(models.googlenet(pretrained=True).eval())
+        # replacement for models.googlenet(pretrained=True) that does not download weights
+        kwargs = {}
+        kwargs['transform_input'] = True
+        kwargs['aux_logits'] = True
+        kwargs['init_weights'] = False
+        model = models.GoogLeNet(**kwargs)
+        model.aux_logits = False
+        model.aux1 = None
+        model.aux2 = None
+        m = torch.jit.script(model.eval())
         self.checkModule(m, "googlenet", torch.rand(1, 3, 224, 224))
 
     @unittest.skipIf(not torch.cuda.is_available(), 'needs GPU')

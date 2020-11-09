@@ -11,7 +11,7 @@ from ._utils import overwrite_eps
 from ..utils import load_state_dict_from_url
 
 from .faster_rcnn import FasterRCNN
-from .backbone_utils import resnet_fpn_backbone
+from .backbone_utils import resnet_fpn_backbone, _validate_resnet_trainable_layers
 
 __all__ = [
     "MaskRCNN", "maskrcnn_resnet50_fpn",
@@ -266,7 +266,7 @@ model_urls = {
 
 
 def maskrcnn_resnet50_fpn(pretrained=False, progress=True,
-                          num_classes=91, pretrained_backbone=True, trainable_backbone_layers=3, **kwargs):
+                          num_classes=91, pretrained_backbone=True, trainable_backbone_layers=None, **kwargs):
     """
     Constructs a Mask R-CNN model with a ResNet-50-FPN backbone.
 
@@ -316,10 +316,10 @@ def maskrcnn_resnet50_fpn(pretrained=False, progress=True,
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
-    assert trainable_backbone_layers <= 5 and trainable_backbone_layers >= 0
-    # dont freeze any layers if pretrained model or backbone is not used
-    if not (pretrained or pretrained_backbone):
-        trainable_backbone_layers = 5
+    # check default parameters and by default set it to 3 if possible
+    trainable_backbone_layers = _validate_resnet_trainable_layers(
+        pretrained or pretrained_backbone, trainable_backbone_layers)
+
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
