@@ -108,10 +108,9 @@ class Inception3(nn.Module):
         self.Mixed_6c = inception_c(768, channels_7x7=160)
         self.Mixed_6d = inception_c(768, channels_7x7=160)
         self.Mixed_6e = inception_c(768, channels_7x7=192)
+        self.AuxLogits: Optional[nn.Module] = None
         if aux_logits:
             self.AuxLogits = inception_aux(768, num_classes)
-        else:
-            self.AuxLogits = None
         self.Mixed_7a = inception_d(768)
         self.Mixed_7b = inception_e(1280)
         self.Mixed_7c = inception_e(2048)
