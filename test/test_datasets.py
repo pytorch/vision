@@ -139,10 +139,24 @@ class Tester(unittest.TestCase):
             dataset = torchvision.datasets.ImageNet(root, split='val')
             self.generic_classification_dataset_test(dataset)
 
-    def test_widerface(self):
+    @mock.patch('torchvision.datasets.WIDERFace._check_integrity')
+    def test_widerface(self, mock_check_integrity):
+        mock_check_integrity.return_value = True
         with widerface_root() as root:
             dataset = torchvision.datasets.WIDERFace(root, split='train')
             self.assertEqual(len(dataset), 1)
+            img, target = dataset[0]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
+
+            dataset = torchvision.datasets.WIDERFace(root, split='val')
+            self.assertEqual(len(dataset), 1)
+            img, target = dataset[0]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
+
+            dataset = torchvision.datasets.WIDERFace(root, split='test')
+            self.assertEqual(len(dataset), 1)
+            img, target = dataset[0]
+            self.assertTrue(isinstance(img, PIL.Image.Image))
 
     @mock.patch('torchvision.datasets.cifar.check_integrity')
     @mock.patch('torchvision.datasets.cifar.CIFAR10._check_integrity')
