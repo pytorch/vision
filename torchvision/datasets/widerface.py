@@ -1,8 +1,10 @@
 from PIL import Image
 import os
+from os.path import abspath, expanduser
 import torch
-from typing import Any, Callable, List, Optional, Tuple, Union
-from .utils import download_file_from_google_drive, check_integrity, download_url, extract_archive
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from .utils import download_file_from_google_drive, check_integrity, download_url, \
+    extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -19,12 +21,12 @@ class WIDERFace(VisionDataset):
     Args:
         root (string): Root directory where images and annotations are downloaded to.
             Expects the following folder structure if download=False:
-                .
-                └── widerface
-                    ├── wider_face_split.zip
-                    ├── WIDER_train.zip
-                    ├── WIDER_val.zip
-                    └── WIDER_test.zip
+                <root>
+                    └── widerface
+                        ├── wider_face_split.zip
+                        ├── WIDER_train.zip
+                        ├── WIDER_val.zip
+                        └── WIDER_test.zip
         split (string): The dataset split to use. One of {``train``, ``val``, ``test``}.
             Defaults to ``train``.
         target_type (string): The type of target to use, can be one
@@ -45,14 +47,14 @@ class WIDERFace(VisionDataset):
             downloaded again.
     """
 
-    base_folder = "widerface"
-    file_list = [
+    BASE_FOLDER = "widerface"
+    FILE_LIST = [
         # File ID                        MD5 Hash                            Filename
         ("0B6eKvaijfFUDQUUwd21EckhUbWs", "3fedf70df600953d25982bcd13d91ba2", "WIDER_train.zip"),
         ("0B6eKvaijfFUDd3dIRmpvSk8tLUk", "dfa7d7e790efa35df3788964cf0bbaea", "WIDER_val.zip"),
         ("0B6eKvaijfFUDbW4tdGpaYjgzZkU", "e5d8f4248ed24c334bbd12f49c29dd40", "WIDER_test.zip")
     ]
-    annotations_file = ("http://mmlab.ie.cuhk.edu.hk/projects/WIDERFace/support/bbx_annotation/wider_face_split.zip",
+    ANNOTATIONS_FILE = ("http://mmlab.ie.cuhk.edu.hk/projects/WIDERFace/support/bbx_annotation/wider_face_split.zip",
                         "0e3767bcf0e326556d407bf5bff5d27c",
                         "wider_face_split.zip")
 
@@ -65,21 +67,21 @@ class WIDERFace(VisionDataset):
             target_transform: Optional[Callable] = None,
             download: bool = False,
     ) -> None:
-        super(WIDERFace, self).__init__(root=os.path.join(root, self.base_folder),
+        super(WIDERFace, self).__init__(root=os.path.join(root, self.BASE_FOLDER),
                                         transform=transform,
                                         target_transform=target_transform)
         # check arguments
-        if split not in ("train", "val", "test"):
-            raise ValueError("split \"{}\" is not recognized.".format(split))
-        self.split = split
+        self.split = verify_str_arg(split, "split", ("train", "val", "test"))
+        if self.split == "test":
+            target_type = ""
 
         if isinstance(target_type, list):
             self.target_type = target_type
         else:
             self.target_type = [target_type]
+        self.target_type = [verify_str_arg(t, "target_type", ("raw", "bbox", "attr", ""))
+                            for t in self.target_type]
 
-        if not (all(x in ["raw", "bbox", "attr", ""] for x in self.target_type)):
-            raise ValueError("target_type \"{}\" is not recognized.".format(self.target_type))
         if not self.target_type and self.target_transform is not None:
             raise RuntimeError('target_transform is specified but target_type is empty')
 
@@ -90,17 +92,13 @@ class WIDERFace(VisionDataset):
             raise RuntimeError("Dataset not found or corrupted. " +
                                "You can use download=True to download it")
 
-        # prepare dataset
-        self.imgs_path: List[str] = []
-        self.raw_annotations: List[torch.Tensor] = []
-
         # process dataset
+        # dataset will be stored as a list of dict objects (img_info)
+        self.img_info: Any = []
         if self.split in ("train", "val"):
             self.parse_train_val_annotations_file()
-        elif self.split == "test":
-            self.parse_test_annotations_file()
         else:
-            raise ValueError("split \"{}\" is not recognized.".format(self.split))
+            self.parse_test_annotations_file()
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         """
@@ -112,28 +110,25 @@ class WIDERFace(VisionDataset):
         """
 
         # stay consistent with other datasets and return a PIL Image
-        img = Image.open(self.imgs_path[index])
+        img = Image.open(self.img_info[index]["img_path"])
 
         if self.transform is not None:
             img = self.transform(img)
 
-        if self.split == "test":
-            return img, None
-
-        # prepare target in the train/val split
+        # prepare target
         target: Any = []
         for t in self.target_type:
             if t == "raw":
-                target.append(self.raw_annotations[index])
+                target.append(self.img_info[index][t])
             elif t == "bbox":
-                target.append(self.raw_annotations[index][:, :4])
+                # bbox coordinates are the first 4 values in the raw annotation
+                target.append(self.img_info[index]["raw"][:, :4])
             elif t == "attr":
-                target.append(self.raw_annotations[index][:, 4:])
-            elif t == "":
+                # attributes are defined after the bbox coordinates
+                target.append(self.img_info[index]["raw"][:, 4:])
+            else:  # target_type == "":
                 target = None
                 break
-            else:
-                raise ValueError("Target type \"{}\" is not recognized.".format(t))
         if target:
             target = tuple(target) if len(target) > 1 else target[0]
             if self.target_transform is not None:
@@ -142,7 +137,7 @@ class WIDERFace(VisionDataset):
         return img, target
 
     def __len__(self) -> int:
-        return len(self.imgs_path)
+        return len(self.img_info)
 
     def extra_repr(self) -> str:
         lines = ["Target type: {target_type}", "Split: {split}"]
@@ -152,52 +147,55 @@ class WIDERFace(VisionDataset):
         filename = "wider_face_train_bbx_gt.txt" if self.split == "train" else "wider_face_val_bbx_gt.txt"
         filepath = os.path.join(self.root, "wider_face_split", filename)
 
-        f = open(filepath, "r")
-        lines = f.readlines()
+        with open(filepath, "r") as f:
+            lines = f.readlines()
 
-        file_name_line, num_boxes_line, box_annotation_line = True, False, False
-        num_boxes, box_counter = 0, 0
-        labels = []
-        for line in lines:
-            line = line.rstrip()
-            if file_name_line:
-                img_path = os.path.join(self.root, "WIDER_" + self.split, "images", line)
-                self.imgs_path.append(img_path)
-                file_name_line = False
-                num_boxes_line = True
-            elif num_boxes_line:
-                num_boxes = int(line)
-                num_boxes_line = False
-                box_annotation_line = True
-            elif box_annotation_line:
-                box_counter += 1
-                line_split = line.split(" ")
-                line_values = [int(x) for x in line_split]
-                labels.append(line_values)
-                if box_counter >= num_boxes:
-                    box_annotation_line = False
-                    file_name_line = True
-                    self.raw_annotations.append(torch.tensor(labels))
-                    box_counter = 0
-                    labels.clear()
-            else:
-                raise RuntimeError("Error parsing annotation file {}".format(filepath))
-        f.close()
+            file_name_line, num_boxes_line, box_annotation_line = True, False, False
+            num_boxes, box_counter = 0, 0
+            labels = []
+            for line in lines:
+                line = line.rstrip()
+                if file_name_line:
+                    img_path = os.path.join(self.root, "WIDER_" + self.split, "images", line)
+                    img_path = abspath(expanduser(img_path))
+                    file_name_line = False
+                    num_boxes_line = True
+                elif num_boxes_line:
+                    num_boxes = int(line)
+                    num_boxes_line = False
+                    box_annotation_line = True
+                elif box_annotation_line:
+                    box_counter += 1
+                    line_split = line.split(" ")
+                    line_values = [int(x) for x in line_split]
+                    labels.append(line_values)
+                    if box_counter >= num_boxes:
+                        box_annotation_line = False
+                        file_name_line = True
+                        self.img_info.append({
+                            "img_path": img_path,
+                            "raw": torch.tensor(labels),
+                        })
+                        box_counter = 0
+                        labels.clear()
+                else:
+                    raise RuntimeError("Error parsing annotation file {}".format(filepath))
 
     def parse_test_annotations_file(self) -> None:
         filepath = os.path.join(self.root, "wider_face_split", "wider_face_test_filelist.txt")
-        f = open(filepath, "r")
-        lines = f.readlines()
-        for line in lines:
-            line = line.rstrip()
-            img_path = os.path.join(self.root, "WIDER_test", "images", line)
-            self.imgs_path.append(img_path)
-        f.close()
+        filepath = abspath(expanduser(filepath))
+        with open(filepath, "r") as f:
+            lines = f.readlines()
+            for line in lines:
+                line = line.rstrip()
+                img_path = os.path.join(self.root, "WIDER_test", "images", line)
+                img_path = abspath(expanduser(img_path))
+                self.img_info.append({"img_path": img_path})
 
     def _check_integrity(self) -> bool:
         # Allow original archive to be deleted (zip). Only need the extracted images
-        all_files = self.file_list.copy()
-        all_files.append(self.annotations_file)
+        all_files = self.FILE_LIST.copy()
+        all_files.append(self.ANNOTATIONS_FILE)
         for (_, md5, filename) in all_files:
             file, ext = os.path.splitext(filename)
             extracted_dir = os.path.join(self.root, file)
@@ -215,7 +213,7 @@ class WIDERFace(VisionDataset):
             return
 
         # download data if the extracted data doesn't exist
-        for (file_id, md5, filename) in self.file_list:
+        for (file_id, md5, filename) in self.FILE_LIST:
             file, _ = os.path.splitext(filename)
             extracted_dir = os.path.join(self.root, file)
             if os.path.isdir(extracted_dir):
@@ -223,6 +221,6 @@ class WIDERFace(VisionDataset):
             download_file_from_google_drive(file_id, self.root, filename, md5)
 
         # download annotation files
-        extracted_dir, _ = os.path.splitext(self.annotations_file[2])
+        extracted_dir, _ = os.path.splitext(self.ANNOTATIONS_FILE[2])
         if not os.path.isdir(extracted_dir):
-            download_url(url=self.annotations_file[0], root=self.root, md5=self.annotations_file[1])
+            download_url(url=self.ANNOTATIONS_FILE[0], root=self.root, md5=self.ANNOTATIONS_FILE[1])

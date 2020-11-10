@@ -111,13 +111,13 @@ class Tester(TransformsTester):
         for f in [0.2, 0.5, (-0.2, 0.3), [-0.4, 0.5]]:
             meth_kwargs = {"hue": f}
             self._test_class_op(
-                "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=0.1, agg_method="mean"
+                "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=16.1, agg_method="max"
             )
 
         # All 4 parameters together
         meth_kwargs = {"brightness": 0.2, "contrast": 0.2, "saturation": 0.2, "hue": 0.2}
         self._test_class_op(
-            "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=0.1, agg_method="mean"
+            "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=12.1, agg_method="max"
         )
 
     def test_pad(self):

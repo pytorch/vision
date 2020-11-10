@@ -44,7 +44,6 @@ if os.getenv('BUILD_VERSION'):
     version = os.getenv('BUILD_VERSION')
 elif sha != 'Unknown':
     version += '+' + sha[:7]
-print("Building wheel {}-{}".format(package_name, version))
 
 
 def write_version_file():
@@ -56,10 +55,6 @@ def write_version_file():
         f.write("if _check_cuda_version() > 0:\n")
         f.write("    cuda = _check_cuda_version()\n")
 
-
-write_version_file()
-
-readme = open('README.rst').read()
 
 pytorch_dep = 'torch'
 if os.getenv('PYTORCH_VERSION'):
@@ -397,30 +392,38 @@ class clean(distutils.command.clean.clean):
         distutils.command.clean.clean.run(self)
 
 
-setup(
-    # Metadata
-    name=package_name,
-    version=version,
-    author='PyTorch Core Team',
-    author_email='soumith@pytorch.org',
-    url='https://github.com/pytorch/vision',
-    description='image and video datasets and models for torch deep learning',
-    long_description=readme,
-    license='BSD',
+if __name__ == "__main__":
+    print("Building wheel {}-{}".format(package_name, version))
 
-    # Package info
-    packages=find_packages(exclude=('test',)),
-    package_data={
-        package_name: ['*.dll', '*.dylib', '*.so']
-    },
-    zip_safe=False,
-    install_requires=requirements,
-    extras_require={
-        "scipy": ["scipy"],
-    },
-    ext_modules=get_extensions(),
-    cmdclass={
-        'build_ext': BuildExtension.with_options(no_python_abi_suffix=True),
-        'clean': clean,
-    }
-)
+    write_version_file()
+
+    with open('README.rst') as f:
+        readme = f.read()
+
+    setup(
+        # Metadata
+        name=package_name,
+        version=version,
+        author='PyTorch Core Team',
+        author_email='soumith@pytorch.org',
+        url='https://github.com/pytorch/vision',
+        description='image and video datasets and models for torch deep learning',
+        long_description=readme,
+        license='BSD',
+
+        # Package info
+        packages=find_packages(exclude=('test',)),
+        package_data={
+            package_name: ['*.dll', '*.dylib', '*.so']
+        },
+        zip_safe=False,
+        install_requires=requirements,
+        extras_require={
+            "scipy": ["scipy"],
+        },
+        ext_modules=get_extensions(),
+        cmdclass={
+            'build_ext': BuildExtension.with_options(no_python_abi_suffix=True),
+            'clean': clean,
+        }
+    )
