@@ -107,10 +107,11 @@ class TestVideoApi(unittest.TestCase):
                     av_array = torch.tensor(av_frame.to_ndarray()).permute(1, 0)
                     vr_array = vr_frame["data"]
 
-                    mean_delta = torch.mean(
+                    max_delta = torch.max(
                         torch.abs(av_array.float() - vr_array.float())
                     )
-                    self.assertTrue(mean_delta.item() < 1)
+                    # we assure that there is never more than 1% difference in signal
+                    self.assertTrue(max_delta.item() < 0.001)
 
     def test_metadata(self):
         """
