@@ -209,25 +209,23 @@ def widerface_root():
         train_bbox_contents = '0--Parade/0_Parade_marchingband_1_1.jpg\n1\n449 330 122 149 0 0 0 0 0 0\n'
         val_bbox_contents = '0--Parade/0_Parade_marchingband_1_2.jpg\n1\n501 160 285 443 0 0 0 0 0 0\n'
         test_filelist_contents = '0--Parade/0_Parade_marchingband_1_3.jpg\n'
+        extracted_dir = os.path.join(root, 'wider_face_split')
+        os.mkdir(extracted_dir)
 
-        with get_tmp_dir() as tmp:
-            extracted_dir = os.path.join(root, 'wider_face_split')
-            os.makedirs(extracted_dir)
+        # bbox training file
+        bbox_file = os.path.join(extracted_dir, "wider_face_train_bbx_gt.txt")
+        with open(bbox_file, "w") as txt_file:
+            txt_file.write(train_bbox_contents)
 
-            # bbox training file
-            bbox_file = os.path.join(extracted_dir, "wider_face_train_bbx_gt.txt")
-            with open(bbox_file, "w") as txt_file:
-                txt_file.write(train_bbox_contents)
+        # bbox validation file
+        bbox_file = os.path.join(extracted_dir, "wider_face_val_bbx_gt.txt")
+        with open(bbox_file, "w") as txt_file:
+            txt_file.write(val_bbox_contents)
 
-            # bbox validation file
-            bbox_file = os.path.join(extracted_dir, "wider_face_val_bbx_gt.txt")
-            with open(bbox_file, "w") as txt_file:
-                txt_file.write(val_bbox_contents)
-
-            # test filelist file
-            filelist_file = os.path.join(extracted_dir, "wider_face_test_filelist.txt")
-            with open(filelist_file, "w") as txt_file:
-                txt_file.write(test_filelist_contents)
+        # test filelist file
+        filelist_file = os.path.join(extracted_dir, "wider_face_test_filelist.txt")
+        with open(filelist_file, "w") as txt_file:
+            txt_file.write(test_filelist_contents)
 
     with get_tmp_dir() as root:
         root_base = os.path.join(root, "widerface")
