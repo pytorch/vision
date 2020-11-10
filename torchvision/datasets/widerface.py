@@ -126,7 +126,7 @@ class WIDERFace(VisionDataset):
             elif t == "attr":
                 # attributes are defined after the bbox coordinates
                 target.append(self.img_info[index]["raw"][:, 4:])
-            else: # target_type == "":
+            else:  # target_type == "":
                 target = None
                 break
         if target:
