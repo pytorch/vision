@@ -12,7 +12,6 @@ try:
     import av
 
     # Do a version test too
-    print("Success")
     torchvision.io.video._check_av_available()
 except ImportError:
     av = None
@@ -64,22 +63,7 @@ test_videos = {
 
 @unittest.skipIf(_HAS_VIDEO_OPT is False, "Didn't compile with ffmpeg")
 class TestVideoApi(unittest.TestCase):
-    def test_predefined_metadata(self):
-        """
-        Test that the source metadata corresponds to the one returned
-        by the new video decoder API.
-        """
-        for test_video, config in test_videos.items():
-            full_path = os.path.join(VIDEO_DIR, test_video)
-            reader = VideoReader(full_path, "video")
-            reader_md = reader.get_metadata()
-            self.assertAlmostEqual(
-                config.video_fps, reader_md["video"]["fps"][0], delta=0.0001
-            )
-            self.assertAlmostEqual(
-                config.duration, reader_md["video"]["duration"][0], delta=0.5
-            )
-
+    @unittest.skipIf(av is None, "PyAV unavailable")
     def test_frame_reading(self):
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
@@ -203,7 +187,6 @@ class TestVideoApi(unittest.TestCase):
         video_path = fate("sub/MovText_capability_tester.mp4", VIDEO_DIR)
         vr = VideoReader(video_path)
         metadata = vr.get_metadata()
-        print(metadata)
 
         self.assertTrue(metadata["subtitles"]["duration"] is not None)
         os.remove(video_path)
