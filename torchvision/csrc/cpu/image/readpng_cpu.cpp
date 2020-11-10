@@ -98,7 +98,7 @@ torch::Tensor decodePNG(const torch::Tensor& data) {
       {int64_t(height), int64_t(width), int64_t(channels)}, torch::kU8);
   auto ptr = tensor.accessor<uint8_t, 3>().data();
   auto bytes = png_get_rowbytes(png_ptr, info_ptr);
-  for (int64_t i = 0; i < height; ++i) {
+  for (png_uint_32 i = 0; i < height; ++i) {
     png_read_row(png_ptr, ptr, nullptr);
     ptr += bytes;
   }
