@@ -137,7 +137,7 @@ class ImageTester(unittest.TestCase):
         for img_path in get_images(FAKEDATA_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
             if len(img_pil.shape) == 3:
-               img_pil = img_pil.permute(2, 0, 1)
+                img_pil = img_pil.permute(2, 0, 1)
             else:
                 img_pil = img_pil.unsqueeze(0)
             data = read_file(img_path)
