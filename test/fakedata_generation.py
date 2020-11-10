@@ -174,45 +174,36 @@ def imagenet_root():
 @contextlib.contextmanager
 def widerface_root():
     """
+    Generates a dataset with the following folder structure and returns the path root:
     <root>
-    └── widerface
-        ├── wider_face_split.zip ('wider_face_split' when uncompressed)
-        ├── WIDER_train.zip ('WIDER_train' when uncompressed)
-        ├── WIDER_val.zip ('WIDER_val' when uncompressed)
-        └── WIDER_test.zip ('WIDER_test' when uncompressed)
+        └── widerface
+            ├── wider_face_split
+            ├── WIDER_train
+            ├── WIDER_val
+            └── WIDER_test
 
     The dataset consist of
-      1 image for each dataset split (train, val, test)
-      annotation files for each split
+      1 image for each dataset split (train, val, test) and annotation files
+      for each split
     """
-    import shutil
 
     def _make_image(file):
         PIL.Image.fromarray(np.zeros((32, 32, 3), dtype=np.uint8)).save(file)
 
     def _make_train_archive(root):
-        with get_tmp_dir() as tmp:
-            extracted_dir = os.path.join(tmp, 'WIDER_train', 'images', '0--Parade')
-            os.makedirs(extracted_dir)
-            _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_1.jpg'))
-            zipped_file = os.path.join(root, 'WIDER_train')
-            shutil.make_archive(zipped_file, 'zip', root_dir=tmp)
+        extracted_dir = os.path.join(root, 'WIDER_train', 'images', '0--Parade')
+        os.makedirs(extracted_dir)
+        _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_1.jpg'))
 
     def _make_val_archive(root):
-        with get_tmp_dir() as tmp:
-            extracted_dir = os.path.join(tmp, 'WIDER_val', 'images', '0--Parade')
-            os.makedirs(extracted_dir)
-            _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_2.jpg'))
-            zipped_file = os.path.join(root, 'WIDER_val')
-            shutil.make_archive(zipped_file, 'zip', root_dir=tmp)
+        extracted_dir = os.path.join(root, 'WIDER_val', 'images', '0--Parade')
+        os.makedirs(extracted_dir)
+        _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_2.jpg'))
 
     def _make_test_archive(root):
-        with get_tmp_dir() as tmp:
-            extracted_dir = os.path.join(tmp, 'WIDER_test', 'images', '0--Parade')
-            os.makedirs(extracted_dir)
-            _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_3.jpg'))
-            zipped_file = os.path.join(root, 'WIDER_test')
-            shutil.make_archive(zipped_file, 'zip', root_dir=tmp)
+        extracted_dir = os.path.join(root, 'WIDER_test', 'images', '0--Parade')
+        os.makedirs(extracted_dir)
+        _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_3.jpg'))
 
     def _make_annotations_archive(root):
         train_bbox_contents = '0--Parade/0_Parade_marchingband_1_1.jpg\n1\n449 330 122 149 0 0 0 0 0 0\n'
@@ -220,7 +211,7 @@ def widerface_root():
         test_filelist_contents = '0--Parade/0_Parade_marchingband_1_3.jpg\n'
 
         with get_tmp_dir() as tmp:
-            extracted_dir = os.path.join(tmp, 'wider_face_split')
+            extracted_dir = os.path.join(root, 'wider_face_split')
             os.makedirs(extracted_dir)
 
             # bbox training file
@@ -238,15 +229,13 @@ def widerface_root():
             with open(filelist_file, "w") as txt_file:
                 txt_file.write(test_filelist_contents)
 
-            # zip up all annotation files
-            zipped_file = os.path.join(root, 'wider_face_split')
-            shutil.make_archive(zipped_file, 'zip', root_dir=tmp)
-
     with get_tmp_dir() as root:
-        _make_train_archive(root)
-        _make_val_archive(root)
-        _make_test_archive(root)
-        _make_annotations_archive(root)
+        root_base = os.path.join(root, "widerface")
+        os.mkdir(root_base)
+        _make_train_archive(root_base)
+        _make_val_archive(root_base)
+        _make_test_archive(root_base)
+        _make_annotations_archive(root_base)
 
         yield root
 
