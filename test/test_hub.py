@@ -13,7 +13,7 @@ def sum_of_model_parameters(model):
     return s
 
 
-SUM_OF_PRETRAINED_RESNET18_PARAMS = -12703.9931640625
+SUM_OF_PRETRAINED_RESNET18_PARAMS = -12703.8974609375
 
 
 @unittest.skipIf('torchvision' in sys.modules,

@@ -22,6 +22,7 @@ torchvision.ops
 .. autofunction:: roi_pool
 .. autofunction:: ps_roi_pool
 .. autofunction:: deform_conv2d
+.. autofunction:: sigmoid_focal_loss
 
 .. autoclass:: RoIAlign
 .. autoclass:: PSRoIAlign
