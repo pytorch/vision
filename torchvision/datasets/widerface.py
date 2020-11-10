@@ -80,7 +80,7 @@ class WIDERFace(VisionDataset):
         else:
             self.target_type = [target_type]
         self.target_type = [verify_str_arg(t, "target_type", ("raw", "bbox", "attr", ""))
-                            for t in target_type]
+                            for t in self.target_type]
 
         if not self.target_type and self.target_transform is not None:
             raise RuntimeError('target_transform is specified but target_type is empty')
