@@ -3,8 +3,8 @@ import torch.nn.functional as F
 
 
 def sigmoid_focal_loss(
-    inputs,
-    targets,
+    inputs: torch.Tensor,
+    targets: torch.Tensor,
     alpha: float = 0.25,
     gamma: float = 2,
     reduction: str = "none",
@@ -12,11 +12,12 @@ def sigmoid_focal_loss(
     """
     Original implementation from https://github.com/facebookresearch/fvcore/blob/master/fvcore/nn/focal_loss.py .
     Loss used in RetinaNet for dense detection: https://arxiv.org/abs/1708.02002.
-    Args:
+
+    Arguments:
         inputs: A float tensor of arbitrary shape.
                 The predictions for each example.
         targets: A float tensor with the same shape as inputs. Stores the binary
-                 classification label for each element in inputs
+                classification label for each element in inputs
                 (0 for the negative class and 1 for the positive class).
         alpha: (optional) Weighting factor in range (0,1) to balance
                 positive vs negative examples or -1 for ignore. Default = 0.25
