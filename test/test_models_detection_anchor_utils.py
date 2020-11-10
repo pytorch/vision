@@ -45,11 +45,11 @@ class Tester(unittest.TestCase):
 
         # Compute target anchors numbers
         grid_sizes = [f.shape[-2:] for f in features]
-        num_anchors_target = 0
+        num_anchors_estimated = 0
         for sizes, num_anchors_per_loc in zip(grid_sizes, model.num_anchors_per_location()):
-            num_anchors_target += sizes[0] * sizes[1] * num_anchors_per_loc
+            num_anchors_estimated += sizes[0] * sizes[1] * num_anchors_per_loc
 
+        self.assertEqual(num_anchors_estimated, 126)
         self.assertEqual(len(anchors), 2)
-        self.assertEqual(num_anchors_target, 126)
-        self.assertEqual(tuple(anchors[0].shape), (num_anchors_target, 4))
-        self.assertEqual(tuple(anchors[1].shape), (num_anchors_target, 4))
+        self.assertEqual(tuple(anchors[0].shape), (num_anchors_estimated, 4))
+        self.assertEqual(tuple(anchors[1].shape), (num_anchors_estimated, 4))
