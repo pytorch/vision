@@ -3,7 +3,7 @@ import torch
 from torchvision.models.detection import _utils
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 import unittest
-from torchvision.models.detection import fasterrcnn_resnet50_fpn, maskrcnn_resnet50_fpn, keypointrcnn_resnet50_fpn
+from torchvision.models.detection import backbone_utils
 
 
 class Tester(unittest.TestCase):
@@ -20,50 +20,34 @@ class Tester(unittest.TestCase):
         self.assertEqual(neg[0].sum(), 3)
         self.assertEqual(neg[0][0:6].sum(), 3)
 
-    def test_fasterrcnn_resnet50_fpn_frozen_layers(self):
+    def test_resnet_fpn_backbone_frozen_layers(self):
         # we know how many initial layers and parameters of the network should
-        # be frozen for each trainable_backbone_layers paramter value
+        # be frozen for each trainable_backbone_layers parameter value
         # i.e all 53 params are frozen if trainable_backbone_layers=0
         # ad first 24 params are frozen if trainable_backbone_layers=2
         expected_frozen_params = {0: 53, 1: 43, 2: 24, 3: 11, 4: 1, 5: 0}
         for train_layers, exp_froz_params in expected_frozen_params.items():
-            model = fasterrcnn_resnet50_fpn(pretrained=True, progress=False,
-                                            num_classes=91, pretrained_backbone=False,
-                                            trainable_backbone_layers=train_layers)
+            model = backbone_utils.resnet_fpn_backbone(
+                'resnet50', pretrained=False, trainable_layers=train_layers)
             # boolean list that is true if the param at that index is frozen
             is_frozen = [not parameter.requires_grad for _, parameter in model.named_parameters()]
             # check that expected initial number of layers are frozen
             self.assertTrue(all(is_frozen[:exp_froz_params]))
 
-    def test_maskrcnn_resnet50_fpn_frozen_layers(self):
-        # we know how many initial layers and parameters of the maskrcnn should
-        # be frozen for each trainable_backbone_layers paramter value
-        # i.e all 53 params are frozen if trainable_backbone_layers=0
-        # ad first 24 params are frozen if trainable_backbone_layers=2
-        expected_frozen_params = {0: 53, 1: 43, 2: 24, 3: 11, 4: 1, 5: 0}
-        for train_layers, exp_froz_params in expected_frozen_params.items():
-            model = maskrcnn_resnet50_fpn(pretrained=True, progress=False,
-                                          num_classes=91, pretrained_backbone=False,
-                                          trainable_backbone_layers=train_layers)
-            # boolean list that is true if the parameter at that index is frozen
-            is_frozen = [not parameter.requires_grad for _, parameter in model.named_parameters()]
-            # check that expected initial number of layers in maskrcnn are frozen
-            self.assertTrue(all(is_frozen[:exp_froz_params]))
-
-    def test_keypointrcnn_resnet50_fpn_frozen_layers(self):
-        # we know how many initial layers and parameters of the keypointrcnn should
-        # be frozen for each trainable_backbone_layers paramter value
-        # i.e all 53 params are frozen if trainable_backbone_layers=0
-        # ad first 24 params are frozen if trainable_backbone_layers=2
-        expected_frozen_params = {0: 53, 1: 43, 2: 24, 3: 11, 4: 1, 5: 0}
-        for train_layers, exp_froz_params in expected_frozen_params.items():
-            model = keypointrcnn_resnet50_fpn(pretrained=True, progress=False,
-                                              num_classes=2, pretrained_backbone=False,
-                                              trainable_backbone_layers=train_layers)
-            # boolean list that is true if the parameter at that index is frozen
-            is_frozen = [not parameter.requires_grad for _, parameter in model.named_parameters()]
-            # check that expected initial number of layers in keypointrcnn are frozen
-            self.assertTrue(all(is_frozen[:exp_froz_params]))
+    def test_validate_resnet_inputs_detection(self):
+        # default number of backbone layers to train
+        ret = backbone_utils._validate_resnet_trainable_layers(
+            pretrained=True, trainable_backbone_layers=None)
+        self.assertEqual(ret, 3)
+        # can't go beyond 5
+        with self.assertRaises(AssertionError):
+            ret = backbone_utils._validate_resnet_trainable_layers(
+                pretrained=True, trainable_backbone_layers=6)
+        # if not pretrained, should use all trainable layers and warn
+        with self.assertWarns(UserWarning):
+            ret = backbone_utils._validate_resnet_trainable_layers(
+                pretrained=False, trainable_backbone_layers=0)
+        self.assertEqual(ret, 5)
 
     def test_transform_copy_targets(self):
         transform = GeneralizedRCNNTransform(300, 500, torch.zeros(3), torch.ones(3))
