@@ -7,6 +7,7 @@ import torch.nn as nn
 from torch import Tensor
 from torch.jit.annotations import Dict, List, Tuple
 
+from ._utils import overwrite_eps
 from ..utils import load_state_dict_from_url
 
 from . import _utils as det_utils
@@ -628,4 +629,5 @@ def retinanet_resnet50_fpn(pretrained=False, progress=True,
         state_dict = load_state_dict_from_url(model_urls['retinanet_resnet50_fpn_coco'],
                                               progress=progress)
         model.load_state_dict(state_dict)
+        overwrite_eps(model, 0.0)
     return model

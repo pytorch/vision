@@ -38,6 +38,24 @@ def make_dataset(
     extensions: Optional[Tuple[str, ...]] = None,
     is_valid_file: Optional[Callable[[str], bool]] = None,
 ) -> List[Tuple[str, int]]:
+    """Generates a list of samples of a form (path_to_sample, class).
+
+    Args:
+        directory (str): root dataset directory
+        class_to_idx (Dict[str, int]): dictionary mapping class name to class index
+        extensions (optional): A list of allowed extensions.
+            Either extensions or is_valid_file should be passed. Defaults to None.
+        is_valid_file (optional): A function that takes path of a file
+            and checks if the file is a valid file
+            (used to check of corrupt files) both extensions and
+            is_valid_file should not be passed. Defaults to None.
+
+    Raises:
+        ValueError: In case ``extensions`` and ``is_valid_file`` are None or both are not None.
+
+    Returns:
+        List[Tuple[str, int]]: samples of a form (path_to_sample, class)
+    """
     instances = []
     directory = os.path.expanduser(directory)
     both_none = extensions is None and is_valid_file is None

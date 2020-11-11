@@ -10,7 +10,7 @@ struct VISION_API MobileNetV2Impl : torch::nn::Module {
   int64_t last_channel;
   torch::nn::Sequential features, classifier;
 
-  MobileNetV2Impl(
+  explicit MobileNetV2Impl(
       int64_t num_classes = 1000,
       double width_mult = 1.0,
       std::vector<std::vector<int64_t>> inverted_residual_settings = {},

@@ -60,9 +60,9 @@ def make_grid(
             assert isinstance(range, tuple), \
                 "range has to be a tuple (min, max) if specified. min and max are numbers"
 
-        def norm_ip(img, min, max):
-            img.clamp_(min=min, max=max)
-            img.add_(-min).div_(max - min + 1e-5)
+        def norm_ip(img, low, high):
+            img.clamp_(min=low, max=high)
+            img.sub_(low).div_(max(high - low, 1e-5))
 
         def norm_range(t, range):
             if range is not None:
