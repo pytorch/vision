@@ -36,10 +36,7 @@ def get_images(directory, img_ext):
 
 def pil_read_image(img_path):
     with Image.open(img_path) as img:
-        t = torch.from_numpy(np.array(img))
-        if img.mode == "CMYK":
-            t = 255 - t
-        return t
+        return torch.from_numpy(np.array(img))
 
 
 def normalize_dimensions(img_pil):
@@ -52,12 +49,32 @@ def normalize_dimensions(img_pil):
 
 class ImageTester(unittest.TestCase):
     def test_decode_jpeg(self):
+        conversion = [(None, 0), ("L", 1), ("RGB", 3)]
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            img_pil = pil_read_image(img_path)
-            img_pil = normalize_dimensions(img_pil)
-            data = read_file(img_path)
-            img_ljpeg = decode_jpeg(data)
-            self.assertTrue(img_ljpeg.equal(img_pil))
+            for pil_mode, components in conversion:
+                with Image.open(img_path) as img:
+                    is_cmyk = img.mode == "CMYK"
+                    if pil_mode is not None:
+                        if is_cmyk:
+                            # libjpeg does not support the conversion
+                            continue
+                        img = img.convert(pil_mode)
+                    img_pil = torch.from_numpy(np.array(img))
+                    if is_cmyk:
+                        # flip the colors to match libjpeg
+                        img_pil = 255 - img_pil
+
+                img_pil = normalize_dimensions(img_pil)
+                data = read_file(img_path)
+                img_ljpeg = decode_jpeg(data, components=components)
+
+                if pil_mode != "L":
+                    self.assertTrue(img_ljpeg.equal(img_pil))
+                else:
+                    # Permit a small variation on pixel values to account for implementation
+                    # differences between Pillow and LibJPEG.
+                    abs_mean_diff = (img_ljpeg.type(torch.float32) - img_pil).abs().mean().item()
+                    self.assertTrue(abs_mean_diff < 2)
 
         with self.assertRaisesRegex(RuntimeError, "Expected a non empty 1-dimensional tensor"):
             decode_jpeg(torch.empty((100, 1), dtype=torch.uint8))
@@ -151,34 +168,26 @@ class ImageTester(unittest.TestCase):
             self.assertEqual(torch_bytes, pil_bytes)
 
     def test_decode_png(self):
+        conversion = [(None, 0), ("L", 1), ("LA", 2), ("RGB", 3), ("RGBA", 4)]
         for img_path in get_images(FAKEDATA_DIR, ".png"):
-            img_pil = pil_read_image(img_path)
-            img_pil = normalize_dimensions(img_pil)
-            data = read_file(img_path)
-            img_lpng = decode_png(data)
-            self.assertTrue(img_lpng.equal(img_pil))
+            for pil_mode, channels in conversion:
+                with Image.open(img_path) as img:
+                    if not (pil_mode == "L" and img.mode == "P") and pil_mode is not None:
+                        # Don't grayscale palette images
+                        img = img.convert(pil_mode)
+                    img_pil = torch.from_numpy(np.array(img))
+
+                img_pil = normalize_dimensions(img_pil)
+                data = read_file(img_path)
+                img_lpng = decode_png(data, channels=channels)
+
+                tol = 0 if conversion is None else 1
+                self.assertTrue(img_lpng.allclose(img_pil, atol=tol))
 
         with self.assertRaises(RuntimeError):
             decode_png(torch.empty((), dtype=torch.uint8))
         with self.assertRaises(RuntimeError):
             decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
-
-    def test_decode_png_with_channels(self):
-        conversion = [(None, 0), ("L", 1), ("LA", 2), ("RGB", 3), ("RGBA", 4)]
-        for img_path in get_images(FAKEDATA_DIR, ".png"):
-            for pil_mode, channels in conversion:
-                with Image.open(img_path) as img:
-                    if pil_mode is None or (pil_mode == "L" and img.mode == "P"):
-                        # Don't try try to grayscale palette images or when pil_mode is None
-                        pass
-                    else:
-                        img = img.convert(pil_mode)
-                    img_pil = torch.from_numpy(np.array(img))
-                img_pil = normalize_dimensions(img_pil)
-                data = read_file(img_path)
-                img_lpng = decode_png(data, channels=channels)
-
-                self.assertTrue(img_lpng.allclose(img_pil, rtol=0.01))
 
     def test_encode_png(self):
         for img_path in get_images(IMAGE_DIR, '.png'):

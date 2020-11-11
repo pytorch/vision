@@ -4,7 +4,7 @@
 #include <string>
 
 #if !JPEG_FOUND
-torch::Tensor decodeJPEG(const torch::Tensor& data) {
+torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t components) {
   TORCH_CHECK(
       false, "decodeJPEG: torchvision not compiled with libjpeg support");
 }
@@ -69,13 +69,16 @@ static void torch_jpeg_set_source_mgr(
   src->pub.next_input_byte = src->data;
 }
 
-torch::Tensor decodeJPEG(const torch::Tensor& data) {
+torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t components) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
   TORCH_CHECK(
       data.dim() == 1 && data.numel() > 0,
       "Expected a non empty 1-dimensional tensor");
+  TORCH_CHECK(
+      components == 0 || components == 1 || components == 3,
+      "Number of components not supported");
 
   struct jpeg_decompress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;
@@ -99,21 +102,15 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
   // read info from header.
   jpeg_read_header(&cinfo, TRUE);
 
-  int64_t components = 0; // TODO: make it an input param
   int current_channels = cinfo.num_components;
 
   if (components > 0 && components != current_channels) {
-
     switch (components) {
       case 1: // Gray
         cinfo.out_color_space = JCS_GRAYSCALE;
         break;
       case 3: // RGB
         cinfo.out_color_space = JCS_RGB;
-        break;
-      case 4: // CMYK or YCCK
-        // If the requested channels are 4, always default to CMYK.
-        cinfo.out_color_space = JCS_CMYK;
         break;
       default:
         jpeg_destroy_decompress(&cinfo);
@@ -131,8 +128,8 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
   int width = cinfo.output_width;
 
   int stride = width * components;
-  auto tensor = torch::empty(
-      {int64_t(height), int64_t(width), components}, torch::kU8);
+  auto tensor =
+      torch::empty({int64_t(height), int64_t(width), components}, torch::kU8);
   auto ptr = tensor.data_ptr<uint8_t>();
   while (cinfo.output_scanline < cinfo.output_height) {
     /* jpeg_read_scanlines expects an array of pointers to scanlines.

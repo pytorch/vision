@@ -19,6 +19,8 @@ torch::Tensor decodePNG(const torch::Tensor& data, int64_t channels) {
   TORCH_CHECK(
       data.dim() == 1 && data.numel() > 0,
       "Expected a non empty 1-dimensional tensor");
+  TORCH_CHECK(
+      channels >= 0 && channels <= 4, "Number of channels not supported");
 
   auto png_ptr =
       png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
