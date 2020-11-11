@@ -98,15 +98,41 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
 
   // read info from header.
   jpeg_read_header(&cinfo, TRUE);
+
+  int64_t components = 0; // TODO: make it an input param
+  int current_channels = cinfo.num_components;
+
+  if (components > 0 && components != current_channels) {
+
+    switch (components) {
+      case 1: // Gray
+        cinfo.out_color_space = JCS_GRAYSCALE;
+        break;
+      case 3: // RGB
+        cinfo.out_color_space = JCS_RGB;
+        break;
+      case 4: // CMYK or YCCK
+        // If the requested channels are 4, always default to CMYK.
+        cinfo.out_color_space = JCS_CMYK;
+        break;
+      default:
+        jpeg_destroy_decompress(&cinfo);
+        TORCH_CHECK(false, "Invalid number of output channels.");
+    }
+
+    jpeg_calc_output_dimensions(&cinfo);
+  } else {
+    components = current_channels;
+  }
+
   jpeg_start_decompress(&cinfo);
 
   int height = cinfo.output_height;
   int width = cinfo.output_width;
-  int components = cinfo.output_components;
 
-  auto stride = width * components;
+  int stride = width * components;
   auto tensor = torch::empty(
-      {int64_t(height), int64_t(width), int64_t(components)}, torch::kU8);
+      {int64_t(height), int64_t(width), components}, torch::kU8);
   auto ptr = tensor.data_ptr<uint8_t>();
   while (cinfo.output_scanline < cinfo.output_height) {
     /* jpeg_read_scanlines expects an array of pointers to scanlines.
