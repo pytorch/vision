@@ -150,7 +150,7 @@ class ImageTester(unittest.TestCase):
             decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
 
     def test_decode_png_with_channels(self):
-        conversion = [(None, 0), ]  # ("L", 1), ("LA", 2), ("RGB", 3), ("RGBA", 4)]
+        conversion = [(None, 0), ("L", 1), ("LA", 2), ("RGB", 3), ("RGBA", 4)]
         for img_path in get_images(FAKEDATA_DIR, ".png"):
             for pil_mode, channels in conversion:
                 with Image.open(img_path) as img:
@@ -165,9 +165,9 @@ class ImageTester(unittest.TestCase):
                 else:
                     img_pil = img_pil.unsqueeze(0)
                 data = read_file(img_path)
-                img_lpng = decode_png(data)  # TODO: add channels here
+                img_lpng = decode_png(data, channels=channels)
 
-                self.assertTrue(img_lpng.allclose(img_pil, rtol=0.05))
+                self.assertTrue(img_lpng.allclose(img_pil, rtol=0.01))
 
     def test_encode_png(self):
         for img_path in get_images(IMAGE_DIR, '.png'):

@@ -5,14 +5,14 @@
 #include <string>
 
 #if !PNG_FOUND
-torch::Tensor decodePNG(const torch::Tensor& data) {
+torch::Tensor decodePNG(const torch::Tensor& data, int64_t channels) {
   TORCH_CHECK(false, "decodePNG: torchvision not compiled with libPNG support");
 }
 #else
 #include <png.h>
 #include <setjmp.h>
 
-torch::Tensor decodePNG(const torch::Tensor& data) {
+torch::Tensor decodePNG(const torch::Tensor& data, int64_t channels) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
@@ -71,10 +71,11 @@ torch::Tensor decodePNG(const torch::Tensor& data) {
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
     TORCH_CHECK(retval == 1, "Could read image metadata from content.")
   }
-  int64_t channels = 0; // TODO: add it as input param
+
   int current_channels = png_get_channels(png_ptr, info_ptr);
 
   if (channels > 0 && channels != current_channels) {
+    // TODO: consider supporting PNG_INFO_tRNS
     bool is_palette = (color_type & PNG_COLOR_MASK_PALETTE) != 0;
     bool has_color = (color_type & PNG_COLOR_MASK_COLOR) != 0;
     bool has_alpha = (color_type & PNG_COLOR_MASK_ALPHA) != 0;
@@ -86,7 +87,7 @@ torch::Tensor decodePNG(const torch::Tensor& data) {
         }
 
         if (has_color && !is_palette) {
-          png_set_rgb_to_gray(png_ptr, 1, 0.299, 0.587);
+          png_set_rgb_to_gray(png_ptr, 1, 0.2989, 0.587);
         }
         break;
       case 2: // Gray + Alpha
@@ -100,7 +101,7 @@ torch::Tensor decodePNG(const torch::Tensor& data) {
         }
 
         if (has_color) {
-          png_set_rgb_to_gray(png_ptr, 1, 0.299, 0.587);
+          png_set_rgb_to_gray(png_ptr, 1, 0.2989, 0.587);
         }
         break;
       case 3:

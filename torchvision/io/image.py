@@ -74,19 +74,24 @@ def write_file(filename: str, data: torch.Tensor) -> None:
     torch.ops.image.write_file(filename, data)
 
 
-def decode_png(input: torch.Tensor) -> torch.Tensor:
+def decode_png(input: torch.Tensor, channels: int = 0) -> torch.Tensor:
     """
     Decodes a PNG image into a 3 dimensional RGB Tensor.
+    Optionally converts the image to the desired number of color channels.
     The values of the output tensor are uint8 between 0 and 255.
 
     Arguments:
         input (Tensor[1]): a one dimensional uint8 tensor containing
     the raw bytes of the PNG image.
+        channels (int): the number of output channels for the decoded
+    image. 0 keeps the original number of channels, 1 converts to Grayscale
+    if the input image is not Palette, 2 converts to Grayscale with Alpha,
+    3 converts to RGB and 4 coverts to RGB with Alpha. Default: 0
 
     Returns:
         output (Tensor[3, image_height, image_width])
     """
-    output = torch.ops.image.decode_png(input)
+    output = torch.ops.image.decode_png(input, channels)
     return output
 
 

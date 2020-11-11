@@ -1,19 +1,17 @@
 #include "readjpeg_cpu.h"
 
 #include <ATen/ATen.h>
-#include <setjmp.h>
 #include <string>
 
 #if !JPEG_FOUND
-
 torch::Tensor decodeJPEG(const torch::Tensor& data) {
   TORCH_CHECK(
       false, "decodeJPEG: torchvision not compiled with libjpeg support");
 }
-
 #else
 #include <jpeglib.h>
 #include "jpegcommon.h"
+#include <setjmp.h>
 
 struct torch_jpeg_mgr {
   struct jpeg_source_mgr pub;

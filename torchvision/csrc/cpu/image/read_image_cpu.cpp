@@ -17,7 +17,7 @@ torch::Tensor decode_image(const torch::Tensor& data) {
   if (memcmp(jpeg_signature, datap, 3) == 0) {
     return decodeJPEG(data);
   } else if (memcmp(png_signature, datap, 4) == 0) {
-    return decodePNG(data);
+    return decodePNG(data); // TODO: add channels here
   } else {
     TORCH_CHECK(
         false,
