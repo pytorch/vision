@@ -3,8 +3,8 @@ import os
 from os.path import abspath, expanduser
 import torch
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-from .utils import download_file_from_google_drive, check_integrity, download_url, \
-    extract_archive, verify_str_arg
+from .utils import check_integrity, download_file_from_google_drive, \
+    download_and_extract_archive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -90,7 +90,7 @@ class WIDERFace(VisionDataset):
 
         if not self._check_integrity():
             raise RuntimeError("Dataset not found or corrupted. " +
-                               "You can use download=True to download it")
+                               "You can use download=True to download and prepare it")
 
         # process dataset
         # dataset will be stored as a list of dict objects (img_info)
@@ -199,12 +199,8 @@ class WIDERFace(VisionDataset):
         for (_, md5, filename) in all_files:
             file, ext = os.path.splitext(filename)
             extracted_dir = os.path.join(self.root, file)
-            if os.path.exists(extracted_dir):
-                continue
-            filepath = os.path.join(self.root, filename)
-            if not check_integrity(filepath, md5):
+            if not os.path.exists(extracted_dir):
                 return False
-            extract_archive(filepath)
         return True
 
     def download(self) -> None:
@@ -212,15 +208,13 @@ class WIDERFace(VisionDataset):
             print('Files already downloaded and verified')
             return
 
-        # download data if the extracted data doesn't exist
+        # download and extract image data
         for (file_id, md5, filename) in self.FILE_LIST:
-            file, _ = os.path.splitext(filename)
-            extracted_dir = os.path.join(self.root, file)
-            if os.path.isdir(extracted_dir):
-                continue
             download_file_from_google_drive(file_id, self.root, filename, md5)
+            filepath = os.path.join(self.root, filename)
+            extract_archive(filepath)
 
-        # download annotation files
-        extracted_dir, _ = os.path.splitext(self.ANNOTATIONS_FILE[2])
-        if not os.path.isdir(extracted_dir):
-            download_url(url=self.ANNOTATIONS_FILE[0], root=self.root, md5=self.ANNOTATIONS_FILE[1])
+        # download and extract annotation files
+        download_and_extract_archive(url=self.ANNOTATIONS_FILE[0],
+                                     download_root=self.root,
+                                     md5=self.ANNOTATIONS_FILE[1])
