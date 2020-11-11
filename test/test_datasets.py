@@ -140,6 +140,7 @@ class Tester(unittest.TestCase):
             self.generic_classification_dataset_test(dataset)
 
     @mock.patch('torchvision.datasets.WIDERFace._check_integrity')
+    @unittest.skipIf('win' in sys.platform, 'temporarily disabled on Windows')
     def test_widerface(self, mock_check_integrity):
         mock_check_integrity.return_value = True
         with widerface_root() as root:
