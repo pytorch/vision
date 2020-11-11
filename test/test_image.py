@@ -19,6 +19,7 @@ IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
 IMAGE_DIR = os.path.join(FAKEDATA_DIR, "imagefolder")
 DAMAGED_JPEG = os.path.join(IMAGE_ROOT, 'damaged_jpeg')
+ENCODE_JPEG = os.path.join(IMAGE_ROOT, "encode_jpeg")
 
 
 def get_images(directory, img_ext):
@@ -33,11 +34,27 @@ def get_images(directory, img_ext):
                 yield os.path.join(root, fl)
 
 
+def pil_read_image(img_path):
+    with Image.open(img_path) as img:
+        t = torch.from_numpy(np.array(img))
+        if img.mode == "CMYK":
+            t = 255 - t
+        return t
+
+
+def normalize_dimensions(img_pil):
+    if len(img_pil.shape) == 3:
+        img_pil = img_pil.permute(2, 0, 1)
+    else:
+        img_pil = img_pil.unsqueeze(0)
+    return img_pil
+
+
 class ImageTester(unittest.TestCase):
     def test_decode_jpeg(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            img_pil = torch.load(img_path.replace('jpg', 'pth'))
-            img_pil = img_pil.permute(2, 0, 1)
+            img_pil = pil_read_image(img_path)
+            img_pil = normalize_dimensions(img_pil)
             data = read_file(img_path)
             img_ljpeg = decode_jpeg(data)
             self.assertTrue(img_ljpeg.equal(img_pil))
@@ -68,7 +85,7 @@ class ImageTester(unittest.TestCase):
                 decode_jpeg(data)
 
     def test_encode_jpeg(self):
-        for img_path in get_images(IMAGE_ROOT, ".jpg"):
+        for img_path in get_images(ENCODE_JPEG, ".jpg"):
             dirname = os.path.dirname(img_path)
             filename, _ = os.path.splitext(os.path.basename(img_path))
             write_folder = os.path.join(dirname, 'jpeg_write')
@@ -111,7 +128,7 @@ class ImageTester(unittest.TestCase):
             encode_jpeg(torch.empty((100, 100), dtype=torch.uint8))
 
     def test_write_jpeg(self):
-        for img_path in get_images(IMAGE_ROOT, ".jpg"):
+        for img_path in get_images(ENCODE_JPEG, ".jpg"):
             data = read_file(img_path)
             img = decode_jpeg(data)
 
@@ -135,11 +152,8 @@ class ImageTester(unittest.TestCase):
 
     def test_decode_png(self):
         for img_path in get_images(FAKEDATA_DIR, ".png"):
-            img_pil = torch.from_numpy(np.array(Image.open(img_path)))
-            if len(img_pil.shape) == 3:
-                img_pil = img_pil.permute(2, 0, 1)
-            else:
-                img_pil = img_pil.unsqueeze(0)
+            img_pil = pil_read_image(img_path)
+            img_pil = normalize_dimensions(img_pil)
             data = read_file(img_path)
             img_lpng = decode_png(data)
             self.assertTrue(img_lpng.equal(img_pil))
@@ -160,10 +174,7 @@ class ImageTester(unittest.TestCase):
                     else:
                         img = img.convert(pil_mode)
                     img_pil = torch.from_numpy(np.array(img))
-                if len(img_pil.shape) == 3:
-                    img_pil = img_pil.permute(2, 0, 1)
-                else:
-                    img_pil = img_pil.unsqueeze(0)
+                img_pil = normalize_dimensions(img_pil)
                 data = read_file(img_path)
                 img_lpng = decode_png(data, channels=channels)
 
@@ -218,14 +229,14 @@ class ImageTester(unittest.TestCase):
 
     def test_decode_image(self):
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            img_pil = torch.load(img_path.replace('jpg', 'pth'))
-            img_pil = img_pil.permute(2, 0, 1)
+            img_pil = pil_read_image(img_path)
+            img_pil = normalize_dimensions(img_pil)
             img_ljpeg = decode_image(read_file(img_path))
             self.assertTrue(img_ljpeg.equal(img_pil))
 
         for img_path in get_images(IMAGE_DIR, ".png"):
-            img_pil = torch.from_numpy(np.array(Image.open(img_path)))
-            img_pil = img_pil.permute(2, 0, 1)
+            img_pil = pil_read_image(img_path)
+            img_pil = normalize_dimensions(img_pil)
             img_lpng = decode_image(read_file(img_path))
             self.assertTrue(img_lpng.equal(img_pil))
 
