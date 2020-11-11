@@ -68,13 +68,10 @@ class ImageTester(unittest.TestCase):
                 data = read_file(img_path)
                 img_ljpeg = decode_jpeg(data, components=components)
 
-                if pil_mode != "L":
-                    self.assertTrue(img_ljpeg.equal(img_pil))
-                else:
-                    # Permit a small variation on pixel values to account for implementation
-                    # differences between Pillow and LibJPEG.
-                    abs_mean_diff = (img_ljpeg.type(torch.float32) - img_pil).abs().mean().item()
-                    self.assertTrue(abs_mean_diff < 2)
+                # Permit a small variation on pixel values to account for implementation
+                # differences between Pillow and LibJPEG.
+                abs_mean_diff = (img_ljpeg.type(torch.float32) - img_pil).abs().mean().item()
+                self.assertTrue(abs_mean_diff < 2)
 
         with self.assertRaisesRegex(RuntimeError, "Expected a non empty 1-dimensional tensor"):
             decode_jpeg(torch.empty((100, 1), dtype=torch.uint8))
@@ -235,19 +232,6 @@ class ImageTester(unittest.TestCase):
             saved_image = saved_image.permute(2, 0, 1)
 
             self.assertTrue(img_pil.equal(saved_image))
-
-    def test_decode_image(self):
-        for img_path in get_images(ENCODE_JPEG, ".jpg"):
-            img_pil = pil_read_image(img_path)
-            img_pil = normalize_dimensions(img_pil)
-            img_ljpeg = decode_image(read_file(img_path))
-            self.assertTrue(img_ljpeg.equal(img_pil))
-
-        for img_path in get_images(IMAGE_DIR, ".png"):
-            img_pil = pil_read_image(img_path)
-            img_pil = normalize_dimensions(img_pil)
-            img_lpng = decode_image(read_file(img_path))
-            self.assertTrue(img_lpng.equal(img_pil))
 
     def test_read_file(self):
         with get_tmp_dir() as d:
