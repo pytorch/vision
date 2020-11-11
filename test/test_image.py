@@ -144,10 +144,30 @@ class ImageTester(unittest.TestCase):
             img_lpng = decode_png(data)
             self.assertTrue(img_lpng.equal(img_pil))
 
-            with self.assertRaises(RuntimeError):
-                decode_png(torch.empty((), dtype=torch.uint8))
-            with self.assertRaises(RuntimeError):
-                decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
+        with self.assertRaises(RuntimeError):
+            decode_png(torch.empty((), dtype=torch.uint8))
+        with self.assertRaises(RuntimeError):
+            decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
+
+    def test_decode_png_with_channels(self):
+        conversion = [(None, 0), ]  # ("L", 1), ("LA", 2), ("RGB", 3), ("RGBA", 4)]
+        for img_path in get_images(FAKEDATA_DIR, ".png"):
+            for pil_mode, channels in conversion:
+                with Image.open(img_path) as img:
+                    if pil_mode is None or (pil_mode == "L" and img.mode == "P"):
+                        # Don't try try to grayscale palette images or when pil_mode is None
+                        pass
+                    else:
+                        img = img.convert(pil_mode)
+                    img_pil = torch.from_numpy(np.array(img))
+                if len(img_pil.shape) == 3:
+                    img_pil = img_pil.permute(2, 0, 1)
+                else:
+                    img_pil = img_pil.unsqueeze(0)
+                data = read_file(img_path)
+                img_lpng = decode_png(data)  # TODO: add channels here
+
+                self.assertTrue(img_lpng.allclose(img_pil, rtol=0.05))
 
     def test_encode_png(self):
         for img_path in get_images(IMAGE_DIR, '.png'):
