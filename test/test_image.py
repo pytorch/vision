@@ -237,7 +237,7 @@ class ImageTester(unittest.TestCase):
             self.assertTrue(img_pil.equal(saved_image))
 
     def test_decode_image(self):
-        for img_path in get_images(IMAGE_ROOT, ".jpg"):
+        for img_path in get_images(ENCODE_JPEG, ".jpg"):
             img_pil = pil_read_image(img_path)
             img_pil = normalize_dimensions(img_pil)
             img_ljpeg = decode_image(read_file(img_path))
