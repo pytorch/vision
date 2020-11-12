@@ -3,7 +3,7 @@ from PIL import Image
 import os
 import torch
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-from .utils import check_integrity, extract_archive
+from .utils import check_integrity, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -49,8 +49,8 @@ class VGGFace2(VisionDataset):
                 downloaded again.
         """
 
-    base_folder = "vggface2"
-    file_list = [
+    BASE_FOLDER = "vggface2"
+    FILE_LIST = [
         # Filename                MD5 Hash                            Uncompressed filename
         ("vggface2_train.tar.gz", "88813c6b15de58afc8fa75ea83361d7f", "train"),
         ("vggface2_test.tar.gz", "bb7a323824d1004e14e00c23974facd3", "test"),
@@ -67,7 +67,7 @@ class VGGFace2(VisionDataset):
         download: bool = False,
     ) -> None:
         import pandas
-        super(VGGFace2, self).__init__(root=os.path.join(root, self.base_folder),
+        super(VGGFace2, self).__init__(root=os.path.join(root, self.BASE_FOLDER),
                                        transform=transform,
                                        target_transform=target_transform)
 
@@ -79,18 +79,17 @@ class VGGFace2(VisionDataset):
             raise RuntimeError(msg)
 
         # check arguments
-        if split not in ("train", "test"):
-            raise ValueError('split \"{}\" is not recognized.'.format(split))
-        self.split = split
+        self.split = verify_str_arg(split, "split", ("train", "test"))
         self.img_info: List[Dict[str, object]] = []
 
         if isinstance(target_type, list):
             self.target_type = target_type
         else:
             self.target_type = [target_type]
+        self.target_type = [verify_str_arg(t, "target_type",
+                            ("class_id", "image_id", "face_id", "bbox", "landmarks", ""))
+                            for t in self.target_type]
 
-        if not (all(x in ["class_id", "image_id", "face_id", "bbox", "landmarks", ""] for x in self.target_type)):
-            raise ValueError("target_type \"{}\" is not recognized.".format(self.target_type))
         if not self.target_type and self.target_transform is not None:
             raise RuntimeError("target_transform is specified but target_type is empty")
 
@@ -98,14 +97,14 @@ class VGGFace2(VisionDataset):
         image_list_file = os.path.join(self.root, image_list_file)
 
         # prepare dataset
-        for (filename, _, extracted_dir) in self.file_list:
+        for (filename, _, extracted_dir) in self.FILE_LIST:
             filename = os.path.join(self.root, filename)
             extracted_dir_path = os.path.join(self.root, extracted_dir)
             if not os.path.isdir(extracted_dir_path):
                 extract_archive(filename)
 
         # process dataset
-        fn = partial(os.path.join, self.root, self.file_list[2][2])
+        fn = partial(os.path.join, self.root, self.FILE_LIST[2][2])
         bbox_frames = [pandas.read_csv(fn("loose_bb_train.csv"), index_col=0),
                        pandas.read_csv(fn("loose_bb_test.csv"), index_col=0)]
         self.bbox = pandas.concat(bbox_frames)
@@ -134,10 +133,8 @@ class VGGFace2(VisionDataset):
         return len(self.img_info)
 
     def __getitem__(self, index) -> Tuple[Any, Any]:
-        img_info = self.img_info[index]
-
         # prepare image
-        img = Image.open(img_info["img_path"])
+        img = Image.open(self.img_info[index]["img_path"])
         if self.transform:
             img = self.transform(img)
 
@@ -147,7 +144,7 @@ class VGGFace2(VisionDataset):
             if t == "":
                 target = None
                 break
-            target.append(img_info[t])
+            target.append(self.img_info[index][t])
         if target:
             target = tuple(target) if len(target) > 1 else target[0]
             if self.target_transform is not None:
