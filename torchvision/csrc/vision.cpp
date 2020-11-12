@@ -8,7 +8,7 @@
 #include <hip/hip_runtime.h>
 #endif
 
-#include "DeformConv.h"
+#include "DeformConv2d.h"
 #include "PSROIAlign.h"
 #include "PSROIPool.h"
 #include "ROIAlign.h"
