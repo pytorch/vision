@@ -264,7 +264,7 @@ class DeformConv2dBackwardFunction
 } // namespace
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
-at::Tensor DeformConv2d_autocast(
+at::Tensor deform_conv2d_autocast(
     const at::Tensor& input,
     const at::Tensor& weight,
     const at::Tensor& offset,
@@ -299,7 +299,7 @@ at::Tensor DeformConv2d_autocast(
 }
 #endif
 
-at::Tensor DeformConv2d_autograd(
+at::Tensor deform_conv2d_autograd(
     const at::Tensor& input,
     const at::Tensor& weight,
     const at::Tensor& offset,
@@ -332,7 +332,7 @@ at::Tensor DeformConv2d_autograd(
 }
 
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
-DeformConv2d_backward_autograd(
+deform_conv2d_backward_autograd(
     const at::Tensor& grad,
     const at::Tensor& input,
     const at::Tensor& weight,

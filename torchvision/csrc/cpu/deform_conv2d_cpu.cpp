@@ -68,11 +68,7 @@
 
 #include <ATen/ATen.h>
 #include <ATen/TensorUtils.h>
-#include <ATen/cuda/CUDAContext.h>
-#include <c10/cuda/CUDAGuard.h>
-#include <THC/THCAtomics.cuh>
-
-#include "cuda_helpers.h"
+#include <TH/TH.h>
 
 #include <cmath>
 #include <iostream>
@@ -82,21 +78,8 @@ namespace {
 
 const int kMaxParallelImgs = 32;
 
-inline unsigned int GET_THREADS() {
-  if (at::cuda::getCurrentDeviceProperties()->major >= 6) {
-    return 1024;
-  }
-  return 512;
-}
-
-inline unsigned int GET_BLOCKS(const unsigned int THREADS, const unsigned int N) {
-  unsigned int kMaxGridNum =
-      at::cuda::getCurrentDeviceProperties()->maxGridSize[0];
-  return std::min(kMaxGridNum, (N + THREADS - 1) / THREADS);
-}
-
 template <typename scalar_t>
-__device__ scalar_t bilinear_interpolate(
+scalar_t bilinear_interpolate(
     const scalar_t* in,
     int height,
     int width,
@@ -135,11 +118,11 @@ __device__ scalar_t bilinear_interpolate(
 }
 
 template <typename scalar_t>
-__global__ void deformable_im2col_kernel(
+void deformable_im2col_kernel(
     int n,
-    const scalar_t* input_ptr,
-    const scalar_t* offset_ptr,
-    const scalar_t* mask_ptr,
+    const scalar_t* input,
+    const scalar_t* offset,
+    const scalar_t* mask,
     int height,
     int width,
     int weight_h,
@@ -156,8 +139,8 @@ __global__ void deformable_im2col_kernel(
     int out_h,
     int out_w,
     bool use_mask,
-    scalar_t* columns_ptr) {
-  CUDA_1D_KERNEL_LOOP(index, n) {
+    scalar_t* columns) {
+  for (int index = 0; index != n; ++index) {
     const int out_x = index % out_w;
     const int out_y = (index / out_w) % out_h;
     const int out_b = (index / (out_w * out_h)) % batch_sz;
@@ -167,16 +150,18 @@ __global__ void deformable_im2col_kernel(
     int c_per_offset_grp = n_in_channels / n_offset_grps;
     const int grp_idx = in_c / c_per_offset_grp;
 
-    columns_ptr +=
+    auto columns_ptr = columns +
         (out_c * (batch_sz * out_h * out_w) + out_b * (out_h * out_w) +
          out_y * out_w + out_x);
 
-    input_ptr +=
+    auto input_ptr = input +
         (out_b * (n_in_channels * height * width) + in_c * (height * width));
 
-    offset_ptr += (out_b * n_offset_grps + grp_idx) * 2 * weight_h * weight_w *
-        out_h * out_w;
+    auto offset_ptr = offset +
+        (out_b * n_offset_grps + grp_idx) * 2 * weight_h * weight_w * out_h *
+            out_w;
 
+    auto mask_ptr = mask;
     if (use_mask) {
       mask_ptr += (out_b * n_offset_grps + grp_idx) * weight_h * weight_w *
           out_h * out_w;
@@ -230,14 +215,9 @@ void deformable_im2col(
     at::Tensor data_col) {
   int num_kernels = n_in_channels * out_h * out_w * parallel_imgs;
 
-  const unsigned int threads = GET_THREADS();
-  const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
-
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "deformable_im2col_gpu", ([&] {
-        deformable_im2col_kernel<<<
-            blocks,
-            threads>>>(
+      input.scalar_type(), "deformable_im2col", ([&] {
+        deformable_im2col_kernel(
             num_kernels,
             input.data_ptr<scalar_t>(),
             data_offset.data_ptr<scalar_t>(),
@@ -260,11 +240,6 @@ void deformable_im2col(
             use_mask,
             data_col.data_ptr<scalar_t>());
       }));
-
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess) {
-    printf("error in deformable_im2col: %s\n", cudaGetErrorString(err));
-  }
 }
 
 int get_greatest_divisor_below_bound(int n, int bound) {
@@ -277,11 +252,11 @@ int get_greatest_divisor_below_bound(int n, int bound) {
 }
 
 template <typename scalar_t>
-__global__ void deformable_col2im_kernel(
+void deformable_col2im_kernel(
     int n,
     const scalar_t* col,
-    const scalar_t* offset_ptr,
-    const scalar_t* mask_ptr,
+    const scalar_t* offset,
+    const scalar_t* mask,
     int channels,
     int height,
     int width,
@@ -299,7 +274,7 @@ __global__ void deformable_col2im_kernel(
     int out_w,
     bool use_mask,
     scalar_t* grad_im) {
-  CUDA_1D_KERNEL_LOOP(index, n) {
+  for (int index = 0; index != n; ++index) {
     const int out_x = index % out_w;
     const int out_y = (index / out_w) % out_h;
     const int b = (index / (out_w * out_h)) % batch_sz;
@@ -310,9 +285,11 @@ __global__ void deformable_col2im_kernel(
     int c_per_offset_grp = channels / n_offset_grps;
     const int offset_grp = c / c_per_offset_grp;
 
-    offset_ptr += (b * n_offset_grps + offset_grp) * 2 * kernel_h * kernel_w *
-        out_h * out_w;
+    auto offset_ptr = offset +
+        (b * n_offset_grps + offset_grp) * 2 * kernel_h * kernel_w * out_h *
+            out_w;
 
+    auto mask_ptr = mask;
     if (use_mask) {
       mask_ptr += (b * n_offset_grps + offset_grp) * kernel_h * kernel_w *
           out_h * out_w;
@@ -343,7 +320,7 @@ __global__ void deformable_col2im_kernel(
             std::abs(y - yp) < 1 && std::abs(x - xp) < 1) {
           int grad_pos = ((b * channels + c) * height + yp) * width + xp;
           scalar_t weight = (1 - std::abs(y - yp)) * (1 - std::abs(x - xp));
-          atomicAdd(grad_im + grad_pos, mask_value * weight * col[index]);
+          grad_im[grad_pos] += mask_value * weight * col[index];
         }
       }
     }
@@ -376,14 +353,9 @@ void compute_grad_input(
   int num_kernels =
       channels * weight_h * weight_w * out_h * out_w * parallel_imgs;
 
-  const unsigned int threads = GET_THREADS();
-  const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
-
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "deformable_col2im_gpu", ([&] {
-        deformable_col2im_kernel<<<
-            blocks,
-            threads>>>(
+      columns.scalar_type(), "deformable_col2im", ([&] {
+        deformable_col2im_kernel(
             num_kernels,
             columns.data_ptr<scalar_t>(),
             offset.data_ptr<scalar_t>(),
@@ -406,15 +378,10 @@ void compute_grad_input(
             use_mask,
             grad_im.data_ptr<scalar_t>());
       }));
-
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess) {
-    printf("error in compute_grad_input: %s\n", cudaGetErrorString(err));
-  }
 }
 
 template <typename scalar_t>
-__device__ scalar_t get_coordinate_weight(
+scalar_t get_coordinate_weight(
     const scalar_t* im_data,
     int height,
     int width,
@@ -447,12 +414,12 @@ __device__ scalar_t get_coordinate_weight(
 }
 
 template <typename scalar_t>
-__global__ void deformable_col2im_coord_kernel(
+void deformable_col2im_coord_kernel(
     int n,
-    const scalar_t* col_ptr,
-    const scalar_t* im_ptr,
-    const scalar_t* offset_ptr,
-    const scalar_t* mask_ptr,
+    const scalar_t* col,
+    const scalar_t* im,
+    const scalar_t* offset,
+    const scalar_t* mask,
     int channels,
     int height,
     int width,
@@ -469,10 +436,10 @@ __global__ void deformable_col2im_coord_kernel(
     int n_offset_grps,
     int out_h,
     int out_w,
-    const bool use_mask,
+    bool use_mask,
     scalar_t* grad_offset,
     scalar_t* grad_mask) {
-  CUDA_1D_KERNEL_LOOP(index, n) {
+  for (int index = 0; index != n; ++index) {
     scalar_t grad_offset_val = 0;
     scalar_t grad_mask_val = 0;
 
@@ -488,13 +455,16 @@ __global__ void deformable_col2im_coord_kernel(
 
     int c_per_offset_grp = channels / n_offset_grps;
 
-    col_ptr += offset_grp * c_per_offset_grp * weight_h * weight_w * batch_sz *
-        out_w * out_h;
-    im_ptr +=
+    auto col_ptr = col +
+        offset_grp * c_per_offset_grp * weight_h * weight_w * batch_sz * out_w *
+            out_h;
+    auto im_ptr = im +
         (b * n_offset_grps + offset_grp) * c_per_offset_grp * height * width;
-    offset_ptr += (b * n_offset_grps + offset_grp) * 2 * weight_h * weight_w *
-        out_h * out_w;
+    auto offset_ptr = offset +
+        (b * n_offset_grps + offset_grp) * 2 * weight_h * weight_w * out_h *
+            out_w;
 
+    auto mask_ptr = mask;
     if (use_mask) {
       mask_ptr += (b * n_offset_grps + offset_grp) * weight_h * weight_w *
           out_h * out_w;
@@ -514,12 +484,12 @@ __global__ void deformable_col2im_coord_kernel(
 
       const int mask_idx = i * weight_w + j;
 
-      const int offset_h_ptr =
+      const int offset_h_idx =
           (((2 * mask_idx) * out_h + out_y) * out_w + out_x);
-      const int offset_w_ptr =
+      const int offset_w_idx =
           (((2 * mask_idx + 1) * out_h + out_y) * out_w + out_x);
-      const scalar_t offset_h = offset_ptr[offset_h_ptr];
-      const scalar_t offset_w = offset_ptr[offset_w_ptr];
+      const scalar_t offset_h = offset_ptr[offset_h_idx];
+      const scalar_t offset_w = offset_ptr[offset_w_idx];
 
       scalar_t mask_value = 1;
       if (use_mask) {
@@ -584,14 +554,9 @@ void compute_grad_offset_and_mask(
   int num_kernels =
       out_h * out_w * 2 * weight_h * weight_w * n_offset_grps * parallel_imgs;
 
-  const unsigned int threads = GET_THREADS();
-  const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
-
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "deformable_col2im_coord_gpu", ([&] {
-        deformable_col2im_coord_kernel<<<
-            blocks,
-            threads>>>(
+      columns.scalar_type(), "deformable_col2im_coord", ([&] {
+        deformable_col2im_coord_kernel(
             num_kernels,
             columns.data_ptr<scalar_t>(),
             input.data_ptr<scalar_t>(),
@@ -617,15 +582,9 @@ void compute_grad_offset_and_mask(
             grad_offset.data_ptr<scalar_t>(),
             grad_mask.data_ptr<scalar_t>());
       }));
-
-  cudaError_t err = cudaGetLastError();
-  if (err != cudaSuccess) {
-    printf(
-        "error in compute_grad_offset_and_mask: %s\n", cudaGetErrorString(err));
-  }
 }
 
-std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
+std::tuple<at::Tensor, at::Tensor, at::Tensor> gradient_inputs(
     at::Tensor input,
     at::Tensor weight,
     at::Tensor offset,
@@ -641,12 +600,10 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
     int n_offset_grps,
     int n_parallel_imgs,
     bool use_mask) {
-  at::DeviceGuard guard(input.device());
-
   int batch_sz = input.size(0);
-  long n_in_channels = input.size(1);
-  long in_h = input.size(2);
-  long in_w = input.size(3);
+  int n_in_channels = input.size(1);
+  int in_h = input.size(2);
+  int in_w = input.size(3);
 
   n_parallel_imgs = std::min(batch_sz, n_parallel_imgs);
 
@@ -654,8 +611,8 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
   int weight_h = weight.size(2);
   int weight_w = weight.size(3);
 
-  long out_w = (in_w + 2 * pad_w - (dil_w * (weight_w - 1) + 1)) / stride_w + 1;
   long out_h = (in_h + 2 * pad_h - (dil_h * (weight_h - 1) + 1)) / stride_h + 1;
+  long out_w = (in_w + 2 * pad_w - (dil_w * (weight_w - 1) + 1)) / stride_w + 1;
 
   auto grad_input = at::zeros_like(input);
   auto grad_offset = at::zeros_like(offset);
@@ -716,6 +673,7 @@ std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
 
   columns = columns.view(
       {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
+
   for (int elt = 0; elt < batch_sz / n_parallel_imgs; elt++) {
     columns.zero_();
     // Separate into weight groups
@@ -795,12 +753,10 @@ at::Tensor backward_gradient_parameters(
     int n_offset_grps,
     int n_parallel_imgs,
     bool use_mask) {
-  at::DeviceGuard guard(input.device());
-
   int batch_sz = input.size(0);
-  long n_in_channels = input.size(1);
-  long in_h = input.size(2);
-  long in_w = input.size(3);
+  int n_in_channels = input.size(1);
+  int in_h = input.size(2);
+  int in_w = input.size(3);
 
   n_parallel_imgs = std::min(batch_sz, n_parallel_imgs);
 
@@ -843,11 +799,11 @@ at::Tensor backward_gradient_parameters(
                          out_w});
   }
 
-  grad_weight = grad_weight.reshape({n_weight_grps,
-                                     grad_weight.size(0) / n_weight_grps,
-                                     grad_weight.size(1),
-                                     grad_weight.size(2),
-                                     grad_weight.size(3)});
+  grad_weight = grad_weight.view({n_weight_grps,
+                                  grad_weight.size(0) / n_weight_grps,
+                                  grad_weight.size(1),
+                                  grad_weight.size(2),
+                                  grad_weight.size(3)});
 
   auto columns = at::empty(
       {n_weight_grps,
@@ -897,7 +853,7 @@ at::Tensor backward_gradient_parameters(
 
 } // namespace
 
-at::Tensor DeformConv2d_forward_cuda(
+at::Tensor deform_conv2d_forward_cpu(
     const at::Tensor& input_param,
     const at::Tensor& weight_param,
     const at::Tensor& offset_param,
@@ -922,18 +878,17 @@ at::Tensor DeformConv2d_forward_cuda(
   TORCH_CHECK(offset.ndimension() == 4);
   TORCH_CHECK(!use_mask || mask.ndimension() == 4);
   TORCH_CHECK(weight.ndimension() == 4);
-  TORCH_CHECK(input.is_cuda(), "input must be a CUDA tensor");
-
-  at::DeviceGuard guard(input.device());
+  TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
 
   int batch_sz = input.size(0);
-  int in_channels = input.size(1);
+  int n_in_channels = input.size(1);
   int in_h = input.size(2);
   int in_w = input.size(3);
 
   int n_parallel_imgs =
       get_greatest_divisor_below_bound(batch_sz, kMaxParallelImgs);
 
+  // Unpack shapes and args
   int out_channels = weight.size(0);
   int weight_h = weight.size(2);
   int weight_w = weight.size(3);
@@ -991,7 +946,7 @@ at::Tensor DeformConv2d_forward_cuda(
   TORCH_CHECK((mask.size(0) == input.size(0)), "invalid batch size of mask");
   TORCH_CHECK(
       (!use_mask || (mask.size(2) == out_h && mask.size(3) == out_w)),
-      "mask output dims: (",
+      "offset output dims: (",
       mask.size(2),
       ", ",
       mask.size(3),
@@ -1020,7 +975,7 @@ at::Tensor DeformConv2d_forward_cuda(
                   out_h,
                   out_w});
   input = input.view(
-      {batch_sz / n_parallel_imgs, n_parallel_imgs, in_channels, in_h, in_w});
+      {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
 
   offset = offset.view({batch_sz / n_parallel_imgs,
                         n_parallel_imgs,
@@ -1057,14 +1012,14 @@ at::Tensor DeformConv2d_forward_cuda(
 
   // Sample points and perform convolution
   auto columns = at::zeros(
-      {in_channels * weight_h * weight_w, n_parallel_imgs * out_h * out_w},
+      {n_in_channels * weight_h * weight_w, n_parallel_imgs * out_h * out_w},
       input.options());
   for (int b = 0; b < batch_sz / n_parallel_imgs; b++) {
     deformable_im2col(
         input[b],
         offset[b],
         mask[b],
-        in_channels,
+        n_in_channels,
         in_h,
         in_w,
         weight_h,
@@ -1107,7 +1062,7 @@ at::Tensor DeformConv2d_forward_cuda(
 }
 
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
-DeformConv2d_backward_cuda(
+deform_conv2d_backward_cpu(
     const at::Tensor& grad_out_param,
     const at::Tensor& input_param,
     const at::Tensor& weight_param,
@@ -1134,7 +1089,7 @@ DeformConv2d_backward_cuda(
   const int n_parallel_imgs =
       get_greatest_divisor_below_bound(batch_sz, kMaxParallelImgs);
 
-  auto grad_input_and_offset_and_mask = backward_gradient_inputs(
+  auto grad_input_and_offset_and_mask = gradient_inputs(
       input,
       weight,
       offset,
@@ -1172,8 +1127,7 @@ DeformConv2d_backward_cuda(
       n_parallel_imgs,
       use_mask);
 
-  auto value = grad_out.sum({0, 2, 3});
-  auto grad_bias = at::ones_like(bias) * value;
+  auto grad_bias = at::ones_like(bias) * grad_out.sum({0, 2, 3});
 
   return std::make_tuple(
       grad_input, grad_weight, grad_offset, grad_mask, grad_bias);
