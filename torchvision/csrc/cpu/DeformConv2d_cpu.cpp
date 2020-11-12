@@ -790,8 +790,7 @@ static void compute_grad_offset_and_mask(
       }));
 }
 
-static std::tuple<at::Tensor, at::Tensor, at::Tensor>
-deform_conv2d_backward_input_cpu(
+static std::tuple<at::Tensor, at::Tensor, at::Tensor> gradient_inputs(
     at::Tensor input,
     at::Tensor weight,
     at::Tensor offset,
@@ -944,7 +943,7 @@ deform_conv2d_backward_input_cpu(
   return std::make_tuple(grad_input, grad_offset, grad_mask);
 }
 
-static at::Tensor deform_conv2d_backward_parameters_cpu(
+static at::Tensor backward_gradient_parameters(
     at::Tensor input,
     const at::Tensor& weight,
     at::Tensor offset,
@@ -1086,7 +1085,7 @@ DeformConv2d_backward_cpu(
   const int n_parallel_imgs =
       get_greatest_divisor_below_bound(batch_sz, kMaxParallelImgs);
 
-  auto grad_input_and_offset_and_mask = deform_conv2d_backward_input_cpu(
+  auto grad_input_and_offset_and_mask = gradient_inputs(
       input,
       weight,
       offset,
@@ -1107,7 +1106,7 @@ DeformConv2d_backward_cpu(
   auto grad_offset = std::get<1>(grad_input_and_offset_and_mask);
   auto grad_mask = std::get<2>(grad_input_and_offset_and_mask);
 
-  auto grad_weight = deform_conv2d_backward_parameters_cpu(
+  auto grad_weight = backward_gradient_parameters(
       input,
       weight,
       offset,

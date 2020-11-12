@@ -133,7 +133,7 @@ __device__ scalar_t bilinear_interpolate(
 }
 
 template <typename scalar_t>
-__global__ void deformable_im2col_gpu_kernel(
+__global__ void deformable_im2col_kernel(
     int n,
     const scalar_t* input_ptr,
     const scalar_t* offset_ptr,
@@ -233,7 +233,7 @@ static void deformable_im2col(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "deformable_im2col_gpu", ([&] {
-        deformable_im2col_gpu_kernel<<<
+        deformable_im2col_kernel<<<
             blocks,
             threads>>>(
             num_kernels,
@@ -484,7 +484,7 @@ at::Tensor DeformConv2d_forward_cuda(
 }
 
 template <typename scalar_t>
-__global__ void deformable_col2im_gpu_kernel(
+__global__ void deformable_col2im_kernel(
     int n,
     const scalar_t* col,
     const scalar_t* offset_ptr,
@@ -588,7 +588,7 @@ static void compute_grad_input(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       columns.scalar_type(), "deformable_col2im_gpu", ([&] {
-        deformable_col2im_gpu_kernel<<<
+        deformable_col2im_kernel<<<
             blocks,
             threads>>>(
             num_kernels,
@@ -654,7 +654,7 @@ __device__ scalar_t get_coordinate_weight(
 }
 
 template <typename scalar_t>
-__global__ void deformable_col2im_coord_gpu_kernel(
+__global__ void deformable_col2im_coord_kernel(
     int n,
     const scalar_t* col_ptr,
     const scalar_t* im_ptr,
@@ -796,7 +796,7 @@ static void compute_grad_offset_and_mask(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       columns.scalar_type(), "deformable_col2im_coord_gpu", ([&] {
-        deformable_col2im_coord_gpu_kernel<<<
+        deformable_col2im_coord_kernel<<<
             blocks,
             threads>>>(
             num_kernels,
@@ -832,7 +832,7 @@ static void compute_grad_offset_and_mask(
   }
 }
 
-static std::tuple<at::Tensor, at::Tensor, at::Tensor> deform_conv2d_backward_input_cuda(
+static std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
     at::Tensor input,
     at::Tensor weight,
     at::Tensor offset,
@@ -986,7 +986,7 @@ static std::tuple<at::Tensor, at::Tensor, at::Tensor> deform_conv2d_backward_inp
   return std::make_tuple(grad_input, grad_offset, grad_mask);
 }
 
-static at::Tensor deform_conv2d_backward_parameters_cuda(
+static at::Tensor backward_gradient_parameters(
     at::Tensor input,
     const at::Tensor& weight,
     at::Tensor offset,
@@ -1130,7 +1130,7 @@ DeformConv2d_backward_cuda(
   const int n_parallel_imgs =
       get_greatest_divisor_below_bound(batch_sz, kMaxParallelImgs);
 
-  auto grad_input_and_offset_and_mask = deform_conv2d_backward_input_cuda(
+  auto grad_input_and_offset_and_mask = backward_gradient_inputs(
       input,
       weight,
       offset,
@@ -1151,7 +1151,7 @@ DeformConv2d_backward_cuda(
   auto grad_offset = std::get<1>(grad_input_and_offset_and_mask);
   auto grad_mask = std::get<2>(grad_input_and_offset_and_mask);
 
-  auto grad_weight = deform_conv2d_backward_parameters_cuda(
+  auto grad_weight = backward_gradient_parameters(
       input,
       weight,
       offset,
