@@ -16,7 +16,8 @@ from common_utils import get_tmp_dir
 
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
-IMAGE_DIR = os.path.join(IMAGE_ROOT, "fakedata", "imagefolder")
+FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
+IMAGE_DIR = os.path.join(FAKEDATA_DIR, "imagefolder")
 DAMAGED_JPEG = os.path.join(IMAGE_ROOT, 'damaged_jpeg')
 
 
@@ -133,9 +134,12 @@ class ImageTester(unittest.TestCase):
             self.assertEqual(torch_bytes, pil_bytes)
 
     def test_decode_png(self):
-        for img_path in get_images(IMAGE_DIR, ".png"):
+        for img_path in get_images(FAKEDATA_DIR, ".png"):
             img_pil = torch.from_numpy(np.array(Image.open(img_path)))
-            img_pil = img_pil.permute(2, 0, 1)
+            if len(img_pil.shape) == 3:
+                img_pil = img_pil.permute(2, 0, 1)
+            else:
+                img_pil = img_pil.unsqueeze(0)
             data = read_file(img_path)
             img_lpng = decode_png(data)
             self.assertTrue(img_lpng.equal(img_pil))
@@ -221,9 +225,33 @@ class ImageTester(unittest.TestCase):
                 RuntimeError, "No such file or directory: 'tst'"):
             read_file('tst')
 
+    def test_read_file_non_ascii(self):
+        with get_tmp_dir() as d:
+            fname, content = '日本語(Japanese).bin', b'TorchVision\211\n'
+            fpath = os.path.join(d, fname)
+            with open(fpath, 'wb') as f:
+                f.write(content)
+
+            data = read_file(fpath)
+            expected = torch.tensor(list(content), dtype=torch.uint8)
+            self.assertTrue(data.equal(expected))
+            os.unlink(fpath)
+
     def test_write_file(self):
         with get_tmp_dir() as d:
             fname, content = 'test1.bin', b'TorchVision\211\n'
+            fpath = os.path.join(d, fname)
+            content_tensor = torch.tensor(list(content), dtype=torch.uint8)
+            write_file(fpath, content_tensor)
+
+            with open(fpath, 'rb') as f:
+                saved_content = f.read()
+            self.assertEqual(content, saved_content)
+            os.unlink(fpath)
+
+    def test_write_file_non_ascii(self):
+        with get_tmp_dir() as d:
+            fname, content = '日本語(Japanese).bin', b'TorchVision\211\n'
             fpath = os.path.join(d, fname)
             content_tensor = torch.tensor(list(content), dtype=torch.uint8)
             write_file(fpath, content_tensor)

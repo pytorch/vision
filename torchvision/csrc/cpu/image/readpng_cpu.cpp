@@ -71,17 +71,34 @@ torch::Tensor decodePNG(const torch::Tensor& data) {
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
     TORCH_CHECK(retval == 1, "Could read image metadata from content.")
   }
-  if (color_type != PNG_COLOR_TYPE_RGB) {
-    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    TORCH_CHECK(
-        color_type == PNG_COLOR_TYPE_RGB, "Non RGB images are not supported.")
+
+  int channels;
+  switch (color_type) {
+    case PNG_COLOR_TYPE_RGB:
+      channels = 3;
+      break;
+    case PNG_COLOR_TYPE_RGB_ALPHA:
+      channels = 4;
+      break;
+    case PNG_COLOR_TYPE_GRAY:
+      channels = 1;
+      break;
+    case PNG_COLOR_TYPE_GRAY_ALPHA:
+      channels = 2;
+      break;
+    case PNG_COLOR_TYPE_PALETTE:
+      channels = 1;
+      break;
+    default:
+      png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
+      TORCH_CHECK(false, "Image color type is not supported.");
   }
 
-  auto tensor =
-      torch::empty({int64_t(height), int64_t(width), int64_t(3)}, torch::kU8);
+  auto tensor = torch::empty(
+      {int64_t(height), int64_t(width), int64_t(channels)}, torch::kU8);
   auto ptr = tensor.accessor<uint8_t, 3>().data();
   auto bytes = png_get_rowbytes(png_ptr, info_ptr);
-  for (decltype(height) i = 0; i < height; ++i) {
+  for (png_uint_32 i = 0; i < height; ++i) {
     png_read_row(png_ptr, ptr, nullptr);
     ptr += bytes;
   }
