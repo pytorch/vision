@@ -542,7 +542,7 @@ def rotate(img, angle, resample=0, expand=False, center=None, fill=None):
 
 
 @torch.jit.unused
-def perspective(img, perspective_coeffs, interpolation=Image.BICUBIC, fill=None):
+def perspective(img, perspective_coeffs, interpolation=Image.BICUBIC, fill=None, new_size=None):
     """PRIVATE METHOD. Perform perspective transform of the given PIL Image.
 
     .. warning::
@@ -553,6 +553,7 @@ def perspective(img, perspective_coeffs, interpolation=Image.BICUBIC, fill=None)
     Args:
         img (PIL Image): Image to be transformed.
         perspective_coeffs (list of float): perspective transformation coefficients.
+        new_size (tuple of int): Image size after transformation.
         interpolation (int): Interpolation type. Default, ``Image.BICUBIC``.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
@@ -565,9 +566,12 @@ def perspective(img, perspective_coeffs, interpolation=Image.BICUBIC, fill=None)
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
+    if not new_size:
+        new_size = img.size
+
     opts = _parse_fill(fill, img, '5.0.0')
 
-    return img.transform(img.size, Image.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
+    return img.transform(new_size, Image.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
 
 
 @torch.jit.unused
