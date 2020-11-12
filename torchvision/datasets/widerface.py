@@ -23,10 +23,10 @@ class WIDERFace(VisionDataset):
             Expects the following folder structure if download=False:
                 <root>
                     └── widerface
-                        ├── wider_face_split.zip ('wider_face_split' if uncompressed)
-                        ├── WIDER_train.zip ('WIDER_train' if uncompressed)
-                        ├── WIDER_val.zip ('WIDER_val' if uncompressed)
-                        └── WIDER_test.zip ('WIDER_test' if uncompressed)
+                        ├── wider_face_split ('wider_face_split.zip' if compressed)
+                        ├── WIDER_train ('WIDER_train.zip' if compressed)
+                        ├── WIDER_val ('WIDER_val.zip' if compressed)
+                        └── WIDER_test ('WIDER_test.zip' if compressed)
         split (string): The dataset split to use. One of {``train``, ``val``, ``test``}.
             Defaults to ``train``.
         target_type (string): The type of target to use, can be one
