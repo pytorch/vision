@@ -74,10 +74,12 @@
 #include <iostream>
 #include <tuple>
 
+namespace {
+
 const int kMaxParallelImgs = 32;
 
 template <typename scalar_t>
-static scalar_t bilinear_interpolate(
+scalar_t bilinear_interpolate(
     const scalar_t* in,
     int height,
     int width,
@@ -116,7 +118,7 @@ static scalar_t bilinear_interpolate(
 }
 
 template <typename scalar_t>
-static void deformable_im2col_kernel(
+void deformable_im2col_kernel(
     int n,
     const scalar_t* input,
     const scalar_t* offset,
@@ -190,7 +192,7 @@ static void deformable_im2col_kernel(
   }
 }
 
-static void deformable_im2col(
+void deformable_im2col(
     const at::Tensor& input,
     const at::Tensor& data_offset,
     const at::Tensor& data_mask,
@@ -240,7 +242,7 @@ static void deformable_im2col(
       }));
 }
 
-static int get_greatest_divisor_below_bound(int n, int bound) {
+int get_greatest_divisor_below_bound(int n, int bound) {
   for (int k = bound; k > 1; --k) {
     if (n % k == 0) {
       return k;
@@ -248,6 +250,608 @@ static int get_greatest_divisor_below_bound(int n, int bound) {
   }
   return 1;
 }
+
+template <typename scalar_t>
+void deformable_col2im_kernel(
+    int n,
+    const scalar_t* col,
+    const scalar_t* offset,
+    const scalar_t* mask,
+    int channels,
+    int height,
+    int width,
+    int kernel_h,
+    int kernel_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dilation_h,
+    int dilation_w,
+    int batch_sz,
+    int n_offset_grps,
+    int out_h,
+    int out_w,
+    bool use_mask,
+    scalar_t* grad_im) {
+  for (int index = 0; index != n; ++index) {
+    const int out_x = index % out_w;
+    const int out_y = (index / out_w) % out_h;
+    const int b = (index / (out_w * out_h)) % batch_sz;
+    const int j = (index / (out_w * out_h * batch_sz)) % kernel_w;
+    const int i = (index / (out_w * out_h * batch_sz * kernel_w)) % kernel_h;
+    const int c = index / (out_w * out_h * batch_sz * kernel_w * kernel_h);
+
+    int c_per_offset_grp = channels / n_offset_grps;
+    const int offset_grp = c / c_per_offset_grp;
+
+    auto offset_ptr = offset +
+        (b * n_offset_grps + offset_grp) * 2 * kernel_h * kernel_w * out_h *
+            out_w;
+
+    auto mask_ptr = mask;
+    if (use_mask) {
+      mask_ptr += (b * n_offset_grps + offset_grp) * kernel_h * kernel_w *
+          out_h * out_w;
+    }
+
+    const int mask_idx = i * kernel_w + j;
+    const int offset_idx = 2 * mask_idx;
+
+    const int offset_h_ptr = ((offset_idx)*out_h + out_y) * out_w + out_x;
+    const int offset_w_ptr = ((offset_idx + 1) * out_h + out_y) * out_w + out_x;
+
+    const scalar_t offset_h = offset_ptr[offset_h_ptr];
+    const scalar_t offset_w = offset_ptr[offset_w_ptr];
+
+    scalar_t mask_value = 1;
+    if (use_mask) {
+      mask_value = mask_ptr[(mask_idx * out_h + out_y) * out_w + out_x];
+    }
+
+    const scalar_t y = (out_y * stride_h - pad_h) + i * dilation_h + offset_h;
+    const scalar_t x = (out_x * stride_w - pad_w) + j * dilation_w + offset_w;
+
+    for (int dy = -1; dy <= 1; dy++) {
+      for (int dx = -1; dx <= 1; dx++) {
+        int yp = int(y) + dy;
+        int xp = int(x) + dx;
+        if (0 <= yp && yp < height && 0 <= xp && xp < width &&
+            std::abs(y - yp) < 1 && std::abs(x - xp) < 1) {
+          int grad_pos = ((b * channels + c) * height + yp) * width + xp;
+          scalar_t weight = (1 - std::abs(y - yp)) * (1 - std::abs(x - xp));
+          grad_im[grad_pos] += mask_value * weight * col[index];
+        }
+      }
+    }
+  }
+}
+
+void compute_grad_input(
+    const at::Tensor& columns,
+    const at::Tensor& offset,
+    const at::Tensor& mask,
+    int channels,
+    int height,
+    int width,
+    int weight_h,
+    int weight_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dilation_h,
+    int dilation_w,
+    int parallel_imgs,
+    int n_offset_grps,
+    bool use_mask,
+    at::Tensor grad_im) {
+  int out_h =
+      (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
+  int out_w =
+      (width + 2 * pad_w - (dilation_w * (weight_w - 1) + 1)) / stride_w + 1;
+  int num_kernels =
+      channels * weight_h * weight_w * out_h * out_w * parallel_imgs;
+
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      columns.scalar_type(), "deformable_col2im", ([&] {
+        deformable_col2im_kernel(
+            num_kernels,
+            columns.data_ptr<scalar_t>(),
+            offset.data_ptr<scalar_t>(),
+            mask.data_ptr<scalar_t>(),
+            channels,
+            height,
+            width,
+            weight_h,
+            weight_w,
+            pad_h,
+            pad_w,
+            stride_h,
+            stride_w,
+            dilation_h,
+            dilation_w,
+            parallel_imgs,
+            n_offset_grps,
+            out_h,
+            out_w,
+            use_mask,
+            grad_im.data_ptr<scalar_t>());
+      }));
+}
+
+template <typename scalar_t>
+scalar_t get_coordinate_weight(
+    const scalar_t* im_data,
+    int height,
+    int width,
+    scalar_t y,
+    scalar_t x,
+    bool is_y_direction) {
+  int y_l = floor(y);
+  int x_l = floor(x);
+  int y_h = y_l + 1;
+  int x_h = x_l + 1;
+
+  bool valid_y_l = 0 <= y_l && y_l < height;
+  bool valid_y_h = 0 <= y_h && y_h < height;
+  bool valid_x_l = 0 <= x_l && x_l < width;
+  bool valid_x_h = 0 <= x_h && x_h < width;
+
+  scalar_t zero = 0;
+  scalar_t v_yx = (valid_y_l && valid_x_l) ? im_data[y_l * width + x_l] : zero;
+  scalar_t v_yX = (valid_y_l && valid_x_h) ? im_data[y_l * width + x_h] : zero;
+  scalar_t v_Yx = (valid_y_h && valid_x_l) ? im_data[y_h * width + x_l] : zero;
+  scalar_t v_YX = (valid_y_h && valid_x_h) ? im_data[y_h * width + x_h] : zero;
+
+  if (is_y_direction) {
+    scalar_t dx = x - x_l;
+    return dx * (v_YX - v_yX) + (1 - dx) * (v_Yx - v_yx);
+  } else {
+    scalar_t dy = y - y_l;
+    return dy * (v_YX - v_Yx) + (1 - dy) * (v_yX - v_yx);
+  }
+}
+
+template <typename scalar_t>
+void deformable_col2im_coord_kernel(
+    int n,
+    const scalar_t* col,
+    const scalar_t* im,
+    const scalar_t* offset,
+    const scalar_t* mask,
+    int channels,
+    int height,
+    int width,
+    int weight_h,
+    int weight_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dilation_h,
+    int dilation_w,
+    int batch_sz,
+    int offset_channels,
+    int n_offset_grps,
+    int out_h,
+    int out_w,
+    bool use_mask,
+    scalar_t* grad_offset,
+    scalar_t* grad_mask) {
+  for (int index = 0; index != n; ++index) {
+    scalar_t grad_offset_val = 0;
+    scalar_t grad_mask_val = 0;
+
+    int w = index % out_w;
+    int h = (index / out_w) % out_h;
+    int w_w = (index / (out_w * out_h * 2)) % weight_w;
+    int w_h = (index / (out_w * out_h * 2 * weight_w)) % weight_h;
+    int c = (index / (out_w * out_h)) % offset_channels;
+    int b = index / (out_w * out_h * offset_channels);
+
+    const int offset_grp = c / (2 * weight_h * weight_w);
+    const int col_step = weight_h * weight_w;
+
+    int c_per_offset_grp = channels / n_offset_grps;
+
+    auto col_ptr = col +
+        offset_grp * c_per_offset_grp * weight_h * weight_w * batch_sz * out_w *
+            out_h;
+    auto im_ptr = im +
+        (b * n_offset_grps + offset_grp) * c_per_offset_grp * height * width;
+    auto offset_ptr = offset +
+        (b * n_offset_grps + offset_grp) * 2 * weight_h * weight_w * out_h *
+            out_w;
+
+    auto mask_ptr = mask;
+    if (use_mask) {
+      mask_ptr += (b * n_offset_grps + offset_grp) * weight_h * weight_w *
+          out_h * out_w;
+    }
+
+    const int offset_c = c - offset_grp * 2 * weight_h * weight_w;
+    const bool is_y_direction = offset_c % 2 == 0;
+
+    const int c_bound = c_per_offset_grp * weight_h * weight_w;
+    for (int col_c = (offset_c / 2); col_c < c_bound; col_c += col_step) {
+      const int col_pos = (((col_c * batch_sz + b) * out_h) + h) * out_w + w;
+
+      int out_x = col_pos % out_w;
+      int out_y = (col_pos / out_w) % out_h;
+      int j = (col_pos / (out_w * out_h * batch_sz)) % weight_w;
+      int i = (col_pos / (out_w * out_h * batch_sz * weight_w)) % weight_h;
+
+      const int mask_idx = i * weight_w + j;
+
+      const int offset_h_idx =
+          (((2 * mask_idx) * out_h + out_y) * out_w + out_x);
+      const int offset_w_idx =
+          (((2 * mask_idx + 1) * out_h + out_y) * out_w + out_x);
+      const scalar_t offset_h = offset_ptr[offset_h_idx];
+      const scalar_t offset_w = offset_ptr[offset_w_idx];
+
+      scalar_t mask_value = 1;
+      if (use_mask) {
+        mask_value = mask_ptr[(mask_idx * out_h + out_y) * out_w + out_x];
+      }
+
+      scalar_t y = (out_y * stride_h - pad_h) + i * dilation_h + offset_h;
+      scalar_t x = (out_x * stride_w - pad_w) + j * dilation_w + offset_w;
+
+      const scalar_t weight =
+          get_coordinate_weight(im_ptr, height, width, y, x, is_y_direction);
+      grad_offset_val += mask_value * weight * col_ptr[col_pos];
+
+      if (use_mask && is_y_direction) {
+        grad_mask_val += col_ptr[col_pos] *
+            bilinear_interpolate(im_ptr, height, width, y, x);
+      }
+
+      im_ptr += height * width;
+    }
+
+    grad_offset[index] = grad_offset_val;
+
+    if (use_mask && is_y_direction) {
+      const int idx =
+          ((((b * n_offset_grps + offset_grp) * weight_h + w_h) * weight_w +
+            w_w) *
+               out_h +
+           h) *
+              out_w +
+          w;
+      grad_mask[idx] = grad_mask_val;
+    }
+  }
+}
+
+void compute_grad_offset_and_mask(
+    const at::Tensor& columns,
+    const at::Tensor& input,
+    const at::Tensor& offset,
+    const at::Tensor& mask,
+    int channels,
+    int height,
+    int width,
+    int weight_h,
+    int weight_w,
+    int pad_h,
+    int pad_w,
+    int stride_h,
+    int stride_w,
+    int dilation_h,
+    int dilation_w,
+    int parallel_imgs,
+    int n_offset_grps,
+    bool use_mask,
+    at::Tensor grad_offset,
+    at::Tensor grad_mask) {
+  int out_h =
+      (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
+  int out_w =
+      (width + 2 * pad_w - (dilation_w * (weight_w - 1) + 1)) / stride_w + 1;
+  int num_kernels =
+      out_h * out_w * 2 * weight_h * weight_w * n_offset_grps * parallel_imgs;
+
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      columns.scalar_type(), "deformable_col2im_coord", ([&] {
+        deformable_col2im_coord_kernel(
+            num_kernels,
+            columns.data_ptr<scalar_t>(),
+            input.data_ptr<scalar_t>(),
+            offset.data_ptr<scalar_t>(),
+            mask.data_ptr<scalar_t>(),
+            channels,
+            height,
+            width,
+            weight_h,
+            weight_w,
+            pad_h,
+            pad_w,
+            stride_h,
+            stride_w,
+            dilation_h,
+            dilation_w,
+            parallel_imgs,
+            2 * weight_h * weight_w * n_offset_grps,
+            n_offset_grps,
+            out_h,
+            out_w,
+            use_mask,
+            grad_offset.data_ptr<scalar_t>(),
+            grad_mask.data_ptr<scalar_t>());
+      }));
+}
+
+std::tuple<at::Tensor, at::Tensor, at::Tensor> gradient_inputs(
+    at::Tensor input,
+    at::Tensor weight,
+    at::Tensor offset,
+    at::Tensor mask,
+    at::Tensor grad_out,
+    int stride_h,
+    int stride_w,
+    int pad_h,
+    int pad_w,
+    int dil_h,
+    int dil_w,
+    int n_weight_grps,
+    int n_offset_grps,
+    int n_parallel_imgs,
+    bool use_mask) {
+  int batch_sz = input.size(0);
+  int n_in_channels = input.size(1);
+  int in_h = input.size(2);
+  int in_w = input.size(3);
+
+  n_parallel_imgs = std::min(batch_sz, n_parallel_imgs);
+
+  long n_out_channels = weight.size(0);
+  int weight_h = weight.size(2);
+  int weight_w = weight.size(3);
+
+  long out_h = (in_h + 2 * pad_h - (dil_h * (weight_h - 1) + 1)) / stride_h + 1;
+  long out_w = (in_w + 2 * pad_w - (dil_w * (weight_w - 1) + 1)) / stride_w + 1;
+
+  auto grad_input = at::zeros_like(input);
+  auto grad_offset = at::zeros_like(offset);
+  auto grad_mask = at::zeros_like(mask);
+
+  if (batch_sz == 0) {
+    return std::make_tuple(grad_input, grad_offset, grad_mask);
+  }
+
+  auto columns = at::empty(
+      {n_in_channels * weight_w * weight_h, n_parallel_imgs * out_h * out_w},
+      input.options());
+
+  // Separate into blocks
+  grad_input = grad_input.reshape(
+      {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
+  input = input.reshape(
+      {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
+
+  grad_offset = grad_offset.reshape({batch_sz / n_parallel_imgs,
+                                     n_parallel_imgs,
+                                     n_offset_grps * 2 * weight_h * weight_w,
+                                     out_h,
+                                     out_w});
+  offset = offset.reshape({batch_sz / n_parallel_imgs,
+                           n_parallel_imgs,
+                           n_offset_grps * 2 * weight_h * weight_w,
+                           out_h,
+                           out_w});
+
+  if (use_mask) {
+    grad_mask = grad_mask.reshape({batch_sz / n_parallel_imgs,
+                                   n_parallel_imgs,
+                                   n_offset_grps * weight_h * weight_w,
+                                   out_h,
+                                   out_w});
+    mask = mask.reshape({batch_sz / n_parallel_imgs,
+                         n_parallel_imgs,
+                         n_offset_grps * weight_h * weight_w,
+                         out_h,
+                         out_w});
+  }
+
+  grad_out = grad_out
+                 .reshape({batch_sz / n_parallel_imgs,
+                           n_parallel_imgs,
+                           n_weight_grps,
+                           n_out_channels / n_weight_grps,
+                           out_h,
+                           out_w})
+                 .permute({0, 2, 3, 1, 4, 5});
+
+  weight = weight.reshape({n_weight_grps,
+                           weight.size(0) / n_weight_grps,
+                           weight.size(1),
+                           weight.size(2),
+                           weight.size(3)});
+
+  columns = columns.view(
+      {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
+
+  for (int elt = 0; elt < batch_sz / n_parallel_imgs; elt++) {
+    columns.zero_();
+    // Separate into weight groups
+    for (int g = 0; g < n_weight_grps; g++) {
+      columns[g] = columns[g].addmm_(
+          weight[g].flatten(1).transpose(0, 1), grad_out[elt][g].flatten(1));
+    }
+
+    compute_grad_offset_and_mask(
+        columns,
+        input[elt],
+        offset[elt],
+        mask[elt],
+        n_in_channels,
+        in_h,
+        in_w,
+        weight_h,
+        weight_w,
+        pad_h,
+        pad_w,
+        stride_h,
+        stride_w,
+        dil_h,
+        dil_w,
+        n_parallel_imgs,
+        n_offset_grps,
+        use_mask,
+        grad_offset[elt],
+        grad_mask[elt]);
+
+    compute_grad_input(
+        columns,
+        offset[elt],
+        mask[elt],
+        n_in_channels,
+        in_h,
+        in_w,
+        weight_h,
+        weight_w,
+        pad_h,
+        pad_w,
+        stride_h,
+        stride_w,
+        dil_h,
+        dil_w,
+        n_parallel_imgs,
+        n_offset_grps,
+        use_mask,
+        grad_input[elt]);
+  }
+
+  grad_input = grad_input.view({batch_sz, n_in_channels, in_h, in_w});
+  grad_offset = grad_offset.view(
+      {batch_sz, n_offset_grps * 2 * weight_h * weight_w, out_h, out_w});
+
+  if (use_mask) {
+    grad_mask = grad_mask.view(
+        {batch_sz, n_offset_grps * weight_h * weight_w, out_h, out_w});
+  }
+
+  return std::make_tuple(grad_input, grad_offset, grad_mask);
+}
+
+at::Tensor backward_gradient_parameters(
+    at::Tensor input,
+    const at::Tensor& weight,
+    at::Tensor offset,
+    at::Tensor mask,
+    const at::Tensor& grad_out,
+    int stride_h,
+    int stride_w,
+    int pad_h,
+    int pad_w,
+    int dil_h,
+    int dil_w,
+    int n_weight_grps,
+    int n_offset_grps,
+    int n_parallel_imgs,
+    bool use_mask) {
+  int batch_sz = input.size(0);
+  int n_in_channels = input.size(1);
+  int in_h = input.size(2);
+  int in_w = input.size(3);
+
+  n_parallel_imgs = std::min(batch_sz, n_parallel_imgs);
+
+  long n_out_channels = weight.size(0);
+  int weight_h = weight.size(2);
+  int weight_w = weight.size(3);
+
+  long out_h = grad_out.size(2);
+  long out_w = grad_out.size(3);
+
+  auto grad_weight = at::zeros_like(weight);
+  if (batch_sz == 0) {
+    return grad_weight;
+  }
+
+  at::Tensor grad_out_buf = grad_out
+                                .reshape({batch_sz / n_parallel_imgs,
+                                          n_parallel_imgs,
+                                          n_weight_grps,
+                                          n_out_channels / n_weight_grps,
+                                          out_h,
+                                          out_w})
+                                .permute({0, 2, 3, 1, 4, 5})
+                                .contiguous();
+
+  input = input.reshape(
+      {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
+
+  offset = offset.reshape({batch_sz / n_parallel_imgs,
+                           n_parallel_imgs,
+                           n_offset_grps * 2 * weight_h * weight_w,
+                           out_h,
+                           out_w});
+
+  if (use_mask) {
+    mask = mask.reshape({batch_sz / n_parallel_imgs,
+                         n_parallel_imgs,
+                         n_offset_grps * weight_h * weight_w,
+                         out_h,
+                         out_w});
+  }
+
+  grad_weight = grad_weight.view({n_weight_grps,
+                                  grad_weight.size(0) / n_weight_grps,
+                                  grad_weight.size(1),
+                                  grad_weight.size(2),
+                                  grad_weight.size(3)});
+
+  auto columns = at::empty(
+      {n_weight_grps,
+       n_in_channels * weight_w * weight_h / n_weight_grps,
+       n_parallel_imgs * out_h * out_w},
+      input.options());
+
+  for (int elt = 0; elt < batch_sz / n_parallel_imgs; elt++) {
+    deformable_im2col(
+        input[elt],
+        offset[elt],
+        mask[elt],
+        n_in_channels,
+        in_h,
+        in_w,
+        weight_h,
+        weight_w,
+        pad_h,
+        pad_w,
+        stride_h,
+        stride_w,
+        dil_h,
+        dil_w,
+        out_h,
+        out_w,
+        n_parallel_imgs,
+        n_offset_grps,
+        use_mask,
+        columns);
+
+    for (int g = 0; g < n_weight_grps; g++) {
+      grad_weight[g] =
+          grad_weight[g]
+              .flatten(1)
+              .addmm_(
+                  grad_out_buf[elt][g].flatten(1), columns[g].transpose(1, 0))
+              .view_as(grad_weight[g]);
+    }
+  }
+
+  grad_weight = grad_weight.view({grad_weight.size(0) * grad_weight.size(1),
+                                  grad_weight.size(2),
+                                  grad_weight.size(3),
+                                  grad_weight.size(4)});
+  return grad_weight;
+}
+
+} // namespace
 
 at::Tensor DeformConv2d_forward_cpu(
     const at::Tensor& input_param,
@@ -455,606 +1059,6 @@ at::Tensor DeformConv2d_forward_cpu(
   out = out.view({batch_sz, out_channels, out_h, out_w});
 
   return out + bias.view({1, out_channels, 1, 1});
-}
-
-template <typename scalar_t>
-static void deformable_col2im_kernel(
-    int n,
-    const scalar_t* col,
-    const scalar_t* offset,
-    const scalar_t* mask,
-    int channels,
-    int height,
-    int width,
-    int kernel_h,
-    int kernel_w,
-    int pad_h,
-    int pad_w,
-    int stride_h,
-    int stride_w,
-    int dilation_h,
-    int dilation_w,
-    int batch_sz,
-    int n_offset_grps,
-    int out_h,
-    int out_w,
-    bool use_mask,
-    scalar_t* grad_im) {
-  for (int index = 0; index != n; ++index) {
-    const int out_x = index % out_w;
-    const int out_y = (index / out_w) % out_h;
-    const int b = (index / (out_w * out_h)) % batch_sz;
-    const int j = (index / (out_w * out_h * batch_sz)) % kernel_w;
-    const int i = (index / (out_w * out_h * batch_sz * kernel_w)) % kernel_h;
-    const int c = index / (out_w * out_h * batch_sz * kernel_w * kernel_h);
-
-    int c_per_offset_grp = channels / n_offset_grps;
-    const int offset_grp = c / c_per_offset_grp;
-
-    auto offset_ptr = offset +
-        (b * n_offset_grps + offset_grp) * 2 * kernel_h * kernel_w * out_h *
-            out_w;
-
-    auto mask_ptr = mask;
-    if (use_mask) {
-      mask_ptr += (b * n_offset_grps + offset_grp) * kernel_h * kernel_w *
-          out_h * out_w;
-    }
-
-    const int mask_idx = i * kernel_w + j;
-    const int offset_idx = 2 * mask_idx;
-
-    const int offset_h_ptr = ((offset_idx)*out_h + out_y) * out_w + out_x;
-    const int offset_w_ptr = ((offset_idx + 1) * out_h + out_y) * out_w + out_x;
-
-    const scalar_t offset_h = offset_ptr[offset_h_ptr];
-    const scalar_t offset_w = offset_ptr[offset_w_ptr];
-
-    scalar_t mask_value = 1;
-    if (use_mask) {
-      mask_value = mask_ptr[(mask_idx * out_h + out_y) * out_w + out_x];
-    }
-
-    const scalar_t y = (out_y * stride_h - pad_h) + i * dilation_h + offset_h;
-    const scalar_t x = (out_x * stride_w - pad_w) + j * dilation_w + offset_w;
-
-    for (int dy = -1; dy <= 1; dy++) {
-      for (int dx = -1; dx <= 1; dx++) {
-        int yp = int(y) + dy;
-        int xp = int(x) + dx;
-        if (0 <= yp && yp < height && 0 <= xp && xp < width &&
-            std::abs(y - yp) < 1 && std::abs(x - xp) < 1) {
-          int grad_pos = ((b * channels + c) * height + yp) * width + xp;
-          scalar_t weight = (1 - std::abs(y - yp)) * (1 - std::abs(x - xp));
-          grad_im[grad_pos] += mask_value * weight * col[index];
-        }
-      }
-    }
-  }
-}
-
-static void compute_grad_input(
-    const at::Tensor& columns,
-    const at::Tensor& offset,
-    const at::Tensor& mask,
-    int channels,
-    int height,
-    int width,
-    int weight_h,
-    int weight_w,
-    int pad_h,
-    int pad_w,
-    int stride_h,
-    int stride_w,
-    int dilation_h,
-    int dilation_w,
-    int parallel_imgs,
-    int n_offset_grps,
-    bool use_mask,
-    at::Tensor grad_im) {
-  int out_h =
-      (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
-  int out_w =
-      (width + 2 * pad_w - (dilation_w * (weight_w - 1) + 1)) / stride_w + 1;
-  int num_kernels =
-      channels * weight_h * weight_w * out_h * out_w * parallel_imgs;
-
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "deformable_col2im", ([&] {
-        deformable_col2im_kernel(
-            num_kernels,
-            columns.data_ptr<scalar_t>(),
-            offset.data_ptr<scalar_t>(),
-            mask.data_ptr<scalar_t>(),
-            channels,
-            height,
-            width,
-            weight_h,
-            weight_w,
-            pad_h,
-            pad_w,
-            stride_h,
-            stride_w,
-            dilation_h,
-            dilation_w,
-            parallel_imgs,
-            n_offset_grps,
-            out_h,
-            out_w,
-            use_mask,
-            grad_im.data_ptr<scalar_t>());
-      }));
-}
-
-template <typename scalar_t>
-static scalar_t get_coordinate_weight(
-    const scalar_t* im_data,
-    int height,
-    int width,
-    scalar_t y,
-    scalar_t x,
-    bool is_y_direction) {
-  int y_l = floor(y);
-  int x_l = floor(x);
-  int y_h = y_l + 1;
-  int x_h = x_l + 1;
-
-  bool valid_y_l = 0 <= y_l && y_l < height;
-  bool valid_y_h = 0 <= y_h && y_h < height;
-  bool valid_x_l = 0 <= x_l && x_l < width;
-  bool valid_x_h = 0 <= x_h && x_h < width;
-
-  scalar_t zero = 0;
-  scalar_t v_yx = (valid_y_l && valid_x_l) ? im_data[y_l * width + x_l] : zero;
-  scalar_t v_yX = (valid_y_l && valid_x_h) ? im_data[y_l * width + x_h] : zero;
-  scalar_t v_Yx = (valid_y_h && valid_x_l) ? im_data[y_h * width + x_l] : zero;
-  scalar_t v_YX = (valid_y_h && valid_x_h) ? im_data[y_h * width + x_h] : zero;
-
-  if (is_y_direction) {
-    scalar_t dx = x - x_l;
-    return dx * (v_YX - v_yX) + (1 - dx) * (v_Yx - v_yx);
-  } else {
-    scalar_t dy = y - y_l;
-    return dy * (v_YX - v_Yx) + (1 - dy) * (v_yX - v_yx);
-  }
-}
-
-template <typename scalar_t>
-static void deformable_col2im_coord_kernel(
-    int n,
-    const scalar_t* col,
-    const scalar_t* im,
-    const scalar_t* offset,
-    const scalar_t* mask,
-    int channels,
-    int height,
-    int width,
-    int weight_h,
-    int weight_w,
-    int pad_h,
-    int pad_w,
-    int stride_h,
-    int stride_w,
-    int dilation_h,
-    int dilation_w,
-    int batch_sz,
-    int offset_channels,
-    int n_offset_grps,
-    int out_h,
-    int out_w,
-    bool use_mask,
-    scalar_t* grad_offset,
-    scalar_t* grad_mask) {
-  for (int index = 0; index != n; ++index) {
-    scalar_t grad_offset_val = 0;
-    scalar_t grad_mask_val = 0;
-
-    int w = index % out_w;
-    int h = (index / out_w) % out_h;
-    int w_w = (index / (out_w * out_h * 2)) % weight_w;
-    int w_h = (index / (out_w * out_h * 2 * weight_w)) % weight_h;
-    int c = (index / (out_w * out_h)) % offset_channels;
-    int b = index / (out_w * out_h * offset_channels);
-
-    const int offset_grp = c / (2 * weight_h * weight_w);
-    const int col_step = weight_h * weight_w;
-
-    int c_per_offset_grp = channels / n_offset_grps;
-
-    auto col_ptr = col +
-        offset_grp * c_per_offset_grp * weight_h * weight_w * batch_sz * out_w *
-            out_h;
-    auto im_ptr = im +
-        (b * n_offset_grps + offset_grp) * c_per_offset_grp * height * width;
-    auto offset_ptr = offset +
-        (b * n_offset_grps + offset_grp) * 2 * weight_h * weight_w * out_h *
-            out_w;
-
-    auto mask_ptr = mask;
-    if (use_mask) {
-      mask_ptr += (b * n_offset_grps + offset_grp) * weight_h * weight_w *
-          out_h * out_w;
-    }
-
-    const int offset_c = c - offset_grp * 2 * weight_h * weight_w;
-    const bool is_y_direction = offset_c % 2 == 0;
-
-    const int c_bound = c_per_offset_grp * weight_h * weight_w;
-    for (int col_c = (offset_c / 2); col_c < c_bound; col_c += col_step) {
-      const int col_pos = (((col_c * batch_sz + b) * out_h) + h) * out_w + w;
-
-      int out_x = col_pos % out_w;
-      int out_y = (col_pos / out_w) % out_h;
-      int j = (col_pos / (out_w * out_h * batch_sz)) % weight_w;
-      int i = (col_pos / (out_w * out_h * batch_sz * weight_w)) % weight_h;
-
-      const int mask_idx = i * weight_w + j;
-
-      const int offset_h_idx =
-          (((2 * mask_idx) * out_h + out_y) * out_w + out_x);
-      const int offset_w_idx =
-          (((2 * mask_idx + 1) * out_h + out_y) * out_w + out_x);
-      const scalar_t offset_h = offset_ptr[offset_h_idx];
-      const scalar_t offset_w = offset_ptr[offset_w_idx];
-
-      scalar_t mask_value = 1;
-      if (use_mask) {
-        mask_value = mask_ptr[(mask_idx * out_h + out_y) * out_w + out_x];
-      }
-
-      scalar_t y = (out_y * stride_h - pad_h) + i * dilation_h + offset_h;
-      scalar_t x = (out_x * stride_w - pad_w) + j * dilation_w + offset_w;
-
-      const scalar_t weight =
-          get_coordinate_weight(im_ptr, height, width, y, x, is_y_direction);
-      grad_offset_val += mask_value * weight * col_ptr[col_pos];
-
-      if (use_mask && is_y_direction) {
-        grad_mask_val += col_ptr[col_pos] *
-            bilinear_interpolate(im_ptr, height, width, y, x);
-      }
-
-      im_ptr += height * width;
-    }
-
-    grad_offset[index] = grad_offset_val;
-
-    if (use_mask && is_y_direction) {
-      const int idx =
-          ((((b * n_offset_grps + offset_grp) * weight_h + w_h) * weight_w +
-            w_w) *
-               out_h +
-           h) *
-              out_w +
-          w;
-      grad_mask[idx] = grad_mask_val;
-    }
-  }
-}
-
-static void compute_grad_offset_and_mask(
-    const at::Tensor& columns,
-    const at::Tensor& input,
-    const at::Tensor& offset,
-    const at::Tensor& mask,
-    int channels,
-    int height,
-    int width,
-    int weight_h,
-    int weight_w,
-    int pad_h,
-    int pad_w,
-    int stride_h,
-    int stride_w,
-    int dilation_h,
-    int dilation_w,
-    int parallel_imgs,
-    int n_offset_grps,
-    bool use_mask,
-    at::Tensor grad_offset,
-    at::Tensor grad_mask) {
-  int out_h =
-      (height + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
-  int out_w =
-      (width + 2 * pad_w - (dilation_w * (weight_w - 1) + 1)) / stride_w + 1;
-  int num_kernels =
-      out_h * out_w * 2 * weight_h * weight_w * n_offset_grps * parallel_imgs;
-
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "deformable_col2im_coord", ([&] {
-        deformable_col2im_coord_kernel(
-            num_kernels,
-            columns.data_ptr<scalar_t>(),
-            input.data_ptr<scalar_t>(),
-            offset.data_ptr<scalar_t>(),
-            mask.data_ptr<scalar_t>(),
-            channels,
-            height,
-            width,
-            weight_h,
-            weight_w,
-            pad_h,
-            pad_w,
-            stride_h,
-            stride_w,
-            dilation_h,
-            dilation_w,
-            parallel_imgs,
-            2 * weight_h * weight_w * n_offset_grps,
-            n_offset_grps,
-            out_h,
-            out_w,
-            use_mask,
-            grad_offset.data_ptr<scalar_t>(),
-            grad_mask.data_ptr<scalar_t>());
-      }));
-}
-
-static std::tuple<at::Tensor, at::Tensor, at::Tensor> gradient_inputs(
-    at::Tensor input,
-    at::Tensor weight,
-    at::Tensor offset,
-    at::Tensor mask,
-    at::Tensor grad_out,
-    int stride_h,
-    int stride_w,
-    int pad_h,
-    int pad_w,
-    int dil_h,
-    int dil_w,
-    int n_weight_grps,
-    int n_offset_grps,
-    int n_parallel_imgs,
-    bool use_mask) {
-  int batch_sz = input.size(0);
-  int n_in_channels = input.size(1);
-  int in_h = input.size(2);
-  int in_w = input.size(3);
-
-  n_parallel_imgs = std::min(batch_sz, n_parallel_imgs);
-
-  long n_out_channels = weight.size(0);
-  int weight_h = weight.size(2);
-  int weight_w = weight.size(3);
-
-  long out_h = (in_h + 2 * pad_h - (dil_h * (weight_h - 1) + 1)) / stride_h + 1;
-  long out_w = (in_w + 2 * pad_w - (dil_w * (weight_w - 1) + 1)) / stride_w + 1;
-
-  auto grad_input = at::zeros_like(input);
-  auto grad_offset = at::zeros_like(offset);
-  auto grad_mask = at::zeros_like(mask);
-
-  if (batch_sz == 0) {
-    return std::make_tuple(grad_input, grad_offset, grad_mask);
-  }
-
-  auto columns = at::empty(
-      {n_in_channels * weight_w * weight_h, n_parallel_imgs * out_h * out_w},
-      input.options());
-
-  // Separate into blocks
-  grad_input = grad_input.reshape(
-      {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
-  input = input.reshape(
-      {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
-
-  grad_offset = grad_offset.reshape({batch_sz / n_parallel_imgs,
-                                     n_parallel_imgs,
-                                     n_offset_grps * 2 * weight_h * weight_w,
-                                     out_h,
-                                     out_w});
-  offset = offset.reshape({batch_sz / n_parallel_imgs,
-                           n_parallel_imgs,
-                           n_offset_grps * 2 * weight_h * weight_w,
-                           out_h,
-                           out_w});
-
-  if (use_mask) {
-    grad_mask = grad_mask.reshape({batch_sz / n_parallel_imgs,
-                                   n_parallel_imgs,
-                                   n_offset_grps * weight_h * weight_w,
-                                   out_h,
-                                   out_w});
-    mask = mask.reshape({batch_sz / n_parallel_imgs,
-                         n_parallel_imgs,
-                         n_offset_grps * weight_h * weight_w,
-                         out_h,
-                         out_w});
-  }
-
-  grad_out = grad_out
-                 .reshape({batch_sz / n_parallel_imgs,
-                           n_parallel_imgs,
-                           n_weight_grps,
-                           n_out_channels / n_weight_grps,
-                           out_h,
-                           out_w})
-                 .permute({0, 2, 3, 1, 4, 5});
-
-  weight = weight.reshape({n_weight_grps,
-                           weight.size(0) / n_weight_grps,
-                           weight.size(1),
-                           weight.size(2),
-                           weight.size(3)});
-
-  columns = columns.view(
-      {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
-
-  for (int elt = 0; elt < batch_sz / n_parallel_imgs; elt++) {
-    columns.zero_();
-    // Separate into weight groups
-    for (int g = 0; g < n_weight_grps; g++) {
-      columns[g] = columns[g].addmm_(
-          weight[g].flatten(1).transpose(0, 1), grad_out[elt][g].flatten(1));
-    }
-
-    compute_grad_offset_and_mask(
-        columns,
-        input[elt],
-        offset[elt],
-        mask[elt],
-        n_in_channels,
-        in_h,
-        in_w,
-        weight_h,
-        weight_w,
-        pad_h,
-        pad_w,
-        stride_h,
-        stride_w,
-        dil_h,
-        dil_w,
-        n_parallel_imgs,
-        n_offset_grps,
-        use_mask,
-        grad_offset[elt],
-        grad_mask[elt]);
-
-    compute_grad_input(
-        columns,
-        offset[elt],
-        mask[elt],
-        n_in_channels,
-        in_h,
-        in_w,
-        weight_h,
-        weight_w,
-        pad_h,
-        pad_w,
-        stride_h,
-        stride_w,
-        dil_h,
-        dil_w,
-        n_parallel_imgs,
-        n_offset_grps,
-        use_mask,
-        grad_input[elt]);
-  }
-
-  grad_input = grad_input.view({batch_sz, n_in_channels, in_h, in_w});
-  grad_offset = grad_offset.view(
-      {batch_sz, n_offset_grps * 2 * weight_h * weight_w, out_h, out_w});
-
-  if (use_mask) {
-    grad_mask = grad_mask.view(
-        {batch_sz, n_offset_grps * weight_h * weight_w, out_h, out_w});
-  }
-
-  return std::make_tuple(grad_input, grad_offset, grad_mask);
-}
-
-static at::Tensor backward_gradient_parameters(
-    at::Tensor input,
-    const at::Tensor& weight,
-    at::Tensor offset,
-    at::Tensor mask,
-    const at::Tensor& grad_out,
-    int stride_h,
-    int stride_w,
-    int pad_h,
-    int pad_w,
-    int dil_h,
-    int dil_w,
-    int n_weight_grps,
-    int n_offset_grps,
-    int n_parallel_imgs,
-    bool use_mask) {
-  int batch_sz = input.size(0);
-  int n_in_channels = input.size(1);
-  int in_h = input.size(2);
-  int in_w = input.size(3);
-
-  n_parallel_imgs = std::min(batch_sz, n_parallel_imgs);
-
-  long n_out_channels = weight.size(0);
-  int weight_h = weight.size(2);
-  int weight_w = weight.size(3);
-
-  long out_h = grad_out.size(2);
-  long out_w = grad_out.size(3);
-
-  auto grad_weight = at::zeros_like(weight);
-  if (batch_sz == 0) {
-    return grad_weight;
-  }
-
-  at::Tensor grad_out_buf = grad_out
-                                .reshape({batch_sz / n_parallel_imgs,
-                                          n_parallel_imgs,
-                                          n_weight_grps,
-                                          n_out_channels / n_weight_grps,
-                                          out_h,
-                                          out_w})
-                                .permute({0, 2, 3, 1, 4, 5})
-                                .contiguous();
-
-  input = input.reshape(
-      {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
-
-  offset = offset.reshape({batch_sz / n_parallel_imgs,
-                           n_parallel_imgs,
-                           n_offset_grps * 2 * weight_h * weight_w,
-                           out_h,
-                           out_w});
-
-  if (use_mask) {
-    mask = mask.reshape({batch_sz / n_parallel_imgs,
-                         n_parallel_imgs,
-                         n_offset_grps * weight_h * weight_w,
-                         out_h,
-                         out_w});
-  }
-
-  grad_weight = grad_weight.view({n_weight_grps,
-                                  grad_weight.size(0) / n_weight_grps,
-                                  grad_weight.size(1),
-                                  grad_weight.size(2),
-                                  grad_weight.size(3)});
-
-  auto columns = at::empty(
-      {n_weight_grps,
-       n_in_channels * weight_w * weight_h / n_weight_grps,
-       n_parallel_imgs * out_h * out_w},
-      input.options());
-
-  for (int elt = 0; elt < batch_sz / n_parallel_imgs; elt++) {
-    deformable_im2col(
-        input[elt],
-        offset[elt],
-        mask[elt],
-        n_in_channels,
-        in_h,
-        in_w,
-        weight_h,
-        weight_w,
-        pad_h,
-        pad_w,
-        stride_h,
-        stride_w,
-        dil_h,
-        dil_w,
-        out_h,
-        out_w,
-        n_parallel_imgs,
-        n_offset_grps,
-        use_mask,
-        columns);
-
-    for (int g = 0; g < n_weight_grps; g++) {
-      grad_weight[g] =
-          grad_weight[g]
-              .flatten(1)
-              .addmm_(
-                  grad_out_buf[elt][g].flatten(1), columns[g].transpose(1, 0))
-              .view_as(grad_weight[g]);
-    }
-  }
-
-  grad_weight = grad_weight.view({grad_weight.size(0) * grad_weight.size(1),
-                                  grad_weight.size(2),
-                                  grad_weight.size(3),
-                                  grad_weight.size(4)});
-  return grad_weight;
 }
 
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
