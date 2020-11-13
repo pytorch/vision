@@ -4,7 +4,7 @@
 #include <string>
 
 #if !JPEG_FOUND
-torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t components) {
+torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t channels) {
   TORCH_CHECK(
       false, "decodeJPEG: torchvision not compiled with libjpeg support");
 }
@@ -69,7 +69,7 @@ static void torch_jpeg_set_source_mgr(
   src->pub.next_input_byte = src->data;
 }
 
-torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t components) {
+torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t channels) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
@@ -77,8 +77,8 @@ torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t components) {
       data.dim() == 1 && data.numel() > 0,
       "Expected a non empty 1-dimensional tensor");
   TORCH_CHECK(
-      components == 0 || components == 1 || components == 3,
-      "Number of components not supported");
+      channels == 0 || channels == 1 || channels == 3,
+      "Number of channels not supported");
 
   struct jpeg_decompress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;
@@ -104,8 +104,8 @@ torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t components) {
 
   int current_channels = cinfo.num_components;
 
-  if (components > 0 && components != current_channels) {
-    switch (components) {
+  if (channels > 0 && channels != current_channels) {
+    switch (channels) {
       case 1: // Gray
         cinfo.out_color_space = JCS_GRAYSCALE;
         break;
@@ -119,7 +119,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t components) {
 
     jpeg_calc_output_dimensions(&cinfo);
   } else {
-    components = current_channels;
+    channels = current_channels;
   }
 
   jpeg_start_decompress(&cinfo);
@@ -127,9 +127,9 @@ torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t components) {
   int height = cinfo.output_height;
   int width = cinfo.output_width;
 
-  int stride = width * components;
+  int stride = width * channels;
   auto tensor =
-      torch::empty({int64_t(height), int64_t(width), components}, torch::kU8);
+      torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
   auto ptr = tensor.data_ptr<uint8_t>();
   while (cinfo.output_scanline < cinfo.output_height) {
     /* jpeg_read_scanlines expects an array of pointers to scanlines.

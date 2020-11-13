@@ -137,7 +137,7 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
     write_file(filename, output)
 
 
-def decode_jpeg(input: torch.Tensor, components: int = 0) -> torch.Tensor:
+def decode_jpeg(input: torch.Tensor, channels: int = 0) -> torch.Tensor:
     """
     Decodes a JPEG image into a 3 dimensional RGB Tensor.
     Optionally converts the image to the desired number of color channels.
@@ -146,14 +146,14 @@ def decode_jpeg(input: torch.Tensor, components: int = 0) -> torch.Tensor:
     Arguments:
         input (Tensor[1]): a one dimensional uint8 tensor containing
     the raw bytes of the JPEG image.
-        components (int): the number of output channels for the decoded
-    image. 0 keeps the original number of components, 1 converts to Grayscale
+        channels (int): the number of output channels for the decoded
+    image. 0 keeps the original number of channels, 1 converts to Grayscale
     and 3 converts to RGB. Default: 0
 
     Returns:
         output (Tensor[3, image_height, image_width])
     """
-    output = torch.ops.image.decode_jpeg(input, components)
+    output = torch.ops.image.decode_jpeg(input, channels)
     return output
 
 
@@ -216,9 +216,9 @@ def decode_image(input: torch.Tensor, channels: int = 0) -> torch.Tensor:
         a one dimensional uint8 tensor containing the raw bytes of the
         PNG or JPEG image.
     channels: int
-        the number of output channels or components of the decoded image.
-        JPEG and PNG images have different permitted values. See
-        `decode_jpeg()` and `decode_png()` for more information. Default: 0
+        the number of output channels of the decoded image. JPEG and PNG images
+        have different permitted values. See `decode_jpeg()` and `decode_png()`
+        for more information. Default: 0
 
     Returns
     -------
@@ -239,9 +239,9 @@ def read_image(path: str, channels: int = 0) -> torch.Tensor:
     path: str
         path of the JPEG or PNG image.
     channels: int
-        the number of output channels or components of the decoded image.
-        JPEG and PNG images have different permitted values. See
-        `decode_jpeg()` and `decode_png()` for more information. Default: 0
+        the number of output channels of the decoded image. JPEG and PNG images
+        have different permitted values. See `decode_jpeg()` and `decode_png()`
+        for more information. Default: 0
 
     Returns
     -------
