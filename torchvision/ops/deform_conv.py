@@ -20,7 +20,7 @@ def deform_conv2d(
     mask: Optional[Tensor] = None,
 ) -> Tensor:
     r"""
-    Performs Deformable Convolution v2, described in 
+    Performs Deformable Convolution v2, described in
     `Deformable ConvNets v2: More Deformable, Better Results by Xizhou Zhu,
     Han Hu, Stephen Lin, Jifeng Dai
     <https://arxiv.org/abs/1811.11168>`__.
