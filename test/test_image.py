@@ -51,7 +51,7 @@ class ImageTester(unittest.TestCase):
     def test_decode_jpeg(self):
         conversion = [(None, 0), ("L", 1), ("RGB", 3)]
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            for pil_mode, components in conversion:
+            for pil_mode, channels in conversion:
                 with Image.open(img_path) as img:
                     is_cmyk = img.mode == "CMYK"
                     if pil_mode is not None:
@@ -66,7 +66,7 @@ class ImageTester(unittest.TestCase):
 
                 img_pil = normalize_dimensions(img_pil)
                 data = read_file(img_path)
-                img_ljpeg = decode_jpeg(data, components=components)
+                img_ljpeg = decode_jpeg(data, channels=channels)
 
                 # Permit a small variation on pixel values to account for implementation
                 # differences between Pillow and LibJPEG.

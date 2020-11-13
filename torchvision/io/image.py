@@ -217,7 +217,8 @@ def decode_image(input: torch.Tensor, channels: int = 0) -> torch.Tensor:
         PNG or JPEG image.
     channels: int
         the number of output channels of the decoded image. JPEG and PNG images
-        have different permitted values. See `decode_jpeg()` and `decode_png()`
+        have different permitted values. The default value is 0 and it keeps
+        the original number of channels. See `decode_jpeg()` and `decode_png()`
         for more information. Default: 0
 
     Returns
@@ -240,7 +241,8 @@ def read_image(path: str, channels: int = 0) -> torch.Tensor:
         path of the JPEG or PNG image.
     channels: int
         the number of output channels of the decoded image. JPEG and PNG images
-        have different permitted values. See `decode_jpeg()` and `decode_png()`
+        have different permitted values. The default value is 0 and it keeps
+        the original number of channels. See `decode_jpeg()` and `decode_png()`
         for more information. Default: 0
 
     Returns
