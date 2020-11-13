@@ -102,7 +102,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t channels) {
   // read info from header.
   jpeg_read_header(&cinfo, TRUE);
 
-  int current_channels = cinfo.output_components;
+  int current_channels = cinfo.num_components;
 
   if (channels > 0 && channels != current_channels) {
     switch (channels) {
