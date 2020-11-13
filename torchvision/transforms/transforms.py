@@ -1059,10 +1059,14 @@ class ColorJitter(torch.nn.Module):
         """Get the parameters for the randomized transform to be applied on image.
 
         Args:
-            brightness (tuple of float (min, max)): The range from which the brightness_factor is chosen uniformly.
-            contrast (tuple of float (min, max)): The range from which the contrast_factor is chosen uniformly.
-            saturation (tuple of float (min, max)): The range from which the saturation_factor is chosen uniformly.
-            hue (tuple of float (min, max)): The range from which the hue_factor is chosen uniformly.
+            brightness (tuple of float (min, max) or None): The range from which the brightness_factor is chosen
+                uniformly. Pass None to turn off the transformation.
+            contrast (tuple of float (min, max) or None): The range from which the contrast_factor is chosen
+                uniformly. Pass None to turn off the transformation.
+            saturation (tuple of float (min, max) or None): The range from which the saturation_factor is chosen
+                uniformly. Pass None to turn off the transformation.
+            hue (tuple of float (min, max) or None): The range from which the hue_factor is chosen uniformly.
+                Pass None to turn off the transformation.
 
         Returns:
             tuple: The parameters used to apply the randomized transform
