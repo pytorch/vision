@@ -112,6 +112,12 @@ torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t channels) {
       case 3: // RGB
         cinfo.out_color_space = JCS_RGB;
         break;
+      /*
+       * Libjpeg does not support converting from CMYK to grayscale etc. There
+       * is a way to do this but it involves converting it manually to RGB:
+       * https://github.com/tensorflow/tensorflow/blob/86871065265b04e0db8ca360c046421efb2bdeb4/tensorflow/core/lib/jpeg/jpeg_mem.cc#L284-L313
+       *
+       */
       default:
         jpeg_destroy_decompress(&cinfo);
         TORCH_CHECK(false, "Invalid number of output channels.");
