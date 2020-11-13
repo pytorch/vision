@@ -19,8 +19,11 @@ def deform_conv2d(
     dilation: Tuple[int, int] = (1, 1),
     mask: Optional[Tensor] = None,
 ) -> Tensor:
-    """
-    Performs Deformable Convolution, described in Deformable Convolutional Networks
+    r"""
+    Performs Deformable Convolution v2, described in 
+    `Deformable ConvNets v2: More Deformable, Better Results by Xizhou Zhu,
+    Han Hu, Stephen Lin, Jifeng Dai
+    <https://arxiv.org/abs/1811.11168>`__.
 
     Arguments:
         input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
