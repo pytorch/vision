@@ -321,7 +321,7 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationModes = Int
             :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
             In torchscript mode size as single int is not supported, use a tuple or
             list of length 1: ``[size, ]``.
-        interpolation (InterpolationModes, optional): Desired interpolation enum defined by
+        interpolation (InterpolationModes): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationModes`.
             Default is ``InterpolationModes.BILINEAR``. If input is Tensor, only ``InterpolationModes.NEAREST``,
             ``InterpolationModes.BILINEAR`` and ``InterpolationModes.BICUBIC`` are supported.
@@ -329,8 +329,10 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationModes = Int
     Returns:
         PIL Image or Tensor: Resized image.
     """
+    if not isinstance(interpolation, InterpolationModes):
+        raise TypeError("Argument interpolation should be a InterpolationModes")
+
     if not isinstance(img, torch.Tensor):
-        # TODO: Check and convert to PIL value
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.resize(img, size=size, interpolation=pil_interpolation)
 
@@ -441,7 +443,8 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
 
 
 def resized_crop(
-        img: Tensor, top: int, left: int, height: int, width: int, size: List[int], interpolation: int = Image.BILINEAR
+        img: Tensor, top: int, left: int, height: int, width: int, size: List[int],
+        interpolation: InterpolationModes = InterpolationModes.BILINEAR
 ) -> Tensor:
     """Crop the given image and resize it to desired size.
     The image can be a PIL Image or a Tensor, in which case it is expected
@@ -456,9 +459,11 @@ def resized_crop(
         height (int): Height of the crop box.
         width (int): Width of the crop box.
         size (sequence or int): Desired output size. Same semantics as ``resize``.
-        interpolation (int, optional): Desired interpolation enum defined by `filters`_.
-            Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
-            and ``PIL.Image.BICUBIC`` are supported.
+        interpolation (InterpolationModes): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationModes`.
+            Default is ``InterpolationModes.BILINEAR``. If input is Tensor, only ``InterpolationModes.NEAREST``,
+            ``InterpolationModes.BILINEAR`` and ``InterpolationModes.BICUBIC`` are supported.
+
     Returns:
         PIL Image or Tensor: Cropped image.
     """
@@ -519,7 +524,7 @@ def perspective(
         img: Tensor,
         startpoints: List[List[int]],
         endpoints: List[List[int]],
-        interpolation: int = 2,
+        interpolation: InterpolationModes = InterpolationModes.BILINEAR,
         fill: Optional[int] = None
 ) -> Tensor:
     """Perform perspective transform of the given image.
@@ -532,8 +537,9 @@ def perspective(
             ``[top-left, top-right, bottom-right, bottom-left]`` of the original image.
         endpoints (list of list of ints): List containing four lists of two integers corresponding to four corners
             ``[top-left, top-right, bottom-right, bottom-left]`` of the transformed image.
-        interpolation (int): Interpolation type. If input is Tensor, only ``PIL.Image.NEAREST`` and
-            ``PIL.Image.BILINEAR`` are supported. Default, ``PIL.Image.BILINEAR`` for PIL images and Tensors.
+        interpolation (InterpolationModes): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationModes`. Default is ``InterpolationModes.BILINEAR``.
+            If input is Tensor, only ``InterpolationModes.NEAREST``, ``InterpolationModes.BILINEAR`` are supported.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively.
             This option is only available for ``pillow>=5.0.0``. This option is not supported for Tensor
@@ -545,10 +551,14 @@ def perspective(
 
     coeffs = _get_perspective_coeffs(startpoints, endpoints)
 
-    if not isinstance(img, torch.Tensor):
-        return F_pil.perspective(img, coeffs, interpolation=interpolation, fill=fill)
+    if not isinstance(interpolation, InterpolationModes):
+        raise TypeError("Argument interpolation should be a InterpolationModes")
 
-    return F_t.perspective(img, coeffs, interpolation=interpolation, fill=fill)
+    if not isinstance(img, torch.Tensor):
+        pil_interpolation = pil_modes_mapping[interpolation]
+        return F_pil.perspective(img, coeffs, interpolation=pil_interpolation, fill=fill)
+
+    return F_t.perspective(img, coeffs, interpolation=interpolation.value, fill=fill)
 
 
 def vflip(img: Tensor) -> Tensor:
@@ -818,8 +828,9 @@ def _get_inverse_affine_matrix(
 
 
 def rotate(
-        img: Tensor, angle: float, interpolation: int = 0, expand: bool = False,
-        center: Optional[List[int]] = None, fill: Optional[int] = None, resample: Optional[int] = None
+        img: Tensor, angle: float, interpolation: InterpolationModes = InterpolationModes.NEAREST,
+        expand: bool = False, center: Optional[List[int]] = None,
+        fill: Optional[int] = None, resample: Optional[int] = None
 ) -> Tensor:
     """Rotate the image by angle.
     The image can be a PIL Image or a Tensor, in which case it is expected
@@ -828,9 +839,9 @@ def rotate(
     Args:
         img (PIL Image or Tensor): image to be rotated.
         angle (float or int): rotation angle value in degrees, counter-clockwise.
-        interpolation (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
-            An optional resampling filter. See `filters`_ for more information.
-            If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
+        interpolation (InterpolationModes): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationModes`. Default is ``InterpolationModes.NEAREST``.
+            If input is Tensor, only ``InterpolationModes.NEAREST``, ``InterpolationModes.BILINEAR`` are supported.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
@@ -855,7 +866,15 @@ def rotate(
         warnings.warn(
             "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
         )
-        interpolation = resample
+        inverse_modes_mapping = {
+            0: InterpolationModes.NEAREST,
+            2: InterpolationModes.BILINEAR,
+            3: InterpolationModes.BICUBIC,
+            4: InterpolationModes.BOX,
+            5: InterpolationModes.HAMMING,
+            1: InterpolationModes.LANCZOS,
+        }
+        interpolation = inverse_modes_mapping[resample]
 
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")
@@ -863,8 +882,12 @@ def rotate(
     if center is not None and not isinstance(center, (list, tuple)):
         raise TypeError("Argument center should be a sequence")
 
+    if not isinstance(interpolation, InterpolationModes):
+        raise TypeError("Argument interpolation should be a InterpolationModes")
+
     if not isinstance(img, torch.Tensor):
-        return F_pil.rotate(img, angle=angle, interpolation=interpolation, expand=expand, center=center, fill=fill)
+        pil_interpolation = pil_modes_mapping[interpolation]
+        return F_pil.rotate(img, angle=angle, interpolation=pil_interpolation, expand=expand, center=center, fill=fill)
 
     center_f = [0.0, 0.0]
     if center is not None:
@@ -875,13 +898,13 @@ def rotate(
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
     matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
-    return F_t.rotate(img, matrix=matrix, interpolation=interpolation, expand=expand, fill=fill)
+    return F_t.rotate(img, matrix=matrix, interpolation=interpolation.value, expand=expand, fill=fill)
 
 
 def affine(
         img: Tensor, angle: float, translate: List[int], scale: float, shear: List[float],
-        interpolation: int = 0, fill: Optional[int] = None, resample: Optional[int] = None,
-        fillcolor: Optional[int] = None
+        interpolation: InterpolationModes = InterpolationModes.NEAREST, fill: Optional[int] = None,
+        resample: Optional[int] = None, fillcolor: Optional[int] = None
 ) -> Tensor:
     """Apply affine transformation on the image keeping image center invariant.
     The image can be a PIL Image or a Tensor, in which case it is expected
@@ -895,10 +918,9 @@ def affine(
         shear (float or tuple or list): shear angle value in degrees between -180 to 180, clockwise direction.
             If a tuple of list is specified, the first value corresponds to a shear parallel to the x axis, while
             the second value corresponds to a shear parallel to the y axis.
-        interpolation (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
-            An optional resampling filter. See `filters`_ for more information.
-            If omitted, or if the image is PIL Image and has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
-            If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
+        interpolation (InterpolationModes): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationModes`. Default is ``InterpolationModes.NEAREST``.
+            If input is Tensor, only ``InterpolationModes.NEAREST``, ``InterpolationModes.BILINEAR`` are supported.
         fill (int): Optional fill color for the area outside the transform in the output image (Pillow>=5.0.0).
             This option is not supported for Tensor input. Fill value for the area outside the transform in the output
             image is always 0.
@@ -914,7 +936,15 @@ def affine(
         warnings.warn(
             "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
         )
-        interpolation = resample
+        inverse_modes_mapping = {
+            0: InterpolationModes.NEAREST,
+            2: InterpolationModes.BILINEAR,
+            3: InterpolationModes.BICUBIC,
+            4: InterpolationModes.BOX,
+            5: InterpolationModes.HAMMING,
+            1: InterpolationModes.LANCZOS,
+        }
+        interpolation = inverse_modes_mapping[resample]
 
     if fillcolor is not None:
         warnings.warn(
@@ -936,6 +966,9 @@ def affine(
 
     if not isinstance(shear, (numbers.Number, (list, tuple))):
         raise TypeError("Shear should be either a single value or a sequence of two values")
+
+    if not isinstance(interpolation, InterpolationModes):
+        raise TypeError("Argument interpolation should be a InterpolationModes")
 
     if isinstance(angle, int):
         angle = float(angle)
@@ -962,12 +995,12 @@ def affine(
         # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
         center = [img_size[0] * 0.5, img_size[1] * 0.5]
         matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
-
-        return F_pil.affine(img, matrix=matrix, interpolation=interpolation, fill=fill)
+        pil_interpolation = pil_modes_mapping[interpolation]
+        return F_pil.affine(img, matrix=matrix, interpolation=pil_interpolation, fill=fill)
 
     translate_f = [1.0 * t for t in translate]
     matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, translate_f, scale, shear)
-    return F_t.affine(img, matrix=matrix, interpolation=interpolation, fill=fill)
+    return F_t.affine(img, matrix=matrix, interpolation=interpolation.value, fill=fill)
 
 
 @torch.jit.unused
