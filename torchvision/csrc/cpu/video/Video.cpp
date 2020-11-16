@@ -9,22 +9,6 @@
 using namespace std;
 using namespace ffmpeg;
 
-// If we are in a Windows environment, we need to define
-// initialization functions for the _custom_ops extension
-// #ifdef _WIN32
-// #if PY_MAJOR_VERSION < 3
-// PyMODINIT_FUNC init_video_reader(void) {
-//   // No need to do anything.
-//   return NULL;
-// }
-// #else
-// PyMODINIT_FUNC PyInit_video_reader(void) {
-//   // No need to do anything.
-//   return NULL;
-// }
-// #endif
-// #endif
-
 const size_t decoderTimeoutMs = 600000;
 const AVPixelFormat defaultVideoPixelFormat = AV_PIX_FMT_RGB24;
 const AVSampleFormat defaultAudioSampleFormat = AV_SAMPLE_FMT_FLT;
