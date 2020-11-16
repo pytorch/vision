@@ -85,11 +85,11 @@ def decode_png(input: torch.Tensor, channels: int = 0) -> torch.Tensor:
     the raw bytes of the PNG image.
         channels (int): the number of output channels for the decoded
     image. 0 keeps the original number of channels, 1 converts to Grayscale
-    if the input image is not Palette, 2 converts to Grayscale with Alpha,
-    3 converts to RGB and 4 coverts to RGB with Alpha. Default: 0
+    2 converts to Grayscale with Alpha, 3 converts to RGB and 4 coverts to
+    RGB with Alpha. Default: 0
 
     Returns:
-        output (Tensor[3, image_height, image_width])
+        output (Tensor[image_channels, image_height, image_width])
     """
     output = torch.ops.image.decode_png(input, channels)
     return output
@@ -151,7 +151,7 @@ def decode_jpeg(input: torch.Tensor, channels: int = 0) -> torch.Tensor:
     and 3 converts to RGB. Default: 0
 
     Returns:
-        output (Tensor[3, image_height, image_width])
+        output (Tensor[image_channels, image_height, image_width])
     """
     output = torch.ops.image.decode_jpeg(input, channels)
     return output
@@ -223,7 +223,7 @@ def decode_image(input: torch.Tensor, channels: int = 0) -> torch.Tensor:
 
     Returns
     -------
-    output: Tensor[3, image_height, image_width]
+    output: Tensor[image_channels, image_height, image_width]
     """
     output = torch.ops.image.decode_image(input, channels)
     return output
@@ -247,7 +247,7 @@ def read_image(path: str, channels: int = 0) -> torch.Tensor:
 
     Returns
     -------
-    output: Tensor[3, image_height, image_width]
+    output: Tensor[image_channels, image_height, image_width]
     """
     data = read_file(path)
     return decode_image(data, channels)

@@ -4,6 +4,7 @@
 #include <ATen/ATen.h>
 #include <string>
 
+#define PNG_FOUND 1
 #if !PNG_FOUND
 torch::Tensor decodePNG(const torch::Tensor& data, int64_t channels) {
   TORCH_CHECK(false, "decodePNG: torchvision not compiled with libPNG support");
@@ -76,19 +77,24 @@ torch::Tensor decodePNG(const torch::Tensor& data, int64_t channels) {
 
   int current_channels = png_get_channels(png_ptr, info_ptr);
 
-  if (channels > 0 && channels != current_channels) {
+  if (channels > 0) {
     // TODO: consider supporting PNG_INFO_tRNS
     bool is_palette = (color_type & PNG_COLOR_MASK_PALETTE) != 0;
     bool has_color = (color_type & PNG_COLOR_MASK_COLOR) != 0;
     bool has_alpha = (color_type & PNG_COLOR_MASK_ALPHA) != 0;
 
     switch (channels) {
-      case 1: // Gray or Palette
+      case 1: // Gray
+        if (is_palette) {
+          png_set_palette_to_rgb(png_ptr);
+          has_alpha = true;
+        }
+
         if (has_alpha) {
           png_set_strip_alpha(png_ptr);
         }
 
-        if (has_color && !is_palette) {
+        if (has_color) {
           png_set_rgb_to_gray(png_ptr, 1, 0.2989, 0.587);
         }
         break;

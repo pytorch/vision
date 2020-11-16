@@ -169,8 +169,7 @@ class ImageTester(unittest.TestCase):
         for img_path in get_images(FAKEDATA_DIR, ".png"):
             for pil_mode, channels in conversion:
                 with Image.open(img_path) as img:
-                    if not (pil_mode == "L" and img.mode == "P") and pil_mode is not None:
-                        # Don't grayscale palette images
+                    if pil_mode is not None:
                         img = img.convert(pil_mode)
                     img_pil = torch.from_numpy(np.array(img))
 
