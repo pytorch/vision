@@ -1,4 +1,3 @@
-
 #include "Video.h"
 #include <c10/util/Logging.h>
 #include <torch/script.h>
