@@ -66,7 +66,7 @@ class ImageTester(unittest.TestCase):
 
                 img_pil = normalize_dimensions(img_pil)
                 data = read_file(img_path)
-                img_ljpeg = decode_jpeg(data, channels=channels)
+                img_ljpeg = decode_image(data, channels=channels)
 
                 # Permit a small variation on pixel values to account for implementation
                 # differences between Pillow and LibJPEG.
@@ -176,7 +176,7 @@ class ImageTester(unittest.TestCase):
 
                 img_pil = normalize_dimensions(img_pil)
                 data = read_file(img_path)
-                img_lpng = decode_png(data, channels=channels)
+                img_lpng = decode_image(data, channels=channels)
 
                 tol = 0 if conversion is None else 1
                 self.assertTrue(img_lpng.allclose(img_pil, atol=tol))
