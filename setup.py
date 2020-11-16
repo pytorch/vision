@@ -197,7 +197,7 @@ def get_extensions():
     if sys.platform == 'win32':
         define_macros += [('torchvision_EXPORTS', None)]
         extra_compile_args['cxx'].append('/MP')
-    else:
+    elif sys.platform == 'linux':
         extra_compile_args['cxx'].append('-fopenmp')
 
     debug_mode = os.getenv('DEBUG', '0') == '1'
