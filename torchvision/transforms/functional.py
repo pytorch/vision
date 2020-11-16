@@ -1,6 +1,7 @@
 import math
 import numbers
 import warnings
+from enum import Enum
 from typing import Any, Optional
 
 import numpy as np
@@ -18,6 +19,27 @@ except ImportError:
 from . import functional_pil as F_pil
 from . import functional_tensor as F_t
 
+
+class InterpolationModes(Enum):
+    """Interpolation modes
+    """
+    NEAREST = "nearest"
+    BILINEAR = "bilinear"
+    BICUBIC = "bicubic"
+    # For PIL compatibility
+    BOX = "box"
+    HAMMING = "hamming"
+    LANCZOS = "lanczos"
+
+
+pil_modes_mapping = {
+    InterpolationModes.NEAREST: 0,
+    InterpolationModes.BILINEAR: 2,
+    InterpolationModes.BICUBIC: 3,
+    InterpolationModes.BOX: 4,
+    InterpolationModes.HAMMING: 5,
+    InterpolationModes.LANCZOS: 1,
+}
 
 _is_pil_image = F_pil._is_pil_image
 _parse_fill = F_pil._parse_fill
@@ -285,7 +307,7 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     return tensor
 
 
-def resize(img: Tensor, size: List[int], interpolation: int = Image.BILINEAR) -> Tensor:
+def resize(img: Tensor, size: List[int], interpolation: InterpolationModes = InterpolationModes.BILINEAR) -> Tensor:
     r"""Resize the input image to the given size.
     The image can be a PIL Image or a torch Tensor, in which case it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
@@ -299,17 +321,20 @@ def resize(img: Tensor, size: List[int], interpolation: int = Image.BILINEAR) ->
             :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
             In torchscript mode size as single int is not supported, use a tuple or
             list of length 1: ``[size, ]``.
-        interpolation (int, optional): Desired interpolation enum defined by `filters`_.
-            Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
-            and ``PIL.Image.BICUBIC`` are supported.
+        interpolation (InterpolationModes, optional): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationModes`.
+            Default is ``InterpolationModes.BILINEAR``. If input is Tensor, only ``InterpolationModes.NEAREST``,
+            ``InterpolationModes.BILINEAR`` and ``InterpolationModes.BICUBIC`` are supported.
 
     Returns:
         PIL Image or Tensor: Resized image.
     """
     if not isinstance(img, torch.Tensor):
-        return F_pil.resize(img, size=size, interpolation=interpolation)
+        # TODO: Check and convert to PIL value
+        pil_interpolation = pil_modes_mapping[interpolation]
+        return F_pil.resize(img, size=size, interpolation=pil_interpolation)
 
-    return F_t.resize(img, size=size, interpolation=interpolation)
+    return F_t.resize(img, size=size, interpolation=interpolation.value)
 
 
 def scale(*args, **kwargs):
