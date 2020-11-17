@@ -97,8 +97,8 @@ void Video::_getDecoderParams(
     double videoStartS,
     int64_t getPtsOnly,
     std::string stream,
-    bool fastSeek = true,
     long stream_id = -1,
+    bool fastSeek = true,
     bool all_streams = false,
     double seekFrameMarginUs = 10) {
   int64_t videoStartUs = int64_t(videoStartS * 1e6);
@@ -163,6 +163,7 @@ Video::Video(std::string videoPath, std::string stream) {
       0, // headerOnly
       get<0>(current_stream), // stream info - remove that
       long(-1), // stream_id parsed from info above change to -2
+      false, // fastseek: we're using the default param here
       true // read all streams
   );
 
@@ -234,6 +235,7 @@ bool Video::setCurrentStream(std::string stream = "video") {
       get<0>(current_stream), // stream
       long(get<1>(
           current_stream)), // stream_id parsed from info above change to -2
+      false, // fastseek param set to 0 false by default (changed in seek)
       false // read all streams
   );
 
@@ -256,9 +258,9 @@ void Video::Seek(double ts, bool fastSeek = false) {
       ts, // video start
       0, // headerOnly
       get<0>(current_stream), // stream
-      fastSeek, // fastseek
       long(get<1>(
           current_stream)), // stream_id parsed from info above change to -2
+      fastSeek, // fastseek
       false // read all streams
   );
 
