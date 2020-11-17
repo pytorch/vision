@@ -592,7 +592,7 @@ int Decoder::processPacket(
     AVPacket* packet,
     bool* gotFrame,
     bool* hasMsg,
-    bool fastSeek = false) {
+    bool fastSeek) {
   // decode package
   int result;
   DecoderOutputMessage msg;
