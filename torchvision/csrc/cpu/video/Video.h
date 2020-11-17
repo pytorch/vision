@@ -45,8 +45,8 @@ struct Video : torch::CustomClassHolder {
       double videoStartS,
       int64_t getPtsOnly,
       std::string stream,
-      bool fastSeek,
       long stream_id,
+      bool fastSeek,
       bool all_streams,
       double seekFrameMarginUs); // this needs to be improved
 
