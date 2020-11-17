@@ -114,6 +114,7 @@ void Video::_getDecoderParams(
     double videoStartS,
     int64_t getPtsOnly,
     std::string stream,
+    bool fastSeek = true,
     long stream_id = -1,
     bool all_streams = false,
     double seekFrameMarginUs = 10) {
@@ -122,6 +123,7 @@ void Video::_getDecoderParams(
   params.timeoutMs = decoderTimeoutMs;
   params.startOffset = videoStartUs;
   params.seekAccuracy = seekFrameMarginUs;
+  params.fastSeek = fastSeek;
   params.headerOnly = false;
 
   params.preventStaleness = false; // not sure what this is about
@@ -265,12 +267,13 @@ c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>> Video::
   return streamsMetadata;
 }
 
-void Video::Seek(double ts) {
+void Video::Seek(double ts, bool fastSeek = false) {
   // initialize the class variables used for seeking and retrurn
   _getDecoderParams(
       ts, // video start
       0, // headerOnly
       get<0>(current_stream), // stream
+      fastSeek, // fastseek
       long(get<1>(
           current_stream)), // stream_id parsed from info above change to -2
       false // read all streams
