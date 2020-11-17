@@ -200,6 +200,8 @@ def to_pil_image(pic, mode=None):
     if not isinstance(npimg, np.ndarray):
         raise TypeError('Input pic must be a torch.Tensor or NumPy ndarray, ' +
                         'not {}'.format(type(npimg)))
+    if npimg.shape[2] > 4:
+        raise ValueError('pic should not have > 4 channels. Got {} channels.'.format(npimg.shape[2]))
 
     if npimg.shape[2] == 1:
         expected_mode = None
