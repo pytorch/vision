@@ -190,6 +190,8 @@ struct DecoderParameters {
   bool listen{false};
   // don't copy frame body, only header
   bool headerOnly{false};
+  // enable fast seek (seek only to keyframes)
+  bool fastSeek{false};
   // interrupt init method on timeout
   bool preventStaleness{true};
   // seek tolerated accuracy (us)
