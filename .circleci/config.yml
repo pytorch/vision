@@ -455,6 +455,7 @@ jobs:
     resource_class: gpu.small
     environment:
       image_name: "pytorch/manylinux-cuda101"
+      PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
       - designate_upload_channel
@@ -462,14 +463,9 @@ jobs:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
           command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-
-          keys:
-            - env-v2-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-
       - run:
           name: Setup
-          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/setup_env.sh
+          command: docker run -e PYTHON_VERSION -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/setup_env.sh
       - save_cache:
 
           key: env-v2-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
@@ -533,6 +529,7 @@ jobs:
       name: windows-gpu
     environment:
       CUDA_VERSION: "10.1"
+      PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
       - designate_upload_channel
@@ -540,11 +537,6 @@ jobs:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
           command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-
-          keys:
-            - env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-
       - run:
           name: Setup
           command: .circleci/unittest/windows/scripts/setup_env.sh
