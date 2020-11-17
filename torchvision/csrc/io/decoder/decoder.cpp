@@ -527,9 +527,9 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       bool gotFrame = false;
       bool hasMsg = false;
       // packet either got consumed completely or not at all
-      if ((result = processPacket(stream, &avPacket, &gotFrame, &hasMsg)) < 0) {
-        LOG(ERROR) << "uuid=" << params_.loggingUuid
-                   << " processPacket failed with code=" << result;
+      if ((result = processPacket(
+               stream, &avPacket, &gotFrame, &hasMsg, params_.fastSeek)) < 0) {
+        LOG(ERROR) << "processPacket failed with code: " << result;
         break;
       }
 
