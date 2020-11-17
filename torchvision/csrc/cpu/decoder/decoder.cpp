@@ -590,7 +590,8 @@ int Decoder::processPacket(
     Stream* stream,
     AVPacket* packet,
     bool* gotFrame,
-    bool* hasMsg) {
+    bool* hasMsg,
+    bool fastSeek = false) {
   // decode package
   int result;
   DecoderOutputMessage msg;
@@ -603,7 +604,15 @@ int Decoder::processPacket(
     bool endInRange =
         params_.endOffset <= 0 || msg.header.pts <= params_.endOffset;
     inRange_.set(stream->getIndex(), endInRange);
-    if (endInRange && msg.header.pts >= params_.startOffset) {
+    // if fastseek is enabled, we're returning the first
+    // frame that we decode after (potential) seek.
+    // By default, we perform accurate seek to the closest
+    // following frame
+    bool startCondition = true;
+    if (!fastSeek) {
+      startCondition = msg.header.pts >= params_.startOffset;
+    }
+    if (endInRange && startCondition) {
       *hasMsg = true;
       push(std::move(msg));
     }
