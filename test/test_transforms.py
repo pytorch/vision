@@ -994,10 +994,14 @@ class Tester(unittest.TestCase):
 
     def test_ndarray_bad_types_to_pil_image(self):
         trans = transforms.ToPILImage()
-        with self.assertRaisesRegex(TypeError, r'Input type \w+ is not supported'):
+        reg_msg = r'Input type \w+ is not supported'
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.int64))
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.uint16))
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.uint32))
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.float64))
 
         with self.assertRaisesRegex(ValueError, r'pic should be 2/3 dimensional. Got \d+ dimensions.'):
