@@ -1,18 +1,16 @@
 #include "readjpeg_cpu.h"
 
 #include <ATen/ATen.h>
-#include <setjmp.h>
 #include <string>
 
 #if !JPEG_FOUND
-
-torch::Tensor decodeJPEG(const torch::Tensor& data) {
+torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t channels) {
   TORCH_CHECK(
       false, "decodeJPEG: torchvision not compiled with libjpeg support");
 }
-
 #else
 #include <jpeglib.h>
+#include <setjmp.h>
 #include "jpegcommon.h"
 
 struct torch_jpeg_mgr {
@@ -71,13 +69,16 @@ static void torch_jpeg_set_source_mgr(
   src->pub.next_input_byte = src->data;
 }
 
-torch::Tensor decodeJPEG(const torch::Tensor& data) {
+torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t channels) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
   TORCH_CHECK(
       data.dim() == 1 && data.numel() > 0,
       "Expected a non empty 1-dimensional tensor");
+  TORCH_CHECK(
+      channels == 0 || channels == 1 || channels == 3,
+      "Number of channels not supported");
 
   struct jpeg_decompress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;
@@ -100,15 +101,41 @@ torch::Tensor decodeJPEG(const torch::Tensor& data) {
 
   // read info from header.
   jpeg_read_header(&cinfo, TRUE);
+
+  int current_channels = cinfo.num_components;
+
+  if (channels > 0 && channels != current_channels) {
+    switch (channels) {
+      case 1: // Gray
+        cinfo.out_color_space = JCS_GRAYSCALE;
+        break;
+      case 3: // RGB
+        cinfo.out_color_space = JCS_RGB;
+        break;
+      /*
+       * Libjpeg does not support converting from CMYK to grayscale etc. There
+       * is a way to do this but it involves converting it manually to RGB:
+       * https://github.com/tensorflow/tensorflow/blob/86871065265b04e0db8ca360c046421efb2bdeb4/tensorflow/core/lib/jpeg/jpeg_mem.cc#L284-L313
+       *
+       */
+      default:
+        jpeg_destroy_decompress(&cinfo);
+        TORCH_CHECK(false, "Invalid number of output channels.");
+    }
+
+    jpeg_calc_output_dimensions(&cinfo);
+  } else {
+    channels = current_channels;
+  }
+
   jpeg_start_decompress(&cinfo);
 
   int height = cinfo.output_height;
   int width = cinfo.output_width;
-  int components = cinfo.output_components;
 
-  auto stride = width * components;
-  auto tensor = torch::empty(
-      {int64_t(height), int64_t(width), int64_t(components)}, torch::kU8);
+  int stride = width * channels;
+  auto tensor =
+      torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
   auto ptr = tensor.data_ptr<uint8_t>();
   while (cinfo.output_scanline < cinfo.output_height) {
     /* jpeg_read_scanlines expects an array of pointers to scanlines.
