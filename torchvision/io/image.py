@@ -74,19 +74,24 @@ def write_file(filename: str, data: torch.Tensor) -> None:
     torch.ops.image.write_file(filename, data)
 
 
-def decode_png(input: torch.Tensor) -> torch.Tensor:
+def decode_png(input: torch.Tensor, channels: int = 0) -> torch.Tensor:
     """
     Decodes a PNG image into a 3 dimensional RGB Tensor.
+    Optionally converts the image to the desired number of color channels.
     The values of the output tensor are uint8 between 0 and 255.
 
     Arguments:
         input (Tensor[1]): a one dimensional uint8 tensor containing
     the raw bytes of the PNG image.
+        channels (int): the number of output channels for the decoded
+    image. 0 keeps the original number of channels, 1 converts to Grayscale
+    2 converts to Grayscale with Alpha, 3 converts to RGB and 4 coverts to
+    RGB with Alpha. Default: 0
 
     Returns:
-        output (Tensor[3, image_height, image_width])
+        output (Tensor[image_channels, image_height, image_width])
     """
-    output = torch.ops.image.decode_png(input)
+    output = torch.ops.image.decode_png(input, channels)
     return output
 
 
@@ -132,17 +137,23 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
     write_file(filename, output)
 
 
-def decode_jpeg(input: torch.Tensor) -> torch.Tensor:
+def decode_jpeg(input: torch.Tensor, channels: int = 0) -> torch.Tensor:
     """
     Decodes a JPEG image into a 3 dimensional RGB Tensor.
+    Optionally converts the image to the desired number of color channels.
     The values of the output tensor are uint8 between 0 and 255.
+
     Arguments:
         input (Tensor[1]): a one dimensional uint8 tensor containing
     the raw bytes of the JPEG image.
+        channels (int): the number of output channels for the decoded
+    image. 0 keeps the original number of channels, 1 converts to Grayscale
+    and 3 converts to RGB. Default: 0
+
     Returns:
-        output (Tensor[3, image_height, image_width])
+        output (Tensor[image_channels, image_height, image_width])
     """
-    output = torch.ops.image.decode_jpeg(input)
+    output = torch.ops.image.decode_jpeg(input, channels)
     return output
 
 
@@ -191,11 +202,12 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
     write_file(filename, output)
 
 
-def decode_image(input: torch.Tensor) -> torch.Tensor:
+def decode_image(input: torch.Tensor, channels: int = 0) -> torch.Tensor:
     """
     Detects whether an image is a JPEG or PNG and performs the appropriate
     operation to decode the image into a 3 dimensional RGB Tensor.
 
+    Optionally converts the image to the desired number of color channels.
     The values of the output tensor are uint8 between 0 and 255.
 
     Parameters
@@ -203,28 +215,39 @@ def decode_image(input: torch.Tensor) -> torch.Tensor:
     input: Tensor
         a one dimensional uint8 tensor containing the raw bytes of the
         PNG or JPEG image.
+    channels: int
+        the number of output channels of the decoded image. JPEG and PNG images
+        have different permitted values. The default value is 0 and it keeps
+        the original number of channels. See `decode_jpeg()` and `decode_png()`
+        for more information. Default: 0
 
     Returns
     -------
-    output: Tensor[3, image_height, image_width]
+    output: Tensor[image_channels, image_height, image_width]
     """
-    output = torch.ops.image.decode_image(input)
+    output = torch.ops.image.decode_image(input, channels)
     return output
 
 
-def read_image(path: str) -> torch.Tensor:
+def read_image(path: str, channels: int = 0) -> torch.Tensor:
     """
     Reads a JPEG or PNG image into a 3 dimensional RGB Tensor.
+    Optionally converts the image to the desired number of color channels.
     The values of the output tensor are uint8 between 0 and 255.
 
     Parameters
     ----------
     path: str
         path of the JPEG or PNG image.
+    channels: int
+        the number of output channels of the decoded image. JPEG and PNG images
+        have different permitted values. The default value is 0 and it keeps
+        the original number of channels. See `decode_jpeg()` and `decode_png()`
+        for more information. Default: 0
 
     Returns
     -------
-    output: Tensor[3, image_height, image_width]
+    output: Tensor[image_channels, image_height, image_width]
     """
     data = read_file(path)
-    return decode_image(data)
+    return decode_image(data, channels)
