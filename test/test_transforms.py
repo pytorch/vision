@@ -989,6 +989,7 @@ class Tester(unittest.TestCase):
     def test_tensor_bad_types_to_pil_image(self):
         with self.assertRaises(ValueError):
             transforms.ToPILImage()(torch.ones(1, 3, 4, 4))
+            transforms.ToPILImage()(torch.ones(6, 4, 4))
 
     def test_ndarray_bad_types_to_pil_image(self):
         trans = transforms.ToPILImage()
@@ -1000,6 +1001,7 @@ class Tester(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             transforms.ToPILImage()(np.ones([1, 4, 4, 3]))
+            transforms.ToPILImage()(np.ones([4, 4, 6]))
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_vertical_flip(self):
