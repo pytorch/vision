@@ -1,26 +1,22 @@
 #include "readpng_cpu.h"
 
-// Comment
 #include <ATen/ATen.h>
-#include <string>
 
 #if !PNG_FOUND
-torch::Tensor decodePNG(const torch::Tensor& data, int64_t channels) {
+torch::Tensor decodePNG(const torch::Tensor& data, int64_t mode) {
   TORCH_CHECK(false, "decodePNG: torchvision not compiled with libPNG support");
 }
 #else
 #include <png.h>
 #include <setjmp.h>
 
-torch::Tensor decodePNG(const torch::Tensor& data, int64_t channels) {
+torch::Tensor decodePNG(const torch::Tensor& data, int64_t mode) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
   TORCH_CHECK(
       data.dim() == 1 && data.numel() > 0,
       "Expected a non empty 1-dimensional tensor");
-  TORCH_CHECK(
-      channels >= 0 && channels <= 4, "Number of channels not supported");
 
   auto png_ptr =
       png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -74,75 +70,85 @@ torch::Tensor decodePNG(const torch::Tensor& data, int64_t channels) {
     TORCH_CHECK(retval == 1, "Could read image metadata from content.")
   }
 
-  int current_channels = png_get_channels(png_ptr, info_ptr);
+  int channels = png_get_channels(png_ptr, info_ptr);
 
-  if (channels > 0) {
+  if (mode != 0) { // ImageReadMode.UNCHANGED
     // TODO: consider supporting PNG_INFO_tRNS
     bool is_palette = (color_type & PNG_COLOR_MASK_PALETTE) != 0;
     bool has_color = (color_type & PNG_COLOR_MASK_COLOR) != 0;
     bool has_alpha = (color_type & PNG_COLOR_MASK_ALPHA) != 0;
 
-    switch (channels) {
-      case 1: // Gray
-        if (is_palette) {
-          png_set_palette_to_rgb(png_ptr);
-          has_alpha = true;
-        }
+    switch (mode) {
+      case 1: // ImageReadMode.GRAY
+        if (color_type != PNG_COLOR_TYPE_GRAY) {
+          if (is_palette) {
+            png_set_palette_to_rgb(png_ptr);
+            has_alpha = true;
+          }
 
-        if (has_alpha) {
-          png_set_strip_alpha(png_ptr);
-        }
+          if (has_alpha) {
+            png_set_strip_alpha(png_ptr);
+          }
 
-        if (has_color) {
-          png_set_rgb_to_gray(png_ptr, 1, 0.2989, 0.587);
+          if (has_color) {
+            png_set_rgb_to_gray(png_ptr, 1, 0.2989, 0.587);
+          }
+          channels = 1;
         }
         break;
-      case 2: // Gray + Alpha
-        if (is_palette) {
-          png_set_palette_to_rgb(png_ptr);
-          has_alpha = true;
-        }
+      case 2: // ImageReadMode.GRAY_ALPHA
+        if (color_type != PNG_COLOR_TYPE_GRAY_ALPHA) {
+          if (is_palette) {
+            png_set_palette_to_rgb(png_ptr);
+            has_alpha = true;
+          }
 
-        if (!has_alpha) {
-          png_set_add_alpha(png_ptr, (1 << bit_depth) - 1, PNG_FILLER_AFTER);
-        }
+          if (!has_alpha) {
+            png_set_add_alpha(png_ptr, (1 << bit_depth) - 1, PNG_FILLER_AFTER);
+          }
 
-        if (has_color) {
-          png_set_rgb_to_gray(png_ptr, 1, 0.2989, 0.587);
+          if (has_color) {
+            png_set_rgb_to_gray(png_ptr, 1, 0.2989, 0.587);
+          }
+          channels = 2;
         }
         break;
-      case 3:
-        if (is_palette) {
-          png_set_palette_to_rgb(png_ptr);
-          has_alpha = true;
-        } else if (!has_color) {
-          png_set_gray_to_rgb(png_ptr);
-        }
+      case 3: // ImageReadMode.RGB
+        if (color_type != PNG_COLOR_TYPE_RGB) {
+          if (is_palette) {
+            png_set_palette_to_rgb(png_ptr);
+            has_alpha = true;
+          } else if (!has_color) {
+            png_set_gray_to_rgb(png_ptr);
+          }
 
-        if (has_alpha) {
-          png_set_strip_alpha(png_ptr);
+          if (has_alpha) {
+            png_set_strip_alpha(png_ptr);
+          }
+          channels = 3;
         }
         break;
-      case 4:
-        if (is_palette) {
-          png_set_palette_to_rgb(png_ptr);
-          has_alpha = true;
-        } else if (!has_color) {
-          png_set_gray_to_rgb(png_ptr);
-        }
+      case 4: // ImageReadMode.RGB_ALPHA
+        if (color_type != PNG_COLOR_TYPE_RGB_ALPHA) {
+          if (is_palette) {
+            png_set_palette_to_rgb(png_ptr);
+            has_alpha = true;
+          } else if (!has_color) {
+            png_set_gray_to_rgb(png_ptr);
+          }
 
-        if (!has_alpha) {
-          png_set_add_alpha(png_ptr, (1 << bit_depth) - 1, PNG_FILLER_AFTER);
+          if (!has_alpha) {
+            png_set_add_alpha(png_ptr, (1 << bit_depth) - 1, PNG_FILLER_AFTER);
+          }
+          channels = 4;
         }
         break;
       default:
         png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-        TORCH_CHECK(false, "Invalid number of output channels.");
+        TORCH_CHECK(false, "Provided mode not supported");
     }
 
     png_read_update_info(png_ptr, info_ptr);
-  } else {
-    channels = current_channels;
   }
 
   auto tensor =
