@@ -4,7 +4,6 @@
 #include <ATen/ATen.h>
 #include <string>
 
-#define PNG_FOUND 1
 #if !PNG_FOUND
 torch::Tensor decodePNG(const torch::Tensor& data, int64_t channels) {
   TORCH_CHECK(false, "decodePNG: torchvision not compiled with libPNG support");
