@@ -2,7 +2,7 @@
 #include "readjpeg_cpu.h"
 #include "readpng_cpu.h"
 
-torch::Tensor decode_image(const torch::Tensor& data, int64_t mode) {
+torch::Tensor decode_image(const torch::Tensor& data, ImageReadMode mode) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional

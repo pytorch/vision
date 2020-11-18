@@ -3,14 +3,14 @@
 #include <ATen/ATen.h>
 
 #if !PNG_FOUND
-torch::Tensor decodePNG(const torch::Tensor& data, int64_t mode) {
+torch::Tensor decodePNG(const torch::Tensor& data, ImageReadMode mode) {
   TORCH_CHECK(false, "decodePNG: torchvision not compiled with libPNG support");
 }
 #else
 #include <png.h>
 #include <setjmp.h>
 
-torch::Tensor decodePNG(const torch::Tensor& data, int64_t mode) {
+torch::Tensor decodePNG(const torch::Tensor& data, ImageReadMode mode) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
@@ -72,14 +72,14 @@ torch::Tensor decodePNG(const torch::Tensor& data, int64_t mode) {
 
   int channels = png_get_channels(png_ptr, info_ptr);
 
-  if (mode != 0) { // ImageReadMode.UNCHANGED
+  if (mode != IMAGE_READ_MODE_UNCHANGED) {
     // TODO: consider supporting PNG_INFO_tRNS
     bool is_palette = (color_type & PNG_COLOR_MASK_PALETTE) != 0;
     bool has_color = (color_type & PNG_COLOR_MASK_COLOR) != 0;
     bool has_alpha = (color_type & PNG_COLOR_MASK_ALPHA) != 0;
 
     switch (mode) {
-      case 1: // ImageReadMode.GRAY
+      case IMAGE_READ_MODE_GRAY:
         if (color_type != PNG_COLOR_TYPE_GRAY) {
           if (is_palette) {
             png_set_palette_to_rgb(png_ptr);
@@ -96,7 +96,7 @@ torch::Tensor decodePNG(const torch::Tensor& data, int64_t mode) {
           channels = 1;
         }
         break;
-      case 2: // ImageReadMode.GRAY_ALPHA
+      case IMAGE_READ_MODE_GRAY_ALPHA:
         if (color_type != PNG_COLOR_TYPE_GRAY_ALPHA) {
           if (is_palette) {
             png_set_palette_to_rgb(png_ptr);
@@ -113,7 +113,7 @@ torch::Tensor decodePNG(const torch::Tensor& data, int64_t mode) {
           channels = 2;
         }
         break;
-      case 3: // ImageReadMode.RGB
+      case IMAGE_READ_MODE_RGB:
         if (color_type != PNG_COLOR_TYPE_RGB) {
           if (is_palette) {
             png_set_palette_to_rgb(png_ptr);
@@ -128,7 +128,7 @@ torch::Tensor decodePNG(const torch::Tensor& data, int64_t mode) {
           channels = 3;
         }
         break;
-      case 4: // ImageReadMode.RGB_ALPHA
+      case IMAGE_READ_MODE_RGB_ALPHA:
         if (color_type != PNG_COLOR_TYPE_RGB_ALPHA) {
           if (is_palette) {
             png_set_palette_to_rgb(png_ptr);

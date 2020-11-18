@@ -3,7 +3,7 @@
 #include <ATen/ATen.h>
 
 #if !JPEG_FOUND
-torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t mode) {
+torch::Tensor decodeJPEG(const torch::Tensor& data, ImageReadMode mode) {
   TORCH_CHECK(
       false, "decodeJPEG: torchvision not compiled with libjpeg support");
 }
@@ -68,7 +68,7 @@ static void torch_jpeg_set_source_mgr(
   src->pub.next_input_byte = src->data;
 }
 
-torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t mode) {
+torch::Tensor decodeJPEG(const torch::Tensor& data, ImageReadMode mode) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
@@ -100,15 +100,15 @@ torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t mode) {
 
   int channels = cinfo.num_components;
 
-  if (mode != 0) { // ImageReadMode.UNCHANGED
+  if (mode != IMAGE_READ_MODE_UNCHANGED) {
     switch (mode) {
-      case 1: // ImageReadMode.GRAY
+      case IMAGE_READ_MODE_GRAY:
         if (cinfo.jpeg_color_space != JCS_GRAYSCALE) {
           cinfo.out_color_space = JCS_GRAYSCALE;
           channels = 1;
         }
         break;
-      case 3: // ImageReadMode.RGB
+      case IMAGE_READ_MODE_RGB:
         if (cinfo.jpeg_color_space != JCS_RGB) {
           cinfo.out_color_space = JCS_RGB;
           channels = 3;
