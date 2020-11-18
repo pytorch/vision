@@ -179,11 +179,6 @@ def to_pil_image(pic, mode=None):
         if pic.ndimension() not in {2, 3}:
             raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndimension()))
 
-        elif pic.ndimension() == 3:
-            # check number of channels
-            if pic.shape[0] > 4:
-                raise ValueError('pic should not have > 4 channels. Got {} channels.'.format(pic.shape[0]))
-
         elif pic.ndimension() == 2:
             # if 2D image, add channel dimension (CHW)
             pic = pic.unsqueeze(0)
@@ -195,11 +190,6 @@ def to_pil_image(pic, mode=None):
     elif isinstance(pic, np.ndarray):
         if pic.ndim not in {2, 3}:
             raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
-
-        elif pic.ndim == 3:
-            # check number of channels
-            if pic.shape[2] > 4:
-                raise ValueError('pic should not have > 4 channels. Got {} channels.'.format(pic.shape[2]))
 
         elif pic.ndim == 2:
             # if 2D image, add channel dimension (HWC)
