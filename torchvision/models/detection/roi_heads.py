@@ -742,7 +742,6 @@ class RoIHeads(torch.nn.Module):
                 if self.has_keypoint():
                     assert t["keypoints"].dtype == torch.float32, 'target keypoints must of float type'
 
-        if self.training:
             proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
         else:
             labels = None
@@ -755,7 +754,7 @@ class RoIHeads(torch.nn.Module):
 
         result = torch.jit.annotate(List[Dict[str, torch.Tensor]], [])
         losses = {}
-        if self.training:
+        if targets is not None:
             assert labels is not None and regression_targets is not None
             loss_classifier, loss_box_reg = fastrcnn_loss(
                 class_logits, box_regression, labels, regression_targets)
@@ -763,7 +762,8 @@ class RoIHeads(torch.nn.Module):
                 "loss_classifier": loss_classifier,
                 "loss_box_reg": loss_box_reg
             }
-        else:
+
+        if not self.training:
             boxes, scores, labels = self.postprocess_detections(class_logits, box_regression, proposals, image_shapes)
             num_images = len(boxes)
             for i in range(num_images):
@@ -777,9 +777,9 @@ class RoIHeads(torch.nn.Module):
 
         if self.has_mask():
             mask_proposals = [p["boxes"] for p in result]
-            if self.training:
+            if targets is not None:
                 assert matched_idxs is not None
-                # during training, only focus on positive boxes
+                # only focus on positive boxes
                 num_images = len(proposals)
                 mask_proposals = []
                 pos_matched_idxs = []
@@ -799,8 +799,7 @@ class RoIHeads(torch.nn.Module):
                 raise Exception("Expected mask_roi_pool to be not None")
 
             loss_mask = {}
-            if self.training:
-                assert targets is not None
+            if targets is not None:
                 assert pos_matched_idxs is not None
                 assert mask_logits is not None
 
@@ -812,7 +811,7 @@ class RoIHeads(torch.nn.Module):
                 loss_mask = {
                     "loss_mask": rcnn_loss_mask
                 }
-            else:
+            if not self.training:
                 labels = [r["labels"] for r in result]
                 masks_probs = maskrcnn_inference(mask_logits, labels)
                 for mask_prob, r in zip(masks_probs, result):
@@ -825,8 +824,8 @@ class RoIHeads(torch.nn.Module):
         if self.keypoint_roi_pool is not None and self.keypoint_head is not None \
                 and self.keypoint_predictor is not None:
             keypoint_proposals = [p["boxes"] for p in result]
-            if self.training:
-                # during training, only focus on positive boxes
+            if targets is not None:
+                # only focus on positive boxes
                 num_images = len(proposals)
                 keypoint_proposals = []
                 pos_matched_idxs = []
