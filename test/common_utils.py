@@ -7,7 +7,7 @@ import argparse
 import sys
 import io
 import torch
-import errno
+import warnings
 import __main__
 
 from numbers import Number
@@ -272,7 +272,14 @@ class TestCase(unittest.TestCase):
         """
         if not TEST_WITH_SLOW or skip:
             # TorchScript is not enabled, skip these tests
-            return
+            msg = "The checkModule test for {} was skipped. " \
+                  "This test checks if the module's results in TorchScript " \
+                  "match eager and that it can be exported. To run these " \
+                  "tests make sure you set the environment variable " \
+                  "PYTORCH_TEST_WITH_SLOW=1 and that the test is not " \
+                  "manually skipped.".format(nn_module.__class__.__name__)
+            warnings.warn(msg, RuntimeWarning)
+            return None
 
         sm = torch.jit.script(nn_module)
 

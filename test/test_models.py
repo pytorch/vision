@@ -38,44 +38,16 @@ def get_available_video_models():
     return [k for k, v in models.video.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
-# models that are in torch hub, as well as r3d_18. we tried testing all models
-# but the test was too slow. not included are detection models, because
-# they are not yet supported in JIT.
 # If 'unwrapper' is provided it will be called with the script model outputs
 # before they are compared to the eager model outputs. This is useful if the
 # model outputs are different between TorchScript / Eager mode
-script_test_models = {
-    'deeplabv3_resnet50': {},
-    'deeplabv3_resnet101': {},
-    'mobilenet_v2': {},
-    'resnext50_32x4d': {},
-    'fcn_resnet50': {},
-    'fcn_resnet101': {},
-    'googlenet': {
-        'unwrapper': lambda x: x.logits
-    },
-    'densenet121': {},
-    'resnet18': {},
-    'alexnet': {},
-    'shufflenet_v2_x1_0': {},
-    'squeezenet1_0': {},
-    'vgg11': {},
-    'inception_v3': {
-        'unwrapper': lambda x: x.logits
-    },
-    'r3d_18': {},
-    "fasterrcnn_resnet50_fpn": {
-        'unwrapper': lambda x: x[1]
-    },
-    "maskrcnn_resnet50_fpn": {
-        'unwrapper': lambda x: x[1]
-    },
-    "keypointrcnn_resnet50_fpn": {
-        'unwrapper': lambda x: x[1]
-    },
-    "retinanet_resnet50_fpn": {
-        'unwrapper': lambda x: x[1]
-    }
+script_model_unwrapper = {
+    'googlenet': lambda x: x.logits,
+    'inception_v3': lambda x: x.logits,
+    "fasterrcnn_resnet50_fpn": lambda x: x[1],
+    "maskrcnn_resnet50_fpn": lambda x: x[1],
+    "keypointrcnn_resnet50_fpn": lambda x: x[1],
+    "retinanet_resnet50_fpn": lambda x: x[1],
 }
 
 
@@ -98,9 +70,7 @@ autocast_flaky_numerics = (
 
 class ModelTester(TestCase):
     def checkModule(self, model, name, args):
-        if name not in script_test_models:
-            return
-        unwrapper = script_test_models[name].get('unwrapper', None)
+        unwrapper = script_model_unwrapper.get(name, None)
         return super(ModelTester, self).checkModule(model, args, unwrapper=unwrapper, skip=False)
 
     def _test_classification_model(self, name, input_shape, dev):
