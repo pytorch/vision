@@ -192,10 +192,7 @@ class RetinaNetRegressionHead(nn.Module):
                 zip(targets, bbox_regression, anchors, matched_idxs):
             # no matched_idxs means there were no annotations in this image
             if matched_idxs_per_image.numel() == 0:
-                device = targets_per_image['boxes'].device
-                bbox_regression_per_image = torch.zeros_like(targets_per_image['boxes'], device=device)
-                target_regression = torch.zeros_like(targets_per_image['boxes'], device=device)
-                num_foreground = torch.tensor(0, dtype=torch.int64, device=device)
+                matched_gt_boxes_per_image = torch.zeros_like(bbox_regression_per_image)
             else:
                 # get the targets corresponding GT for each proposal
                 # NB: need to clamp the indices because we can have a single
@@ -203,17 +200,17 @@ class RetinaNetRegressionHead(nn.Module):
                 # out of bounds
                 matched_gt_boxes_per_image = targets_per_image['boxes'][matched_idxs_per_image.clamp(min=0)]
 
-                # determine only the foreground indices, ignore the rest
-                foreground_idxs_per_image = matched_idxs_per_image >= 0
-                num_foreground = foreground_idxs_per_image.sum()
+            # determine only the foreground indices, ignore the rest
+            foreground_idxs_per_image = torch.where(matched_idxs_per_image >= 0)[0]
+            num_foreground = foreground_idxs_per_image.numel()
 
-                # select only the foreground boxes
-                matched_gt_boxes_per_image = matched_gt_boxes_per_image[foreground_idxs_per_image, :]
-                bbox_regression_per_image = bbox_regression_per_image[foreground_idxs_per_image, :]
-                anchors_per_image = anchors_per_image[foreground_idxs_per_image, :]
+            # select only the foreground boxes
+            matched_gt_boxes_per_image = matched_gt_boxes_per_image[foreground_idxs_per_image, :]
+            bbox_regression_per_image = bbox_regression_per_image[foreground_idxs_per_image, :]
+            anchors_per_image = anchors_per_image[foreground_idxs_per_image, :]
 
-                # compute the regression targets
-                target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
+            # compute the regression targets
+            target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
 
             # compute the loss
             losses.append(torch.nn.functional.l1_loss(
@@ -404,7 +401,7 @@ class RetinaNet(nn.Module):
         matched_idxs = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
             if targets_per_image['boxes'].numel() == 0:
-                matched_idxs.append(torch.empty((0,), dtype=torch.int32))
+                matched_idxs.append(torch.empty((0,), dtype=torch.int64))
                 continue
 
             match_quality_matrix = box_ops.box_iou(targets_per_image['boxes'], anchors_per_image)
