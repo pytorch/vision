@@ -221,7 +221,7 @@ class ModelTester(TestCase):
         # TODO: refactor tests
         # self.check_script(model, name)
         self.checkModule(model, name, ([x],))
-
+        
         if dev == "cuda":
             with torch.cuda.amp.autocast():
                 out = model(model_input)
@@ -237,28 +237,44 @@ class ModelTester(TestCase):
             warnings.warn(msg, RuntimeWarning)
             raise unittest.SkipTest(msg)
 
-    def _test_detection_model_validation(self, name):
+    def _test_detection_model_checks(self, name):
         set_rng_seed(0)
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False)
-        input_shape = (3, 300, 300)
+
+        input_shape = (1, 3, 300, 300)
         x = [torch.rand(input_shape)]
 
-        # validate that targets are present in training
-        self.assertRaises(ValueError, model, x)
+        N = 4 # nb of boxes
+        targets = [{"boxes": None, "labels":None}]
 
-        # validate type
-        targets = [{'boxes': 0.}]
-        self.assertRaises(ValueError, model, x, targets=targets)
-
-        # validate boxes shape
-        for boxes in (torch.rand((4,)), torch.rand((1, 5))):
-            targets = [{'boxes': boxes}]
+        def test_tensor_checks(tname, dtype, shape):
+            # presence check
+            if tname in targets[0]:
+                del targets[0][tname]
             self.assertRaises(ValueError, model, x, targets=targets)
 
-        # validate that no degenerate boxes are present
-        boxes = torch.tensor([[1, 3, 1, 4], [2, 4, 3, 4]])
-        targets = [{'boxes': boxes}]
-        self.assertRaises(ValueError, model, x, targets=targets)
+            # type check
+            targets[0][tname] = torch.zeros((1,),
+                dtype=torch.bool if dtype != torch.bool else torch.float)
+            self.assertRaises(ValueError, model, x, targets=targets)
+
+            # shape check
+            targets[0][tname] = torch.zeros((*shape, 1), dtype=dtype)
+            self.assertRaises(ValueError, model, x, targets=targets)
+
+            # set the Tensor to the correct shape and dtype for next tests
+            targets[0][tname] = torch.zeros(shape, dtype=dtype)
+
+        # check that targets are available when training
+        self.assertRaises(ValueError, model, x)
+
+        test_tensor_checks("boxes", torch.float, (N, 4))
+        test_tensor_checks("labels", torch.int64, (N,))
+
+        if "mask" in name:
+            test_tensor_checks("masks", torch.uint8, (N, 300, 300))
+        if "keypoint" in name:
+            test_tensor_checks("keypoints", torch.float, (N, 5, 3))
 
     def _test_video_model(self, name, dev):
         # the default input shape is
@@ -465,9 +481,9 @@ for model_name in get_available_detection_models():
         setattr(ModelTester, "test_" + model_name + "_" + dev, do_test)
 
     def do_validation_test(self, model_name=model_name):
-        self._test_detection_model_validation(model_name)
+        self._test_detection_model_checks(model_name)
 
-    setattr(ModelTester, "test_" + model_name + "_validation", do_validation_test)
+    setattr(ModelTester, "test_" + model_name + "_checks", do_validation_test)
 
 
 for model_name in get_available_video_models():

@@ -482,6 +482,57 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
     return ret
 
 
+def _check_target_item(target,          # type: Dict[str, Tensor]
+                       key,             # type: str
+                       dtype,           # type: List[torch.dtype]
+                       shape,           # type: List[Optional[int]]
+                       shape_string="", # type: Optional[str]
+                       ):
+    # type: (...) -> None
+    """
+    Checks that a key in target corresponds to a Tensor with correct shape and
+    dtype.
+
+    Args:
+        target (Dict[str, Tensor]): target for a training instance containing
+            the Tensors to be checked
+        key (str): key for the Tensor to be checked in target.
+        dtype (List[torch.dtype]): a list containing the possible dtypes of
+            the Tensor.
+        shape (List[int]): the expected shape of the Tensor. This function checks
+            the number of dimensions and any non-None values of this list.
+        shape_string (Optional[str]): optional string for exception messages.
+            If messages. If not specified, shape will be cast into string and
+            used instead.
+
+        Raises:
+            ValueError if the Tensor fails a check.
+     """
+    if len(shape_string) == 0:
+        shape_string = str(shape)
+
+    if key not in target:
+        raise ValueError("Key '{:}' not found in targets.".format(key))
+
+    arr = target[key]
+    if not isinstance(arr, torch.Tensor):
+        raise ValueError("Expected target {:} to be of type Tensor, got {:}."
+                         .format(key, type(arr)))
+    if arr.dtype not in dtype:
+        raise ValueError("Expected target {:} to be a Tensor with dtype {:}, "
+                         "got {:}.".format(key, dtype, arr.dtype))
+    if len(arr.shape) != len(shape):
+        raise ValueError("Expected target {:} to be Tensor with shape {:}, got"
+                         " {:}.".format(key, shape_string, arr.shape))
+    for i in range(len(shape)):
+        item = shape[i]
+        if item is not None:
+            if arr.shape[i] != shape[i]:
+                raise ValueError("Expected target {:} to be Tensor with shape "
+                                 "{:}, got {:}.".format(key,
+                                 shape_string, arr.shape))
+
+
 class RoIHeads(torch.nn.Module):
     __annotations__ = {
         'box_coder': det_utils.BoxCoder,
@@ -505,6 +556,7 @@ class RoIHeads(torch.nn.Module):
                  mask_roi_pool=None,
                  mask_head=None,
                  mask_predictor=None,
+                 # Keypoints
                  keypoint_roi_pool=None,
                  keypoint_head=None,
                  keypoint_predictor=None,
@@ -619,18 +671,37 @@ class RoIHeads(torch.nn.Module):
 
     def check_targets(self, targets):
         # type: (Optional[List[Dict[str, Tensor]]]) -> None
-        assert targets is not None
-        assert all(["boxes" in t for t in targets])
-        assert all(["labels" in t for t in targets])
-        if self.has_mask():
-            assert all(["masks" in t for t in targets])
+        """
+        Check that the training targets contain the necessary Tensors with
+        correct shape and dtype.
+
+        Args:
+            targets (List[Dict[str, Tensor]]): ground-truth boxes present in
+                the images.
+
+        Raises:
+            ValueError if targets fails a check.
+        """
+        # TODO: https://github.com/pytorch/pytorch/issues/26731
+        floating_point_types = [torch.float, torch.double, torch.half]
+
+        if targets is None:
+            raise ValueError("In training mode, targets should be passed")
+
+        for t in targets:
+            _check_target_item(t, "boxes", floating_point_types, [None, 4], shape_string="[N, 4]")
+            N = t["boxes"].shape[0] # must match for labels, masks and keypoints
+            _check_target_item(t, "labels", [torch.int64], [N], shape_string="[N,]")
+            if self.has_mask():
+                _check_target_item(t, "masks", [torch.uint8], [N, None, None], shape_string="[N, H, W]")
+            if self.has_keypoint():
+                _check_target_item(t, "keypoints", floating_point_types, [N, None, 3], shape_string="[N, K, 3]")
 
     def select_training_samples(self,
                                 proposals,  # type: List[Tensor]
                                 targets     # type: Optional[List[Dict[str, Tensor]]]
                                 ):
         # type: (...) -> Tuple[List[Tensor], List[Tensor], List[Tensor], List[Tensor]]
-        self.check_targets(targets)
         assert targets is not None
         dtype = proposals[0].dtype
         device = proposals[0].device
@@ -733,16 +804,8 @@ class RoIHeads(torch.nn.Module):
             image_shapes (List[Tuple[H, W]])
             targets (List[Dict])
         """
-        if targets is not None:
-            for t in targets:
-                # TODO: https://github.com/pytorch/pytorch/issues/26731
-                floating_point_types = (torch.float, torch.double, torch.half)
-                assert t["boxes"].dtype in floating_point_types, 'target boxes must of float type'
-                assert t["labels"].dtype == torch.int64, 'target labels must of int64 type'
-                if self.has_keypoint():
-                    assert t["keypoints"].dtype == torch.float32, 'target keypoints must of float type'
-
         if self.training:
+            self.check_targets(targets)
             proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)
         else:
             labels = None
