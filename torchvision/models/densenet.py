@@ -121,7 +121,7 @@ class _DenseBlock(nn.ModuleDict):
             )
             self.add_module('denselayer%d' % (i + 1), layer)
 
-    def forward(self, init_features):
+    def forward(self, init_features: Tensor) -> Tensor:
         features = [init_features]
         for name, layer in self.items():
             new_features = layer(features)
