@@ -318,8 +318,8 @@ class ModelTester(TestCase):
         model = models.Inception3(**kwargs)
         model.aux_logits = False
         model.AuxLogits = None
-        m = torch.jit.script(model.eval())
-        self.checkModule(m, "inception_v3", torch.rand(1, 3, 299, 299))
+        model = model.eval()
+        self.checkModule(model, "inception_v3", [torch.rand(1, 3, 299, 299)])
 
     def test_fasterrcnn_double(self):
         model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
@@ -345,8 +345,8 @@ class ModelTester(TestCase):
         model.aux_logits = False
         model.aux1 = None
         model.aux2 = None
-        m = torch.jit.script(model.eval())
-        self.checkModule(m, "googlenet", torch.rand(1, 3, 224, 224))
+        model = model.eval()
+        self.checkModule(model, "googlenet", [torch.rand(1, 3, 224, 224)])
 
     @unittest.skipIf(not torch.cuda.is_available(), 'needs GPU')
     def test_fasterrcnn_switch_devices(self):

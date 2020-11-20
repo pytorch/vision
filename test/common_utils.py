@@ -291,7 +291,7 @@ class TestCase(unittest.TestCase):
             if unwrapper:
                 script_out = unwrapper(script_out)
 
-        self.assertEqual(eager_out, script_out)
+        self.assertEqual(eager_out, script_out, prec=1e-4)
         self.assertExportImportModule(sm, args)
 
         return sm
