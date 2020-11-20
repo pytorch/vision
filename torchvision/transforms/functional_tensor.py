@@ -851,7 +851,7 @@ def _assert_grid_transform_inputs(
     if coeffs is not None and len(coeffs) != 8:
         raise ValueError("Argument coeffs should have 8 float values")
 
-    if fill is not None:
+    if fill is not None and not (isinstance(fill, (int, float)) and fill == 0):
         warnings.warn("Argument fill is not supported for Tensor input. Fill value is zero")
 
     if interpolation not in supported_interpolation_modes:

@@ -1494,6 +1494,11 @@ class Tester(unittest.TestCase):
             t = transforms.RandomRotation((-10, 10), resample=2)
             self.assertEqual(t.interpolation, transforms.InterpolationModes.BILINEAR)
 
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+            t = transforms.RandomRotation((-10, 10), interpolation=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationModes.BILINEAR)
+
     def test_random_affine(self):
 
         with self.assertRaises(ValueError):
@@ -1545,6 +1550,12 @@ class Tester(unittest.TestCase):
         with self.assertWarnsRegex(UserWarning, r"Argument fillcolor is deprecated and will be removed"):
             t = transforms.RandomAffine(10, fillcolor=10)
             self.assertEqual(t.fill, 10)
+
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+            t = transforms.RandomAffine(10, interpolation=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationModes.BILINEAR)
+
 
     def test_to_grayscale(self):
         """Unit tests for grayscale transform"""

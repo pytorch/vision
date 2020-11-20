@@ -392,7 +392,7 @@ class Tester(TransformsTester):
                         resized_tensor.size()[1:], resized_pil_img.size[::-1], msg="{}, {}".format(size, interpolation)
                     )
 
-                    if interpolation != NEAREST:
+                    if interpolation not in [NEAREST, ]:
                         # We can not check values if mode = NEAREST, as results are different
                         # E.g. resized_tensor  = [[a, a, b, c, d, d, e, ...]]
                         # E.g. resized_pil_img = [[a, b, c, c, d, e, f, ...]]
@@ -410,6 +410,11 @@ class Tester(TransformsTester):
                         script_size = [size, ]
                     else:
                         script_size = size
+
+                    # skip test if interpolation is int
+                    if isinstance(interpolation, int):
+                        continue
+
                     resize_result = script_fn(tensor, size=script_size, interpolation=interpolation)
                     self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
 
@@ -417,10 +422,17 @@ class Tester(TransformsTester):
                         batch_tensors, F.resize, size=script_size, interpolation=interpolation
                     )
 
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+            res1 = F.resize(tensor, size=32, interpolation=2)
+            res2 = F.resize(tensor, size=32, interpolation=BILINEAR)
+            self.assertTrue(res1.equal(res2))
+
     def test_resized_crop(self):
         # test values of F.resized_crop in several cases:
         # 1) resize to the same size, crop to the same size => should be identity
         tensor, _ = self._create_data(26, 36, device=self.device)
+
         for mode in [NEAREST, BILINEAR, BICUBIC]:
             out_tensor = F.resized_crop(tensor, top=0, left=0, height=26, width=36, size=[26, 36], interpolation=mode)
             self.assertTrue(tensor.equal(out_tensor), msg="{} vs {}".format(out_tensor[0, :5, :5], tensor[0, :5, :5]))
@@ -617,6 +629,12 @@ class Tester(TransformsTester):
             res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
             self.assertTrue(res1.equal(res2))
 
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+            res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=2)
+            res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
+            self.assertTrue(res1.equal(res2))
+
         with self.assertWarnsRegex(UserWarning, r"Argument fillcolor is deprecated and will be removed"):
             res1 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fillcolor=10)
             res2 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fill=10)
@@ -699,6 +717,12 @@ class Tester(TransformsTester):
             res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
             self.assertTrue(res1.equal(res2))
 
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+            res1 = F.rotate(tensor, 45, interpolation=2)
+            res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
+            self.assertTrue(res1.equal(res2))
+
     def _test_perspective(self, tensor, pil_img, scripted_transform, test_configs):
         dt = tensor.dtype
         for r in [NEAREST, ]:
@@ -764,6 +788,14 @@ class Tester(TransformsTester):
                     self._test_fn_on_batch(
                         batch_tensors, F.perspective, startpoints=spoints, endpoints=epoints, interpolation=NEAREST
                     )
+
+        # assert changed type warning
+        spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
+        epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+            res1 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=2)
+            res2 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=BILINEAR)
+            self.assertTrue(res1.equal(res2))
 
     def test_gaussian_blur(self):
         small_image_tensor = torch.from_numpy(
