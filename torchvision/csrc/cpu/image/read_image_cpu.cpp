@@ -1,7 +1,8 @@
 #include "read_image_cpu.h"
-#include <cstring>
+#include "readjpeg_cpu.h"
+#include "readpng_cpu.h"
 
-torch::Tensor decode_image(const torch::Tensor& data) {
+torch::Tensor decode_image(const torch::Tensor& data, ImageReadMode mode) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
@@ -15,9 +16,9 @@ torch::Tensor decode_image(const torch::Tensor& data) {
   const uint8_t png_signature[4] = {137, 80, 78, 71}; // == "\211PNG"
 
   if (memcmp(jpeg_signature, datap, 3) == 0) {
-    return decodeJPEG(data);
+    return decodeJPEG(data, mode);
   } else if (memcmp(png_signature, datap, 4) == 0) {
-    return decodePNG(data);
+    return decodePNG(data, mode);
   } else {
     TORCH_CHECK(
         false,
