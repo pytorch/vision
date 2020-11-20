@@ -134,11 +134,12 @@ def save_image(
     im.save(fp, format=format)
 
 
+@torch.no_grad()
 def draw_bounding_boxes(
     image: torch.Tensor,
     boxes: torch.Tensor,
-    colors: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
+    colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
     width: int = 1,
     font: Optional[ImageFont] = None
 ) -> torch.Tensor:
@@ -149,9 +150,12 @@ def draw_bounding_boxes(
 
     Args:
         image (Tensor): Tensor of shape (C x H x W)
-        bboxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format.
-        colors (List): List containing the colors of bounding boxes excluding background.
-        labels (List): List containing the labels of bounding boxes excluding background.
+        bboxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
+            the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
+            `0 <= ymin < ymax < H`.
+        labels (List[str]): List containing the labels of bounding boxes.
+        colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of bounding boxes. The colors can
+            be represented as `str` or `Tuple[int, int, int]`.
         width (int): Width of bounding box.
         font (ImageFont): The PIL ImageFont object used to for drawing the labels.
     """
@@ -162,11 +166,6 @@ def draw_bounding_boxes(
         raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
     elif image.dim() != 3:
         raise ValueError("Pass individual images, not batches")
-
-    if image.requires_grad:
-        image = image.detach()
-    if boxes.requires_grad:
-        boxes = boxes.detach()
 
     ndarr = image.permute(1, 2, 0).numpy()
     img_to_draw = Image.fromarray(ndarr)
