@@ -411,10 +411,6 @@ class Tester(TransformsTester):
                     else:
                         script_size = size
 
-                    # skip test if interpolation is int
-                    if isinstance(interpolation, int):
-                        continue
-
                     resize_result = script_fn(tensor, size=script_size, interpolation=interpolation)
                     self.assertTrue(resized_tensor.equal(resize_result), msg="{}, {}".format(size, interpolation))
 
