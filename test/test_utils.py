@@ -80,7 +80,7 @@ class Tester(unittest.TestCase):
                             'Pixel Image not stored in file object')
 
     def test_draw_boxes(self):
-        img = torch.rand(3, 226, 226, dtype=torch.uint8)
+        img = torch.randint(0, 255, (3, 226, 226), dtype=torch.uint8)
         boxes = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0],
                              [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
         labels = ['a', 'b', 'c', 'd']
