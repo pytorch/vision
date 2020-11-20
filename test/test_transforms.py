@@ -1564,7 +1564,6 @@ class Tester(unittest.TestCase):
             t = transforms.RandomAffine(10, interpolation=2)
             self.assertEqual(t.interpolation, transforms.InterpolationModes.BILINEAR)
 
-
     def test_to_grayscale(self):
         """Unit tests for grayscale transform"""
 
