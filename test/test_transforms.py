@@ -24,7 +24,7 @@ from common_utils import cycle_over, int_dtypes, float_dtypes
 
 
 GRACE_HOPPER = get_file_path_2(
-    os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
+    os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
 
 
 class Tester(unittest.TestCase):
@@ -987,19 +987,27 @@ class Tester(unittest.TestCase):
                 self.assertTrue(np.allclose(img_data, img))
 
     def test_tensor_bad_types_to_pil_image(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, r'pic should be 2/3 dimensional. Got \d+ dimensions.'):
             transforms.ToPILImage()(torch.ones(1, 3, 4, 4))
+        with self.assertRaisesRegex(ValueError, r'pic should not have > 4 channels. Got \d+ channels.'):
+            transforms.ToPILImage()(torch.ones(6, 4, 4))
 
     def test_ndarray_bad_types_to_pil_image(self):
         trans = transforms.ToPILImage()
-        with self.assertRaises(TypeError):
+        reg_msg = r'Input type \w+ is not supported'
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.int64))
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.uint16))
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.uint32))
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.float64))
 
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, r'pic should be 2/3 dimensional. Got \d+ dimensions.'):
             transforms.ToPILImage()(np.ones([1, 4, 4, 3]))
+        with self.assertRaisesRegex(ValueError, r'pic should not have > 4 channels. Got \d+ channels.'):
+            transforms.ToPILImage()(np.ones([4, 4, 6]))
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_vertical_flip(self):
