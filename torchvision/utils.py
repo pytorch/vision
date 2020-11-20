@@ -4,7 +4,7 @@ import torch
 import math
 import numpy as np
 from PIL import Image, ImageDraw
-from PIL.ImageFont import ImageFont
+from PIL import ImageFont
 
 __all__ = ["make_grid", "save_image", "draw_bounding_boxes"]
 
@@ -141,7 +141,8 @@ def draw_bounding_boxes(
     labels: Optional[List[str]] = None,
     colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
     width: int = 1,
-    font: Optional[ImageFont] = None
+    font: Optional[str] = None,
+    font_size: int = 10
 ) -> torch.Tensor:
 
     """
@@ -157,7 +158,10 @@ def draw_bounding_boxes(
         colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of bounding boxes. The colors can
             be represented as `str` or `Tuple[int, int, int]`.
         width (int): Width of bounding box.
-        font (ImageFont): The PIL ImageFont object used to for drawing the labels.
+        font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
+            also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
+            `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
+        font_size (int): The requested font size in points.
     """
 
     if not isinstance(image, torch.Tensor):
@@ -179,6 +183,7 @@ def draw_bounding_boxes(
         draw.rectangle(bbox, width=width, outline=color)
 
         if labels is not None:
-            draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=font)
+            txt_font = None if font is None else ImageFont.truetype(font=font, size=font_size)
+            draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
 
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)

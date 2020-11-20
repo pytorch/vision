@@ -6,8 +6,9 @@ import torchvision.utils as utils
 import unittest
 from io import BytesIO
 import torchvision.transforms.functional as F
-from PIL import Image, ImageDraw
-
+from torchvision.io.image import read_image
+from PIL import Image
+from common_utils import set_rng_seed
 
 class Tester(unittest.TestCase):
 
@@ -80,13 +81,20 @@ class Tester(unittest.TestCase):
                             'Pixel Image not stored in file object')
 
     def test_draw_boxes(self):
+        set_rng_seed(0)
         img = torch.randint(0, 255, (3, 100, 100), dtype=torch.uint8)
         boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0],
                              [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
         labels = ["a", "b", "c", "d"]
         colors = ["green", "#FF00FF", (0, 255, 0), "red"]
-        result = utils.draw_bounding_boxes(img, boxes, labels=labels, colors=colors)
-        #Image.fromarray(result.permute(1, 2, 0).numpy()).show()
+        result = utils.draw_bounding_boxes(img, boxes, labels=labels, colors=colors, font="Arial.ttf", font_size=10)
+
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_util.png")
+        if not os.path.exists(path):
+            Image.fromarray(result.permute(1, 2, 0).numpy()).save(path)
+
+        expected = read_image(path)
+        self.assertTrue(torch.equal(result, expected))
 
 
 if __name__ == '__main__':
