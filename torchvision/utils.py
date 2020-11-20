@@ -1,10 +1,10 @@
-from typing import Union, Optional, List, Tuple, Text, BinaryIO, Dict
-import io
+from typing import Union, Optional, List, Tuple, Text, BinaryIO
 import pathlib
 import torch
 import math
 import numpy as np
 from PIL import Image, ImageDraw
+from PIL.ImageFont import ImageFont
 
 __all__ = ["make_grid", "save_image", "draw_bounding_boxes"]
 
@@ -137,59 +137,49 @@ def save_image(
 def draw_bounding_boxes(
     image: torch.Tensor,
     boxes: torch.Tensor,
-    labels: torch.Tensor,
-    label_names: List[str] = None,
-    colors: Dict[int, str] = None,
-    width: int = 1
+    colors: Optional[List[str]] = None,
+    labels: Optional[List[str]] = None,
+    width: int = 1,
+    font: Optional[ImageFont] = None
 ) -> torch.Tensor:
 
     """
     Draws bounding boxes on given image.
+    The values of the input image should be uint8 between 0 and 255.
 
     Args:
-        image (Tensor): Tensor of shape (C x H x W) or (1 x C x H x W)
+        image (Tensor): Tensor of shape (C x H x W)
         bboxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format.
-        labels (Tensor): Tensor of size (N) Labels for each bounding boxes.
-        label_names (List): List containing labels excluding background.
-        colors (dict): Dict with key as label id and value as color name.
+        colors (List): List containing the colors of bounding boxes excluding background.
+        labels (List): List containing the labels of bounding boxes excluding background.
         width (int): Width of bounding box.
+        font (ImageFont): The PIL ImageFont object used to for drawing the labels.
     """
 
     if not isinstance(image, torch.Tensor):
-        raise TypeError(f'tensor expected, got {type(image)}')
+        raise TypeError(f"Tensor expected, got {type(image)}")
+    elif image.dtype != torch.uint8:
+        raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
+    elif image.dim() != 3:
+        raise ValueError("Pass individual images, not batches")
 
-    if image.dim() == 4:
-        if image.shape[0] == 1:
-            image = image.squeeze(0)
-        else:
-            raise ValueError("Batch size > 1 is not supported. Pass images with batch size 1 only")
-
-    # if label_names is not None:
-    #     # Since for our detection models class 0 is background
-    #     label_names.insert(0, "__background__")
-
-    # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
-    ndarr = image.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
-
-    # Neceassary check to remove grad if present
+    if image.requires_grad:
+        image = image.detach()
     if boxes.requires_grad:
         boxes = boxes.detach()
 
-    boxes = boxes.to(torch.int64).tolist()
-    labels = labels.to(torch.int64).tolist()
-
+    ndarr = image.permute(1, 2, 0).numpy()
     img_to_draw = Image.fromarray(ndarr)
+
+    img_boxes = boxes.to(torch.int64).tolist()
+
     draw = ImageDraw.Draw(img_to_draw)
 
-    for bbox, label in zip(boxes, labels):
-        if colors is None:
-            draw.rectangle(bbox, width=width)
-        else:
-            draw.rectangle(bbox, width=width, outline=colors[label])
+    for i, bbox in enumerate(img_boxes):
+        color = None if colors is None else colors[i]
+        draw.rectangle(bbox, width=width, outline=color)
 
-        if label_names is None:
-            draw.text((bbox[0], bbox[1]), str(label))
-        else:
-            draw.text((bbox[0], bbox[1]), label_names[int(label)])
+        if labels is not None:
+            draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=font)
 
-    return torch.from_numpy(np.array(img_to_draw))
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)
