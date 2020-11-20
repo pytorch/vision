@@ -38,44 +38,16 @@ def get_available_video_models():
     return [k for k, v in models.video.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
 
 
-# models that are in torch hub, as well as r3d_18. we tried testing all models
-# but the test was too slow. not included are detection models, because
-# they are not yet supported in JIT.
 # If 'unwrapper' is provided it will be called with the script model outputs
 # before they are compared to the eager model outputs. This is useful if the
 # model outputs are different between TorchScript / Eager mode
-script_test_models = {
-    'deeplabv3_resnet50': {},
-    'deeplabv3_resnet101': {},
-    'mobilenet_v2': {},
-    'resnext50_32x4d': {},
-    'fcn_resnet50': {},
-    'fcn_resnet101': {},
-    'googlenet': {
-        'unwrapper': lambda x: x.logits
-    },
-    'densenet121': {},
-    'resnet18': {},
-    'alexnet': {},
-    'shufflenet_v2_x1_0': {},
-    'squeezenet1_0': {},
-    'vgg11': {},
-    'inception_v3': {
-        'unwrapper': lambda x: x.logits
-    },
-    'r3d_18': {},
-    "fasterrcnn_resnet50_fpn": {
-        'unwrapper': lambda x: x[1]
-    },
-    "maskrcnn_resnet50_fpn": {
-        'unwrapper': lambda x: x[1]
-    },
-    "keypointrcnn_resnet50_fpn": {
-        'unwrapper': lambda x: x[1]
-    },
-    "retinanet_resnet50_fpn": {
-        'unwrapper': lambda x: x[1]
-    }
+script_model_unwrapper = {
+    'googlenet': lambda x: x.logits,
+    'inception_v3': lambda x: x.logits,
+    "fasterrcnn_resnet50_fpn": lambda x: x[1],
+    "maskrcnn_resnet50_fpn": lambda x: x[1],
+    "keypointrcnn_resnet50_fpn": lambda x: x[1],
+    "retinanet_resnet50_fpn": lambda x: x[1],
 }
 
 
@@ -97,12 +69,6 @@ autocast_flaky_numerics = (
 
 
 class ModelTester(TestCase):
-    def checkModule(self, model, name, args):
-        if name not in script_test_models:
-            return
-        unwrapper = script_test_models[name].get('unwrapper', None)
-        return super(ModelTester, self).checkModule(model, args, unwrapper=unwrapper, skip=False)
-
     def _test_classification_model(self, name, input_shape, dev):
         set_rng_seed(0)
         # passing num_class equal to a number other than 1000 helps in making the test
@@ -114,7 +80,7 @@ class ModelTester(TestCase):
         out = model(x)
         self.assertExpected(out.cpu(), prec=0.1, strip_suffix="_" + dev)
         self.assertEqual(out.shape[-1], 50)
-        self.checkModule(model, name, (x,))
+        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
         if dev == "cuda":
             with torch.cuda.amp.autocast():
@@ -134,7 +100,7 @@ class ModelTester(TestCase):
         x = torch.rand(input_shape).to(device=dev)
         out = model(x)
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
-        self.checkModule(model, name, (x,))
+        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
         if dev == "cuda":
             with torch.cuda.amp.autocast():
@@ -209,18 +175,7 @@ class ModelTester(TestCase):
             return True  # Full validation performed
 
         full_validation = check_out(out)
-
-        scripted_model = torch.jit.script(model)
-        scripted_model.eval()
-        scripted_out = scripted_model(model_input)[1]
-        self.assertEqual(scripted_out[0]["boxes"], out[0]["boxes"])
-        self.assertEqual(scripted_out[0]["scores"], out[0]["scores"])
-        # labels currently float in script: need to investigate (though same result)
-        self.assertEqual(scripted_out[0]["labels"].to(dtype=torch.long), out[0]["labels"])
-        # don't check script because we are compiling it here:
-        # TODO: refactor tests
-        # self.check_script(model, name)
-        self.checkModule(model, name, ([x],))
+        self.check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(name, None))
 
         if dev == "cuda":
             with torch.cuda.amp.autocast():
@@ -270,7 +225,7 @@ class ModelTester(TestCase):
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         out = model(x)
-        self.checkModule(model, name, (x,))
+        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
         self.assertEqual(out.shape[-1], 50)
 
         if dev == "cuda":
@@ -345,11 +300,13 @@ class ModelTester(TestCase):
         kwargs['transform_input'] = True
         kwargs['aux_logits'] = True
         kwargs['init_weights'] = False
+        name = "inception_v3"
         model = models.Inception3(**kwargs)
         model.aux_logits = False
         model.AuxLogits = None
-        m = torch.jit.script(model.eval())
-        self.checkModule(m, "inception_v3", torch.rand(1, 3, 299, 299))
+        model = model.eval()
+        x = torch.rand(1, 3, 299, 299)
+        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
     def test_fasterrcnn_double(self):
         model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
@@ -371,12 +328,14 @@ class ModelTester(TestCase):
         kwargs['transform_input'] = True
         kwargs['aux_logits'] = True
         kwargs['init_weights'] = False
+        name = "googlenet"
         model = models.GoogLeNet(**kwargs)
         model.aux_logits = False
         model.aux1 = None
         model.aux2 = None
-        m = torch.jit.script(model.eval())
-        self.checkModule(m, "googlenet", torch.rand(1, 3, 224, 224))
+        model = model.eval()
+        x = torch.rand(1, 3, 224, 224)
+        self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
     @unittest.skipIf(not torch.cuda.is_available(), 'needs GPU')
     def test_fasterrcnn_switch_devices(self):
