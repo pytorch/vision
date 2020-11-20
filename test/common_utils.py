@@ -265,14 +265,14 @@ class TestCase(unittest.TestCase):
         else:
             super(TestCase, self).assertEqual(x, y, message)
 
-    def checkModule(self, nn_module, args, unwrapper=None, skip=False):
+    def check_jit_scriptable(self, nn_module, args, unwrapper=None, skip=False):
         """
         Check that a nn.Module's results in TorchScript match eager and that it
         can be exported
         """
         if not TEST_WITH_SLOW or skip:
             # TorchScript is not enabled, skip these tests
-            msg = "The checkModule test for {} was skipped. " \
+            msg = "The check_jit_scriptable test for {} was skipped. " \
                   "This test checks if the module's results in TorchScript " \
                   "match eager and that it can be exported. To run these " \
                   "tests make sure you set the environment variable " \
