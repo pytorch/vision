@@ -41,7 +41,7 @@ class RetinaNetHead(nn.Module):
         num_classes (int): number of classes to be predicted
     """
 
-    def __init__(self, in_channels, num_anchors, num_classes):
+    def __init__(self, in_channels, num_anchors, num_classes) -> None:
         super().__init__()
         self.classification_head = RetinaNetClassificationHead(in_channels, num_anchors, num_classes)
         self.regression_head = RetinaNetRegressionHead(in_channels, num_anchors)
@@ -71,7 +71,7 @@ class RetinaNetClassificationHead(nn.Module):
         num_classes (int): number of classes to be predicted
     """
 
-    def __init__(self, in_channels, num_anchors, num_classes, prior_probability=0.01):
+    def __init__(self, in_channels, num_anchors, num_classes, prior_probability=0.01) -> None:
         super().__init__()
 
         conv = []
@@ -163,7 +163,7 @@ class RetinaNetRegressionHead(nn.Module):
         'box_coder': det_utils.BoxCoder,
     }
 
-    def __init__(self, in_channels, num_anchors):
+    def __init__(self, in_channels, num_anchors) -> None:
         super().__init__()
 
         conv = []
@@ -342,7 +342,7 @@ class RetinaNet(nn.Module):
                  nms_thresh=0.5,
                  detections_per_img=300,
                  fg_iou_thresh=0.5, bg_iou_thresh=0.4,
-                 topk_candidates=1000):
+                 topk_candidates=1000) -> None:
         super().__init__()
 
         if not hasattr(backbone, "out_channels"):

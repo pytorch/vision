@@ -27,7 +27,7 @@ class DeepLabV3(_SimpleSegmentationModel):
 
 
 class DeepLabHead(nn.Sequential):
-    def __init__(self, in_channels, num_classes):
+    def __init__(self, in_channels, num_classes) -> None:
         super(DeepLabHead, self).__init__(
             ASPP(in_channels, [12, 24, 36]),
             nn.Conv2d(256, 256, 3, padding=1, bias=False),
@@ -38,7 +38,7 @@ class DeepLabHead(nn.Sequential):
 
 
 class ASPPConv(nn.Sequential):
-    def __init__(self, in_channels, out_channels, dilation):
+    def __init__(self, in_channels, out_channels, dilation) -> None:
         modules = [
             nn.Conv2d(in_channels, out_channels, 3, padding=dilation, dilation=dilation, bias=False),
             nn.BatchNorm2d(out_channels),
@@ -48,7 +48,7 @@ class ASPPConv(nn.Sequential):
 
 
 class ASPPPooling(nn.Sequential):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels) -> None:
         super(ASPPPooling, self).__init__(
             nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(in_channels, out_channels, 1, bias=False),
@@ -63,7 +63,7 @@ class ASPPPooling(nn.Sequential):
 
 
 class ASPP(nn.Module):
-    def __init__(self, in_channels, atrous_rates, out_channels=256):
+    def __init__(self, in_channels, atrous_rates, out_channels=256) -> None:
         super(ASPP, self).__init__()
         modules = []
         modules.append(nn.Sequential(

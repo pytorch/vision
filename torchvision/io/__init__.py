@@ -93,7 +93,7 @@ class VideoReader:
             Currently available options include ``['video', 'audio']``
     """
 
-    def __init__(self, path, stream="video"):
+    def __init__(self, path, stream="video") -> None:
         if not _has_video_opt():
             raise RuntimeError(
                 "Not compiled with video_reader support, "

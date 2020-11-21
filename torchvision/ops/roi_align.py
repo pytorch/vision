@@ -63,7 +63,7 @@ class RoIAlign(nn.Module):
         spatial_scale: float,
         sampling_ratio: int,
         aligned: bool = False,
-    ):
+    ) -> None:
         super(RoIAlign, self).__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale

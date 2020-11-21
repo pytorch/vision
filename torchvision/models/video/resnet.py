@@ -19,7 +19,7 @@ class Conv3DSimple(nn.Conv3d):
                  out_planes,
                  midplanes=None,
                  stride=1,
-                 padding=1):
+                 padding=1) -> None:
 
         super(Conv3DSimple, self).__init__(
             in_channels=in_planes,
@@ -41,7 +41,7 @@ class Conv2Plus1D(nn.Sequential):
                  out_planes,
                  midplanes,
                  stride=1,
-                 padding=1):
+                 padding=1) -> None:
         super(Conv2Plus1D, self).__init__(
             nn.Conv3d(in_planes, midplanes, kernel_size=(1, 3, 3),
                       stride=(1, stride, stride), padding=(0, padding, padding),
@@ -64,7 +64,7 @@ class Conv3DNoTemporal(nn.Conv3d):
                  out_planes,
                  midplanes=None,
                  stride=1,
-                 padding=1):
+                 padding=1) -> None:
 
         super(Conv3DNoTemporal, self).__init__(
             in_channels=in_planes,
@@ -83,7 +83,7 @@ class BasicBlock(nn.Module):
 
     expansion = 1
 
-    def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None):
+    def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None) -> None:
         midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
 
         super(BasicBlock, self).__init__()
@@ -117,7 +117,7 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None):
+    def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None) -> None:
 
         super(Bottleneck, self).__init__()
         midplanes = (inplanes * planes * 3 * 3 * 3) // (inplanes * 3 * 3 + 3 * planes)
@@ -163,7 +163,7 @@ class Bottleneck(nn.Module):
 class BasicStem(nn.Sequential):
     """The default conv-batchnorm-relu stem
     """
-    def __init__(self):
+    def __init__(self) -> None:
         super(BasicStem, self).__init__(
             nn.Conv3d(3, 64, kernel_size=(3, 7, 7), stride=(1, 2, 2),
                       padding=(1, 3, 3), bias=False),
@@ -174,7 +174,7 @@ class BasicStem(nn.Sequential):
 class R2Plus1dStem(nn.Sequential):
     """R(2+1)D stem is different than the default one as it uses separated 3D convolution
     """
-    def __init__(self):
+    def __init__(self) -> None:
         super(R2Plus1dStem, self).__init__(
             nn.Conv3d(3, 45, kernel_size=(1, 7, 7),
                       stride=(1, 2, 2), padding=(0, 3, 3),
@@ -192,7 +192,7 @@ class VideoResNet(nn.Module):
 
     def __init__(self, block, conv_makers, layers,
                  stem, num_classes=400,
-                 zero_init_residual=False):
+                 zero_init_residual=False) -> None:
         """Generic resnet video generator.
 
         Args:

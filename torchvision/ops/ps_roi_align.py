@@ -61,7 +61,7 @@ class PSRoIAlign(nn.Module):
         output_size: int,
         spatial_scale: float,
         sampling_ratio: int,
-    ):
+    ) -> None:
         super(PSRoIAlign, self).__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale

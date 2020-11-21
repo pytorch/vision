@@ -34,7 +34,7 @@ class GroupedBatchSampler(BatchSampler):
             0, i.e. they must be in the range [0, num_groups).
         batch_size (int): Size of mini-batch.
     """
-    def __init__(self, sampler, group_ids, batch_size):
+    def __init__(self, sampler, group_ids, batch_size) -> None:
         if not isinstance(sampler, Sampler):
             raise ValueError(
                 "sampler should be an instance of "
@@ -93,7 +93,7 @@ def _compute_aspect_ratios_slow(dataset, indices=None):
         indices = range(len(dataset))
 
     class SubsetSampler(Sampler):
-        def __init__(self, indices):
+        def __init__(self, indices) -> None:
             self.indices = indices
 
         def __iter__(self):

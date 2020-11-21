@@ -67,7 +67,7 @@ class GeneralizedRCNNTransform(nn.Module):
     It returns a ImageList for the inputs, and a List[Dict[Tensor]] for the targets
     """
 
-    def __init__(self, min_size, max_size, image_mean, image_std):
+    def __init__(self, min_size, max_size, image_mean, image_std) -> None:
         super(GeneralizedRCNNTransform, self).__init__()
         if not isinstance(min_size, (list, tuple)):
             min_size = (min_size,)

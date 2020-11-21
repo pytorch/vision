@@ -15,7 +15,7 @@ from torch.jit.annotations import List, Optional, Tuple
 
 
 class Conv2d(torch.nn.Conv2d):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         warnings.warn(
             "torchvision.ops.misc.Conv2d is deprecated and will be "
@@ -23,7 +23,7 @@ class Conv2d(torch.nn.Conv2d):
 
 
 class ConvTranspose2d(torch.nn.ConvTranspose2d):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         warnings.warn(
             "torchvision.ops.misc.ConvTranspose2d is deprecated and will be "
@@ -31,7 +31,7 @@ class ConvTranspose2d(torch.nn.ConvTranspose2d):
 
 
 class BatchNorm2d(torch.nn.BatchNorm2d):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         warnings.warn(
             "torchvision.ops.misc.BatchNorm2d is deprecated and will be "
@@ -53,7 +53,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
         num_features: int,
         eps: float = 1e-5,
         n: Optional[int] = None,
-    ):
+    ) -> None:
         # n=None for backward-compatibility
         if n is not None:
             warnings.warn("`n` argument is deprecated and has been renamed `num_features`",

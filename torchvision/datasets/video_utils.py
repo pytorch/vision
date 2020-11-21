@@ -55,7 +55,7 @@ class _VideoTimestampsDataset(object):
     pickled when forking.
     """
 
-    def __init__(self, video_paths: List[str]):
+    def __init__(self, video_paths: List[str]) -> None:
         self.video_paths = video_paths
 
     def __len__(self):
@@ -105,7 +105,7 @@ class VideoClips(object):
         _video_max_dimension=0,
         _audio_samples=0,
         _audio_channels=0,
-    ):
+    ) -> None:
 
         self.video_paths = video_paths
         self.num_workers = num_workers

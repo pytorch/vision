@@ -79,7 +79,7 @@ class ONNXExporterTester(unittest.TestCase):
     @unittest.skip("Disable test until Split w/ zero sizes is implemented in ORT")
     def test_new_empty_tensor(self):
         class Module(torch.nn.Module):
-            def __init__(self):
+            def __init__(self) -> None:
                 super(Module, self).__init__()
                 self.conv2 = ops.misc.ConvTranspose2d(16, 33, (3, 5))
 
@@ -160,7 +160,7 @@ class ONNXExporterTester(unittest.TestCase):
 
     def test_resize_images(self):
         class TransformModule(torch.nn.Module):
-            def __init__(self_module):
+            def __init__(self_module) -> None:
                 super(TransformModule, self_module).__init__()
                 self_module.transform = self._init_test_generalized_rcnn_transform()
 
@@ -175,7 +175,7 @@ class ONNXExporterTester(unittest.TestCase):
     def test_transform_images(self):
 
         class TransformModule(torch.nn.Module):
-            def __init__(self_module):
+            def __init__(self_module) -> None:
                 super(TransformModule, self_module).__init__()
                 self_module.transform = self._init_test_generalized_rcnn_transform()
 
@@ -266,7 +266,7 @@ class ONNXExporterTester(unittest.TestCase):
 
     def test_rpn(self):
         class RPNModule(torch.nn.Module):
-            def __init__(self_module):
+            def __init__(self_module) -> None:
                 super(RPNModule, self_module).__init__()
                 self_module.rpn = self._init_test_rpn()
 
@@ -292,7 +292,7 @@ class ONNXExporterTester(unittest.TestCase):
     def test_multi_scale_roi_align(self):
 
         class TransformModule(torch.nn.Module):
-            def __init__(self):
+            def __init__(self) -> None:
                 super(TransformModule, self).__init__()
                 self.model = ops.MultiScaleRoIAlign(['feat1', 'feat2'], 3, 2)
                 self.image_sizes = [(512, 512)]
@@ -316,7 +316,7 @@ class ONNXExporterTester(unittest.TestCase):
 
     def test_roi_heads(self):
         class RoiHeadsModule(torch.nn.Module):
-            def __init__(self_module):
+            def __init__(self_module) -> None:
                 super(RoiHeadsModule, self_module).__init__()
                 self_module.transform = self._init_test_generalized_rcnn_transform()
                 self_module.rpn = self._init_test_rpn()

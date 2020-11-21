@@ -15,7 +15,7 @@ def _flip_coco_person_keypoints(kps, width):
 
 
 class Compose(object):
-    def __init__(self, transforms):
+    def __init__(self, transforms) -> None:
         self.transforms = transforms
 
     def __call__(self, image, target):
@@ -25,7 +25,7 @@ class Compose(object):
 
 
 class RandomHorizontalFlip(object):
-    def __init__(self, prob):
+    def __init__(self, prob) -> None:
         self.prob = prob
 
     def __call__(self, image, target):

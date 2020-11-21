@@ -65,7 +65,7 @@ class Timebase(object):
         self,
         numerator,  # type: int
         denominator,  # type: int
-    ):
+    ) -> None:
         # type: (...) -> None
         self.numerator = numerator
         self.denominator = denominator
@@ -93,7 +93,7 @@ class VideoMetaData(object):
         "audio_sample_rate",
     ]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.has_video = False
         self.video_timebase = Timebase(0, 1)
         self.video_duration = 0.0

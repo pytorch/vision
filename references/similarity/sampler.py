@@ -40,7 +40,7 @@ class PKSampler(Sampler):
         k (int): Number of samples for each label/group in a batch
     """
 
-    def __init__(self, groups, p, k):
+    def __init__(self, groups, p, k) -> None:
         self.p = p
         self.k = k
         self.groups = create_groups(groups, self.k)

@@ -118,7 +118,7 @@ class DeformConv2d(nn.Module):
         dilation: int = 1,
         groups: int = 1,
         bias: bool = True,
-    ):
+    ) -> None:
         super(DeformConv2d, self).__init__()
 
         if in_channels % groups != 0:

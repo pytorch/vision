@@ -47,7 +47,7 @@ class RoIPool(nn.Module):
     """
     See roi_pool
     """
-    def __init__(self, output_size: BroadcastingList2[int], spatial_scale: float):
+    def __init__(self, output_size: BroadcastingList2[int], spatial_scale: float) -> None:
         super(RoIPool, self).__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale

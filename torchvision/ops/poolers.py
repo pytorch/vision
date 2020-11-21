@@ -63,7 +63,7 @@ class LevelMapper(object):
         canonical_scale: int = 224,
         canonical_level: int = 4,
         eps: float = 1e-6,
-    ):
+    ) -> None:
         self.k_min = k_min
         self.k_max = k_max
         self.s0 = canonical_scale
@@ -123,7 +123,7 @@ class MultiScaleRoIAlign(nn.Module):
         featmap_names: List[str],
         output_size: Union[int, Tuple[int], List[int]],
         sampling_ratio: int,
-    ):
+    ) -> None:
         super(MultiScaleRoIAlign, self).__init__()
         if isinstance(output_size, int):
             output_size = (output_size, output_size)

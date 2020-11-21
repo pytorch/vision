@@ -12,7 +12,7 @@ from transforms import Compose
 
 
 class FilterAndRemapCocoCategories(object):
-    def __init__(self, categories, remap=True):
+    def __init__(self, categories, remap=True) -> None:
         self.categories = categories
         self.remap = remap
 

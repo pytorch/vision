@@ -13,7 +13,7 @@ class SmoothedValue(object):
     window or the global series average.
     """
 
-    def __init__(self, window_size=20, fmt=None):
+    def __init__(self, window_size=20, fmt=None) -> None:
         if fmt is None:
             fmt = "{median:.4f} ({global_avg:.4f})"
         self.deque = deque(maxlen=window_size)
@@ -71,7 +71,7 @@ class SmoothedValue(object):
 
 
 class ConfusionMatrix(object):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes) -> None:
         self.num_classes = num_classes
         self.mat = None
 
@@ -116,7 +116,7 @@ class ConfusionMatrix(object):
 
 
 class MetricLogger(object):
-    def __init__(self, delimiter="\t"):
+    def __init__(self, delimiter="\t") -> None:
         self.meters = defaultdict(SmoothedValue)
         self.delimiter = delimiter
 

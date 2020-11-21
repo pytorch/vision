@@ -22,7 +22,7 @@ quant_model_urls = {
 
 
 class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(QuantizableInvertedResidual, self).__init__(*args, **kwargs)
         self.cat = nn.quantized.FloatFunctional()
 
@@ -39,7 +39,7 @@ class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
 
 
 class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(QuantizableShuffleNetV2, self).__init__(*args, inverted_residual=QuantizableInvertedResidual, **kwargs)
         self.quant = torch.quantization.QuantStub()
         self.dequant = torch.quantization.DeQuantStub()

@@ -36,7 +36,7 @@ class RPNHead(nn.Module):
         num_anchors (int): number of anchors to be predicted
     """
 
-    def __init__(self, in_channels, num_anchors):
+    def __init__(self, in_channels, num_anchors) -> None:
         super(RPNHead, self).__init__()
         self.conv = nn.Conv2d(
             in_channels, in_channels, kernel_size=3, stride=1, padding=1
@@ -141,7 +141,7 @@ class RegionProposalNetwork(torch.nn.Module):
                  fg_iou_thresh, bg_iou_thresh,
                  batch_size_per_image, positive_fraction,
                  #
-                 pre_nms_top_n, post_nms_top_n, nms_thresh):
+                 pre_nms_top_n, post_nms_top_n, nms_thresh) -> None:
         super(RegionProposalNetwork, self).__init__()
         self.anchor_generator = anchor_generator
         self.head = head

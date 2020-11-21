@@ -13,7 +13,7 @@ import transforms as T
 
 
 class FilterAndRemapCocoCategories(object):
-    def __init__(self, categories, remap=True):
+    def __init__(self, categories, remap=True) -> None:
         self.categories = categories
         self.remap = remap
 
@@ -207,7 +207,7 @@ def get_coco_api_from_dataset(dataset):
 
 
 class CocoDetection(torchvision.datasets.CocoDetection):
-    def __init__(self, img_folder, ann_file, transforms):
+    def __init__(self, img_folder, ann_file, transforms) -> None:
         super(CocoDetection, self).__init__(img_folder, ann_file)
         self._transforms = transforms
 

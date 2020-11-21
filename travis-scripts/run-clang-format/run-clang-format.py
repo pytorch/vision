@@ -80,13 +80,13 @@ def make_diff(file, original, reformatted):
 
 
 class DiffError(Exception):
-    def __init__(self, message, errs=None):
+    def __init__(self, message, errs=None) -> None:
         super(DiffError, self).__init__(message)
         self.errs = errs or []
 
 
 class UnexpectedError(Exception):
-    def __init__(self, message, exc=None):
+    def __init__(self, message, exc=None) -> None:
         super(UnexpectedError, self).__init__(message)
         self.formatted_traceback = traceback.format_exc()
         self.exc = exc

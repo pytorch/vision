@@ -49,7 +49,7 @@ class PSRoIPool(nn.Module):
     """
     See ps_roi_pool
     """
-    def __init__(self, output_size: int, spatial_scale: float):
+    def __init__(self, output_size: int, spatial_scale: float) -> None:
         super(PSRoIPool, self).__init__()
         self.output_size = output_size
         self.spatial_scale = spatial_scale

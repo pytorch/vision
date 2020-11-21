@@ -7,7 +7,7 @@ import torch.nn as nn
 
 
 class TripletMarginLoss(nn.Module):
-    def __init__(self, margin=1.0, p=2., mining='batch_all'):
+    def __init__(self, margin=1.0, p=2., mining='batch_all') -> None:
         super(TripletMarginLoss, self).__init__()
         self.margin = margin
         self.p = p

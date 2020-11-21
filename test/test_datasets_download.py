@@ -117,7 +117,7 @@ def assert_file_downloads_correctly(url, md5):
 
 
 class DownloadConfig:
-    def __init__(self, url, md5=None, id=None):
+    def __init__(self, url, md5=None, id=None) -> None:
         self.url = url
         self.md5 = md5
         self.id = id or url

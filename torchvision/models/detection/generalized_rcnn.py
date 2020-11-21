@@ -25,7 +25,7 @@ class GeneralizedRCNN(nn.Module):
             the model
     """
 
-    def __init__(self, backbone, rpn, roi_heads, transform):
+    def __init__(self, backbone, rpn, roi_heads, transform) -> None:
         super(GeneralizedRCNN, self).__init__()
         self.transform = transform
         self.backbone = backbone

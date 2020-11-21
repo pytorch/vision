@@ -8,7 +8,7 @@ from torch.nn import functional as F
 class _SimpleSegmentationModel(nn.Module):
     __constants__ = ['aux_classifier']
 
-    def __init__(self, backbone, classifier, aux_classifier=None):
+    def __init__(self, backbone, classifier, aux_classifier=None) -> None:
         super(_SimpleSegmentationModel, self).__init__()
         self.backbone = backbone
         self.classifier = classifier

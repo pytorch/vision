@@ -12,7 +12,7 @@ class BalancedPositiveNegativeSampler(object):
     This class samples batches, ensuring that they contain a fixed proportion of positives
     """
 
-    def __init__(self, batch_size_per_image, positive_fraction):
+    def __init__(self, batch_size_per_image, positive_fraction) -> None:
         # type: (int, float) -> None
         """
         Arguments:
@@ -241,7 +241,7 @@ class Matcher(object):
         'BETWEEN_THRESHOLDS': int,
     }
 
-    def __init__(self, high_threshold, low_threshold, allow_low_quality_matches=False):
+    def __init__(self, high_threshold, low_threshold, allow_low_quality_matches=False) -> None:
         # type: (float, float, bool) -> None
         """
         Args:

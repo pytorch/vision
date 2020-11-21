@@ -14,7 +14,7 @@ quant_model_urls = {
 
 
 class QuantizableInvertedResidual(InvertedResidual):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(QuantizableInvertedResidual, self).__init__(*args, **kwargs)
         self.skip_add = nn.quantized.FloatFunctional()
 
@@ -31,7 +31,7 @@ class QuantizableInvertedResidual(InvertedResidual):
 
 
 class QuantizableMobileNetV2(MobileNetV2):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         """
         MobileNet V2 main class
 

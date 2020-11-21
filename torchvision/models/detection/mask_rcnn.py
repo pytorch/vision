@@ -168,7 +168,7 @@ class MaskRCNN(FasterRCNN):
                  box_batch_size_per_image=512, box_positive_fraction=0.25,
                  bbox_reg_weights=None,
                  # Mask parameters
-                 mask_roi_pool=None, mask_head=None, mask_predictor=None):
+                 mask_roi_pool=None, mask_head=None, mask_predictor=None) -> None:
 
         assert isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None)))
 
@@ -220,7 +220,7 @@ class MaskRCNN(FasterRCNN):
 
 
 class MaskRCNNHeads(nn.Sequential):
-    def __init__(self, in_channels, layers, dilation):
+    def __init__(self, in_channels, layers, dilation) -> None:
         """
         Arguments:
             in_channels (int): number of input channels
@@ -245,7 +245,7 @@ class MaskRCNNHeads(nn.Sequential):
 
 
 class MaskRCNNPredictor(nn.Sequential):
-    def __init__(self, in_channels, dim_reduced, num_classes):
+    def __init__(self, in_channels, dim_reduced, num_classes) -> None:
         super(MaskRCNNPredictor, self).__init__(OrderedDict([
             ("conv5_mask", nn.ConvTranspose2d(in_channels, dim_reduced, 2, 2, 0)),
             ("relu", nn.ReLU(inplace=True)),

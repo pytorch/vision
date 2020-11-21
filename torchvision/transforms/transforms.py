@@ -59,7 +59,7 @@ class Compose:
 
     """
 
-    def __init__(self, transforms):
+    def __init__(self, transforms) -> None:
         self.transforms = transforms
 
     def __call__(self, img):
@@ -170,7 +170,7 @@ class ToPILImage:
 
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
-    def __init__(self, mode=None):
+    def __init__(self, mode=None) -> None:
         self.mode = mode
 
     def __call__(self, pic):
@@ -209,7 +209,7 @@ class Normalize(torch.nn.Module):
 
     """
 
-    def __init__(self, mean, std, inplace=False):
+    def __init__(self, mean, std, inplace=False) -> None:
         super().__init__()
         self.mean = mean
         self.std = std
@@ -247,7 +247,7 @@ class Resize(torch.nn.Module):
             and ``PIL.Image.BICUBIC`` are supported.
     """
 
-    def __init__(self, size, interpolation=Image.BILINEAR):
+    def __init__(self, size, interpolation=Image.BILINEAR) -> None:
         super().__init__()
         if not isinstance(size, (int, Sequence)):
             raise TypeError("Size should be int or sequence. Got {}".format(type(size)))
@@ -275,7 +275,7 @@ class Scale(Resize):
     """
     Note: This transform is deprecated in favor of Resize.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         warnings.warn("The use of the transforms.Scale transform is deprecated, " +
                       "please use transforms.Resize instead.")
         super(Scale, self).__init__(*args, **kwargs)
@@ -292,7 +292,7 @@ class CenterCrop(torch.nn.Module):
             made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
     """
 
-    def __init__(self, size):
+    def __init__(self, size) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
@@ -343,7 +343,7 @@ class Pad(torch.nn.Module):
                 will result in [2, 1, 1, 2, 3, 4, 4, 3]
     """
 
-    def __init__(self, padding, fill=0, padding_mode="constant"):
+    def __init__(self, padding, fill=0, padding_mode="constant") -> None:
         super().__init__()
         if not isinstance(padding, (numbers.Number, tuple, list)):
             raise TypeError("Got inappropriate padding arg")
@@ -384,7 +384,7 @@ class Lambda:
         lambd (function): Lambda/function to be used for transform.
     """
 
-    def __init__(self, lambd):
+    def __init__(self, lambd) -> None:
         if not callable(lambd):
             raise TypeError("Argument lambd should be callable, got {}".format(repr(type(lambd).__name__)))
         self.lambd = lambd
@@ -403,7 +403,7 @@ class RandomTransforms:
         transforms (list or tuple): list of transformations
     """
 
-    def __init__(self, transforms):
+    def __init__(self, transforms) -> None:
         if not isinstance(transforms, Sequence):
             raise TypeError("Argument transforms should be a sequence")
         self.transforms = transforms
@@ -440,7 +440,7 @@ class RandomApply(torch.nn.Module):
         p (float): probability
     """
 
-    def __init__(self, transforms, p=0.5):
+    def __init__(self, transforms, p=0.5) -> None:
         super().__init__()
         self.transforms = transforms
         self.p = p
@@ -549,7 +549,7 @@ class RandomCrop(torch.nn.Module):
         j = torch.randint(0, w - tw + 1, size=(1, )).item()
         return i, j, th, tw
 
-    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
+    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant") -> None:
         super().__init__()
 
         self.size = tuple(_setup_size(
@@ -600,7 +600,7 @@ class RandomHorizontalFlip(torch.nn.Module):
         p (float): probability of the image being flipped. Default value is 0.5
     """
 
-    def __init__(self, p=0.5):
+    def __init__(self, p=0.5) -> None:
         super().__init__()
         self.p = p
 
@@ -630,7 +630,7 @@ class RandomVerticalFlip(torch.nn.Module):
         p (float): probability of the image being flipped. Default value is 0.5
     """
 
-    def __init__(self, p=0.5):
+    def __init__(self, p=0.5) -> None:
         super().__init__()
         self.p = p
 
@@ -668,7 +668,7 @@ class RandomPerspective(torch.nn.Module):
 
     """
 
-    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=Image.BILINEAR, fill=0):
+    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=Image.BILINEAR, fill=0) -> None:
         super().__init__()
         self.p = p
         self.interpolation = interpolation
@@ -836,7 +836,7 @@ class RandomSizedCrop(RandomResizedCrop):
     """
     Note: This transform is deprecated in favor of RandomResizedCrop.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         warnings.warn("The use of the transforms.RandomSizedCrop transform is deprecated, " +
                       "please use transforms.RandomResizedCrop instead.")
         super(RandomSizedCrop, self).__init__(*args, **kwargs)
@@ -870,7 +870,7 @@ class FiveCrop(torch.nn.Module):
          >>> result_avg = result.view(bs, ncrops, -1).mean(1) # avg over crops
     """
 
-    def __init__(self, size):
+    def __init__(self, size) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
@@ -918,7 +918,7 @@ class TenCrop(torch.nn.Module):
          >>> result_avg = result.view(bs, ncrops, -1).mean(1) # avg over crops
     """
 
-    def __init__(self, size, vertical_flip=False):
+    def __init__(self, size, vertical_flip=False) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
         self.vertical_flip = vertical_flip
@@ -955,7 +955,7 @@ class LinearTransformation(torch.nn.Module):
         mean_vector (Tensor): tensor [D], D = C x H x W
     """
 
-    def __init__(self, transformation_matrix, mean_vector):
+    def __init__(self, transformation_matrix, mean_vector) -> None:
         super().__init__()
         if transformation_matrix.size(0) != transformation_matrix.size(1):
             raise ValueError("transformation_matrix should be square. Got " +
@@ -1022,7 +1022,7 @@ class ColorJitter(torch.nn.Module):
             Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
     """
 
-    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
+    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0) -> None:
         super().__init__()
         self.brightness = self._check_input(brightness, 'brightness')
         self.contrast = self._check_input(contrast, 'contrast')
@@ -1141,7 +1141,7 @@ class RandomRotation(torch.nn.Module):
 
     """
 
-    def __init__(self, degrees, resample=False, expand=False, center=None, fill=None):
+    def __init__(self, degrees, resample=False, expand=False, center=None, fill=None) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 
@@ -1219,7 +1219,7 @@ class RandomAffine(torch.nn.Module):
 
     """
 
-    def __init__(self, degrees, translate=None, scale=None, shear=None, resample=0, fillcolor=0):
+    def __init__(self, degrees, translate=None, scale=None, shear=None, resample=0, fillcolor=0) -> None:
         super().__init__()
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 
@@ -1330,7 +1330,7 @@ class Grayscale(torch.nn.Module):
 
     """
 
-    def __init__(self, num_output_channels=1):
+    def __init__(self, num_output_channels=1) -> None:
         super().__init__()
         self.num_output_channels = num_output_channels
 
@@ -1365,7 +1365,7 @@ class RandomGrayscale(torch.nn.Module):
 
     """
 
-    def __init__(self, p=0.1):
+    def __init__(self, p=0.1) -> None:
         super().__init__()
         self.p = p
 

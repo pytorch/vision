@@ -47,7 +47,7 @@ for i, arg in enumerate(sys.argv):
 
 
 class MapNestedTensorObjectImpl(object):
-    def __init__(self, tensor_map_fn):
+    def __init__(self, tensor_map_fn) -> None:
         self.tensor_map_fn = tensor_map_fn
 
     def __call__(self, object):

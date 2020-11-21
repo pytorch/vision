@@ -77,7 +77,7 @@ def googlenet(pretrained=False, progress=True, quantize=False, **kwargs):
 
 class QuantizableBasicConv2d(BasicConv2d):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(QuantizableBasicConv2d, self).__init__(*args, **kwargs)
         self.relu = nn.ReLU()
 
@@ -93,7 +93,7 @@ class QuantizableBasicConv2d(BasicConv2d):
 
 class QuantizableInception(Inception):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(QuantizableInception, self).__init__(
             conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.cat = nn.quantized.FloatFunctional()
@@ -105,7 +105,7 @@ class QuantizableInception(Inception):
 
 class QuantizableInceptionAux(InceptionAux):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(QuantizableInceptionAux, self).__init__(
             conv_block=QuantizableBasicConv2d, *args, **kwargs)
         self.relu = nn.ReLU()
@@ -131,7 +131,7 @@ class QuantizableInceptionAux(InceptionAux):
 
 class QuantizableGoogLeNet(GoogLeNet):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(QuantizableGoogLeNet, self).__init__(
             blocks=[QuantizableBasicConv2d, QuantizableInception, QuantizableInceptionAux],
             *args,

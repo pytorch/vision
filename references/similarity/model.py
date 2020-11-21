@@ -4,7 +4,7 @@ import torchvision.models as models
 
 
 class EmbeddingNet(nn.Module):
-    def __init__(self, backbone=None):
+    def __init__(self, backbone=None) -> None:
         super(EmbeddingNet, self).__init__()
         if backbone is None:
             backbone = models.resnet50(num_classes=128)

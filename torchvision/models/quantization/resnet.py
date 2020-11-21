@@ -21,7 +21,7 @@ quant_model_urls = {
 
 
 class QuantizableBasicBlock(BasicBlock):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(QuantizableBasicBlock, self).__init__(*args, **kwargs)
         self.add_relu = torch.nn.quantized.FloatFunctional()
 
@@ -50,7 +50,7 @@ class QuantizableBasicBlock(BasicBlock):
 
 
 class QuantizableBottleneck(Bottleneck):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(QuantizableBottleneck, self).__init__(*args, **kwargs)
         self.skip_add_relu = nn.quantized.FloatFunctional()
         self.relu1 = nn.ReLU(inplace=False)
@@ -84,7 +84,7 @@ class QuantizableBottleneck(Bottleneck):
 
 class QuantizableResNet(ResNet):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super(QuantizableResNet, self).__init__(*args, **kwargs)
 
         self.quant = torch.quantization.QuantStub()
