@@ -71,13 +71,13 @@ class _DenseLayer(nn.Module):
     def forward(self, input: List[Tensor]) -> Tensor:
         pass
 
-    @torch.jit._overload_method  # type: ignore[no-redef] # noqa: F811
+    @torch.jit._overload_method  # noqa: F811
     def forward(self, input: Tensor) -> Tensor:
         pass
 
     # torchscript does not yet support *args, so we overload method
     # allowing it to take either a List[Tensor] or single Tensor
-    def forward(self, input: Tensor) -> Tensor:  # type: ignore[no-redef] # noqa: F811
+    def forward(self, input: Tensor) -> Tensor:  # noqa: F811
         if isinstance(input, Tensor):
             prev_features = [input]
         else:
@@ -121,7 +121,7 @@ class _DenseBlock(nn.ModuleDict):
             )
             self.add_module('denselayer%d' % (i + 1), layer)
 
-    def forward(self, init_features: Tensor) -> Tensor:  # type: ignore[override]
+    def forward(self, init_features: Tensor) -> Tensor:
         features = [init_features]
         for name, layer in self.items():
             new_features = layer(features)
@@ -141,7 +141,7 @@ class _Transition(nn.Sequential):
 
 class DenseNet(nn.Module):
     r"""Densenet-BC model class, based on
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
+    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
 
     Args:
         growth_rate (int) - how many filters to add each layer (`k` in paper)
@@ -152,7 +152,7 @@ class DenseNet(nn.Module):
         drop_rate (float) - dropout rate after each dense layer
         num_classes (int) - number of classification classes
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
+          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
     """
 
     def __init__(
@@ -256,13 +256,13 @@ def _densenet(
 
 def densenet121(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-121 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
+    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
+          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
     """
     return _densenet('densenet121', 32, (6, 12, 24, 16), 64, pretrained, progress,
                      **kwargs)
@@ -270,13 +270,13 @@ def densenet121(pretrained: bool = False, progress: bool = True, **kwargs: Any) 
 
 def densenet161(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-161 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
+    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
+          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
     """
     return _densenet('densenet161', 48, (6, 12, 36, 24), 96, pretrained, progress,
                      **kwargs)
@@ -284,13 +284,13 @@ def densenet161(pretrained: bool = False, progress: bool = True, **kwargs: Any) 
 
 def densenet169(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-169 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
+    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
+          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
     """
     return _densenet('densenet169', 32, (6, 12, 32, 32), 64, pretrained, progress,
                      **kwargs)
@@ -298,13 +298,13 @@ def densenet169(pretrained: bool = False, progress: bool = True, **kwargs: Any) 
 
 def densenet201(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-201 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_
+    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_
+          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
     """
     return _densenet('densenet201', 32, (6, 12, 48, 32), 64, pretrained, progress,
                      **kwargs)
