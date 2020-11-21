@@ -2,14 +2,12 @@ import os
 import io
 import glob
 import unittest
-import sys
 
 import torch
-import torchvision
 from PIL import Image
 from torchvision.io.image import (
     decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
-    encode_png, write_png, write_file)
+    encode_png, write_png, write_file, ImageReadMode)
 import numpy as np
 
 from common_utils import get_tmp_dir
@@ -19,6 +17,7 @@ IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
 IMAGE_DIR = os.path.join(FAKEDATA_DIR, "imagefolder")
 DAMAGED_JPEG = os.path.join(IMAGE_ROOT, 'damaged_jpeg')
+ENCODE_JPEG = os.path.join(IMAGE_ROOT, "encode_jpeg")
 
 
 def get_images(directory, img_ext):
@@ -33,14 +32,44 @@ def get_images(directory, img_ext):
                 yield os.path.join(root, fl)
 
 
+def pil_read_image(img_path):
+    with Image.open(img_path) as img:
+        return torch.from_numpy(np.array(img))
+
+
+def normalize_dimensions(img_pil):
+    if len(img_pil.shape) == 3:
+        img_pil = img_pil.permute(2, 0, 1)
+    else:
+        img_pil = img_pil.unsqueeze(0)
+    return img_pil
+
+
 class ImageTester(unittest.TestCase):
     def test_decode_jpeg(self):
+        conversion = [(None, ImageReadMode.UNCHANGED), ("L", ImageReadMode.GRAY), ("RGB", ImageReadMode.RGB)]
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            img_pil = torch.load(img_path.replace('jpg', 'pth'))
-            img_pil = img_pil.permute(2, 0, 1)
-            data = read_file(img_path)
-            img_ljpeg = decode_jpeg(data)
-            self.assertTrue(img_ljpeg.equal(img_pil))
+            for pil_mode, mode in conversion:
+                with Image.open(img_path) as img:
+                    is_cmyk = img.mode == "CMYK"
+                    if pil_mode is not None:
+                        if is_cmyk:
+                            # libjpeg does not support the conversion
+                            continue
+                        img = img.convert(pil_mode)
+                    img_pil = torch.from_numpy(np.array(img))
+                    if is_cmyk:
+                        # flip the colors to match libjpeg
+                        img_pil = 255 - img_pil
+
+                img_pil = normalize_dimensions(img_pil)
+                data = read_file(img_path)
+                img_ljpeg = decode_image(data, mode=mode)
+
+                # Permit a small variation on pixel values to account for implementation
+                # differences between Pillow and LibJPEG.
+                abs_mean_diff = (img_ljpeg.type(torch.float32) - img_pil).abs().mean().item()
+                self.assertTrue(abs_mean_diff < 2)
 
         with self.assertRaisesRegex(RuntimeError, "Expected a non empty 1-dimensional tensor"):
             decode_jpeg(torch.empty((100, 1), dtype=torch.uint8))
@@ -68,7 +97,7 @@ class ImageTester(unittest.TestCase):
                 decode_jpeg(data)
 
     def test_encode_jpeg(self):
-        for img_path in get_images(IMAGE_ROOT, ".jpg"):
+        for img_path in get_images(ENCODE_JPEG, ".jpg"):
             dirname = os.path.dirname(img_path)
             filename, _ = os.path.splitext(os.path.basename(img_path))
             write_folder = os.path.join(dirname, 'jpeg_write')
@@ -111,7 +140,7 @@ class ImageTester(unittest.TestCase):
             encode_jpeg(torch.empty((100, 100), dtype=torch.uint8))
 
     def test_write_jpeg(self):
-        for img_path in get_images(IMAGE_ROOT, ".jpg"):
+        for img_path in get_images(ENCODE_JPEG, ".jpg"):
             data = read_file(img_path)
             img = decode_jpeg(data)
 
@@ -134,20 +163,26 @@ class ImageTester(unittest.TestCase):
             self.assertEqual(torch_bytes, pil_bytes)
 
     def test_decode_png(self):
+        conversion = [(None, ImageReadMode.UNCHANGED), ("L", ImageReadMode.GRAY), ("LA", ImageReadMode.GRAY_ALPHA),
+                      ("RGB", ImageReadMode.RGB), ("RGBA", ImageReadMode.RGB_ALPHA)]
         for img_path in get_images(FAKEDATA_DIR, ".png"):
-            img_pil = torch.from_numpy(np.array(Image.open(img_path)))
-            if len(img_pil.shape) == 3:
-                img_pil = img_pil.permute(2, 0, 1)
-            else:
-                img_pil = img_pil.unsqueeze(0)
-            data = read_file(img_path)
-            img_lpng = decode_png(data)
-            self.assertTrue(img_lpng.equal(img_pil))
+            for pil_mode, mode in conversion:
+                with Image.open(img_path) as img:
+                    if pil_mode is not None:
+                        img = img.convert(pil_mode)
+                    img_pil = torch.from_numpy(np.array(img))
 
-            with self.assertRaises(RuntimeError):
-                decode_png(torch.empty((), dtype=torch.uint8))
-            with self.assertRaises(RuntimeError):
-                decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
+                img_pil = normalize_dimensions(img_pil)
+                data = read_file(img_path)
+                img_lpng = decode_image(data, mode=mode)
+
+                tol = 0 if conversion is None else 1
+                self.assertTrue(img_lpng.allclose(img_pil, atol=tol))
+
+        with self.assertRaises(RuntimeError):
+            decode_png(torch.empty((), dtype=torch.uint8))
+        with self.assertRaises(RuntimeError):
+            decode_png(torch.randint(3, 5, (300,), dtype=torch.uint8))
 
     def test_encode_png(self):
         for img_path in get_images(IMAGE_DIR, '.png'):
@@ -195,19 +230,6 @@ class ImageTester(unittest.TestCase):
             saved_image = saved_image.permute(2, 0, 1)
 
             self.assertTrue(img_pil.equal(saved_image))
-
-    def test_decode_image(self):
-        for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            img_pil = torch.load(img_path.replace('jpg', 'pth'))
-            img_pil = img_pil.permute(2, 0, 1)
-            img_ljpeg = decode_image(read_file(img_path))
-            self.assertTrue(img_ljpeg.equal(img_pil))
-
-        for img_path in get_images(IMAGE_DIR, ".png"):
-            img_pil = torch.from_numpy(np.array(Image.open(img_path)))
-            img_pil = img_pil.permute(2, 0, 1)
-            img_lpng = decode_image(read_file(img_path))
-            self.assertTrue(img_lpng.equal(img_pil))
 
     def test_read_file(self):
         with get_tmp_dir() as d:

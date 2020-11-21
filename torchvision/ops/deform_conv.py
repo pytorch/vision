@@ -19,8 +19,13 @@ def deform_conv2d(
     dilation: Tuple[int, int] = (1, 1),
     mask: Optional[Tensor] = None,
 ) -> Tensor:
-    """
-    Performs Deformable Convolution, described in Deformable Convolutional Networks
+    r"""
+    Performs Deformable Convolution v2, described in
+    `Deformable ConvNets v2: More Deformable, Better Results
+    <https://arxiv.org/abs/1811.11168>`__ if :attr:`mask` is not ``None`` and
+    Performs Deformable Convolution, described in
+    `Deformable Convolutional Networks
+    <https://arxiv.org/abs/1703.06211>`__ if :attr:`mask` is ``None``.
 
     Arguments:
         input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
@@ -36,7 +41,7 @@ def deform_conv2d(
         dilation (int or Tuple[int, int]): the spacing between kernel elements. Default: 1
         mask (Tensor[batch_size, offset_groups * kernel_height * kernel_width,
             out_height, out_width]): masks to be applied for each position in the
-            convolution kernel.
+            convolution kernel. Default: None
 
     Returns:
         output (Tensor[batch_sz, out_channels, out_h, out_w]): result of convolution

@@ -4,6 +4,8 @@ import os
 import os.path as osp
 import importlib.machinery
 
+from enum import Enum
+
 _HAS_IMAGE_OPT = False
 
 try:
@@ -47,6 +49,14 @@ except (ImportError, OSError):
     pass
 
 
+class ImageReadMode(Enum):
+    UNCHANGED = 0
+    GRAY = 1
+    GRAY_ALPHA = 2
+    RGB = 3
+    RGB_ALPHA = 4
+
+
 def read_file(path: str) -> torch.Tensor:
     """
     Reads and outputs the bytes contents of a file as a uint8 Tensor
@@ -74,19 +84,26 @@ def write_file(filename: str, data: torch.Tensor) -> None:
     torch.ops.image.write_file(filename, data)
 
 
-def decode_png(input: torch.Tensor) -> torch.Tensor:
+def decode_png(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     """
     Decodes a PNG image into a 3 dimensional RGB Tensor.
+    Optionally converts the image to the desired format.
     The values of the output tensor are uint8 between 0 and 255.
 
     Arguments:
         input (Tensor[1]): a one dimensional uint8 tensor containing
     the raw bytes of the PNG image.
+        mode (ImageReadMode): the read mode used for optionally
+    converting the image. Use `ImageReadMode.UNCHANGED` for loading
+    the image as-is, `ImageReadMode.GRAY` for converting to grayscale,
+    `ImageReadMode.GRAY_ALPHA` for grayscale with transparency,
+    `ImageReadMode.RGB` for RGB and `ImageReadMode.RGB_ALPHA` for
+     RGB with transparency. Default: `ImageReadMode.UNCHANGED`
 
     Returns:
-        output (Tensor[3, image_height, image_width])
+        output (Tensor[image_channels, image_height, image_width])
     """
-    output = torch.ops.image.decode_png(input)
+    output = torch.ops.image.decode_png(input, mode.value)
     return output
 
 
@@ -132,17 +149,24 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
     write_file(filename, output)
 
 
-def decode_jpeg(input: torch.Tensor) -> torch.Tensor:
+def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     """
     Decodes a JPEG image into a 3 dimensional RGB Tensor.
+    Optionally converts the image to the desired format.
     The values of the output tensor are uint8 between 0 and 255.
+
     Arguments:
         input (Tensor[1]): a one dimensional uint8 tensor containing
     the raw bytes of the JPEG image.
+        mode (ImageReadMode): the read mode used for optionally
+    converting the image. Use `ImageReadMode.UNCHANGED` for loading
+    the image as-is, `ImageReadMode.GRAY` for converting to grayscale
+    and `ImageReadMode.RGB` for RGB. Default: `ImageReadMode.UNCHANGED`
+
     Returns:
-        output (Tensor[3, image_height, image_width])
+        output (Tensor[image_channels, image_height, image_width])
     """
-    output = torch.ops.image.decode_jpeg(input)
+    output = torch.ops.image.decode_jpeg(input, mode.value)
     return output
 
 
@@ -191,11 +215,12 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
     write_file(filename, output)
 
 
-def decode_image(input: torch.Tensor) -> torch.Tensor:
+def decode_image(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     """
     Detects whether an image is a JPEG or PNG and performs the appropriate
     operation to decode the image into a 3 dimensional RGB Tensor.
 
+    Optionally converts the image to the desired format.
     The values of the output tensor are uint8 between 0 and 255.
 
     Parameters
@@ -203,28 +228,41 @@ def decode_image(input: torch.Tensor) -> torch.Tensor:
     input: Tensor
         a one dimensional uint8 tensor containing the raw bytes of the
         PNG or JPEG image.
+    mode: ImageReadMode
+        the read mode used for optionally converting the image. JPEG
+        and PNG images have different permitted values. The default
+        value is `ImageReadMode.UNCHANGED` and it keeps the image as-is.
+        See `decode_jpeg()` and `decode_png()` for more information.
+        Default: `ImageReadMode.UNCHANGED`
 
     Returns
     -------
-    output: Tensor[3, image_height, image_width]
+    output: Tensor[image_channels, image_height, image_width]
     """
-    output = torch.ops.image.decode_image(input)
+    output = torch.ops.image.decode_image(input, mode.value)
     return output
 
 
-def read_image(path: str) -> torch.Tensor:
+def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     """
     Reads a JPEG or PNG image into a 3 dimensional RGB Tensor.
+    Optionally converts the image to the desired format.
     The values of the output tensor are uint8 between 0 and 255.
 
     Parameters
     ----------
     path: str
         path of the JPEG or PNG image.
+    mode: ImageReadMode
+        the read mode used for optionally converting the image. JPEG
+        and PNG images have different permitted values. The default
+        value is `ImageReadMode.UNCHANGED` and it keeps the image as-is.
+        See `decode_jpeg()` and `decode_png()` for more information.
+        Default: `ImageReadMode.UNCHANGED`
 
     Returns
     -------
-    output: Tensor[3, image_height, image_width]
+    output: Tensor[image_channels, image_height, image_width]
     """
     data = read_file(path)
-    return decode_image(data)
+    return decode_image(data, mode)
