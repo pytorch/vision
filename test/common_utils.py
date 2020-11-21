@@ -7,7 +7,7 @@ import argparse
 import sys
 import io
 import torch
-import errno
+import warnings
 import __main__
 
 from numbers import Number
@@ -265,14 +265,21 @@ class TestCase(unittest.TestCase):
         else:
             super(TestCase, self).assertEqual(x, y, message)
 
-    def checkModule(self, nn_module, args, unwrapper=None, skip=False):
+    def check_jit_scriptable(self, nn_module, args, unwrapper=None, skip=False):
         """
         Check that a nn.Module's results in TorchScript match eager and that it
         can be exported
         """
         if not TEST_WITH_SLOW or skip:
             # TorchScript is not enabled, skip these tests
-            return
+            msg = "The check_jit_scriptable test for {} was skipped. " \
+                  "This test checks if the module's results in TorchScript " \
+                  "match eager and that it can be exported. To run these " \
+                  "tests make sure you set the environment variable " \
+                  "PYTORCH_TEST_WITH_SLOW=1 and that the test is not " \
+                  "manually skipped.".format(nn_module.__class__.__name__)
+            warnings.warn(msg, RuntimeWarning)
+            return None
 
         sm = torch.jit.script(nn_module)
 
@@ -284,7 +291,7 @@ class TestCase(unittest.TestCase):
             if unwrapper:
                 script_out = unwrapper(script_out)
 
-        self.assertEqual(eager_out, script_out)
+        self.assertEqual(eager_out, script_out, prec=1e-4)
         self.assertExportImportModule(sm, args)
 
         return sm
