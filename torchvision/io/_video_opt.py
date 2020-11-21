@@ -65,7 +65,7 @@ class Timebase(object):
         self,
         numerator,  # type: int
         denominator,  # type: int
-    ) -> None:
+    ):
         # type: (...) -> None
         self.numerator = numerator
         self.denominator = denominator
