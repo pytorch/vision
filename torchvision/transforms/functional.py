@@ -183,6 +183,10 @@ def to_pil_image(pic, mode=None):
             # if 2D image, add channel dimension (CHW)
             pic = pic.unsqueeze(0)
 
+        # check number of channels
+        if pic.shape[-3] > 4:
+            raise ValueError('pic should not have > 4 channels. Got {} channels.'.format(pic.shape[-3]))
+
     elif isinstance(pic, np.ndarray):
         if pic.ndim not in {2, 3}:
             raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
@@ -190,6 +194,10 @@ def to_pil_image(pic, mode=None):
         elif pic.ndim == 2:
             # if 2D image, add channel dimension (HWC)
             pic = np.expand_dims(pic, 2)
+
+        # check number of channels
+        if pic.shape[-1] > 4:
+            raise ValueError('pic should not have > 4 channels. Got {} channels.'.format(pic.shape[-1]))
 
     npimg = pic
     if isinstance(pic, torch.Tensor):
