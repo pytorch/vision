@@ -66,13 +66,7 @@
 // modified from
 // https://github.com/open-mmlab/mmdetection/blob/master/mmdet/ops/dcn/src/deform_conv_cuda.cpp
 
-#include <ATen/ATen.h>
-#include <ATen/TensorUtils.h>
-#include <TH/TH.h>
-
-#include <cmath>
-#include <iostream>
-#include <tuple>
+#include "deform_conv2d_cpu.h"
 
 namespace {
 
