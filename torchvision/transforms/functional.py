@@ -529,7 +529,12 @@ def perspective(
     coeffs = _get_perspective_coeffs(startpoints, endpoints)
 
     if not isinstance(img, torch.Tensor):
-        return F_pil.perspective(img, coeffs, interpolation=interpolation, fill=fill)
+        t_endpoints = Tensor(endpoints)
+        new_size = tuple([
+            torch.max(t_endpoints[:, 0]) - torch.min(t_endpoints[:, 0]) + 1,
+            torch.max(t_endpoints[:, 1]) - torch.min(t_endpoints[:, 1]) + 1])
+        return F_pil.perspective(
+            img, coeffs, interpolation=interpolation, fill=fill, new_size=new_size)
 
     return F_t.perspective(img, coeffs, interpolation=interpolation, fill=fill)
 
