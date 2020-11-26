@@ -1,5 +1,6 @@
 import bisect
 import math
+import warnings
 from fractions import Fraction
 from typing import List
 
@@ -204,6 +205,9 @@ class VideoClips(object):
         )
         video_pts = video_pts[idxs]
         clips = unfold(video_pts, num_frames, step)
+        if not clips.numel():
+            warnings.warn("There aren't enough frames in the current video to get a clip for the given clip length and "
+                          "frames between clips. The video (and potentially others) will be skipped.")
         if isinstance(idxs, slice):
             idxs = [idxs] * len(clips)
         else:

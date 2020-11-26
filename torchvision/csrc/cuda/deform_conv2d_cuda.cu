@@ -83,6 +83,9 @@ namespace {
 const int kMaxParallelImgs = 32;
 
 inline unsigned int GET_THREADS() {
+#ifdef __HIP_PLATFORM_HCC__
+  return 256;
+#endif
   if (at::cuda::getCurrentDeviceProperties()->major >= 6) {
     return 1024;
   }
