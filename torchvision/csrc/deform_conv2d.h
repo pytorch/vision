@@ -1,12 +1,12 @@
 #pragma once
 
-#include "cpu/deform_conv2d_cpu.h"
+#include "cpu/deform_conv2d_kernel.h"
 
 #ifdef WITH_CUDA
-#include "cuda/deform_conv2d_cuda.h"
+#include "cuda/deform_conv2d_kernel.h"
 #endif
 #ifdef WITH_HIP
-#include "hip/deform_conv2d_cuda.h"
+#include "hip/deform_conv2d_kernel.h"
 #endif
 
 // Autocast Registration

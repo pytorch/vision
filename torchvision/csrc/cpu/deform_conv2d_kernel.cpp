@@ -66,7 +66,7 @@
 // modified from
 // https://github.com/open-mmlab/mmdetection/blob/master/mmdet/ops/dcn/src/deform_conv_cuda.cpp
 
-#include "deform_conv2d_cpu.h"
+#include "deform_conv2d_kernel.h"
 
 namespace {
 

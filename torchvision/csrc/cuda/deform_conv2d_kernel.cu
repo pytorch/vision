@@ -71,8 +71,8 @@
 #include <c10/cuda/CUDAGuard.h>
 #include <THC/THCAtomics.cuh>
 
-#include "deform_conv2d_cuda.h"
 #include "cuda_helpers.h"
+#include "deform_conv2d_kernel.h"
 
 namespace {
 
