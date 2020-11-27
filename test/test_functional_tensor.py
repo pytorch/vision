@@ -9,12 +9,12 @@ import torch
 import torchvision.transforms.functional_tensor as F_t
 import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional as F
-from torchvision.transforms import InterpolationModes
+from torchvision.transforms import InterpolationMode
 
 from common_utils import TransformsTester
 
 
-NEAREST, BILINEAR, BICUBIC = InterpolationModes.NEAREST, InterpolationModes.BILINEAR, InterpolationModes.BICUBIC
+NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
 
 class Tester(TransformsTester):
@@ -419,7 +419,7 @@ class Tester(TransformsTester):
                     )
 
         # assert changed type warning
-        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
             res1 = F.resize(tensor, size=32, interpolation=2)
             res2 = F.resize(tensor, size=32, interpolation=BILINEAR)
             self.assertTrue(res1.equal(res2))
@@ -626,7 +626,7 @@ class Tester(TransformsTester):
             self.assertTrue(res1.equal(res2))
 
         # assert changed type warning
-        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
             res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=2)
             res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
             self.assertTrue(res1.equal(res2))
@@ -714,7 +714,7 @@ class Tester(TransformsTester):
             self.assertTrue(res1.equal(res2))
 
         # assert changed type warning
-        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
             res1 = F.rotate(tensor, 45, interpolation=2)
             res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
             self.assertTrue(res1.equal(res2))
@@ -788,7 +788,7 @@ class Tester(TransformsTester):
         # assert changed type warning
         spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
         epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
-        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
             res1 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=2)
             res2 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=BILINEAR)
             self.assertTrue(res1.equal(res2))

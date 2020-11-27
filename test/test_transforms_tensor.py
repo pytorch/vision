@@ -2,7 +2,7 @@ import os
 import torch
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
-from torchvision.transforms import InterpolationModes
+from torchvision.transforms import InterpolationMode
 
 import numpy as np
 
@@ -11,7 +11,7 @@ import unittest
 from common_utils import TransformsTester, get_tmp_dir, int_dtypes, float_dtypes
 
 
-NEAREST, BILINEAR, BICUBIC = InterpolationModes.NEAREST, InterpolationModes.BILINEAR, InterpolationModes.BICUBIC
+NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
 
 class Tester(TransformsTester):

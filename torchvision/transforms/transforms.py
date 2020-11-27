@@ -14,14 +14,14 @@ except ImportError:
     accimage = None
 
 from . import functional as F
-from .functional import InterpolationModes, _interpolation_modes_from_int
+from .functional import InterpolationMode, _interpolation_modes_from_int
 
 
 __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize", "Resize", "Scale",
            "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
            "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
-           "RandomPerspective", "RandomErasing", "GaussianBlur", "InterpolationModes"]
+           "RandomPerspective", "RandomErasing", "GaussianBlur", "InterpolationMode"]
 
 
 class Compose:
@@ -234,15 +234,15 @@ class Resize(torch.nn.Module):
             (size * height / width, size).
             In torchscript mode padding as single int is not supported, use a tuple or
             list of length 1: ``[size, ]``.
-        interpolation (InterpolationModes): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationModes`. Default is ``InterpolationModes.BILINEAR``.
-            If input is Tensor, only ``InterpolationModes.NEAREST``, ``InterpolationModes.BILINEAR`` and
-            ``InterpolationModes.BICUBIC`` are supported.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
+            ``InterpolationMode.BICUBIC`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
 
     """
 
-    def __init__(self, size, interpolation=InterpolationModes.BILINEAR):
+    def __init__(self, size, interpolation=InterpolationMode.BILINEAR):
         super().__init__()
         if not isinstance(size, (int, Sequence)):
             raise TypeError("Size should be int or sequence. Got {}".format(type(size)))
@@ -253,8 +253,8 @@ class Resize(torch.nn.Module):
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
             warnings.warn(
-                "Argument interpolation should be of type InterpolationModes instead of int. "
-                "Please, use InterpolationModes enum."
+                "Argument interpolation should be of type InterpolationMode instead of int. "
+                "Please, use InterpolationMode enum."
             )
             interpolation = _interpolation_modes_from_int(interpolation)
 
@@ -663,9 +663,9 @@ class RandomPerspective(torch.nn.Module):
         distortion_scale (float): argument to control the degree of distortion and ranges from 0 to 1.
             Default is 0.5.
         p (float): probability of the image being transformed. Default is 0.5.
-        interpolation (InterpolationModes): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationModes`. Default is ``InterpolationModes.BILINEAR``.
-            If input is Tensor, only ``InterpolationModes.NEAREST``, ``InterpolationModes.BILINEAR`` are supported.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively. Default is 0.
@@ -673,15 +673,15 @@ class RandomPerspective(torch.nn.Module):
             input. Fill value for the area outside the transform in the output image is always 0.
     """
 
-    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=InterpolationModes.BILINEAR, fill=0):
+    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=InterpolationMode.BILINEAR, fill=0):
         super().__init__()
         self.p = p
 
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
             warnings.warn(
-                "Argument interpolation should be of type InterpolationModes instead of int. "
-                "Please, use InterpolationModes enum."
+                "Argument interpolation should be of type InterpolationMode instead of int. "
+                "Please, use InterpolationMode enum."
             )
             interpolation = _interpolation_modes_from_int(interpolation)
 
@@ -758,15 +758,15 @@ class RandomResizedCrop(torch.nn.Module):
             made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
         scale (tuple of float): scale range of the cropped image before resizing, relatively to the origin image.
         ratio (tuple of float): aspect ratio range of the cropped image before resizing.
-        interpolation (InterpolationModes): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationModes`. Default is ``InterpolationModes.BILINEAR``.
-            If input is Tensor, only ``InterpolationModes.NEAREST``, ``InterpolationModes.BILINEAR`` and
-            ``InterpolationModes.BICUBIC`` are supported.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
+            ``InterpolationMode.BICUBIC`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
 
     """
 
-    def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=InterpolationModes.BILINEAR):
+    def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=InterpolationMode.BILINEAR):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
@@ -780,8 +780,8 @@ class RandomResizedCrop(torch.nn.Module):
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
             warnings.warn(
-                "Argument interpolation should be of type InterpolationModes instead of int. "
-                "Please, use InterpolationModes enum."
+                "Argument interpolation should be of type InterpolationMode instead of int. "
+                "Please, use InterpolationMode enum."
             )
             interpolation = _interpolation_modes_from_int(interpolation)
 
@@ -1147,9 +1147,9 @@ class RandomRotation(torch.nn.Module):
         degrees (sequence or float or int): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
             will be (-degrees, +degrees).
-        interpolation (InterpolationModes): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationModes`. Default is ``InterpolationModes.NEAREST``.
-            If input is Tensor, only ``InterpolationModes.NEAREST``, ``InterpolationModes.BILINEAR`` are supported.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output to make it large enough to hold the entire rotated image.
@@ -1170,7 +1170,7 @@ class RandomRotation(torch.nn.Module):
     """
 
     def __init__(
-        self, degrees, interpolation=InterpolationModes.NEAREST, expand=False, center=None, fill=None, resample=None
+        self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=None, resample=None
     ):
         super().__init__()
         if resample is not None:
@@ -1182,8 +1182,8 @@ class RandomRotation(torch.nn.Module):
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
             warnings.warn(
-                "Argument interpolation should be of type InterpolationModes instead of int. "
-                "Please, use InterpolationModes enum."
+                "Argument interpolation should be of type InterpolationMode instead of int. "
+                "Please, use InterpolationMode enum."
             )
             interpolation = _interpolation_modes_from_int(interpolation)
 
@@ -1253,9 +1253,9 @@ class RandomAffine(torch.nn.Module):
             range (shear[0], shear[1]) will be applied. Else if shear is a tuple or list of 4 values,
             a x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
             Will not apply shear by default.
-        interpolation (InterpolationModes): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationModes`. Default is ``InterpolationModes.NEAREST``.
-            If input is Tensor, only ``InterpolationModes.NEAREST``, ``InterpolationModes.BILINEAR`` are supported.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (tuple or int): Optional fill color (Tuple for RGB Image and int for grayscale) for the area
             outside the transform in the output image (Pillow>=5.0.0). This option is not supported for Tensor
@@ -1270,7 +1270,7 @@ class RandomAffine(torch.nn.Module):
     """
 
     def __init__(
-        self, degrees, translate=None, scale=None, shear=None, interpolation=InterpolationModes.NEAREST, fill=0,
+        self, degrees, translate=None, scale=None, shear=None, interpolation=InterpolationMode.NEAREST, fill=0,
         fillcolor=None, resample=None
     ):
         super().__init__()
@@ -1283,8 +1283,8 @@ class RandomAffine(torch.nn.Module):
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
             warnings.warn(
-                "Argument interpolation should be of type InterpolationModes instead of int. "
-                "Please, use InterpolationModes enum."
+                "Argument interpolation should be of type InterpolationMode instead of int. "
+                "Please, use InterpolationMode enum."
             )
             interpolation = _interpolation_modes_from_int(interpolation)
 
@@ -1377,7 +1377,7 @@ class RandomAffine(torch.nn.Module):
             s += ', scale={scale}'
         if self.shear is not None:
             s += ', shear={shear}'
-        if self.interpolation != InterpolationModes.NEAREST:
+        if self.interpolation != InterpolationMode.NEAREST:
             s += ', interpolation={interpolation}'
         if self.fill != 0:
             s += ', fill={fill}'

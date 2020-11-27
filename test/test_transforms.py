@@ -1500,12 +1500,12 @@ class Tester(unittest.TestCase):
         # assert deprecation warning and non-BC
         with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
             t = transforms.RandomRotation((-10, 10), resample=2)
-            self.assertEqual(t.interpolation, transforms.InterpolationModes.BILINEAR)
+            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
 
         # assert changed type warning
-        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
             t = transforms.RandomRotation((-10, 10), interpolation=2)
-            self.assertEqual(t.interpolation, transforms.InterpolationModes.BILINEAR)
+            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
 
     def test_random_affine(self):
 
@@ -1547,22 +1547,22 @@ class Tester(unittest.TestCase):
         # Checking if RandomAffine can be printed as string
         t.__repr__()
 
-        t = transforms.RandomAffine(10, interpolation=transforms.InterpolationModes.BILINEAR)
+        t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
         self.assertIn("bilinear", t.__repr__())
 
         # assert deprecation warning and non-BC
         with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
             t = transforms.RandomAffine(10, resample=2)
-            self.assertEqual(t.interpolation, transforms.InterpolationModes.BILINEAR)
+            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
 
         with self.assertWarnsRegex(UserWarning, r"Argument fillcolor is deprecated and will be removed"):
             t = transforms.RandomAffine(10, fillcolor=10)
             self.assertEqual(t.fill, 10)
 
         # assert changed type warning
-        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
             t = transforms.RandomAffine(10, interpolation=2)
-            self.assertEqual(t.interpolation, transforms.InterpolationModes.BILINEAR)
+            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
 
     def test_to_grayscale(self):
         """Unit tests for grayscale transform"""
