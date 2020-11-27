@@ -1,10 +1,9 @@
 #include "readjpeg_cpu.h"
 
 #include <ATen/ATen.h>
-#include <string>
 
 #if !JPEG_FOUND
-torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t channels) {
+torch::Tensor decodeJPEG(const torch::Tensor& data, ImageReadMode mode) {
   TORCH_CHECK(
       false, "decodeJPEG: torchvision not compiled with libjpeg support");
 }
@@ -69,16 +68,13 @@ static void torch_jpeg_set_source_mgr(
   src->pub.next_input_byte = src->data;
 }
 
-torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t channels) {
+torch::Tensor decodeJPEG(const torch::Tensor& data, ImageReadMode mode) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
   TORCH_CHECK(
       data.dim() == 1 && data.numel() > 0,
       "Expected a non empty 1-dimensional tensor");
-  TORCH_CHECK(
-      channels == 0 || channels == 1 || channels == 3,
-      "Number of channels not supported");
 
   struct jpeg_decompress_struct cinfo;
   struct torch_jpeg_error_mgr jerr;
@@ -102,30 +98,33 @@ torch::Tensor decodeJPEG(const torch::Tensor& data, int64_t channels) {
   // read info from header.
   jpeg_read_header(&cinfo, TRUE);
 
-  int current_channels = cinfo.num_components;
+  int channels = cinfo.num_components;
 
-  if (channels > 0 && channels != current_channels) {
-    switch (channels) {
-      case 1: // Gray
-        cinfo.out_color_space = JCS_GRAYSCALE;
+  if (mode != IMAGE_READ_MODE_UNCHANGED) {
+    switch (mode) {
+      case IMAGE_READ_MODE_GRAY:
+        if (cinfo.jpeg_color_space != JCS_GRAYSCALE) {
+          cinfo.out_color_space = JCS_GRAYSCALE;
+          channels = 1;
+        }
         break;
-      case 3: // RGB
-        cinfo.out_color_space = JCS_RGB;
+      case IMAGE_READ_MODE_RGB:
+        if (cinfo.jpeg_color_space != JCS_RGB) {
+          cinfo.out_color_space = JCS_RGB;
+          channels = 3;
+        }
         break;
       /*
        * Libjpeg does not support converting from CMYK to grayscale etc. There
        * is a way to do this but it involves converting it manually to RGB:
        * https://github.com/tensorflow/tensorflow/blob/86871065265b04e0db8ca360c046421efb2bdeb4/tensorflow/core/lib/jpeg/jpeg_mem.cc#L284-L313
-       *
        */
       default:
         jpeg_destroy_decompress(&cinfo);
-        TORCH_CHECK(false, "Invalid number of output channels.");
+        TORCH_CHECK(false, "Provided mode not supported");
     }
 
     jpeg_calc_output_dimensions(&cinfo);
-  } else {
-    channels = current_channels;
   }
 
   jpeg_start_decompress(&cinfo);
