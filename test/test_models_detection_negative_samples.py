@@ -128,6 +128,7 @@ class Tester(unittest.TestCase):
         self.assertEqual(loss_dict["loss_rpn_box_reg"], torch.tensor(0.))
         self.assertEqual(loss_dict["loss_keypoint"], torch.tensor(0.))
 
+    @unittest.skip("Temporarily disabled")
     def test_forward_negative_sample_retinanet(self):
         model = torchvision.models.detection.retinanet_resnet50_fpn(
             num_classes=2, min_size=100, max_size=100)
