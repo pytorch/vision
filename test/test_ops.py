@@ -1,3 +1,4 @@
+from common_utils import set_rng_seed
 import math
 import unittest
 
@@ -655,6 +656,7 @@ class DeformConvTester(OpTester, unittest.TestCase):
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_autocast(self):
+        set_rng_seed(0)
         for dtype in (torch.float, torch.half):
             with torch.cuda.amp.autocast():
                 self._test_forward(torch.device("cuda"), False, dtype=dtype)
