@@ -120,7 +120,9 @@ def list_files(root: str, suffix: str, prefix: bool = False) -> List[str]:
 
 
 def _quota_exceeded(response: "requests.models.Response") -> bool:  # type: ignore[name-defined]
-    return "Google Drive - Quota exceeded" in response.text
+    return False
+    # See https://github.com/pytorch/vision/issues/2992 for details
+    # return "Google Drive - Quota exceeded" in response.text
 
 
 def download_file_from_google_drive(file_id: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None):

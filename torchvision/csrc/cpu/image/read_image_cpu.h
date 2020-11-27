@@ -1,8 +1,8 @@
 #pragma once
 
-#include "readjpeg_cpu.h"
-#include "readpng_cpu.h"
+#include <torch/torch.h>
+#include "image_read_mode.h"
 
 C10_EXPORT torch::Tensor decode_image(
     const torch::Tensor& data,
-    int64_t channels = 0);
+    ImageReadMode mode = IMAGE_READ_MODE_UNCHANGED);

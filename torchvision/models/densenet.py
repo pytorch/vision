@@ -71,13 +71,13 @@ class _DenseLayer(nn.Module):
     def forward(self, input: List[Tensor]) -> Tensor:
         pass
 
-    @torch.jit._overload_method  # type: ignore[no-redef] # noqa: F811
+    @torch.jit._overload_method  # noqa: F811
     def forward(self, input: Tensor) -> Tensor:
         pass
 
     # torchscript does not yet support *args, so we overload method
     # allowing it to take either a List[Tensor] or single Tensor
-    def forward(self, input: Tensor) -> Tensor:  # type: ignore[no-redef] # noqa: F811
+    def forward(self, input: Tensor) -> Tensor:  # noqa: F811
         if isinstance(input, Tensor):
             prev_features = [input]
         else:
@@ -121,7 +121,7 @@ class _DenseBlock(nn.ModuleDict):
             )
             self.add_module('denselayer%d' % (i + 1), layer)
 
-    def forward(self, init_features: Tensor) -> Tensor:  # type: ignore[override]
+    def forward(self, init_features: Tensor) -> Tensor:
         features = [init_features]
         for name, layer in self.items():
             new_features = layer(features)
