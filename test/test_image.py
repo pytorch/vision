@@ -2,14 +2,12 @@ import os
 import io
 import glob
 import unittest
-import sys
 
 import torch
-import torchvision
 from PIL import Image
 from torchvision.io.image import (
     decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
-    encode_png, write_png, write_file)
+    encode_png, write_png, write_file, ImageReadMode)
 import numpy as np
 
 from common_utils import get_tmp_dir
@@ -49,9 +47,9 @@ def normalize_dimensions(img_pil):
 
 class ImageTester(unittest.TestCase):
     def test_decode_jpeg(self):
-        conversion = [(None, 0), ("L", 1), ("RGB", 3)]
+        conversion = [(None, ImageReadMode.UNCHANGED), ("L", ImageReadMode.GRAY), ("RGB", ImageReadMode.RGB)]
         for img_path in get_images(IMAGE_ROOT, ".jpg"):
-            for pil_mode, channels in conversion:
+            for pil_mode, mode in conversion:
                 with Image.open(img_path) as img:
                     is_cmyk = img.mode == "CMYK"
                     if pil_mode is not None:
@@ -66,7 +64,7 @@ class ImageTester(unittest.TestCase):
 
                 img_pil = normalize_dimensions(img_pil)
                 data = read_file(img_path)
-                img_ljpeg = decode_image(data, channels=channels)
+                img_ljpeg = decode_image(data, mode=mode)
 
                 # Permit a small variation on pixel values to account for implementation
                 # differences between Pillow and LibJPEG.
@@ -165,9 +163,10 @@ class ImageTester(unittest.TestCase):
             self.assertEqual(torch_bytes, pil_bytes)
 
     def test_decode_png(self):
-        conversion = [(None, 0), ("L", 1), ("LA", 2), ("RGB", 3), ("RGBA", 4)]
+        conversion = [(None, ImageReadMode.UNCHANGED), ("L", ImageReadMode.GRAY), ("LA", ImageReadMode.GRAY_ALPHA),
+                      ("RGB", ImageReadMode.RGB), ("RGBA", ImageReadMode.RGB_ALPHA)]
         for img_path in get_images(FAKEDATA_DIR, ".png"):
-            for pil_mode, channels in conversion:
+            for pil_mode, mode in conversion:
                 with Image.open(img_path) as img:
                     if pil_mode is not None:
                         img = img.convert(pil_mode)
@@ -175,7 +174,7 @@ class ImageTester(unittest.TestCase):
 
                 img_pil = normalize_dimensions(img_pil)
                 data = read_file(img_path)
-                img_lpng = decode_image(data, channels=channels)
+                img_lpng = decode_image(data, mode=mode)
 
                 tol = 0 if conversion is None else 1
                 self.assertTrue(img_lpng.allclose(img_pil, atol=tol))

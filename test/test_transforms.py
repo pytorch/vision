@@ -987,19 +987,27 @@ class Tester(unittest.TestCase):
                 self.assertTrue(np.allclose(img_data, img))
 
     def test_tensor_bad_types_to_pil_image(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, r'pic should be 2/3 dimensional. Got \d+ dimensions.'):
             transforms.ToPILImage()(torch.ones(1, 3, 4, 4))
+        with self.assertRaisesRegex(ValueError, r'pic should not have > 4 channels. Got \d+ channels.'):
+            transforms.ToPILImage()(torch.ones(6, 4, 4))
 
     def test_ndarray_bad_types_to_pil_image(self):
         trans = transforms.ToPILImage()
-        with self.assertRaises(TypeError):
+        reg_msg = r'Input type \w+ is not supported'
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.int64))
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.uint16))
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.uint32))
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.float64))
 
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, r'pic should be 2/3 dimensional. Got \d+ dimensions.'):
             transforms.ToPILImage()(np.ones([1, 4, 4, 3]))
+        with self.assertRaisesRegex(ValueError, r'pic should not have > 4 channels. Got \d+ channels.'):
+            transforms.ToPILImage()(np.ones([4, 4, 6]))
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_vertical_flip(self):
@@ -1484,10 +1492,20 @@ class Tester(unittest.TestCase):
 
         t = transforms.RandomRotation((-10, 10))
         angle = t.get_params(t.degrees)
-        self.assertTrue(angle > -10 and angle < 10)
+        self.assertTrue(-10 < angle < 10)
 
         # Checking if RandomRotation can be printed as string
         t.__repr__()
+
+        # assert deprecation warning and non-BC
+        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
+            t = transforms.RandomRotation((-10, 10), resample=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationModes.BILINEAR)
+
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+            t = transforms.RandomRotation((-10, 10), interpolation=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationModes.BILINEAR)
 
     def test_random_affine(self):
 
@@ -1529,8 +1547,22 @@ class Tester(unittest.TestCase):
         # Checking if RandomAffine can be printed as string
         t.__repr__()
 
-        t = transforms.RandomAffine(10, resample=Image.BILINEAR)
-        self.assertIn("Image.BILINEAR", t.__repr__())
+        t = transforms.RandomAffine(10, interpolation=transforms.InterpolationModes.BILINEAR)
+        self.assertIn("bilinear", t.__repr__())
+
+        # assert deprecation warning and non-BC
+        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
+            t = transforms.RandomAffine(10, resample=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationModes.BILINEAR)
+
+        with self.assertWarnsRegex(UserWarning, r"Argument fillcolor is deprecated and will be removed"):
+            t = transforms.RandomAffine(10, fillcolor=10)
+            self.assertEqual(t.fill, 10)
+
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationModes"):
+            t = transforms.RandomAffine(10, interpolation=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationModes.BILINEAR)
 
     def test_to_grayscale(self):
         """Unit tests for grayscale transform"""

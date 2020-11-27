@@ -1,8 +1,13 @@
 from typing import Union, Optional, List, Tuple, Text, BinaryIO
-import io
 import pathlib
 import torch
 import math
+import numpy as np
+from PIL import Image, ImageDraw
+from PIL import ImageFont
+
+__all__ = ["make_grid", "save_image", "draw_bounding_boxes"]
+
 irange = range
 
 
@@ -121,10 +126,64 @@ def save_image(
             If a file object was used instead of a filename, this parameter should always be used.
         **kwargs: Other arguments are documented in ``make_grid``.
     """
-    from PIL import Image
     grid = make_grid(tensor, nrow=nrow, padding=padding, pad_value=pad_value,
                      normalize=normalize, range=range, scale_each=scale_each)
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
+
+
+@torch.no_grad()
+def draw_bounding_boxes(
+    image: torch.Tensor,
+    boxes: torch.Tensor,
+    labels: Optional[List[str]] = None,
+    colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
+    width: int = 1,
+    font: Optional[str] = None,
+    font_size: int = 10
+) -> torch.Tensor:
+
+    """
+    Draws bounding boxes on given image.
+    The values of the input image should be uint8 between 0 and 255.
+
+    Args:
+        image (Tensor): Tensor of shape (C x H x W)
+        bboxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
+            the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
+            `0 <= ymin < ymax < H`.
+        labels (List[str]): List containing the labels of bounding boxes.
+        colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of bounding boxes. The colors can
+            be represented as `str` or `Tuple[int, int, int]`.
+        width (int): Width of bounding box.
+        font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
+            also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
+            `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
+        font_size (int): The requested font size in points.
+    """
+
+    if not isinstance(image, torch.Tensor):
+        raise TypeError(f"Tensor expected, got {type(image)}")
+    elif image.dtype != torch.uint8:
+        raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
+    elif image.dim() != 3:
+        raise ValueError("Pass individual images, not batches")
+
+    ndarr = image.permute(1, 2, 0).numpy()
+    img_to_draw = Image.fromarray(ndarr)
+
+    img_boxes = boxes.to(torch.int64).tolist()
+
+    draw = ImageDraw.Draw(img_to_draw)
+
+    for i, bbox in enumerate(img_boxes):
+        color = None if colors is None else colors[i]
+        draw.rectangle(bbox, width=width, outline=color)
+
+        if labels is not None:
+            txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
+            draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
+
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)
