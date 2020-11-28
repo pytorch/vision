@@ -2,14 +2,16 @@ import os
 import torch
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
-
-from PIL.Image import NEAREST, BILINEAR, BICUBIC
+from torchvision.transforms import InterpolationMode
 
 import numpy as np
 
 import unittest
 
 from common_utils import TransformsTester, get_tmp_dir, int_dtypes, float_dtypes
+
+
+NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
 
 class Tester(TransformsTester):
@@ -349,7 +351,7 @@ class Tester(TransformsTester):
                         for interpolation in [NEAREST, BILINEAR]:
                             transform = T.RandomAffine(
                                 degrees=degrees, translate=translate,
-                                scale=scale, shear=shear, resample=interpolation
+                                scale=scale, shear=shear, interpolation=interpolation
                             )
                             s_transform = torch.jit.script(transform)
 
@@ -368,7 +370,7 @@ class Tester(TransformsTester):
                 for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
                     for interpolation in [NEAREST, BILINEAR]:
                         transform = T.RandomRotation(
-                            degrees=degrees, resample=interpolation, expand=expand, center=center
+                            degrees=degrees, interpolation=interpolation, expand=expand, center=center
                         )
                         s_transform = torch.jit.script(transform)
 

@@ -1,21 +1,13 @@
-from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state
+from common_utils import TestCase, map_nested_tensor_object, freeze_rng_state, set_rng_seed
 from collections import OrderedDict
 from itertools import product
 import functools
 import operator
 import torch
 import torch.nn as nn
-import numpy as np
 from torchvision import models
 import unittest
-import random
 import warnings
-
-
-def set_rng_seed(seed):
-    torch.manual_seed(seed)
-    random.seed(seed)
-    np.random.seed(seed)
 
 
 def get_available_classification_models():
