@@ -136,7 +136,7 @@ class ImageTester(unittest.TestCase):
 
     def test_write_jpeg(self):
         with get_tmp_dir() as d:
-            for img_path in get_images(IMAGE_ROOT, ".jpg"):
+            for img_path in get_images(ENCODE_JPEG, ".jpg"):
                 data = read_file(img_path)
                 img = decode_jpeg(data)
 
