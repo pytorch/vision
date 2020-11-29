@@ -14,7 +14,7 @@ from common_utils import get_tmp_dir
 
 
 TEST_FILE = get_file_path_2(
-    os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
+    os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
 
 
 class Tester(unittest.TestCase):

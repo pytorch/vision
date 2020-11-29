@@ -6,7 +6,6 @@ from collections.abc import Sequence
 from typing import Tuple, List, Optional
 
 import torch
-from PIL import Image
 from torch import Tensor
 
 try:
@@ -15,21 +14,14 @@ except ImportError:
     accimage = None
 
 from . import functional as F
+from .functional import InterpolationMode, _interpolation_modes_from_int
+
 
 __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize", "Resize", "Scale",
            "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
            "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
-           "RandomPerspective", "RandomErasing", "GaussianBlur"]
-
-_pil_interpolation_to_str = {
-    Image.NEAREST: 'PIL.Image.NEAREST',
-    Image.BILINEAR: 'PIL.Image.BILINEAR',
-    Image.BICUBIC: 'PIL.Image.BICUBIC',
-    Image.LANCZOS: 'PIL.Image.LANCZOS',
-    Image.HAMMING: 'PIL.Image.HAMMING',
-    Image.BOX: 'PIL.Image.BOX',
-}
+           "RandomPerspective", "RandomErasing", "GaussianBlur", "InterpolationMode"]
 
 
 class Compose:
@@ -242,18 +234,30 @@ class Resize(torch.nn.Module):
             (size * height / width, size).
             In torchscript mode padding as single int is not supported, use a tuple or
             list of length 1: ``[size, ]``.
-        interpolation (int, optional): Desired interpolation enum defined by `filters`_.
-            Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
-            and ``PIL.Image.BICUBIC`` are supported.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
+            ``InterpolationMode.BICUBIC`` are supported.
+            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+
     """
 
-    def __init__(self, size, interpolation=Image.BILINEAR):
+    def __init__(self, size, interpolation=InterpolationMode.BILINEAR):
         super().__init__()
         if not isinstance(size, (int, Sequence)):
             raise TypeError("Size should be int or sequence. Got {}".format(type(size)))
         if isinstance(size, Sequence) and len(size) not in (1, 2):
             raise ValueError("If size is a sequence, it should have 1 or 2 values")
         self.size = size
+
+        # Backward compatibility with integer value
+        if isinstance(interpolation, int):
+            warnings.warn(
+                "Argument interpolation should be of type InterpolationMode instead of int. "
+                "Please, use InterpolationMode enum."
+            )
+            interpolation = _interpolation_modes_from_int(interpolation)
+
         self.interpolation = interpolation
 
     def forward(self, img):
@@ -267,7 +271,7 @@ class Resize(torch.nn.Module):
         return F.resize(img, self.size, self.interpolation)
 
     def __repr__(self):
-        interpolate_str = _pil_interpolation_to_str[self.interpolation]
+        interpolate_str = self.interpolation.value
         return self.__class__.__name__ + '(size={0}, interpolation={1})'.format(self.size, interpolate_str)
 
 
@@ -659,18 +663,28 @@ class RandomPerspective(torch.nn.Module):
         distortion_scale (float): argument to control the degree of distortion and ranges from 0 to 1.
             Default is 0.5.
         p (float): probability of the image being transformed. Default is 0.5.
-        interpolation (int): Interpolation type. If input is Tensor, only ``PIL.Image.NEAREST`` and
-            ``PIL.Image.BILINEAR`` are supported. Default, ``PIL.Image.BILINEAR`` for PIL images and Tensors.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (n-tuple or int or float): Pixel fill value for area outside the rotated
             image. If int or float, the value is used for all bands respectively. Default is 0.
             This option is only available for ``pillow>=5.0.0``. This option is not supported for Tensor
             input. Fill value for the area outside the transform in the output image is always 0.
-
     """
 
-    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=Image.BILINEAR, fill=0):
+    def __init__(self, distortion_scale=0.5, p=0.5, interpolation=InterpolationMode.BILINEAR, fill=0):
         super().__init__()
         self.p = p
+
+        # Backward compatibility with integer value
+        if isinstance(interpolation, int):
+            warnings.warn(
+                "Argument interpolation should be of type InterpolationMode instead of int. "
+                "Please, use InterpolationMode enum."
+            )
+            interpolation = _interpolation_modes_from_int(interpolation)
+
         self.interpolation = interpolation
         self.distortion_scale = distortion_scale
         self.fill = fill
@@ -744,12 +758,15 @@ class RandomResizedCrop(torch.nn.Module):
             made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
         scale (tuple of float): scale range of the cropped image before resizing, relatively to the origin image.
         ratio (tuple of float): aspect ratio range of the cropped image before resizing.
-        interpolation (int): Desired interpolation enum defined by `filters`_.
-            Default is ``PIL.Image.BILINEAR``. If input is Tensor, only ``PIL.Image.NEAREST``, ``PIL.Image.BILINEAR``
-            and ``PIL.Image.BICUBIC`` are supported.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
+            ``InterpolationMode.BICUBIC`` are supported.
+            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+
     """
 
-    def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=Image.BILINEAR):
+    def __init__(self, size, scale=(0.08, 1.0), ratio=(3. / 4., 4. / 3.), interpolation=InterpolationMode.BILINEAR):
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
@@ -759,6 +776,14 @@ class RandomResizedCrop(torch.nn.Module):
             raise TypeError("Ratio should be a sequence")
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
             warnings.warn("Scale and ratio should be of kind (min, max)")
+
+        # Backward compatibility with integer value
+        if isinstance(interpolation, int):
+            warnings.warn(
+                "Argument interpolation should be of type InterpolationMode instead of int. "
+                "Please, use InterpolationMode enum."
+            )
+            interpolation = _interpolation_modes_from_int(interpolation)
 
         self.interpolation = interpolation
         self.scale = scale
@@ -824,7 +849,7 @@ class RandomResizedCrop(torch.nn.Module):
         return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
 
     def __repr__(self):
-        interpolate_str = _pil_interpolation_to_str[self.interpolation]
+        interpolate_str = self.interpolation.value
         format_string = self.__class__.__name__ + '(size={0}'.format(self.size)
         format_string += ', scale={0}'.format(tuple(round(s, 4) for s in self.scale))
         format_string += ', ratio={0}'.format(tuple(round(r, 4) for r in self.ratio))
@@ -1051,38 +1076,35 @@ class ColorJitter(torch.nn.Module):
         return value
 
     @staticmethod
-    @torch.jit.unused
-    def get_params(brightness, contrast, saturation, hue):
-        """Get a randomized transform to be applied on image.
+    def get_params(brightness: Optional[List[float]],
+                   contrast: Optional[List[float]],
+                   saturation: Optional[List[float]],
+                   hue: Optional[List[float]]
+                   ) -> Tuple[Tensor, Optional[float], Optional[float], Optional[float], Optional[float]]:
+        """Get the parameters for the randomized transform to be applied on image.
 
-        Arguments are same as that of __init__.
+        Args:
+            brightness (tuple of float (min, max), optional): The range from which the brightness_factor is chosen
+                uniformly. Pass None to turn off the transformation.
+            contrast (tuple of float (min, max), optional): The range from which the contrast_factor is chosen
+                uniformly. Pass None to turn off the transformation.
+            saturation (tuple of float (min, max), optional): The range from which the saturation_factor is chosen
+                uniformly. Pass None to turn off the transformation.
+            hue (tuple of float (min, max), optional): The range from which the hue_factor is chosen uniformly.
+                Pass None to turn off the transformation.
 
         Returns:
-            Transform which randomly adjusts brightness, contrast and
-            saturation in a random order.
+            tuple: The parameters used to apply the randomized transform
+            along with their random order.
         """
-        transforms = []
+        fn_idx = torch.randperm(4)
 
-        if brightness is not None:
-            brightness_factor = random.uniform(brightness[0], brightness[1])
-            transforms.append(Lambda(lambda img: F.adjust_brightness(img, brightness_factor)))
+        b = None if brightness is None else float(torch.empty(1).uniform_(brightness[0], brightness[1]))
+        c = None if contrast is None else float(torch.empty(1).uniform_(contrast[0], contrast[1]))
+        s = None if saturation is None else float(torch.empty(1).uniform_(saturation[0], saturation[1]))
+        h = None if hue is None else float(torch.empty(1).uniform_(hue[0], hue[1]))
 
-        if contrast is not None:
-            contrast_factor = random.uniform(contrast[0], contrast[1])
-            transforms.append(Lambda(lambda img: F.adjust_contrast(img, contrast_factor)))
-
-        if saturation is not None:
-            saturation_factor = random.uniform(saturation[0], saturation[1])
-            transforms.append(Lambda(lambda img: F.adjust_saturation(img, saturation_factor)))
-
-        if hue is not None:
-            hue_factor = random.uniform(hue[0], hue[1])
-            transforms.append(Lambda(lambda img: F.adjust_hue(img, hue_factor)))
-
-        random.shuffle(transforms)
-        transform = Compose(transforms)
-
-        return transform
+        return fn_idx, b, c, s, h
 
     def forward(self, img):
         """
@@ -1092,26 +1114,17 @@ class ColorJitter(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Color jittered image.
         """
-        fn_idx = torch.randperm(4)
+        fn_idx, brightness_factor, contrast_factor, saturation_factor, hue_factor = \
+            self.get_params(self.brightness, self.contrast, self.saturation, self.hue)
+
         for fn_id in fn_idx:
-            if fn_id == 0 and self.brightness is not None:
-                brightness = self.brightness
-                brightness_factor = torch.tensor(1.0).uniform_(brightness[0], brightness[1]).item()
+            if fn_id == 0 and brightness_factor is not None:
                 img = F.adjust_brightness(img, brightness_factor)
-
-            if fn_id == 1 and self.contrast is not None:
-                contrast = self.contrast
-                contrast_factor = torch.tensor(1.0).uniform_(contrast[0], contrast[1]).item()
+            elif fn_id == 1 and contrast_factor is not None:
                 img = F.adjust_contrast(img, contrast_factor)
-
-            if fn_id == 2 and self.saturation is not None:
-                saturation = self.saturation
-                saturation_factor = torch.tensor(1.0).uniform_(saturation[0], saturation[1]).item()
+            elif fn_id == 2 and saturation_factor is not None:
                 img = F.adjust_saturation(img, saturation_factor)
-
-            if fn_id == 3 and self.hue is not None:
-                hue = self.hue
-                hue_factor = torch.tensor(1.0).uniform_(hue[0], hue[1]).item()
+            elif fn_id == 3 and hue_factor is not None:
                 img = F.adjust_hue(img, hue_factor)
 
         return img
@@ -1134,9 +1147,10 @@ class RandomRotation(torch.nn.Module):
         degrees (sequence or float or int): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
             will be (-degrees, +degrees).
-        resample (int, optional): An optional resampling filter. See `filters`_ for more information.
-            If omitted, or if the image has mode "1" or "P", it is set to PIL.Image.NEAREST.
-            If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
@@ -1148,13 +1162,31 @@ class RandomRotation(torch.nn.Module):
             Defaults to 0 for all bands. This option is only available for Pillow>=5.2.0.
             This option is not supported for Tensor input. Fill value for the area outside the transform in the output
             image is always 0.
+        resample (int, optional): deprecated argument and will be removed since v0.10.0.
+            Please use `arg`:interpolation: instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
 
-    def __init__(self, degrees, resample=False, expand=False, center=None, fill=None):
+    def __init__(
+        self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=None, resample=None
+    ):
         super().__init__()
+        if resample is not None:
+            warnings.warn(
+                "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+            )
+            interpolation = _interpolation_modes_from_int(resample)
+
+        # Backward compatibility with integer value
+        if isinstance(interpolation, int):
+            warnings.warn(
+                "Argument interpolation should be of type InterpolationMode instead of int. "
+                "Please, use InterpolationMode enum."
+            )
+            interpolation = _interpolation_modes_from_int(interpolation)
+
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 
         if center is not None:
@@ -1162,7 +1194,7 @@ class RandomRotation(torch.nn.Module):
 
         self.center = center
 
-        self.resample = resample
+        self.resample = self.interpolation = interpolation
         self.expand = expand
         self.fill = fill
 
@@ -1185,11 +1217,12 @@ class RandomRotation(torch.nn.Module):
             PIL Image or Tensor: Rotated image.
         """
         angle = self.get_params(self.degrees)
-        return F.rotate(img, angle, self.resample, self.expand, self.center, self.fill)
+        return F.rotate(img, angle, self.interpolation, self.expand, self.center, self.fill)
 
     def __repr__(self):
+        interpolate_str = self.interpolation.value
         format_string = self.__class__.__name__ + '(degrees={0}'.format(self.degrees)
-        format_string += ', resample={0}'.format(self.resample)
+        format_string += ', interpolation={0}'.format(interpolate_str)
         format_string += ', expand={0}'.format(self.expand)
         if self.center is not None:
             format_string += ', center={0}'.format(self.center)
@@ -1220,19 +1253,47 @@ class RandomAffine(torch.nn.Module):
             range (shear[0], shear[1]) will be applied. Else if shear is a tuple or list of 4 values,
             a x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
             Will not apply shear by default.
-        resample (int, optional): An optional resampling filter. See `filters`_ for more information.
-            If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
-            If input is Tensor, only ``PIL.Image.NEAREST`` and ``PIL.Image.BILINEAR`` are supported.
-        fillcolor (tuple or int): Optional fill color (Tuple for RGB Image and int for grayscale) for the area
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+        fill (tuple or int): Optional fill color (Tuple for RGB Image and int for grayscale) for the area
             outside the transform in the output image (Pillow>=5.0.0). This option is not supported for Tensor
             input. Fill value for the area outside the transform in the output image is always 0.
+        fillcolor (tuple or int, optional): deprecated argument and will be removed since v0.10.0.
+            Please use `arg`:fill: instead.
+        resample (int, optional): deprecated argument and will be removed since v0.10.0.
+            Please use `arg`:interpolation: instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
 
-    def __init__(self, degrees, translate=None, scale=None, shear=None, resample=0, fillcolor=0):
+    def __init__(
+        self, degrees, translate=None, scale=None, shear=None, interpolation=InterpolationMode.NEAREST, fill=0,
+        fillcolor=None, resample=None
+    ):
         super().__init__()
+        if resample is not None:
+            warnings.warn(
+                "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+            )
+            interpolation = _interpolation_modes_from_int(resample)
+
+        # Backward compatibility with integer value
+        if isinstance(interpolation, int):
+            warnings.warn(
+                "Argument interpolation should be of type InterpolationMode instead of int. "
+                "Please, use InterpolationMode enum."
+            )
+            interpolation = _interpolation_modes_from_int(interpolation)
+
+        if fillcolor is not None:
+            warnings.warn(
+                "Argument fillcolor is deprecated and will be removed since v0.10.0. Please, use fill instead"
+            )
+            fill = fillcolor
+
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
 
         if translate is not None:
@@ -1254,8 +1315,8 @@ class RandomAffine(torch.nn.Module):
         else:
             self.shear = shear
 
-        self.resample = resample
-        self.fillcolor = fillcolor
+        self.resample = self.interpolation = interpolation
+        self.fillcolor = self.fill = fill
 
     @staticmethod
     def get_params(
@@ -1306,7 +1367,7 @@ class RandomAffine(torch.nn.Module):
         img_size = F._get_image_size(img)
 
         ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img_size)
-        return F.affine(img, *ret, resample=self.resample, fillcolor=self.fillcolor)
+        return F.affine(img, *ret, interpolation=self.interpolation, fill=self.fill)
 
     def __repr__(self):
         s = '{name}(degrees={degrees}'
@@ -1316,13 +1377,13 @@ class RandomAffine(torch.nn.Module):
             s += ', scale={scale}'
         if self.shear is not None:
             s += ', shear={shear}'
-        if self.resample > 0:
-            s += ', resample={resample}'
-        if self.fillcolor != 0:
-            s += ', fillcolor={fillcolor}'
+        if self.interpolation != InterpolationMode.NEAREST:
+            s += ', interpolation={interpolation}'
+        if self.fill != 0:
+            s += ', fill={fill}'
         s += ')'
         d = dict(self.__dict__)
-        d['resample'] = _pil_interpolation_to_str[d['resample']]
+        d['interpolation'] = self.interpolation.value
         return s.format(name=self.__class__.__name__, **d)
 
 

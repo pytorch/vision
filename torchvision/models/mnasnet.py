@@ -216,9 +216,10 @@ def _load_pretrained(model_name: str, model: nn.Module, progress: bool) -> None:
 
 
 def mnasnet0_5(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MNASNet:
-    """MNASNet with depth multiplier of 0.5 from
+    r"""MNASNet with depth multiplier of 0.5 from
     `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
     <https://arxiv.org/pdf/1807.11626.pdf>`_.
+
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
@@ -230,9 +231,10 @@ def mnasnet0_5(pretrained: bool = False, progress: bool = True, **kwargs: Any) -
 
 
 def mnasnet0_75(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MNASNet:
-    """MNASNet with depth multiplier of 0.75 from
+    r"""MNASNet with depth multiplier of 0.75 from
     `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
     <https://arxiv.org/pdf/1807.11626.pdf>`_.
+
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
@@ -244,9 +246,10 @@ def mnasnet0_75(pretrained: bool = False, progress: bool = True, **kwargs: Any) 
 
 
 def mnasnet1_0(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MNASNet:
-    """MNASNet with depth multiplier of 1.0 from
+    r"""MNASNet with depth multiplier of 1.0 from
     `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
     <https://arxiv.org/pdf/1807.11626.pdf>`_.
+
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
@@ -258,9 +261,10 @@ def mnasnet1_0(pretrained: bool = False, progress: bool = True, **kwargs: Any) -
 
 
 def mnasnet1_3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MNASNet:
-    """MNASNet with depth multiplier of 1.3 from
+    r"""MNASNet with depth multiplier of 1.3 from
     `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
     <https://arxiv.org/pdf/1807.11626.pdf>`_.
+
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
