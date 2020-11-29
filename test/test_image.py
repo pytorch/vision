@@ -10,7 +10,7 @@ from common_utils import get_tmp_dir
 
 from torchvision.io.image import (
     decode_png, decode_jpeg, encode_jpeg, write_jpeg, decode_image, read_file,
-    encode_png, write_png, write_file)
+    encode_png, write_png, write_file, ImageReadMode)
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 FAKEDATA_DIR = os.path.join(IMAGE_ROOT, "fakedata")
