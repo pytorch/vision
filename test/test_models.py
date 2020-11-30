@@ -74,7 +74,7 @@ class ModelTester(TestCase):
         self.assertEqual(out.shape[-1], 50)
         self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
-        if dev == "cuda":
+        if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
                 out = model(x)
                 # See autocast_flaky_numerics comment at top of file.
@@ -94,7 +94,7 @@ class ModelTester(TestCase):
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
         self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
-        if dev == "cuda":
+        if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
                 out = model(x)
                 self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
@@ -169,7 +169,7 @@ class ModelTester(TestCase):
         full_validation = check_out(out)
         self.check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(name, None))
 
-        if dev == "cuda":
+        if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
                 out = model(model_input)
                 # See autocast_flaky_numerics comment at top of file.
@@ -220,7 +220,7 @@ class ModelTester(TestCase):
         self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
         self.assertEqual(out.shape[-1], 50)
 
-        if dev == "cuda":
+        if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
                 out = model(x)
                 self.assertEqual(out.shape[-1], 50)
