@@ -70,16 +70,16 @@ class ModelTester(TestCase):
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         out = model(x)
-        self.assertExpected(out.cpu(), prec=0.1, strip_suffix="_" + dev)
+        self.assertExpected(out.cpu(), prec=0.1, strip_suffix=f"_{dev}")
         self.assertEqual(out.shape[-1], 50)
         self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
-        if dev == "cuda":
+        if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
                 out = model(x)
                 # See autocast_flaky_numerics comment at top of file.
                 if name not in autocast_flaky_numerics:
-                    self.assertExpected(out.cpu(), prec=0.1, strip_suffix="_" + dev)
+                    self.assertExpected(out.cpu(), prec=0.1, strip_suffix=f"_{dev}")
                 self.assertEqual(out.shape[-1], 50)
 
     def _test_segmentation_model(self, name, dev):
@@ -94,7 +94,7 @@ class ModelTester(TestCase):
         self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
         self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
-        if dev == "cuda":
+        if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
                 out = model(x)
                 self.assertEqual(tuple(out["out"].shape), (1, 50, 300, 300))
@@ -143,7 +143,7 @@ class ModelTester(TestCase):
 
             output = map_nested_tensor_object(out, tensor_map_fn=compact)
             prec = 0.01
-            strip_suffix = "_" + dev
+            strip_suffix = f"_{dev}"
             try:
                 # We first try to assert the entire output if possible. This is not
                 # only the best way to assert results but also handles the cases
@@ -169,7 +169,7 @@ class ModelTester(TestCase):
         full_validation = check_out(out)
         self.check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(name, None))
 
-        if dev == "cuda":
+        if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
                 out = model(model_input)
                 # See autocast_flaky_numerics comment at top of file.
@@ -220,7 +220,7 @@ class ModelTester(TestCase):
         self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
         self.assertEqual(out.shape[-1], 50)
 
-        if dev == "cuda":
+        if dev == torch.device("cuda"):
             with torch.cuda.amp.autocast():
                 out = model(x)
                 self.assertEqual(out.shape[-1], 50)
@@ -380,7 +380,7 @@ class ModelTester(TestCase):
         self.assertEqual(t.__repr__(), expected_string)
 
 
-_devs = ["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"]
+_devs = [torch.device("cpu"), torch.device("cuda")] if torch.cuda.is_available() else [torch.device("cpu")]
 
 
 for model_name in get_available_classification_models():
@@ -393,7 +393,7 @@ for model_name in get_available_classification_models():
                 input_shape = (1, 3, 299, 299)
             self._test_classification_model(model_name, input_shape, dev)
 
-        setattr(ModelTester, "test_" + model_name + "_" + dev, do_test)
+        setattr(ModelTester, f"test_{model_name}_{dev}", do_test)
 
 
 for model_name in get_available_segmentation_models():
@@ -403,7 +403,7 @@ for model_name in get_available_segmentation_models():
         def do_test(self, model_name=model_name, dev=dev):
             self._test_segmentation_model(model_name, dev)
 
-        setattr(ModelTester, "test_" + model_name + "_" + dev, do_test)
+        setattr(ModelTester, f"test_{model_name}_{dev}", do_test)
 
 
 for model_name in get_available_detection_models():
@@ -413,7 +413,7 @@ for model_name in get_available_detection_models():
         def do_test(self, model_name=model_name, dev=dev):
             self._test_detection_model(model_name, dev)
 
-        setattr(ModelTester, "test_" + model_name + "_" + dev, do_test)
+        setattr(ModelTester, f"test_{model_name}_{dev}", do_test)
 
     def do_validation_test(self, model_name=model_name):
         self._test_detection_model_validation(model_name)
@@ -426,7 +426,7 @@ for model_name in get_available_video_models():
         def do_test(self, model_name=model_name, dev=dev):
             self._test_video_model(model_name, dev)
 
-        setattr(ModelTester, "test_" + model_name + "_" + dev, do_test)
+        setattr(ModelTester, f"test_{model_name}_{dev}", do_test)
 
 if __name__ == '__main__':
     unittest.main()
