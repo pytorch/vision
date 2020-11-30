@@ -285,7 +285,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
 
 
 def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
-    """PRIVATE METHOD. Adjust hue of an image.
+    """PRIVATE METHOD. Adjust hue of an RGB image.
 
     .. warning::
 
