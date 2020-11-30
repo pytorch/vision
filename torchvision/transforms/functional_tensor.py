@@ -1138,3 +1138,31 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
 
     img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
+
+
+def invert(img: Tensor) -> Tensor:
+    """PRIVATE METHOD. Invert the colors of a grayscale or RGB image.
+
+    .. warning::``
+
+        Module ``transforms.functional_tensor`` is private and should not be used in user application.
+        Please, consider instead using methods from `transforms.functional` module.
+
+    Args:
+        img (Tensor): Image to have its colors inverted in the form [C, H, W].
+
+    Returns:
+        Tensor: Color inverted image Tensor.
+    """
+    if not _is_tensor_a_torch_image(img):
+        raise TypeError('tensor is not a torch image.')
+
+    if img.ndim < 3:
+        raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
+    c = img.shape[-3]
+    if c != 1 and c != 3:
+        raise TypeError("Input image tensor should 1 or 3 channels, but found {}".format(c))
+
+    max_val = _max_value(img.dtype)
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+    return (max_val - img.to(dtype)).to(img.dtype)
