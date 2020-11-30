@@ -5,7 +5,7 @@ import warnings
 import torch
 import torch.nn as nn
 from torch import Tensor
-from torch.jit.annotations import Dict, List, Tuple
+from torch.jit.annotations import Dict, List, Tuple, Optional
 
 from ._utils import overwrite_eps
 from ..utils import load_state_dict_from_url
