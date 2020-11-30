@@ -11,9 +11,9 @@ dependencies:
   - libpng
   - jpeg
   - ca-certificates
+  - av
   - pip:
     - future
     - pillow>=4.1.1
     - scipy==1.4.1
-    - av
     - dataclasses
