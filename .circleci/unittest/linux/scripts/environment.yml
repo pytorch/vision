@@ -1,6 +1,7 @@
 channels:
   - pytorch
   - defaults
+  - conda-forge
 dependencies:
   - numpy
   - pytest

@@ -27,11 +27,6 @@ if [ ! -d "${conda_dir}" ]; then
 fi
 eval "$(${conda_dir}/bin/conda shell.bash hook)"
 
-CONDA_CHANNEL_FLAGS=""
-if [[ "${PYTHON_VERSION}" = 3.9 ]]; then
-    CONDA_CHANNEL_FLAGS="-c=conda-forge"
-fi
-
 # 2. Create test environment at ./env
 if [ ! -d "${env_dir}" ]; then
     printf "* Creating a test environment\n"
@@ -41,4 +36,4 @@ conda activate "${env_dir}"
 
 # 3. Install Conda dependencies
 printf "* Installing dependencies (except PyTorch)\n"
-conda env update ${CONDA_CHANNEL_FLAGS} --file "${this_dir}/environment.yml" --prune
+conda env update --file "${this_dir}/environment.yml" --prune
