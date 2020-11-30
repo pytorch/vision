@@ -70,6 +70,7 @@
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <THC/THCAtomics.cuh>
+#include <torch/script.h>
 
 #include "cuda_helpers.h"
 #include "deform_conv2d_kernel.h"
@@ -1187,4 +1188,9 @@ deform_conv2d_backward_cuda(
 
   return std::make_tuple(
       grad_input, grad_weight, grad_offset, grad_mask, grad_bias);
+}
+
+TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
+  m.impl("deform_conv2d", deform_conv2d_forward_cuda);
+  m.impl("_deform_conv2d_backward", deform_conv2d_backward_cuda);
 }

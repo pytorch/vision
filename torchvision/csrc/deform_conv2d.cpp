@@ -74,6 +74,10 @@ at::Tensor deform_conv2d_autocast(
              use_mask)
       .to(input.scalar_type());
 }
+
+TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
+  m.impl("deform_conv2d", deform_conv2d_autocast);
+}
 #endif
 
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
@@ -360,4 +364,9 @@ deform_conv2d_backward_autograd(
       use_mask);
 
   return std::make_tuple(result[0], result[1], result[2], result[3], result[4]);
+}
+
+TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
+  m.impl("deform_conv2d", deform_conv2d_autograd);
+  m.impl("_deform_conv2d_backward", deform_conv2d_backward_autograd);
 }

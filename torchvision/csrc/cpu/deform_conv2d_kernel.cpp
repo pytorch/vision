@@ -66,6 +66,8 @@
 // modified from
 // https://github.com/open-mmlab/mmdetection/blob/master/mmdet/ops/dcn/src/deform_conv_cuda.cpp
 
+#include <torch/script.h>
+
 #include "deform_conv2d_kernel.h"
 
 namespace {
@@ -1136,4 +1138,9 @@ deform_conv2d_backward_cpu(
 
   return std::make_tuple(
       grad_input, grad_weight, grad_offset, grad_mask, grad_bias);
+}
+
+TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
+  m.impl("deform_conv2d", deform_conv2d_forward_cpu);
+  m.impl("_deform_conv2d_backward", deform_conv2d_backward_cpu);
 }

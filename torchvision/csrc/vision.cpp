@@ -62,8 +62,6 @@ TORCH_LIBRARY(torchvision, m) {
 }
 
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
-  m.impl("deform_conv2d", deform_conv2d_forward_cpu);
-  m.impl("_deform_conv2d_backward", deform_conv2d_backward_cpu);
   m.impl("nms", nms_cpu);
   m.impl("ps_roi_align", PSROIAlign_forward_cpu);
   m.impl("_ps_roi_align_backward", PSROIAlign_backward_cpu);
@@ -78,8 +76,6 @@ TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
 // TODO: Place this in a hypothetical separate torchvision_cuda library
 #if defined(WITH_CUDA) || defined(WITH_HIP)
 TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
-  m.impl("deform_conv2d", deform_conv2d_forward_cuda);
-  m.impl("_deform_conv2d_backward", deform_conv2d_backward_cuda);
   m.impl("nms", nms_cuda);
   m.impl("ps_roi_align", PSROIAlign_forward_cuda);
   m.impl("_ps_roi_align_backward", PSROIAlign_backward_cuda);
@@ -95,7 +91,6 @@ TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
 // Autocast only needs to wrap forward pass ops.
 #if defined(WITH_CUDA) || defined(WITH_HIP)
 TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
-  m.impl("deform_conv2d", deform_conv2d_autocast);
   m.impl("nms", nms_autocast);
   m.impl("ps_roi_align", PSROIAlign_autocast);
   m.impl("ps_roi_pool", PSROIPool_autocast);
@@ -105,8 +100,6 @@ TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
 #endif
 
 TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
-  m.impl("deform_conv2d", deform_conv2d_autograd);
-  m.impl("_deform_conv2d_backward", deform_conv2d_backward_autograd);
   m.impl("ps_roi_align", PSROIAlign_autograd);
   m.impl("_ps_roi_align_backward", PSROIAlign_backward_autograd);
   m.impl("ps_roi_pool", PSROIPool_autograd);
