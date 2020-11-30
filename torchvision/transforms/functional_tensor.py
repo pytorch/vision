@@ -851,8 +851,8 @@ def _assert_grid_transform_inputs(
     if coeffs is not None and len(coeffs) != 8:
         raise ValueError("Argument coeffs should have 8 float values")
 
-    if fill is not None and not isinstance(fill, list):
-        warnings.warn("Argument fill should be a list")
+    if fill is not None and not isinstance(fill, (int, float, tuple, list)):
+        warnings.warn("Argument fill should be either int, float, tuple or list")
 
     if interpolation not in supported_interpolation_modes:
         raise ValueError("Interpolation mode '{}' is unsupported with Tensor input".format(interpolation))
@@ -907,9 +907,11 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[L
         mask = img[:, -1:, :, :]  # N * 1 * H * W
         img = img[:, :-1, :, :]  # N * C * H * W
         mask = mask.expand_as(img)
-        fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device).view(1, len(fill), 1, 1).expand_as(img)
+        len_fill = len(fill) if isinstance(fill, list) else 1
+        fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device).view(1, len_fill, 1, 1).expand_as(img)
         if mode == 'nearest':
-            img[mask < 1e-3] = fill_img[mask < 1e-3]  # Leave some room for error
+            mask = mask < 0.5
+            img[mask] = fill_img[mask]
         else:  # 'bilinear'
             img = img * mask + (1.0 - mask) * fill_img
 
