@@ -907,8 +907,7 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[L
         mask = img[:, -1:, :, :]  # N * 1 * H * W
         img = img[:, :-1, :, :]  # N * C * H * W
         mask = mask.expand_as(img)
-        fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device).unsqueeze(0).unsqueeze(-1).unsqueeze(-1) \
-            .expand_as(img)
+        fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device).view(1, len(fill), 1, 1).expand_as(img)
         if mode == 'nearest':
             img[mask < 1e-3] = fill_img[mask < 1e-3]  # Leave some room for error
         else:  # 'bilinear'
