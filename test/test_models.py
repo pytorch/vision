@@ -380,7 +380,7 @@ class ModelTester(TestCase):
         self.assertEqual(t.__repr__(), expected_string)
 
 
-_devs = ["cpu", "cuda"] if torch.cuda.is_available() else ["cpu"]
+_devs = [torch.device("cpu"), torch.device("cuda")] if torch.cuda.is_available() else [torch.device("cpu")]
 
 
 for model_name in get_available_classification_models():
