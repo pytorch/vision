@@ -6,7 +6,6 @@
 #include <vector>
 
 #include <ATen/ATen.h>
-#include <Python.h>
 #include <c10/util/Logging.h>
 #include <torch/script.h>
 

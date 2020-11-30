@@ -1,18 +1,16 @@
 #include "readpng_cpu.h"
 
-// Comment
 #include <ATen/ATen.h>
-#include <setjmp.h>
-#include <string>
 
 #if !PNG_FOUND
-torch::Tensor decodePNG(const torch::Tensor& data) {
+torch::Tensor decodePNG(const torch::Tensor& data, ImageReadMode mode) {
   TORCH_CHECK(false, "decodePNG: torchvision not compiled with libPNG support");
 }
 #else
 #include <png.h>
+#include <setjmp.h>
 
-torch::Tensor decodePNG(const torch::Tensor& data) {
+torch::Tensor decodePNG(const torch::Tensor& data, ImageReadMode mode) {
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
@@ -71,17 +69,93 @@ torch::Tensor decodePNG(const torch::Tensor& data) {
     png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
     TORCH_CHECK(retval == 1, "Could read image metadata from content.")
   }
-  if (color_type != PNG_COLOR_TYPE_RGB) {
-    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-    TORCH_CHECK(
-        color_type == PNG_COLOR_TYPE_RGB, "Non RGB images are not supported.")
+
+  int channels = png_get_channels(png_ptr, info_ptr);
+
+  if (mode != IMAGE_READ_MODE_UNCHANGED) {
+    // TODO: consider supporting PNG_INFO_tRNS
+    bool is_palette = (color_type & PNG_COLOR_MASK_PALETTE) != 0;
+    bool has_color = (color_type & PNG_COLOR_MASK_COLOR) != 0;
+    bool has_alpha = (color_type & PNG_COLOR_MASK_ALPHA) != 0;
+
+    switch (mode) {
+      case IMAGE_READ_MODE_GRAY:
+        if (color_type != PNG_COLOR_TYPE_GRAY) {
+          if (is_palette) {
+            png_set_palette_to_rgb(png_ptr);
+            has_alpha = true;
+          }
+
+          if (has_alpha) {
+            png_set_strip_alpha(png_ptr);
+          }
+
+          if (has_color) {
+            png_set_rgb_to_gray(png_ptr, 1, 0.2989, 0.587);
+          }
+          channels = 1;
+        }
+        break;
+      case IMAGE_READ_MODE_GRAY_ALPHA:
+        if (color_type != PNG_COLOR_TYPE_GRAY_ALPHA) {
+          if (is_palette) {
+            png_set_palette_to_rgb(png_ptr);
+            has_alpha = true;
+          }
+
+          if (!has_alpha) {
+            png_set_add_alpha(png_ptr, (1 << bit_depth) - 1, PNG_FILLER_AFTER);
+          }
+
+          if (has_color) {
+            png_set_rgb_to_gray(png_ptr, 1, 0.2989, 0.587);
+          }
+          channels = 2;
+        }
+        break;
+      case IMAGE_READ_MODE_RGB:
+        if (color_type != PNG_COLOR_TYPE_RGB) {
+          if (is_palette) {
+            png_set_palette_to_rgb(png_ptr);
+            has_alpha = true;
+          } else if (!has_color) {
+            png_set_gray_to_rgb(png_ptr);
+          }
+
+          if (has_alpha) {
+            png_set_strip_alpha(png_ptr);
+          }
+          channels = 3;
+        }
+        break;
+      case IMAGE_READ_MODE_RGB_ALPHA:
+        if (color_type != PNG_COLOR_TYPE_RGB_ALPHA) {
+          if (is_palette) {
+            png_set_palette_to_rgb(png_ptr);
+            has_alpha = true;
+          } else if (!has_color) {
+            png_set_gray_to_rgb(png_ptr);
+          }
+
+          if (!has_alpha) {
+            png_set_add_alpha(png_ptr, (1 << bit_depth) - 1, PNG_FILLER_AFTER);
+          }
+          channels = 4;
+        }
+        break;
+      default:
+        png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
+        TORCH_CHECK(false, "Provided mode not supported");
+    }
+
+    png_read_update_info(png_ptr, info_ptr);
   }
 
   auto tensor =
-      torch::empty({int64_t(height), int64_t(width), int64_t(3)}, torch::kU8);
+      torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
   auto ptr = tensor.accessor<uint8_t, 3>().data();
   auto bytes = png_get_rowbytes(png_ptr, info_ptr);
-  for (decltype(height) i = 0; i < height; ++i) {
+  for (png_uint_32 i = 0; i < height; ++i) {
     png_read_row(png_ptr, ptr, nullptr);
     ptr += bytes;
   }

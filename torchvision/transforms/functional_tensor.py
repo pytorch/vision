@@ -757,7 +757,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     return img
 
 
-def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
+def resize(img: Tensor, size: List[int], interpolation: str = "bilinear") -> Tensor:
     r"""PRIVATE METHOD. Resize the input Tensor to the given size.
 
     .. warning::
@@ -774,8 +774,8 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
             :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
             In torchscript mode padding as a single int is not supported, use a tuple or
             list of length 1: ``[size, ]``.
-        interpolation (int, optional): Desired interpolation. Default is bilinear (=2). Other supported values:
-            nearest(=0) and bicubic(=3).
+        interpolation (str): Desired interpolation. Default is "bilinear". Other supported values:
+            "nearest" and "bicubic".
 
     Returns:
         Tensor: Resized image.
@@ -785,16 +785,10 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
 
     if not isinstance(size, (int, tuple, list)):
         raise TypeError("Got inappropriate size arg")
-    if not isinstance(interpolation, int):
+    if not isinstance(interpolation, str):
         raise TypeError("Got inappropriate interpolation arg")
 
-    _interpolation_modes = {
-        0: "nearest",
-        2: "bilinear",
-        3: "bicubic",
-    }
-
-    if interpolation not in _interpolation_modes:
+    if interpolation not in ["nearest", "bilinear", "bicubic"]:
         raise ValueError("This interpolation mode is unsupported with Tensor input")
 
     if isinstance(size, tuple):
@@ -822,32 +816,17 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
         if (w <= h and w == size_w) or (h <= w and h == size_h):
             return img
 
-    # make image NCHW
-    need_squeeze = False
-    if img.ndim < 4:
-        img = img.unsqueeze(dim=0)
-        need_squeeze = True
-
-    mode = _interpolation_modes[interpolation]
-
-    out_dtype = img.dtype
-    need_cast = False
-    if img.dtype not in (torch.float32, torch.float64):
-        need_cast = True
-        img = img.to(torch.float32)
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [torch.float32, torch.float64])
 
     # Define align_corners to avoid warnings
-    align_corners = False if mode in ["bilinear", "bicubic"] else None
+    align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
-    img = interpolate(img, size=[size_h, size_w], mode=mode, align_corners=align_corners)
+    img = interpolate(img, size=[size_h, size_w], mode=interpolation, align_corners=align_corners)
 
-    if need_squeeze:
-        img = img.squeeze(dim=0)
+    if interpolation == "bicubic" and out_dtype == torch.uint8:
+        img = img.clamp(min=0, max=255)
 
-    if need_cast:
-        if mode == "bicubic":
-            img = img.clamp(min=0, max=255)
-        img = img.to(out_dtype)
+    img = _cast_squeeze_out(img, need_cast=need_cast, need_squeeze=need_squeeze, out_dtype=out_dtype)
 
     return img
 
@@ -855,9 +834,9 @@ def resize(img: Tensor, size: List[int], interpolation: int = 2) -> Tensor:
 def _assert_grid_transform_inputs(
         img: Tensor,
         matrix: Optional[List[float]],
-        resample: int,
-        fillcolor: Optional[List[float]],
-        _interpolation_modes: Dict[int, str],
+        interpolation: str,
+        fill: Optional[List[float]],
+        supported_interpolation_modes: List[str],
         coeffs: Optional[List[float]] = None,
 ):
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
@@ -872,14 +851,14 @@ def _assert_grid_transform_inputs(
     if coeffs is not None and len(coeffs) != 8:
         raise ValueError("Argument coeffs should have 8 float values")
 
-    if fillcolor is not None and not isinstance(fillcolor, list):
-        warnings.warn("Argument fill/fillcolor should be a list")
+    if fill is not None and not isinstance(fill, list):
+        warnings.warn("Argument fill should be a list")
 
-    if resample not in _interpolation_modes:
-        raise ValueError("Resampling mode '{}' is unsupported with Tensor input".format(resample))
+    if interpolation not in supported_interpolation_modes:
+        raise ValueError("Interpolation mode '{}' is unsupported with Tensor input".format(interpolation))
 
 
-def _cast_squeeze_in(img: Tensor, req_dtype: torch.dtype) -> Tuple[Tensor, bool, bool, torch.dtype]:
+def _cast_squeeze_in(img: Tensor, req_dtypes: List[torch.dtype]) -> Tuple[Tensor, bool, bool, torch.dtype]:
     need_squeeze = False
     # make image NCHW
     if img.ndim < 4:
@@ -888,8 +867,9 @@ def _cast_squeeze_in(img: Tensor, req_dtype: torch.dtype) -> Tuple[Tensor, bool,
 
     out_dtype = img.dtype
     need_cast = False
-    if out_dtype != req_dtype:
+    if out_dtype not in req_dtypes:
         need_cast = True
+        req_dtype = req_dtypes[0]
         img = img.to(req_dtype)
     return img, need_cast, need_squeeze, out_dtype
 
@@ -899,33 +879,35 @@ def _cast_squeeze_out(img: Tensor, need_cast: bool, need_squeeze: bool, out_dtyp
         img = img.squeeze(dim=0)
 
     if need_cast:
-        # it is better to round before cast
-        img = torch.round(img).to(out_dtype)
+        if out_dtype in (torch.uint8, torch.int8, torch.int16, torch.int32, torch.int64):
+            # it is better to round before cast
+            img = torch.round(img)
+        img = img.to(out_dtype)
 
     return img
 
 
-def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fillcolor: Optional[List[float]]) -> Tensor:
+def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[List[float]]) -> Tensor:
 
-    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, grid.dtype)
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [grid.dtype, ])
 
     if img.shape[0] > 1:
         # Apply same grid to a batch of images
         grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
 
     # Append a dummy mask for customized fill colors, should be faster than grid_sample() twice
-    if fillcolor is not None:
+    if fill is not None:
         dummy = torch.ones((img.shape[0], 1, img.shape[2], img.shape[3]), dtype=img.dtype, device=img.device)
         img = torch.cat((img, dummy), dim=1)
 
     img = grid_sample(img, grid, mode=mode, padding_mode="zeros", align_corners=False)
 
     # Fill with required color
-    if fillcolor is not None:
+    if fill is not None:
         mask = img[:, -1:, :, :]  # N * 1 * H * W
         img = img[:, :-1, :, :]  # N * C * H * W
         mask = mask.expand_as(img)
-        fill = torch.tensor(fillcolor, dtype=img.dtype, device=img.device).unsqueeze(0).unsqueeze(-1).unsqueeze(-1) \
+        fill = torch.tensor(fill, dtype=img.dtype, device=img.device).unsqueeze(0).unsqueeze(-1).unsqueeze(-1) \
             .expand_as(img)
         if mode == 'nearest':
             img[mask < 1e-3] = fill[mask < 1e-3]  # Leave some room for error
@@ -959,7 +941,7 @@ def _gen_affine_grid(
 
 
 def affine(
-        img: Tensor, matrix: List[float], resample: int = 0, fillcolor: Optional[List[float]] = None
+        img: Tensor, matrix: List[float], interpolation: str = "nearest", fill: Optional[List[float]] = None
 ) -> Tensor:
     """PRIVATE METHOD. Apply affine transformation on the Tensor image keeping image center invariant.
 
@@ -971,28 +953,21 @@ def affine(
     Args:
         img (Tensor): image to be rotated.
         matrix (list of floats): list of 6 float values representing inverse matrix for affine transformation.
-        resample (int, optional): An optional resampling filter. Default is nearest (=0). Other supported values:
-            bilinear(=2).
+        interpolation (str): An optional resampling filter. Default is "nearest". Other supported values: "bilinear".
         fill (sequence or int or float, optional): Optional fill value, default None.
             If None, fill with 0.
 
     Returns:
         Tensor: Transformed image.
     """
-    _interpolation_modes = {
-        0: "nearest",
-        2: "bilinear",
-    }
-
-    _assert_grid_transform_inputs(img, matrix, resample, fillcolor, _interpolation_modes)
+    _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
 
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     shape = img.shape
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
-    mode = _interpolation_modes[resample]
-    return _apply_grid_transform(img, grid, mode, fillcolor=fillcolor)
+    return _apply_grid_transform(img, grid, interpolation, fill=fill)
 
 
 def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
@@ -1021,7 +996,8 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
 
 
 def rotate(
-        img: Tensor, matrix: List[float], resample: int = 0, expand: bool = False, fill: Optional[List[float]] = None
+    img: Tensor, matrix: List[float], interpolation: str = "nearest",
+    expand: bool = False, fill: Optional[List[float]] = None
 ) -> Tensor:
     """PRIVATE METHOD. Rotate the Tensor image by angle.
 
@@ -1034,8 +1010,7 @@ def rotate(
         img (Tensor): image to be rotated.
         matrix (list of floats): list of 6 float values representing inverse matrix for rotation transformation.
             Translation part (``matrix[2]`` and ``matrix[5]``) should be in pixel coordinates.
-        resample (int, optional): An optional resampling filter. Default is nearest (=0). Other supported values:
-            bilinear(=2).
+        interpolation (str): An optional resampling filter. Default is "nearest". Other supported values: "bilinear".
         expand (bool, optional): Optional expansion flag.
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
@@ -1049,21 +1024,15 @@ def rotate(
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
-    _interpolation_modes = {
-        0: "nearest",
-        2: "bilinear",
-    }
-
-    _assert_grid_transform_inputs(img, matrix, resample, fill, _interpolation_modes)
+    _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
     w, h = img.shape[-1], img.shape[-2]
     ow, oh = _compute_output_size(matrix, w, h) if expand else (w, h)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
-    mode = _interpolation_modes[resample]
 
-    return _apply_grid_transform(img, grid, mode, fillcolor=fill)
+    return _apply_grid_transform(img, grid, interpolation, fill=fill)
 
 
 def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype, device: torch.device):
@@ -1100,7 +1069,7 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
 
 
 def perspective(
-        img: Tensor, perspective_coeffs: List[float], interpolation: int = 2, fill: Optional[List[float]] = None
+        img: Tensor, perspective_coeffs: List[float], interpolation: str = "bilinear", fill: Optional[List[float]] = None
 ) -> Tensor:
     """PRIVATE METHOD. Perform perspective transform of the given Tensor image.
 
@@ -1112,7 +1081,7 @@ def perspective(
     Args:
         img (Tensor): Image to be transformed.
         perspective_coeffs (list of float): perspective transformation coefficients.
-        interpolation (int): Interpolation type. Default, ``PIL.Image.BILINEAR``.
+        interpolation (str): Interpolation type. Default, "bilinear".
         fill (sequence or int or float, optional): Optional fill value, default None.
             If None, fill with 0.
 
@@ -1122,26 +1091,19 @@ def perspective(
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
         raise TypeError('Input img should be Tensor Image')
 
-    _interpolation_modes = {
-        0: "nearest",
-        2: "bilinear",
-    }
-
     _assert_grid_transform_inputs(
         img,
         matrix=None,
-        resample=interpolation,
-        fillcolor=fill,
-        _interpolation_modes=_interpolation_modes,
+        interpolation=interpolation,
+        fill=fill,
+        supported_interpolation_modes=["nearest", "bilinear"],
         coeffs=perspective_coeffs
     )
 
     ow, oh = img.shape[-1], img.shape[-2]
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=img.device)
-    mode = _interpolation_modes[interpolation]
-
-    return _apply_grid_transform(img, grid, mode, fillcolor=fill)
+    return _apply_grid_transform(img, grid, interpolation_mode, fill=fill)
 
 
 def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> Tensor:
@@ -1186,7 +1148,7 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
     kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=img.device)
     kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
 
-    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, kernel.dtype)
+    img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [kernel.dtype, ])
 
     # padding = (left, right, top, bottom)
     padding = [kernel_size[0] // 2, kernel_size[0] // 2, kernel_size[1] // 2, kernel_size[1] // 2]

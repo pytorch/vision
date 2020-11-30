@@ -23,7 +23,7 @@ struct torch_png_error_mgr {
   jmp_buf setjmp_buffer; /* for return to caller */
 };
 
-typedef torch_png_error_mgr* torch_png_error_mgr_ptr;
+using torch_png_error_mgr_ptr = torch_png_error_mgr*;
 
 void torch_png_warn(png_structp png_ptr, png_const_charp warn_msg) {
   /* Display warning to user */

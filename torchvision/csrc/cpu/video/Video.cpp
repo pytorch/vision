@@ -1,4 +1,3 @@
-
 #include "Video.h"
 #include <c10/util/Logging.h>
 #include <torch/script.h>
@@ -8,22 +7,6 @@
 
 using namespace std;
 using namespace ffmpeg;
-
-// If we are in a Windows environment, we need to define
-// initialization functions for the _custom_ops extension
-// #ifdef _WIN32
-// #if PY_MAJOR_VERSION < 3
-// PyMODINIT_FUNC init_video_reader(void) {
-//   // No need to do anything.
-//   return NULL;
-// }
-// #else
-// PyMODINIT_FUNC PyInit_video_reader(void) {
-//   // No need to do anything.
-//   return NULL;
-// }
-// #endif
-// #endif
 
 const size_t decoderTimeoutMs = 600000;
 const AVPixelFormat defaultVideoPixelFormat = AV_PIX_FMT_RGB24;
@@ -334,6 +317,5 @@ std::tuple<torch::Tensor, double> Video::Next() {
     LOG(ERROR) << "Decoder failed with ERROR_CODE " << res;
   }
 
-  std::tuple<torch::Tensor, double> result = {outFrame, frame_pts_s};
-  return result;
+  return std::make_tuple(outFrame, frame_pts_s);
 }

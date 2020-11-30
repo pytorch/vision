@@ -86,7 +86,7 @@ class FeaturePyramidNetwork(nn.Module):
             self.layer_blocks.append(layer_block_module)
 
         # initialize parameters now to avoid modifying the initialization of top_blocks
-        for m in self.children():
+        for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_uniform_(m.weight, a=1)
                 nn.init.constant_(m.bias, 0)
