@@ -368,7 +368,11 @@ jobs:
             set -x
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda env remove -n python${PYTHON_VERSION} || true
-            conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
+            CONDA_CHANNEL_FLAGS=""
+            if [[ "${PYTHON_VERSION}" = 3.9 ]]; then
+              CONDA_CHANNEL_FLAGS="-c=conda-forge"
+            fi
+            conda create ${CONDA_CHANNEL_FLAGS} -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
             conda install Pillow
             conda install -v -y -c pytorch-nightly pytorch
@@ -393,7 +397,11 @@ jobs:
           command: |
             set -x
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
-            conda env remove -n python${PYTHON_VERSION} || true
+            CONDA_CHANNEL_FLAGS=""
+            if [[ "${PYTHON_VERSION}" = 3.9 ]]; then
+              CONDA_CHANNEL_FLAGS="-c=conda-forge"
+            fi
+            conda create ${CONDA_CHANNEL_FLAGS} -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
             pip install $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
