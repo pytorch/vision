@@ -393,7 +393,7 @@ for model_name in get_available_classification_models():
                 input_shape = (1, 3, 299, 299)
             self._test_classification_model(model_name, input_shape, dev)
 
-        setattr(ModelTester, "test_" + model_name + "_" + dev, do_test)
+        setattr(ModelTester, "test_" + model_name + "_" + str(dev), do_test)
 
 
 for model_name in get_available_segmentation_models():
@@ -403,7 +403,7 @@ for model_name in get_available_segmentation_models():
         def do_test(self, model_name=model_name, dev=dev):
             self._test_segmentation_model(model_name, dev)
 
-        setattr(ModelTester, "test_" + model_name + "_" + dev, do_test)
+        setattr(ModelTester, "test_" + model_name + "_" + str(dev), do_test)
 
 
 for model_name in get_available_detection_models():
@@ -413,7 +413,7 @@ for model_name in get_available_detection_models():
         def do_test(self, model_name=model_name, dev=dev):
             self._test_detection_model(model_name, dev)
 
-        setattr(ModelTester, "test_" + model_name + "_" + dev, do_test)
+        setattr(ModelTester, "test_" + model_name + "_" + str(dev), do_test)
 
     def do_validation_test(self, model_name=model_name):
         self._test_detection_model_validation(model_name)
@@ -426,7 +426,7 @@ for model_name in get_available_video_models():
         def do_test(self, model_name=model_name, dev=dev):
             self._test_video_model(model_name, dev)
 
-        setattr(ModelTester, "test_" + model_name + "_" + dev, do_test)
+        setattr(ModelTester, "test_" + model_name + "_" + str(dev), do_test)
 
 if __name__ == '__main__':
     unittest.main()
