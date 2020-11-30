@@ -657,7 +657,7 @@ class Tester(TransformsTester):
                                     out_pil_tensor.shape,
                                     msg="{}: {} vs {}".format(
                                         (img_size, r, dt, a, e, c), out_tensor.shape, out_pil_tensor.shape
-                                    )
+                                    ))
 
                                 num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
                                 ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]

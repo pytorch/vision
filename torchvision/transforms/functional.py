@@ -959,7 +959,8 @@ def affine(
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence, int, float): Optional fill color for the area outside the transform in the output image (Pillow>=5.0.0).
+        fill (sequence, int, float): Optional fill color for the area outside the transform in the output image
+            (Pillow>=5.0.0).
         fillcolor (sequence, int, float): deprecated argument and will be removed since v0.10.0.
             Please use `arg`:fill: instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.

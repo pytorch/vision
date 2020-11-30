@@ -907,12 +907,12 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[L
         mask = img[:, -1:, :, :]  # N * 1 * H * W
         img = img[:, :-1, :, :]  # N * C * H * W
         mask = mask.expand_as(img)
-        fill = torch.tensor(fill, dtype=img.dtype, device=img.device).unsqueeze(0).unsqueeze(-1).unsqueeze(-1) \
+        fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device).unsqueeze(0).unsqueeze(-1).unsqueeze(-1) \
             .expand_as(img)
         if mode == 'nearest':
-            img[mask < 1e-3] = fill[mask < 1e-3]  # Leave some room for error
+            img[mask < 1e-3] = fill_img[mask < 1e-3]  # Leave some room for error
         else:  # 'bilinear'
-            img = img * mask + (1.0 - mask) * fill
+            img = img * mask + (1.0 - mask) * fill_img
 
     img = _cast_squeeze_out(img, need_cast, need_squeeze, out_dtype)
     return img
@@ -1069,7 +1069,7 @@ def _perspective_grid(coeffs: List[float], ow: int, oh: int, dtype: torch.dtype,
 
 
 def perspective(
-        img: Tensor, perspective_coeffs: List[float], interpolation: str = "bilinear", fill: Optional[List[float]] = None
+    img: Tensor, perspective_coeffs: List[float], interpolation: str = "bilinear", fill: Optional[List[float]] = None
 ) -> Tensor:
     """PRIVATE METHOD. Perform perspective transform of the given Tensor image.
 
@@ -1103,7 +1103,7 @@ def perspective(
     ow, oh = img.shape[-1], img.shape[-2]
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     grid = _perspective_grid(perspective_coeffs, ow=ow, oh=oh, dtype=dtype, device=img.device)
-    return _apply_grid_transform(img, grid, interpolation_mode, fill=fill)
+    return _apply_grid_transform(img, grid, interpolation, fill=fill)
 
 
 def _get_gaussian_kernel1d(kernel_size: int, sigma: float) -> Tensor:

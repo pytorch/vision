@@ -1222,7 +1222,7 @@ class RandomRotation(torch.nn.Module):
         if isinstance(img, Tensor) and isinstance(fill, (int, float)):
             fill = [float(fill)] * F._get_image_num_channels(img)
         angle = self.get_params(self.degrees)
-        
+
         return F.rotate(img, angle, self.resample, self.expand, self.center, fill)
 
     def __repr__(self):
