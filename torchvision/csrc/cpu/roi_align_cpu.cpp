@@ -111,7 +111,7 @@ void pre_calc_for_bilinear_interpolate(
 }
 
 template <typename T>
-void ROIAlignForward(
+void roi_align_forward_kernel_impl(
     int nthreads,
     const T* input,
     const T& spatial_scale,
@@ -277,7 +277,7 @@ inline void add(T* address, const T& val) {
 }
 
 template <typename T>
-void ROIAlignBackward(
+void roi_align_backward_kernel_impl(
     int nthreads,
     const T* grad_output,
     const T& spatial_scale,
@@ -382,9 +382,9 @@ void ROIAlignBackward(
       } // ix
     } // iy
   } // for
-} // ROIAlignBackward
+}
 
-at::Tensor ROIAlign_forward_cpu(
+at::Tensor roi_align_forward_cpu(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -398,7 +398,7 @@ at::Tensor ROIAlign_forward_cpu(
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
-  at::CheckedFrom c = "ROIAlign_forward_cpu";
+  at::CheckedFrom c = "roi_align_forward_cpu";
   at::checkAllSameType(c, {input_t, rois_t});
 
   auto num_rois = rois.size(0);
@@ -416,8 +416,8 @@ at::Tensor ROIAlign_forward_cpu(
 
   auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "ROIAlign_forward", [&] {
-        ROIAlignForward<scalar_t>(
+      input.scalar_type(), "roi_align_forward", [&] {
+        roi_align_forward_kernel_impl<scalar_t>(
             output_size,
             input_.data_ptr<scalar_t>(),
             spatial_scale,
@@ -434,7 +434,7 @@ at::Tensor ROIAlign_forward_cpu(
   return output;
 }
 
-at::Tensor ROIAlign_backward_cpu(
+at::Tensor roi_align_backward_cpu(
     const at::Tensor& grad,
     const at::Tensor& rois,
     double spatial_scale,
@@ -451,7 +451,7 @@ at::Tensor ROIAlign_backward_cpu(
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2};
 
-  at::CheckedFrom c = "ROIAlign_backward_cpu";
+  at::CheckedFrom c = "roi_align_backward_cpu";
   at::checkAllSameType(c, {grad_t, rois_t});
 
   at::Tensor grad_input =
@@ -470,8 +470,8 @@ at::Tensor ROIAlign_backward_cpu(
 
   auto rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      grad.scalar_type(), "ROIAlign_forward", [&] {
-        ROIAlignBackward<scalar_t>(
+      grad.scalar_type(), "roi_align_forward", [&] {
+        roi_align_backward_kernel_impl<scalar_t>(
             grad.numel(),
             grad.data_ptr<scalar_t>(),
             spatial_scale,

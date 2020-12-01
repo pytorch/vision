@@ -39,7 +39,7 @@ at::Tensor roi_align(
 }
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
-at::Tensor ROIAlign_autocast(
+at::Tensor roi_align_autocast(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -189,7 +189,7 @@ class ROIAlignBackwardFunction
   }
 };
 
-at::Tensor ROIAlign_autograd(
+at::Tensor roi_align_autograd(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -207,7 +207,7 @@ at::Tensor ROIAlign_autograd(
       aligned)[0];
 }
 
-at::Tensor ROIAlign_backward_autograd(
+at::Tensor roi_align_backward_autograd(
     const at::Tensor& grad,
     const at::Tensor& rois,
     double spatial_scale,

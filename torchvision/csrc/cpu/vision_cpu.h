@@ -4,7 +4,7 @@
 
 // TODO: Delete this file once all the methods are gone
 
-VISION_API at::Tensor ROIAlign_forward_cpu(
+VISION_API at::Tensor roi_align_forward_cpu(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -13,7 +13,7 @@ VISION_API at::Tensor ROIAlign_forward_cpu(
     int64_t sampling_ratio,
     bool aligned);
 
-VISION_API at::Tensor ROIAlign_backward_cpu(
+VISION_API at::Tensor roi_align_backward_cpu(
     const at::Tensor& grad,
     const at::Tensor& rois,
     double spatial_scale,
