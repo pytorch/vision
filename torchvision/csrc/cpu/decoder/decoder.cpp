@@ -222,8 +222,8 @@ bool Decoder::init(
   cleanUp();
 
   if ((params.uri.empty() || in) && (!params.uri.empty() || !in)) {
-    LOG(ERROR) <<
-        "uuid=" << params_.loggingUuid << " either external URI gets provided or explicit input callback";
+    LOG(ERROR) << "uuid=" << params_.loggingUuid
+               << " either external URI gets provided or explicit input callback";
     return false;
   }
 
@@ -231,8 +231,8 @@ bool Decoder::init(
   params_ = params;
 
   if (!(inputCtx_ = avformat_alloc_context())) {
-    LOG(ERROR) <<
-        "uuid=" << params_.loggingUuid << " cannot allocate format context";
+    LOG(ERROR) << "uuid=" << params_.loggingUuid
+               << " cannot allocate format context";
     return false;
   }
 
@@ -245,8 +245,8 @@ bool Decoder::init(
              params_.timeoutMs,
              params_.maxSeekableBytes,
              params_.isImage ? &type : nullptr)) < 0) {
-      LOG(ERROR) <<
-          "uuid=" << params_.loggingUuid << " can't initiate seekable buffer";
+      LOG(ERROR) << "uuid=" << params_.loggingUuid
+                 << " can't initiate seekable buffer";
       cleanUp();
       return false;
     }
@@ -274,8 +274,9 @@ bool Decoder::init(
     uint8_t* avioCtxBuffer =
         (uint8_t*)av_malloc(avioCtxBufferSize + kIoPaddingSize);
     if (!avioCtxBuffer) {
-      LOG(ERROR) <<
-          "uuid=" << params_.loggingUuid << " av_malloc cannot allocate " << avioCtxBufferSize << " bytes";
+      LOG(ERROR) << "uuid=" << params_.loggingUuid
+                 << " av_malloc cannot allocate " << avioCtxBufferSize
+                 << " bytes";
       cleanUp();
       return false;
     }
@@ -288,8 +289,8 @@ bool Decoder::init(
               &Decoder::readFunction,
               nullptr,
               result == 1 ? &Decoder::seekFunction : nullptr))) {
-      LOG(ERROR) <<
-          "uuid=" << params_.loggingUuid << " avio_alloc_context failed";
+      LOG(ERROR) << "uuid=" << params_.loggingUuid
+                 << " avio_alloc_context failed";
       av_free(avioCtxBuffer);
       cleanUp();
       return false;
@@ -327,8 +328,9 @@ bool Decoder::init(
     guard = std::make_unique<std::thread>([&f, this]() {
       auto timeout = std::chrono::milliseconds(params_.timeoutMs);
       if (std::future_status::timeout == f.wait_for(timeout)) {
-        LOG(ERROR) <<
-            "uuid=" << params_.loggingUuid << " cannot open stream within " << params_.timeoutMs << " ms";
+        LOG(ERROR) << "uuid=" << params_.loggingUuid
+                   << " cannot open stream within " << params_.timeoutMs
+                   << " ms";
         interrupted_ = true;
       }
     });
@@ -350,8 +352,9 @@ bool Decoder::init(
   }
 
   if (result < 0 || interrupted_) {
-    LOG(ERROR) <<
-        "uuid=" << params_.loggingUuid << " avformat_open_input failed, error=" << Util::generateErrorDesc(result);
+    LOG(ERROR) << "uuid=" << params_.loggingUuid
+               << " avformat_open_input failed, error="
+               << Util::generateErrorDesc(result);
     cleanUp();
     return false;
   }
@@ -359,15 +362,16 @@ bool Decoder::init(
   result = avformat_find_stream_info(inputCtx_, nullptr);
 
   if (result < 0) {
-    LOG(ERROR) <<
-        "uuid=" << params_.loggingUuid << " avformat_find_stream_info failed, error=" << Util::generateErrorDesc(result);
+    LOG(ERROR) << "uuid=" << params_.loggingUuid
+               << " avformat_find_stream_info failed, error="
+               << Util::generateErrorDesc(result);
     cleanUp();
     return false;
   }
 
   if (!openStreams(metadata)) {
-    LOG(ERROR) <<
-        "uuid=" << params_.loggingUuid << " cannot activate streams";
+    LOG(ERROR) << "uuid=" << params_.loggingUuid
+               << " cannot activate streams";
     cleanUp();
     return false;
   }
@@ -423,8 +427,8 @@ bool Decoder::openStreams(std::vector<DecoderMetadata>* metadata) {
           params_.loggingUuid);
       CHECK(stream);
       if (stream->openCodec(metadata) < 0) {
-        LOG(ERROR) <<
-            "uuid=" << params_.loggingUuid << " open codec failed, stream_idx=" << i;
+        LOG(ERROR) << "uuid=" << params_.loggingUuid
+                   << " open codec failed, stream_idx=" << i;
         return false;
       }
       streams_.emplace(i, std::move(stream));
@@ -524,15 +528,15 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       bool hasMsg = false;
       // packet either got consumed completely or not at all
       if ((result = processPacket(stream, &avPacket, &gotFrame, &hasMsg)) < 0) {
-        LOG(ERROR) <<
-            "uuid=" << params_.loggingUuid << " processPacket failed with code=" << result;
+        LOG(ERROR) << "uuid=" << params_.loggingUuid
+                   << " processPacket failed with code=" << result;
         break;
       }
 
       if (!gotFrame && params_.maxProcessNoBytes != 0 &&
           ++numConsecutiveNoBytes > params_.maxProcessNoBytes) {
-        LOG(ERROR) <<
-            "uuid=" << params_.loggingUuid << " exceeding max amount of consecutive no bytes";
+        LOG(ERROR) << "uuid=" << params_.loggingUuid
+                   << " exceeding max amount of consecutive no bytes";
         break;
       }
       if (result > 0) {
@@ -546,8 +550,8 @@ int Decoder::getFrame(size_t workingTimeInMs) {
     if (result < 0) {
       if (params_.maxPackageErrors != 0 && // check errors
           ++decodingErrors >= params_.maxPackageErrors) { // reached the limit
-        LOG(ERROR) <<
-            "uuid=" << params_.loggingUuid << " exceeding max amount of consecutive package errors";
+        LOG(ERROR) << "uuid=" << params_.loggingUuid
+                   << " exceeding max amount of consecutive package errors";
         break;
       }
     } else {
