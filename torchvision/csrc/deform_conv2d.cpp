@@ -1,17 +1,9 @@
-#pragma once
+#include "deform_conv2d.h"
+#include <torch/extension.h>
 
-#include "cpu/vision_cpu.h"
-
-#ifdef WITH_CUDA
-#include "autocast.h"
-#include "cuda/vision_cuda.h"
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+#include <ATen/autocast_mode.h>
 #endif
-#ifdef WITH_HIP
-#include "autocast.h"
-#include "hip/vision_cuda.h"
-#endif
-
-// TODO: put this stuff in torchvision namespace
 
 at::Tensor deform_conv2d(
     const at::Tensor& input,
@@ -49,7 +41,7 @@ at::Tensor deform_conv2d(
 }
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
-at::Tensor DeformConv2d_autocast(
+at::Tensor deform_conv2d_autocast(
     const at::Tensor& input,
     const at::Tensor& weight,
     const at::Tensor& offset,
@@ -122,6 +114,8 @@ _deform_conv2d_backward(
       offset_groups,
       use_mask);
 }
+
+namespace {
 
 class DeformConv2dFunction
     : public torch::autograd::Function<DeformConv2dFunction> {
@@ -297,7 +291,9 @@ class DeformConv2dBackwardFunction
   }
 };
 
-at::Tensor DeformConv2d_autograd(
+} // namespace
+
+at::Tensor deform_conv2d_autograd(
     const at::Tensor& input,
     const at::Tensor& weight,
     const at::Tensor& offset,
@@ -330,7 +326,7 @@ at::Tensor DeformConv2d_autograd(
 }
 
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
-DeformConv2d_backward_autograd(
+deform_conv2d_backward_autograd(
     const at::Tensor& grad,
     const at::Tensor& input,
     const at::Tensor& weight,
