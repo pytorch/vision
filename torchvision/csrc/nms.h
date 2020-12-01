@@ -1,26 +1,36 @@
 #pragma once
+
 #include "cpu/vision_cpu.h"
 
 #ifdef WITH_CUDA
+#include "autocast.h"
 #include "cuda/vision_cuda.h"
 #endif
+#ifdef WITH_HIP
+#include "autocast.h"
+#include "hip/vision_cuda.h"
+#endif
 
+// nms dispatch nexus
 at::Tensor nms(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    const double iou_threshold) {
-  if (dets.device().is_cuda()) {
-#ifdef WITH_CUDA
-    if (dets.numel() == 0) {
-      at::cuda::CUDAGuard device_guard(dets.device());
-      return at::empty({0}, dets.options().dtype(at::kLong));
-    }
-    return nms_cuda(dets, scores, iou_threshold);
-#else
-    AT_ERROR("Not compiled with GPU support");
-#endif
-  }
-
-  at::Tensor result = nms_cpu(dets, scores, iou_threshold);
-  return result;
+    double iou_threshold) {
+  static auto op = c10::Dispatcher::singleton()
+                       .findSchemaOrThrow("torchvision::nms", "")
+                       .typed<decltype(nms)>();
+  return op.call(dets, scores, iou_threshold);
 }
+
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+at::Tensor nms_autocast(
+    const at::Tensor& dets,
+    const at::Tensor& scores,
+    double iou_threshold) {
+  c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
+  return nms(
+      at::autocast::cached_cast(at::kFloat, dets),
+      at::autocast::cached_cast(at::kFloat, scores),
+      iou_threshold);
+}
+#endif

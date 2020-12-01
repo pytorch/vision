@@ -1,20 +1,17 @@
 import os
 import contextlib
+import sys
 import tempfile
 import torch
 import torchvision.datasets.utils as utils
 import torchvision.io as io
 from torchvision import get_video_backend
 import unittest
-import sys
 import warnings
+from urllib.error import URLError
 
 from common_utils import get_tmp_dir
 
-if sys.version_info < (3,):
-    from urllib2 import URLError
-else:
-    from urllib.error import URLError
 
 try:
     import av
@@ -70,7 +67,7 @@ def temp_video(num_frames, height, width, fps, lossless=False, video_codec=None,
 @unittest.skipIf(get_video_backend() != "pyav" and not io._HAS_VIDEO_OPT,
                  "video_reader backend not available")
 @unittest.skipIf(av is None, "PyAV unavailable")
-class Tester(unittest.TestCase):
+class TestIO(unittest.TestCase):
     # compression adds artifacts, thus we add a tolerance of
     # 6 in 0-255 range
     TOLERANCE = 6
@@ -244,6 +241,7 @@ class Tester(unittest.TestCase):
             self.assertEqual(video_pts, [])
             self.assertIs(video_fps, None)
 
+    @unittest.skip("Temporarily disabled due to new pyav")
     def test_read_video_partially_corrupted_file(self):
         with temp_video(5, 4, 4, 5, lossless=True) as (f_name, data):
             with open(f_name, 'r+b') as f:
@@ -266,11 +264,12 @@ class Tester(unittest.TestCase):
             # and the last few frames are wrong
             self.assertFalse(video.equal(data))
 
+    @unittest.skipIf(sys.platform == 'win32', 'temporarily disabled on Windows')
     def test_write_video_with_audio(self):
         f_name = os.path.join(VIDEO_DIR, "R6llTwEh07w.mp4")
         video_tensor, audio_tensor, info = io.read_video(f_name, pts_unit="sec")
 
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with get_tmp_dir() as tmpdir:
             out_f_name = os.path.join(tmpdir, "testing.mp4")
             io.video.write_video(
                 out_f_name,

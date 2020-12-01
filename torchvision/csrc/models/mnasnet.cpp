@@ -107,10 +107,7 @@ void MNASNetImpl::_initialize_weights() {
   for (auto& module : modules(/*include_self=*/false)) {
     if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
       torch::nn::init::kaiming_normal_(
-          M->weight,
-          0,
-          torch::kFanOut,
-          torch::kReLU);
+          M->weight, 0, torch::kFanOut, torch::kReLU);
     else if (auto M = dynamic_cast<torch::nn::BatchNorm2dImpl*>(module.get())) {
       torch::nn::init::ones_(M->weight);
       torch::nn::init::zeros_(M->bias);

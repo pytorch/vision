@@ -38,7 +38,8 @@ void VGGImpl::_initialize_weights() {
           torch::kFanOut,
           torch::kReLU);
       torch::nn::init::constant_(M->bias, 0);
-    } else if (auto M = dynamic_cast<torch::nn::BatchNorm2dImpl*>(module.get())) {
+    } else if (
+        auto M = dynamic_cast<torch::nn::BatchNorm2dImpl*>(module.get())) {
       torch::nn::init::constant_(M->weight, 1);
       torch::nn::init::constant_(M->bias, 0);
     } else if (auto M = dynamic_cast<torch::nn::LinearImpl*>(module.get())) {
@@ -49,7 +50,7 @@ void VGGImpl::_initialize_weights() {
 }
 
 VGGImpl::VGGImpl(
-    torch::nn::Sequential features,
+    const torch::nn::Sequential& features,
     int64_t num_classes,
     bool initialize_weights) {
   classifier = torch::nn::Sequential(

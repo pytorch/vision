@@ -89,7 +89,7 @@ export tmp_conda="${WIN_PACKAGE_WORK_DIR}\\conda"
 export miniconda_exe="${WIN_PACKAGE_WORK_DIR}\\miniconda.exe"
 rm -rf "$tmp_conda"
 rm -f "$miniconda_exe"
-curl -sSk https://repo.continuum.io/miniconda/Miniconda3-latest-Windows-x86_64.exe -o "$miniconda_exe"
+curl -sSk https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe -o "$miniconda_exe"
 "$SOURCE_DIR/install_conda.bat" && rm "$miniconda_exe"
 pushd $tmp_conda
 export PATH="$(pwd):$(pwd)/Library/usr/bin:$(pwd)/Library/bin:$(pwd)/Scripts:$(pwd)/bin:$PATH"
@@ -108,7 +108,9 @@ if [[ "$desired_cuda" == 'cpu' ]]; then
 else
     export CONDA_CPUONLY_FEATURE=""
     . ./switch_cuda_version.sh $desired_cuda
-    if [[ "$desired_cuda" == "10.1" ]]; then
+    if [[ "$desired_cuda" == "10.2" ]]; then
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.2,<10.3 # [not osx]"
+    elif [[ "$desired_cuda" == "10.1" ]]; then
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.1,<10.2 # [not osx]"
     elif [[ "$desired_cuda" == "10.0" ]]; then
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=10.0,<10.1 # [not osx]"
@@ -125,7 +127,7 @@ else
 fi
 
 if [[ -z "$PYTORCH_VERSION" ]]; then
-    export CONDA_CHANNEL_FLAGS="-c pytorch-nightly"
+    export CONDA_CHANNEL_FLAGS="-c pytorch-nightly -c pytorch"
     export PYTORCH_VERSION="$(conda search --json 'pytorch[channel=pytorch-nightly]' | \
                                 python -c "import os, sys, json, re; cuver = '$cuver'; \
                                 cuver = cuver.replace('cu', 'cuda') if cuver != 'cpu' else cuver; \

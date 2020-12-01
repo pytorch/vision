@@ -49,7 +49,7 @@ InceptionAImpl::InceptionAImpl(int64_t in_channels, int64_t pool_features)
   register_module("branch_pool", branch_pool);
 }
 
-torch::Tensor InceptionAImpl::forward(torch::Tensor x) {
+torch::Tensor InceptionAImpl::forward(const torch::Tensor& x) {
   auto branch1x1 = this->branch1x1->forward(x);
 
   auto branch5x5 = this->branch5x5_1->forward(x);
@@ -76,7 +76,7 @@ InceptionBImpl::InceptionBImpl(int64_t in_channels)
   register_module("branch3x3dbl_3", branch3x3dbl_3);
 }
 
-torch::Tensor InceptionBImpl::forward(torch::Tensor x) {
+torch::Tensor InceptionBImpl::forward(const torch::Tensor& x) {
   auto branch3x3 = this->branch3x3->forward(x);
 
   auto branch3x3dbl = this->branch3x3dbl_1->forward(x);
@@ -115,7 +115,7 @@ InceptionCImpl::InceptionCImpl(int64_t in_channels, int64_t channels_7x7) {
   register_module("branch_pool", branch_pool);
 }
 
-torch::Tensor InceptionCImpl::forward(torch::Tensor x) {
+torch::Tensor InceptionCImpl::forward(const torch::Tensor& x) {
   auto branch1x1 = this->branch1x1->forward(x);
 
   auto branch7x7 = this->branch7x7_1->forward(x);
@@ -151,7 +151,7 @@ InceptionDImpl::InceptionDImpl(int64_t in_channels)
   register_module("branch7x7x3_4", branch7x7x3_4);
 }
 
-torch::Tensor InceptionDImpl::forward(torch::Tensor x) {
+torch::Tensor InceptionDImpl::forward(const torch::Tensor& x) {
   auto branch3x3 = this->branch3x3_1->forward(x);
   branch3x3 = this->branch3x3_2->forward(branch3x3);
 
@@ -185,7 +185,7 @@ InceptionEImpl::InceptionEImpl(int64_t in_channels)
   register_module("branch_pool", branch_pool);
 }
 
-torch::Tensor InceptionEImpl::forward(torch::Tensor x) {
+torch::Tensor InceptionEImpl::forward(const torch::Tensor& x) {
   auto branch1x1 = this->branch1x1->forward(x);
 
   auto branch3x3 = this->branch3x3_1->forward(x);

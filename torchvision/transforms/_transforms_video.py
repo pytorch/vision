@@ -129,7 +129,7 @@ class NormalizeVideo(object):
 class ToTensorVideo(object):
     """
     Convert tensor data type from uint8 to float, divide value by 255.0 and
-    permute the dimenions of clip tensor
+    permute the dimensions of clip tensor
     """
 
     def __init__(self):

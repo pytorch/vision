@@ -1,4 +1,5 @@
 import warnings
+import os
 
 from .extension import _HAS_OPS
 
@@ -15,6 +16,14 @@ try:
     from .version import __version__  # noqa: F401
 except ImportError:
     pass
+
+# Check if torchvision is being imported within the root folder
+if (not _HAS_OPS and os.path.dirname(os.path.realpath(__file__)) ==
+        os.path.join(os.path.realpath(os.getcwd()), 'torchvision')):
+    message = ('You are importing torchvision within its own root folder ({}). '
+               'This is not expected to work and may give errors. Please exit the '
+               'torchvision project source and relaunch your python interpreter.')
+    warnings.warn(message.format(os.getcwd()))
 
 _image_backend = 'PIL'
 
@@ -62,7 +71,11 @@ def set_video_backend(backend):
             "Invalid video backend '%s'. Options are 'pyav' and 'video_reader'" % backend
         )
     if backend == "video_reader" and not io._HAS_VIDEO_OPT:
-        warnings.warn("video_reader video backend is not available")
+        message = (
+            "video_reader video backend is not available."
+            " Please compile torchvision from source and try again"
+        )
+        warnings.warn(message)
     else:
         _video_backend = backend
 

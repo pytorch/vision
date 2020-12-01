@@ -2,10 +2,10 @@ import random
 import math
 import torch
 from torch import nn, Tensor
+from torch.nn import functional as F
 import torchvision
 from torch.jit.annotations import List, Tuple, Dict, Optional
 
-from torchvision.ops import misc as misc_nn_ops
 from .image_list import ImageList
 from .roi_heads import paste_masks_in_image
 
@@ -20,7 +20,7 @@ def _resize_image_and_masks_onnx(image, self_min_size, self_max_size, target):
     scale_factor = torch.min(self_min_size / min_size, self_max_size / max_size)
 
     image = torch.nn.functional.interpolate(
-        image[None], scale_factor=scale_factor, mode='bilinear',
+        image[None], scale_factor=scale_factor, mode='bilinear', recompute_scale_factor=True,
         align_corners=False)[0]
 
     if target is None:
@@ -28,7 +28,7 @@ def _resize_image_and_masks_onnx(image, self_min_size, self_max_size, target):
 
     if "masks" in target:
         mask = target["masks"]
-        mask = misc_nn_ops.interpolate(mask[None].float(), scale_factor=scale_factor)[0].byte()
+        mask = F.interpolate(mask[:, None].float(), scale_factor=scale_factor)[:, 0].byte()
         target["masks"] = mask
     return image, target
 
@@ -42,7 +42,7 @@ def _resize_image_and_masks(image, self_min_size, self_max_size, target):
     if max_size * scale_factor > self_max_size:
         scale_factor = self_max_size / max_size
     image = torch.nn.functional.interpolate(
-        image[None], scale_factor=scale_factor, mode='bilinear',
+        image[None], scale_factor=scale_factor, mode='bilinear', recompute_scale_factor=True,
         align_corners=False)[0]
 
     if target is None:
@@ -50,7 +50,7 @@ def _resize_image_and_masks(image, self_min_size, self_max_size, target):
 
     if "masks" in target:
         mask = target["masks"]
-        mask = misc_nn_ops.interpolate(mask[None].float(), scale_factor=scale_factor)[0].byte()
+        mask = F.interpolate(mask[:, None].float(), scale_factor=scale_factor)[:, 0].byte()
         target["masks"] = mask
     return image, target
 
@@ -82,6 +82,18 @@ class GeneralizedRCNNTransform(nn.Module):
                 ):
         # type: (...) -> Tuple[ImageList, Optional[List[Dict[str, Tensor]]]]
         images = [img for img in images]
+        if targets is not None:
+            # make a copy of targets to avoid modifying it in-place
+            # once torchscript supports dict comprehension
+            # this can be simplified as as follows
+            # targets = [{k: v for k,v in t.items()} for t in targets]
+            targets_copy: List[Dict[str, Tensor]] = []
+            for t in targets:
+                data: Dict[str, Tensor] = {}
+                for k, v in t.items():
+                    data[k] = v
+                targets_copy.append(data)
+            targets = targets_copy
         for i in range(len(images)):
             image = images[i]
             target_index = targets[i] if targets is not None else None
