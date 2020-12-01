@@ -5,6 +5,7 @@
 #include <THC/THCAtomics.cuh>
 
 #include "cuda_helpers.h"
+#include "ps_roi_pool_kernel.h"
 
 namespace {
 

@@ -3,6 +3,8 @@
 #include <TH/TH.h>
 #include <algorithm>
 
+#include "ps_roi_pool_kernel.h"
+
 namespace {
 
 template <class T>

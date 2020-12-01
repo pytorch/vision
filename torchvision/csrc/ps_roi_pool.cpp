@@ -1,14 +1,8 @@
-#pragma once
+#include "ps_roi_pool.h"
+#include <torch/extension.h>
 
-#include "cpu/vision_cpu.h"
-
-#ifdef WITH_CUDA
-#include "autocast.h"
-#include "cuda/vision_cuda.h"
-#endif
-#ifdef WITH_HIP
-#include "autocast.h"
-#include "hip/vision_cuda.h"
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+#include <ATen/autocast_mode.h>
 #endif
 
 std::tuple<at::Tensor, at::Tensor> ps_roi_pool(
