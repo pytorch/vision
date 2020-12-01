@@ -15,6 +15,7 @@
 #include "ROIPool.h"
 #include "empty_tensor_op.h"
 #include "nms.h"
+#include "vision.h"
 
 // If we are in a Windows environment, we need to define
 // initialization functions for the _custom_ops extension

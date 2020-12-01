@@ -5,6 +5,10 @@ set(TORCHVISION_VERSION 0.7.0)
 
 option(WITH_CUDA "Enable CUDA support" OFF)
 
+if(MSVC)
+  option(IGNORE_PYTHON_DEBUG_LIBRARY "Ignore the debug python library" ON)
+endif()
+
 if(WITH_CUDA)
   enable_language(CUDA)
   add_definitions(-D__CUDA_NO_HALF_OPERATORS__)
@@ -62,11 +66,25 @@ endif()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
+if(MSVC AND IGNORE_PYTHON_DEBUG_LIBRARY)
+  # A typical build on Windows needs to have Release and Debug libraries but most
+  # people don't have the python debug library. Hence, we ignore it here and link
+  # against the Release python library even in debug mode.
+  set(PYTHON3_DEBUG_LIBRARY_NAME python${Python3_VERSION_MAJOR}${Python3_VERSION_MINOR}_d.lib)
+  set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "${CMAKE_SHARED_LINKER_FLAGS} /NODEFAULTLIB:${PYTHON3_DEBUG_LIBRARY_NAME}")
+  set(CMAKE_MODULE_LINKER_FLAGS_DEBUG "${CMAKE_MODULE_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:${PYTHON3_DEBUG_LIBRARY_NAME}")
+  set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} /NODEFAULTLIB:${PYTHON3_DEBUG_LIBRARY_NAME}")
+endif()
 add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES} ${IMAGE_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} ${JPEG_LIBRARIES} Python3::Python)
 set_target_properties(${PROJECT_NAME} PROPERTIES
   EXPORT_NAME TorchVision
   INSTALL_RPATH ${TORCH_INSTALL_PREFIX}/lib)
+if(MSVC)
+  # This is required for consuming projects otherwise, the linker
+  # will strip the operators registration symbols.
+  target_link_options(${PROJECT_NAME} INTERFACE /OPT:NOREF)
+endif()
 
 include_directories(torchvision/csrc ${JPEG_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS})
 
