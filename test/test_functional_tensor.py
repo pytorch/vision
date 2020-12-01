@@ -554,7 +554,7 @@ class Tester(TransformsTester):
         test_configs = [
             (45.5, [5, 6], 1.0, [0.0, 0.0], None),
             (33, (5, -4), 1.0, [0.0, 0.0], [0, 0, 0]),
-            (45, [-5, 4], 1.2, [0.0, 0.0], [1, 2, 3]),
+            (45, [-5, 4], 1.2, [0.0, 0.0], (1.0, 2.0, 3.0)),
             (33, (-4, -8), 2.0, [0.0, 0.0], [255, 255, 255]),
             (85, (10, -10), 0.7, [0.0, 0.0], [1, ]),
             (0, [0, 0], 1.0, [35.0, ], (2.0, )),
@@ -644,7 +644,7 @@ class Tester(TransformsTester):
             for a in range(-180, 180, 17):
                 for e in [True, False]:
                     for c in centers:
-                        for f in [None, [0, 0, 0], [1, 2, 3], [255, 255, 255], [1, ], (2.0, )]:
+                        for f in [None, [0, 0, 0], (1.0, 2.0, 3.0), [255, 255, 255], [1, ], (2.0, )]:
                             f_pil = int(f[0]) if f is not None and len(f) == 1 else f
                             out_pil_img = F.rotate(pil_img, angle=a, interpolation=r, expand=e, center=c, fill=f_pil)
                             out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
