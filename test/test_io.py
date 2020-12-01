@@ -267,7 +267,7 @@ class TestIO(unittest.TestCase):
         f_name = os.path.join(VIDEO_DIR, "R6llTwEh07w.mp4")
         video_tensor, audio_tensor, info = io.read_video(f_name, pts_unit="sec")
 
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with get_tmp_dir() as tmpdir:
             out_f_name = os.path.join(tmpdir, "testing.mp4")
             io.video.write_video(
                 out_f_name,
