@@ -7,6 +7,8 @@
 #include <iostream>
 #include <vector>
 
+namespace {
+
 int const threadsPerBlock = sizeof(unsigned long long) * 8;
 
 template <typename T>
@@ -71,6 +73,8 @@ __global__ void nms_kernel(
     dev_mask[cur_box_idx * col_blocks + col_start] = t;
   }
 }
+
+} // namespace
 
 at::Tensor nms_cuda(const at::Tensor& dets,
     const at::Tensor& scores,

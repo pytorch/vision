@@ -1,5 +1,7 @@
 #include "vision_cpu.h"
 
+namespace {
+
 template <typename scalar_t>
 at::Tensor nms_kernel(
     const at::Tensor& dets,
@@ -68,6 +70,8 @@ at::Tensor nms_kernel(
   }
   return keep_t.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep);
 }
+
+} // namespace
 
 at::Tensor nms_cpu(
     const at::Tensor& dets,
