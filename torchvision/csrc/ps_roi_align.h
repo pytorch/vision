@@ -30,7 +30,7 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_align(
 }
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
-std::tuple<at::Tensor, at::Tensor> PSROIAlign_autocast(
+std::tuple<at::Tensor, at::Tensor> ps_roi_align_autocast(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -186,7 +186,7 @@ class PSROIAlignBackwardFunction
   }
 };
 
-std::tuple<at::Tensor, at::Tensor> PSROIAlign_autograd(
+std::tuple<at::Tensor, at::Tensor> ps_roi_align_autograd(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -199,7 +199,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_autograd(
   return std::make_tuple(result[0], result[1]);
 }
 
-at::Tensor PSROIAlign_backward_autograd(
+at::Tensor ps_roi_align_backward_autograd(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& channel_mapping,

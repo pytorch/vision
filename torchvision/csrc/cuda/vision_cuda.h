@@ -4,7 +4,7 @@
 
 // TODO: Delete this file once all the methods are gone
 
-VISION_API std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cuda(
+VISION_API std::tuple<at::Tensor, at::Tensor> ps_roi_align_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -12,7 +12,7 @@ VISION_API std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cuda(
     int64_t pooled_width,
     int64_t sampling_ratio);
 
-VISION_API at::Tensor PSROIAlign_backward_cuda(
+VISION_API at::Tensor ps_roi_align_backward_cuda(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& channel_mapping,
