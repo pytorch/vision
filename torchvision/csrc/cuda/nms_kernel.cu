@@ -5,9 +5,6 @@
 #include "cuda_helpers.h"
 #include "nms_kernel.h"
 
-#include <iostream>
-#include <vector>
-
 namespace {
 
 int const threadsPerBlock = sizeof(unsigned long long) * 8;
