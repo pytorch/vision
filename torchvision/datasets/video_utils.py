@@ -384,11 +384,10 @@ class VideoClips(object):
         # use torch.float as default dtype. This happens when decoding fails and
         # no pts is returned in the list.
         video_pts = [x.to(torch.int64) for x in self.video_pts]
-        if video_pts:
-            video_pts = torch.cat(video_pts)
-            # avoid bug in https://github.com/pytorch/pytorch/issues/32351
-            # TODO: Revert it once the bug is fixed.
-            video_pts = video_pts.numpy()
+        video_pts = torch.cat(video_pts)
+        # avoid bug in https://github.com/pytorch/pytorch/issues/32351
+        # TODO: Revert it once the bug is fixed.
+        video_pts = video_pts.numpy()
 
         # make a copy of the fields of self
         d = self.__dict__.copy()
@@ -396,12 +395,9 @@ class VideoClips(object):
         d["video_pts"] = video_pts
         # delete the following attributes to reduce the size of dictionary. They
         # will be re-computed in "__setstate__()"
-        if "clips" in d:
-            del d["clips"]
-        if "resampling_idxs" in d:
-            del d["resampling_idxs"]
-        if "cumulative_sizes" in d:
-            del d["cumulative_sizes"]
+        del d["clips"]
+        del d["resampling_idxs"]
+        del d["cumulative_sizes"]
 
         # for backwards-compatibility
         d["_version"] = 2
