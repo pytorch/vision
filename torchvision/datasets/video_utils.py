@@ -66,7 +66,7 @@ class _VideoTimestampsDataset(object):
         return read_video_timestamps(self.video_paths[idx])
 
 
-def _collate_fn(self, x):
+def _collate_fn(x):
     """
     Dummy collate function to be used with _VideoTimestampsDataset
     """
