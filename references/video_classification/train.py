@@ -1,22 +1,19 @@
-from __future__ import print_function
 import datetime
 import os
 import time
-import sys
-
 import torch
 import torch.utils.data
 from torch.utils.data.dataloader import default_collate
 from torch import nn
 import torchvision
 import torchvision.datasets.video_utils
-from torchvision import transforms
+from torchvision import transforms as T
 from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
 
 import utils
 
 from scheduler import WarmupMultiStepLR
-import transforms as T
+from transforms import ConvertBHWCtoBCHW, ConvertBCHWtoCBHW
 
 try:
     from apex import amp
@@ -95,12 +92,9 @@ def collate_fn(batch):
 
 
 def main(args):
-    if args.apex:
-        if sys.version_info < (3, 0):
-            raise RuntimeError("Apex currently only supports Python 3. Aborting.")
-        if amp is None:
-            raise RuntimeError("Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
-                               "to enable mixed-precision training.")
+    if args.apex and amp is None:
+        raise RuntimeError("Failed to import apex. Please install apex from https://www.github.com/nvidia/apex "
+                           "to enable mixed-precision training.")
 
     if args.output_dir:
         utils.mkdir(args.output_dir)
@@ -125,11 +119,13 @@ def main(args):
     st = time.time()
     cache_path = _get_cache_path(traindir)
     transform_train = torchvision.transforms.Compose([
-        T.ToFloatTensorInZeroOne(),
+        ConvertBHWCtoBCHW(),
+        T.ConvertImageDtype(torch.float32),
         T.Resize((128, 171)),
         T.RandomHorizontalFlip(),
         normalize,
-        T.RandomCrop((112, 112))
+        T.RandomCrop((112, 112)),
+        ConvertBCHWtoCBHW()
     ])
 
     if args.cache_dataset and os.path.exists(cache_path):
@@ -145,7 +141,8 @@ def main(args):
             frames_per_clip=args.clip_len,
             step_between_clips=1,
             transform=transform_train,
-            frame_rate=15
+            frame_rate=15,
+            extensions=('avi', 'mp4', )
         )
         if args.cache_dataset:
             print("Saving dataset_train to {}".format(cache_path))
@@ -158,10 +155,12 @@ def main(args):
     cache_path = _get_cache_path(valdir)
 
     transform_test = torchvision.transforms.Compose([
-        T.ToFloatTensorInZeroOne(),
+        ConvertBHWCtoBCHW(),
+        T.ConvertImageDtype(torch.float32),
         T.Resize((128, 171)),
         normalize,
-        T.CenterCrop((112, 112))
+        T.CenterCrop((112, 112)),
+        ConvertBCHWtoCBHW()
     ])
 
     if args.cache_dataset and os.path.exists(cache_path):
@@ -177,7 +176,8 @@ def main(args):
             frames_per_clip=args.clip_len,
             step_between_clips=1,
             transform=transform_test,
-            frame_rate=15
+            frame_rate=15,
+            extensions=('avi', 'mp4',)
         )
         if args.cache_dataset:
             print("Saving dataset_test to {}".format(cache_path))
@@ -271,7 +271,7 @@ def main(args):
 
 def parse_args():
     import argparse
-    parser = argparse.ArgumentParser(description='PyTorch Classification Training')
+    parser = argparse.ArgumentParser(description='PyTorch Video Classification Training')
 
     parser.add_argument('--data-path', default='/datasets01_101/kinetics/070618/', help='dataset')
     parser.add_argument('--train-dir', default='train_avi-480p', help='name of train dir')

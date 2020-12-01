@@ -7,12 +7,16 @@ import argparse
 import sys
 import io
 import torch
-import errno
+import warnings
 import __main__
+import random
 
 from numbers import Number
-from torch._six import string_classes, inf
+from torch._six import string_classes
 from collections import OrderedDict
+
+import numpy as np
+from PIL import Image
 
 
 @contextlib.contextmanager
@@ -25,6 +29,12 @@ def get_tmp_dir(src=None, **kwargs):
         yield tmp_dir
     finally:
         shutil.rmtree(tmp_dir)
+
+
+def set_rng_seed(seed):
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
 
 
 ACCEPT = os.getenv('EXPECTTEST_ACCEPT')
@@ -85,7 +95,35 @@ def is_iterable(obj):
 class TestCase(unittest.TestCase):
     precision = 1e-5
 
-    def assertExpected(self, output, subname=None, prec=None):
+    def _get_expected_file(self, subname=None, strip_suffix=None):
+        def remove_prefix_suffix(text, prefix, suffix):
+            if text.startswith(prefix):
+                text = text[len(prefix):]
+            if suffix is not None and text.endswith(suffix):
+                text = text[:len(text) - len(suffix)]
+            return text
+        # NB: we take __file__ from the module that defined the test
+        # class, so we place the expect directory where the test script
+        # lives, NOT where test/common_utils.py lives.
+        module_id = self.__class__.__module__
+        munged_id = remove_prefix_suffix(self.id(), module_id + ".", strip_suffix)
+        test_file = os.path.realpath(sys.modules[module_id].__file__)
+        expected_file = os.path.join(os.path.dirname(test_file),
+                                     "expect",
+                                     munged_id)
+
+        if subname:
+            expected_file += "_" + subname
+        expected_file += "_expect.pkl"
+
+        if not ACCEPT and not os.path.exists(expected_file):
+            raise RuntimeError(
+                ("No expect file exists for {}; to accept the current output, run:\n"
+                 "python {} {} --accept").format(os.path.basename(expected_file), __main__.__file__, munged_id))
+
+        return expected_file
+
+    def assertExpected(self, output, subname=None, prec=None, strip_suffix=None):
         r"""
         Test that a python value matches the recorded contents of a file
         derived from the name of this test and subname.  The value must be
@@ -96,57 +134,25 @@ class TestCase(unittest.TestCase):
 
         If you call this multiple times in a single function, you must
         give a unique subname each time.
+
+        strip_suffix allows different tests that expect similar numerics, e.g.
+        "test_xyz_cuda" and "test_xyz_cpu", to use the same pickled data.
+        test_xyz_cuda would pass strip_suffix="_cuda", test_xyz_cpu would pass
+        strip_suffix="_cpu", and they would both use a data file name based on
+        "test_xyz".
         """
-        def remove_prefix(text, prefix):
-            if text.startswith(prefix):
-                return text[len(prefix):]
-            return text
-        # NB: we take __file__ from the module that defined the test
-        # class, so we place the expect directory where the test script
-        # lives, NOT where test/common_utils.py lives.
-        module_id = self.__class__.__module__
-        munged_id = remove_prefix(self.id(), module_id + ".")
-        test_file = os.path.realpath(sys.modules[module_id].__file__)
-        expected_file = os.path.join(os.path.dirname(test_file),
-                                     "expect",
-                                     munged_id)
+        expected_file = self._get_expected_file(subname, strip_suffix)
 
-        subname_output = ""
-        if subname:
-            expected_file += "_" + subname
-            subname_output = " ({})".format(subname)
-        expected_file += "_expect.pkl"
-        expected = None
-
-        def accept_output(update_type):
-            print("Accepting {} for {}{}:\n\n{}".format(update_type, munged_id, subname_output, output))
+        if ACCEPT:
+            filename = {os.path.basename(expected_file)}
+            print("Accepting updated output for {}:\n\n{}".format(filename, output))
             torch.save(output, expected_file)
             MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
             binary_size = os.path.getsize(expected_file)
-            self.assertTrue(binary_size <= MAX_PICKLE_SIZE)
-
-        try:
-            expected = torch.load(expected_file)
-        except IOError as e:
-            if e.errno != errno.ENOENT:
-                raise
-            elif ACCEPT:
-                return accept_output("output")
-            else:
-                raise RuntimeError(
-                    ("I got this output for {}{}:\n\n{}\n\n"
-                     "No expect file exists; to accept the current output, run:\n"
-                     "python {} {} --accept").format(munged_id, subname_output, output, __main__.__file__, munged_id))
-
-        if ACCEPT:
-            equal = False
-            try:
-                equal = self.assertEqual(output, expected, prec=prec)
-            except Exception:
-                equal = False
-            if not equal:
-                return accept_output("updated output")
+            if binary_size > MAX_PICKLE_SIZE:
+                raise RuntimeError("The output for {}, is larger than 50kb".format(filename))
         else:
+            expected = torch.load(expected_file)
             self.assertEqual(output, expected, prec=prec)
 
     def assertEqual(self, x, y, prec=None, message='', allow_inf=False):
@@ -255,6 +261,7 @@ class TestCase(unittest.TestCase):
         elif isinstance(x, bool) and isinstance(y, bool):
             super(TestCase, self).assertEqual(x, y, message)
         elif isinstance(x, Number) and isinstance(y, Number):
+            inf = float("inf")
             if abs(x) == inf or abs(y) == inf:
                 if allow_inf:
                     super(TestCase, self).assertEqual(x, y, message)
@@ -265,14 +272,21 @@ class TestCase(unittest.TestCase):
         else:
             super(TestCase, self).assertEqual(x, y, message)
 
-    def checkModule(self, nn_module, args, unwrapper=None, skip=False):
+    def check_jit_scriptable(self, nn_module, args, unwrapper=None, skip=False):
         """
         Check that a nn.Module's results in TorchScript match eager and that it
         can be exported
         """
         if not TEST_WITH_SLOW or skip:
             # TorchScript is not enabled, skip these tests
-            return
+            msg = "The check_jit_scriptable test for {} was skipped. " \
+                  "This test checks if the module's results in TorchScript " \
+                  "match eager and that it can be exported. To run these " \
+                  "tests make sure you set the environment variable " \
+                  "PYTORCH_TEST_WITH_SLOW=1 and that the test is not " \
+                  "manually skipped.".format(nn_module.__class__.__name__)
+            warnings.warn(msg, RuntimeWarning)
+            return None
 
         sm = torch.jit.script(nn_module)
 
@@ -284,7 +298,7 @@ class TestCase(unittest.TestCase):
             if unwrapper:
                 script_out = unwrapper(script_out)
 
-        self.assertEqual(eager_out, script_out)
+        self.assertEqual(eager_out, script_out, prec=1e-4)
         self.assertExportImportModule(sm, args)
 
         return sm
@@ -320,3 +334,54 @@ def freeze_rng_state():
     if torch.cuda.is_available():
         torch.cuda.set_rng_state(cuda_rng_state)
     torch.set_rng_state(rng_state)
+
+
+class TransformsTester(unittest.TestCase):
+
+    def _create_data(self, height=3, width=3, channels=3, device="cpu"):
+        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8, device=device)
+        pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
+        return tensor, pil_img
+
+    def _create_data_batch(self, height=3, width=3, channels=3, num_samples=4, device="cpu"):
+        batch_tensor = torch.randint(
+            0, 255,
+            (num_samples, channels, height, width),
+            dtype=torch.uint8,
+            device=device
+        )
+        return batch_tensor
+
+    def compareTensorToPIL(self, tensor, pil_image, msg=None):
+        np_pil_image = np.array(pil_image)
+        if np_pil_image.ndim == 2:
+            np_pil_image = np_pil_image[:, :, None]
+        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1)))
+        if msg is None:
+            msg = "tensor:\n{} \ndid not equal PIL tensor:\n{}".format(tensor, pil_tensor)
+        self.assertTrue(tensor.cpu().equal(pil_tensor), msg)
+
+    def approxEqualTensorToPIL(self, tensor, pil_image, tol=1e-5, msg=None, agg_method="mean"):
+        np_pil_image = np.array(pil_image)
+        if np_pil_image.ndim == 2:
+            np_pil_image = np_pil_image[:, :, None]
+        pil_tensor = torch.as_tensor(np_pil_image.transpose((2, 0, 1))).to(tensor)
+        # error value can be mean absolute error, max abs error
+        err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
+        self.assertTrue(
+            err < tol,
+            msg="{}: err={}, tol={}: \n{}\nvs\n{}".format(msg, err, tol, tensor[0, :10, :10], pil_tensor[0, :10, :10])
+        )
+
+
+def cycle_over(objs):
+    for idx, obj in enumerate(objs):
+        yield obj, objs[:idx] + objs[idx + 1:]
+
+
+def int_dtypes():
+    return torch.testing.integral_types()
+
+
+def float_dtypes():
+    return torch.testing.floating_types()

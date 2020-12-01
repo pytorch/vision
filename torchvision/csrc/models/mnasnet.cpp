@@ -24,7 +24,7 @@ struct MNASNetInvertedResidualImpl : torch::nn::Module {
     apply_residual = input == output && stride == 1;
 
     layers->push_back(torch::nn::Conv2d(Options(input, mid, 1).bias(false)));
-    layers->push_back(torch::nn::BatchNorm(
+    layers->push_back(torch::nn::BatchNorm2d(
         torch::nn::BatchNormOptions(mid).momentum(bn_momentum)));
     layers->push_back(
         torch::nn::Functional(torch::nn::Functional(modelsimpl::relu_)));
@@ -34,12 +34,12 @@ struct MNASNetInvertedResidualImpl : torch::nn::Module {
                                                 .stride(stride)
                                                 .groups(mid)
                                                 .bias(false))));
-    layers->push_back(torch::nn::BatchNorm(
+    layers->push_back(torch::nn::BatchNorm2d(
         torch::nn::BatchNormOptions(mid).momentum(bn_momentum)));
     layers->push_back(
         torch::nn::Functional(torch::nn::Functional(modelsimpl::relu_)));
     layers->push_back(torch::nn::Conv2d(Options(mid, output, 1).bias(false)));
-    layers->push_back(torch::nn::BatchNorm(
+    layers->push_back(torch::nn::BatchNorm2d(
         torch::nn::BatchNormOptions(output).momentum(bn_momentum)));
 
     register_module("layers", layers);
@@ -107,11 +107,8 @@ void MNASNetImpl::_initialize_weights() {
   for (auto& module : modules(/*include_self=*/false)) {
     if (auto M = dynamic_cast<torch::nn::Conv2dImpl*>(module.get()))
       torch::nn::init::kaiming_normal_(
-          M->weight,
-          0,
-          torch::nn::init::FanMode::FanOut,
-          torch::nn::init::Nonlinearity::ReLU);
-    else if (auto M = dynamic_cast<torch::nn::BatchNormImpl*>(module.get())) {
+          M->weight, 0, torch::kFanOut, torch::kReLU);
+    else if (auto M = dynamic_cast<torch::nn::BatchNorm2dImpl*>(module.get())) {
       torch::nn::init::ones_(M->weight);
       torch::nn::init::zeros_(M->bias);
     } else if (auto M = dynamic_cast<torch::nn::LinearImpl*>(module.get())) {
@@ -128,17 +125,17 @@ MNASNetImpl::MNASNetImpl(double alpha, int64_t num_classes, double dropout) {
 
   layers->push_back(
       torch::nn::Conv2d(Options(3, 32, 3).padding(1).stride(2).bias(false)));
-  layers->push_back(torch::nn::BatchNorm(
+  layers->push_back(torch::nn::BatchNorm2d(
       torch::nn::BatchNormOptions(32).momentum(BN_MOMENTUM)));
   layers->push_back(torch::nn::Functional(modelsimpl::relu_));
   layers->push_back(torch::nn::Conv2d(
       Options(32, 32, 3).padding(1).stride(1).groups(32).bias(false)));
-  layers->push_back(torch::nn::BatchNorm(
+  layers->push_back(torch::nn::BatchNorm2d(
       torch::nn::BatchNormOptions(32).momentum(BN_MOMENTUM)));
   layers->push_back(torch::nn::Functional(modelsimpl::relu_));
   layers->push_back(
       torch::nn::Conv2d(Options(32, 16, 1).padding(0).stride(1).bias(false)));
-  layers->push_back(torch::nn::BatchNorm(
+  layers->push_back(torch::nn::BatchNorm2d(
       torch::nn::BatchNormOptions(16).momentum(BN_MOMENTUM)));
 
   layers->push_back(stack(16, depths[0], 3, 2, 3, 3, BN_MOMENTUM));
@@ -150,7 +147,7 @@ MNASNetImpl::MNASNetImpl(double alpha, int64_t num_classes, double dropout) {
 
   layers->push_back(torch::nn::Conv2d(
       Options(depths[5], 1280, 1).padding(0).stride(1).bias(false)));
-  layers->push_back(torch::nn::BatchNorm(
+  layers->push_back(torch::nn::BatchNorm2d(
       torch::nn::BatchNormOptions(1280).momentum(BN_MOMENTUM)));
   layers->push_back(torch::nn::Functional(modelsimpl::relu_));
 

@@ -7,13 +7,15 @@ import torch.nn.functional as F
 from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops import MultiScaleRoIAlign
 
+from ._utils import overwrite_eps
 from ..utils import load_state_dict_from_url
 
+from .anchor_utils import AnchorGenerator
 from .generalized_rcnn import GeneralizedRCNN
-from .rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
+from .rpn import RPNHead, RegionProposalNetwork
 from .roi_heads import RoIHeads
 from .transform import GeneralizedRCNNTransform
-from .backbone_utils import resnet_fpn_backbone
+from .backbone_utils import resnet_fpn_backbone, _validate_resnet_trainable_layers
 
 
 __all__ = [
@@ -32,8 +34,8 @@ class FasterRCNN(GeneralizedRCNN):
 
     During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
-        - boxes (FloatTensor[N, 4]): the ground-truth boxes in [x1, y1, x2, y2] format, with values
-          between 0 and H and 0 and W
+        - boxes (FloatTensor[N, 4]): the ground-truth boxes in [x1, y1, x2, y2] format, with values of x
+          between 0 and W and values of y between 0 and H
         - labels (Int64Tensor[N]): the class label for each ground-truth box
 
     The model returns a Dict[Tensor] during training, containing the classification and regression
@@ -42,8 +44,8 @@ class FasterRCNN(GeneralizedRCNN):
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
     follows:
-        - boxes (FloatTensor[N, 4]): the predicted boxes in [x1, y1, x2, y2] format, with values between
-          0 and H and 0 and W
+        - boxes (FloatTensor[N, 4]): the predicted boxes in [x1, y1, x2, y2] format, with values of x
+          between 0 and W and values of y between 0 and H
         - labels (Int64Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores or each prediction
 
@@ -289,7 +291,7 @@ model_urls = {
 
 
 def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
-                            num_classes=91, pretrained_backbone=True, **kwargs):
+                            num_classes=91, pretrained_backbone=True, trainable_backbone_layers=None, **kwargs):
     """
     Constructs a Faster R-CNN model with a ResNet-50-FPN backbone.
 
@@ -300,8 +302,8 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
 
     During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
-        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with values
-          between ``0`` and ``H`` and ``0`` and ``W``
+        - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with values of ``x``
+          between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``
         - labels (``Int64Tensor[N]``): the class label for each ground-truth box
 
     The model returns a ``Dict[Tensor]`` during training, containing the classification and regression
@@ -310,8 +312,8 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as
     follows:
-        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with values between
-          ``0`` and ``H`` and ``0`` and ``W``
+        - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with values of ``x``
+          between ``0`` and ``W`` and values of ``y`` between ``0`` and ``H``
         - labels (``Int64Tensor[N]``): the predicted labels for each image
         - scores (``Tensor[N]``): the scores or each prediction
 
@@ -342,14 +344,23 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
     Arguments:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
+        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
+        num_classes (int): number of output classes of the model (including the background)
+        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
+    # check default parameters and by default set it to 3 if possible
+    trainable_backbone_layers = _validate_resnet_trainable_layers(
+        pretrained or pretrained_backbone, trainable_backbone_layers)
+
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
-    backbone = resnet_fpn_backbone('resnet50', pretrained_backbone)
+    backbone = resnet_fpn_backbone('resnet50', pretrained_backbone, trainable_layers=trainable_backbone_layers)
     model = FasterRCNN(backbone, num_classes, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls['fasterrcnn_resnet50_fpn_coco'],
                                               progress=progress)
         model.load_state_dict(state_dict)
+        overwrite_eps(model, 0.0)
     return model

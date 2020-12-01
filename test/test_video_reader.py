@@ -1,31 +1,27 @@
 import collections
-from common_utils import get_tmp_dir
-from fractions import Fraction
 import math
-import numpy as np
 import os
-import sys
 import time
+import unittest
+from fractions import Fraction
+
+import numpy as np
 import torch
 import torchvision.io as io
-import unittest
 from numpy.random import randint
+from torchvision.io import _HAS_VIDEO_OPT
+
 
 try:
     import av
+
     # Do a version test too
     io.video._check_av_available()
 except ImportError:
     av = None
 
 
-if sys.version_info < (3,):
-    from urllib2 import URLError
-else:
-    from urllib.error import URLError
-
-
-from torchvision.io import _HAS_VIDEO_OPT
+from urllib.error import URLError
 
 
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")
@@ -39,10 +35,7 @@ CheckerConfig = [
     "check_aframes",
     "check_aframe_pts",
 ]
-GroundTruth = collections.namedtuple(
-    "GroundTruth",
-    " ".join(CheckerConfig)
-)
+GroundTruth = collections.namedtuple("GroundTruth", " ".join(CheckerConfig))
 
 all_check_config = GroundTruth(
     duration=0,
@@ -193,9 +186,9 @@ def _decode_frames_by_av_module(
             frames are read
     """
     if video_end_pts is None:
-        video_end_pts = float('inf')
+        video_end_pts = float("inf")
     if audio_end_pts is None:
-        audio_end_pts = float('inf')
+        audio_end_pts = float("inf")
     container = av.open(full_path)
 
     video_frames = []
@@ -282,8 +275,10 @@ class TestVideoReader(unittest.TestCase):
     def check_separate_decoding_result(self, tv_result, config):
         """check the decoding results from TorchVision decoder
         """
-        vframes, vframe_pts, vtimebase, vfps, vduration, aframes, aframe_pts, \
-            atimebase, asample_rate, aduration = tv_result
+        vframes, vframe_pts, vtimebase, vfps, vduration, \
+            aframes, aframe_pts, atimebase, asample_rate, aduration = (
+                tv_result
+            )
 
         video_duration = vduration.item() * Fraction(
             vtimebase[0].item(), vtimebase[1].item()
@@ -321,6 +316,13 @@ class TestVideoReader(unittest.TestCase):
             )
             self.assertAlmostEqual(audio_duration, config.duration, delta=0.5)
 
+    def check_meta_result(self, result, config):
+        self.assertAlmostEqual(result.video_duration, config.duration, delta=0.5)
+        self.assertAlmostEqual(result.video_fps, config.video_fps, delta=0.5)
+        if result.has_audio > 0:
+            self.assertEqual(result.audio_sample_rate, config.audio_sample_rate)
+            self.assertAlmostEqual(result.audio_duration, config.duration, delta=0.5)
+
     def compare_decoding_result(self, tv_result, ref_result, config=all_check_config):
         """
         Compare decoding results from two sources.
@@ -330,8 +332,10 @@ class TestVideoReader(unittest.TestCase):
                         decoder or TorchVision decoder with getPtsOnly = 1
             config: config of decoding results checker
         """
-        vframes, vframe_pts, vtimebase, _vfps, _vduration, aframes, aframe_pts, \
-            atimebase, _asample_rate, _aduration = tv_result
+        vframes, vframe_pts, vtimebase, _vfps, _vduration, \
+            aframes, aframe_pts, atimebase, _asample_rate, _aduration = (
+                tv_result
+            )
         if isinstance(ref_result, list):
             # the ref_result is from new video_reader decoder
             ref_result = DecoderResult(
@@ -344,22 +348,34 @@ class TestVideoReader(unittest.TestCase):
             )
 
         if vframes.numel() > 0 and ref_result.vframes.numel() > 0:
-            mean_delta = torch.mean(torch.abs(vframes.float() - ref_result.vframes.float()))
+            mean_delta = torch.mean(
+                torch.abs(vframes.float() - ref_result.vframes.float())
+            )
             self.assertAlmostEqual(mean_delta, 0, delta=8.0)
 
-        mean_delta = torch.mean(torch.abs(vframe_pts.float() - ref_result.vframe_pts.float()))
+        mean_delta = torch.mean(
+            torch.abs(vframe_pts.float() - ref_result.vframe_pts.float())
+        )
         self.assertAlmostEqual(mean_delta, 0, delta=1.0)
 
         is_same = torch.all(torch.eq(vtimebase, ref_result.vtimebase)).item()
         self.assertEqual(is_same, True)
 
-        if config.check_aframes and aframes.numel() > 0 and ref_result.aframes.numel() > 0:
+        if (
+            config.check_aframes
+            and aframes.numel() > 0
+            and ref_result.aframes.numel() > 0
+        ):
             """Audio stream is available and audio frame is required to return
             from decoder"""
             is_same = torch.all(torch.eq(aframes, ref_result.aframes)).item()
             self.assertEqual(is_same, True)
 
-        if config.check_aframe_pts and aframe_pts.numel() > 0 and ref_result.aframe_pts.numel() > 0:
+        if (
+            config.check_aframe_pts
+            and aframe_pts.numel() > 0
+            and ref_result.aframe_pts.numel() > 0
+        ):
             """Audio stream is available"""
             is_same = torch.all(torch.eq(aframe_pts, ref_result.aframe_pts)).item()
             self.assertEqual(is_same, True)
@@ -375,7 +391,7 @@ class TestVideoReader(unittest.TestCase):
     def test_stress_test_read_video_from_file(self):
         num_iter = 10000
         # video related
-        width, height, min_dimension = 0, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -396,6 +412,7 @@ class TestVideoReader(unittest.TestCase):
                     width,
                     height,
                     min_dimension,
+                    max_dimension,
                     video_start_pts,
                     video_end_pts,
                     video_timebase_num,
@@ -414,7 +431,7 @@ class TestVideoReader(unittest.TestCase):
         Test the case when decoder starts with a video file to decode frames.
         """
         # video related
-        width, height, min_dimension = 0, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -434,6 +451,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -459,7 +477,7 @@ class TestVideoReader(unittest.TestCase):
         only reads video stream and ignores audio stream
         """
         # video related
-        width, height, min_dimension = 0, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -479,6 +497,7 @@ class TestVideoReader(unittest.TestCase):
                     width,
                     height,
                     min_dimension,
+                    max_dimension,
                     video_start_pts,
                     video_end_pts,
                     video_timebase_num,
@@ -492,15 +511,19 @@ class TestVideoReader(unittest.TestCase):
                     audio_timebase_den,
                 )
 
-                vframes, vframe_pts, vtimebase, vfps, vduration, aframes, aframe_pts, \
-                    atimebase, asample_rate, aduration = tv_result
+                vframes, vframe_pts, vtimebase, vfps, vduration, \
+                    aframes, aframe_pts, atimebase, asample_rate, aduration = (
+                        tv_result
+                    )
 
                 self.assertEqual(vframes.numel() > 0, readVideoStream)
                 self.assertEqual(vframe_pts.numel() > 0, readVideoStream)
                 self.assertEqual(vtimebase.numel() > 0, readVideoStream)
                 self.assertEqual(vfps.numel() > 0, readVideoStream)
 
-                expect_audio_data = readAudioStream == 1 and config.audio_sample_rate is not None
+                expect_audio_data = (
+                    readAudioStream == 1 and config.audio_sample_rate is not None
+                )
                 self.assertEqual(aframes.numel() > 0, expect_audio_data)
                 self.assertEqual(aframe_pts.numel() > 0, expect_audio_data)
                 self.assertEqual(atimebase.numel() > 0, expect_audio_data)
@@ -512,7 +535,7 @@ class TestVideoReader(unittest.TestCase):
         video min dimension between height and width is set.
         """
         # video related
-        width, height, min_dimension = 0, 0, 128
+        width, height, min_dimension, max_dimension = 0, 0, 128, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -531,6 +554,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -543,15 +567,17 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            self.assertEqual(min_dimension, min(tv_result[0].size(1), tv_result[0].size(2)))
+            self.assertEqual(
+                min_dimension, min(tv_result[0].size(1), tv_result[0].size(2))
+            )
 
-    def test_read_video_from_file_rescale_width(self):
+    def test_read_video_from_file_rescale_max_dimension(self):
         """
         Test the case when decoder starts with a video file to decode frames, and
-        video width is set.
+        video min dimension between height and width is set.
         """
         # video related
-        width, height, min_dimension = 256, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 85
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -570,6 +596,94 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
+                video_start_pts,
+                video_end_pts,
+                video_timebase_num,
+                video_timebase_den,
+                1,  # readAudioStream
+                samples,
+                channels,
+                audio_start_pts,
+                audio_end_pts,
+                audio_timebase_num,
+                audio_timebase_den,
+            )
+            self.assertEqual(
+                max_dimension, max(tv_result[0].size(1), tv_result[0].size(2))
+            )
+
+    def test_read_video_from_file_rescale_both_min_max_dimension(self):
+        """
+        Test the case when decoder starts with a video file to decode frames, and
+        video min dimension between height and width is set.
+        """
+        # video related
+        width, height, min_dimension, max_dimension = 0, 0, 64, 85
+        video_start_pts, video_end_pts = 0, -1
+        video_timebase_num, video_timebase_den = 0, 1
+        # audio related
+        samples, channels = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
+        audio_timebase_num, audio_timebase_den = 0, 1
+
+        for test_video, _config in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
+
+            tv_result = torch.ops.video_reader.read_video_from_file(
+                full_path,
+                seek_frame_margin,
+                0,  # getPtsOnly
+                1,  # readVideoStream
+                width,
+                height,
+                min_dimension,
+                max_dimension,
+                video_start_pts,
+                video_end_pts,
+                video_timebase_num,
+                video_timebase_den,
+                1,  # readAudioStream
+                samples,
+                channels,
+                audio_start_pts,
+                audio_end_pts,
+                audio_timebase_num,
+                audio_timebase_den,
+            )
+            self.assertEqual(
+                min_dimension, min(tv_result[0].size(1), tv_result[0].size(2))
+            )
+            self.assertEqual(
+                max_dimension, max(tv_result[0].size(1), tv_result[0].size(2))
+            )
+
+    def test_read_video_from_file_rescale_width(self):
+        """
+        Test the case when decoder starts with a video file to decode frames, and
+        video width is set.
+        """
+        # video related
+        width, height, min_dimension, max_dimension = 256, 0, 0, 0
+        video_start_pts, video_end_pts = 0, -1
+        video_timebase_num, video_timebase_den = 0, 1
+        # audio related
+        samples, channels = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
+        audio_timebase_num, audio_timebase_den = 0, 1
+
+        for test_video, _config in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
+
+            tv_result = torch.ops.video_reader.read_video_from_file(
+                full_path,
+                seek_frame_margin,
+                0,  # getPtsOnly
+                1,  # readVideoStream
+                width,
+                height,
+                min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -590,7 +704,7 @@ class TestVideoReader(unittest.TestCase):
         video height is set.
         """
         # video related
-        width, height, min_dimension = 0, 224, 0
+        width, height, min_dimension, max_dimension = 0, 224, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -609,6 +723,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -629,7 +744,7 @@ class TestVideoReader(unittest.TestCase):
         both video height and width are set.
         """
         # video related
-        width, height, min_dimension = 320, 240, 0
+        width, height, min_dimension, max_dimension = 320, 240, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -648,6 +763,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -669,12 +785,9 @@ class TestVideoReader(unittest.TestCase):
         audio waveform are resampled
         """
 
-        for samples in [
-            9600,  # downsampling
-            96000,  # upsampling
-        ]:
+        for samples in [9600, 96000]:  # downsampling  # upsampling
             # video related
-            width, height, min_dimension = 0, 0, 0
+            width, height, min_dimension, max_dimension = 0, 0, 0, 0
             video_start_pts, video_end_pts = 0, -1
             video_timebase_num, video_timebase_den = 0, 1
             # audio related
@@ -693,6 +806,7 @@ class TestVideoReader(unittest.TestCase):
                     width,
                     height,
                     min_dimension,
+                    max_dimension,
                     video_start_pts,
                     video_end_pts,
                     video_timebase_num,
@@ -705,13 +819,19 @@ class TestVideoReader(unittest.TestCase):
                     audio_timebase_num,
                     audio_timebase_den,
                 )
-                vframes, vframe_pts, vtimebase, vfps, vduration, aframes, aframe_pts, \
-                    atimebase, asample_rate, aduration = tv_result
+                vframes, vframe_pts, vtimebase, vfps, vduration, \
+                    aframes, aframe_pts, atimebase, asample_rate, aduration = (
+                        tv_result
+                    )
                 if aframes.numel() > 0:
                     self.assertEqual(samples, asample_rate.item())
                     self.assertEqual(1, aframes.size(1))
                     # when audio stream is found
-                    duration = float(aframe_pts[-1]) * float(atimebase[0]) / float(atimebase[1])
+                    duration = (
+                        float(aframe_pts[-1])
+                        * float(atimebase[0])
+                        / float(atimebase[1])
+                    )
                     self.assertAlmostEqual(
                         aframes.size(0),
                         int(duration * asample_rate.item()),
@@ -723,7 +843,7 @@ class TestVideoReader(unittest.TestCase):
         Test the case when video is already in memory, and decoder reads data in memory
         """
         # video related
-        width, height, min_dimension = 0, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -743,6 +863,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -765,6 +886,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -787,7 +909,7 @@ class TestVideoReader(unittest.TestCase):
         Test the case when video is already in memory, and decoder reads data in memory
         """
         # video related
-        width, height, min_dimension = 0, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -807,6 +929,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -832,7 +955,7 @@ class TestVideoReader(unittest.TestCase):
         for both pts and frame data
         """
         # video related
-        width, height, min_dimension = 0, 0, 0
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
         video_start_pts, video_end_pts = 0, -1
         video_timebase_num, video_timebase_den = 0, 1
         # audio related
@@ -852,6 +975,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -875,6 +999,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -901,7 +1026,7 @@ class TestVideoReader(unittest.TestCase):
         for test_video, config in test_videos.items():
             full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
             # video related
-            width, height, min_dimension = 0, 0, 0
+            width, height, min_dimension, max_dimension = 0, 0, 0, 0
             video_start_pts, video_end_pts = 0, -1
             video_timebase_num, video_timebase_den = 0, 1
             # audio related
@@ -917,6 +1042,7 @@ class TestVideoReader(unittest.TestCase):
                 width,
                 height,
                 min_dimension,
+                max_dimension,
                 video_start_pts,
                 video_end_pts,
                 video_timebase_num,
@@ -929,8 +1055,10 @@ class TestVideoReader(unittest.TestCase):
                 audio_timebase_num,
                 audio_timebase_den,
             )
-            vframes, vframe_pts, vtimebase, vfps, vduration, aframes, aframe_pts, \
-                atimebase, asample_rate, aduration = tv_result
+            vframes, vframe_pts, vtimebase, vfps, vduration, \
+                aframes, aframe_pts, atimebase, asample_rate, aduration = (
+                    tv_result
+                )
             self.assertAlmostEqual(config.video_fps, vfps.item(), delta=0.01)
 
             for num_frames in [4, 8, 16, 32, 64, 128]:
@@ -969,6 +1097,7 @@ class TestVideoReader(unittest.TestCase):
                     width,
                     height,
                     min_dimension,
+                    max_dimension,
                     video_start_pts,
                     video_end_pts,
                     video_timebase_num,
@@ -983,31 +1112,41 @@ class TestVideoReader(unittest.TestCase):
                 )
 
                 # pass 3: decode frames in range using PyAv
-                video_timebase_av, audio_timebase_av = _get_timebase_by_av_module(full_path)
+                video_timebase_av, audio_timebase_av = _get_timebase_by_av_module(
+                    full_path
+                )
 
                 video_start_pts_av = _pts_convert(
                     video_start_pts.item(),
                     Fraction(video_timebase_num.item(), video_timebase_den.item()),
-                    Fraction(video_timebase_av.numerator, video_timebase_av.denominator),
+                    Fraction(
+                        video_timebase_av.numerator, video_timebase_av.denominator
+                    ),
                     math.floor,
                 )
                 video_end_pts_av = _pts_convert(
                     video_end_pts.item(),
                     Fraction(video_timebase_num.item(), video_timebase_den.item()),
-                    Fraction(video_timebase_av.numerator, video_timebase_av.denominator),
+                    Fraction(
+                        video_timebase_av.numerator, video_timebase_av.denominator
+                    ),
                     math.ceil,
                 )
                 if audio_timebase_av:
                     audio_start_pts = _pts_convert(
                         video_start_pts.item(),
                         Fraction(video_timebase_num.item(), video_timebase_den.item()),
-                        Fraction(audio_timebase_av.numerator, audio_timebase_av.denominator),
+                        Fraction(
+                            audio_timebase_av.numerator, audio_timebase_av.denominator
+                        ),
                         math.floor,
                     )
                     audio_end_pts = _pts_convert(
                         video_end_pts.item(),
                         Fraction(video_timebase_num.item(), video_timebase_den.item()),
-                        Fraction(audio_timebase_av.numerator, audio_timebase_av.denominator),
+                        Fraction(
+                            audio_timebase_av.numerator, audio_timebase_av.denominator
+                        ),
                         math.ceil,
                     )
 
@@ -1044,6 +1183,55 @@ class TestVideoReader(unittest.TestCase):
             probe_result = torch.ops.video_reader.probe_video_from_memory(video_tensor)
             self.check_probe_result(probe_result, config)
 
+    def test_probe_video_from_memory_script(self):
+        scripted_fun = torch.jit.script(io._probe_video_from_memory)
+        self.assertIsNotNone(scripted_fun)
 
-if __name__ == '__main__':
+        for test_video, config in test_videos.items():
+            full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
+            probe_result = scripted_fun(video_tensor)
+            self.check_meta_result(probe_result, config)
+
+    def test_read_video_from_memory_scripted(self):
+        """
+        Test the case when video is already in memory, and decoder reads data in memory
+        """
+        # video related
+        width, height, min_dimension, max_dimension = 0, 0, 0, 0
+        video_start_pts, video_end_pts = 0, -1
+        video_timebase_num, video_timebase_den = 0, 1
+        # audio related
+        samples, channels = 0, 0
+        audio_start_pts, audio_end_pts = 0, -1
+        audio_timebase_num, audio_timebase_den = 0, 1
+
+        scripted_fun = torch.jit.script(io._read_video_from_memory)
+        self.assertIsNotNone(scripted_fun)
+
+        for test_video, _config in test_videos.items():
+            full_path, video_tensor = _get_video_tensor(VIDEO_DIR, test_video)
+
+            # decode all frames using cpp decoder
+            scripted_fun(
+                video_tensor,
+                seek_frame_margin,
+                1,  # readVideoStream
+                width,
+                height,
+                min_dimension,
+                max_dimension,
+                [video_start_pts, video_end_pts],
+                video_timebase_num,
+                video_timebase_den,
+                1,  # readAudioStream
+                samples,
+                channels,
+                [audio_start_pts, audio_end_pts],
+                audio_timebase_num,
+                audio_timebase_den,
+            )
+            # FUTURE: check value of video / audio frames
+
+
+if __name__ == "__main__":
     unittest.main()

@@ -81,7 +81,6 @@ class Conv3DNoTemporal(nn.Conv3d):
 
 class BasicBlock(nn.Module):
 
-    __constants__ = ['downsample']
     expansion = 1
 
     def __init__(self, inplanes, planes, conv_builder, stride=1, downsample=None):

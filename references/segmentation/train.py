@@ -12,13 +12,13 @@ import transforms as T
 import utils
 
 
-def get_dataset(name, image_set, transform):
+def get_dataset(dir_path, name, image_set, transform):
     def sbd(*args, **kwargs):
         return torchvision.datasets.SBDataset(*args, mode='segmentation', **kwargs)
     paths = {
-        "voc": ('/datasets01/VOC/060817/', torchvision.datasets.VOCSegmentation, 21),
-        "voc_aug": ('/datasets01/SBDD/072318/', sbd, 21),
-        "coco": ('/datasets01/COCO/022719/', get_coco, 21)
+        "voc": (dir_path, torchvision.datasets.VOCSegmentation, 21),
+        "voc_aug": (dir_path, sbd, 21),
+        "coco": (dir_path, get_coco, 21)
     }
     p, ds_fn, num_classes = paths[name]
 
@@ -101,8 +101,8 @@ def main(args):
 
     device = torch.device(args.device)
 
-    dataset, num_classes = get_dataset(args.dataset, "train", get_transform(train=True))
-    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(train=False))
+    dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(train=True))
+    dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(train=False))
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
@@ -127,10 +127,6 @@ def main(args):
     model.to(device)
     if args.distributed:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-
-    if args.resume:
-        checkpoint = torch.load(args.resume, map_location='cpu')
-        model.load_state_dict(checkpoint['model'])
 
     model_without_ddp = model
     if args.distributed:
@@ -157,8 +153,15 @@ def main(args):
         optimizer,
         lambda x: (1 - x / (len(data_loader) * args.epochs)) ** 0.9)
 
+    if args.resume:
+        checkpoint = torch.load(args.resume, map_location='cpu')
+        model_without_ddp.load_state_dict(checkpoint['model'])
+        optimizer.load_state_dict(checkpoint['optimizer'])
+        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+        args.start_epoch = checkpoint['epoch'] + 1
+
     start_time = time.time()
-    for epoch in range(args.epochs):
+    for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
         train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, args.print_freq)
@@ -168,6 +171,7 @@ def main(args):
             {
                 'model': model_without_ddp.state_dict(),
                 'optimizer': optimizer.state_dict(),
+                'lr_scheduler': lr_scheduler.state_dict(),
                 'epoch': epoch,
                 'args': args
             },
@@ -182,7 +186,8 @@ def parse_args():
     import argparse
     parser = argparse.ArgumentParser(description='PyTorch Segmentation Training')
 
-    parser.add_argument('--dataset', default='voc', help='dataset')
+    parser.add_argument('--data-path', default='/datasets01/COCO/022719/', help='dataset path')
+    parser.add_argument('--dataset', default='coco', help='dataset name')
     parser.add_argument('--model', default='fcn_resnet101', help='model')
     parser.add_argument('--aux-loss', action='store_true', help='auxiliar loss')
     parser.add_argument('--device', default='cuda', help='device')
@@ -201,6 +206,8 @@ def parse_args():
     parser.add_argument('--print-freq', default=10, type=int, help='print frequency')
     parser.add_argument('--output-dir', default='.', help='path where to save')
     parser.add_argument('--resume', default='', help='resume from checkpoint')
+    parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
+                        help='start epoch')
     parser.add_argument(
         "--test-only",
         dest="test_only",

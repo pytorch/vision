@@ -1,5 +1,4 @@
 import contextlib
-import sys
 import os
 import torch
 import unittest
@@ -92,7 +91,6 @@ class Tester(unittest.TestCase):
                     video, audio, info, video_idx = video_clips.get_clip(i)
                     self.assertEqual(video.shape[0], num_frames)
                     self.assertEqual(info["video_fps"], fps)
-                    self.assertEqual(info, {"video_fps": fps})
                     # TODO add tests checking that the content is right
 
     def test_compute_clips_for_video(self):
@@ -120,6 +118,16 @@ class Tester(unittest.TestCase):
         self.assertEqual(len(clips), 3)
         self.assertTrue(clips.equal(idxs))
         self.assertTrue(idxs.flatten().equal(resampled_idxs))
+
+        # case 3: frames aren't enough for a clip
+        num_frames = 32
+        orig_fps = 30
+        new_fps = 13
+        with self.assertWarns(UserWarning):
+            clips, idxs = VideoClips.compute_clips_for_video(video_pts, num_frames, num_frames,
+                                                             orig_fps, new_fps)
+        self.assertEqual(len(clips), 0)
+        self.assertEqual(len(idxs), 0)
 
 
 if __name__ == '__main__':

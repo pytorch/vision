@@ -1,4 +1,3 @@
-from __future__ import division
 import torch
 import torchvision.transforms._transforms_video as transforms
 from torchvision.transforms import Compose
