@@ -379,15 +379,17 @@ class VideoClips(object):
 
     def __getstate__(self):
         video_pts_sizes = [len(v) for v in self.video_pts]
-        # To be back-comptiable, we convert data to dtype torch.long as nedded
+        # To be back-compatible, we convert data to dtype torch.long as needed
         # because for empty list, in legacy implementation, torch.as_tensor will
         # use torch.float as default dtype. This happens when decoding fails and
         # no pts is returned in the list.
         video_pts = [x.to(torch.int64) for x in self.video_pts]
-        video_pts = torch.cat(video_pts)
-        # avoid bug in https://github.com/pytorch/pytorch/issues/32351
-        # TODO: Revert it once the bug is fixed.
-        video_pts = video_pts.numpy()
+        # video_pts can be an empty list if no frames have been decoded
+        if video_pts:
+            video_pts = torch.cat(video_pts)
+            # avoid bug in https://github.com/pytorch/pytorch/issues/32351
+            # TODO: Revert it once the bug is fixed.
+            video_pts = video_pts.numpy()
 
         # make a copy of the fields of self
         d = self.__dict__.copy()
