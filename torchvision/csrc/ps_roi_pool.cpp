@@ -1,17 +1,9 @@
-#pragma once
+#include "ps_roi_pool.h"
+#include <torch/extension.h>
 
-#include "cpu/vision_cpu.h"
-
-#ifdef WITH_CUDA
-#include "autocast.h"
-#include "cuda/vision_cuda.h"
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+#include <ATen/autocast_mode.h>
 #endif
-#ifdef WITH_HIP
-#include "autocast.h"
-#include "hip/vision_cuda.h"
-#endif
-
-// TODO: put this stuff in torchvision namespace
 
 std::tuple<at::Tensor, at::Tensor> ps_roi_pool(
     const at::Tensor& input,
@@ -26,7 +18,7 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_pool(
 }
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
-std::tuple<at::Tensor, at::Tensor> PSROIPool_autocast(
+std::tuple<at::Tensor, at::Tensor> ps_roi_pool_autocast(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -73,6 +65,8 @@ at::Tensor _ps_roi_pool_backward(
       height,
       width);
 }
+
+namespace {
 
 class PSROIPoolFunction : public torch::autograd::Function<PSROIPoolFunction> {
  public:
@@ -166,7 +160,9 @@ class PSROIPoolBackwardFunction
   }
 };
 
-std::tuple<at::Tensor, at::Tensor> PSROIPool_autograd(
+} // namespace
+
+std::tuple<at::Tensor, at::Tensor> ps_roi_pool_autograd(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -178,7 +174,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_autograd(
   return std::make_tuple(result[0], result[1]);
 }
 
-at::Tensor PSROIPool_backward_autograd(
+at::Tensor ps_roi_pool_backward_autograd(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& channel_mapping,
