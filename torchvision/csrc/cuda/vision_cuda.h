@@ -4,11 +4,6 @@
 
 // TODO: Delete this file once all the methods are gone
 
-VISION_API at::Tensor nms_cuda(
-    const at::Tensor& dets,
-    const at::Tensor& scores,
-    double iou_threshold);
-
 VISION_API std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,

@@ -1,7 +1,9 @@
-#include "vision_cpu.h"
+#include "nms_kernel.h"
+
+namespace {
 
 template <typename scalar_t>
-at::Tensor nms_cpu_kernel(
+at::Tensor nms_kernel(
     const at::Tensor& dets,
     const at::Tensor& scores,
     double iou_threshold) {
@@ -69,6 +71,8 @@ at::Tensor nms_cpu_kernel(
   return keep_t.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep);
 }
 
+} // namespace
+
 at::Tensor nms_cpu(
     const at::Tensor& dets,
     const at::Tensor& scores,
@@ -95,7 +99,7 @@ at::Tensor nms_cpu(
   auto result = at::empty({0}, dets.options());
 
   AT_DISPATCH_FLOATING_TYPES(dets.scalar_type(), "nms", [&] {
-    result = nms_cpu_kernel<scalar_t>(dets, scores, iou_threshold);
+    result = nms_kernel<scalar_t>(dets, scores, iou_threshold);
   });
   return result;
 }

@@ -3,14 +3,17 @@
 #include <c10/cuda/CUDAGuard.h>
 
 #include "cuda_helpers.h"
+#include "nms_kernel.h"
 
-#include <iostream>
-#include <vector>
+namespace {
 
 int const threadsPerBlock = sizeof(unsigned long long) * 8;
 
 template <typename T>
-__device__ inline bool devIoU(T const* const a, T const* const b, const float threshold) {
+__device__ inline bool devIoU(
+    T const* const a,
+    T const* const b,
+    const float threshold) {
   T left = max(a[0], b[0]), right = min(a[2], b[2]);
   T top = max(a[1], b[1]), bottom = min(a[3], b[3]);
   T width = max(right - left, (T)0), height = max(bottom - top, (T)0);
@@ -29,7 +32,8 @@ __global__ void nms_kernel(
   const int row_start = blockIdx.y;
   const int col_start = blockIdx.x;
 
-  if (row_start > col_start) return;
+  if (row_start > col_start)
+    return;
 
   const int row_size =
       min(n_boxes - row_start * threadsPerBlock, threadsPerBlock);
@@ -67,6 +71,8 @@ __global__ void nms_kernel(
     dev_mask[cur_box_idx * col_blocks + col_start] = t;
   }
 }
+
+} // namespace
 
 at::Tensor nms_cuda(const at::Tensor& dets,
     const at::Tensor& scores,
