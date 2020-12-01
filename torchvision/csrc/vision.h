@@ -6,7 +6,7 @@
 #include "macros.h"
 
 namespace vision {
-VISION_API int64_t cuda_version() noexcept;
+VISION_API int64_t cuda_version();
 
 namespace detail {
 // Dummy variable to reference a symbol from vision.cpp.
