@@ -263,7 +263,6 @@ class Tester(unittest.TestCase):
                              }})
 
     @unittest.skipIf(not HAS_PYAV, "PyAV unavailable")
-    @unittest.skipIf(sys.platform == 'win32', 'temporarily disabled on Windows')
     def test_ucf101(self):
         with ucf101_root() as (root, ann_root):
             for split in {True, False}:
