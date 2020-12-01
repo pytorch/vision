@@ -1,6 +1,4 @@
-#include <ATen/ATen.h>
-#include <ATen/TensorUtils.h>
-#include <TH/TH.h>
+#include "ps_roi_align_kernel.h"
 
 namespace {
 
