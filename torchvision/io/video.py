@@ -58,7 +58,7 @@ def write_video(
     audio_array: Optional[torch.Tensor] = None,
     audio_fps: Optional[float] = None,
     audio_codec: Optional[str] = None,
-    audio_options: optional[Dict[str, Any]] = None,
+    audio_options: Optional[Dict[str, Any]] = None,
 ) -> None:
     """
     Writes a 4d tensor in [T, H, W, C] format in a video file
