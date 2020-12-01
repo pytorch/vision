@@ -1,5 +1,6 @@
 import os
 import contextlib
+import sys
 import tempfile
 import torch
 import torchvision.datasets.utils as utils
@@ -18,6 +19,9 @@ try:
     io.video._check_av_available()
 except ImportError:
     av = None
+
+
+VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")
 
 
 def _create_video_frames(num_frames, height, width):
@@ -259,6 +263,39 @@ class TestIO(unittest.TestCase):
             self.assertTrue(video[:3].equal(data[:3]))
             # and the last few frames are wrong
             self.assertFalse(video.equal(data))
+
+    @unittest.skipIf(sys.platform == 'win32', 'temporarily disabled on Windows')
+    def test_write_video_with_audio(self):
+        f_name = os.path.join(VIDEO_DIR, "R6llTwEh07w.mp4")
+        video_tensor, audio_tensor, info = io.read_video(f_name, pts_unit="sec")
+
+        with get_tmp_dir() as tmpdir:
+            out_f_name = os.path.join(tmpdir, "testing.mp4")
+            io.video.write_video(
+                out_f_name,
+                video_tensor,
+                round(info["video_fps"]),
+                video_codec="libx264rgb",
+                options={'crf': '0'},
+                audio_array=audio_tensor,
+                audio_fps=info["audio_fps"],
+                audio_codec="aac",
+            )
+
+            out_video_tensor, out_audio_tensor, out_info = io.read_video(
+                out_f_name, pts_unit="sec"
+            )
+
+            self.assertEqual(info["video_fps"], out_info["video_fps"])
+            self.assertTrue(video_tensor.equal(out_video_tensor))
+
+            audio_stream = av.open(f_name).streams.audio[0]
+            out_audio_stream = av.open(out_f_name).streams.audio[0]
+
+            self.assertEqual(info["audio_fps"], out_info["audio_fps"])
+            self.assertEqual(audio_stream.rate, out_audio_stream.rate)
+            self.assertAlmostEqual(audio_stream.frames, out_audio_stream.frames, delta=1)
+            self.assertEqual(audio_stream.frame_size, out_audio_stream.frame_size)
 
     # TODO add tests for audio
 
