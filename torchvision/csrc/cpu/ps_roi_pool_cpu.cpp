@@ -3,6 +3,8 @@
 #include <TH/TH.h>
 #include <algorithm>
 
+namespace {
+
 template <class T>
 inline void add(T* address, const T& val) {
   *address += val;
@@ -142,6 +144,8 @@ void ps_roi_pool_backward_kernel_impl(
     }
   }
 }
+
+} // namespace
 
 std::tuple<at::Tensor, at::Tensor> ps_roi_pool_forward_cpu(
     const at::Tensor& input,
