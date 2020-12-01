@@ -24,7 +24,7 @@ else
 fi
 
 CONDA_CHANNEL_FLAGS=""
-if [[ "${PYTHON_VERSION}" = 3.9 ]]; then
+if [[ "$(python --version)" = *3.9* ]]; then
   CONDA_CHANNEL_FLAGS="-c=conda-forge"
 fi
 
