@@ -552,19 +552,20 @@ class Tester(TransformsTester):
     def _test_affine_all_ops(self, tensor, pil_img, scripted_affine):
         # 4) Test rotation + translation + scale + share
         test_configs = [
-            (45.5, [5, 6], 1.0, [0.0, 0.0], None, None),
-            (33, (5, -4), 1.0, [0.0, 0.0], [0, 0, 0], [0, 0, 0]),
-            (45, [-5, 4], 1.2, [0.0, 0.0], [1, 2, 3], (1, 2, 3)),
-            (33, (-4, -8), 2.0, [0.0, 0.0], [255, 255, 255], [255, 255, 255]),
-            (85, (10, -10), 0.7, [0.0, 0.0], [1, ], 1),
-            (0, [0, 0], 1.0, [35.0, ], (2.0, ), 2),
-            (-25, [0, 0], 1.2, [0.0, 15.0], None, None),
-            (-45, [-10, 0], 0.7, [2.0, 5.0], None, None),
-            (-45, [-10, -10], 1.2, [4.0, 5.0], None, None),
-            (-90, [0, 0], 1.0, [0.0, 0.0], None, None),
+            (45.5, [5, 6], 1.0, [0.0, 0.0], None),
+            (33, (5, -4), 1.0, [0.0, 0.0], [0, 0, 0]),
+            (45, [-5, 4], 1.2, [0.0, 0.0], [1, 2, 3]),
+            (33, (-4, -8), 2.0, [0.0, 0.0], [255, 255, 255]),
+            (85, (10, -10), 0.7, [0.0, 0.0], [1, ]),
+            (0, [0, 0], 1.0, [35.0, ], (2.0, )),
+            (-25, [0, 0], 1.2, [0.0, 15.0], None),
+            (-45, [-10, 0], 0.7, [2.0, 5.0], None),
+            (-45, [-10, -10], 1.2, [4.0, 5.0], None),
+            (-90, [0, 0], 1.0, [0.0, 0.0], None),
         ]
         for r in [NEAREST, ]:
-            for a, t, s, sh, f, f_pil in test_configs:
+            for a, t, s, sh, f in test_configs:
+                f_pil = int(f[0]) if f is not None and len(f) == 1 else f
                 out_pil_img = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh, interpolation=r, fill=f_pil)
                 out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
@@ -643,8 +644,8 @@ class Tester(TransformsTester):
             for a in range(-180, 180, 17):
                 for e in [True, False]:
                     for c in centers:
-                        for f, f_pil in [(None, None), ([0, 0, 0], [0, 0, 0]), ([1, 2, 3], (1, 2, 3)),
-                                         ([255, 255, 255], [255, 255, 255]), ([1, ], 1), ((2.0, ), 2)]:
+                        for f in [None, [0, 0, 0], [1, 2, 3], [255, 255, 255], [1, ], (2.0, )]:
+                            f_pil = int(f[0]) if f is not None and len(f) == 1 else f
                             out_pil_img = F.rotate(pil_img, angle=a, interpolation=r, expand=e, center=c, fill=f_pil)
                             out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
                             for fn in [F.rotate, scripted_rotate]:
@@ -722,10 +723,10 @@ class Tester(TransformsTester):
 
     def _test_perspective(self, tensor, pil_img, scripted_transform, test_configs):
         dt = tensor.dtype
-        for f, f_pil in [(None, None), ([0, 0, 0], [0, 0, 0]), ([1, 2, 3], (1, 2, 3)),
-                         ([255, 255, 255], [255, 255, 255]), ([1, ], 1), ((2.0, ), 2)]:
+        for f in [None, [0, 0, 0], [1, 2, 3], [255, 255, 255], [1, ], (2.0, )]:
             for r in [NEAREST, ]:
                 for spoints, epoints in test_configs:
+                    f_pil = int(f[0]) if f is not None and len(f) == 1 else f
                     out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r,
                                                 fill=f_pil)
                     out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
