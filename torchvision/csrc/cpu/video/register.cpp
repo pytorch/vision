@@ -1,9 +1,19 @@
 #ifndef REGISTER_H
 #define REGISTER_H
 
+#include <ATen/ATen.h>
+
+#include "Frame.h"
 #include "Video.h"
 
 namespace {
+
+static auto registerFrame =
+    torch::class_<Frame>("torchvision", "Frame")
+        .def(torch::init<std::string, double, torch::Tensor>())
+        .def("type", &Frame::getType)
+        .def("pts", &Frame::getPTS)
+        .def("data_t", &Frame::getData);
 
 static auto registerVideo =
     torch::class_<Video>("torchvision", "Video")

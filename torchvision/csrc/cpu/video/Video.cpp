@@ -264,10 +264,10 @@ void Video::Seek(double ts) {
   LOG(INFO) << "Decoder init at seek " << succeeded << "\n";
 }
 
-std::tuple<torch::Tensor, double> Video::Next() {
+c10::intrusive_ptr<Frame> Video::Next() {
   // if failing to decode simply return a null tensor (note, should we
   // raise an exeption?)
-  double frame_pts_s;
+  double frame_pts_s = -1;
   torch::Tensor outFrame = torch::zeros({0}, torch::kByte);
 
   // decode single frame
@@ -317,5 +317,6 @@ std::tuple<torch::Tensor, double> Video::Next() {
     LOG(ERROR) << "Decoder failed with ERROR_CODE " << res;
   }
 
-  return std::make_tuple(outFrame, frame_pts_s);
+  return c10::make_intrusive<Frame>(
+      get<0>(current_stream), frame_pts_s, outFrame);
 }
