@@ -1,4 +1,3 @@
-#include <ATen/TensorUtils.h>
 #include "roi_align_kernel.h"
 
 namespace {
