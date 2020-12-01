@@ -149,8 +149,8 @@ bool Decoder::enableLogLevel(int level) const {
 }
 
 void Decoder::logCallback(int level, const std::string& message) {
-  LOG(INFO) <<
-      "Msg, uuid=" << params_.loggingUuid << " level=" << level << " msg=" << message;
+  LOG(INFO) << "Msg, uuid=" << params_.loggingUuid << " level=" << level
+            << " msg=" << message;
 }
 
 /* static */
@@ -222,8 +222,9 @@ bool Decoder::init(
   cleanUp();
 
   if ((params.uri.empty() || in) && (!params.uri.empty() || !in)) {
-    LOG(ERROR) << "uuid=" << params_.loggingUuid
-               << " either external URI gets provided or explicit input callback";
+    LOG(ERROR)
+        << "uuid=" << params_.loggingUuid
+        << " either external URI gets provided or explicit input callback";
     return false;
   }
 
@@ -370,8 +371,7 @@ bool Decoder::init(
   }
 
   if (!openStreams(metadata)) {
-    LOG(ERROR) << "uuid=" << params_.loggingUuid
-               << " cannot activate streams";
+    LOG(ERROR) << "uuid=" << params_.loggingUuid << " cannot activate streams";
     cleanUp();
     return false;
   }
