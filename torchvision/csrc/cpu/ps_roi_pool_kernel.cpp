@@ -1,8 +1,3 @@
-#include <ATen/ATen.h>
-#include <ATen/TensorUtils.h>
-#include <TH/TH.h>
-#include <algorithm>
-
 #include "ps_roi_pool_kernel.h"
 
 namespace {
