@@ -895,6 +895,13 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[L
         # Apply same grid to a batch of images
         grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
 
+    # Check fill
+    num_channels = _get_image_num_channels(img)
+    if isinstance(fill, (tuple, list)) and (len(fill) > 1 and len(fill) != num_channels):
+        msg = ("The number of elements in 'fill' cannot broadcast to match the number of "
+               "channels of the image ({} != {})")
+        raise ValueError(msg.format(len(fill), num_channels))
+
     # Append a dummy mask for customized fill colors, should be faster than grid_sample() twice
     if fill is not None:
         dummy = torch.ones((img.shape[0], 1, img.shape[2], img.shape[3]), dtype=img.dtype, device=img.device)
@@ -907,7 +914,7 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[L
         mask = img[:, -1:, :, :]  # N * 1 * H * W
         img = img[:, :-1, :, :]  # N * C * H * W
         mask = mask.expand_as(img)
-        len_fill = len(fill) if isinstance(fill, list) else 1
+        len_fill = len(fill) if isinstance(fill, (tuple, list)) else 1
         fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device).view(1, len_fill, 1, 1).expand_as(img)
         if mode == 'nearest':
             mask = mask < 0.5

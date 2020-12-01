@@ -17,8 +17,8 @@ from . import functional as F
 from .functional import InterpolationMode, _interpolation_modes_from_int
 
 
-__all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize",
-           "Resize", "Scale", "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
+__all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize", "Resize", "Scale",
+           "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
            "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
            "RandomPerspective", "RandomErasing", "GaussianBlur", "InterpolationMode"]
@@ -670,8 +670,6 @@ class RandomPerspective(torch.nn.Module):
         fill (sequence or int or float, optional): Pixel fill value for the area outside the rotated
             image. If int or float, the value is used for all bands respectively.
             This option is supported for PIL image and Tensor inputs.
-            In torchscript mode single int/float value is not supported, please use a tuple
-            or list of length 1: ``[value, ]``.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
     """
 
@@ -701,8 +699,11 @@ class RandomPerspective(torch.nn.Module):
         """
 
         fill = self.fill
-        if isinstance(img, Tensor) and isinstance(fill, (int, float)):
-            fill = [float(fill)] * F._get_image_num_channels(img)
+        if isinstance(img, Tensor):
+            if isinstance(fill, (int, float)):
+                fill = [float(fill)] * F._get_image_num_channels(img)
+            else:
+                fill = [float(f) for f in fill]
 
         if torch.rand(1) < self.p:
             width, height = F._get_image_size(img)
@@ -1167,8 +1168,6 @@ class RandomRotation(torch.nn.Module):
         fill (sequence or int or float, optional): Pixel fill value for the area outside the rotated
             image. If int or float, the value is used for all bands respectively.
             This option is supported for PIL image and Tensor inputs.
-            In torchscript mode single int/float value is not supported, please use a tuple
-            or list of length 1: ``[value, ]``.
             If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use `arg`:interpolation: instead.
@@ -1225,8 +1224,11 @@ class RandomRotation(torch.nn.Module):
             PIL Image or Tensor: Rotated image.
         """
         fill = self.fill
-        if isinstance(img, Tensor) and isinstance(fill, (int, float)):
-            fill = [float(fill)] * F._get_image_num_channels(img)
+        if isinstance(img, Tensor):
+            if isinstance(fill, (int, float)):
+                fill = [float(fill)] * F._get_image_num_channels(img)
+            else:
+                fill = [float(f) for f in fill]
         angle = self.get_params(self.degrees)
 
         return F.rotate(img, angle, self.resample, self.expand, self.center, fill)
@@ -1269,11 +1271,9 @@ class RandomAffine(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the rotated
+        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
             image. If int or float, the value is used for all bands respectively.
             This option is supported for PIL image and Tensor inputs.
-            In torchscript mode single int/float value is not supported, please use a tuple
-            or list of length 1: ``[value, ]``.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
         fillcolor (sequence or int or float, optional): deprecated argument and will be removed since v0.10.0.
             Please use `arg`:fill: instead.
@@ -1379,8 +1379,12 @@ class RandomAffine(torch.nn.Module):
             PIL Image or Tensor: Affine transformed image.
         """
         fill = self.fill
-        if isinstance(img, Tensor) and isinstance(fill, (int, float)):
-            fill = [float(fill)] * F._get_image_num_channels(img)
+        if isinstance(img, Tensor):
+            if isinstance(fill, (int, float)):
+                fill = [float(fill)] * F._get_image_num_channels(img)
+            else:
+                fill = [float(f) for f in fill]
+
         img_size = F._get_image_size(img)
 
         ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img_size)

@@ -573,7 +573,7 @@ def perspective(
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the rotated
+        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
             image. If int or float, the value is used for all bands respectively.
             This option is supported for PIL image and Tensor inputs.
             In torchscript mode single int/float value is not supported, please use a tuple
@@ -892,7 +892,7 @@ def rotate(
             Note that the expand flag assumes rotation around the center and no translation.
         center (list or tuple, optional): Optional center of rotation. Origin is the upper left corner.
             Default is the center of the image.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the rotated
+        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
             image. If int or float, the value is used for all bands respectively.
             This option is supported for PIL image and Tensor inputs.
             In torchscript mode single int/float value is not supported, please use a tuple
@@ -965,7 +965,7 @@ def affine(
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the rotated
+        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
             image. If int or float, the value is used for all bands respectively.
             This option is supported for PIL image and Tensor inputs.
             In torchscript mode single int/float value is not supported, please use a tuple
