@@ -1492,10 +1492,20 @@ class Tester(unittest.TestCase):
 
         t = transforms.RandomRotation((-10, 10))
         angle = t.get_params(t.degrees)
-        self.assertTrue(angle > -10 and angle < 10)
+        self.assertTrue(-10 < angle < 10)
 
         # Checking if RandomRotation can be printed as string
         t.__repr__()
+
+        # assert deprecation warning and non-BC
+        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
+            t = transforms.RandomRotation((-10, 10), resample=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
+
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
+            t = transforms.RandomRotation((-10, 10), interpolation=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
 
     def test_random_affine(self):
 
@@ -1537,8 +1547,22 @@ class Tester(unittest.TestCase):
         # Checking if RandomAffine can be printed as string
         t.__repr__()
 
-        t = transforms.RandomAffine(10, resample=Image.BILINEAR)
-        self.assertIn("Image.BILINEAR", t.__repr__())
+        t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
+        self.assertIn("bilinear", t.__repr__())
+
+        # assert deprecation warning and non-BC
+        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
+            t = transforms.RandomAffine(10, resample=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
+
+        with self.assertWarnsRegex(UserWarning, r"Argument fillcolor is deprecated and will be removed"):
+            t = transforms.RandomAffine(10, fillcolor=10)
+            self.assertEqual(t.fill, 10)
+
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
+            t = transforms.RandomAffine(10, interpolation=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
 
     def test_to_grayscale(self):
         """Unit tests for grayscale transform"""
