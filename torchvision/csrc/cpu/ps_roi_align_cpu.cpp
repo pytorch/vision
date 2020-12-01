@@ -2,6 +2,8 @@
 #include <ATen/TensorUtils.h>
 #include <TH/TH.h>
 
+namespace {
+
 template <typename T>
 T bilinear_interpolate(
     const T* input,
@@ -297,6 +299,8 @@ void ps_roi_align_backward_kernel_impl(
     } // iy
   }
 }
+
+} // namespace
 
 std::tuple<at::Tensor, at::Tensor> ps_roi_align_forward_cpu(
     const at::Tensor& input,

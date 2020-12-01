@@ -82,6 +82,8 @@ at::Tensor _ps_roi_align_backward(
       width);
 }
 
+namespace {
+
 class PSROIAlignFunction
     : public torch::autograd::Function<PSROIAlignFunction> {
  public:
@@ -185,6 +187,8 @@ class PSROIAlignBackwardFunction
     TORCH_CHECK(0, "double backwards on ps_roi_align not supported");
   }
 };
+
+} // namespace
 
 std::tuple<at::Tensor, at::Tensor> ps_roi_align_autograd(
     const at::Tensor& input,
