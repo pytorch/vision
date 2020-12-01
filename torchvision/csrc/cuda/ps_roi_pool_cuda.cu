@@ -7,7 +7,7 @@
 #include "cuda_helpers.h"
 
 template <typename T>
-__global__ void PSROIPoolForward(
+__global__ void ps_roi_pool_forward_kernel_impl(
     int nthreads,
     const T* input,
     const T spatial_scale,
@@ -73,7 +73,7 @@ __global__ void PSROIPoolForward(
 }
 
 template <typename T>
-__global__ void PSROIPoolBackward(
+__global__ void ps_roi_pool_backward_kernel_impl(
     int nthreads,
     const T* grad_output,
     const int* channel_mapping,
@@ -132,7 +132,7 @@ __global__ void PSROIPoolBackward(
   }
 }
 
-std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cuda(
+std::tuple<at::Tensor, at::Tensor> ps_roi_pool_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -146,7 +146,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cuda(
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
-  at::CheckedFrom c = "PSROIPool_forward_cuda";
+  at::CheckedFrom c = "ps_roi_pool_forward_cuda";
   at::checkAllSameGPU(c, {input_t, rois_t});
   at::checkAllSameType(c, {input_t, rois_t});
 
@@ -183,8 +183,8 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cuda(
   auto input_ = input.contiguous(),
        rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "PSROIPool_forward", [&] {
-        PSROIPoolForward<scalar_t><<<grid, block, 0, stream>>>(
+      input.scalar_type(), "ps_roi_pool_forward", [&] {
+        ps_roi_pool_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
             output_size,
             input_.data_ptr<scalar_t>(),
             spatial_scale,
@@ -202,7 +202,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cuda(
   return std::make_tuple(output, channel_mapping);
 }
 
-at::Tensor PSROIPool_backward_cuda(
+at::Tensor ps_roi_pool_backward_cuda(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& channel_mapping,
@@ -223,7 +223,7 @@ at::Tensor PSROIPool_backward_cuda(
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2},
       channel_mapping_t{channel_mapping, "channel_mapping", 3};
 
-  at::CheckedFrom c = "PSROIPool_backward_cuda";
+  at::CheckedFrom c = "ps_roi_pool_backward_cuda";
   at::checkAllSameGPU(c, {grad_t, rois_t, channel_mapping_t});
   at::checkAllSameType(c, {grad_t, rois_t});
 
@@ -251,8 +251,8 @@ at::Tensor PSROIPool_backward_cuda(
   auto grad_ = grad.contiguous(),
        rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      grad.scalar_type(), "PSROIPool_backward", [&] {
-        PSROIPoolBackward<scalar_t><<<grid, block, 0, stream>>>(
+      grad.scalar_type(), "ps_roi_pool_backward", [&] {
+        ps_roi_pool_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
             grad.numel(),
             grad_.data_ptr<scalar_t>(),
             channel_mapping.data_ptr<int>(),
