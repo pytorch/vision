@@ -1,5 +1,5 @@
 #include <ATen/TensorUtils.h>
-#include "vision_cpu.h"
+#include "roi_align_kernel.h"
 
 namespace {
 

@@ -5,6 +5,7 @@
 #include <THC/THCAtomics.cuh>
 
 #include "cuda_helpers.h"
+#include "roi_align_kernel.h"
 
 namespace {
 
