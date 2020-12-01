@@ -90,7 +90,7 @@ class Tester(unittest.TestCase):
 
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_util.png")
         if not os.path.exists(path):
-            write_png(result.permute(1, 2, 0), path)
+            write_png(result, path)
 
         expected = read_image(path)
         self.assertTrue(torch.equal(result, expected))
