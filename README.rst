@@ -29,6 +29,12 @@ supported Python versions.
 +==========================+==========================+=================================+
 | ``master`` / ``nightly`` | ``master`` / ``nightly`` | ``>=3.6``                       |
 +--------------------------+--------------------------+---------------------------------+
+| ``1.7.0``                | ``0.8.0``                | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
+| ``1.6.0``                | ``0.7.0``                | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
+| ``1.5.1``                | ``0.6.1``                | ``>=3.5``                       |
++--------------------------+--------------------------+---------------------------------+
 | ``1.5.0``                | ``0.6.0``                | ``>=3.5``                       |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.4.0``                | ``0.5.0``                | ``==2.7``, ``>=3.5``, ``<=3.8`` |
@@ -78,13 +84,23 @@ Torchvision currently supports the following image backends:
 
 * `accimage`_ - if installed can be activated by calling :code:`torchvision.set_image_backend('accimage')`
 
+* `libpng`_ - can be installed via conda :code:`conda install libpng` or any of the package managers for debian-based and RHEL-based Linux distributions.
+
+* `libjpeg`_ - can be installed via conda :code:`conda install jpeg` or any of the package managers for debian-based and RHEL-based Linux distributions. `libjpeg-turbo`_ can be used as well.
+
+**Notes:** ``libpng`` and ``libjpeg`` must be available at compilation time in order to be available. Make sure that it is available on the standard library locations,
+otherwise, add the include and library paths in the environment variables ``TORCHVISION_INCLUDE`` and ``TORCHVISION_LIBRARY``, respectively.
+
+.. _libpng : http://www.libpng.org/pub/png/libpng.html
 .. _Pillow : https://python-pillow.org/
 .. _Pillow-SIMD : https://github.com/uploadcare/pillow-simd
 .. _accimage: https://github.com/pytorch/accimage
+.. _libjpeg: http://ijg.org/
+.. _libjpeg-turbo: https://libjpeg-turbo.org/
 
 C++ API
 =======
-TorchVision also offers a C++ API that contains C++ equivalent of python models. 
+TorchVision also offers a C++ API that contains C++ equivalent of python models.
 
 Installation From source:
 
@@ -94,7 +110,7 @@ Installation From source:
     cd build
     # Add -DWITH_CUDA=on support for the CUDA if needed
     cmake ..
-    make 
+    make
     make install
 
 Once installed, the library can be accessed in cmake (after properly configuring ``CMAKE_PREFIX_PATH``) via the :code:`TorchVision::TorchVision` target:
@@ -109,9 +125,14 @@ so make sure that it is also available to cmake via the ``CMAKE_PREFIX_PATH``.
 
 For an example setup, take a look at ``examples/cpp/hello_world``.
 
+TorchVision Operators
+---------------------
+In order to get the torchvision operators registered with torch (eg. for the JIT), all you need to do is to ensure that you
+:code:`#include <torchvision/vision.h>` in your project.
+
 Documentation
 =============
-You can find the API documentation on the pytorch website: http://pytorch.org/docs/master/torchvision/
+You can find the API documentation on the pytorch website: https://pytorch.org/docs/stable/torchvision/index.html
 
 Contributing
 ============

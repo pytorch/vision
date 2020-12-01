@@ -22,8 +22,8 @@ __device__ inline bool devIoU(T const* const a, T const* const b, const float th
 
 template <typename T>
 __global__ void nms_kernel(
-    const int n_boxes,
-    const float iou_threshold,
+    int n_boxes,
+    double iou_threshold,
     const T* dev_boxes,
     unsigned long long* dev_mask) {
   const int row_start = blockIdx.y;
@@ -70,10 +70,38 @@ __global__ void nms_kernel(
 
 at::Tensor nms_cuda(const at::Tensor& dets,
     const at::Tensor& scores,
-    float iou_threshold) {
-  AT_ASSERTM(dets.is_cuda(), "dets must be a CUDA tensor");
-  AT_ASSERTM(scores.is_cuda(), "scores must be a CUDA tensor");
+    double iou_threshold) {
+  TORCH_CHECK(dets.is_cuda(), "dets must be a CUDA tensor");
+  TORCH_CHECK(scores.is_cuda(), "scores must be a CUDA tensor");
+
+  TORCH_CHECK(
+      dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
+  TORCH_CHECK(
+      dets.size(1) == 4,
+      "boxes should have 4 elements in dimension 1, got ",
+      dets.size(1));
+  TORCH_CHECK(
+      scores.dim() == 1,
+      "scores should be a 1d tensor, got ",
+      scores.dim(),
+      "D");
+  TORCH_CHECK(
+      dets.size(0) == scores.size(0),
+      "boxes and scores should have same number of elements in ",
+      "dimension 0, got ",
+      dets.size(0),
+      " and ",
+      scores.size(0))
+
+#if defined(WITH_CUDA) || defined(WITH_HIP)
   at::cuda::CUDAGuard device_guard(dets.device());
+#else
+  TORCH_CHECK(false, "Not compiled with GPU support");
+#endif
+
+  if (dets.numel() == 0) {
+    return at::empty({0}, dets.options().dtype(at::kLong));
+  }
 
   auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
   auto dets_sorted = dets.index_select(0, order_t).contiguous();

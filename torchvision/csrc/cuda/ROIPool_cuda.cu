@@ -8,14 +8,14 @@
 
 template <typename T>
 __global__ void RoIPoolForward(
-    const int nthreads,
+    int nthreads,
     const T* input,
     const T spatial_scale,
-    const int channels,
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
     const T* rois,
     T* output,
     int* argmax_data) {
@@ -73,22 +73,22 @@ __global__ void RoIPoolForward(
 
 template <typename T>
 __global__ void RoIPoolBackward(
-    const int nthreads,
+    int nthreads,
     const T* grad_output,
     const int* argmax_data,
-    const int num_rois,
+    int num_rois,
     const T spatial_scale,
-    const int channels,
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
     T* grad_input,
     const T* rois,
-    const int n_stride,
-    const int c_stride,
-    const int h_stride,
-    const int w_stride) {
+    int n_stride,
+    int c_stride,
+    int h_stride,
+    int w_stride) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
@@ -118,11 +118,13 @@ __global__ void RoIPoolBackward(
 std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width) {
-  AT_ASSERTM(input.is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width) {
+  TORCH_CHECK(input.is_cuda(), "input must be a CUDA tensor");
+  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
+  TORCH_CHECK(
+      rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -180,17 +182,17 @@ at::Tensor ROIPool_backward_cuda(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& argmax,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width,
-    const int batch_size,
-    const int channels,
-    const int height,
-    const int width) {
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t batch_size,
+    int64_t channels,
+    int64_t height,
+    int64_t width) {
   // Check if input tensors are CUDA tensors
-  AT_ASSERTM(grad.is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
-  AT_ASSERTM(argmax.is_cuda(), "argmax must be a CUDA tensor");
+  TORCH_CHECK(grad.is_cuda(), "grad must be a CUDA tensor");
+  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
+  TORCH_CHECK(argmax.is_cuda(), "argmax must be a CUDA tensor");
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2},
       argmax_t{argmax, "argmax", 3};

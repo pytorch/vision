@@ -66,6 +66,7 @@ class ONNXExporterTester(unittest.TestCase):
         # compute onnxruntime output prediction
         ort_inputs = dict((ort_session.get_inputs()[i].name, inpt) for i, inpt in enumerate(inputs))
         ort_outs = ort_session.run(None, ort_inputs)
+
         for i in range(0, len(outputs)):
             try:
                 torch.testing.assert_allclose(outputs[i], ort_outs[i], rtol=1e-03, atol=1e-05)
@@ -119,6 +120,34 @@ class ONNXExporterTester(unittest.TestCase):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 0, 0, 4, 4]], dtype=torch.float32)
         model = ops.RoIAlign((5, 5), 1, 2)
+        self.run_model(model, [(x, single_roi)])
+
+    def test_roi_align_aligned(self):
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 1.5, 1.5, 3, 3]], dtype=torch.float32)
+        model = ops.RoIAlign((5, 5), 1, 2, aligned=True)
+        self.run_model(model, [(x, single_roi)])
+
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
+        model = ops.RoIAlign((5, 5), 0.5, 3, aligned=True)
+        self.run_model(model, [(x, single_roi)])
+
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
+        model = ops.RoIAlign((5, 5), 1.8, 2, aligned=True)
+        self.run_model(model, [(x, single_roi)])
+
+        x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 0.2, 0.3, 4.5, 3.5]], dtype=torch.float32)
+        model = ops.RoIAlign((2, 2), 2.5, 0, aligned=True)
+        self.run_model(model, [(x, single_roi)])
+
+    @unittest.skip  # Issue in exporting ROIAlign with aligned = True for malformed boxes
+    def test_roi_align_malformed_boxes(self):
+        x = torch.randn(1, 1, 10, 10, dtype=torch.float32)
+        single_roi = torch.tensor([[0, 2, 0.3, 1.5, 1.5]], dtype=torch.float32)
+        model = ops.RoIAlign((5, 5), 1, 1, aligned=True)
         self.run_model(model, [(x, single_roi)])
 
     def test_roi_pool(self):
@@ -446,25 +475,9 @@ class ONNXExporterTester(unittest.TestCase):
         assert torch.all(out2[1].eq(out_trace2[1]))
 
     def test_keypoint_rcnn(self):
-        class KeyPointRCNN(torch.nn.Module):
-            def __init__(self):
-                super(KeyPointRCNN, self).__init__()
-                self.model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(
-                    pretrained=True, min_size=200, max_size=300)
-
-            def forward(self, images):
-                output = self.model(images)
-                # TODO: The keypoints_scores require the use of Argmax that is updated in ONNX.
-                #       For now we are testing all the output of KeypointRCNN except keypoints_scores.
-                #       Enable When Argmax is updated in ONNX Runtime.
-                return output[0]['boxes'], output[0]['labels'], output[0]['scores'], output[0]['keypoints']
-
         images, test_images = self.get_test_images()
-        # TODO:
-        # Enable test for dummy_image (no detection) once issue is
-        # _onnx_heatmaps_to_keypoints_loop for empty heatmaps is fixed
         dummy_images = [torch.ones(3, 100, 100) * 0.3]
-        model = KeyPointRCNN()
+        model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
         model.eval()
         model(images)
         self.run_model(model, [(images,), (test_images,), (dummy_images,)],
@@ -472,8 +485,7 @@ class ONNXExporterTester(unittest.TestCase):
                        output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
                        dynamic_axes={"images_tensors": [0, 1, 2, 3]},
                        tolerate_small_mismatch=True)
-        # TODO: enable this test once dynamic model export is fixed
-        # Test exported model for an image with no detections on other images
+
         self.run_model(model, [(dummy_images,), (test_images,)],
                        input_names=["images_tensors"],
                        output_names=["outputs1", "outputs2", "outputs3", "outputs4"],

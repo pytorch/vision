@@ -37,10 +37,10 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     # get indices that correspond to the regression targets for
     # the corresponding ground truth labels, to be used with
     # advanced indexing
-    sampled_pos_inds_subset = torch.nonzero(labels > 0).squeeze(1)
+    sampled_pos_inds_subset = torch.where(labels > 0)[0]
     labels_pos = labels[sampled_pos_inds_subset]
     N, num_classes = class_logits.shape
-    box_regression = box_regression.reshape(N, -1, 4)
+    box_regression = box_regression.reshape(N, box_regression.size(-1) // 4, 4)
 
     box_loss = det_utils.smooth_l1_loss(
         box_regression[sampled_pos_inds_subset, labels_pos],
@@ -196,12 +196,16 @@ def _onnx_heatmaps_to_keypoints(maps, maps_i, roi_map_width, roi_map_height,
                               xy_preds_i_2.to(dtype=torch.float32)], 0)
 
     # TODO: simplify when indexing without rank will be supported by ONNX
+    base = num_keypoints * num_keypoints + num_keypoints + 1
+    ind = torch.arange(num_keypoints)
+    ind = ind.to(dtype=torch.int64) * base
     end_scores_i = roi_map.index_select(1, y_int.to(dtype=torch.int64)) \
-        .index_select(2, x_int.to(dtype=torch.int64))[:num_keypoints, 0, 0]
+        .index_select(2, x_int.to(dtype=torch.int64)).view(-1).index_select(0, ind.to(dtype=torch.int64))
+
     return xy_preds_i, end_scores_i
 
 
-@torch.jit.script
+@torch.jit._script_if_tracing
 def _onnx_heatmaps_to_keypoints_loop(maps, rois, widths_ceil, heights_ceil,
                                      widths, heights, offset_x, offset_y, num_keypoints):
     xy_preds = torch.zeros((0, 3, int(num_keypoints)), dtype=torch.float32, device=maps.device)
@@ -292,7 +296,7 @@ def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched
 
     keypoint_targets = torch.cat(heatmaps, dim=0)
     valid = torch.cat(valid, dim=0).to(dtype=torch.uint8)
-    valid = torch.nonzero(valid).squeeze(1)
+    valid = torch.where(valid)[0]
 
     # torch.mean (in binary_cross_entropy_with_logits) does'nt
     # accept empty tensors, so handle it sepaartely
@@ -447,7 +451,7 @@ def _onnx_paste_mask_in_image(mask, box, im_h, im_w):
     return im_mask
 
 
-@torch.jit.script
+@torch.jit._script_if_tracing
 def _onnx_paste_masks_in_image_loop(masks, boxes, im_h, im_w):
     res_append = torch.zeros(0, im_h, im_w)
     for i in range(masks.size(0)):
@@ -600,7 +604,7 @@ class RoIHeads(torch.nn.Module):
         for img_idx, (pos_inds_img, neg_inds_img) in enumerate(
             zip(sampled_pos_inds, sampled_neg_inds)
         ):
-            img_sampled_inds = torch.nonzero(pos_inds_img | neg_inds_img).squeeze(1)
+            img_sampled_inds = torch.where(pos_inds_img | neg_inds_img)[0]
             sampled_inds.append(img_sampled_inds)
         return sampled_inds
 
@@ -696,7 +700,7 @@ class RoIHeads(torch.nn.Module):
             labels = labels.reshape(-1)
 
             # remove low scoring boxes
-            inds = torch.nonzero(scores > self.score_thresh).squeeze(1)
+            inds = torch.where(scores > self.score_thresh)[0]
             boxes, scores, labels = boxes[inds], scores[inds], labels[inds]
 
             # remove empty boxes
@@ -780,7 +784,7 @@ class RoIHeads(torch.nn.Module):
                 mask_proposals = []
                 pos_matched_idxs = []
                 for img_id in range(num_images):
-                    pos = torch.nonzero(labels[img_id] > 0).squeeze(1)
+                    pos = torch.where(labels[img_id] > 0)[0]
                     mask_proposals.append(proposals[img_id][pos])
                     pos_matched_idxs.append(matched_idxs[img_id][pos])
             else:
@@ -828,7 +832,7 @@ class RoIHeads(torch.nn.Module):
                 pos_matched_idxs = []
                 assert matched_idxs is not None
                 for img_id in range(num_images):
-                    pos = torch.nonzero(labels[img_id] > 0).squeeze(1)
+                    pos = torch.where(labels[img_id] > 0)[0]
                     keypoint_proposals.append(proposals[img_id][pos])
                     pos_matched_idxs.append(matched_idxs[img_id][pos])
             else:

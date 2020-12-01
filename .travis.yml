@@ -1,7 +1,11 @@
 language: python
 
-dist: xenial
-matrix:
+os:
+  - linux
+
+dist: bionic
+
+jobs:
   include:
     - python: "3.6"
       env: IMAGE_BACKEND=Pillow-SIMD
@@ -9,6 +13,7 @@ matrix:
 
 before_install:
   - sudo apt-get update
+  - sudo apt-get install -y libpng-dev libjpeg-turbo8-dev
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -17,7 +22,7 @@ before_install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch scipy -c pytorch-nightly
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION cpuonly pytorch scipy -c pytorch-nightly
   - source activate test-environment
   - |
     if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
@@ -29,10 +34,9 @@ before_install:
   - |
     if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then
       pip install -q --user typing-extensions==3.6.6
-      pip install -q --user -i https://test.pypi.org/simple/ ort-nightly==1.3.0.dev202005123
+      pip install -q --user -i https://test.pypi.org/simple/ ort-nightly==1.5.2.dev202010191
     fi
   - conda install av -c conda-forge
-
 
 install:
   # Using pip instead of setup.py ensures we install a non-compressed version of the package
@@ -50,7 +54,7 @@ install:
     cd -
 
 script:
-  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH -k 'not TestVideoReader and not TestVideoTransforms and not TestIO' test
+  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH -k 'not TestVideo and not TestVideoReader and not TestVideoTransforms and not TestIO' test --ignore=test/test_datasets_download.py
   - pytest test/test_hub.py
 
 after_success:

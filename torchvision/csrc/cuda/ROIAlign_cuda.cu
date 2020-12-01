@@ -9,11 +9,11 @@
 template <typename T>
 __device__ T bilinear_interpolate(
     const T* input,
-    const int height,
-    const int width,
+    int height,
+    int width,
     T y,
     T x,
-    const int index /* index for debug only*/) {
+    int index /* index for debug only*/) {
   // deal with cases that inverse elements are out of feature map boundary
   if (y < -1.0 || y > height || x < -1.0 || x > width) {
     // empty
@@ -62,16 +62,16 @@ __device__ T bilinear_interpolate(
 
 template <typename T>
 __global__ void RoIAlignForward(
-    const int nthreads,
+    int nthreads,
     const T* input,
     const T spatial_scale,
-    const int channels,
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
-    const int sampling_ratio,
-    const bool aligned,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
+    int sampling_ratio,
+    bool aligned,
     const T* rois,
     T* output) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
@@ -91,9 +91,13 @@ __global__ void RoIAlignForward(
     T roi_end_w = offset_rois[3] * spatial_scale - offset;
     T roi_end_h = offset_rois[4] * spatial_scale - offset;
 
-    // Force malformed ROIs to be 1x1
-    T roi_width = max(roi_end_w - roi_start_w, (T)1.);
-    T roi_height = max(roi_end_h - roi_start_h, (T)1.);
+    T roi_width = roi_end_w - roi_start_w;
+    T roi_height = roi_end_h - roi_start_h;
+    if (!aligned) {
+      // Force malformed ROIs to be 1x1
+      roi_width = max(roi_width, (T)1.);
+      roi_height = max(roi_height, (T)1.);
+    }
 
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
@@ -135,8 +139,8 @@ __global__ void RoIAlignForward(
 
 template <typename T>
 __device__ void bilinear_interpolate_gradient(
-    const int height,
-    const int width,
+    int height,
+    int width,
     T y,
     T x,
     T& w1,
@@ -147,7 +151,7 @@ __device__ void bilinear_interpolate_gradient(
     int& x_high,
     int& y_low,
     int& y_high,
-    const int index /* index for debug only*/) {
+    int index /* index for debug only*/) {
   // deal with cases that inverse elements are out of feature map boundary
   if (y < -1.0 || y > height || x < -1.0 || x > width) {
     // empty
@@ -190,28 +194,26 @@ __device__ void bilinear_interpolate_gradient(
   // T val = (w1 * v1 + w2 * v2 + w3 * v3 + w4 * v4);
 
   w1 = hy * hx, w2 = hy * lx, w3 = ly * hx, w4 = ly * lx;
-
-  return;
 }
 
 template <typename T>
 __global__ void RoIAlignBackward(
-    const int nthreads,
+    int nthreads,
     const T* grad_output,
     const T spatial_scale,
-    const int channels,
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
-    const int sampling_ratio,
-    const bool aligned,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
+    int sampling_ratio,
+    bool aligned,
     T* grad_input,
     const T* rois,
-    const int n_stride,
-    const int c_stride,
-    const int h_stride,
-    const int w_stride) {
+    int n_stride,
+    int c_stride,
+    int h_stride,
+    int w_stride) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
     // (n, c, ph, pw) is an element in the pooled output
     int pw = index % pooled_width;
@@ -229,9 +231,13 @@ __global__ void RoIAlignBackward(
     T roi_end_w = offset_rois[3] * spatial_scale - offset;
     T roi_end_h = offset_rois[4] * spatial_scale - offset;
 
-    // Force malformed ROIs to be 1x1
-    T roi_width = max(roi_end_w - roi_start_w, (T)1.);
-    T roi_height = max(roi_end_h - roi_start_h, (T)1.);
+    T roi_width = roi_end_w - roi_start_w;
+    T roi_height = roi_end_h - roi_start_h;
+    if (!aligned) {
+      // Force malformed ROIs to be 1x1
+      roi_width = max(roi_width, (T)1.);
+      roi_height = max(roi_height, (T)1.);
+    }
 
     T bin_size_h = static_cast<T>(roi_height) / static_cast<T>(pooled_height);
     T bin_size_w = static_cast<T>(roi_width) / static_cast<T>(pooled_width);
@@ -307,13 +313,15 @@ __global__ void RoIAlignBackward(
 at::Tensor ROIAlign_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width,
-    const int sampling_ratio,
-    const bool aligned) {
-  AT_ASSERTM(input.is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t sampling_ratio,
+    bool aligned) {
+  TORCH_CHECK(input.is_cuda(), "input must be a CUDA tensor");
+  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
+  TORCH_CHECK(
+      rois.size(1) == 5, "rois must have shape as Tensor[K, 5]");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -368,17 +376,17 @@ at::Tensor ROIAlign_forward_cuda(
 at::Tensor ROIAlign_backward_cuda(
     const at::Tensor& grad,
     const at::Tensor& rois,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width,
-    const int batch_size,
-    const int channels,
-    const int height,
-    const int width,
-    const int sampling_ratio,
-    const bool aligned) {
-  AT_ASSERTM(grad.is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t batch_size,
+    int64_t channels,
+    int64_t height,
+    int64_t width,
+    int64_t sampling_ratio,
+    bool aligned) {
+  TORCH_CHECK(grad.is_cuda(), "grad must be a CUDA tensor");
+  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2};
 

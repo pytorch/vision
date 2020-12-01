@@ -8,16 +8,16 @@
 
 template <typename T>
 __global__ void PSROIPoolForward(
-    const int nthreads,
+    int nthreads,
     const T* input,
     const T spatial_scale,
-    const int channels,
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
     const T* rois,
-    const int channels_out,
+    int channels_out,
     T* output,
     int* channel_mapping) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
@@ -74,17 +74,17 @@ __global__ void PSROIPoolForward(
 
 template <typename T>
 __global__ void PSROIPoolBackward(
-    const int nthreads,
+    int nthreads,
     const T* grad_output,
     const int* channel_mapping,
-    const int num_rois,
+    int num_rois,
     const T spatial_scale,
-    const int channels,
-    const int height,
-    const int width,
-    const int pooled_height,
-    const int pooled_width,
-    const int channels_out,
+    int channels,
+    int height,
+    int width,
+    int pooled_height,
+    int pooled_width,
+    int channels_out,
     T* grad_input,
     const T* rois) {
   CUDA_1D_KERNEL_LOOP(index, nthreads) {
@@ -135,12 +135,14 @@ __global__ void PSROIPoolBackward(
 std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width) {
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width) {
   // Check if input tensors are CUDA tensors
-  AT_ASSERTM(input.is_cuda(), "input must be a CUDA tensor");
-  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
+  TORCH_CHECK(input.is_cuda(), "input must be a CUDA tensor");
+  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
+  TORCH_CHECK(
+      rois.size(1) == 5, "Tensor rois should have shape as Tensor[K, 5]");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -155,7 +157,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIPool_forward_cuda(
   auto height = input.size(2);
   auto width = input.size(3);
 
-  AT_ASSERTM(
+  TORCH_CHECK(
       channels % (pooled_height * pooled_width) == 0,
       "input channels must be a multiple of pooling height * pooling width");
   int channels_out = channels / (pooled_height * pooled_width);
@@ -204,17 +206,17 @@ at::Tensor PSROIPool_backward_cuda(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& channel_mapping,
-    const float spatial_scale,
-    const int pooled_height,
-    const int pooled_width,
-    const int batch_size,
-    const int channels,
-    const int height,
-    const int width) {
+    double spatial_scale,
+    int64_t pooled_height,
+    int64_t pooled_width,
+    int64_t batch_size,
+    int64_t channels,
+    int64_t height,
+    int64_t width) {
   // Check if input tensors are CUDA tensors
-  AT_ASSERTM(grad.is_cuda(), "grad must be a CUDA tensor");
-  AT_ASSERTM(rois.is_cuda(), "rois must be a CUDA tensor");
-  AT_ASSERTM(
+  TORCH_CHECK(grad.is_cuda(), "grad must be a CUDA tensor");
+  TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
+  TORCH_CHECK(
       channel_mapping.is_cuda(),
       "channel_mapping must be a CUDA tensor");
 
