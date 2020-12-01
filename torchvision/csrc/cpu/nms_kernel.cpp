@@ -1,4 +1,4 @@
-#include "vision_cpu.h"
+#include "nms_kernel.h"
 
 namespace {
 
