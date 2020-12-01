@@ -9,6 +9,7 @@ import io
 import torch
 import warnings
 import __main__
+import random
 
 from numbers import Number
 from torch._six import string_classes
@@ -28,6 +29,12 @@ def get_tmp_dir(src=None, **kwargs):
         yield tmp_dir
     finally:
         shutil.rmtree(tmp_dir)
+
+
+def set_rng_seed(seed):
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
 
 
 ACCEPT = os.getenv('EXPECTTEST_ACCEPT')

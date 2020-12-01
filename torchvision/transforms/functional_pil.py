@@ -474,7 +474,7 @@ def _parse_fill(fill, img, min_pil_version, name="fillcolor"):
 
 
 @torch.jit.unused
-def affine(img, matrix, resample=0, fillcolor=None):
+def affine(img, matrix, interpolation=0, fill=None):
     """PRIVATE METHOD. Apply affine transformation on the PIL Image keeping image center invariant.
 
     .. warning::
@@ -485,11 +485,11 @@ def affine(img, matrix, resample=0, fillcolor=None):
     Args:
         img (PIL Image): image to be rotated.
         matrix (list of floats): list of 6 float values representing inverse matrix for affine transformation.
-        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
+        interpolation (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
             An optional resampling filter.
             See `filters`_ for more information.
             If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
-        fillcolor (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
+        fill (int): Optional fill color for the area outside the transform in the output image. (Pillow>=5.0.0)
 
     Returns:
         PIL Image: Transformed image.
@@ -498,12 +498,12 @@ def affine(img, matrix, resample=0, fillcolor=None):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
 
     output_size = img.size
-    opts = _parse_fill(fillcolor, img, '5.0.0')
-    return img.transform(output_size, Image.AFFINE, matrix, resample, **opts)
+    opts = _parse_fill(fill, img, '5.0.0')
+    return img.transform(output_size, Image.AFFINE, matrix, interpolation, **opts)
 
 
 @torch.jit.unused
-def rotate(img, angle, resample=0, expand=False, center=None, fill=None):
+def rotate(img, angle, interpolation=0, expand=False, center=None, fill=None):
     """PRIVATE METHOD. Rotate PIL image by angle.
 
     .. warning::
@@ -514,7 +514,7 @@ def rotate(img, angle, resample=0, expand=False, center=None, fill=None):
     Args:
         img (PIL Image): image to be rotated.
         angle (float or int): rotation angle value in degrees, counter-clockwise.
-        resample (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
+        interpolation (``PIL.Image.NEAREST`` or ``PIL.Image.BILINEAR`` or ``PIL.Image.BICUBIC``, optional):
             An optional resampling filter. See `filters`_ for more information.
             If omitted, or if the image has mode "1" or "P", it is set to ``PIL.Image.NEAREST``.
         expand (bool, optional): Optional expansion flag.
@@ -538,7 +538,7 @@ def rotate(img, angle, resample=0, expand=False, center=None, fill=None):
         raise TypeError("img should be PIL Image. Got {}".format(type(img)))
 
     opts = _parse_fill(fill, img, '5.2.0')
-    return img.rotate(angle, resample, expand, center, **opts)
+    return img.rotate(angle, interpolation, expand, center, **opts)
 
 
 @torch.jit.unused
