@@ -11,8 +11,6 @@
 #include "hip/vision_cuda.h"
 #endif
 
-// TODO: put this stuff in torchvision namespace
-
 // roi_align dispatch nexus
 at::Tensor roi_align(
     const at::Tensor& input, // Input feature map.
@@ -89,6 +87,8 @@ at::Tensor _roi_align_backward(
       sampling_ratio,
       aligned);
 }
+
+namespace {
 
 class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
  public:
@@ -188,6 +188,8 @@ class ROIAlignBackwardFunction
     TORCH_CHECK(0, "double backwards on roi_align not supported");
   }
 };
+
+} // namespace
 
 at::Tensor roi_align_autograd(
     const at::Tensor& input,

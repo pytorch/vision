@@ -6,6 +6,8 @@
 
 #include "cuda_helpers.h"
 
+namespace {
+
 template <typename T>
 __device__ T bilinear_interpolate(
     const T* input,
@@ -309,6 +311,8 @@ __global__ void roi_align_backward_kernel_impl(
     } // iy
   } // CUDA_1D_KERNEL_LOOP
 }
+
+} // namespace
 
 at::Tensor roi_align_forward_cuda(
     const at::Tensor& input,

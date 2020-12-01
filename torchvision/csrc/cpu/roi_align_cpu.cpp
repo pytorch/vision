@@ -1,6 +1,8 @@
 #include <ATen/TensorUtils.h>
 #include "vision_cpu.h"
 
+namespace {
+
 // implementation taken from Caffe2
 template <typename T>
 struct PreCalc {
@@ -383,6 +385,8 @@ void roi_align_backward_kernel_impl(
     } // iy
   } // for
 }
+
+} // namespace
 
 at::Tensor roi_align_forward_cpu(
     const at::Tensor& input,
