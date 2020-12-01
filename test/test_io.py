@@ -1,5 +1,6 @@
 import os
 import contextlib
+import sys
 import tempfile
 import torch
 import torchvision.datasets.utils as utils
@@ -263,6 +264,7 @@ class TestIO(unittest.TestCase):
             # and the last few frames are wrong
             self.assertFalse(video.equal(data))
 
+    @unittest.skipIf(sys.platform == 'win32', 'temporarily disabled on Windows')
     def test_write_video_with_audio(self):
         f_name = os.path.join(VIDEO_DIR, "R6llTwEh07w.mp4")
         video_tensor, audio_tensor, info = io.read_video(f_name, pts_unit="sec")
