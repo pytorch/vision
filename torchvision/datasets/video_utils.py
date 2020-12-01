@@ -66,6 +66,13 @@ class _VideoTimestampsDataset(object):
         return read_video_timestamps(self.video_paths[idx])
 
 
+def _collate_fn(self, x):
+    """
+    Dummy collate function to be used with _VideoTimestampsDataset
+    """
+    return x
+
+
 class VideoClips(object):
     """
     Given a list of video files, computes all consecutive subvideos of size
@@ -125,9 +132,6 @@ class VideoClips(object):
             self._init_from_metadata(_precomputed_metadata)
         self.compute_clips(clip_length_in_frames, frames_between_clips, frame_rate)
 
-    def _collate_fn(self, x):
-        return x
-
     def _compute_frame_pts(self):
         self.video_pts = []
         self.video_fps = []
@@ -140,7 +144,7 @@ class VideoClips(object):
             _VideoTimestampsDataset(self.video_paths),
             batch_size=16,
             num_workers=self.num_workers,
-            collate_fn=self._collate_fn,
+            collate_fn=_collate_fn,
         )
 
         with tqdm(total=len(dl)) as pbar:
