@@ -1,3 +1,5 @@
+#include "vision.h"
+
 #include <Python.h>
 #include <torch/script.h>
 
