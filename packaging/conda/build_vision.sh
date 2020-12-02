@@ -164,9 +164,9 @@ for py_ver in "${DESIRED_PYTHON[@]}"; do
     mkdir "$output_folder"
 
     if [[ "$py_ver" == 3.5 ]]; then
-	export CONDA_TYPING_CONSTRAINT="- typing"
+      export CONDA_TYPING_CONSTRAINT="- typing"
     else
-	export CONDA_TYPING_CONSTRAINT=""
+      export CONDA_TYPING_CONSTRAINT=""
     fi
 
     export VSTOOLCHAIN_PACKAGE=vs2017

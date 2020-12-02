@@ -1,5 +1,4 @@
-#ifndef MODELSIMPL_H
-#define MODELSIMPL_H
+#pragma once
 
 #include <torch/torch.h>
 
@@ -42,5 +41,3 @@ inline bool double_compare(double a, double b) {
 } // namespace modelsimpl
 } // namespace models
 } // namespace vision
-
-#endif // MODELSIMPL_H

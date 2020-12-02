@@ -212,6 +212,7 @@ if __name__ == "__main__":
         loader=jinja2.FileSystemLoader(d),
         lstrip_blocks=True,
         autoescape=False,
+        keep_trailing_newline=True,
     )
 
     with open(os.path.join(d, 'config.yml'), 'w') as f:
