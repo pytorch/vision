@@ -16,7 +16,6 @@ except ImportError:
 from . import functional as F
 from .functional import InterpolationMode, _interpolation_modes_from_int
 
-
 __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImage", "Normalize", "Resize", "Scale",
            "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
@@ -162,6 +161,7 @@ class ToPILImage:
 
     .. _PIL.Image mode: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-modes
     """
+
     def __init__(self, mode=None):
         self.mode = mode
 
@@ -279,6 +279,7 @@ class Scale(Resize):
     """
     Note: This transform is deprecated in favor of Resize.
     """
+
     def __init__(self, *args, **kwargs):
         warnings.warn("The use of the transforms.Scale transform is deprecated, " +
                       "please use transforms.Resize instead.")
@@ -377,7 +378,7 @@ class Pad(torch.nn.Module):
         return F.pad(img, self.padding, self.fill, self.padding_mode)
 
     def __repr__(self):
-        return self.__class__.__name__ + '(padding={0}, fill={1}, padding_mode={2})'.\
+        return self.__class__.__name__ + '(padding={0}, fill={1}, padding_mode={2})'. \
             format(self.padding, self.fill, self.padding_mode)
 
 
@@ -449,8 +450,18 @@ class RandomApply(torch.nn.Module):
         self.transforms = transforms
         self.p = p
 
+    @staticmethod
+    def get_params() -> float:
+        """Choose value for random transformation application.
+
+        Returns:
+            float: Random value which is used to determine whether the transformations
+            should occur.
+        """
+        return torch.rand(1).item()
+
     def forward(self, img):
-        if self.p < torch.rand(1):
+        if self.p < self.get_params():
             return img
         for t in self.transforms:
             img = t(img)
@@ -469,6 +480,7 @@ class RandomApply(torch.nn.Module):
 class RandomOrder(RandomTransforms):
     """Apply a list of transformations in a random order. This transform does not support torchscript.
     """
+
     def __call__(self, img):
         order = list(range(len(self.transforms)))
         random.shuffle(order)
@@ -480,6 +492,7 @@ class RandomOrder(RandomTransforms):
 class RandomChoice(RandomTransforms):
     """Apply single transformation randomly picked from a list. This transform does not support torchscript.
     """
+
     def __call__(self, img):
         t = random.choice(self.transforms)
         return t(img)
@@ -549,8 +562,8 @@ class RandomCrop(torch.nn.Module):
         if w == tw and h == th:
             return 0, 0, h, w
 
-        i = torch.randint(0, h - th + 1, size=(1, )).item()
-        j = torch.randint(0, w - tw + 1, size=(1, )).item()
+        i = torch.randint(0, h - th + 1, size=(1,)).item()
+        j = torch.randint(0, w - tw + 1, size=(1,)).item()
         return i, j, th, tw
 
     def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
@@ -608,6 +621,16 @@ class RandomHorizontalFlip(torch.nn.Module):
         super().__init__()
         self.p = p
 
+    @staticmethod
+    def get_params() -> float:
+        """Choose value for random horizontal flip.
+
+        Returns:
+            float: Random value which is used to determine whether the random horizontal flip
+            should occur.
+        """
+        return torch.rand(1).item()
+
     def forward(self, img):
         """
         Args:
@@ -616,7 +639,7 @@ class RandomHorizontalFlip(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly flipped image.
         """
-        if torch.rand(1) < self.p:
+        if self.p > self.get_params():
             return F.hflip(img)
         return img
 
@@ -638,6 +661,16 @@ class RandomVerticalFlip(torch.nn.Module):
         super().__init__()
         self.p = p
 
+    @staticmethod
+    def get_params() -> float:
+        """Choose value for random vertical flip.
+
+        Returns:
+            float: Random value which is used to determine whether the random vertical flip
+            should occur.
+        """
+        return torch.rand(1).item()
+
     def forward(self, img):
         """
         Args:
@@ -646,7 +679,7 @@ class RandomVerticalFlip(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly flipped image.
         """
-        if torch.rand(1) < self.p:
+        if self.p > self.get_params():
             return F.vflip(img)
         return img
 
@@ -727,20 +760,20 @@ class RandomPerspective(torch.nn.Module):
         half_height = height // 2
         half_width = width // 2
         topleft = [
-            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1, )).item()),
-            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1, )).item())
+            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1,)).item()),
+            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1,)).item())
         ]
         topright = [
-            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1, )).item()),
-            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1, )).item())
+            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1,)).item()),
+            int(torch.randint(0, int(distortion_scale * half_height) + 1, size=(1,)).item())
         ]
         botright = [
-            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1, )).item()),
-            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1, )).item())
+            int(torch.randint(width - int(distortion_scale * half_width) - 1, width, size=(1,)).item()),
+            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1,)).item())
         ]
         botleft = [
-            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1, )).item()),
-            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1, )).item())
+            int(torch.randint(0, int(distortion_scale * half_width) + 1, size=(1,)).item()),
+            int(torch.randint(height - int(distortion_scale * half_height) - 1, height, size=(1,)).item())
         ]
         startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
         endpoints = [topleft, topright, botright, botleft]
@@ -869,6 +902,7 @@ class RandomSizedCrop(RandomResizedCrop):
     """
     Note: This transform is deprecated in favor of RandomResizedCrop.
     """
+
     def __init__(self, *args, **kwargs):
         warnings.warn("The use of the transforms.RandomSizedCrop transform is deprecated, " +
                       "please use transforms.RandomResizedCrop instead.")
@@ -1177,7 +1211,7 @@ class RandomRotation(torch.nn.Module):
     """
 
     def __init__(
-        self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=None, resample=None
+            self, degrees, interpolation=InterpolationMode.NEAREST, expand=False, center=None, fill=None, resample=None
     ):
         super().__init__()
         if resample is not None:
@@ -1194,10 +1228,10 @@ class RandomRotation(torch.nn.Module):
             )
             interpolation = _interpolation_modes_from_int(interpolation)
 
-        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
+        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
 
         if center is not None:
-            _check_sequence_input(center, "center", req_sizes=(2, ))
+            _check_sequence_input(center, "center", req_sizes=(2,))
 
         self.center = center
 
@@ -1285,8 +1319,8 @@ class RandomAffine(torch.nn.Module):
     """
 
     def __init__(
-        self, degrees, translate=None, scale=None, shear=None, interpolation=InterpolationMode.NEAREST, fill=0,
-        fillcolor=None, resample=None
+            self, degrees, translate=None, scale=None, shear=None, interpolation=InterpolationMode.NEAREST, fill=0,
+            fillcolor=None, resample=None
     ):
         super().__init__()
         if resample is not None:
@@ -1309,17 +1343,17 @@ class RandomAffine(torch.nn.Module):
             )
             fill = fillcolor
 
-        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2, ))
+        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
 
         if translate is not None:
-            _check_sequence_input(translate, "translate", req_sizes=(2, ))
+            _check_sequence_input(translate, "translate", req_sizes=(2,))
             for t in translate:
                 if not (0.0 <= t <= 1.0):
                     raise ValueError("translation values should be between 0 and 1")
         self.translate = translate
 
         if scale is not None:
-            _check_sequence_input(scale, "scale", req_sizes=(2, ))
+            _check_sequence_input(scale, "scale", req_sizes=(2,))
             for s in scale:
                 if s <= 0:
                     raise ValueError("scale values should be positive")
@@ -1464,6 +1498,16 @@ class RandomGrayscale(torch.nn.Module):
         super().__init__()
         self.p = p
 
+    @staticmethod
+    def get_params() -> float:
+        """Choose value for randomly converting image to grayscale.
+
+        Returns:
+            float: Random value which is used to determine whether the transformations
+            should occur.
+        """
+        return torch.rand(1).item()
+
     def forward(self, img):
         """
         Args:
@@ -1473,7 +1517,7 @@ class RandomGrayscale(torch.nn.Module):
             PIL Image or Tensor: Randomly grayscaled image.
         """
         num_output_channels = F._get_image_num_channels(img)
-        if torch.rand(1) < self.p:
+        if self.p > self.get_params():
             return F.rgb_to_grayscale(img, num_output_channels=num_output_channels)
         return img
 
@@ -1564,8 +1608,8 @@ class RandomErasing(torch.nn.Module):
             else:
                 v = torch.tensor(value)[:, None, None]
 
-            i = torch.randint(0, img_h - h + 1, size=(1, )).item()
-            j = torch.randint(0, img_w - w + 1, size=(1, )).item()
+            i = torch.randint(0, img_h - h + 1, size=(1,)).item()
+            j = torch.randint(0, img_w - w + 1, size=(1,)).item()
             return i, j, h, w, v
 
         # Return original image
@@ -1690,7 +1734,7 @@ def _check_sequence_input(x, name, req_sizes):
         raise ValueError("{} should be sequence of length {}.".format(name, msg))
 
 
-def _setup_angle(x, name, req_sizes=(2, )):
+def _setup_angle(x, name, req_sizes=(2,)):
     if isinstance(x, numbers.Number):
         if x < 0:
             raise ValueError("If {} is a single number, it must be positive.".format(name))
