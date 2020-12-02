@@ -1,19 +1,13 @@
-#pragma once
+#include "roi_align.h"
+#include <torch/extension.h>
 
-#include "cpu/vision_cpu.h"
-
-#ifdef WITH_CUDA
-#include "autocast.h"
-#include "cuda/vision_cuda.h"
-#endif
-#ifdef WITH_HIP
-#include "autocast.h"
-#include "hip/vision_cuda.h"
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+#include <ATen/autocast_mode.h>
 #endif
 
-// TODO: put this stuff in torchvision namespace
+namespace vision {
+namespace ops {
 
-// roi_align dispatch nexus
 at::Tensor roi_align(
     const at::Tensor& input, // Input feature map.
     const at::Tensor& rois, // List of ROIs to pool over.
@@ -39,7 +33,7 @@ at::Tensor roi_align(
 }
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
-at::Tensor ROIAlign_autocast(
+at::Tensor roi_align_autocast(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -89,6 +83,8 @@ at::Tensor _roi_align_backward(
       sampling_ratio,
       aligned);
 }
+
+namespace {
 
 class ROIAlignFunction : public torch::autograd::Function<ROIAlignFunction> {
  public:
@@ -189,7 +185,9 @@ class ROIAlignBackwardFunction
   }
 };
 
-at::Tensor ROIAlign_autograd(
+} // namespace
+
+at::Tensor roi_align_autograd(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -207,7 +205,7 @@ at::Tensor ROIAlign_autograd(
       aligned)[0];
 }
 
-at::Tensor ROIAlign_backward_autograd(
+at::Tensor roi_align_backward_autograd(
     const at::Tensor& grad,
     const at::Tensor& rois,
     double spatial_scale,
@@ -232,3 +230,6 @@ at::Tensor ROIAlign_backward_autograd(
       sampling_ratio,
       aligned)[0];
 }
+
+} // namespace ops
+} // namespace vision

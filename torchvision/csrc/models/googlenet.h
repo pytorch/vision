@@ -1,8 +1,7 @@
-#ifndef GOOGLENET_H
-#define GOOGLENET_H
+#pragma once
 
 #include <torch/torch.h>
-#include "general.h"
+#include "../macros.h"
 
 namespace vision {
 namespace models {
@@ -86,5 +85,3 @@ TORCH_MODULE(GoogLeNet);
 
 } // namespace models
 } // namespace vision
-
-#endif // GOOGLENET_H

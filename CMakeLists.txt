@@ -32,9 +32,11 @@ file(GLOB HEADERS torchvision/csrc/*.h)
 # Image extension
 file(GLOB IMAGE_HEADERS torchvision/csrc/cpu/image/*.h)
 file(GLOB IMAGE_SOURCES torchvision/csrc/cpu/image/*.cpp)
-file(GLOB OPERATOR_SOURCES torchvision/csrc/cpu/*.h torchvision/csrc/cpu/*.cpp ${IMAGE_HEADERS} ${IMAGE_SOURCES} ${HEADERS} torchvision/csrc/*.cpp)
+file(GLOB OPERATOR_HEADERS torchvision/csrc/cpu/*.h)
+file(GLOB OPERATOR_SOURCES ${OPERATOR_HEADERS} torchvision/csrc/cpu/*.cpp ${IMAGE_HEADERS} ${IMAGE_SOURCES} ${HEADERS} torchvision/csrc/*.cpp)
 if(WITH_CUDA)
-  file(GLOB OPERATOR_SOURCES ${OPERATOR_SOURCES} torchvision/csrc/cuda/*.h torchvision/csrc/cuda/*.cu)
+  file(GLOB OPERATOR_HEADERS ${OPERATOR_HEADERS} torchvision/csrc/cuda/*.h)
+  file(GLOB OPERATOR_SOURCES ${OPERATOR_SOURCES} ${OPERATOR_HEADERS} torchvision/csrc/cuda/*.cu)
 endif()
 file(GLOB MODELS_HEADERS torchvision/csrc/models/*.h)
 file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.cpp)
@@ -95,11 +97,11 @@ install(EXPORT TorchVisionTargets
 
 install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 install(FILES
-  torchvision/csrc/cpu/vision_cpu.h
+  ${OPERATOR_HEADERS}
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/cpu)
 if(WITH_CUDA)
   install(FILES
-    torchvision/csrc/cuda/vision_cuda.h
+    ${OPERATOR_HEADERS}
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/cuda)
 endif()
 install(FILES ${MODELS_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/models)
