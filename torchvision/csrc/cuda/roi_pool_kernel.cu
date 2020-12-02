@@ -1,7 +1,6 @@
-#include <ATen/ATen.h>
-#include <ATen/TensorUtils.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
+#include <float.h>
 #include <THC/THCAtomics.cuh>
 
 #include "cuda_helpers.h"

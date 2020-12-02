@@ -1,7 +1,4 @@
-#include <ATen/ATen.h>
-#include <ATen/TensorUtils.h>
-#include <TH/TH.h>
-#include <algorithm>
+#include <float.h>
 
 #include "roi_pool_kernel.h"
 
