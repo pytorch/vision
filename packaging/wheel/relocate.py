@@ -21,7 +21,7 @@ if sys.platform == 'linux':
 from wheel.bdist_wheel import get_abi_tag
 
 
-WHITELIST = {
+ALLOWLIST = {
     'libgcc_s.so.1', 'libstdc++.so.6', 'libm.so.6',
     'libdl.so.2', 'librt.so.1', 'libc.so.6',
     'libnsl.so.1', 'libutil.so.1', 'libpthread.so.0',
@@ -31,7 +31,7 @@ WHITELIST = {
     'libglib-2.0.so.0', 'ld-linux-x86-64.so.2', 'ld-2.17.so'
 }
 
-WINDOWS_WHITELIST = {
+WINDOWS_ALLOWLIST = {
     'MSVCP140.dll', 'KERNEL32.dll',
     'VCRUNTIME140_1.dll', 'VCRUNTIME140.dll',
     'api-ms-win-crt-heap-l1-1-0.dll',
@@ -164,7 +164,7 @@ def relocate_elf_library(patchelf, output_dir, output_library, binary):
             print('Omitting {0}'.format(library))
             continue
 
-        if library in WHITELIST:
+        if library in ALLOWLIST:
             # Omit glibc/gcc/system libraries
             print('Omitting {0}'.format(library))
             continue
@@ -275,7 +275,7 @@ def relocate_dll_library(dumpbin, output_dir, output_library, binary):
 
     while binary_queue != []:
         library, parent = binary_queue.pop(0)
-        if library in WINDOWS_WHITELIST or library.startswith('api-ms-win'):
+        if library in WINDOWS_ALLOWLIST or library.startswith('api-ms-win'):
             print('Omitting {0}'.format(library))
             continue
 
