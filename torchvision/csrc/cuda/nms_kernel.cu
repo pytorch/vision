@@ -73,7 +73,8 @@ __global__ void nms_kernel_impl(
 
 } // namespace
 
-at::Tensor nms_cuda(const at::Tensor& dets,
+at::Tensor nms_cuda(
+    const at::Tensor& dets,
     const at::Tensor& scores,
     double iou_threshold) {
   TORCH_CHECK(dets.is_cuda(), "dets must be a CUDA tensor");
@@ -132,7 +133,8 @@ at::Tensor nms_cuda(const at::Tensor& dets,
       });
 
   at::Tensor mask_cpu = mask.to(at::kCPU);
-  unsigned long long* mask_host = (unsigned long long*)mask_cpu.data_ptr<int64_t>();
+  unsigned long long* mask_host =
+      (unsigned long long*)mask_cpu.data_ptr<int64_t>();
 
   std::vector<unsigned long long> remv(col_blocks);
   memset(&remv[0], 0, sizeof(unsigned long long) * col_blocks);

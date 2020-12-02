@@ -323,8 +323,7 @@ at::Tensor roi_align_forward_cuda(
     bool aligned) {
   TORCH_CHECK(input.is_cuda(), "input must be a CUDA tensor");
   TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
-  TORCH_CHECK(
-      rois.size(1) == 5, "rois must have shape as Tensor[K, 5]");
+  TORCH_CHECK(rois.size(1) == 5, "rois must have shape as Tensor[K, 5]");
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
@@ -346,7 +345,7 @@ at::Tensor roi_align_forward_cuda(
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   dim3 grid(std::min(
-    ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
+      ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
       static_cast<int64_t>(4096)));
   dim3 block(512);
 
@@ -355,23 +354,23 @@ at::Tensor roi_align_forward_cuda(
     return output;
   }
 
-  auto input_ = input.contiguous(),
-       rois_ = rois.contiguous();
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.scalar_type(), "roi_align_forward_cuda", [&] {
-    roi_align_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
-        output_size,
-        input_.data_ptr<scalar_t>(),
-        spatial_scale,
-        channels,
-        height,
-        width,
-        pooled_height,
-        pooled_width,
-        sampling_ratio,
-        aligned,
-        rois_.data_ptr<scalar_t>(),
-        output.data_ptr<scalar_t>());
-  });
+  auto input_ = input.contiguous(), rois_ = rois.contiguous();
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      input.scalar_type(), "roi_align_forward_cuda", [&] {
+        roi_align_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
+            output_size,
+            input_.data_ptr<scalar_t>(),
+            spatial_scale,
+            channels,
+            height,
+            width,
+            pooled_height,
+            pooled_width,
+            sampling_ratio,
+            aligned,
+            rois_.data_ptr<scalar_t>(),
+            output.data_ptr<scalar_t>());
+      });
   AT_CUDA_CHECK(cudaGetLastError());
   return output;
 }
@@ -405,7 +404,7 @@ at::Tensor roi_align_backward_cuda(
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   dim3 grid(std::min(
-    ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
+      ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
       static_cast<int64_t>(4096)));
   dim3 block(512);
 
@@ -421,25 +420,26 @@ at::Tensor roi_align_backward_cuda(
   int w_stride = grad.stride(3);
 
   auto rois_ = rois.contiguous();
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.scalar_type(), "roi_align_backward_cuda", [&] {
-    roi_align_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
-        grad.numel(),
-        grad.data_ptr<scalar_t>(),
-        spatial_scale,
-        channels,
-        height,
-        width,
-        pooled_height,
-        pooled_width,
-        sampling_ratio,
-        aligned,
-        grad_input.data_ptr<scalar_t>(),
-        rois_.data_ptr<scalar_t>(),
-        n_stride,
-        c_stride,
-        h_stride,
-        w_stride);
-  });
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      grad.scalar_type(), "roi_align_backward_cuda", [&] {
+        roi_align_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
+            grad.numel(),
+            grad.data_ptr<scalar_t>(),
+            spatial_scale,
+            channels,
+            height,
+            width,
+            pooled_height,
+            pooled_width,
+            sampling_ratio,
+            aligned,
+            grad_input.data_ptr<scalar_t>(),
+            rois_.data_ptr<scalar_t>(),
+            n_stride,
+            c_stride,
+            h_stride,
+            w_stride);
+      });
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;
 }

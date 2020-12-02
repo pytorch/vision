@@ -87,7 +87,9 @@ inline unsigned int GET_THREADS() {
   return 512;
 }
 
-inline unsigned int GET_BLOCKS(const unsigned int THREADS, const unsigned int N) {
+inline unsigned int GET_BLOCKS(
+    const unsigned int THREADS,
+    const unsigned int N) {
   unsigned int kMaxGridNum =
       at::cuda::getCurrentDeviceProperties()->maxGridSize[0];
   return std::min(kMaxGridNum, (N + THREADS - 1) / THREADS);
@@ -235,9 +237,7 @@ void deformable_im2col(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       input.scalar_type(), "deformable_im2col", ([&] {
-        deformable_im2col_kernel<<<
-            blocks,
-            threads>>>(
+        deformable_im2col_kernel<<<blocks, threads>>>(
             num_kernels,
             input.data_ptr<scalar_t>(),
             data_offset.data_ptr<scalar_t>(),
@@ -381,9 +381,7 @@ void compute_grad_input(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       columns.scalar_type(), "compute_grad_input", ([&] {
-        deformable_col2im_kernel<<<
-            blocks,
-            threads>>>(
+        deformable_col2im_kernel<<<blocks, threads>>>(
             num_kernels,
             columns.data_ptr<scalar_t>(),
             offset.data_ptr<scalar_t>(),
@@ -589,9 +587,7 @@ void compute_grad_offset_and_mask(
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
       columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
-        deformable_col2im_coord_kernel<<<
-            blocks,
-            threads>>>(
+        deformable_col2im_coord_kernel<<<blocks, threads>>>(
             num_kernels,
             columns.data_ptr<scalar_t>(),
             input.data_ptr<scalar_t>(),
