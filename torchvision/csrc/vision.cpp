@@ -9,7 +9,7 @@
 #endif
 
 #include "deform_conv2d.h"
-#include "empty_tensor_op.h"
+#include "new_empty_tensor_op.h"
 #include "nms.h"
 #include "ps_roi_align.h"
 #include "ps_roi_pool.h"
