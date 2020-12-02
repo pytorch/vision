@@ -854,6 +854,13 @@ def _assert_grid_transform_inputs(
     if fill is not None and not isinstance(fill, (int, float, tuple, list)):
         warnings.warn("Argument fill should be either int, float, tuple or list")
 
+    # Check fill
+    num_channels = _get_image_num_channels(img)
+    if isinstance(fill, (tuple, list)) and (len(fill) > 1 and len(fill) != num_channels):
+        msg = ("The number of elements in 'fill' cannot broadcast to match the number of "
+               "channels of the image ({} != {})")
+        raise ValueError(msg.format(len(fill), num_channels))
+
     if interpolation not in supported_interpolation_modes:
         raise ValueError("Interpolation mode '{}' is unsupported with Tensor input".format(interpolation))
 
@@ -894,13 +901,6 @@ def _apply_grid_transform(img: Tensor, grid: Tensor, mode: str, fill: Optional[L
     if img.shape[0] > 1:
         # Apply same grid to a batch of images
         grid = grid.expand(img.shape[0], grid.shape[1], grid.shape[2], grid.shape[3])
-
-    # Check fill
-    num_channels = _get_image_num_channels(img)
-    if isinstance(fill, (tuple, list)) and (len(fill) > 1 and len(fill) != num_channels):
-        msg = ("The number of elements in 'fill' cannot broadcast to match the number of "
-               "channels of the image ({} != {})")
-        raise ValueError(msg.format(len(fill), num_channels))
 
     # Append a dummy mask for customized fill colors, should be faster than grid_sample() twice
     if fill is not None:

@@ -667,7 +667,7 @@ class RandomPerspective(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the rotated
+        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
             image. If int or float, the value is used for all bands respectively.
             This option is supported for PIL image and Tensor inputs.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
