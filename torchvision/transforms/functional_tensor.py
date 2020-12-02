@@ -1200,9 +1200,8 @@ def invert(img: Tensor) -> Tensor:
 
     if img.ndim < 3:
         raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
-    c = img.shape[-3]
-    if c != 1 and c != 3:
-        raise TypeError("Input image tensor should 1 or 3 channels, but found {}".format(c))
+
+    _assert_channels(img, [1, 3])
 
     max_val = _max_value(img.dtype)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
