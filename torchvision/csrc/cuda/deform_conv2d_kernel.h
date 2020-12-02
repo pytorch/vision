@@ -3,6 +3,9 @@
 #include <ATen/ATen.h>
 #include "../macros.h"
 
+namespace vision {
+namespace ops {
+
 VISION_API at::Tensor deform_conv2d_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& weight,
@@ -37,3 +40,6 @@ VISION_API std::
         int64_t n_weight_grps,
         int64_t n_offset_grps,
         bool use_mask);
+
+} // namespace ops
+} // namespace vision

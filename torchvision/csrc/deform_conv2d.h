@@ -9,6 +9,9 @@
 #include "hip/deform_conv2d_kernel.h"
 #endif
 
+namespace vision {
+namespace ops {
+
 // C++ Forward
 at::Tensor deform_conv2d(
     const at::Tensor& input,
@@ -98,3 +101,6 @@ deform_conv2d_backward_autograd(
     int64_t groups,
     int64_t offset_groups,
     bool use_mask);
+
+} // namespace ops
+} // namespace vision

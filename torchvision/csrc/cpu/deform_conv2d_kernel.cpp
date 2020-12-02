@@ -68,6 +68,9 @@
 
 #include "deform_conv2d_kernel.h"
 
+namespace vision {
+namespace ops {
+
 namespace {
 
 const int kMaxParallelImgs = 32;
@@ -1137,3 +1140,6 @@ deform_conv2d_backward_cpu(
   return std::make_tuple(
       grad_input, grad_weight, grad_offset, grad_mask, grad_bias);
 }
+
+} // namespace ops
+} // namespace vision

@@ -1,5 +1,8 @@
 #include "roi_align_kernel.h"
 
+namespace vision {
+namespace ops {
+
 namespace {
 
 // implementation taken from Caffe2
@@ -494,3 +497,6 @@ at::Tensor roi_align_backward_cpu(
       });
   return grad_input;
 }
+
+} // namespace ops
+} // namespace vision

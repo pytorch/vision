@@ -35,6 +35,8 @@ int64_t cuda_version() noexcept {
 }
 } // namespace vision
 
+using namespace vision::ops;
+
 TORCH_LIBRARY(torchvision, m) {
   m.def(
       "deform_conv2d(Tensor input, Tensor weight, Tensor offset, Tensor mask, Tensor bias, int stride_h, int stride_w, int pad_h, int pad_w, int dilation_h, int dilation_w, int groups, int offset_groups, bool use_mask) -> Tensor");

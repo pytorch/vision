@@ -5,6 +5,9 @@
 #include <ATen/autocast_mode.h>
 #endif
 
+namespace vision {
+namespace ops {
+
 std::tuple<at::Tensor, at::Tensor> roi_pool(
     const at::Tensor& input,
     const at::Tensor& rois,
@@ -196,3 +199,6 @@ at::Tensor roi_pool_backward_autograd(
       height,
       width)[0];
 }
+
+} // namespace ops
+} // namespace vision

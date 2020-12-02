@@ -3,6 +3,9 @@
 #include <ATen/ATen.h>
 #include "../macros.h"
 
+namespace vision {
+namespace ops {
+
 VISION_API at::Tensor roi_align_forward_cpu(
     const at::Tensor& input,
     const at::Tensor& rois,
@@ -24,3 +27,6 @@ VISION_API at::Tensor roi_align_backward_cpu(
     int64_t width,
     int64_t sampling_ratio,
     bool aligned);
+
+} // namespace ops
+} // namespace vision

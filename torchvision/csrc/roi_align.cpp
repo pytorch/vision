@@ -5,6 +5,9 @@
 #include <ATen/autocast_mode.h>
 #endif
 
+namespace vision {
+namespace ops {
+
 at::Tensor roi_align(
     const at::Tensor& input, // Input feature map.
     const at::Tensor& rois, // List of ROIs to pool over.
@@ -227,3 +230,6 @@ at::Tensor roi_align_backward_autograd(
       sampling_ratio,
       aligned)[0];
 }
+
+} // namespace ops
+} // namespace vision

@@ -9,6 +9,9 @@
 #include "hip/ps_roi_pool_kernel.h"
 #endif
 
+namespace vision {
+namespace ops {
+
 // C++ Forward
 std::tuple<at::Tensor, at::Tensor> ps_roi_pool(
     const at::Tensor& input,
@@ -59,3 +62,6 @@ at::Tensor ps_roi_pool_backward_autograd(
     int64_t channels,
     int64_t height,
     int64_t width);
+
+} // namespace ops
+} // namespace vision
