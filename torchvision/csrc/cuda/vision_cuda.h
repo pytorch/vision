@@ -4,14 +4,14 @@
 
 // TODO: Delete this file once all the methods are gone
 
-VISION_API std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(
+VISION_API std::tuple<at::Tensor, at::Tensor> roi_pool_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,
     const double spatial_scale,
     const int64_t pooled_height,
     const int64_t pooled_width);
 
-VISION_API at::Tensor ROIPool_backward_cuda(
+VISION_API at::Tensor roi_pool_backward_cuda(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& argmax,

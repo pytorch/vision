@@ -26,7 +26,7 @@ std::tuple<at::Tensor, at::Tensor> roi_pool(
 }
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
-std::tuple<at::Tensor, at::Tensor> ROIPool_autocast(
+std::tuple<at::Tensor, at::Tensor> roi_pool_autocast(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -165,7 +165,7 @@ class ROIPoolBackwardFunction
   }
 };
 
-std::tuple<at::Tensor, at::Tensor> ROIPool_autograd(
+std::tuple<at::Tensor, at::Tensor> roi_pool_autograd(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -177,7 +177,7 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_autograd(
   return std::make_tuple(result[0], result[1]);
 }
 
-at::Tensor ROIPool_backward_autograd(
+at::Tensor roi_pool_backward_autograd(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& argmax,
