@@ -350,7 +350,7 @@ void compute_grad_input(
       channels * weight_h * weight_w * out_h * out_w * parallel_imgs;
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "deformable_col2im", ([&] {
+      columns.scalar_type(), "compute_grad_input", ([&] {
         deformable_col2im_kernel(
             num_kernels,
             columns.data_ptr<scalar_t>(),
@@ -551,7 +551,7 @@ void compute_grad_offset_and_mask(
       out_h * out_w * 2 * weight_h * weight_w * n_offset_grps * parallel_imgs;
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "deformable_col2im_coord", ([&] {
+      columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
         deformable_col2im_coord_kernel(
             num_kernels,
             columns.data_ptr<scalar_t>(),

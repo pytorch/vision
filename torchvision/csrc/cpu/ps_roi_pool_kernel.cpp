@@ -183,7 +183,7 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_pool_forward_cpu(
 
   auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "ps_roi_pool_forward", [&] {
+      input.scalar_type(), "ps_roi_pool_forward_cpu", [&] {
         ps_roi_pool_forward_kernel_impl<scalar_t>(
             input_.data_ptr<scalar_t>(),
             spatial_scale,
@@ -238,7 +238,7 @@ at::Tensor ps_roi_pool_backward_cpu(
 
   auto grad_ = grad.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      grad.scalar_type(), "ps_roi_pool_backward", [&] {
+      grad.scalar_type(), "ps_roi_pool_backward_cpu", [&] {
         ps_roi_pool_backward_kernel_impl<scalar_t>(
             grad_.data_ptr<scalar_t>(),
             channel_mapping.data_ptr<int>(),

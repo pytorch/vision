@@ -1,5 +1,4 @@
-#ifndef ALEXNET_H
-#define ALEXNET_H
+#pragma once
 
 #include <torch/torch.h>
 #include "general.h"
@@ -20,5 +19,3 @@ TORCH_MODULE(AlexNet);
 
 } // namespace models
 } // namespace vision
-
-#endif // ALEXNET_H

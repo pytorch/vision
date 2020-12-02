@@ -153,7 +153,7 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_cuda(
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   dim3 grid(std::min(
-    ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
+      ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
       static_cast<int64_t>(4096)));
   dim3 block(512);
 
@@ -162,22 +162,22 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_cuda(
     return std::make_tuple(output, argmax);
   }
 
-  auto input_ = input.contiguous(),
-       rois_ = rois.contiguous();
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.scalar_type(), "roi_pool_forward", [&] {
-    roi_pool_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
-        output_size,
-        input_.data_ptr<scalar_t>(),
-        spatial_scale,
-        channels,
-        height,
-        width,
-        pooled_height,
-        pooled_width,
-        rois_.data_ptr<scalar_t>(),
-        output.data_ptr<scalar_t>(),
-        argmax.data_ptr<int>());
-  });
+  auto input_ = input.contiguous(), rois_ = rois.contiguous();
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      input.scalar_type(), "roi_pool_forward_cuda", [&] {
+        roi_pool_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
+            output_size,
+            input_.data_ptr<scalar_t>(),
+            spatial_scale,
+            channels,
+            height,
+            width,
+            pooled_height,
+            pooled_width,
+            rois_.data_ptr<scalar_t>(),
+            output.data_ptr<scalar_t>(),
+            argmax.data_ptr<int>());
+      });
   AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(output, argmax);
 }
@@ -215,7 +215,7 @@ at::Tensor roi_pool_backward_cuda(
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   dim3 grid(std::min(
-    ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
+      ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
       static_cast<int64_t>(4096)));
   dim3 block(512);
 
@@ -230,27 +230,27 @@ at::Tensor roi_pool_backward_cuda(
   int h_stride = grad.stride(2);
   int w_stride = grad.stride(3);
 
-  auto argmax_ = argmax.contiguous(),
-       rois_ = rois.contiguous();
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.scalar_type(), "roi_pool_backward", [&] {
-    roi_pool_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
-        grad.numel(),
-        grad.data_ptr<scalar_t>(),
-        argmax_.data_ptr<int>(),
-        num_rois,
-        spatial_scale,
-        channels,
-        height,
-        width,
-        pooled_height,
-        pooled_width,
-        grad_input.data_ptr<scalar_t>(),
-        rois_.data_ptr<scalar_t>(),
-        n_stride,
-        c_stride,
-        h_stride,
-        w_stride);
-  });
+  auto argmax_ = argmax.contiguous(), rois_ = rois.contiguous();
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      grad.scalar_type(), "roi_pool_backward_cuda", [&] {
+        roi_pool_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
+            grad.numel(),
+            grad.data_ptr<scalar_t>(),
+            argmax_.data_ptr<int>(),
+            num_rois,
+            spatial_scale,
+            channels,
+            height,
+            width,
+            pooled_height,
+            pooled_width,
+            grad_input.data_ptr<scalar_t>(),
+            rois_.data_ptr<scalar_t>(),
+            n_stride,
+            c_stride,
+            h_stride,
+            w_stride);
+      });
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;
 }

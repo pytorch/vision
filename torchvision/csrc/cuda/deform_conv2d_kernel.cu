@@ -66,7 +66,6 @@
 // modified from
 // https://github.com/open-mmlab/mmdetection/blob/master/mmdet/ops/dcn/src/deform_conv_cuda.cpp
 
-#include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <THC/THCAtomics.cuh>
@@ -88,7 +87,9 @@ inline unsigned int GET_THREADS() {
   return 512;
 }
 
-inline unsigned int GET_BLOCKS(const unsigned int THREADS, const unsigned int N) {
+inline unsigned int GET_BLOCKS(
+    const unsigned int THREADS,
+    const unsigned int N) {
   unsigned int kMaxGridNum =
       at::cuda::getCurrentDeviceProperties()->maxGridSize[0];
   return std::min(kMaxGridNum, (N + THREADS - 1) / THREADS);
@@ -235,10 +236,8 @@ void deformable_im2col(
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "deformable_im2col_gpu", ([&] {
-        deformable_im2col_kernel<<<
-            blocks,
-            threads>>>(
+      input.scalar_type(), "deformable_im2col", ([&] {
+        deformable_im2col_kernel<<<blocks, threads>>>(
             num_kernels,
             input.data_ptr<scalar_t>(),
             data_offset.data_ptr<scalar_t>(),
@@ -381,10 +380,8 @@ void compute_grad_input(
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "deformable_col2im_gpu", ([&] {
-        deformable_col2im_kernel<<<
-            blocks,
-            threads>>>(
+      columns.scalar_type(), "compute_grad_input", ([&] {
+        deformable_col2im_kernel<<<blocks, threads>>>(
             num_kernels,
             columns.data_ptr<scalar_t>(),
             offset.data_ptr<scalar_t>(),
@@ -589,10 +586,8 @@ void compute_grad_offset_and_mask(
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "deformable_col2im_coord_gpu", ([&] {
-        deformable_col2im_coord_kernel<<<
-            blocks,
-            threads>>>(
+      columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
+        deformable_col2im_coord_kernel<<<blocks, threads>>>(
             num_kernels,
             columns.data_ptr<scalar_t>(),
             input.data_ptr<scalar_t>(),

@@ -1,5 +1,4 @@
-#ifndef VISION_GENERAL_H
-#define VISION_GENERAL_H
+#pragma once
 
 #ifdef _WIN32
 #if defined(torchvision_EXPORTS)
@@ -10,5 +9,3 @@
 #else
 #define VISION_API
 #endif
-
-#endif // VISION_GENERAL_H

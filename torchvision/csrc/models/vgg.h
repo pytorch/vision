@@ -1,5 +1,4 @@
-#ifndef VGG_H
-#define VGG_H
+#pragma once
 
 #include <torch/torch.h>
 #include "general.h"
@@ -89,5 +88,3 @@ TORCH_MODULE(VGG19BN);
 
 } // namespace models
 } // namespace vision
-
-#endif // VGG_H

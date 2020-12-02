@@ -339,14 +339,13 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_align_forward_cuda(
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   dim3 grid(std::min(
-    ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
+      ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
       static_cast<int64_t>(4096)));
   dim3 block(512);
 
-  auto input_ = input.contiguous(),
-       rois_ = rois.contiguous();
+  auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "ps_roi_align_forward", [&] {
+      input.scalar_type(), "ps_roi_align_forward_cuda", [&] {
         ps_roi_align_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
             output_size,
             input_.data_ptr<scalar_t>(),
@@ -383,8 +382,7 @@ at::Tensor ps_roi_align_backward_cuda(
   TORCH_CHECK(grad.is_cuda(), "grad must be a CUDA tensor");
   TORCH_CHECK(rois.is_cuda(), "rois must be a CUDA tensor");
   TORCH_CHECK(
-      channel_mapping.is_cuda(),
-      "channel_mapping must be a CUDA tensor");
+      channel_mapping.is_cuda(), "channel_mapping must be a CUDA tensor");
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2},
       channel_mapping_t{channel_mapping, "channel_mapping", 3};
@@ -402,7 +400,7 @@ at::Tensor ps_roi_align_backward_cuda(
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   dim3 grid(std::min(
-    ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
+      ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
       static_cast<int64_t>(4096)));
   dim3 block(512);
 
@@ -414,10 +412,9 @@ at::Tensor ps_roi_align_backward_cuda(
 
   int channels_out = channels / (pooled_height * pooled_width);
 
-  auto grad_ = grad.contiguous(),
-       rois_ = rois.contiguous();
+  auto grad_ = grad.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      grad.scalar_type(), "ps_roi_align_backward", [&] {
+      grad.scalar_type(), "ps_roi_align_backward_cuda", [&] {
         ps_roi_align_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
             grad.numel(),
             grad_.data_ptr<scalar_t>(),

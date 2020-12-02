@@ -1,5 +1,4 @@
-#ifndef VISION_H
-#define VISION_H
+#pragma once
 
 #include <torchvision/models/models.h>
 #include <cstdint>
@@ -15,5 +14,3 @@ namespace detail {
 VISION_INLINE_VARIABLE int64_t _cuda_version = cuda_version();
 } // namespace detail
 } // namespace vision
-
-#endif // VISION_H
