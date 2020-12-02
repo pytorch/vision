@@ -1,8 +1,7 @@
-#ifndef INCEPTION_H
-#define INCEPTION_H
+#pragma once
 
 #include <torch/torch.h>
-#include "general.h"
+#include "../macros.h"
 
 namespace vision {
 namespace models {
@@ -124,5 +123,3 @@ TORCH_MODULE(InceptionV3);
 
 } // namespace models
 } // namespace vision
-
-#endif // INCEPTION_H

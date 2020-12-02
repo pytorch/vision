@@ -557,7 +557,7 @@ def perspective(
         startpoints: List[List[int]],
         endpoints: List[List[int]],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[int] = None
+        fill: Optional[List[float]] = None
 ) -> Tensor:
     """Perform perspective transform of the given image.
     The image can be a PIL Image or a Tensor, in which case it is expected
@@ -573,10 +573,12 @@ def perspective(
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
             image. If int or float, the value is used for all bands respectively.
-            This option is only available for ``pillow>=5.0.0``. This option is not supported for Tensor
-            input. Fill value for the area outside the transform in the output image is always 0.
+            This option is supported for PIL image and Tensor inputs.
+            In torchscript mode single int/float value is not supported, please use a tuple
+            or list of length 1: ``[value, ]``.
+            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
 
     Returns:
         PIL Image or Tensor: transformed Image.
@@ -871,7 +873,7 @@ def _get_inverse_affine_matrix(
 def rotate(
         img: Tensor, angle: float, interpolation: InterpolationMode = InterpolationMode.NEAREST,
         expand: bool = False, center: Optional[List[int]] = None,
-        fill: Optional[int] = None, resample: Optional[int] = None
+        fill: Optional[List[float]] = None, resample: Optional[int] = None
 ) -> Tensor:
     """Rotate the image by angle.
     The image can be a PIL Image or a Tensor, in which case it is expected
@@ -890,13 +892,12 @@ def rotate(
             Note that the expand flag assumes rotation around the center and no translation.
         center (list or tuple, optional): Optional center of rotation. Origin is the upper left corner.
             Default is the center of the image.
-        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
             image. If int or float, the value is used for all bands respectively.
-            Defaults to 0 for all bands. This option is only available for ``pillow>=5.2.0``.
-            This option is not supported for Tensor input. Fill value for the area outside the transform in the output
-            image is always 0.
-        resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use `arg`:interpolation: instead.
+            This option is supported for PIL image and Tensor inputs.
+            In torchscript mode single int/float value is not supported, please use a tuple
+            or list of length 1: ``[value, ]``.
+            If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
 
     Returns:
         PIL Image or Tensor: Rotated image.
@@ -945,8 +946,8 @@ def rotate(
 
 def affine(
         img: Tensor, angle: float, translate: List[int], scale: float, shear: List[float],
-        interpolation: InterpolationMode = InterpolationMode.NEAREST, fill: Optional[int] = None,
-        resample: Optional[int] = None, fillcolor: Optional[int] = None
+        interpolation: InterpolationMode = InterpolationMode.NEAREST, fill: Optional[List[float]] = None,
+        resample: Optional[int] = None, fillcolor: Optional[List[float]] = None
 ) -> Tensor:
     """Apply affine transformation on the image keeping image center invariant.
     The image can be a PIL Image or a Tensor, in which case it is expected
@@ -964,10 +965,13 @@ def affine(
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (int): Optional fill color for the area outside the transform in the output image (Pillow>=5.0.0).
-            This option is not supported for Tensor input. Fill value for the area outside the transform in the output
-            image is always 0.
-        fillcolor (tuple or int, optional): deprecated argument and will be removed since v0.10.0.
+        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
+            image. If int or float, the value is used for all bands respectively.
+            This option is supported for PIL image and Tensor inputs.
+            In torchscript mode single int/float value is not supported, please use a tuple
+            or list of length 1: ``[value, ]``.
+            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
+        fillcolor (sequence, int, float): deprecated argument and will be removed since v0.10.0.
             Please use `arg`:fill: instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use `arg`:interpolation: instead.

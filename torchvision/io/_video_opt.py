@@ -193,7 +193,7 @@ def _read_video_from_file(
     video_width/video_height/video_min_dimension/video_max_dimension: int
         together decide the size of decoded frames
         - When video_width = 0, video_height = 0, video_min_dimension = 0,
-            and video_max_dimension = 0, keep the orignal frame resolution
+            and video_max_dimension = 0, keep the original frame resolution
         - When video_width = 0, video_height = 0, video_min_dimension != 0,
             and video_max_dimension = 0, keep the aspect ratio and resize the
             frame so that shorter edge size is video_min_dimension
@@ -357,7 +357,7 @@ def _read_video_from_memory(
     video_width/video_height/video_min_dimension/video_max_dimension: int
         together decide the size of decoded frames
         - When video_width = 0, video_height = 0, video_min_dimension = 0,
-            and video_max_dimension = 0, keep the orignal frame resolution
+            and video_max_dimension = 0, keep the original frame resolution
         - When video_width = 0, video_height = 0, video_min_dimension != 0,
             and video_max_dimension = 0, keep the aspect ratio and resize the
             frame so that shorter edge size is video_min_dimension

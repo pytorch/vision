@@ -1,5 +1,4 @@
-#ifndef TORCHVISION_MACROS_H
-#define TORCHVISION_MACROS_H
+#pragma once
 
 #ifdef _WIN32
 #if defined(torchvision_EXPORTS)
@@ -20,5 +19,3 @@
 #define VISION_INLINE_VARIABLE __attribute__((weak))
 #endif
 #endif
-
-#endif // TORCHVISION_MACROS_H

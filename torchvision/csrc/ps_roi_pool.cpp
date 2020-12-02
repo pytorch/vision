@@ -1,39 +1,34 @@
-#pragma once
+#include "ps_roi_pool.h"
+#include <torch/extension.h>
 
-#include "cpu/vision_cpu.h"
-
-#ifdef WITH_CUDA
-#include "autocast.h"
-#include "cuda/vision_cuda.h"
-#endif
-#ifdef WITH_HIP
-#include "autocast.h"
-#include "hip/vision_cuda.h"
+#if defined(WITH_CUDA) || defined(WITH_HIP)
+#include <ATen/autocast_mode.h>
 #endif
 
-// TODO: put this stuff in torchvision namespace
+namespace vision {
+namespace ops {
 
-std::tuple<at::Tensor, at::Tensor> roi_pool(
+std::tuple<at::Tensor, at::Tensor> ps_roi_pool(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
     int64_t pooled_height,
     int64_t pooled_width) {
   static auto op = c10::Dispatcher::singleton()
-                       .findSchemaOrThrow("torchvision::roi_pool", "")
-                       .typed<decltype(roi_pool)>();
+                       .findSchemaOrThrow("torchvision::ps_roi_pool", "")
+                       .typed<decltype(ps_roi_pool)>();
   return op.call(input, rois, spatial_scale, pooled_height, pooled_width);
 }
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
-std::tuple<at::Tensor, at::Tensor> ROIPool_autocast(
+std::tuple<at::Tensor, at::Tensor> ps_roi_pool_autocast(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
     int64_t pooled_height,
     int64_t pooled_width) {
   c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
-  auto result = roi_pool(
+  auto result = ps_roi_pool(
       at::autocast::cached_cast(at::kFloat, input),
       at::autocast::cached_cast(at::kFloat, rois),
       spatial_scale,
@@ -46,10 +41,10 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_autocast(
 }
 #endif
 
-at::Tensor _roi_pool_backward(
+at::Tensor _ps_roi_pool_backward(
     const at::Tensor& grad,
     const at::Tensor& rois,
-    const at::Tensor& argmax,
+    const at::Tensor& channel_mapping,
     double spatial_scale,
     int64_t pooled_height,
     int64_t pooled_width,
@@ -57,13 +52,14 @@ at::Tensor _roi_pool_backward(
     int64_t channels,
     int64_t height,
     int64_t width) {
-  static auto op = c10::Dispatcher::singleton()
-                       .findSchemaOrThrow("torchvision::_roi_pool_backward", "")
-                       .typed<decltype(_roi_pool_backward)>();
+  static auto op =
+      c10::Dispatcher::singleton()
+          .findSchemaOrThrow("torchvision::_ps_roi_pool_backward", "")
+          .typed<decltype(_ps_roi_pool_backward)>();
   return op.call(
       grad,
       rois,
-      argmax,
+      channel_mapping,
       spatial_scale,
       pooled_height,
       pooled_width,
@@ -73,7 +69,9 @@ at::Tensor _roi_pool_backward(
       width);
 }
 
-class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
+namespace {
+
+class PSROIPoolFunction : public torch::autograd::Function<PSROIPoolFunction> {
  public:
   static torch::autograd::variable_list forward(
       torch::autograd::AutogradContext* ctx,
@@ -88,14 +86,14 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
     ctx->saved_data["input_shape"] = input.sizes();
     at::AutoNonVariableTypeMode g;
     auto result =
-        roi_pool(input, rois, spatial_scale, pooled_height, pooled_width);
+        ps_roi_pool(input, rois, spatial_scale, pooled_height, pooled_width);
 
     auto output = std::get<0>(result);
-    auto argmax = std::get<1>(result);
-    ctx->save_for_backward({rois, argmax});
-    ctx->mark_non_differentiable({argmax});
+    auto channel_mapping = std::get<1>(result);
+    ctx->save_for_backward({rois, channel_mapping});
+    ctx->mark_non_differentiable({channel_mapping});
 
-    return {output, argmax};
+    return {output, channel_mapping};
   }
 
   static torch::autograd::variable_list backward(
@@ -104,12 +102,12 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
     // Use data saved in forward
     auto saved = ctx->get_saved_variables();
     auto rois = saved[0];
-    auto argmax = saved[1];
+    auto channel_mapping = saved[1];
     auto input_shape = ctx->saved_data["input_shape"].toIntList();
-    auto grad_in = _roi_pool_backward(
+    auto grad_in = _ps_roi_pool_backward(
         grad_output[0],
         rois,
-        argmax,
+        channel_mapping,
         ctx->saved_data["spatial_scale"].toDouble(),
         ctx->saved_data["pooled_height"].toInt(),
         ctx->saved_data["pooled_width"].toInt(),
@@ -127,14 +125,14 @@ class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
 };
 
 // TODO: There should be an easier way to do this
-class ROIPoolBackwardFunction
-    : public torch::autograd::Function<ROIPoolBackwardFunction> {
+class PSROIPoolBackwardFunction
+    : public torch::autograd::Function<PSROIPoolBackwardFunction> {
  public:
   static torch::autograd::variable_list forward(
       torch::autograd::AutogradContext* ctx,
       const torch::autograd::Variable& grad,
       const torch::autograd::Variable& rois,
-      const torch::autograd::Variable& argmax,
+      const torch::autograd::Variable& channel_mapping,
       double spatial_scale,
       int64_t pooled_height,
       int64_t pooled_width,
@@ -143,10 +141,10 @@ class ROIPoolBackwardFunction
       int64_t height,
       int64_t width) {
     at::AutoNonVariableTypeMode g;
-    auto grad_in = _roi_pool_backward(
+    auto grad_in = _ps_roi_pool_backward(
         grad,
         rois,
-        argmax,
+        channel_mapping,
         spatial_scale,
         pooled_height,
         pooled_width,
@@ -161,26 +159,28 @@ class ROIPoolBackwardFunction
   static torch::autograd::variable_list backward(
       torch::autograd::AutogradContext* ctx,
       const torch::autograd::variable_list& grad_output) {
-    TORCH_CHECK(0, "double backwards on roi_pool not supported");
+    TORCH_CHECK(0, "double backwards on ps_roi_pool not supported");
   }
 };
 
-std::tuple<at::Tensor, at::Tensor> ROIPool_autograd(
+} // namespace
+
+std::tuple<at::Tensor, at::Tensor> ps_roi_pool_autograd(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
     int64_t pooled_height,
     int64_t pooled_width) {
-  auto result = ROIPoolFunction::apply(
+  auto result = PSROIPoolFunction::apply(
       input, rois, spatial_scale, pooled_height, pooled_width);
 
   return std::make_tuple(result[0], result[1]);
 }
 
-at::Tensor ROIPool_backward_autograd(
+at::Tensor ps_roi_pool_backward_autograd(
     const at::Tensor& grad,
     const at::Tensor& rois,
-    const at::Tensor& argmax,
+    const at::Tensor& channel_mapping,
     double spatial_scale,
     int64_t pooled_height,
     int64_t pooled_width,
@@ -188,10 +188,10 @@ at::Tensor ROIPool_backward_autograd(
     int64_t channels,
     int64_t height,
     int64_t width) {
-  return ROIPoolBackwardFunction::apply(
+  return PSROIPoolBackwardFunction::apply(
       grad,
       rois,
-      argmax,
+      channel_mapping,
       spatial_scale,
       pooled_height,
       pooled_width,
@@ -200,3 +200,6 @@ at::Tensor ROIPool_backward_autograd(
       height,
       width)[0];
 }
+
+} // namespace ops
+} // namespace vision
