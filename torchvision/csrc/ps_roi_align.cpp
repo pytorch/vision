@@ -5,6 +5,9 @@
 #include <ATen/autocast_mode.h>
 #endif
 
+namespace vision {
+namespace ops {
+
 std::tuple<at::Tensor, at::Tensor> ps_roi_align(
     const at::Tensor& input,
     const at::Tensor& rois,
@@ -218,3 +221,6 @@ at::Tensor ps_roi_align_backward_autograd(
       height,
       width)[0];
 }
+
+} // namespace ops
+} // namespace vision

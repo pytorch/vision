@@ -5,6 +5,9 @@
 #include <ATen/autocast_mode.h>
 #endif
 
+namespace vision {
+namespace ops {
+
 at::Tensor nms(
     const at::Tensor& dets,
     const at::Tensor& scores,
@@ -27,3 +30,6 @@ at::Tensor nms_autocast(
       iou_threshold);
 }
 #endif
+
+} // namespace ops
+} // namespace vision

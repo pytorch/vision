@@ -5,6 +5,9 @@
 #include "cuda_helpers.h"
 #include "ps_roi_align_kernel.h"
 
+namespace vision {
+namespace ops {
+
 namespace {
 
 template <typename T>
@@ -434,3 +437,6 @@ at::Tensor ps_roi_align_backward_cuda(
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;
 }
+
+} // namespace ops
+} // namespace vision

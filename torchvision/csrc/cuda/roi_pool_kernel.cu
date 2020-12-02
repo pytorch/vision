@@ -6,6 +6,9 @@
 #include "cuda_helpers.h"
 #include "roi_pool_kernel.h"
 
+namespace vision {
+namespace ops {
+
 namespace {
 
 template <typename T>
@@ -254,3 +257,6 @@ at::Tensor roi_pool_backward_cuda(
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;
 }
+
+} // namespace ops
+} // namespace vision

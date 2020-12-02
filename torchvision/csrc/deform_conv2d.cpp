@@ -5,6 +5,9 @@
 #include <ATen/autocast_mode.h>
 #endif
 
+namespace vision {
+namespace ops {
+
 at::Tensor deform_conv2d(
     const at::Tensor& input,
     const at::Tensor& weight,
@@ -361,3 +364,6 @@ deform_conv2d_backward_autograd(
 
   return std::make_tuple(result[0], result[1], result[2], result[3], result[4]);
 }
+
+} // namespace ops
+} // namespace vision

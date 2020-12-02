@@ -9,6 +9,9 @@
 #include "hip/roi_align_kernel.h"
 #endif
 
+namespace vision {
+namespace ops {
+
 // C++ Forward
 at::Tensor roi_align(
     const at::Tensor& input,
@@ -67,3 +70,6 @@ at::Tensor roi_align_backward_autograd(
     int64_t width,
     int64_t sampling_ratio,
     bool aligned);
+
+} // namespace ops
+} // namespace vision

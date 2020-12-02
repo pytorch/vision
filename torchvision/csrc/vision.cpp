@@ -1,3 +1,5 @@
+#include "vision.h"
+
 #include <Python.h>
 #include <torch/script.h>
 
@@ -34,6 +36,8 @@ int64_t cuda_version() noexcept {
 #endif
 }
 } // namespace vision
+
+using namespace vision::ops;
 
 TORCH_LIBRARY(torchvision, m) {
   m.def(

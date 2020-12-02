@@ -2,6 +2,9 @@
 
 #include "roi_pool_kernel.h"
 
+namespace vision {
+namespace ops {
+
 namespace {
 
 template <class T>
@@ -231,3 +234,6 @@ at::Tensor roi_pool_backward_cpu(
       });
   return grad_input;
 }
+
+} // namespace ops
+} // namespace vision

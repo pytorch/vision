@@ -4,6 +4,9 @@
 #include "cuda_helpers.h"
 #include "nms_kernel.h"
 
+namespace vision {
+namespace ops {
+
 namespace {
 
 int const threadsPerBlock = sizeof(unsigned long long) * 8;
@@ -162,3 +165,6 @@ at::Tensor nms_cuda(
       {keep.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep)
            .to(order_t.device(), keep.scalar_type())});
 }
+
+} // namespace ops
+} // namespace vision

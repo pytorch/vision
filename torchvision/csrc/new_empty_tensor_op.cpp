@@ -3,6 +3,9 @@
 #include "new_empty_tensor_op.h"
 #include <torch/extension.h>
 
+namespace vision {
+namespace ops {
+
 namespace {
 
 class NewEmptyTensorOp : public torch::autograd::Function<NewEmptyTensorOp> {
@@ -33,3 +36,6 @@ at::Tensor new_empty_tensor(
     const c10::List<int64_t>& shape) {
   return NewEmptyTensorOp::apply(input, shape)[0];
 }
+
+} // namespace ops
+} // namespace vision

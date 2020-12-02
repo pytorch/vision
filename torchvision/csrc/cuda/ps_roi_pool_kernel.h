@@ -3,6 +3,9 @@
 #include <ATen/ATen.h>
 #include "../macros.h"
 
+namespace vision {
+namespace ops {
+
 VISION_API std::tuple<at::Tensor, at::Tensor> ps_roi_pool_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,
@@ -21,3 +24,6 @@ VISION_API at::Tensor ps_roi_pool_backward_cuda(
     int64_t channels,
     int64_t height,
     int64_t width);
+
+} // namespace ops
+} // namespace vision

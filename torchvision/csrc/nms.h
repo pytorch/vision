@@ -9,6 +9,9 @@
 #include "hip/nms_kernel.h"
 #endif
 
+namespace vision {
+namespace ops {
+
 // C++ Forward
 at::Tensor nms(
     const at::Tensor& dets,
@@ -22,3 +25,6 @@ at::Tensor nms_autocast(
     const at::Tensor& scores,
     double iou_threshold);
 #endif
+
+} // namespace ops
+} // namespace vision

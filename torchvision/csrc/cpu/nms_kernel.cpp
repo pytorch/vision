@@ -1,5 +1,8 @@
 #include "nms_kernel.h"
 
+namespace vision {
+namespace ops {
+
 namespace {
 
 template <typename scalar_t>
@@ -103,3 +106,6 @@ at::Tensor nms_cpu(
   });
   return result;
 }
+
+} // namespace ops
+} // namespace vision

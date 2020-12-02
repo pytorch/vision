@@ -1,6 +1,5 @@
 #pragma once
 
-#include <torchvision/models/models.h>
 #include <cstdint>
 #include "macros.h"
 
