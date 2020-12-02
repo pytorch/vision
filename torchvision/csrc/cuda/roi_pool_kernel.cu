@@ -1,13 +1,18 @@
-#include <ATen/ATen.h>
-#include <ATen/TensorUtils.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
+#include <float.h>
 #include <THC/THCAtomics.cuh>
 
 #include "cuda_helpers.h"
+#include "roi_pool_kernel.h"
+
+namespace vision {
+namespace ops {
+
+namespace {
 
 template <typename T>
-__global__ void RoIPoolForward(
+__global__ void roi_pool_forward_kernel_impl(
     int nthreads,
     const T* input,
     const T spatial_scale,
@@ -72,7 +77,7 @@ __global__ void RoIPoolForward(
 }
 
 template <typename T>
-__global__ void RoIPoolBackward(
+__global__ void roi_pool_backward_kernel_impl(
     int nthreads,
     const T* grad_output,
     const int* argmax_data,
@@ -115,7 +120,9 @@ __global__ void RoIPoolBackward(
   }
 }
 
-std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(
+} // namespace
+
+std::tuple<at::Tensor, at::Tensor> roi_pool_forward_cuda(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -128,7 +135,7 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
-  at::CheckedFrom c = "ROIPool_forward_cuda";
+  at::CheckedFrom c = "roi_pool_forward_cuda";
   at::checkAllSameGPU(c, {input_t, rois_t});
   at::checkAllSameType(c, {input_t, rois_t});
 
@@ -149,7 +156,7 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   dim3 grid(std::min(
-    ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
+      ceil_div(static_cast<int64_t>(output_size), static_cast<int64_t>(512)),
       static_cast<int64_t>(4096)));
   dim3 block(512);
 
@@ -158,27 +165,27 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cuda(
     return std::make_tuple(output, argmax);
   }
 
-  auto input_ = input.contiguous(),
-       rois_ = rois.contiguous();
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.scalar_type(), "ROIPool_forward", [&] {
-    RoIPoolForward<scalar_t><<<grid, block, 0, stream>>>(
-        output_size,
-        input_.data_ptr<scalar_t>(),
-        spatial_scale,
-        channels,
-        height,
-        width,
-        pooled_height,
-        pooled_width,
-        rois_.data_ptr<scalar_t>(),
-        output.data_ptr<scalar_t>(),
-        argmax.data_ptr<int>());
-  });
+  auto input_ = input.contiguous(), rois_ = rois.contiguous();
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      input.scalar_type(), "roi_pool_forward_cuda", [&] {
+        roi_pool_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
+            output_size,
+            input_.data_ptr<scalar_t>(),
+            spatial_scale,
+            channels,
+            height,
+            width,
+            pooled_height,
+            pooled_width,
+            rois_.data_ptr<scalar_t>(),
+            output.data_ptr<scalar_t>(),
+            argmax.data_ptr<int>());
+      });
   AT_CUDA_CHECK(cudaGetLastError());
   return std::make_tuple(output, argmax);
 }
 
-at::Tensor ROIPool_backward_cuda(
+at::Tensor roi_pool_backward_cuda(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& argmax,
@@ -197,7 +204,7 @@ at::Tensor ROIPool_backward_cuda(
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2},
       argmax_t{argmax, "argmax", 3};
 
-  at::CheckedFrom c = "ROIPool_backward_cuda";
+  at::CheckedFrom c = "roi_pool_backward_cuda";
   at::checkAllSameGPU(c, {grad_t, rois_t, argmax_t});
   at::checkAllSameType(c, {grad_t, rois_t});
 
@@ -211,7 +218,7 @@ at::Tensor ROIPool_backward_cuda(
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   dim3 grid(std::min(
-    ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
+      ceil_div(static_cast<int64_t>(grad.numel()), static_cast<int64_t>(512)),
       static_cast<int64_t>(4096)));
   dim3 block(512);
 
@@ -226,27 +233,30 @@ at::Tensor ROIPool_backward_cuda(
   int h_stride = grad.stride(2);
   int w_stride = grad.stride(3);
 
-  auto argmax_ = argmax.contiguous(),
-       rois_ = rois.contiguous();
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.scalar_type(), "ROIPool_backward", [&] {
-    RoIPoolBackward<scalar_t><<<grid, block, 0, stream>>>(
-        grad.numel(),
-        grad.data_ptr<scalar_t>(),
-        argmax_.data_ptr<int>(),
-        num_rois,
-        spatial_scale,
-        channels,
-        height,
-        width,
-        pooled_height,
-        pooled_width,
-        grad_input.data_ptr<scalar_t>(),
-        rois_.data_ptr<scalar_t>(),
-        n_stride,
-        c_stride,
-        h_stride,
-        w_stride);
-  });
+  auto argmax_ = argmax.contiguous(), rois_ = rois.contiguous();
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(
+      grad.scalar_type(), "roi_pool_backward_cuda", [&] {
+        roi_pool_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
+            grad.numel(),
+            grad.data_ptr<scalar_t>(),
+            argmax_.data_ptr<int>(),
+            num_rois,
+            spatial_scale,
+            channels,
+            height,
+            width,
+            pooled_height,
+            pooled_width,
+            grad_input.data_ptr<scalar_t>(),
+            rois_.data_ptr<scalar_t>(),
+            n_stride,
+            c_stride,
+            h_stride,
+            w_stride);
+      });
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;
 }
+
+} // namespace ops
+} // namespace vision

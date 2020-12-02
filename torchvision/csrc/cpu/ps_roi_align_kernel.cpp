@@ -1,6 +1,9 @@
-#include <ATen/ATen.h>
-#include <ATen/TensorUtils.h>
-#include <TH/TH.h>
+#include "ps_roi_align_kernel.h"
+
+namespace vision {
+namespace ops {
+
+namespace {
 
 template <typename T>
 T bilinear_interpolate(
@@ -57,7 +60,7 @@ T bilinear_interpolate(
 }
 
 template <typename T>
-void PSROIAlignForwardCPU(
+void ps_roi_align_forward_kernel_impl(
     int nthreads,
     const T* input,
     const T spatial_scale,
@@ -202,7 +205,7 @@ inline void add(T* address, const T& val) {
 }
 
 template <typename T>
-void PSROIAlignBackwardCPU(
+void ps_roi_align_backward_kernel_impl(
     int nthreads,
     const T* grad_output,
     const int* channel_mapping,
@@ -298,7 +301,9 @@ void PSROIAlignBackwardCPU(
   }
 }
 
-std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
+} // namespace
+
+std::tuple<at::Tensor, at::Tensor> ps_roi_align_forward_cpu(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -313,7 +318,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
-  at::CheckedFrom c = "PSROIAlign_forward_cpu";
+  at::CheckedFrom c = "ps_roi_align_forward_cpu";
   at::checkAllSameType(c, {input_t, rois_t});
 
   int num_rois = rois.size(0);
@@ -338,8 +343,8 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
 
   auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "PSROIAlign_forward", [&] {
-        PSROIAlignForwardCPU<scalar_t>(
+      input.scalar_type(), "ps_roi_align_forward_cpu", [&] {
+        ps_roi_align_forward_kernel_impl<scalar_t>(
             output_size,
             input_.data_ptr<scalar_t>(),
             spatial_scale,
@@ -357,7 +362,7 @@ std::tuple<at::Tensor, at::Tensor> PSROIAlign_forward_cpu(
   return std::make_tuple(output, channel_mapping);
 }
 
-at::Tensor PSROIAlign_backward_cpu(
+at::Tensor ps_roi_align_backward_cpu(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& channel_mapping,
@@ -379,7 +384,7 @@ at::Tensor PSROIAlign_backward_cpu(
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2},
       channel_mapping_t{channel_mapping, "channel_mapping", 3};
 
-  at::CheckedFrom c = "PSROIAlign_backward_cpu";
+  at::CheckedFrom c = "ps_roi_align_backward_cpu";
   at::checkAllSameType(c, {grad_t, rois_t});
 
   auto num_rois = rois.size(0);
@@ -395,8 +400,8 @@ at::Tensor PSROIAlign_backward_cpu(
 
   auto grad_ = grad.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      grad.scalar_type(), "PSROIAlign_backward", [&] {
-        PSROIAlignBackwardCPU<scalar_t>(
+      grad.scalar_type(), "ps_roi_align_backward_cpu", [&] {
+        ps_roi_align_backward_kernel_impl<scalar_t>(
             grad.numel(),
             grad_.data_ptr<scalar_t>(),
             channel_mapping.data_ptr<int>(),
@@ -414,3 +419,6 @@ at::Tensor PSROIAlign_backward_cpu(
       });
   return grad_input;
 }
+
+} // namespace ops
+} // namespace vision

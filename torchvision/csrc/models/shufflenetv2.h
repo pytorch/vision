@@ -1,8 +1,7 @@
-#ifndef SHUFFLENETV2_H
-#define SHUFFLENETV2_H
+#pragma once
 
 #include <torch/torch.h>
-#include "general.h"
+#include "../macros.h"
 
 namespace vision {
 namespace models {
@@ -44,5 +43,3 @@ TORCH_MODULE(ShuffleNetV2_x2_0);
 
 } // namespace models
 } // namespace vision
-
-#endif // SHUFFLENETV2_H
