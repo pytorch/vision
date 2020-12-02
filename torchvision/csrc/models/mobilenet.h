@@ -1,8 +1,7 @@
-#ifndef MOBILENET_H
-#define MOBILENET_H
+#pragma once
 
 #include <torch/torch.h>
-#include "general.h"
+#include "../macros.h"
 
 namespace vision {
 namespace models {
@@ -22,5 +21,3 @@ struct VISION_API MobileNetV2Impl : torch::nn::Module {
 TORCH_MODULE(MobileNetV2);
 } // namespace models
 } // namespace vision
-
-#endif // MOBILENET_H

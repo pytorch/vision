@@ -1,7 +1,11 @@
-#include <ATen/ATen.h>
-#include <ATen/TensorUtils.h>
-#include <TH/TH.h>
-#include <algorithm>
+#include <float.h>
+
+#include "roi_pool_kernel.h"
+
+namespace vision {
+namespace ops {
+
+namespace {
 
 template <class T>
 inline void add(T* address, const T& val) {
@@ -9,7 +13,7 @@ inline void add(T* address, const T& val) {
 }
 
 template <typename T>
-void RoIPoolForward(
+void roi_pool_forward_kernel_impl(
     const T* input,
     const T spatial_scale,
     int channels,
@@ -78,7 +82,7 @@ void RoIPoolForward(
 }
 
 template <typename T>
-void RoIPoolBackward(
+void roi_pool_backward_kernel_impl(
     const T* grad_output,
     const int* argmax_data,
     int num_rois,
@@ -120,7 +124,9 @@ void RoIPoolBackward(
   } // num_rois
 }
 
-std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(
+} // namespace
+
+std::tuple<at::Tensor, at::Tensor> roi_pool_forward_cpu(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -131,7 +137,7 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
-  at::CheckedFrom c = "ROIPool_forward_cpu";
+  at::CheckedFrom c = "roi_pool_forward_cpu";
   at::checkAllSameType(c, {input_t, rois_t});
 
   int num_rois = rois.size(0);
@@ -151,8 +157,8 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(
 
   auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "ROIPool_forward", [&] {
-        RoIPoolForward<scalar_t>(
+      input.scalar_type(), "roi_pool_forward_cpu", [&] {
+        roi_pool_forward_kernel_impl<scalar_t>(
             input_.data_ptr<scalar_t>(),
             spatial_scale,
             channels,
@@ -168,7 +174,7 @@ std::tuple<at::Tensor, at::Tensor> ROIPool_forward_cpu(
   return std::make_tuple(output, argmax);
 }
 
-at::Tensor ROIPool_backward_cpu(
+at::Tensor roi_pool_backward_cpu(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& argmax,
@@ -188,7 +194,7 @@ at::Tensor ROIPool_backward_cpu(
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2};
 
-  at::CheckedFrom c = "ROIPool_backward_cpu";
+  at::CheckedFrom c = "roi_pool_backward_cpu";
   at::checkAllSameType(c, {grad_t, rois_t});
 
   auto num_rois = rois.size(0);
@@ -209,8 +215,8 @@ at::Tensor ROIPool_backward_cpu(
 
   auto rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      grad.scalar_type(), "ROIPool_backward", [&] {
-        RoIPoolBackward<scalar_t>(
+      grad.scalar_type(), "roi_pool_backward_cpu", [&] {
+        roi_pool_backward_kernel_impl<scalar_t>(
             grad.data_ptr<scalar_t>(),
             argmax.data_ptr<int>(),
             num_rois,
@@ -228,3 +234,6 @@ at::Tensor ROIPool_backward_cpu(
       });
   return grad_input;
 }
+
+} // namespace ops
+} // namespace vision
