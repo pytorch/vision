@@ -66,18 +66,17 @@
 // modified from
 // https://github.com/open-mmlab/mmdetection/blob/master/mmdet/ops/dcn/src/deform_conv_cuda.cpp
 
-#include <ATen/ATen.h>
-#include <ATen/TensorUtils.h>
-#include <TH/TH.h>
+#include "deform_conv2d_kernel.h"
 
-#include <cmath>
-#include <iostream>
-#include <tuple>
+namespace vision {
+namespace ops {
+
+namespace {
 
 const int kMaxParallelImgs = 32;
 
 template <typename scalar_t>
-static scalar_t bilinear_interpolate(
+scalar_t bilinear_interpolate(
     const scalar_t* in,
     int height,
     int width,
@@ -116,7 +115,7 @@ static scalar_t bilinear_interpolate(
 }
 
 template <typename scalar_t>
-static void deformable_im2col_kernel(
+void deformable_im2col_kernel(
     int n,
     const scalar_t* input,
     const scalar_t* offset,
@@ -129,8 +128,8 @@ static void deformable_im2col_kernel(
     int pad_w,
     int stride_h,
     int stride_w,
-    int dil_h,
-    int dil_w,
+    int dilation_h,
+    int dilation_w,
     int batch_sz,
     int n_in_channels,
     int n_offset_grps,
@@ -180,8 +179,10 @@ static void deformable_im2col_kernel(
             offset_ptr[offset_idx * (out_h * out_w) + out_y * out_w + out_x];
         const scalar_t offset_w = offset_ptr
             [(offset_idx + 1) * (out_h * out_w) + out_y * out_w + out_x];
-        const scalar_t y = (out_y * stride_h - pad_h) + i * dil_h + offset_h;
-        const scalar_t x = (out_x * stride_w - pad_w) + j * dil_w + offset_w;
+        const scalar_t y =
+            (out_y * stride_h - pad_h) + i * dilation_h + offset_h;
+        const scalar_t x =
+            (out_x * stride_w - pad_w) + j * dilation_w + offset_w;
         *columns_ptr =
             mask_value * bilinear_interpolate(input_ptr, height, width, y, x);
         columns_ptr += batch_sz * out_h * out_w;
@@ -190,7 +191,7 @@ static void deformable_im2col_kernel(
   }
 }
 
-static void deformable_im2col(
+void deformable_im2col(
     const at::Tensor& input,
     const at::Tensor& data_offset,
     const at::Tensor& data_mask,
@@ -203,8 +204,8 @@ static void deformable_im2col(
     int pad_w,
     int stride_h,
     int stride_w,
-    int dil_h,
-    int dil_w,
+    int dilation_h,
+    int dilation_w,
     int out_h,
     int out_w,
     int parallel_imgs,
@@ -228,8 +229,8 @@ static void deformable_im2col(
             pad_w,
             stride_h,
             stride_w,
-            dil_h,
-            dil_w,
+            dilation_h,
+            dilation_w,
             parallel_imgs,
             n_in_channels,
             deformable_group,
@@ -240,7 +241,7 @@ static void deformable_im2col(
       }));
 }
 
-static int get_greatest_divisor_below_bound(int n, int bound) {
+int get_greatest_divisor_below_bound(int n, int bound) {
   for (int k = bound; k > 1; --k) {
     if (n % k == 0) {
       return k;
@@ -249,216 +250,8 @@ static int get_greatest_divisor_below_bound(int n, int bound) {
   return 1;
 }
 
-at::Tensor DeformConv2d_forward_cpu(
-    const at::Tensor& input_param,
-    const at::Tensor& weight_param,
-    const at::Tensor& offset_param,
-    const at::Tensor& mask_param,
-    const at::Tensor& bias_param,
-    int64_t stride_h,
-    int64_t stride_w,
-    int64_t pad_h,
-    int64_t pad_w,
-    int64_t dil_h,
-    int64_t dil_w,
-    int64_t n_weight_grps,
-    int64_t n_offset_grps,
-    bool use_mask) {
-  at::Tensor input = input_param.contiguous();
-  at::Tensor offset = offset_param.contiguous();
-  at::Tensor weight = weight_param.contiguous();
-  at::Tensor mask = mask_param.contiguous();
-  at::Tensor bias = bias_param.contiguous();
-
-  TORCH_CHECK(input.ndimension() == 4);
-  TORCH_CHECK(offset.ndimension() == 4);
-  TORCH_CHECK(!use_mask || mask.ndimension() == 4);
-  TORCH_CHECK(weight.ndimension() == 4);
-  TORCH_CHECK(input.device().is_cpu(), "input must be a CPU tensor");
-
-  int batch_sz = input.size(0);
-  int n_in_channels = input.size(1);
-  int in_h = input.size(2);
-  int in_w = input.size(3);
-
-  int n_parallel_imgs =
-      get_greatest_divisor_below_bound(batch_sz, kMaxParallelImgs);
-
-  // Unpack shapes and args
-  int out_channels = weight.size(0);
-  int weight_h = weight.size(2);
-  int weight_w = weight.size(3);
-
-  int ker_h = dil_h * (weight_h - 1) + 1;
-  int ker_w = dil_w * (weight_w - 1) + 1;
-  int out_h = ((in_h + 2 * pad_h - ker_h) / stride_h) + 1;
-  int out_w = ((in_w + 2 * pad_w - ker_w) / stride_w) + 1;
-
-  TORCH_CHECK(
-      weight_h > 0 && weight_w > 0,
-      "weight_h: ",
-      weight_h,
-      " weight_w: ",
-      weight_w);
-  TORCH_CHECK(
-      stride_h > 0 && stride_w > 0,
-      "stride_h: ",
-      stride_h,
-      " stride_w: ",
-      stride_w);
-  TORCH_CHECK(pad_h >= 0 && pad_w >= 0, "pad_h: ", pad_h, " pad_w: ", pad_w);
-  TORCH_CHECK(dil_h > 0 && dil_w > 0, "dil_h: ", dil_h, " dil_w: ", dil_w);
-
-  TORCH_CHECK(weight.size(1) * n_weight_grps == input.size(1));
-  TORCH_CHECK(weight.size(0) % n_weight_grps == 0);
-  TORCH_CHECK(
-      (offset.size(1) == n_offset_grps * 2 * weight_h * weight_w),
-      "offset.shape[1] is not valid: got: ",
-      offset.size(1),
-      " expected: ",
-      n_offset_grps * 2 * weight_h * weight_w);
-  TORCH_CHECK(
-      (!use_mask || mask.size(1) == n_offset_grps * weight_h * weight_w),
-      "mask.shape[1] is not valid: got: ",
-      mask.size(1),
-      " expected: ",
-      n_offset_grps * weight_h * weight_w);
-  TORCH_CHECK(input.size(1) % n_offset_grps == 0);
-
-  TORCH_CHECK(
-      (offset.size(0) == input.size(0)), "invalid batch size of offset");
-  TORCH_CHECK(
-      (offset.size(2) == out_h && offset.size(3) == out_w),
-      "offset output dims: (",
-      offset.size(2),
-      ", ",
-      offset.size(3),
-      ") - ",
-      "computed output dims: (",
-      out_h,
-      ", ",
-      out_w,
-      ")");
-  TORCH_CHECK((mask.size(0) == input.size(0)), "invalid batch size of mask");
-  TORCH_CHECK(
-      (!use_mask || (mask.size(2) == out_h && mask.size(3) == out_w)),
-      "offset output dims: (",
-      mask.size(2),
-      ", ",
-      mask.size(3),
-      ") - ",
-      "computed output dims: (",
-      out_h,
-      ", ",
-      out_w,
-      ")");
-  TORCH_CHECK(
-      out_h > 0 && out_w > 0,
-      "Calculated output size too small - out_h: ",
-      out_h,
-      " out_w: ",
-      out_w);
-
-  auto out = at::zeros({batch_sz, out_channels, out_h, out_w}, input.options());
-  if (batch_sz == 0) {
-    return out;
-  }
-
-  // Separate batches into blocks
-  out = out.view({batch_sz / n_parallel_imgs,
-                  n_parallel_imgs,
-                  out_channels,
-                  out_h,
-                  out_w});
-  input = input.view(
-      {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
-
-  offset = offset.view({batch_sz / n_parallel_imgs,
-                        n_parallel_imgs,
-                        n_offset_grps * 2 * weight_h * weight_w,
-                        out_h,
-                        out_w});
-
-  if (use_mask) {
-    mask = mask.view({batch_sz / n_parallel_imgs,
-                      n_parallel_imgs,
-                      n_offset_grps * weight_h * weight_w,
-                      out_h,
-                      out_w});
-  }
-
-  at::Tensor out_buf = at::zeros(
-      {batch_sz / n_parallel_imgs,
-       out_channels,
-       n_parallel_imgs * out_h,
-       out_w},
-      out.options());
-
-  // Separate channels into convolution groups
-  out_buf = out_buf.view({out_buf.size(0),
-                          n_weight_grps,
-                          out_buf.size(1) / n_weight_grps,
-                          out_buf.size(2),
-                          out_buf.size(3)});
-  weight = weight.view({n_weight_grps,
-                        weight.size(0) / n_weight_grps,
-                        weight.size(1),
-                        weight.size(2),
-                        weight.size(3)});
-
-  // Sample points and perform convolution
-  auto columns = at::zeros(
-      {n_in_channels * weight_h * weight_w, n_parallel_imgs * out_h * out_w},
-      input.options());
-  for (int b = 0; b < batch_sz / n_parallel_imgs; b++) {
-    deformable_im2col(
-        input[b],
-        offset[b],
-        mask[b],
-        n_in_channels,
-        in_h,
-        in_w,
-        weight_h,
-        weight_w,
-        pad_h,
-        pad_w,
-        stride_h,
-        stride_w,
-        dil_h,
-        dil_w,
-        out_h,
-        out_w,
-        n_parallel_imgs,
-        n_offset_grps,
-        use_mask,
-        columns);
-
-    columns = columns.view(
-        {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
-    for (int g = 0; g < n_weight_grps; g++) {
-      out_buf[b][g] = out_buf[b][g]
-                          .flatten(1)
-                          .addmm_(weight[g].flatten(1), columns[g])
-                          .view_as(out_buf[b][g]);
-    }
-    columns =
-        columns.view({columns.size(0) * columns.size(1), columns.size(2)});
-  }
-
-  out_buf = out_buf.view({batch_sz / n_parallel_imgs,
-                          out_channels,
-                          n_parallel_imgs,
-                          out_h,
-                          out_w});
-  out_buf.transpose_(1, 2);
-  out.copy_(out_buf);
-  out = out.view({batch_sz, out_channels, out_h, out_w});
-
-  return out + bias.view({1, out_channels, 1, 1});
-}
-
 template <typename scalar_t>
-static void deformable_col2im_kernel(
+void deformable_col2im_kernel(
     int n,
     const scalar_t* col,
     const scalar_t* offset,
@@ -533,7 +326,7 @@ static void deformable_col2im_kernel(
   }
 }
 
-static void compute_grad_input(
+void compute_grad_input(
     const at::Tensor& columns,
     const at::Tensor& offset,
     const at::Tensor& mask,
@@ -560,7 +353,7 @@ static void compute_grad_input(
       channels * weight_h * weight_w * out_h * out_w * parallel_imgs;
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "deformable_col2im", ([&] {
+      columns.scalar_type(), "compute_grad_input", ([&] {
         deformable_col2im_kernel(
             num_kernels,
             columns.data_ptr<scalar_t>(),
@@ -587,7 +380,7 @@ static void compute_grad_input(
 }
 
 template <typename scalar_t>
-static scalar_t get_coordinate_weight(
+scalar_t get_coordinate_weight(
     const scalar_t* im_data,
     int height,
     int width,
@@ -620,7 +413,7 @@ static scalar_t get_coordinate_weight(
 }
 
 template <typename scalar_t>
-static void deformable_col2im_coord_kernel(
+void deformable_col2im_coord_kernel(
     int n,
     const scalar_t* col,
     const scalar_t* im,
@@ -732,7 +525,7 @@ static void deformable_col2im_coord_kernel(
   }
 }
 
-static void compute_grad_offset_and_mask(
+void compute_grad_offset_and_mask(
     const at::Tensor& columns,
     const at::Tensor& input,
     const at::Tensor& offset,
@@ -761,7 +554,7 @@ static void compute_grad_offset_and_mask(
       out_h * out_w * 2 * weight_h * weight_w * n_offset_grps * parallel_imgs;
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "deformable_col2im_coord", ([&] {
+      columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
         deformable_col2im_coord_kernel(
             num_kernels,
             columns.data_ptr<scalar_t>(),
@@ -790,8 +583,7 @@ static void compute_grad_offset_and_mask(
       }));
 }
 
-static std::tuple<at::Tensor, at::Tensor, at::Tensor>
-deform_conv2d_backward_input_cpu(
+std::tuple<at::Tensor, at::Tensor, at::Tensor> backward_gradient_inputs(
     at::Tensor input,
     at::Tensor weight,
     at::Tensor offset,
@@ -801,8 +593,8 @@ deform_conv2d_backward_input_cpu(
     int stride_w,
     int pad_h,
     int pad_w,
-    int dil_h,
-    int dil_w,
+    int dilation_h,
+    int dilation_w,
     int n_weight_grps,
     int n_offset_grps,
     int n_parallel_imgs,
@@ -818,8 +610,10 @@ deform_conv2d_backward_input_cpu(
   int weight_h = weight.size(2);
   int weight_w = weight.size(3);
 
-  long out_h = (in_h + 2 * pad_h - (dil_h * (weight_h - 1) + 1)) / stride_h + 1;
-  long out_w = (in_w + 2 * pad_w - (dil_w * (weight_w - 1) + 1)) / stride_w + 1;
+  long out_h =
+      (in_h + 2 * pad_h - (dilation_h * (weight_h - 1) + 1)) / stride_h + 1;
+  long out_w =
+      (in_w + 2 * pad_w - (dilation_w * (weight_w - 1) + 1)) / stride_w + 1;
 
   auto grad_input = at::zeros_like(input);
   auto grad_offset = at::zeros_like(offset);
@@ -903,8 +697,8 @@ deform_conv2d_backward_input_cpu(
         pad_w,
         stride_h,
         stride_w,
-        dil_h,
-        dil_w,
+        dilation_h,
+        dilation_w,
         n_parallel_imgs,
         n_offset_grps,
         use_mask,
@@ -924,8 +718,8 @@ deform_conv2d_backward_input_cpu(
         pad_w,
         stride_h,
         stride_w,
-        dil_h,
-        dil_w,
+        dilation_h,
+        dilation_w,
         n_parallel_imgs,
         n_offset_grps,
         use_mask,
@@ -944,7 +738,7 @@ deform_conv2d_backward_input_cpu(
   return std::make_tuple(grad_input, grad_offset, grad_mask);
 }
 
-static at::Tensor deform_conv2d_backward_parameters_cpu(
+at::Tensor backward_gradient_parameters(
     at::Tensor input,
     const at::Tensor& weight,
     at::Tensor offset,
@@ -954,8 +748,8 @@ static at::Tensor deform_conv2d_backward_parameters_cpu(
     int stride_w,
     int pad_h,
     int pad_w,
-    int dil_h,
-    int dil_w,
+    int dilation_h,
+    int dilation_w,
     int n_weight_grps,
     int n_offset_grps,
     int n_parallel_imgs,
@@ -1032,8 +826,8 @@ static at::Tensor deform_conv2d_backward_parameters_cpu(
         pad_w,
         stride_h,
         stride_w,
-        dil_h,
-        dil_w,
+        dilation_h,
+        dilation_w,
         out_h,
         out_w,
         n_parallel_imgs,
@@ -1058,46 +852,263 @@ static at::Tensor deform_conv2d_backward_parameters_cpu(
   return grad_weight;
 }
 
-std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
-DeformConv2d_backward_cpu(
-    const at::Tensor& grad_out_param,
-    const at::Tensor& input_param,
-    const at::Tensor& weight_param,
-    const at::Tensor& offset_param,
-    const at::Tensor& mask_param,
-    const at::Tensor& bias_param,
+} // namespace
+
+at::Tensor deform_conv2d_forward_cpu(
+    const at::Tensor& input,
+    const at::Tensor& weight,
+    const at::Tensor& offset,
+    const at::Tensor& mask,
+    const at::Tensor& bias,
     int64_t stride_h,
     int64_t stride_w,
     int64_t pad_h,
     int64_t pad_w,
-    int64_t dil_h,
-    int64_t dil_w,
+    int64_t dilation_h,
+    int64_t dilation_w,
     int64_t n_weight_grps,
     int64_t n_offset_grps,
     bool use_mask) {
-  at::Tensor grad_out = grad_out_param.contiguous();
-  at::Tensor input = input_param.contiguous();
-  at::Tensor weight = weight_param.contiguous();
-  at::Tensor offset = offset_param.contiguous();
-  at::Tensor mask = mask_param.contiguous();
-  at::Tensor bias = bias_param.contiguous();
+  at::Tensor input_c = input.contiguous();
+  at::Tensor offset_c = offset.contiguous();
+  at::Tensor weight_c = weight.contiguous();
+  at::Tensor mask_c = mask.contiguous();
+  at::Tensor bias_c = bias.contiguous();
 
-  const int batch_sz = input.size(0);
+  TORCH_CHECK(input_c.ndimension() == 4);
+  TORCH_CHECK(offset_c.ndimension() == 4);
+  TORCH_CHECK(!use_mask || mask_c.ndimension() == 4);
+  TORCH_CHECK(weight_c.ndimension() == 4);
+  TORCH_CHECK(input_c.device().is_cpu(), "input must be a CPU tensor");
+
+  int batch_sz = input_c.size(0);
+  int n_in_channels = input_c.size(1);
+  int in_h = input_c.size(2);
+  int in_w = input_c.size(3);
+
+  int n_parallel_imgs =
+      get_greatest_divisor_below_bound(batch_sz, kMaxParallelImgs);
+
+  // Unpack shapes and args
+  int out_channels = weight_c.size(0);
+  int weight_h = weight_c.size(2);
+  int weight_w = weight_c.size(3);
+
+  int ker_h = dilation_h * (weight_h - 1) + 1;
+  int ker_w = dilation_w * (weight_w - 1) + 1;
+  int out_h = ((in_h + 2 * pad_h - ker_h) / stride_h) + 1;
+  int out_w = ((in_w + 2 * pad_w - ker_w) / stride_w) + 1;
+
+  TORCH_CHECK(
+      weight_h > 0 && weight_w > 0,
+      "weight_h: ",
+      weight_h,
+      " weight_w: ",
+      weight_w);
+  TORCH_CHECK(
+      stride_h > 0 && stride_w > 0,
+      "stride_h: ",
+      stride_h,
+      " stride_w: ",
+      stride_w);
+  TORCH_CHECK(pad_h >= 0 && pad_w >= 0, "pad_h: ", pad_h, " pad_w: ", pad_w);
+  TORCH_CHECK(
+      dilation_h > 0 && dilation_w > 0,
+      "dilation_h: ",
+      dilation_h,
+      " dilation_w: ",
+      dilation_w);
+
+  TORCH_CHECK(weight_c.size(1) * n_weight_grps == input_c.size(1));
+  TORCH_CHECK(weight_c.size(0) % n_weight_grps == 0);
+  TORCH_CHECK(
+      (offset_c.size(1) == n_offset_grps * 2 * weight_h * weight_w),
+      "offset.shape[1] is not valid: got: ",
+      offset_c.size(1),
+      " expected: ",
+      n_offset_grps * 2 * weight_h * weight_w);
+  TORCH_CHECK(
+      (!use_mask || mask_c.size(1) == n_offset_grps * weight_h * weight_w),
+      "mask.shape[1] is not valid: got: ",
+      mask_c.size(1),
+      " expected: ",
+      n_offset_grps * weight_h * weight_w);
+  TORCH_CHECK(input_c.size(1) % n_offset_grps == 0);
+
+  TORCH_CHECK(
+      (offset_c.size(0) == input_c.size(0)), "invalid batch size of offset");
+  TORCH_CHECK(
+      (offset_c.size(2) == out_h && offset_c.size(3) == out_w),
+      "offset output dims: (",
+      offset_c.size(2),
+      ", ",
+      offset_c.size(3),
+      ") - ",
+      "computed output dims: (",
+      out_h,
+      ", ",
+      out_w,
+      ")");
+  TORCH_CHECK(
+      (mask_c.size(0) == input_c.size(0)), "invalid batch size of mask");
+  TORCH_CHECK(
+      (!use_mask || (mask_c.size(2) == out_h && mask_c.size(3) == out_w)),
+      "offset output dims: (",
+      mask_c.size(2),
+      ", ",
+      mask_c.size(3),
+      ") - ",
+      "computed output dims: (",
+      out_h,
+      ", ",
+      out_w,
+      ")");
+  TORCH_CHECK(
+      out_h > 0 && out_w > 0,
+      "Calculated output size too small - out_h: ",
+      out_h,
+      " out_w: ",
+      out_w);
+
+  auto out =
+      at::zeros({batch_sz, out_channels, out_h, out_w}, input_c.options());
+  if (batch_sz == 0) {
+    return out;
+  }
+
+  // Separate batches into blocks
+  out = out.view({batch_sz / n_parallel_imgs,
+                  n_parallel_imgs,
+                  out_channels,
+                  out_h,
+                  out_w});
+  input_c = input_c.view(
+      {batch_sz / n_parallel_imgs, n_parallel_imgs, n_in_channels, in_h, in_w});
+
+  offset_c = offset_c.view({batch_sz / n_parallel_imgs,
+                            n_parallel_imgs,
+                            n_offset_grps * 2 * weight_h * weight_w,
+                            out_h,
+                            out_w});
+
+  if (use_mask) {
+    mask_c = mask_c.view({batch_sz / n_parallel_imgs,
+                          n_parallel_imgs,
+                          n_offset_grps * weight_h * weight_w,
+                          out_h,
+                          out_w});
+  }
+
+  at::Tensor out_buf = at::zeros(
+      {batch_sz / n_parallel_imgs,
+       out_channels,
+       n_parallel_imgs * out_h,
+       out_w},
+      out.options());
+
+  // Separate channels into convolution groups
+  out_buf = out_buf.view({out_buf.size(0),
+                          n_weight_grps,
+                          out_buf.size(1) / n_weight_grps,
+                          out_buf.size(2),
+                          out_buf.size(3)});
+  weight_c = weight_c.view({n_weight_grps,
+                            weight_c.size(0) / n_weight_grps,
+                            weight_c.size(1),
+                            weight_c.size(2),
+                            weight_c.size(3)});
+
+  // Sample points and perform convolution
+  auto columns = at::zeros(
+      {n_in_channels * weight_h * weight_w, n_parallel_imgs * out_h * out_w},
+      input_c.options());
+  for (int b = 0; b < batch_sz / n_parallel_imgs; b++) {
+    deformable_im2col(
+        input_c[b],
+        offset_c[b],
+        mask_c[b],
+        n_in_channels,
+        in_h,
+        in_w,
+        weight_h,
+        weight_w,
+        pad_h,
+        pad_w,
+        stride_h,
+        stride_w,
+        dilation_h,
+        dilation_w,
+        out_h,
+        out_w,
+        n_parallel_imgs,
+        n_offset_grps,
+        use_mask,
+        columns);
+
+    columns = columns.view(
+        {n_weight_grps, columns.size(0) / n_weight_grps, columns.size(1)});
+    for (int g = 0; g < n_weight_grps; g++) {
+      out_buf[b][g] = out_buf[b][g]
+                          .flatten(1)
+                          .addmm_(weight_c[g].flatten(1), columns[g])
+                          .view_as(out_buf[b][g]);
+    }
+    columns =
+        columns.view({columns.size(0) * columns.size(1), columns.size(2)});
+  }
+
+  out_buf = out_buf.view({batch_sz / n_parallel_imgs,
+                          out_channels,
+                          n_parallel_imgs,
+                          out_h,
+                          out_w});
+  out_buf.transpose_(1, 2);
+  out.copy_(out_buf);
+  out = out.view({batch_sz, out_channels, out_h, out_w});
+
+  return out + bias_c.view({1, out_channels, 1, 1});
+}
+
+std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
+deform_conv2d_backward_cpu(
+    const at::Tensor& grad_out,
+    const at::Tensor& input,
+    const at::Tensor& weight,
+    const at::Tensor& offset,
+    const at::Tensor& mask,
+    const at::Tensor& bias,
+    int64_t stride_h,
+    int64_t stride_w,
+    int64_t pad_h,
+    int64_t pad_w,
+    int64_t dilation_h,
+    int64_t dilation_w,
+    int64_t n_weight_grps,
+    int64_t n_offset_grps,
+    bool use_mask) {
+  at::Tensor grad_out_c = grad_out.contiguous();
+  at::Tensor input_c = input.contiguous();
+  at::Tensor weight_c = weight.contiguous();
+  at::Tensor offset_c = offset.contiguous();
+  at::Tensor mask_c = mask.contiguous();
+  at::Tensor bias_c = bias.contiguous();
+
+  const int batch_sz = input_c.size(0);
   const int n_parallel_imgs =
       get_greatest_divisor_below_bound(batch_sz, kMaxParallelImgs);
 
-  auto grad_input_and_offset_and_mask = deform_conv2d_backward_input_cpu(
-      input,
-      weight,
-      offset,
-      mask,
-      grad_out,
+  auto grad_input_and_offset_and_mask = backward_gradient_inputs(
+      input_c,
+      weight_c,
+      offset_c,
+      mask_c,
+      grad_out_c,
       stride_h,
       stride_w,
       pad_h,
       pad_w,
-      dil_h,
-      dil_w,
+      dilation_h,
+      dilation_w,
       n_weight_grps,
       n_offset_grps,
       n_parallel_imgs,
@@ -1107,25 +1118,28 @@ DeformConv2d_backward_cpu(
   auto grad_offset = std::get<1>(grad_input_and_offset_and_mask);
   auto grad_mask = std::get<2>(grad_input_and_offset_and_mask);
 
-  auto grad_weight = deform_conv2d_backward_parameters_cpu(
-      input,
-      weight,
-      offset,
-      mask,
-      grad_out,
+  auto grad_weight = backward_gradient_parameters(
+      input_c,
+      weight_c,
+      offset_c,
+      mask_c,
+      grad_out_c,
       stride_h,
       stride_w,
       pad_h,
       pad_w,
-      dil_h,
-      dil_w,
+      dilation_h,
+      dilation_w,
       n_weight_grps,
       n_offset_grps,
       n_parallel_imgs,
       use_mask);
 
-  auto grad_bias = at::ones_like(bias) * grad_out.sum({0, 2, 3});
+  auto grad_bias = at::ones_like(bias_c) * grad_out_c.sum({0, 2, 3});
 
   return std::make_tuple(
       grad_input, grad_weight, grad_offset, grad_mask, grad_bias);
 }
+
+} // namespace ops
+} // namespace vision

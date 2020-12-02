@@ -1,8 +1,7 @@
-#ifndef SQUEEZENET_H
-#define SQUEEZENET_H
+#pragma once
 
 #include <torch/torch.h>
-#include "general.h"
+#include "../macros.h"
 
 namespace vision {
 namespace models {
@@ -36,5 +35,3 @@ TORCH_MODULE(SqueezeNet1_1);
 
 } // namespace models
 } // namespace vision
-
-#endif // SQUEEZENET_H

@@ -552,24 +552,25 @@ class Tester(TransformsTester):
     def _test_affine_all_ops(self, tensor, pil_img, scripted_affine):
         # 4) Test rotation + translation + scale + share
         test_configs = [
-            (45, [5, 6], 1.0, [0.0, 0.0]),
-            (33, (5, -4), 1.0, [0.0, 0.0]),
-            (45, [-5, 4], 1.2, [0.0, 0.0]),
-            (33, (-4, -8), 2.0, [0.0, 0.0]),
-            (85, (10, -10), 0.7, [0.0, 0.0]),
-            (0, [0, 0], 1.0, [35.0, ]),
-            (-25, [0, 0], 1.2, [0.0, 15.0]),
-            (-45, [-10, 0], 0.7, [2.0, 5.0]),
-            (-45, [-10, -10], 1.2, [4.0, 5.0]),
-            (-90, [0, 0], 1.0, [0.0, 0.0]),
+            (45.5, [5, 6], 1.0, [0.0, 0.0], None),
+            (33, (5, -4), 1.0, [0.0, 0.0], [0, 0, 0]),
+            (45, [-5, 4], 1.2, [0.0, 0.0], (1, 2, 3)),
+            (33, (-4, -8), 2.0, [0.0, 0.0], [255, 255, 255]),
+            (85, (10, -10), 0.7, [0.0, 0.0], [1, ]),
+            (0, [0, 0], 1.0, [35.0, ], (2.0, )),
+            (-25, [0, 0], 1.2, [0.0, 15.0], None),
+            (-45, [-10, 0], 0.7, [2.0, 5.0], None),
+            (-45, [-10, -10], 1.2, [4.0, 5.0], None),
+            (-90, [0, 0], 1.0, [0.0, 0.0], None),
         ]
         for r in [NEAREST, ]:
-            for a, t, s, sh in test_configs:
-                out_pil_img = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh, interpolation=r)
+            for a, t, s, sh, f in test_configs:
+                f_pil = int(f[0]) if f is not None and len(f) == 1 else f
+                out_pil_img = F.affine(pil_img, angle=a, translate=t, scale=s, shear=sh, interpolation=r, fill=f_pil)
                 out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
                 for fn in [F.affine, scripted_affine]:
-                    out_tensor = fn(tensor, angle=a, translate=t, scale=s, shear=sh, interpolation=r).cpu()
+                    out_tensor = fn(tensor, angle=a, translate=t, scale=s, shear=sh, interpolation=r, fill=f).cpu()
 
                     if out_tensor.dtype != torch.uint8:
                         out_tensor = out_tensor.to(torch.uint8)
@@ -582,7 +583,7 @@ class Tester(TransformsTester):
                         ratio_diff_pixels,
                         tol,
                         msg="{}: {}\n{} vs \n{}".format(
-                            (r, a, t, s, sh), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
+                            (r, a, t, s, sh, f), ratio_diff_pixels, out_tensor[0, :7, :7], out_pil_tensor[0, :7, :7]
                         )
                     )
 
@@ -643,35 +644,36 @@ class Tester(TransformsTester):
             for a in range(-180, 180, 17):
                 for e in [True, False]:
                     for c in centers:
+                        for f in [None, [0, 0, 0], (1, 2, 3), [255, 255, 255], [1, ], (2.0, )]:
+                            f_pil = int(f[0]) if f is not None and len(f) == 1 else f
+                            out_pil_img = F.rotate(pil_img, angle=a, interpolation=r, expand=e, center=c, fill=f_pil)
+                            out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+                            for fn in [F.rotate, scripted_rotate]:
+                                out_tensor = fn(tensor, angle=a, interpolation=r, expand=e, center=c, fill=f).cpu()
 
-                        out_pil_img = F.rotate(pil_img, angle=a, interpolation=r, expand=e, center=c)
-                        out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
-                        for fn in [F.rotate, scripted_rotate]:
-                            out_tensor = fn(tensor, angle=a, interpolation=r, expand=e, center=c).cpu()
+                                if out_tensor.dtype != torch.uint8:
+                                    out_tensor = out_tensor.to(torch.uint8)
 
-                            if out_tensor.dtype != torch.uint8:
-                                out_tensor = out_tensor.to(torch.uint8)
+                                self.assertEqual(
+                                    out_tensor.shape,
+                                    out_pil_tensor.shape,
+                                    msg="{}: {} vs {}".format(
+                                        (img_size, r, dt, a, e, c), out_tensor.shape, out_pil_tensor.shape
+                                    ))
 
-                            self.assertEqual(
-                                out_tensor.shape,
-                                out_pil_tensor.shape,
-                                msg="{}: {} vs {}".format(
-                                    (img_size, r, dt, a, e, c), out_tensor.shape, out_pil_tensor.shape
-                                )
-                            )
-                            num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
-                            ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                            # Tolerance : less than 3% of different pixels
-                            self.assertLess(
-                                ratio_diff_pixels,
-                                0.03,
-                                msg="{}: {}\n{} vs \n{}".format(
-                                    (img_size, r, dt, a, e, c),
+                                num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+                                ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+                                # Tolerance : less than 3% of different pixels
+                                self.assertLess(
                                     ratio_diff_pixels,
-                                    out_tensor[0, :7, :7],
-                                    out_pil_tensor[0, :7, :7]
+                                    0.03,
+                                    msg="{}: {}\n{} vs \n{}".format(
+                                        (img_size, r, dt, a, e, c, f),
+                                        ratio_diff_pixels,
+                                        out_tensor[0, :7, :7],
+                                        out_pil_tensor[0, :7, :7]
+                                    )
                                 )
-                            )
 
     def test_rotate(self):
         # Tests on square image
@@ -721,30 +723,33 @@ class Tester(TransformsTester):
 
     def _test_perspective(self, tensor, pil_img, scripted_transform, test_configs):
         dt = tensor.dtype
-        for r in [NEAREST, ]:
-            for spoints, epoints in test_configs:
-                out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r)
-                out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
+        for f in [None, [0, 0, 0], [1, 2, 3], [255, 255, 255], [1, ], (2.0, )]:
+            for r in [NEAREST, ]:
+                for spoints, epoints in test_configs:
+                    f_pil = int(f[0]) if f is not None and len(f) == 1 else f
+                    out_pil_img = F.perspective(pil_img, startpoints=spoints, endpoints=epoints, interpolation=r,
+                                                fill=f_pil)
+                    out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
-                for fn in [F.perspective, scripted_transform]:
-                    out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r).cpu()
+                    for fn in [F.perspective, scripted_transform]:
+                        out_tensor = fn(tensor, startpoints=spoints, endpoints=epoints, interpolation=r, fill=f).cpu()
 
-                    if out_tensor.dtype != torch.uint8:
-                        out_tensor = out_tensor.to(torch.uint8)
+                        if out_tensor.dtype != torch.uint8:
+                            out_tensor = out_tensor.to(torch.uint8)
 
-                    num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
-                    ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
-                    # Tolerance : less than 5% of different pixels
-                    self.assertLess(
-                        ratio_diff_pixels,
-                        0.05,
-                        msg="{}: {}\n{} vs \n{}".format(
-                            (r, dt, spoints, epoints),
+                        num_diff_pixels = (out_tensor != out_pil_tensor).sum().item() / 3.0
+                        ratio_diff_pixels = num_diff_pixels / out_tensor.shape[-1] / out_tensor.shape[-2]
+                        # Tolerance : less than 5% of different pixels
+                        self.assertLess(
                             ratio_diff_pixels,
-                            out_tensor[0, :7, :7],
-                            out_pil_tensor[0, :7, :7]
+                            0.05,
+                            msg="{}: {}\n{} vs \n{}".format(
+                                (f, r, dt, spoints, epoints),
+                                ratio_diff_pixels,
+                                out_tensor[0, :7, :7],
+                                out_pil_tensor[0, :7, :7]
+                            )
                         )
-                    )
 
     def test_perspective(self):
 

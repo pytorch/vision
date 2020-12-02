@@ -465,10 +465,13 @@ def _parse_fill(fill, img, min_pil_version, name="fillcolor"):
         fill = 0
     if isinstance(fill, (int, float)) and num_bands > 1:
         fill = tuple([fill] * num_bands)
-    if not isinstance(fill, (int, float)) and len(fill) != num_bands:
-        msg = ("The number of elements in 'fill' does not match the number of "
-               "bands of the image ({} != {})")
-        raise ValueError(msg.format(len(fill), num_bands))
+    if isinstance(fill, (list, tuple)):
+        if len(fill) != num_bands:
+            msg = ("The number of elements in 'fill' does not match the number of "
+                   "bands of the image ({} != {})")
+            raise ValueError(msg.format(len(fill), num_bands))
+
+        fill = tuple(fill)
 
     return {name: fill}
 
