@@ -8,13 +8,13 @@
 #include <hip/hip_runtime.h>
 #endif
 
-#include "ROIAlign.h"
 #include "ROIPool.h"
 #include "deform_conv2d.h"
 #include "empty_tensor_op.h"
 #include "nms.h"
 #include "ps_roi_align.h"
 #include "ps_roi_pool.h"
+#include "roi_align.h"
 
 // If we are in a Windows environment, we need to define
 // initialization functions for the _custom_ops extension
@@ -69,8 +69,8 @@ TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
   m.impl("_ps_roi_align_backward", ps_roi_align_backward_cpu);
   m.impl("ps_roi_pool", ps_roi_pool_forward_cpu);
   m.impl("_ps_roi_pool_backward", ps_roi_pool_backward_cpu);
-  m.impl("roi_align", ROIAlign_forward_cpu);
-  m.impl("_roi_align_backward", ROIAlign_backward_cpu);
+  m.impl("roi_align", roi_align_forward_cpu);
+  m.impl("_roi_align_backward", roi_align_backward_cpu);
   m.impl("roi_pool", ROIPool_forward_cpu);
   m.impl("_roi_pool_backward", ROIPool_backward_cpu);
 }
@@ -85,8 +85,8 @@ TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
   m.impl("_ps_roi_align_backward", ps_roi_align_backward_cuda);
   m.impl("ps_roi_pool", ps_roi_pool_forward_cuda);
   m.impl("_ps_roi_pool_backward", ps_roi_pool_backward_cuda);
-  m.impl("roi_align", ROIAlign_forward_cuda);
-  m.impl("_roi_align_backward", ROIAlign_backward_cuda);
+  m.impl("roi_align", roi_align_forward_cuda);
+  m.impl("_roi_align_backward", roi_align_backward_cuda);
   m.impl("roi_pool", ROIPool_forward_cuda);
   m.impl("_roi_pool_backward", ROIPool_backward_cuda);
 }
@@ -99,7 +99,7 @@ TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
   m.impl("nms", nms_autocast);
   m.impl("ps_roi_align", ps_roi_align_autocast);
   m.impl("ps_roi_pool", ps_roi_pool_autocast);
-  m.impl("roi_align", ROIAlign_autocast);
+  m.impl("roi_align", roi_align_autocast);
   m.impl("roi_pool", ROIPool_autocast);
 }
 #endif
@@ -111,8 +111,8 @@ TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
   m.impl("_ps_roi_align_backward", ps_roi_align_backward_autograd);
   m.impl("ps_roi_pool", ps_roi_pool_autograd);
   m.impl("_ps_roi_pool_backward", ps_roi_pool_backward_autograd);
-  m.impl("roi_align", ROIAlign_autograd);
-  m.impl("_roi_align_backward", ROIAlign_backward_autograd);
+  m.impl("roi_align", roi_align_autograd);
+  m.impl("_roi_align_backward", roi_align_backward_autograd);
   m.impl("roi_pool", ROIPool_autograd);
   m.impl("_roi_pool_backward", ROIPool_backward_autograd);
 }
