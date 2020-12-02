@@ -2,7 +2,6 @@
 #include <torch/script.h>
 #include <torch/torch.h>
 #include <torchvision/roi_align.h>
-#include <torchvision/cpu/vision_cpu.h>
 #include <torchvision/nms.h>
 
 #ifdef _WIN32
