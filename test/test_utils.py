@@ -6,7 +6,7 @@ import torchvision.utils as utils
 import unittest
 from io import BytesIO
 import torchvision.transforms.functional as F
-from torchvision.io.image import read_image
+from torchvision.io.image import read_image, write_png
 from PIL import Image
 
 
@@ -90,7 +90,7 @@ class Tester(unittest.TestCase):
 
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_util.png")
         if not os.path.exists(path):
-            Image.fromarray(result.permute(1, 2, 0).numpy()).save(path)
+            write_png(result, path)
 
         expected = read_image(path)
         self.assertTrue(torch.equal(result, expected))
