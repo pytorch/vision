@@ -186,7 +186,7 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_pool_forward_cuda(
   auto input_ = input.contiguous(),
        rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "ps_roi_pool_forward", [&] {
+      input.scalar_type(), "ps_roi_pool_forward_cuda", [&] {
         ps_roi_pool_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
             output_size,
             input_.data_ptr<scalar_t>(),
@@ -254,7 +254,7 @@ at::Tensor ps_roi_pool_backward_cuda(
   auto grad_ = grad.contiguous(),
        rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      grad.scalar_type(), "ps_roi_pool_backward", [&] {
+      grad.scalar_type(), "ps_roi_pool_backward_cuda", [&] {
         ps_roi_pool_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
             grad.numel(),
             grad_.data_ptr<scalar_t>(),

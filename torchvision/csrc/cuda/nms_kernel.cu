@@ -23,7 +23,7 @@ __device__ inline bool devIoU(
 }
 
 template <typename T>
-__global__ void nms_kernel(
+__global__ void nms_kernel_impl(
     int n_boxes,
     double iou_threshold,
     const T* dev_boxes,
@@ -123,8 +123,8 @@ at::Tensor nms_cuda(const at::Tensor& dets,
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      dets_sorted.scalar_type(), "nms_kernel_cuda", [&] {
-        nms_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
+      dets_sorted.scalar_type(), "nms_cuda", [&] {
+        nms_kernel_impl<scalar_t><<<blocks, threads, 0, stream>>>(
             dets_num,
             iou_threshold,
             dets_sorted.data_ptr<scalar_t>(),

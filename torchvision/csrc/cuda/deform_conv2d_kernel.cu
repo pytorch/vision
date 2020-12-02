@@ -234,7 +234,7 @@ void deformable_im2col(
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "deformable_im2col_gpu", ([&] {
+      input.scalar_type(), "deformable_im2col", ([&] {
         deformable_im2col_kernel<<<
             blocks,
             threads>>>(
@@ -380,7 +380,7 @@ void compute_grad_input(
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "deformable_col2im_gpu", ([&] {
+      columns.scalar_type(), "compute_grad_input", ([&] {
         deformable_col2im_kernel<<<
             blocks,
             threads>>>(
@@ -588,7 +588,7 @@ void compute_grad_offset_and_mask(
   const unsigned int blocks = GET_BLOCKS(threads, num_kernels);
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      columns.scalar_type(), "deformable_col2im_coord_gpu", ([&] {
+      columns.scalar_type(), "compute_grad_offset_and_mask", ([&] {
         deformable_col2im_coord_kernel<<<
             blocks,
             threads>>>(

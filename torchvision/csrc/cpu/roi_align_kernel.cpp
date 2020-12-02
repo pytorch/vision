@@ -419,7 +419,7 @@ at::Tensor roi_align_forward_cpu(
 
   auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "roi_align_forward", [&] {
+      input.scalar_type(), "roi_align_forward_cpu", [&] {
         roi_align_forward_kernel_impl<scalar_t>(
             output_size,
             input_.data_ptr<scalar_t>(),
@@ -473,7 +473,7 @@ at::Tensor roi_align_backward_cpu(
 
   auto rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      grad.scalar_type(), "roi_align_forward", [&] {
+      grad.scalar_type(), "roi_align_backward_cpu", [&] {
         roi_align_backward_kernel_impl<scalar_t>(
             grad.numel(),
             grad.data_ptr<scalar_t>(),

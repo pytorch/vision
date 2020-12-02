@@ -357,7 +357,7 @@ at::Tensor roi_align_forward_cuda(
 
   auto input_ = input.contiguous(),
        rois_ = rois.contiguous();
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.scalar_type(), "roi_align_forward", [&] {
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(input.scalar_type(), "roi_align_forward_cuda", [&] {
     roi_align_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
         output_size,
         input_.data_ptr<scalar_t>(),
@@ -421,7 +421,7 @@ at::Tensor roi_align_backward_cuda(
   int w_stride = grad.stride(3);
 
   auto rois_ = rois.contiguous();
-  AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.scalar_type(), "roi_align_backward", [&] {
+  AT_DISPATCH_FLOATING_TYPES_AND_HALF(grad.scalar_type(), "roi_align_backward_cuda", [&] {
     roi_align_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
         grad.numel(),
         grad.data_ptr<scalar_t>(),
