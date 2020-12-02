@@ -177,13 +177,13 @@ def draw_bounding_boxes(
     img_boxes = boxes.to(torch.int64).tolist()
 
     draw = ImageDraw.Draw(img_to_draw)
+    txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
     for i, bbox in enumerate(img_boxes):
         color = None if colors is None else colors[i]
         draw.rectangle(bbox, width=width, outline=color)
 
         if labels is not None:
-            txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
             draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
 
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)

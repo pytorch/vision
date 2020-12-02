@@ -1,3 +1,5 @@
+#include "vision.h"
+
 #include <Python.h>
 #include <torch/script.h>
 
@@ -8,13 +10,13 @@
 #include <hip/hip_runtime.h>
 #endif
 
-#include "DeformConv.h"
-#include "PSROIAlign.h"
-#include "PSROIPool.h"
-#include "ROIAlign.h"
-#include "ROIPool.h"
-#include "empty_tensor_op.h"
+#include "deform_conv2d.h"
+#include "new_empty_tensor_op.h"
 #include "nms.h"
+#include "ps_roi_align.h"
+#include "ps_roi_pool.h"
+#include "roi_align.h"
+#include "roi_pool.h"
 
 // If we are in a Windows environment, we need to define
 // initialization functions for the _custom_ops extension
@@ -26,7 +28,7 @@ PyMODINIT_FUNC PyInit__C(void) {
 #endif
 
 namespace vision {
-int64_t cuda_version() noexcept {
+int64_t cuda_version() {
 #ifdef WITH_CUDA
   return CUDA_VERSION;
 #else
@@ -34,6 +36,8 @@ int64_t cuda_version() noexcept {
 #endif
 }
 } // namespace vision
+
+using namespace vision::ops;
 
 TORCH_LIBRARY(torchvision, m) {
   m.def(
@@ -62,57 +66,57 @@ TORCH_LIBRARY(torchvision, m) {
 }
 
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
-  m.impl("deform_conv2d", DeformConv2d_forward_cpu);
-  m.impl("_deform_conv2d_backward", DeformConv2d_backward_cpu);
+  m.impl("deform_conv2d", deform_conv2d_forward_cpu);
+  m.impl("_deform_conv2d_backward", deform_conv2d_backward_cpu);
   m.impl("nms", nms_cpu);
-  m.impl("ps_roi_align", PSROIAlign_forward_cpu);
-  m.impl("_ps_roi_align_backward", PSROIAlign_backward_cpu);
-  m.impl("ps_roi_pool", PSROIPool_forward_cpu);
-  m.impl("_ps_roi_pool_backward", PSROIPool_backward_cpu);
-  m.impl("roi_align", ROIAlign_forward_cpu);
-  m.impl("_roi_align_backward", ROIAlign_backward_cpu);
-  m.impl("roi_pool", ROIPool_forward_cpu);
-  m.impl("_roi_pool_backward", ROIPool_backward_cpu);
+  m.impl("ps_roi_align", ps_roi_align_forward_cpu);
+  m.impl("_ps_roi_align_backward", ps_roi_align_backward_cpu);
+  m.impl("ps_roi_pool", ps_roi_pool_forward_cpu);
+  m.impl("_ps_roi_pool_backward", ps_roi_pool_backward_cpu);
+  m.impl("roi_align", roi_align_forward_cpu);
+  m.impl("_roi_align_backward", roi_align_backward_cpu);
+  m.impl("roi_pool", roi_pool_forward_cpu);
+  m.impl("_roi_pool_backward", roi_pool_backward_cpu);
 }
 
 // TODO: Place this in a hypothetical separate torchvision_cuda library
 #if defined(WITH_CUDA) || defined(WITH_HIP)
 TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
-  m.impl("deform_conv2d", DeformConv2d_forward_cuda);
-  m.impl("_deform_conv2d_backward", DeformConv2d_backward_cuda);
+  m.impl("deform_conv2d", deform_conv2d_forward_cuda);
+  m.impl("_deform_conv2d_backward", deform_conv2d_backward_cuda);
   m.impl("nms", nms_cuda);
-  m.impl("ps_roi_align", PSROIAlign_forward_cuda);
-  m.impl("_ps_roi_align_backward", PSROIAlign_backward_cuda);
-  m.impl("ps_roi_pool", PSROIPool_forward_cuda);
-  m.impl("_ps_roi_pool_backward", PSROIPool_backward_cuda);
-  m.impl("roi_align", ROIAlign_forward_cuda);
-  m.impl("_roi_align_backward", ROIAlign_backward_cuda);
-  m.impl("roi_pool", ROIPool_forward_cuda);
-  m.impl("_roi_pool_backward", ROIPool_backward_cuda);
+  m.impl("ps_roi_align", ps_roi_align_forward_cuda);
+  m.impl("_ps_roi_align_backward", ps_roi_align_backward_cuda);
+  m.impl("ps_roi_pool", ps_roi_pool_forward_cuda);
+  m.impl("_ps_roi_pool_backward", ps_roi_pool_backward_cuda);
+  m.impl("roi_align", roi_align_forward_cuda);
+  m.impl("_roi_align_backward", roi_align_backward_cuda);
+  m.impl("roi_pool", roi_pool_forward_cuda);
+  m.impl("_roi_pool_backward", roi_pool_backward_cuda);
 }
 #endif
 
 // Autocast only needs to wrap forward pass ops.
 #if defined(WITH_CUDA) || defined(WITH_HIP)
 TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
-  m.impl("deform_conv2d", DeformConv2d_autocast);
+  m.impl("deform_conv2d", deform_conv2d_autocast);
   m.impl("nms", nms_autocast);
-  m.impl("ps_roi_align", PSROIAlign_autocast);
-  m.impl("ps_roi_pool", PSROIPool_autocast);
-  m.impl("roi_align", ROIAlign_autocast);
-  m.impl("roi_pool", ROIPool_autocast);
+  m.impl("ps_roi_align", ps_roi_align_autocast);
+  m.impl("ps_roi_pool", ps_roi_pool_autocast);
+  m.impl("roi_align", roi_align_autocast);
+  m.impl("roi_pool", roi_pool_autocast);
 }
 #endif
 
 TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
-  m.impl("deform_conv2d", DeformConv2d_autograd);
-  m.impl("_deform_conv2d_backward", DeformConv2d_backward_autograd);
-  m.impl("ps_roi_align", PSROIAlign_autograd);
-  m.impl("_ps_roi_align_backward", PSROIAlign_backward_autograd);
-  m.impl("ps_roi_pool", PSROIPool_autograd);
-  m.impl("_ps_roi_pool_backward", PSROIPool_backward_autograd);
-  m.impl("roi_align", ROIAlign_autograd);
-  m.impl("_roi_align_backward", ROIAlign_backward_autograd);
-  m.impl("roi_pool", ROIPool_autograd);
-  m.impl("_roi_pool_backward", ROIPool_backward_autograd);
+  m.impl("deform_conv2d", deform_conv2d_autograd);
+  m.impl("_deform_conv2d_backward", deform_conv2d_backward_autograd);
+  m.impl("ps_roi_align", ps_roi_align_autograd);
+  m.impl("_ps_roi_align_backward", ps_roi_align_backward_autograd);
+  m.impl("ps_roi_pool", ps_roi_pool_autograd);
+  m.impl("_ps_roi_pool_backward", ps_roi_pool_backward_autograd);
+  m.impl("roi_align", roi_align_autograd);
+  m.impl("_roi_align_backward", roi_align_backward_autograd);
+  m.impl("roi_pool", roi_pool_autograd);
+  m.impl("_roi_pool_backward", roi_pool_backward_autograd);
 }

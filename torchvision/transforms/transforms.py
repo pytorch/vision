@@ -667,10 +667,10 @@ class RandomPerspective(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
-            image. If int or float, the value is used for all bands respectively. Default is 0.
-            This option is only available for ``pillow>=5.0.0``. This option is not supported for Tensor
-            input. Fill value for the area outside the transform in the output image is always 0.
+        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
+            image. If int or float, the value is used for all bands respectively.
+            This option is supported for PIL image and Tensor inputs.
+            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
     """
 
     def __init__(self, distortion_scale=0.5, p=0.5, interpolation=InterpolationMode.BILINEAR, fill=0):
@@ -697,10 +697,18 @@ class RandomPerspective(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly transformed image.
         """
+
+        fill = self.fill
+        if isinstance(img, Tensor):
+            if isinstance(fill, (int, float)):
+                fill = [float(fill)] * F._get_image_num_channels(img)
+            else:
+                fill = [float(f) for f in fill]
+
         if torch.rand(1) < self.p:
             width, height = F._get_image_size(img)
             startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
-            return F.perspective(img, startpoints, endpoints, self.interpolation, self.fill)
+            return F.perspective(img, startpoints, endpoints, self.interpolation, fill)
         return img
 
     @staticmethod
@@ -1157,11 +1165,10 @@ class RandomRotation(torch.nn.Module):
             Note that the expand flag assumes rotation around the center and no translation.
         center (list or tuple, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
-        fill (n-tuple or int or float): Pixel fill value for area outside the rotated
+        fill (sequence or int or float, optional): Pixel fill value for the area outside the rotated
             image. If int or float, the value is used for all bands respectively.
-            Defaults to 0 for all bands. This option is only available for Pillow>=5.2.0.
-            This option is not supported for Tensor input. Fill value for the area outside the transform in the output
-            image is always 0.
+            This option is supported for PIL image and Tensor inputs.
+            If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use `arg`:interpolation: instead.
 
@@ -1216,8 +1223,15 @@ class RandomRotation(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Rotated image.
         """
+        fill = self.fill
+        if isinstance(img, Tensor):
+            if isinstance(fill, (int, float)):
+                fill = [float(fill)] * F._get_image_num_channels(img)
+            else:
+                fill = [float(f) for f in fill]
         angle = self.get_params(self.degrees)
-        return F.rotate(img, angle, self.interpolation, self.expand, self.center, self.fill)
+
+        return F.rotate(img, angle, self.resample, self.expand, self.center, fill)
 
     def __repr__(self):
         interpolate_str = self.interpolation.value
@@ -1257,10 +1271,11 @@ class RandomAffine(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (tuple or int): Optional fill color (Tuple for RGB Image and int for grayscale) for the area
-            outside the transform in the output image (Pillow>=5.0.0). This option is not supported for Tensor
-            input. Fill value for the area outside the transform in the output image is always 0.
-        fillcolor (tuple or int, optional): deprecated argument and will be removed since v0.10.0.
+        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
+            image. If int or float, the value is used for all bands respectively.
+            This option is supported for PIL image and Tensor inputs.
+            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
+        fillcolor (sequence or int or float, optional): deprecated argument and will be removed since v0.10.0.
             Please use `arg`:fill: instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use `arg`:interpolation: instead.
@@ -1363,11 +1378,18 @@ class RandomAffine(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Affine transformed image.
         """
+        fill = self.fill
+        if isinstance(img, Tensor):
+            if isinstance(fill, (int, float)):
+                fill = [float(fill)] * F._get_image_num_channels(img)
+            else:
+                fill = [float(f) for f in fill]
 
         img_size = F._get_image_size(img)
 
         ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img_size)
-        return F.affine(img, *ret, interpolation=self.interpolation, fill=self.fill)
+
+        return F.affine(img, *ret, interpolation=self.interpolation, fill=fill)
 
     def __repr__(self):
         s = '{name}(degrees={degrees}'
