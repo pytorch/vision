@@ -1,5 +1,4 @@
-#ifndef MNASNET_H
-#define MNASNET_H
+#pragma once
 
 #include <torch/torch.h>
 #include "general.h"
@@ -43,5 +42,3 @@ TORCH_MODULE(MNASNet1_3);
 
 } // namespace models
 } // namespace vision
-
-#endif // MNASNET_H

@@ -1,5 +1,4 @@
-#ifndef DENSENET_H
-#define DENSENET_H
+#pragma once
 
 #include <torch/torch.h>
 #include "general.h"
@@ -82,5 +81,3 @@ TORCH_MODULE(DenseNet161);
 
 } // namespace models
 } // namespace vision
-
-#endif // DENSENET_H
