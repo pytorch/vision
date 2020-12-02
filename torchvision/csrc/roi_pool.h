@@ -11,8 +11,6 @@
 #include "hip/vision_cuda.h"
 #endif
 
-// TODO: put this stuff in torchvision namespace
-
 std::tuple<at::Tensor, at::Tensor> roi_pool(
     const at::Tensor& input,
     const at::Tensor& rois,
@@ -72,6 +70,8 @@ at::Tensor _roi_pool_backward(
       height,
       width);
 }
+
+namespace {
 
 class ROIPoolFunction : public torch::autograd::Function<ROIPoolFunction> {
  public:
@@ -164,6 +164,8 @@ class ROIPoolBackwardFunction
     TORCH_CHECK(0, "double backwards on roi_pool not supported");
   }
 };
+
+} // namespace
 
 std::tuple<at::Tensor, at::Tensor> roi_pool_autograd(
     const at::Tensor& input,

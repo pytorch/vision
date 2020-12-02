@@ -6,6 +6,8 @@
 
 #include "cuda_helpers.h"
 
+namespace {
+
 template <typename T>
 __global__ void roi_pool_forward_kernel_impl(
     int nthreads,
@@ -114,6 +116,8 @@ __global__ void roi_pool_backward_kernel_impl(
     }
   }
 }
+
+} // namespace
 
 std::tuple<at::Tensor, at::Tensor> roi_pool_forward_cuda(
     const at::Tensor& input,
