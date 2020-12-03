@@ -1203,6 +1203,6 @@ def invert(img: Tensor) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
-    max_val = _max_value(img.dtype)
+    bound = 1.0 if img.is_floating_point() else 255.0
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    return (max_val - img.to(dtype)).to(img.dtype)
+    return (bound - img.to(dtype)).to(img.dtype)
