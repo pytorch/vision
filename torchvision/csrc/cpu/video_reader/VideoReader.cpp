@@ -662,8 +662,8 @@ torch::List<torch::Tensor> probeVideoFromFile(std::string videoPath) {
 } // namespace video_reader
 
 TORCH_LIBRARY_FRAGMENT(video_reader, m) {
-    m.def("read_video_from_memory", video_reader::readVideoFromMemory);
-    m.def("read_video_from_file", video_reader::readVideoFromFile);
-    m.def("probe_video_from_memory", video_reader::probeVideoFromMemory);
-    m.def("probe_video_from_file", video_reader::probeVideoFromFile);
+  m.def("read_video_from_memory", video_reader::readVideoFromMemory);
+  m.def("read_video_from_file", video_reader::readVideoFromFile);
+  m.def("probe_video_from_memory", video_reader::probeVideoFromMemory);
+  m.def("probe_video_from_file", video_reader::probeVideoFromFile);
 }
