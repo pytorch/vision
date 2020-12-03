@@ -9,7 +9,7 @@ requirements:
   build:
     - {{ compiler('c') }} # [win]
     - libpng
-    - jpeg
+    - jpeg <=9b
 
   host:
     - python
@@ -21,7 +21,7 @@ requirements:
   run:
     - python
     - libpng
-    - jpeg
+    - jpeg <=9b
     - pillow >=4.1.1
     - numpy >=1.11
     {{ environ.get('CONDA_PYTORCH_CONSTRAINT') }}
@@ -49,6 +49,7 @@ test:
     - pytest
     - scipy
     - av >=8.0.1
+    - jpeg <=9b
     - ca-certificates
     {{ environ.get('CONDA_TYPING_CONSTRAINT') }}
 

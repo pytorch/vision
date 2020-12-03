@@ -185,7 +185,7 @@ setup_wheel_python() {
     conda create ${CONDA_CHANNEL_FLAGS} -yn "env$PYTHON_VERSION" python="$PYTHON_VERSION"
     conda activate "env$PYTHON_VERSION"
     # Install libpng from Anaconda (defaults)
-    conda install ${CONDA_CHANNEL_FLAGS} libpng jpeg -y
+    conda install ${CONDA_CHANNEL_FLAGS} -c conda-forge libpng "jpeg<=9b" -y
   else
     # Install native CentOS libJPEG, LAME, freetype and GnuTLS
     yum install -y libjpeg-turbo-devel lame freetype gnutls

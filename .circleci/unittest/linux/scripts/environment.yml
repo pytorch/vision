@@ -10,7 +10,7 @@ dependencies:
   - codecov
   - pip
   - libpng
-  - jpeg
+  - jpeg <= 9b
   - ca-certificates
   - av
   - pip:
