@@ -101,6 +101,7 @@ class VideoClips(object):
         _video_max_dimension=0,
         _audio_samples=0,
         _audio_channels=0,
+        _multiprocessing_context=None,
     ):
 
         self.video_paths = video_paths
@@ -113,6 +114,8 @@ class VideoClips(object):
         self._video_max_dimension = _video_max_dimension
         self._audio_samples = _audio_samples
         self._audio_channels = _audio_channels
+
+        self._multiprocessing_context = _multiprocessing_context
 
         if _precomputed_metadata is None:
             self._compute_frame_pts()
@@ -136,6 +139,7 @@ class VideoClips(object):
             batch_size=16,
             num_workers=self.num_workers,
             collate_fn=self._collate_fn,
+            multiprocessing_context=self._multiprocessing_context,
         )
 
         with tqdm(total=len(dl)) as pbar:
