@@ -155,7 +155,8 @@ def pil_to_tensor(pic):
         raise TypeError('pic should be PIL Image. Got {}'.format(type(pic)))
 
     if accimage is not None and isinstance(pic, accimage.Image):
-        nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
+        # accimage format is always uint8 internally, so always return uint8 here
+        nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.uint8)
         pic.copyto(nppic)
         return torch.as_tensor(nppic)
 
