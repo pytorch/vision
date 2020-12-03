@@ -610,19 +610,6 @@ def to_grayscale(img, num_output_channels):
 
 @torch.jit.unused
 def invert(img):
-    """PRIVATE METHOD. Invert the colors of an image.
-
-    .. warning::
-
-        Module ``transforms.functional_pil`` is private and should not be used in user application.
-        Please, consider instead using methods from `transforms.functional` module.
-
-    Args:
-        img (PIL Image): Image to have its colors inverted.
-
-    Returns:
-        PIL Image: Color inverted image Tensor.
-    """
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
     return ImageOps.invert(img)
