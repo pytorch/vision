@@ -1749,6 +1749,38 @@ class Tester(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
             transforms.GaussianBlur(3, "sigma_string")
 
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_invert(self):
+        random_state = random.getstate()
+        random.seed(42)
+        img = transforms.ToPILImage()(torch.rand(3, 10, 10))
+        inv_img = F.invert(img)
+
+        num_samples = 250
+        num_inverts = 0
+        for _ in range(num_samples):
+            out = transforms.RandomInvert()(img)
+            if out == inv_img:
+                num_inverts += 1
+
+        p_value = stats.binom_test(num_inverts, num_samples, p=0.5)
+        random.setstate(random_state)
+        self.assertGreater(p_value, 0.0001)
+
+        num_samples = 250
+        num_inverts = 0
+        for _ in range(num_samples):
+            out = transforms.RandomInvert(p=0.7)(img)
+            if out == inv_img:
+                num_inverts += 1
+
+        p_value = stats.binom_test(num_inverts, num_samples, p=0.7)
+        random.setstate(random_state)
+        self.assertGreater(p_value, 0.0001)
+
+        # Checking if RandomInvert can be printed as string
+        transforms.RandomInvert().__repr__()
+
 
 if __name__ == '__main__':
     unittest.main()

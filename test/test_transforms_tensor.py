@@ -89,6 +89,9 @@ class Tester(TransformsTester):
     def test_random_vertical_flip(self):
         self._test_op('vflip', 'RandomVerticalFlip')
 
+    def test_random_invert(self):
+        self._test_op('invert', 'RandomInvert')
+
     def test_color_jitter(self):
 
         tol = 1.0 + 1e-10

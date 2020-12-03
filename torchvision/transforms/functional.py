@@ -1178,3 +1178,21 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
     if not isinstance(img, torch.Tensor):
         output = to_pil_image(output)
     return output
+
+
+def invert(img: Tensor) -> Tensor:
+    """Invert the colors of a PIL Image or torch Tensor.
+
+    Args:
+        img (PIL Image or Tensor): Image to have its colors inverted.
+            If img is a Tensor, it is expected to be in [..., H, W] format,
+            where ... means it can have an arbitrary number of trailing
+            dimensions.
+
+    Returns:
+        PIL Image: Color inverted image.
+    """
+    if not isinstance(img, torch.Tensor):
+        return F_pil.invert(img)
+
+    return F_t.invert(img)

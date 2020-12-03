@@ -21,7 +21,7 @@ __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImag
            "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
            "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
-           "RandomPerspective", "RandomErasing", "GaussianBlur", "InterpolationMode"]
+           "RandomPerspective", "RandomErasing", "GaussianBlur", "InterpolationMode", "RandomInvert"]
 
 
 class Compose:
@@ -1699,3 +1699,43 @@ def _setup_angle(x, name, req_sizes=(2, )):
         _check_sequence_input(x, name, req_sizes)
 
     return [float(d) for d in x]
+
+
+class RandomInvert(torch.nn.Module):
+    """Inverts the colors of the given image randomly with a given probability.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions
+
+    Args:
+        p (float): probability of the image being color inverted. Default value is 0.5
+    """
+
+    def __init__(self, p=0.5):
+        super().__init__()
+        self.p = p
+
+    @staticmethod
+    def get_params() -> float:
+        """Choose value for random color inversion.
+
+        Returns:
+            float: Random value which is used to determine whether the random color inversion
+            should occur.
+        """
+        return torch.rand(1).item()
+
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be inverted.
+
+        Returns:
+            PIL Image or Tensor: Randomly color inverted image.
+        """
+        if self.get_params() < self.p:
+            return F.invert(img)
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(p={})'.format(self.p)

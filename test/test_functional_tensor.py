@@ -862,6 +862,21 @@ class Tester(TransformsTester):
                                 msg="{}, {}".format(ksize, sigma)
                             )
 
+    def test_invert(self):
+        script_invert = torch.jit.script(F.invert)
+
+        img_tensor, pil_img = self._create_data(16, 18, device=self.device)
+        inverted_img = F.invert(img_tensor)
+        inverted_pil_img = F.invert(pil_img)
+        self.compareTensorToPIL(inverted_img, inverted_pil_img)
+
+        # scriptable function test
+        inverted_img_script = script_invert(img_tensor)
+        self.assertTrue(inverted_img.equal(inverted_img_script))
+
+        batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
+        self._test_fn_on_batch(batch_tensors, F.invert)
+
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):
