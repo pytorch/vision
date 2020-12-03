@@ -92,6 +92,12 @@ class Tester(TransformsTester):
     def test_random_invert(self):
         self._test_op('invert', 'RandomInvert')
 
+    def test_random_posterize(self):
+        fn_kwargs = meth_kwargs = {"bits": 4}
+        self._test_op(
+            'posterize', 'RandomPosterize', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
     def test_color_jitter(self):
 
         tol = 1.0 + 1e-10

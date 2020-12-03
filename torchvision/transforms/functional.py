@@ -1196,3 +1196,24 @@ def invert(img: Tensor) -> Tensor:
         return F_pil.invert(img)
 
     return F_t.invert(img)
+
+
+def posterize(img: Tensor, bits: int) -> Tensor:
+    """Posterize a PIL Image or torch Tensor by reducing the number of bits for each color channel.
+
+    Args:
+        img (PIL Image or Tensor): Image to have its colors inverted.
+            If img is a Tensor, it is expected to be in [..., H, W] format,
+            where ... means it can have an arbitrary number of trailing
+            dimensions.
+        bits (int): The number of bits to keep for each channel (0-8).
+    Returns:
+        PIL Image: Posterized image.
+    """
+    if not (0 <= bits <= 8):
+        raise ValueError('The number if bits should be between 0 and 8. Got {}'.format(bits))
+
+    if not isinstance(img, torch.Tensor):
+        return F_pil.posterize(img, bits)
+
+    return F_t.posterize(img, bits)

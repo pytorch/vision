@@ -1761,7 +1761,9 @@ class Tester(unittest.TestCase):
                 num_samples = 250
                 counts = 0
                 for _ in range(num_samples):
-                    out = trans(p=p, **config)(img)
+                    tranformation = trans(p=p, **config)
+                    tranformation.__repr__()
+                    out = tranformation(img)
                     if out == inv_img:
                         counts += 1
 
@@ -1769,15 +1771,20 @@ class Tester(unittest.TestCase):
                 random.setstate(random_state)
                 self.assertGreater(p_value, 0.0001)
 
-        # Checking if it can be printed as string
-        trans().__repr__()
-
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_invert(self):
         self._test_randomness(
             F.invert,
             transforms.RandomInvert,
             [{}]
+        )
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_posterize(self):
+        self._test_randomness(
+            F.posterize,
+            transforms.RandomPosterize,
+            [{"bits": 4}]
         )
 
 

@@ -289,13 +289,14 @@ class Tester(TransformsTester):
 
                     self._test_fn_on_batch(batch_tensors, F.pad, padding=script_pad, **kwargs)
 
-    def _test_adjust_fn(self, fn, fn_pil, fn_t, configs, tol=2.0 + 1e-10, agg_method="max"):
+    def _test_adjust_fn(self, fn, fn_pil, fn_t, configs, tol=2.0 + 1e-10, agg_method="max",
+                        dts=(None, torch.float32, torch.float64)):
         script_fn = torch.jit.script(fn)
         torch.manual_seed(15)
         tensor, pil_img = self._create_data(26, 34, device=self.device)
         batch_tensors = self._create_data_batch(16, 18, num_samples=4, device=self.device)
 
-        for dt in [None, torch.float32, torch.float64]:
+        for dt in dts:
 
             if dt is not None:
                 tensor = F.convert_image_dtype(tensor, dt)
@@ -870,6 +871,17 @@ class Tester(TransformsTester):
             [{}],
             tol=1.0,
             agg_method="max"
+        )
+
+    def test_posterize(self):
+        self._test_adjust_fn(
+            F.posterize,
+            F_pil.posterize,
+            F_t.posterize,
+            [{"bits": bits} for bits in range(0, 8)],
+            tol=1.0,
+            agg_method="max",
+            dts=(None,)
         )
 
 
