@@ -16,5 +16,5 @@ dependencies:
   - pip:
     - future
     - pillow>=4.1.1
-    - scipy==1.4.1
+    - scipy>=1.4.1
     - dataclasses
