@@ -1,6 +1,7 @@
 channels:
   - pytorch
   - defaults
+  # use conda-forge for python 3.9+
   - conda-forge
 dependencies:
   - numpy
