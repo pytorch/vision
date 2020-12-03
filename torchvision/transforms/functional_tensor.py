@@ -1182,19 +1182,6 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
 
 
 def invert(img: Tensor) -> Tensor:
-    """PRIVATE METHOD. Invert the colors of a grayscale or RGB image.
-
-    .. warning::``
-
-        Module ``transforms.functional_tensor`` is private and should not be used in user application.
-        Please, consider instead using methods from `transforms.functional` module.
-
-    Args:
-        img (Tensor): Image to have its colors inverted in the form [C, H, W].
-
-    Returns:
-        Tensor: Color inverted image Tensor.
-    """
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
