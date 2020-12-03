@@ -21,7 +21,7 @@ __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImag
            "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
            "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
-           "RandomPerspective", "RandomErasing", "GaussianBlur", "InterpolationMode", "RandomInvert"]
+           "RandomPerspective", "RandomErasing", "GaussianBlur", "InterpolationMode", "RandomInvert", "RandomPosterize"]
 
 
 class Compose:
@@ -1717,10 +1717,10 @@ class RandomInvert(torch.nn.Module):
 
     @staticmethod
     def get_params() -> float:
-        """Choose value for random color inversion.
+        """Choose a value for the random transformation.
 
         Returns:
-            float: Random value which is used to determine whether the random color inversion
+            float: Random value which is used to determine whether the random transformation
             should occur.
         """
         return torch.rand(1).item()
@@ -1739,3 +1739,45 @@ class RandomInvert(torch.nn.Module):
 
     def __repr__(self):
         return self.__class__.__name__ + '(p={})'.format(self.p)
+
+
+class RandomPosterize(torch.nn.Module):
+    """Posterize the image randomly with a given probability by reducing the
+    number of bits for each color channel. The image can be a PIL Image or a torch
+    Tensor, in which case it is expected to have [..., H, W] shape, where ... means
+    an arbitrary number of leading dimensions
+
+    Args:
+        bits (int): number of bits to keep for each channel (0-8)
+        p (float): probability of the image being color inverted. Default value is 0.5
+    """
+
+    def __init__(self, bits, p=0.5):
+        super().__init__()
+        self.bits = bits
+        self.p = p
+
+    @staticmethod
+    def get_params() -> float:
+        """Choose a value for the random transformation.
+
+        Returns:
+            float: Random value which is used to determine whether the random transformation
+            should occur.
+        """
+        return torch.rand(1).item()
+
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be posterized.
+
+        Returns:
+            PIL Image or Tensor: Randomly posterized image.
+        """
+        if self.get_params() < self.p:
+            return F.posterize(img, self.bits)
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(bits={},p={})'.format(self.bits, self.p)

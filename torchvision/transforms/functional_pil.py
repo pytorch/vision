@@ -613,3 +613,10 @@ def invert(img):
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
     return ImageOps.invert(img)
+
+
+@torch.jit.unused
+def posterize(img, bits):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.posterize(img, bits)
