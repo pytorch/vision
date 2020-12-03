@@ -1203,9 +1203,9 @@ def posterize(img: Tensor, bits: int) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to have its colors inverted.
-            If img is a Tensor, it is expected to be in [..., H, W] format,
-            where ... means it can have an arbitrary number of trailing
-            dimensions.
+            If img is a Tensor, it should be of type torch.uint8 and
+            it is expected to be in [..., H, W] format, where ... means
+            it can have an arbitrary number of trailing dimensions.
         bits (int): The number of bits to keep for each channel (0-8).
     Returns:
         PIL Image: Posterized image.
@@ -1217,3 +1217,21 @@ def posterize(img: Tensor, bits: int) -> Tensor:
         return F_pil.posterize(img, bits)
 
     return F_t.posterize(img, bits)
+
+
+def solarize(img: Tensor, threshold: float) -> Tensor:
+    """Solarize a PIL Image or torch Tensor by inverting all pixel values above a threshold.
+
+    Args:
+        img (PIL Image or Tensor): Image to have its colors inverted.
+            If img is a Tensor, it is expected to be in [..., H, W] format,
+            where ... means it can have an arbitrary number of trailing
+            dimensions.
+        threshold (float): All pixels equal or above this value are inverted.
+    Returns:
+        PIL Image: Solarized image.
+    """
+    if not isinstance(img, torch.Tensor):
+        return F_pil.solarize(img, threshold)
+
+    return F_t.solarize(img, threshold)

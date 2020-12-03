@@ -98,6 +98,12 @@ class Tester(TransformsTester):
             'posterize', 'RandomPosterize', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
+    def test_random_solarize(self):
+        fn_kwargs = meth_kwargs = {"threshold": 192.0}
+        self._test_op(
+            'solarize', 'RandomSolarize', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
     def test_color_jitter(self):
 
         tol = 1.0 + 1e-10

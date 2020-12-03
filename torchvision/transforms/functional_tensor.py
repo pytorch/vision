@@ -1192,7 +1192,7 @@ def invert(img: Tensor) -> Tensor:
 
     bound = 1.0 if img.is_floating_point() else 255.0
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    return (bound - img.to(dtype)).to(img.dtype)
+    return (bound - img.to(dtype)).clamp(0, bound).to(img.dtype)
 
 
 def posterize(img: Tensor, bits: int) -> Tensor:
@@ -1207,3 +1207,22 @@ def posterize(img: Tensor, bits: int) -> Tensor:
     _assert_channels(img, [1, 3])
     mask = -int(2**(8 - bits))  # JIT-friendly for: ~(2 ** (8 - bits) - 1)
     return img & mask
+
+
+def solarize(img: Tensor, threshold: float) -> Tensor:
+    if not _is_tensor_a_torch_image(img):
+        raise TypeError('tensor is not a torch image.')
+
+    if img.ndim < 3:
+        raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
+
+    _assert_channels(img, [1, 3])
+
+    bound = 1.0 if img.is_floating_point() else 255.0
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+
+    result = img.clone().view(-1)
+    invert_idx = torch.where(result >= threshold)[0]
+    result[invert_idx] = (bound - result[invert_idx].to(dtype=dtype)).clamp(0, bound).to(dtype=img.dtype)
+
+    return result.view(img.shape)
