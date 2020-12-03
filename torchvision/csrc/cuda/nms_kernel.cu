@@ -1,16 +1,21 @@
-#include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
 
 #include "cuda_helpers.h"
+#include "nms_kernel.h"
 
-#include <iostream>
-#include <vector>
+namespace vision {
+namespace ops {
+
+namespace {
 
 int const threadsPerBlock = sizeof(unsigned long long) * 8;
 
 template <typename T>
-__device__ inline bool devIoU(T const* const a, T const* const b, const float threshold) {
+__device__ inline bool devIoU(
+    T const* const a,
+    T const* const b,
+    const float threshold) {
   T left = max(a[0], b[0]), right = min(a[2], b[2]);
   T top = max(a[1], b[1]), bottom = min(a[3], b[3]);
   T width = max(right - left, (T)0), height = max(bottom - top, (T)0);
@@ -21,7 +26,7 @@ __device__ inline bool devIoU(T const* const a, T const* const b, const float th
 }
 
 template <typename T>
-__global__ void nms_kernel(
+__global__ void nms_kernel_impl(
     int n_boxes,
     double iou_threshold,
     const T* dev_boxes,
@@ -29,7 +34,8 @@ __global__ void nms_kernel(
   const int row_start = blockIdx.y;
   const int col_start = blockIdx.x;
 
-  if (row_start > col_start) return;
+  if (row_start > col_start)
+    return;
 
   const int row_size =
       min(n_boxes - row_start * threadsPerBlock, threadsPerBlock);
@@ -68,7 +74,10 @@ __global__ void nms_kernel(
   }
 }
 
-at::Tensor nms_cuda(const at::Tensor& dets,
+} // namespace
+
+at::Tensor nms_cuda(
+    const at::Tensor& dets,
     const at::Tensor& scores,
     double iou_threshold) {
   TORCH_CHECK(dets.is_cuda(), "dets must be a CUDA tensor");
@@ -118,8 +127,8 @@ at::Tensor nms_cuda(const at::Tensor& dets,
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      dets_sorted.scalar_type(), "nms_kernel_cuda", [&] {
-        nms_kernel<scalar_t><<<blocks, threads, 0, stream>>>(
+      dets_sorted.scalar_type(), "nms_cuda", [&] {
+        nms_kernel_impl<scalar_t><<<blocks, threads, 0, stream>>>(
             dets_num,
             iou_threshold,
             dets_sorted.data_ptr<scalar_t>(),
@@ -127,7 +136,8 @@ at::Tensor nms_cuda(const at::Tensor& dets,
       });
 
   at::Tensor mask_cpu = mask.to(at::kCPU);
-  unsigned long long* mask_host = (unsigned long long*)mask_cpu.data_ptr<int64_t>();
+  unsigned long long* mask_host =
+      (unsigned long long*)mask_cpu.data_ptr<int64_t>();
 
   std::vector<unsigned long long> remv(col_blocks);
   memset(&remv[0], 0, sizeof(unsigned long long) * col_blocks);
@@ -155,3 +165,6 @@ at::Tensor nms_cuda(const at::Tensor& dets,
       {keep.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep)
            .to(order_t.device(), keep.scalar_type())});
 }
+
+} // namespace ops
+} // namespace vision
