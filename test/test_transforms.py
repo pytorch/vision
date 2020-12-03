@@ -1787,6 +1787,14 @@ class Tester(unittest.TestCase):
             [{"bits": 4}]
         )
 
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_solarize(self):
+        self._test_randomness(
+            F.solarize,
+            transforms.RandomSolarize,
+            [{"threshold": 192}]
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -884,6 +884,26 @@ class Tester(TransformsTester):
             dts=(None,)
         )
 
+    def test_solarize(self):
+        self._test_adjust_fn(
+            F.solarize,
+            F_pil.solarize,
+            F_t.solarize,
+            [{"threshold": threshold} for threshold in [0, 64, 128, 192, 255]],
+            tol=1.0,
+            agg_method="max",
+            dts=(None,)
+        )
+        self._test_adjust_fn(
+            F.solarize,
+            lambda img, threshold: F_pil.solarize(img, 255 * threshold),
+            F_t.solarize,
+            [{"threshold": threshold} for threshold in [0.0, 0.25, 0.5, 0.75, 1.0]],
+            tol=1.0,
+            agg_method="max",
+            dts=(torch.float32, torch.float64)
+        )
+
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):

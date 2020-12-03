@@ -620,3 +620,10 @@ def posterize(img, bits):
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
     return ImageOps.posterize(img, bits)
+
+
+@torch.jit.unused
+def solarize(img, threshold):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.solarize(img, threshold)
