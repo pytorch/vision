@@ -70,7 +70,8 @@ def googlenet(pretrained=False, progress=True, quantize=False, **kwargs):
 
         if not original_aux_logits:
             model.aux_logits = False
-            del model.aux1, model.aux2
+            model.aux1 = None
+            model.aux2 = None
     return model
 
 

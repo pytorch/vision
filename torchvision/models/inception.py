@@ -3,9 +3,9 @@ import warnings
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.jit.annotations import Optional
 from torch import Tensor
 from .utils import load_state_dict_from_url
+from typing import Callable, Any, Optional, Tuple, List
 
 
 __all__ = ['Inception3', 'inception_v3', 'InceptionOutputs', '_InceptionOutputs']
@@ -24,7 +24,7 @@ InceptionOutputs.__annotations__ = {'logits': torch.Tensor, 'aux_logits': Option
 _InceptionOutputs = InceptionOutputs
 
 
-def inception_v3(pretrained=False, progress=True, **kwargs):
+def inception_v3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> "Inception3":
     r"""Inception v3 model architecture from
     `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
 
@@ -48,13 +48,14 @@ def inception_v3(pretrained=False, progress=True, **kwargs):
             kwargs['aux_logits'] = True
         else:
             original_aux_logits = True
+        kwargs['init_weights'] = False  # we are loading weights from a pretrained model
         model = Inception3(**kwargs)
         state_dict = load_state_dict_from_url(model_urls['inception_v3_google'],
                                               progress=progress)
         model.load_state_dict(state_dict)
         if not original_aux_logits:
             model.aux_logits = False
-            del model.AuxLogits
+            model.AuxLogits = None
         return model
 
     return Inception3(**kwargs)
@@ -62,14 +63,25 @@ def inception_v3(pretrained=False, progress=True, **kwargs):
 
 class Inception3(nn.Module):
 
-    def __init__(self, num_classes=1000, aux_logits=True, transform_input=False,
-                 inception_blocks=None, init_weights=True):
+    def __init__(
+        self,
+        num_classes: int = 1000,
+        aux_logits: bool = True,
+        transform_input: bool = False,
+        inception_blocks: Optional[List[Callable[..., nn.Module]]] = None,
+        init_weights: Optional[bool] = None
+    ) -> None:
         super(Inception3, self).__init__()
         if inception_blocks is None:
             inception_blocks = [
                 BasicConv2d, InceptionA, InceptionB, InceptionC,
                 InceptionD, InceptionE, InceptionAux
             ]
+        if init_weights is None:
+            warnings.warn('The default weight initialization of inception_v3 will be changed in future releases of '
+                          'torchvision. If you wish to keep the old behavior (which leads to long initialization times'
+                          ' due to scipy/scipy#11299), please set init_weights=True.', FutureWarning)
+            init_weights = True
         assert len(inception_blocks) == 7
         conv_block = inception_blocks[0]
         inception_a = inception_blocks[1]
@@ -96,6 +108,7 @@ class Inception3(nn.Module):
         self.Mixed_6c = inception_c(768, channels_7x7=160)
         self.Mixed_6d = inception_c(768, channels_7x7=160)
         self.Mixed_6e = inception_c(768, channels_7x7=192)
+        self.AuxLogits: Optional[nn.Module] = None
         if aux_logits:
             self.AuxLogits = inception_aux(768, num_classes)
         self.Mixed_7a = inception_d(768)
@@ -118,7 +131,7 @@ class Inception3(nn.Module):
                     nn.init.constant_(m.weight, 1)
                     nn.init.constant_(m.bias, 0)
 
-    def _transform_input(self, x):
+    def _transform_input(self, x: Tensor) -> Tensor:
         if self.transform_input:
             x_ch0 = torch.unsqueeze(x[:, 0], 1) * (0.229 / 0.5) + (0.485 - 0.5) / 0.5
             x_ch1 = torch.unsqueeze(x[:, 1], 1) * (0.224 / 0.5) + (0.456 - 0.5) / 0.5
@@ -126,7 +139,7 @@ class Inception3(nn.Module):
             x = torch.cat((x_ch0, x_ch1, x_ch2), 1)
         return x
 
-    def _forward(self, x):
+    def _forward(self, x: Tensor) -> Tuple[Tensor, Optional[Tensor]]:
         # N x 3 x 299 x 299
         x = self.Conv2d_1a_3x3(x)
         # N x 32 x 149 x 149
@@ -158,11 +171,10 @@ class Inception3(nn.Module):
         # N x 768 x 17 x 17
         x = self.Mixed_6e(x)
         # N x 768 x 17 x 17
-        aux_defined = self.training and self.aux_logits
-        if aux_defined:
-            aux = self.AuxLogits(x)
-        else:
-            aux = None
+        aux = torch.jit.annotate(Optional[Tensor], None)
+        if self.AuxLogits is not None:
+            if self.training:
+                aux = self.AuxLogits(x)
         # N x 768 x 17 x 17
         x = self.Mixed_7a(x)
         # N x 1280 x 8 x 8
@@ -182,14 +194,13 @@ class Inception3(nn.Module):
         return x, aux
 
     @torch.jit.unused
-    def eager_outputs(self, x, aux):
-        # type: (Tensor, Optional[Tensor]) -> InceptionOutputs
+    def eager_outputs(self, x: Tensor, aux: Optional[Tensor]) -> InceptionOutputs:
         if self.training and self.aux_logits:
             return InceptionOutputs(x, aux)
         else:
-            return x
+            return x  # type: ignore[return-value]
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> InceptionOutputs:
         x = self._transform_input(x)
         x, aux = self._forward(x)
         aux_defined = self.training and self.aux_logits
@@ -203,7 +214,12 @@ class Inception3(nn.Module):
 
 class InceptionA(nn.Module):
 
-    def __init__(self, in_channels, pool_features, conv_block=None):
+    def __init__(
+        self,
+        in_channels: int,
+        pool_features: int,
+        conv_block: Optional[Callable[..., nn.Module]] = None
+    ) -> None:
         super(InceptionA, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -218,7 +234,7 @@ class InceptionA(nn.Module):
 
         self.branch_pool = conv_block(in_channels, pool_features, kernel_size=1)
 
-    def _forward(self, x):
+    def _forward(self, x: Tensor) -> List[Tensor]:
         branch1x1 = self.branch1x1(x)
 
         branch5x5 = self.branch5x5_1(x)
@@ -234,14 +250,18 @@ class InceptionA(nn.Module):
         outputs = [branch1x1, branch5x5, branch3x3dbl, branch_pool]
         return outputs
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         outputs = self._forward(x)
         return torch.cat(outputs, 1)
 
 
 class InceptionB(nn.Module):
 
-    def __init__(self, in_channels, conv_block=None):
+    def __init__(
+        self,
+        in_channels: int,
+        conv_block: Optional[Callable[..., nn.Module]] = None
+    ) -> None:
         super(InceptionB, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -251,7 +271,7 @@ class InceptionB(nn.Module):
         self.branch3x3dbl_2 = conv_block(64, 96, kernel_size=3, padding=1)
         self.branch3x3dbl_3 = conv_block(96, 96, kernel_size=3, stride=2)
 
-    def _forward(self, x):
+    def _forward(self, x: Tensor) -> List[Tensor]:
         branch3x3 = self.branch3x3(x)
 
         branch3x3dbl = self.branch3x3dbl_1(x)
@@ -263,14 +283,19 @@ class InceptionB(nn.Module):
         outputs = [branch3x3, branch3x3dbl, branch_pool]
         return outputs
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         outputs = self._forward(x)
         return torch.cat(outputs, 1)
 
 
 class InceptionC(nn.Module):
 
-    def __init__(self, in_channels, channels_7x7, conv_block=None):
+    def __init__(
+        self,
+        in_channels: int,
+        channels_7x7: int,
+        conv_block: Optional[Callable[..., nn.Module]] = None
+    ) -> None:
         super(InceptionC, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -289,7 +314,7 @@ class InceptionC(nn.Module):
 
         self.branch_pool = conv_block(in_channels, 192, kernel_size=1)
 
-    def _forward(self, x):
+    def _forward(self, x: Tensor) -> List[Tensor]:
         branch1x1 = self.branch1x1(x)
 
         branch7x7 = self.branch7x7_1(x)
@@ -308,14 +333,18 @@ class InceptionC(nn.Module):
         outputs = [branch1x1, branch7x7, branch7x7dbl, branch_pool]
         return outputs
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         outputs = self._forward(x)
         return torch.cat(outputs, 1)
 
 
 class InceptionD(nn.Module):
 
-    def __init__(self, in_channels, conv_block=None):
+    def __init__(
+        self,
+        in_channels: int,
+        conv_block: Optional[Callable[..., nn.Module]] = None
+    ) -> None:
         super(InceptionD, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -327,7 +356,7 @@ class InceptionD(nn.Module):
         self.branch7x7x3_3 = conv_block(192, 192, kernel_size=(7, 1), padding=(3, 0))
         self.branch7x7x3_4 = conv_block(192, 192, kernel_size=3, stride=2)
 
-    def _forward(self, x):
+    def _forward(self, x: Tensor) -> List[Tensor]:
         branch3x3 = self.branch3x3_1(x)
         branch3x3 = self.branch3x3_2(branch3x3)
 
@@ -340,14 +369,18 @@ class InceptionD(nn.Module):
         outputs = [branch3x3, branch7x7x3, branch_pool]
         return outputs
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         outputs = self._forward(x)
         return torch.cat(outputs, 1)
 
 
 class InceptionE(nn.Module):
 
-    def __init__(self, in_channels, conv_block=None):
+    def __init__(
+        self,
+        in_channels: int,
+        conv_block: Optional[Callable[..., nn.Module]] = None
+    ) -> None:
         super(InceptionE, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
@@ -364,7 +397,7 @@ class InceptionE(nn.Module):
 
         self.branch_pool = conv_block(in_channels, 192, kernel_size=1)
 
-    def _forward(self, x):
+    def _forward(self, x: Tensor) -> List[Tensor]:
         branch1x1 = self.branch1x1(x)
 
         branch3x3 = self.branch3x3_1(x)
@@ -388,24 +421,29 @@ class InceptionE(nn.Module):
         outputs = [branch1x1, branch3x3, branch3x3dbl, branch_pool]
         return outputs
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         outputs = self._forward(x)
         return torch.cat(outputs, 1)
 
 
 class InceptionAux(nn.Module):
 
-    def __init__(self, in_channels, num_classes, conv_block=None):
+    def __init__(
+        self,
+        in_channels: int,
+        num_classes: int,
+        conv_block: Optional[Callable[..., nn.Module]] = None
+    ) -> None:
         super(InceptionAux, self).__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.conv0 = conv_block(in_channels, 128, kernel_size=1)
         self.conv1 = conv_block(128, 768, kernel_size=5)
-        self.conv1.stddev = 0.01
+        self.conv1.stddev = 0.01  # type: ignore[assignment]
         self.fc = nn.Linear(768, num_classes)
-        self.fc.stddev = 0.001
+        self.fc.stddev = 0.001  # type: ignore[assignment]
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         # N x 768 x 17 x 17
         x = F.avg_pool2d(x, kernel_size=5, stride=3)
         # N x 768 x 5 x 5
@@ -425,12 +463,17 @@ class InceptionAux(nn.Module):
 
 class BasicConv2d(nn.Module):
 
-    def __init__(self, in_channels, out_channels, **kwargs):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        **kwargs: Any
+    ) -> None:
         super(BasicConv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.conv(x)
         x = self.bn(x)
         return F.relu(x, inplace=True)

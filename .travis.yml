@@ -1,31 +1,19 @@
 language: python
 
-dist: xenial
-matrix:
+os:
+  - linux
+
+dist: bionic
+
+jobs:
   include:
-    - env: FORMAT_CHECK
-      language: cpp
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-xenial-7
-          packages:
-            - clang-7
-            - clang-format-7
-      before_install: skip
-      install: skip
-      script: ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
-    - env: LINT_CHECK
-      python: "3.6"
-      install: pip install flake8 typing
-      script: flake8 .circleci
-      after_success: []
     - python: "3.6"
       env: IMAGE_BACKEND=Pillow-SIMD
     - python: "3.6"
 
 before_install:
   - sudo apt-get update
+  - sudo apt-get install -y libpng-dev libjpeg-turbo8-dev
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -34,7 +22,7 @@ before_install:
   # Useful for debugging any issues with conda
   - conda info -a
 
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION pytorch scipy -c pytorch-nightly
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION cpuonly pytorch scipy -c pytorch-nightly
   - source activate test-environment
   - |
     if [[ "$IMAGE_BACKEND" == "Pillow-SIMD" ]]; then
@@ -42,15 +30,13 @@ before_install:
     fi
   - pip install future
   - pip install pytest pytest-cov codecov
-  - pip install mock
   - pip install typing
   - |
     if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then
       pip install -q --user typing-extensions==3.6.6
-      pip install -q --user -i https://test.pypi.org/simple/ ort-nightly==1.2.0.dev202005021
+      pip install -q --user -i https://test.pypi.org/simple/ ort-nightly==1.5.2.dev202010191
     fi
   - conda install av -c conda-forge
-
 
 install:
   # Using pip instead of setup.py ensures we install a non-compressed version of the package
@@ -68,7 +54,7 @@ install:
     cd -
 
 script:
-  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH -k 'not TestVideoReader and not TestVideoTransforms' test
+  - pytest --cov-config .coveragerc --cov torchvision --cov $TV_INSTALL_PATH -k 'not TestVideo and not TestVideoReader and not TestVideoTransforms and not TestIO' test --ignore=test/test_datasets_download.py
   - pytest test/test_hub.py
 
 after_success:

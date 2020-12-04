@@ -12,7 +12,7 @@ struct VISION_API BasicConv2dImpl : torch::nn::Module {
   torch::nn::Conv2d conv{nullptr};
   torch::nn::BatchNorm2d bn{nullptr};
 
-  BasicConv2dImpl(torch::nn::Conv2dOptions options);
+  explicit BasicConv2dImpl(torch::nn::Conv2dOptions options);
 
   torch::Tensor forward(torch::Tensor x);
 };
@@ -71,7 +71,7 @@ struct VISION_API GoogLeNetImpl : torch::nn::Module {
   torch::nn::Dropout dropout{nullptr};
   torch::nn::Linear fc{nullptr};
 
-  GoogLeNetImpl(
+  explicit GoogLeNetImpl(
       int64_t num_classes = 1000,
       bool aux_logits = true,
       bool transform_input = false,

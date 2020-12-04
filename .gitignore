@@ -20,3 +20,8 @@ htmlcov
 *.swp
 *.swo
 gen.yml
+.mypy_cache
+.vscode/
+.idea/
+*.orig
+*-checkpoint.ipynb

@@ -395,8 +395,8 @@ void setFormatDimensions(
     }
   }
   // prevent zeros
-  destW = std::max(destW, 1UL);
-  destH = std::max(destH, 1UL);
+  destW = std::max(destW, size_t(1UL));
+  destH = std::max(destH, size_t(1UL));
 }
 } // namespace Util
 } // namespace ffmpeg

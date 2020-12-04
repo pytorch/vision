@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <functional>
 #include <memory>
 #include <set>
@@ -51,7 +52,7 @@ struct VideoFormat {
   }
   /*
   When width = 0, height = 0, minDimension = 0, and maxDimension = 0,
-    keep the orignal frame resolution
+    keep the original frame resolution
   When width = 0, height = 0, minDimension != 0, and maxDimension = 0,
     keep the aspect ratio and resize the frame so that shorter edge size is
   minDimension
