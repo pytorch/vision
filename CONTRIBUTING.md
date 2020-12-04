@@ -16,7 +16,10 @@ Your contributions may fall into the following categories:
 - You would like to improve the documentation. This is no less important than improving the library itself! 
 If you find a typo in the documentation, do not hesitate to submit a GitHub pull request.
 
-- If you are planning to contribute back bug-fixes, please do so without any further discussion. 
+- If you would like to fix a bug
+    - please pick one from the [list of open issues labelled as "help wanted"](https://github.com/pytorch/vision/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
+    - comment on the issue that you want to work on this issue
+    - send a PR with your fix, see below. 
 
 - If you plan to contribute new features, utility functions or extensions, please first open an issue and discuss the feature with us.
 
@@ -37,6 +40,7 @@ conda install pytorch -c pytorch-nightly
 ```
 
 ### Install Torchvision
+
 ```bash
 git clone https://github.com/pytorch/vision.git
 cd vision
@@ -128,11 +132,15 @@ Then open the browser at `0.0.0.0:<port>` (e.g. `0.0.0.0:1234`)
 
 ### New model
 
-TDB
+More details on how to add a new model will be provided later.
+**Important.** Please, do not send any PR with a new model without discussing 
+it in an issue as, most likely, it will not be accepted.
  
 ### New dataset
 
-TDB
+More details on how to add a new model will be provided later.
+**Important.** Please, do not send any PR with a new dataset without discussing 
+it in an issue as, most likely, it will not be accepted.
 
 ### Pull Request
 
