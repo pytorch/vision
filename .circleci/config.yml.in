@@ -48,11 +48,11 @@ binary_common: &binary_common
     build_version:
       description: "version number of release binary; by default, build a nightly"
       type: string
-      default: "0.8.0"
+      default: "0.8.2"
     pytorch_version:
       description: "PyTorch version to build against; by default, use a nightly"
       type: string
-      default: "1.7.0"
+      default: "1.7.1"
     # Don't edit these
     python_version:
       description: "Python version to build against (e.g., 3.7)"
@@ -368,7 +368,11 @@ jobs:
             set -x
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda env remove -n python${PYTHON_VERSION} || true
-            conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
+            CONDA_CHANNEL_FLAGS=""
+            if [[ "${PYTHON_VERSION}" = 3.9 ]]; then
+              CONDA_CHANNEL_FLAGS="-c=conda-forge"
+            fi
+            conda create ${CONDA_CHANNEL_FLAGS} -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
             conda install Pillow
             conda install -v -y -c pytorch-nightly pytorch
@@ -393,7 +397,11 @@ jobs:
           command: |
             set -x
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
-            conda env remove -n python${PYTHON_VERSION} || true
+            CONDA_CHANNEL_FLAGS=""
+            if [[ "${PYTHON_VERSION}" = 3.9 ]]; then
+              CONDA_CHANNEL_FLAGS="-c=conda-forge"
+            fi
+            conda create ${CONDA_CHANNEL_FLAGS} -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
             pip install $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
@@ -464,7 +472,7 @@ jobs:
           {% endraw %}
       - run:
           name: Setup
-          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/setup_env.sh
+          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e PYTHON_VERSION "${image_name}" .circleci/unittest/linux/scripts/setup_env.sh
       - save_cache:
           {% raw %}
           key: env-v2-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
@@ -474,7 +482,7 @@ jobs:
             - env
       - run:
           name: Install torchvision
-          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e UPLOAD_CHANNEL "${image_name}" .circleci/unittest/linux/scripts/install.sh
+          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e UPLOAD_CHANNEL -e CU_VERSION "${image_name}" .circleci/unittest/linux/scripts/install.sh
       - run:
           name: Run tests
           command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh

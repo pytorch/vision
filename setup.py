@@ -330,7 +330,9 @@ def get_extensions():
         ))
 
     ffmpeg_exe = distutils.spawn.find_executable('ffmpeg')
-    has_ffmpeg = ffmpeg_exe is not None
+    # Disable ffmpeg by default
+    no_ffmpeg = os.environ.get("NO_FFMPEG", True)
+    has_ffmpeg = ffmpeg_exe is not None and not no_ffmpeg
     print("FFmpeg found: {}".format(has_ffmpeg))
 
     if has_ffmpeg:

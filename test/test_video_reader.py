@@ -269,6 +269,7 @@ def _get_video_tensor(video_dir, video_file):
     return full_path, video_tensor
 
 
+@unittest.skip("ffmpeg was not included in this release")
 @unittest.skipIf(av is None, "PyAV unavailable")
 @unittest.skipIf(_HAS_VIDEO_OPT is False, "Didn't compile with ffmpeg")
 class TestVideoReader(unittest.TestCase):

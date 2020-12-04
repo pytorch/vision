@@ -179,10 +179,13 @@ setup_wheel_python() {
   if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
     eval "$(conda shell.bash hook)"
     conda env remove -n "env$PYTHON_VERSION" || true
-    conda create -yn "env$PYTHON_VERSION" python="$PYTHON_VERSION"
+    if [[ "$PYTHON_VERSION" == 3.9 ]]; then
+      export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c=conda-forge"
+    fi
+    conda create ${CONDA_CHANNEL_FLAGS} -yn "env$PYTHON_VERSION" python="$PYTHON_VERSION"
     conda activate "env$PYTHON_VERSION"
     # Install libpng from Anaconda (defaults)
-    conda install libpng jpeg -y
+    conda install ${CONDA_CHANNEL_FLAGS} -c conda-forge libpng "jpeg<=9b" -y
   else
     # Install native CentOS libJPEG, LAME, freetype and GnuTLS
     yum install -y libjpeg-turbo-devel lame freetype gnutls
@@ -198,6 +201,7 @@ setup_wheel_python() {
       3.6) python_abi=cp36-cp36m ;;
       3.7) python_abi=cp37-cp37m ;;
       3.8) python_abi=cp38-cp38 ;;
+      3.9) python_abi=cp39-cp39 ;;
       *)
         echo "Unrecognized PYTHON_VERSION=$PYTHON_VERSION"
         exit 1
@@ -271,6 +275,9 @@ setup_conda_pytorch_constraint() {
   fi
   if [[ "$OSTYPE" == msys && "$CU_VERSION" == cu92 ]]; then
     export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c defaults -c numba/label/dev"
+  fi
+  if [[ "$PYTHON_VERSION" == 3.9 ]]; then
+    export CONDA_CHANNEL_FLAGS="${CONDA_CHANNEL_FLAGS} -c=conda-forge"
   fi
 }
 

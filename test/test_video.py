@@ -276,6 +276,7 @@ def _template_read_video(video_object, s=0, e=None):
     return video_frames, audio_frames, video_object.get_metadata()
 
 
+@unittest.skip("ffmpeg isn't included in this release skip these tests")
 @unittest.skipIf(_HAS_VIDEO_OPT is False, "Didn't compile with ffmpeg")
 class TestVideo(unittest.TestCase):
     @unittest.skipIf(av is None, "PyAV unavailable")
