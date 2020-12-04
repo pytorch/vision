@@ -582,6 +582,11 @@ def _rgb2hsv(img):
     maxc = torch.max(img, dim=-3).values
     minc = torch.min(img, dim=-3).values
 
+    assert torch.all(minc >= 0), (
+        "The input RGB image has negative pixel values. "
+        "The input image range should be always between zero and a positive number."
+    )
+
     # The algorithm erases S and H channel where `maxc = minc`. This avoids NaN
     # from happening in the results, because
     #   + S channel has division by `maxc`, which is zero only if `maxc = minc`
