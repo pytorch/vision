@@ -1262,3 +1262,25 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
         return img
 
     return _blend(img, _blur_image(img), sharpness_factor)
+
+
+def autocontrast(img: Tensor) -> Tensor:
+    if not _is_tensor_a_torch_image(img):
+        raise TypeError('tensor is not a torch image.')
+
+    if img.ndim < 3:
+        raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
+
+    _assert_channels(img, [1, 3])
+
+    bound = 1.0 if img.is_floating_point() else 255.0
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+
+    minimum = img.amin(dim=(-2, -1)).unsqueeze(-1).unsqueeze(-1).to(dtype)
+    maximum = img.amax(dim=(-2, -1)).unsqueeze(-1).unsqueeze(-1).to(dtype)
+    eq_idxs = torch.where(minimum == maximum)[0]
+    minimum[eq_idxs] = 0
+    maximum[eq_idxs] = bound
+    scale = bound / (maximum - minimum)
+
+    return ((img.to(dtype) - minimum) * scale).clamp(0, bound).to(img.dtype)

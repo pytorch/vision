@@ -1838,6 +1838,14 @@ class Tester(unittest.TestCase):
             [{"threshold": 192}]
         )
 
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_autocontrast(self):
+        self._test_randomness(
+            F.autocontrast,
+            transforms.RandomAutocontrast,
+            [{}]
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
