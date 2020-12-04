@@ -661,12 +661,9 @@ torch::List<torch::Tensor> probeVideoFromFile(std::string videoPath) {
 
 } // namespace video_reader
 
-static auto registry = torch::RegisterOperators()
-                           .op("video_reader::read_video_from_memory",
-                               &video_reader::readVideoFromMemory)
-                           .op("video_reader::read_video_from_file",
-                               &video_reader::readVideoFromFile)
-                           .op("video_reader::probe_video_from_memory",
-                               &video_reader::probeVideoFromMemory)
-                           .op("video_reader::probe_video_from_file",
-                               &video_reader::probeVideoFromFile);
+TORCH_LIBRARY_FRAGMENT(video_reader, m) {
+  m.def("read_video_from_memory", video_reader::readVideoFromMemory);
+  m.def("read_video_from_file", video_reader::readVideoFromFile);
+  m.def("probe_video_from_memory", video_reader::probeVideoFromMemory);
+  m.def("probe_video_from_file", video_reader::probeVideoFromFile);
+}
