@@ -22,7 +22,7 @@ __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImag
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
            "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
            "RandomPerspective", "RandomErasing", "GaussianBlur", "InterpolationMode", "RandomInvert", "RandomPosterize",
-           "RandomSolarize", "RandomAutocontrast"]
+           "RandomSolarize", "RandomAutocontrast", "RandomEqualize"]
 
 
 class Compose:
@@ -1872,6 +1872,46 @@ class RandomAutocontrast(torch.nn.Module):
         """
         if self.get_params() < self.p:
             return F.autocontrast(img)
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(p={})'.format(self.p)
+
+
+class RandomEqualize(torch.nn.Module):
+    """Equalize the histogram of the given image randomly with a given probability.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions.
+
+    Args:
+        p (float): probability of the image being equalized. Default value is 0.5
+    """
+
+    def __init__(self, p=0.5):
+        super().__init__()
+        self.p = p
+
+    @staticmethod
+    def get_params() -> float:
+        """Choose a value for the random transformation.
+
+        Returns:
+            float: Random value which is used to determine whether the random transformation
+            should occur.
+        """
+        return torch.rand(1).item()
+
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be equalized.
+
+        Returns:
+            PIL Image or Tensor: Randomly equalized image.
+        """
+        if self.get_params() < self.p:
+            return F.equalize(img)
         return img
 
     def __repr__(self):

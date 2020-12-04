@@ -1284,3 +1284,41 @@ def autocontrast(img: Tensor) -> Tensor:
     scale = bound / (maximum - minimum)
 
     return ((img.to(dtype) - minimum) * scale).clamp(0, bound).to(img.dtype)
+
+
+def _scale_channel(img_chan):
+    hist = torch.histc(img_chan.to(torch.float32), bins=256, min=0, max=255)
+
+    nonzero_hist = hist[hist != 0]
+    if nonzero_hist.numel() > 0:
+        step = (nonzero_hist.sum() - nonzero_hist[-1]) // 255
+    else:
+        step = torch.tensor(0, device=img_chan.device)
+    if step == 0:
+        return img_chan
+
+    lut = (torch.cumsum(hist, 0) + (step // 2)) // step
+    lut = torch.cat([torch.zeros(1, device=img_chan.device), lut[:-1]]).clamp(0, 255)
+
+    return lut[img_chan.to(torch.int64)].to(torch.uint8)
+
+
+def _equalize_single_image(img: Tensor) -> Tensor:
+    return torch.stack([_scale_channel(img[c]) for c in range(img.size(0))])
+
+
+def equalize(img: Tensor) -> Tensor:
+    if not _is_tensor_a_torch_image(img):
+        raise TypeError('tensor is not a torch image.')
+
+    if not (3 <= img.ndim <= 4):
+        raise TypeError("Input image tensor should have 3 or 4 dimensions, but found {}".format(img.ndim))
+    if img.dtype != torch.uint8:
+        raise TypeError("Only torch.uint8 image tensors are supported, but found {}".format(img.dtype))
+
+    _assert_channels(img, [1, 3])
+
+    if img.ndim == 3:
+        return _equalize_single_image(img)
+
+    return torch.stack([_equalize_single_image(x) for x in img])
