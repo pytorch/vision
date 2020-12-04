@@ -1190,7 +1190,7 @@ def invert(img: Tensor) -> Tensor:
             dimensions.
 
     Returns:
-        PIL Image: Color inverted image.
+        PIL Image or Tensor: Color inverted image.
     """
     if not isinstance(img, torch.Tensor):
         return F_pil.invert(img)
@@ -1208,7 +1208,7 @@ def posterize(img: Tensor, bits: int) -> Tensor:
             it can have an arbitrary number of trailing dimensions.
         bits (int): The number of bits to keep for each channel (0-8).
     Returns:
-        PIL Image: Posterized image.
+        PIL Image or Tensor: Posterized image.
     """
     if not (0 <= bits <= 8):
         raise ValueError('The number if bits should be between 0 and 8. Got {}'.format(bits))
@@ -1229,7 +1229,7 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
             dimensions.
         threshold (float): All pixels equal or above this value are inverted.
     Returns:
-        PIL Image: Solarized image.
+        PIL Image or Tensor: Solarized image.
     """
     if not isinstance(img, torch.Tensor):
         return F_pil.solarize(img, threshold)
@@ -1253,3 +1253,23 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
         return F_pil.adjust_sharpness(img, sharpness_factor)
 
     return F_t.adjust_sharpness(img, sharpness_factor)
+
+
+def autocontrast(img: Tensor) -> Tensor:
+    """Maximize contrast of a PIL Image or torch Tensor by remapping its
+    pixels per channel so that the lowest becomes black and the lightest
+    becomes white.
+
+    Args:
+        img (PIL Image or Tensor): Image on which autocontrast is applied.
+            If img is a Tensor, it is expected to be in [..., H, W] format,
+            where ... means it can have an arbitrary number of trailing
+            dimensions.
+
+    Returns:
+        PIL Image or Tensor: An image that was autocontrasted.
+    """
+    if not isinstance(img, torch.Tensor):
+        return F_pil.autocontrast(img)
+
+    return F_t.autocontrast(img)

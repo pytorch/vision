@@ -637,3 +637,10 @@ def adjust_sharpness(img, sharpness_factor):
     enhancer = ImageEnhance.Sharpness(img)
     img = enhancer.enhance(sharpness_factor)
     return img
+
+
+@torch.jit.unused
+def autocontrast(img):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.autocontrast(img)

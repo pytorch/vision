@@ -104,6 +104,9 @@ class Tester(TransformsTester):
             'solarize', 'RandomSolarize', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
+    def test_random_autocontrast(self):
+        self._test_op('autocontrast', 'RandomAutocontrast')
+
     def test_color_jitter(self):
 
         tol = 1.0 + 1e-10

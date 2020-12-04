@@ -912,6 +912,16 @@ class Tester(TransformsTester):
             [{"sharpness_factor": f} for f in [0.2, 0.5, 1.0, 1.5, 2.0]]
         )
 
+    def test_autocontrast(self):
+        self._test_adjust_fn(
+            F.autocontrast,
+            F_pil.autocontrast,
+            F_t.autocontrast,
+            [{}],
+            tol=1.0,
+            agg_method="max"
+        )
+
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):
