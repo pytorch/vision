@@ -132,14 +132,12 @@ Then open the browser at `0.0.0.0:<port>` (e.g. `0.0.0.0:1234`)
 
 ### New model
 
-More details on how to add a new model will be provided later.
-**Important.** Please, do not send any PR with a new model without discussing 
+More details on how to add a new model will be provided later. Please, do not send any PR with a new model without discussing 
 it in an issue as, most likely, it will not be accepted.
  
 ### New dataset
 
-More details on how to add a new model will be provided later.
-**Important.** Please, do not send any PR with a new dataset without discussing 
+More details on how to add a new dataset will be provided later. Please, do not send any PR with a new dataset without discussing 
 it in an issue as, most likely, it will not be accepted.
 
 ### Pull Request
