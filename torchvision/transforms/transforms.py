@@ -1039,7 +1039,7 @@ class LinearTransformation(torch.nn.Module):
 
 
 class ColorJitter(torch.nn.Module):
-    """Randomly change the brightness, contrast and saturation of an image.
+    """Randomly change the brightness, contrast, saturation, hue and sharpness of an image.
 
     Args:
         brightness (float or tuple of float (min, max)): How much to jitter brightness.
@@ -1054,15 +1054,19 @@ class ColorJitter(torch.nn.Module):
         hue (float or tuple of float (min, max)): How much to jitter hue.
             hue_factor is chosen uniformly from [-hue, hue] or the given [min, max].
             Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
+        sharpness (float or tuple of float (min, max)): How much to jitter sharpness.
+            sharpness_factor is chosen uniformly from [max(0, 1 - sharpness), 1 + sharpness]
+            or the given [min, max]. Should be non negative numbers.
     """
 
-    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
+    def __init__(self, brightness=0, contrast=0, saturation=0, hue=0, sharpness=0):
         super().__init__()
         self.brightness = self._check_input(brightness, 'brightness')
         self.contrast = self._check_input(contrast, 'contrast')
         self.saturation = self._check_input(saturation, 'saturation')
         self.hue = self._check_input(hue, 'hue', center=0, bound=(-0.5, 0.5),
                                      clip_first_on_zero=False)
+        self.sharpness = self._check_input(sharpness, 'sharpness')
 
     @torch.jit.unused
     def _check_input(self, value, name, center=1, bound=(0, float('inf')), clip_first_on_zero=True):
@@ -1078,7 +1082,7 @@ class ColorJitter(torch.nn.Module):
         else:
             raise TypeError("{} should be a single number or a list/tuple with lenght 2.".format(name))
 
-        # if value is 0 or (1., 1.) for brightness/contrast/saturation
+        # if value is 0 or (1., 1.) for brightness/contrast/saturation/sharpness
         # or (0., 0.) for hue, do nothing
         if value[0] == value[1] == center:
             value = None
@@ -1088,8 +1092,10 @@ class ColorJitter(torch.nn.Module):
     def get_params(brightness: Optional[List[float]],
                    contrast: Optional[List[float]],
                    saturation: Optional[List[float]],
-                   hue: Optional[List[float]]
-                   ) -> Tuple[Tensor, Optional[float], Optional[float], Optional[float], Optional[float]]:
+                   hue: Optional[List[float]],
+                   sharpness: Optional[List[float]]
+                   ) -> Tuple[Tensor, Optional[float], Optional[float], Optional[float], Optional[float],
+                              Optional[float]]:
         """Get the parameters for the randomized transform to be applied on image.
 
         Args:
@@ -1101,19 +1107,22 @@ class ColorJitter(torch.nn.Module):
                 uniformly. Pass None to turn off the transformation.
             hue (tuple of float (min, max), optional): The range from which the hue_factor is chosen uniformly.
                 Pass None to turn off the transformation.
+            sharpness (tuple of float (min, max), optional): The range from which the sharpness is chosen
+                uniformly. Pass None to turn off the transformation.
 
         Returns:
             tuple: The parameters used to apply the randomized transform
             along with their random order.
         """
-        fn_idx = torch.randperm(4)
+        fn_idx = torch.randperm(5)
 
         b = None if brightness is None else float(torch.empty(1).uniform_(brightness[0], brightness[1]))
         c = None if contrast is None else float(torch.empty(1).uniform_(contrast[0], contrast[1]))
         s = None if saturation is None else float(torch.empty(1).uniform_(saturation[0], saturation[1]))
         h = None if hue is None else float(torch.empty(1).uniform_(hue[0], hue[1]))
+        sp = None if sharpness is None else float(torch.empty(1).uniform_(sharpness[0], sharpness[1]))
 
-        return fn_idx, b, c, s, h
+        return fn_idx, b, c, s, h, sp
 
     def forward(self, img):
         """
@@ -1123,8 +1132,8 @@ class ColorJitter(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Color jittered image.
         """
-        fn_idx, brightness_factor, contrast_factor, saturation_factor, hue_factor = \
-            self.get_params(self.brightness, self.contrast, self.saturation, self.hue)
+        fn_idx, brightness_factor, contrast_factor, saturation_factor, hue_factor, sharpness_factor = \
+            self.get_params(self.brightness, self.contrast, self.saturation, self.hue, self.sharpness)
 
         for fn_id in fn_idx:
             if fn_id == 0 and brightness_factor is not None:
@@ -1135,6 +1144,8 @@ class ColorJitter(torch.nn.Module):
                 img = F.adjust_saturation(img, saturation_factor)
             elif fn_id == 3 and hue_factor is not None:
                 img = F.adjust_hue(img, hue_factor)
+            elif fn_id == 4 and sharpness_factor is not None:
+                img = F.adjust_sharpness(img, sharpness_factor)
 
         return img
 
@@ -1143,7 +1154,8 @@ class ColorJitter(torch.nn.Module):
         format_string += 'brightness={0}'.format(self.brightness)
         format_string += ', contrast={0}'.format(self.contrast)
         format_string += ', saturation={0}'.format(self.saturation)
-        format_string += ', hue={0})'.format(self.hue)
+        format_string += ', hue={0}'.format(self.hue)
+        format_string += ', sharpness={0})'.format(self.sharpness)
         return format_string
 
 

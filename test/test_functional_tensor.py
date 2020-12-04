@@ -904,6 +904,14 @@ class Tester(TransformsTester):
             dts=(torch.float32, torch.float64)
         )
 
+    def test_adjust_sharpness(self):
+        self._test_adjust_fn(
+            F.adjust_sharpness,
+            F_pil.adjust_sharpness,
+            F_t.adjust_sharpness,
+            [{"sharpness_factor": f} for f in [0.2, 0.5, 1.0, 1.5, 2.0]]
+        )
+
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):

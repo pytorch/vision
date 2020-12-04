@@ -1226,3 +1226,39 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
     result[invert_idx] = (bound - result[invert_idx].to(dtype=dtype)).clamp(0, bound).to(dtype=img.dtype)
 
     return result.view(img.shape)
+
+
+def _blur_image(img: Tensor) -> Tensor:
+    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
+
+    kernel = torch.ones((3, 3), dtype=dtype, device=img.device)
+    kernel[1, 1] = 5.0
+    kernel /= kernel.sum()
+    kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
+
+    result, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [kernel.dtype, ])
+    result = conv2d(result, kernel, groups=result.shape[-3])
+    result = torch_pad(result, [1, 1, 1, 1])
+    result = _cast_squeeze_out(result, need_cast, need_squeeze, out_dtype)
+
+    result[..., 0, :] = img[..., 0, :]
+    result[..., -1, :] = img[..., -1, :]
+    result[..., :, 0] = img[..., :, 0]
+    result[..., :, -1] = img[..., :, -1]
+
+    return result
+
+
+def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
+    if sharpness_factor < 0:
+        raise ValueError('sharpness_factor ({}) is not non-negative.'.format(sharpness_factor))
+
+    if not _is_tensor_a_torch_image(img):
+        raise TypeError('tensor is not a torch image.')
+
+    _assert_channels(img, [1, 3])
+
+    if img.size(-1) <= 2 or img.size(-2) <= 2:
+        return img
+
+    return _blend(img, _blur_image(img), sharpness_factor)
