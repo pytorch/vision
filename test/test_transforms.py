@@ -1232,6 +1232,37 @@ class Tester(unittest.TestCase):
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         self.assertTrue(np.allclose(y_np, y_ans))
 
+    def test_adjust_sharpness(self):
+        x_shape = [4, 4, 3]
+        x_data = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
+                  0, 65, 108, 101, 120, 97, 110, 100, 101, 114, 32, 86, 114, 121, 110, 105,
+                  111, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+        x_pil = Image.fromarray(x_np, mode='RGB')
+
+        # test 0
+        y_pil = F.adjust_sharpness(x_pil, 1)
+        y_np = np.array(y_pil)
+        self.assertTrue(np.allclose(y_np, x_np))
+
+        # test 1
+        y_pil = F.adjust_sharpness(x_pil, 0.5)
+        y_np = np.array(y_pil)
+        y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 30,
+                 30, 74, 103, 96, 114, 97, 110, 100, 101, 114, 32, 81, 103, 108, 102, 101,
+                 107, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+        self.assertTrue(np.allclose(y_np, y_ans))
+
+        # test 2
+        y_pil = F.adjust_sharpness(x_pil, 2)
+        y_np = np.array(y_pil)
+        y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
+                 0, 46, 118, 111, 132, 97, 110, 100, 101, 114, 32, 95, 135, 146, 126, 112,
+                 119, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+        self.assertTrue(np.allclose(y_np, y_ans))
+
     def test_adjust_gamma(self):
         x_shape = [2, 2, 3]
         x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
@@ -1268,10 +1299,11 @@ class Tester(unittest.TestCase):
         self.assertEqual(F.adjust_saturation(x_l, 2).mode, 'L')
         self.assertEqual(F.adjust_contrast(x_l, 2).mode, 'L')
         self.assertEqual(F.adjust_hue(x_l, 0.4).mode, 'L')
+        self.assertEqual(F.adjust_sharpness(x_l, 2).mode, 'L')
         self.assertEqual(F.adjust_gamma(x_l, 0.5).mode, 'L')
 
     def test_color_jitter(self):
-        color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
+        color_jitter = transforms.ColorJitter(2, 2, 2, 0.1, 2)
 
         x_shape = [2, 2, 3]
         x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
