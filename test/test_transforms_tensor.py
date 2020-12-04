@@ -107,6 +107,10 @@ class Tester(TransformsTester):
     def test_random_autocontrast(self):
         self._test_op('autocontrast', 'RandomAutocontrast')
 
+    def test_random_equalize(self):
+        torch.set_deterministic(False)
+        self._test_op('equalize', 'RandomEqualize')
+
     def test_color_jitter(self):
 
         tol = 1.0 + 1e-10

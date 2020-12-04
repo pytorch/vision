@@ -1273,3 +1273,23 @@ def autocontrast(img: Tensor) -> Tensor:
         return F_pil.autocontrast(img)
 
     return F_t.autocontrast(img)
+
+
+def equalize(img: Tensor) -> Tensor:
+    """Equalize the histogram of a PIL Image or torch Tensor by applying
+    a non-linear mapping to the input in order to create a uniform
+    distribution of grayscale values in the output.
+
+    Args:
+        img (PIL Image or Tensor): Image on which equalize is applied.
+            If img is a Tensor, it is expected to be in [..., H, W] format,
+            where ... means it can have an arbitrary number of trailing
+            dimensions.
+
+    Returns:
+        PIL Image or Tensor: An image that was equalized.
+    """
+    if not isinstance(img, torch.Tensor):
+        return F_pil.equalize(img)
+
+    return F_t.equalize(img)

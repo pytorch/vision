@@ -1795,7 +1795,7 @@ class Tester(unittest.TestCase):
     def _test_randomness(self, fn, trans, configs):
         random_state = random.getstate()
         random.seed(42)
-        img = transforms.ToPILImage()(torch.rand(3, 10, 10))
+        img = transforms.ToPILImage()(torch.rand(3, 16, 18))
 
         for p in [0.5, 0.7]:
             for config in configs:
@@ -1843,6 +1843,14 @@ class Tester(unittest.TestCase):
         self._test_randomness(
             F.autocontrast,
             transforms.RandomAutocontrast,
+            [{}]
+        )
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_equalize(self):
+        self._test_randomness(
+            F.equalize,
+            transforms.RandomEqualize,
             [{}]
         )
 

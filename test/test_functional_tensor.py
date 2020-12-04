@@ -922,6 +922,16 @@ class Tester(TransformsTester):
             agg_method="max"
         )
 
+    def test_equalize(self):
+        torch.set_deterministic(False)
+        self._test_adjust_fn(
+            F.equalize,
+            F_pil.equalize,
+            F_t.equalize,
+            [{}],
+            dts=(None,)
+        )
+
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):

@@ -644,3 +644,10 @@ def autocontrast(img):
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
     return ImageOps.autocontrast(img)
+
+
+@torch.jit.unused
+def equalize(img):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.equalize(img)
