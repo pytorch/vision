@@ -923,6 +923,7 @@ class Tester(TransformsTester):
         )
 
     def test_equalize(self):
+        torch.set_deterministic(False)
         self._test_adjust_fn(
             F.equalize,
             F_pil.equalize,
