@@ -1263,6 +1263,17 @@ class Tester(unittest.TestCase):
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         self.assertTrue(np.allclose(y_np, y_ans))
 
+        # test 3
+        x_shape = [2, 2, 3]
+        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+        x_pil = Image.fromarray(x_np, mode='RGB')
+        x_th = torch.tensor(x_np.transpose(2, 0, 1))
+        y_pil = F.adjust_sharpness(x_pil, 2)
+        y_np = np.array(y_pil).transpose(2, 0, 1)
+        y_th = F.adjust_sharpness(x_th, 2)
+        self.assertTrue(np.allclose(y_np, y_th.numpy()))
+
     def test_adjust_gamma(self):
         x_shape = [2, 2, 3]
         x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]

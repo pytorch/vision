@@ -1258,4 +1258,7 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
+    if img.size(-1) <= 2 or img.size(-2) <= 2:
+        return img
+
     return _blend(img, _blur_image(img), sharpness_factor)
