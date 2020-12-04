@@ -1235,3 +1235,21 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
         return F_pil.solarize(img, threshold)
 
     return F_t.solarize(img, threshold)
+
+
+def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
+    """Adjust the sharpness of an Image.
+
+    Args:
+        img (PIL Image or Tensor): Image to be adjusted.
+        sharpness_factor (float):  How much to adjust the sharpness. Can be
+            any non negative number. 0 gives a blurred image, 1 gives the
+            original image while 2 increases the sharpness by a factor of 2.
+
+    Returns:
+        PIL Image or Tensor: Sharpness adjusted image.
+    """
+    if not isinstance(img, torch.Tensor):
+        return F_pil.adjust_sharpness(img, sharpness_factor)
+
+    return F_t.adjust_sharpness(img, sharpness_factor)

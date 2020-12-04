@@ -627,3 +627,13 @@ def solarize(img, threshold):
     if not _is_pil_image(img):
         raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
     return ImageOps.solarize(img, threshold)
+
+
+@torch.jit.unused
+def adjust_sharpness(img, sharpness_factor):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    enhancer = ImageEnhance.Sharpness(img)
+    img = enhancer.enhance(sharpness_factor)
+    return img
