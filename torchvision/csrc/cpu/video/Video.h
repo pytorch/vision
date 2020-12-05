@@ -10,6 +10,7 @@
 #include <torch/script.h>
 
 #include <exception>
+#include "Frame.h"
 #include "defs.h"
 #include "memory_buffer.h"
 #include "sync_decoder.h"
@@ -29,7 +30,7 @@ struct Video : torch::CustomClassHolder {
   getStreamMetadata() const;
   void Seek(double ts);
   bool setCurrentStream(std::string stream);
-  std::tuple<torch::Tensor, double> Next();
+  c10::intrusive_ptr<Frame> Next();
 
  private:
   bool video_any_frame = false; // add this to input parameters?
