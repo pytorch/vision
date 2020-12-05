@@ -929,6 +929,8 @@ class Tester(TransformsTester):
             F_pil.equalize,
             F_t.equalize,
             [{}],
+            tol=1.0,
+            agg_method="max",
             dts=(None,)
         )
 
