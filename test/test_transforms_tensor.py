@@ -452,6 +452,7 @@ class Tester(TransformsTester):
         # We skip some tests from _test_transform_vs_scripted_on_batch as
         # results for scripted and non-scripted transformations are not exactly the same
         torch.manual_seed(12)
+        torch.set_deterministic(True)
         transformed_batch = fn(batch_tensors)
         torch.manual_seed(12)
         s_transformed_batch = scripted_fn(batch_tensors)
