@@ -570,6 +570,7 @@ def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = Fa
 
 
 def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
+    ratio = float(ratio)
     bound = 1.0 if img1.is_floating_point() else 255.0
     return (ratio * img1 + (1.0 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
