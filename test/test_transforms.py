@@ -170,7 +170,7 @@ class Tester(unittest.TestCase):
             to_pil_image = transforms.ToPILImage()
             img = to_pil_image(img)
             perp = transforms.RandomPerspective()
-            startpoints, endpoints = perp.get_params(width, height, 0.5)
+            startpoints, endpoints, probability = perp.get_params(width, height, 0.5)
             tr_img = F.perspective(img, startpoints, endpoints)
             tr_img2 = F.to_tensor(F.perspective(tr_img, endpoints, startpoints))
             tr_img = F.to_tensor(tr_img)
@@ -202,7 +202,7 @@ class Tester(unittest.TestCase):
 
         for mode, num_bands in zip(modes, nums_bands):
             img_conv = img.convert(mode)
-            startpoints, endpoints = transforms.RandomPerspective.get_params(width, height, 0.5)
+            startpoints, endpoints, probability = transforms.RandomPerspective.get_params(width, height, 0.5)
             tr_img = F.perspective(img_conv, startpoints, endpoints, fill=fill)
             pixel = tr_img.getpixel((0, 0))
 

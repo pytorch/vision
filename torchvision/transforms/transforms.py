@@ -738,14 +738,15 @@ class RandomPerspective(torch.nn.Module):
             else:
                 fill = [float(f) for f in fill]
 
-        if torch.rand(1) < self.p:
-            width, height = F._get_image_size(img)
-            startpoints, endpoints = self.get_params(width, height, self.distortion_scale)
+        width, height = F._get_image_size(img)
+        startpoints, endpoints, probability = self.get_params(width, height, self.distortion_scale)
+
+        if probability < self.p:
             return F.perspective(img, startpoints, endpoints, self.interpolation, fill)
         return img
 
     @staticmethod
-    def get_params(width: int, height: int, distortion_scale: float) -> Tuple[List[List[int]], List[List[int]]]:
+    def get_params(width: int, height: int, distortion_scale: float) -> Tuple[List[List[int]], List[List[int]], float]:
         """Get parameters for ``perspective`` for a random perspective transform.
 
         Args:
@@ -756,6 +757,7 @@ class RandomPerspective(torch.nn.Module):
         Returns:
             List containing [top-left, top-right, bottom-right, bottom-left] of the original image,
             List containing [top-left, top-right, bottom-right, bottom-left] of the transformed image.
+            Float which is used to determine whether the random perspective transformation should occur
         """
         half_height = height // 2
         half_width = width // 2
@@ -777,7 +779,8 @@ class RandomPerspective(torch.nn.Module):
         ]
         startpoints = [[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]]
         endpoints = [topleft, topright, botright, botleft]
-        return startpoints, endpoints
+        probability = torch.rand(1).item()
+        return startpoints, endpoints, probability
 
     def __repr__(self):
         return self.__class__.__name__ + '(p={})'.format(self.p)
@@ -1577,7 +1580,7 @@ class RandomErasing(torch.nn.Module):
     @staticmethod
     def get_params(
             img: Tensor, scale: Tuple[float, float], ratio: Tuple[float, float], value: Optional[List[float]] = None
-    ) -> Tuple[int, int, int, int, Tensor]:
+    ) -> Tuple[int, int, int, int, Tensor, float]:
         """Get parameters for ``erase`` for a random erasing.
 
         Args:
@@ -1589,10 +1592,13 @@ class RandomErasing(torch.nn.Module):
                 i.e. ``value[0]``.
 
         Returns:
-            tuple: params (i, j, h, w, v) to be passed to ``erase`` for random erasing.
+            tuple: params (i, j, h, w, v) and probability to determine whether the transformation
+            should occur and params to be passed to ``erase`` for random erasing.
+
         """
         img_c, img_h, img_w = img.shape[-3], img.shape[-2], img.shape[-1]
         area = img_h * img_w
+        probability = torch.rand(1).item()
 
         for _ in range(10):
             erase_area = area * torch.empty(1).uniform_(scale[0], scale[1]).item()
@@ -1610,10 +1616,10 @@ class RandomErasing(torch.nn.Module):
 
             i = torch.randint(0, img_h - h + 1, size=(1,)).item()
             j = torch.randint(0, img_w - w + 1, size=(1,)).item()
-            return i, j, h, w, v
+            return i, j, h, w, v, probability
 
         # Return original image
-        return 0, 0, img_h, img_w, img
+        return 0, 0, img_h, img_w, img, probability
 
     def forward(self, img):
         """
@@ -1623,25 +1629,24 @@ class RandomErasing(torch.nn.Module):
         Returns:
             img (Tensor): Erased Tensor image.
         """
-        if torch.rand(1) < self.p:
+        # cast self.value to script acceptable type
+        if isinstance(self.value, (int, float)):
+            value = [self.value, ]
+        elif isinstance(self.value, str):
+            value = None
+        elif isinstance(self.value, tuple):
+            value = list(self.value)
+        else:
+            value = self.value
 
-            # cast self.value to script acceptable type
-            if isinstance(self.value, (int, float)):
-                value = [self.value, ]
-            elif isinstance(self.value, str):
-                value = None
-            elif isinstance(self.value, tuple):
-                value = list(self.value)
-            else:
-                value = self.value
+        if value is not None and not (len(value) in (1, img.shape[-3])):
+            raise ValueError(
+                "If value is a sequence, it should have either a single value or "
+                "{} (number of input channels)".format(img.shape[-3])
+            )
 
-            if value is not None and not (len(value) in (1, img.shape[-3])):
-                raise ValueError(
-                    "If value is a sequence, it should have either a single value or "
-                    "{} (number of input channels)".format(img.shape[-3])
-                )
-
-            x, y, h, w, v = self.get_params(img, scale=self.scale, ratio=self.ratio, value=value)
+        x, y, h, w, v, probability = self.get_params(img, scale=self.scale, ratio=self.ratio, value=value)
+        if probability < self.p:
             return F.erase(img, x, y, h, w, v, self.inplace)
         return img
 
