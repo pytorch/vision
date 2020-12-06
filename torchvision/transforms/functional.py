@@ -155,7 +155,8 @@ def pil_to_tensor(pic):
         raise TypeError('pic should be PIL Image. Got {}'.format(type(pic)))
 
     if accimage is not None and isinstance(pic, accimage.Image):
-        nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.float32)
+        # accimage format is always uint8 internally, so always return uint8 here
+        nppic = np.zeros([pic.channels, pic.height, pic.width], dtype=np.uint8)
         pic.copyto(nppic)
         return torch.as_tensor(nppic)
 
@@ -462,14 +463,8 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
     image_width, image_height = _get_image_size(img)
     crop_height, crop_width = output_size
 
-    # crop_top = int(round((image_height - crop_height) / 2.))
-    # Result can be different between python func and scripted func
-    # Temporary workaround:
-    crop_top = int((image_height - crop_height + 1) * 0.5)
-    # crop_left = int(round((image_width - crop_width) / 2.))
-    # Result can be different between python func and scripted func
-    # Temporary workaround:
-    crop_left = int((image_width - crop_width + 1) * 0.5)
+    crop_top = int(round((image_height - crop_height) / 2.))
+    crop_left = int(round((image_width - crop_width) / 2.))
     return crop(img, crop_top, crop_left, crop_height, crop_width)
 
 

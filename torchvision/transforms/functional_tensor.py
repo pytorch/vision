@@ -105,13 +105,14 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         return result.to(dtype)
     else:
         input_max = _max_value(image.dtype)
-        output_max = _max_value(dtype)
 
         # int to float
         # TODO: replace with dtype.is_floating_point when torchscript supports it
         if torch.tensor(0, dtype=dtype).is_floating_point():
             image = image.to(dtype)
             return image / input_max
+
+        output_max = _max_value(dtype)
 
         # int to int
         if input_max > output_max:

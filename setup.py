@@ -328,10 +328,51 @@ def get_extensions():
     print("FFmpeg found: {}".format(has_ffmpeg))
 
     if has_ffmpeg:
+        ffmpeg_libraries = {
+            'libavcodec',
+            'libavformat',
+            'libavutil',
+            'libswresample',
+            'libswscale'
+        }
+
         ffmpeg_bin = os.path.dirname(ffmpeg_exe)
         ffmpeg_root = os.path.dirname(ffmpeg_bin)
         ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
         ffmpeg_library_dir = os.path.join(ffmpeg_root, 'lib')
+
+        gcc = distutils.spawn.find_executable('gcc')
+        platform_tag = subprocess.run(
+            [gcc, '-print-multiarch'], stdout=subprocess.PIPE)
+        platform_tag = platform_tag.stdout.strip().decode('utf-8')
+
+        if platform_tag:
+            # Most probably a Debian-based distribution
+            ffmpeg_include_dir = [
+                ffmpeg_include_dir,
+                os.path.join(ffmpeg_include_dir, platform_tag)
+            ]
+            ffmpeg_library_dir = [
+                ffmpeg_library_dir,
+                os.path.join(ffmpeg_library_dir, platform_tag)
+            ]
+        else:
+            ffmpeg_include_dir = [ffmpeg_include_dir]
+            ffmpeg_library_dir = [ffmpeg_library_dir]
+
+        has_ffmpeg = True
+        for library in ffmpeg_libraries:
+            library_found = False
+            for search_path in ffmpeg_include_dir + include_dirs:
+                full_path = os.path.join(search_path, library, '*.h')
+                library_found |= len(glob.glob(full_path)) > 0
+
+            if not library_found:
+                print('{0} header files were not found, disabling ffmpeg '
+                      'support')
+                has_ffmpeg = False
+
+    if has_ffmpeg:
         print("ffmpeg include path: {}".format(ffmpeg_include_dir))
         print("ffmpeg library_dir: {}".format(ffmpeg_library_dir))
 
@@ -357,10 +398,11 @@ def get_extensions():
                     base_decoder_src_dir,
                     video_reader_src_dir,
                     videoapi_src_dir,
-                    ffmpeg_include_dir,
                     extensions_dir,
+                    *ffmpeg_include_dir,
+                    *include_dirs
                 ],
-                library_dirs=[ffmpeg_library_dir] + library_dirs,
+                library_dirs=ffmpeg_library_dir + library_dirs,
                 libraries=[
                     'avcodec',
                     'avformat',
