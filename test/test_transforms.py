@@ -1316,7 +1316,7 @@ class Tester(unittest.TestCase):
         self.assertEqual(F.adjust_gamma(x_l, 0.5).mode, 'L')
 
     def test_color_jitter(self):
-        color_jitter = transforms.ColorJitter(2, 2, 2, 0.1, 2)
+        color_jitter = transforms.ColorJitter(2, 2, 2, 0.1)
 
         x_shape = [2, 2, 3]
         x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
@@ -1838,6 +1838,14 @@ class Tester(unittest.TestCase):
             F.solarize,
             transforms.RandomSolarize,
             [{"threshold": 192}]
+        )
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_adjust_sharpness(self):
+        self._test_randomness(
+            F.adjust_sharpness,
+            transforms.RandomAdjustSharpness,
+            [{"sharpness_factor": 2.0}]
         )
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')

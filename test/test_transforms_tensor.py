@@ -104,6 +104,12 @@ class Tester(TransformsTester):
             'solarize', 'RandomSolarize', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
         )
 
+    def test_random_adjust_sharpness(self):
+        fn_kwargs = meth_kwargs = {"sharpness_factor": 2.0}
+        self._test_op(
+            'adjust_sharpness', 'RandomAdjustSharpness', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
     def test_random_autocontrast(self):
         self._test_op('autocontrast', 'RandomAutocontrast')
 
@@ -138,14 +144,8 @@ class Tester(TransformsTester):
                 "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=16.1, agg_method="max"
             )
 
-        for f in [0.5, 0.75, 1.0, 1.25, (0.3, 0.7), [0.3, 0.4]]:
-            meth_kwargs = {"sharpness": f}
-            self._test_class_op(
-                "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=tol, agg_method="max"
-            )
-
         # All 4 parameters together
-        meth_kwargs = {"brightness": 0.2, "contrast": 0.2, "saturation": 0.2, "hue": 0.2, "sharpness": 0.2}
+        meth_kwargs = {"brightness": 0.2, "contrast": 0.2, "saturation": 0.2, "hue": 0.2}
         self._test_class_op(
             "ColorJitter", meth_kwargs=meth_kwargs, test_exact_match=False, tol=12.1, agg_method="max"
         )
