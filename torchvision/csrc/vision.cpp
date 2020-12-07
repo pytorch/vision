@@ -10,7 +10,6 @@
 #include <hip/hip_runtime.h>
 #endif
 
-#include "roi_align.h"
 #include "roi_pool.h"
 
 // If we are in a Windows environment, we need to define
@@ -36,10 +35,6 @@ using namespace vision::ops;
 
 TORCH_LIBRARY(torchvision, m) {
   m.def(
-      "roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio, bool aligned) -> Tensor");
-  m.def(
-      "_roi_align_backward(Tensor grad, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int batch_size, int channels, int height, int width, int sampling_ratio, bool aligned) -> Tensor");
-  m.def(
       "roi_pool(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width) -> (Tensor, Tensor)");
   m.def(
       "_roi_pool_backward(Tensor grad, Tensor rois, Tensor argmax, float spatial_scale, int pooled_height, int pooled_width, int batch_size, int channels, int height, int width) -> Tensor");
@@ -47,8 +42,6 @@ TORCH_LIBRARY(torchvision, m) {
 }
 
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
-  m.impl("roi_align", roi_align_forward_cpu);
-  m.impl("_roi_align_backward", roi_align_backward_cpu);
   m.impl("roi_pool", roi_pool_forward_cpu);
   m.impl("_roi_pool_backward", roi_pool_backward_cpu);
 }
@@ -56,8 +49,6 @@ TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
 // TODO: Place this in a hypothetical separate torchvision_cuda library
 #if defined(WITH_CUDA) || defined(WITH_HIP)
 TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
-  m.impl("roi_align", roi_align_forward_cuda);
-  m.impl("_roi_align_backward", roi_align_backward_cuda);
   m.impl("roi_pool", roi_pool_forward_cuda);
   m.impl("_roi_pool_backward", roi_pool_backward_cuda);
 }
@@ -66,14 +57,11 @@ TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
 // Autocast only needs to wrap forward pass ops.
 #if defined(WITH_CUDA) || defined(WITH_HIP)
 TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
-  m.impl("roi_align", roi_align_autocast);
   m.impl("roi_pool", roi_pool_autocast);
 }
 #endif
 
 TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
-  m.impl("roi_align", roi_align_autograd);
-  m.impl("_roi_align_backward", roi_align_backward_autograd);
   m.impl("roi_pool", roi_pool_autograd);
   m.impl("_roi_pool_backward", roi_pool_backward_autograd);
 }

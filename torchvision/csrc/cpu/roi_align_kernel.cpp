@@ -1,4 +1,5 @@
-#include "roi_align_kernel.h"
+#include <ATen/ATen.h>
+#include <torch/library.h>
 
 namespace vision {
 namespace ops {
@@ -388,9 +389,7 @@ void roi_align_backward_kernel_impl(
   } // for
 }
 
-} // namespace
-
-at::Tensor roi_align_forward_cpu(
+at::Tensor roi_align_forward_kernel(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -404,7 +403,7 @@ at::Tensor roi_align_forward_cpu(
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
-  at::CheckedFrom c = "roi_align_forward_cpu";
+  at::CheckedFrom c = "roi_align_forward_kernel";
   at::checkAllSameType(c, {input_t, rois_t});
 
   auto num_rois = rois.size(0);
@@ -422,7 +421,7 @@ at::Tensor roi_align_forward_cpu(
 
   auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "roi_align_forward_cpu", [&] {
+      input.scalar_type(), "roi_align_forward_kernel", [&] {
         roi_align_forward_kernel_impl<scalar_t>(
             output_size,
             input_.data_ptr<scalar_t>(),
@@ -440,7 +439,7 @@ at::Tensor roi_align_forward_cpu(
   return output;
 }
 
-at::Tensor roi_align_backward_cpu(
+at::Tensor roi_align_backward_kernel(
     const at::Tensor& grad,
     const at::Tensor& rois,
     double spatial_scale,
@@ -457,7 +456,7 @@ at::Tensor roi_align_backward_cpu(
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2};
 
-  at::CheckedFrom c = "roi_align_backward_cpu";
+  at::CheckedFrom c = "roi_align_backward_kernel";
   at::checkAllSameType(c, {grad_t, rois_t});
 
   at::Tensor grad_input =
@@ -476,7 +475,7 @@ at::Tensor roi_align_backward_cpu(
 
   auto rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      grad.scalar_type(), "roi_align_backward_cpu", [&] {
+      grad.scalar_type(), "roi_align_backward_kernel", [&] {
         roi_align_backward_kernel_impl<scalar_t>(
             grad.numel(),
             grad.data_ptr<scalar_t>(),
@@ -496,6 +495,13 @@ at::Tensor roi_align_backward_cpu(
             w_stride);
       });
   return grad_input;
+}
+
+} // namespace
+
+TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
+  m.impl("roi_align", roi_align_forward_kernel);
+  m.impl("_roi_align_backward", roi_align_backward_kernel);
 }
 
 } // namespace ops
