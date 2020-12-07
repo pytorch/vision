@@ -10,7 +10,6 @@
 #include <hip/hip_runtime.h>
 #endif
 
-#include "new_empty_tensor_op.h"
 #include "ps_roi_align.h"
 #include "ps_roi_pool.h"
 #include "roi_align.h"
@@ -55,7 +54,6 @@ TORCH_LIBRARY(torchvision, m) {
   m.def(
       "_roi_pool_backward(Tensor grad, Tensor rois, Tensor argmax, float spatial_scale, int pooled_height, int pooled_width, int batch_size, int channels, int height, int width) -> Tensor");
   m.def("_cuda_version", &vision::cuda_version);
-  m.def("_new_empty_tensor_op", &new_empty_tensor);
 }
 
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
