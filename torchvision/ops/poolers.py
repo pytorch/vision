@@ -95,6 +95,8 @@ class MultiScaleRoIAlign(nn.Module):
             for the pooling.
         output_size (List[Tuple[int, int]] or List[int]): output size for the pooled region
         sampling_ratio (int): sampling ratio for ROIAlign
+        canonical_scale (int): canonical_scale for LevelMapper
+        canonical_level (int): canonical_level for LevelMapper
 
     Examples::
 
@@ -123,6 +125,8 @@ class MultiScaleRoIAlign(nn.Module):
         featmap_names: List[str],
         output_size: Union[int, Tuple[int], List[int]],
         sampling_ratio: int,
+        canonical_scale: int = 224,
+        canonical_level: int = 4,
     ):
         super(MultiScaleRoIAlign, self).__init__()
         if isinstance(output_size, int):
@@ -132,6 +136,8 @@ class MultiScaleRoIAlign(nn.Module):
         self.output_size = tuple(output_size)
         self.scales = None
         self.map_levels = None
+        self.canonical_scale = canonical_scale
+        self.canonical_level = canonical_level
 
     def convert_to_roi_format(self, boxes: List[Tensor]) -> Tensor:
         concat_boxes = torch.cat(boxes, dim=0)
@@ -176,7 +182,12 @@ class MultiScaleRoIAlign(nn.Module):
         lvl_min = -torch.log2(torch.tensor(scales[0], dtype=torch.float32)).item()
         lvl_max = -torch.log2(torch.tensor(scales[-1], dtype=torch.float32)).item()
         self.scales = scales
-        self.map_levels = initLevelMapper(int(lvl_min), int(lvl_max))
+        self.map_levels = initLevelMapper(
+            int(lvl_min), 
+            int(lvl_max),
+            canonical_scale=self.canonical_scale,
+            canonical_level=self.canonical_level,
+        )
 
     def forward(
         self,
