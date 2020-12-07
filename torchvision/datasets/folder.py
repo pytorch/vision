@@ -85,11 +85,11 @@ class DatasetFolder(VisionDataset):
 
         root/class_x/xxx.ext
         root/class_x/xxy.ext
-        root/class_x/xxz.ext
+        root/class_x/[...]/xxz.ext
 
         root/class_y/123.ext
         root/class_y/nsdf3.ext
-        root/class_y/asd932_.ext
+        root/class_y/[...]/asd932_.ext
 
     Args:
         root (string): Root directory path.
@@ -211,11 +211,11 @@ class ImageFolder(DatasetFolder):
 
         root/dog/xxx.png
         root/dog/xxy.png
-        root/dog/xxz.png
+        root/dog/[...]/xxz.png
 
         root/cat/123.png
         root/cat/nsdf3.png
-        root/cat/asd932_.png
+        root/cat/[...]/asd932_.png
 
     Args:
         root (string): Root directory path.
