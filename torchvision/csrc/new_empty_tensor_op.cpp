@@ -1,5 +1,3 @@
-#pragma once
-
 #include <torch/extension.h>
 
 namespace vision {
