@@ -1,4 +1,3 @@
-#include "deform_conv2d.h"
 #include <torch/extension.h>
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
@@ -77,6 +76,10 @@ at::Tensor deform_conv2d_autocast(
              use_mask)
       .to(input.scalar_type());
 }
+
+TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
+  m.impl("deform_conv2d", deform_conv2d_autocast);
+}
 #endif
 
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
@@ -116,6 +119,13 @@ _deform_conv2d_backward(
       groups,
       offset_groups,
       use_mask);
+}
+
+TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.def(
+      "deform_conv2d(Tensor input, Tensor weight, Tensor offset, Tensor mask, Tensor bias, int stride_h, int stride_w, int pad_h, int pad_w, int dilation_h, int dilation_w, int groups, int offset_groups, bool use_mask) -> Tensor");
+  m.def(
+      "_deform_conv2d_backward(Tensor grad, Tensor input, Tensor weight, Tensor offset, Tensor mask, Tensor bias, int stride_h, int stride_w, int pad_h, int pad_w, int dilation_h, int dilation_w, int groups, int offset_groups, bool use_mask) -> (Tensor, Tensor, Tensor, Tensor, Tensor)");
 }
 
 namespace {
@@ -363,6 +373,11 @@ deform_conv2d_backward_autograd(
       use_mask);
 
   return std::make_tuple(result[0], result[1], result[2], result[3], result[4]);
+}
+
+TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
+  m.impl("deform_conv2d", deform_conv2d_autograd);
+  m.impl("_deform_conv2d_backward", deform_conv2d_backward_autograd);
 }
 
 } // namespace ops

@@ -66,12 +66,13 @@
 // modified from
 // https://github.com/open-mmlab/mmdetection/blob/master/mmdet/ops/dcn/src/deform_conv_cuda.cpp
 
+#include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <THC/THCAtomics.cuh>
+#include <torch/library.h>
 
 #include "cuda_helpers.h"
-#include "deform_conv2d_kernel.h"
 
 namespace vision {
 namespace ops {
@@ -896,9 +897,7 @@ at::Tensor backward_gradient_parameters(
   return grad_weight;
 }
 
-} // namespace
-
-at::Tensor deform_conv2d_forward_cuda(
+at::Tensor deform_conv2d_forward_kernel(
     const at::Tensor& input,
     const at::Tensor& weight,
     const at::Tensor& offset,
@@ -1115,7 +1114,7 @@ at::Tensor deform_conv2d_forward_cuda(
 }
 
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
-deform_conv2d_backward_cuda(
+deform_conv2d_backward_kernel(
     const at::Tensor& grad_out,
     const at::Tensor& input,
     const at::Tensor& weight,
@@ -1185,6 +1184,13 @@ deform_conv2d_backward_cuda(
 
   return std::make_tuple(
       grad_input, grad_weight, grad_offset, grad_mask, grad_bias);
+}
+
+} // namespace
+
+TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
+  m.impl("deform_conv2d", deform_conv2d_forward_kernel);
+  m.impl("_deform_conv2d_backward", deform_conv2d_backward_kernel);
 }
 
 } // namespace ops
