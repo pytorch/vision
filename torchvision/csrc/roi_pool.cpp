@@ -1,6 +1,7 @@
 #include "roi_pool.h"
 
-#include <torch/extension.h>
+#include <torch/autograd.h>
+#include <torch/types.h>
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
 #include <ATen/autocast_mode.h>

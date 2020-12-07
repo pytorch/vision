@@ -1,6 +1,7 @@
 #include "new_empty_tensor_op.h"
 
-#include <torch/extension.h>
+#include <torch/autograd.h>
+#include <torch/types.h>
 
 namespace vision {
 namespace ops {

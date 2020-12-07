@@ -1,6 +1,7 @@
 #include "vision.h"
 
-#include <torch/extension.h>
+#include <Python.h>
+#include <torch/library.h>
 
 #ifdef WITH_CUDA
 #include <cuda.h>
