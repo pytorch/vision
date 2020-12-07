@@ -1,3 +1,5 @@
+#include "ps_roi_align.h"
+
 #include <torch/extension.h>
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
@@ -80,9 +82,9 @@ at::Tensor _ps_roi_align_backward(
 
 TORCH_LIBRARY_FRAGMENT(torchvision, m) {
   m.def(
-    "ps_roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio) -> (Tensor, Tensor)");
+      "ps_roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio) -> (Tensor, Tensor)");
   m.def(
-    "_ps_roi_align_backward(Tensor grad, Tensor rois, Tensor channel_mapping, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio, int batch_size, int channels, int height, int width) -> Tensor");
+      "_ps_roi_align_backward(Tensor grad, Tensor rois, Tensor channel_mapping, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio, int batch_size, int channels, int height, int width) -> Tensor");
 }
 
 namespace {

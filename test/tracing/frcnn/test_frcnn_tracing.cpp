@@ -1,7 +1,8 @@
 #include <ATen/ATen.h>
 #include <torch/script.h>
 #include <torch/torch.h>
-#include <torchvision/vision.h>
+#include <torchvision/nms.h>
+#include <torchvision/roi_align.h>
 
 int main() {
   torch::DeviceType device_type;

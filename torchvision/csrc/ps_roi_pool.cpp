@@ -1,3 +1,5 @@
+#include "ps_roi_pool.h"
+
 #include <torch/extension.h>
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)

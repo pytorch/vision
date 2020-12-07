@@ -69,8 +69,8 @@
 #include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
-#include <THC/THCAtomics.cuh>
 #include <torch/library.h>
+#include <THC/THCAtomics.cuh>
 
 #include "cuda_helpers.h"
 

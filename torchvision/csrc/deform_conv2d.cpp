@@ -1,3 +1,5 @@
+#include "deform_conv2d.h"
+
 #include <torch/extension.h>
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)

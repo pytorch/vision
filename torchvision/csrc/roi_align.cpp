@@ -1,3 +1,5 @@
+#include "roi_align.h"
+
 #include <torch/extension.h>
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
