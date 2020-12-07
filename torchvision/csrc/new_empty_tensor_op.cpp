@@ -1,5 +1,3 @@
-#pragma once
-
 #include "new_empty_tensor_op.h"
 #include <torch/extension.h>
 
