@@ -349,14 +349,15 @@ class Tester(TransformsTester):
                 for translate in [(0.1, 0.2), [0.2, 0.1]]:
                     for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
                         for interpolation in [NEAREST, BILINEAR]:
-                            transform = T.RandomAffine(
-                                degrees=degrees, translate=translate,
-                                scale=scale, shear=shear, interpolation=interpolation
-                            )
-                            s_transform = torch.jit.script(transform)
+                            for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
+                                transform = T.RandomAffine(
+                                    degrees=degrees, translate=translate,
+                                    scale=scale, shear=shear, interpolation=interpolation, fill=fill
+                                )
+                                s_transform = torch.jit.script(transform)
 
-                            self._test_transform_vs_scripted(transform, s_transform, tensor)
-                            self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+                                self._test_transform_vs_scripted(transform, s_transform, tensor)
+                                self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_random_affine.pt"))
@@ -369,13 +370,14 @@ class Tester(TransformsTester):
             for expand in [True, False]:
                 for degrees in [45, 35.0, (-45, 45), [-90.0, 90.0]]:
                     for interpolation in [NEAREST, BILINEAR]:
-                        transform = T.RandomRotation(
-                            degrees=degrees, interpolation=interpolation, expand=expand, center=center
-                        )
-                        s_transform = torch.jit.script(transform)
+                        for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
+                            transform = T.RandomRotation(
+                                degrees=degrees, interpolation=interpolation, expand=expand, center=center, fill=fill
+                            )
+                            s_transform = torch.jit.script(transform)
 
-                        self._test_transform_vs_scripted(transform, s_transform, tensor)
-                        self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+                            self._test_transform_vs_scripted(transform, s_transform, tensor)
+                            self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_random_rotate.pt"))
@@ -386,14 +388,16 @@ class Tester(TransformsTester):
 
         for distortion_scale in np.linspace(0.1, 1.0, num=20):
             for interpolation in [NEAREST, BILINEAR]:
-                transform = T.RandomPerspective(
-                    distortion_scale=distortion_scale,
-                    interpolation=interpolation
-                )
-                s_transform = torch.jit.script(transform)
+                for fill in [85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
+                    transform = T.RandomPerspective(
+                        distortion_scale=distortion_scale,
+                        interpolation=interpolation,
+                        fill=fill
+                    )
+                    s_transform = torch.jit.script(transform)
 
-                self._test_transform_vs_scripted(transform, s_transform, tensor)
-                self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+                    self._test_transform_vs_scripted(transform, s_transform, tensor)
+                    self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_perspective.pt"))
