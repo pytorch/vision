@@ -22,7 +22,7 @@ def get_list_of_videos(num_videos=5, sizes=None, fps=None):
                 f = 5
             else:
                 f = fps[i]
-            data = torch.randint(0, 255, (size, 300, 400, 3), dtype=torch.uint8)
+            data = torch.randint(0, 256, (size, 300, 400, 3), dtype=torch.uint8)
             name = os.path.join(tmp_dir, "{}.mp4".format(i))
             names.append(name)
             io.write_video(name, data, fps=f)
