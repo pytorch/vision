@@ -18,8 +18,34 @@ class AutoAugmentPolicy(Enum):
 
 
 class AutoAugment(torch.nn.Module):
-    r"""AutoAugment method, based on
+    r"""AutoAugment data augmentation method based on
     `"AutoAugment: Learning Augmentation Strategies from Data" <https://arxiv.org/pdf/1805.09501.pdf>`_.
+    The image can be a PIL Image or a Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+
+    Args:
+        policy (AutoAugmentPolicy): Desired policy enum defined by
+            :class:`torchvision.transforms.autoaugment.AutoAugmentPolicy`. Default is ``AutoAugmentPolicy.IMAGENET``.
+        translate (tuple, optional): tuple of maximum absolute fraction for horizontal
+            and vertical translations. For example translate=(a, b), then horizontal shift
+            is randomly sampled in the range -img_width * a < dx < img_width * a and vertical shift is
+            randomly sampled in the range -img_height * b < dy < img_height * b. Will not translate by default.
+        scale (tuple, optional): scaling factor interval, e.g (a, b), then scale is
+            randomly sampled from the range a <= scale <= b. Will keep original scale by default.
+        shear (sequence or float or int, optional): Range of degrees to select from.
+            If shear is a number, a shear parallel to the x axis in the range (-shear, +shear)
+            will be applied. Else if shear is a tuple or list of 2 values a shear parallel to the x axis in the
+            range (shear[0], shear[1]) will be applied. Else if shear is a tuple or list of 4 values,
+            a x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
+            Will not apply shear by default.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
+            image. If int or float, the value is used for all bands respectively.
+            This option is supported for PIL image and Tensor inputs.
+            If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
     """
 
     def __init__(self, policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET, fill: Optional[List[float]] = None):
@@ -134,6 +160,11 @@ class AutoAugment(torch.nn.Module):
 
     @staticmethod
     def get_params(policy_num: int) -> Tuple[int, Tensor, Tensor]:
+        """Get parameters for autoaugment transformation
+
+        Returns:
+            params required by the autoaugment transformation
+        """
         policy_id = torch.randint(policy_num, (1,)).item()
         probs = torch.rand((2,))
         signs = torch.randint(2, (2,))
@@ -144,6 +175,12 @@ class AutoAugment(torch.nn.Module):
         return self._op_meta[name]
 
     def forward(self, img: Tensor):
+        """
+            img (PIL Image or Tensor): Image to be transformed.
+
+        Returns:
+            PIL Image or Tensor: AutoAugmented image.
+        """
         fill = self.fill
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
@@ -156,24 +193,25 @@ class AutoAugment(torch.nn.Module):
         for i, (op_name, p, magnitude_id) in enumerate(self.policies[policy_id]):
             if probs[i] <= p:
                 magnitudes, signed = self._get_op_meta(op_name)
-                magnitude = float(magnitudes[magnitude_id].item()) if magnitudes is not None and magnitude_id is not None else 0.0
+                magnitude = float(magnitudes[magnitude_id].item()) if magnitudes is not None and \
+                                                                      magnitude_id is not None else 0.0
                 if signed is not None and signed and signs[i] == 0:
                     magnitude *= -1.0
 
                 if op_name == "ShearX":
                     img = F.affine(img, angle=0.0, translate=[0, 0], scale=1.0, shear=[math.degrees(magnitude), 0.0],
-                                   interpolation=InterpolationMode.BICUBIC, fill=fill)
+                                   fill=fill)
                 elif op_name == "ShearY":
                     img = F.affine(img, angle=0.0, translate=[0, 0], scale=1.0, shear=[0.0, math.degrees(magnitude)],
-                                   interpolation=InterpolationMode.BICUBIC, fill=fill)
+                                   fill=fill)
                 elif op_name == "TranslateX":
                     img = F.affine(img, angle=0.0, translate=[int(F._get_image_size(img)[0] * magnitude), 0], scale=1.0,
-                                   shear=[0.0, 0.0], interpolation=InterpolationMode.BICUBIC, fill=fill)
+                                   shear=[0.0, 0.0], fill=fill)
                 elif op_name == "TranslateY":
                     img = F.affine(img, angle=0.0, translate=[0, int(F._get_image_size(img)[1] * magnitude)], scale=1.0,
-                                   shear=[0.0, 0.0], interpolation=InterpolationMode.BICUBIC, fill=fill)
+                                   shear=[0.0, 0.0], fill=fill)
                 elif op_name == "Rotate":
-                    img = F.rotate(img, magnitude, interpolation=InterpolationMode.BICUBIC, fill=fill)
+                    img = F.rotate(img, magnitude, fill=fill)
                 elif op_name == "Brightness":
                     img = F.adjust_brightness(img, 1.0 + magnitude)
                 elif op_name == "Color":

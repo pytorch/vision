@@ -4,6 +4,7 @@ import torchvision.transforms as transforms
 import torchvision.transforms.functional as F
 import torchvision.transforms.functional_tensor as F_t
 from torch._utils_internal import get_file_path_2
+from torchvision.transforms.autoaugment import AutoAugment, AutoAugmentPolicy
 from numpy.testing import assert_array_almost_equal
 import unittest
 import math
@@ -1863,6 +1864,16 @@ class Tester(unittest.TestCase):
             transforms.RandomEqualize,
             [{}]
         )
+
+    def test_autoaugment(self):
+        for policy in AutoAugmentPolicy:
+            for fill in [None, 85, (128, 128, 128)]:
+                random.seed(42)
+                img = transforms.ToPILImage()(torch.rand(3, 44, 56))
+                transform = AutoAugment(policy=policy, fill=fill)
+                for _ in range(1000):
+                    img = transform(img)
+                transform.__repr__()
 
 
 if __name__ == '__main__':

@@ -640,6 +640,8 @@ class Tester(TransformsTester):
                     self._test_transform_vs_scripted(transform, s_transform, tensor)
                     self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
+        with get_tmp_dir() as tmp_dir:
+            s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):
