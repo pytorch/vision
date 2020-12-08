@@ -1864,6 +1864,16 @@ class Tester(unittest.TestCase):
             [{}]
         )
 
+    def test_autoaugment(self):
+        for policy in transforms.AutoAugmentPolicy:
+            for fill in [None, 85, (128, 128, 128)]:
+                random.seed(42)
+                img = Image.open(GRACE_HOPPER)
+                transform = transforms.AutoAugment(policy=policy, fill=fill)
+                for _ in range(100):
+                    img = transform(img)
+                transform.__repr__()
+
 
 if __name__ == '__main__':
     unittest.main()
