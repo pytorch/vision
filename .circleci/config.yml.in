@@ -152,6 +152,10 @@ jobs:
       - checkout
       - run:
           command: |
+            pip install --user --progress-bar off numpy
+            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            # need to install torchvision dependencies due to transitive imports
+            pip install --user --progress-bar off --editable .
             pip install --user onnx
             pip install --user -i https://test.pypi.org/simple/ ort-nightly==1.5.2.dev202012031
             python test/test_onnx.py
