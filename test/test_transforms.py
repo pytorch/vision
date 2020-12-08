@@ -1869,9 +1869,9 @@ class Tester(unittest.TestCase):
         for policy in AutoAugmentPolicy:
             for fill in [None, 85, (128, 128, 128)]:
                 random.seed(42)
-                img = transforms.ToPILImage()(torch.rand(3, 44, 56))
+                img = Image.open(GRACE_HOPPER)
                 transform = AutoAugment(policy=policy, fill=fill)
-                for _ in range(1000):
+                for _ in range(100):
                     img = transform(img)
                 transform.__repr__()
 
