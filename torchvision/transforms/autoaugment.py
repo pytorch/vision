@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.jit.annotations import List, Tuple
 from typing import Optional
 
-from . import functional as F, InterpolationMode
+from . import functional as F
 
 
 class AutoAugmentPolicy(Enum):
@@ -26,26 +26,19 @@ class AutoAugment(torch.nn.Module):
     Args:
         policy (AutoAugmentPolicy): Desired policy enum defined by
             :class:`torchvision.transforms.autoaugment.AutoAugmentPolicy`. Default is ``AutoAugmentPolicy.IMAGENET``.
-        translate (tuple, optional): tuple of maximum absolute fraction for horizontal
-            and vertical translations. For example translate=(a, b), then horizontal shift
-            is randomly sampled in the range -img_width * a < dx < img_width * a and vertical shift is
-            randomly sampled in the range -img_height * b < dy < img_height * b. Will not translate by default.
-        scale (tuple, optional): scaling factor interval, e.g (a, b), then scale is
-            randomly sampled from the range a <= scale <= b. Will keep original scale by default.
-        shear (sequence or float or int, optional): Range of degrees to select from.
-            If shear is a number, a shear parallel to the x axis in the range (-shear, +shear)
-            will be applied. Else if shear is a tuple or list of 2 values a shear parallel to the x axis in the
-            range (shear[0], shear[1]) will be applied. Else if shear is a tuple or list of 4 values,
-            a x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
-            Will not apply shear by default.
-        interpolation (InterpolationMode): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
-            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
             image. If int or float, the value is used for all bands respectively.
             This option is supported for PIL image and Tensor inputs.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
+
+    Example:
+        >>> t = transforms.AutoAugment()
+        >>> transformed = t(image)
+
+        >>> transform=transforms.Compose([
+        >>>     transforms.Resize(256),
+        >>>     transforms.AutoAugment(),
+        >>>     transforms.ToTensor()])
     """
 
     def __init__(self, policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET, fill: Optional[List[float]] = None):

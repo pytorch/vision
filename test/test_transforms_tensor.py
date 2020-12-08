@@ -3,7 +3,6 @@ import torch
 from torchvision import transforms as T
 from torchvision.transforms import functional as F
 from torchvision.transforms import InterpolationMode
-from torchvision.transforms.autoaugment import AutoAugment, AutoAugmentPolicy
 
 import numpy as np
 
@@ -631,10 +630,10 @@ class Tester(TransformsTester):
         tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
         batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
 
-        for policy in AutoAugmentPolicy:
+        for policy in T.AutoAugmentPolicy:
             for fill in [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
                 for _ in range(100):
-                    transform = AutoAugment(policy=policy, fill=fill)
+                    transform = T.AutoAugment(policy=policy, fill=fill)
                     s_transform = torch.jit.script(transform)
 
                     self._test_transform_vs_scripted(transform, s_transform, tensor)
