@@ -1,5 +1,7 @@
 #include "ps_roi_align.h"
-#include <torch/extension.h>
+
+#include <torch/autograd.h>
+#include <torch/types.h>
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
 #include <ATen/autocast_mode.h>
@@ -43,6 +45,10 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_align_autocast(
       std::get<0>(result).to(input.scalar_type()),
       std::get<1>(result).to(input.scalar_type()));
 }
+
+TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
+  m.impl("ps_roi_align", ps_roi_align_autocast);
+}
 #endif
 
 at::Tensor _ps_roi_align_backward(
@@ -73,6 +79,13 @@ at::Tensor _ps_roi_align_backward(
       channels,
       height,
       width);
+}
+
+TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.def(
+      "ps_roi_align(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio) -> (Tensor, Tensor)");
+  m.def(
+      "_ps_roi_align_backward(Tensor grad, Tensor rois, Tensor channel_mapping, float spatial_scale, int pooled_height, int pooled_width, int sampling_ratio, int batch_size, int channels, int height, int width) -> Tensor");
 }
 
 namespace {
@@ -220,6 +233,11 @@ at::Tensor ps_roi_align_backward_autograd(
       channels,
       height,
       width)[0];
+}
+
+TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
+  m.impl("ps_roi_align", ps_roi_align_autograd);
+  m.impl("_ps_roi_align_backward", ps_roi_align_backward_autograd);
 }
 
 } // namespace ops
