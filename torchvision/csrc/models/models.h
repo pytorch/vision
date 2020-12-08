@@ -1,5 +1,4 @@
-#ifndef MODELS_H
-#define MODELS_H
+#pragma once
 
 #include "alexnet.h"
 #include "densenet.h"
@@ -11,5 +10,3 @@
 #include "shufflenetv2.h"
 #include "squeezenet.h"
 #include "vgg.h"
-
-#endif // MODELS_H

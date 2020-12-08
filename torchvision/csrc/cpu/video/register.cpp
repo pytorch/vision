@@ -1,6 +1,3 @@
-#ifndef REGISTER_H
-#define REGISTER_H
-
 #include "Video.h"
 
 namespace {
@@ -15,4 +12,3 @@ static auto registerVideo =
         .def("next", &Video::Next);
 
 } // namespace
-#endif
