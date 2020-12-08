@@ -141,6 +141,8 @@ jobs:
           command: |
             pip install --user --progress-bar off numpy
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            # need to install torchvision dependencies due to transitive imports
+            pip install --user --progress-bar off --editable .
             python test/test_hub.py
 
   binary_linux_wheel:
