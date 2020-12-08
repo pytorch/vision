@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Dict, Tuple
+from typing import Optional, Tuple
 
 import torch
 from torch import Tensor
@@ -43,6 +43,12 @@ def _max_value(dtype: torch.dtype) -> float:
         else:
             return max_value.item()
     return max_value.item()
+
+
+def _assert_channels(img: Tensor, permitted: List[int]) -> None:
+    c = _get_image_num_channels(img)
+    if c not in permitted:
+        raise TypeError("Input image tensor permitted channel values are {}, but found {}".format(permitted, c))
 
 
 def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
@@ -211,9 +217,7 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     """
     if img.ndim < 3:
         raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
-    c = img.shape[-3]
-    if c != 3:
-        raise TypeError("Input image tensor should 3 channels, but found {}".format(c))
+    _assert_channels(img, [3])
 
     if num_output_channels not in (1, 3):
         raise ValueError('num_output_channels should be either 1 or 3')
@@ -231,7 +235,7 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
 
 
 def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
-    """PRIVATE METHOD. Adjust brightness of an RGB image.
+    """PRIVATE METHOD. Adjust brightness of a Grayscale or RGB image.
 
     .. warning::
 
@@ -252,6 +256,8 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
 
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
+
+    _assert_channels(img, [1, 3])
 
     return _blend(img, torch.zeros_like(img), brightness_factor)
 
@@ -279,6 +285,8 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
+    _assert_channels(img, [3])
+
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     mean = torch.mean(rgb_to_grayscale(img).to(dtype), dim=(-3, -2, -1), keepdim=True)
 
@@ -286,7 +294,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
 
 
 def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
-    """PRIVATE METHOD. Adjust hue of an image.
+    """PRIVATE METHOD. Adjust hue of an RGB image.
 
     .. warning::
 
@@ -320,6 +328,8 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
 
     if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
         raise TypeError('Input img should be Tensor image')
+
+    _assert_channels(img, [3])
 
     orig_dtype = img.dtype
     if img.dtype == torch.uint8:
@@ -360,11 +370,13 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     if not _is_tensor_a_torch_image(img):
         raise TypeError('tensor is not a torch image.')
 
+    _assert_channels(img, [3])
+
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
 
 
 def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
-    r"""PRIVATE METHOD. Adjust gamma of an RGB image.
+    r"""PRIVATE METHOD. Adjust gamma of a Grayscale or RGB image.
 
     .. warning::
 
@@ -391,6 +403,8 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
     if not isinstance(img, torch.Tensor):
         raise TypeError('Input img should be a Tensor.')
+
+    _assert_channels(img, [1, 3])
 
     if gamma < 0:
         raise ValueError('Gamma should be a non-negative real number')
