@@ -643,6 +643,7 @@ class Tester(TransformsTester):
         with get_tmp_dir() as tmp_dir:
             s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
 
+
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
 class CUDATester(Tester):
 

@@ -193,8 +193,8 @@ class AutoAugment(torch.nn.Module):
         for i, (op_name, p, magnitude_id) in enumerate(self.policies[policy_id]):
             if probs[i] <= p:
                 magnitudes, signed = self._get_op_meta(op_name)
-                magnitude = float(magnitudes[magnitude_id].item()) if magnitudes is not None and \
-                                                                      magnitude_id is not None else 0.0
+                magnitude = float(magnitudes[magnitude_id].item()) \
+                    if magnitudes is not None and magnitude_id is not None else 0.0
                 if signed is not None and signed and signs[i] == 0:
                     magnitude *= -1.0
 
