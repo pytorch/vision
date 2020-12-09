@@ -1,10 +1,11 @@
+#include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <float.h>
+#include <torch/library.h>
 #include <THC/THCAtomics.cuh>
 
 #include "cuda_helpers.h"
-#include "roi_pool_kernel.h"
 
 namespace vision {
 namespace ops {
@@ -120,9 +121,7 @@ __global__ void roi_pool_backward_kernel_impl(
   }
 }
 
-} // namespace
-
-std::tuple<at::Tensor, at::Tensor> roi_pool_forward_cuda(
+std::tuple<at::Tensor, at::Tensor> roi_pool_forward_kernel(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -135,7 +134,7 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_cuda(
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
-  at::CheckedFrom c = "roi_pool_forward_cuda";
+  at::CheckedFrom c = "roi_pool_forward_kernel";
   at::checkAllSameGPU(c, {input_t, rois_t});
   at::checkAllSameType(c, {input_t, rois_t});
 
@@ -167,7 +166,7 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_cuda(
 
   auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "roi_pool_forward_cuda", [&] {
+      input.scalar_type(), "roi_pool_forward_kernel", [&] {
         roi_pool_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
             output_size,
             input_.data_ptr<scalar_t>(),
@@ -185,7 +184,7 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_forward_cuda(
   return std::make_tuple(output, argmax);
 }
 
-at::Tensor roi_pool_backward_cuda(
+at::Tensor roi_pool_backward_kernel(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& argmax,
@@ -204,7 +203,7 @@ at::Tensor roi_pool_backward_cuda(
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2},
       argmax_t{argmax, "argmax", 3};
 
-  at::CheckedFrom c = "roi_pool_backward_cuda";
+  at::CheckedFrom c = "roi_pool_backward_kernel";
   at::checkAllSameGPU(c, {grad_t, rois_t, argmax_t});
   at::checkAllSameType(c, {grad_t, rois_t});
 
@@ -235,7 +234,7 @@ at::Tensor roi_pool_backward_cuda(
 
   auto argmax_ = argmax.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      grad.scalar_type(), "roi_pool_backward_cuda", [&] {
+      grad.scalar_type(), "roi_pool_backward_kernel", [&] {
         roi_pool_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
             grad.numel(),
             grad.data_ptr<scalar_t>(),
@@ -256,6 +255,13 @@ at::Tensor roi_pool_backward_cuda(
       });
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;
+}
+
+} // namespace
+
+TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
+  m.impl("roi_pool", roi_pool_forward_kernel);
+  m.impl("_roi_pool_backward", roi_pool_backward_kernel);
 }
 
 } // namespace ops
