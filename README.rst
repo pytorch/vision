@@ -137,7 +137,7 @@ You can find the API documentation on the pytorch website: https://pytorch.org/d
 Contributing
 ============
 
-See the [CONTRIBUTING](CONTRIBUTING.md) file for how to help out.
+See the `CONTRIBUTING <CONTRIBUTING.md>`_ file for how to help out.
 
 Disclaimer on Datasets
 ======================
