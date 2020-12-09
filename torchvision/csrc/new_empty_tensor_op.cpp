@@ -1,5 +1,7 @@
 #include "new_empty_tensor_op.h"
-#include <torch/extension.h>
+
+#include <torch/autograd.h>
+#include <torch/types.h>
 
 namespace vision {
 namespace ops {
@@ -33,6 +35,10 @@ at::Tensor new_empty_tensor(
     const at::Tensor& input,
     const c10::List<int64_t>& shape) {
   return NewEmptyTensorOp::apply(input, shape)[0];
+}
+
+TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.def("_new_empty_tensor_op", &new_empty_tensor);
 }
 
 } // namespace ops

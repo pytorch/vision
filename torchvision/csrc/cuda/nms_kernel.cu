@@ -1,8 +1,9 @@
+#include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
+#include <torch/library.h>
 
 #include "cuda_helpers.h"
-#include "nms_kernel.h"
 
 namespace vision {
 namespace ops {
@@ -74,9 +75,7 @@ __global__ void nms_kernel_impl(
   }
 }
 
-} // namespace
-
-at::Tensor nms_cuda(
+at::Tensor nms_kernel(
     const at::Tensor& dets,
     const at::Tensor& scores,
     double iou_threshold) {
@@ -127,7 +126,7 @@ at::Tensor nms_cuda(
   cudaStream_t stream = at::cuda::getCurrentCUDAStream();
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      dets_sorted.scalar_type(), "nms_cuda", [&] {
+      dets_sorted.scalar_type(), "nms_kernel", [&] {
         nms_kernel_impl<scalar_t><<<blocks, threads, 0, stream>>>(
             dets_num,
             iou_threshold,
@@ -164,6 +163,12 @@ at::Tensor nms_cuda(
   return order_t.index(
       {keep.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep)
            .to(order_t.device(), keep.scalar_type())});
+}
+
+} // namespace
+
+TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
+  m.impl("nms", nms_kernel);
 }
 
 } // namespace ops

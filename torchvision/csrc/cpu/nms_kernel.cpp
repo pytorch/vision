@@ -1,4 +1,5 @@
-#include "nms_kernel.h"
+#include <ATen/ATen.h>
+#include <torch/library.h>
 
 namespace vision {
 namespace ops {
@@ -74,9 +75,7 @@ at::Tensor nms_kernel_impl(
   return keep_t.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep);
 }
 
-} // namespace
-
-at::Tensor nms_cpu(
+at::Tensor nms_kernel(
     const at::Tensor& dets,
     const at::Tensor& scores,
     double iou_threshold) {
@@ -101,10 +100,16 @@ at::Tensor nms_cpu(
 
   auto result = at::empty({0}, dets.options());
 
-  AT_DISPATCH_FLOATING_TYPES(dets.scalar_type(), "nms_cpu", [&] {
+  AT_DISPATCH_FLOATING_TYPES(dets.scalar_type(), "nms_kernel", [&] {
     result = nms_kernel_impl<scalar_t>(dets, scores, iou_threshold);
   });
   return result;
+}
+
+} // namespace
+
+TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
+  m.impl("nms", nms_kernel);
 }
 
 } // namespace ops
