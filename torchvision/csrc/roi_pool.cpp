@@ -1,5 +1,7 @@
 #include "roi_pool.h"
-#include <torch/extension.h>
+
+#include <torch/autograd.h>
+#include <torch/types.h>
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
 #include <ATen/autocast_mode.h>
@@ -39,6 +41,10 @@ std::tuple<at::Tensor, at::Tensor> roi_pool_autocast(
       std::get<0>(result).to(input.scalar_type()),
       std::get<1>(result).to(input.scalar_type()));
 }
+
+TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
+  m.impl("roi_pool", roi_pool_autocast);
+}
 #endif
 
 at::Tensor _roi_pool_backward(
@@ -66,6 +72,13 @@ at::Tensor _roi_pool_backward(
       channels,
       height,
       width);
+}
+
+TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.def(
+      "roi_pool(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width) -> (Tensor, Tensor)");
+  m.def(
+      "_roi_pool_backward(Tensor grad, Tensor rois, Tensor argmax, float spatial_scale, int pooled_height, int pooled_width, int batch_size, int channels, int height, int width) -> Tensor");
 }
 
 namespace {
@@ -198,6 +211,11 @@ at::Tensor roi_pool_backward_autograd(
       channels,
       height,
       width)[0];
+}
+
+TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
+  m.impl("roi_pool", roi_pool_autograd);
+  m.impl("_roi_pool_backward", roi_pool_backward_autograd);
 }
 
 } // namespace ops
