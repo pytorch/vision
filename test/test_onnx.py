@@ -170,7 +170,7 @@ class ONNXExporterTester(unittest.TestCase):
         input = torch.rand(3, 10, 20)
         input_test = torch.rand(3, 100, 150)
         self.run_model(TransformModule(), [(input,), (input_test,)],
-                       input_names=["input1"], dynamic_axes={"input1": [0, 1, 2, 3]})
+                       input_names=["input1"], dynamic_axes={"input1": [0, 1, 2]})
 
     def test_transform_images(self):
 
