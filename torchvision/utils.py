@@ -206,7 +206,7 @@ def draw_bounding_boxes(
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)
 
 
-def get_range(range_tmp, emit_warning=True) ->  Tuple[int, int]:
+def get_range(range_tmp, emit_warning=True) -> Tuple[int, int]:
     """
     In order to support previous versions, accept range argument and convert this into (vmin, vmax).
     """
