@@ -6,7 +6,6 @@
 namespace vision {
 namespace ops {
 
-// C++ Forward
 VISION_API at::Tensor nms(
     const at::Tensor& dets,
     const at::Tensor& scores,
