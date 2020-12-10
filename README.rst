@@ -136,7 +136,8 @@ You can find the API documentation on the pytorch website: https://pytorch.org/d
 
 Contributing
 ============
-We appreciate all contributions. If you are planning to contribute back bug-fixes, please do so without any further discussion. If you plan to contribute new features, utility functions or extensions, please first open an issue and discuss the feature with us.
+
+See the `CONTRIBUTING <CONTRIBUTING.md>`_ file for how to help out.
 
 Disclaimer on Datasets
 ======================
