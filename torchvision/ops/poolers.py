@@ -189,7 +189,7 @@ class MultiScaleRoIAlign(nn.Module):
         lvl_max = -torch.log2(torch.tensor(scales[-1], dtype=torch.float32)).item()
         self.scales = scales
         self.map_levels = initLevelMapper(
-            int(lvl_min), 
+            int(lvl_min),
             int(lvl_max),
             canonical_scale=self.canonical_scale,
             canonical_level=self.canonical_level,
