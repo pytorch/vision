@@ -71,6 +71,7 @@ def make_grid(
                 assert isinstance(kwargs["range"], tuple), \
                     "range has to be a tuple (min, max) if specified. min and max are numbers"
             vmin, vmax = get_range(kwargs["range"])
+
         def norm_ip(img, low, high):
             img.clamp_(min=low, max=high)
             img.sub_(low).div_(max(high - low, 1e-5))
@@ -205,7 +206,7 @@ def draw_bounding_boxes(
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)
 
 
-def get_range(range_tmp, emit_warning=True) -> (int, int):
+def get_range(range_tmp, emit_warning=True) ->  Tuple[int, int]:
     """
     In order to support previous versions, accept range argument and convert this into (vmin, vmax).
     """
@@ -214,4 +215,4 @@ def get_range(range_tmp, emit_warning=True) -> (int, int):
     vmin_, vmax_ = range_tmp
     if emit_warning:
         warnings.warn(warning)
-    return (vmin_, vmax_ )
+    return (vmin_, vmax_)
