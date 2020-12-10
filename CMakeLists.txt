@@ -52,7 +52,8 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 set(TVCPP torchvision/csrc)
-list(APPEND ALLOW_LISTED ${TVCPP} ${TVCPP}/io/image ${TVCPP}/io/image/cpu ${TVCPP}/models ${TVCPP}/ops ${TVCPP}/ops/cpu)
+list(APPEND ALLOW_LISTED ${TVCPP} ${TVCPP}/io/image ${TVCPP}/io/image/cpu ${TVCPP}/models ${TVCPP}/ops
+  ${TVCPP}/ops/autograd ${TVCPP}/ops/cpu)
 if(WITH_CUDA)
     list(APPEND ALLOW_LISTED ${TVCPP}/ops/cuda ${TVCPP}/ops/autocast)
 endif()
