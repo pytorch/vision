@@ -1,5 +1,7 @@
 #include "nms.h"
-#include <torch/extension.h>
+
+#include <torch/autograd.h>
+#include <torch/types.h>
 
 #if defined(WITH_CUDA) || defined(WITH_HIP)
 #include <ATen/autocast_mode.h>
@@ -29,7 +31,15 @@ at::Tensor nms_autocast(
       at::autocast::cached_cast(at::kFloat, scores),
       iou_threshold);
 }
+
+TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
+  m.impl("nms", nms_autocast);
+}
 #endif
+
+TORCH_LIBRARY_FRAGMENT(torchvision, m) {
+  m.def("nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor");
+}
 
 } // namespace ops
 } // namespace vision

@@ -1,9 +1,10 @@
+#include <ATen/ATen.h>
 #include <ATen/cuda/CUDAContext.h>
 #include <c10/cuda/CUDAGuard.h>
+#include <torch/library.h>
 #include <THC/THCAtomics.cuh>
 
 #include "cuda_helpers.h"
-#include "roi_align_kernel.h"
 
 namespace vision {
 namespace ops {
@@ -314,9 +315,7 @@ __global__ void roi_align_backward_kernel_impl(
   } // CUDA_1D_KERNEL_LOOP
 }
 
-} // namespace
-
-at::Tensor roi_align_forward_cuda(
+at::Tensor roi_align_forward_kernel(
     const at::Tensor& input,
     const at::Tensor& rois,
     double spatial_scale,
@@ -330,7 +329,7 @@ at::Tensor roi_align_forward_cuda(
 
   at::TensorArg input_t{input, "input", 1}, rois_t{rois, "rois", 2};
 
-  at::CheckedFrom c = "roi_align_forward_cuda";
+  at::CheckedFrom c = "roi_align_forward_kernel";
   at::checkAllSameGPU(c, {input_t, rois_t});
   at::checkAllSameType(c, {input_t, rois_t});
 
@@ -359,7 +358,7 @@ at::Tensor roi_align_forward_cuda(
 
   auto input_ = input.contiguous(), rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      input.scalar_type(), "roi_align_forward_cuda", [&] {
+      input.scalar_type(), "roi_align_forward_kernel", [&] {
         roi_align_forward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
             output_size,
             input_.data_ptr<scalar_t>(),
@@ -378,7 +377,7 @@ at::Tensor roi_align_forward_cuda(
   return output;
 }
 
-at::Tensor roi_align_backward_cuda(
+at::Tensor roi_align_backward_kernel(
     const at::Tensor& grad,
     const at::Tensor& rois,
     double spatial_scale,
@@ -395,7 +394,7 @@ at::Tensor roi_align_backward_cuda(
 
   at::TensorArg grad_t{grad, "grad", 1}, rois_t{rois, "rois", 2};
 
-  at::CheckedFrom c = "roi_align_backward_cuda";
+  at::CheckedFrom c = "roi_align_backward_kernel";
   at::checkAllSameGPU(c, {grad_t, rois_t});
   at::checkAllSameType(c, {grad_t, rois_t});
 
@@ -424,7 +423,7 @@ at::Tensor roi_align_backward_cuda(
 
   auto rois_ = rois.contiguous();
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(
-      grad.scalar_type(), "roi_align_backward_cuda", [&] {
+      grad.scalar_type(), "roi_align_backward_kernel", [&] {
         roi_align_backward_kernel_impl<scalar_t><<<grid, block, 0, stream>>>(
             grad.numel(),
             grad.data_ptr<scalar_t>(),
@@ -445,6 +444,13 @@ at::Tensor roi_align_backward_cuda(
       });
   AT_CUDA_CHECK(cudaGetLastError());
   return grad_input;
+}
+
+} // namespace
+
+TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
+  m.impl("roi_align", roi_align_forward_kernel);
+  m.impl("_roi_align_backward", roi_align_backward_kernel);
 }
 
 } // namespace ops
