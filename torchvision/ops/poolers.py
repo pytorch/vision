@@ -88,15 +88,20 @@ class MultiScaleRoIAlign(nn.Module):
     """
     Multi-scale RoIAlign pooling, which is useful for detection with or without FPN.
 
-    It infers the scale of the pooling via the heuristics present in the FPN paper.
+    It infers the scale of the pooling via the heuristics specified in eq. 1
+    of the `Feature Pyramid Network paper <https://arxiv.org/abs/1612.03144>`_.
+    They keyword-only parameters ``canonical_scale`` and ``canonical_level``
+    correspond respectively to ``224`` and ``k0=4`` in eq. 1, and
+    have the following meaning: ``canonical_level`` is the target level of the pyramid from
+    which to pool a region of interest with ``w x h = canonical_scale x canonical_scale``.
 
     Arguments:
         featmap_names (List[str]): the names of the feature maps that will be used
             for the pooling.
         output_size (List[Tuple[int, int]] or List[int]): output size for the pooled region
         sampling_ratio (int): sampling ratio for ROIAlign
-        canonical_scale (int): canonical_scale for LevelMapper
-        canonical_level (int): canonical_level for LevelMapper
+        canonical_scale (int, optional): canonical_scale for LevelMapper
+        canonical_level (int, optional): canonical_level for LevelMapper
 
     Examples::
 
@@ -125,6 +130,7 @@ class MultiScaleRoIAlign(nn.Module):
         featmap_names: List[str],
         output_size: Union[int, Tuple[int], List[int]],
         sampling_ratio: int,
+        *,
         canonical_scale: int = 224,
         canonical_level: int = 4,
     ):
