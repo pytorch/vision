@@ -1,4 +1,6 @@
 #include <iostream>
+#include <torch/torch.h>
+#include <torchvision/vision.h>
 #include <torchvision/models/resnet.h>
 
 int main()
