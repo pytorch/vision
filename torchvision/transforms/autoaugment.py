@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.jit.annotations import List, Tuple
 from typing import Optional
 
-from . import functional as F
+from . import functional as F, InterpolationMode
 
 
 class AutoAugmentPolicy(Enum):
@@ -104,6 +104,27 @@ def _get_transforms(policy: AutoAugmentPolicy):
         ]
 
 
+def _get_magnitudes():
+    _BINS = 10
+    return {
+        # name: (magnitudes, signed)
+        "ShearX": (torch.linspace(0.0, 0.3, _BINS), True),
+        "ShearY": (torch.linspace(0.0, 0.3, _BINS), True),
+        "TranslateX": (torch.linspace(0.0, 150.0 / 331.0, _BINS), True),
+        "TranslateY": (torch.linspace(0.0, 150.0 / 331.0, _BINS), True),
+        "Rotate": (torch.linspace(0.0, 30.0, _BINS), True),
+        "Brightness": (torch.linspace(0.0, 0.9, _BINS), True),
+        "Color": (torch.linspace(0.0, 0.9, _BINS), True),
+        "Contrast": (torch.linspace(0.0, 0.9, _BINS), True),
+        "Sharpness": (torch.linspace(0.0, 0.9, _BINS), True),
+        "Posterize": (torch.tensor([8, 8, 7, 7, 6, 6, 5, 5, 4, 4]), False),
+        "Solarize": (torch.linspace(256.0, 0.0, _BINS), False),
+        "AutoContrast": (None, None),
+        "Equalize": (None, None),
+        "Invert": (None, None),
+    }
+
+
 class AutoAugment(torch.nn.Module):
     r"""AutoAugment data augmentation method based on
     `"AutoAugment: Learning Augmentation Strategies from Data" <https://arxiv.org/pdf/1805.09501.pdf>`_.
@@ -113,6 +134,9 @@ class AutoAugment(torch.nn.Module):
     Args:
         policy (AutoAugmentPolicy): Desired policy enum defined by
             :class:`torchvision.transforms.autoaugment.AutoAugmentPolicy`. Default is ``AutoAugmentPolicy.IMAGENET``.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
         fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
             image. If int or float, the value is used for all bands respectively.
             This option is supported for PIL image and Tensor inputs.
@@ -128,32 +152,17 @@ class AutoAugment(torch.nn.Module):
         >>>     transforms.ToTensor()])
     """
 
-    def __init__(self, policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET, fill: Optional[List[float]] = None):
+    def __init__(self, policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
+                 interpolation: InterpolationMode = InterpolationMode.NEAREST, fill: Optional[List[float]] = None):
         super().__init__()
         self.policy = policy
+        self.interpolation = interpolation
         self.fill = fill
+
         self.transforms = _get_transforms(policy)
         if self.transforms is None:
             raise ValueError("The provided policy {} is not recognized.".format(policy))
-
-        _BINS = 10
-        self._op_meta = {
-            # name: (magnitudes, signed)
-            "ShearX": (torch.linspace(0.0, 0.3, _BINS), True),
-            "ShearY": (torch.linspace(0.0, 0.3, _BINS), True),
-            "TranslateX": (torch.linspace(0.0, 150.0 / 331.0, _BINS), True),
-            "TranslateY": (torch.linspace(0.0, 150.0 / 331.0, _BINS), True),
-            "Rotate": (torch.linspace(0.0, 30.0, _BINS), True),
-            "Brightness": (torch.linspace(0.0, 0.9, _BINS), True),
-            "Color": (torch.linspace(0.0, 0.9, _BINS), True),
-            "Contrast": (torch.linspace(0.0, 0.9, _BINS), True),
-            "Sharpness": (torch.linspace(0.0, 0.9, _BINS), True),
-            "Posterize": (torch.tensor([8, 8, 7, 7, 6, 6, 5, 5, 4, 4]), False),
-            "Solarize": (torch.linspace(256.0, 0.0, _BINS), False),
-            "AutoContrast": (None, None),
-            "Equalize": (None, None),
-            "Invert": (None, None),
-        }
+        self._op_meta = _get_magnitudes()
 
     @staticmethod
     def get_params(transform_num: int) -> Tuple[int, Tensor, Tensor]:
@@ -197,18 +206,18 @@ class AutoAugment(torch.nn.Module):
 
                 if op_name == "ShearX":
                     img = F.affine(img, angle=0.0, translate=[0, 0], scale=1.0, shear=[math.degrees(magnitude), 0.0],
-                                   fill=fill)
+                                   interpolation=self.interpolation, fill=fill)
                 elif op_name == "ShearY":
                     img = F.affine(img, angle=0.0, translate=[0, 0], scale=1.0, shear=[0.0, math.degrees(magnitude)],
-                                   fill=fill)
+                                   interpolation=self.interpolation, fill=fill)
                 elif op_name == "TranslateX":
                     img = F.affine(img, angle=0.0, translate=[int(F._get_image_size(img)[0] * magnitude), 0], scale=1.0,
-                                   shear=[0.0, 0.0], fill=fill)
+                                   interpolation=self.interpolation, shear=[0.0, 0.0], fill=fill)
                 elif op_name == "TranslateY":
                     img = F.affine(img, angle=0.0, translate=[0, int(F._get_image_size(img)[1] * magnitude)], scale=1.0,
-                                   shear=[0.0, 0.0], fill=fill)
+                                   interpolation=self.interpolation, shear=[0.0, 0.0], fill=fill)
                 elif op_name == "Rotate":
-                    img = F.rotate(img, magnitude, fill=fill)
+                    img = F.rotate(img, magnitude, interpolation=self.interpolation, fill=fill)
                 elif op_name == "Brightness":
                     img = F.adjust_brightness(img, 1.0 + magnitude)
                 elif op_name == "Color":
