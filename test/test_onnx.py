@@ -76,20 +76,6 @@ class ONNXExporterTester(unittest.TestCase):
                 else:
                     raise
 
-    @unittest.skip("Disable test until Split w/ zero sizes is implemented in ORT")
-    def test_new_empty_tensor(self):
-        class Module(torch.nn.Module):
-            def __init__(self):
-                super(Module, self).__init__()
-                self.conv2 = ops.misc.ConvTranspose2d(16, 33, (3, 5))
-
-            def forward(self, input2):
-                return self.conv2(input2)
-
-        input = torch.rand(0, 16, 10, 10)
-        test_input = torch.rand(0, 16, 20, 20)
-        self.run_model(Module(), [(input, ), (test_input,)], do_constant_folding=False)
-
     def test_nms(self):
         boxes = torch.rand(5, 4)
         boxes[:, 2:] += torch.rand(5, 2)
@@ -170,7 +156,7 @@ class ONNXExporterTester(unittest.TestCase):
         input = torch.rand(3, 10, 20)
         input_test = torch.rand(3, 100, 150)
         self.run_model(TransformModule(), [(input,), (input_test,)],
-                       input_names=["input1"], dynamic_axes={"input1": [0, 1, 2, 3]})
+                       input_names=["input1"], dynamic_axes={"input1": [0, 1, 2]})
 
     def test_transform_images(self):
 
@@ -382,12 +368,12 @@ class ONNXExporterTester(unittest.TestCase):
         # Test exported model on images of different size, or dummy input
         self.run_model(model, [(images,), (test_images,), (dummy_image,)], input_names=["images_tensors"],
                        output_names=["outputs"],
-                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
+                       dynamic_axes={"images_tensors": [0, 1, 2], "outputs": [0, 1, 2]},
                        tolerate_small_mismatch=True)
         # Test exported model for an image with no detections on other images
         self.run_model(model, [(dummy_image,), (images,)], input_names=["images_tensors"],
                        output_names=["outputs"],
-                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "outputs": [0, 1, 2, 3]},
+                       dynamic_axes={"images_tensors": [0, 1, 2], "outputs": [0, 1, 2]},
                        tolerate_small_mismatch=True)
 
     # Verify that paste_mask_in_image beahves the same in tracing.
@@ -434,16 +420,16 @@ class ONNXExporterTester(unittest.TestCase):
         self.run_model(model, [(images,), (test_images,), (dummy_image,)],
                        input_names=["images_tensors"],
                        output_names=["boxes", "labels", "scores", "masks"],
-                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "boxes": [0, 1], "labels": [0],
-                                     "scores": [0], "masks": [0, 1, 2, 3]},
+                       dynamic_axes={"images_tensors": [0, 1, 2], "boxes": [0, 1], "labels": [0],
+                                     "scores": [0], "masks": [0, 1, 2]},
                        tolerate_small_mismatch=True)
         # TODO: enable this test once dynamic model export is fixed
         # Test exported model for an image with no detections on other images
         self.run_model(model, [(dummy_image,), (images,)],
                        input_names=["images_tensors"],
                        output_names=["boxes", "labels", "scores", "masks"],
-                       dynamic_axes={"images_tensors": [0, 1, 2, 3], "boxes": [0, 1], "labels": [0],
-                                     "scores": [0], "masks": [0, 1, 2, 3]},
+                       dynamic_axes={"images_tensors": [0, 1, 2], "boxes": [0, 1], "labels": [0],
+                                     "scores": [0], "masks": [0, 1, 2]},
                        tolerate_small_mismatch=True)
 
     # Verify that heatmaps_to_keypoints behaves the same in tracing.
@@ -483,13 +469,13 @@ class ONNXExporterTester(unittest.TestCase):
         self.run_model(model, [(images,), (test_images,), (dummy_images,)],
                        input_names=["images_tensors"],
                        output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
-                       dynamic_axes={"images_tensors": [0, 1, 2, 3]},
+                       dynamic_axes={"images_tensors": [0, 1, 2]},
                        tolerate_small_mismatch=True)
 
         self.run_model(model, [(dummy_images,), (test_images,)],
                        input_names=["images_tensors"],
                        output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
-                       dynamic_axes={"images_tensors": [0, 1, 2, 3]},
+                       dynamic_axes={"images_tensors": [0, 1, 2]},
                        tolerate_small_mismatch=True)
 
 
