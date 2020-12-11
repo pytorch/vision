@@ -1176,7 +1176,7 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
 
 
 def invert(img: Tensor) -> Tensor:
-    """Invert the colors of a PIL Image or torch Tensor.
+    """Invert the colors of an RGB/grayscale PIL Image or torch Tensor.
 
     Args:
         img (PIL Image or Tensor): Image to have its colors inverted.
