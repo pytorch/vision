@@ -1,6 +1,5 @@
 #include "nms.h"
 
-#include <torch/autograd.h>
 #include <torch/types.h>
 
 namespace vision {
