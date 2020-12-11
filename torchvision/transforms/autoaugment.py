@@ -17,6 +17,93 @@ class AutoAugmentPolicy(Enum):
     SVHN = "svhn"
 
 
+def _get_transforms(policy: AutoAugmentPolicy):
+    if policy == AutoAugmentPolicy.IMAGENET:
+        return [
+            (("Posterize", 0.4, 8), ("Rotate", 0.6, 9)),
+            (("Solarize", 0.6, 5), ("AutoContrast", 0.6, None)),
+            (("Equalize", 0.8, None), ("Equalize", 0.6, None)),
+            (("Posterize", 0.6, 7), ("Posterize", 0.6, 6)),
+            (("Equalize", 0.4, None), ("Solarize", 0.2, 4)),
+            (("Equalize", 0.4, None), ("Rotate", 0.8, 8)),
+            (("Solarize", 0.6, 3), ("Equalize", 0.6, None)),
+            (("Posterize", 0.8, 5), ("Equalize", 1.0, None)),
+            (("Rotate", 0.2, 3), ("Solarize", 0.6, 8)),
+            (("Equalize", 0.6, None), ("Posterize", 0.4, 6)),
+            (("Rotate", 0.8, 8), ("Color", 0.4, 0)),
+            (("Rotate", 0.4, 9), ("Equalize", 0.6, None)),
+            (("Equalize", 0.0, None), ("Equalize", 0.8, None)),
+            (("Invert", 0.6, None), ("Equalize", 1.0, None)),
+            (("Color", 0.6, 4), ("Contrast", 1.0, 8)),
+            (("Rotate", 0.8, 8), ("Color", 1.0, 2)),
+            (("Color", 0.8, 8), ("Solarize", 0.8, 7)),
+            (("Sharpness", 0.4, 7), ("Invert", 0.6, None)),
+            (("ShearX", 0.6, 5), ("Equalize", 1.0, None)),
+            (("Color", 0.4, 0), ("Equalize", 0.6, None)),
+            (("Equalize", 0.4, None), ("Solarize", 0.2, 4)),
+            (("Solarize", 0.6, 5), ("AutoContrast", 0.6, None)),
+            (("Invert", 0.6, None), ("Equalize", 1.0, None)),
+            (("Color", 0.6, 4), ("Contrast", 1.0, 8)),
+            (("Equalize", 0.8, None), ("Equalize", 0.6, None)),
+        ]
+    elif policy == AutoAugmentPolicy.CIFAR10:
+        return [
+            (("Invert", 0.1, None), ("Contrast", 0.2, 6)),
+            (("Rotate", 0.7, 2), ("TranslateX", 0.3, 9)),
+            (("Sharpness", 0.8, 1), ("Sharpness", 0.9, 3)),
+            (("ShearY", 0.5, 8), ("TranslateY", 0.7, 9)),
+            (("AutoContrast", 0.5, None), ("Equalize", 0.9, None)),
+            (("ShearY", 0.2, 7), ("Posterize", 0.3, 7)),
+            (("Color", 0.4, 3), ("Brightness", 0.6, 7)),
+            (("Sharpness", 0.3, 9), ("Brightness", 0.7, 9)),
+            (("Equalize", 0.6, None), ("Equalize", 0.5, None)),
+            (("Contrast", 0.6, 7), ("Sharpness", 0.6, 5)),
+            (("Color", 0.7, 7), ("TranslateX", 0.5, 8)),
+            (("Equalize", 0.3, None), ("AutoContrast", 0.4, None)),
+            (("TranslateY", 0.4, 3), ("Sharpness", 0.2, 6)),
+            (("Brightness", 0.9, 6), ("Color", 0.2, 8)),
+            (("Solarize", 0.5, 2), ("Invert", 0.0, None)),
+            (("Equalize", 0.2, None), ("AutoContrast", 0.6, None)),
+            (("Equalize", 0.2, None), ("Equalize", 0.6, None)),
+            (("Color", 0.9, 9), ("Equalize", 0.6, None)),
+            (("AutoContrast", 0.8, None), ("Solarize", 0.2, 8)),
+            (("Brightness", 0.1, 3), ("Color", 0.7, 0)),
+            (("Solarize", 0.4, 5), ("AutoContrast", 0.9, None)),
+            (("TranslateY", 0.9, 9), ("TranslateY", 0.7, 9)),
+            (("AutoContrast", 0.9, None), ("Solarize", 0.8, 3)),
+            (("Equalize", 0.8, None), ("Invert", 0.1, None)),
+            (("TranslateY", 0.7, 9), ("AutoContrast", 0.9, None)),
+        ]
+    elif policy == AutoAugmentPolicy.SVHN:
+        return [
+            (("ShearX", 0.9, 4), ("Invert", 0.2, None)),
+            (("ShearY", 0.9, 8), ("Invert", 0.7, None)),
+            (("Equalize", 0.6, None), ("Solarize", 0.6, 6)),
+            (("Invert", 0.9, None), ("Equalize", 0.6, None)),
+            (("Equalize", 0.6, None), ("Rotate", 0.9, 3)),
+            (("ShearX", 0.9, 4), ("AutoContrast", 0.8, None)),
+            (("ShearY", 0.9, 8), ("Invert", 0.4, None)),
+            (("ShearY", 0.9, 5), ("Solarize", 0.2, 6)),
+            (("Invert", 0.9, None), ("AutoContrast", 0.8, None)),
+            (("Equalize", 0.6, None), ("Rotate", 0.9, 3)),
+            (("ShearX", 0.9, 4), ("Solarize", 0.3, 3)),
+            (("ShearY", 0.8, 8), ("Invert", 0.7, None)),
+            (("Equalize", 0.9, None), ("TranslateY", 0.6, 6)),
+            (("Invert", 0.9, None), ("Equalize", 0.6, None)),
+            (("Contrast", 0.3, 3), ("Rotate", 0.8, 4)),
+            (("Invert", 0.8, None), ("TranslateY", 0.0, 2)),
+            (("ShearY", 0.7, 6), ("Solarize", 0.4, 8)),
+            (("Invert", 0.6, None), ("Rotate", 0.8, 4)),
+            (("ShearY", 0.3, 7), ("TranslateX", 0.9, 3)),
+            (("ShearX", 0.1, 6), ("Invert", 0.6, None)),
+            (("Solarize", 0.7, 2), ("TranslateY", 0.6, 7)),
+            (("ShearY", 0.8, 4), ("Invert", 0.8, None)),
+            (("ShearX", 0.7, 9), ("TranslateY", 0.8, 3)),
+            (("ShearY", 0.8, 5), ("AutoContrast", 0.7, None)),
+            (("ShearX", 0.7, 2), ("Invert", 0.1, None)),
+        ]
+
+
 class AutoAugment(torch.nn.Module):
     r"""AutoAugment data augmentation method based on
     `"AutoAugment: Learning Augmentation Strategies from Data" <https://arxiv.org/pdf/1805.09501.pdf>`_.
@@ -45,91 +132,8 @@ class AutoAugment(torch.nn.Module):
         super().__init__()
         self.policy = policy
         self.fill = fill
-        if policy == AutoAugmentPolicy.IMAGENET:
-            self.policies = [
-                (("Posterize", 0.4, 8), ("Rotate", 0.6, 9)),
-                (("Solarize", 0.6, 5), ("AutoContrast", 0.6, None)),
-                (("Equalize", 0.8, None), ("Equalize", 0.6, None)),
-                (("Posterize", 0.6, 7), ("Posterize", 0.6, 6)),
-                (("Equalize", 0.4, None), ("Solarize", 0.2, 4)),
-                (("Equalize", 0.4, None), ("Rotate", 0.8, 8)),
-                (("Solarize", 0.6, 3), ("Equalize", 0.6, None)),
-                (("Posterize", 0.8, 5), ("Equalize", 1.0, None)),
-                (("Rotate", 0.2, 3), ("Solarize", 0.6, 8)),
-                (("Equalize", 0.6, None), ("Posterize", 0.4, 6)),
-                (("Rotate", 0.8, 8), ("Color", 0.4, 0)),
-                (("Rotate", 0.4, 9), ("Equalize", 0.6, None)),
-                (("Equalize", 0.0, None), ("Equalize", 0.8, None)),
-                (("Invert", 0.6, None), ("Equalize", 1.0, None)),
-                (("Color", 0.6, 4), ("Contrast", 1.0, 8)),
-                (("Rotate", 0.8, 8), ("Color", 1.0, 2)),
-                (("Color", 0.8, 8), ("Solarize", 0.8, 7)),
-                (("Sharpness", 0.4, 7), ("Invert", 0.6, None)),
-                (("ShearX", 0.6, 5), ("Equalize", 1.0, None)),
-                (("Color", 0.4, 0), ("Equalize", 0.6, None)),
-                (("Equalize", 0.4, None), ("Solarize", 0.2, 4)),
-                (("Solarize", 0.6, 5), ("AutoContrast", 0.6, None)),
-                (("Invert", 0.6, None), ("Equalize", 1.0, None)),
-                (("Color", 0.6, 4), ("Contrast", 1.0, 8)),
-                (("Equalize", 0.8, None), ("Equalize", 0.6, None)),
-            ]
-        elif policy == AutoAugmentPolicy.CIFAR10:
-            self.policies = [
-                (("Invert", 0.1, None), ("Contrast", 0.2, 6)),
-                (("Rotate", 0.7, 2), ("TranslateX", 0.3, 9)),
-                (("Sharpness", 0.8, 1), ("Sharpness", 0.9, 3)),
-                (("ShearY", 0.5, 8), ("TranslateY", 0.7, 9)),
-                (("AutoContrast", 0.5, None), ("Equalize", 0.9, None)),
-                (("ShearY", 0.2, 7), ("Posterize", 0.3, 7)),
-                (("Color", 0.4, 3), ("Brightness", 0.6, 7)),
-                (("Sharpness", 0.3, 9), ("Brightness", 0.7, 9)),
-                (("Equalize", 0.6, None), ("Equalize", 0.5, None)),
-                (("Contrast", 0.6, 7), ("Sharpness", 0.6, 5)),
-                (("Color", 0.7, 7), ("TranslateX", 0.5, 8)),
-                (("Equalize", 0.3, None), ("AutoContrast", 0.4, None)),
-                (("TranslateY", 0.4, 3), ("Sharpness", 0.2, 6)),
-                (("Brightness", 0.9, 6), ("Color", 0.2, 8)),
-                (("Solarize", 0.5, 2), ("Invert", 0.0, None)),
-                (("Equalize", 0.2, None), ("AutoContrast", 0.6, None)),
-                (("Equalize", 0.2, None), ("Equalize", 0.6, None)),
-                (("Color", 0.9, 9), ("Equalize", 0.6, None)),
-                (("AutoContrast", 0.8, None), ("Solarize", 0.2, 8)),
-                (("Brightness", 0.1, 3), ("Color", 0.7, 0)),
-                (("Solarize", 0.4, 5), ("AutoContrast", 0.9, None)),
-                (("TranslateY", 0.9, 9), ("TranslateY", 0.7, 9)),
-                (("AutoContrast", 0.9, None), ("Solarize", 0.8, 3)),
-                (("Equalize", 0.8, None), ("Invert", 0.1, None)),
-                (("TranslateY", 0.7, 9), ("AutoContrast", 0.9, None)),
-            ]
-        elif policy == AutoAugmentPolicy.SVHN:
-            self.policies = [
-                (("ShearX", 0.9, 4), ("Invert", 0.2, None)),
-                (("ShearY", 0.9, 8), ("Invert", 0.7, None)),
-                (("Equalize", 0.6, None), ("Solarize", 0.6, 6)),
-                (("Invert", 0.9, None), ("Equalize", 0.6, None)),
-                (("Equalize", 0.6, None), ("Rotate", 0.9, 3)),
-                (("ShearX", 0.9, 4), ("AutoContrast", 0.8, None)),
-                (("ShearY", 0.9, 8), ("Invert", 0.4, None)),
-                (("ShearY", 0.9, 5), ("Solarize", 0.2, 6)),
-                (("Invert", 0.9, None), ("AutoContrast", 0.8, None)),
-                (("Equalize", 0.6, None), ("Rotate", 0.9, 3)),
-                (("ShearX", 0.9, 4), ("Solarize", 0.3, 3)),
-                (("ShearY", 0.8, 8), ("Invert", 0.7, None)),
-                (("Equalize", 0.9, None), ("TranslateY", 0.6, 6)),
-                (("Invert", 0.9, None), ("Equalize", 0.6, None)),
-                (("Contrast", 0.3, 3), ("Rotate", 0.8, 4)),
-                (("Invert", 0.8, None), ("TranslateY", 0.0, 2)),
-                (("ShearY", 0.7, 6), ("Solarize", 0.4, 8)),
-                (("Invert", 0.6, None), ("Rotate", 0.8, 4)),
-                (("ShearY", 0.3, 7), ("TranslateX", 0.9, 3)),
-                (("ShearX", 0.1, 6), ("Invert", 0.6, None)),
-                (("Solarize", 0.7, 2), ("TranslateY", 0.6, 7)),
-                (("ShearY", 0.8, 4), ("Invert", 0.8, None)),
-                (("ShearX", 0.7, 9), ("TranslateY", 0.8, 3)),
-                (("ShearY", 0.8, 5), ("AutoContrast", 0.7, None)),
-                (("ShearX", 0.7, 2), ("Invert", 0.1, None)),
-            ]
-        else:
+        self.transforms = _get_transforms(policy)
+        if self.transforms is None:
             raise ValueError("The provided policy {} is not recognized.".format(policy))
 
         _BINS = 10
@@ -152,13 +156,13 @@ class AutoAugment(torch.nn.Module):
         }
 
     @staticmethod
-    def get_params(policy_num: int) -> Tuple[int, Tensor, Tensor]:
+    def get_params(transform_num: int) -> Tuple[int, Tensor, Tensor]:
         """Get parameters for autoaugment transformation
 
         Returns:
             params required by the autoaugment transformation
         """
-        policy_id = torch.randint(policy_num, (1,)).item()
+        policy_id = torch.randint(transform_num, (1,)).item()
         probs = torch.rand((2,))
         signs = torch.randint(2, (2,))
 
@@ -181,9 +185,9 @@ class AutoAugment(torch.nn.Module):
             elif fill is not None:
                 fill = [float(f) for f in fill]
 
-        policy_id, probs, signs = self.get_params(len(self.policies))
+        transform_id, probs, signs = self.get_params(len(self.transforms))
 
-        for i, (op_name, p, magnitude_id) in enumerate(self.policies[policy_id]):
+        for i, (op_name, p, magnitude_id) in enumerate(self.transforms[transform_id]):
             if probs[i] <= p:
                 magnitudes, signed = self._get_op_meta(op_name)
                 magnitude = float(magnitudes[magnitude_id].item()) \

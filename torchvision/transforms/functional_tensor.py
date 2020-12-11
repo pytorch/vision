@@ -1230,7 +1230,7 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
     return result.view(img.shape)
 
 
-def _blur_image(img: Tensor) -> Tensor:
+def _blurred_degenerate_image(img: Tensor) -> Tensor:
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
 
     kernel = torch.ones((3, 3), dtype=dtype, device=img.device)
@@ -1263,7 +1263,7 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
     if img.size(-1) <= 2 or img.size(-2) <= 2:
         return img
 
-    return _blend(img, _blur_image(img), sharpness_factor)
+    return _blend(img, _blurred_degenerate_image(img), sharpness_factor)
 
 
 def autocontrast(img: Tensor) -> Tensor:
