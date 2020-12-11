@@ -76,20 +76,6 @@ class ONNXExporterTester(unittest.TestCase):
                 else:
                     raise
 
-    @unittest.skip("Disable test until Split w/ zero sizes is implemented in ORT")
-    def test_new_empty_tensor(self):
-        class Module(torch.nn.Module):
-            def __init__(self):
-                super(Module, self).__init__()
-                self.conv2 = ops.misc.ConvTranspose2d(16, 33, (3, 5))
-
-            def forward(self, input2):
-                return self.conv2(input2)
-
-        input = torch.rand(0, 16, 10, 10)
-        test_input = torch.rand(0, 16, 20, 20)
-        self.run_model(Module(), [(input, ), (test_input,)], do_constant_folding=False)
-
     def test_nms(self):
         boxes = torch.rand(5, 4)
         boxes[:, 2:] += torch.rand(5, 2)
