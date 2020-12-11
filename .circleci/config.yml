@@ -145,6 +145,21 @@ jobs:
             pip install --user --progress-bar off --editable .
             python test/test_hub.py
 
+  torch_onnx_test:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off numpy
+            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            # need to install torchvision dependencies due to transitive imports
+            pip install --user --progress-bar off --editable .
+            pip install --user onnx
+            pip install --user -i https://test.pypi.org/simple/ ort-nightly==1.5.2.dev202012031
+            python test/test_onnx.py
+
   binary_linux_wheel:
     <<: *binary_common
     docker:
@@ -1074,6 +1089,7 @@ workflows:
       - python_type_check
       - clang_format
       - torchhub_test
+      - torch_onnx_test
 
   unittest:
     jobs:
@@ -1189,6 +1205,7 @@ workflows:
       - python_type_check
       - clang_format
       - torchhub_test
+      - torch_onnx_test
       - binary_linux_wheel:
           cu_version: cpu
           filters:
