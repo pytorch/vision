@@ -1197,7 +1197,7 @@ def posterize(img: Tensor, bits: int) -> Tensor:
     """Posterize a PIL Image or torch Tensor by reducing the number of bits for each color channel.
 
     Args:
-        img (PIL Image or Tensor): Image to have its colors inverted.
+        img (PIL Image or Tensor): Image to have its colors posterized.
             If img is a Tensor, it should be of type torch.uint8 and
             it is expected to be in [..., H, W] format, where ... means
             it can have an arbitrary number of trailing dimensions.
