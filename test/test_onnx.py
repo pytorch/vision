@@ -1,5 +1,4 @@
 import io
-import numpy as np
 import torch
 from torchvision import ops
 from torchvision import models
@@ -489,6 +488,7 @@ class ONNXExporterTester(unittest.TestCase):
                        output_names=["output"],
                        dynamic_axes={"input_images": {0: 'batch_size'}, "output": {0: 'batch_size'}},
                        tolerate_small_mismatch=True)
+
 
 if __name__ == '__main__':
     unittest.main()
