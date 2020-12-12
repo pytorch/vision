@@ -33,8 +33,12 @@ class ONNXExporterTester(unittest.TestCase):
         model.eval()
 
         onnx_io = io.BytesIO()
+        if isinstance(inputs_list[0][-1], dict):
+            torch_onnx_input = inputs_list[0] + ({},)
+        else:
+            torch_onnx_input = inputs_list[0]
         # export to onnx with the first input
-        torch.onnx.export(model, inputs_list[0], onnx_io,
+        torch.onnx.export(model, torch_onnx_input, onnx_io,
                           do_constant_folding=do_constant_folding, opset_version=_onnx_opset_version,
                           dynamic_axes=dynamic_axes, input_names=input_names, output_names=output_names)
         # validate the exported model with onnx runtime
@@ -476,6 +480,17 @@ class ONNXExporterTester(unittest.TestCase):
                        input_names=["images_tensors"],
                        output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
                        dynamic_axes={"images_tensors": [0, 1, 2]},
+                       tolerate_small_mismatch=True)
+
+    def test_shufflenet_v2_dynamic_axes(self):
+        model = models.shufflenet_v2_x0_5(pretrained=True)
+        dummy_input = torch.randn(1, 3, 224, 224, requires_grad=True)
+        test_inputs = torch.cat([dummy_input, dummy_input, dummy_input], 0)
+
+        self.run_model(model, [(dummy_input,), (test_inputs,)],
+                       input_names=["input_images"],
+                       output_names=["output"],
+                       dynamic_axes={"input_images": {0: 'batch_size'}, "output": {0: 'batch_size'}},
                        tolerate_small_mismatch=True)
 
 
