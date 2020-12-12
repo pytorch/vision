@@ -38,7 +38,7 @@ class ImageNet(ImageFolder):
         targets (list): The class_index value for each image in the dataset
     """
 
-    def __init__(self, root: str, split: str = 'train', download: Optional[bool] = None, **kwargs: Any) -> None:
+    def __init__(self, root: str, split: str = 'train', download: bool = False, **kwargs: Any) -> None:
         if download is True:
             msg = ("The dataset is no longer publicly accessible. You need to "
                    "download the archives externally and place them in the root "
