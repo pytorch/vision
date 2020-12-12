@@ -483,5 +483,17 @@ class ONNXExporterTester(unittest.TestCase):
                        tolerate_small_mismatch=True)
 
 
+    def test_shufflenet_v2_dynamic_axes(self):
+        model = models.shufflenet_v2_x0_5(pretrained=True)
+        dummy_input = torch.randn(1, 3, 224, 224, requires_grad=True)
+        test_inputs = torch.cat([dummy_input, dummy_input, dummy_input], 0)
+
+        self.run_model(model, [(dummy_input,), (test_inputs,)],
+                       input_names=["input_images"],
+                       output_names=["output"],
+                       dynamic_axes={"input_images": {0: 'batch_size'}, "output": {0: 'batch_size'}},
+                       tolerate_small_mismatch=True)
+
+
 if __name__ == '__main__':
     unittest.main()
