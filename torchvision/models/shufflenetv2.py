@@ -19,7 +19,7 @@ model_urls = {
 
 
 def channel_shuffle(x: Tensor, groups: int) -> Tensor:
-    batchsize, num_channels, height, width = x.shape[0], x.shape[1], x.shape[2], x.shape[3]
+    batchsize, num_channels, height, width = x.size()
     channels_per_group = num_channels // groups
 
     # reshape
