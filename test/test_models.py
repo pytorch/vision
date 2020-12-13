@@ -70,7 +70,7 @@ class ModelTester(TestCase):
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
         out = model(x)
-        self.assertExpected(out.cpu(), prec=0.1, strip_suffix=f"_{dev}")
+        self.assertExpected(out.cpu(), prec=0.2, strip_suffix=f"_{dev}")
         self.assertEqual(out.shape[-1], 50)
         self.check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(name, None))
 
