@@ -20,7 +20,7 @@ The torchvision package consists of popular datasets, model architectures, and c
 Installation
 ============
 
-We recommend Anaconda as Python package management system. Please refer to `pytorch.org <https://pytorch.org/>`_
+We recommend  you Anaconda as Python package management system. Please refer to `pytorch.org <https://pytorch.org/>`_
 for the detail of PyTorch (``torch``) installation. The following is the corresponding ``torchvision`` versions and
 supported Python versions.
 
@@ -112,7 +112,7 @@ Installation From source:
     make
     make install
 
-Once installed, the library can be accessed in cmake (after properly configuring ``CMAKE_PREFIX_PATH``) via the :code:`TorchVision::TorchVision` target:
+Once you  installed, the library you  can accessed in cmake (after properly configuring ``CMAKE_PREFIX_PATH``) via the :code:`TorchVision::TorchVision` target:
 
 .. code:: rest
 
@@ -130,11 +130,11 @@ You can find the API documentation on the pytorch website: https://pytorch.org/d
 
 **Contributing**
 ============
-We appreciate all contributions. If you are planning to contribute back bug-fixes, please do so without any further discussion. If you plan to contribute new features, utility functions or extensions, please first open an issue and discuss the feature with us.
+We appreciate for  all contributions. If you are planning to contribute back bug-fixes, please do so without any further discussion. If you plan to contribute new features, utility functions or extensions, please first open an issue and discuss the feature with us.
 
 **Disclaimer on Datasets**
 ======================
 
-This is a utility library that downloads and prepares the  public datasets. We do not host or redistribute these datasets, vouch for their quality or fairness, or claim that you have license to use the dataset. It is your responsibility to determine whether you have permission to use the dataset under the dataset's license.
+This is a utility library that downloads and prepares the  public datasets. We do not host or redistribute these datasets, vouch for their quality or fairness, or claim that you have  a license to use the dataset. It is your responsibility to determine whether you have permission to use the dataset under the dataset's license.
 
 If you're a dataset owner and wish to update any part of it (description, citation, etc.), or do not want your dataset to be included in this library, please get in touch through a GitHub issue. Thanks for your contribution to the ML community!
