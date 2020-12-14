@@ -6,17 +6,19 @@ from torch import Tensor
 from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
 from torch.jit.annotations import List, BroadcastingList2
 
-
 def _is_tensor_a_torch_image(x: Tensor) -> bool:
     return x.ndim >= 2
+
+def _assert_image_tensor(img):
+    if not _is_tensor_a_torch_image(img):
+        raise TypeError("Tensor is not a torch image.")
 
 
 def _get_image_size(img: Tensor) -> List[int]:
     """Returns (w, h) of tensor image"""
-    if _is_tensor_a_torch_image(img):
-        return [img.shape[-1], img.shape[-2]]
-    raise TypeError("Unexpected input type")
-
+    _assert_image_tensor(img)
+    return [img.shape[-1], img.shape[-2]]
+    
 
 def _get_image_num_channels(img: Tensor) -> int:
     if img.ndim == 2:
@@ -143,8 +145,7 @@ def vflip(img: Tensor) -> Tensor:
     Returns:
         Tensor:  Vertically flipped image Tensor.
     """
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+    _assert_image_tensor(img)
 
     return img.flip(-2)
 
@@ -163,8 +164,7 @@ def hflip(img: Tensor) -> Tensor:
     Returns:
         Tensor:  Horizontally flipped image Tensor.
     """
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+    _assert_image_tensor(img)
 
     return img.flip(-1)
 
@@ -187,8 +187,7 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     Returns:
         Tensor: Cropped image.
     """
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError("tensor is not a torch image.")
+    _assert_image_tensor(img)
 
     return img[..., top:top + height, left:left + width]
 
@@ -254,8 +253,7 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     if brightness_factor < 0:
         raise ValueError('brightness_factor ({}) is not non-negative.'.format(brightness_factor))
 
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+    _assert_image_tensor(img)
 
     _assert_channels(img, [1, 3])
 
@@ -282,8 +280,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     if contrast_factor < 0:
         raise ValueError('contrast_factor ({}) is not non-negative.'.format(contrast_factor))
 
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+    _assert_image_tensor(img)
 
     _assert_channels(img, [3])
 
@@ -326,7 +323,9 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
 
-    if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
+    _assert_image_tensor(img)
+
+    if not (isinstance(img, torch.Tensor)):
         raise TypeError('Input img should be Tensor image')
 
     _assert_channels(img, [3])
@@ -367,8 +366,7 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     if saturation_factor < 0:
         raise ValueError('saturation_factor ({}) is not non-negative.'.format(saturation_factor))
 
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+    _assert_image_tensor(img)
 
     _assert_channels(img, [3])
 
@@ -447,8 +445,7 @@ def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
         "Please, use ``F.center_crop`` instead."
     )
 
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+    _assert_image_tensor(img)
 
     _, image_width, image_height = img.size()
     crop_height, crop_width = output_size
@@ -497,8 +494,7 @@ def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
         "Please, use ``F.five_crop`` instead."
     )
 
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+    _assert_image_tensor(img)
 
     assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
 
@@ -553,8 +549,7 @@ def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = Fa
         "Please, use ``F.ten_crop`` instead."
     )
 
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+    _assert_image_tensor(img)
 
     assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
     first_five = five_crop(img, size)
@@ -702,8 +697,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     Returns:
         Tensor: Padded image.
     """
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError("tensor is not a torch image.")
+    _assert_image_tensor(img)
 
     if not isinstance(padding, (int, tuple, list)):
         raise TypeError("Got inappropriate padding arg")
@@ -795,8 +789,7 @@ def resize(img: Tensor, size: List[int], interpolation: str = "bilinear") -> Ten
     Returns:
         Tensor: Resized image.
     """
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError("tensor is not a torch image.")
+    _assert_image_tensor(img)
 
     if not isinstance(size, (int, tuple, list)):
         raise TypeError("Got inappropriate size arg")
@@ -854,8 +847,10 @@ def _assert_grid_transform_inputs(
         supported_interpolation_modes: List[str],
         coeffs: Optional[List[float]] = None,
 ):
-    if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
-        raise TypeError("Input img should be Tensor Image")
+    _assert_image_tensor(img)
+
+    if not (isinstance(img, torch.Tensor)):
+        raise TypeError("Input img should be Tensor")
 
     if matrix is not None and not isinstance(matrix, list):
         raise TypeError("Argument matrix should be a list")
@@ -1111,8 +1106,10 @@ def perspective(
     Returns:
         Tensor: transformed image.
     """
-    if not (isinstance(img, torch.Tensor) and _is_tensor_a_torch_image(img)):
-        raise TypeError('Input img should be Tensor Image')
+    _assert_image_tensor(img)
+
+    if not (isinstance(img, torch.Tensor)):
+        raise TypeError('Input img should be Tensor.')
 
     _assert_grid_transform_inputs(
         img,
@@ -1164,8 +1161,10 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
     Returns:
         Tensor: An image that is blurred using gaussian kernel of given parameters
     """
-    if not (isinstance(img, torch.Tensor) or _is_tensor_a_torch_image(img)):
-        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+    _assert_image_tensor(img)
+
+    if not (isinstance(img, torch.Tensor)):
+        raise TypeError('img should be Tensor. Got {}'.format(type(img)))
 
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=img.device)
