@@ -13,6 +13,8 @@ from torchvision.transforms import InterpolationMode
 
 from common_utils import TransformsTester
 
+from typing import Dict, List, Tuple
+
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
@@ -33,6 +35,25 @@ class Tester(TransformsTester):
         # scriptable function test
         s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
         self.assertTrue(transformed_batch.allclose(s_transformed_batch))
+
+    def test_assert_image_tensor(self):
+        shape = (100,)
+        tensor = torch.rand(*shape, dtype=torch.float, device=self.device)
+
+        list_of_methods = [(F_t._get_image_size, (tensor, )), (F_t.vflip, (tensor, )),
+                           (F_t.hflip, (tensor, )), (F_t.crop, (tensor, 1, 2, 4, 5)),
+                           (F_t.adjust_brightness, (tensor, 0.)), (F_t.adjust_contrast, (tensor, 1.)),
+                           (F_t.adjust_hue, (tensor, -0.5)), (F_t.adjust_saturation, (tensor, 2.)),
+                           (F_t.center_crop, (tensor, [10, 11])), (F_t.five_crop, (tensor, [10, 11])),
+                           (F_t.ten_crop, (tensor, [10, 11])), (F_t.pad, (tensor, [2, ], 2, "constant")),
+                           (F_t.resize, (tensor, [10, 11])), (F_t.perspective, (tensor, [0.2, ])),
+                           (F_t.gaussian_blur, (tensor, (2, 2), (0.7, 0.5)))]
+
+        for func, args in list_of_methods:
+            with self.assertRaises(Exception) as context:
+                func(*args)
+
+            self.assertTrue('Tensor is not a torch image.' in str(context.exception))
 
     def test_vflip(self):
         script_vflip = torch.jit.script(F.vflip)
