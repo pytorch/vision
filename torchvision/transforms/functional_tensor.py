@@ -325,10 +325,10 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError('hue_factor ({}) is not in [-0.5, 0.5].'.format(hue_factor))
 
-    _assert_image_tensor(img)
-
     if not (isinstance(img, torch.Tensor)):
         raise TypeError('Input img should be Tensor image')
+
+    _assert_image_tensor(img)
 
     _assert_channels(img, [3])
 
@@ -849,10 +849,11 @@ def _assert_grid_transform_inputs(
         supported_interpolation_modes: List[str],
         coeffs: Optional[List[float]] = None,
 ):
-    _assert_image_tensor(img)
 
     if not (isinstance(img, torch.Tensor)):
         raise TypeError("Input img should be Tensor")
+
+    _assert_image_tensor(img)
 
     if matrix is not None and not isinstance(matrix, list):
         raise TypeError("Argument matrix should be a list")
@@ -1108,10 +1109,11 @@ def perspective(
     Returns:
         Tensor: transformed image.
     """
-    _assert_image_tensor(img)
 
     if not (isinstance(img, torch.Tensor)):
         raise TypeError('Input img should be Tensor.')
+
+    _assert_image_tensor(img)
 
     _assert_grid_transform_inputs(
         img,
@@ -1163,10 +1165,11 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
     Returns:
         Tensor: An image that is blurred using gaussian kernel of given parameters
     """
-    _assert_image_tensor(img)
 
     if not (isinstance(img, torch.Tensor)):
         raise TypeError('img should be Tensor. Got {}'.format(type(img)))
+
+    _assert_image_tensor(img)
 
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     kernel = _get_gaussian_kernel2d(kernel_size, sigma, dtype=dtype, device=img.device)
