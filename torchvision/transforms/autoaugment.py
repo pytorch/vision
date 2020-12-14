@@ -242,4 +242,4 @@ class AutoAugment(torch.nn.Module):
         return img
 
     def __repr__(self):
-        return self.__class__.__name__ + '(policy={},fill={})'.format(self.policy, self.fill)
+        return self.__class__.__name__ + '(policy={}, fill={})'.format(self.policy, self.fill)

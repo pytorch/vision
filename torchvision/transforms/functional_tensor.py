@@ -1278,8 +1278,8 @@ def autocontrast(img: Tensor) -> Tensor:
     bound = 1.0 if img.is_floating_point() else 255.0
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
 
-    minimum = img.amin(dim=(-2, -1)).unsqueeze(-1).unsqueeze(-1).to(dtype)
-    maximum = img.amax(dim=(-2, -1)).unsqueeze(-1).unsqueeze(-1).to(dtype)
+    minimum = img.amin(dim=(-2, -1), keepdim=True).to(dtype)
+    maximum = img.amax(dim=(-2, -1), keepdim=True).to(dtype)
     eq_idxs = torch.where(minimum == maximum)[0]
     minimum[eq_idxs] = 0
     maximum[eq_idxs] = bound
@@ -1292,10 +1292,7 @@ def _scale_channel(img_chan):
     hist = torch.histc(img_chan.to(torch.float32), bins=256, min=0, max=255)
 
     nonzero_hist = hist[hist != 0]
-    if nonzero_hist.numel() > 0:
-        step = (nonzero_hist.sum() - nonzero_hist[-1]) // 255
-    else:
-        step = torch.tensor(0, device=img_chan.device)
+    step = nonzero_hist[:-1].sum() // 255
     if step == 0:
         return img_chan
 
