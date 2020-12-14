@@ -15,7 +15,7 @@ VISION_API std::tuple<at::Tensor, at::Tensor> roi_pool(
 
 namespace detail {
 
-VISION_API at::Tensor _roi_pool_backward(
+at::Tensor _roi_pool_backward(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& argmax,

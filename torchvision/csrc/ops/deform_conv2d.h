@@ -24,7 +24,6 @@ VISION_API at::Tensor deform_conv2d(
 
 namespace detail {
 
-VISION_API
 std::tuple<at::Tensor, at::Tensor, at::Tensor, at::Tensor, at::Tensor>
 _deform_conv2d_backward(
     const at::Tensor& grad,
