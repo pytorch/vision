@@ -6,8 +6,10 @@ from torch import Tensor
 from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
 from torch.jit.annotations import List, BroadcastingList2
 
+
 def _is_tensor_a_torch_image(x: Tensor) -> bool:
     return x.ndim >= 2
+
 
 def _assert_image_tensor(img):
     if not _is_tensor_a_torch_image(img):
@@ -18,7 +20,7 @@ def _get_image_size(img: Tensor) -> List[int]:
     """Returns (w, h) of tensor image"""
     _assert_image_tensor(img)
     return [img.shape[-1], img.shape[-2]]
-    
+
 
 def _get_image_num_channels(img: Tensor) -> int:
     if img.ndim == 2:
