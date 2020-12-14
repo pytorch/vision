@@ -1234,6 +1234,48 @@ class Tester(unittest.TestCase):
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         self.assertTrue(np.allclose(y_np, y_ans))
 
+    def test_adjust_sharpness(self):
+        x_shape = [4, 4, 3]
+        x_data = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
+                  0, 65, 108, 101, 120, 97, 110, 100, 101, 114, 32, 86, 114, 121, 110, 105,
+                  111, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+        x_pil = Image.fromarray(x_np, mode='RGB')
+
+        # test 0
+        y_pil = F.adjust_sharpness(x_pil, 1)
+        y_np = np.array(y_pil)
+        self.assertTrue(np.allclose(y_np, x_np))
+
+        # test 1
+        y_pil = F.adjust_sharpness(x_pil, 0.5)
+        y_np = np.array(y_pil)
+        y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 30,
+                 30, 74, 103, 96, 114, 97, 110, 100, 101, 114, 32, 81, 103, 108, 102, 101,
+                 107, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+        self.assertTrue(np.allclose(y_np, y_ans))
+
+        # test 2
+        y_pil = F.adjust_sharpness(x_pil, 2)
+        y_np = np.array(y_pil)
+        y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
+                 0, 46, 118, 111, 132, 97, 110, 100, 101, 114, 32, 95, 135, 146, 126, 112,
+                 119, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+        self.assertTrue(np.allclose(y_np, y_ans))
+
+        # test 3
+        x_shape = [2, 2, 3]
+        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+        x_pil = Image.fromarray(x_np, mode='RGB')
+        x_th = torch.tensor(x_np.transpose(2, 0, 1))
+        y_pil = F.adjust_sharpness(x_pil, 2)
+        y_np = np.array(y_pil).transpose(2, 0, 1)
+        y_th = F.adjust_sharpness(x_th, 2)
+        self.assertTrue(np.allclose(y_np, y_th.numpy()))
+
     def test_adjust_gamma(self):
         x_shape = [2, 2, 3]
         x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
@@ -1270,6 +1312,7 @@ class Tester(unittest.TestCase):
         self.assertEqual(F.adjust_saturation(x_l, 2).mode, 'L')
         self.assertEqual(F.adjust_contrast(x_l, 2).mode, 'L')
         self.assertEqual(F.adjust_hue(x_l, 0.4).mode, 'L')
+        self.assertEqual(F.adjust_sharpness(x_l, 2).mode, 'L')
         self.assertEqual(F.adjust_gamma(x_l, 0.5).mode, 'L')
 
     def test_color_jitter(self):
@@ -1750,6 +1793,86 @@ class Tester(unittest.TestCase):
             F.gaussian_blur(img, 3, "sigma_string")
         with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
             transforms.GaussianBlur(3, "sigma_string")
+
+    def _test_randomness(self, fn, trans, configs):
+        random_state = random.getstate()
+        random.seed(42)
+        img = transforms.ToPILImage()(torch.rand(3, 16, 18))
+
+        for p in [0.5, 0.7]:
+            for config in configs:
+                inv_img = fn(img, **config)
+
+                num_samples = 250
+                counts = 0
+                for _ in range(num_samples):
+                    tranformation = trans(p=p, **config)
+                    tranformation.__repr__()
+                    out = tranformation(img)
+                    if out == inv_img:
+                        counts += 1
+
+                p_value = stats.binom_test(counts, num_samples, p=p)
+                random.setstate(random_state)
+                self.assertGreater(p_value, 0.0001)
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_invert(self):
+        self._test_randomness(
+            F.invert,
+            transforms.RandomInvert,
+            [{}]
+        )
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_posterize(self):
+        self._test_randomness(
+            F.posterize,
+            transforms.RandomPosterize,
+            [{"bits": 4}]
+        )
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_solarize(self):
+        self._test_randomness(
+            F.solarize,
+            transforms.RandomSolarize,
+            [{"threshold": 192}]
+        )
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_adjust_sharpness(self):
+        self._test_randomness(
+            F.adjust_sharpness,
+            transforms.RandomAdjustSharpness,
+            [{"sharpness_factor": 2.0}]
+        )
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_autocontrast(self):
+        self._test_randomness(
+            F.autocontrast,
+            transforms.RandomAutocontrast,
+            [{}]
+        )
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_equalize(self):
+        self._test_randomness(
+            F.equalize,
+            transforms.RandomEqualize,
+            [{}]
+        )
+
+    def test_autoaugment(self):
+        for policy in transforms.AutoAugmentPolicy:
+            for fill in [None, 85, (128, 128, 128)]:
+                random.seed(42)
+                img = Image.open(GRACE_HOPPER)
+                transform = transforms.AutoAugment(policy=policy, fill=fill)
+                for _ in range(100):
+                    img = transform(img)
+                transform.__repr__()
 
 
 if __name__ == '__main__':

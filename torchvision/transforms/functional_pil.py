@@ -606,3 +606,48 @@ def to_grayscale(img, num_output_channels):
         raise ValueError('num_output_channels should be either 1 or 3')
 
     return img
+
+
+@torch.jit.unused
+def invert(img):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.invert(img)
+
+
+@torch.jit.unused
+def posterize(img, bits):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.posterize(img, bits)
+
+
+@torch.jit.unused
+def solarize(img, threshold):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.solarize(img, threshold)
+
+
+@torch.jit.unused
+def adjust_sharpness(img, sharpness_factor):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+
+    enhancer = ImageEnhance.Sharpness(img)
+    img = enhancer.enhance(sharpness_factor)
+    return img
+
+
+@torch.jit.unused
+def autocontrast(img):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.autocontrast(img)
+
+
+@torch.jit.unused
+def equalize(img):
+    if not _is_pil_image(img):
+        raise TypeError('img should be PIL Image. Got {}'.format(type(img)))
+    return ImageOps.equalize(img)
