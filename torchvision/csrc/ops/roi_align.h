@@ -17,7 +17,7 @@ VISION_API at::Tensor roi_align(
 
 namespace detail {
 
-VISION_API at::Tensor _roi_align_backward(
+at::Tensor _roi_align_backward(
     const at::Tensor& grad,
     const at::Tensor& rois,
     double spatial_scale,
