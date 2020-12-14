@@ -703,9 +703,6 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     Returns:
         Tensor: Padded image.
     """
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError("tensor is not a torch image.")
-
     if not isinstance(padding, (int, tuple, list)):
         raise TypeError("Got inappropriate padding arg")
     if not isinstance(fill, (int, float)):
@@ -1192,9 +1189,8 @@ def invert(img: Tensor) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
-    bound = 1.0 if img.is_floating_point() else 255.0
-    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    return (bound - img.to(dtype)).clamp(0, bound).to(img.dtype)
+    bound = torch.tensor(1 if img.is_floating_point() else 255, dtype=img.dtype, device=img.device)
+    return bound - img
 
 
 def posterize(img: Tensor, bits: int) -> Tensor:
@@ -1220,14 +1216,8 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
-    bound = 1.0 if img.is_floating_point() else 255.0
-    dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-
-    result = img.clone().view(-1)
-    invert_idx = torch.where(result >= threshold)[0]
-    result[invert_idx] = (bound - result[invert_idx].to(dtype=dtype)).clamp(0, bound).to(dtype=img.dtype)
-
-    return result.view(img.shape)
+    inverted_img = invert(img)
+    return torch.where(img >= threshold, inverted_img, img)
 
 
 def _blurred_degenerate_image(img: Tensor) -> Tensor:
@@ -1238,15 +1228,12 @@ def _blurred_degenerate_image(img: Tensor) -> Tensor:
     kernel /= kernel.sum()
     kernel = kernel.expand(img.shape[-3], 1, kernel.shape[0], kernel.shape[1])
 
-    result, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [kernel.dtype, ])
-    result = conv2d(result, kernel, groups=result.shape[-3])
-    result = torch_pad(result, [1, 1, 1, 1])
-    result = _cast_squeeze_out(result, need_cast, need_squeeze, out_dtype)
+    result_tmp, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [kernel.dtype, ])
+    result_tmp = conv2d(result_tmp, kernel, groups=result_tmp.shape[-3])
+    result_tmp = _cast_squeeze_out(result_tmp, need_cast, need_squeeze, out_dtype)
 
-    result[..., 0, :] = img[..., 0, :]
-    result[..., -1, :] = img[..., -1, :]
-    result[..., :, 0] = img[..., :, 0]
-    result[..., :, -1] = img[..., :, -1]
+    result = img.clone()
+    result[..., 1:-1, 1:-1] = result_tmp
 
     return result
 
@@ -1285,7 +1272,7 @@ def autocontrast(img: Tensor) -> Tensor:
     maximum[eq_idxs] = bound
     scale = bound / (maximum - minimum)
 
-    return ((img.to(dtype) - minimum) * scale).clamp(0, bound).to(img.dtype)
+    return ((img - minimum) * scale).clamp(0, bound).to(img.dtype)
 
 
 def _scale_channel(img_chan):
@@ -1297,7 +1284,7 @@ def _scale_channel(img_chan):
         return img_chan
 
     lut = (torch.cumsum(hist, 0) + (step // 2)) // step
-    lut = torch.cat([torch.zeros(1, device=img_chan.device), lut[:-1]]).clamp(0, 255)
+    lut = pad(lut, [1, 0])[:-1].clamp(0, 255)
 
     return lut[img_chan.to(torch.int64)].to(torch.uint8)
 

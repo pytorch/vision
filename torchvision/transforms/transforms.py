@@ -1716,16 +1716,6 @@ class RandomInvert(torch.nn.Module):
         super().__init__()
         self.p = p
 
-    @staticmethod
-    def get_params() -> float:
-        """Choose a value for the random transformation.
-
-        Returns:
-            float: Random value which is used to determine whether the random transformation
-            should occur.
-        """
-        return torch.rand(1).item()
-
     def forward(self, img):
         """
         Args:
@@ -1734,7 +1724,7 @@ class RandomInvert(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly color inverted image.
         """
-        if self.get_params() < self.p:
+        if torch.rand(1).item() < self.p:
             return F.invert(img)
         return img
 
@@ -1758,16 +1748,6 @@ class RandomPosterize(torch.nn.Module):
         self.bits = bits
         self.p = p
 
-    @staticmethod
-    def get_params() -> float:
-        """Choose a value for the random transformation.
-
-        Returns:
-            float: Random value which is used to determine whether the random transformation
-            should occur.
-        """
-        return torch.rand(1).item()
-
     def forward(self, img):
         """
         Args:
@@ -1776,7 +1756,7 @@ class RandomPosterize(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly posterized image.
         """
-        if self.get_params() < self.p:
+        if torch.rand(1).item() < self.p:
             return F.posterize(img, self.bits)
         return img
 
@@ -1800,16 +1780,6 @@ class RandomSolarize(torch.nn.Module):
         self.threshold = threshold
         self.p = p
 
-    @staticmethod
-    def get_params() -> float:
-        """Choose a value for the random transformation.
-
-        Returns:
-            float: Random value which is used to determine whether the random transformation
-            should occur.
-        """
-        return torch.rand(1).item()
-
     def forward(self, img):
         """
         Args:
@@ -1818,7 +1788,7 @@ class RandomSolarize(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly solarized image.
         """
-        if self.get_params() < self.p:
+        if torch.rand(1).item() < self.p:
             return F.solarize(img, self.threshold)
         return img
 
@@ -1843,16 +1813,6 @@ class RandomAdjustSharpness(torch.nn.Module):
         self.sharpness_factor = sharpness_factor
         self.p = p
 
-    @staticmethod
-    def get_params() -> float:
-        """Choose a value for the random transformation.
-
-        Returns:
-            float: Random value which is used to determine whether the random transformation
-            should occur.
-        """
-        return torch.rand(1).item()
-
     def forward(self, img):
         """
         Args:
@@ -1861,7 +1821,7 @@ class RandomAdjustSharpness(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly sharpened image.
         """
-        if self.get_params() < self.p:
+        if torch.rand(1).item() < self.p:
             return F.adjust_sharpness(img, self.sharpness_factor)
         return img
 
@@ -1883,16 +1843,6 @@ class RandomAutocontrast(torch.nn.Module):
         super().__init__()
         self.p = p
 
-    @staticmethod
-    def get_params() -> float:
-        """Choose a value for the random transformation.
-
-        Returns:
-            float: Random value which is used to determine whether the random transformation
-            should occur.
-        """
-        return torch.rand(1).item()
-
     def forward(self, img):
         """
         Args:
@@ -1901,7 +1851,7 @@ class RandomAutocontrast(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly autocontrasted image.
         """
-        if self.get_params() < self.p:
+        if torch.rand(1).item() < self.p:
             return F.autocontrast(img)
         return img
 
@@ -1923,16 +1873,6 @@ class RandomEqualize(torch.nn.Module):
         super().__init__()
         self.p = p
 
-    @staticmethod
-    def get_params() -> float:
-        """Choose a value for the random transformation.
-
-        Returns:
-            float: Random value which is used to determine whether the random transformation
-            should occur.
-        """
-        return torch.rand(1).item()
-
     def forward(self, img):
         """
         Args:
@@ -1941,7 +1881,7 @@ class RandomEqualize(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly equalized image.
         """
-        if self.get_params() < self.p:
+        if torch.rand(1).item() < self.p:
             return F.equalize(img)
         return img
 
