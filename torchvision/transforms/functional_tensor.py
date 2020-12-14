@@ -703,6 +703,9 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     Returns:
         Tensor: Padded image.
     """
+    if not _is_tensor_a_torch_image(img):
+        raise TypeError("tensor is not a torch image.")
+
     if not isinstance(padding, (int, tuple, list)):
         raise TypeError("Got inappropriate padding arg")
     if not isinstance(fill, (int, float)):
@@ -1284,7 +1287,7 @@ def _scale_channel(img_chan):
         return img_chan
 
     lut = (torch.cumsum(hist, 0) + (step // 2)) // step
-    lut = pad(lut, [1, 0])[:-1].clamp(0, 255)
+    lut = torch.nn.functional.pad(lut, [1, 0])[:-1].clamp(0, 255)
 
     return lut[img_chan.to(torch.int64)].to(torch.uint8)
 
