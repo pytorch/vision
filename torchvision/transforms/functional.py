@@ -2,14 +2,13 @@ import math
 import numbers
 import warnings
 from enum import Enum
-from typing import Any, Optional
 
 import numpy as np
 from PIL import Image
 
 import torch
 from torch import Tensor
-from torch.jit.annotations import List, Tuple
+from typing import List, Tuple, Any, Optional
 
 try:
     import accimage
