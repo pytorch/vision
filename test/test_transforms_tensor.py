@@ -89,6 +89,34 @@ class Tester(TransformsTester):
     def test_random_vertical_flip(self):
         self._test_op('vflip', 'RandomVerticalFlip')
 
+    def test_random_invert(self):
+        self._test_op('invert', 'RandomInvert')
+
+    def test_random_posterize(self):
+        fn_kwargs = meth_kwargs = {"bits": 4}
+        self._test_op(
+            'posterize', 'RandomPosterize', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
+    def test_random_solarize(self):
+        fn_kwargs = meth_kwargs = {"threshold": 192.0}
+        self._test_op(
+            'solarize', 'RandomSolarize', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
+    def test_random_adjust_sharpness(self):
+        fn_kwargs = meth_kwargs = {"sharpness_factor": 2.0}
+        self._test_op(
+            'adjust_sharpness', 'RandomAdjustSharpness', fn_kwargs=fn_kwargs, meth_kwargs=meth_kwargs
+        )
+
+    def test_random_autocontrast(self):
+        self._test_op('autocontrast', 'RandomAutocontrast')
+
+    def test_random_equalize(self):
+        torch.set_deterministic(False)
+        self._test_op('equalize', 'RandomEqualize')
+
     def test_color_jitter(self):
 
         tol = 1.0 + 1e-10
@@ -597,6 +625,22 @@ class Tester(TransformsTester):
 
         with get_tmp_dir() as tmp_dir:
             scripted_fn.save(os.path.join(tmp_dir, "t_convert_dtype.pt"))
+
+    def test_autoaugment(self):
+        tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
+        batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
+
+        for policy in T.AutoAugmentPolicy:
+            for fill in [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
+                for _ in range(100):
+                    transform = T.AutoAugment(policy=policy, fill=fill)
+                    s_transform = torch.jit.script(transform)
+
+                    self._test_transform_vs_scripted(transform, s_transform, tensor)
+                    self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+        with get_tmp_dir() as tmp_dir:
+            s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")

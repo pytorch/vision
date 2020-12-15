@@ -21,7 +21,8 @@ __all__ = ["Compose", "ToTensor", "PILToTensor", "ConvertImageDtype", "ToPILImag
            "CenterCrop", "Pad", "Lambda", "RandomApply", "RandomChoice", "RandomOrder", "RandomCrop",
            "RandomHorizontalFlip", "RandomVerticalFlip", "RandomResizedCrop", "RandomSizedCrop", "FiveCrop", "TenCrop",
            "LinearTransformation", "ColorJitter", "RandomRotation", "RandomAffine", "Grayscale", "RandomGrayscale",
-           "RandomPerspective", "RandomErasing", "GaussianBlur", "InterpolationMode"]
+           "RandomPerspective", "RandomErasing", "GaussianBlur", "InterpolationMode", "RandomInvert", "RandomPosterize",
+           "RandomSolarize", "RandomAdjustSharpness", "RandomAutocontrast", "RandomEqualize"]
 
 
 class Compose:
@@ -1038,7 +1039,7 @@ class LinearTransformation(torch.nn.Module):
 
 
 class ColorJitter(torch.nn.Module):
-    """Randomly change the brightness, contrast and saturation of an image.
+    """Randomly change the brightness, contrast, saturation and hue of an image.
 
     Args:
         brightness (float or tuple of float (min, max)): How much to jitter brightness.
@@ -1699,3 +1700,190 @@ def _setup_angle(x, name, req_sizes=(2, )):
         _check_sequence_input(x, name, req_sizes)
 
     return [float(d) for d in x]
+
+
+class RandomInvert(torch.nn.Module):
+    """Inverts the colors of the given image randomly with a given probability.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions.
+
+    Args:
+        p (float): probability of the image being color inverted. Default value is 0.5
+    """
+
+    def __init__(self, p=0.5):
+        super().__init__()
+        self.p = p
+
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be inverted.
+
+        Returns:
+            PIL Image or Tensor: Randomly color inverted image.
+        """
+        if torch.rand(1).item() < self.p:
+            return F.invert(img)
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(p={})'.format(self.p)
+
+
+class RandomPosterize(torch.nn.Module):
+    """Posterize the image randomly with a given probability by reducing the
+    number of bits for each color channel. The image can be a PIL Image or a torch
+    Tensor, in which case it is expected to have [..., H, W] shape, where ... means
+    an arbitrary number of leading dimensions.
+
+    Args:
+        bits (int): number of bits to keep for each channel (0-8)
+        p (float): probability of the image being color inverted. Default value is 0.5
+    """
+
+    def __init__(self, bits, p=0.5):
+        super().__init__()
+        self.bits = bits
+        self.p = p
+
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be posterized.
+
+        Returns:
+            PIL Image or Tensor: Randomly posterized image.
+        """
+        if torch.rand(1).item() < self.p:
+            return F.posterize(img, self.bits)
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(bits={},p={})'.format(self.bits, self.p)
+
+
+class RandomSolarize(torch.nn.Module):
+    """Solarize the image randomly with a given probability by inverting all pixel
+    values above a threshold. The image can be a PIL Image or a torch Tensor, in
+    which case it is expected to have [..., H, W] shape, where ... means an arbitrary
+    number of leading dimensions.
+
+    Args:
+        threshold (float): all pixels equal or above this value are inverted.
+        p (float): probability of the image being color inverted. Default value is 0.5
+    """
+
+    def __init__(self, threshold, p=0.5):
+        super().__init__()
+        self.threshold = threshold
+        self.p = p
+
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be solarized.
+
+        Returns:
+            PIL Image or Tensor: Randomly solarized image.
+        """
+        if torch.rand(1).item() < self.p:
+            return F.solarize(img, self.threshold)
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(threshold={},p={})'.format(self.threshold, self.p)
+
+
+class RandomAdjustSharpness(torch.nn.Module):
+    """Adjust the sharpness of the image randomly with a given probability. The image
+    can be a PIL Image or a torch Tensor, in which case it is expected to have [..., H, W]
+    shape, where ... means an arbitrary number of leading dimensions.
+
+    Args:
+        sharpness_factor (float):  How much to adjust the sharpness. Can be
+            any non negative number. 0 gives a blurred image, 1 gives the
+            original image while 2 increases the sharpness by a factor of 2.
+        p (float): probability of the image being color inverted. Default value is 0.5
+    """
+
+    def __init__(self, sharpness_factor, p=0.5):
+        super().__init__()
+        self.sharpness_factor = sharpness_factor
+        self.p = p
+
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be sharpened.
+
+        Returns:
+            PIL Image or Tensor: Randomly sharpened image.
+        """
+        if torch.rand(1).item() < self.p:
+            return F.adjust_sharpness(img, self.sharpness_factor)
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(sharpness_factor={},p={})'.format(self.sharpness_factor, self.p)
+
+
+class RandomAutocontrast(torch.nn.Module):
+    """Autocontrast the pixels of the given image randomly with a given probability.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions.
+
+    Args:
+        p (float): probability of the image being autocontrasted. Default value is 0.5
+    """
+
+    def __init__(self, p=0.5):
+        super().__init__()
+        self.p = p
+
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be autocontrasted.
+
+        Returns:
+            PIL Image or Tensor: Randomly autocontrasted image.
+        """
+        if torch.rand(1).item() < self.p:
+            return F.autocontrast(img)
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(p={})'.format(self.p)
+
+
+class RandomEqualize(torch.nn.Module):
+    """Equalize the histogram of the given image randomly with a given probability.
+    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading
+    dimensions.
+
+    Args:
+        p (float): probability of the image being equalized. Default value is 0.5
+    """
+
+    def __init__(self, p=0.5):
+        super().__init__()
+        self.p = p
+
+    def forward(self, img):
+        """
+        Args:
+            img (PIL Image or Tensor): Image to be equalized.
+
+        Returns:
+            PIL Image or Tensor: Randomly equalized image.
+        """
+        if torch.rand(1).item() < self.p:
+            return F.equalize(img)
+        return img
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(p={})'.format(self.p)

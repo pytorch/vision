@@ -10,7 +10,7 @@ from torchvision.ops import roi_align
 
 from . import _utils as det_utils
 
-from torch.jit.annotations import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
@@ -379,7 +379,7 @@ def expand_masks(mask, padding):
         scale = expand_masks_tracing_scale(M, padding)
     else:
         scale = float(M + 2 * padding) / M
-    padded_mask = torch.nn.functional.pad(mask, (padding,) * 4)
+    padded_mask = F.pad(mask, (padding,) * 4)
     return padded_mask, scale
 
 
@@ -482,7 +482,7 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
     return ret
 
 
-class RoIHeads(torch.nn.Module):
+class RoIHeads(nn.Module):
     __annotations__ = {
         'box_coder': det_utils.BoxCoder,
         'proposal_matcher': det_utils.Matcher,
@@ -753,7 +753,7 @@ class RoIHeads(torch.nn.Module):
         box_features = self.box_head(box_features)
         class_logits, box_regression = self.box_predictor(box_features)
 
-        result = torch.jit.annotate(List[Dict[str, torch.Tensor]], [])
+        result: List[Dict[str, torch.Tensor]] = []
         losses = {}
         if self.training:
             assert labels is not None and regression_targets is not None
