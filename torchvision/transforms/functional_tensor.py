@@ -1188,8 +1188,8 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: List[float]) -> Te
 
 
 def invert(img: Tensor) -> Tensor:
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+
+    _assert_image_tensor(img)
 
     if img.ndim < 3:
         raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
@@ -1201,8 +1201,8 @@ def invert(img: Tensor) -> Tensor:
 
 
 def posterize(img: Tensor, bits: int) -> Tensor:
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+
+    _assert_image_tensor(img)
 
     if img.ndim < 3:
         raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
@@ -1215,8 +1215,8 @@ def posterize(img: Tensor, bits: int) -> Tensor:
 
 
 def solarize(img: Tensor, threshold: float) -> Tensor:
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+
+    _assert_image_tensor(img)
 
     if img.ndim < 3:
         raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
@@ -1249,8 +1249,7 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
     if sharpness_factor < 0:
         raise ValueError('sharpness_factor ({}) is not non-negative.'.format(sharpness_factor))
 
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+    _assert_image_tensor(img)
 
     _assert_channels(img, [1, 3])
 
@@ -1261,8 +1260,8 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
 
 
 def autocontrast(img: Tensor) -> Tensor:
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+
+    _assert_image_tensor(img)
 
     if img.ndim < 3:
         raise TypeError("Input image tensor should have at least 3 dimensions, but found {}".format(img.ndim))
@@ -1301,8 +1300,8 @@ def _equalize_single_image(img: Tensor) -> Tensor:
 
 
 def equalize(img: Tensor) -> Tensor:
-    if not _is_tensor_a_torch_image(img):
-        raise TypeError('tensor is not a torch image.')
+
+    _assert_image_tensor(img)
 
     if not (3 <= img.ndim <= 4):
         raise TypeError("Input image tensor should have 3 or 4 dimensions, but found {}".format(img.ndim))
