@@ -7,9 +7,9 @@ import numpy as np
 import torch
 from torch import Tensor
 from torch.autograd import gradcheck
-from torch.jit.annotations import Tuple
 from torch.nn.modules.utils import _pair
 from torchvision import ops
+from typing import Tuple
 
 
 class OpTester(object):
