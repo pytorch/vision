@@ -33,8 +33,12 @@ class ONNXExporterTester(unittest.TestCase):
         model.eval()
 
         onnx_io = io.BytesIO()
+        if isinstance(inputs_list[0][-1], dict):
+            torch_onnx_input = inputs_list[0] + ({},)
+        else:
+            torch_onnx_input = inputs_list[0]
         # export to onnx with the first input
-        torch.onnx.export(model, inputs_list[0], onnx_io,
+        torch.onnx.export(model, torch_onnx_input, onnx_io,
                           do_constant_folding=do_constant_folding, opset_version=_onnx_opset_version,
                           dynamic_axes=dynamic_axes, input_names=input_names, output_names=output_names)
         # validate the exported model with onnx runtime
