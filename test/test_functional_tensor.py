@@ -49,7 +49,7 @@ class Tester(TransformsTester):
                            (F_t.resize, (tensor, [10, 11])), (F_t.perspective, (tensor, [0.2, ])),
                            (F_t.gaussian_blur, (tensor, (2, 2), (0.7, 0.5))),
                            (F_t.invert, (tensor, )), (F_t.posterize, (tensor, 0)),
-                           (F_t.posterize, (tensor, 0.3)), (F_t.adjust_sharpness, (tensor, 0.3)),
+                           (F_t.solarize, (tensor, 0.3)), (F_t.adjust_sharpness, (tensor, 0.3)),
                            (F_t.autocontrast, (tensor, )), (F_t.equalize, (tensor, ))]
 
         for func, args in list_of_methods:
