@@ -7,9 +7,9 @@ import numpy as np
 import torch
 from torch import Tensor
 from torch.autograd import gradcheck
-from torch.jit.annotations import Tuple
 from torch.nn.modules.utils import _pair
 from torchvision import ops
+from typing import Tuple
 
 
 class OpTester(object):
@@ -447,15 +447,6 @@ class NMSTester(unittest.TestCase):
         for dtype in (torch.float, torch.half):
             with torch.cuda.amp.autocast():
                 self.test_nms_cuda(dtype=dtype)
-
-
-class NewEmptyTensorTester(unittest.TestCase):
-    def test_new_empty_tensor(self):
-        input = torch.tensor([2., 2.], requires_grad=True)
-        new_shape = [3, 3]
-        out = torch.ops.torchvision._new_empty_tensor_op(input, new_shape)
-        assert out.size() == torch.Size([3, 3])
-        assert out.dtype == input.dtype
 
 
 class DeformConvTester(OpTester, unittest.TestCase):

@@ -1,8 +1,8 @@
 import math
 
 import torch
-from torch.jit.annotations import List, Tuple
 from torch import Tensor
+from typing import List, Tuple
 
 from torchvision.ops.misc import FrozenBatchNorm2d
 

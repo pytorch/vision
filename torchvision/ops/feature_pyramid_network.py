@@ -1,10 +1,9 @@
 from collections import OrderedDict
 
-import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from torch.jit.annotations import Tuple, List, Dict, Optional
+from typing import Tuple, List, Dict, Optional
 
 
 class ExtraFPNBlock(nn.Module):
