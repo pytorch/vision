@@ -28,19 +28,6 @@ function(CUDA_CONVERT_FLAGS EXISTING_TARGET)
     endif()
 endfunction()
 
-file(GLOB HEADERS torchvision/csrc/*.h)
-# Image extension
-file(GLOB IMAGE_HEADERS torchvision/csrc/cpu/image/*.h)
-file(GLOB IMAGE_SOURCES torchvision/csrc/cpu/image/*.cpp)
-file(GLOB OPERATOR_HEADERS torchvision/csrc/cpu/*.h)
-file(GLOB OPERATOR_SOURCES ${OPERATOR_HEADERS} torchvision/csrc/cpu/*.cpp ${IMAGE_HEADERS} ${IMAGE_SOURCES} ${HEADERS} torchvision/csrc/*.cpp)
-if(WITH_CUDA)
-  file(GLOB OPERATOR_HEADERS ${OPERATOR_HEADERS} torchvision/csrc/cuda/*.h)
-  file(GLOB OPERATOR_SOURCES ${OPERATOR_SOURCES} ${OPERATOR_HEADERS} torchvision/csrc/cuda/*.cu)
-endif()
-file(GLOB MODELS_HEADERS torchvision/csrc/models/*.h)
-file(GLOB MODELS_SOURCES torchvision/csrc/models/*.h torchvision/csrc/models/*.cpp)
-
 if(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4819")
   if(WITH_CUDA)
@@ -64,7 +51,18 @@ endif()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-add_library(${PROJECT_NAME} SHARED ${MODELS_SOURCES} ${OPERATOR_SOURCES} ${IMAGE_SOURCES})
+set(TVCPP torchvision/csrc)
+list(APPEND ALLOW_LISTED ${TVCPP} ${TVCPP}/io/image ${TVCPP}/io/image/cpu ${TVCPP}/models ${TVCPP}/ops
+  ${TVCPP}/ops/autograd ${TVCPP}/ops/cpu)
+if(WITH_CUDA)
+    list(APPEND ALLOW_LISTED ${TVCPP}/ops/cuda ${TVCPP}/ops/autocast)
+endif()
+
+FOREACH(DIR ${ALLOW_LISTED})
+    file(GLOB ALL_SOURCES ${ALL_SOURCES} ${DIR}/*.*)
+ENDFOREACH()
+
+add_library(${PROJECT_NAME} SHARED ${ALL_SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} ${JPEG_LIBRARIES} Python3::Python)
 set_target_properties(${PROJECT_NAME} PROPERTIES
   EXPORT_NAME TorchVision
@@ -95,13 +93,8 @@ install(EXPORT TorchVisionTargets
   NAMESPACE TorchVision::
   DESTINATION ${TORCHVISION_CMAKECONFIG_INSTALL_DIR})
 
-install(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
-install(FILES
-  ${OPERATOR_HEADERS}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/cpu)
-if(WITH_CUDA)
-  install(FILES
-    ${OPERATOR_HEADERS}
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/cuda)
-endif()
-install(FILES ${MODELS_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}/models)
+FOREACH(INPUT_DIR ${ALLOW_LISTED})
+    string(REPLACE "${TVCPP}" "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}" OUTPUT_DIR ${INPUT_DIR})
+    file(GLOB INPUT_FILES ${INPUT_DIR}/*.*)
+    install(FILES ${INPUT_FILES} DESTINATION ${OUTPUT_DIR})
+ENDFOREACH()

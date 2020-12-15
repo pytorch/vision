@@ -1,6 +1,6 @@
 #pragma once
 
-#include <torch/torch.h>
+#include <torch/nn.h>
 #include "../macros.h"
 
 namespace vision {

@@ -29,6 +29,10 @@ supported Python versions.
 +==========================+==========================+=================================+
 | ``master`` / ``nightly`` | ``master`` / ``nightly`` | ``>=3.6``                       |
 +--------------------------+--------------------------+---------------------------------+
+| ``1.7.1``                | ``0.8.2``                | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
+| ``1.7.0``                | ``0.8.1``                | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
 | ``1.7.0``                | ``0.8.0``                | ``>=3.6``                       |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.6.0``                | ``0.7.0``                | ``>=3.6``                       |
@@ -136,7 +140,8 @@ You can find the API documentation on the pytorch website: https://pytorch.org/d
 
 Contributing
 ============
-We appreciate all contributions. If you are planning to contribute back bug-fixes, please do so without any further discussion. If you plan to contribute new features, utility functions or extensions, please first open an issue and discuss the feature with us.
+
+See the `CONTRIBUTING <CONTRIBUTING.md>`_ file for how to help out.
 
 Disclaimer on Datasets
 ======================

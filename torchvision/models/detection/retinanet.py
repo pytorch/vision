@@ -3,9 +3,8 @@ from collections import OrderedDict
 import warnings
 
 import torch
-import torch.nn as nn
-from torch import Tensor
-from torch.jit.annotations import Dict, List, Tuple, Optional
+from torch import nn, Tensor
+from typing import Dict, List, Tuple, Optional
 
 from ._utils import overwrite_eps
 from ..utils import load_state_dict_from_url
@@ -402,7 +401,7 @@ class RetinaNet(nn.Module):
 
         num_images = len(image_shapes)
 
-        detections = torch.jit.annotate(List[Dict[str, Tensor]], [])
+        detections: List[Dict[str, Tensor]] = []
 
         for index in range(num_images):
             box_regression_per_image = [br[index] for br in box_regression]
@@ -486,7 +485,7 @@ class RetinaNet(nn.Module):
                                      "Tensor, got {:}.".format(type(boxes)))
 
         # get the original image sizes
-        original_image_sizes = torch.jit.annotate(List[Tuple[int, int]], [])
+        original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
             assert len(val) == 2
@@ -524,7 +523,7 @@ class RetinaNet(nn.Module):
         anchors = self.anchor_generator(images, features)
 
         losses = {}
-        detections = torch.jit.annotate(List[Dict[str, Tensor]], [])
+        detections: List[Dict[str, Tensor]] = []
         if self.training:
             assert targets is not None
 
