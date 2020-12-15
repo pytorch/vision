@@ -1,7 +1,5 @@
 import torch
-from torch.jit.annotations import Tuple
 from torch import Tensor
-import torchvision
 
 
 def _box_cxcywh_to_xyxy(boxes: Tensor) -> Tensor:

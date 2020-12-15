@@ -1,15 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
-from typing import Union
-
 import torch
-import torch.nn.functional as F
 from torch import nn, Tensor
 
+import torchvision
 from torchvision.ops import roi_align
 from torchvision.ops.boxes import box_area
 
-from torch.jit.annotations import Optional, List, Dict, Tuple
-import torchvision
+from typing import Optional, List, Dict, Tuple, Union
 
 
 # copying result_idx_in_level to a specific index in result[]
@@ -149,7 +146,7 @@ class MultiScaleRoIAlign(nn.Module):
     def infer_scale(self, feature: Tensor, original_size: List[int]) -> float:
         # assumption: the scale is of the form 2 ** (-k), with k integer
         size = feature.shape[-2:]
-        possible_scales = torch.jit.annotate(List[float], [])
+        possible_scales: List[float] = []
         for s1, s2 in zip(size, original_size):
             approx_scale = float(s1) / float(s2)
             scale = 2 ** float(torch.tensor(approx_scale).log2().round())

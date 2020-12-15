@@ -9,7 +9,7 @@ from torchvision.ops import boxes as box_ops
 from . import _utils as det_utils
 from .image_list import ImageList
 
-from torch.jit.annotations import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple
 
 # Import AnchorGenerator to keep compatibility.
 from .anchor_utils import AnchorGenerator
