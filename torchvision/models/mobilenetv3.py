@@ -71,38 +71,49 @@ class SqueezeExcitation(nn.Module):
         return scale * input
 
 
+class InvertedResidualConfig:
+    def __init__(self, input_channels: int, kernel: int, expanded_channels: int, output_channels: int, use_se: bool,
+                 activation: str, stride: int, width_mult: float):
+        self.input_channels = _make_divisible(input_channels * width_mult)
+        self.kernel = kernel
+        self.expanded_channels = _make_divisible(expanded_channels * width_mult)
+        self.output_channels = _make_divisible(output_channels * width_mult)
+        self.use_se = use_se
+        self.use_hs = activation == "HS"
+        self.stride = stride
+
+
 class InvertedResidual(nn.Module):
 
-    def __init__(self, input_channels: int, kernel: int, expanded_channels: int, output_channels: int,
-                 use_se: bool, use_hs: bool, stride: int, norm_layer: Callable[..., nn.Module]):
+    def __init__(self, cnf: InvertedResidualConfig, norm_layer: Callable[..., nn.Module]):
         super().__init__()
-        assert stride in [1, 2]
+        assert cnf.stride in [1, 2]
 
-        self.use_res_connect = stride == 1 and input_channels == output_channels
+        self.use_res_connect = cnf.stride == 1 and cnf.input_channels == cnf.output_channels
 
         layers: List[nn.Module] = []
         # expand
-        if expanded_channels != input_channels:
+        if cnf.expanded_channels != cnf.input_channels:
             layers.extend([
-                nn.Conv2d(input_channels, expanded_channels, 1, bias=False),
-                norm_layer(expanded_channels),
-                HardSwish(inplace=True) if use_hs else nn.ReLU(inplace=True),
+                nn.Conv2d(cnf.input_channels, cnf.expanded_channels, 1, bias=False),
+                norm_layer(cnf.expanded_channels),
+                HardSwish(inplace=True) if cnf.use_hs else nn.ReLU(inplace=True),
             ])
 
         # depthwise
         layers.extend([
-            nn.Conv2d(expanded_channels, expanded_channels, kernel, stride=stride, padding=(kernel - 1) // 2,
-                      groups=expanded_channels, bias=False),
-            norm_layer(expanded_channels),
-            HardSwish(inplace=True) if use_hs else nn.ReLU(inplace=True),
+            nn.Conv2d(cnf.expanded_channels, cnf.expanded_channels, cnf.kernel, stride=cnf.stride,
+                      padding=(cnf.kernel - 1) // 2, groups=cnf.expanded_channels, bias=False),
+            norm_layer(cnf.expanded_channels),
+            HardSwish(inplace=True) if cnf.use_hs else nn.ReLU(inplace=True),
         ])
-        if use_se:
-            layers.append(SqueezeExcitation(expanded_channels))
+        if cnf.use_se:
+            layers.append(SqueezeExcitation(cnf.expanded_channels))
 
         # project
         layers.extend([
-            nn.Conv2d(expanded_channels, output_channels, 1, bias=False),
-            norm_layer(expanded_channels),
+            nn.Conv2d(cnf.expanded_channels, cnf.output_channels, 1, bias=False),
+            norm_layer(cnf.expanded_channels),
         ])
 
         self.block = nn.Sequential(*layers)
@@ -118,7 +129,7 @@ class MobileNetV3(nn.Module):
 
     def __init__(
             self,
-            inverted_residual_setting: List[List[int]],
+            inverted_residual_setting: List[InvertedResidualConfig],
             last_channel: int,
             num_classes: int = 1000,
             blocks: Optional[List[Callable[..., nn.Module]]] = None,
@@ -137,54 +148,46 @@ class MobileNetV3(nn.Module):
 
         ]
 
-
-
         pass
         # TODO: initialize weights
 
 
 def mobilenetv3(mode: str = "large", width_mult: float = 1.0):
+    bneck_conf = partial(InvertedResidualConfig, width_mult=width_mult)
     if mode == "large":
         inverted_residual_setting = [
-            # in, kernel, exp, out, use_se, use_hs, stride
-            [16, 3, 16, 16, 0, 0, 1],
-            [16, 3, 64, 24, 0, 0, 2],
-            [24, 3, 72, 24, 0, 0, 1],
-            [24, 5, 72, 40, 1, 0, 2],
-            [40, 5, 120, 40, 1, 0, 1],
-            [40, 5, 120, 40, 1, 0, 1],
-            [40, 3, 240, 80, 0, 1, 2],
-            [80, 3, 200, 80, 0, 1, 1],
-            [80, 3, 184, 80, 0, 1, 1],
-            [80, 3, 184, 80, 0, 1, 1],
-            [80, 3, 480, 112, 1, 1, 1],
-            [112, 3, 672, 112, 1, 1, 1],
-            [112, 5, 672, 160, 1, 1, 2],
-            [160, 5, 960, 160, 1, 1, 1],
-            [160, 5, 960, 160, 1, 1, 1],
+            bneck_conf(16, 3, 16, 16, False, "RE", 1),
+            bneck_conf(16, 3, 64, 24, False, "RE", 2),
+            bneck_conf(24, 3, 72, 24, False, "RE", 1),
+            bneck_conf(24, 5, 72, 40, True, "RE", 2),
+            bneck_conf(40, 5, 120, 40, True, "RE", 1),
+            bneck_conf(40, 5, 120, 40, True, "RE", 1),
+            bneck_conf(40, 3, 240, 80, False, "HS", 2),
+            bneck_conf(80, 3, 200, 80, False, "HS", 1),
+            bneck_conf(80, 3, 184, 80, False, "HS", 1),
+            bneck_conf(80, 3, 184, 80, False, "HS", 1),
+            bneck_conf(80, 3, 480, 112, True, "HS", 1),
+            bneck_conf(112, 3, 672, 112, True, "HS", 1),
+            bneck_conf(112, 5, 672, 160, True, "HS", 2),
+            bneck_conf(160, 5, 960, 160, True, "HS", 1),
+            bneck_conf(160, 5, 960, 160, True, "HS", 1),
         ]
         last_channel = 1280
     else:
         inverted_residual_setting = [
-            # in, kernel, exp, out, use_se, use_hs, stride
-            [16, 3, 16, 16, 1, 0, 2],
-            [16, 3, 72, 24, 0, 0, 2],
-            [24, 3, 88, 24, 0, 0, 1],
-            [24, 5, 96, 40, 1, 1, 2],
-            [40, 5, 240, 40, 1, 1, 1],
-            [40, 5, 240, 40, 1, 1, 1],
-            [40, 5, 120, 48, 1, 1, 1],
-            [48, 5, 144, 48, 1, 1, 1],
-            [48, 5, 288, 96, 1, 1, 2],
-            [96, 5, 576, 96, 1, 1, 1],
-            [96, 5, 576, 96, 1, 1, 1],
+            bneck_conf(16, 3, 16, 16, True, "RE", 2),
+            bneck_conf(16, 3, 72, 24, False, "RE", 2),
+            bneck_conf(24, 3, 88, 24, False, "RE", 1),
+            bneck_conf(24, 5, 96, 40, True, "HS", 2),
+            bneck_conf(40, 5, 240, 40, True, "HS", 1),
+            bneck_conf(40, 5, 240, 40, True, "HS", 1),
+            bneck_conf(40, 5, 120, 48, True, "HS", 1),
+            bneck_conf(48, 5, 144, 48, True, "HS", 1),
+            bneck_conf(48, 5, 288, 96, True, "HS", 2),
+            bneck_conf(96, 5, 576, 96, True, "HS", 1),
+            bneck_conf(96, 5, 576, 96, True, "HS", 1),
         ]
         last_channel = 1024
-
-    # apply multipler on: in, exp, out columns
-    for row in inverted_residual_setting:
-        for id in (0, 2, 3):
-            row[id] = _make_divisible(row[id] * width_mult)
     last_channel = _make_divisible(last_channel * width_mult)
 
     return MobileNetV3(inverted_residual_setting, last_channel)
