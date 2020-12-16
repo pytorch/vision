@@ -76,13 +76,17 @@ class InvertedResidualConfig:
 
     def __init__(self, input_channels: int, kernel: int, expanded_channels: int, output_channels: int, use_se: bool,
                  activation: str, stride: int, width_mult: float):
-        self.input_channels = _make_divisible(input_channels * width_mult, 8)
+        self.input_channels = self.adjust_channels(input_channels, width_mult)
         self.kernel = kernel
-        self.expanded_channels = _make_divisible(expanded_channels * width_mult, 8)
-        self.output_channels = _make_divisible(output_channels * width_mult, 8)
+        self.expanded_channels = self.adjust_channels(expanded_channels, width_mult)
+        self.output_channels = self.adjust_channels(output_channels, width_mult)
         self.use_se = use_se
         self.use_hs = activation == "HS"
         self.stride = stride
+
+    @staticmethod
+    def adjust_channels(channels: int, width_mult: float):
+        return _make_divisible(channels * width_mult, 8)
 
 
 class InvertedResidual(nn.Module):
@@ -228,7 +232,7 @@ def mobilenet_v3_large(pretrained: bool = False, progress: bool = True, **kwargs
     """
     width_mult = 1.0
     bneck_conf = partial(InvertedResidualConfig, width_mult=width_mult)
-    lastchannel_conf = lambda c: _make_divisible(c * width_mult, 8)
+    adjust_channels = partial(InvertedResidualConfig.adjust_channels, width_mult=width_mult)
 
     inverted_residual_setting = [
         bneck_conf(16, 3, 16, 16, False, "RE", 1),
@@ -247,7 +251,7 @@ def mobilenet_v3_large(pretrained: bool = False, progress: bool = True, **kwargs
         bneck_conf(160, 5, 960, 160, True, "HS", 1),
         bneck_conf(160, 5, 960, 160, True, "HS", 1),
     ]
-    last_channel = lastchannel_conf(1280)
+    last_channel = adjust_channels(1280)
 
     return _mobilenet_v3("mobilenet_v3_large_1_0", inverted_residual_setting, last_channel, pretrained, progress,
                          **kwargs)
@@ -264,7 +268,7 @@ def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs
     """
     width_mult = 1.0
     bneck_conf = partial(InvertedResidualConfig, width_mult=width_mult)
-    lastchannel_conf = lambda c: _make_divisible(c * width_mult, 8)
+    adjust_channels = partial(InvertedResidualConfig.adjust_channels, width_mult=width_mult)
 
     inverted_residual_setting = [
         bneck_conf(16, 3, 16, 16, True, "RE", 2),
@@ -279,7 +283,7 @@ def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs
         bneck_conf(96, 5, 576, 96, True, "HS", 1),
         bneck_conf(96, 5, 576, 96, True, "HS", 1),
     ]
-    last_channel = lastchannel_conf(1024)
+    last_channel = adjust_channels(1024)
 
     return _mobilenet_v3("mobilenet_v3_small_1_0", inverted_residual_setting, last_channel, pretrained, progress,
                          **kwargs)
