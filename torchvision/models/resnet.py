@@ -4,11 +4,9 @@ import torch.nn as nn
 from .utils import load_state_dict_from_url
 from typing import Type, Any, Callable, Union, List, Optional
 
-
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
            'resnet152', 'resnext50_32x4d', 'resnext101_32x8d',
            'wide_resnet50_2', 'wide_resnet101_2']
-
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -222,9 +220,10 @@ class ResNet(nn.Module):
             )
 
         # multi grid support use 1 as default so nothing will happen
-        layers = [block(inplanes=self.inplanes, planes=planes, stride=stride, downsample=downsample,
-                        groups=self.groups, base_width=self.base_width, dilation=previous_dilation,
-                        norm_layer=norm_layer, multi_grid=self._generate_multi_grid(0, multi_grid))]
+        layers = []
+        layers = layers.append(block(inplanes=self.inplanes, planes=planes, stride=stride, downsample=downsample,
+                                     groups=self.groups, base_width=self.base_width, dilation=previous_dilation,
+                                     norm_layer=norm_layer, multi_grid=self._generate_multi_grid(0, multi_grid)))
 
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
