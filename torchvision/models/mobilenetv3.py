@@ -97,7 +97,7 @@ class InvertedResidual(nn.Module):
 
         self.use_res_connect = cnf.stride == 1 and cnf.input_channels == cnf.output_channels
 
-        layers = []
+        layers: List[nn.Module] = []
         activation_layer = HardSwish if cnf.use_hs else nn.ReLU
 
         # expand
@@ -156,10 +156,12 @@ class MobileNetV3(nn.Module):
         if norm_layer is None:
             norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.01)
 
+        layers: List[nn.Module] = []
+
         # building first layer
         firstconv_output_channels = inverted_residual_setting[0].input_channels
-        layers = [ConvBNActivation(3, firstconv_output_channels, kernel_size=3, stride=2, norm_layer=norm_layer,
-                                   activation_layer=HardSwish)]
+        layers.append(ConvBNActivation(3, firstconv_output_channels, kernel_size=3, stride=2, norm_layer=norm_layer,
+                                       activation_layer=HardSwish))
 
         # building inverted residual blocks
         for cnf in inverted_residual_setting:
