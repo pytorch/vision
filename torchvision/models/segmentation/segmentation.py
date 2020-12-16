@@ -16,10 +16,12 @@ model_urls = {
 }
 
 
-def _segm_resnet(name, backbone_name, num_classes, aux, pretrained_backbone=True):
+def _segm_resnet(name, backbone_name, num_classes, aux, multi_grid, pretrained_backbone=True):
     backbone = resnet.__dict__[backbone_name](
         pretrained=pretrained_backbone,
-        replace_stride_with_dilation=[False, True, True])
+        replace_stride_with_dilation=[False, True, True],
+        multi_grid=multi_grid,
+    )
 
     return_layers = {'layer4': 'out'}
     if aux:
@@ -43,10 +45,10 @@ def _segm_resnet(name, backbone_name, num_classes, aux, pretrained_backbone=True
     return model
 
 
-def _load_model(arch_type, backbone, pretrained, progress, num_classes, aux_loss, **kwargs):
+def _load_model(arch_type, backbone, pretrained, progress, num_classes, aux_loss, multi_grid, **kwargs):
     if pretrained:
         aux_loss = True
-    model = _segm_resnet(arch_type, backbone, num_classes, aux_loss, **kwargs)
+    model = _segm_resnet(arch_type, backbone, num_classes, aux_loss, multi_grid, **kwargs)
     if pretrained:
         arch = arch_type + '_' + backbone + '_coco'
         model_url = model_urls[arch]
@@ -83,24 +85,26 @@ def fcn_resnet101(pretrained=False, progress=True,
 
 
 def deeplabv3_resnet50(pretrained=False, progress=True,
-                       num_classes=21, aux_loss=None, **kwargs):
+                       num_classes=21, aux_loss=None, multi_grid=None, **kwargs):
     """Constructs a DeepLabV3 model with a ResNet-50 backbone.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
+        multi_grid (Tuple): if argument is given, the 4th layer of resnet will be multi_grid
     """
-    return _load_model('deeplabv3', 'resnet50', pretrained, progress, num_classes, aux_loss, **kwargs)
+    return _load_model('deeplabv3', 'resnet50', pretrained, progress, num_classes, aux_loss, multi_grid, **kwargs)
 
 
 def deeplabv3_resnet101(pretrained=False, progress=True,
-                        num_classes=21, aux_loss=None, **kwargs):
+                        num_classes=21, aux_loss=None, multi_grid=None, **kwargs):
     """Constructs a DeepLabV3 model with a ResNet-101 backbone.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
+        multi_grid (Tuple): if argument is given, the 4th layer of resnet will be multi_grid
     """
-    return _load_model('deeplabv3', 'resnet101', pretrained, progress, num_classes, aux_loss, **kwargs)
+    return _load_model('deeplabv3', 'resnet101', pretrained, progress, num_classes, aux_loss, multi_grid, **kwargs)
