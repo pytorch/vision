@@ -97,7 +97,7 @@ class MNASNet(torch.nn.Module):
     >>> x = torch.rand(1, 3, 224, 224)
     >>> y = model(x)
     >>> y.dim()
-    1
+    2
     >>> y.nelement()
     1000
     """
