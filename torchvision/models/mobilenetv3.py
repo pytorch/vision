@@ -19,40 +19,14 @@ model_urls = {
 }
 
 
-class _InplaceActivation(nn.Module):
+class Identity(nn.Module):
 
     def __init__(self, inplace: bool = False):
         super().__init__()
         self.inplace = inplace
 
-    def extra_repr(self) -> str:
-        return 'inplace=True' if self.inplace else ''
-
-
-class Identity(_InplaceActivation):
-
     def forward(self, input: Tensor) -> Tensor:
         return input
-
-
-def hard_sigmoid(x: Tensor, inplace: bool = False) -> Tensor:
-    return F.relu6(x + 3.0, inplace=inplace) / 6.0
-
-
-class HardSigmoid(_InplaceActivation):
-
-    def forward(self, input: Tensor) -> Tensor:
-        return hard_sigmoid(input, inplace=self.inplace)
-
-
-def hard_swish(x: Tensor, inplace: bool = False) -> Tensor:
-    return x * hard_sigmoid(x, inplace=inplace)
-
-
-class HardSwish(_InplaceActivation):
-
-    def forward(self, input: Tensor) -> Tensor:
-        return hard_swish(input, inplace=self.inplace)
 
 
 class SqueezeExcitation(nn.Module):
@@ -68,7 +42,7 @@ class SqueezeExcitation(nn.Module):
         scale = self.fc1(scale)
         scale = F.relu(scale, inplace=True)
         scale = self.fc2(scale)
-        scale = hard_sigmoid(scale, inplace=True)
+        scale = F.hardsigmoid(scale, inplace=True)
         return scale * input
 
 
@@ -98,7 +72,7 @@ class InvertedResidual(nn.Module):
         self.use_res_connect = cnf.stride == 1 and cnf.input_channels == cnf.output_channels
 
         layers: List[nn.Module] = []
-        activation_layer = HardSwish if cnf.use_hs else nn.ReLU
+        activation_layer = nn.Hardswish if cnf.use_hs else nn.ReLU
 
         # expand
         if cnf.expanded_channels != cnf.input_channels:
@@ -161,7 +135,7 @@ class MobileNetV3(nn.Module):
         # building first layer
         firstconv_output_channels = inverted_residual_setting[0].input_channels
         layers.append(ConvBNActivation(3, firstconv_output_channels, kernel_size=3, stride=2, norm_layer=norm_layer,
-                                       activation_layer=HardSwish))
+                                       activation_layer=nn.Hardswish))
 
         # building inverted residual blocks
         for cnf in inverted_residual_setting:
@@ -171,13 +145,13 @@ class MobileNetV3(nn.Module):
         lastconv_input_channels = inverted_residual_setting[-1].output_channels
         lastconv_output_channels = 6 * lastconv_input_channels
         layers.append(ConvBNActivation(lastconv_input_channels, lastconv_output_channels, kernel_size=1,
-                                       norm_layer=norm_layer, activation_layer=HardSwish))
+                                       norm_layer=norm_layer, activation_layer=nn.Hardswish))
 
         self.features = nn.Sequential(*layers)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.classifier = nn.Sequential(
             nn.Linear(lastconv_output_channels, last_channel),
-            HardSwish(inplace=True),
+            nn.Hardswish(inplace=True),
             nn.Dropout(p=0.2),
             nn.Linear(last_channel, num_classes),
         )
