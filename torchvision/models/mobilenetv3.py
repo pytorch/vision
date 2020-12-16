@@ -1,9 +1,11 @@
-from .mobilenetv2 import _make_divisible, ConvBNActivation
+import torch
 
 from functools import partial
 from torch import nn, Tensor
 from torch.nn import functional as F
 from typing import Callable, List, Optional
+
+from .mobilenetv2 import _make_divisible, ConvBNActivation
 
 
 class _InplaceActivation(nn.Module):
@@ -60,6 +62,7 @@ class SqueezeExcitation(nn.Module):
 
 
 class InvertedResidualConfig:
+
     def __init__(self, input_channels: int, kernel: int, expanded_channels: int, output_channels: int, use_se: bool,
                  activation: str, stride: int, width_mult: float):
         self.input_channels = _make_divisible(input_channels * width_mult, 8)
@@ -119,17 +122,63 @@ class MobileNetV3(nn.Module):
     ) -> None:
         super().__init__()
 
+        if not inverted_residual_setting:
+            raise ValueError("The inverted_residual_setting should not be empty")
+
         if block is None:
             block = InvertedResidual
 
         if norm_layer is None:
             norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.01)
 
+        # building first layer
         firstconv_output_channels = inverted_residual_setting[0].input_channels
         layers = [ConvBNActivation(3, firstconv_output_channels, kernel_size=3, stride=2, norm_layer=norm_layer,
                                    activation_layer=HardSwish)]
 
-        # TODO: initialize weights
+        # building inverted residual blocks
+        for cnf in inverted_residual_setting:
+            layers.append(block(cnf, norm_layer))
+
+        # building last several layers
+        lastconv_input_channels = inverted_residual_setting[-1].output_channels
+        lastconv_output_channels = 6 * lastconv_input_channels
+        layers.append(ConvBNActivation(lastconv_input_channels, lastconv_output_channels, kernel_size=1,
+                                       norm_layer=norm_layer, activation_layer=HardSwish))
+
+        self.features = nn.Sequential(*layers)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
+        self.classifier = nn.Sequential(
+            nn.Linear(lastconv_output_channels, last_channel),
+            HardSwish(inplace=True),
+            nn.Dropout(p=0.2),
+            nn.Linear(last_channel, num_classes),
+        )
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out')
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.ones_(m.weight)
+                nn.init.zeros_(m.bias)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.zeros_(m.bias)
+
+    def _forward_impl(self, x: Tensor) -> Tensor:
+        x = self.features(x)
+
+        x = self.avgpool(x)
+        x = torch.flatten(x, 1)
+
+        x = self.classifier(x)
+
+        return x
+
+    def forward(self, x: Tensor) -> Tensor:
+        return self._forward_impl(x)
 
 
 # TODO: add doc strings and add it in document files
