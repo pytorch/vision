@@ -1,27 +1,9 @@
+from .mobilenetv2 import _make_divisible, ConvBNActivation
+
 from functools import partial
 from torch import nn, Tensor
 from torch.nn import functional as F
 from typing import Callable, List, Optional
-
-
-def _make_divisible(v: float, divisor: int, min_value: Optional[int] = None) -> int:
-    """
-    This function is taken from the original tf repo.
-    It ensures that all layers have a channel number that is divisible by 8
-    It can be seen here:
-    https://github.com/tensorflow/models/blob/master/research/slim/nets/mobilenet/mobilenet.py
-    :param v:
-    :param divisor:
-    :param min_value:
-    :return:
-    """
-    if min_value is None:
-        min_value = divisor
-    new_v = max(min_value, int(v + divisor / 2) // divisor * divisor)
-    # Make sure that round down does not go down by more than 10%.
-    if new_v < 0.9 * v:
-        new_v += divisor
-    return new_v
 
 
 class _InplaceActivation(nn.Module):
@@ -32,6 +14,12 @@ class _InplaceActivation(nn.Module):
 
     def extra_repr(self) -> str:
         return 'inplace=True' if self.inplace else ''
+
+
+class Identity(_InplaceActivation):
+
+    def forward(self, input: Tensor) -> Tensor:
+        return input
 
 
 def hard_sigmoid(x: Tensor, inplace: bool = False) -> Tensor:
@@ -92,29 +80,23 @@ class InvertedResidual(nn.Module):
         self.use_res_connect = cnf.stride == 1 and cnf.input_channels == cnf.output_channels
 
         layers = []
+        activation_layer = HardSwish if cnf.use_hs else nn.ReLU
+
         # expand
         if cnf.expanded_channels != cnf.input_channels:
-            layers.extend([
-                nn.Conv2d(cnf.input_channels, cnf.expanded_channels, 1, bias=False),
-                norm_layer(cnf.expanded_channels),
-                HardSwish(inplace=True) if cnf.use_hs else nn.ReLU(inplace=True),
-            ])
+            layers.append(ConvBNActivation(cnf.input_channels, cnf.expanded_channels, kernel_size=1,
+                                           norm_layer=norm_layer, activation_layer=activation_layer))
 
         # depthwise
-        layers.extend([
-            nn.Conv2d(cnf.expanded_channels, cnf.expanded_channels, cnf.kernel, stride=cnf.stride,
-                      padding=(cnf.kernel - 1) // 2, groups=cnf.expanded_channels, bias=False),
-            norm_layer(cnf.expanded_channels),
-            HardSwish(inplace=True) if cnf.use_hs else nn.ReLU(inplace=True),
-        ])
+        layers.append(ConvBNActivation(cnf.expanded_channels, cnf.expanded_channels, kernel_size=cnf.kernel,
+                                       stride=cnf.stride, groups=cnf.expanded_channels, norm_layer=norm_layer,
+                                       activation_layer=activation_layer))
         if cnf.use_se:
             layers.append(SqueezeExcitation(cnf.expanded_channels))
 
         # project
-        layers.extend([
-            nn.Conv2d(cnf.expanded_channels, cnf.output_channels, 1, bias=False),
-            norm_layer(cnf.expanded_channels),
-        ])
+        layers.append(ConvBNActivation(cnf.expanded_channels, cnf.output_channels, kernel_size=1, norm_layer=norm_layer,
+                                       activation_layer=Identity))
 
         self.block = nn.Sequential(*layers)
 
@@ -144,17 +126,17 @@ class MobileNetV3(nn.Module):
             norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.01)
 
         firstconv_output_channels = inverted_residual_setting[0].input_channels
-        layers = [
-            nn.Conv2d(3, firstconv_output_channels, 3, stride=2, padding=1, bias=False),
-            norm_layer(firstconv_output_channels),
-            HardSwish(inplace=True),
-        ]
+        layers = [ConvBNActivation(3, firstconv_output_channels, kernel_size=3, stride=2, norm_layer=norm_layer,
+                                   activation_layer=HardSwish)]
 
-        pass
         # TODO: initialize weights
 
 
-def mobilenetv3(mode: str = "large", width_mult: float = 1.0):
+# TODO: add doc strings and add it in document files
+# TODO: tests
+# TODO: add it in hubconf.py
+# TODO: pretrained
+def mobilenet_v3(mode: str = "large", width_mult: float = 1.0):
     bneck_conf = partial(InvertedResidualConfig, width_mult=width_mult)
     if mode == "large":
         inverted_residual_setting = [
