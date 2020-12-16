@@ -61,7 +61,7 @@ def _load_model(arch_type, backbone, pretrained, progress, num_classes, aux_loss
 
 
 def fcn_resnet50(pretrained=False, progress=True,
-                 num_classes=21, aux_loss=None, **kwargs):
+                 num_classes=21, aux_loss=None, multi_grid=None, **kwargs):
     """Constructs a Fully-Convolutional Network model with a ResNet-50 backbone.
 
     Args:
@@ -69,11 +69,11 @@ def fcn_resnet50(pretrained=False, progress=True,
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _load_model('fcn', 'resnet50', pretrained, progress, num_classes, aux_loss, **kwargs)
+    return _load_model('fcn', 'resnet50', pretrained, progress, num_classes, aux_loss, multi_grid, **kwargs)
 
 
 def fcn_resnet101(pretrained=False, progress=True,
-                  num_classes=21, aux_loss=None, **kwargs):
+                  num_classes=21, aux_loss=None, multi_grid=None, **kwargs):
     """Constructs a Fully-Convolutional Network model with a ResNet-101 backbone.
 
     Args:
@@ -81,7 +81,7 @@ def fcn_resnet101(pretrained=False, progress=True,
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _load_model('fcn', 'resnet101', pretrained, progress, num_classes, aux_loss, **kwargs)
+    return _load_model('fcn', 'resnet101', pretrained, progress, num_classes, aux_loss, multi_grid, **kwargs)
 
 
 def deeplabv3_resnet50(pretrained=False, progress=True,
