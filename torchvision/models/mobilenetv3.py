@@ -3,9 +3,20 @@ import torch
 from functools import partial
 from torch import nn, Tensor
 from torch.nn import functional as F
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional
 
-from .mobilenetv2 import _make_divisible, ConvBNActivation
+from torchvision.models.utils import load_state_dict_from_url
+from torchvision.models.mobilenetv2 import _make_divisible, ConvBNActivation
+
+
+__all__ = ["MobileNetV3", "mobilenet_v3_large", "mobilenet_v3_small"]
+
+
+# TODO: add pretrained
+model_urls = {
+    "mobilenet_v3_large_1_0": None,
+    "mobilenet_v3_small_1_0": None,
+}
 
 
 class _InplaceActivation(nn.Module):
@@ -35,7 +46,7 @@ class HardSigmoid(_InplaceActivation):
 
 
 def hard_swish(x: Tensor, inplace: bool = False) -> Tensor:
-    return x * hard_swish(x, inplace=inplace)
+    return x * hard_sigmoid(x, inplace=inplace)
 
 
 class HardSwish(_InplaceActivation):
@@ -120,6 +131,16 @@ class MobileNetV3(nn.Module):
             block: Optional[Callable[..., nn.Module]] = None,
             norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
+        """
+        MobileNet V3 main class
+
+        Args:
+            inverted_residual_setting (List[InvertedResidualConfig]): Network structure
+            last_channel (int): The number of channels on the penultimate layer
+            num_classes (int): Number of classes
+            block (Optional[Callable[..., nn.Module]]): Module specifying inverted residual building block for mobilenet
+            norm_layer (Optional[Callable[..., nn.Module]]): Module specifying the normalization layer to use
+        """
         super().__init__()
 
         if not inverted_residual_setting:
@@ -181,47 +202,84 @@ class MobileNetV3(nn.Module):
         return self._forward_impl(x)
 
 
-# TODO: add doc strings and add it in document files
-# TODO: tests
-# TODO: add it in hubconf.py
-# TODO: pretrained
-def mobilenet_v3(mode: str = "large", width_mult: float = 1.0):
+def _mobilenet_v3(
+    arch: str,
+    inverted_residual_setting: List[InvertedResidualConfig],
+    last_channel: int,
+    pretrained: bool,
+    progress: bool,
+    **kwargs: Any
+):
+    model = MobileNetV3(inverted_residual_setting, last_channel, **kwargs)
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        model.load_state_dict(state_dict)
+    return model
+
+
+def mobilenet_v3_large(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MobileNetV3:
+    """
+    Constructs a large MobileNetV3 architecture from
+    `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    width_mult = 1.0
     bneck_conf = partial(InvertedResidualConfig, width_mult=width_mult)
-    if mode == "large":
-        inverted_residual_setting = [
-            bneck_conf(16, 3, 16, 16, False, "RE", 1),
-            bneck_conf(16, 3, 64, 24, False, "RE", 2),
-            bneck_conf(24, 3, 72, 24, False, "RE", 1),
-            bneck_conf(24, 5, 72, 40, True, "RE", 2),
-            bneck_conf(40, 5, 120, 40, True, "RE", 1),
-            bneck_conf(40, 5, 120, 40, True, "RE", 1),
-            bneck_conf(40, 3, 240, 80, False, "HS", 2),
-            bneck_conf(80, 3, 200, 80, False, "HS", 1),
-            bneck_conf(80, 3, 184, 80, False, "HS", 1),
-            bneck_conf(80, 3, 184, 80, False, "HS", 1),
-            bneck_conf(80, 3, 480, 112, True, "HS", 1),
-            bneck_conf(112, 3, 672, 112, True, "HS", 1),
-            bneck_conf(112, 5, 672, 160, True, "HS", 2),
-            bneck_conf(160, 5, 960, 160, True, "HS", 1),
-            bneck_conf(160, 5, 960, 160, True, "HS", 1),
-        ]
-        last_channel = 1280
-    else:
-        inverted_residual_setting = [
-            bneck_conf(16, 3, 16, 16, True, "RE", 2),
-            bneck_conf(16, 3, 72, 24, False, "RE", 2),
-            bneck_conf(24, 3, 88, 24, False, "RE", 1),
-            bneck_conf(24, 5, 96, 40, True, "HS", 2),
-            bneck_conf(40, 5, 240, 40, True, "HS", 1),
-            bneck_conf(40, 5, 240, 40, True, "HS", 1),
-            bneck_conf(40, 5, 120, 48, True, "HS", 1),
-            bneck_conf(48, 5, 144, 48, True, "HS", 1),
-            bneck_conf(48, 5, 288, 96, True, "HS", 2),
-            bneck_conf(96, 5, 576, 96, True, "HS", 1),
-            bneck_conf(96, 5, 576, 96, True, "HS", 1),
-        ]
-        last_channel = 1024
+    lastchannel_conf = lambda c: _make_divisible(c * width_mult, 8)
 
-    last_channel = _make_divisible(last_channel * width_mult, 8)
+    inverted_residual_setting = [
+        bneck_conf(16, 3, 16, 16, False, "RE", 1),
+        bneck_conf(16, 3, 64, 24, False, "RE", 2),
+        bneck_conf(24, 3, 72, 24, False, "RE", 1),
+        bneck_conf(24, 5, 72, 40, True, "RE", 2),
+        bneck_conf(40, 5, 120, 40, True, "RE", 1),
+        bneck_conf(40, 5, 120, 40, True, "RE", 1),
+        bneck_conf(40, 3, 240, 80, False, "HS", 2),
+        bneck_conf(80, 3, 200, 80, False, "HS", 1),
+        bneck_conf(80, 3, 184, 80, False, "HS", 1),
+        bneck_conf(80, 3, 184, 80, False, "HS", 1),
+        bneck_conf(80, 3, 480, 112, True, "HS", 1),
+        bneck_conf(112, 3, 672, 112, True, "HS", 1),
+        bneck_conf(112, 5, 672, 160, True, "HS", 2),
+        bneck_conf(160, 5, 960, 160, True, "HS", 1),
+        bneck_conf(160, 5, 960, 160, True, "HS", 1),
+    ]
+    last_channel = lastchannel_conf(1280)
 
-    return MobileNetV3(inverted_residual_setting, last_channel)
+    return _mobilenet_v3("mobilenet_v3_large_1_0", inverted_residual_setting, last_channel, pretrained, progress,
+                         **kwargs)
+
+
+def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MobileNetV3:
+    """
+    Constructs a small MobileNetV3 architecture from
+    `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    width_mult = 1.0
+    bneck_conf = partial(InvertedResidualConfig, width_mult=width_mult)
+    lastchannel_conf = lambda c: _make_divisible(c * width_mult, 8)
+
+    inverted_residual_setting = [
+        bneck_conf(16, 3, 16, 16, True, "RE", 2),
+        bneck_conf(16, 3, 72, 24, False, "RE", 2),
+        bneck_conf(24, 3, 88, 24, False, "RE", 1),
+        bneck_conf(24, 5, 96, 40, True, "HS", 2),
+        bneck_conf(40, 5, 240, 40, True, "HS", 1),
+        bneck_conf(40, 5, 240, 40, True, "HS", 1),
+        bneck_conf(40, 5, 120, 48, True, "HS", 1),
+        bneck_conf(48, 5, 144, 48, True, "HS", 1),
+        bneck_conf(48, 5, 288, 96, True, "HS", 2),
+        bneck_conf(96, 5, 576, 96, True, "HS", 1),
+        bneck_conf(96, 5, 576, 96, True, "HS", 1),
+    ]
+    last_channel = lastchannel_conf(1024)
+
+    return _mobilenet_v3("mobilenet_v3_small_1_0", inverted_residual_setting, last_channel, pretrained, progress,
+                         **kwargs)
