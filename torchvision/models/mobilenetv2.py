@@ -32,7 +32,7 @@ def _make_divisible(v: float, divisor: int, min_value: Optional[int] = None) -> 
     return new_v
 
 
-class ConvBNReLU(nn.Sequential):
+class ConvBNActivation(nn.Sequential):
     def __init__(
         self,
         in_planes: int,
@@ -40,16 +40,23 @@ class ConvBNReLU(nn.Sequential):
         kernel_size: int = 3,
         stride: int = 1,
         groups: int = 1,
-        norm_layer: Optional[Callable[..., nn.Module]] = None
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
+        activation_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         padding = (kernel_size - 1) // 2
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
+        if activation_layer is None:
+            activation_layer = nn.ReLU6
         super(ConvBNReLU, self).__init__(
             nn.Conv2d(in_planes, out_planes, kernel_size, stride, padding, groups=groups, bias=False),
             norm_layer(out_planes),
-            nn.ReLU6(inplace=True)
+            activation_layer(inplace=True)
         )
+
+
+# necessary for backwards compatibility
+ConvBNReLU = ConvBNActivation
 
 
 class InvertedResidual(nn.Module):
