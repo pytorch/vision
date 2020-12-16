@@ -1,9 +1,10 @@
+from functools import partial
 from torch import nn, Tensor
 from torch.nn import functional as F
-from typing import Optional
+from typing import Callable, List, Optional
 
 
-def _make_divisible(v: float, divisor: int, min_value: Optional[int] = None) -> int:
+def _make_divisible(v: float, divisor: int = 8, min_value: Optional[int] = None) -> int:
     """
     This function is taken from the original tf repo.
     It ensures that all layers have a channel number that is divisible by 8
@@ -55,9 +56,9 @@ class HardSwish(_InplaceActivation):
 
 class SqueezeExcitation(nn.Module):
 
-    def __init__(self, input_channels: int, squeeze_factor: int):
+    def __init__(self, input_channels: int, squeeze_factor: int = 4):
         super().__init__()
-        squeeze_channels = _make_divisible(input_channels // squeeze_factor, 8)
+        squeeze_channels = _make_divisible(input_channels // squeeze_factor)
         self.fc1 = nn.Conv2d(input_channels, squeeze_channels, 1)
         self.fc2 = nn.Conv2d(squeeze_channels, input_channels, 1)
 
@@ -70,48 +71,120 @@ class SqueezeExcitation(nn.Module):
         return scale * input
 
 
-class InvertedResidualBottleneck(nn.Module):
+class InvertedResidual(nn.Module):
 
     def __init__(self, input_channels: int, kernel: int, expanded_channels: int, output_channels: int,
-                 se_block: bool, activation: str, stride: int):
+                 use_se: bool, use_hs: bool, stride: int, norm_layer: Callable[..., nn.Module]):
         super().__init__()
-        self.shortcut = stride == 1 and input_channels == output_channels
+        assert stride in [1, 2]
 
-        self.block = nn.Sequential()
+        self.use_res_connect = stride == 1 and input_channels == output_channels
+
+        layers: List[nn.Module] = []
+        # expand
         if expanded_channels != input_channels:
-            self.block.add_module("expand_conv", nn.Conv2d(input_channels, expanded_channels, 1, bias=False))
-            self._add_bn_act("expand", expanded_channels, activation)
+            layers.extend([
+                nn.Conv2d(input_channels, expanded_channels, 1, bias=False),
+                norm_layer(expanded_channels),
+                HardSwish(inplace=True) if use_hs else nn.ReLU(inplace=True),
+            ])
 
-        self.block.add_module("depthwise_conv", nn.Conv2d(expanded_channels, expanded_channels, kernel, stride=stride,
-                                                          padding=(kernel - 1) // 2, groups=expanded_channels,
-                                                          bias=False))
-        self._add_bn_act("depthwise", expanded_channels, activation)
+        # depthwise
+        layers.extend([
+            nn.Conv2d(expanded_channels, expanded_channels, kernel, stride=stride, padding=(kernel - 1) // 2,
+                      groups=expanded_channels, bias=False),
+            norm_layer(expanded_channels),
+            HardSwish(inplace=True) if use_hs else nn.ReLU(inplace=True),
+        ])
+        if use_se:
+            layers.append(SqueezeExcitation(expanded_channels))
 
-        if se_block:
-            self.block.add_module("squeeze_excitation", SqueezeExcitation(expanded_channels, 4))
+        # project
+        layers.extend([
+            nn.Conv2d(expanded_channels, output_channels, 1, bias=False),
+            norm_layer(expanded_channels),
+        ])
 
-        self.block.add_module("project_conv", nn.Conv2d(expanded_channels, output_channels, 1, bias=False))
-        self._add_bn_act("project", expanded_channels, None)
-
-    def _add_bn_act(self, block_name: str, channels: int, activation: Optional[str]):
-        self.block.add_module("{}_bn".format(block_name), nn.BatchNorm2d(channels, momentum=0.01, eps=0.001))
-        if activation == "RE":
-            self.block.add_module("{}_act".format(block_name), nn.ReLU(inplace=True))
-        elif activation == "HS":
-            self.block.add_module("{}_act".format(block_name), HardSwish(inplace=True))
+        self.block = nn.Sequential(*layers)
 
     def forward(self, input: Tensor) -> Tensor:
         result = self.block(input)
-        if self.shortcut:
+        if self.use_res_connect:
             result += input
         return result
 
 
 class MobileNetV3(nn.Module):
 
-    def __init__(self,
+    def __init__(
+            self,
+            inverted_residual_setting: List[List[int]],
+            last_channel: int,
+            num_classes: int = 1000,
+            blocks: Optional[List[Callable[..., nn.Module]]] = None,
+            norm_layer: Optional[Callable[..., nn.Module]] = None
+    ) -> None:
+        super().__init__()
 
-                 num_classes: int = 1000):
+        if blocks is None:
+            blocks = [SqueezeExcitation, InvertedResidual]
+        se_layer, bottleneck_layer = blocks
+
+        if norm_layer is None:
+            norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.01)
+
+        layers: List[nn.Module] = [
+
+        ]
 
 
-        #TODO: initialize weights
+
+        pass
+        # TODO: initialize weights
+
+
+def mobilenetv3(mode: str = "large", width_mult: float = 1.0):
+    if mode == "large":
+        inverted_residual_setting = [
+            # in, kernel, exp, out, use_se, use_hs, stride
+            [16, 3, 16, 16, 0, 0, 1],
+            [16, 3, 64, 24, 0, 0, 2],
+            [24, 3, 72, 24, 0, 0, 1],
+            [24, 5, 72, 40, 1, 0, 2],
+            [40, 5, 120, 40, 1, 0, 1],
+            [40, 5, 120, 40, 1, 0, 1],
+            [40, 3, 240, 80, 0, 1, 2],
+            [80, 3, 200, 80, 0, 1, 1],
+            [80, 3, 184, 80, 0, 1, 1],
+            [80, 3, 184, 80, 0, 1, 1],
+            [80, 3, 480, 112, 1, 1, 1],
+            [112, 3, 672, 112, 1, 1, 1],
+            [112, 5, 672, 160, 1, 1, 2],
+            [160, 5, 960, 160, 1, 1, 1],
+            [160, 5, 960, 160, 1, 1, 1],
+        ]
+        last_channel = 1280
+    else:
+        inverted_residual_setting = [
+            # in, kernel, exp, out, use_se, use_hs, stride
+            [16, 3, 16, 16, 1, 0, 2],
+            [16, 3, 72, 24, 0, 0, 2],
+            [24, 3, 88, 24, 0, 0, 1],
+            [24, 5, 96, 40, 1, 1, 2],
+            [40, 5, 240, 40, 1, 1, 1],
+            [40, 5, 240, 40, 1, 1, 1],
+            [40, 5, 120, 48, 1, 1, 1],
+            [48, 5, 144, 48, 1, 1, 1],
+            [48, 5, 288, 96, 1, 1, 2],
+            [96, 5, 576, 96, 1, 1, 1],
+            [96, 5, 576, 96, 1, 1, 1],
+        ]
+        last_channel = 1024
+
+    # apply multipler on: in, exp, out columns
+    for row in inverted_residual_setting:
+        for id in (0, 2, 3):
+            row[id] = _make_divisible(row[id] * width_mult)
+    last_channel = _make_divisible(last_channel * width_mult)
+
+    return MobileNetV3(inverted_residual_setting, last_channel)
