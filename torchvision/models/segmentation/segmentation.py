@@ -108,3 +108,5 @@ def deeplabv3_resnet101(pretrained=False, progress=True,
         multi_grid (Tuple): if argument is given, the 4th layer of resnet will be multi_grid
     """
     return _load_model('deeplabv3', 'resnet101', pretrained, progress, num_classes, aux_loss, multi_grid, **kwargs)
+
+

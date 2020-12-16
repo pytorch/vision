@@ -206,6 +206,9 @@ class ResNet(nn.Module):
 
     def _make_layer(self, block: Type[Union[BasicBlock, Bottleneck]], planes: int, blocks: int,
                     stride: int = 1, dilate: bool = False, multi_grid: int = 1) -> nn.Sequential:
+        if multi_grid != 1 and multi_grid is not None:
+            assert (len(multi_grid) == blocks)
+
         norm_layer = self._norm_layer
         downsample = None
         previous_dilation = self.dilation
@@ -219,18 +222,20 @@ class ResNet(nn.Module):
             )
 
         # multi grid support use 1 as default so nothing will happen
-        generate_multi_grid = lambda index, grids: grids[index % len(grids)] if isinstance(grids, tuple) else 1
         layers = [block(inplanes=self.inplanes, planes=planes, stride=stride, downsample=downsample,
                         groups=self.groups, base_width=self.base_width, dilation=previous_dilation,
-                        norm_layer=norm_layer, multi_grid=generate_multi_grid(0, multi_grid))]
+                        norm_layer=norm_layer, multi_grid=self._generate_multi_grid(0, multi_grid))]
 
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
             layers.append(block(self.inplanes, planes, groups=self.groups,
                                 base_width=self.base_width, dilation=self.dilation,
-                                norm_layer=norm_layer, multi_grid=generate_multi_grid(i, multi_grid)))
+                                norm_layer=norm_layer, multi_grid=self._generate_multi_grid(i, multi_grid)))
 
         return nn.Sequential(*layers)
+
+    def _generate_multi_grid(self, index, grids):
+        return grids[index % len(grids)] if isinstance(grids, tuple) else 1
 
     def _forward_impl(self, x: Tensor) -> Tensor:
         # See note [TorchScript super()]
