@@ -1,6 +1,6 @@
 from torch import nn
 from torchvision.models.utils import load_state_dict_from_url
-from torchvision.models.mobilenet import InvertedResidual, ConvBNReLU, MobileNetV2, model_urls
+from torchvision.models.mobilenetv2 import InvertedResidual, ConvBNReLU, MobileNetV2, model_urls
 from torch.quantization import QuantStub, DeQuantStub, fuse_modules
 from .utils import _replace_relu, quantize_model
 
