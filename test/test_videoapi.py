@@ -89,8 +89,9 @@ class TestVideoApi(unittest.TestCase):
                         torch.abs(av_array.float() - vr_array.float())
                     )
                     # on average the difference is very small and caused
-                    # by decoding
-                    # TODO: asses empirically how to set this?
+                    # by decoding (around 1%)
+                    # TODO: asses empirically how to set this? atm it's 1%
+                    # averaged over all frames
                     self.assertTrue(mean_delta.item() < 2.5)
 
             av_reader = av.open(full_path)
