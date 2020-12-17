@@ -44,9 +44,12 @@ class BasicBlock(nn.Module):
         groups: int = 1,
         base_width: int = 64,
         dilation: int = 1,
+        multi_grid: int = 1,
         norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
         super(BasicBlock, self).__init__()
+        if multi_grid != 1:
+            raise ValueError('BasicBlock only supports multi_grid=1')
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         if groups != 1 or base_width != 64:
@@ -204,8 +207,8 @@ class ResNet(nn.Module):
 
     def _make_layer(self, block: Type[Union[BasicBlock, Bottleneck]], planes: int, blocks: int,
                     stride: int = 1, dilate: bool = False, multi_grid: int = 1) -> nn.Sequential:
-        if multi_grid != 1 and multi_grid is not None:
-            assert (len(multi_grid) == blocks)
+        if multi_grid != 1 and multi_grid is not None and len(multi_grid) != blocks:
+            raise ValueError('Multi Grid must be 1 or equal to number of blocks')
 
         norm_layer = self._norm_layer
         downsample = None
