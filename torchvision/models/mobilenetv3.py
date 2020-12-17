@@ -3,7 +3,7 @@ import torch
 from functools import partial
 from torch import nn, Tensor
 from torch.nn import functional as F
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, List, Optional, Sequence
 
 from torchvision.models.utils import load_state_dict_from_url
 from torchvision.models.mobilenetv2 import _make_divisible, ConvBNActivation
@@ -14,8 +14,8 @@ __all__ = ["MobileNetV3", "mobilenet_v3_large", "mobilenet_v3_small"]
 
 # TODO: add pretrained
 model_urls = {
-    "mobilenet_v3_large_1_0": None,
-    "mobilenet_v3_small_1_0": None,
+    "mobilenet_v3_large": None,
+    "mobilenet_v3_small": None,
 }
 
 
@@ -67,7 +67,8 @@ class InvertedResidual(nn.Module):
 
     def __init__(self, cnf: InvertedResidualConfig, norm_layer: Callable[..., nn.Module]):
         super().__init__()
-        assert cnf.stride in [1, 2]
+        if not (1 <= cnf.stride <= 2):
+            raise ValueError('illegal stride value')
 
         self.use_res_connect = cnf.stride == 1 and cnf.input_channels == cnf.output_channels
 
@@ -123,6 +124,9 @@ class MobileNetV3(nn.Module):
 
         if not inverted_residual_setting:
             raise ValueError("The inverted_residual_setting should not be empty")
+        elif not (isinstance(inverted_residual_setting, Sequence) and
+                  all([isinstance(s, InvertedResidualConfig) for s in inverted_residual_setting])):
+            raise TypeError("The inverted_residual_setting should be List[InvertedResidualConfig]")
 
         if block is None:
             block = InvertedResidual
@@ -229,8 +233,7 @@ def mobilenet_v3_large(pretrained: bool = False, progress: bool = True, **kwargs
     ]
     last_channel = adjust_channels(1280)
 
-    return _mobilenet_v3("mobilenet_v3_large_1_0", inverted_residual_setting, last_channel, pretrained, progress,
-                         **kwargs)
+    return _mobilenet_v3("mobilenet_v3_large", inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
 
 
 def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MobileNetV3:
@@ -261,5 +264,4 @@ def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs
     ]
     last_channel = adjust_channels(1024)
 
-    return _mobilenet_v3("mobilenet_v3_small_1_0", inverted_residual_setting, last_channel, pretrained, progress,
-                         **kwargs)
+    return _mobilenet_v3("mobilenet_v3_small", inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
