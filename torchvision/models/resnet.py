@@ -221,9 +221,9 @@ class ResNet(nn.Module):
 
         # multi grid support use 1 as default so nothing will happen
         layers = []
-        layers = layers.append(block(inplanes=self.inplanes, planes=planes, stride=stride, downsample=downsample,
-                                     groups=self.groups, base_width=self.base_width, dilation=previous_dilation,
-                                     norm_layer=norm_layer, multi_grid=self._generate_multi_grid(0, multi_grid)))
+        layers.append(block(inplanes=self.inplanes, planes=planes, stride=stride, downsample=downsample,
+                            groups=self.groups, base_width=self.base_width, dilation=previous_dilation,
+                            norm_layer=norm_layer, multi_grid=self._generate_multi_grid(0, multi_grid)))
 
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
