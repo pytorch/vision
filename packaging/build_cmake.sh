@@ -45,7 +45,7 @@ cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch -DWITH_CUDA=$CMAKE_USE_CUDA
 
 # Compile and install libtorchvision
 if [[ "$OSTYPE" == "msys" ]]; then
-    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_cmake.bat" -maxcpucount:$PARALLELISM
+    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_cmake.bat" $PARALLELISM
     CONDA_PATH=$(dirname $(which python))
     cp -r "C:/Program Files (x86)/torchvision/include/torchvision" $CONDA_PATH/include
 else
@@ -76,7 +76,7 @@ cp fasterrcnn_resnet50_fpn.pt build
 cd build
 cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch -DWITH_CUDA=$CMAKE_USE_CUDA
 if [[ "$OSTYPE" == "msys" ]]; then
-    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_frcnn.bat" -maxcpucount:$PARALLELISM
+    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_frcnn.bat" $PARALLELISM
     mv fasterrcnn_resnet50_fpn.pt Release
     cd Release
     export PATH=$(cygpath "C:/Program Files (x86)/torchvision/bin"):$(cygpath $TORCH_PATH)/lib:$PATH
@@ -96,7 +96,7 @@ cd build
 cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch
 
 if [[ "$OSTYPE" == "msys" ]]; then
-    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_cpp_example.bat" -maxcpucount:$PARALLELISM
+    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_cpp_example.bat" $PARALLELISM
     cd Release
 else
     make -j$PARALLELISM

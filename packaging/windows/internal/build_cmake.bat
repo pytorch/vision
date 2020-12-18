@@ -1,3 +1,3 @@
 @echo on
-msbuild "-p:Configuration=Release" "-p:BuildInParallel=true" torchvision.vcxproj %1
-msbuild "-p:Configuration=Release" "-p:BuildInParallel=true" INSTALL.vcxproj %1
+msbuild "-p:Configuration=Release" "-p:BuildInParallel=true" "-p:CL_MPCount=%1" torchvision.vcxproj -maxcpucount:%1
+msbuild "-p:Configuration=Release" "-p:BuildInParallel=true" "-p:CL_MPCount=%1" INSTALL.vcxproj -maxcpucount:%1
