@@ -614,9 +614,11 @@ class DeformConvTester(OpTester, unittest.TestCase):
         gradcheck(lambda z, off, wei, bi: script_func_no_mask(z, off, wei, bi, stride, padding, dilation),
                   (x, offset, weight, bias), nondet_tol=1e-5)
 
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_compare_cpu_cuda_grads(self):
         # Test from https://github.com/pytorch/vision/issues/2598
         # Run on CUDA only
-        if "cuda" in device.type:
+        for contiguous in [False, True]:
             # compare grads computed on CUDA with grads computed on CPU
             true_cpu_grads = None
 
