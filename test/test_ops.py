@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 
 import torch
+from functools import lru_cache
 from torch import Tensor
 from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
@@ -496,6 +497,7 @@ class DeformConvTester(OpTester, unittest.TestCase):
         out += bias.view(1, n_out_channels, 1, 1)
         return out
 
+    @lru_cache(maxsize=None)
     def get_fn_args(self, device, contiguous, batch_sz, dtype):
         n_in_channels = 6
         n_out_channels = 2
@@ -614,9 +616,11 @@ class DeformConvTester(OpTester, unittest.TestCase):
         gradcheck(lambda z, off, wei, bi: script_func_no_mask(z, off, wei, bi, stride, padding, dilation),
                   (x, offset, weight, bias), nondet_tol=1e-5)
 
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_compare_cpu_cuda_grads(self):
         # Test from https://github.com/pytorch/vision/issues/2598
         # Run on CUDA only
-        if "cuda" in device.type:
+        for contiguous in [False, True]:
             # compare grads computed on CUDA with grads computed on CPU
             true_cpu_grads = None
 
