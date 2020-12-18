@@ -1,6 +1,11 @@
 #!/bin/bash
 set -ex
 
+PARALLELISM=8
+if [ -n "$MAX_JOBS" ]; then
+    PARALLELISM=$MAX_JOBS
+fi
+
 if [[ "$(uname)" != Darwin && "$OSTYPE" != "msys" ]]; then
     eval "$(./conda/bin/conda shell.bash hook)"
     conda activate ./env
@@ -44,7 +49,7 @@ if [[ "$OSTYPE" == "msys" ]]; then
     CONDA_PATH=$(dirname $(which python))
     cp -r "C:/Program Files (x86)/torchvision/include/torchvision" $CONDA_PATH/include
 else
-    make
+    make -j$PARALLELISM
     make install
 
     if [[ "$(uname)" == Darwin ]]; then
@@ -76,7 +81,7 @@ if [[ "$OSTYPE" == "msys" ]]; then
     cd Release
     export PATH=$(cygpath "C:/Program Files (x86)/torchvision/bin"):$(cygpath $TORCH_PATH)/lib:$PATH
 else
-    make
+    make -j$PARALLELISM
 fi
 
 # Run traced program
@@ -94,7 +99,7 @@ if [[ "$OSTYPE" == "msys" ]]; then
     "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_cpp_example.bat"
     cd Release
 else
-    make
+    make -j$PARALLELISM
 fi
 
 # Run CPP example
