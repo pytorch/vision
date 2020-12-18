@@ -632,10 +632,9 @@ class Tester(TransformsTester):
 
         for policy in T.AutoAugmentPolicy:
             for fill in [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
+                transform = T.AutoAugment(policy=policy, fill=fill)
+                s_transform = torch.jit.script(transform)
                 for _ in range(100):
-                    transform = T.AutoAugment(policy=policy, fill=fill)
-                    s_transform = torch.jit.script(transform)
-
                     self._test_transform_vs_scripted(transform, s_transform, tensor)
                     self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
