@@ -50,6 +50,13 @@ except (ImportError, OSError):
 
 
 class ImageReadMode(Enum):
+    """
+    Use `ImageReadMode.UNCHANGED` for loading
+    the image as-is, `ImageReadMode.GRAY` for converting to grayscale,
+    `ImageReadMode.GRAY_ALPHA` for grayscale with transparency,
+    `ImageReadMode.RGB` for RGB and `ImageReadMode.RGB_ALPHA` for
+    RGB with transparency. Default: `ImageReadMode.UNCHANGED`
+    """
     UNCHANGED = 0
     GRAY = 1
     GRAY_ALPHA = 2
