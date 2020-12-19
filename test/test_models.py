@@ -63,9 +63,13 @@ autocast_flaky_numerics = (
 class ModelTester(TestCase):
     def _test_classification_model(self, name, input_shape, dev):
         set_rng_seed(0)
+        kwargs = {}
+        if name in {"googlenet", "inception_v3"}:
+            # The above is very slow on windows so we turn it off
+            kwargs['init_weights'] = False
         # passing num_class equal to a number other than 1000 helps in making the test
         # more enforcing in nature
-        model = models.__dict__[name](num_classes=50)
+        model = models.__dict__[name](num_classes=50, **kwargs)
         model.eval().to(device=dev)
         # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
         x = torch.rand(input_shape).to(device=dev)
