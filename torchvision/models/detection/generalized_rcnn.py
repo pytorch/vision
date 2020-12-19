@@ -91,9 +91,13 @@ class GeneralizedRCNN(nn.Module):
                                      " Found invalid box {} for target at index {}."
                                      .format(degen_bb, target_idx))
 
-        features = self.backbone(images.tensors)
+        features = self.backbone(images.tensors.contiguous(memory_format=torch.channels_last))
+
         if isinstance(features, torch.Tensor):
-            features = OrderedDict([('0', features)])
+            features = OrderedDict([('0', features.contiguous(memory_format=torch.contiguous_format))])
+        if torch.jit.isinstance(features, Dict[str, torch.Tensor]):
+            features = {k:v.contiguous(memory_format=torch.contiguous_format) for (k,v) in features.items()}
+
         proposals, proposal_losses = self.rpn(images, features, targets)
         detections, detector_losses = self.roi_heads(features, proposals, images.image_sizes, targets)
         detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
