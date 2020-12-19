@@ -272,7 +272,7 @@ class ModelTester(TestCase):
             f = 2 ** sum(i)
             self.assertEqual(out.shape, (1, 2048, 7 * f, 7 * f))
 
-    def test_mobilenetv2_residual_setting(self):
+    def test_mobilenet_v2_residual_setting(self):
         model = models.__dict__["mobilenet_v2"](inverted_residual_setting=[[1, 16, 1, 1], [6, 24, 2, 2]])
         model.eval()
         x = torch.rand(1, 3, 224, 224)
@@ -290,7 +290,7 @@ class ModelTester(TestCase):
         self.assertFalse(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
         self.assertTrue(any(isinstance(x, nn.GroupNorm) for x in model.modules()))
 
-    def test_inceptionv3_eval(self):
+    def test_inception_v3_eval(self):
         # replacement for models.inception_v3(pretrained=True) that does not download weights
         kwargs = {}
         kwargs['transform_input'] = True
