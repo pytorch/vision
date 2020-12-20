@@ -51,11 +51,13 @@ except (ImportError, OSError):
 
 class ImageReadMode(Enum):
     """
-    Use `ImageReadMode.UNCHANGED` for loading
-    the image as-is, `ImageReadMode.GRAY` for converting to grayscale,
+    Support for various modes while reading images.
+
+    Use `ImageReadMode.UNCHANGED` for loading the image as-is,
+    `ImageReadMode.GRAY` for converting to grayscale,
     `ImageReadMode.GRAY_ALPHA` for grayscale with transparency,
     `ImageReadMode.RGB` for RGB and `ImageReadMode.RGB_ALPHA` for
-    RGB with transparency. Default: `ImageReadMode.UNCHANGED`
+    RGB with transparency.
     """
     UNCHANGED = 0
     GRAY = 1
@@ -101,11 +103,9 @@ def decode_png(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGE
         input (Tensor[1]): a one dimensional uint8 tensor containing
     the raw bytes of the PNG image.
         mode (ImageReadMode): the read mode used for optionally
-    converting the image. Use `ImageReadMode.UNCHANGED` for loading
-    the image as-is, `ImageReadMode.GRAY` for converting to grayscale,
-    `ImageReadMode.GRAY_ALPHA` for grayscale with transparency,
-    `ImageReadMode.RGB` for RGB and `ImageReadMode.RGB_ALPHA` for
-     RGB with transparency. Default: `ImageReadMode.UNCHANGED`
+    converting the image. Default: `ImageReadMode.UNCHANGED`.
+    See `ImageReadMode` class for more information on various
+    available modes.
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
@@ -166,9 +166,9 @@ def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
         input (Tensor[1]): a one dimensional uint8 tensor containing
     the raw bytes of the JPEG image.
         mode (ImageReadMode): the read mode used for optionally
-    converting the image. Use `ImageReadMode.UNCHANGED` for loading
-    the image as-is, `ImageReadMode.GRAY` for converting to grayscale
-    and `ImageReadMode.RGB` for RGB. Default: `ImageReadMode.UNCHANGED`
+    converting the image. Default: `ImageReadMode.UNCHANGED`.
+    See `ImageReadMode` class for more information on various
+    available modes.
 
     Returns:
         output (Tensor[image_channels, image_height, image_width])
@@ -236,11 +236,10 @@ def decode_image(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHAN
         a one dimensional uint8 tensor containing the raw bytes of the
         PNG or JPEG image.
     mode: ImageReadMode
-        the read mode used for optionally converting the image. JPEG
-        and PNG images have different permitted values. The default
-        value is `ImageReadMode.UNCHANGED` and it keeps the image as-is.
-        See `decode_jpeg()` and `decode_png()` for more information.
-        Default: `ImageReadMode.UNCHANGED`
+        the read mode used for optionally converting the image.
+        Default: `ImageReadMode.UNCHANGED`.
+        See `ImageReadMode` class for more information on various
+        available modes.
 
     Returns
     -------
@@ -261,11 +260,10 @@ def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torc
     path: str
         path of the JPEG or PNG image.
     mode: ImageReadMode
-        the read mode used for optionally converting the image. JPEG
-        and PNG images have different permitted values. The default
-        value is `ImageReadMode.UNCHANGED` and it keeps the image as-is.
-        See `decode_jpeg()` and `decode_png()` for more information.
-        Default: `ImageReadMode.UNCHANGED`
+        the read mode used for optionally converting the image.
+        Default: `ImageReadMode.UNCHANGED`.
+        See `ImageReadMode` class for more information on various
+        available modes.
 
     Returns
     -------
