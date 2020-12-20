@@ -117,7 +117,7 @@ torch::Tensor decodeJPEG(const torch::Tensor& data, ImageReadMode mode) {
        */
       default:
         jpeg_destroy_decompress(&cinfo);
-        TORCH_CHECK(false, "Provided mode not supported as the input is JPEG");
+        TORCH_CHECK(false, "The provided mode is not supported for JPEG files");
     }
 
     jpeg_calc_output_dimensions(&cinfo);
