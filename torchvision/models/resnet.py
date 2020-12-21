@@ -365,7 +365,8 @@ def resnext50_32x4d(pretrained: bool = False, progress: bool = True, multi_grid:
                    **kwargs)
 
 
-def resnext101_32x8d(pretrained: bool = False, progress: bool = True, multi_grid: Tuple = None, **kwargs: Any) -> ResNet:
+def resnext101_32x8d(pretrained: bool = False, progress: bool = True,
+                     multi_grid: Tuple = None, **kwargs: Any) -> ResNet:
     r"""ResNeXt-101 32x8d model from
     `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_.
 
@@ -401,7 +402,8 @@ def wide_resnet50_2(pretrained: bool = False, progress: bool = True, multi_grid:
                    **kwargs)
 
 
-def wide_resnet101_2(pretrained: bool = False, progress: bool = True, multi_grid: Tuple = None, **kwargs: Any) -> ResNet:
+def wide_resnet101_2(pretrained: bool = False, progress: bool = True,
+                     multi_grid: Tuple = None, **kwargs: Any) -> ResNet:
     r"""Wide ResNet-101-2 model from
     `"Wide Residual Networks" <https://arxiv.org/pdf/1605.07146.pdf>`_.
 
