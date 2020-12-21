@@ -143,7 +143,7 @@ torch::Tensor decodePNG(const torch::Tensor& data, ImageReadMode mode) {
         break;
       default:
         png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-        TORCH_CHECK(false, "Provided mode not supported");
+        TORCH_CHECK(false, "The provided mode is not supported for PNG files");
     }
 
     png_read_update_info(png_ptr, info_ptr);
