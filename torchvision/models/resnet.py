@@ -102,7 +102,7 @@ class Bottleneck(nn.Module):
         groups: int = 1,
         base_width: int = 64,
         dilation: int = 1,
-        multi_grid: Optional[Tuple] = None,
+        multi_grid: Tuple[int] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
         super(Bottleneck, self).__init__()
@@ -154,7 +154,7 @@ class ResNet(nn.Module):
         groups: int = 1,
         width_per_group: int = 64,
         replace_stride_with_dilation: Optional[List[bool]] = None,
-        multi_grid: Optional[Tuple[int]] = None,
+        multi_grid: Tuple[int] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
         super(ResNet, self).__init__()
@@ -268,7 +268,7 @@ def _resnet(
     layers: List[int],
     pretrained: bool,
     progress: bool,
-    multi_grid: Optional[Tuple[int]],
+    multi_grid: Tuple[int],
     **kwargs: Any
 ) -> ResNet:
     model = ResNet(block=block, layers=layers, multi_grid=multi_grid, **kwargs)
@@ -280,7 +280,7 @@ def _resnet(
 
 
 def resnet18(pretrained: bool = False, progress: bool = True,
-             multi_grid: Optional[Tuple[int]] = None, **kwargs: Any) -> ResNet:
+             multi_grid: Tuple[int] = None, **kwargs: Any) -> ResNet:
     r"""ResNet-18 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_.
 
@@ -295,7 +295,7 @@ def resnet18(pretrained: bool = False, progress: bool = True,
 
 
 def resnet34(pretrained: bool = False, progress: bool = True,
-             multi_grid: Optional[Tuple[int]] = None, **kwargs: Any) -> ResNet:
+             multi_grid: Tuple[int] = None, **kwargs: Any) -> ResNet:
     r"""ResNet-34 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_.
 
@@ -310,7 +310,7 @@ def resnet34(pretrained: bool = False, progress: bool = True,
 
 
 def resnet50(pretrained: bool = False, progress: bool = True,
-             multi_grid: Optional[Tuple[int]] = None, **kwargs: Any) -> ResNet:
+             multi_grid: Tuple[int] = None, **kwargs: Any) -> ResNet:
     r"""ResNet-50 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_.
 
@@ -325,7 +325,7 @@ def resnet50(pretrained: bool = False, progress: bool = True,
 
 
 def resnet101(pretrained: bool = False, progress: bool = True,
-              multi_grid: Optional[Tuple[int]] = None, **kwargs: Any) -> ResNet:
+              multi_grid: Tuple[int] = None, **kwargs: Any) -> ResNet:
     r"""ResNet-101 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_.
 
@@ -340,7 +340,7 @@ def resnet101(pretrained: bool = False, progress: bool = True,
 
 
 def resnet152(pretrained: bool = False, progress: bool = True,
-              multi_grid: Optional[Tuple[int]] = None, **kwargs: Any) -> ResNet:
+              multi_grid: Tuple[int] = None, **kwargs: Any) -> ResNet:
     r"""ResNet-152 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_.
 
@@ -355,7 +355,7 @@ def resnet152(pretrained: bool = False, progress: bool = True,
 
 
 def resnext50_32x4d(pretrained: bool = False, progress: bool = True,
-                    multi_grid: Optional[Tuple[int]] = None, **kwargs: Any) -> ResNet:
+                    multi_grid: Tuple[int] = None, **kwargs: Any) -> ResNet:
     r"""ResNeXt-50 32x4d model from
     `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_.
 
@@ -372,7 +372,7 @@ def resnext50_32x4d(pretrained: bool = False, progress: bool = True,
 
 
 def resnext101_32x8d(pretrained: bool = False, progress: bool = True,
-                     multi_grid: Optional[Tuple[int]] = None, **kwargs: Any) -> ResNet:
+                     multi_grid: Tuple[int] = None, **kwargs: Any) -> ResNet:
     r"""ResNeXt-101 32x8d model from
     `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_.
 
@@ -389,7 +389,7 @@ def resnext101_32x8d(pretrained: bool = False, progress: bool = True,
 
 
 def wide_resnet50_2(pretrained: bool = False, progress: bool = True,
-                    multi_grid: Optional[Tuple[int]] = None, **kwargs: Any) -> ResNet:
+                    multi_grid: Tuple[int] = None, **kwargs: Any) -> ResNet:
     r"""Wide ResNet-50-2 model from
     `"Wide Residual Networks" <https://arxiv.org/pdf/1605.07146.pdf>`_.
 
@@ -410,7 +410,7 @@ def wide_resnet50_2(pretrained: bool = False, progress: bool = True,
 
 
 def wide_resnet101_2(pretrained: bool = False, progress: bool = True,
-                     multi_grid: Optional[Tuple[int]] = None, **kwargs: Any) -> ResNet:
+                     multi_grid: Tuple[int] = None, **kwargs: Any) -> ResNet:
     r"""Wide ResNet-101-2 model from
     `"Wide Residual Networks" <https://arxiv.org/pdf/1605.07146.pdf>`_.
 
