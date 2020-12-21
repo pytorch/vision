@@ -268,7 +268,7 @@ def _resnet(
     layers: List[int],
     pretrained: bool,
     progress: bool,
-    multi_grid: int,
+    multi_grid: Tuple,
     **kwargs: Any
 ) -> ResNet:
     model = ResNet(block=block, layers=layers, multi_grid=multi_grid, **kwargs)
