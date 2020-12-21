@@ -48,7 +48,7 @@ class BasicBlock(nn.Module):
         norm_layer: Optional[Callable[..., nn.Module]] = None
     ) -> None:
         super(BasicBlock, self).__init__()
-        if multi_grid != None:
+        if multi_grid is not None:
             raise ValueError('BasicBlock does not support')
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
