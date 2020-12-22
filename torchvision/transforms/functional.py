@@ -88,6 +88,7 @@ def _is_numpy_image(img: Any) -> bool:
 
 def to_tensor(pic):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
+    This function does not support torchscript.
 
     See :class:`~torchvision.transforms.ToTensor` for more details.
 
@@ -143,6 +144,7 @@ def to_tensor(pic):
 
 def pil_to_tensor(pic):
     """Convert a ``PIL Image`` to a tensor of the same type.
+    This function does not support torchscript.
 
     See :class:`~torchvision.transforms.PILToTensor` for more details.
 
@@ -171,6 +173,7 @@ def pil_to_tensor(pic):
 
 def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
     """Convert a tensor image to the given ``dtype`` and scale the values accordingly
+    This function does not support PIL Image.
 
     Args:
         image (torch.Tensor): Image to be converted
@@ -197,7 +200,7 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
 
 
 def to_pil_image(pic, mode=None):
-    """Convert a tensor or an ndarray to PIL Image.
+    """Convert a tensor or an ndarray to PIL Image. This function does not support torchscript.
 
     See :class:`~torchvision.transforms.ToPILImage` for more details.
 
@@ -293,6 +296,7 @@ def to_pil_image(pic, mode=None):
 
 def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool = False) -> Tensor:
     """Normalize a tensor image with mean and standard deviation.
+    This transform does not support PIL Image.
 
     .. note::
         This transform acts out of place by default, i.e., it does not mutates the input tensor.
@@ -333,7 +337,7 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
 
 def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = InterpolationMode.BILINEAR) -> Tensor:
     r"""Resize the input image to the given size.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
@@ -380,7 +384,7 @@ def scale(*args, **kwargs):
 
 def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
     r"""Pad the given image on all sides with the given "pad" value.
-    The image can be a PIL Image or a torch Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
@@ -423,9 +427,8 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     """Crop the given image at specified location and output size.
-    The image can be a PIL Image or a Tensor, in which case it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading
-    dimensions
+    If the image is torch Tensor, it is expected
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         img (PIL Image or Tensor): Image to be cropped. (0,0) denotes the top left corner of the image.
@@ -446,7 +449,7 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
 
 def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
     """Crops the given image at the center.
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
@@ -475,7 +478,7 @@ def resized_crop(
         interpolation: InterpolationMode = InterpolationMode.BILINEAR
 ) -> Tensor:
     """Crop the given image and resize it to desired size.
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Notably used in :class:`~torchvision.transforms.RandomResizedCrop`.
@@ -502,7 +505,7 @@ def resized_crop(
 
 
 def hflip(img: Tensor) -> Tensor:
-    """Horizontally flip the given PIL Image or Tensor.
+    """Horizontally flip the given image.
 
     Args:
         img (PIL Image or Tensor): Image to be flipped. If img
@@ -557,7 +560,7 @@ def perspective(
         fill: Optional[List[float]] = None
 ) -> Tensor:
     """Perform perspective transform of the given image.
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
@@ -601,7 +604,7 @@ def perspective(
 
 
 def vflip(img: Tensor) -> Tensor:
-    """Vertically flip the given PIL Image or torch Tensor.
+    """Vertically flip the given image.
 
     Args:
         img (PIL Image or Tensor): Image to be flipped. If img
@@ -620,7 +623,7 @@ def vflip(img: Tensor) -> Tensor:
 
 def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
     """Crop the given image into four corners and the central crop.
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     .. Note::
@@ -665,7 +668,7 @@ def ten_crop(img: Tensor, size: List[int], vertical_flip: bool = False) -> List[
     """Generate ten cropped images from the given image.
     Crop the given image into four corners and the central crop plus the
     flipped version of these (horizontal flipping is used by default).
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     .. Note::
@@ -704,7 +707,7 @@ def ten_crop(img: Tensor, size: List[int], vertical_flip: bool = False) -> List[
 
 
 def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
-    """Adjust brightness of an Image.
+    """Adjust brightness of an image.
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
@@ -722,7 +725,7 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
 
 
 def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
-    """Adjust contrast of an Image.
+    """Adjust contrast of an image.
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
@@ -872,7 +875,7 @@ def rotate(
         fill: Optional[List[float]] = None, resample: Optional[int] = None
 ) -> Tensor:
     """Rotate the image by angle.
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
@@ -945,7 +948,7 @@ def affine(
         resample: Optional[int] = None, fillcolor: Optional[List[float]] = None
 ) -> Tensor:
     """Apply affine transformation on the image keeping image center invariant.
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
@@ -1047,6 +1050,7 @@ def affine(
 @torch.jit.unused
 def to_grayscale(img, num_output_channels=1):
     """Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.
+    This transform does not support torch Tensor.
 
     Args:
         img (PIL Image): PIL Image to be converted to grayscale.
@@ -1066,7 +1070,7 @@ def to_grayscale(img, num_output_channels=1):
 
 def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     """Convert RGB image to grayscale version of image.
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    If the image is torch Tensor, it is expected
     to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Note:
@@ -1091,6 +1095,7 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
 
 def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool = False) -> Tensor:
     """ Erase the input Tensor Image with given value.
+    This transform does not support PIL Image.
 
     Args:
         img (Tensor Image): Tensor image of size (C, H, W) to be erased
@@ -1115,10 +1120,9 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
 
 
 def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Tensor:
-    """Performs Gaussian blurring on the img by given kernel.
-    The image can be a PIL Image or a Tensor, in which case it is expected
+    """Performs Gaussian blurring on the image by given kernel.
+    If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
-    If input is a PIL image, it will be first converted to Tensor for this operation, then converted back.
 
     Args:
         img (PIL Image or Tensor): Image to be blurred
@@ -1176,7 +1180,7 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
 
 
 def invert(img: Tensor) -> Tensor:
-    """Invert the colors of an RGB/grayscale PIL Image or torch Tensor.
+    """Invert the colors of an RGB/grayscale image.
 
     Args:
         img (PIL Image or Tensor): Image to have its colors inverted.
@@ -1194,7 +1198,7 @@ def invert(img: Tensor) -> Tensor:
 
 
 def posterize(img: Tensor, bits: int) -> Tensor:
-    """Posterize a PIL Image or torch Tensor by reducing the number of bits for each color channel.
+    """Posterize an image by reducing the number of bits for each color channel.
 
     Args:
         img (PIL Image or Tensor): Image to have its colors posterized.
@@ -1215,7 +1219,7 @@ def posterize(img: Tensor, bits: int) -> Tensor:
 
 
 def solarize(img: Tensor, threshold: float) -> Tensor:
-    """Solarize a PIL Image or torch Tensor by inverting all pixel values above a threshold.
+    """Solarize an image by inverting all pixel values above a threshold.
 
     Args:
         img (PIL Image or Tensor): Image to have its colors inverted.
@@ -1251,7 +1255,7 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
 
 
 def autocontrast(img: Tensor) -> Tensor:
-    """Maximize contrast of a PIL Image or torch Tensor by remapping its
+    """Maximize contrast of an image by remapping its
     pixels per channel so that the lowest becomes black and the lightest
     becomes white.
 
@@ -1271,7 +1275,7 @@ def autocontrast(img: Tensor) -> Tensor:
 
 
 def equalize(img: Tensor) -> Tensor:
-    """Equalize the histogram of a PIL Image or torch Tensor by applying
+    """Equalize the histogram of an image by applying
     a non-linear mapping to the input in order to create a uniform
     distribution of grayscale values in the output.
 
