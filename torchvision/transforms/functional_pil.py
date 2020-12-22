@@ -140,7 +140,7 @@ def pad(img, padding, fill=0, padding_mode="constant"):
                          "{} element tuple".format(len(padding)))
 
     if isinstance(padding, tuple) and len(padding) == 1:
-        # Compatibility with `_functional_tensor.pad`
+        # Compatibility with `functional_tensor.pad`
         padding = padding[0]
 
     if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:

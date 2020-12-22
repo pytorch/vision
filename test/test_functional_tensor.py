@@ -6,8 +6,8 @@ import math
 import numpy as np
 
 import torch
-import torchvision.transforms._functional_tensor as F_t
-import torchvision.transforms._functional_pil as F_pil
+import torchvision.transforms.functional_tensor as F_t
+import torchvision.transforms.functional_pil as F_pil
 import torchvision.transforms.functional as F
 from torchvision.transforms import InterpolationMode
 

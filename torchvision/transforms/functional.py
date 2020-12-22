@@ -15,8 +15,8 @@ try:
 except ImportError:
     accimage = None
 
-from . import _functional_pil as F_pil
-from . import _functional_tensor as F_t
+from . import functional_pil as F_pil
+from . import functional_tensor as F_t
 
 
 class InterpolationMode(Enum):
