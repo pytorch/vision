@@ -709,6 +709,8 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
+        If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+        where ... means it can have an arbitrary number of leading dimensions.
         brightness_factor (float):  How much to adjust the brightness. Can be
             any non negative number. 0 gives a black image, 1 gives the
             original image while 2 increases the brightness by a factor of 2.
@@ -804,6 +806,8 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): PIL Image to be adjusted.
+        If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+        where ... means it can have an arbitrary number of leading dimensions.
         gamma (float): Non negative real number, same as :math:`\gamma` in the equation.
             gamma larger than 1 make the shadows darker,
             while gamma smaller than 1 make dark regions lighter.
@@ -1181,9 +1185,9 @@ def invert(img: Tensor) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to have its colors inverted.
-            If img is a Tensor, it is expected to be in [..., H, W] format,
+            If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
-            For PIL images, only mode "L" and "RGB" is supported.
+            If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Returns:
         PIL Image or Tensor: Color inverted image.
@@ -1200,8 +1204,9 @@ def posterize(img: Tensor, bits: int) -> Tensor:
     Args:
         img (PIL Image or Tensor): Image to have its colors posterized.
             If img is a Tensor, it should be of type torch.uint8 and
-            it is expected to be in [..., H, W] format, where ... means
+            it is expected to be in [..., 1 or 3, H, W] format, where ... means
             it can have an arbitrary number of leading dimensions.
+            If img is PIL Image, it is expected to be in mode "L" or "RGB".
         bits (int): The number of bits to keep for each channel (0-8).
     Returns:
         PIL Image or Tensor: Posterized image.
@@ -1216,13 +1221,13 @@ def posterize(img: Tensor, bits: int) -> Tensor:
 
 
 def solarize(img: Tensor, threshold: float) -> Tensor:
-    """Solarize an image by inverting all pixel values above a threshold.
+    """Solarize an RGB/grayscale image by inverting all pixel values above a threshold.
 
     Args:
         img (PIL Image or Tensor): Image to have its colors inverted.
-            If img is a Tensor, it is expected to be in [..., H, W] format,
-            where ... means it can have an arbitrary number of leading
-            dimensions.
+            If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
+            If img is PIL Image, it is expected to be in mode "L" or "RGB".
         threshold (float): All pixels equal or above this value are inverted.
     Returns:
         PIL Image or Tensor: Solarized image.
@@ -1234,10 +1239,12 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
 
 
 def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
-    """Adjust the sharpness of an Image.
+    """Adjust the sharpness of an image.
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
+        If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+        where ... means it can have an arbitrary number of leading dimensions.
         sharpness_factor (float):  How much to adjust the sharpness. Can be
             any non negative number. 0 gives a blurred image, 1 gives the
             original image while 2 increases the sharpness by a factor of 2.
@@ -1258,9 +1265,9 @@ def autocontrast(img: Tensor) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image on which autocontrast is applied.
-            If img is a Tensor, it is expected to be in [..., H, W] format,
-            where ... means it can have an arbitrary number of leading
-            dimensions.
+            If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
+            If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Returns:
         PIL Image or Tensor: An image that was autocontrasted.
@@ -1278,9 +1285,9 @@ def equalize(img: Tensor) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image on which equalize is applied.
-            If img is a Tensor, it is expected to be in [..., H, W] format,
-            where ... means it can have an arbitrary number of leading
-            dimensions.
+            If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
+            If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
 
     Returns:
         PIL Image or Tensor: An image that was equalized.

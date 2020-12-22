@@ -1704,10 +1704,9 @@ def _setup_angle(x, name, req_sizes=(2, )):
 
 class RandomInvert(torch.nn.Module):
     """Inverts the colors of the given image randomly with a given probability.
-    If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading
-    dimensions.
-    For PIL images, only mode "L" and "RGB" is supported.
+    If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+    where ... means it can have an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
         p (float): probability of the image being color inverted. Default value is 0.5
@@ -1736,7 +1735,8 @@ class RandomInvert(torch.nn.Module):
 class RandomPosterize(torch.nn.Module):
     """Posterize the image randomly with a given probability by reducing the
     number of bits for each color channel. If the image is torch Tensor, it should be of type torch.uint8,
-    and it is expected to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    and it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
         bits (int): number of bits to keep for each channel (0-8)
@@ -1766,8 +1766,9 @@ class RandomPosterize(torch.nn.Module):
 
 class RandomSolarize(torch.nn.Module):
     """Solarize the image randomly with a given probability by inverting all pixel
-    values above a threshold. If the image is torch Tensor,
-    it is expected to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    values above a threshold. If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+    where ... means it can have an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
         threshold (float): all pixels equal or above this value are inverted.
@@ -1797,7 +1798,7 @@ class RandomSolarize(torch.nn.Module):
 
 class RandomAdjustSharpness(torch.nn.Module):
     """Adjust the sharpness of the image randomly with a given probability. If the image is torch Tensor,
-    it is expected to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
         sharpness_factor (float):  How much to adjust the sharpness. Can be
@@ -1830,7 +1831,8 @@ class RandomAdjustSharpness(torch.nn.Module):
 class RandomAutocontrast(torch.nn.Module):
     """Autocontrast the pixels of the given image randomly with a given probability.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
         p (float): probability of the image being autocontrasted. Default value is 0.5
@@ -1859,7 +1861,8 @@ class RandomAutocontrast(torch.nn.Module):
 class RandomEqualize(torch.nn.Module):
     """Equalize the histogram of the given image randomly with a given probability.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
 
     Args:
         p (float): probability of the image being equalized. Default value is 0.5
