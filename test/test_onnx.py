@@ -197,12 +197,14 @@ class ONNXExporterTester(unittest.TestCase):
         rpn_pre_nms_top_n = dict(training=2000, testing=1000)
         rpn_post_nms_top_n = dict(training=2000, testing=1000)
         rpn_nms_thresh = 0.7
+        rpn_score_thresh = 0.05
 
         rpn = RegionProposalNetwork(
             rpn_anchor_generator, rpn_head,
             rpn_fg_iou_thresh, rpn_bg_iou_thresh,
             rpn_batch_size_per_image, rpn_positive_fraction,
-            rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh)
+            rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh,
+            score_thresh=rpn_score_thresh)
         return rpn
 
     def _init_test_roi_heads_faster_rcnn(self):
