@@ -347,8 +347,7 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             the smaller edge of the image will be matched to this number maintaining
             the aspect ratio. i.e, if height > width, then image will be rescaled to
             :math:`\left(\text{size} \times \frac{\text{height}}{\text{width}}, \text{size}\right)`.
-            In torchscript mode size as single int is not supported, use a tuple or
-            list of length 1: ``[size, ]``.
+            In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
@@ -389,17 +388,16 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 
     Args:
         img (PIL Image or Tensor): Image to be padded.
-        padding (int or tuple or list): Padding on each border. If a single int is provided this
-            is used to pad all borders. If tuple or list of length 2 is provided this is the padding
-            on left/right and top/bottom respectively. If a tuple or list of length 4 is provided
+        padding (int or sequence): Padding on each border. If a single int is provided this
+            is used to pad all borders. If sequence of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a sequence of length 4 is provided
             this is the padding for the left, top, right and bottom borders respectively.
-            In torchscript mode padding as single int is not supported, use a tuple or
-            list of length 1: ``[padding, ]``.
-        fill (int or float or str or tuple): Pixel fill value for constant fill. Default is 0.
-            If a tuple/list of length 3, it is used to fill R, G, B channels respectively.
+            In torchscript mode padding as single int is not supported, use a sequence of length 1: ``[padding, ]``.
+        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
+            If a tuple of length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
-            Only int or float value is supported for Tensors.
-            Only int or str or tuple value is supported for PIL Images.
+            Only number is supported for torch Tensor.
+            Only int or str or tuple value is supported for PIL Image.
         padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
 
             - constant: pads with a constant value, this value is specified with fill
@@ -454,7 +452,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be cropped.
-        output_size (sequence or int): (height, width) of the crop box. If int or sequence with single int
+        output_size (sequence or int): (height, width) of the crop box. If int or sequence with single int,
             it is used for both directions.
 
     Returns:
@@ -573,10 +571,10 @@ def perspective(
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
-            image. If int or float, the value is used for all bands respectively.
-            In torchscript mode single int/float value is not supported, please use a tuple
-            or list of length 1: ``[value, ]``.
+        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+            image. If given a number, the value is used for all bands respectively.
+            In torchscript mode single int/float value is not supported, please use a sequence
+            of length 1: ``[value, ]``.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
 
     Returns:
@@ -634,7 +632,7 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
         img (PIL Image or Tensor): Image to be cropped.
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
+            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
 
     Returns:
        tuple: tuple (tl, tr, bl, br, center)
@@ -679,7 +677,7 @@ def ten_crop(img: Tensor, size: List[int], vertical_flip: bool = False) -> List[
         img (PIL Image or Tensor): Image to be cropped.
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
+            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
         vertical_flip (bool): Use vertical flipping instead of horizontal
 
     Returns:
@@ -880,7 +878,7 @@ def rotate(
 
     Args:
         img (PIL Image or Tensor): image to be rotated.
-        angle (float or int): rotation angle value in degrees, counter-clockwise.
+        angle (number): rotation angle value in degrees, counter-clockwise.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
@@ -889,12 +887,12 @@ def rotate(
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
             Note that the expand flag assumes rotation around the center and no translation.
-        center (list or tuple, optional): Optional center of rotation. Origin is the upper left corner.
+        center (sequence, optional): Optional center of rotation. Origin is the upper left corner.
             Default is the center of the image.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
-            image. If int or float, the value is used for all bands respectively.
-            In torchscript mode single int/float value is not supported, please use a tuple
-            or list of length 1: ``[value, ]``.
+        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+            image. If given a number, the value is used for all bands respectively.
+            In torchscript mode single int/float value is not supported, please use a sequence
+            of length 1: ``[value, ]``.
             If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
 
     Returns:
@@ -953,20 +951,20 @@ def affine(
 
     Args:
         img (PIL Image or Tensor): image to transform.
-        angle (float or int): rotation angle in degrees between -180 and 180, clockwise direction.
-        translate (list or tuple of integers): horizontal and vertical translations (post-rotation translation)
+        angle (number): rotation angle in degrees between -180 and 180, clockwise direction.
+        translate (sequence of integers): horizontal and vertical translations (post-rotation translation)
         scale (float): overall scale
-        shear (float or tuple or list): shear angle value in degrees between -180 to 180, clockwise direction.
-            If a tuple of list is specified, the first value corresponds to a shear parallel to the x axis, while
+        shear (float or sequence): shear angle value in degrees between -180 to 180, clockwise direction.
+            If a sequence is specified, the first value corresponds to a shear parallel to the x axis, while
             the second value corresponds to a shear parallel to the y axis.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
-            image. If int or float, the value is used for all bands respectively.
-            In torchscript mode single int/float value is not supported, please use a tuple
-            or list of length 1: ``[value, ]``.
+        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+            image. If given a number, the value is used for all bands respectively.
+            In torchscript mode single int/float value is not supported, please use a sequence
+            of length 1: ``[value, ]``.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
         fillcolor (sequence, int, float): deprecated argument and will be removed since v0.10.0.
             Please use `arg`:fill: instead.
@@ -1128,14 +1126,13 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
         img (PIL Image or Tensor): Image to be blurred
         kernel_size (sequence of ints or int): Gaussian kernel size. Can be a sequence of integers
             like ``(kx, ky)`` or a single integer for square kernels.
-            In torchscript mode kernel_size as single int is not supported, use a tuple or
-            list of length 1: ``[ksize, ]``.
+            In torchscript mode kernel_size as single int is not supported, use a sequence of length 1: ``[ksize, ]``.
         sigma (sequence of floats or float, optional): Gaussian kernel standard deviation. Can be a
             sequence of floats like ``(sigma_x, sigma_y)`` or a single float to define the
             same sigma in both X/Y directions. If None, then it is computed using
             ``kernel_size`` as ``sigma = 0.3 * ((kernel_size - 1) * 0.5 - 1) + 0.8``.
             Default, None. In torchscript mode sigma as single float is
-            not supported, use a tuple or list of length 1: ``[sigma, ]``.
+            not supported, use a sequence of length 1: ``[sigma, ]``.
 
     Returns:
         PIL Image or Tensor: Gaussian Blurred version of the image.

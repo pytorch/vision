@@ -235,8 +235,7 @@ class Resize(torch.nn.Module):
             smaller edge of the image will be matched to this number.
             i.e, if height > width, then image will be rescaled to
             (size * height / width, size).
-            In torchscript mode size as single int is not supported, use a tuple or
-            list of length 1: ``[size, ]``.
+            In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
@@ -296,7 +295,7 @@ class CenterCrop(torch.nn.Module):
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
+            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
     """
 
     def __init__(self, size):
@@ -323,17 +322,16 @@ class Pad(torch.nn.Module):
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
-        padding (int or tuple or list): Padding on each border. If a single int is provided this
-            is used to pad all borders. If tuple or list of length 2 is provided this is the padding
-            on left/right and top/bottom respectively. If a tuple or list of length 4 is provided
+        padding (int or sequence): Padding on each border. If a single int is provided this
+            is used to pad all borders. If sequence of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a sequence of length 4 is provided
             this is the padding for the left, top, right and bottom borders respectively.
-            In torchscript mode padding as single int is not supported, use a tuple or
-            list of length 1: ``[padding, ]``.
-        fill (int or float or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
+            In torchscript mode padding as single int is not supported, use a sequence of length 1: ``[padding, ]``.
+        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
-            Only int or float value is supported for Tensors.
-            Only int or str or tuple value is supported for PIL Images.
+            Only number is supported for torch Tensor.
+            Only int or str or tuple value is supported for PIL Image.
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
 
@@ -409,7 +407,7 @@ class RandomTransforms:
     """Base class for a list of transformations with randomness
 
     Args:
-        transforms (list or tuple): list of transformations
+        transforms (sequence): list of transformations
     """
 
     def __init__(self, transforms):
@@ -445,7 +443,7 @@ class RandomApply(torch.nn.Module):
         `lambda` functions or ``PIL.Image``.
 
     Args:
-        transforms (list or tuple or torch.nn.Module): list of transformations
+        transforms (sequence or torch.nn.Module): list of transformations
         p (float): probability
     """
 
@@ -498,22 +496,21 @@ class RandomCrop(torch.nn.Module):
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
+            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
         padding (int or sequence, optional): Optional padding on each border
             of the image. Default is None. If a single int is provided this
-            is used to pad all borders. If tuple or list of length 2 is provided this is the padding
-            on left/right and top/bottom respectively. If a tuple or list of length 4 is provided
+            is used to pad all borders. If sequence of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a sequence of length 4 is provided
             this is the padding for the left, top, right and bottom borders respectively.
-            In torchscript mode padding as single int is not supported, use a tuple or
-            list of length 1: ``[padding, ]``.
+            In torchscript mode padding as single int is not supported, use a sequence of length 1: ``[padding, ]``.
         pad_if_needed (boolean): It will pad the image if smaller than the
             desired size to avoid raising an exception. Since cropping is done
             after padding, the padding seems to be done at a random offset.
-        fill (int or float or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
+        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
-            Only int or float value is supported for Tensors.
-            Only int or str or tuple value is supported for PIL Images.
+            Only number is supported for torch Tensor.
+            Only int or str or tuple value is supported for PIL Image.
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
 
              - constant: pads with a constant value, this value is specified with fill
@@ -672,8 +669,8 @@ class RandomPerspective(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
-            image. If int or float, the value is used for all bands respectively.
+        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+            image. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
     """
 
@@ -767,9 +764,8 @@ class RandomResizedCrop(torch.nn.Module):
     Args:
         size (int or sequence): expected output size of each edge. If size is an
             int instead of sequence like (h, w), a square output size ``(size, size)`` is
-            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
-            In torchscript mode size as single int is not supported, use a tuple or
-            list of length 1: ``[size, ]``.
+            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
+            In torchscript mode size as single int is not supported, use a sequence of length 1: ``[size, ]``.
         scale (tuple of float): scale range of the cropped image before resizing, relatively to the origin image.
         ratio (tuple of float): aspect ratio range of the cropped image before resizing.
         interpolation (InterpolationMode): Desired interpolation enum defined by
@@ -895,7 +891,7 @@ class FiveCrop(torch.nn.Module):
     Args:
          size (sequence or int): Desired output size of the crop. If size is an ``int``
             instead of sequence like (h, w), a square crop of size (size, size) is made.
-            If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
+            If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
 
     Example:
          >>> transform = Compose([
@@ -942,7 +938,7 @@ class TenCrop(torch.nn.Module):
     Args:
         size (sequence or int): Desired output size of the crop. If size is an
             int instead of sequence like (h, w), a square crop (size, size) is
-            made. If provided a tuple or list of length 1, it will be interpreted as (size[0], size[0]).
+            made. If provided a sequence of length 1, it will be interpreted as (size[0], size[0]).
         vertical_flip (bool): Use vertical flipping instead of horizontal
 
     Example:
@@ -1161,7 +1157,7 @@ class RandomRotation(torch.nn.Module):
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        degrees (sequence or float or int): Range of degrees to select from.
+        degrees (sequence or number): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
             will be (-degrees, +degrees).
         interpolation (InterpolationMode): Desired interpolation enum defined by
@@ -1172,10 +1168,10 @@ class RandomRotation(torch.nn.Module):
             If true, expands the output to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
             Note that the expand flag assumes rotation around the center and no translation.
-        center (list or tuple, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
+        center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the rotated
-            image. If int or float, the value is used for all bands respectively.
+        fill (sequence or number, optional): Pixel fill value for the area outside the rotated
+            image. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use `arg`:interpolation: instead.
@@ -1260,7 +1256,7 @@ class RandomAffine(torch.nn.Module):
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
-        degrees (sequence or float or int): Range of degrees to select from.
+        degrees (sequence or number): Range of degrees to select from.
             If degrees is a number instead of sequence like (min, max), the range of degrees
             will be (-degrees, +degrees). Set to 0 to deactivate rotations.
         translate (tuple, optional): tuple of maximum absolute fraction for horizontal
@@ -1269,20 +1265,20 @@ class RandomAffine(torch.nn.Module):
             randomly sampled in the range -img_height * b < dy < img_height * b. Will not translate by default.
         scale (tuple, optional): scaling factor interval, e.g (a, b), then scale is
             randomly sampled from the range a <= scale <= b. Will keep original scale by default.
-        shear (sequence or float or int, optional): Range of degrees to select from.
+        shear (sequence or number, optional): Range of degrees to select from.
             If shear is a number, a shear parallel to the x axis in the range (-shear, +shear)
-            will be applied. Else if shear is a tuple or list of 2 values a shear parallel to the x axis in the
-            range (shear[0], shear[1]) will be applied. Else if shear is a tuple or list of 4 values,
+            will be applied. Else if shear is a sequence of 2 values a shear parallel to the x axis in the
+            range (shear[0], shear[1]) will be applied. Else if shear is a sequence of 4 values,
             a x-axis shear in (shear[0], shear[1]) and y-axis shear in (shear[2], shear[3]) will be applied.
             Will not apply shear by default.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
-            image. If int or float, the value is used for all bands respectively.
+        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+            image. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
-        fillcolor (sequence or int or float, optional): deprecated argument and will be removed since v0.10.0.
+        fillcolor (sequence or number, optional): deprecated argument and will be removed since v0.10.0.
             Please use `arg`:fill: instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use `arg`:interpolation: instead.
@@ -1544,8 +1540,8 @@ class RandomErasing(torch.nn.Module):
 
         Args:
             img (Tensor): Tensor image to be erased.
-            scale (tuple or list): range of proportion of erased area against input image.
-            ratio (tuple or list): range of aspect ratio of erased area.
+            scale (sequence): range of proportion of erased area against input image.
+            ratio (sequence): range of aspect ratio of erased area.
             value (list, optional): erasing value. If None, it is interpreted as "random"
                 (erasing each pixel with random values). If ``len(value)`` is 1, it is interpreted as a number,
                 i.e. ``value[0]``.

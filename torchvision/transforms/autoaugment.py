@@ -136,8 +136,8 @@ class AutoAugment(torch.nn.Module):
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
-            image. If int or float, the value is used for all bands respectively.
+        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+            image. If given a number, the value is used for all bands respectively.
             This option is supported for PIL image and Tensor inputs.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
 
