@@ -678,7 +678,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
             this is the padding for the left, top, right and bottom borders
             respectively. In torchscript mode padding as single int is not supported, use a tuple or
             list of length 1: ``[padding, ]``.
-        fill (int): Pixel fill value for constant fill. Default is 0.
+        fill (int, float): Pixel fill value for constant fill. Default is 0.
             This value is only used when the padding_mode is constant
         padding_mode (str): Type of padding. Should be: constant, edge or reflect. Default is constant.
             Mode symmetric is not yet supported for Tensor inputs.

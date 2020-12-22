@@ -59,7 +59,7 @@ _parse_fill = F_pil._parse_fill
 
 
 def _get_image_size(img: Tensor) -> List[int]:
-    """Returns image sizea as (w, h)
+    """Returns image size as [w, h]
     """
     if isinstance(img, torch.Tensor):
         return F_t._get_image_size(img)
@@ -68,6 +68,8 @@ def _get_image_size(img: Tensor) -> List[int]:
 
 
 def _get_image_num_channels(img: Tensor) -> int:
+    """Returns number of image channels
+    """
     if isinstance(img, torch.Tensor):
         return F_t._get_image_num_channels(img)
 
@@ -87,7 +89,7 @@ def _is_numpy_image(img: Any) -> bool:
 def to_tensor(pic):
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
 
-    See ``ToTensor`` for more details.
+    See :class:`~torchvision.transforms.ToTensor` for more details.
 
     Args:
         pic (PIL Image or numpy.ndarray): Image to be converted to tensor.
@@ -384,16 +386,17 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     Args:
         img (PIL Image or Tensor): Image to be padded.
         padding (int or tuple or list): Padding on each border. If a single int is provided this
-            is used to pad all borders. If tuple of length 2 is provided this is the padding
-            on left/right and top/bottom respectively. If a tuple of length 4 is provided
+            is used to pad all borders. If tuple or list of length 2 is provided this is the padding
+            on left/right and top/bottom respectively. If a tuple or list of length 4 is provided
             this is the padding for the left, top, right and bottom borders respectively.
             In torchscript mode padding as single int is not supported, use a tuple or
             list of length 1: ``[padding, ]``.
-        fill (int or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
-            length 3, it is used to fill R, G, B channels respectively.
-            This value is only used when the padding_mode is constant. Only int value is supported for Tensors.
+        fill (int or float or str or tuple): Pixel fill value for constant fill. Default is 0.
+            If a tuple/list of length 3, it is used to fill R, G, B channels respectively.
+            This value is only used when the padding_mode is constant.
+            Only int or float value is supported for Tensors.
+            Only int or str or tuple value is supported for PIL Images.
         padding_mode: Type of padding. Should be: constant, edge, reflect or symmetric. Default is constant.
-            Mode symmetric is not yet supported for Tensor inputs.
 
             - constant: pads with a constant value, this value is specified with fill
 
@@ -504,7 +507,7 @@ def hflip(img: Tensor) -> Tensor:
     Args:
         img (PIL Image or Tensor): Image to be flipped. If img
             is a Tensor, it is expected to be in [..., H, W] format,
-            where ... means it can have an arbitrary number of trailing
+            where ... means it can have an arbitrary number of leading
             dimensions.
 
     Returns:
@@ -569,7 +572,6 @@ def perspective(
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
             image. If int or float, the value is used for all bands respectively.
-            This option is supported for PIL image and Tensor inputs.
             In torchscript mode single int/float value is not supported, please use a tuple
             or list of length 1: ``[value, ]``.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
@@ -604,11 +606,11 @@ def vflip(img: Tensor) -> Tensor:
     Args:
         img (PIL Image or Tensor): Image to be flipped. If img
             is a Tensor, it is expected to be in [..., H, W] format,
-            where ... means it can have an arbitrary number of trailing
+            where ... means it can have an arbitrary number of leading
             dimensions.
 
     Returns:
-        PIL Image:  Vertically flipped image.
+        PIL Image or Tensor:  Vertically flipped image.
     """
     if not isinstance(img, torch.Tensor):
         return F_pil.vflip(img)
@@ -888,7 +890,6 @@ def rotate(
             Default is the center of the image.
         fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
             image. If int or float, the value is used for all bands respectively.
-            This option is supported for PIL image and Tensor inputs.
             In torchscript mode single int/float value is not supported, please use a tuple
             or list of length 1: ``[value, ]``.
             If input is PIL Image, the options is only available for ``Pillow>=5.2.0``.
@@ -961,7 +962,6 @@ def affine(
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
             image. If int or float, the value is used for all bands respectively.
-            This option is supported for PIL image and Tensor inputs.
             In torchscript mode single int/float value is not supported, please use a tuple
             or list of length 1: ``[value, ]``.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
@@ -1050,7 +1050,7 @@ def to_grayscale(img, num_output_channels=1):
 
     Args:
         img (PIL Image): PIL Image to be converted to grayscale.
-        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default, 1.
+        num_output_channels (int): number of channels of the output image. Value can be 1 or 3. Default is 1.
 
     Returns:
         PIL Image: Grayscale version of the image.
@@ -1067,7 +1067,7 @@ def to_grayscale(img, num_output_channels=1):
 def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     """Convert RGB image to grayscale version of image.
     The image can be a PIL Image or a Tensor, in which case it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Note:
         Please, note that this method supports only RGB images as input. For inputs in other color spaces,
@@ -1117,7 +1117,8 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
 def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Tensor:
     """Performs Gaussian blurring on the img by given kernel.
     The image can be a PIL Image or a Tensor, in which case it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If input is a PIL image, it will be first converted to Tensor for this operation, then converted back.
 
     Args:
         img (PIL Image or Tensor): Image to be blurred
@@ -1180,8 +1181,8 @@ def invert(img: Tensor) -> Tensor:
     Args:
         img (PIL Image or Tensor): Image to have its colors inverted.
             If img is a Tensor, it is expected to be in [..., H, W] format,
-            where ... means it can have an arbitrary number of trailing
-            dimensions.
+            where ... means it can have an arbitrary number of leading dimensions.
+            For PIL images, only mode "L" and "RGB" is supported.
 
     Returns:
         PIL Image or Tensor: Color inverted image.
@@ -1199,7 +1200,7 @@ def posterize(img: Tensor, bits: int) -> Tensor:
         img (PIL Image or Tensor): Image to have its colors posterized.
             If img is a Tensor, it should be of type torch.uint8 and
             it is expected to be in [..., H, W] format, where ... means
-            it can have an arbitrary number of trailing dimensions.
+            it can have an arbitrary number of leading dimensions.
         bits (int): The number of bits to keep for each channel (0-8).
     Returns:
         PIL Image or Tensor: Posterized image.
@@ -1219,7 +1220,7 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
     Args:
         img (PIL Image or Tensor): Image to have its colors inverted.
             If img is a Tensor, it is expected to be in [..., H, W] format,
-            where ... means it can have an arbitrary number of trailing
+            where ... means it can have an arbitrary number of leading
             dimensions.
         threshold (float): All pixels equal or above this value are inverted.
     Returns:
@@ -1257,7 +1258,7 @@ def autocontrast(img: Tensor) -> Tensor:
     Args:
         img (PIL Image or Tensor): Image on which autocontrast is applied.
             If img is a Tensor, it is expected to be in [..., H, W] format,
-            where ... means it can have an arbitrary number of trailing
+            where ... means it can have an arbitrary number of leading
             dimensions.
 
     Returns:
@@ -1277,7 +1278,7 @@ def equalize(img: Tensor) -> Tensor:
     Args:
         img (PIL Image or Tensor): Image on which equalize is applied.
             If img is a Tensor, it is expected to be in [..., H, W] format,
-            where ... means it can have an arbitrary number of trailing
+            where ... means it can have an arbitrary number of leading
             dimensions.
 
     Returns:
