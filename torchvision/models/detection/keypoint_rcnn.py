@@ -44,7 +44,7 @@ class KeypointRCNN(FasterRCNN):
         - scores (Tensor[N]): the scores or each prediction
         - keypoints (FloatTensor[N, K, 3]): the locations of the predicted keypoints, in [x, y, v] format.
 
-    Arguments:
+    Args:
         backbone (nn.Module): the network used to compute the features for the model.
             It should contain a out_channels attribute, which indicates the number of output
             channels that each feature map has (and it should be the same for all feature maps).
@@ -309,7 +309,7 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
         >>> # optionally, if you want to export the model to ONNX:
         >>> torch.onnx.export(model, x, "keypoint_rcnn.onnx", opset_version = 11)
 
-    Arguments:
+    Args:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet

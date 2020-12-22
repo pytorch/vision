@@ -18,7 +18,7 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     """
     Computes the loss for Faster R-CNN.
 
-    Arguments:
+    Args:
         class_logits (Tensor)
         box_regression (Tensor)
         labels (list[BoxList])
@@ -61,7 +61,7 @@ def maskrcnn_inference(x, labels):
     probability (which are of fixed size and directly output
     by the CNN) and return the masks in the mask field of the BoxList.
 
-    Arguments:
+    Args:
         x (Tensor): the mask logits
         labels (list[BoxList]): bounding boxes that are used as
             reference, one for ech image
@@ -101,7 +101,7 @@ def project_masks_on_boxes(gt_masks, boxes, matched_idxs, M):
 def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs):
     # type: (Tensor, List[Tensor], List[Tensor], List[Tensor], List[Tensor]) -> Tensor
     """
-    Arguments:
+    Args:
         proposals (list[BoxList])
         mask_logits (Tensor)
         targets (list[BoxList])
@@ -727,7 +727,7 @@ class RoIHeads(nn.Module):
                 ):
         # type: (...) -> Tuple[List[Dict[str, Tensor]], Dict[str, Tensor]]
         """
-        Arguments:
+        Args:
             features (List[Tensor])
             proposals (List[Tensor[N, 4]])
             image_shapes (List[Tuple[H, W]])
