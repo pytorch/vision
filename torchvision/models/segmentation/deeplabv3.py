@@ -14,7 +14,7 @@ class DeepLabV3(_SimpleSegmentationModel):
     `"Rethinking Atrous Convolution for Semantic Image Segmentation"
     <https://arxiv.org/abs/1706.05587>`_.
 
-    Arguments:
+    Args:
         backbone (nn.Module): the network used to compute the features for the model.
             The backbone should return an OrderedDict[Tensor], with the key being
             "out" for the last feature map used, and "aux" if an auxiliary classifier
