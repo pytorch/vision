@@ -88,7 +88,7 @@ class VideoClips(object):
     Recreating the clips for different clip lengths is fast, and can be done
     with the `compute_clips` method.
 
-    Arguments:
+    Args:
         video_paths (List[str]): paths to the video files
         clip_length_in_frames (int): size of a clip in number of frames
         frames_between_clips (int): step (in frames) between each clip
@@ -227,7 +227,7 @@ class VideoClips(object):
         Always returns clips of size `num_frames`, meaning that the
         last few frames in a video can potentially be dropped.
 
-        Arguments:
+        Args:
             num_frames (int): number of frames for the clip
             step (int): distance between two clips
         """
@@ -285,7 +285,7 @@ class VideoClips(object):
         """
         Gets a subclip from a list of videos.
 
-        Arguments:
+        Args:
             idx (int): index of the subclip. Must be between 0 and num_clips().
 
         Returns:

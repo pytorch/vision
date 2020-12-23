@@ -26,7 +26,7 @@ class GroupedBatchSampler(BatchSampler):
     It enforces that the batch only contain elements from the same group.
     It also tries to provide mini-batches which follows an ordering which is
     as close as possible to the ordering from the original sampler.
-    Arguments:
+    Args:
         sampler (Sampler): Base sampler.
         group_ids (list[int]): If the sampler produces indices in range [0, N),
             `group_ids` must be a list of `N` ints which contains the group id of each sample.

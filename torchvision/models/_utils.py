@@ -18,7 +18,7 @@ class IntermediateLayerGetter(nn.ModuleDict):
     assigned to the model. So if `model` is passed, `model.feature1` can
     be returned, but not `model.feature1.layer2`.
 
-    Arguments:
+    Args:
         model (nn.Module): model on which we will extract the features
         return_layers (Dict[name, new_name]): a dict containing the names
             of the modules for which the activations will be returned as

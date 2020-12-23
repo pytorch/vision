@@ -27,7 +27,7 @@ def deform_conv2d(
     `Deformable Convolutional Networks
     <https://arxiv.org/abs/1703.06211>`__ if :attr:`mask` is ``None``.
 
-    Arguments:
+    Args:
         input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
         offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
             out_height, out_width]): offsets to be applied for each position in the
@@ -154,7 +154,7 @@ class DeformConv2d(nn.Module):
 
     def forward(self, input: Tensor, offset: Tensor, mask: Tensor = None) -> Tensor:
         """
-        Arguments:
+        Args:
             input (Tensor[batch_size, in_channels, in_height, in_width]): input tensor
             offset (Tensor[batch_size, 2 * offset_groups * kernel_height * kernel_width,
                 out_height, out_width]): offsets to be applied for each position in the
