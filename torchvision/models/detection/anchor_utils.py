@@ -2,7 +2,7 @@
 import torch
 from torch import nn, Tensor
 
-from torch.jit.annotations import List, Optional, Dict
+from typing import List, Optional, Dict
 from .image_list import ImageList
 
 
@@ -148,7 +148,7 @@ class AnchorGenerator(nn.Module):
                     torch.tensor(image_size[1] // g[1], dtype=torch.int64, device=device)] for g in grid_sizes]
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.cached_grid_anchors(grid_sizes, strides)
-        anchors = torch.jit.annotate(List[List[torch.Tensor]], [])
+        anchors: List[List[torch.Tensor]] = []
         for i in range(len(image_list.image_sizes)):
             anchors_in_image = [anchors_per_feature_map for anchors_per_feature_map in anchors_over_all_feature_maps]
             anchors.append(anchors_in_image)

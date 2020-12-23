@@ -3,8 +3,7 @@ import torch
 
 from enum import Enum
 from torch import Tensor
-from torch.jit.annotations import List, Tuple
-from typing import Optional
+from typing import List, Tuple, Optional
 
 from . import functional as F, InterpolationMode
 

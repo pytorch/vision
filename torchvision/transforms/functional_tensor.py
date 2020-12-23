@@ -1,10 +1,10 @@
 import warnings
-from typing import Optional, Tuple
 
 import torch
 from torch import Tensor
 from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
-from torch.jit.annotations import List, BroadcastingList2
+from torch.jit.annotations import BroadcastingList2
+from typing import Optional, Tuple, List
 
 
 def _is_tensor_a_torch_image(x: Tensor) -> bool:

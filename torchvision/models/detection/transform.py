@@ -4,7 +4,7 @@ import torch
 from torch import nn, Tensor
 from torch.nn import functional as F
 import torchvision
-from torch.jit.annotations import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional
 
 from .image_list import ImageList
 from .roi_heads import paste_masks_in_image
@@ -109,7 +109,7 @@ class GeneralizedRCNNTransform(nn.Module):
 
         image_sizes = [img.shape[-2:] for img in images]
         images = self.batch_images(images)
-        image_sizes_list = torch.jit.annotate(List[Tuple[int, int]], [])
+        image_sizes_list: List[Tuple[int, int]] = []
         for image_size in image_sizes:
             assert len(image_size) == 2
             image_sizes_list.append((image_size[0], image_size[1]))

@@ -4,12 +4,10 @@ Implements the Generalized R-CNN framework
 """
 
 from collections import OrderedDict
-from typing import Union
 import torch
-from torch import nn
+from torch import nn, Tensor
 import warnings
-from torch.jit.annotations import Tuple, List, Dict, Optional
-from torch import Tensor
+from typing import Tuple, List, Dict, Optional, Union
 
 
 class GeneralizedRCNN(nn.Module):
@@ -71,7 +69,7 @@ class GeneralizedRCNN(nn.Module):
                     raise ValueError("Expected target boxes to be of type "
                                      "Tensor, got {:}.".format(type(boxes)))
 
-        original_image_sizes = torch.jit.annotate(List[Tuple[int, int]], [])
+        original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
             assert len(val) == 2
