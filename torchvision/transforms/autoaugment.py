@@ -127,8 +127,9 @@ def _get_magnitudes():
 class AutoAugment(torch.nn.Module):
     r"""AutoAugment data augmentation method based on
     `"AutoAugment: Learning Augmentation Strategies from Data" <https://arxiv.org/pdf/1805.09501.pdf>`_.
-    The image can be a PIL Image or a Tensor, in which case it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If the image is torch Tensor, it should be of type torch.uint8, and it is expected
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
         policy (AutoAugmentPolicy): Desired policy enum defined by
@@ -136,9 +137,8 @@ class AutoAugment(torch.nn.Module):
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-        fill (sequence or int or float, optional): Pixel fill value for the area outside the transformed
-            image. If int or float, the value is used for all bands respectively.
-            This option is supported for PIL image and Tensor inputs.
+        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+            image. If given a number, the value is used for all bands respectively.
             If input is PIL Image, the options is only available for ``Pillow>=5.0.0``.
 
     Example:
