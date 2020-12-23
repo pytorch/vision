@@ -264,8 +264,8 @@ class RegionProposalNetwork(torch.nn.Module):
             boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
 
             # remove low scoring boxes
-            inds = torch.where(scores > self.score_thresh)[0]
-            boxes, scores, lvl = boxes[inds], scores[inds], lvl[inds]
+            keep = torch.where(scores > self.score_thresh)[0]
+            boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
 
             # non-maximum suppression, independently done per level
             keep = box_ops.batched_nms(boxes, scores, lvl, self.nms_thresh)
