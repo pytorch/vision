@@ -34,7 +34,7 @@ class RetinaNetHead(nn.Module):
     """
     A regression and classification head for use in RetinaNet.
 
-    Arguments:
+    Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
         num_classes (int): number of classes to be predicted
@@ -64,7 +64,7 @@ class RetinaNetClassificationHead(nn.Module):
     """
     A classification head for use in RetinaNet.
 
-    Arguments:
+    Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
         num_classes (int): number of classes to be predicted
@@ -149,7 +149,7 @@ class RetinaNetRegressionHead(nn.Module):
     """
     A regression head for use in RetinaNet.
 
-    Arguments:
+    Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
     """
@@ -251,7 +251,7 @@ class RetinaNet(nn.Module):
         - labels (Int64Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores for each prediction
 
-    Arguments:
+    Args:
         backbone (nn.Module): the network used to compute the features for the model.
             It should contain an out_channels attribute, which indicates the number of output
             channels that each feature map has (and it should be the same for all feature maps).
@@ -457,7 +457,7 @@ class RetinaNet(nn.Module):
     def forward(self, images, targets=None):
         # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
         """
-        Arguments:
+        Args:
             images (list[Tensor]): images to be processed
             targets (list[Dict[Tensor]]): ground-truth boxes present in the image (optional)
 
@@ -597,7 +597,7 @@ def retinanet_resnet50_fpn(pretrained=False, progress=True,
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
 
-    Arguments:
+    Args:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
     """

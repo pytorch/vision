@@ -22,7 +22,7 @@ class AnchorGenerator(nn.Module):
     and AnchorGenerator will output a set of sizes[i] * aspect_ratios[i] anchors
     per spatial location for feature map i.
 
-    Arguments:
+    Args:
         sizes (Tuple[Tuple[int]]):
         aspect_ratios (Tuple[Tuple[float]]):
     """

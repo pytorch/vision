@@ -17,7 +17,7 @@ def ps_roi_pool(
     Performs Position-Sensitive Region of Interest (RoI) Pool operator
     described in R-FCN
 
-    Arguments:
+    Args:
         input (Tensor[N, C, H, W]): input tensor
         boxes (Tensor[K, 5] or List[Tensor[L, 4]]): the box coordinates in (x1, y1, x2, y2)
             format where the regions will be taken from. If a single Tensor is passed,

@@ -45,7 +45,7 @@ class LevelMapper(object):
     """Determine which FPN level each RoI in a set of RoIs should map to based
     on the heuristic in the FPN paper.
 
-    Arguments:
+    Args:
         k_min (int)
         k_max (int)
         canonical_scale (int)
@@ -69,7 +69,7 @@ class LevelMapper(object):
 
     def __call__(self, boxlists: List[Tensor]) -> Tensor:
         """
-        Arguments:
+        Args:
             boxlists (list[BoxList])
         """
         # Compute level ids
@@ -87,7 +87,7 @@ class MultiScaleRoIAlign(nn.Module):
 
     It infers the scale of the pooling via the heuristics present in the FPN paper.
 
-    Arguments:
+    Args:
         featmap_names (List[str]): the names of the feature maps that will be used
             for the pooling.
         output_size (List[Tuple[int, int]] or List[int]): output size for the pooled region
@@ -182,7 +182,7 @@ class MultiScaleRoIAlign(nn.Module):
         image_shapes: List[Tuple[int, int]],
     ) -> Tensor:
         """
-        Arguments:
+        Args:
             x (OrderedDict[Tensor]): feature maps for each level. They are assumed to have
                 all the same number of channels, but they can have different sizes.
             boxes (List[Tensor[N, 4]]): boxes to be used to perform the pooling operation, in
