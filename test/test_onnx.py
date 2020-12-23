@@ -1,3 +1,4 @@
+from common_utils import set_rng_seed
 import io
 import torch
 from torchvision import ops
@@ -257,6 +258,8 @@ class ONNXExporterTester(unittest.TestCase):
         return features
 
     def test_rpn(self):
+        set_rng_seed(0)
+
         class RPNModule(torch.nn.Module):
             def __init__(self_module):
                 super(RPNModule, self_module).__init__()

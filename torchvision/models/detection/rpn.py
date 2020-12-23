@@ -264,7 +264,8 @@ class RegionProposalNetwork(torch.nn.Module):
             boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
 
             # remove low scoring boxes
-            keep = torch.where(scores > self.score_thresh)[0]
+            # use >= for Backwards compatibility
+            keep = torch.where(scores >= self.score_thresh)[0]
             boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
 
             # non-maximum suppression, independently done per level
