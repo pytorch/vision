@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.1)
+cmake_policy(SET CMP0074 NEW)
 project(torchvision)
 set(CMAKE_CXX_STANDARD 14)
 set(TORCHVISION_VERSION 0.7.0)
 
 option(WITH_CUDA "Enable CUDA support" OFF)
+option(USE_PYTHON_TORCH "Use python installation of torch" OFF)
 
 if(WITH_CUDA)
   enable_language(CUDA)
@@ -13,6 +15,18 @@ if(WITH_CUDA)
 endif()
 
 find_package(Python3 COMPONENTS Development)
+
+if(USE_PYTHON_TORCH)
+  execute_process(COMMAND python3 -c "import torch; print(torch.__file__)"
+    RESULT_VARIABLE COMMAND_RESULT
+    OUTPUT_VARIABLE PYTORCH_INIT_FILE
+    ERROR_VARIABLE PYTHON_ERROR)
+  if(NOT ${COMMAND_RESULT} STREQUAL "0")
+    message(FATAL_ERROR "Failed to find Python's torch module.\n${PYTHON_ERROR}")
+  endif()
+  get_filename_component(Torch_ROOT ${PYTORCH_INIT_FILE} DIRECTORY)
+  message(STATUS "Using Python's torch installation located at ${Torch_ROOT}")
+endif()
 
 find_package(Torch REQUIRED)
 find_package(PNG REQUIRED)
