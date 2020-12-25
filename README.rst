@@ -68,6 +68,8 @@ pip:
 
 From source:
 
+This requires the nightly version of PyTorch to be installed
+
 .. code:: bash
 
     python setup.py install
