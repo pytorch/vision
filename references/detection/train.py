@@ -95,7 +95,7 @@ def main(args):
     print("Creating model")
     kwargs = {}
     if "rcnn" in args.model:
-        kwargs["rpn_score_thresh"] = 0.05
+        kwargs["rpn_score_thresh"] = 0.5
     model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes, pretrained=args.pretrained,
                                                               **kwargs)
     model.to(device)
