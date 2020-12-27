@@ -1,17 +1,16 @@
 from collections import OrderedDict
 
-import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from torch.jit.annotations import Tuple, List, Dict, Optional
+from typing import Tuple, List, Dict, Optional
 
 
 class ExtraFPNBlock(nn.Module):
     """
     Base class for the extra block in the FPN.
 
-    Arguments:
+    Args:
         results (List[Tensor]): the result of the FPN
         x (List[Tensor]): the original feature maps
         names (List[str]): the names for each one of the
@@ -42,7 +41,7 @@ class FeaturePyramidNetwork(nn.Module):
     The input to the model is expected to be an OrderedDict[Tensor], containing
     the feature maps on top of which the FPN will be added.
 
-    Arguments:
+    Args:
         in_channels_list (list[int]): number of channels for each feature map that
             is passed to the module
         out_channels (int): number of channels of the FPN representation
@@ -135,7 +134,7 @@ class FeaturePyramidNetwork(nn.Module):
         """
         Computes the FPN for a set of feature maps.
 
-        Arguments:
+        Args:
             x (OrderedDict[Tensor]): feature maps for each feature level.
 
         Returns:

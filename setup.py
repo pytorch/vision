@@ -29,11 +29,13 @@ def get_dist(pkgname):
         return None
 
 
-version = '0.9.0a0'
+cwd = os.path.dirname(os.path.abspath(__file__))
+
+version_txt = os.path.join(cwd, 'version.txt')
+with open(version_txt, 'r') as f:
+    version = f.readline().strip()
 sha = 'Unknown'
 package_name = 'torchvision'
-
-cwd = os.path.dirname(os.path.abspath(__file__))
 
 try:
     sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=cwd).decode('ascii').strip()
@@ -134,8 +136,10 @@ def get_extensions():
     this_dir = os.path.dirname(os.path.abspath(__file__))
     extensions_dir = os.path.join(this_dir, 'torchvision', 'csrc')
 
-    main_file = glob.glob(os.path.join(extensions_dir, '*.cpp'))
-    source_cpu = glob.glob(os.path.join(extensions_dir, 'cpu', '*.cpp'))
+    main_file = glob.glob(os.path.join(extensions_dir, '*.cpp')) + glob.glob(os.path.join(extensions_dir, 'ops',
+                                                                                          '*.cpp'))
+    source_cpu = glob.glob(os.path.join(extensions_dir, 'ops', 'autograd', '*.cpp')) + glob.glob(
+        os.path.join(extensions_dir, 'ops', 'cpu', '*.cpp'))
 
     is_rocm_pytorch = False
     if torch.__version__ >= '1.5':
@@ -146,17 +150,19 @@ def get_extensions():
         hipify_python.hipify(
             project_directory=this_dir,
             output_directory=this_dir,
-            includes="torchvision/csrc/cuda/*",
+            includes="torchvision/csrc/ops/cuda/*",
             show_detailed=True,
             is_pytorch_extension=True,
         )
-        source_cuda = glob.glob(os.path.join(extensions_dir, 'hip', '*.hip'))
+        source_cuda = glob.glob(os.path.join(extensions_dir, 'ops', 'hip', '*.hip'))
         # Copy over additional files
-        shutil.copy("torchvision/csrc/cuda/cuda_helpers.h", "torchvision/csrc/hip/cuda_helpers.h")
-        shutil.copy("torchvision/csrc/cuda/vision_cuda.h", "torchvision/csrc/hip/vision_cuda.h")
+        for file in glob.glob(r"torchvision/csrc/ops/cuda/*.h"):
+            shutil.copy(file, "torchvision/csrc/ops/hip")
 
     else:
-        source_cuda = glob.glob(os.path.join(extensions_dir, 'cuda', '*.cu'))
+        source_cuda = glob.glob(os.path.join(extensions_dir, 'ops', 'cuda', '*.cu'))
+
+    source_cuda += glob.glob(os.path.join(extensions_dir, 'ops', 'autocast', '*.cpp'))
 
     sources = main_file + source_cpu
     extension = CppExtension
@@ -309,8 +315,8 @@ def get_extensions():
             image_library += [jpeg_lib]
             image_include += [jpeg_include]
 
-    image_path = os.path.join(extensions_dir, 'cpu', 'image')
-    image_src = glob.glob(os.path.join(image_path, '*.cpp'))
+    image_path = os.path.join(extensions_dir, 'io', 'image')
+    image_src = glob.glob(os.path.join(image_path, '*.cpp')) + glob.glob(os.path.join(image_path, 'cpu', '*.cpp'))
 
     if png_found or jpeg_found:
         ext_modules.append(extension(
@@ -328,21 +334,62 @@ def get_extensions():
     print("FFmpeg found: {}".format(has_ffmpeg))
 
     if has_ffmpeg:
+        ffmpeg_libraries = {
+            'libavcodec',
+            'libavformat',
+            'libavutil',
+            'libswresample',
+            'libswscale'
+        }
+
         ffmpeg_bin = os.path.dirname(ffmpeg_exe)
         ffmpeg_root = os.path.dirname(ffmpeg_bin)
         ffmpeg_include_dir = os.path.join(ffmpeg_root, 'include')
         ffmpeg_library_dir = os.path.join(ffmpeg_root, 'lib')
+
+        gcc = distutils.spawn.find_executable('gcc')
+        platform_tag = subprocess.run(
+            [gcc, '-print-multiarch'], stdout=subprocess.PIPE)
+        platform_tag = platform_tag.stdout.strip().decode('utf-8')
+
+        if platform_tag:
+            # Most probably a Debian-based distribution
+            ffmpeg_include_dir = [
+                ffmpeg_include_dir,
+                os.path.join(ffmpeg_include_dir, platform_tag)
+            ]
+            ffmpeg_library_dir = [
+                ffmpeg_library_dir,
+                os.path.join(ffmpeg_library_dir, platform_tag)
+            ]
+        else:
+            ffmpeg_include_dir = [ffmpeg_include_dir]
+            ffmpeg_library_dir = [ffmpeg_library_dir]
+
+        has_ffmpeg = True
+        for library in ffmpeg_libraries:
+            library_found = False
+            for search_path in ffmpeg_include_dir + include_dirs:
+                full_path = os.path.join(search_path, library, '*.h')
+                library_found |= len(glob.glob(full_path)) > 0
+
+            if not library_found:
+                print('{0} header files were not found, disabling ffmpeg '
+                      'support')
+                has_ffmpeg = False
+
+    if has_ffmpeg:
         print("ffmpeg include path: {}".format(ffmpeg_include_dir))
         print("ffmpeg library_dir: {}".format(ffmpeg_library_dir))
 
         # TorchVision base decoder + video reader
-        video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video_reader')
+        video_reader_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'io', 'video_reader')
         video_reader_src = glob.glob(os.path.join(video_reader_src_dir, "*.cpp"))
-        base_decoder_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'decoder')
+        base_decoder_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'io', 'decoder')
         base_decoder_src = glob.glob(
             os.path.join(base_decoder_src_dir, "*.cpp"))
         # Torchvision video API
-        videoapi_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'cpu', 'video')
+        videoapi_src_dir = os.path.join(this_dir, 'torchvision', 'csrc', 'io', 'video')
         videoapi_src = glob.glob(os.path.join(videoapi_src_dir, "*.cpp"))
         # exclude tests
         base_decoder_src = [x for x in base_decoder_src if '_test.cpp' not in x]
@@ -357,10 +404,11 @@ def get_extensions():
                     base_decoder_src_dir,
                     video_reader_src_dir,
                     videoapi_src_dir,
-                    ffmpeg_include_dir,
                     extensions_dir,
+                    *ffmpeg_include_dir,
+                    *include_dirs
                 ],
-                library_dirs=[ffmpeg_library_dir] + library_dirs,
+                library_dirs=ffmpeg_library_dir + library_dirs,
                 libraries=[
                     'avcodec',
                     'avformat',

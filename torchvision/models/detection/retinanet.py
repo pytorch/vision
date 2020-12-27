@@ -3,9 +3,8 @@ from collections import OrderedDict
 import warnings
 
 import torch
-import torch.nn as nn
-from torch import Tensor
-from torch.jit.annotations import Dict, List, Tuple, Optional
+from torch import nn, Tensor
+from typing import Dict, List, Tuple, Optional
 
 from ._utils import overwrite_eps
 from ..utils import load_state_dict_from_url
@@ -35,7 +34,7 @@ class RetinaNetHead(nn.Module):
     """
     A regression and classification head for use in RetinaNet.
 
-    Arguments:
+    Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
         num_classes (int): number of classes to be predicted
@@ -65,7 +64,7 @@ class RetinaNetClassificationHead(nn.Module):
     """
     A classification head for use in RetinaNet.
 
-    Arguments:
+    Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
         num_classes (int): number of classes to be predicted
@@ -150,7 +149,7 @@ class RetinaNetRegressionHead(nn.Module):
     """
     A regression head for use in RetinaNet.
 
-    Arguments:
+    Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
     """
@@ -252,7 +251,7 @@ class RetinaNet(nn.Module):
         - labels (Int64Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores for each prediction
 
-    Arguments:
+    Args:
         backbone (nn.Module): the network used to compute the features for the model.
             It should contain an out_channels attribute, which indicates the number of output
             channels that each feature map has (and it should be the same for all feature maps).
@@ -402,7 +401,7 @@ class RetinaNet(nn.Module):
 
         num_images = len(image_shapes)
 
-        detections = torch.jit.annotate(List[Dict[str, Tensor]], [])
+        detections: List[Dict[str, Tensor]] = []
 
         for index in range(num_images):
             box_regression_per_image = [br[index] for br in box_regression]
@@ -458,7 +457,7 @@ class RetinaNet(nn.Module):
     def forward(self, images, targets=None):
         # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
         """
-        Arguments:
+        Args:
             images (list[Tensor]): images to be processed
             targets (list[Dict[Tensor]]): ground-truth boxes present in the image (optional)
 
@@ -486,7 +485,7 @@ class RetinaNet(nn.Module):
                                      "Tensor, got {:}.".format(type(boxes)))
 
         # get the original image sizes
-        original_image_sizes = torch.jit.annotate(List[Tuple[int, int]], [])
+        original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
             assert len(val) == 2
@@ -524,7 +523,7 @@ class RetinaNet(nn.Module):
         anchors = self.anchor_generator(images, features)
 
         losses = {}
-        detections = torch.jit.annotate(List[Dict[str, Tensor]], [])
+        detections: List[Dict[str, Tensor]] = []
         if self.training:
             assert targets is not None
 
@@ -598,7 +597,7 @@ def retinanet_resnet50_fpn(pretrained=False, progress=True,
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
 
-    Arguments:
+    Args:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
     """

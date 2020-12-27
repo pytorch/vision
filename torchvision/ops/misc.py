@@ -10,8 +10,8 @@ is implemented
 
 import warnings
 import torch
-from torch import Tensor, Size
-from torch.jit.annotations import List, Optional, Tuple
+from torch import Tensor
+from typing import List, Optional
 
 
 class Conv2d(torch.nn.Conv2d):

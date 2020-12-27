@@ -339,13 +339,13 @@ def freeze_rng_state():
 class TransformsTester(unittest.TestCase):
 
     def _create_data(self, height=3, width=3, channels=3, device="cpu"):
-        tensor = torch.randint(0, 255, (channels, height, width), dtype=torch.uint8, device=device)
+        tensor = torch.randint(0, 256, (channels, height, width), dtype=torch.uint8, device=device)
         pil_img = Image.fromarray(tensor.permute(1, 2, 0).contiguous().cpu().numpy())
         return tensor, pil_img
 
     def _create_data_batch(self, height=3, width=3, channels=3, num_samples=4, device="cpu"):
         batch_tensor = torch.randint(
-            0, 255,
+            0, 256,
             (num_samples, channels, height, width),
             dtype=torch.uint8,
             device=device

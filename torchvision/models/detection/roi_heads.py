@@ -10,7 +10,7 @@ from torchvision.ops import roi_align
 
 from . import _utils as det_utils
 
-from torch.jit.annotations import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Tuple
 
 
 def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
@@ -18,7 +18,7 @@ def fastrcnn_loss(class_logits, box_regression, labels, regression_targets):
     """
     Computes the loss for Faster R-CNN.
 
-    Arguments:
+    Args:
         class_logits (Tensor)
         box_regression (Tensor)
         labels (list[BoxList])
@@ -61,7 +61,7 @@ def maskrcnn_inference(x, labels):
     probability (which are of fixed size and directly output
     by the CNN) and return the masks in the mask field of the BoxList.
 
-    Arguments:
+    Args:
         x (Tensor): the mask logits
         labels (list[BoxList]): bounding boxes that are used as
             reference, one for ech image
@@ -101,7 +101,7 @@ def project_masks_on_boxes(gt_masks, boxes, matched_idxs, M):
 def maskrcnn_loss(mask_logits, proposals, gt_masks, gt_labels, mask_matched_idxs):
     # type: (Tensor, List[Tensor], List[Tensor], List[Tensor], List[Tensor]) -> Tensor
     """
-    Arguments:
+    Args:
         proposals (list[BoxList])
         mask_logits (Tensor)
         targets (list[BoxList])
@@ -379,7 +379,7 @@ def expand_masks(mask, padding):
         scale = expand_masks_tracing_scale(M, padding)
     else:
         scale = float(M + 2 * padding) / M
-    padded_mask = torch.nn.functional.pad(mask, (padding,) * 4)
+    padded_mask = F.pad(mask, (padding,) * 4)
     return padded_mask, scale
 
 
@@ -482,7 +482,7 @@ def paste_masks_in_image(masks, boxes, img_shape, padding=1):
     return ret
 
 
-class RoIHeads(torch.nn.Module):
+class RoIHeads(nn.Module):
     __annotations__ = {
         'box_coder': det_utils.BoxCoder,
         'proposal_matcher': det_utils.Matcher,
@@ -727,7 +727,7 @@ class RoIHeads(torch.nn.Module):
                 ):
         # type: (...) -> Tuple[List[Dict[str, Tensor]], Dict[str, Tensor]]
         """
-        Arguments:
+        Args:
             features (List[Tensor])
             proposals (List[Tensor[N, 4]])
             image_shapes (List[Tuple[H, W]])
@@ -753,7 +753,7 @@ class RoIHeads(torch.nn.Module):
         box_features = self.box_head(box_features)
         class_logits, box_regression = self.box_predictor(box_features)
 
-        result = torch.jit.annotate(List[Dict[str, torch.Tensor]], [])
+        result: List[Dict[str, torch.Tensor]] = []
         losses = {}
         if self.training:
             assert labels is not None and regression_targets is not None
