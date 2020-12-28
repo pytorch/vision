@@ -13,6 +13,8 @@ import torch
 from torch.utils.cpp_extension import BuildExtension, CppExtension, CUDAExtension, CUDA_HOME
 from torch.utils.hipify import hipify_python
 
+import pandas as pd
+
 
 def read(*names, **kwargs):
     with io.open(
