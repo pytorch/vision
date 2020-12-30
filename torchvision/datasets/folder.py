@@ -32,6 +32,54 @@ def is_image_file(filename: str) -> bool:
     return has_file_allowed_extension(filename, IMG_EXTENSIONS)
 
 
+def make_dataset(
+    directory: str,
+    class_to_idx: Dict[str, int],
+    extensions: Optional[Tuple[str, ...]] = None,
+    is_valid_file: Optional[Callable[[str], bool]] = None,
+) -> List[Tuple[str, int]]:
+    """Generates a list of samples of a form (path_to_sample, class).
+
+    Args:
+        directory (str): root dataset directory
+        class_to_idx (Dict[str, int]): dictionary mapping class name to class index
+        extensions (optional): A list of allowed extensions.
+            Either extensions or is_valid_file should be passed. Defaults to None.
+        is_valid_file (optional): A function that takes path of a file
+            and checks if the file is a valid file
+            (used to check of corrupt files) both extensions and
+            is_valid_file should not be passed. Defaults to None.
+
+    Raises:
+        ValueError: In case ``extensions`` and ``is_valid_file`` are None or both are not None.
+
+    Returns:
+        List[Tuple[str, int]]: samples of a form (path_to_sample, class)
+    """
+    instances = []
+    directory = os.path.expanduser(directory)
+    both_none = extensions is None and is_valid_file is None
+    both_something = extensions is not None and is_valid_file is not None
+    if both_none or both_something:
+        raise ValueError("Both extensions and is_valid_file cannot be None or not None at the same time")
+    if extensions is not None:
+        def is_valid_file(x: str) -> bool:
+            return has_file_allowed_extension(x, cast(Tuple[str, ...], extensions))
+    is_valid_file = cast(Callable[[str], bool], is_valid_file)
+    for target_class in sorted(class_to_idx.keys()):
+        class_index = class_to_idx[target_class]
+        target_dir = os.path.join(directory, target_class)
+        if not os.path.isdir(target_dir):
+            continue
+        for root, _, fnames in sorted(os.walk(target_dir, followlinks=True)):
+            for fname in sorted(fnames):
+                path = os.path.join(root, fname)
+                if is_valid_file(path):
+                    item = path, class_index
+                    instances.append(item)
+    return instances
+
+
 class DatasetFolder(VisionDataset):
     """A generic data loader where the samples are arranged in this way: ::
 
@@ -98,46 +146,7 @@ class DatasetFolder(VisionDataset):
         extensions: Optional[Tuple[str, ...]] = None,
         is_valid_file: Optional[Callable[[str], bool]] = None,
     ) -> List[Tuple[str, int]]:
-        """Generates a list of samples of a form (path_to_sample, class).
-
-        Args:
-            directory (str): root dataset directory
-            class_to_idx (Dict[str, int]): dictionary mapping class name to class index
-            extensions (optional): A list of allowed extensions.
-                Either extensions or is_valid_file should be passed. Defaults to None.
-            is_valid_file (optional): A function that takes path of a file
-                and checks if the file is a valid file
-                (used to check of corrupt files) both extensions and
-                is_valid_file should not be passed. Defaults to None.
-
-        Raises:
-            ValueError: In case ``extensions`` and ``is_valid_file`` are None or both are not None.
-
-        Returns:
-            List[Tuple[str, int]]: samples of a form (path_to_sample, class)
-        """
-        instances = []
-        directory = os.path.expanduser(directory)
-        both_none = extensions is None and is_valid_file is None
-        both_something = extensions is not None and is_valid_file is not None
-        if both_none or both_something:
-            raise ValueError("Both extensions and is_valid_file cannot be None or not None at the same time")
-        if extensions is not None:
-            def is_valid_file(x: str) -> bool:
-                return has_file_allowed_extension(x, cast(Tuple[str, ...], extensions))
-        is_valid_file = cast(Callable[[str], bool], is_valid_file)
-        for target_class in sorted(class_to_idx.keys()):
-            class_index = class_to_idx[target_class]
-            target_dir = os.path.join(directory, target_class)
-            if not os.path.isdir(target_dir):
-                continue
-            for root, _, fnames in sorted(os.walk(target_dir, followlinks=True)):
-                for fname in sorted(fnames):
-                    path = os.path.join(root, fname)
-                    if is_valid_file(path):
-                        item = path, class_index
-                        instances.append(item)
-        return instances
+        return make_dataset(directory, class_to_idx, extensions=extensions, is_valid_file=is_valid_file)
 
     def _find_classes(self, dir: str) -> Tuple[List[str], Dict[str, int]]:
         """
