@@ -1,3 +1,4 @@
+from common_utils import set_rng_seed
 import math
 import unittest
 
@@ -6,9 +7,9 @@ import numpy as np
 import torch
 from torch import Tensor
 from torch.autograd import gradcheck
-from torch.jit.annotations import Tuple
 from torch.nn.modules.utils import _pair
 from torchvision import ops
+from typing import Tuple
 
 
 class OpTester(object):
@@ -448,15 +449,6 @@ class NMSTester(unittest.TestCase):
                 self.test_nms_cuda(dtype=dtype)
 
 
-class NewEmptyTensorTester(unittest.TestCase):
-    def test_new_empty_tensor(self):
-        input = torch.tensor([2., 2.], requires_grad=True)
-        new_shape = [3, 3]
-        out = torch.ops.torchvision._new_empty_tensor_op(input, new_shape)
-        assert out.size() == torch.Size([3, 3])
-        assert out.dtype == input.dtype
-
-
 class DeformConvTester(OpTester, unittest.TestCase):
     def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):
         stride_h, stride_w = _pair(stride)
@@ -655,6 +647,7 @@ class DeformConvTester(OpTester, unittest.TestCase):
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
     def test_autocast(self):
+        set_rng_seed(0)
         for dtype in (torch.float, torch.half):
             with torch.cuda.amp.autocast():
                 self._test_forward(torch.device("cuda"), False, dtype=dtype)

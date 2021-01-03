@@ -1,8 +1,8 @@
 import math
 
 import torch
-from torch.jit.annotations import List, Tuple
 from torch import Tensor
+from typing import List, Tuple
 
 from torchvision.ops.misc import FrozenBatchNorm2d
 
@@ -15,7 +15,7 @@ class BalancedPositiveNegativeSampler(object):
     def __init__(self, batch_size_per_image, positive_fraction):
         # type: (int, float) -> None
         """
-        Arguments:
+        Args:
             batch_size_per_image (int): number of elements to be selected per image
             positive_fraction (float): percentace of positive elements per batch
         """
@@ -25,7 +25,7 @@ class BalancedPositiveNegativeSampler(object):
     def __call__(self, matched_idxs):
         # type: (List[Tensor]) -> Tuple[List[Tensor], List[Tensor]]
         """
-        Arguments:
+        Args:
             matched idxs: list of tensors containing -1, 0 or positive values.
                 Each tensor corresponds to a specific image.
                 -1 values are ignored, 0 are considered as negatives and > 0 as
@@ -83,7 +83,7 @@ def encode_boxes(reference_boxes, proposals, weights):
     Encode a set of proposals with respect to some
     reference boxes
 
-    Arguments:
+    Args:
         reference_boxes (Tensor): reference boxes
         proposals (Tensor): boxes to be encoded
     """
@@ -133,7 +133,7 @@ class BoxCoder(object):
     def __init__(self, weights, bbox_xform_clip=math.log(1000. / 16)):
         # type: (Tuple[float, float, float, float], float) -> None
         """
-        Arguments:
+        Args:
             weights (4-element tuple)
             bbox_xform_clip (float)
         """
@@ -153,7 +153,7 @@ class BoxCoder(object):
         Encode a set of proposals with respect to some
         reference boxes
 
-        Arguments:
+        Args:
             reference_boxes (Tensor): reference boxes
             proposals (Tensor): boxes to be encoded
         """
@@ -183,7 +183,7 @@ class BoxCoder(object):
         From a set of original boxes and encoded relative box offsets,
         get the decoded boxes.
 
-        Arguments:
+        Args:
             rel_codes (Tensor): encoded boxes
             boxes (Tensor): reference boxes.
         """
@@ -361,7 +361,7 @@ def overwrite_eps(model, eps):
     only when the pretrained weights are loaded to maintain compatibility
     with previous versions.
 
-    Arguments:
+    Args:
         model (nn.Module): The model on which we perform the overwrite.
         eps (float): The new value of eps.
     """

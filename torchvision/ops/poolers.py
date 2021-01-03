@@ -1,15 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
-from typing import Union
-
 import torch
-import torch.nn.functional as F
 from torch import nn, Tensor
 
+import torchvision
 from torchvision.ops import roi_align
 from torchvision.ops.boxes import box_area
 
-from torch.jit.annotations import Optional, List, Dict, Tuple
-import torchvision
+from typing import Optional, List, Dict, Tuple, Union
 
 
 # copying result_idx_in_level to a specific index in result[]
@@ -48,7 +45,7 @@ class LevelMapper(object):
     """Determine which FPN level each RoI in a set of RoIs should map to based
     on the heuristic in the FPN paper.
 
-    Arguments:
+    Args:
         k_min (int)
         k_max (int)
         canonical_scale (int)
@@ -72,7 +69,7 @@ class LevelMapper(object):
 
     def __call__(self, boxlists: List[Tensor]) -> Tensor:
         """
-        Arguments:
+        Args:
             boxlists (list[BoxList])
         """
         # Compute level ids
@@ -90,7 +87,7 @@ class MultiScaleRoIAlign(nn.Module):
 
     It infers the scale of the pooling via the heuristics present in the FPN paper.
 
-    Arguments:
+    Args:
         featmap_names (List[str]): the names of the feature maps that will be used
             for the pooling.
         output_size (List[Tuple[int, int]] or List[int]): output size for the pooled region
@@ -149,7 +146,7 @@ class MultiScaleRoIAlign(nn.Module):
     def infer_scale(self, feature: Tensor, original_size: List[int]) -> float:
         # assumption: the scale is of the form 2 ** (-k), with k integer
         size = feature.shape[-2:]
-        possible_scales = torch.jit.annotate(List[float], [])
+        possible_scales: List[float] = []
         for s1, s2 in zip(size, original_size):
             approx_scale = float(s1) / float(s2)
             scale = 2 ** float(torch.tensor(approx_scale).log2().round())
@@ -185,7 +182,7 @@ class MultiScaleRoIAlign(nn.Module):
         image_shapes: List[Tuple[int, int]],
     ) -> Tensor:
         """
-        Arguments:
+        Args:
             x (OrderedDict[Tensor]): feature maps for each level. They are assumed to have
                 all the same number of channels, but they can have different sizes.
             boxes (List[Tensor[N, 4]]): boxes to be used to perform the pooling operation, in

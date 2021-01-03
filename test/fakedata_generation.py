@@ -21,7 +21,7 @@ def mnist_root(num_images, cls_name):
         return torch.tensor(v, dtype=torch.int32).numpy().tobytes()[::-1]
 
     def _make_image_file(filename, num_images):
-        img = torch.randint(0, 255, size=(28 * 28 * num_images,), dtype=torch.uint8)
+        img = torch.randint(0, 256, size=(28 * 28 * num_images,), dtype=torch.uint8)
         with open(filename, "wb") as f:
             f.write(_encode(2051))  # magic header
             f.write(_encode(num_images))

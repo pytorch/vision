@@ -9,7 +9,7 @@ from torchvision.ops import boxes as box_ops
 from . import _utils as det_utils
 from .image_list import ImageList
 
-from torch.jit.annotations import List, Optional, Dict, Tuple
+from typing import List, Optional, Dict, Tuple
 
 # Import AnchorGenerator to keep compatibility.
 from .anchor_utils import AnchorGenerator
@@ -31,7 +31,7 @@ class RPNHead(nn.Module):
     """
     Adds a simple RPN Head with classification and regression heads
 
-    Arguments:
+    Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
     """
@@ -105,7 +105,7 @@ class RegionProposalNetwork(torch.nn.Module):
     """
     Implements Region Proposal Network (RPN).
 
-    Arguments:
+    Args:
         anchor_generator (AnchorGenerator): module that generates the anchors for a set of feature
             maps.
         head (nn.Module): module that computes the objectness and regression deltas
@@ -269,7 +269,7 @@ class RegionProposalNetwork(torch.nn.Module):
     def compute_loss(self, objectness, pred_bbox_deltas, labels, regression_targets):
         # type: (Tensor, Tensor, List[Tensor], List[Tensor]) -> Tuple[Tensor, Tensor]
         """
-        Arguments:
+        Args:
             objectness (Tensor)
             pred_bbox_deltas (Tensor)
             labels (List[Tensor])
@@ -311,7 +311,7 @@ class RegionProposalNetwork(torch.nn.Module):
                 ):
         # type: (...) -> Tuple[List[Tensor], Dict[str, Tensor]]
         """
-        Arguments:
+        Args:
             images (ImageList): images for which we want to compute the predictions
             features (OrderedDict[Tensor]): features computed from the images that are
                 used for computing the predictions. Each tensor in the list

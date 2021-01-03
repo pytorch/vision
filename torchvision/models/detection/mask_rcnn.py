@@ -48,7 +48,7 @@ class MaskRCNN(FasterRCNN):
           obtain the final segmentation masks, the soft masks can be thresholded, generally
           with a value of 0.5 (mask >= 0.5)
 
-    Arguments:
+    Args:
         backbone (nn.Module): the network used to compute the features for the model.
             It should contain a out_channels attribute, which indicates the number of output
             channels that each feature map has (and it should be the same for all feature maps).
@@ -222,7 +222,7 @@ class MaskRCNN(FasterRCNN):
 class MaskRCNNHeads(nn.Sequential):
     def __init__(self, in_channels, layers, dilation):
         """
-        Arguments:
+        Args:
             in_channels (int): number of input channels
             layers (list): feature dimensions of each FCN layer
             dilation (int): dilation rate of kernel
@@ -308,7 +308,7 @@ def maskrcnn_resnet50_fpn(pretrained=False, progress=True,
         >>> # optionally, if you want to export the model to ONNX:
         >>> torch.onnx.export(model, x, "mask_rcnn.onnx", opset_version = 11)
 
-    Arguments:
+    Args:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet

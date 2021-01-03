@@ -132,6 +132,34 @@ jobs:
             sudo mv clang-format /opt/clang-format
             ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
 
+  torchhub_test:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off numpy
+            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            # need to install torchvision dependencies due to transitive imports
+            pip install --user --progress-bar off --editable .
+            python test/test_hub.py
+
+  torch_onnx_test:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off numpy
+            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            # need to install torchvision dependencies due to transitive imports
+            pip install --user --progress-bar off --editable .
+            pip install --user onnx
+            pip install --user onnxruntime
+            python test/test_onnx.py
+
   binary_linux_wheel:
     <<: *binary_common
     docker:
@@ -686,6 +714,8 @@ workflows:
       - python_lint
       - python_type_check
       - clang_format
+      - torchhub_test
+      - torch_onnx_test
 
   unittest:
     jobs:
@@ -702,6 +732,8 @@ workflows:
       - python_lint
       - python_type_check
       - clang_format
+      - torchhub_test
+      - torch_onnx_test
       {{ build_workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
   docker_build:
     triggers:

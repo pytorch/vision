@@ -60,7 +60,7 @@ def center_crop(clip, crop_size):
 def to_tensor(clip):
     """
     Convert tensor data type from uint8 to float, divide value by 255.0 and
-    permute the dimenions of clip tensor
+    permute the dimensions of clip tensor
     Args:
         clip (torch.tensor, dtype=torch.uint8): Size is (T, H, W, C)
     Return:

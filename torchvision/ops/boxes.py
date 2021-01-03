@@ -1,6 +1,6 @@
 import torch
-from torch.jit.annotations import Tuple
 from torch import Tensor
+from typing import Tuple
 from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
 import torchvision
 from torchvision.extension import _assert_has_ops
@@ -93,7 +93,7 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
     """
     Remove boxes which contains at least one side smaller than min_size.
 
-    Arguments:
+    Args:
         boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) format
         min_size (float): minimum size
 
@@ -111,7 +111,7 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     """
     Clip boxes so that they lie inside an image of size `size`.
 
-    Arguments:
+    Args:
         boxes (Tensor[N, 4]): boxes in (x1, y1, x2, y2) format
         size (Tuple[height, width]): size of the image
 
@@ -148,7 +148,7 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     'cxcywh' : boxes are represented via centre, width and height, cx, cy being center of box, w, h
     being width and height.
 
-    Arguments:
+    Args:
         boxes (Tensor[N, 4]): boxes which will be converted.
         in_fmt (str): Input format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh'].
         out_fmt (str): Output format of given boxes. Supported formats are ['xyxy', 'xywh', 'cxcywh']
@@ -190,7 +190,7 @@ def box_area(boxes: Tensor) -> Tensor:
     Computes the area of a set of bounding boxes, which are specified by its
     (x1, y1, x2, y2) coordinates.
 
-    Arguments:
+    Args:
         boxes (Tensor[N, 4]): boxes for which the area will be computed. They
             are expected to be in (x1, y1, x2, y2) format
 
@@ -208,7 +208,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
 
     Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
 
-    Arguments:
+    Args:
         boxes1 (Tensor[N, 4])
         boxes2 (Tensor[M, 4])
 
@@ -235,7 +235,7 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
 
     Both sets of boxes are expected to be in (x1, y1, x2, y2) format.
 
-    Arguments:
+    Args:
         boxes1 (Tensor[N, 4])
         boxes2 (Tensor[M, 4])
 
