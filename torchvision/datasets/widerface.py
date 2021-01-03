@@ -11,13 +11,6 @@ from .vision import VisionDataset
 class WIDERFace(VisionDataset):
     """`WIDERFace <http://shuoyang1213.me/WIDERFACE/>`_ Dataset.
 
-    Citation:
-    @inproceedings{yang2016wider,
-        author    = "Yang, Shuo and Luo, Ping and Loy, Chen Change and Tang, Xiaoou",
-        booktitle = "IEEE Conference on Computer Vision and Pattern Recognition (CVPR)",
-        title     = "WIDER FACE: A Face Detection Benchmark",
-        year      = "2016"}
-
     Args:
         root (string): Root directory where images and annotations are downloaded to.
             Expects the following folder structure if download=False:
