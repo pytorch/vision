@@ -29,11 +29,13 @@ def get_dist(pkgname):
         return None
 
 
-version = '0.9.0a0'
+cwd = os.path.dirname(os.path.abspath(__file__))
+
+version_txt = os.path.join(cwd, 'version.txt')
+with open(version_txt, 'r') as f:
+    version = f.readline().strip()
 sha = 'Unknown'
 package_name = 'torchvision'
-
-cwd = os.path.dirname(os.path.abspath(__file__))
 
 try:
     sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=cwd).decode('ascii').strip()
