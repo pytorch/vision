@@ -38,9 +38,11 @@ class WIDERFace(VisionDataset):
         ("0B6eKvaijfFUDd3dIRmpvSk8tLUk", "dfa7d7e790efa35df3788964cf0bbaea", "WIDER_val.zip"),
         ("0B6eKvaijfFUDbW4tdGpaYjgzZkU", "e5d8f4248ed24c334bbd12f49c29dd40", "WIDER_test.zip")
     ]
-    ANNOTATIONS_FILE = ("http://mmlab.ie.cuhk.edu.hk/projects/WIDERFace/support/bbx_annotation/wider_face_split.zip",
-                        "0e3767bcf0e326556d407bf5bff5d27c",
-                        "wider_face_split.zip")
+    ANNOTATIONS_FILE = (
+        "http://mmlab.ie.cuhk.edu.hk/projects/WIDERFace/support/bbx_annotation/wider_face_split.zip",
+        "0e3767bcf0e326556d407bf5bff5d27c",
+        "wider_face_split.zip"
+    )
 
     def __init__(
             self,
