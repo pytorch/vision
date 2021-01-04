@@ -65,8 +65,6 @@ class WIDERFace(VisionDataset):
             raise RuntimeError("Dataset not found or corrupted. " +
                                "You can use download=True to download and prepare it")
 
-        # process dataset
-        # dataset will be stored as a list of dict objects (img_info)
         self.img_info: Any = []
         if self.split in ("train", "val"):
             self.parse_train_val_annotations_file()
@@ -79,7 +77,8 @@ class WIDERFace(VisionDataset):
             index (int): Index
 
         Returns:
-            tuple: (image, target) where target=None for the test split.
+            tuple: (image, target) where target is a dict of annotations for all faces in the image.
+            target=None for the test split.
         """
 
         # stay consistent with other datasets and return a PIL Image
