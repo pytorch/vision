@@ -1144,10 +1144,10 @@ deform_conv2d_backward_kernel(
 
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
   m.impl(
-      TORCH_SELECTIVE_NAME("deform_conv2d"),
+      TORCH_SELECTIVE_NAME("torchvision::deform_conv2d"),
       TORCH_FN(deform_conv2d_forward_kernel));
   m.impl(
-      TORCH_SELECTIVE_NAME("_deform_conv2d_backward"),
+      TORCH_SELECTIVE_NAME("torchvision::_deform_conv2d_backward"),
       TORCH_FN(deform_conv2d_backward_kernel));
 }
 

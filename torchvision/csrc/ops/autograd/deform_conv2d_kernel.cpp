@@ -255,9 +255,10 @@ deform_conv2d_backward_autograd(
 
 TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
   m.impl(
-      TORCH_SELECTIVE_NAME("deform_conv2d"), TORCH_FN(deform_conv2d_autograd));
+      TORCH_SELECTIVE_NAME("torchvision::deform_conv2d"),
+      TORCH_FN(deform_conv2d_autograd));
   m.impl(
-      TORCH_SELECTIVE_NAME("_deform_conv2d_backward"),
+      TORCH_SELECTIVE_NAME("torchvision::_deform_conv2d_backward"),
       TORCH_FN(deform_conv2d_backward_autograd));
 }
 

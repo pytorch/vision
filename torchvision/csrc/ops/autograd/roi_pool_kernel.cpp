@@ -139,9 +139,11 @@ at::Tensor roi_pool_backward_autograd(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
-  m.impl(TORCH_SELECTIVE_NAME("roi_pool"), TORCH_FN(roi_pool_autograd));
   m.impl(
-      TORCH_SELECTIVE_NAME("_roi_pool_backward"),
+      TORCH_SELECTIVE_NAME("torchvision::roi_pool"),
+      TORCH_FN(roi_pool_autograd));
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::_roi_pool_backward"),
       TORCH_FN(roi_pool_backward_autograd));
 }
 

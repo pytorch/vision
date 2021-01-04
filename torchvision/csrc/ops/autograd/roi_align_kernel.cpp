@@ -154,9 +154,11 @@ at::Tensor roi_align_backward_autograd(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
-  m.impl(TORCH_SELECTIVE_NAME("roi_align"), TORCH_FN(roi_align_autograd));
   m.impl(
-      TORCH_SELECTIVE_NAME("_roi_align_backward"),
+      TORCH_SELECTIVE_NAME("torchvision::roi_align"),
+      TORCH_FN(roi_align_autograd));
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::_roi_align_backward"),
       TORCH_FN(roi_align_backward_autograd));
 }
 

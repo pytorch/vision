@@ -277,10 +277,10 @@ at::Tensor ps_roi_pool_backward_kernel(
 
 TORCH_LIBRARY_IMPL(torchvision, CUDA, m) {
   m.impl(
-      TORCH_SELECTIVE_NAME("ps_roi_pool"),
+      TORCH_SELECTIVE_NAME("torchvision::ps_roi_pool"),
       TORCH_FN(ps_roi_pool_forward_kernel));
   m.impl(
-      TORCH_SELECTIVE_NAME("_ps_roi_pool_backward"),
+      TORCH_SELECTIVE_NAME("torchvision::_ps_roi_pool_backward"),
       TORCH_FN(ps_roi_pool_backward_kernel));
 }
 
