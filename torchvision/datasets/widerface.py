@@ -2,7 +2,7 @@ from PIL import Image
 import os
 from os.path import abspath, expanduser
 import torch
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Tuple
 from .utils import check_integrity, download_file_from_google_drive, \
     download_and_extract_archive, extract_archive, verify_str_arg
 from .vision import VisionDataset
@@ -22,15 +22,6 @@ class WIDERFace(VisionDataset):
                         └── WIDER_test ('WIDER_test.zip' if compressed)
         split (string): The dataset split to use. One of {``train``, ``val``, ``test``}.
             Defaults to ``train``.
-        target_type (string): The type of target to use, can be one
-            of {``raw``, ``bbox``, ``attr``.``""``}. Can also be a list to
-            output a tuple with all specified target types.
-            The targets represent:
-                ``raw``  (torch.tensor shape=(10,) dtype=int): all annotations combined (bbox + attr)
-                ``bbox`` (torch.tensor shape=(4,) dtype=int): bounding box (x, y, width, height)
-                ``attr`` (torch.tensor shape=(6,) dtype=int): label values for attributes
-                    that represent (blur, expression, illumination, occlusion, pose, invalid)
-            Defaults to ``raw``. If empty, ``None`` will be returned as target.
         transform (callable, optional): A function/transform that  takes in a PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
@@ -55,7 +46,6 @@ class WIDERFace(VisionDataset):
             self,
             root: str,
             split: str = "train",
-            target_type: Union[List[str], str] = "raw",
             transform: Optional[Callable] = None,
             target_transform: Optional[Callable] = None,
             download: bool = False,
@@ -65,18 +55,6 @@ class WIDERFace(VisionDataset):
                                         target_transform=target_transform)
         # check arguments
         self.split = verify_str_arg(split, "split", ("train", "val", "test"))
-        if self.split == "test":
-            target_type = ""
-
-        if isinstance(target_type, list):
-            self.target_type = target_type
-        else:
-            self.target_type = [target_type]
-        self.target_type = [verify_str_arg(t, "target_type", ("raw", "bbox", "attr", ""))
-                            for t in self.target_type]
-
-        if not self.target_type and self.target_transform is not None:
-            raise RuntimeError('target_transform is specified but target_type is empty')
 
         if download:
             self.download()
@@ -108,24 +86,9 @@ class WIDERFace(VisionDataset):
         if self.transform is not None:
             img = self.transform(img)
 
-        # prepare target
-        target: Any = []
-        for t in self.target_type:
-            if t == "raw":
-                target.append(self.img_info[index][t])
-            elif t == "bbox":
-                # bbox coordinates are the first 4 values in the raw annotation
-                target.append(self.img_info[index]["raw"][:, :4])
-            elif t == "attr":
-                # attributes are defined after the bbox coordinates
-                target.append(self.img_info[index]["raw"][:, 4:])
-            else:  # target_type == "":
-                target = None
-                break
-        if target:
-            target = tuple(target) if len(target) > 1 else target[0]
-            if self.target_transform is not None:
-                target = self.target_transform(target)
+        target = None if self.split == "test" else self.img_info[index]["annotations"]
+        if self.target_transform is not None:
+            target = self.target_transform(target)
 
         return img, target
 
@@ -133,7 +96,7 @@ class WIDERFace(VisionDataset):
         return len(self.img_info)
 
     def extra_repr(self) -> str:
-        lines = ["Target type: {target_type}", "Split: {split}"]
+        lines = ["Split: {split}"]
         return '\n'.join(lines).format(**self.__dict__)
 
     def parse_train_val_annotations_file(self) -> None:
@@ -165,9 +128,16 @@ class WIDERFace(VisionDataset):
                     if box_counter >= num_boxes:
                         box_annotation_line = False
                         file_name_line = True
+                        labels_tensor = torch.tensor(labels)
                         self.img_info.append({
                             "img_path": img_path,
-                            "raw": torch.tensor(labels),
+                            "annotations": {"bbox": labels_tensor[:, 0:4],
+                                            "blur": labels_tensor[:, 4],
+                                            "expression": labels_tensor[:, 5],
+                                            "illumination": labels_tensor[:, 6],
+                                            "occlusion": labels_tensor[:, 7],
+                                            "pose": labels_tensor[:, 8],
+                                            "invalid": labels_tensor[:, 9]}
                         })
                         box_counter = 0
                         labels.clear()
