@@ -630,17 +630,18 @@ class Tester(TransformsTester):
         tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=self.device)
         batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=self.device)
 
+        s_transform = None
         for policy in T.AutoAugmentPolicy:
             for fill in [None, 85, (10, -10, 10), 0.7, [0.0, 0.0, 0.0], [1, ], 1]:
+                transform = T.AutoAugment(policy=policy, fill=fill)
+                s_transform = torch.jit.script(transform)
                 for _ in range(100):
-                    transform = T.AutoAugment(policy=policy, fill=fill)
-                    s_transform = torch.jit.script(transform)
-
                     self._test_transform_vs_scripted(transform, s_transform, tensor)
                     self._test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
-        with get_tmp_dir() as tmp_dir:
-            s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
+        if s_transform is not None:
+            with get_tmp_dir() as tmp_dir:
+                s_transform.save(os.path.join(tmp_dir, "t_autoaugment.pt"))
 
 
 @unittest.skipIf(not torch.cuda.is_available(), reason="Skip if no CUDA device")
