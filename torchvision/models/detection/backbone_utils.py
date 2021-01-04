@@ -14,7 +14,7 @@ class BackboneWithFPN(nn.Module):
     Internally, it uses torchvision.models._utils.IntermediateLayerGetter to
     extract a submodel that returns the feature maps specified in return_layers.
     The same limitations of IntermediatLayerGetter apply here.
-    Arguments:
+    Args:
         backbone (nn.Module)
         return_layers (Dict[name, new_name]): a dict containing the names
             of the modules for which the activations will be returned as
@@ -73,7 +73,7 @@ def resnet_fpn_backbone(
         >>>    ('3', torch.Size([1, 256, 2, 2])),
         >>>    ('pool', torch.Size([1, 256, 1, 1]))]
 
-    Arguments:
+    Args:
         backbone_name (string): resnet architecture. Possible values are 'ResNet', 'resnet18', 'resnet34', 'resnet50',
              'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2'
         norm_layer (torchvision.ops): it is recommended to use the default value. For details visit:
