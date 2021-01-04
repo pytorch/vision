@@ -237,8 +237,10 @@ at::Tensor roi_pool_backward_kernel(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
-  m.impl("roi_pool", roi_pool_forward_kernel);
-  m.impl("_roi_pool_backward", roi_pool_backward_kernel);
+  m.impl(TORCH_SELECTIVE_NAME("roi_pool"), TORCH_FN(roi_pool_forward_kernel));
+  m.impl(
+      TORCH_SELECTIVE_NAME("_roi_pool_backward"),
+      TORCH_FN(roi_pool_backward_kernel));
 }
 
 } // namespace ops

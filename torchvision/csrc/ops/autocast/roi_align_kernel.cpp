@@ -31,7 +31,7 @@ at::Tensor roi_align_autocast(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
-  m.impl("roi_align", roi_align_autocast);
+  m.impl(TORCH_SELECTIVE_NAME("roi_align"), TORCH_FN(roi_align_autocast));
 }
 
 } // namespace ops

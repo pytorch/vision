@@ -45,7 +45,8 @@ at::Tensor deform_conv2d_autocast(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
-  m.impl("deform_conv2d", deform_conv2d_autocast);
+  m.impl(
+      TORCH_SELECTIVE_NAME("deform_conv2d"), TORCH_FN(deform_conv2d_autocast));
 }
 
 } // namespace ops

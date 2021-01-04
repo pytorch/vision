@@ -32,7 +32,7 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_align_autocast(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
-  m.impl("ps_roi_align", ps_roi_align_autocast);
+  m.impl(TORCH_SELECTIVE_NAME("ps_roi_align"), TORCH_FN(ps_roi_align_autocast));
 }
 
 } // namespace ops
