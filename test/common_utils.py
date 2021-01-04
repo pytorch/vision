@@ -39,7 +39,6 @@ def set_rng_seed(seed):
 
 ACCEPT = os.getenv('EXPECTTEST_ACCEPT')
 TEST_WITH_SLOW = os.getenv('PYTORCH_TEST_WITH_SLOW', '0') == '1'
-# TEST_WITH_SLOW = True  # TODO: Delete this line once there is a PYTORCH_TEST_WITH_SLOW aware CI job
 
 
 parser = argparse.ArgumentParser(add_help=False)
