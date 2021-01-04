@@ -71,7 +71,7 @@ def read_file(path: str) -> torch.Tensor:
     Reads and outputs the bytes contents of a file as a uint8 Tensor
     with one dimension.
 
-    Arguments:
+    Args:
         path (str): the path to the file to be read
 
     Returns:
@@ -86,7 +86,7 @@ def write_file(filename: str, data: torch.Tensor) -> None:
     Writes the contents of a uint8 tensor with one dimension to a
     file.
 
-    Arguments:
+    Args:
         filename (str): the path to the file to be written
         data (Tensor): the contents to be written to the output file
     """
@@ -99,7 +99,7 @@ def decode_png(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGE
     Optionally converts the image to the desired format.
     The values of the output tensor are uint8 between 0 and 255.
 
-    Arguments:
+    Args:
         input (Tensor[1]): a one dimensional uint8 tensor containing
     the raw bytes of the PNG image.
         mode (ImageReadMode): the read mode used for optionally
@@ -162,7 +162,7 @@ def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
     Optionally converts the image to the desired format.
     The values of the output tensor are uint8 between 0 and 255.
 
-    Arguments:
+    Args:
         input (Tensor[1]): a one dimensional uint8 tensor containing
     the raw bytes of the JPEG image.
         mode (ImageReadMode): the read mode used for optionally

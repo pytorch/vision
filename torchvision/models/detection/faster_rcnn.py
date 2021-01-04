@@ -49,7 +49,7 @@ class FasterRCNN(GeneralizedRCNN):
         - labels (Int64Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores or each prediction
 
-    Arguments:
+    Args:
         backbone (nn.Module): the network used to compute the features for the model.
             It should contain a out_channels attribute, which indicates the number of output
             channels that each feature map has (and it should be the same for all feature maps).
@@ -239,7 +239,7 @@ class TwoMLPHead(nn.Module):
     """
     Standard heads for FPN-based models
 
-    Arguments:
+    Args:
         in_channels (int): number of input channels
         representation_size (int): size of the intermediate representation
     """
@@ -264,7 +264,7 @@ class FastRCNNPredictor(nn.Module):
     Standard classification + bounding box regression layers
     for Fast R-CNN.
 
-    Arguments:
+    Args:
         in_channels (int): number of input channels
         num_classes (int): number of output classes (including background)
     """
@@ -341,7 +341,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
         >>> # optionally, if you want to export the model to ONNX:
         >>> torch.onnx.export(model, x, "faster_rcnn.onnx", opset_version = 11)
 
-    Arguments:
+    Args:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
