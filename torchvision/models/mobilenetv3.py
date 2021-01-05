@@ -222,12 +222,12 @@ def mobilenet_v3_large(pretrained: bool = False, progress: bool = True, reduced_
 
     inverted_residual_setting = [
         bneck_conf(16, 3, 16, 16, False, "RE", 1),
-        bneck_conf(16, 3, 64, 24, False, "RE", 2),
+        bneck_conf(16, 3, 64, 24, False, "RE", 2),  # C1
         bneck_conf(24, 3, 72, 24, False, "RE", 1),
-        bneck_conf(24, 5, 72, 40, True, "RE", 2),
+        bneck_conf(24, 5, 72, 40, True, "RE", 2),  # C2
         bneck_conf(40, 5, 120, 40, True, "RE", 1),
         bneck_conf(40, 5, 120, 40, True, "RE", 1),
-        bneck_conf(40, 3, 240, 80, False, "HS", 2),
+        bneck_conf(40, 3, 240, 80, False, "HS", 2),  # C3
         bneck_conf(80, 3, 200, 80, False, "HS", 1),
         bneck_conf(80, 3, 184, 80, False, "HS", 1),
         bneck_conf(80, 3, 184, 80, False, "HS", 1),
@@ -262,10 +262,10 @@ def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, reduced_
     reduce_divider = 2 if reduced_tail else 1
 
     inverted_residual_setting = [
-        bneck_conf(16, 3, 16, 16, True, "RE", 2),
-        bneck_conf(16, 3, 72, 24, False, "RE", 2),
+        bneck_conf(16, 3, 16, 16, True, "RE", 2),  # C1
+        bneck_conf(16, 3, 72, 24, False, "RE", 2),  # C2
         bneck_conf(24, 3, 88, 24, False, "RE", 1),
-        bneck_conf(24, 5, 96, 40, True, "HS", 2),
+        bneck_conf(24, 5, 96, 40, True, "HS", 2),  # C3
         bneck_conf(40, 5, 240, 40, True, "HS", 1),
         bneck_conf(40, 5, 240, 40, True, "HS", 1),
         bneck_conf(40, 5, 120, 48, True, "HS", 1),
