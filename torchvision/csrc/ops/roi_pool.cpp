@@ -49,10 +49,10 @@ at::Tensor _roi_pool_backward(
 } // namespace detail
 
 TORCH_LIBRARY_FRAGMENT(torchvision, m) {
-  m.def(
-      "roi_pool(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width) -> (Tensor, Tensor)");
-  m.def(
-      "_roi_pool_backward(Tensor grad, Tensor rois, Tensor argmax, float spatial_scale, int pooled_height, int pooled_width, int batch_size, int channels, int height, int width) -> Tensor");
+  m.def(TORCH_SELECTIVE_SCHEMA(
+      "torchvision::roi_pool(Tensor input, Tensor rois, float spatial_scale, int pooled_height, int pooled_width) -> (Tensor, Tensor)"));
+  m.def(TORCH_SELECTIVE_SCHEMA(
+      "torchvision::_roi_pool_backward(Tensor grad, Tensor rois, Tensor argmax, float spatial_scale, int pooled_height, int pooled_width, int batch_size, int channels, int height, int width) -> Tensor"));
 }
 
 } // namespace ops
