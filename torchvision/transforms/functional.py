@@ -776,6 +776,8 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
+        If img is a Tensor, it is expected to be a RGB image in [..., 3, H, W] format,
+        where ... means it can have an arbitrary number of leading dimensions.
         hue_factor (float):  How much to shift the hue channel. Should be in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
