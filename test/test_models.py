@@ -104,7 +104,7 @@ class ModelTester(TestCase):
         kwargs = {}
         if "retinanet" in name:
             # Reduce the default threshold to ensure the returned boxes are not empty.
-            kwargs["score_thresh"] = 0.01
+            kwargs["score_thresh"] = 0.0099999
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False, **kwargs)
         model.eval().to(device=dev)
         input_shape = (3, 300, 300)

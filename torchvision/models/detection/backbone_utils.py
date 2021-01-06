@@ -1,10 +1,10 @@
 import warnings
-from collections import OrderedDict
 from torch import nn
 from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastLevelMaxPool
 
 from torchvision.ops import misc as misc_nn_ops
 from .._utils import IntermediateLayerGetter
+from .. import mobilenet
 from .. import resnet
 
 
@@ -122,3 +122,42 @@ def _validate_resnet_trainable_layers(pretrained, trainable_backbone_layers):
         trainable_backbone_layers = 3
     assert trainable_backbone_layers <= 5 and trainable_backbone_layers >= 0
     return trainable_backbone_layers
+
+
+def mobilenet_fpn_backbone(
+    backbone_name,
+    pretrained,
+    norm_layer=misc_nn_ops.FrozenBatchNorm2d,
+    trainable_layers=2,
+    returned_layers=None,
+    extra_blocks=None
+):
+    backbone = mobilenet.__dict__[backbone_name](
+        pretrained=pretrained,
+        norm_layer=norm_layer).features
+
+    # Gather the indeces of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
+    # The first and last blocks are always included because they are the C0 (conv1) and Cn.
+    stage_indeces = [0] + [i for i, b in enumerate(backbone) if getattr(b, "is_strided", False)] + [len(backbone) - 1]
+    num_stages = len(stage_indeces)
+
+    # find the index of the layer from which we wont freeze
+    assert 0 <= trainable_layers <= num_stages
+    freeze_before = num_stages if trainable_layers == 0 else stage_indeces[num_stages - trainable_layers]
+
+    # freeze layers only if pretrained backbone is used
+    for b in backbone[:freeze_before]:
+        for parameter in b.parameters():
+            parameter.requires_grad_(False)
+
+    if extra_blocks is None:
+        extra_blocks = LastLevelMaxPool()
+
+    if returned_layers is None:
+        returned_layers = [num_stages - 2, num_stages - 1]
+    assert min(returned_layers) >= 0 and max(returned_layers) < num_stages
+    return_layers = {f'{stage_indeces[k]}': str(v) for v, k in enumerate(returned_layers)}
+
+    in_channels_list = [backbone[stage_indeces[i]].output_channels for i in returned_layers]
+    out_channels = 256
+    return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks)

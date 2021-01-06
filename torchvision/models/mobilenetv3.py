@@ -92,6 +92,8 @@ class InvertedResidual(nn.Module):
                                        activation_layer=Identity))
 
         self.block = nn.Sequential(*layers)
+        self.output_channels = cnf.output_channels
+        self.is_strided = cnf.stride > 1
 
     def forward(self, input: Tensor) -> Tensor:
         result = self.block(input)

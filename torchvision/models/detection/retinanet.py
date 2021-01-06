@@ -12,14 +12,14 @@ from ..utils import load_state_dict_from_url
 from . import _utils as det_utils
 from .anchor_utils import AnchorGenerator
 from .transform import GeneralizedRCNNTransform
-from .backbone_utils import resnet_fpn_backbone
+from .backbone_utils import resnet_fpn_backbone, mobilenet_fpn_backbone
 from ...ops.feature_pyramid_network import LastLevelP6P7
 from ...ops import sigmoid_focal_loss
 from ...ops import boxes as box_ops
 
 
 __all__ = [
-    "RetinaNet", "retinanet_resnet50_fpn",
+    "RetinaNet", "retinanet_resnet50_fpn", "retinanet_mobilenet_v3_large_fpn"
 ]
 
 
@@ -558,6 +558,7 @@ class RetinaNet(nn.Module):
 
 
 model_urls = {
+    'retinanet_mobilenet_v3_large_fpn_coco': None,  # TODO: add pretrained model
     'retinanet_resnet50_fpn_coco':
         'https://download.pytorch.org/models/retinanet_resnet50_fpn_coco-eeacb38b.pth',
 }
@@ -613,4 +614,36 @@ def retinanet_resnet50_fpn(pretrained=False, progress=True,
                                               progress=progress)
         model.load_state_dict(state_dict)
         overwrite_eps(model, 0.0)
+    return model
+
+
+def retinanet_mobilenet_v3_large_fpn(pretrained=False, progress=True,
+                                     num_classes=91, pretrained_backbone=True, **kwargs):
+    """
+    Constructs a RetinaNet model with a MobileNetV3-Large-FPN backbone. It works similarly
+    to RetinaNet with ResNet-50-FPN backbone. See `retinanet_resnet50_fpn` for more details.
+
+    Example::
+
+        >>> model = torchvision.models.detection.retinanet_mobilenet_v3_large_fpn(pretrained=True)
+        >>> model.eval()
+        >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
+        >>> predictions = model(x)
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    if pretrained:
+        pretrained_backbone = False
+    backbone = mobilenet_fpn_backbone("mobilenet_v3_large", pretrained_backbone, returned_layers=[4, 5])
+
+    anchor_sizes = ((128,), (256,), (512,))
+    aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
+
+    model = RetinaNet(backbone, num_classes, anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios), **kwargs)
+    if pretrained:
+        state_dict = load_state_dict_from_url(model_urls['retinanet_mobilenet_v3_large_fpn_coco'],
+                                              progress=progress)
+        model.load_state_dict(state_dict)
     return model
