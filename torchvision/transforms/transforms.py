@@ -1043,7 +1043,7 @@ class LinearTransformation(torch.nn.Module):
 class ColorJitter(torch.nn.Module):
     """Randomly change the brightness, contrast, saturation and hue of an image.
     If the image is torch Tensor, it is expected
-    to be RGB and have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
 
     Args:
         brightness (float or tuple of float (min, max)): How much to jitter brightness.
