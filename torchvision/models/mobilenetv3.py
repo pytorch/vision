@@ -14,7 +14,7 @@ __all__ = ["MobileNetV3", "mobilenet_v3_large", "mobilenet_v3_small"]
 
 # TODO: add pretrained
 model_urls = {
-    "mobilenet_v3_large": None,
+    "mobilenet_v3_large": "https://github.com/datumbox/torchvision-models/raw/main/mobilenet_v3_large-0d8130cf.pth",
     "mobilenet_v3_small": None,
 }
 
