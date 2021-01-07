@@ -1,4 +1,3 @@
-import glob
 import os
 
 from .utils import list_dir

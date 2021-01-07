@@ -2,7 +2,6 @@ import os
 import os.path
 import hashlib
 import gzip
-import errno
 import tarfile
 from typing import Any, Callable, List, Iterable, Optional, TypeVar
 import zipfile
