@@ -254,8 +254,12 @@ deform_conv2d_backward_autograd(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, Autograd, m) {
-  m.impl("deform_conv2d", deform_conv2d_autograd);
-  m.impl("_deform_conv2d_backward", deform_conv2d_backward_autograd);
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::deform_conv2d"),
+      TORCH_FN(deform_conv2d_autograd));
+  m.impl(
+      TORCH_SELECTIVE_NAME("torchvision::_deform_conv2d_backward"),
+      TORCH_FN(deform_conv2d_backward_autograd));
 }
 
 } // namespace ops
