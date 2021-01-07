@@ -106,7 +106,6 @@ class WIDERFace(VisionDataset):
 
         with open(filepath, "r") as f:
             lines = f.readlines()
-
             file_name_line, num_boxes_line, box_annotation_line = True, False, False
             num_boxes, box_counter = 0, 0
             labels = []
