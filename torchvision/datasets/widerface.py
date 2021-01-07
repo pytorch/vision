@@ -2,7 +2,7 @@ from PIL import Image
 import os
 from os.path import abspath, expanduser
 import torch
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, List, Dict, Optional, Tuple, Union
 from .utils import check_integrity, download_file_from_google_drive, \
     download_and_extract_archive, extract_archive, verify_str_arg
 from .vision import VisionDataset
@@ -65,7 +65,7 @@ class WIDERFace(VisionDataset):
             raise RuntimeError("Dataset not found or corrupted. " +
                                "You can use download=True to download and prepare it")
 
-        self.img_info: Any = []
+        self.img_info: List[Dict[str, Union[str, Dict[str, torch.Tensor]]]] = []
         if self.split in ("train", "val"):
             self.parse_train_val_annotations_file()
         else:
@@ -132,7 +132,7 @@ class WIDERFace(VisionDataset):
                         labels_tensor = torch.tensor(labels)
                         self.img_info.append({
                             "img_path": img_path,
-                            "annotations": {"bbox": labels_tensor[:, 0:4],
+                            "annotations": {"bbox": labels_tensor[:, 0:4],  # x, y, width, height
                                             "blur": labels_tensor[:, 4],
                                             "expression": labels_tensor[:, 5],
                                             "illumination": labels_tensor[:, 6],
