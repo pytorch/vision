@@ -1,9 +1,6 @@
 torchvision
 ===========
 
-.. image:: https://circleci.com/gh/pytorch/vision.svg?style=svg
-    :target: https://circleci.com/gh/pytorch/vision
-
 .. image:: https://codecov.io/gh/pytorch/vision/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/pytorch/vision
 
