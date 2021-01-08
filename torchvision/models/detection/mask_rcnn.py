@@ -1,10 +1,7 @@
 from collections import OrderedDict
 
-import torch
 from torch import nn
-import torch.nn.functional as F
 
-from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops import MultiScaleRoIAlign
 
 from ._utils import overwrite_eps
@@ -315,8 +312,8 @@ def maskrcnn_resnet50_fpn(pretrained=False, progress=True,
     Args:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         num_classes (int): number of output classes of the model (including the background)
+        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """

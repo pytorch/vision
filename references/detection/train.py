@@ -23,7 +23,6 @@ import time
 
 import torch
 import torch.utils.data
-from torch import nn
 import torchvision
 import torchvision.models.detection
 import torchvision.models.detection.mask_rcnn
