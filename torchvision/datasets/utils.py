@@ -42,6 +42,23 @@ def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
     return check_md5(fpath, md5)
 
 
+def _get_redirect_url(url: str, hop_idx: int = 0) -> str:
+    import requests
+
+    _MAX_HOPS = 10
+    if hop_idx >= _MAX_HOPS:
+        raise RecursionError(f'Too many redirects: {hop_idx} (max. allowed {_MAX_HOPS})')
+
+    response = requests.get(url)
+    if response.url != url and response.url is not None:
+        redirect_url = response.url
+        print(f'Redirecting to {redirect_url}')
+
+        return _get_redirect_url(redirect_url, hop_idx + 1)
+    else:
+        return url
+
+
 def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None) -> None:
     """Download a file from a url and place it in root.
 
@@ -59,6 +76,9 @@ def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optio
     fpath = os.path.join(root, filename)
 
     os.makedirs(root, exist_ok=True)
+
+    # expand redirect chain if needed
+    url = _get_redirect_url(url)
 
     # check if file is already present locally
     if check_integrity(fpath, md5):
