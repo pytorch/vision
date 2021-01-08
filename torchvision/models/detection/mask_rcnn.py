@@ -1,10 +1,7 @@
 from collections import OrderedDict
 
-import torch
 from torch import nn
-import torch.nn.functional as F
 
-from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops import MultiScaleRoIAlign
 
 from ._utils import overwrite_eps
