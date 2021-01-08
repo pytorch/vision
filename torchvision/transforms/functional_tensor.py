@@ -180,7 +180,9 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
 
     _assert_image_tensor(img)
 
-    _assert_channels(img, [3])
+    _assert_channels(img, [1, 3])
+    if _get_image_num_channels(img) == 1:  # Match PIL behaviour
+        return img
 
     orig_dtype = img.dtype
     if img.dtype == torch.uint8:
