@@ -133,9 +133,7 @@ def mobilenet_fpn_backbone(
     returned_layers=None,
     extra_blocks=None
 ):
-    backbone = mobilenet.__dict__[backbone_name](
-        pretrained=pretrained,
-        norm_layer=norm_layer).features
+    backbone = mobilenet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer).features
 
     # Gather the indeces of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
     # The first and last blocks are always included because they are the C0 (conv1) and Cn.
@@ -159,6 +157,6 @@ def mobilenet_fpn_backbone(
     assert min(returned_layers) >= 0 and max(returned_layers) < num_stages
     return_layers = {f'{stage_indeces[k]}': str(v) for v, k in enumerate(returned_layers)}
 
-    in_channels_list = [backbone[stage_indeces[i]].output_channels for i in returned_layers]
+    in_channels_list = [backbone[stage_indeces[i]].out_channels for i in returned_layers]
     out_channels = 256
     return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks)
