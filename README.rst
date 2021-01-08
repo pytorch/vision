@@ -76,7 +76,7 @@ From source:
 
 
 In case building TorchVision from source fails, install the nightly version of PyTorch following 
-the linked guide from the  `contributing page <https://github.com/pytorch/vision/blob/master/CONTRIBUTING.md#development-installation>`_ and retry the install.
+the linked guide on the  `contributing page <https://github.com/pytorch/vision/blob/master/CONTRIBUTING.md#development-installation>`_ and retry the install.
 
 By default, GPU support is built if CUDA is found and ``torch.cuda.is_available()`` is true.
 It's possible to force building GPU support by setting ``FORCE_CUDA=1`` environment variable,
