@@ -646,9 +646,9 @@ def retinanet_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_classe
         num_classes (int): number of output classes of the model (including the background)
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
+            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
     """
-    # check default parameters and by default set it to 3 if possible
+    # check default parameters and by default set it to 2 if possible
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 6, 2)
 
