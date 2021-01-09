@@ -560,7 +560,7 @@ class RetinaNet(nn.Module):
 # TODO: replace with pytorch links
 model_urls = {
     'retinanet_mobilenet_v3_large_fpn_coco':
-        'https://github.com/datumbox/torchvision-models/raw/main/retinanet_mobilenet_v3_large_fpn-9385e81f.pth',
+        'https://github.com/datumbox/torchvision-models/raw/main/retinanet_mobilenet_v3_large_fpn-575f7893.pth',
     'retinanet_resnet50_fpn_coco':
         'https://download.pytorch.org/models/retinanet_resnet50_fpn_coco-eeacb38b.pth',
 }
@@ -648,9 +648,9 @@ def retinanet_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_classe
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
     """
-    # check default parameters and by default set it to 2 if possible
+    # check default parameters and by default set it to 3 if possible
     trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 6, 2)
+        pretrained or pretrained_backbone, trainable_backbone_layers, 6, 3)
 
     if pretrained:
         pretrained_backbone = False
