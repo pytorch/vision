@@ -58,6 +58,32 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(targets[0]['boxes'], targets_copy[0]['boxes']))
         self.assertTrue(torch.equal(targets[1]['boxes'], targets_copy[1]['boxes']))
 
+    def test_normalize_integer(self):
+        transform = GeneralizedRCNNTransform(
+            300, 500,
+            torch.randint(0, 255, (3,)),
+            torch.randint(0, 255, (3,))
+        )
+        image = [torch.randint(0, 255, (3, 200, 300), dtype=torch.uint8)]
+        targets = [{'boxes': torch.randint(0, 255, (3, 4))}]
+        image_list, _ = transform(image, targets)  # noqa: F841
+        # check that original images still have uint8 dtype
+        for img in image:
+            self.assertTrue(img.dtype == torch.uint8)
+        # check that the resulting images have float32 dtype
+        self.assertTrue(image_list.tensors.dtype == torch.float32)
+
+    def test_normalize_float(self):
+        transform = GeneralizedRCNNTransform(300, 500, torch.zeros(3), torch.ones(3))
+        image = [torch.rand(3, 200, 300)]
+        targets = [{'boxes': torch.rand(3, 4)}]
+        image_list, _ = transform(image, targets)  # noqa: F841
+        # check that original images still have float32 dtype
+        for img in image:
+            self.assertTrue(img.dtype == torch.float32)
+        # check that the resulting images have float32 dtype
+        self.assertTrue(image_list.tensors.dtype == torch.float32)
+
 
 if __name__ == '__main__':
     unittest.main()
