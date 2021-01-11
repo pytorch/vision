@@ -117,8 +117,8 @@ class GeneralizedRCNNTransform(nn.Module):
         return image_list, targets
 
     def normalize(self, image):
-        if image.dtype not in (torch.float, torch.double, torch.half):
-            image = image.float()
+        if not image.is_floating_point():
+            image = image.to(torch.float32)
         dtype, device = image.dtype, image.device
         mean = torch.as_tensor(self.image_mean, dtype=dtype, device=device)
         std = torch.as_tensor(self.image_std, dtype=dtype, device=device)

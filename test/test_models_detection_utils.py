@@ -72,6 +72,8 @@ class Tester(unittest.TestCase):
             self.assertTrue(img.dtype == torch.uint8)
         # check that the resulting images have float32 dtype
         self.assertTrue(image_list.tensors.dtype == torch.float32)
+        # check that no NaN values are produced
+        self.assertFalse(torch.any(torch.isnan(image_list.tensors)))
 
     def test_normalize_float(self):
         transform = GeneralizedRCNNTransform(300, 500, torch.zeros(3), torch.ones(3))
