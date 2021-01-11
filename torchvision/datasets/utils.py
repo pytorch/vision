@@ -58,7 +58,9 @@ def _get_redirect_url(url: str, hop_idx: int = 0, max_hops: int = 10) -> str:
         return url
 
 
-def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None) -> None:
+def download_url(
+    url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None, max_redirect_hops: int = 10
+) -> None:
     """Download a file from a url and place it in root.
 
     Args:
@@ -66,6 +68,7 @@ def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optio
         root (str): Directory to place downloaded file in
         filename (str, optional): Name to save the file under. If None, use the basename of the URL
         md5 (str, optional): MD5 checksum of the download. If None, do not check
+        max_redirect_hops (int, optional): Maximum number of redirect hops allowed
     """
     import urllib
 
@@ -77,7 +80,7 @@ def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optio
     os.makedirs(root, exist_ok=True)
 
     # expand redirect chain if needed
-    url = _get_redirect_url(url)
+    url = _get_redirect_url(url, max_hops=max_redirect_hops)
 
     # check if file is already present locally
     if check_integrity(fpath, md5):
