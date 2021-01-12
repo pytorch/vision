@@ -14,7 +14,7 @@ __all__ = ["MobileNetV3", "mobilenet_v3_large", "mobilenet_v3_small"]
 
 # TODO: add pretrained
 model_urls = {
-    "mobilenet_v3_large": "https://github.com/datumbox/torchvision-models/raw/main/mobilenet_v3_large-8738ca79.pth",
+    "mobilenet_v3_large": "https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth",
     "mobilenet_v3_small": None,
 }
 
@@ -197,7 +197,7 @@ def _mobilenet_v3(
     **kwargs: Any
 ):
     model = MobileNetV3(inverted_residual_setting, last_channel, **kwargs)
-    if pretrained:
+    if pretrained and model_urls[arch] is not None:
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model

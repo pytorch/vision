@@ -27,12 +27,23 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --lr-steps 16 22 --aspect-ratio-group-factor 3
 ```
 
-### RetinaNet
+
+### RetinaNet with ResNet50 FPN
 ```
 python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --dataset coco --model retinanet_resnet50_fpn --epochs 26\
     --lr-steps 16 22 --aspect-ratio-group-factor 3 --lr 0.01
 ```
+
+
+### RetinaNet with MobileNetV3 Large FPN
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
+    --dataset coco --model retinanet_mobilenet_v3_large_fpn --epochs 26 --lr-steps 16 22\
+    --aspect-ratio-group-factor 3 --lr 0.01
+```
+
+Then we averaged the parameters of the last 2 checkpoints that improved the AP. See [#3223](https://github.com/pytorch/vision/pull/3223) for details.
 
 
 ### Mask R-CNN
