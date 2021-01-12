@@ -560,7 +560,7 @@ class RetinaNet(nn.Module):
 # TODO: replace with pytorch links
 model_urls = {
     'retinanet_mobilenet_v3_large_fpn_coco':
-        'https://github.com/datumbox/torchvision-models/raw/main/retinanet_mobilenet_v3_large_fpn-d88336d5.pth',
+        'https://github.com/datumbox/torchvision-models/raw/main/retinanet_mobilenet_v3_large_fpn-41c847a4.pth',
     'retinanet_resnet50_fpn_coco':
         'https://download.pytorch.org/models/retinanet_resnet50_fpn_coco-eeacb38b.pth',
 }
