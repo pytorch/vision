@@ -129,13 +129,14 @@ class Tester(unittest.TestCase):
         self.assertEqual(loss_dict["loss_keypoint"], torch.tensor(0.))
 
     def test_forward_negative_sample_retinanet(self):
-        model = torchvision.models.detection.retinanet_resnet50_fpn(
-            num_classes=2, min_size=100, max_size=100)
+        for name in ["retinanet_resnet50_fpn", "retinanet_mobilenet_v3_large_fpn"]:
+            model = torchvision.models.detection.__dict__[name](
+                num_classes=2, min_size=100, max_size=100, pretrained_backbone=False)
 
-        images, targets = self._make_empty_sample()
-        loss_dict = model(images, targets)
+            images, targets = self._make_empty_sample()
+            loss_dict = model(images, targets)
 
-        self.assertEqual(loss_dict["bbox_regression"], torch.tensor(0.))
+            self.assertEqual(loss_dict["bbox_regression"], torch.tensor(0.))
 
 
 if __name__ == '__main__':

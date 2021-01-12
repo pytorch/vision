@@ -7,7 +7,7 @@ from ._utils import overwrite_eps
 from ..utils import load_state_dict_from_url
 
 from .faster_rcnn import FasterRCNN
-from .backbone_utils import resnet_fpn_backbone, _validate_resnet_trainable_layers
+from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers
 
 
 __all__ = [
@@ -319,8 +319,8 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
     # check default parameters and by default set it to 3 if possible
-    trainable_backbone_layers = _validate_resnet_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers)
+    trainable_backbone_layers = _validate_trainable_layers(
+        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3)
 
     if pretrained:
         # no need to download the backbone if pretrained is set
