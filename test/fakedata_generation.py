@@ -172,6 +172,73 @@ def imagenet_root():
 
 
 @contextlib.contextmanager
+def widerface_root():
+    """
+    Generates a dataset with the following folder structure and returns the path root:
+    <root>
+        └── widerface
+            ├── wider_face_split
+            ├── WIDER_train
+            ├── WIDER_val
+            └── WIDER_test
+
+    The dataset consist of
+      1 image for each dataset split (train, val, test) and annotation files
+      for each split
+    """
+
+    def _make_image(file):
+        PIL.Image.fromarray(np.zeros((32, 32, 3), dtype=np.uint8)).save(file)
+
+    def _make_train_archive(root):
+        extracted_dir = os.path.join(root, 'WIDER_train', 'images', '0--Parade')
+        os.makedirs(extracted_dir)
+        _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_1.jpg'))
+
+    def _make_val_archive(root):
+        extracted_dir = os.path.join(root, 'WIDER_val', 'images', '0--Parade')
+        os.makedirs(extracted_dir)
+        _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_2.jpg'))
+
+    def _make_test_archive(root):
+        extracted_dir = os.path.join(root, 'WIDER_test', 'images', '0--Parade')
+        os.makedirs(extracted_dir)
+        _make_image(os.path.join(extracted_dir, '0_Parade_marchingband_1_3.jpg'))
+
+    def _make_annotations_archive(root):
+        train_bbox_contents = '0--Parade/0_Parade_marchingband_1_1.jpg\n1\n449 330 122 149 0 0 0 0 0 0\n'
+        val_bbox_contents = '0--Parade/0_Parade_marchingband_1_2.jpg\n1\n501 160 285 443 0 0 0 0 0 0\n'
+        test_filelist_contents = '0--Parade/0_Parade_marchingband_1_3.jpg\n'
+        extracted_dir = os.path.join(root, 'wider_face_split')
+        os.mkdir(extracted_dir)
+
+        # bbox training file
+        bbox_file = os.path.join(extracted_dir, "wider_face_train_bbx_gt.txt")
+        with open(bbox_file, "w") as txt_file:
+            txt_file.write(train_bbox_contents)
+
+        # bbox validation file
+        bbox_file = os.path.join(extracted_dir, "wider_face_val_bbx_gt.txt")
+        with open(bbox_file, "w") as txt_file:
+            txt_file.write(val_bbox_contents)
+
+        # test filelist file
+        filelist_file = os.path.join(extracted_dir, "wider_face_test_filelist.txt")
+        with open(filelist_file, "w") as txt_file:
+            txt_file.write(test_filelist_contents)
+
+    with get_tmp_dir() as root:
+        root_base = os.path.join(root, "widerface")
+        os.mkdir(root_base)
+        _make_train_archive(root_base)
+        _make_val_archive(root_base)
+        _make_test_archive(root_base)
+        _make_annotations_archive(root_base)
+
+        yield root
+
+
+@contextlib.contextmanager
 def cityscapes_root():
 
     def _make_image(file):
