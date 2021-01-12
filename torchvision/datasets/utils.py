@@ -42,6 +42,31 @@ def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
     return check_md5(fpath, md5)
 
 
+def _get_google_drive_file_id(url: str) -> Optional[str]:
+    import re
+
+    pattern = re.compile(
+        '(?:(?:(?:http)s?://)?(?:(?:docs)|(?:drive))\\.(?:google)\\.(?:com))(?P<request>.*)',
+        re.IGNORECASE
+    )
+    match = pattern.match(url)
+
+    file_id = None
+    if match is not None:
+        request = match.groupdict().get('request')
+        if request is not None:
+            request, *query = request.split('?')
+            if query and 'id=' in query[0]:
+                query = [kv for q in query for kv in q.split('&')]
+                query = filter(lambda kv: '=' in kv, query)
+                query = {k: v for k, v in map(lambda kv: kv.split('='), query)}
+                file_id = query.get('id')
+            else:
+                *_, file_id, _ = request.split('/')
+
+    return file_id
+
+
 def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None) -> None:
     """Download a file from a url and place it in root.
 
@@ -59,6 +84,11 @@ def download_url(url: str, root: str, filename: Optional[str] = None, md5: Optio
     fpath = os.path.join(root, filename)
 
     os.makedirs(root, exist_ok=True)
+
+    # check if file is located on Google Drive
+    file_id = _get_google_drive_file_id(url)
+    if file_id is not None:
+        return download_file_from_google_drive(file_id, root, filename, md5)
 
     # check if file is already present locally
     if check_integrity(fpath, md5):
