@@ -40,7 +40,7 @@ script_model_unwrapper = {
     "maskrcnn_resnet50_fpn": lambda x: x[1],
     "keypointrcnn_resnet50_fpn": lambda x: x[1],
     "retinanet_resnet50_fpn": lambda x: x[1],
-    "retinanet_mobilenet_v3_large_fpn": lambda x: x[1],
+    "retinanet_mobilenet_v3_large": lambda x: x[1],
 }
 
 

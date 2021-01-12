@@ -129,7 +129,7 @@ class Tester(unittest.TestCase):
         self.assertEqual(loss_dict["loss_keypoint"], torch.tensor(0.))
 
     def test_forward_negative_sample_retinanet(self):
-        for name in ["retinanet_resnet50_fpn", "retinanet_mobilenet_v3_large_fpn"]:
+        for name in ["retinanet_resnet50_fpn", "retinanet_mobilenet_v3_large"]:
             model = torchvision.models.detection.__dict__[name](
                 num_classes=2, min_size=100, max_size=100, pretrained_backbone=False)
 

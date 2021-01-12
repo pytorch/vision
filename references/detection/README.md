@@ -36,10 +36,10 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
 ```
 
 
-### RetinaNet with MobileNetV3 Large FPN
+### RetinaNet with MobileNetV3 Large
 ```
 python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
-    --dataset coco --model retinanet_mobilenet_v3_large_fpn --epochs 26 --lr-steps 16 22\
+    --dataset coco --model retinanet_mobilenet_v3_large --epochs 26 --lr-steps 16 22\
     --aspect-ratio-group-factor 3 --lr 0.01
 ```
 

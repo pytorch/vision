@@ -363,7 +363,7 @@ Network                           box AP   mask AP   keypoint AP
 ================================  =======  ========  ===========
 Faster R-CNN ResNet-50 FPN        37.0     -         -
 RetinaNet ResNet-50 FPN           36.4     -         -
-RetinaNet MobileNetV3-Large FPN   25.6     -         -
+RetinaNet MobileNetV3-Large       ????     -         -
 Mask R-CNN ResNet-50 FPN          37.9     34.6      -
 ================================  =======  ========  ===========
 
@@ -420,7 +420,7 @@ Network                         train time (s / it)  test time (s / it)  memory 
 ==============================  ===================  ==================  ===========
 Faster R-CNN ResNet-50 FPN      0.2288               0.0590              5.2
 RetinaNet ResNet-50 FPN         0.2514               0.0939              4.1
-RetinaNet MobileNetV3-Large FPN 0.0928               0.0547              1.4
+RetinaNet MobileNetV3-Large     ??????               ??????              ???
 Mask R-CNN ResNet-50 FPN        0.2728               0.0903              5.4
 Keypoint R-CNN ResNet-50 FPN    0.3789               0.1242              6.8
 ==============================  ===================  ==================  ===========
@@ -436,7 +436,7 @@ RetinaNet
 ------------
 
 .. autofunction:: torchvision.models.detection.retinanet_resnet50_fpn
-.. autofunction:: torchvision.models.detection.retinanet_mobilenet_v3_large_fpn
+.. autofunction:: torchvision.models.detection.retinanet_mobilenet_v3_large
 
 
 Mask R-CNN
