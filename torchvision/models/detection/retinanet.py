@@ -649,9 +649,9 @@ def retinanet_mobilenet_v3_large(pretrained=False, progress=True, num_classes=91
         min_size (int): minimum size of the image to be rescaled before feeding it to the backbone
         max_size (int): maximum size of the image to be rescaled before feeding it to the backbone
     """
-    # check default parameters and by default set it to 3 if possible
+    # check default parameters and by default set it to 6 if possible
     trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 6, 3)
+        pretrained or pretrained_backbone, trainable_backbone_layers, 6, 6)
 
     if pretrained:
         pretrained_backbone = False
