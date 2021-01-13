@@ -559,8 +559,7 @@ class RetinaNet(nn.Module):
 
 # TODO: replace with pytorch links
 model_urls = {
-    'retinanet_mobilenet_v3_large_fpn_coco':
-        'https://download.pytorch.org/models/retinanet_mobilenet_v3_large_fpn-41c847a4.pth',
+    'retinanet_mobilenet_v3_large_fpn_coco': None,
     'retinanet_resnet50_fpn_coco':
         'https://download.pytorch.org/models/retinanet_resnet50_fpn_coco-eeacb38b.pth',
 }
@@ -628,7 +627,7 @@ def retinanet_resnet50_fpn(pretrained=False, progress=True,
 
 
 def retinanet_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_classes=91, pretrained_backbone=True,
-                                     trainable_backbone_layers=None, **kwargs):
+                                     trainable_backbone_layers=None, min_size=320, max_size=640, **kwargs):
     """
     Constructs a RetinaNet model with a MobileNetV3-Large-FPN backbone. It works similarly
     to RetinaNet with ResNet-50-FPN backbone. See `retinanet_resnet50_fpn` for more details.
@@ -647,6 +646,8 @@ def retinanet_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_classe
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
+        min_size (int): minimum size of the image to be rescaled before feeding it to the backbone
+        max_size (int): maximum size of the image to be rescaled before feeding it to the backbone
     """
     # check default parameters and by default set it to 3 if possible
     trainable_backbone_layers = _validate_trainable_layers(
@@ -657,12 +658,12 @@ def retinanet_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_classe
     backbone = mobilenet_fpn_backbone("mobilenet_v3_large", pretrained_backbone, returned_layers=[4, 5],
                                       trainable_layers=trainable_backbone_layers)
 
-    anchor_sizes = ((128,), (256,), (512,))
+    anchor_sizes = ((16, 32, 64, 128, 256,), ) * 3
     aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
 
-    model = RetinaNet(backbone, num_classes, anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios), **kwargs)
+    model = RetinaNet(backbone, num_classes, anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios),
+                      min_size=min_size, max_size=max_size, **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls['retinanet_mobilenet_v3_large_fpn_coco'],
-                                              progress=progress)
+        state_dict = load_state_dict_from_url(model_urls['retinanet_mobilenet_v3_large_fpn_coco'], progress=progress)
         model.load_state_dict(state_dict)
     return model
