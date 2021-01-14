@@ -16,6 +16,7 @@ from .cityscapes import Cityscapes
 from .imagenet import ImageNet
 from .caltech import Caltech101, Caltech256
 from .celeba import CelebA
+from .widerface import WIDERFace
 from .sbd import SBDataset
 from .vision import VisionDataset
 from .usps import USPS
@@ -31,5 +32,6 @@ __all__ = ('LSUN', 'LSUNClass',
            'MNIST', 'KMNIST', 'STL10', 'SVHN', 'PhotoTour', 'SEMEION',
            'Omniglot', 'SBU', 'Flickr8k', 'Flickr30k',
            'VOCSegmentation', 'VOCDetection', 'Cityscapes', 'ImageNet',
-           'Caltech101', 'Caltech256', 'CelebA', 'SBDataset', 'VisionDataset',
-           'USPS', 'Kinetics400', 'HMDB51', 'UCF101', 'Places365')
+           'Caltech101', 'Caltech256', 'CelebA', 'WIDERFace', 'SBDataset',
+           'VisionDataset', 'USPS', 'Kinetics400', 'HMDB51', 'UCF101',
+           'Places365')
