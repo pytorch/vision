@@ -1,5 +1,4 @@
 import warnings
-from collections import OrderedDict
 from torch import nn
 from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastLevelMaxPool
 
@@ -108,17 +107,18 @@ def resnet_fpn_backbone(
     return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks)
 
 
-def _validate_resnet_trainable_layers(pretrained, trainable_backbone_layers):
+def _validate_trainable_layers(pretrained, trainable_backbone_layers, max_value, default_value):
     # dont freeze any layers if pretrained model or backbone is not used
     if not pretrained:
         if trainable_backbone_layers is not None:
             warnings.warn(
                 "Changing trainable_backbone_layers has not effect if "
                 "neither pretrained nor pretrained_backbone have been set to True, "
-                "falling back to trainable_backbone_layers=5 so that all layers are trainable")
-        trainable_backbone_layers = 5
-    # by default, freeze first 2 blocks following Faster R-CNN
+                "falling back to trainable_backbone_layers={} so that all layers are trainable".format(max_value))
+        trainable_backbone_layers = max_value
+
+    # by default freeze first blocks
     if trainable_backbone_layers is None:
-        trainable_backbone_layers = 3
-    assert trainable_backbone_layers <= 5 and trainable_backbone_layers >= 0
+        trainable_backbone_layers = default_value
+    assert 0 <= trainable_backbone_layers <= max_value
     return trainable_backbone_layers
