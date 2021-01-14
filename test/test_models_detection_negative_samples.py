@@ -44,7 +44,7 @@ class Tester(unittest.TestCase):
             rpn_anchor_generator, rpn_head,
             0.5, 0.3,
             256, 0.5,
-            2000, 2000, 0.7)
+            2000, 2000, 0.7, 0.05)
 
         labels, matched_gt_boxes = head.assign_targets_to_anchors(anchors, targets)
 

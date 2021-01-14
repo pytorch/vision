@@ -1,3 +1,4 @@
+from common_utils import set_rng_seed
 import io
 import torch
 from torchvision import ops
@@ -197,12 +198,14 @@ class ONNXExporterTester(unittest.TestCase):
         rpn_pre_nms_top_n = dict(training=2000, testing=1000)
         rpn_post_nms_top_n = dict(training=2000, testing=1000)
         rpn_nms_thresh = 0.7
+        rpn_score_thresh = 0.0
 
         rpn = RegionProposalNetwork(
             rpn_anchor_generator, rpn_head,
             rpn_fg_iou_thresh, rpn_bg_iou_thresh,
             rpn_batch_size_per_image, rpn_positive_fraction,
-            rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh)
+            rpn_pre_nms_top_n, rpn_post_nms_top_n, rpn_nms_thresh,
+            score_thresh=rpn_score_thresh)
         return rpn
 
     def _init_test_roi_heads_faster_rcnn(self):
@@ -255,6 +258,8 @@ class ONNXExporterTester(unittest.TestCase):
         return features
 
     def test_rpn(self):
+        set_rng_seed(0)
+
         class RPNModule(torch.nn.Module):
             def __init__(self_module):
                 super(RPNModule, self_module).__init__()
