@@ -92,8 +92,11 @@ def main(args):
         collate_fn=utils.collate_fn)
 
     print("Creating model")
-    model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes,
-                                                              pretrained=args.pretrained)
+    kwargs = {}
+    if "rcnn" in args.model:
+        kwargs["rpn_score_thresh"] = 0.0
+    model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes, pretrained=args.pretrained,
+                                                              **kwargs)
     model.to(device)
 
     model_without_ddp = model
