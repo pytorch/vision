@@ -19,7 +19,7 @@ from ...ops import boxes as box_ops
 
 
 __all__ = [
-    "RetinaNet", "retinanet_resnet50_fpn",
+    "RetinaNet", "retinanet_resnet50_fpn"
 ]
 
 
