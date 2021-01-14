@@ -22,7 +22,8 @@ architectures for image classification:
 -  `Inception`_ v3
 -  `GoogLeNet`_
 -  `ShuffleNet`_ v2
--  `MobileNet`_ v2
+-  `MobileNetV2`_
+-  `MobileNetV3`_
 -  `ResNeXt`_
 -  `Wide ResNet`_
 -  `MNASNet`_
@@ -40,7 +41,9 @@ You can construct a model with random weights by calling its constructor:
     inception = models.inception_v3()
     googlenet = models.googlenet()
     shufflenet = models.shufflenet_v2_x1_0()
-    mobilenet = models.mobilenet_v2()
+    mobilenet_v2 = models.mobilenet_v2()
+    mobilenet_v3_large = models.mobilenet_v3_large()
+    mobilenet_v3_small = models.mobilenet_v3_small()
     resnext50_32x4d = models.resnext50_32x4d()
     wide_resnet50_2 = models.wide_resnet50_2()
     mnasnet = models.mnasnet1_0()
@@ -59,7 +62,8 @@ These can be constructed by passing ``pretrained=True``:
     inception = models.inception_v3(pretrained=True)
     googlenet = models.googlenet(pretrained=True)
     shufflenet = models.shufflenet_v2_x1_0(pretrained=True)
-    mobilenet = models.mobilenet_v2(pretrained=True)
+    mobilenet_v2 = models.mobilenet_v2(pretrained=True)
+    mobilenet_v3_large = models.mobilenet_v3_large(pretrained=True)
     resnext50_32x4d = models.resnext50_32x4d(pretrained=True)
     wide_resnet50_2 = models.wide_resnet50_2(pretrained=True)
     mnasnet = models.mnasnet1_0(pretrained=True)
@@ -137,6 +141,7 @@ Inception v3                      22.55           6.44
 GoogleNet                         30.22           10.47
 ShuffleNet V2                     30.64           11.68
 MobileNet V2                      28.12           9.71
+MobileNet V3 Large                25.96           8.66
 ResNeXt-50-32x4d                  22.38           6.30
 ResNeXt-101-32x8d                 20.69           5.47
 Wide ResNet-50-2                  21.49           5.91
@@ -153,7 +158,8 @@ MNASNet 1.0                       26.49           8.456
 .. _Inception: https://arxiv.org/abs/1512.00567
 .. _GoogLeNet: https://arxiv.org/abs/1409.4842
 .. _ShuffleNet: https://arxiv.org/abs/1807.11164
-.. _MobileNet: https://arxiv.org/abs/1801.04381
+.. _MobileNetV2: https://arxiv.org/abs/1801.04381
+.. _MobileNetV3: https://arxiv.org/abs/1905.02244
 .. _ResNeXt: https://arxiv.org/abs/1611.05431
 .. _MNASNet: https://arxiv.org/abs/1807.11626
 
@@ -230,6 +236,12 @@ MobileNet v2
 -------------
 
 .. autofunction:: mobilenet_v2
+
+MobileNet v3
+-------------
+
+.. autofunction:: mobilenet_v3_large
+.. autofunction:: mobilenet_v3_small
 
 ResNext
 -------

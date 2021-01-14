@@ -53,6 +53,7 @@ class ConvBNActivation(nn.Sequential):
             norm_layer(out_planes),
             activation_layer(inplace=True)
         )
+        self.out_channels = out_planes
 
 
 # necessary for backwards compatibility
@@ -90,6 +91,8 @@ class InvertedResidual(nn.Module):
             norm_layer(oup),
         ])
         self.conv = nn.Sequential(*layers)
+        self.out_channels = oup
+        self.is_strided = stride > 1
 
     def forward(self, x: Tensor) -> Tensor:
         if self.use_res_connect:
