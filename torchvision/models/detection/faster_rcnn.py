@@ -372,7 +372,7 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
 
 
 def fasterrcnn_mobilenet_v3_large(pretrained=False, progress=True, num_classes=91, pretrained_backbone=True,
-                                  trainable_backbone_layers=None, **kwargs):
+                                  trainable_backbone_layers=None, min_size=320, max_size=640, **kwargs):
     """
     Constructs a Faster R-CNN model with a MobileNetV3-Large backbone. It works similarly
     to Faster R-CNN with ResNet-50 FPN backbone. See `fasterrcnn_resnet50_fpn` for more details.
@@ -391,6 +391,8 @@ def fasterrcnn_mobilenet_v3_large(pretrained=False, progress=True, num_classes=9
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
+        min_size (int): minimum size of the image to be rescaled before feeding it to the backbone
+        max_size (int): maximum size of the image to be rescaled before feeding it to the backbone
     """
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 6, 3)
@@ -400,11 +402,11 @@ def fasterrcnn_mobilenet_v3_large(pretrained=False, progress=True, num_classes=9
     backbone = mobilenet_backbone("mobilenet_v3_large", pretrained_backbone, False,
                                   trainable_layers=trainable_backbone_layers)
 
-    anchor_sizes = ((32, 64, 128, 256, 512), )
+    anchor_sizes = ((16, 32, 64, 128, 256), )
     aspect_ratios = ((0.5, 1.0, 2.0), )
 
     model = FasterRCNN(backbone, num_classes, rpn_anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios),
-                       **kwargs)
+                       min_size=min_size, max_size=max_size, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls['fasterrcnn_mobilenet_v3_large_coco'], progress=progress)
         model.load_state_dict(state_dict)
@@ -412,7 +414,7 @@ def fasterrcnn_mobilenet_v3_large(pretrained=False, progress=True, num_classes=9
 
 
 def fasterrcnn_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_classes=91, pretrained_backbone=True,
-                                      trainable_backbone_layers=None, **kwargs):
+                                      trainable_backbone_layers=None, min_size=320, max_size=640, **kwargs):
     """
     Constructs a Faster R-CNN model with a MobileNetV3-Large FPN backbone. It works similarly
     to Faster R-CNN with ResNet-50 FPN backbone. See `fasterrcnn_resnet50_fpn` for more details.
@@ -431,6 +433,8 @@ def fasterrcnn_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_class
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
+        min_size (int): minimum size of the image to be rescaled before feeding it to the backbone
+        max_size (int): maximum size of the image to be rescaled before feeding it to the backbone
     """
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 6, 3)
@@ -440,11 +444,11 @@ def fasterrcnn_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_class
     backbone = mobilenet_backbone("mobilenet_v3_large", pretrained_backbone, True,
                                   trainable_layers=trainable_backbone_layers)
 
-    anchor_sizes = ((32, 64, 128, 256, 512, ), ) * 3
+    anchor_sizes = ((16, 32, 64, 128, 256, ), ) * 3
     aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
 
     model = FasterRCNN(backbone, num_classes, rpn_anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios),
-                       **kwargs)
+                       min_size=min_size, max_size=max_size, **kwargs)
     if pretrained:
         state_dict = load_state_dict_from_url(model_urls['fasterrcnn_mobilenet_v3_large_fpn_coco'], progress=progress)
         model.load_state_dict(state_dict)
