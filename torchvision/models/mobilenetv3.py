@@ -12,9 +12,8 @@ from torchvision.models.mobilenetv2 import _make_divisible, ConvBNActivation
 __all__ = ["MobileNetV3", "mobilenet_v3_large", "mobilenet_v3_small"]
 
 
-# TODO: add pretrained
 model_urls = {
-    "mobilenet_v3_large": None,
+    "mobilenet_v3_large": "https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth",
     "mobilenet_v3_small": None,
 }
 
@@ -48,12 +47,12 @@ class SqueezeExcitation(nn.Module):
 
 class InvertedResidualConfig:
 
-    def __init__(self, input_channels: int, kernel: int, expanded_channels: int, output_channels: int, use_se: bool,
+    def __init__(self, input_channels: int, kernel: int, expanded_channels: int, out_channels: int, use_se: bool,
                  activation: str, stride: int, width_mult: float):
         self.input_channels = self.adjust_channels(input_channels, width_mult)
         self.kernel = kernel
         self.expanded_channels = self.adjust_channels(expanded_channels, width_mult)
-        self.output_channels = self.adjust_channels(output_channels, width_mult)
+        self.out_channels = self.adjust_channels(out_channels, width_mult)
         self.use_se = use_se
         self.use_hs = activation == "HS"
         self.stride = stride
@@ -70,7 +69,7 @@ class InvertedResidual(nn.Module):
         if not (1 <= cnf.stride <= 2):
             raise ValueError('illegal stride value')
 
-        self.use_res_connect = cnf.stride == 1 and cnf.input_channels == cnf.output_channels
+        self.use_res_connect = cnf.stride == 1 and cnf.input_channels == cnf.out_channels
 
         layers: List[nn.Module] = []
         activation_layer = nn.Hardswish if cnf.use_hs else nn.ReLU
@@ -88,10 +87,12 @@ class InvertedResidual(nn.Module):
             layers.append(SqueezeExcitation(cnf.expanded_channels))
 
         # project
-        layers.append(ConvBNActivation(cnf.expanded_channels, cnf.output_channels, kernel_size=1, norm_layer=norm_layer,
+        layers.append(ConvBNActivation(cnf.expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer,
                                        activation_layer=Identity))
 
         self.block = nn.Sequential(*layers)
+        self.out_channels = cnf.out_channels
+        self.is_strided = cnf.stride > 1
 
     def forward(self, input: Tensor) -> Tensor:
         result = self.block(input)
@@ -146,7 +147,7 @@ class MobileNetV3(nn.Module):
             layers.append(block(cnf, norm_layer))
 
         # building last several layers
-        lastconv_input_channels = inverted_residual_setting[-1].output_channels
+        lastconv_input_channels = inverted_residual_setting[-1].out_channels
         lastconv_output_channels = 6 * lastconv_input_channels
         layers.append(ConvBNActivation(lastconv_input_channels, lastconv_output_channels, kernel_size=1,
                                        norm_layer=norm_layer, activation_layer=nn.Hardswish))
@@ -195,7 +196,7 @@ def _mobilenet_v3(
     **kwargs: Any
 ):
     model = MobileNetV3(inverted_residual_setting, last_channel, **kwargs)
-    if pretrained:
+    if pretrained and model_urls[arch] is not None:
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
