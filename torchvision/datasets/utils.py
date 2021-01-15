@@ -42,20 +42,18 @@ def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
     return check_md5(fpath, md5)
 
 
-def _get_redirect_url(url: str, hop_idx: int = 0, max_hops: int = 10) -> str:
+def _get_redirect_url(url: str, max_hops: int = 10) -> str:
     import requests
 
-    if hop_idx >= max_hops:
-        raise RecursionError(f'Too many redirects: {hop_idx} (max. allowed {max_hops})')
+    for hop in range(max_hops + 1):
+        response = requests.get(url)
 
-    response = requests.get(url)
-    if response.url != url and response.url is not None:
-        redirect_url = response.url
-        print(f'Redirecting to {redirect_url}')
+        if response.url == url or response.url is None:
+            return url
 
-        return _get_redirect_url(redirect_url, hop_idx + 1)
+        url = response.url
     else:
-        return url
+        raise RecursionError(f"Too many redirects: {max_hops + 1})")
 
 
 def download_url(
@@ -79,33 +77,35 @@ def download_url(
 
     os.makedirs(root, exist_ok=True)
 
-    # expand redirect chain if needed
-    url = _get_redirect_url(url, max_hops=max_redirect_hops)
-
     # check if file is already present locally
     if check_integrity(fpath, md5):
         print('Using downloaded and verified file: ' + fpath)
-    else:   # download the file
-        try:
-            print('Downloading ' + url + ' to ' + fpath)
+        return
+
+    # expand redirect chain if needed
+    url = _get_redirect_url(url, max_hops=max_redirect_hops)
+
+    # download the file
+    try:
+        print('Downloading ' + url + ' to ' + fpath)
+        urllib.request.urlretrieve(
+            url, fpath,
+            reporthook=gen_bar_updater()
+        )
+    except (urllib.error.URLError, IOError) as e:  # type: ignore[attr-defined]
+        if url[:5] == 'https':
+            url = url.replace('https:', 'http:')
+            print('Failed download. Trying https -> http instead.'
+                  ' Downloading ' + url + ' to ' + fpath)
             urllib.request.urlretrieve(
                 url, fpath,
                 reporthook=gen_bar_updater()
             )
-        except (urllib.error.URLError, IOError) as e:  # type: ignore[attr-defined]
-            if url[:5] == 'https':
-                url = url.replace('https:', 'http:')
-                print('Failed download. Trying https -> http instead.'
-                      ' Downloading ' + url + ' to ' + fpath)
-                urllib.request.urlretrieve(
-                    url, fpath,
-                    reporthook=gen_bar_updater()
-                )
-            else:
-                raise e
-        # check integrity of downloaded file
-        if not check_integrity(fpath, md5):
-            raise RuntimeError("File not found or corrupted.")
+        else:
+            raise e
+    # check integrity of downloaded file
+    if not check_integrity(fpath, md5):
+        raise RuntimeError("File not found or corrupted.")
 
 
 def list_dir(root: str, prefix: bool = False) -> List[str]:
