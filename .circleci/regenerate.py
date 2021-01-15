@@ -19,7 +19,7 @@ import yaml
 import os.path
 
 
-PYTHON_VERSIONS = ["3.6", "3.7", "3.8"]
+PYTHON_VERSIONS = ["3.6", "3.7", "3.8", "3.9"]
 
 
 def build_workflows(prefix='', filter_branch=None, upload=False, indentation=6, windows_latest_only=False):

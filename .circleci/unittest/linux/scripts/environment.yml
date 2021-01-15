@@ -1,6 +1,8 @@
 channels:
   - pytorch
   - defaults
+  # using conda-forge for python v3.9+
+  - conda-forge
 dependencies:
   - numpy
   - pytest
@@ -8,11 +10,11 @@ dependencies:
   - codecov
   - pip
   - libpng
-  - jpeg
+  - jpeg <= 9b
   - ffmpeg=4.2
   - ca-certificates
+  - av
   - pip:
     - future
     - pillow>=4.1.1
     - scipy
-    - av

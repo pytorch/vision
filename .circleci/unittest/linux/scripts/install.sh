@@ -22,8 +22,14 @@ else
     version="$(python -c "print('.'.join(\"${CUDA_VERSION}\".split('.')[:2]))")"
     cudatoolkit="cudatoolkit=${version}"
 fi
+
+CONDA_CHANNEL_FLAGS=""
+if [[ "$(python --version)" = *3.9* ]]; then
+  CONDA_CHANNEL_FLAGS="-c=conda-forge"
+fi
+
 printf "Installing PyTorch with %s\n" "${cudatoolkit}"
-conda install -y -c "pytorch-${UPLOAD_CHANNEL}" pytorch "${cudatoolkit}"
+conda install -y -c "pytorch-${UPLOAD_CHANNEL}" ${CONDA_CHANNEL_FLAGS} pytorch "${cudatoolkit}"
 
 printf "* Installing torchvision\n"
 python setup.py develop
