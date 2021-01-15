@@ -57,7 +57,7 @@ def _get_redirect_url(url: str, max_hops: int = 10) -> str:
 
 
 def download_url(
-    url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None, max_redirect_hops: int = 10
+    url: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None, max_redirect_hops: int = 3
 ) -> None:
     """Download a file from a url and place it in root.
 
