@@ -12,7 +12,8 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHe
 from torchvision.models.detection.mask_rcnn import MaskRCNNHeads, MaskRCNNPredictor
 
 from collections import OrderedDict
-
+from torchvision import transforms as T
+from torchvision.io.image import decode_jpeg
 # onnxruntime requires python 3.5 or above
 try:
     import onnxruntime
@@ -39,7 +40,7 @@ class ONNXExporterTester(unittest.TestCase):
         else:
             torch_onnx_input = inputs_list[0]
         # export to onnx with the first input
-        torch.onnx.export(model, torch_onnx_input, onnx_io,
+        torch.onnx.export(model, torch_onnx_input, onnx_io, verbose=True,
                           do_constant_folding=do_constant_folding, opset_version=_onnx_opset_version,
                           dynamic_axes=dynamic_axes, input_names=input_names, output_names=output_names)
         # validate the exported model with onnx runtime
@@ -80,6 +81,14 @@ class ONNXExporterTester(unittest.TestCase):
                     self.assertIn("(0.00%)", str(error), str(error))
                 else:
                     raise
+
+    def test_decode(self):
+        class Module(torch.nn.Module):
+            def forward(self, x):
+                return decode_jpeg(x)
+        
+        x = torch.randn(2, 3, 225, 225)
+        self.run_model(Module(), (x,))
 
     def test_nms(self):
         boxes = torch.rand(5, 4)
@@ -486,6 +495,23 @@ class ONNXExporterTester(unittest.TestCase):
                        output_names=["outputs1", "outputs2", "outputs3", "outputs4"],
                        dynamic_axes={"images_tensors": [0, 1, 2]},
                        tolerate_small_mismatch=True)
+
+
+   # from torchvision import transforms as T
+    def test_resize(self):
+        x = torch.rand(3, 32, 46)
+        m = T.Resize(size=38)
+        self.run_model(m, (x,))
+
+    def test_pad(self):
+        x = torch.rand(3, 32, 46)
+        m = T.Pad(2)
+        self.run_model(m, (x,))
+  
+    def test_gauss(self):
+        x = torch.randn(3, 32, 46)
+        m = T.GaussianBlur([1, 1])
+        self.run_model(m, (x,))
 
     def test_shufflenet_v2_dynamic_axes(self):
         model = models.shufflenet_v2_x0_5(pretrained=True)
