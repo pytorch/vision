@@ -402,7 +402,7 @@ def fasterrcnn_mobilenet_v3_large(pretrained=False, progress=True, num_classes=9
     backbone = mobilenet_backbone("mobilenet_v3_large", pretrained_backbone, False,
                                   trainable_layers=trainable_backbone_layers)
 
-    anchor_sizes = ((16, 32, 64, 128, 256), )
+    anchor_sizes = ((32, 64, 128, 256, 512, ), )
     aspect_ratios = ((0.5, 1.0, 2.0), )
 
     model = FasterRCNN(backbone, num_classes, rpn_anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios),
@@ -444,7 +444,7 @@ def fasterrcnn_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_class
     backbone = mobilenet_backbone("mobilenet_v3_large", pretrained_backbone, True,
                                   trainable_layers=trainable_backbone_layers)
 
-    anchor_sizes = ((16, 32, 64, 128, 256, ), ) * 3
+    anchor_sizes = ((32, 64, 128, 256, 512, ), ) * 3
     aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
 
     model = FasterRCNN(backbone, num_classes, rpn_anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios),
