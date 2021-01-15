@@ -45,7 +45,7 @@ def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
 def _get_redirect_url(url: str, max_hops: int = 10) -> str:
     import requests
 
-    for hop in range(max_hops):
+    for hop in range(max_hops + 1):
         response = requests.get(url)
 
         if response.url == url or response.url is None:
@@ -53,7 +53,7 @@ def _get_redirect_url(url: str, max_hops: int = 10) -> str:
 
         url = response.url
     else:
-        raise RecursionError(f"Too many redirects: {max_hops})")
+        raise RecursionError(f"Too many redirects: {max_hops + 1})")
 
 
 def download_url(
