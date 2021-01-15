@@ -51,7 +51,6 @@ def _get_redirect_url(url: str, hop_idx: int = 0, max_hops: int = 10) -> str:
     response = requests.get(url)
     if response.url != url and response.url is not None:
         redirect_url = response.url
-        print(f'Redirecting to {redirect_url}')
 
         return _get_redirect_url(redirect_url, hop_idx + 1)
     else:
