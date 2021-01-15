@@ -42,19 +42,18 @@ def check_integrity(fpath: str, md5: Optional[str] = None) -> bool:
     return check_md5(fpath, md5)
 
 
-def _get_redirect_url(url: str, hop_idx: int = 0, max_hops: int = 10) -> str:
+def _get_redirect_url(url: str, max_hops: int = 10) -> str:
     import requests
 
-    if hop_idx >= max_hops:
-        raise RecursionError(f'Too many redirects: {hop_idx} (max. allowed {max_hops})')
+    for hop in range(max_hops):
+        response = requests.get(url)
 
-    response = requests.get(url)
-    if response.url != url and response.url is not None:
-        redirect_url = response.url
+        if response.url == url or response.url is None:
+            return url
 
-        return _get_redirect_url(redirect_url, hop_idx + 1)
+        url = response.url
     else:
-        return url
+        raise RecursionError(f"Too many redirects: {max_hops})")
 
 
 def download_url(
