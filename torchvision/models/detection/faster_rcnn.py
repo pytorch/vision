@@ -1,10 +1,7 @@
-from collections import OrderedDict
-
 import torch
 from torch import nn
 import torch.nn.functional as F
 
-from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops import MultiScaleRoIAlign
 
 from ._utils import overwrite_eps
@@ -19,7 +16,7 @@ from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers, mob
 
 
 __all__ = [
-    "FasterRCNN", "fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large", "fasterrcnn_mobilenet_v3_large_fpn"
+    "FasterRCNN", "fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_fpn"
 ]
 
 
@@ -291,8 +288,7 @@ class FastRCNNPredictor(nn.Module):
 model_urls = {
     'fasterrcnn_resnet50_fpn_coco':
         'https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth',
-    'fasterrcnn_mobilenet_v3_large_coco': None,
-    'fasterrcnn_mobilenet_v3_large_fpn_coco': None,
+    'fasterrcnn_mobilenet_v3_large_fpn_coco': None,  # TODO: Add the final model url
 }
 
 
@@ -368,48 +364,6 @@ def fasterrcnn_resnet50_fpn(pretrained=False, progress=True,
                                               progress=progress)
         model.load_state_dict(state_dict)
         overwrite_eps(model, 0.0)
-    return model
-
-
-def fasterrcnn_mobilenet_v3_large(pretrained=False, progress=True, num_classes=91, pretrained_backbone=True,
-                                  trainable_backbone_layers=None, min_size=320, max_size=640, **kwargs):
-    """
-    Constructs a Faster R-CNN model with a MobileNetV3-Large backbone. It works similarly
-    to Faster R-CNN with ResNet-50 FPN backbone. See `fasterrcnn_resnet50_fpn` for more details.
-
-    Example::
-
-        >>> model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large(pretrained=True)
-        >>> model.eval()
-        >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
-        >>> predictions = model(x)
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
-        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
-        min_size (int): minimum size of the image to be rescaled before feeding it to the backbone
-        max_size (int): maximum size of the image to be rescaled before feeding it to the backbone
-    """
-    trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 6, 3)
-
-    if pretrained:
-        pretrained_backbone = False
-    backbone = mobilenet_backbone("mobilenet_v3_large", pretrained_backbone, False,
-                                  trainable_layers=trainable_backbone_layers)
-
-    anchor_sizes = ((32, 64, 128, 256, 512, ), )
-    aspect_ratios = ((0.5, 1.0, 2.0), )
-
-    model = FasterRCNN(backbone, num_classes, rpn_anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios),
-                       min_size=min_size, max_size=max_size, **kwargs)
-    if pretrained:
-        state_dict = load_state_dict_from_url(model_urls['fasterrcnn_mobilenet_v3_large_coco'], progress=progress)
-        model.load_state_dict(state_dict)
     return model
 
 
