@@ -106,6 +106,6 @@ class GeneralizedRCNN(nn.Module):
             if not self._has_warned:
                 warnings.warn("RCNN always returns a (Losses, Detections) tuple in scripting")
                 self._has_warned = True
-            return (losses, detections)
+            return losses, detections
         else:
             return self.eager_outputs(losses, detections)
