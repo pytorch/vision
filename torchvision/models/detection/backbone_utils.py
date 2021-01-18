@@ -138,12 +138,12 @@ def mobilenet_backbone(
 
     # Gather the indeces of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
     # The first and last blocks are always included because they are the C0 (conv1) and Cn.
-    stage_indeces = [0] + [i for i, b in enumerate(backbone) if getattr(b, "is_strided", False)] + [len(backbone) - 1]
-    num_stages = len(stage_indeces)
+    stage_indices = [0] + [i for i, b in enumerate(backbone) if getattr(b, "is_strided", False)] + [len(backbone) - 1]
+    num_stages = len(stage_indices)
 
     # find the index of the layer from which we wont freeze
     assert 0 <= trainable_layers <= num_stages
-    freeze_before = num_stages if trainable_layers == 0 else stage_indeces[num_stages - trainable_layers]
+    freeze_before = num_stages if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     # freeze layers only if pretrained backbone is used
     for b in backbone[:freeze_before]:
@@ -158,9 +158,9 @@ def mobilenet_backbone(
         if returned_layers is None:
             returned_layers = [num_stages - 2, num_stages - 1]
         assert min(returned_layers) >= 0 and max(returned_layers) < num_stages
-        return_layers = {f'{stage_indeces[k]}': str(v) for v, k in enumerate(returned_layers)}
+        return_layers = {f'{stage_indices[k]}': str(v) for v, k in enumerate(returned_layers)}
 
-        in_channels_list = [backbone[stage_indeces[i]].out_channels for i in returned_layers]
+        in_channels_list = [backbone[stage_indices[i]].out_channels for i in returned_layers]
         return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks)
     else:
         m = nn.Sequential(
