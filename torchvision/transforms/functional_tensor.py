@@ -46,7 +46,6 @@ def _max_value(dtype: torch.dtype) -> float:
             bits *= 2
         else:
             return max_value.item()
-    return max_value.item()
 
 
 def _assert_channels(img: Tensor, permitted: List[int]) -> None:

@@ -795,7 +795,6 @@ class RoIHeads(nn.Module):
                 mask_features = self.mask_head(mask_features)
                 mask_logits = self.mask_predictor(mask_features)
             else:
-                mask_logits = torch.tensor(0)
                 raise Exception("Expected mask_roi_pool to be not None")
 
             loss_mask = {}
