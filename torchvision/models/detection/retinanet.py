@@ -12,14 +12,14 @@ from ..utils import load_state_dict_from_url
 from . import _utils as det_utils
 from .anchor_utils import AnchorGenerator
 from .transform import GeneralizedRCNNTransform
-from .backbone_utils import resnet_fpn_backbone, _validate_resnet_trainable_layers
+from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers
 from ...ops.feature_pyramid_network import LastLevelP6P7
 from ...ops import sigmoid_focal_loss
 from ...ops import boxes as box_ops
 
 
 __all__ = [
-    "RetinaNet", "retinanet_resnet50_fpn",
+    "RetinaNet", "retinanet_resnet50_fpn"
 ]
 
 
@@ -605,9 +605,8 @@ def retinanet_resnet50_fpn(pretrained=False, progress=True,
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
-    # check default parameters and by default set it to 3 if possible
-    trainable_backbone_layers = _validate_resnet_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers)
+    trainable_backbone_layers = _validate_trainable_layers(
+        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3)
 
     if pretrained:
         # no need to download the backbone if pretrained is set
