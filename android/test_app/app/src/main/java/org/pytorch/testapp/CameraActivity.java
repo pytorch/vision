@@ -271,8 +271,8 @@ public class CameraActivity extends AppCompatActivity {
       for (int x = 0; x < tensorSize; x++) {
         final int centerCropX = (int) Math.floor(x * scale);
         final int centerCropY = (int) Math.floor(y * scale);
-        int srcX = centerCropY + offsetX;
-        int srcY = (minSizeAfterRtn - 1) - centerCropX + offsetY;
+        int srcX = centerCropX + offsetX;
+        int srcY = centerCropY + offsetY;
 
         if (rotationDegrees == 90) {
           srcX = offsetX + centerCropY;
