@@ -9,10 +9,10 @@ set(build_DIR ${CMAKE_SOURCE_DIR}/build)
 set(root_DIR ${CMAKE_CURRENT_LIST_DIR}/..)
 
 file(GLOB VISION_SRCS
-    ../../torchvision/csrc/cpu/*.h
-    ../../torchvision/csrc/cpu/*.cpp
-    ../../torchvision/csrc/*.h
-    ../../torchvision/csrc/*.cpp)
+    ../../torchvision/csrc/ops/cpu/*.h
+    ../../torchvision/csrc/ops/cpu/*.cpp
+    ../../torchvision/csrc/ops/*.h
+    ../../torchvision/csrc/ops/*.cpp)
 
 add_library(${TARGET} SHARED
   ${VISION_SRCS}
