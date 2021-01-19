@@ -37,7 +37,7 @@ script_model_unwrapper = {
     'googlenet': lambda x: x.logits,
     'inception_v3': lambda x: x.logits,
     "fasterrcnn_resnet50_fpn": lambda x: x[1],
-    "fasterrcnn_mobilenet_v3_large_fpn": lambda x: x[1],
+    "fasterrcnn_mobilenet_v3_large_320_fpn": lambda x: x[1],
     "maskrcnn_resnet50_fpn": lambda x: x[1],
     "keypointrcnn_resnet50_fpn": lambda x: x[1],
     "retinanet_resnet50_fpn": lambda x: x[1],

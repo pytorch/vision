@@ -97,7 +97,7 @@ class Tester(unittest.TestCase):
         self.assertEqual(labels[0].dtype, torch.int64)
 
     def test_forward_negative_sample_frcnn(self):
-        for name in ["fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_fpn"]:
+        for name in ["fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_320_fpn"]:
             model = torchvision.models.detection.__dict__[name](
                 num_classes=2, min_size=100, max_size=100)
 
