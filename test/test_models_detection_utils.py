@@ -36,17 +36,17 @@ class Tester(unittest.TestCase):
 
     def test_validate_resnet_inputs_detection(self):
         # default number of backbone layers to train
-        ret = backbone_utils._validate_resnet_trainable_layers(
-            pretrained=True, trainable_backbone_layers=None)
+        ret = backbone_utils._validate_trainable_layers(
+            pretrained=True, trainable_backbone_layers=None, max_value=5, default_value=3)
         self.assertEqual(ret, 3)
         # can't go beyond 5
         with self.assertRaises(AssertionError):
-            ret = backbone_utils._validate_resnet_trainable_layers(
-                pretrained=True, trainable_backbone_layers=6)
+            ret = backbone_utils._validate_trainable_layers(
+                pretrained=True, trainable_backbone_layers=6, max_value=5, default_value=3)
         # if not pretrained, should use all trainable layers and warn
         with self.assertWarns(UserWarning):
-            ret = backbone_utils._validate_resnet_trainable_layers(
-                pretrained=False, trainable_backbone_layers=0)
+            ret = backbone_utils._validate_trainable_layers(
+                pretrained=False, trainable_backbone_layers=0, max_value=5, default_value=3)
         self.assertEqual(ret, 5)
 
     def test_transform_copy_targets(self):
