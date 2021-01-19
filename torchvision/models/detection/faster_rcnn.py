@@ -16,7 +16,8 @@ from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers, mob
 
 
 __all__ = [
-    "FasterRCNN", "fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_320_fpn"
+    "FasterRCNN", "fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_320_fpn",
+    "fasterrcnn_mobilenet_v3_large_fpn"
 ]
 
 
@@ -290,6 +291,8 @@ model_urls = {
         'https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth',
     'fasterrcnn_mobilenet_v3_large_320_fpn_coco':
         'https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth',
+    'fasterrcnn_mobilenet_v3_large_fpn_coco':
+        'https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth'
 }
 
 
@@ -394,7 +397,7 @@ def _fasterrcnn_mobilenet_v3_large_fpn(weights_name, pretrained=False, progress=
 def fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=False, progress=True, num_classes=91, pretrained_backbone=True,
                                           trainable_backbone_layers=None, **kwargs):
     """
-    Constructs a Faster R-CNN model with a MobileNetV3-Large FPN backbone tunned for mobile use-cases.
+    Constructs a low resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone tunned for mobile use-cases.
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See `fasterrcnn_resnet50_fpn` for more details.
 
     Example::
@@ -418,6 +421,38 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=False, progress=True, num_c
         "max_size": 640,
         "rpn_pre_nms_top_n_test": 150,
         "rpn_post_nms_top_n_test": 150,
+        "rpn_score_thresh": 0.05,
+    }
+
+    kwargs = {**defaults, **kwargs}
+    return _fasterrcnn_mobilenet_v3_large_fpn(weights_name, pretrained=pretrained, progress=progress,
+                                              num_classes=num_classes, pretrained_backbone=pretrained_backbone,
+                                              trainable_backbone_layers=trainable_backbone_layers, **kwargs)
+
+
+def fasterrcnn_mobilenet_v3_large_fpn(pretrained=False, progress=True, num_classes=91, pretrained_backbone=True,
+                                      trainable_backbone_layers=None, **kwargs):
+    """
+    Constructs a high resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone.
+    It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See `fasterrcnn_resnet50_fpn` for more details.
+
+    Example::
+
+        >>> model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn(pretrained=True)
+        >>> model.eval()
+        >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
+        >>> predictions = model(x)
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        progress (bool): If True, displays a progress bar of the download to stderr
+        num_classes (int): number of output classes of the model (including the background)
+        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
+        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
+    """
+    weights_name = "fasterrcnn_mobilenet_v3_large_fpn_coco"
+    defaults = {
         "rpn_score_thresh": 0.05,
     }
 
