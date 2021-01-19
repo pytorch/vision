@@ -107,8 +107,10 @@ class ModelTester(TestCase):
         if "retinanet" in name:
             # Reduce the default threshold to ensure the returned boxes are not empty.
             kwargs["score_thresh"] = 0.01
-        elif "fasterrcnn_mobilenet" in name:
+        elif "fasterrcnn_mobilenet_v3_large_fpn" in name:
             kwargs["box_score_thresh"] = 0.02076
+        elif "fasterrcnn_mobilenet_v3_large_320_fpn" in name:
+            kwargs["box_score_thresh"] = 0.0208
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False, **kwargs)
         model.eval().to(device=dev)
         input_shape = (3, 300, 300)
