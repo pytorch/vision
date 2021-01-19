@@ -303,7 +303,7 @@ def _read_video_timestamps_from_file(filename):
         1,  # audio_timebase_den
     )
     _vframes, vframe_pts, vtimebase, vfps, vduration, \
-        _aframes, aframe_pts, atimebase, asample_rate, aduration = (result)
+        _aframes, aframe_pts, atimebase, asample_rate, aduration = result
     info = _fill_info(vtimebase, vfps, vduration, atimebase, asample_rate, aduration)
 
     vframe_pts = vframe_pts.numpy().tolist()
