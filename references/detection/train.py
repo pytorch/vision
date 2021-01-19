@@ -92,9 +92,12 @@ def main(args):
         collate_fn=utils.collate_fn)
 
     print("Creating model")
-    kwargs = {}
+    kwargs = {
+        "trainable_backbone_layers": args.trainable_backbone_layers
+    }
     if "rcnn" in args.model:
-        kwargs["rpn_score_thresh"] = 0.0
+        if args.rpn_score_thresh is not None:
+            kwargs["rpn_score_thresh"] = args.rpn_score_thresh
     model = torchvision.models.detection.__dict__[args.model](num_classes=num_classes, pretrained=args.pretrained,
                                                               **kwargs)
     model.to(device)
@@ -177,6 +180,9 @@ if __name__ == "__main__":
     parser.add_argument('--resume', default='', help='resume from checkpoint')
     parser.add_argument('--start_epoch', default=0, type=int, help='start epoch')
     parser.add_argument('--aspect-ratio-group-factor', default=3, type=int)
+    parser.add_argument('--rpn-score-thresh', default=None, type=float, help='rpn score threshold for faster-rcnn')
+    parser.add_argument('--trainable-backbone-layers', default=None, type=int,
+                        help='number of trainable layers of backbone')
     parser.add_argument(
         "--test-only",
         dest="test_only",

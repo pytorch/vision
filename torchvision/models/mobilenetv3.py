@@ -18,16 +18,6 @@ model_urls = {
 }
 
 
-class Identity(nn.Module):
-
-    def __init__(self, inplace: bool = False):
-        super().__init__()
-        self.inplace = inplace
-
-    def forward(self, input: Tensor) -> Tensor:
-        return input
-
-
 class SqueezeExcitation(nn.Module):
 
     def __init__(self, input_channels: int, squeeze_factor: int = 4):
@@ -88,7 +78,7 @@ class InvertedResidual(nn.Module):
 
         # project
         layers.append(ConvBNActivation(cnf.expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer,
-                                       activation_layer=Identity))
+                                       activation_layer=nn.Identity))
 
         self.block = nn.Sequential(*layers)
         self.out_channels = cnf.out_channels
