@@ -1105,6 +1105,7 @@ workflows:
           python_version: '3.8'
       - python_lint
       - python_type_check
+      - docstring_format_check
       - clang_format
       - torchhub_test
       - torch_onnx_test
@@ -1221,6 +1222,7 @@ workflows:
       - circleci_consistency
       - python_lint
       - python_type_check
+      - docstring_format_check
       - clang_format
       - torchhub_test
       - torch_onnx_test
