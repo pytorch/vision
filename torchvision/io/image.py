@@ -71,9 +71,6 @@ def read_file(path: str) -> torch.Tensor:
     Reads and outputs the bytes contents of a file as a uint8 Tensor
     with one dimension.
 
-    Parameters
-    ----------
-
     Args:
         path (str): the path to the file to be read
 
