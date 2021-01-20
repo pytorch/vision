@@ -358,13 +358,15 @@ models return the predictions of the following classes:
 Here are the summary of the accuracies for the models trained on
 the instances set of COCO train2017 and evaluated on COCO val2017.
 
-================================  =======  ========  ===========
-Network                           box AP   mask AP   keypoint AP
-================================  =======  ========  ===========
-Faster R-CNN ResNet-50 FPN        37.0     -         -
-RetinaNet ResNet-50 FPN           36.4     -         -
-Mask R-CNN ResNet-50 FPN          37.9     34.6      -
-================================  =======  ========  ===========
+======================================  =======  ========  ===========
+Network                                 box AP   mask AP   keypoint AP
+======================================  =======  ========  ===========
+Faster R-CNN ResNet-50 FPN              37.0     -         -
+Faster R-CNN MobileNetV3-Large FPN      32.8     -         -
+Faster R-CNN MobileNetV3-Large 320 FPN  22.8     -         -
+RetinaNet ResNet-50 FPN                 36.4     -         -
+Mask R-CNN ResNet-50 FPN                37.9     34.6      -
+======================================  =======  ========  ===========
 
 For person keypoint detection, the accuracies for the pre-trained
 models are as follows
@@ -414,20 +416,24 @@ For test time, we report the time for the model evaluation and postprocessing
 (including mask pasting in image), but not the time for computing the
 precision-recall.
 
-==============================  ===================  ==================  ===========
-Network                         train time (s / it)  test time (s / it)  memory (GB)
-==============================  ===================  ==================  ===========
-Faster R-CNN ResNet-50 FPN      0.2288               0.0590              5.2
-RetinaNet ResNet-50 FPN         0.2514               0.0939              4.1
-Mask R-CNN ResNet-50 FPN        0.2728               0.0903              5.4
-Keypoint R-CNN ResNet-50 FPN    0.3789               0.1242              6.8
-==============================  ===================  ==================  ===========
+======================================  ===================  ==================  ===========
+Network                                 train time (s / it)  test time (s / it)  memory (GB)
+======================================  ===================  ==================  ===========
+Faster R-CNN ResNet-50 FPN              0.2288               0.0590              5.2
+Faster R-CNN MobileNetV3-Large FPN      0.1020               0.0415              1.0
+Faster R-CNN MobileNetV3-Large 320 FPN  0.0978               0.0376              0.6
+RetinaNet ResNet-50 FPN                 0.2514               0.0939              4.1
+Mask R-CNN ResNet-50 FPN                0.2728               0.0903              5.4
+Keypoint R-CNN ResNet-50 FPN            0.3789               0.1242              6.8
+======================================  ===================  ==================  ===========
 
 
 Faster R-CNN
 ------------
 
 .. autofunction:: torchvision.models.detection.fasterrcnn_resnet50_fpn
+.. autofunction:: torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn
+.. autofunction:: torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn
 
 
 RetinaNet
