@@ -1,4 +1,4 @@
-from typing import Union, Optional, List, Tuple, Text, BinaryIO, Any
+from typing import Union, Optional, List, Tuple, Text, BinaryIO
 import pathlib
 import torch
 import math
@@ -19,7 +19,7 @@ def make_grid(
     value_range: Optional[Tuple[int, int]] = None,
     scale_each: bool = False,
     pad_value: int = 0,
-    **kwargs: Any
+    **kwargs
 ) -> torch.Tensor:
     """Make a grid of images.
 
