@@ -1,9 +1,6 @@
 torchvision
 ===========
 
-.. image:: https://travis-ci.org/pytorch/vision.svg?branch=master
-    :target: https://travis-ci.org/pytorch/vision
-
 .. image:: https://codecov.io/gh/pytorch/vision/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/pytorch/vision
 
