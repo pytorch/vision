@@ -37,6 +37,8 @@ script_model_unwrapper = {
     'googlenet': lambda x: x.logits,
     'inception_v3': lambda x: x.logits,
     "fasterrcnn_resnet50_fpn": lambda x: x[1],
+    "fasterrcnn_mobilenet_v3_large_fpn": lambda x: x[1],
+    "fasterrcnn_mobilenet_v3_large_320_fpn": lambda x: x[1],
     "maskrcnn_resnet50_fpn": lambda x: x[1],
     "keypointrcnn_resnet50_fpn": lambda x: x[1],
     "retinanet_resnet50_fpn": lambda x: x[1],
@@ -105,6 +107,11 @@ class ModelTester(TestCase):
         if "retinanet" in name:
             # Reduce the default threshold to ensure the returned boxes are not empty.
             kwargs["score_thresh"] = 0.01
+        elif "fasterrcnn_mobilenet_v3_large" in name:
+            kwargs["box_score_thresh"] = 0.02076
+            if "fasterrcnn_mobilenet_v3_large_320_fpn" in name:
+                kwargs["rpn_pre_nms_top_n_test"] = 1000
+                kwargs["rpn_post_nms_top_n_test"] = 1000
         model = models.detection.__dict__[name](num_classes=50, pretrained_backbone=False, **kwargs)
         model.eval().to(device=dev)
         input_shape = (3, 300, 300)
@@ -275,16 +282,17 @@ class ModelTester(TestCase):
         out = model(x)
         self.assertEqual(out.shape[-1], 1000)
 
-    def test_mobilenetv2_norm_layer(self):
-        model = models.__dict__["mobilenet_v2"]()
-        self.assertTrue(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
+    def test_mobilenet_norm_layer(self):
+        for name in ["mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"]:
+            model = models.__dict__[name]()
+            self.assertTrue(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
 
-        def get_gn(num_channels):
-            return nn.GroupNorm(32, num_channels)
+            def get_gn(num_channels):
+                return nn.GroupNorm(32, num_channels)
 
-        model = models.__dict__["mobilenet_v2"](norm_layer=get_gn)
-        self.assertFalse(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
-        self.assertTrue(any(isinstance(x, nn.GroupNorm) for x in model.modules()))
+            model = models.__dict__[name](norm_layer=get_gn)
+            self.assertFalse(any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
+            self.assertTrue(any(isinstance(x, nn.GroupNorm) for x in model.modules()))
 
     def test_inception_v3_eval(self):
         # replacement for models.inception_v3(pretrained=True) that does not download weights

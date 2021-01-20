@@ -53,6 +53,16 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
      --lr-step-size 1 --lr-gamma 0.98
 ```
 
+
+### MobileNetV3 Large
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
+     --model mobilenet_v3_large --epochs 600 --opt rmsprop --batch-size 128 --lr 0.064\ 
+     --wd 0.00001 --lr-step-size 2 --lr-gamma 0.973 --auto-augment imagenet --random-erase 0.2
+```
+
+Then we averaged the parameters of the last 3 checkpoints that improved the Acc@1. See [#3182](https://github.com/pytorch/vision/pull/3182) for details.
+
 ## Mixed precision training
 Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [NVIDIA Apex extension](https://github.com/NVIDIA/apex).
 

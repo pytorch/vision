@@ -192,7 +192,6 @@ def read_info_file(data_dir: str, info_file: str) -> torch.Tensor:
     """Return a Tensor containing the list of labels
        Read the file and keep only the ID of the 3D point.
     """
-    labels = []
     with open(os.path.join(data_dir, info_file), 'r') as f:
         labels = [int(line.split()[0]) for line in f]
     return torch.LongTensor(labels)

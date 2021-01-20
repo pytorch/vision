@@ -44,7 +44,7 @@ class Tester(unittest.TestCase):
             rpn_anchor_generator, rpn_head,
             0.5, 0.3,
             256, 0.5,
-            2000, 2000, 0.7)
+            2000, 2000, 0.7, 0.05)
 
         labels, matched_gt_boxes = head.assign_targets_to_anchors(anchors, targets)
 
@@ -97,14 +97,16 @@ class Tester(unittest.TestCase):
         self.assertEqual(labels[0].dtype, torch.int64)
 
     def test_forward_negative_sample_frcnn(self):
-        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(
-            num_classes=2, min_size=100, max_size=100)
+        for name in ["fasterrcnn_resnet50_fpn", "fasterrcnn_mobilenet_v3_large_fpn",
+                     "fasterrcnn_mobilenet_v3_large_320_fpn"]:
+            model = torchvision.models.detection.__dict__[name](
+                num_classes=2, min_size=100, max_size=100)
 
-        images, targets = self._make_empty_sample()
-        loss_dict = model(images, targets)
+            images, targets = self._make_empty_sample()
+            loss_dict = model(images, targets)
 
-        self.assertEqual(loss_dict["loss_box_reg"], torch.tensor(0.))
-        self.assertEqual(loss_dict["loss_rpn_box_reg"], torch.tensor(0.))
+            self.assertEqual(loss_dict["loss_box_reg"], torch.tensor(0.))
+            self.assertEqual(loss_dict["loss_rpn_box_reg"], torch.tensor(0.))
 
     def test_forward_negative_sample_mrcnn(self):
         model = torchvision.models.detection.maskrcnn_resnet50_fpn(
@@ -130,7 +132,7 @@ class Tester(unittest.TestCase):
 
     def test_forward_negative_sample_retinanet(self):
         model = torchvision.models.detection.retinanet_resnet50_fpn(
-            num_classes=2, min_size=100, max_size=100)
+            num_classes=2, min_size=100, max_size=100, pretrained_backbone=False)
 
         images, targets = self._make_empty_sample()
         loss_dict = model(images, targets)
