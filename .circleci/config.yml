@@ -106,6 +106,20 @@ jobs:
             pip install --user --progress-bar off flake8 typing
             flake8 --config=setup.cfg .
 
+  python_type_check:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            sudo apt-get update -y
+            sudo apt install -y libturbojpeg-dev
+            pip install --user --progress-bar off numpy mypy
+            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            pip install --user --progress-bar off --editable .
+            mypy --config-file mypy.ini
+            
   docstring_format_check:
     # We just check for the
     # Parameters
@@ -123,20 +137,6 @@ jobs:
               echo "Bad docstring format. Please use the Args: syntax to specify arguments"
               exit 1
             fi
-
-  python_type_check:
-    docker:
-      - image: circleci/python:3.7
-    steps:
-      - checkout
-      - run:
-          command: |
-            sudo apt-get update -y
-            sudo apt install -y libturbojpeg-dev
-            pip install --user --progress-bar off numpy mypy
-            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-            pip install --user --progress-bar off --editable .
-            mypy --config-file mypy.ini
 
   clang_format:
     docker:

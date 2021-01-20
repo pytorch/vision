@@ -120,6 +120,24 @@ jobs:
             pip install --user --progress-bar off --editable .
             mypy --config-file mypy.ini
 
+  docstring_format_check:
+    # We just check for the
+    # Parameters
+    # ----------
+    # syntax and error if there's a match
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            match=`git grep -A 1 Parameters | grep "\-\-\-"`
+            if [ ! -z "$match" ]
+            then
+              echo "Bad docstring format. Please use the Args: syntax to specify arguments"
+              exit 1
+            fi
+
   clang_format:
     docker:
       - image: circleci/python:3.7
