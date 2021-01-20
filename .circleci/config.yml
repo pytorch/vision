@@ -119,7 +119,7 @@ jobs:
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             pip install --user --progress-bar off --editable .
             mypy --config-file mypy.ini
-            
+
   docstring_format_check:
     # We just check for the
     # Parameters
