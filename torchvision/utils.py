@@ -49,10 +49,6 @@ def make_grid(
     if "range" in kwargs.keys():
         warning = "range will be deprecated, please use value_range instead."
         warnings.warn(warning)
-
-    if kwargs["range"] is not None:
-        assert isinstance(kwargs["range"], tuple), "range has to be a tuple (min, max) \
-        if specified. min and max are numbers"
         value_range = kwargs["range"]
 
     # if list of tensors, convert to a 4D mini-batch Tensor
