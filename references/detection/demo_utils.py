@@ -68,7 +68,8 @@ class PennFudanDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         # load images and masks
-        img_path = os.path.join(self.root, "PNGImages", self.imgs[idx])
+        img_name = self.imgs[idx]
+        img_path = os.path.join(self.root, "PNGImages", img_name)
         mask_path = os.path.join(self.root, "PedMasks", self.masks[idx])
         img = Image.open(img_path).convert("RGB")
         # note that we haven't converted the mask to RGB,
@@ -118,7 +119,7 @@ class PennFudanDataset(torch.utils.data.Dataset):
         if self.transforms is not None:
             img, target = self.transforms(img, target)
 
-        return img, target
+        return img, target, img_name
 
     def __len__(self):
         return len(self.imgs)
