@@ -121,10 +121,6 @@ jobs:
             mypy --config-file mypy.ini
 
   docstring_format_check:
-    # We just check for the
-    # Parameters
-    # ----------
-    # syntax and error if there's a match
     docker:
       - image: circleci/python:3.7
     steps:
