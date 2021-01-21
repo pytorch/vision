@@ -58,6 +58,13 @@ class Tester(unittest.TestCase):
         self.assertTrue(torch.equal(targets[0]['boxes'], targets_copy[0]['boxes']))
         self.assertTrue(torch.equal(targets[1]['boxes'], targets_copy[1]['boxes']))
 
+    def test_not_float_normalize(self):
+        transform = GeneralizedRCNNTransform(300, 500, torch.zeros(3), torch.ones(3))
+        image = [torch.randint(0, 255, (3, 200, 300), dtype=torch.uint8)]
+        targets = [{'boxes': torch.rand(3, 4)}]
+        with self.assertRaises(TypeError):
+            out = transform(image, targets)  # noqa: F841
+
 
 if __name__ == '__main__':
     unittest.main()
