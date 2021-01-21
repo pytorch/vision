@@ -131,9 +131,10 @@ jobs:
             if [ ! -z "$match" ]
             then
               echo "Bad docstring format. Please use the Args: syntax to specify arguments"
-              exit 1
+              exit 123
             else
               echo "Docstring format is OK"
+              exit 321
             fi
 
   clang_format:
