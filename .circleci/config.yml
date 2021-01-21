@@ -127,15 +127,7 @@ jobs:
       - checkout
       - run:
           command: |
-            match=`git grep -A 1 Parameters | grep "\-\-\-"`
-            if [ ! -z "$match" ]
-            then
-              echo "Bad docstring format. Please use the Args: syntax to specify arguments"
-              exit 123
-            else
-              echo "Docstring format is OK"
-              exit 321
-            fi
+          .circleci/check_docstring_format.sh
 
   clang_format:
     docker:
