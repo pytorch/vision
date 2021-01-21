@@ -132,6 +132,8 @@ jobs:
             then
               echo "Bad docstring format. Please use the Args: syntax to specify arguments"
               exit 1
+            else
+              echo "Docstring format is OK"
             fi
 
   clang_format:
