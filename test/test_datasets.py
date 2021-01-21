@@ -264,12 +264,15 @@ class Tester(unittest.TestCase):
 
     @unittest.skipIf(not HAS_PYAV, "PyAV unavailable")
     def test_ucf101(self):
+        cached_meta_data = None
         with ucf101_root() as (root, ann_root):
             for split in {True, False}:
                 for fold in range(1, 4):
                     for length in {10, 15, 20}:
-                        dataset = torchvision.datasets.UCF101(
-                            root, ann_root, length, fold=fold, train=split)
+                        dataset = torchvision.datasets.UCF101(root, ann_root, length, fold=fold, train=split,
+                                                              num_workers=2, _precomputed_metadata=cached_meta_data)
+                        if cached_meta_data is None:
+                            cached_meta_data = dataset.metadata
                         self.assertGreater(len(dataset), 0)
 
                         video, audio, label = dataset[0]
