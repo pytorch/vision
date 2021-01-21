@@ -99,9 +99,7 @@ class FeaturePyramidNetwork(nn.Module):
         This is equivalent to self.inner_blocks[idx](x),
         but torchscript doesn't support this yet
         """
-        num_blocks = 0
-        for m in self.inner_blocks:
-            num_blocks += 1
+        num_blocks = len(self.inner_blocks)
         if idx < 0:
             idx += num_blocks
         i = 0
@@ -117,9 +115,7 @@ class FeaturePyramidNetwork(nn.Module):
         This is equivalent to self.layer_blocks[idx](x),
         but torchscript doesn't support this yet
         """
-        num_blocks = 0
-        for m in self.layer_blocks:
-            num_blocks += 1
+        num_blocks = len(self.layer_blocks)
         if idx < 0:
             idx += num_blocks
         i = 0
