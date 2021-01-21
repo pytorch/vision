@@ -22,7 +22,7 @@ at::Tensor nms_autocast(
 } // namespace
 
 TORCH_LIBRARY_IMPL(torchvision, Autocast, m) {
-  m.impl("nms", nms_autocast);
+  m.impl(TORCH_SELECTIVE_NAME("torchvision::nms"), TORCH_FN(nms_autocast));
 }
 
 } // namespace ops
