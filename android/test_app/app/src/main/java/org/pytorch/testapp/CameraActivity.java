@@ -58,6 +58,7 @@ public class CameraActivity extends AppCompatActivity {
   private static final float BBOX_SCORE_DRAW_THRESHOLD = 0.5f;
   private static final String TAG = BuildConfig.LOGCAT_TAG;
   private static final int TEXT_TRIM_SIZE = 4096;
+  private static final int RGB_MAX_CHANNEL_VALUE = 262143;
 
   private static final int REQUEST_CODE_CAMERA_PERMISSION = 200;
   private static final String[] PERMISSIONS = {Manifest.permission.CAMERA};
@@ -260,11 +261,10 @@ public class CameraActivity extends AppCompatActivity {
 
     int yRowStride = Y.getRowStride();
     int yPixelStride = Y.getPixelStride();
-    int uRowStride = U.getRowStride();
+    int uvRowStride = U.getRowStride();
     int uvPixelStride = U.getPixelStride();
 
     float scale = cropWidthAfterRtn / tensorSize;
-    int uvRowStride = uRowStride >> 1;
     int yIdx, uvIdx, yi, ui, vi;
     final int channelSize = tensorSize * tensorSize;
     for (int y = 0; y < tensorSize; y++) {
@@ -286,20 +286,30 @@ public class CameraActivity extends AppCompatActivity {
         }
 
         yIdx = srcY * yRowStride + srcX * yPixelStride;
-        uvIdx = (srcY >> 1) * uvRowStride + srcX * uvPixelStride;
+        uvIdx = (srcY >> 1) * uvRowStride + (srcX >> 1) * uvPixelStride;
+
         yi = yBuffer.get(yIdx) & 0xff;
         ui = uBuffer.get(uvIdx) & 0xff;
         vi = vBuffer.get(uvIdx) & 0xff;
 
-        int a0 = 1192 * (yi - 16);
-        int ri = clamp0255((a0 + 1634 * (vi - 128)) >> 10);
-        int gi = clamp0255((a0 - 832 * (vi - 128) - 400 * (ui - 128)) >> 10);
-        int bi = clamp0255((a0 + 2066 * (ui - 128)) >> 10);
+        yi = (yi - 16) < 0 ? 0 : (yi - 16);
+        ui -= 128;
+        vi -= 128;
 
-        mInputTensorBitmap.setPixel(x, y, Color.argb(255, ri, gi, bi));
-        inputTensorBuffer.put(0 * channelSize + y * tensorSize + x,ri / 255.f);
-        inputTensorBuffer.put(1 * channelSize + y * tensorSize + x, gi / 255.f);
-        inputTensorBuffer.put(2 * channelSize + y * tensorSize + x, bi / 255.f);
+        int a0 = 1192 * yi;
+        int ri = (a0 + 1634 * vi);
+        int gi = (a0 - 833 * vi - 400 * ui);
+        int bi = (a0 + 2066 * ui);
+
+        ri = ri > RGB_MAX_CHANNEL_VALUE ? RGB_MAX_CHANNEL_VALUE : (ri < 0 ? 0 : ri);
+        gi = gi > RGB_MAX_CHANNEL_VALUE ? RGB_MAX_CHANNEL_VALUE : (gi < 0 ? 0 : gi);
+        bi = bi > RGB_MAX_CHANNEL_VALUE ? RGB_MAX_CHANNEL_VALUE : (bi < 0 ? 0 : bi);
+
+        final int color = 0xff000000 | ((ri << 6) & 0xff0000) | ((gi >> 2) & 0xff00) | ((bi >> 10) & 0xff);
+        mInputTensorBitmap.setPixel(x, y, color);
+        inputTensorBuffer.put(0 * channelSize + y * tensorSize + x, clamp0255(ri >> 10));
+        inputTensorBuffer.put(1 * channelSize + y * tensorSize + x, clamp0255(gi >> 10));
+        inputTensorBuffer.put(2 * channelSize + y * tensorSize + x, clamp0255(bi >> 10));
       }
     }
   }
