@@ -127,7 +127,7 @@ jobs:
       - checkout
       - run:
           command: |
-          .circleci/check_docstring_format.sh
+          ./.circleci/check_docstring_format.sh
 
   clang_format:
     docker:
