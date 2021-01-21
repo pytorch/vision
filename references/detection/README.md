@@ -34,6 +34,13 @@ python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
     --lr-steps 16 22 --aspect-ratio-group-factor 3
 ```
 
+### Faster R-CNN MobileNetV3-Large 320 FPN
+```
+python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
+    --dataset coco --model fasterrcnn_mobilenet_v3_large_320_fpn --epochs 26\
+    --lr-steps 16 22 --aspect-ratio-group-factor 3
+```
+
 ### RetinaNet
 ```
 python -m torch.distributed.launch --nproc_per_node=8 --use_env train.py\
