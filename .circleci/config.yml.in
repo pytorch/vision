@@ -160,6 +160,91 @@ jobs:
             pip install --user onnxruntime
             python test/test_onnx.py
 
+
+
+  check_import_linux_pip:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            python test/test_import.py
+
+  check_import_osx_pip:
+    macos:
+      xcode: "9.4.1"
+    steps:
+      - checkout
+      - run:
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            pip install --user --progress-bar off --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            python test/test_import.py
+
+
+  check_import_win_pip:
+    executor: windows-cpu
+    steps:
+      - checkout_merge
+      - run:
+          name: Build conda packages
+          command: |
+            set -ex
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
+            conda activate base
+            #conda install -yq conda-build "conda-package-handling!=1.5.0"
+            conda install pip
+            pip install --user --progress-bar off --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            python test/test_import.py
+
+
+
+  check_import_linux_conda:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            conda install -y -c pytorch-nightly pytorch torchvision
+            python test/test_import.py
+
+  check_import_osx_conda:
+    macos:
+      xcode: "9.4.1"
+    steps:
+      - checkout
+      - run:
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            conda install -y -c pytorch-nightly pytorch torchvision
+            python test/test_import.py
+
+
+  check_import_win_conda:
+    executor: windows-cpu
+    steps:
+      - checkout_merge
+      - run:
+          name: Build conda packages
+          command: |
+            set -ex
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
+            conda activate base
+            #conda install -yq conda-build "conda-package-handling!=1.5.0"
+            conda install -y -c pytorch-nightly pytorch torchvision
+            python test/test_import.py
+
+
   binary_linux_wheel:
     <<: *binary_common
     docker:
@@ -710,7 +795,6 @@ workflows:
 {%- if True %}
     jobs:
       - circleci_consistency
-      {{ build_workflows(windows_latest_only=True) }}
       - python_lint
       - python_type_check
       - clang_format
@@ -719,11 +803,12 @@ workflows:
 
   unittest:
     jobs:
-      {{ unittest_workflows() }}
-
-  cmake:
-    jobs:
-      {{ cmake_workflows() }}
+      - check_import_linux_pip
+      - check_import_osx_pip
+      - check_import_win_pip
+      - check_import_linux_conda
+      - check_import_osx_conda
+      - check_import_win_conda
 
   nightly:
 {%- endif %}

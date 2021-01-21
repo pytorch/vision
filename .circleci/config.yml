@@ -160,6 +160,91 @@ jobs:
             pip install --user onnxruntime
             python test/test_onnx.py
 
+
+
+  check_import_linux_pip:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            python test/test_import.py
+
+  check_import_osx_pip:
+    macos:
+      xcode: "9.4.1"
+    steps:
+      - checkout
+      - run:
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            pip install --user --progress-bar off --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            python test/test_import.py
+
+
+  check_import_win_pip:
+    executor: windows-cpu
+    steps:
+      - checkout_merge
+      - run:
+          name: Build conda packages
+          command: |
+            set -ex
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
+            conda activate base
+            #conda install -yq conda-build "conda-package-handling!=1.5.0"
+            conda install pip
+            pip install --user --progress-bar off --pre torch torchvision -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            python test/test_import.py
+
+
+
+  check_import_linux_conda:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            conda install -y -c pytorch-nightly pytorch torchvision
+            python test/test_import.py
+
+  check_import_osx_conda:
+    macos:
+      xcode: "9.4.1"
+    steps:
+      - checkout
+      - run:
+          command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            conda install -y -c pytorch-nightly pytorch torchvision
+            python test/test_import.py
+
+
+  check_import_win_conda:
+    executor: windows-cpu
+    steps:
+      - checkout_merge
+      - run:
+          name: Build conda packages
+          command: |
+            set -ex
+            eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
+            conda activate base
+            #conda install -yq conda-build "conda-package-handling!=1.5.0"
+            conda install -y -c pytorch-nightly pytorch torchvision
+            python test/test_import.py
+
+
   binary_linux_wheel:
     <<: *binary_common
     docker:
@@ -709,382 +794,6 @@ workflows:
   build:
     jobs:
       - circleci_consistency
-      - binary_linux_wheel:
-          cu_version: cpu
-          name: binary_linux_wheel_py3.6_cpu
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cu92
-          name: binary_linux_wheel_py3.6_cu92
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_wheel:
-          cu_version: cu101
-          name: binary_linux_wheel_py3.6_cu101
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_wheel:
-          cu_version: cu102
-          name: binary_linux_wheel_py3.6_cu102
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cu110
-          name: binary_linux_wheel_py3.6_cu110
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda110
-      - binary_linux_wheel:
-          cu_version: cpu
-          name: binary_linux_wheel_py3.7_cpu
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cu92
-          name: binary_linux_wheel_py3.7_cu92
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_wheel:
-          cu_version: cu101
-          name: binary_linux_wheel_py3.7_cu101
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_wheel:
-          cu_version: cu102
-          name: binary_linux_wheel_py3.7_cu102
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cu110
-          name: binary_linux_wheel_py3.7_cu110
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda110
-      - binary_linux_wheel:
-          cu_version: cpu
-          name: binary_linux_wheel_py3.8_cpu
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cu92
-          name: binary_linux_wheel_py3.8_cu92
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_wheel:
-          cu_version: cu101
-          name: binary_linux_wheel_py3.8_cu101
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_wheel:
-          cu_version: cu102
-          name: binary_linux_wheel_py3.8_cu102
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_wheel:
-          cu_version: cu110
-          name: binary_linux_wheel_py3.8_cu110
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda110
-      - binary_macos_wheel:
-          cu_version: cpu
-          name: binary_macos_wheel_py3.6_cpu
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_wheel:
-          cu_version: cpu
-          name: binary_macos_wheel_py3.7_cpu
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_wheel:
-          cu_version: cpu
-          name: binary_macos_wheel_py3.8_cpu
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_win_wheel:
-          cu_version: cpu
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_wheel_py3.6_cpu
-          python_version: '3.6'
-      - binary_win_wheel:
-          cu_version: cu101
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_wheel_py3.6_cu101
-          python_version: '3.6'
-      - binary_win_wheel:
-          cu_version: cu102
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_wheel_py3.6_cu102
-          python_version: '3.6'
-      - binary_win_wheel:
-          cu_version: cu110
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_wheel_py3.6_cu110
-          python_version: '3.6'
-      - binary_win_wheel:
-          cu_version: cpu
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_wheel_py3.7_cpu
-          python_version: '3.7'
-      - binary_win_wheel:
-          cu_version: cu101
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_wheel_py3.7_cu101
-          python_version: '3.7'
-      - binary_win_wheel:
-          cu_version: cu102
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_wheel_py3.7_cu102
-          python_version: '3.7'
-      - binary_win_wheel:
-          cu_version: cu110
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_wheel_py3.7_cu110
-          python_version: '3.7'
-      - binary_win_wheel:
-          cu_version: cpu
-          name: binary_win_wheel_py3.8_cpu
-          python_version: '3.8'
-      - binary_win_wheel:
-          cu_version: cu101
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_wheel_py3.8_cu101
-          python_version: '3.8'
-      - binary_win_wheel:
-          cu_version: cu102
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_wheel_py3.8_cu102
-          python_version: '3.8'
-      - binary_win_wheel:
-          cu_version: cu110
-          name: binary_win_wheel_py3.8_cu110
-          python_version: '3.8'
-      - binary_linux_conda:
-          cu_version: cpu
-          name: binary_linux_conda_py3.6_cpu
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cu92
-          name: binary_linux_conda_py3.6_cu92
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_conda:
-          cu_version: cu101
-          name: binary_linux_conda_py3.6_cu101
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_conda:
-          cu_version: cu102
-          name: binary_linux_conda_py3.6_cu102
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cu110
-          name: binary_linux_conda_py3.6_cu110
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda110
-      - binary_linux_conda:
-          cu_version: cpu
-          name: binary_linux_conda_py3.7_cpu
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cu92
-          name: binary_linux_conda_py3.7_cu92
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_conda:
-          cu_version: cu101
-          name: binary_linux_conda_py3.7_cu101
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_conda:
-          cu_version: cu102
-          name: binary_linux_conda_py3.7_cu102
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cu110
-          name: binary_linux_conda_py3.7_cu110
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda110
-      - binary_linux_conda:
-          cu_version: cpu
-          name: binary_linux_conda_py3.8_cpu
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cu92
-          name: binary_linux_conda_py3.8_cu92
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda92
-      - binary_linux_conda:
-          cu_version: cu101
-          name: binary_linux_conda_py3.8_cu101
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - binary_linux_conda:
-          cu_version: cu102
-          name: binary_linux_conda_py3.8_cu102
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_linux_conda:
-          cu_version: cu110
-          name: binary_linux_conda_py3.8_cu110
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda110
-      - binary_macos_conda:
-          cu_version: cpu
-          name: binary_macos_conda_py3.6_cpu
-          python_version: '3.6'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_conda:
-          cu_version: cpu
-          name: binary_macos_conda_py3.7_cpu
-          python_version: '3.7'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_macos_conda:
-          cu_version: cpu
-          name: binary_macos_conda_py3.8_cpu
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda102
-      - binary_win_conda:
-          cu_version: cpu
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_conda_py3.6_cpu
-          python_version: '3.6'
-      - binary_win_conda:
-          cu_version: cu101
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_conda_py3.6_cu101
-          python_version: '3.6'
-      - binary_win_conda:
-          cu_version: cu102
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_conda_py3.6_cu102
-          python_version: '3.6'
-      - binary_win_conda:
-          cu_version: cu110
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_conda_py3.6_cu110
-          python_version: '3.6'
-      - binary_win_conda:
-          cu_version: cpu
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_conda_py3.7_cpu
-          python_version: '3.7'
-      - binary_win_conda:
-          cu_version: cu101
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_conda_py3.7_cu101
-          python_version: '3.7'
-      - binary_win_conda:
-          cu_version: cu102
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_conda_py3.7_cu102
-          python_version: '3.7'
-      - binary_win_conda:
-          cu_version: cu110
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_conda_py3.7_cu110
-          python_version: '3.7'
-      - binary_win_conda:
-          cu_version: cpu
-          name: binary_win_conda_py3.8_cpu
-          python_version: '3.8'
-      - binary_win_conda:
-          cu_version: cu101
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_conda_py3.8_cu101
-          python_version: '3.8'
-      - binary_win_conda:
-          cu_version: cu102
-          filters:
-            branches:
-              only: master
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
-          name: binary_win_conda_py3.8_cu102
-          python_version: '3.8'
-      - binary_win_conda:
-          cu_version: cu110
-          name: binary_win_conda_py3.8_cu110
-          python_version: '3.8'
       - python_lint
       - python_type_check
       - clang_format
@@ -1093,110 +802,12 @@ workflows:
 
   unittest:
     jobs:
-      - unittest_linux_cpu:
-          cu_version: cpu
-          name: unittest_linux_cpu_py3.6
-          python_version: '3.6'
-      - unittest_linux_cpu:
-          cu_version: cpu
-          name: unittest_linux_cpu_py3.7
-          python_version: '3.7'
-      - unittest_linux_cpu:
-          cu_version: cpu
-          name: unittest_linux_cpu_py3.8
-          python_version: '3.8'
-      - unittest_linux_gpu:
-          cu_version: cu101
-          filters:
-            branches:
-              only:
-              - master
-              - nightly
-          name: unittest_linux_gpu_py3.6
-          python_version: '3.6'
-      - unittest_linux_gpu:
-          cu_version: cu101
-          filters:
-            branches:
-              only:
-              - master
-              - nightly
-          name: unittest_linux_gpu_py3.7
-          python_version: '3.7'
-      - unittest_linux_gpu:
-          cu_version: cu101
-          name: unittest_linux_gpu_py3.8
-          python_version: '3.8'
-      - unittest_windows_cpu:
-          cu_version: cpu
-          name: unittest_windows_cpu_py3.6
-          python_version: '3.6'
-      - unittest_windows_cpu:
-          cu_version: cpu
-          name: unittest_windows_cpu_py3.7
-          python_version: '3.7'
-      - unittest_windows_cpu:
-          cu_version: cpu
-          name: unittest_windows_cpu_py3.8
-          python_version: '3.8'
-      - unittest_windows_gpu:
-          cu_version: cu101
-          filters:
-            branches:
-              only:
-              - master
-              - nightly
-          name: unittest_windows_gpu_py3.6
-          python_version: '3.6'
-      - unittest_windows_gpu:
-          cu_version: cu101
-          filters:
-            branches:
-              only:
-              - master
-              - nightly
-          name: unittest_windows_gpu_py3.7
-          python_version: '3.7'
-      - unittest_windows_gpu:
-          cu_version: cu101
-          name: unittest_windows_gpu_py3.8
-          python_version: '3.8'
-      - unittest_macos_cpu:
-          cu_version: cpu
-          name: unittest_macos_cpu_py3.6
-          python_version: '3.6'
-      - unittest_macos_cpu:
-          cu_version: cpu
-          name: unittest_macos_cpu_py3.7
-          python_version: '3.7'
-      - unittest_macos_cpu:
-          cu_version: cpu
-          name: unittest_macos_cpu_py3.8
-          python_version: '3.8'
-
-  cmake:
-    jobs:
-      - cmake_linux_cpu:
-          cu_version: cpu
-          name: cmake_linux_cpu
-          python_version: '3.8'
-      - cmake_linux_gpu:
-          cu_version: cu101
-          name: cmake_linux_gpu
-          python_version: '3.8'
-          wheel_docker_image: pytorch/manylinux-cuda101
-      - cmake_windows_cpu:
-          cu_version: cpu
-          name: cmake_windows_cpu
-          python_version: '3.8'
-      - cmake_windows_gpu:
-          cu_version: cu101
-          name: cmake_windows_gpu
-          python_version: '3.8'
-      - cmake_macos_cpu:
-          cu_version: cpu
-          name: cmake_macos_cpu
-          python_version: '3.8'
+      - check_import_linux_pip
+      - check_import_osx_pip
+      - check_import_win_pip
+      - check_import_linux_conda
+      - check_import_osx_conda
+      - check_import_win_conda
 
   nightly:
     jobs:
