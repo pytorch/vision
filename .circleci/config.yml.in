@@ -48,7 +48,7 @@ commands:
 
 binary_common: &binary_common
   parameters:
-    # Edit these defaults to do a release`
+    # Edit these defaults to do a release
     build_version:
       description: "version number of release binary; by default, build a nightly"
       type: string
@@ -127,9 +127,38 @@ jobs:
       - checkout
       - run:
           command: |
-            sudo apt-get update -y
-            sudo apt-get install -y clang-format
-            ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc
+            curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o clang-format
+            chmod +x clang-format
+            sudo mv clang-format /opt/clang-format
+            ./travis-scripts/run-clang-format/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
+
+  torchhub_test:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off numpy
+            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            # need to install torchvision dependencies due to transitive imports
+            pip install --user --progress-bar off --editable .
+            python test/test_hub.py
+
+  torch_onnx_test:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install --user --progress-bar off numpy
+            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+            # need to install torchvision dependencies due to transitive imports
+            pip install --user --progress-bar off --editable .
+            pip install --user onnx
+            pip install --user onnxruntime
+            python test/test_onnx.py
 
   binary_linux_wheel:
     <<: *binary_common
@@ -138,6 +167,7 @@ jobs:
     resource_class: 2xlarge+
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run: packaging/build_wheel.sh
       - store_artifacts:
           path: dist
@@ -153,6 +183,7 @@ jobs:
     resource_class: 2xlarge+
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run: packaging/build_conda.sh
       - store_artifacts:
           path: /opt/conda/conda-bld/linux-64
@@ -168,6 +199,7 @@ jobs:
     executor: windows-cpu
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           name: Build conda packages
           command: |
@@ -193,6 +225,7 @@ jobs:
     executor: windows-cpu
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           name: Build wheel packages
           command: |
@@ -215,6 +248,7 @@ jobs:
       xcode: "9.4.1"
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           # Cannot easily deduplicate this as source'ing activate
           # will set environment variables which we need to propagate
@@ -237,6 +271,7 @@ jobs:
       xcode: "9.4.1"
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           command: |
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
@@ -299,6 +334,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/workspace
+      - designate_upload_channel
       - run:
           name: install binaries
           command: |
@@ -317,6 +353,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/workspace
+      - designate_upload_channel
       - run:
           name: install binaries
           command: |
@@ -337,6 +374,7 @@ jobs:
       image_name: torchvision/smoke_test
     steps:
       - checkout
+      - designate_upload_channel
       - run:
           name: Build and push Docker image
           no_output_timeout: "1h"
@@ -356,6 +394,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/workspace
+      - designate_upload_channel
       - run:
           name: install binaries
           command: |
@@ -381,6 +420,7 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/workspace
+      - designate_upload_channel
       - run:
           name: install binaries
           command: |
@@ -404,6 +444,7 @@ jobs:
     resource_class: 2xlarge+
     steps:
       - checkout
+      - designate_upload_channel
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -442,20 +483,17 @@ jobs:
     resource_class: gpu.small
     environment:
       image_name: "pytorch/manylinux-cuda101"
+      PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
+      - designate_upload_channel
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
           command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-          {% raw %}
-          keys:
-            - env-v2-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
       - run:
           name: Setup
-          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/setup_env.sh
+          command: docker run -e PYTHON_VERSION -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/setup_env.sh
       - save_cache:
           {% raw %}
           key: env-v2-linux-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/linux/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
@@ -465,7 +503,7 @@ jobs:
             - env
       - run:
           name: Install torchvision
-          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/install.sh
+          command: docker run -t --gpus all -v $PWD:$PWD -w $PWD -e UPLOAD_CHANNEL "${image_name}" .circleci/unittest/linux/scripts/install.sh
       - run:
           name: Run tests
           command: docker run -t --gpus all -v $PWD:$PWD -w $PWD "${image_name}" .circleci/unittest/linux/scripts/run_test.sh
@@ -481,6 +519,7 @@ jobs:
       name: windows-cpu
     steps:
       - checkout
+      - designate_upload_channel
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
@@ -518,17 +557,14 @@ jobs:
       name: windows-gpu
     environment:
       CUDA_VERSION: "10.1"
+      PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
+      - designate_upload_channel
       - run:
           name: Generate cache key
           # This will refresh cache on Sundays, nightly build should generate new cache.
           command: echo "$(date +"%Y-%U")" > .circleci-weekly
-      - restore_cache:
-          {% raw %}
-          keys:
-            - env-v1-windows-{{ arch }}-py<< parameters.python_version >>-{{ checksum ".circleci/unittest/windows/scripts/environment.yml" }}-{{ checksum ".circleci-weekly" }}
-          {% endraw %}
       - run:
           name: Setup
           command: .circleci/unittest/windows/scripts/setup_env.sh
@@ -558,6 +594,7 @@ jobs:
     resource_class: large
     steps:
       - checkout
+      - designate_upload_channel
       - run:
           name: Install wget
           command: HOMEBREW_NO_AUTO_UPDATE=1 brew install wget
@@ -600,6 +637,7 @@ jobs:
     resource_class: 2xlarge+
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           name: Setup conda
           command: .circleci/unittest/linux/scripts/setup_env.sh
@@ -617,19 +655,21 @@ jobs:
       CU_VERSION: << parameters.cu_version >>
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           name: Setup conda
           command: docker run -e CU_VERSION -e PYTHON_VERSION -e UNICODE_ABI -e PYTORCH_VERSION -t --gpus all -v $PWD:$PWD -w $PWD << parameters.wheel_docker_image >> .circleci/unittest/linux/scripts/setup_env.sh
       - run:
           name: Build torchvision C++ distribution and test
-          command: docker run -e CU_VERSION -e PYTHON_VERSION -e UNICODE_ABI -e PYTORCH_VERSION -t --gpus all -v $PWD:$PWD -w $PWD << parameters.wheel_docker_image >> packaging/build_cmake.sh
+          command: docker run -e CU_VERSION -e PYTHON_VERSION -e UNICODE_ABI -e PYTORCH_VERSION -e UPLOAD_CHANNEL -t --gpus all -v $PWD:$PWD -w $PWD << parameters.wheel_docker_image >> packaging/build_cmake.sh
 
   cmake_macos_cpu:
     <<: *binary_common
     macos:
-      xcode: "9.0"
+      xcode: "9.4.1"
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           command: |
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
@@ -644,6 +684,7 @@ jobs:
       name: windows-cpu
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           command: |
             set -ex
@@ -656,12 +697,78 @@ jobs:
       name: windows-gpu
     steps:
       - checkout_merge
+      - designate_upload_channel
       - run:
           command: |
             set -ex
             source packaging/windows/internal/vc_install_helper.sh
             packaging/windows/internal/cuda_install.bat
             packaging/build_cmake.sh
+
+  build_docs:
+    <<: *binary_common
+    docker:
+      - image: "pytorch/manylinux-cuda100"
+    resource_class: 2xlarge+
+    steps:
+      - attach_workspace:
+          at: ~/workspace
+      - checkout
+      - run:
+          name: Setup
+          command: .circleci/unittest/linux/scripts/setup_env.sh
+      - designate_upload_channel
+      - run:
+          name: Install torchvision
+          command: .circleci/unittest/linux/scripts/install.sh
+      - run:
+          name: Build docs
+          command: |
+            set -ex
+            tag=${CIRCLE_TAG:1:5}
+            VERSION=${tag:-master}
+            eval "$(./conda/bin/conda shell.bash hook)"
+            conda activate ./env
+            pushd docs
+            pip install -r requirements.txt
+            make html
+            popd
+      - persist_to_workspace:
+          root: ./
+          paths:
+            - "*"
+      - store_artifacts:
+          path: ./docs/build/html
+          destination: docs
+
+  upload_docs:
+    <<: *binary_common
+    docker:
+      - image: "pytorch/manylinux-cuda100"
+    resource_class: 2xlarge+
+    steps:
+      - attach_workspace:
+          at: ~/workspace
+      - run:
+          name: Generate netrc
+          command: |
+            # set credentials for https pushing
+            # requires the org-member context
+            cat > ~/.netrc \<<DONE
+              machine github.com
+              login pytorchbot
+              password ${GITHUB_PYTORCHBOT_TOKEN}
+            DONE
+      - run:
+          name: Upload docs
+          command: |
+            # Don't use "checkout" step since it uses ssh, which cannot git push
+            # https://circleci.com/docs/2.0/configuration-reference/#checkout
+            set -ex
+            tag=${CIRCLE_TAG:1:5}
+            target=${tag:-master}
+            ~/workspace/.circleci/build_docs/commit_docs.sh ~/workspace $target
+
 
 workflows:
   build:
@@ -672,6 +779,8 @@ workflows:
       - python_lint
       - python_type_check
       - clang_format
+      - torchhub_test
+      - torch_onnx_test
 
   unittest:
     jobs:
@@ -688,6 +797,8 @@ workflows:
       - python_lint
       - python_type_check
       - clang_format
+      - torchhub_test
+      - torch_onnx_test
       {{ build_workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}
   docker_build:
     triggers:

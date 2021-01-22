@@ -1,6 +1,11 @@
 #!/bin/bash
 set -ex
 
+PARALLELISM=8
+if [ -n "$MAX_JOBS" ]; then
+    PARALLELISM=$MAX_JOBS
+fi
+
 if [[ "$(uname)" != Darwin && "$OSTYPE" != "msys" ]]; then
     eval "$(./conda/bin/conda shell.bash hook)"
     conda activate ./env
@@ -10,7 +15,7 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 . "$script_dir/pkg_helpers.bash"
 
 export BUILD_TYPE=conda
-setup_env 0.8.0
+setup_env 0.9.0
 export SOURCE_ROOT_DIR="$PWD"
 setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_plain_constraint
@@ -23,7 +28,7 @@ fi
 setup_visual_studio_constraint
 setup_junit_results_folder
 
-conda install -yq pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE  -c pytorch-nightly
+conda install -yq pytorch=$PYTORCH_VERSION $CONDA_CUDATOOLKIT_CONSTRAINT $CONDA_CPUONLY_FEATURE  -c "pytorch-${UPLOAD_CHANNEL}"
 TORCH_PATH=$(dirname $(python -c "import torch; print(torch.__file__)"))
 
 if [[ "$(uname)" == Darwin || "$OSTYPE" == "msys" ]]; then
@@ -40,11 +45,11 @@ cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch -DWITH_CUDA=$CMAKE_USE_CUDA
 
 # Compile and install libtorchvision
 if [[ "$OSTYPE" == "msys" ]]; then
-    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_cmake.bat"
+    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_cmake.bat" $PARALLELISM
     CONDA_PATH=$(dirname $(which python))
     cp -r "C:/Program Files (x86)/torchvision/include/torchvision" $CONDA_PATH/include
 else
-    make
+    make -j$PARALLELISM
     make install
 
     if [[ "$(uname)" == Darwin ]]; then
@@ -71,12 +76,12 @@ cp fasterrcnn_resnet50_fpn.pt build
 cd build
 cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch -DWITH_CUDA=$CMAKE_USE_CUDA
 if [[ "$OSTYPE" == "msys" ]]; then
-    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_frcnn.bat"
+    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_frcnn.bat" $PARALLELISM
     mv fasterrcnn_resnet50_fpn.pt Release
     cd Release
     export PATH=$(cygpath "C:/Program Files (x86)/torchvision/bin"):$(cygpath $TORCH_PATH)/lib:$PATH
 else
-    make
+    make -j$PARALLELISM
 fi
 
 # Run traced program
@@ -91,10 +96,10 @@ cd build
 cmake .. -DTorch_DIR=$TORCH_PATH/share/cmake/Torch
 
 if [[ "$OSTYPE" == "msys" ]]; then
-    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_cpp_example.bat"
+    "$script_dir/windows/internal/vc_env_helper.bat" "$script_dir/windows/internal/build_cpp_example.bat" $PARALLELISM
     cd Release
 else
-    make
+    make -j$PARALLELISM
 fi
 
 # Run CPP example

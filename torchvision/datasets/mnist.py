@@ -7,6 +7,8 @@ import numpy as np
 import torch
 import codecs
 import string
+import gzip
+import lzma
 from typing import Any, Callable, Dict, IO, List, Optional, Tuple, Union
 from .utils import download_url, download_and_extract_archive, extract_archive, \
     verify_str_arg
@@ -247,13 +249,13 @@ class EMNIST(MNIST):
     md5 = "58c8d27c78d21e728a6bc7b3cc06412e"
     splits = ('byclass', 'bymerge', 'balanced', 'letters', 'digits', 'mnist')
     # Merged Classes assumes Same structure for both uppercase and lowercase version
-    _merged_classes = set(['C', 'I', 'J', 'K', 'L', 'M', 'O', 'P', 'S', 'U', 'V', 'W', 'X', 'Y', 'Z'])
-    _all_classes = set(list(string.digits + string.ascii_letters))
+    _merged_classes = {'c', 'i', 'j', 'k', 'l', 'm', 'o', 'p', 's', 'u', 'v', 'w', 'x', 'y', 'z'}
+    _all_classes = set(string.digits + string.ascii_letters)
     classes_split_dict = {
-        'byclass': list(_all_classes),
+        'byclass': sorted(list(_all_classes)),
         'bymerge': sorted(list(_all_classes - _merged_classes)),
         'balanced': sorted(list(_all_classes - _merged_classes)),
-        'letters': list(string.ascii_lowercase),
+        'letters': ['N/A'] + list(string.ascii_lowercase),
         'digits': list(string.digits),
         'mnist': list(string.digits),
     }
@@ -435,17 +437,15 @@ def get_int(b: bytes) -> int:
     return int(codecs.encode(b, 'hex'), 16)
 
 
-def open_maybe_compressed_file(path: Union[str, IO]) -> IO:
+def open_maybe_compressed_file(path: Union[str, IO]) -> Union[IO, gzip.GzipFile]:
     """Return a file object that possibly decompresses 'path' on the fly.
        Decompression occurs when argument `path` is a string and ends with '.gz' or '.xz'.
     """
     if not isinstance(path, torch._six.string_classes):
         return path
     if path.endswith('.gz'):
-        import gzip
         return gzip.open(path, 'rb')
     if path.endswith('.xz'):
-        import lzma
         return lzma.open(path, 'rb')
     return open(path, 'rb')
 
@@ -471,8 +471,8 @@ def read_sn3_pascalvincent_tensor(path: Union[str, IO], strict: bool = True) -> 
     magic = get_int(data[0:4])
     nd = magic % 256
     ty = magic // 256
-    assert nd >= 1 and nd <= 3
-    assert ty >= 8 and ty <= 14
+    assert 1 <= nd <= 3
+    assert 8 <= ty <= 14
     m = SN3_PASCALVINCENT_TYPEMAP[ty]
     s = [get_int(data[4 * (i + 1): 4 * (i + 2)]) for i in range(nd)]
     parsed = np.frombuffer(data, dtype=m[1], offset=(4 * (nd + 1)))

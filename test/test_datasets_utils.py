@@ -14,7 +14,7 @@ from common_utils import get_tmp_dir
 
 
 TEST_FILE = get_file_path_2(
-    os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
+    os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
 
 
 class Tester(unittest.TestCase):
@@ -35,6 +35,18 @@ class Tester(unittest.TestCase):
         self.assertFalse(utils.check_integrity(existing_fpath, false_md5))
         self.assertTrue(utils.check_integrity(existing_fpath))
         self.assertFalse(utils.check_integrity(nonexisting_fpath))
+
+    def test_get_redirect_url(self):
+        url = "http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz"
+        expected = "https://drive.google.com/file/d/1hbzc_P1FuxMkcabkgn9ZKinBwW683j45/view"
+
+        actual = utils._get_redirect_url(url)
+        assert actual == expected
+
+    def test_get_redirect_url_max_hops_exceeded(self):
+        url = "http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz"
+        with self.assertRaises(RecursionError):
+            utils._get_redirect_url(url, max_hops=0)
 
     def test_download_url(self):
         with get_tmp_dir() as temp_dir:

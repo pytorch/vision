@@ -2,7 +2,7 @@ import torch
 from torch import nn, Tensor
 
 from torch.nn.modules.utils import _pair
-from torch.jit.annotations import List, BroadcastingList2
+from torch.jit.annotations import BroadcastingList2
 
 from torchvision.extension import _assert_has_ops
 from ._utils import convert_boxes_to_roi_format, check_roi_boxes_shape
@@ -19,7 +19,7 @@ def roi_align(
     """
     Performs Region of Interest (RoI) Align operator described in Mask R-CNN
 
-    Arguments:
+    Args:
         input (Tensor[N, C, H, W]): input tensor
         boxes (Tensor[K, 5] or List[Tensor[L, 4]]): the box coordinates in (x1, y1, x2, y2)
             format where the regions will be taken from. If a single Tensor is passed,

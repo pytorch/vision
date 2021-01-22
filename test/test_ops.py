@@ -1,14 +1,16 @@
+from common_utils import set_rng_seed
 import math
 import unittest
 
 import numpy as np
 
 import torch
+from functools import lru_cache
 from torch import Tensor
 from torch.autograd import gradcheck
-from torch.jit.annotations import Tuple
 from torch.nn.modules.utils import _pair
 from torchvision import ops
+from typing import Tuple
 
 
 class OpTester(object):
@@ -119,6 +121,13 @@ class RoIOpTester(OpTester):
 
     def expected_fn(*args, **kwargs):
         pass
+
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_autocast(self):
+        for x_dtype in (torch.float, torch.half):
+            for rois_dtype in (torch.float, torch.half):
+                with torch.cuda.amp.autocast():
+                    self._test_forward(torch.device("cuda"), contiguous=False, x_dtype=x_dtype, rois_dtype=rois_dtype)
 
 
 class RoIPoolTester(RoIOpTester, unittest.TestCase):
@@ -295,13 +304,6 @@ class RoIAlignTester(RoIOpTester, unittest.TestCase):
     def _test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_align)
 
-    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_roi_align_autocast(self):
-        for x_dtype in (torch.float, torch.half):
-            for rois_dtype in (torch.float, torch.half):
-                with torch.cuda.amp.autocast():
-                    self._test_forward(torch.device("cuda"), contiguous=False, x_dtype=x_dtype, rois_dtype=rois_dtype)
-
 
 class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
@@ -355,6 +357,20 @@ class PSRoIAlignTester(RoIOpTester, unittest.TestCase):
 
     def _test_boxes_shape(self):
         self._helper_boxes_shape(ops.ps_roi_align)
+
+
+class MultiScaleRoIAlignTester(unittest.TestCase):
+    def test_msroialign_repr(self):
+        fmap_names = ['0']
+        output_size = (7, 7)
+        sampling_ratio = 2
+        # Pass mock feature map names
+        t = ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
+
+        # Check integrity of object __repr__ attribute
+        expected_string = (f"MultiScaleRoIAlign(featmap_names={fmap_names}, output_size={output_size}, "
+                           f"sampling_ratio={sampling_ratio})")
+        self.assertEqual(t.__repr__(), expected_string)
 
 
 class NMSTester(unittest.TestCase):
@@ -411,7 +427,8 @@ class NMSTester(unittest.TestCase):
         self.assertRaises(RuntimeError, ops.nms, torch.rand(3, 4), torch.rand(4), 0.5)
 
     @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
-    def test_nms_cuda(self):
+    def test_nms_cuda(self, dtype=torch.float64):
+        tol = 1e-3 if dtype is torch.half else 1e-5
         err_msg = 'NMS incompatible between CPU and CUDA for IoU={}'
 
         for iou in [0.2, 0.5, 0.8]:
@@ -423,21 +440,18 @@ class NMSTester(unittest.TestCase):
             if not is_eq:
                 # if the indices are not the same, ensure that it's because the scores
                 # are duplicate
-                is_eq = torch.allclose(scores[r_cpu], scores[r_cuda.cpu()])
+                is_eq = torch.allclose(scores[r_cpu], scores[r_cuda.cpu()], rtol=tol, atol=tol)
             self.assertTrue(is_eq, err_msg.format(iou))
 
-
-class NewEmptyTensorTester(unittest.TestCase):
-    def test_new_empty_tensor(self):
-        input = torch.tensor([2., 2.], requires_grad=True)
-        new_shape = [3, 3]
-        out = torch.ops.torchvision._new_empty_tensor_op(input, new_shape)
-        assert out.size() == torch.Size([3, 3])
-        assert out.dtype == input.dtype
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_autocast(self):
+        for dtype in (torch.float, torch.half):
+            with torch.cuda.amp.autocast():
+                self.test_nms_cuda(dtype=dtype)
 
 
 class DeformConvTester(OpTester, unittest.TestCase):
-    def expected_fn(self, x, weight, offset, bias, stride=1, padding=0, dilation=1):
+    def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):
         stride_h, stride_w = _pair(stride)
         pad_h, pad_w = _pair(padding)
         dil_h, dil_w = _pair(dilation)
@@ -468,18 +482,23 @@ class DeformConvTester(OpTester, unittest.TestCase):
                                     c_in = weight_grp * in_c_per_weight_grp + c
 
                                     offset_grp = c_in // in_c_per_offset_grp
-                                    offset_idx = 2 * (offset_grp * (weight_h * weight_w) + di * weight_w + dj)
+                                    mask_idx = offset_grp * (weight_h * weight_w) + di * weight_w + dj
+                                    offset_idx = 2 * mask_idx
 
                                     pi = stride_h * i - pad_h + dil_h * di + offset[b, offset_idx, i, j]
                                     pj = stride_w * j - pad_w + dil_w * dj + offset[b, offset_idx + 1, i, j]
 
-                                    out[b, c_out, i, j] += (weight[c_out, c, di, dj] *
+                                    mask_value = 1.0
+                                    if mask is not None:
+                                        mask_value = mask[b, mask_idx, i, j]
+
+                                    out[b, c_out, i, j] += (mask_value * weight[c_out, c, di, dj] *
                                                             bilinear_interpolate(x[b, c_in, :, :], pi, pj))
         out += bias.view(1, n_out_channels, 1, 1)
         return out
 
-    def get_fn_args(self, device, contiguous):
-        batch_sz = 33
+    @lru_cache(maxsize=None)
+    def get_fn_args(self, device, contiguous, batch_sz, dtype):
         n_in_channels = 6
         n_out_channels = 2
         n_weight_grps = 2
@@ -498,81 +517,129 @@ class DeformConvTester(OpTester, unittest.TestCase):
         out_h = (in_h + 2 * pad_h - (dil_h * (weight_h - 1) + 1)) // stride_h + 1
         out_w = (in_w + 2 * pad_w - (dil_w * (weight_w - 1) + 1)) // stride_w + 1
 
-        x = torch.rand(batch_sz, n_in_channels, in_h, in_w, device=device, dtype=self.dtype, requires_grad=True)
+        x = torch.rand(batch_sz, n_in_channels, in_h, in_w, device=device, dtype=dtype, requires_grad=True)
 
         offset = torch.randn(batch_sz, n_offset_grps * 2 * weight_h * weight_w, out_h, out_w,
-                             device=device, dtype=self.dtype, requires_grad=True)
+                             device=device, dtype=dtype, requires_grad=True)
+
+        mask = torch.randn(batch_sz, n_offset_grps * weight_h * weight_w, out_h, out_w,
+                           device=device, dtype=dtype, requires_grad=True)
 
         weight = torch.randn(n_out_channels, n_in_channels // n_weight_grps, weight_h, weight_w,
-                             device=device, dtype=self.dtype, requires_grad=True)
+                             device=device, dtype=dtype, requires_grad=True)
 
-        bias = torch.randn(n_out_channels, device=device, dtype=self.dtype, requires_grad=True)
+        bias = torch.randn(n_out_channels, device=device, dtype=dtype, requires_grad=True)
 
         if not contiguous:
             x = x.permute(0, 1, 3, 2).contiguous().permute(0, 1, 3, 2)
             offset = offset.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
+            mask = mask.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
             weight = weight.permute(3, 2, 0, 1).contiguous().permute(2, 3, 1, 0)
 
-        return x, weight, offset, bias, stride, pad, dilation
+        return x, weight, offset, mask, bias, stride, pad, dilation
 
-    def _test_forward(self, device, contiguous):
-        x, _, offset, _, stride, padding, dilation = self.get_fn_args(device, contiguous)
+    def _test_forward(self, device, contiguous, dtype=None):
+        dtype = self.dtype if dtype is None else dtype
+        for batch_sz in [0, 33]:
+            self._test_forward_with_batchsize(device, contiguous, batch_sz, dtype)
+
+    def _test_forward_with_batchsize(self, device, contiguous, batch_sz, dtype):
+        x, _, offset, mask, _, stride, padding, dilation = self.get_fn_args(device, contiguous, batch_sz, dtype)
         in_channels = 6
         out_channels = 2
         kernel_size = (3, 2)
         groups = 2
+        tol = 1e-3 if dtype is torch.half else 1e-5
 
         layer = ops.DeformConv2d(in_channels, out_channels, kernel_size, stride=stride, padding=padding,
-                                 dilation=dilation, groups=groups).to(device=x.device, dtype=x.dtype)
-        res = layer(x, offset)
+                                 dilation=dilation, groups=groups).to(device=x.device, dtype=dtype)
+        res = layer(x, offset, mask)
 
         weight = layer.weight.data
         bias = layer.bias.data
-        expected = self.expected_fn(x, weight, offset, bias, stride=stride, padding=padding, dilation=dilation)
+        expected = self.expected_fn(x, weight, offset, mask, bias, stride=stride, padding=padding, dilation=dilation)
 
-        self.assertTrue(torch.allclose(res, expected), '\nres:\n{}\nexpected:\n{}'.format(res, expected))
+        self.assertTrue(torch.allclose(res.to(expected.dtype), expected, rtol=tol, atol=tol),
+                        '\nres:\n{}\nexpected:\n{}'.format(res, expected))
+
+        # no modulation test
+        res = layer(x, offset)
+        expected = self.expected_fn(x, weight, offset, None, bias, stride=stride, padding=padding, dilation=dilation)
+
+        self.assertTrue(torch.allclose(res.to(expected.dtype), expected, rtol=tol, atol=tol),
+                        '\nres:\n{}\nexpected:\n{}'.format(res, expected))
 
         # test for wrong sizes
         with self.assertRaises(RuntimeError):
             wrong_offset = torch.rand_like(offset[:, :2])
             res = layer(x, wrong_offset)
 
+        with self.assertRaises(RuntimeError):
+            wrong_mask = torch.rand_like(mask[:, :2])
+            res = layer(x, offset, wrong_mask)
+
     def _test_backward(self, device, contiguous):
-        x, weight, offset, bias, stride, padding, dilation = self.get_fn_args(device, contiguous)
+        for batch_sz in [0, 33]:
+            self._test_backward_with_batchsize(device, contiguous, batch_sz)
 
-        def func(x_, offset_, weight_, bias_):
-            return ops.deform_conv2d(x_, offset_, weight_, bias_, stride=stride, padding=padding, dilation=dilation)
+    def _test_backward_with_batchsize(self, device, contiguous, batch_sz):
+        x, weight, offset, mask, bias, stride, padding, dilation = self.get_fn_args(device, contiguous,
+                                                                                    batch_sz, self.dtype)
 
-        gradcheck(func, (x, offset, weight, bias), nondet_tol=1e-5)
+        def func(x_, offset_, mask_, weight_, bias_):
+            return ops.deform_conv2d(x_, offset_, weight_, bias_, stride=stride,
+                                     padding=padding, dilation=dilation, mask=mask_)
+
+        gradcheck(func, (x, offset, mask, weight, bias), nondet_tol=1e-5)
+
+        def func_no_mask(x_, offset_, weight_, bias_):
+            return ops.deform_conv2d(x_, offset_, weight_, bias_, stride=stride,
+                                     padding=padding, dilation=dilation, mask=None)
+
+        gradcheck(func_no_mask, (x, offset, weight, bias), nondet_tol=1e-5)
 
         @torch.jit.script
-        def script_func(x_, offset_, weight_, bias_, stride_, pad_, dilation_):
-            # type: (Tensor, Tensor, Tensor, Tensor, Tuple[int, int], Tuple[int, int], Tuple[int, int]) -> Tensor
-            return ops.deform_conv2d(x_, offset_, weight_, bias_, stride=stride_, padding=pad_, dilation=dilation_)
+        def script_func(x_, offset_, mask_, weight_, bias_, stride_, pad_, dilation_):
+            # type:(Tensor, Tensor, Tensor, Tensor, Tensor, Tuple[int, int], Tuple[int, int], Tuple[int, int])->Tensor
+            return ops.deform_conv2d(x_, offset_, weight_, bias_, stride=stride_,
+                                     padding=pad_, dilation=dilation_, mask=mask_)
 
-        gradcheck(lambda z, off, wei, bi: script_func(z, off, wei, bi, stride, padding, dilation),
+        gradcheck(lambda z, off, msk, wei, bi: script_func(z, off, msk, wei, bi, stride, padding, dilation),
+                  (x, offset, mask, weight, bias), nondet_tol=1e-5)
+
+        @torch.jit.script
+        def script_func_no_mask(x_, offset_, weight_, bias_, stride_, pad_, dilation_):
+            # type:(Tensor, Tensor, Tensor, Tensor, Tuple[int, int], Tuple[int, int], Tuple[int, int])->Tensor
+            return ops.deform_conv2d(x_, offset_, weight_, bias_, stride=stride_,
+                                     padding=pad_, dilation=dilation_, mask=None)
+
+        gradcheck(lambda z, off, wei, bi: script_func_no_mask(z, off, wei, bi, stride, padding, dilation),
                   (x, offset, weight, bias), nondet_tol=1e-5)
 
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_compare_cpu_cuda_grads(self):
         # Test from https://github.com/pytorch/vision/issues/2598
         # Run on CUDA only
-        if "cuda" in device.type:
+        for contiguous in [False, True]:
             # compare grads computed on CUDA with grads computed on CPU
             true_cpu_grads = None
 
             init_weight = torch.randn(9, 9, 3, 3, requires_grad=True)
             img = torch.randn(8, 9, 1000, 110)
             offset = torch.rand(8, 2 * 3 * 3, 1000, 110)
+            mask = torch.rand(8, 3 * 3, 1000, 110)
 
             if not contiguous:
                 img = img.permute(0, 1, 3, 2).contiguous().permute(0, 1, 3, 2)
                 offset = offset.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
+                mask = mask.permute(1, 3, 0, 2).contiguous().permute(2, 0, 3, 1)
                 weight = init_weight.permute(3, 2, 0, 1).contiguous().permute(2, 3, 1, 0)
             else:
                 weight = init_weight
 
             for d in ["cpu", "cuda"]:
 
-                out = ops.deform_conv2d(img.to(d), offset.to(d), weight.to(d), padding=1)
+                out = ops.deform_conv2d(img.to(d), offset.to(d), weight.to(d), padding=1, mask=mask.to(d))
                 out.mean().backward()
                 if true_cpu_grads is None:
                     true_cpu_grads = init_weight.grad
@@ -582,14 +649,22 @@ class DeformConvTester(OpTester, unittest.TestCase):
                     res_grads = init_weight.grad.to("cpu")
                     self.assertTrue(true_cpu_grads.allclose(res_grads))
 
+    @unittest.skipIf(not torch.cuda.is_available(), "CUDA unavailable")
+    def test_autocast(self):
+        set_rng_seed(0)
+        for dtype in (torch.float, torch.half):
+            with torch.cuda.amp.autocast():
+                self._test_forward(torch.device("cuda"), False, dtype=dtype)
+
 
 class FrozenBNTester(unittest.TestCase):
     def test_frozenbatchnorm2d_repr(self):
         num_features = 32
-        t = ops.misc.FrozenBatchNorm2d(num_features)
+        eps = 1e-5
+        t = ops.misc.FrozenBatchNorm2d(num_features, eps=eps)
 
         # Check integrity of object __repr__ attribute
-        expected_string = f"FrozenBatchNorm2d({num_features})"
+        expected_string = f"FrozenBatchNorm2d({num_features}, eps={eps})"
         self.assertEqual(t.__repr__(), expected_string)
 
     def test_frozenbatchnorm2d_eps(self):
@@ -601,10 +676,10 @@ class FrozenBNTester(unittest.TestCase):
                           running_var=torch.rand(sample_size[1]),
                           num_batches_tracked=torch.tensor(100))
 
-        # Check that default eps is zero for backward-compatibility
+        # Check that default eps is equal to the one of BN
         fbn = ops.misc.FrozenBatchNorm2d(sample_size[1])
         fbn.load_state_dict(state_dict, strict=False)
-        bn = torch.nn.BatchNorm2d(sample_size[1], eps=0).eval()
+        bn = torch.nn.BatchNorm2d(sample_size[1]).eval()
         bn.load_state_dict(state_dict)
         # Difference is expected to fall in an acceptable range
         self.assertTrue(torch.allclose(fbn(x), bn(x), atol=1e-6))

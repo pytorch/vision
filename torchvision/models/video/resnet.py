@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 
 from ..utils import load_state_dict_from_url
@@ -31,7 +30,7 @@ class Conv3DSimple(nn.Conv3d):
 
     @staticmethod
     def get_downsample_stride(stride):
-        return (stride, stride, stride)
+        return stride, stride, stride
 
 
 class Conv2Plus1D(nn.Sequential):
@@ -54,7 +53,7 @@ class Conv2Plus1D(nn.Sequential):
 
     @staticmethod
     def get_downsample_stride(stride):
-        return (stride, stride, stride)
+        return stride, stride, stride
 
 
 class Conv3DNoTemporal(nn.Conv3d):
@@ -76,7 +75,7 @@ class Conv3DNoTemporal(nn.Conv3d):
 
     @staticmethod
     def get_downsample_stride(stride):
-        return (1, stride, stride)
+        return 1, stride, stride
 
 
 class BasicBlock(nn.Module):

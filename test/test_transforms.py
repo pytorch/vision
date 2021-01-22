@@ -24,7 +24,7 @@ from common_utils import cycle_over, int_dtypes, float_dtypes
 
 
 GRACE_HOPPER = get_file_path_2(
-    os.path.dirname(os.path.abspath(__file__)), 'assets', 'grace_hopper_517x606.jpg')
+    os.path.dirname(os.path.abspath(__file__)), 'assets', 'encode_jpeg', 'grace_hopper_517x606.jpg')
 
 
 class Tester(unittest.TestCase):
@@ -215,48 +215,64 @@ class Tester(unittest.TestCase):
                     F.perspective(img_conv, startpoints, endpoints, fill=tuple([fill] * wrong_num_bands))
 
     def test_resize(self):
-        height = random.randint(24, 32) * 2
-        width = random.randint(24, 32) * 2
-        osize = random.randint(5, 12) * 2
 
-        img = torch.ones(3, height, width)
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize(osize),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertIn(osize, result.size())
-        if height < width:
-            self.assertLessEqual(result.size(1), result.size(2))
-        elif width < height:
-            self.assertGreaterEqual(result.size(1), result.size(2))
+        input_sizes = [
+            # height, width
+            # square image
+            (28, 28),
+            (27, 27),
+            # rectangular image: h < w
+            (28, 34),
+            (29, 35),
+            # rectangular image: h > w
+            (34, 28),
+            (35, 29),
+        ]
+        test_output_sizes_1 = [
+            # single integer
+            22, 27, 28, 36,
+            # single integer in tuple/list
+            [22, ], (27, ),
+        ]
+        test_output_sizes_2 = [
+            # two integers
+            [22, 22], [22, 28], [22, 36],
+            [27, 22], [36, 22], [28, 28],
+            [28, 37], [37, 27], [37, 37]
+        ]
 
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize([osize, osize]),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertIn(osize, result.size())
-        self.assertEqual(result.size(1), osize)
-        self.assertEqual(result.size(2), osize)
+        for height, width in input_sizes:
+            img = Image.new("RGB", size=(width, height), color=127)
 
-        oheight = random.randint(5, 12) * 2
-        owidth = random.randint(5, 12) * 2
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize((oheight, owidth)),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertEqual(result.size(1), oheight)
-        self.assertEqual(result.size(2), owidth)
+            for osize in test_output_sizes_1:
 
-        result = transforms.Compose([
-            transforms.ToPILImage(),
-            transforms.Resize([oheight, owidth]),
-            transforms.ToTensor(),
-        ])(img)
-        self.assertEqual(result.size(1), oheight)
-        self.assertEqual(result.size(2), owidth)
+                t = transforms.Resize(osize)
+                result = t(img)
+
+                msg = "{}, {} - {}".format(height, width, osize)
+                osize = osize[0] if isinstance(osize, (list, tuple)) else osize
+                # If size is an int, smaller edge of the image will be matched to this number.
+                # i.e, if height > width, then image will be rescaled to (size * height / width, size).
+                if height < width:
+                    expected_size = (int(osize * width / height), osize)  # (w, h)
+                    self.assertEqual(result.size, expected_size, msg=msg)
+                elif width < height:
+                    expected_size = (osize, int(osize * height / width))  # (w, h)
+                    self.assertEqual(result.size, expected_size, msg=msg)
+                else:
+                    expected_size = (osize, osize)  # (w, h)
+                    self.assertEqual(result.size, expected_size, msg=msg)
+
+        for height, width in input_sizes:
+            img = Image.new("RGB", size=(width, height), color=127)
+
+            for osize in test_output_sizes_2:
+                oheight, owidth = osize
+
+                t = transforms.Resize(osize)
+                result = t(img)
+
+                self.assertEqual((owidth, oheight), result.size)
 
     def test_random_crop(self):
         height = random.randint(10, 32) * 2
@@ -297,6 +313,11 @@ class Tester(unittest.TestCase):
         ])(img)
         self.assertEqual(result.size(1), height + 1)
         self.assertEqual(result.size(2), width + 1)
+
+        t = transforms.RandomCrop(48)
+        img = torch.ones(3, 32, 32)
+        with self.assertRaisesRegex(ValueError, r"Required crop size .+ is larger then input image size .+"):
+            t(img)
 
     def test_pad(self):
         height = random.randint(10, 32) * 2
@@ -536,8 +557,10 @@ class Tester(unittest.TestCase):
         for dtype in int_dtypes():
             self.assertEqual(F_t._max_value(dtype), torch.iinfo(dtype).max)
 
-        for dtype in float_dtypes():
-            self.assertGreater(F_t._max_value(dtype), torch.finfo(dtype).max)
+        # remove float testing as it can lead to errors such as
+        # runtime error: 5.7896e+76 is outside the range of representable values of type 'float'
+        # for dtype in float_dtypes():
+        #     self.assertGreater(F_t._max_value(dtype), torch.finfo(dtype).max)
 
     def test_convert_image_dtype_float_to_float(self):
         for input_dtype, output_dtypes in cycle_over(float_dtypes()):
@@ -966,19 +989,27 @@ class Tester(unittest.TestCase):
                 self.assertTrue(np.allclose(img_data, img))
 
     def test_tensor_bad_types_to_pil_image(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, r'pic should be 2/3 dimensional. Got \d+ dimensions.'):
             transforms.ToPILImage()(torch.ones(1, 3, 4, 4))
+        with self.assertRaisesRegex(ValueError, r'pic should not have > 4 channels. Got \d+ channels.'):
+            transforms.ToPILImage()(torch.ones(6, 4, 4))
 
     def test_ndarray_bad_types_to_pil_image(self):
         trans = transforms.ToPILImage()
-        with self.assertRaises(TypeError):
+        reg_msg = r'Input type \w+ is not supported'
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.int64))
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.uint16))
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.uint32))
+        with self.assertRaisesRegex(TypeError, reg_msg):
             trans(np.ones([4, 4, 1], np.float64))
 
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, r'pic should be 2/3 dimensional. Got \d+ dimensions.'):
             transforms.ToPILImage()(np.ones([1, 4, 4, 3]))
+        with self.assertRaisesRegex(ValueError, r'pic should not have > 4 channels. Got \d+ channels.'):
+            transforms.ToPILImage()(np.ones([4, 4, 6]))
 
     @unittest.skipIf(stats is None, 'scipy.stats not available')
     def test_random_vertical_flip(self):
@@ -1203,6 +1234,48 @@ class Tester(unittest.TestCase):
         y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
         self.assertTrue(np.allclose(y_np, y_ans))
 
+    def test_adjust_sharpness(self):
+        x_shape = [4, 4, 3]
+        x_data = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
+                  0, 65, 108, 101, 120, 97, 110, 100, 101, 114, 32, 86, 114, 121, 110, 105,
+                  111, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+        x_pil = Image.fromarray(x_np, mode='RGB')
+
+        # test 0
+        y_pil = F.adjust_sharpness(x_pil, 1)
+        y_np = np.array(y_pil)
+        self.assertTrue(np.allclose(y_np, x_np))
+
+        # test 1
+        y_pil = F.adjust_sharpness(x_pil, 0.5)
+        y_np = np.array(y_pil)
+        y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 30,
+                 30, 74, 103, 96, 114, 97, 110, 100, 101, 114, 32, 81, 103, 108, 102, 101,
+                 107, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+        self.assertTrue(np.allclose(y_np, y_ans))
+
+        # test 2
+        y_pil = F.adjust_sharpness(x_pil, 2)
+        y_np = np.array(y_pil)
+        y_ans = [75, 121, 114, 105, 97, 107, 105, 32, 66, 111, 117, 114, 99, 104, 97, 0,
+                 0, 46, 118, 111, 132, 97, 110, 100, 101, 114, 32, 95, 135, 146, 126, 112,
+                 119, 116, 105, 115, 0, 0, 73, 32, 108, 111, 118, 101, 32, 121, 111, 117]
+        y_ans = np.array(y_ans, dtype=np.uint8).reshape(x_shape)
+        self.assertTrue(np.allclose(y_np, y_ans))
+
+        # test 3
+        x_shape = [2, 2, 3]
+        x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
+        x_np = np.array(x_data, dtype=np.uint8).reshape(x_shape)
+        x_pil = Image.fromarray(x_np, mode='RGB')
+        x_th = torch.tensor(x_np.transpose(2, 0, 1))
+        y_pil = F.adjust_sharpness(x_pil, 2)
+        y_np = np.array(y_pil).transpose(2, 0, 1)
+        y_th = F.adjust_sharpness(x_th, 2)
+        self.assertTrue(np.allclose(y_np, y_th.numpy()))
+
     def test_adjust_gamma(self):
         x_shape = [2, 2, 3]
         x_data = [0, 5, 13, 54, 135, 226, 37, 8, 234, 90, 255, 1]
@@ -1239,6 +1312,7 @@ class Tester(unittest.TestCase):
         self.assertEqual(F.adjust_saturation(x_l, 2).mode, 'L')
         self.assertEqual(F.adjust_contrast(x_l, 2).mode, 'L')
         self.assertEqual(F.adjust_hue(x_l, 0.4).mode, 'L')
+        self.assertEqual(F.adjust_sharpness(x_l, 2).mode, 'L')
         self.assertEqual(F.adjust_gamma(x_l, 0.5).mode, 'L')
 
     def test_color_jitter(self):
@@ -1463,10 +1537,20 @@ class Tester(unittest.TestCase):
 
         t = transforms.RandomRotation((-10, 10))
         angle = t.get_params(t.degrees)
-        self.assertTrue(angle > -10 and angle < 10)
+        self.assertTrue(-10 < angle < 10)
 
         # Checking if RandomRotation can be printed as string
         t.__repr__()
+
+        # assert deprecation warning and non-BC
+        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
+            t = transforms.RandomRotation((-10, 10), resample=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
+
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
+            t = transforms.RandomRotation((-10, 10), interpolation=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
 
     def test_random_affine(self):
 
@@ -1508,8 +1592,22 @@ class Tester(unittest.TestCase):
         # Checking if RandomAffine can be printed as string
         t.__repr__()
 
-        t = transforms.RandomAffine(10, resample=Image.BILINEAR)
-        self.assertIn("Image.BILINEAR", t.__repr__())
+        t = transforms.RandomAffine(10, interpolation=transforms.InterpolationMode.BILINEAR)
+        self.assertIn("bilinear", t.__repr__())
+
+        # assert deprecation warning and non-BC
+        with self.assertWarnsRegex(UserWarning, r"Argument resample is deprecated and will be removed"):
+            t = transforms.RandomAffine(10, resample=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
+
+        with self.assertWarnsRegex(UserWarning, r"Argument fillcolor is deprecated and will be removed"):
+            t = transforms.RandomAffine(10, fillcolor=10)
+            self.assertEqual(t.fill, 10)
+
+        # assert changed type warning
+        with self.assertWarnsRegex(UserWarning, r"Argument interpolation should be of type InterpolationMode"):
+            t = transforms.RandomAffine(10, interpolation=2)
+            self.assertEqual(t.interpolation, transforms.InterpolationMode.BILINEAR)
 
     def test_to_grayscale(self):
         """Unit tests for grayscale transform"""
@@ -1695,6 +1793,86 @@ class Tester(unittest.TestCase):
             F.gaussian_blur(img, 3, "sigma_string")
         with self.assertRaisesRegex(ValueError, r"sigma should be a single number or a list/tuple with length 2"):
             transforms.GaussianBlur(3, "sigma_string")
+
+    def _test_randomness(self, fn, trans, configs):
+        random_state = random.getstate()
+        random.seed(42)
+        img = transforms.ToPILImage()(torch.rand(3, 16, 18))
+
+        for p in [0.5, 0.7]:
+            for config in configs:
+                inv_img = fn(img, **config)
+
+                num_samples = 250
+                counts = 0
+                for _ in range(num_samples):
+                    tranformation = trans(p=p, **config)
+                    tranformation.__repr__()
+                    out = tranformation(img)
+                    if out == inv_img:
+                        counts += 1
+
+                p_value = stats.binom_test(counts, num_samples, p=p)
+                random.setstate(random_state)
+                self.assertGreater(p_value, 0.0001)
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_invert(self):
+        self._test_randomness(
+            F.invert,
+            transforms.RandomInvert,
+            [{}]
+        )
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_posterize(self):
+        self._test_randomness(
+            F.posterize,
+            transforms.RandomPosterize,
+            [{"bits": 4}]
+        )
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_solarize(self):
+        self._test_randomness(
+            F.solarize,
+            transforms.RandomSolarize,
+            [{"threshold": 192}]
+        )
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_adjust_sharpness(self):
+        self._test_randomness(
+            F.adjust_sharpness,
+            transforms.RandomAdjustSharpness,
+            [{"sharpness_factor": 2.0}]
+        )
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_autocontrast(self):
+        self._test_randomness(
+            F.autocontrast,
+            transforms.RandomAutocontrast,
+            [{}]
+        )
+
+    @unittest.skipIf(stats is None, 'scipy.stats not available')
+    def test_random_equalize(self):
+        self._test_randomness(
+            F.equalize,
+            transforms.RandomEqualize,
+            [{}]
+        )
+
+    def test_autoaugment(self):
+        for policy in transforms.AutoAugmentPolicy:
+            for fill in [None, 85, (128, 128, 128)]:
+                random.seed(42)
+                img = Image.open(GRACE_HOPPER)
+                transform = transforms.AutoAugment(policy=policy, fill=fill)
+                for _ in range(100):
+                    img = transform(img)
+                transform.__repr__()
 
 
 if __name__ == '__main__':

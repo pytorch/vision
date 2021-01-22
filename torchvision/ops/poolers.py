@@ -1,15 +1,12 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
-from typing import Union
-
 import torch
-import torch.nn.functional as F
 from torch import nn, Tensor
 
+import torchvision
 from torchvision.ops import roi_align
 from torchvision.ops.boxes import box_area
 
-from torch.jit.annotations import Optional, List, Dict, Tuple
-import torchvision
+from typing import Optional, List, Dict, Tuple, Union
 
 
 # copying result_idx_in_level to a specific index in result[]
@@ -48,7 +45,7 @@ class LevelMapper(object):
     """Determine which FPN level each RoI in a set of RoIs should map to based
     on the heuristic in the FPN paper.
 
-    Arguments:
+    Args:
         k_min (int)
         k_max (int)
         canonical_scale (int)
@@ -72,7 +69,7 @@ class LevelMapper(object):
 
     def __call__(self, boxlists: List[Tensor]) -> Tensor:
         """
-        Arguments:
+        Args:
             boxlists (list[BoxList])
         """
         # Compute level ids
@@ -88,13 +85,20 @@ class MultiScaleRoIAlign(nn.Module):
     """
     Multi-scale RoIAlign pooling, which is useful for detection with or without FPN.
 
-    It infers the scale of the pooling via the heuristics present in the FPN paper.
+    It infers the scale of the pooling via the heuristics specified in eq. 1
+    of the `Feature Pyramid Network paper <https://arxiv.org/abs/1612.03144>`_.
+    They keyword-only parameters ``canonical_scale`` and ``canonical_level``
+    correspond respectively to ``224`` and ``k0=4`` in eq. 1, and
+    have the following meaning: ``canonical_level`` is the target level of the pyramid from
+    which to pool a region of interest with ``w x h = canonical_scale x canonical_scale``.
 
-    Arguments:
+    Args:
         featmap_names (List[str]): the names of the feature maps that will be used
             for the pooling.
         output_size (List[Tuple[int, int]] or List[int]): output size for the pooled region
         sampling_ratio (int): sampling ratio for ROIAlign
+        canonical_scale (int, optional): canonical_scale for LevelMapper
+        canonical_level (int, optional): canonical_level for LevelMapper
 
     Examples::
 
@@ -123,6 +127,9 @@ class MultiScaleRoIAlign(nn.Module):
         featmap_names: List[str],
         output_size: Union[int, Tuple[int], List[int]],
         sampling_ratio: int,
+        *,
+        canonical_scale: int = 224,
+        canonical_level: int = 4,
     ):
         super(MultiScaleRoIAlign, self).__init__()
         if isinstance(output_size, int):
@@ -132,6 +139,8 @@ class MultiScaleRoIAlign(nn.Module):
         self.output_size = tuple(output_size)
         self.scales = None
         self.map_levels = None
+        self.canonical_scale = canonical_scale
+        self.canonical_level = canonical_level
 
     def convert_to_roi_format(self, boxes: List[Tensor]) -> Tensor:
         concat_boxes = torch.cat(boxes, dim=0)
@@ -149,7 +158,7 @@ class MultiScaleRoIAlign(nn.Module):
     def infer_scale(self, feature: Tensor, original_size: List[int]) -> float:
         # assumption: the scale is of the form 2 ** (-k), with k integer
         size = feature.shape[-2:]
-        possible_scales = torch.jit.annotate(List[float], [])
+        possible_scales: List[float] = []
         for s1, s2 in zip(size, original_size):
             approx_scale = float(s1) / float(s2)
             scale = 2 ** float(torch.tensor(approx_scale).log2().round())
@@ -176,7 +185,12 @@ class MultiScaleRoIAlign(nn.Module):
         lvl_min = -torch.log2(torch.tensor(scales[0], dtype=torch.float32)).item()
         lvl_max = -torch.log2(torch.tensor(scales[-1], dtype=torch.float32)).item()
         self.scales = scales
-        self.map_levels = initLevelMapper(int(lvl_min), int(lvl_max))
+        self.map_levels = initLevelMapper(
+            int(lvl_min),
+            int(lvl_max),
+            canonical_scale=self.canonical_scale,
+            canonical_level=self.canonical_level,
+        )
 
     def forward(
         self,
@@ -185,7 +199,7 @@ class MultiScaleRoIAlign(nn.Module):
         image_shapes: List[Tuple[int, int]],
     ) -> Tensor:
         """
-        Arguments:
+        Args:
             x (OrderedDict[Tensor]): feature maps for each level. They are assumed to have
                 all the same number of channels, but they can have different sizes.
             boxes (List[Tensor[N, 4]]): boxes to be used to perform the pooling operation, in
@@ -258,3 +272,7 @@ class MultiScaleRoIAlign(nn.Module):
             result = _onnx_merge_levels(levels, tracing_results)
 
         return result
+
+    def __repr__(self) -> str:
+        return (f"{self.__class__.__name__}(featmap_names={self.featmap_names}, "
+                f"output_size={self.output_size}, sampling_ratio={self.sampling_ratio})")

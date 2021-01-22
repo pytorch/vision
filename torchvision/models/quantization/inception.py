@@ -6,7 +6,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models import inception as inception_module
 from torchvision.models.inception import InceptionOutputs
-from torch.jit.annotations import Optional
 from torchvision.models.utils import load_state_dict_from_url
 from .utils import _replace_relu, quantize_model
 
@@ -67,7 +66,7 @@ def inception_v3(pretrained=False, progress=True, quantize=False, **kwargs):
         if quantize:
             if not original_aux_logits:
                 model.aux_logits = False
-                del model.AuxLogits
+                model.AuxLogits = None
             model_url = quant_model_urls['inception_v3_google' + '_' + backend]
         else:
             model_url = inception_module.model_urls['inception_v3_google']
@@ -80,7 +79,7 @@ def inception_v3(pretrained=False, progress=True, quantize=False, **kwargs):
         if not quantize:
             if not original_aux_logits:
                 model.aux_logits = False
-                del model.AuxLogits
+                model.AuxLogits = None
     return model
 
 

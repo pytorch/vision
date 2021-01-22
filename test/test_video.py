@@ -5,12 +5,14 @@ import tempfile
 import unittest
 import random
 
+import itertools
+
 
 import numpy as np
 
 import torch
 import torchvision
-from torchvision.io import _HAS_VIDEO_OPT, Video
+from torchvision.io import _HAS_VIDEO_OPT, VideoReader
 
 try:
     import av
@@ -242,11 +244,11 @@ def _template_read_video(video_object, s=0, e=None):
     video_frames = torch.empty(0)
     frames = []
     video_pts = []
-    t, pts = video_object.next()
-    while t.numel() > 0 and (pts >= s and pts <= e):
-        frames.append(t)
-        video_pts.append(pts)
-        t, pts = video_object.next()
+    for frame in itertools.takewhile(lambda x: x['pts'] <= e, video_object):
+        if frame['pts'] < s:
+            continue
+        frames.append(frame['data'])
+        video_pts.append(frame['pts'])
     if len(frames) > 0:
         video_frames = torch.stack(frames, 0)
 
@@ -255,11 +257,11 @@ def _template_read_video(video_object, s=0, e=None):
     audio_frames = torch.empty(0)
     frames = []
     audio_pts = []
-    t, pts = video_object.next()
-    while t.numel() > 0 and (pts > s and pts <= e):
-        frames.append(t)
-        audio_pts.append(pts)
-        t, pts = video_object.next()
+    for frame in itertools.takewhile(lambda x: x['pts'] <= e, video_object):
+        if frame['pts'] < s:
+            continue
+        frames.append(frame['data'])
+        audio_pts.append(frame['pts'])
     if len(frames) > 0:
         audio_frames = torch.stack(frames, 0)
 
@@ -289,12 +291,10 @@ class TestVideo(unittest.TestCase):
             tv_result, _, _ = torchvision.io.read_video(full_path, pts_unit="sec")
             tv_result = tv_result.permute(0, 3, 1, 2)
             # pass 2: decode all frames using new api
-            reader = Video(full_path, "video")
+            reader = VideoReader(full_path, "video")
             frames = []
-            t, _ = reader.next()
-            while t.numel() > 0:
-                frames.append(t)
-                t, _ = reader.next()
+            for frame in reader:
+                frames.append(frame['data'])
             new_api = torch.stack(frames, 0)
             self.assertEqual(tv_result.size(), new_api.size())
 
@@ -310,7 +310,7 @@ class TestVideo(unittest.TestCase):
     #         s = min(r)
     #         e = max(r)
 
-    #         reader = Video(full_path, "video")
+    #         reader = VideoReader(full_path, "video")
     #         results = _template_read_video(reader, s, e)
     #         tv_video, tv_audio, info = torchvision.io.read_video(
     #             full_path, start_pts=s, end_pts=e, pts_unit="sec"
@@ -329,12 +329,12 @@ class TestVideo(unittest.TestCase):
     #             full_path, pts_unit="sec"
     #         )
     #         # pass 2: decode all frames using new api
-    #         reader = Video(full_path, "video")
+    #         reader = VideoReader(full_path, "video")
     #         pts = []
-    #         t, p = reader.next()
-    #         while t.numel() > 0:
+    #         t, p = next(reader)
+    #         while t.numel() > 0:  # THIS NEEDS TO BE FIXED
     #             pts.append(p)
-    #             t, p = reader.next()
+    #             t, p = next(reader)
 
     #         tv_timestamps = [float(p) for p in tv_timestamps]
     #         napi_pts = [float(p) for p in pts]
@@ -353,7 +353,7 @@ class TestVideo(unittest.TestCase):
         torchvision.set_video_backend("pyav")
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
-            reader = Video(full_path, "video")
+            reader = VideoReader(full_path, "video")
             reader_md = reader.get_metadata()
             self.assertAlmostEqual(
                 config.video_fps, reader_md["video"]["fps"][0], delta=0.0001
@@ -372,7 +372,7 @@ class TestVideo(unittest.TestCase):
 
             ref_result = _decode_frames_by_av_module(full_path)
 
-            reader = Video(full_path, "video")
+            reader = VideoReader(full_path, "video")
             newapi_result = _template_read_video(reader)
 
             # First we check if the frames are approximately the same

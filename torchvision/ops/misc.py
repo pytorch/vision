@@ -10,8 +10,8 @@ is implemented
 
 import warnings
 import torch
-from torch import Tensor, Size
-from torch.jit.annotations import List, Optional, Tuple
+from torch import Tensor
+from typing import List, Optional
 
 
 class Conv2d(torch.nn.Conv2d):
@@ -51,7 +51,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
     def __init__(
         self,
         num_features: int,
-        eps: float = 0.,
+        eps: float = 1e-5,
         n: Optional[int] = None,
     ):
         # n=None for backward-compatibility
@@ -96,4 +96,4 @@ class FrozenBatchNorm2d(torch.nn.Module):
         return x * scale + bias
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self.weight.shape[0]})"
+        return f"{self.__class__.__name__}({self.weight.shape[0]}, eps={self.eps})"

@@ -1,9 +1,6 @@
 torchvision
 ===========
 
-.. image:: https://travis-ci.org/pytorch/vision.svg?branch=master
-    :target: https://travis-ci.org/pytorch/vision
-
 .. image:: https://codecov.io/gh/pytorch/vision/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/pytorch/vision
 
@@ -28,6 +25,12 @@ supported Python versions.
 | ``torch``                | ``torchvision``          | ``python``                      |
 +==========================+==========================+=================================+
 | ``master`` / ``nightly`` | ``master`` / ``nightly`` | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
+| ``1.7.1``                | ``0.8.2``                | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
+| ``1.7.0``                | ``0.8.1``                | ``>=3.6``                       |
++--------------------------+--------------------------+---------------------------------+
+| ``1.7.0``                | ``0.8.0``                | ``>=3.6``                       |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.6.0``                | ``0.7.0``                | ``>=3.6``                       |
 +--------------------------+--------------------------+---------------------------------+
@@ -67,6 +70,10 @@ From source:
     python setup.py install
     # or, for OSX
     # MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++ python setup.py install
+
+
+In case building TorchVision from source fails, install the nightly version of PyTorch following 
+the linked guide on the  `contributing page <https://github.com/pytorch/vision/blob/master/CONTRIBUTING.md#development-installation>`_ and retry the install.
 
 By default, GPU support is built if CUDA is found and ``torch.cuda.is_available()`` is true.
 It's possible to force building GPU support by setting ``FORCE_CUDA=1`` environment variable,
@@ -123,13 +130,19 @@ so make sure that it is also available to cmake via the ``CMAKE_PREFIX_PATH``.
 
 For an example setup, take a look at ``examples/cpp/hello_world``.
 
+TorchVision Operators
+---------------------
+In order to get the torchvision operators registered with torch (eg. for the JIT), all you need to do is to ensure that you
+:code:`#include <torchvision/vision.h>` in your project.
+
 Documentation
 =============
 You can find the API documentation on the pytorch website: https://pytorch.org/docs/stable/torchvision/index.html
 
 Contributing
 ============
-We appreciate all contributions. If you are planning to contribute back bug-fixes, please do so without any further discussion. If you plan to contribute new features, utility functions or extensions, please first open an issue and discuss the feature with us.
+
+See the `CONTRIBUTING <CONTRIBUTING.md>`_ file for how to help out.
 
 Disclaimer on Datasets
 ======================

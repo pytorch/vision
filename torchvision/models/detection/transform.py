@@ -1,10 +1,9 @@
-import random
 import math
 import torch
 from torch import nn, Tensor
 from torch.nn import functional as F
 import torchvision
-from torch.jit.annotations import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional
 
 from .image_list import ImageList
 from .roi_heads import paste_masks_in_image
@@ -28,7 +27,7 @@ def _resize_image_and_masks_onnx(image, self_min_size, self_max_size, target):
 
     if "masks" in target:
         mask = target["masks"]
-        mask = F.interpolate(mask[:, None].float(), scale_factor=scale_factor)[:, 0].byte()
+        mask = F.interpolate(mask[:, None].float(), scale_factor=scale_factor, recompute_scale_factor=True)[:, 0].byte()
         target["masks"] = mask
     return image, target
 
@@ -50,7 +49,7 @@ def _resize_image_and_masks(image, self_min_size, self_max_size, target):
 
     if "masks" in target:
         mask = target["masks"]
-        mask = F.interpolate(mask[:, None].float(), scale_factor=scale_factor)[:, 0].byte()
+        mask = F.interpolate(mask[:, None].float(), scale_factor=scale_factor, recompute_scale_factor=True)[:, 0].byte()
         target["masks"] = mask
     return image, target
 
@@ -109,7 +108,7 @@ class GeneralizedRCNNTransform(nn.Module):
 
         image_sizes = [img.shape[-2:] for img in images]
         images = self.batch_images(images)
-        image_sizes_list = torch.jit.annotate(List[Tuple[int, int]], [])
+        image_sizes_list: List[Tuple[int, int]] = []
         for image_size in image_sizes:
             assert len(image_size) == 2
             image_sizes_list.append((image_size[0], image_size[1]))
@@ -118,6 +117,11 @@ class GeneralizedRCNNTransform(nn.Module):
         return image_list, targets
 
     def normalize(self, image):
+        if not image.is_floating_point():
+            raise TypeError(
+                f"Expected input images to be of floating type (in range [0, 1]), "
+                f"but found type {image.dtype} instead"
+            )
         dtype, device = image.dtype, image.device
         mean = torch.as_tensor(self.image_mean, dtype=dtype, device=device)
         std = torch.as_tensor(self.image_std, dtype=dtype, device=device)

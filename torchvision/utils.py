@@ -1,19 +1,25 @@
 from typing import Union, Optional, List, Tuple, Text, BinaryIO
-import io
 import pathlib
 import torch
 import math
-irange = range
+import warnings
+import numpy as np
+from PIL import Image, ImageDraw
+from PIL import ImageFont
+
+__all__ = ["make_grid", "save_image", "draw_bounding_boxes"]
 
 
+@torch.no_grad()
 def make_grid(
     tensor: Union[torch.Tensor, List[torch.Tensor]],
     nrow: int = 8,
     padding: int = 2,
     normalize: bool = False,
-    range: Optional[Tuple[int, int]] = None,
+    value_range: Optional[Tuple[int, int]] = None,
     scale_each: bool = False,
     pad_value: int = 0,
+    **kwargs
 ) -> torch.Tensor:
     """Make a grid of images.
 
@@ -25,7 +31,7 @@ def make_grid(
         padding (int, optional): amount of padding. Default: ``2``.
         normalize (bool, optional): If True, shift the image to the range (0, 1),
             by the min and max values specified by :attr:`range`. Default: ``False``.
-        range (tuple, optional): tuple (min, max) where min and max are numbers,
+        value_range (tuple, optional): tuple (min, max) where min and max are numbers,
             then these numbers are used to normalize the image. By default, min and max
             are computed from the tensor.
         scale_each (bool, optional): If ``True``, scale each image in the batch of
@@ -38,7 +44,12 @@ def make_grid(
     """
     if not (torch.is_tensor(tensor) or
             (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
-        raise TypeError('tensor or list of tensors expected, got {}'.format(type(tensor)))
+        raise TypeError(f'tensor or list of tensors expected, got {type(tensor)}')
+
+    if "range" in kwargs.keys():
+        warning = "range will be deprecated, please use value_range instead."
+        warnings.warn(warning)
+        value_range = kwargs["range"]
 
     # if list of tensors, convert to a 4D mini-batch Tensor
     if isinstance(tensor, list):
@@ -56,25 +67,25 @@ def make_grid(
 
     if normalize is True:
         tensor = tensor.clone()  # avoid modifying tensor in-place
-        if range is not None:
-            assert isinstance(range, tuple), \
-                "range has to be a tuple (min, max) if specified. min and max are numbers"
+        if value_range is not None:
+            assert isinstance(value_range, tuple), \
+                "value_range has to be a tuple (min, max) if specified. min and max are numbers"
 
-        def norm_ip(img, min, max):
-            img.clamp_(min=min, max=max)
-            img.add_(-min).div_(max - min + 1e-5)
+        def norm_ip(img, low, high):
+            img.clamp_(min=low, max=high)
+            img.sub_(low).div_(max(high - low, 1e-5))
 
-        def norm_range(t, range):
-            if range is not None:
-                norm_ip(t, range[0], range[1])
+        def norm_range(t, value_range):
+            if value_range is not None:
+                norm_ip(t, value_range[0], value_range[1])
             else:
                 norm_ip(t, float(t.min()), float(t.max()))
 
         if scale_each is True:
             for t in tensor:  # loop over mini-batch dimension
-                norm_range(t, range)
+                norm_range(t, value_range)
         else:
-            norm_range(tensor, range)
+            norm_range(tensor, value_range)
 
     if tensor.size(0) == 1:
         return tensor.squeeze(0)
@@ -87,8 +98,8 @@ def make_grid(
     num_channels = tensor.size(1)
     grid = tensor.new_full((num_channels, height * ymaps + padding, width * xmaps + padding), pad_value)
     k = 0
-    for y in irange(ymaps):
-        for x in irange(xmaps):
+    for y in range(ymaps):
+        for x in range(xmaps):
             if k >= nmaps:
                 break
             # Tensor.copy_() is a valid method but seems to be missing from the stubs
@@ -100,16 +111,13 @@ def make_grid(
     return grid
 
 
+@torch.no_grad()
 def save_image(
     tensor: Union[torch.Tensor, List[torch.Tensor]],
     fp: Union[Text, pathlib.Path, BinaryIO],
-    nrow: int = 8,
-    padding: int = 2,
     normalize: bool = False,
-    range: Optional[Tuple[int, int]] = None,
-    scale_each: bool = False,
-    pad_value: int = 0,
     format: Optional[str] = None,
+    **kwargs
 ) -> None:
     """Save a given Tensor into an image file.
 
@@ -121,10 +129,64 @@ def save_image(
             If a file object was used instead of a filename, this parameter should always be used.
         **kwargs: Other arguments are documented in ``make_grid``.
     """
-    from PIL import Image
-    grid = make_grid(tensor, nrow=nrow, padding=padding, pad_value=pad_value,
-                     normalize=normalize, range=range, scale_each=scale_each)
+
+    grid = make_grid(tensor, **kwargs)
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
+
+
+@torch.no_grad()
+def draw_bounding_boxes(
+    image: torch.Tensor,
+    boxes: torch.Tensor,
+    labels: Optional[List[str]] = None,
+    colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
+    width: int = 1,
+    font: Optional[str] = None,
+    font_size: int = 10
+) -> torch.Tensor:
+
+    """
+    Draws bounding boxes on given image.
+    The values of the input image should be uint8 between 0 and 255.
+
+    Args:
+        image (Tensor): Tensor of shape (C x H x W)
+        bboxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
+            the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
+            `0 <= ymin < ymax < H`.
+        labels (List[str]): List containing the labels of bounding boxes.
+        colors (List[Union[str, Tuple[int, int, int]]]): List containing the colors of bounding boxes. The colors can
+            be represented as `str` or `Tuple[int, int, int]`.
+        width (int): Width of bounding box.
+        font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
+            also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
+            `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
+        font_size (int): The requested font size in points.
+    """
+
+    if not isinstance(image, torch.Tensor):
+        raise TypeError(f"Tensor expected, got {type(image)}")
+    elif image.dtype != torch.uint8:
+        raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
+    elif image.dim() != 3:
+        raise ValueError("Pass individual images, not batches")
+
+    ndarr = image.permute(1, 2, 0).numpy()
+    img_to_draw = Image.fromarray(ndarr)
+
+    img_boxes = boxes.to(torch.int64).tolist()
+
+    draw = ImageDraw.Draw(img_to_draw)
+    txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
+
+    for i, bbox in enumerate(img_boxes):
+        color = None if colors is None else colors[i]
+        draw.rectangle(bbox, width=width, outline=color)
+
+        if labels is not None:
+            draw.text((bbox[0], bbox[1]), labels[i], fill=color, font=txt_font)
+
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1)

@@ -3,10 +3,11 @@ from torch import nn
 
 from torchvision.ops import MultiScaleRoIAlign
 
+from ._utils import overwrite_eps
 from ..utils import load_state_dict_from_url
 
 from .faster_rcnn import FasterRCNN
-from .backbone_utils import resnet_fpn_backbone
+from .backbone_utils import resnet_fpn_backbone, _validate_trainable_layers
 
 
 __all__ = [
@@ -43,7 +44,7 @@ class KeypointRCNN(FasterRCNN):
         - scores (Tensor[N]): the scores or each prediction
         - keypoints (FloatTensor[N, K, 3]): the locations of the predicted keypoints, in [x, y, v] format.
 
-    Arguments:
+    Args:
         backbone (nn.Module): the network used to compute the features for the model.
             It should contain a out_channels attribute, which indicates the number of output
             channels that each feature map has (and it should be the same for all feature maps).
@@ -73,6 +74,8 @@ class KeypointRCNN(FasterRCNN):
             for computing the loss
         rpn_positive_fraction (float): proportion of positive anchors in a mini-batch during training
             of the RPN
+        rpn_score_thresh (float): during inference, only return proposals with a classification score
+            greater than rpn_score_thresh
         box_roi_pool (MultiScaleRoIAlign): the module which crops and resizes the feature maps in
             the locations indicated by the bounding boxes
         box_head (nn.Module): module that takes the cropped feature maps as input
@@ -103,7 +106,7 @@ class KeypointRCNN(FasterRCNN):
         >>> import torch
         >>> import torchvision
         >>> from torchvision.models.detection import KeypointRCNN
-        >>> from torchvision.models.detection.rpn import AnchorGenerator
+        >>> from torchvision.models.detection.anchor_utils import AnchorGenerator
         >>>
         >>> # load a pre-trained model for classification and return
         >>> # only the features
@@ -157,6 +160,7 @@ class KeypointRCNN(FasterRCNN):
                  rpn_nms_thresh=0.7,
                  rpn_fg_iou_thresh=0.7, rpn_bg_iou_thresh=0.3,
                  rpn_batch_size_per_image=256, rpn_positive_fraction=0.5,
+                 rpn_score_thresh=0.0,
                  # Box parameters
                  box_roi_pool=None, box_head=None, box_predictor=None,
                  box_score_thresh=0.05, box_nms_thresh=0.5, box_detections_per_img=100,
@@ -203,6 +207,7 @@ class KeypointRCNN(FasterRCNN):
             rpn_nms_thresh,
             rpn_fg_iou_thresh, rpn_bg_iou_thresh,
             rpn_batch_size_per_image, rpn_positive_fraction,
+            rpn_score_thresh,
             # Box parameters
             box_roi_pool, box_head, box_predictor,
             box_score_thresh, box_nms_thresh, box_detections_per_img,
@@ -267,7 +272,7 @@ model_urls = {
 
 def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
                               num_classes=2, num_keypoints=17,
-                              pretrained_backbone=True, trainable_backbone_layers=3, **kwargs):
+                              pretrained_backbone=True, trainable_backbone_layers=None, **kwargs):
     """
     Constructs a Keypoint R-CNN model with a ResNet-50-FPN backbone.
 
@@ -308,18 +313,18 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
         >>> # optionally, if you want to export the model to ONNX:
         >>> torch.onnx.export(model, x, "keypoint_rcnn.onnx", opset_version = 11)
 
-    Arguments:
+    Args:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         num_classes (int): number of output classes of the model (including the background)
+        num_keypoints (int): number of keypoints, default 17
+        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
     """
-    assert trainable_backbone_layers <= 5 and trainable_backbone_layers >= 0
-    # dont freeze any layers if pretrained model or backbone is not used
-    if not (pretrained or pretrained_backbone):
-        trainable_backbone_layers = 5
+    trainable_backbone_layers = _validate_trainable_layers(
+        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3)
+
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
@@ -332,4 +337,5 @@ def keypointrcnn_resnet50_fpn(pretrained=False, progress=True,
         state_dict = load_state_dict_from_url(model_urls[key],
                                               progress=progress)
         model.load_state_dict(state_dict)
+        overwrite_eps(model, 0.0)
     return model

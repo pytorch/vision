@@ -38,18 +38,7 @@ def _register_custom_op():
                         pooled_shape_i=(pooled_height, pooled_width), spatial_scale_f=spatial_scale)
         return roi_pool, None
 
-    @parse_args('v', 'is')
-    def new_empty_tensor_op(g, input, shape):
-        dtype = input.type().scalarType()
-        if dtype is None:
-            dtype = 'Float'
-        dtype = scalar_type_to_onnx.index(cast_pytorch_to_onnx[dtype])
-        shape = g.op("Constant", value_t=torch.tensor(shape))
-        return g.op("ConstantOfShape", shape,
-                    value_t=torch.tensor([0], dtype=scalar_type_to_pytorch_type[dtype]))
-
     from torch.onnx import register_custom_op_symbolic
     register_custom_op_symbolic('torchvision::nms', symbolic_multi_label_nms, _onnx_opset_version)
     register_custom_op_symbolic('torchvision::roi_align', roi_align, _onnx_opset_version)
     register_custom_op_symbolic('torchvision::roi_pool', roi_pool, _onnx_opset_version)
-    register_custom_op_symbolic('torchvision::_new_empty_tensor_op', new_empty_tensor_op, _onnx_opset_version)

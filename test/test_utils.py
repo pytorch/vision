@@ -1,3 +1,4 @@
+import numpy as np
 import os
 import sys
 import tempfile
@@ -78,6 +79,22 @@ class Tester(unittest.TestCase):
             img_bytes = Image.open(fp)
             self.assertTrue(torch.equal(F.to_tensor(img_orig), F.to_tensor(img_bytes)),
                             'Pixel Image not stored in file object')
+
+    def test_draw_boxes(self):
+        img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
+        boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0],
+                             [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+        labels = ["a", "b", "c", "d"]
+        colors = ["green", "#FF00FF", (0, 255, 0), "red"]
+        result = utils.draw_bounding_boxes(img, boxes, labels=labels, colors=colors)
+
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_util.png")
+        if not os.path.exists(path):
+            res = Image.fromarray(result.permute(1, 2, 0).contiguous().numpy())
+            res.save(path)
+
+        expected = torch.as_tensor(np.array(Image.open(path))).permute(2, 0, 1)
+        self.assertTrue(torch.equal(result, expected))
 
 
 if __name__ == '__main__':
