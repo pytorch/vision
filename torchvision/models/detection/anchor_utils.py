@@ -100,7 +100,7 @@ class AnchorGenerator(nn.Module):
         assert cell_anchors is not None
 
         if not (len(grid_sizes) == len(strides) == len(cell_anchors)):
-            raise ValueError("Achors should be Tuple[Tuple[int]] because each feature "
+            raise ValueError("Anchors should be Tuple[Tuple[int]] because each feature "
                              "map could potentially have different sizes and aspect ratios. "
                              "There needs to be a match between the number of "
                              "feature maps passed and the number of sizes / aspect ratios specified.")
